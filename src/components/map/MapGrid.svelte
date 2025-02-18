@@ -2,41 +2,43 @@
     import { userState } from '../../stores/user.js';
 </script>
 
-<div class="grid">
+<div class="scene">
     {#each $userState.map as row, i}
-        <div class="row">
-            {#each row as cell, j}
-                <div class="cell">
-                    {i},{j}
-                </div>
-            {/each}
-        </div>
+        {#each row as cell, j}
+            <div class="box">
+                {i},{j}
+            </div>
+        {/each}
     {/each}
 </div>
 
 <style>
-    .grid {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        background: #333;
-        padding: 2px;
+    :global(body) {
+        background: #222;
+        perspective: 1000px;
+    }
+
+    .scene {
+        display: grid;
+        grid-template-columns: repeat(10, 60px);
+        grid-auto-rows: 60px;
+        gap: 5px;
+        transform-style: preserve-3d;
+        transform: rotateX(60deg) rotateZ(45deg);
         width: fit-content;
+        margin: 2rem auto;
     }
 
-    .row {
+    .box {
+        width: 100%;
+        height: 100%;
+        background: #3498db;
         display: flex;
-        gap: 2px;
-    }
-
-    .cell {
-        width: 50px;
-        height: 50px;
-        background: #fff;
-        display: flex;
-        align-items: center;
         justify-content: center;
-        font-size: 0.8rem;
-        color: #666;
+        align-items: center;
+        font-family: Arial, sans-serif;
+        color: white;
+        font-weight: bold;
+        border: 1px solid #2980b9;
     }
 </style>
