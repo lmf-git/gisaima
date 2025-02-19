@@ -8,31 +8,38 @@
             <a href="/map">Map</a>
         </nav>
     </header>
-    <main>
-        <slot />
-    </main>
+
+    <slot />
 </div>
 
 <style>
+    :global(*) {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
     .app {
         display: flex;
         flex-direction: column;
-        min-height: 100vh;
-    }
-
-    main {
-        flex: 1;
-        padding: 1rem;
+        height: 100dvh;
+        overflow: hidden;
     }
 
     header {
         background: #333;
-        padding: 1rem;
+        height: 3em;
+        display: flex;
+        align-items: center;
+        position: relative;
+        z-index: 100;
+        flex: 0 0 3em;
     }
 
     nav {
         display: flex;
         gap: 1rem;
+        padding: 0 1em;
     }
 
     a {
