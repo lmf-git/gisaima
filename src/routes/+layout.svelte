@@ -1,8 +1,12 @@
 <script>
+    import { page } from '$app/stores';
+    
+    // Check if current page is the map page
+    $: isMapPage = $page.url.pathname === '/map';
 </script>
 
 <div class="app">
-    <header>
+    <header class={isMapPage ? 'absolute' : ''}>
         <nav>
             <a href="/">Home</a>
             <a href="/map">Map</a>
@@ -27,15 +31,17 @@
     }
 
     header {
-        background: #333;
         height: 3em;
         display: flex;
         align-items: center;
-        position: absolute; /* Changed from relative to absolute */
+        z-index: 100;
+    }
+
+    header.absolute {
+        position: absolute;
         top: 0;
         left: 0;
         right: 0;
-        z-index: 100;
     }
 
     nav {
