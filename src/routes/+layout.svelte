@@ -31,9 +31,11 @@
         height: 3em;
         display: flex;
         align-items: center;
-        position: relative;
+        position: absolute; /* Changed from relative to absolute */
+        top: 0;
+        left: 0;
+        right: 0;
         z-index: 100;
-        flex: 0 0 3em;
     }
 
     nav {
