@@ -2,6 +2,7 @@
   // Use $props() syntax for Svelte 5's runes mode
   const { x = 0, y = 0, title = "Current Position", openDetails } = $props();
   
+  
   // Simple functions with simpler names
   function click() {
     // Call the openDetails prop
