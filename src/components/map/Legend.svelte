@@ -1,24 +1,24 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
+  // Use $props() syntax for Svelte 5's runes mode
+  const { x = 0, y = 0, title = "Current Position", openDetails } = $props();
   
-  // Accept target coordinates as props
-  export let x = 0;
-  export let y = 0;
-  export let title = "Current Position";
+  // Simple functions with simpler names
+  function click() {
+    // Call the openDetails prop
+    openDetails?.();
+  }
   
-  // Initialize the dispatcher
-  const dispatch = createEventDispatcher();
-  
-  // Function to handle clicks on the legend
-  function handleClick() {
-    dispatch('click', { x, y });
+  function keypress(e) {
+    if (e.key === 'Enter') {
+      click();
+    }
   }
 </script>
 
 <div 
   class="coordinate-legend"
-  on:click={handleClick}
-  on:keypress={e => e.key === 'Enter' && handleClick()}
+  onclick={click}
+  onkeypress={keypress}
   role="button"
   tabindex="0"
   aria-label="Show location details"
@@ -27,6 +27,7 @@
     <div class="legend-title">{title}</div>
     <div class="legend-value">X: {x}, Y: {y}</div>
     <div class="legend-hint">(Click for details)</div>
+    <div class="legend-keyboard-hint">WASD/Arrows to Navigate</div>
   </div>
 </div>
 
@@ -80,6 +81,13 @@
   .legend-hint {
     font-size: 0.8rem;
     color: #aaa;
+    font-style: italic;
+    margin-bottom: 0.3em;
+  }
+  
+  .legend-keyboard-hint {
+    font-size: 0.75rem;
+    color: #88a;
     font-style: italic;
   }
 </style>

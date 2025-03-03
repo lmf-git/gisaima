@@ -13,6 +13,11 @@
   // Modal state
   let showDetailsModal = false;
   
+  // Add keyboard navigation state
+  let keysPressed = new Set();
+  let keyboardNavigationInterval = null;
+  const KEYBOARD_MOVE_SPEED = 200; // ms between moves
+  
   // Derived position values
   let offsetX = 0, offsetY = 0;
   
@@ -67,13 +72,92 @@
     // Initial calculation
     resize();
     
+    // Set up keyboard navigation
+    setupKeyboardNavigation();
+    
     return () => {
       // Clean up observer on component destruction
       if (resizeObserver) {
         resizeObserver.disconnect();
       }
+      
+      // Clean up keyboard navigation
+      if (keyboardNavigationInterval) {
+        clearInterval(keyboardNavigationInterval);
+      }
     };
   });
+  
+  // Setup keyboard navigation
+  function setupKeyboardNavigation() {
+    // Handle key down - add key to pressed keys
+    window.addEventListener('keydown', (event) => {
+      const key = event.key.toLowerCase();
+      if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'].includes(key)) {
+        keysPressed.add(key);
+        
+        // Start interval if not already running
+        if (!keyboardNavigationInterval) {
+          moveMapByKeys(); // Move immediately on first press
+          keyboardNavigationInterval = setInterval(moveMapByKeys, KEYBOARD_MOVE_SPEED);
+        }
+        
+        // Prevent default for arrow keys to avoid scrolling the page
+        if (key.startsWith('arrow')) {
+          event.preventDefault();
+        }
+      }
+    });
+    
+    // Handle key up - remove key from pressed keys
+    window.addEventListener('keyup', (event) => {
+      const key = event.key.toLowerCase();
+      if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'].includes(key)) {
+        keysPressed.delete(key);
+        
+        // If no more navigation keys are pressed, stop the interval
+        if (keysPressed.size === 0 && keyboardNavigationInterval) {
+          clearInterval(keyboardNavigationInterval);
+          keyboardNavigationInterval = null;
+        }
+      }
+    });
+  }
+  
+  // Move map based on current keys pressed
+  function moveMapByKeys() {
+    let xChange = 0;
+    let yChange = 0;
+    
+    // Check for horizontal movement
+    if (keysPressed.has('a') || keysPressed.has('arrowleft')) {
+      xChange -= 1; // Move left (lower x value)
+    }
+    if (keysPressed.has('d') || keysPressed.has('arrowright')) {
+      xChange += 1; // Move right (higher x value)
+    }
+    
+    // Check for vertical movement
+    if (keysPressed.has('w') || keysPressed.has('arrowup')) {
+      yChange -= 1; // Move up (lower y value)
+    }
+    if (keysPressed.has('s') || keysPressed.has('arrowdown')) {
+      yChange += 1; // Move down (higher y value)
+    }
+    
+    // Apply movement if there is any
+    if (xChange !== 0 || yChange !== 0) {
+      targetCoord.x -= xChange;
+      targetCoord.y -= yChange;
+      
+      // Update offsets
+      offsetX = centerX + targetCoord.x;
+      offsetY = centerY + targetCoord.y;
+      
+      // Trigger reactivity
+      targetCoord = { ...targetCoord };
+    }
+  }
   
   // Generate grid array using the x - offsetX, y - offsetY calculation
   $: centerX = Math.floor(cols / 2);
@@ -107,9 +191,6 @@
     };
   }) : [];
   
-  // Add a flag to track if modal is open for event handling logic
-  $: isModalOpen = showDetailsModal;
-
   const startDrag = event => {
     // Always start drag regardless of modal state
     isDragging = true;
@@ -149,9 +230,8 @@
     }
   };
   
-  // Handle legend click event
-  function handleLegendClick() {
-    // Show modal regardless of dragging state - removed the isDragging check
+  // Handle legend click event - renamed for clarity
+  function handleOpenDetails() {
     showDetailsModal = true;
   }
   
@@ -187,7 +267,7 @@
     on:mouseleave={stopDrag}
     role="grid"
     tabindex="0"
-    aria-label="Interactive coordinate map"
+    aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
   >
     {#if isReady}
       <div 
@@ -210,11 +290,11 @@
     {/if}
   </div>
   
-  <!-- Use Legend component with click handler -->
+  <!-- Use Legend component with renamed prop -->
   <Legend 
     x={targetCoord.x} 
     y={targetCoord.y} 
-    on:click={handleLegendClick} 
+    openDetails={handleOpenDetails}
   />
   
   <!-- Use Axes component -->
