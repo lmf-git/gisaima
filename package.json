@@ -5,10 +5,12 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "vite build",
+		"build": "node build.js",
+		"original-build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
-		"deploy": "npm run build && firebase deploy"
+		"deploy": "yarn build && firebase deploy",
+		"check-build": "node checkbuild.js"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^4.0.0",
