@@ -1,13 +1,7 @@
 <script>
     import { page } from '$app/stores';
-    import { user, signOut, initAuthListener } from '$lib/stores/authStore';
+    import { user, signOut } from '$lib/stores/authStore';
     import { browser } from '$app/environment';
-    import { onMount } from 'svelte';
-    
-    // Initialize auth listener on mount (client-side only)
-    onMount(() => {
-        initAuthListener();
-    });
     
     // Import analytics only on client side
     if (browser) {
