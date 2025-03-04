@@ -1,13 +1,12 @@
 <script>
-  import { fade, fly } from 'svelte/transition';
-  import { quintOut } from 'svelte/easing';
+  import { fly } from 'svelte/transition';
   
-  // Props for the modal
+  // Props for the component
   export let x = 0;
   export let y = 0;
   export let show = false;
   
-  // Sample data for the location - this would come from your data store in a real app
+  // Sample data for the location
   const locationInfo = {
     terrain: "Plains",
     resources: ["Wood", "Stone"],
@@ -15,171 +14,154 @@
     notes: "Unexplored territory"
   };
   
-  // Handle close button click
+  // Handle close action
   function handleClose() {
     show = false;
   }
   
-  // Handle click outside the modal content but inside the backdrop
-  function handleBackdropClick(event) {
-    if (event.target === event.currentTarget) {
-      show = false;
-    }
+  // Watch for show prop changes to open/close the details element
+  let detailsElement;
+  $: if (detailsElement) {
+    if (show && !detailsElement.open) detailsElement.open = true;
+    else if (!show && detailsElement.open) detailsElement.open = false;
   }
   
-  // Handle escape key
+  // Handle the toggle event to keep the show prop in sync
+  function handleToggle(event) {
+    show = detailsElement.open;
+  }
+  
+  // Allow ESC key to close the details
   function handleKeydown(event) {
-    if (event.key === 'Escape') {
+    if (event.key === 'Escape' && show) {
       show = false;
     }
-  }
-  
-  // Stop propagation of mouse events to prevent interference with map dragging
-  function stopPropagation(event) {
-    event.stopPropagation();
   }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
 
-{#if show}
-  <div 
-    class="modal-backdrop" 
-    on:click={handleBackdropClick}
-    on:mousedown={stopPropagation}
-    transition:fade={{ duration: 200 }}
+<div class="details-container" class:visible={show}>
+  <details 
+    class="location-details" 
+    bind:this={detailsElement}
+    on:toggle={handleToggle}
   >
-    <div 
-      class="modal-container" 
-      on:mousedown|stopPropagation
-      on:mouseup|stopPropagation
-      on:mousemove|stopPropagation
-      transition:fly={{ y: -20, duration: 300, easing: quintOut }}
-      role="dialog"
-      aria-labelledby="modal-title"
-      aria-modal="true"
-    >
-      <div class="modal-header">
-        <h2 id="modal-title">Location Details: ({x}, {y})</h2>
-        <button class="close-button" on:click={handleClose} aria-label="Close details">×</button>
+    <summary class="details-summary">
+      <h2>Location Details: ({x}, {y})</h2>
+      <!-- Custom toggle icon added in CSS -->
+    </summary>
+    
+    <div class="details-content" transition:fly={{ y: -10, duration: 200 }}>
+      <div class="info-section">
+        <h3>Terrain</h3>
+        <p>{locationInfo.terrain}</p>
       </div>
       
-      <div class="modal-body">
-        <div class="info-section">
-          <h3>Terrain</h3>
-          <p>{locationInfo.terrain}</p>
-        </div>
-        
-        <div class="info-section">
-          <h3>Resources</h3>
-          {#if locationInfo.resources.length > 0}
-            <ul>
-              {#each locationInfo.resources as resource}
-                <li>{resource}</li>
-              {/each}
-            </ul>
-          {:else}
-            <p>No resources found</p>
-          {/if}
-        </div>
-        
-        <div class="info-section">
-          <h3>Structures</h3>
-          {#if locationInfo.structures.length > 0}
-            <ul>
-              {#each locationInfo.structures as structure}
-                <li>{structure}</li>
-              {/each}
-            </ul>
-          {:else}
-            <p>No structures present</p>
-          {/if}
-        </div>
-        
-        <div class="info-section">
-          <h3>Notes</h3>
-          <p>{locationInfo.notes}</p>
-        </div>
+      <div class="info-section">
+        <h3>Resources</h3>
+        {#if locationInfo.resources.length > 0}
+          <ul>
+            {#each locationInfo.resources as resource}
+              <li>{resource}</li>
+            {/each}
+          </ul>
+        {:else}
+          <p>No resources found</p>
+        {/if}
       </div>
       
-      <div class="modal-footer">
-        <button class="primary-button" on:click={handleClose}>Close</button>
-        <!-- Additional action buttons could go here -->
+      <div class="info-section">
+        <h3>Structures</h3>
+        {#if locationInfo.structures.length > 0}
+          <ul>
+            {#each locationInfo.structures as structure}
+              <li>{structure}</li>
+            {/each}
+          </ul>
+        {:else}
+          <p>No structures present</p>
+        {/if}
+      </div>
+      
+      <div class="info-section">
+        <h3>Notes</h3>
+        <p>{locationInfo.notes}</p>
+      </div>
+      
+      <div class="details-footer">
+        <button class="close-button" on:click={handleClose}>Close</button>
       </div>
     </div>
-  </div>
-{/if}
+  </details>
+</div>
 
 <style>
-  .modal-backdrop {
+  .details-container {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Less opacity for a more transparent backdrop */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    top: 3.5em; /* Position below the header */
+    right: 1em;
+    max-width: 400px;
+    width: 90%;
     z-index: 1000;
-    pointer-events: none; /* Let events pass through backdrop */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
   }
   
-  .modal-container {
+  .details-container.visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+  
+  .location-details {
     background: #1a1a2e;
     border-radius: 0.5em;
-    width: 90%;
-    max-width: 500px;
-    max-height: 90vh;
-    overflow-y: auto;
     box-shadow: 0 0.5em 1.5em rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    width: 100%;
     color: white;
-    display: flex;
-    flex-direction: column;
-    user-select: none; /* Prevent text selection */
-    pointer-events: auto; /* Restore pointer events for modal content */
   }
   
-  .modal-header {
+  .details-summary {
     padding: 1em 1.5em;
+    background: #252547;
     border-bottom: 1px solid #333;
+    cursor: pointer;
+    user-select: none;
+    list-style: none; /* Remove default marker */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #252547;
+    position: relative;
   }
   
-  .modal-header h2 {
+  /* Remove the default disclosure triangle */
+  .details-summary::-webkit-details-marker {
+    display: none;
+  }
+  
+  /* Add custom disclosure triangle */
+  .details-summary::after {
+    content: "▼";
+    font-size: 0.8em;
+    color: #aaa;
+    transition: transform 0.2s ease;
+  }
+  
+  /* Rotate arrow when open */
+  details[open] .details-summary::after {
+    transform: rotate(180deg);
+  }
+  
+  .details-summary h2 {
     margin: 0;
     font-size: 1.3rem;
     color: #fff;
   }
   
-  .close-button {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #aaa;
-    padding: 0;
-    width: 1.5em;
-    height: 1.5em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s ease;
-  }
-  
-  .close-button:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-  }
-  
-  .modal-body {
+  .details-content {
     padding: 1.5em;
-    overflow-y: auto;
-    user-select: text; /* Allow text selection only in modal body */
   }
   
   .info-section {
@@ -203,15 +185,15 @@
     color: #ddd;
   }
   
-  .modal-footer {
-    padding: 1em 1.5em;
-    border-top: 1px solid #333;
+  .details-footer {
+    margin-top: 1em;
     display: flex;
     justify-content: flex-end;
-    background: #252547;
+    border-top: 1px solid #333;
+    padding-top: 1em;
   }
   
-  .primary-button {
+  .close-button {
     background: #3a3a8c;
     color: white;
     border: none;
@@ -222,7 +204,7 @@
     transition: background 0.2s ease;
   }
   
-  .primary-button:hover {
+  .close-button:hover {
     background: #4a4ab8;
   }
 </style>

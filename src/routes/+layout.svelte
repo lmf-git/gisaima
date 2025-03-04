@@ -24,16 +24,19 @@
 <div class="app">
     <header class={isMapPage ? 'absolute' : ''}>
         <nav>
-            <a href="/">Home</a>
-            <a href="/map">Map</a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/map">Map</a>
+                {#if !$user}
+                    <a href="/login">Login</a>
+                    <a href="/signup">Sign Up</a>
+                {/if}
+            </div>
             
             <div class="auth-links">
                 {#if $user}
                     <span>Hello, {$user.email}</span>
                     <button on:click={handleSignOut}>Sign Out</button>
-                {:else}
-                    <a href="/login">Login</a>
-                    <a href="/signup">Sign Up</a>
                 {/if}
             </div>
         </nav>
@@ -57,7 +60,7 @@
     }
 
     header {
-        height: 3em;
+        height: 3.5em;
         display: flex;
         align-items: center;
         z-index: 100;
@@ -72,33 +75,65 @@
 
     nav {
         display: flex;
-        gap: 1rem;
+        justify-content: space-between;
         padding: 0 1em;
         width: 100%;
+        align-items: center;
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
     }
 
     a {
         color: white;
         text-decoration: none;
+        background-color: rgba(0, 0, 0, 0.4);
+        padding: 0.4rem 1rem;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        display: inline-block;
+        font-size: 1.1rem;
+        font-weight: 500;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
 
     a:hover {
-        text-decoration: underline;
+        text-decoration: none;
+        background-color: rgba(0, 0, 0, 0.6);
+        transform: translateY(-2px);
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
     }
     
     .auth-links {
-        margin-left: auto;
         display: flex;
         gap: 1rem;
         align-items: center;
     }
     
     button {
-        padding: 0.25rem 0.5rem;
+        padding: 0.4rem 1rem;
         cursor: pointer;
-        background-color: transparent;
+        background-color: rgba(0, 0, 0, 0.4);
         color: white;
-        border: 1px solid white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
         border-radius: 4px;
+        transition: all 0.2s ease;
+        font-size: 1.1rem;
+        font-weight: 500;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+    
+    button:hover {
+        background-color: rgba(0, 0, 0, 0.6);
+        transform: translateY(-2px);
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+    }
+    
+    span {
+        color: white;
+        margin-right: 0.5rem;
     }
 </style>
