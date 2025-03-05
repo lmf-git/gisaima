@@ -63,38 +63,38 @@
   .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 2em;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
 
   .showcase {
     text-align: center;
-    padding: 3rem 1rem;
+    padding: 3em 1em;
   }
 
   .title {
-    font-size: 3.5rem;
-    margin: 0.5rem 0;
-    letter-spacing: 0.2rem;
+    font-size: 3.5em;
+    margin: 0.5em 0;
+    letter-spacing: 0.2em;
     color: #2a4365;
   }
 
   .subtitle {
-    font-size: 1.2rem;
+    font-size: 1.2em;
     color: #4a5568;
-    margin-bottom: 2rem;
+    margin-bottom: 2em;
   }
 
   .actions {
     display: flex;
     justify-content: center;
-    gap: 1rem;
-    margin-top: 2rem;
+    gap: 1em;
+    margin-top: 2em;
   }
 
   .button {
-    padding: 0.8rem 1.8rem;
-    border-radius: 0.25rem;
+    padding: 0.8em 1.8em;
+    border-radius: 0.25em;
     text-decoration: none;
     font-weight: bold;
     transition: background-color 0.3s ease;
@@ -119,38 +119,38 @@
   }
 
   .features, .howto {
-    padding: 3rem 0;
+    padding: 3em 0;
   }
 
   .heading {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 2em;
     color: #2a4365;
   }
 
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 2rem;
+    gap: 2em;
   }
 
   .card {
-    padding: 1.5rem;
-    border-radius: 0.5rem;
+    padding: 1.5em;
+    border-radius: 0.5em;
     background-color: #edf2f7;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
 
   .subheading {
     color: #2c5282;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.75em;
   }
 
   .overview {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 2rem;
+    gap: 2em;
   }
 
   .content, .visual {
@@ -173,13 +173,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 0.5rem;
+    border-radius: 0.5em;
     border: 2px dashed #a0aec0;
   }
 
   @media (max-width: 768px) {
     .title {
-      font-size: 2.5rem;
+      font-size: 2.5em;
     }
   }
 </style>

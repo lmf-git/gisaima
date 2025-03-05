@@ -24,7 +24,7 @@
 <div class="app">
     <header class={isMapPage ? 'absolute' : ''}>
         <nav>
-            <div class="nav-links">
+            <div class="navlinks">
                 <a href="/">Home</a>
                 <a href="/map">Map</a>
                 {#if !$user}
@@ -33,10 +33,10 @@
                 {/if}
             </div>
             
-            <div class="auth-links">
+            <div class="authlinks">
                 {#if $user}
-                    <span>Hello, {$user.email}</span>
-                    <button on:click={handleSignOut}>Sign Out</button>
+                    <span class="greeting">Hello, {$user.email}</span>
+                    <button class="signout" on:click={handleSignOut}>Sign Out</button>
                 {/if}
             </div>
         </nav>
@@ -55,8 +55,7 @@
     .app {
         display: flex;
         flex-direction: column;
-        height: 100dvh;
-        overflow: hidden;
+        min-height: 100vh; /* Allow content to expand naturally */
     }
 
     header {
@@ -81,9 +80,9 @@
         align-items: center;
     }
 
-    .nav-links {
+    .navlinks {
         display: flex;
-        gap: 1rem;
+        gap: 1em;
         align-items: center;
     }
 
@@ -91,11 +90,11 @@
         color: white;
         text-decoration: none;
         background-color: rgba(0, 0, 0, 0.4);
-        padding: 0.4rem 1rem;
+        padding: 0.4em 1em;
         border-radius: 4px;
         transition: all 0.2s ease;
         display: inline-block;
-        font-size: 1.1rem;
+        font-size: 1.1em;
         font-weight: 500;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
@@ -107,21 +106,21 @@
         box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
     }
     
-    .auth-links {
+    .authlinks {
         display: flex;
-        gap: 1rem;
+        gap: 1em;
         align-items: center;
     }
     
     button {
-        padding: 0.4rem 1rem;
+        padding: 0.4em 1em;
         cursor: pointer;
         background-color: rgba(0, 0, 0, 0.4);
         color: white;
         border: 1px solid rgba(255, 255, 255, 0.3);
         border-radius: 4px;
         transition: all 0.2s ease;
-        font-size: 1.1rem;
+        font-size: 1.1em;
         font-weight: 500;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
@@ -132,8 +131,8 @@
         box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
     }
     
-    span {
+    .greeting {
         color: white;
-        margin-right: 0.5rem;
+        margin-right: 0.5em;
     }
 </style>

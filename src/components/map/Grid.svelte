@@ -367,8 +367,9 @@
 
 <style>
   .map-container {
-    position: absolute;
-    inset: 0;
+    position: relative;
+    height: 100%;
+    width: 100%;
     overflow: hidden;
     background: #0e0c22;
     user-select: none;
