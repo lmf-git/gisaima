@@ -92,31 +92,7 @@
     margin-top: 2em;
   }
 
-  .button {
-    padding: 0.8em 1.8em;
-    border-radius: 0.25em;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
-  }
-
-  .primary {
-    background-color: #4299e1;
-    color: white;
-  }
-
-  .primary:hover {
-    background-color: #3182ce;
-  }
-
-  .secondary {
-    background-color: #e2e8f0;
-    color: #2d3748;
-  }
-
-  .secondary:hover {
-    background-color: #cbd5e0;
-  }
+  /* Removing duplicate button styles since they are now defined globally */
 
   .features, .howto {
     padding: 3em 0;

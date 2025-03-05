@@ -135,4 +135,43 @@
         color: white;
         margin-right: 0.5em;
     }
+
+    /* Global button and link styling */
+    :global(.button), a {
+        color: white;
+        text-decoration: none;
+        background-color: rgba(0, 0, 0, 0.4);
+        padding: 0.4em 1em;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        display: inline-block;
+        font-size: 1.1em;
+        font-weight: 500;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        border: none;
+        cursor: pointer;
+    }
+
+    :global(.button:hover), a:hover {
+        background-color: rgba(0, 0, 0, 0.6);
+        transform: translateY(-2px);
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+    }
+    
+    :global(.button.primary) {
+        background-color: #4299e1;
+    }
+    
+    :global(.button.primary:hover) {
+        background-color: #3182ce;
+    }
+    
+    :global(.button.secondary) {
+        background-color: #e2e8f0;
+        color: #2d3748;
+    }
+    
+    :global(.button.secondary:hover) {
+        background-color: #cbd5e0;
+    }
 </style>
