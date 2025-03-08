@@ -9,8 +9,7 @@
 		"original-build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
-		"deploy": "yarn build && firebase deploy",
-		"check-build": "node checkbuild.js"
+		"deploy": "yarn build && firebase deploy"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^4.0.0",
