@@ -13,8 +13,8 @@
     <h1 class="title">GISAIMA</h1>
     <p class="subtitle">A territory control strategy game inspired by ancient board games</p>
     <div class="actions">
-      <a href="/play" class="button primary">Play Now</a>
-      <a href="/learn" class="button secondary">Learn How to Play</a>
+      <a href="/map" class="button primary">Play Now</a>
+      <a href="/map" class="button secondary">Learn How to Play</a>
     </div>
   </section>
 

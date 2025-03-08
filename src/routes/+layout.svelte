@@ -28,8 +28,7 @@
             <div class="navlinks">
                 <a href="/" class="logolink">
                     <Logo extraClass="navlogo" />
-                </a>
-                <a href="/" class="button navlink">Home</a>
+                </a>i
                 <a href="/map" class="button navlink">Map</a>
                 {#if !$user}
                     <a href="/login" class="button navlink">Login</a>

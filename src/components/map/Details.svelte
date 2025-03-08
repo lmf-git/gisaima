@@ -1,5 +1,6 @@
 <script>
   import { fly } from 'svelte/transition';
+  import { onMount } from 'svelte';
   
   // Props for the component
   export let x = 0;
@@ -15,6 +16,16 @@
   export let riverValue = 0; // Added river value
   export let lakeValue = 0;  // Added lake value
   export let displayColor = "#808080"; // New prop for the processed color
+  
+  // Add debugging to verify correct data is received when props change
+  $: if (biome) {
+    console.log(`Details component receiving biome: ${biome?.name} at coordinates (${x}, ${y})`);
+  }
+  
+  // Log when details are shown with current terrain data
+  $: if (show) {
+    console.log(`Details visible with biome: ${biome?.name}, moisture: ${moisture}, height: ${height}`);
+  }
   
   // Handle close action
   function handleClose() {
@@ -50,6 +61,24 @@
       "deep_ocean": ["Fish", "Salt"],
       "ocean": ["Fish", "Salt", "Seaweed"],
       "ocean_trench": ["Rare Minerals", "Deep Sea Creatures"],
+      
+      // River biomes
+      "mountain_stream": ["Fresh Water", "Gold Deposits", "Trout"],
+      "river": ["Fresh Water", "Clay", "River Fish"],
+      "wide_river": ["Fresh Water", "Clay", "River Fish", "Reeds"],
+      "riverbank": ["Fertile Soil", "Clay", "Reeds"],
+      "riverine_forest": ["Hardwood", "Medicinal Plants", "Game"],
+      "flood_plain": ["Fertile Soil", "Rice", "Flax"],
+      
+      // Add new river types
+      "stream": ["Fresh Water", "Small Fish", "Pebbles"],
+      "tributary": ["Fresh Water", "Clay", "Small Fish"],
+      
+      // Lake biomes
+      "highland_lake": ["Fresh Water", "Trout", "Minerals"],
+      "lake": ["Fresh Water", "Lake Fish", "Clay"],
+      "lowland_lake": ["Fresh Water", "Lake Fish", "Reeds"],
+      "lakeshore": ["Clay", "Reeds", "Waterfowl"],
       
       // Coastal biomes
       "sandy_beach": ["Sand", "Shells", "Coconuts"],
@@ -114,10 +143,11 @@
     }
   }
   
-  // Add water feature categories
+  // Add water feature categories with enhanced river detection
   $: waterFeature = 
-    riverValue > 0.6 ? "River" :
+    riverValue > 0.4 ? "River" :
     lakeValue > 0.5 ? "Lake" :
+    riverValue > 0.25 ? "Stream" :
     riverValue > 0.2 ? "Riverbank" :
     lakeValue > 0.2 ? "Lake Shore" : "None";
 </script>

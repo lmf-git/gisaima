@@ -279,36 +279,167 @@ export class PerlinNoise {
   }
 }
 
+// Export terrain generation options as a single configuration object
+export const TERRAIN_OPTIONS = {
+  // Continent generation options
+  continent: {
+    scale: 0.0008,
+    threshold: 0.55,       // Increased threshold to generate more water
+    edgeScale: 0.003,
+    edgeAmount: 0.25,
+    sharpness: 2.7         // Slightly reduced to soften coastlines
+  },
+  
+  // Height map options
+  height: {
+    scale: 0.01,     // Increased for more local variance
+    octaves: 6,
+    persistence: 0.5,
+    lacunarity: 2.2  // Slightly increased for more variation
+  },
+  
+  // Moisture map options
+  moisture: {
+    scale: 0.015,    // Increased for more local variance
+    octaves: 4,
+    persistence: 0.6,
+    lacunarity: 2
+  },
+  
+  // Small-scale detail noise options
+  detail: {
+    scale: 0.08,     // High frequency for small details
+    octaves: 2,
+    persistence: 0.4,
+    lacunarity: 2
+  },
+  
+  // River generation options
+  river: {
+    scale: 0.005,
+    riverDensity: 0.85,    // Increased for many more rivers (was 0.75)
+    riverThreshold: 0.68,  // Lowered threshold for easier river formation (was 0.72)
+    minContinentValue: 0.28, // Reduced to allow rivers in more coastal areas
+    riverWidth: 1.0,       // Increased river width for more visibility (was 0.8)
+    noiseFactor: 0.3,      // Slightly reduced for smoother rivers
+    branchFactor: 0.8      // Increased to encourage more branching
+  },
+  
+  // Lake generation options
+  lake: {
+    scale: 0.003,
+    lakeThreshold: 0.78,   // Lowered to create more lakes
+    minHeight: 0.25,       // Lowered to allow lakes in more areas
+    maxHeight: 0.7,        // Maximum height for lakes (avoid mountains)
+    minRiverInfluence: 0.3, // Min river value to influence lake formation
+    lakeSmoothness: 0.7    // Higher values make lakes more circular
+  },
+  
+  // Constants related to terrain generation
+  constants: {
+    continentInfluence: 0.75, // Increased to make continental borders more pronounced
+    waterLevel: 0.35        // Added explicit water level control
+  }
+};
+
+// TerrainGenerator class to handle all terrain generation
+export class TerrainGenerator {
+  constructor(worldSeed = 12345) {
+    this.WORLD_SEED = worldSeed;
+    
+    // Create separate noise instances for each terrain aspect
+    this.continentNoise = new PerlinNoise(this.WORLD_SEED);
+    this.heightNoise = new PerlinNoise(this.WORLD_SEED + 10000);
+    this.moistureNoise = new PerlinNoise(this.WORLD_SEED + 20000);
+    this.detailNoise = new PerlinNoise(this.WORLD_SEED + 30000);
+    this.riverNoise = new PerlinNoise(this.WORLD_SEED + 40000);
+    this.lakeNoise = new PerlinNoise(this.WORLD_SEED + 50000);
+  }
+  
+  // Get terrain data for a specific coordinate
+  getTerrainData(x, y) {
+    // Get continent value first
+    const continent = this.continentNoise.getContinentValue(x, y, TERRAIN_OPTIONS.continent);
+    
+    // Generate base height influenced by continental structure
+    const baseHeight = this.heightNoise.getNoise(x, y, TERRAIN_OPTIONS.height);
+    
+    // Apply continental influence to height
+    let height = baseHeight * (1 - TERRAIN_OPTIONS.constants.continentInfluence) + 
+                 continent * TERRAIN_OPTIONS.constants.continentInfluence;
+    
+    // Add small-scale detail noise
+    const detail = this.detailNoise.getNoise(x, y, TERRAIN_OPTIONS.detail) * 0.1;
+    height = Math.min(1, Math.max(0, height + detail - 0.05));
+    
+    // Generate moisture independent of continents
+    const moisture = this.moistureNoise.getNoise(x, y, TERRAIN_OPTIONS.moisture);
+    
+    // Create height map function
+    const heightMap = (tx, ty) => {
+      const tContinent = this.continentNoise.getContinentValue(tx, ty, TERRAIN_OPTIONS.continent);
+      const tBaseHeight = this.heightNoise.getNoise(tx, ty, TERRAIN_OPTIONS.height);
+      return tBaseHeight * (1 - TERRAIN_OPTIONS.constants.continentInfluence) + 
+             tContinent * TERRAIN_OPTIONS.constants.continentInfluence;
+    };
+    
+    // Generate river value
+    const riverValue = this.riverNoise.getRiverValue(x, y, TERRAIN_OPTIONS.river, heightMap);
+    
+    // Create river map function
+    const riverMap = (tx, ty) => this.riverNoise.getRiverValue(tx, ty, TERRAIN_OPTIONS.river, heightMap);
+    
+    // Generate lake value
+    const lakeValue = this.lakeNoise.getLakeValue(x, y, TERRAIN_OPTIONS.lake, heightMap, riverMap);
+    
+    // Calculate slope
+    const heightNE = this.heightNoise.getNoise(x + 1, y - 1, TERRAIN_OPTIONS.height);
+    const heightNW = this.heightNoise.getNoise(x - 1, y - 1, TERRAIN_OPTIONS.height);
+    const heightSE = this.heightNoise.getNoise(x + 1, y + 1, TERRAIN_OPTIONS.height);
+    const heightSW = this.heightNoise.getNoise(x - 1, y + 1, TERRAIN_OPTIONS.height);
+    
+    const dx = ((heightNE - heightNW) + (heightSE - heightSW)) / 2;
+    const dy = ((heightNW - heightSW) + (heightNE - heightSE)) / 2;
+    const slope = Math.sqrt(dx * dx + dy * dy);
+    
+    // Get biome and color
+    const biome = getBiome(height, moisture, continent, riverValue, lakeValue);
+    const color = getTerrainColor(biome, height, slope, riverValue, lakeValue);
+    
+    return { height, moisture, continent, slope, biome, color, riverValue, lakeValue };
+  }
+}
+
 // Expanded biome classification utility with more terrain types
 export function getBiome(height, moisture, continentValue = 1.0, riverValue = 0, lakeValue = 0) {
   // Special case for rivers (overrides other biomes when strong enough)
-  if (riverValue > 0.6 && continentValue > 0.4) {
+  if (riverValue > 0.4 && continentValue > 0.3) { // Lowered threshold to show more rivers
     if (height > 0.7) return { name: "mountain_stream", color: "#8fbbde" };
     if (height > 0.5) return { name: "river", color: "#689ad3" };
     return { name: "wide_river", color: "#4a91d6" };
   }
   
-  // Special case for lakes (overrides other biomes)
-  if (lakeValue > 0.5 && continentValue > 0.4) {
-    if (height > 0.55) return { name: "highland_lake", color: "#5a8fbf" };
-    if (height > 0.45) return { name: "lake", color: "#3d85c6" };
-    return { name: "lowland_lake", color: "#2d7fc9" };
+  // Special case for smaller streams and tributaries
+  if (riverValue > 0.25 && riverValue <= 0.4 && continentValue > 0.3) {
+    if (height > 0.6) return { name: "stream", color: "#a3c7e8" };
+    return { name: "tributary", color: "#8bb5dd" };
   }
   
+  
   // Ocean biomes - deep ocean is far from continents
-  if (continentValue < 0.1) {
+  if (continentValue < 0.15) { // Increased range for deep oceans
     return { name: "abyssal_ocean", color: "#000033" }; 
   }
   
   // Ocean depth based on continental value
-  if (continentValue < 0.4) {
+  if (continentValue < 0.45) { // Increased range for shallow oceans
     return { name: "deep_ocean", color: "#000080" };
   }
 
   // Water biomes based on height, affected by continent value
-  if (height < 0.3 - (continentValue * 0.1)) {
-    if (height < 0.1) return { name: "ocean_trench", color: "#00004d" };
-    if (height < 0.2) return { name: "deep_ocean", color: "#000080" };
+  if (height < TERRAIN_OPTIONS.constants.waterLevel - (continentValue * 0.05)) {
+    if (height < 0.15) return { name: "ocean_trench", color: "#00004d" };
+    if (height < 0.25) return { name: "deep_ocean", color: "#000080" };
     return { name: "ocean", color: "#0066cc" };
   }
   
