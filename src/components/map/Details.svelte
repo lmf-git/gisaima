@@ -6,17 +6,93 @@
   export let y = 0;
   export let show = false;
   
-  // Sample data for the location
-  const locationInfo = {
-    terrain: "Plains",
-    resources: ["Wood", "Stone"],
-    structures: [],
-    notes: "Unexplored territory"
-  };
+  // Props for terrain data
+  export let biome = { name: "unknown", color: "#808080" };
+  export let height = 0;
+  export let moisture = 0;
+  export let continent = 0;
+  export let slope = 0;
+  export let riverValue = 0; // Added river value
+  export let lakeValue = 0;  // Added lake value
+  export let displayColor = "#808080"; // New prop for the processed color
   
   // Handle close action
   function handleClose() {
     show = false;
+  }
+  
+  // Helper function to format percentage
+  const formatPercent = (value) => `${Math.round(value * 100)}%`;
+  
+  // Get elevation category based on height
+  $: elevationCategory = 
+    height < 0.1 ? "Very Low" :
+    height < 0.3 ? "Low" :
+    height < 0.5 ? "Medium" :
+    height < 0.7 ? "High" :
+    height < 0.85 ? "Very High" : "Extreme";
+  
+  // Get moisture category based on moisture
+  $: moistureCategory = 
+    moisture < 0.2 ? "Very Dry" :
+    moisture < 0.4 ? "Dry" :
+    moisture < 0.6 ? "Moderate" :
+    moisture < 0.8 ? "Wet" : "Very Wet";
+  
+  // Determine potential resources based on biome
+  $: resources = getBiomeResources(biome.name);
+  
+  // Function to determine resources based on biome type
+  function getBiomeResources(biomeName) {
+    const resourceMap = {
+      // Water biomes
+      "abyssal_ocean": ["Deep Sea Fish", "Rare Minerals"],
+      "deep_ocean": ["Fish", "Salt"],
+      "ocean": ["Fish", "Salt", "Seaweed"],
+      "ocean_trench": ["Rare Minerals", "Deep Sea Creatures"],
+      
+      // Coastal biomes
+      "sandy_beach": ["Sand", "Shells", "Coconuts"],
+      "pebble_beach": ["Stones", "Clay"],
+      "rocky_shore": ["Rocks", "Shellfish"],
+      
+      // Mountain biomes
+      "snow_cap": ["Snow", "Crystal"],
+      "alpine": ["Ice", "Rare Herbs"],
+      "mountain": ["Stone", "Iron", "Gems"],
+      "dry_mountain": ["Stone", "Copper", "Gold"],
+      "desert_mountains": ["Stone", "Gold", "Minerals"],
+      
+      // Highland biomes
+      "glacier": ["Ice", "Pure Water"],
+      "highland_forest": ["Wood", "Game", "Herbs"],
+      "highland": ["Stone", "Berries", "Game"],
+      "rocky_highland": ["Stone", "Ore"],
+      "mesa": ["Red Clay", "Minerals"],
+      
+      // Mid-elevation biomes
+      "tropical_rainforest": ["Exotic Wood", "Fruits", "Medicinal Plants"],
+      "temperate_forest": ["Wood", "Game", "Berries"],
+      "woodland": ["Wood", "Game"],
+      "shrubland": ["Herbs", "Berries", "Small Game"],
+      "badlands": ["Clay", "Minerals"],
+      
+      // Lower elevation biomes
+      "swamp": ["Reed", "Herbs", "Mushrooms"],
+      "marsh": ["Reed", "Clay", "Herbs"],
+      "grassland": ["Hay", "Game", "Herbs"],
+      "savanna": ["Fibers", "Game"],
+      "desert_scrub": ["Cactus", "Minerals"],
+      
+      // Low land biomes
+      "bog": ["Peat", "Special Plants"],
+      "wetland": ["Reed", "Herbs", "Fish"],
+      "plains": ["Crops", "Game"],
+      "dry_plains": ["Grains", "Game"],
+      "desert": ["Sand", "Rare Herbs"]
+    };
+    
+    return resourceMap[biomeName] || ["Unknown"];
   }
   
   // Watch for show prop changes to open/close the details element
@@ -37,6 +113,13 @@
       show = false;
     }
   }
+  
+  // Add water feature categories
+  $: waterFeature = 
+    riverValue > 0.6 ? "River" :
+    lakeValue > 0.5 ? "Lake" :
+    riverValue > 0.2 ? "Riverbank" :
+    lakeValue > 0.2 ? "Lake Shore" : "None";
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -54,39 +137,47 @@
     
     <div class="details-content" transition:fly={{ y: -10, duration: 200 }}>
       <div class="info-section">
-        <h3>Terrain</h3>
-        <p>{locationInfo.terrain}</p>
+        <h3>Biome</h3>
+        <div class="biome-info">
+          <!-- Use the processed color from the map instead of the raw biome color -->
+          <div class="biome-color" style="background-color: {displayColor}"></div>
+          <p>{biome.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+        </div>
+      </div>
+      
+      <div class="info-grid">
+        <div class="info-section">
+          <h3>Elevation</h3>
+          <p>{elevationCategory} ({formatPercent(height)})</p>
+        </div>
+        
+        <div class="info-section">
+          <h3>Moisture</h3>
+          <p>{moistureCategory} ({formatPercent(moisture)})</p>
+        </div>
+        
+        <div class="info-section">
+          <h3>Continent</h3>
+          <p>{formatPercent(continent)}</p>
+        </div>
+        
+        <div class="info-section">
+          <h3>Water Feature</h3>
+          <p>{waterFeature}</p>
+        </div>
       </div>
       
       <div class="info-section">
         <h3>Resources</h3>
-        {#if locationInfo.resources.length > 0}
+        {#if resources.length > 0}
           <ul>
-            {#each locationInfo.resources as resource}
+            {#each resources as resource}
               <li>{resource}</li>
             {/each}
           </ul>
         {:else}
           <p>No resources found</p>
         {/if}
-      </div>
-      
-      <div class="info-section">
-        <h3>Structures</h3>
-        {#if locationInfo.structures.length > 0}
-          <ul>
-            {#each locationInfo.structures as structure}
-              <li>{structure}</li>
-            {/each}
-          </ul>
-        {:else}
-          <p>No structures present</p>
-        {/if}
-      </div>
-      
-      <div class="info-section">
-        <h3>Notes</h3>
-        <p>{locationInfo.notes}</p>
       </div>
       
       <div class="details-footer">
@@ -163,6 +254,26 @@
   
   .details-content {
     padding: 1.5em;
+  }
+  
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1em;
+    margin-bottom: 1.5em;
+  }
+  
+  .biome-info {
+    display: flex;
+    align-items: center;
+    gap: 0.8em;
+  }
+  
+  .biome-color {
+    width: 1.5em;
+    height: 1.5em;
+    border-radius: 0.25em;
+    border: 0.0625em solid var(--color-card-border);
   }
   
   .info-section {
