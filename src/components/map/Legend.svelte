@@ -39,12 +39,12 @@
   }
   
   .coordinate-legend {
-    background: rgba(20, 20, 40, 0.85);
-    border: 0.05em solid rgba(58, 58, 80, 0.8);
+    background: var(--color-dark-teal);
+    border: 0.05em solid var(--color-card-border);
     border-radius: 0.3em;
     padding: 0;
-    color: white;
-    box-shadow: 0 0.2em 0.4em rgba(0, 0, 0, 0.3);
+    color: var(--color-text);
+    box-shadow: 0 0.2em 0.4em var(--color-shadow);
     min-width: 10em;
     cursor: pointer;
     user-select: none;
@@ -52,7 +52,7 @@
   }
   
   .coordinate-legend:hover {
-    background: rgba(30, 30, 60, 0.9);
+    background: var(--color-deep-blue);
   }
   
   /* Style the summary element (clickable header) */
@@ -74,7 +74,7 @@
     content: '▼';
     font-size: 0.7em;
     margin-top: 0.3em;
-    color: #aaa;
+    color: var(--color-muted-teal);
     transition: transform 0.2s;
   }
   
@@ -84,15 +84,15 @@
   }
   
   .legend-title {
-    font-size: 0.9rem;
+    font-size: 0.9em;
     font-weight: bold;
-    color: #aaa;
+    color: var(--color-subheading);
   }
   
   .legend-value {
-    font-size: 1.1rem;
+    font-size: 1.1em;
     font-weight: bold;
-    color: #fff;
+    color: var(--color-heading);
     margin-top: 0.3em;
   }
   
@@ -101,31 +101,33 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    border-top: 1px solid rgba(80, 80, 120, 0.4);
+    border-top: 0.0625em solid var(--color-card-border);
     padding-top: 0.75em;
     margin-top: 0.2em;
   }
   
   .legend-keyboard-hint {
-    font-size: 0.75rem;
-    color: #88a;
+    font-size: 0.75em;
+    color: var(--color-text-secondary);
     font-style: italic;
     margin-bottom: 0.8em;
   }
   
   .details-button {
-    background: #3a3a8c;
-    color: white;
+    background: var(--color-button-primary);
+    color: var(--color-text);
     border: none;
     padding: 0.5em 1em;
     border-radius: 0.3em;
     cursor: pointer;
-    font-size: 0.9rem;
-    transition: background 0.2s ease;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
     width: 100%;
   }
   
   .details-button:hover {
-    background: #4a4ab8;
+    background: var(--color-button-primary-hover);
+    transform: translateY(-0.125em);
+    box-shadow: 0 0.1875em 0.3125em var(--color-shadow);
   }
 </style>

@@ -371,7 +371,7 @@
     height: 100%;
     width: 100%;
     overflow: hidden;
-    background: #0e0c22;
+    background: var(--color-dark-blue);
     user-select: none;
   }
 
@@ -382,6 +382,11 @@
     cursor: grab;
     overflow: hidden;
     box-sizing: border-box;
+    background: linear-gradient(
+      135deg,
+      var(--color-dark-navy),
+      var(--color-dark-blue)
+    );
   }
 
   .grid {
@@ -400,13 +405,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 0.05em solid #3a3a50;
+    border: 0.05em solid var(--color-dark-gray-blue);
     box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 1.2rem;
-    color: #fff;
-    background: #2a2a40;
+    font-size: 1.2em;
+    color: var(--color-text);
+    background: var(--color-dark-teal);
     user-select: none;
     -webkit-user-select: none; /* Safari */
     -moz-user-select: none; /* Firefox */
@@ -414,7 +419,7 @@
   }
 
   .center {
-    background: #ff4444;
+    background: var(--color-bright-red);
   }
 
   .map-container.modal-open {

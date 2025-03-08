@@ -101,7 +101,7 @@
     position: fixed;
     top: 3.5em; /* Position below the header */
     right: 1em;
-    max-width: 400px;
+    max-width: 25em;
     width: 90%;
     z-index: 1000;
     opacity: 0;
@@ -115,18 +115,19 @@
   }
   
   .location-details {
-    background: #1a1a2e;
+    background: var(--color-dark-teal);
     border-radius: 0.5em;
-    box-shadow: 0 0.5em 1.5em rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0.5em 1.5em var(--color-shadow);
     overflow: hidden;
     width: 100%;
-    color: white;
+    color: var(--color-text);
+    border: 0.0625em solid var(--color-card-border);
   }
   
   .details-summary {
     padding: 1em 1.5em;
-    background: #252547;
-    border-bottom: 1px solid #333;
+    background: var(--color-deep-blue);
+    border-bottom: 0.0625em solid var(--color-dark-gray-blue);
     cursor: pointer;
     user-select: none;
     list-style: none; /* Remove default marker */
@@ -145,7 +146,7 @@
   .details-summary::after {
     content: "▼";
     font-size: 0.8em;
-    color: #aaa;
+    color: var(--color-muted-teal);
     transition: transform 0.2s ease;
   }
   
@@ -156,8 +157,8 @@
   
   .details-summary h2 {
     margin: 0;
-    font-size: 1.3rem;
-    color: #fff;
+    font-size: 1.3em;
+    color: var(--color-heading);
   }
   
   .details-content {
@@ -169,42 +170,43 @@
   }
   
   .info-section h3 {
-    font-size: 1.1rem;
+    font-size: 1.1em;
     margin: 0 0 0.5em 0;
-    color: #aaf;
+    color: var(--color-subheading);
   }
   
   .info-section p {
     margin: 0;
-    color: #ddd;
+    color: var(--color-text);
   }
   
   .info-section ul {
     margin: 0;
     padding-left: 1.2em;
-    color: #ddd;
+    color: var(--color-text);
   }
   
   .details-footer {
     margin-top: 1em;
     display: flex;
     justify-content: flex-end;
-    border-top: 1px solid #333;
+    border-top: 0.0625em solid var(--color-dark-gray-blue);
     padding-top: 1em;
   }
   
   .close-button {
-    background: #3a3a8c;
-    color: white;
+    background: var(--color-button-secondary);
+    color: var(--color-text);
     border: none;
     padding: 0.5em 1.2em;
     border-radius: 0.3em;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.9em;
     transition: background 0.2s ease;
   }
   
   .close-button:hover {
-    background: #4a4ab8;
+    background: var(--color-button-secondary-hover);
+    transform: translateY(-0.125em);
   }
 </style>

@@ -34,7 +34,7 @@
   .x-grid, .y-grid {
     display: flex;
     position: absolute;
-    background: rgba(20, 20, 40, 0.85);
+    background: var(--color-deep-blue);
   }
   
   .x-grid {
@@ -57,17 +57,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
-    color: white;
-    background: rgba(32, 32, 52, 0.9);
+    font-size: 0.9em;
+    color: var(--color-text);
+    background: var(--color-dark-teal);
     box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;
-    border: 0.05em solid rgba(58, 58, 80, 0.3);
+    border: 0.05em solid var(--color-card-border);
   }
   
   .axis-label.center {
-    background: rgba(255, 68, 68, 0.7);
+    background: var(--color-button-primary);
     font-weight: bold;
   }
 </style>

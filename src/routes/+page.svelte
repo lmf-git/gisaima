@@ -1,5 +1,5 @@
 <script>
-  import Logo from '$lib/components/Logo.svelte';
+  import Logo from '../components/Logo.svelte';
 </script>
 
 <svelte:head>
@@ -9,7 +9,7 @@
 
 <main class="container">
   <section class="showcase">
-    <Logo size="large" />
+    <Logo extraClass="logo" />
     <h1 class="title">GISAIMA</h1>
     <p class="subtitle">A territory control strategy game inspired by ancient board games</p>
     <div class="actions">
@@ -61,10 +61,10 @@
 
 <style>
   .container {
-    max-width: 1200px;
+    max-width: 75em;
     margin: 0 auto;
     padding: 2em;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--color-text);
   }
 
   .showcase {
@@ -76,23 +76,46 @@
     font-size: 3.5em;
     margin: 0.5em 0;
     letter-spacing: 0.2em;
-    color: #2a4365;
+    color: var(--color-heading);
+    text-shadow: 0 0 0.625em rgba(193, 19, 22, 0.5);
   }
 
   .subtitle {
     font-size: 1.2em;
-    color: #4a5568;
+    color: var(--color-text-secondary);
     margin-bottom: 2em;
   }
 
   .actions {
     display: flex;
     justify-content: center;
-    gap: 1em;
-    margin-top: 2em;
+    gap: 1.5em;
+    margin-top: 2.5em;
   }
 
-  /* Removing duplicate button styles since they are now defined globally */
+  /* Hero CTA buttons styling - make them more imposing */
+  .actions :global(.button) {
+    font-size: 1.5em;
+    padding: 0.8em 1.8em;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    transition: all 0.3s ease;
+    box-shadow: 0 0.3em 0.8em var(--color-shadow);
+    text-transform: uppercase;
+  }
+  
+  .actions :global(.button:hover) {
+    transform: translateY(-0.2em) scale(1.05);
+    box-shadow: 0 0.5em 1em var(--color-shadow);
+  }
+  
+  .actions :global(.button.primary) {
+    border: 0.05em solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .actions :global(.button.secondary) {
+    border: 0.05em solid rgba(255, 255, 255, 0.1);
+  }
 
   .features, .howto {
     padding: 3em 0;
@@ -101,25 +124,31 @@
   .heading {
     text-align: center;
     margin-bottom: 2em;
-    color: #2a4365;
+    color: var(--color-pale-green);
+    text-shadow: 0 0 0.3125em rgba(12, 8, 33, 0.7);
   }
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(15em, 1fr));
     gap: 2em;
   }
 
   .card {
     padding: 1.5em;
     border-radius: 0.5em;
-    background-color: #edf2f7;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background-color: var(--color-card-bg);
+    box-shadow: 0 0.25em 0.375em var(--color-shadow);
+    border: 0.0625em solid var(--color-card-border);
   }
 
   .subheading {
-    color: #2c5282;
+    color: var(--color-subheading);
     margin-bottom: 0.75em;
+  }
+
+  .text {
+    color: var(--color-text);
   }
 
   .overview {
@@ -130,32 +159,40 @@
   }
 
   .content, .visual {
-    flex: 1 1 300px;
+    flex: 1 1 18.75em;
   }
 
   .link {
-    color: #4299e1;
+    color: var(--color-link);
     text-decoration: none;
     font-weight: 500;
   }
 
   .link:hover {
     text-decoration: underline;
+    color: var(--color-link-hover);
   }
 
   .preview {
-    height: 300px;
-    background-color: #edf2f7;
+    height: 18.75em;
+    background: linear-gradient(135deg, var(--color-deep-blue), var(--color-dark-teal-blue));
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 0.5em;
-    border: 2px dashed #a0aec0;
+    border: 0.125em dashed var(--color-muted-teal);
   }
 
   @media (max-width: 768px) {
     .title {
       font-size: 2.5em;
     }
+  }
+
+  .showcase :global(.logo) {
+    width: 7.5em;
+    height: auto;
+    margin: 0 auto;
+    filter: drop-shadow(0 0 0.5em rgba(193, 19, 22, 0.6));
   }
 </style>
