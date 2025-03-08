@@ -290,7 +290,7 @@
     class="map"
     bind:this={mapElement}
     on:mousedown={startDrag}
-    data-dragging={isDragging}
+    class:dragging={isDragging}
     role="grid"
     tabindex="0"
     aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
@@ -389,13 +389,13 @@
     transition: filter 0.1s ease-in-out, transform 0.1s ease-in-out;
   }
 
-  /* Replace the hover effect CSS with this more specific version */
-  .map[data-dragging="false"] .tile:hover {
+  /* Replace the hover and drag state CSS */
+  .map:not(.dragging) .tile:hover {
     z-index: 2;
     filter: brightness(1.2);
   }
   
-  .map[data-dragging="true"] .tile {
+  .map.dragging .tile {
     pointer-events: none;
     cursor: grabbing;
     filter: none;
