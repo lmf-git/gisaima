@@ -4,6 +4,7 @@
   import Axes from "./Axes.svelte";
   import Details from "./Details.svelte";
   import { TerrainGenerator } from "../../lib/map/noise.js";
+  import { setupKeyboardNavigation, calculateKeyboardMove,startDrag, stopDrag,checkDragState, createMouseEventHandlers } from "../../lib/map/controls.js";
 
   // Initialize the terrain generator with a fixed seed
   const WORLD_SEED = 12345;
@@ -11,7 +12,7 @@
   
   // Position and drag state
   let isDragging = false;
-  let isMouseActuallyDown = false;
+  let isMouseDown = false;
   let dragStartX = 0;
   let dragStartY = 0;
   let targetCoord = { x: 0, y: 0 };
@@ -19,7 +20,7 @@
   // UI state
   let showDetailsModal = false;
   let keysPressed = new Set();
-  let keyboardNavigationInterval = null;
+  let navInterval = null;
   
   // Configuration
   const KEYBOARD_MOVE_SPEED = 200;
@@ -35,9 +36,28 @@
   let resizeObserver;
   let offsetX = 0, offsetY = 0;
   let visibleChunks = new Set();
-  let dragStateCheckInterval = null;
   let centerX = 0;
   let centerY = 0;
+  
+  // Controls state object
+  const controlsState = {
+    isDragging,
+    isMouseDown,
+    dragStartX,
+    dragStartY,
+    keysPressed,
+    navInterval,
+    tileSize,
+    updateCoordinates: (xChange, yChange) => {
+      if (xChange !== 0 || yChange !== 0) {
+        targetCoord.x += xChange;
+        targetCoord.y += yChange;
+        offsetX = centerX + targetCoord.x;
+        offsetY = centerY + targetCoord.y;
+        targetCoord = { ...targetCoord };
+      }
+    }
+  };
   
   // Calculate grid dimensions and update on resize
   const resize = () => {
@@ -65,62 +85,22 @@
     resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(mapElement);
     resize();
-    setupKeyboardNavigation();
-    dragStateCheckInterval = setInterval(checkDragState, DRAG_CHECK_INTERVAL);
+    
+    // Setup keyboard navigation
+    setupKeyboardNavigation(moveMapByKeys, controlsState, KEYBOARD_MOVE_SPEED);
+    dragCheckInterval = setInterval(() => checkDragState(controlsState), DRAG_CHECK_INTERVAL);
 
     return () => {
       if (resizeObserver) resizeObserver.disconnect();
-      if (keyboardNavigationInterval) clearInterval(keyboardNavigationInterval);
-      if (dragStateCheckInterval) clearInterval(dragStateCheckInterval);
+      if (controlsState.navInterval) clearInterval(controlsState.navInterval);
+      if (dragCheckInterval) clearInterval(dragCheckInterval);
     };
   });
 
-  // Setup keyboard navigation
-  const setupKeyboardNavigation = () => {
-    window.addEventListener("keydown", event => {
-      const key = event.key.toLowerCase();
-      if (["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright"].includes(key)) {
-        keysPressed.add(key);
-
-        if (!keyboardNavigationInterval) {
-          moveMapByKeys();
-          keyboardNavigationInterval = setInterval(moveMapByKeys, KEYBOARD_MOVE_SPEED);
-        }
-
-        if (key.startsWith("arrow")) event.preventDefault();
-      }
-    });
-
-    window.addEventListener("keyup", event => {
-      const key = event.key.toLowerCase();
-      if (["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright"].includes(key)) {
-        keysPressed.delete(key);
-
-        if (keysPressed.size === 0 && keyboardNavigationInterval) {
-          clearInterval(keyboardNavigationInterval);
-          keyboardNavigationInterval = null;
-        }
-      }
-    });
-  };
-
   // Move map based on keyboard input
   const moveMapByKeys = () => {
-    let xChange = 0;
-    let yChange = 0;
-
-    if (keysPressed.has("a") || keysPressed.has("arrowleft")) xChange -= 1;
-    if (keysPressed.has("d") || keysPressed.has("arrowright")) xChange += 1;
-    if (keysPressed.has("w") || keysPressed.has("arrowup")) yChange -= 1;
-    if (keysPressed.has("s") || keysPressed.has("arrowdown")) yChange += 1;
-
-    if (xChange !== 0 || yChange !== 0) {
-      targetCoord.x -= xChange;
-      targetCoord.y -= yChange;
-      offsetX = centerX + targetCoord.x;
-      offsetY = centerY + targetCoord.y;
-      targetCoord = { ...targetCoord };
-    }
+    const { xChange, yChange } = calculateKeyboardMove(controlsState.keysPressed);
+    controlsState.updateCoordinates(-xChange, -yChange);
   };
 
   // Get chunk key from coordinates
@@ -176,77 +156,19 @@
       }))
     : [];
 
-  // Check drag state consistency
-  const checkDragState = () => {
-    if (!isMouseActuallyDown && isDragging) stopDrag();
+  // Wrap the drag-related functions
+  const handleStartDrag = (event) => {
+    startDrag(event, controlsState, mapElement);
+    isDragging = controlsState.isDragging;
   };
 
-  // Drag handling
-  const startDrag = event => {
-    if (event.button !== 0) return;
-    
-    isDragging = true;
-    isMouseActuallyDown = true;
-    dragStartX = event.clientX;
-    dragStartY = event.clientY;
-    
-    document.body.style.cursor = "grabbing";
-    if (mapElement) {
-      mapElement.style.cursor = "grabbing";
-      mapElement.classList.add("dragging");
-    }
-    
-    event.preventDefault();
+  const handleStopDrag = () => {
+    stopDrag(controlsState, mapElement);
+    isDragging = controlsState.isDragging;
   };
 
-  const drag = event => {
-    if (!isDragging) return;
-
-    const deltaX = event.clientX - dragStartX;
-    const deltaY = event.clientY - dragStartY;
-    
-    const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    const tileSizePx = tileSize * baseFontSize;
-    
-    const cellsMovedX = Math.round(deltaX / tileSizePx);
-    const cellsMovedY = Math.round(deltaY / tileSizePx);
-    
-    if (cellsMovedX !== 0 || cellsMovedY !== 0) {
-      targetCoord.x -= cellsMovedX;
-      targetCoord.y -= cellsMovedY;
-      offsetX = centerX + targetCoord.x;
-      offsetY = centerY + targetCoord.y;
-      targetCoord = { ...targetCoord };
-      dragStartX = event.clientX;
-      dragStartY = event.clientY;
-    }
-  };
-
-  const stopDrag = () => {
-    if (!isDragging) return;
-    
-    isDragging = false;
-    document.body.style.cursor = "default";
-    
-    if (mapElement) {
-      mapElement.style.cursor = "grab";
-      mapElement.classList.remove("dragging");
-    }
-  };
-
-  // Global mouse events
-  const globalMouseDown = () => isMouseActuallyDown = true;
-  const globalMouseUp = () => {
-    isMouseActuallyDown = false;
-    if (isDragging) stopDrag();
-    document.body.style.cursor = "default";
-  };
-  const globalMouseMove = event => {
-    if (isMouseActuallyDown && isDragging) drag(event);
-    else if (!isMouseActuallyDown && isDragging) stopDrag();
-  };
-  const globalMouseLeave = () => { if (isDragging) stopDrag(); };
-  const visibilityChange = () => { if (document.visibilityState === 'hidden' && isDragging) stopDrag(); };
+  // Create mouse event handlers
+  const eventHandlers = createMouseEventHandlers(controlsState, mapElement);
 
   // Open details modal
   const openDetails = () => {
@@ -274,22 +196,25 @@
   $: if (showDetailsModal && isReady) {
     centerTileData = terrain.getTerrainData(-targetCoord.x, -targetCoord.y);
   }
+
+  // Sync state with controls state
+  $: isDragging = controlsState.isDragging;
 </script>
 
 <svelte:window
-  on:mousedown={globalMouseDown}
-  on:mouseup={globalMouseUp}
-  on:mousemove={globalMouseMove}
-  on:mouseleave={globalMouseLeave}
-  on:blur={() => isDragging && stopDrag()}
-  on:visibilitychange={visibilityChange}
+  on:mousedown={eventHandlers.globalMouseDown}
+  on:mouseup={eventHandlers.globalMouseUp}
+  on:mousemove={eventHandlers.globalMouseMove}
+  on:mouseleave={eventHandlers.globalMouseLeave}
+  on:blur={() => isDragging && handleStopDrag()}
+  on:visibilitychange={eventHandlers.visibilityChange}
 />
 
 <div class="map-container" style="--tile-size: {tileSize}em;" class:modal-open={showDetailsModal}>
   <div
     class="map"
     bind:this={mapElement}
-    on:mousedown={startDrag}
+    on:mousedown={handleStartDrag}
     class:dragging={isDragging}
     role="grid"
     tabindex="0"
@@ -314,7 +239,9 @@
     {/if}
   </div>
 
-  <Legend x={targetCoord.x} y={targetCoord.y} {openDetails} />
+  {#if !showDetailsModal}
+    <Legend x={targetCoord.x} y={targetCoord.y} {openDetails} />
+  {/if}
 
   {#if showAxisBars && isReady}
     <Axes {xAxisArray} {yAxisArray} {cols} {rows} />
