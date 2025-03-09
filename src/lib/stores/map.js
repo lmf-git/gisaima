@@ -1,4 +1,4 @@
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 import { TerrainGenerator } from '../map/noise.js';
 
 // Initialize the terrain generator with a fixed seed
@@ -204,15 +204,12 @@ export function drag(event) {
     const cellsMovedX = Math.round(deltaX / tileSizePx);
     const cellsMovedY = Math.round(deltaY / tileSizePx);
     
+    // Only update if we've moved at least one cell
     if (cellsMovedX === 0 && cellsMovedY === 0) return state;
     
     result = true;
     const newTargetX = state.targetCoord.x - cellsMovedX;
     const newTargetY = state.targetCoord.y - cellsMovedY;
-    
-    // Get fresh terrain data for the target coordinates - do not negate them
-    const freshTerrainData = getTerrainData(newTargetX, newTargetY);
-    console.log(`Drag to (${newTargetX}, ${newTargetY}) - Biome: ${freshTerrainData.biome.name}`);
     
     return {
       ...state,
@@ -220,10 +217,20 @@ export function drag(event) {
       offsetX: state.centerX + newTargetX,
       offsetY: state.centerY + newTargetY,
       dragStartX: event.clientX,
-      dragStartY: event.clientY,
-      centerTileData: freshTerrainData
+      dragStartY: event.clientY
     };
   });
+  
+  // Get terrain data outside of the state update to reduce redraws
+  if (result) {
+    const state = get(mapState);
+    const { x, y } = state.targetCoord;
+    const freshTerrainData = getTerrainData(x, y);
+    mapState.update(state => ({
+      ...state,
+      centerTileData: freshTerrainData
+    }));
+  }
   
   return result;
 }
@@ -304,30 +311,62 @@ export function checkDragState() {
 }
 
 // Create derived stores for grid and axis arrays - with optimization
-export const gridArray = derived(mapState, ($mapState, set) => {
-  if (!$mapState.isReady) {
-    set([]);
-    return;
-  }
-  
-  // Consider debouncing with a lightweight setTimeout
-  const timer = setTimeout(() => {
+// Add debounce helper at the top with other helpers
+function debounce(fn, ms) {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), ms);
+  };
+}
+
+// Add new helper for grid state comparison
+function gridStateChanged($mapState, prevState) {
+  return !prevState || 
+    prevState.cols !== $mapState.cols ||
+    prevState.rows !== $mapState.rows ||
+    prevState.offsetX !== $mapState.offsetX ||
+    prevState.offsetY !== $mapState.offsetY;
+}
+
+// Add memoization helper
+function memoize(fn) {
+  const cache = new Map();
+  return (...args) => {
+    const key = JSON.stringify(args);
+    if (!cache.has(key)) {
+      cache.set(key, fn(...args));
+    }
+    return cache.get(key);
+  };
+}
+
+// Replace gridArray with memoized version
+export const gridArray = derived(
+  [mapState],
+  ([$mapState], set) => {
+    if (!$mapState.isReady) {
+      set([]);
+      return;
+    }
+
+    const getGridKey = () => {
+      const { cols, rows, offsetX, offsetY } = $mapState;
+      return `${cols}:${rows}:${offsetX}:${offsetY}`;
+    };
+
+    const currentKey = getGridKey();
+    if (gridArray.lastKey === currentKey) {
+      return; // Skip update if nothing changed
+    }
+    gridArray.lastKey = currentKey;
+
     const result = Array.from({ length: $mapState.rows }, (_, y) =>
       Array.from({ length: $mapState.cols }, (_, x) => {
         const globalX = x - $mapState.offsetX;
         const globalY = y - $mapState.offsetY;
         const terrainData = getTerrainData(globalX, globalY);
-        
-        // Mark the center tile for highlighting
         const isCenter = x === $mapState.centerX && y === $mapState.centerY;
-        
-        // Update center tile data when rendering center tile, but avoid doing it repeatedly
-        if (isCenter && (!$mapState.centerTileData || $mapState.centerTileData.x !== globalX || $mapState.centerTileData.y !== globalY)) {
-          mapState.update(state => ({
-            ...state,
-            centerTileData: { ...terrainData, x: globalX, y: globalY }
-          }));
-        }
         
         return {
           x: globalX,
@@ -339,33 +378,35 @@ export const gridArray = derived(mapState, ($mapState, set) => {
     ).flat();
     
     set(result);
-  }, 0);
-  
-  // Cleanup timer on unsubscribe to prevent memory leaks
-  return () => clearTimeout(timer);
-}, []);
+  },
+  []
+);
 
-export const xAxisArray = derived(mapState, $mapState => {
-  if (!$mapState.isReady) return [];
-  
-  return Array.from({ length: $mapState.cols }, (_, x) => ({
-    value: x - $mapState.offsetX,
-    isCenter: x === $mapState.centerX
-  }));
-});
+// Replace axis arrays with memoized versions
+export const xAxisArray = derived(
+  mapState,
+  memoize(($mapState) => {
+    if (!$mapState.isReady) return [];
+    return Array.from({ length: $mapState.cols }, (_, x) => ({
+      value: x - $mapState.offsetX,
+      isCenter: x === $mapState.centerX
+    }));
+  })
+);
 
-export const yAxisArray = derived(mapState, $mapState => {
-  if (!$mapState.isReady) return [];
-  
-  return Array.from({ length: $mapState.rows }, (_, y) => ({
-    value: y - $mapState.offsetY,
-    isCenter: y === $mapState.centerY
-  }));
-});
+export const yAxisArray = derived(
+  mapState,
+  memoize(($mapState) => {
+    if (!$mapState.isReady) return [];
+    return Array.from({ length: $mapState.rows }, (_, y) => ({
+      value: y - $mapState.offsetY,
+      isCenter: y === $mapState.centerY
+    }));
+  })
+);
 
 // Cleanup function to be called when the app unmounts
 export function cleanupMapResources() {
-  // Clear cache to free memory
   terrainCache.clear();
   terrainCache = null;
 }

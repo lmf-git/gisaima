@@ -118,15 +118,15 @@
     else if (!$mapState.isMouseActuallyDown && $mapState.isDragging) handleStopDrag();
   };
   
-  // Simple effect for map updates logging
-  $effect(() => {
-    if ($mapState.isReady && $gridArray.length > 0) {
-      console.log(`Map updated: ${$mapState.targetCoord.x}, ${$mapState.targetCoord.y}`);
-    }
-  });
-
   // Simple derived value for dragging class
   const isDragging = $derived($mapState.isDragging);
+  const targetCoord = $derived({
+    x: $mapState.targetCoord.x,
+    y: $mapState.targetCoord.y
+  });
+
+  // Cache grid data
+  const grid = $derived($gridArray);
 </script>
 
 <svelte:window
@@ -150,7 +150,7 @@
   >
     {#if $mapState.isReady}
       <div class="grid main-grid" style="--cols: {$mapState.cols}; --rows: {$mapState.rows};" role="presentation">
-        {#each $gridArray as cell}
+        {#each grid as cell (cell.x + ':' + cell.y)}
           <div
             class="tile"
             class:center={cell.isCenter}
@@ -168,8 +168,8 @@
   </div>
 
   <Legend 
-    x={$mapState.targetCoord.x} 
-    y={$mapState.targetCoord.y} 
+    x={targetCoord.x} 
+    y={targetCoord.y} 
     openDetails={openDetailsModal} 
   />
 
@@ -187,12 +187,6 @@
     y={$mapState.targetCoord.y} 
     show={$mapState.showDetailsModal}
     biome={$mapState.centerTileData?.biome || { name: "unknown", color: "#808080" }}
-    height={$mapState.centerTileData?.height || 0}
-    moisture={$mapState.centerTileData?.moisture || 0}
-    continent={$mapState.centerTileData?.continent || 0}
-    slope={$mapState.centerTileData?.slope || 0}
-    riverValue={$mapState.centerTileData?.riverValue || 0}
-    lakeValue={$mapState.centerTileData?.lakeValue || 0}
     displayColor={$mapState.centerTileData?.color || "#808080"}
     onClose={closeDetailsModal}
   />
