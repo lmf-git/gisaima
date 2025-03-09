@@ -13,7 +13,7 @@
       <div class="legend-keyboard-hint">WASD/Arrows to Navigate</div>
       <button 
         class="details-button" 
-        on:click={openDetails}
+        onclick={openDetails}
         type="button"
       >
         View Full Details
