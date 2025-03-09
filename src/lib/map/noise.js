@@ -284,61 +284,62 @@ export const TERRAIN_OPTIONS = {
   // Continent generation options
   continent: {
     scale: 0.0008,
-    threshold: 0.55,       // Increased threshold to generate more water
+    threshold: 0.6,       // Increased from 0.55 to reduce ocean size
     edgeScale: 0.003,
     edgeAmount: 0.25,
-    sharpness: 2.7         // Slightly reduced to soften coastlines
+    sharpness: 2.7        
   },
   
-  // Height map options
+  // Height map options - create more extreme peaks
   height: {
-    scale: 0.01,     // Increased for more local variance
-    octaves: 6,
-    persistence: 0.5,
-    lacunarity: 2.2  // Slightly increased for more variation
+    scale: 0.01,    
+    octaves: 7,          // Increased from 6 for more detail in mountains
+    persistence: 0.65,   // Increased from 0.6 for more height variation
+    lacunarity: 2.6      // Increased from 2.3 for more extreme peaks
   },
   
-  // Moisture map options
+  // Moisture map options - make world drier overall
   moisture: {
-    scale: 0.015,    // Increased for more local variance
+    scale: 0.016,        // Slightly increased from 0.015 for larger dry/wet regions
     octaves: 4,
-    persistence: 0.6,
-    lacunarity: 2
+    persistence: 0.45,   // Reduced from 0.5 to create much more dry areas
+    lacunarity: 2.5      // Increased from 2.3 for sharper moisture transitions
   },
   
-  // Small-scale detail noise options
+  // Small-scale detail noise - enhance peaks and valleys
   detail: {
-    scale: 0.08,     // High frequency for small details
-    octaves: 2,
-    persistence: 0.4,
-    lacunarity: 2
+    scale: 0.1,          // Increased from 0.09 for more detailed terrain
+    octaves: 3,
+    persistence: 0.6,    // Increased from 0.5 for stronger terrain features
+    lacunarity: 2.4      // Increased from 2.2 for sharper terrain details
   },
   
   // River generation options
   river: {
     scale: 0.005,
-    riverDensity: 0.85,    // Increased for many more rivers (was 0.75)
-    riverThreshold: 0.68,  // Lowered threshold for easier river formation (was 0.72)
-    minContinentValue: 0.28, // Reduced to allow rivers in more coastal areas
-    riverWidth: 1.0,       // Increased river width for more visibility (was 0.8)
-    noiseFactor: 0.3,      // Slightly reduced for smoother rivers
-    branchFactor: 0.8      // Increased to encourage more branching
+    riverDensity: 0.95,    // Increased from 0.85 for many more rivers
+    riverThreshold: 0.58,  // Lowered from 0.68 for easier river formation
+    minContinentValue: 0.25, // Lowered to allow rivers closer to coast
+    riverWidth: 1.2,       // Increased from 1.0 for wider rivers
+    noiseFactor: 0.25,     // Slightly reduced for smoother rivers
+    branchFactor: 0.9      // Increased to encourage more branching
   },
   
   // Lake generation options
   lake: {
     scale: 0.003,
-    lakeThreshold: 0.78,   // Lowered to create more lakes
-    minHeight: 0.25,       // Lowered to allow lakes in more areas
-    maxHeight: 0.7,        // Maximum height for lakes (avoid mountains)
-    minRiverInfluence: 0.3, // Min river value to influence lake formation
-    lakeSmoothness: 0.7    // Higher values make lakes more circular
+    lakeThreshold: 0.78,
+    minHeight: 0.25,
+    maxHeight: 0.7,
+    minRiverInfluence: 0.3,
+    lakeSmoothness: 0.7
   },
   
   // Constants related to terrain generation
   constants: {
-    continentInfluence: 0.75, // Increased to make continental borders more pronounced
-    waterLevel: 0.35        // Added explicit water level control
+    continentInfluence: 0.6,   // Reduced from 0.68 for more dramatic height variation
+    waterLevel: 0.32,      // Lowered from 0.35 to reduce ocean coverage
+    heightBias: 0.24           // Increased from 0.18 to raise terrain elevation overall
   }
 };
 
@@ -364,16 +365,25 @@ export class TerrainGenerator {
     // Generate base height influenced by continental structure
     const baseHeight = this.heightNoise.getNoise(x, y, TERRAIN_OPTIONS.height);
     
-    // Apply continental influence to height
+    // Apply continental influence to height with bias toward higher elevations
     let height = baseHeight * (1 - TERRAIN_OPTIONS.constants.continentInfluence) + 
                  continent * TERRAIN_OPTIONS.constants.continentInfluence;
     
-    // Add small-scale detail noise
-    const detail = this.detailNoise.getNoise(x, y, TERRAIN_OPTIONS.detail) * 0.1;
+    // Apply height bias to shift distribution upward
+    height = Math.min(1, height + TERRAIN_OPTIONS.constants.heightBias);
+    
+    // Apply non-linear transformation to height to create more peaks and valleys
+    height = Math.pow(height, 0.9);  // Added: Increase contrast between high and low areas
+    
+    // Add small-scale detail noise with increased influence
+    const detail = this.detailNoise.getNoise(x, y, TERRAIN_OPTIONS.detail) * 0.15; // Increased from 0.12
     height = Math.min(1, Math.max(0, height + detail - 0.05));
     
     // Generate moisture independent of continents
-    const moisture = this.moistureNoise.getNoise(x, y, TERRAIN_OPTIONS.moisture);
+    let moisture = this.moistureNoise.getNoise(x, y, TERRAIN_OPTIONS.moisture);
+    
+    // Apply non-linear transformation to moisture to create more extreme desert/wet areas
+    moisture = Math.pow(moisture, 1.2);  // Added: Creates more dry areas
     
     // Create height map function
     const heightMap = (tx, ty) => {
@@ -411,25 +421,32 @@ export class TerrainGenerator {
   // Determine biome based on terrain characteristics
   getBiome(height, moisture, continentValue = 1.0, riverValue = 0, lakeValue = 0) {
     // Special case for rivers (overrides other biomes when strong enough)
-    if (riverValue > 0.4 && continentValue > 0.3) {
-      if (height > 0.7) return { name: "mountain_stream", color: "#8fbbde" };
+    if (riverValue > 0.35 && continentValue > 0.3) {  // Reduced threshold from 0.4 to 0.35
+      if (height > 0.75) return { name: "mountain_stream", color: "#8fbbde" };
+      if (height > 0.6) return { name: "rocky_river", color: "#75a5d1" };
       if (height > 0.5) return { name: "river", color: "#689ad3" };
       return { name: "wide_river", color: "#4a91d6" };
     }
     
-    // Special case for smaller streams and tributaries
-    if (riverValue > 0.25 && riverValue <= 0.4 && continentValue > 0.3) {
+    // Make smaller streams more common
+    if (riverValue > 0.2 && riverValue <= 0.35 && continentValue > 0.3) {  // Reduced threshold from 0.25
+      if (height > 0.7) return { name: "highland_stream", color: "#a8cbe9" };
       if (height > 0.6) return { name: "stream", color: "#a3c7e8" };
       return { name: "tributary", color: "#8bb5dd" };
     }
     
+    // Add even smaller streams/creeks for more water variety
+    if (riverValue > 0.15 && riverValue <= 0.2 && continentValue > 0.3) {  // New tier of smaller streams
+      return { name: "creek", color: "#b5d5ed" };
+    }
+    
     // Ocean biomes - deep ocean is far from continents
-    if (continentValue < 0.15) {
+    if (continentValue < 0.12) {  // Reduced from 0.15 to decrease deep ocean
       return { name: "abyssal_ocean", color: "#000033" }; 
     }
     
     // Ocean depth based on continental value
-    if (continentValue < 0.45) {
+    if (continentValue < 0.42) {  // Reduced from 0.45 to decrease ocean
       return { name: "deep_ocean", color: "#000080" };
     }
   
@@ -462,46 +479,46 @@ export class TerrainGenerator {
       return { name: "rocky_shore", color: "#9e9e83" };
     }
     
-    // Mountains and high elevation
-    if (height > 0.8) {
-      if (moisture > 0.8) return { name: "snow_cap", color: "#ffffff" };
-      if (moisture > 0.6) return { name: "alpine", color: "#e0e0e0" };
-      if (moisture > 0.3) return { name: "mountain", color: "#7d7d7d" };
-      if (moisture > 0.2) return { name: "dry_mountain", color: "#8b6b4c" }; // Fixed value from 2 to 0.2
+    // Mountains and high elevation - lower thresholds for snow, higher for other biomes
+    if (height > 0.7) {          // Reduced from 0.73 for more mountains
+      if (moisture > 0.6) return { name: "snow_cap", color: "#ffffff" };     // Reduced from 0.72
+      if (moisture > 0.5) return { name: "alpine", color: "#e0e0e0" };       // Kept similar
+      if (moisture > 0.35) return { name: "mountain", color: "#7d7d7d" };
+      if (moisture > 0.2) return { name: "dry_mountain", color: "#8b6b4c" };  // Increased from 0.15
       return { name: "desert_mountains", color: "#9c6b4f" };
     }
     
-    if (height > 0.7) {
-      if (moisture > 0.8) return { name: "glacier", color: "#c9eeff" };
-      if (moisture > 0.6) return { name: "highland_forest", color: "#1d6d53" };
+    if (height > 0.6) {         // Reduced from 0.63 for more highlands
+      if (moisture > 0.65) return { name: "glacier", color: "#c9eeff" };      // Reduced from 0.75
+      if (moisture > 0.55) return { name: "highland_forest", color: "#1d6d53" };
       if (moisture > 0.4) return { name: "highland", color: "#5d784c" };
-      if (moisture > 0.2) return { name: "rocky_highland", color: "#787c60" };
+      if (moisture > 0.25) return { name: "rocky_highland", color: "#787c60" }; // Increased from 0.15
       return { name: "mesa", color: "#9e6b54" };
     }
     
-    // Mid-elevation terrain
+    // Mid-elevation terrain - adjust moisture for more deserts
     if (height > 0.5) {
-      if (moisture > 0.8) return { name: "tropical_rainforest", color: "#0e6e1e" };
-      if (moisture > 0.6) return { name: "temperate_forest", color: "#147235" };
-      if (moisture > 0.4) return { name: "woodland", color: "#448d37" };
-      if (moisture > 0.2) return { name: "shrubland", color: "#8d9c4c" };
+      if (moisture > 0.8) return { name: "tropical_rainforest", color: "#0e6e1e" }; // Reduced from 0.85
+      if (moisture > 0.65) return { name: "temperate_forest", color: "#147235" };    // Reduced from 0.7
+      if (moisture > 0.5) return { name: "woodland", color: "#448d37" };
+      if (moisture > 0.35) return { name: "shrubland", color: "#8d9c4c" };         // Increased from 0.28
       return { name: "badlands", color: "#9c7450" };
     }
     
-    // Lower elevation terrain
+    // Lower elevation terrain - more desert
     if (height > 0.4) {
       if (moisture > 0.8) return { name: "swamp", color: "#2f4d2a" };
-      if (moisture > 0.6) return { name: "marsh", color: "#3d6d38" };
-      if (moisture > 0.4) return { name: "grassland", color: "#68a246" };
-      if (moisture > 0.2) return { name: "savanna", color: "#c4b257" };
+      if (moisture > 0.65) return { name: "marsh", color: "#3d6d38" };          // Reduced from 0.7
+      if (moisture > 0.5) return { name: "grassland", color: "#68a246" };
+      if (moisture > 0.35) return { name: "savanna", color: "#c4b257" };        // Increased from 0.28
       return { name: "desert_scrub", color: "#d1ba70" };
     }
     
-    // Low lands
-    if (moisture > 0.8) return { name: "bog", color: "#4f5d40" };
-    if (moisture > 0.6) return { name: "wetland", color: "#517d46" };
-    if (moisture > 0.4) return { name: "plains", color: "#7db356" };
-    if (moisture > 0.2) return { name: "dry_plains", color: "#c3be6a" };
-    return { name: "desert", color: "#e3d59e" };
+    // Low lands - significantly more desert
+    if (moisture > 0.75) return { name: "bog", color: "#4f5d40" };              // Reduced from 0.85
+    if (moisture > 0.6) return { name: "wetland", color: "#517d46" };           // Reduced from 0.7
+    if (moisture > 0.45) return { name: "plains", color: "#7db356" };           // Reduced from 0.5
+    if (moisture > 0.3) return { name: "dry_plains", color: "#c3be6a" };        // Slightly increased
+    return { name: "desert", color: "#e3d59e" }; // More pure desert
   }
 };
