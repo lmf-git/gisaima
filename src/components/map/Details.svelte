@@ -1,87 +1,98 @@
 <script>
   import { fly } from 'svelte/transition';
   import { getBiomeResources } from '../../lib/map/biomes.js';
+  import { createEventDispatcher } from 'svelte';
+
+  const dispatch = createEventDispatcher();
+
+  // Use correct runes syntax for props
+  const { 
+    x = 0, 
+    y = 0, 
+    show = false,
+    biome = { name: "unknown", displayName: "Unknown", color: "#808080" },
+    height = 0,
+    moisture = 0,
+    continent = 0,
+    riverValue = 0,
+    lakeValue = 0, 
+    displayColor = "#808080",
+    slope = 0 
+  } = $props();
   
-  // Props for the component
-  export let x = 0;
-  export let y = 0;
-  export let show = false;
+  // Replace $events with standard event dispatch
+  function updateShow(value) {
+    dispatch('showChange', value);
+  }
   
-  // Props for terrain data
-  export let biome = { name: "unknown", displayName: "Unknown", color: "#808080" };
-  export let height = 0;
-  export let moisture = 0;
-  export let continent = 0;
-  export let riverValue = 0;
-  export let lakeValue = 0;
-  export let slope = 0; // Added missing prop
-  export let displayColor = "#808080";
+  // State for biomeName tracking
+  const state = $state({
+    lastBiomeName: '',
+    resourcesList: []
+  });
+
+  // Convert reactive declarations to derived values
+  const biomeDisplayName = $derived(
+    biome?.displayName || (biome?.name || "Unknown").replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+  );
+
+  const elevationCategory = $derived(
+    height < 0.1 ? "Very Low" :
+    height < 0.3 ? "Low" :
+    height < 0.5 ? "Medium" :
+    height < 0.7 ? "High" :
+    height < 0.85 ? "Very High" : "Extreme"
+  );
   
-  // FIXED: Verify proper biome data is received
-  $: if (biome) {
-    // Ensure biome always has a displayName
-    if (!biome.displayName) {
-      biome.displayName = biome.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const moistureCategory = $derived(
+    moisture < 0.2 ? "Very Dry" :
+    moisture < 0.4 ? "Dry" :
+    moisture < 0.6 ? "Moderate" :
+    moisture < 0.8 ? "Wet" : "Very Wet"
+  );
+
+  const waterFeature = $derived(
+    riverValue > 0.4 ? "River" :
+    lakeValue > 0.5 ? "Lake" :
+    riverValue > 0.25 ? "Stream" :
+    riverValue > 0.2 ? "Riverbank" :
+    lakeValue > 0.2 ? "Lake Shore" : "None"
+  );
+
+  const slopeCategory = $derived(
+    slope < 0.05 ? "Flat" :
+    slope < 0.1 ? "Gentle" :
+    slope < 0.2 ? "Moderate" :
+    slope < 0.3 ? "Steep" : "Extreme"
+  );
+
+  // Use effect for biome resources update
+  $effect(() => {
+    if (biome?.name && biome.name !== state.lastBiomeName) {
+      state.lastBiomeName = biome.name;
+      state.resourcesList = getBiomeResources(biome.name);
     }
-    console.log(`Details received biome: ${biome?.name}, displayName: ${biome?.displayName}`);
-  }
-  
-  // Improve performance by avoiding unnecessary re-renders
-  let lastBiomeName = '';
-  let resourcesList = [];
-  
-  $: if (biome?.name && biome.name !== lastBiomeName) {
-    lastBiomeName = biome.name;
-    resourcesList = getBiomeResources(biome.name);
-    console.log(`Updated resources for biome ${biome.name}:`, resourcesList);
-  }
-  
+  });
+
   // Handle close action
   function handleClose() {
-    show = false;
+    updateShow(false);
   }
   
   // Helper function to format percentage
   const formatPercent = (value) => `${Math.round(value * 100)}%`;
   
-  // Get elevation category based on height
-  $: elevationCategory = 
-    height < 0.1 ? "Very Low" :
-    height < 0.3 ? "Low" :
-    height < 0.5 ? "Medium" :
-    height < 0.7 ? "High" :
-    height < 0.85 ? "Very High" : "Extreme";
-  
-  // Get moisture category based on moisture
-  $: moistureCategory = 
-    moisture < 0.2 ? "Very Dry" :
-    moisture < 0.4 ? "Dry" :
-    moisture < 0.6 ? "Moderate" :
-    moisture < 0.8 ? "Wet" : "Very Wet";
-  
-  // FIXED: Get biome display name reliably
-  $: biomeDisplayName = biome.displayName || 
-    biome.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  
   // Handle the toggle event to keep the show prop in sync
   function handleToggle(event) {
-    show = event.target.open;
+    updateShow(event.target.open);
   }
   
   // Allow ESC key to close the details
   function handleKeydown(event) {
     if (event.key === 'Escape' && show) {
-      show = false;
+      updateShow(false);
     }
   }
-  
-  // Add water feature categories with enhanced river detection
-  $: waterFeature = 
-    riverValue > 0.4 ? "River" :
-    lakeValue > 0.5 ? "Lake" :
-    riverValue > 0.25 ? "Stream" :
-    riverValue > 0.2 ? "Riverbank" :
-    lakeValue > 0.2 ? "Lake Shore" : "None";
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -90,7 +101,7 @@
   <details 
     class="location-details" 
     open={show}
-    on:toggle={handleToggle}
+    ontoggle={handleToggle}
   >
     <summary class="details-summary">
       <h2>Location Details: ({x}, {y})</h2>
@@ -129,9 +140,9 @@
       
       <div class="info-section">
         <h3>Resources</h3>
-        {#if resourcesList.length > 0}
+        {#if state.resourcesList.length > 0}
           <ul>
-            {#each resourcesList as resource}
+            {#each state.resourcesList as resource}
               <li>{resource}</li>
             {/each}
           </ul>
@@ -140,8 +151,13 @@
         {/if}
       </div>
       
+      <div class="info-section">
+        <h3>Terrain</h3>
+        <p>{slopeCategory}</p>
+      </div>
+      
       <div class="details-footer">
-        <button class="close-button" on:click={handleClose}>Close</button>
+        <button class="close-button" onclick={handleClose}>Close</button>
       </div>
     </div>
   </details>

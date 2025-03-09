@@ -1,6 +1,11 @@
 <script>
-  // Use $props() syntax for Svelte 5's runes mode
-  const { x = 0, y = 0, title = "Current Position", openDetails } = $props();
+  // Use correct runes syntax for props
+  const { 
+    x = 0, 
+    y = 0, 
+    title = "Current Position", 
+    openDetails 
+  } = $props();
   
   // Function to handle the view details button click
   function handleViewDetails() {

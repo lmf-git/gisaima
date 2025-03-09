@@ -2,6 +2,37 @@
     import Grid from '../../components/map/Grid.svelte';
     import Minimap from '../../components/map/Minimap.svelte';
     import { TerrainGenerator } from '../../lib/map/noise.js';
+    import { onDestroy } from 'svelte';
+    import { getTerrainCache } from '../../lib/map/minimapcontrols.js';
+    
+    // Centralized state management using $state
+    const state = $state({
+        // Target location and coordinate tracking
+        targetCoord: { x: 0, y: 0 },
+        highlightedCoord: null,
+        
+        // Map configuration
+        minimapVisible: true,
+        minimapPosition: "top-right",
+        detailsVisible: false,
+        
+        // Viewport data
+        mainViewportSize: { 
+            cols: 0, 
+            rows: 0,
+            visibleLeft: 0,
+            visibleRight: 0,
+            visibleTop: 0,
+            visibleBottom: 0,
+            centerX: 0,
+            centerY: 0,
+            worldWidth: 0,
+            worldHeight: 0
+        },
+        
+        // Cache for currently viewed terrain
+        currentTileData: null
+    });
     
     // Initialize the terrain generator at the page level
     const WORLD_SEED = 532534;
@@ -12,60 +43,126 @@
         globalThis.cachedWorldSeed = WORLD_SEED;
         console.log("Created new terrain generator");
     }
+    
+    // Share the terrain generator with all components via props
     const terrain = globalThis.cachedTerrainGenerator;
     
-    // Create a shared terrain cache at the page level - use existing cache during HMR if available
-    const terrainCache = globalThis.persistentTerrainCache || new Map();
-    if (!globalThis.persistentTerrainCache) {
-        globalThis.persistentTerrainCache = terrainCache;
-    }
+    // Use the centralized terrain cache
+    const terrainCache = getTerrainCache();
     
-    // Shared target coordinate state
-    let targetCoord = { x: 0, y: 0 };
-    let minimapVisible = true;
-    let minimapPosition = "top-right";
-    let mainViewportSize = { cols: 0, rows: 0 };
-    
-    // Handle position changes with consistent precision - FIXED
-    function handlePositionChange(event) {
-        // ENHANCED debugging
-        console.log(`Position change received at Page:`, event.detail);
+    // OPTIMIZED: Move terrain data pre-caching to page level
+    function getCachedTerrainData(x, y) {
+        const intX = Math.floor(x);
+        const intY = Math.floor(y);
+        const key = `${intX},${intY}`;
         
-        // Ensure consistent coordinate handling
-        const newCoords = { 
-            x: Math.floor(event.detail.x), 
-            y: Math.floor(event.detail.y)
+        if (terrainCache.has(key)) {
+            return terrainCache.get(key);
+        }
+        
+        const terrainData = terrain.getTerrainData(intX, intY);
+        
+        const stableData = {
+            biome: {
+                ...terrainData.biome,
+                displayName: terrainData.biome.displayName || 
+                    terrainData.biome.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+            },
+            color: terrainData.color,
+            height: terrainData.height,
+            moisture: terrainData.moisture,
+            continent: terrainData.continent,
+            riverValue: terrainData.riverValue,
+            lakeValue: terrainData.lakeValue,
+            slope: terrainData.slope
         };
         
-        // Update the shared target coordinates
-        targetCoord = newCoords;
-        console.log(`Page updated targetCoord to:`, targetCoord);
+        terrainCache.set(key, stableData);
+        return stableData;
     }
     
-    // Update viewport size from grid
+    // Update current tile data when position changes
+    function updateCurrentTileData() {
+        if (!state.targetCoord) return;
+        
+        const intX = Math.floor(state.targetCoord.x);
+        const intY = Math.floor(state.targetCoord.y);
+        
+        state.currentTileData = getCachedTerrainData(intX, intY);
+    }
+    
+    // IMPROVED: Single position change handler used by both components
+    function handlePositionChange(event) {
+        const intX = Math.floor(event.detail.x);
+        const intY = Math.floor(event.detail.y);
+        
+        // Pre-cache terrain data for new position
+        getCachedTerrainData(intX, intY);
+        
+        // Update target coordinates
+        state.targetCoord = { x: intX, y: intY };
+        
+        // Reset highlight when position changes
+        state.highlightedCoord = null;
+        
+        // Update current tile data for details panel
+        updateCurrentTileData();
+    }
+    
+    function handleTileHighlight(event) {
+        state.highlightedCoord = event.detail || null;
+    }
+    
     function handleViewportSizeChange(event) {
-        mainViewportSize = event.detail;
+        // Update viewport data
+        state.mainViewportSize = {
+            cols: event.detail.cols || 0,
+            rows: event.detail.rows || 0,
+            visibleLeft: event.detail.visibleLeft,
+            visibleRight: event.detail.visibleRight,
+            visibleTop: event.detail.visibleTop,
+            visibleBottom: event.detail.visibleBottom,
+            centerX: event.detail.centerX,
+            centerY: event.detail.centerY,
+            worldWidth: (event.detail.visibleRight - event.detail.visibleLeft + 1),
+            worldHeight: (event.detail.visibleBottom - event.detail.visibleTop + 1),
+        };
     }
     
-    // Toggle minimap visibility
+    // UI state management
     function toggleMinimap() {
-        minimapVisible = !minimapVisible;
+        state.minimapVisible = !state.minimapVisible;
     }
     
-    // Handle minimap close
     function handleMinimapClose() {
-        minimapVisible = false;
+        state.minimapVisible = false;
+    }
+    
+    function handleDetailsChange(value) {
+        state.detailsVisible = value;
+    }
+    
+    function openDetails() {
+        updateCurrentTileData();
+        state.detailsVisible = true;
     }
 
-    // ENHANCED: Handle keyboard shortcuts for map navigation
     function handleKeydown(e) {
-        // Toggle minimap with 'M' key
         if (e.key === 'm' && !e.repeat) {
             toggleMinimap();
         }
-        
-        // Add other keyboard shortcuts here as needed
     }
+
+    // Memory management
+    onDestroy(() => {
+        if (terrainCache.size > 10000) {
+            console.log(`Clearing terrain cache with ${terrainCache.size} entries`);
+            terrainCache.clear();
+        }
+    });
+    
+    // Initial data fetch
+    updateCurrentTileData();
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -74,20 +171,27 @@
     <Grid 
         {terrain}
         {terrainCache}
-        bind:targetCoord
+        targetCoord={state.targetCoord}
+        highlightedCoord={state.highlightedCoord}
         on:positionchange={handlePositionChange}
         on:viewportsizechange={handleViewportSizeChange}
+        on:tilehighlight={handleTileHighlight}
+        {openDetails}
+        detailsVisible={state.detailsVisible}
+        onDetailsChange={handleDetailsChange}
     />
     
-    {#if minimapVisible}
+    {#if state.minimapVisible}
         <Minimap 
             {terrain}
             {terrainCache}
-            bind:targetCoord
-            {mainViewportSize}
-            position={minimapPosition}
+            targetCoord={state.targetCoord}
+            highlightedCoord={state.highlightedCoord}
+            mainViewportSize={state.mainViewportSize}
+            position={state.minimapPosition}
             size="20%"
             on:positionchange={handlePositionChange}
+            on:tilehighlight={handleTileHighlight}
             on:close={handleMinimapClose}
         />
     {/if}

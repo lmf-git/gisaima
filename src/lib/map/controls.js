@@ -113,11 +113,18 @@ export function stopDrag(state, mapElement) {
   if (!state.isDragging) return;
   
   state.isDragging = false;
+  state.isMouseActuallyDown = false; // ADDED: Also reset this flag
   document.body.style.cursor = "default";
   
   if (mapElement) {
     mapElement.style.cursor = "grab";
     mapElement.classList.remove("dragging");
+    
+    // ADDED: Force restore pointer events to all tiles
+    const tiles = mapElement.querySelectorAll('.tile');
+    tiles.forEach(tile => {
+      tile.style.pointerEvents = 'auto';
+    });
   }
 }
 
@@ -143,8 +150,15 @@ export function createMouseEventHandlers(state, mapElement) {
     
     globalMouseUp: () => {
       state.isMouseActuallyDown = false;
-      if (state.isDragging) stopDrag(state, mapElement);
+      if (state.isDragging) {
+        stopDrag(state, mapElement);
+      }
       document.body.style.cursor = "default";
+      
+      // ADDED: Ensure map is grabbable again after drag
+      if (mapElement) {
+        mapElement.style.cursor = "grab";
+      }
     },
     
     globalMouseMove: (event) => {

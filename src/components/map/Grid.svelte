@@ -8,24 +8,45 @@
 
   const dispatch = createEventDispatcher();
   
-  // Props - terrain is now received from the parent
-  export let terrain;
-  export let terrainCache;
-  export let targetCoord = { x: 0, y: 0 };
+  // Props using correct runes syntax
+  const { 
+    terrain,
+    terrainCache,
+    targetCoord = { x: 0, y: 0 },
+    highlightedCoord = null,
+    openDetails, // This is the external prop
+    detailsVisible = false,
+    onDetailsChange
+  } = $props();
 
-  // Position and drag state
-  let isDragging = false;
-  let isMouseDown = false;
-  let dragStartX = 0;
-  let dragStartY = 0;
-
-  // UI state
-  let showDetailsModal = false;
-  let showMinimap = true; // Control minimap visibility
-  let minimapPosition = "top-right"; // Changed default position from "bottom-right" to "top-right"
-  let keysPressed = new Set();
-  let navInterval = null;
-  let dragCheckInterval = null;
+  // REFACTORED: Separate internal state from external props
+  const state = $state({
+    isDragging: false,
+    isMouseDown: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    showDetailsModal: false,
+    showMinimap: true,
+    keysPressed: new Set(),
+    navInterval: null,
+    dragCheckInterval: null,
+    mapElement: null,
+    cols: 0, 
+    rows: 0,
+    isReady: false,
+    resizeObserver: null,
+    offsetX: 0,
+    offsetY: 0,
+    visibleChunks: new Set(),
+    centerX: 0,
+    centerY: 0,
+    gridArray: [],
+    xAxisArray: [],
+    yAxisArray: [],
+    centerTileData: null,
+    lastTargetX: 0,
+    lastTargetY: 0
+  });
   
   // Configuration
   const KEYBOARD_MOVE_SPEED = 200;
@@ -34,37 +55,24 @@
   const showAxisBars = true;
   const DRAG_CHECK_INTERVAL = 500;
   
-  // Map elements
-  let mapElement;
-  let cols = 0, rows = 0;
-  let isReady = false;
-  let resizeObserver;
-  let offsetX = 0, offsetY = 0;
-  let visibleChunks = new Set();
-  let centerX = 0;
-  let centerY = 0;
-  
-  // Get terrain data with caching - now uses the shared cache from props
+  // Get terrain data with caching
   function getCachedTerrainData(x, y) {
     const intX = Math.floor(x);
     const intY = Math.floor(y);
-    
     const key = `${intX},${intY}`;
     
     if (terrainCache.has(key)) {
       return terrainCache.get(key);
     }
     
-    // IMPROVED: Add console log for debugging cache misses of important coordinates
-    if ((intX === Math.floor(targetCoord.x) && intY === Math.floor(targetCoord.y))) {
-      console.log(`Cache miss for center coordinates (${intX}, ${intY})`);
-    }
-    
     const terrainData = terrain.getTerrainData(intX, intY);
     
-    // Create a stable copy to ensure consistent data across the app
     const stableData = {
-      biome: terrainData.biome,
+      biome: {
+        ...terrainData.biome,
+        displayName: terrainData.biome.displayName || 
+          terrainData.biome.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+      },
       color: terrainData.color,
       height: terrainData.height,
       moisture: terrainData.moisture,
@@ -75,18 +83,17 @@
     };
     
     terrainCache.set(key, stableData);
-    
     return stableData;
   }
 
   // Controls state object with coordinate update function
   const controlsState = {
-    isDragging,
-    isMouseDown,
-    dragStartX,
-    dragStartY,
-    keysPressed,
-    navInterval,
+    isDragging: state.isDragging,
+    isMouseDown: state.isMouseDown,
+    dragStartX: state.dragStartX,
+    dragStartY: state.dragStartY,
+    keysPressed: state.keysPressed,
+    navInterval: state.navInterval,
     tileSize,
     updateCoordinates: (xChange, yChange) => {
       if (xChange !== 0 || yChange !== 0) {
@@ -95,55 +102,121 @@
         
         // Dispatch event when coordinates change via keyboard/drag
         dispatch('positionchange', { x: newX, y: newY });
-        
-        // Update local targetCoord for immediate visual feedback
-        targetCoord = { x: newX, y: newY };
-        offsetX = centerX + targetCoord.x;
-        offsetY = centerY + targetCoord.y;
       }
     }
   };
   
-  // Calculate grid dimensions and update on resize
   const resize = () => {
-    if (!browser || !mapElement) return;
+    if (!browser || !state.mapElement) return;
     
     const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
     const tileSizePx = tileSize * baseFontSize;
-    const width = mapElement.clientWidth;
-    const height = mapElement.clientHeight;
+    const width = state.mapElement.clientWidth;
+    const height = state.mapElement.clientHeight;
 
-    cols = Math.ceil(width / tileSizePx);
-    cols = cols % 2 === 0 ? cols - 1 : cols;
+    // Ensure odd numbers for proper center tile
+    state.cols = Math.ceil(width / tileSizePx);
+    if (state.cols % 2 === 0) state.cols += 1; 
 
-    rows = Math.ceil(height / tileSizePx);
-    rows = rows % 2 === 0 ? rows - 1 : rows;
+    state.rows = Math.ceil(height / tileSizePx);
+    if (state.rows % 2 === 0) state.rows += 1; 
 
-    centerX = Math.floor(cols / 2);
-    centerY = Math.floor(rows / 2);
-    offsetX = centerX + targetCoord.x;
-    offsetY = centerY + targetCoord.y;
+    state.centerX = Math.floor(state.cols / 2);
+    state.centerY = Math.floor(state.rows / 2);
+    state.offsetX = state.centerX + targetCoord.x;
+    state.offsetY = state.centerY + targetCoord.y;
     
-    // Notify parent about viewport size change
-    dispatch('viewportsizechange', { cols, rows });
+    // Send viewport information
+    const viewportInfo = { 
+      cols: state.cols, 
+      rows: state.rows,
+      centerX: state.centerX, 
+      centerY: state.centerY,
+      visibleLeft: Math.floor(targetCoord.x - state.centerX),
+      visibleRight: Math.floor(targetCoord.x + (state.cols - state.centerX - 1)),
+      visibleTop: Math.floor(targetCoord.y - state.centerY),
+      visibleBottom: Math.floor(targetCoord.y + (state.rows - state.centerY - 1))
+    };
+    
+    viewportInfo.worldWidth = viewportInfo.visibleRight - viewportInfo.visibleLeft + 1;
+    viewportInfo.worldHeight = viewportInfo.visibleBottom - viewportInfo.visibleTop + 1;
+    
+    dispatch('viewportsizechange', viewportInfo);
+    
+    if (!state.isReady) state.isReady = true;
+    
+    // Rebuild grid arrays
+    rebuildGridArrays();
+  };
+  
+  function rebuildGridArrays() {
+    if (!state.isReady) return;
+    
+    // Build grid array
+    state.gridArray = Array.from({ length: state.rows }, (_, y) =>
+      Array.from({ length: state.cols }, (_, x) => {
+        const globalX = Math.floor(x - state.offsetX);
+        const globalY = Math.floor(y - state.offsetY);
+        
+        // Special case for center tile
+        if (x === state.centerX && y === state.centerY && state.centerTileData) {
+          return {
+            x: globalX,
+            y: globalY,
+            isCenter: true,
+            ...state.centerTileData
+          };
+        }
+        
+        const terrainData = getCachedTerrainData(globalX, globalY);
+        
+        return {
+          x: globalX,
+          y: globalY,
+          isCenter: x === state.centerX && y === state.centerY,
+          ...terrainData
+        };
+      })
+    ).flat();
+    
+    // Build axis arrays
+    state.xAxisArray = Array.from({ length: state.cols }, (_, x) => ({
+      value: x - state.offsetX,
+      isCenter: x === state.centerX
+    }));
 
-    if (!isReady) isReady = true;
+    state.yAxisArray = Array.from({ length: state.rows }, (_, y) => ({
+      value: y - state.offsetY,
+      isCenter: y === state.centerY
+    }));
+    
+    // Update visible chunks
+    updateChunks(state.gridArray);
+  }
+  
+  // Get chunk key from coordinates
+  const getChunkKey = (x, y) => `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
+
+  // Update visible chunks log
+  const updateChunks = gridArray => {
+    const newChunkKeys = gridArray.map(cell => getChunkKey(cell.x, cell.y));
+    const newVisibleChunks = new Set(newChunkKeys);
+
+    state.visibleChunks = newVisibleChunks;
   };
 
-  // Initialize when mounted - only runs in browser
   onMount(() => {
-    resizeObserver = new ResizeObserver(resize);
-    resizeObserver.observe(mapElement);
+    state.resizeObserver = new ResizeObserver(resize);
+    state.resizeObserver.observe(state.mapElement);
     resize();
     
-    // Setup keyboard navigation
     setupKeyboardNavigation(moveMapByKeys, controlsState, KEYBOARD_MOVE_SPEED);
-    dragCheckInterval = setInterval(() => checkDragState(controlsState), DRAG_CHECK_INTERVAL);
+    state.dragCheckInterval = setInterval(() => checkDragState(controlsState), DRAG_CHECK_INTERVAL);
 
     return () => {
-      if (resizeObserver) resizeObserver.disconnect();
+      if (state.resizeObserver) state.resizeObserver.disconnect();
       if (controlsState.navInterval) clearInterval(controlsState.navInterval);
-      if (dragCheckInterval) clearInterval(dragCheckInterval);
+      if (state.dragCheckInterval) clearInterval(state.dragCheckInterval);
     };
   });
 
@@ -153,198 +226,84 @@
     controlsState.updateCoordinates(-xChange, -yChange);
   };
 
-  // Get chunk key from coordinates
-  const getChunkKey = (x, y) => `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
+  // OPTIMIZED: Only update grid when targetCoord changes
+  $effect(() => {
+    if (!state.isReady) return;
+    
+    // Skip update if coordinates haven't changed
+    if (state.lastTargetX === targetCoord.x && state.lastTargetY === targetCoord.y) return;
+    
+    // Update last known values
+    state.lastTargetX = targetCoord.x;
+    state.lastTargetY = targetCoord.y;
+    
+    // Update offsets and center data
+    state.offsetX = state.centerX + targetCoord.x;
+    state.offsetY = state.centerY + targetCoord.y;
+    
+    // Update center tile data
+    updateCenterTileData();
+    
+    // Rebuild grid arrays
+    rebuildGridArrays();
+  });
 
-  // Update visible chunks log
-  const updateChunks = gridArray => {
-    const newChunkKeys = gridArray.map(cell => getChunkKey(cell.x, cell.y));
-    const newVisibleChunks = new Set(newChunkKeys);
-
-    Array.from(newVisibleChunks)
-      .filter(chunkKey => !visibleChunks.has(chunkKey))
-      .forEach(chunkKey => console.log(`Chunk loaded: ${chunkKey}`));
-
-    Array.from(visibleChunks)
-      .filter(chunkKey => !newVisibleChunks.has(chunkKey))
-      .forEach(chunkKey => console.log(`Chunk unloaded: ${chunkKey}`));
-
-    visibleChunks = newVisibleChunks;
-  };
-
-  // Generate reactive grid arrays with cached terrain data
-  $: gridArray = isReady
-    ? Array.from({ length: rows }, (_, y) =>
-        Array.from({ length: cols }, (_, x) => {
-          const globalX = Math.floor(x - offsetX); // Ensure integer coordinates
-          const globalY = Math.floor(y - offsetY);
-          
-          // Special case for center tile to ensure consistency with minimap
-          if (x === centerX && y === centerY && centerTileData) {
-            return {
-              x: globalX,
-              y: globalY,
-              isCenter: true,
-              ...centerTileData // Use exact same data as centerTileData
-            };
-          }
-          
-          const terrainData = getCachedTerrainData(globalX, globalY);
-          
-          return {
-            x: globalX,
-            y: globalY,
-            isCenter: x === centerX && y === centerY,
-            ...terrainData
-          };
-        })
-      ).flat()
-    : [];
-
-  $: if (isReady && gridArray.length > 0) updateChunks(gridArray);
-
-  $: xAxisArray = isReady
-    ? Array.from({ length: cols }, (_, x) => ({
-        value: x - offsetX,
-        isCenter: x === centerX
-      }))
-    : [];
-
-  $: yAxisArray = isReady
-    ? Array.from({ length: rows }, (_, y) => ({
-        value: y - offsetY,
-        isCenter: y === centerY
-      }))
-    : [];
-
-  // Wrap the drag-related functions
+  // Drag handlers
   const handleStartDrag = (event) => {
-    startDrag(event, controlsState, mapElement);
-    isDragging = controlsState.isDragging;
+    startDrag(event, controlsState, state.mapElement);
+    state.isDragging = controlsState.isDragging;
   };
 
   const handleStopDrag = () => {
-    stopDrag(controlsState, mapElement);
-    isDragging = controlsState.isDragging;
+    stopDrag(controlsState, state.mapElement);
+    state.isDragging = controlsState.isDragging;
+    
+    if (state.mapElement) {
+      state.mapElement.style.cursor = 'grab';
+      state.mapElement.classList.remove('dragging');
+    }
+    
+    state.isMouseDown = false;
+    controlsState.isMouseDown = false;
   };
 
   // Create mouse event handlers
-  const eventHandlers = createMouseEventHandlers(controlsState, mapElement);
+  const eventHandlers = createMouseEventHandlers(controlsState, state.mapElement);
 
-  // Handle position changes from minimap with guaranteed biome consistency
-  const handleMinimapPositionChange = (event) => {
-    console.log("Grid received position change:", event.detail);
-    
-    // FIXED: Use exact integer coordinates for perfect alignment
-    const newCoords = { 
-      x: Math.floor(event.detail.x), 
-      y: Math.floor(event.detail.y)
-    };
-    
-    // Update target coordinates with the exact values
-    targetCoord = newCoords;
-    
-    // Update offsets to match the main grid's coordinate system
-    offsetX = centerX + targetCoord.x;
-    offsetY = centerY + targetCoord.y;
-    
-    // Force use of cached data to ensure biome consistency
-    const key = `${newCoords.x},${newCoords.y}`;
-    
-    if (event.detail.fromMinimapClick) {
-      console.log(`Click from minimap at (${newCoords.x}, ${newCoords.y})`);
-      
-      // For minimap clicks, ensure we use the cached data which should be set by the minimap
-      if (terrainCache.has(key)) {
-        centerTileData = terrainCache.get(key);
-        console.log(`Grid using cached data for (${newCoords.x}, ${newCoords.y}), biome: ${centerTileData.biome.name}`);
-      } else {
-        // This shouldn't normally happen if minimap is properly setting cache
-        console.warn(`Cache miss for minimap click at (${newCoords.x}, ${newCoords.y})`);
-        centerTileData = getCachedTerrainData(newCoords.x, newCoords.y);
-      }
+  // Renamed to handleOpenDetails to avoid the name collision
+  const handleOpenDetails = () => {
+    updateCenterTileData();
+    if (openDetails) {
+      // Call the prop function if provided
+      openDetails();
     } else {
-      // For other position changes, get data normally
-      centerTileData = getCachedTerrainData(newCoords.x, newCoords.y);
+      // Fall back to local behavior
+      state.showDetailsModal = true;
     }
+  };
+
+  function updateCenterTileData() {
+    if (!state.isReady) return;
     
-    console.log(`Main map updated to: (${newCoords.x}, ${newCoords.y}), biome: ${centerTileData.biome.name}`);
-  };
-
-  // Open details modal
-  const openDetails = () => {
-    // Get fresh data before opening the modal
-    if (isReady) {
-      centerTileData = terrain.getTerrainData(targetCoord.x, targetCoord.y);
-    }
-    showDetailsModal = true;
-  };
-
-  // Toggle minimap visibility
-  const toggleMinimap = () => {
-    showMinimap = !showMinimap;
-  };
-
-  // Handle minimap close event
-  const handleMinimapClose = () => {
-    showMinimap = false;
-  };
-
-  // Ensure dragging class is removed
-  $: if (!isDragging && mapElement && mapElement.classList.contains('dragging'))
-    mapElement.classList.remove('dragging');
-
-  // Generate center tile data for Details component
-  let centerTileData = null;
-  
-  // FIXED: Ensure centerTileData is properly updated whenever targetCoord changes
-  $: if (isReady && targetCoord) {
-    // Use cached data when available to improve consistency
-    const key = `${Math.floor(targetCoord.x)},${Math.floor(targetCoord.y)}`;
-    centerTileData = terrainCache.has(key) 
-      ? terrainCache.get(key) 
-      : getCachedTerrainData(targetCoord.x, targetCoord.y);
+    const intX = Math.floor(targetCoord.x);
+    const intY = Math.floor(targetCoord.y);
     
-    // Debug to ensure proper data is being passed
-    console.log(`Updated centerTileData for Details: ${centerTileData?.biome?.name}`);
+    state.centerTileData = getCachedTerrainData(intX, intY);
+  }
+
+  // Event handlers
+  function handleTileHover(cell) {
+    dispatch('tilehighlight', { x: cell.x, y: cell.y });
   }
   
-  // Same consistency for modal updates - IMPROVED to avoid redundant calls
-  $: if (showDetailsModal && isReady && centerTileData) {
-    console.log(`Showing Details modal with biome: ${centerTileData.biome.name}`);
+  function handleTileLeave() {
+    dispatch('tilehighlight', null);
   }
 
-  // ENHANCED: Handle keyboard navigation for grid elements
-  function handleGridKeydown(e, cell) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      // Set current cell as center
-      targetCoord = { x: cell.x, y: cell.y };
-      dispatch('positionchange', targetCoord);
-    }
-  }
-
-  // Update terrain data - ensure we're consistent with the coordinate system
-  $: if (isReady) {
-    // Use the actual targetCoord values directly (without negation)
-    centerTileData = terrain.getTerrainData(targetCoord.x, targetCoord.y);
-  }
-  
-  // Same consistency for modal updates
-  $: if (showDetailsModal && isReady) {
-    centerTileData = terrain.getTerrainData(targetCoord.x, targetCoord.y);
-  }
-
-  // Sync state with controls state
-  $: isDragging = controlsState.isDragging;
-
-  // ENHANCED: Watch for targetCoord changes and update offsets accordingly
-  $: {
-    if (isReady && centerX && centerY) {
-      // This ensures the grid responds to targetCoord changes from any source
-      offsetX = centerX + targetCoord.x;
-      offsetY = centerY + targetCoord.y;
-      console.log(`Grid updated offsets to: (${offsetX}, ${offsetY}) based on targetCoord: (${targetCoord.x}, ${targetCoord.y})`);
+  // SIMPLIFIED: Handle Detail component show/hide using parent callback
+  function handleDetailUpdate(event) {
+    if (onDetailsChange) {
+      onDetailsChange(event.detail);
     }
   }
 </script>
@@ -354,36 +313,39 @@
   on:mouseup={eventHandlers.globalMouseUp}
   on:mousemove={eventHandlers.globalMouseMove}
   on:mouseleave={eventHandlers.globalMouseLeave}
-  on:blur={() => isDragging && handleStopDrag()}
+  on:blur={() => state.isDragging && handleStopDrag()}
   on:visibilitychange={eventHandlers.visibilityChange}
-  on:keydown={(e) => {
-    // Toggle minimap with 'M' key
-    if (e.key === 'm' && !e.repeat) {
-      toggleMinimap();
-    }
-  }}
 />
 
-<div class="map-container" style="--tile-size: {tileSize}em;" class:modal-open={showDetailsModal}>
+<div class="map-container" style="--tile-size: {tileSize}em;" class:modal-open={state.showDetailsModal}>
   <div
     class="map"
-    bind:this={mapElement}
-    on:mousedown={handleStartDrag}
-    class:dragging={isDragging}
+    bind:this={state.mapElement}
+    onmousedown={handleStartDrag}
+    class:dragging={state.isDragging}
     role="grid"
     tabindex="0"
     aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
   >
-    {#if isReady}
-      <div class="grid main-grid" style="--cols: {cols}; --rows: {rows};" role="presentation">
-        {#each gridArray as cell}
-          <!-- FIXED: Use button instead of div for interactive cells -->
+    {#if state.isReady}
+      <div class="grid main-grid" style="--cols: {state.cols}; --rows: {state.rows};" role="presentation">
+        {#each state.gridArray as cell}
           <button
             class="tile"
             class:center={cell.isCenter}
+            class:highlighted={highlightedCoord && cell.x === highlightedCoord.x && cell.y === highlightedCoord.y}
             role="gridcell"
             tabindex="0"
-            on:keydown={(e) => handleGridKeydown(e, cell)}
+            onkeydown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                dispatch('positionchange', { x: cell.x, y: cell.y });
+              }
+            }}
+            onmouseover={() => handleTileHover(cell)}
+            onmouseleave={handleTileLeave}
+            onfocus={() => handleTileHover(cell)}
+            onblur={handleTileLeave}
             aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}"
             aria-current={cell.isCenter ? "location" : undefined}
             style="background-color: {cell.color};"
@@ -396,27 +358,31 @@
     {/if}
   </div>
 
-  {#if !showDetailsModal}
-    <Legend x={targetCoord.x} y={targetCoord.y} {openDetails} />
+  {#if !state.showDetailsModal}
+    <Legend 
+      x={targetCoord.x} 
+      y={targetCoord.y} 
+      openDetails={handleOpenDetails} 
+    />
   {/if}
 
-  {#if showAxisBars && isReady}
-    <Axes {xAxisArray} {yAxisArray} {cols} {rows} />
+  {#if showAxisBars && state.isReady}
+    <Axes xAxisArray={state.xAxisArray} yAxisArray={state.yAxisArray} cols={state.cols} rows={state.rows} />
   {/if}
 
-  <!-- FIXED: Pass complete and correct biome data to Details component -->
   <Details 
     x={targetCoord.x} 
     y={targetCoord.y} 
-    bind:show={showDetailsModal}
-    biome={centerTileData?.biome || { name: "unknown", displayName: "Unknown", color: "#808080" }}
-    height={centerTileData?.height || 0}
-    moisture={centerTileData?.moisture || 0}
-    continent={centerTileData?.continent || 0}
-    slope={centerTileData?.slope || 0}
-    riverValue={centerTileData?.riverValue || 0}
-    lakeValue={centerTileData?.lakeValue || 0}
-    displayColor={centerTileData?.color || "#808080"}
+    show={detailsVisible || state.showDetailsModal}
+    on:showChange={handleDetailUpdate}
+    biome={state.centerTileData?.biome || { name: "unknown", displayName: "Unknown", color: "#808080" }}
+    height={state.centerTileData?.height || 0}
+    moisture={state.centerTileData?.moisture || 0}
+    continent={state.centerTileData?.continent || 0}
+    slope={state.centerTileData?.slope || 0}
+    riverValue={state.centerTileData?.riverValue || 0}
+    lakeValue={state.centerTileData?.lakeValue || 0}
+    displayColor={state.centerTileData?.color || "#808080"}
   />
 </div>
 
@@ -471,10 +437,10 @@
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
-    transition: filter 0.1s ease-in-out, transform 0.1s ease-in-out;
+    transition: filter 0.1s ease-in-out, transform 0.1s ease-in-out, border 0.1s ease-in-out;
     padding: 0;
     background: none;
-    cursor: pointer;
+    cursor: pointer !important; /* Force cursor to always be pointer */
   }
 
   /* Add focus styles for keyboard navigation */
@@ -491,10 +457,11 @@
   
   .map.dragging .tile {
     pointer-events: none;
-    cursor: grabbing;
-    filter: none;
-    transform: none;
-    z-index: auto;
+    cursor: grabbing !important;
+  }
+  
+  .map:not(.dragging) .tile {
+    pointer-events: auto;
   }
 
   /* Enhanced center tile styling */
@@ -531,5 +498,28 @@
 
   .map-container.modal-open .map {
     pointer-events: all; /* Ensure map still receives pointer events when modal is open */
+  }
+
+  /* Debug info */
+  .debug-grid-info {
+    position: absolute;
+    top: 0.5em;
+    left: 0.5em;
+    color: white;
+    font-size: 0.8em;
+    background: rgba(0,0,0,0.3);
+    padding: 0.3em 0.6em;
+    border-radius: 0.3em;
+    z-index: 10;
+    pointer-events: none; 
+    opacity: 0.7;
+  }
+
+  /* ADDED: Highlighted tile style */
+  .highlighted {
+    z-index: 4;
+    filter: brightness(1.3) !important;
+    box-shadow: 0 0 0.8em rgba(255, 255, 255, 0.7), inset 0 0 0.5em rgba(255, 255, 255, 0.5);
+    border: 0.12em solid rgba(255, 255, 255, 0.8) !important;
   }
 </style>

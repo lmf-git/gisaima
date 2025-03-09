@@ -1,9 +1,11 @@
 <script>
-  // Accept arrays of coordinates for x and y axes
-  export let xAxisArray = [];
-  export let yAxisArray = [];
-  export let cols = 0;
-  export let rows = 0;
+  // Use correct runes syntax for props
+  const { 
+    xAxisArray = [], 
+    yAxisArray = [], 
+    cols = 0, 
+    rows = 0 
+  } = $props();
 </script>
 
 <div class="axes-container">
