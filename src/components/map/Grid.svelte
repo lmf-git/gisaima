@@ -12,7 +12,7 @@
   const { 
     terrain,
     terrainCache,
-    targetCoord = { x: 0, y: 0 },
+    targetCoord,
     highlightedCoord = null,
     openDetails, // This is the external prop
     detailsVisible = false,
@@ -88,20 +88,24 @@
 
   // Controls state object with coordinate update function
   const controlsState = {
-    isDragging: state.isDragging,
-    isMouseDown: state.isMouseDown,
-    dragStartX: state.dragStartX,
-    dragStartY: state.dragStartY,
-    keysPressed: state.keysPressed,
-    navInterval: state.navInterval,
+    isDragging: false,
+    isMouseDown: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    keysPressed: new Set(),
+    navInterval: null,
     tileSize,
     updateCoordinates: (xChange, yChange) => {
       if (xChange !== 0 || yChange !== 0) {
         const newX = targetCoord.x + xChange;
         const newY = targetCoord.y + yChange;
         
-        // Dispatch event when coordinates change via keyboard/drag
-        dispatch('positionchange', { x: newX, y: newY });
+        // Dispatch event with source information for better tracking
+        dispatch('positionchange', { 
+          x: newX, 
+          y: newY,
+          source: state.isDragging ? 'drag' : 'keyboard'
+        });
       }
     }
   };
@@ -250,21 +254,32 @@
 
   // Drag handlers
   const handleStartDrag = (event) => {
+    // Prevent drag from non-primary clicks
+    if (event.button !== 0) return;
+    
     startDrag(event, controlsState, state.mapElement);
-    state.isDragging = controlsState.isDragging;
+    
+    // Update the component state from control state
+    state.isDragging = true;
+    state.isMouseDown = true;
+    state.dragStartX = event.clientX;
+    state.dragStartY = event.clientY;
+    
+    // Prevent default to avoid text selection during drag
+    event.preventDefault();
   };
 
   const handleStopDrag = () => {
     stopDrag(controlsState, state.mapElement);
-    state.isDragging = controlsState.isDragging;
+    
+    // Update the component state
+    state.isDragging = false;
+    state.isMouseDown = false;
     
     if (state.mapElement) {
       state.mapElement.style.cursor = 'grab';
       state.mapElement.classList.remove('dragging');
     }
-    
-    state.isMouseDown = false;
-    controlsState.isMouseDown = false;
   };
 
   // Create mouse event handlers
@@ -306,6 +321,14 @@
       onDetailsChange(event.detail);
     }
   }
+
+  // FIXED: Sync control state with component state
+  $effect(() => {
+    controlsState.isDragging = state.isDragging;
+    controlsState.isMouseDown = state.isMouseDown;
+    controlsState.dragStartX = state.dragStartX;
+    controlsState.dragStartY = state.dragStartY;
+  });
 </script>
 
 <svelte:window

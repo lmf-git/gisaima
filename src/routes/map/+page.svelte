@@ -91,26 +91,44 @@
         state.currentTileData = getCachedTerrainData(intX, intY);
     }
     
-    // IMPROVED: Single position change handler used by both components
+    // IMPROVED: Enhanced position change handler with better sync
     function handlePositionChange(event) {
         const intX = Math.floor(event.detail.x);
         const intY = Math.floor(event.detail.y);
         
-        // Pre-cache terrain data for new position
-        getCachedTerrainData(intX, intY);
-        
-        // Update target coordinates
-        state.targetCoord = { x: intX, y: intY };
-        
-        // Reset highlight when position changes
-        state.highlightedCoord = null;
-        
-        // Update current tile data for details panel
-        updateCurrentTileData();
+        // Only update if coordinates actually changed
+        if (state.targetCoord.x !== intX || state.targetCoord.y !== intY) {
+            // Pre-cache terrain data for new position
+            getCachedTerrainData(intX, intY);
+            
+            // Enhanced logging to track navigation source
+            const source = event.detail.fromMinimap ? "minimap" : 
+                        event.detail.source ? event.detail.source : "unknown";
+            console.log(`Position changed to (${intX}, ${intY}) from ${source}`);
+            
+            // First clear the highlight to avoid desyncs
+            if (state.highlightedCoord) {
+                state.highlightedCoord = null;
+            }
+            
+            // Then update the target coordinate in one atomic operation
+            state.targetCoord = { x: intX, y: intY };
+            
+            // Update current tile data
+            updateCurrentTileData();
+        }
     }
     
+    // IMPROVED: Enhanced tile highlight handler
     function handleTileHighlight(event) {
-        state.highlightedCoord = event.detail || null;
+        if (event.detail) {
+            // Apply highlighting only when not navigating
+            const x = Math.floor(event.detail.x);
+            const y = Math.floor(event.detail.y);
+            state.highlightedCoord = { x, y };
+        } else {
+            state.highlightedCoord = null;
+        }
     }
     
     function handleViewportSizeChange(event) {

@@ -67,17 +67,34 @@
     rebuildGridArray();
   };
   
+  // FIXED: Simplify grid generation to be more reliable
   function rebuildGridArray() {
     if (!state.cols || !state.rows) return [];
     
-    state.minimapGridArray = controls.buildGridArray(
-      state.cols, 
-      state.rows, 
-      state.centerX, 
-      state.centerY, 
-      state.offsetX, 
-      state.offsetY
-    );
+    // Calculate world coordinates of top-left corner of minimap
+    const topLeftX = Math.floor(targetCoord.x - state.centerX);
+    const topLeftY = Math.floor(targetCoord.y - state.centerY);
+    
+    // Build grid from sequential world coordinates without using offset calculation
+    state.minimapGridArray = Array.from({ length: state.rows }, (_, y) =>
+      Array.from({ length: state.cols }, (_, x) => {
+        // Direct mapping from grid position to world coordinates
+        const globalX = topLeftX + x;
+        const globalY = topLeftY + y;
+        
+        // Get terrain data for this coordinate
+        const terrainData = controls.getCachedTerrainData(globalX, globalY);
+        
+        return {
+          x: globalX,
+          y: globalY,
+          gridX: x,
+          gridY: y,
+          isCenter: x === state.centerX && y === state.centerY,
+          ...terrainData
+        };
+      })
+    ).flat();
   }
 
   onMount(() => {
@@ -148,10 +165,17 @@
   });
 
   // Event handlers
+  // FIXED: Improved tile click handler that uses absolute coordinates
   function handleTileClick(cell) {
+    // Use the exact world coordinates stored in the cell
+    const x = cell.x;
+    const y = cell.y;
+    
+    console.log('Dispatching position change from minimap:', x, y);
+    
     dispatch('positionchange', { 
-      x: Math.floor(cell.x), 
-      y: Math.floor(cell.y),
+      x,
+      y,
       fromMinimap: true
     });
   }
@@ -165,6 +189,21 @@
   function setupTileInteraction(node, cell) {
     return controls.setupTileInteraction(node, cell, handleTileClick, dispatch);
   }
+
+  // FIXED: Make sure minimap grid stays in sync with target coordinates
+  $effect(() => {
+    if (!state.isReady) return;
+    
+    // Force full grid rebuild when target coordinates change
+    state.offsetX = state.centerX + targetCoord.x;
+    state.offsetY = state.centerY + targetCoord.y;
+    
+    // Update viewport indicator
+    controls.updateViewportIndicator();
+    
+    // Rebuild the grid array completely
+    rebuildGridArray();
+  });
 </script>
 
 <div 
@@ -199,8 +238,11 @@
     aria-label="Minimap grid"
   >
     {#if state.minimapGridArray.length > 0}
+      <!-- FIXED: Added data attributes for debugging -->
+      <!-- FIXED: Simplified grid layout with no translations -->
       <div class="grid" role="presentation">
         {#each state.minimapGridArray as cell (cell.gridX + '-' + cell.gridY)}
+          <!-- FIXED: Ensure grid-column/row is properly set for exact positioning -->
           <div
             class="mini-tile"
             class:center={cell.isCenter}
@@ -210,6 +252,8 @@
             title="{cell.biome.name} ({cell.x},{cell.y})"
             aria-label="Map position {cell.x},{cell.y}"
             role="gridcell"
+            data-x={cell.x}
+            data-y={cell.y}
           ></div>
         {/each}
       </div>
@@ -308,26 +352,19 @@
     outline-offset: -2px;
   }
   
+  /* FIXED: Grid styling to properly fill the container */
   .grid {
     display: grid;
     grid-template-columns: repeat(var(--cols), var(--tile-size));
     grid-template-rows: repeat(var(--rows), var(--tile-size));
-    width: calc(var(--cols) * var(--tile-size));
-    height: calc(var(--rows) * var(--tile-size));
-    margin: 0 auto;
-    overflow: hidden;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    gap: 0;
+    width: 100%;
+    height: 100%;
+    position: relative;
   }
   
   .mini-tile {
-    width: var(--tile-size);
-    height: var(--tile-size);
-    min-width: var(--tile-size);
-    min-height: var(--tile-size);
+    width: 100%;
+    height: 100%;
     border: none;
     box-sizing: border-box;
     transition: transform 0.1s ease-in-out, filter 0.1s ease-in-out;

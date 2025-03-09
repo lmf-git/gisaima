@@ -174,30 +174,41 @@ export function setupMinimapControls(state, tileSize, tilesRatio, cache, terrain
    * @param {Function} dispatch - Function to dispatch events
    */
   function handleBackgroundClick(event, handleTileClick, dispatch) {
+    // FIXED: Simplified click handling with direct world coordinate calculation
     const rect = state.minimapElement.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
     const clickY = event.clientY - rect.top;
     
-    const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    const tileSizePx = tileSize * baseFontSize;
+    // Calculate the percentage position in the minimap
+    const percentX = clickX / rect.width;
+    const percentY = clickY / rect.height;
     
-    const tileX = Math.floor(clickX / tileSizePx);
-    const tileY = Math.floor(clickY / tileSizePx);
+    // Calculate tile position within grid
+    const tileX = Math.floor(percentX * state.cols);
+    const tileY = Math.floor(percentY * state.rows);
     
-    const clickedCell = state.minimapGridArray.find(cell => 
-      cell.gridX === tileX && cell.gridY === tileY);
-    
-    if (clickedCell) {
-      handleTileClick(clickedCell);
-    } else {
-      const globalX = Math.floor(tileX - state.offsetX);
-      const globalY = Math.floor(tileY - state.offsetY);
+    // Ensure click is within grid bounds
+    if (tileX >= 0 && tileX < state.cols && tileY >= 0 && tileY < state.rows) {
+      // Calculate world coordinates
+      const worldX = Math.floor(targetCoord.x - state.centerX + tileX);
+      const worldY = Math.floor(targetCoord.y - state.centerY + tileY);
       
-      dispatch('positionchange', { 
-        x: globalX, 
-        y: globalY,
-        fromMinimap: true
-      });
+      console.log(`Minimap background click: grid(${tileX},${tileY}) → world(${worldX},${worldY})`);
+      
+      // Try to find exact cell in grid array
+      const clickedCell = state.minimapGridArray.find(cell => 
+        cell.gridX === tileX && cell.gridY === tileY);
+      
+      if (clickedCell) {
+        handleTileClick(clickedCell);
+      } else {
+        // Fallback to calculated coordinates
+        dispatch('positionchange', { 
+          x: worldX, 
+          y: worldY,
+          fromMinimap: true
+        });
+      }
     }
   }
   
@@ -246,11 +257,29 @@ export function setupMinimapControls(state, tileSize, tilesRatio, cache, terrain
     
     function clickHandler(event) {
       event.stopPropagation();
-      handleTileClick(node.__data);
+      event.preventDefault();
+      
+      // FIXED: Ensure we're using the most current cell data
+      const currentX = node.dataset.x !== undefined ? parseInt(node.dataset.x) : cell.x;
+      const currentY = node.dataset.y !== undefined ? parseInt(node.dataset.y) : cell.y;
+      
+      // Create a clean cell object with just the coordinates
+      const cellData = {
+        x: currentX,
+        y: currentY
+      };
+      
+      handleTileClick(cellData);
     }
     
-    function mouseoverHandler() {
-      dispatch('tilehighlight', { x: cell.x, y: cell.y });
+    function mouseoverHandler(event) {
+      // FIXED: Directly use the coordinates from the node's dataset when available
+      if (!event.buttons) {
+        const currentX = node.dataset.x !== undefined ? parseInt(node.dataset.x) : cell.x;
+        const currentY = node.dataset.y !== undefined ? parseInt(node.dataset.y) : cell.y;
+        
+        dispatch('tilehighlight', { x: currentX, y: currentY });
+      }
     }
     
     function mouseleaveHandler() {
