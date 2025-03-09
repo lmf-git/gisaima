@@ -3,75 +3,50 @@
   import Legend from "./Legend.svelte";
   import Axes from "./Axes.svelte";
   import Details from "./Details.svelte";
-  import { TerrainGenerator } from "../../lib/map/noise.js";
-
-  // Initialize the terrain generator with a fixed seed
-  const WORLD_SEED = 12345;
-  const terrain = new TerrainGenerator(WORLD_SEED);
+  import { 
+    mapState, 
+    gridArray, 
+    xAxisArray, 
+    yAxisArray,
+    TILE_SIZE,
+    DRAG_CHECK_INTERVAL,
+    resizeMap,
+    startDrag as startMapDrag,
+    stopDrag as stopMapDrag,
+    drag as dragMap,
+    checkDragState,
+    moveMapByKeys,
+    openDetailsModal,
+    closeDetailsModal,
+    getTerrainData  // Import the function properly
+  } from "../../lib/stores/map.js";
   
-  // Position and drag state
-  let isDragging = false;
-  let isMouseActuallyDown = false;
-  let dragStartX = 0;
-  let dragStartY = 0;
-  let targetCoord = { x: 0, y: 0 };
-
-  // UI state
-  let showDetailsModal = false;
-  let keysPressed = new Set();
+  // Local component state as separate constants
+  let mapElement = null;
+  let resizeObserver = null;
+  let dragStateCheckInterval = null;
   let keyboardNavigationInterval = null;
   
-  // Configuration
-  const KEYBOARD_MOVE_SPEED = 200;
-  const CHUNK_SIZE = 20;
-  const tileSize = 7.5;
+  // Display settings
   const showAxisBars = true;
-  const DRAG_CHECK_INTERVAL = 500;
   
-  // Map elements
-  let mapElement;
-  let cols = 0, rows = 0;
-  let isReady = false;
-  let resizeObserver;
-  let offsetX = 0, offsetY = 0;
-  let visibleChunks = new Set();
-  let dragStateCheckInterval = null;
-  let centerX = 0;
-  let centerY = 0;
-  
-  // Calculate grid dimensions and update on resize
-  const resize = () => {
-    const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    const tileSizePx = tileSize * baseFontSize;
-    const width = mapElement.clientWidth;
-    const height = mapElement.clientHeight;
-
-    cols = Math.ceil(width / tileSizePx);
-    cols = cols % 2 === 0 ? cols - 1 : cols;
-
-    rows = Math.ceil(height / tileSizePx);
-    rows = rows % 2 === 0 ? rows - 1 : rows;
-
-    centerX = Math.floor(cols / 2);
-    centerY = Math.floor(rows / 2);
-    offsetX = centerX + targetCoord.x;
-    offsetY = centerY + targetCoord.y;
-
-    if (!isReady) isReady = true;
-  };
-
   // Initialize when mounted
   onMount(() => {
-    resizeObserver = new ResizeObserver(resize);
+    resizeObserver = new ResizeObserver(() => resizeMap(mapElement));
     resizeObserver.observe(mapElement);
-    resize();
+    resizeMap(mapElement);
     setupKeyboardNavigation();
     dragStateCheckInterval = setInterval(checkDragState, DRAG_CHECK_INTERVAL);
 
     return () => {
+      // Proper cleanup to prevent memory leaks
       if (resizeObserver) resizeObserver.disconnect();
       if (keyboardNavigationInterval) clearInterval(keyboardNavigationInterval);
       if (dragStateCheckInterval) clearInterval(dragStateCheckInterval);
+      if ($mapState.keyboardNavigationInterval) {
+        clearInterval($mapState.keyboardNavigationInterval);
+        mapState.update(state => ({...state, keyboardNavigationInterval: null}));
+      }
     };
   });
 
@@ -80,11 +55,11 @@
     window.addEventListener("keydown", event => {
       const key = event.key.toLowerCase();
       if (["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright"].includes(key)) {
-        keysPressed.add(key);
+        $mapState.keysPressed.add(key);
 
-        if (!keyboardNavigationInterval) {
+        if (!$mapState.keyboardNavigationInterval) {
           moveMapByKeys();
-          keyboardNavigationInterval = setInterval(moveMapByKeys, KEYBOARD_MOVE_SPEED);
+          $mapState.keyboardNavigationInterval = setInterval(moveMapByKeys, 200);
         }
 
         if (key.startsWith("arrow")) event.preventDefault();
@@ -94,186 +69,94 @@
     window.addEventListener("keyup", event => {
       const key = event.key.toLowerCase();
       if (["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright"].includes(key)) {
-        keysPressed.delete(key);
+        $mapState.keysPressed.delete(key);
 
-        if (keysPressed.size === 0 && keyboardNavigationInterval) {
-          clearInterval(keyboardNavigationInterval);
-          keyboardNavigationInterval = null;
+        if ($mapState.keysPressed.size === 0 && $mapState.keyboardNavigationInterval) {
+          clearInterval($mapState.keyboardNavigationInterval);
+          $mapState.keyboardNavigationInterval = null;
         }
       }
     });
   };
 
-  // Move map based on keyboard input
-  const moveMapByKeys = () => {
-    let xChange = 0;
-    let yChange = 0;
-
-    if (keysPressed.has("a") || keysPressed.has("arrowleft")) xChange -= 1;
-    if (keysPressed.has("d") || keysPressed.has("arrowright")) xChange += 1;
-    if (keysPressed.has("w") || keysPressed.has("arrowup")) yChange -= 1;
-    if (keysPressed.has("s") || keysPressed.has("arrowdown")) yChange += 1;
-
-    if (xChange !== 0 || yChange !== 0) {
-      targetCoord.x -= xChange;
-      targetCoord.y -= yChange;
-      offsetX = centerX + targetCoord.x;
-      offsetY = centerY + targetCoord.y;
-      targetCoord = { ...targetCoord };
-    }
-  };
-
-  // Get chunk key from coordinates
-  const getChunkKey = (x, y) => `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
-
-  // Update visible chunks log
-  const updateChunks = gridArray => {
-    const newChunkKeys = gridArray.map(cell => getChunkKey(cell.x, cell.y));
-    const newVisibleChunks = new Set(newChunkKeys);
-
-    Array.from(newVisibleChunks)
-      .filter(chunkKey => !visibleChunks.has(chunkKey))
-      .forEach(chunkKey => console.log(`Chunk loaded: ${chunkKey}`));
-
-    Array.from(visibleChunks)
-      .filter(chunkKey => !newVisibleChunks.has(chunkKey))
-      .forEach(chunkKey => console.log(`Chunk unloaded: ${chunkKey}`));
-
-    visibleChunks = newVisibleChunks;
-  };
-
-  // Generate reactive grid arrays
-  $: gridArray = isReady
-    ? Array.from({ length: rows }, (_, y) =>
-        Array.from({ length: cols }, (_, x) => {
-          const globalX = x - offsetX;
-          const globalY = y - offsetY;
-          const terrainData = terrain.getTerrainData(globalX, globalY);
-          
-          return {
-            x: globalX,
-            y: globalY,
-            isCenter: x === centerX && y === centerY,
-            ...terrainData
-          };
-        })
-      ).flat()
-    : [];
-
-  $: if (isReady && gridArray.length > 0) updateChunks(gridArray);
-
-  $: xAxisArray = isReady
-    ? Array.from({ length: cols }, (_, x) => ({
-        value: x - offsetX,
-        isCenter: x === centerX
-      }))
-    : [];
-
-  $: yAxisArray = isReady
-    ? Array.from({ length: rows }, (_, y) => ({
-        value: y - offsetY,
-        isCenter: y === centerY
-      }))
-    : [];
-
-  // Check drag state consistency
-  const checkDragState = () => {
-    if (!isMouseActuallyDown && isDragging) stopDrag();
-  };
-
   // Drag handling
-  const startDrag = event => {
-    if (event.button !== 0) return;
-    
-    isDragging = true;
-    isMouseActuallyDown = true;
-    dragStartX = event.clientX;
-    dragStartY = event.clientY;
-    
-    document.body.style.cursor = "grabbing";
-    if (mapElement) {
-      mapElement.style.cursor = "grabbing";
-      mapElement.classList.add("dragging");
+  const handleStartDrag = event => {
+    if (startMapDrag(event)) {
+      if (mapElement) {
+        mapElement.style.cursor = "grabbing";
+        mapElement.classList.add("dragging");
+      }
     }
-    
     event.preventDefault();
   };
 
-  const drag = event => {
-    if (!isDragging) return;
-
-    const deltaX = event.clientX - dragStartX;
-    const deltaY = event.clientY - dragStartY;
-    
-    const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    const tileSizePx = tileSize * baseFontSize;
-    
-    const cellsMovedX = Math.round(deltaX / tileSizePx);
-    const cellsMovedY = Math.round(deltaY / tileSizePx);
-    
-    if (cellsMovedX !== 0 || cellsMovedY !== 0) {
-      targetCoord.x -= cellsMovedX;
-      targetCoord.y -= cellsMovedY;
-      offsetX = centerX + targetCoord.x;
-      offsetY = centerY + targetCoord.y;
-      targetCoord = { ...targetCoord };
-      dragStartX = event.clientX;
-      dragStartY = event.clientY;
-    }
-  };
-
-  const stopDrag = () => {
-    if (!isDragging) return;
-    
-    isDragging = false;
-    document.body.style.cursor = "default";
-    
-    if (mapElement) {
+  const handleStopDrag = () => {
+    if (stopMapDrag() && mapElement) {
       mapElement.style.cursor = "grab";
       mapElement.classList.remove("dragging");
     }
   };
 
   // Global mouse events
-  const globalMouseDown = () => isMouseActuallyDown = true;
+  const globalMouseDown = () => $mapState.isMouseActuallyDown = true;
   const globalMouseUp = () => {
-    isMouseActuallyDown = false;
-    if (isDragging) stopDrag();
+    $mapState.isMouseActuallyDown = false;
+    if ($mapState.isDragging) handleStopDrag();
     document.body.style.cursor = "default";
   };
   const globalMouseMove = event => {
-    if (isMouseActuallyDown && isDragging) drag(event);
-    else if (!isMouseActuallyDown && isDragging) stopDrag();
+    if ($mapState.isMouseActuallyDown && $mapState.isDragging) dragMap(event);
+    else if (!$mapState.isMouseActuallyDown && $mapState.isDragging) handleStopDrag();
   };
-  const globalMouseLeave = () => { if (isDragging) stopDrag(); };
-  const visibilityChange = () => { if (document.visibilityState === 'hidden' && isDragging) stopDrag(); };
+  const globalMouseLeave = () => { if ($mapState.isDragging) handleStopDrag(); };
+  const visibilityChange = () => { 
+    if (document.visibilityState === 'hidden' && $mapState.isDragging) handleStopDrag(); 
+  };
 
-  // Open details modal
-  const openDetails = () => {
-    // Get fresh data before opening the modal
-    if (isReady) {
-      centerTileData = terrain.getTerrainData(targetCoord.x, targetCoord.y);
+  // Effect for tracking map changes
+  $effect(() => {
+    if ($mapState.isReady && $gridArray.length > 0) {
+      // Log updates
+      console.log(`Map updated: ${$mapState.targetCoord.x}, ${$mapState.targetCoord.y}`);
     }
-    showDetailsModal = true;
-  };
-
-  // Ensure dragging class is removed
-  $: if (!isDragging && mapElement && mapElement.classList.contains('dragging'))
-    mapElement.classList.remove('dragging');
-
-  // Generate center tile data for Details component
-  let centerTileData = null;
+  });
   
-  // Update terrain data with negated coordinates
-  $: if (isReady) {
-    // Get fresh terrain data when coordinates change or modal opens
-    centerTileData = terrain.getTerrainData(-targetCoord.x, -targetCoord.y);
-  }
-  
-  // Update the details whenever the modal is opened
-  $: if (showDetailsModal && isReady) {
-    centerTileData = terrain.getTerrainData(-targetCoord.x, -targetCoord.y);
-  }
+  // Fix dragging class effect
+  $effect(() => {
+    if (!$mapState.isDragging && mapElement && mapElement.classList.contains('dragging'))
+      mapElement.classList.remove('dragging');
+  });
+
+  // Effect to update center tile data whenever target coordinates change
+  $effect(() => {
+    // When target coordinates change, make sure center tile data is updated
+    if ($mapState.isReady) {
+      const coords = $mapState.targetCoord;
+      
+      // Log the update to help with debugging
+      console.log(`Target coordinates updated: (${coords.x}, ${coords.y})`);
+    }
+  });
+
+  // Modified effect - use a local variable to store coordinates to avoid recursive updates
+  $effect(() => {
+    if ($mapState.isReady && $mapState.targetCoord) {
+      // Store coordinates locally instead of triggering new data fetch here
+      const target = $mapState.targetCoord;
+      console.log(`Target coordinates updated: (${target.x}, ${target.y})`);
+    }
+  });
+
+  // Remove the problematic effect that was causing recursive updates
+  // $effect(() => {
+  //   if ($mapState.isReady && $mapState.targetCoord) {
+  //     const target = $mapState.targetCoord;
+  //     requestAnimationFrame(() => {
+  //       const terrainData = getTerrainData(target.x, target.y);
+  //       console.log(`Grid component updating terrain data for: (${target.x}, ${target.y}) - Biome: ${terrainData.biome.name}`);
+  //     });
+  //   }
+  // });
 </script>
 
 <svelte:window
@@ -281,23 +164,23 @@
   on:mouseup={globalMouseUp}
   on:mousemove={globalMouseMove}
   on:mouseleave={globalMouseLeave}
-  on:blur={() => isDragging && stopDrag()}
+  on:blur={() => $mapState.isDragging && handleStopDrag()}
   on:visibilitychange={visibilityChange}
 />
 
-<div class="map-container" style="--tile-size: {tileSize}em;" class:modal-open={showDetailsModal}>
+<div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={$mapState.showDetailsModal}>
   <div
     class="map"
     bind:this={mapElement}
-    on:mousedown={startDrag}
-    class:dragging={isDragging}
+    on:mousedown={handleStartDrag}
+    class:dragging={$mapState.isDragging}
     role="grid"
     tabindex="0"
     aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
   >
-    {#if isReady}
-      <div class="grid main-grid" style="--cols: {cols}; --rows: {rows};" role="presentation">
-        {#each gridArray as cell}
+    {#if $mapState.isReady}
+      <div class="grid main-grid" style="--cols: {$mapState.cols}; --rows: {$mapState.rows};" role="presentation">
+        {#each $gridArray as cell}
           <div
             class="tile"
             class:center={cell.isCenter}
@@ -314,24 +197,25 @@
     {/if}
   </div>
 
-  <Legend x={targetCoord.x} y={targetCoord.y} {openDetails} />
+  <Legend x={$mapState.targetCoord.x} y={$mapState.targetCoord.y} openDetails={openDetailsModal} />
 
-  {#if showAxisBars && isReady}
-    <Axes {xAxisArray} {yAxisArray} {cols} {rows} />
+  {#if showAxisBars && $mapState.isReady}
+    <Axes xAxisArray={$xAxisArray} yAxisArray={$yAxisArray} cols={$mapState.cols} rows={$mapState.rows} />
   {/if}
 
   <Details 
-    x={targetCoord.x} 
-    y={targetCoord.y} 
-    bind:show={showDetailsModal}
-    biome={centerTileData?.biome || { name: "unknown", color: "#808080" }}
-    height={centerTileData?.height || 0}
-    moisture={centerTileData?.moisture || 0}
-    continent={centerTileData?.continent || 0}
-    slope={centerTileData?.slope || 0}
-    riverValue={centerTileData?.riverValue || 0}
-    lakeValue={centerTileData?.lakeValue || 0}
-    displayColor={centerTileData?.color || "#808080"}
+    x={$mapState.targetCoord.x} 
+    y={$mapState.targetCoord.y} 
+    show={$mapState.showDetailsModal}
+    biome={$mapState.centerTileData?.biome || { name: "unknown", color: "#808080" }}
+    height={$mapState.centerTileData?.height || 0}
+    moisture={$mapState.centerTileData?.moisture || 0}
+    continent={$mapState.centerTileData?.continent || 0}
+    slope={$mapState.centerTileData?.slope || 0}
+    riverValue={$mapState.centerTileData?.riverValue || 0}
+    lakeValue={$mapState.centerTileData?.lakeValue || 0}
+    displayColor={$mapState.centerTileData?.color || "#808080"}
+    onClose={closeDetailsModal}
   />
 </div>
 
@@ -389,7 +273,7 @@
     transition: filter 0.1s ease-in-out, transform 0.1s ease-in-out;
   }
 
-  /* Replace the hover and drag state CSS */
+  /* Replace the hover and dragstate CSS */
   .map:not(.dragging) .tile:hover {
     z-index: 2;
     filter: brightness(1.2);

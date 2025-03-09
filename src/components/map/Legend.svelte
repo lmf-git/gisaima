@@ -21,7 +21,7 @@
       <div class="legend-keyboard-hint">WASD/Arrows to Navigate</div>
       <button 
         class="details-button" 
-        onclick={handleViewDetails}
+        on:click={handleViewDetails}
         type="button"
       >
         View Full Details

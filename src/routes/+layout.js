@@ -1,4 +1,4 @@
-import { initAuthListener } from '$lib/stores/authStore';
+import { initAuthListener } from '$lib/stores/auth';
 import { browser } from '$app/environment';
 
 export const load = () => {

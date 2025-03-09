@@ -1,7 +1,6 @@
 <script>
     import { page } from '$app/stores';
-    import { user, signOut } from '$lib/stores/authStore';
-    import { browser } from '$app/environment';
+    import { user, signOut } from '$lib/stores/auth';
     import Logo from '../components/Logo.svelte';
     
     // Check if current page is the map page

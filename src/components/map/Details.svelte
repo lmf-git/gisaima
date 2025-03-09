@@ -3,58 +3,81 @@
   import { onMount } from 'svelte';
   
   // Props for the component
-  export let x = 0;
-  export let y = 0;
-  export let show = false;
+  const {
+    x = 0,
+    y = 0,
+    show = false,
+    biome = { name: "unknown", color: "#808080" },
+    height = 0,
+    moisture = 0,
+    continent = 0,
+    slope = 0,
+    riverValue = 0,
+    lakeValue = 0,
+    displayColor = "#808080", // This should be the exact color from the map
+    onClose // Add onClose prop for better component communication
+  } = $props();
   
-  // Props for terrain data
-  export let biome = { name: "unknown", color: "#808080" };
-  export let height = 0;
-  export let moisture = 0;
-  export let continent = 0;
-  export let slope = 0;
-  export let riverValue = 0; // Added river value
-  export let lakeValue = 0;  // Added lake value
-  export let displayColor = "#808080"; // New prop for the processed color
+  // Internal state as a simple let variable
+  let detailsElement = null;
   
-  // Add debugging to verify correct data is received when props change
-  $: if (biome) {
-    console.log(`Details component receiving biome: ${biome?.name} at coordinates (${x}, ${y})`);
-  }
-  
-  // Log when details are shown with current terrain data
-  $: if (show) {
-    console.log(`Details visible with biome: ${biome?.name}, moisture: ${moisture}, height: ${height}`);
-  }
+  // Optimize debugging - reduces console noise
+  $effect(() => {
+    if (show && biome) {
+      // Only log when props actually change to reduce console spam
+      console.log(
+        `Details visible with biome: ${biome.name} at (${x}, ${y})`
+      );
+    }
+  });
   
   // Handle close action
   function handleClose() {
-    show = false;
+    onClose?.(); // Call the onClose callback passed as a prop
   }
   
   // Helper function to format percentage
   const formatPercent = (value) => `${Math.round(value * 100)}%`;
   
-  // Get elevation category based on height
-  $: elevationCategory = 
-    height < 0.1 ? "Very Low" :
-    height < 0.3 ? "Low" :
-    height < 0.5 ? "Medium" :
-    height < 0.7 ? "High" :
-    height < 0.85 ? "Very High" : "Extreme";
+  // Initialize derived values with defaults to prevent undefined errors
+  let elevationCategory = "Unknown";
+  let moistureCategory = "Unknown";
+  let waterFeature = "None";
+  let resources = []; // Initialize with empty array to avoid undefined
   
-  // Get moisture category based on moisture
-  $: moistureCategory = 
-    moisture < 0.2 ? "Very Dry" :
-    moisture < 0.4 ? "Dry" :
-    moisture < 0.6 ? "Moderate" :
-    moisture < 0.8 ? "Wet" : "Very Wet";
-  
-  // Determine potential resources based on biome
-  $: resources = getBiomeResources(biome.name);
+  // Calculate derived values reactively within the $effect blocks
+  $effect(() => {
+    // Elevation category
+    elevationCategory = 
+      height < 0.1 ? "Very Low" :
+      height < 0.3 ? "Low" :
+      height < 0.5 ? "Medium" :
+      height < 0.7 ? "High" :
+      height < 0.85 ? "Very High" : "Extreme";
+      
+    // Moisture category
+    moistureCategory = 
+      moisture < 0.2 ? "Very Dry" :
+      moisture < 0.4 ? "Dry" :
+      moisture < 0.6 ? "Moderate" :
+      moisture < 0.8 ? "Wet" : "Very Wet";
+    
+    // Water feature
+    waterFeature = 
+      riverValue > 0.4 ? "River" :
+      lakeValue > 0.5 ? "Lake" :
+      riverValue > 0.25 ? "Stream" :
+      riverValue > 0.2 ? "Riverbank" :
+      lakeValue > 0.2 ? "Lake Shore" : "None";
+      
+    // Resources - ensure biome.name is defined before calling getBiomeResources
+    resources = biome && biome.name ? getBiomeResources(biome.name) : ["Unknown"];
+  });
   
   // Function to determine resources based on biome type
   function getBiomeResources(biomeName) {
+    if (!biomeName) return ["Unknown"];
+    
     const resourceMap = {
       // Water biomes
       "abyssal_ocean": ["Deep Sea Fish", "Rare Minerals"],
@@ -125,31 +148,26 @@
   }
   
   // Watch for show prop changes to open/close the details element
-  let detailsElement;
-  $: if (detailsElement) {
-    if (show && !detailsElement.open) detailsElement.open = true;
-    else if (!show && detailsElement.open) detailsElement.open = false;
-  }
+  $effect(() => {
+    if (detailsElement) {
+      if (show && !detailsElement.open) detailsElement.open = true;
+      else if (!show && detailsElement.open) detailsElement.open = false;
+    }
+  });
   
   // Handle the toggle event to keep the show prop in sync
   function handleToggle(event) {
-    show = detailsElement.open;
+    if (!detailsElement.open) {
+      handleClose(); // Call onClose when details are closed
+    }
   }
   
   // Allow ESC key to close the details
   function handleKeydown(event) {
     if (event.key === 'Escape' && show) {
-      show = false;
+      handleClose();
     }
   }
-  
-  // Add water feature categories with enhanced river detection
-  $: waterFeature = 
-    riverValue > 0.4 ? "River" :
-    lakeValue > 0.5 ? "Lake" :
-    riverValue > 0.25 ? "Stream" :
-    riverValue > 0.2 ? "Riverbank" :
-    lakeValue > 0.2 ? "Lake Shore" : "None";
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -169,10 +187,16 @@
       <div class="info-section">
         <h3>Biome</h3>
         <div class="biome-info">
-          <!-- Use the processed color from the map instead of the raw biome color -->
-          <div class="biome-color" style="background-color: {displayColor}"></div>
-          <p>{biome.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+          <!-- Display the exact color that was passed from the map -->
+          <div class="biome-color" style="background-color: {displayColor || biome.color};"></div>
+          <p>{biome?.name?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown'}</p>
         </div>
+      </div>
+      
+      <!-- Explicitly show the coordinates to confirm they're correct -->
+      <div class="info-section">
+        <h3>Location</h3>
+        <p><strong>Coordinates:</strong> ({x}, {y})</p>
       </div>
       
       <div class="info-grid">
@@ -199,7 +223,7 @@
       
       <div class="info-section">
         <h3>Resources</h3>
-        {#if resources.length > 0}
+        {#if resources && resources.length > 0}
           <ul>
             {#each resources as resource}
               <li>{resource}</li>
