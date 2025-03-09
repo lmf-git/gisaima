@@ -33,7 +33,7 @@
 <style>
   .legend-container {
     position: absolute;
-    top: 1em;
+    bottom: 1em; /* Changed from top: 1em to bottom: 1em */
     right: 1em;
     z-index: 10;
   }

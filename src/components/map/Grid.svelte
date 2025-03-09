@@ -1,5 +1,6 @@
 <script>
   import { onMount } from "svelte";
+  import { browser } from "$app/environment";
   import Legend from "./Legend.svelte";
   import Axes from "./Axes.svelte";
   import Details from "./Details.svelte";
@@ -11,6 +12,41 @@
   const WORLD_SEED = 532534;
   const terrain = new TerrainGenerator(WORLD_SEED);
   
+  // Create a module-scoped terrain cache
+  // This avoids using window directly and works with SSR
+  let terrainCache = new Map();
+  
+  // Get terrain data with caching for consistency across the app
+  function getCachedTerrainData(x, y) {
+    // Use integer coordinates for deterministic results
+    const intX = Math.floor(x);
+    const intY = Math.floor(y);
+    
+    const key = `${intX},${intY}`;
+    
+    if (terrainCache.has(key)) {
+      return terrainCache.get(key);
+    }
+    
+    const terrainData = terrain.getTerrainData(intX, intY);
+    
+    // Create a stable copy to ensure consistent data across the app
+    const stableData = {
+      biome: terrainData.biome,
+      color: terrainData.color,
+      height: terrainData.height,
+      moisture: terrainData.moisture,
+      continent: terrainData.continent,
+      riverValue: terrainData.riverValue,
+      lakeValue: terrainData.lakeValue,
+      slope: terrainData.slope
+    };
+    
+    terrainCache.set(key, stableData);
+    
+    return stableData;
+  }
+
   // Position and drag state
   let isDragging = false;
   let isMouseDown = false;
@@ -21,9 +57,10 @@
   // UI state
   let showDetailsModal = false;
   let showMinimap = true; // Control minimap visibility
-  let minimapPosition = "bottom-right"; // Fixed position for the minimap
+  let minimapPosition = "top-right"; // Changed default position from "bottom-right" to "top-right"
   let keysPressed = new Set();
   let navInterval = null;
+  let dragCheckInterval = null;
   
   // Configuration
   const KEYBOARD_MOVE_SPEED = 200;
@@ -64,6 +101,8 @@
   
   // Calculate grid dimensions and update on resize
   const resize = () => {
+    if (!browser || !mapElement) return;
+    
     const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
     const tileSizePx = tileSize * baseFontSize;
     const width = mapElement.clientWidth;
@@ -83,8 +122,15 @@
     if (!isReady) isReady = true;
   };
 
-  // Initialize when mounted
+  // Initialize when mounted - only runs in browser
   onMount(() => {
+    // Make terrain cache available to Minimap
+    if (!globalThis.globalTerrainCache) {
+      globalThis.globalTerrainCache = terrainCache;
+    } else {
+      terrainCache = globalThis.globalTerrainCache;
+    }
+    
     resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(mapElement);
     resize();
@@ -125,13 +171,13 @@
     visibleChunks = newVisibleChunks;
   };
 
-  // Generate reactive grid arrays
+  // Generate reactive grid arrays with cached terrain data
   $: gridArray = isReady
     ? Array.from({ length: rows }, (_, y) =>
         Array.from({ length: cols }, (_, x) => {
-          const globalX = x - offsetX;
-          const globalY = y - offsetY;
-          const terrainData = terrain.getTerrainData(globalX, globalY);
+          const globalX = Math.floor(x - offsetX); // Ensure integer coordinates
+          const globalY = Math.floor(y - offsetY);
+          const terrainData = getCachedTerrainData(globalX, globalY);
           
           return {
             x: globalX,
@@ -173,32 +219,28 @@
   // Create mouse event handlers
   const eventHandlers = createMouseEventHandlers(controlsState, mapElement);
 
-  // Handle position changes from minimap - FIXED
+  // Handle position changes from minimap - with improved consistency
   const handleMinimapPositionChange = (event) => {
     console.log("Grid received position change:", event.detail);
     
-    // Update target coordinates with a brand new object
-    targetCoord = { ...event.detail };
+    // FIXED: Use exact integer coordinates for perfect alignment
+    const newCoords = { 
+      x: Math.floor(event.detail.x), 
+      y: Math.floor(event.detail.y)
+    };
     
-    // Update offsets to match
+    // Update target coordinates with the exact values
+    targetCoord = newCoords;
+    
+    // Update offsets to match the main grid's coordinate system
     offsetX = centerX + targetCoord.x;
     offsetY = centerY + targetCoord.y;
     
-    // Force immediate grid redraw
-    gridArray = Array.from({ length: rows }, (_, y) =>
-      Array.from({ length: cols }, (_, x) => {
-        const globalX = x - offsetX;
-        const globalY = y - offsetY;
-        const terrainData = terrain.getTerrainData(globalX, globalY);
-        
-        return {
-          x: globalX,
-          y: globalY,
-          isCenter: x === centerX && y === centerY,
-          ...terrainData
-        };
-      })
-    ).flat();
+    // Force immediate update of center tile data for consistent UI feedback
+    centerTileData = getCachedTerrainData(targetCoord.x, targetCoord.y);
+    
+    // IMPROVED: Log for debugging
+    console.log(`Main map updated to: (${targetCoord.x}, ${targetCoord.y}), offsets: (${offsetX}, ${offsetY})`);
   };
 
   // Open details modal
@@ -308,7 +350,7 @@
     displayColor={centerTileData?.color || "#808080"}
   />
 
-  <!-- Minimap component with position change and close handlers -->
+  <!-- Minimap component with updated props -->
   {#if showMinimap && isReady}
     <Minimap 
       {terrain}

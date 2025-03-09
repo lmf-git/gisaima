@@ -1,5 +1,6 @@
 <script>
   import { onMount, createEventDispatcher } from "svelte";
+  import { browser } from "$app/environment";
   import Close from "../icons/Close.svelte";
 
   // Create a dispatcher for events to parent component
@@ -20,12 +21,49 @@
   let minimapElement;
   let cols = 0, rows = 0;
   let isReady = false;
-  let offsetX = 0, offsetY = 0;
   let centerX = 0, centerY = 0;
   
-  // Calculate minimap dimensions
+  // Local terrain cache - will be shared via globalThis in onMount
+  let terrainCache = new Map();
+  
+  // Get terrain data with improved caching to ensure color stability
+  function getCachedTerrainData(x, y) {
+    // FIXED: Use consistent integer coordinates - crucial for deterministic terrain
+    const intX = Math.floor(x);
+    const intY = Math.floor(y);
+    
+    // Create a key for the cache
+    const key = `${intX},${intY}`;
+    
+    // Return cached value if available
+    if (terrainCache.has(key)) {
+      return terrainCache.get(key);
+    }
+    
+    // Generate terrain data and cache it with exact same parameters
+    const terrainData = terrain.getTerrainData(intX, intY);
+    
+    // Create a stable copy of the data to ensure consistent rendering
+    const stableData = {
+      biome: terrainData.biome,
+      color: terrainData.color,
+      height: terrainData.height,
+      moisture: terrainData.moisture,
+      continent: terrainData.continent,
+      riverValue: terrainData.riverValue,
+      lakeValue: terrainData.lakeValue,
+      slope: terrainData.slope
+    };
+    
+    // Cache the stable data
+    terrainCache.set(key, stableData);
+    
+    return stableData;
+  }
+  
+  // Calculate minimap dimensions - ENHANCED for better precision
   const resize = () => {
-    if (!minimapElement) return;
+    if (!browser || !minimapElement) return;
     
     const width = minimapElement.clientWidth;
     const height = minimapElement.clientHeight;
@@ -40,16 +78,19 @@
 
     centerX = Math.floor(cols / 2);
     centerY = Math.floor(rows / 2);
-    
-    // Update offsets based on target coordinates - maintain consistency with main map
-    offsetX = centerX + targetCoord.x / scaleFactor;
-    offsetY = centerY + targetCoord.y / scaleFactor;
 
     if (!isReady) isReady = true;
   };
 
   // Initialize when mounted
   onMount(() => {
+    // Share terrain cache with the main Grid component
+    if (globalThis.globalTerrainCache) {
+      terrainCache = globalThis.globalTerrainCache;
+    } else {
+      globalThis.globalTerrainCache = terrainCache;
+    }
+    
     const resizeObserver = new ResizeObserver(resize);
     if (minimapElement) {
       resizeObserver.observe(minimapElement);
@@ -61,45 +102,49 @@
     };
   });
 
-  // Generate reactive grid array for the minimap
+  // FIXED: Calculate the minimap grid to represent exactly what would be shown on the main map
+  // but zoomed out by the scale factor - with improved center alignment
   $: minimapGridArray = isReady
     ? Array.from({ length: rows }, (_, y) =>
         Array.from({ length: cols }, (_, x) => {
-          // Transform coordinates to match main map but at different scale
-          const globalX = (x - offsetX) * scaleFactor;
-          const globalY = (y - offsetY) * scaleFactor;
-          const terrainData = terrain.getTerrainData(globalX, globalY);
+          // Calculate global position based on minimap position and scale factor
+          // This ensures the minimap shows a wider view of the world centered on targetCoord
+          const viewX = x - centerX; // Distance from center in minimap tiles
+          const viewY = y - centerY;
+          
+          // Convert to world coordinates using the scale factor
+          // CRITICAL FIX: Ensure the center tile EXACTLY matches targetCoord
+          const globalX = Math.floor(targetCoord.x) + Math.floor(viewX * scaleFactor);
+          const globalY = Math.floor(targetCoord.y) + Math.floor(viewY * scaleFactor);
+          
+          // Determine if this is the center tile - exactly matches targetCoord
+          const isCenter = x === centerX && y === centerY;
+          
+          // Get cached terrain data for identical coordinates
+          const terrainData = getCachedTerrainData(globalX, globalY);
           
           return {
             x: globalX,
             y: globalY,
             gridX: x,
             gridY: y,
-            isCenter: x === centerX && y === centerY,
+            isCenter,
             ...terrainData
           };
         })
       ).flat()
     : [];
 
-  // Reactively update offsets when targetCoord changes
-  // This is the key to syncing with main map movement
-  $: if (isReady) {
-    offsetX = centerX + targetCoord.x / scaleFactor;
-    offsetY = centerY + targetCoord.y / scaleFactor;
-  }
+  // FIXED: Calculate viewport dimensions first, then use them for the indicator
+  $: viewportWidth = isReady ? 
+    Math.min(Math.max(mainViewportSize.cols / scaleFactor, 3), cols) : 0;
+  
+  $: viewportHeight = isReady ? 
+    Math.min(Math.max(mainViewportSize.rows / scaleFactor, 3), rows) : 0;
 
-  // Calculate the viewport indicator dimensions and position
-  $: viewportIndicator = isReady ? {
-    width: Math.min(Math.max(mainViewportSize.cols / scaleFactor, 1), cols),
-    height: Math.min(Math.max(mainViewportSize.rows / scaleFactor, 1), rows),
-    left: centerX - (mainViewportSize.cols / (scaleFactor * 2)),
-    top: centerY - (mainViewportSize.rows / (scaleFactor * 2))
-  } : { width: 0, height: 0, left: 0, top: 0 };
-
-  // Handle individual mini-tile click - FIXED
+  // Handle individual mini-tile click - FIXED with correct coordinate handling
   function handleTileClick(cell) {
-    // Create a completely new object to ensure reactivity
+    // Use the exact global coordinates from the cell
     const newCoords = { 
       x: cell.x, 
       y: cell.y 
@@ -107,18 +152,14 @@
     
     console.log("Minimap tile clicked at:", newCoords);
     
-    // Dispatch event FIRST to ensure parent knows about the change
+    // Dispatch event first to ensure parent knows about the change
     dispatch('positionchange', newCoords);
     
-    // Then update local state
-    targetCoord = newCoords;
-    
-    // Force offset update
-    offsetX = centerX + targetCoord.x / scaleFactor;
-    offsetY = centerY + targetCoord.y / scaleFactor;
+    // Then update local state - force a new object to ensure reactivity
+    targetCoord = { ...newCoords };
   }
   
-  // Improved minimap click handler 
+  // Improved minimap background click handler with precise coordinate calculation
   const handleMinimapClick = (event) => {
     // For clicks on the minimap container (not directly on tiles)
     if (event.target === minimapElement || !event.target.classList.contains('mini-tile')) {
@@ -133,14 +174,17 @@
       const tileX = Math.floor(clickX / tileSizePx);
       const tileY = Math.floor(clickY / tileSizePx);
       
-      // Find the cell at this position
-      const clickedCell = minimapGridArray.find(
-        cell => cell.gridX === tileX && cell.gridY === tileY
-      );
+      // FIXED: Calculate the global coordinates using the same formula as in minimapGridArray
+      const viewX = tileX - centerX;
+      const viewY = tileY - centerY;
+      const globalX = Math.floor(targetCoord.x) + Math.floor(viewX * scaleFactor);
+      const globalY = Math.floor(targetCoord.y) + Math.floor(viewY * scaleFactor);
       
-      if (clickedCell) {
-        handleTileClick(clickedCell);
-      }
+      const newCoords = { x: globalX, y: globalY };
+      console.log("Minimap background clicked, calculated coordinates:", newCoords);
+      
+      dispatch('positionchange', newCoords);
+      targetCoord = { ...newCoords };
     }
   };
   
@@ -189,19 +233,22 @@
             style="background-color: {cell.color};"
             on:click|stopPropagation={() => handleTileClick(cell)}
             title="{cell.biome.name} ({cell.x},{cell.y})"
+            data-x={cell.x}
+            data-y={cell.y}
           ></div>
         {/each}
       </div>
       
-      <!-- Viewport indicator -->
+      <!-- FIXED: Enhanced viewport indicator with more precise positioning -->
       <div 
         class="viewport-indicator"
         style="
-          width: {viewportIndicator.width * tileSize}em;
-          height: {viewportIndicator.height * tileSize}em;
-          left: {viewportIndicator.left * tileSize}em;
-          top: {viewportIndicator.top * tileSize}em;
+          width: {viewportWidth * tileSize}em;
+          height: {viewportHeight * tileSize}em;
+          left: {(centerX - viewportWidth/2) * tileSize}em;
+          top: {(centerY - viewportHeight/2) * tileSize}em;
         "
+        title="Current view area"
       ></div>
     {/if}
   </div>
@@ -296,6 +343,7 @@
     border: 0.01em solid rgba(0, 0, 0, 0.1);
     transition: transform 0.1s ease-in-out, filter 0.1s ease-in-out, border 0.1s ease-in-out;
     cursor: pointer;
+    will-change: transform; /* Optimization for smoother rendering */
   }
   
   /* Add hover effect for mini-tiles */
@@ -307,22 +355,28 @@
   
   /* Style for center tile */
   .mini-tile.center {
-    border: 0.08em solid rgba(255, 255, 255, 0.8);
-    z-index: 2;
+    border: 0.12em solid white;
+    box-shadow: 0 0 0.4em white, inset 0 0 0.2em white;
+    z-index: 4;
+    position: relative;
+    filter: brightness(1.2);
+    transform: scale(1.2);
   }
   
   .viewport-indicator {
     position: absolute;
-    border: 2px solid white;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.7), inset 0 0 3px rgba(255, 255, 255, 0.3);
     pointer-events: none;
-    border-radius: 2px;
+    border-radius: 3px;
     animation: pulse 2s infinite ease-in-out;
+    background-color: rgba(255, 255, 255, 0.1);
+    z-index: 3; /* Lower than center tile to ensure center is visible */
   }
   
   @keyframes pulse {
-    0% { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8); }
-    50% { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4); }
-    100% { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8); }
+    0% { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8), inset 0 0 3px rgba(255, 255, 255, 0.3); }
+    50% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.4), inset 0 0 8px rgba(255, 255, 255, 0.1); }
+    100% { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.8), inset 0 0 3px rgba(255, 255, 255, 0.3); }
   }
 </style>
