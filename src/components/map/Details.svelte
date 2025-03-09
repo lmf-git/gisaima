@@ -1,6 +1,6 @@
 <script>
   import { fly } from 'svelte/transition';
-  import { onMount } from 'svelte';
+  import { getBiomeResources } from '../../lib/map/biomes.js';
   
   // Props for the component
   export let x = 0;
@@ -12,7 +12,6 @@
   export let height = 0;
   export let moisture = 0;
   export let continent = 0;
-  export let slope = 0;
   export let riverValue = 0; // Added river value
   export let lakeValue = 0;  // Added lake value
   export let displayColor = "#808080"; // New prop for the processed color
@@ -50,79 +49,11 @@
     moisture < 0.6 ? "Moderate" :
     moisture < 0.8 ? "Wet" : "Very Wet";
   
+  // Get formatted biome display name
+  $: biomeDisplayName = biome.displayName || biome.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  
   // Determine potential resources based on biome
   $: resources = getBiomeResources(biome.name);
-  
-  // Function to determine resources based on biome type
-  function getBiomeResources(biomeName) {
-    const resourceMap = {
-      // Water biomes
-      "abyssal_ocean": ["Deep Sea Fish", "Rare Minerals"],
-      "deep_ocean": ["Fish", "Salt"],
-      "ocean": ["Fish", "Salt", "Seaweed"],
-      "ocean_trench": ["Rare Minerals", "Deep Sea Creatures"],
-      
-      // River biomes
-      "mountain_stream": ["Fresh Water", "Gold Deposits", "Trout"],
-      "river": ["Fresh Water", "Clay", "River Fish"],
-      "wide_river": ["Fresh Water", "Clay", "River Fish", "Reeds"],
-      "riverbank": ["Fertile Soil", "Clay", "Reeds"],
-      "riverine_forest": ["Hardwood", "Medicinal Plants", "Game"],
-      "flood_plain": ["Fertile Soil", "Rice", "Flax"],
-      
-      // Add new river types
-      "stream": ["Fresh Water", "Small Fish", "Pebbles"],
-      "tributary": ["Fresh Water", "Clay", "Small Fish"],
-      
-      // Lake biomes
-      "highland_lake": ["Fresh Water", "Trout", "Minerals"],
-      "lake": ["Fresh Water", "Lake Fish", "Clay"],
-      "lowland_lake": ["Fresh Water", "Lake Fish", "Reeds"],
-      "lakeshore": ["Clay", "Reeds", "Waterfowl"],
-      
-      // Coastal biomes
-      "sandy_beach": ["Sand", "Shells", "Coconuts"],
-      "pebble_beach": ["Stones", "Clay"],
-      "rocky_shore": ["Rocks", "Shellfish"],
-      
-      // Mountain biomes
-      "snow_cap": ["Snow", "Crystal"],
-      "alpine": ["Ice", "Rare Herbs"],
-      "mountain": ["Stone", "Iron", "Gems"],
-      "dry_mountain": ["Stone", "Copper", "Gold"],
-      "desert_mountains": ["Stone", "Gold", "Minerals"],
-      
-      // Highland biomes
-      "glacier": ["Ice", "Pure Water"],
-      "highland_forest": ["Wood", "Game", "Herbs"],
-      "highland": ["Stone", "Berries", "Game"],
-      "rocky_highland": ["Stone", "Ore"],
-      "mesa": ["Red Clay", "Minerals"],
-      
-      // Mid-elevation biomes
-      "tropical_rainforest": ["Exotic Wood", "Fruits", "Medicinal Plants"],
-      "temperate_forest": ["Wood", "Game", "Berries"],
-      "woodland": ["Wood", "Game"],
-      "shrubland": ["Herbs", "Berries", "Small Game"],
-      "badlands": ["Clay", "Minerals"],
-      
-      // Lower elevation biomes
-      "swamp": ["Reed", "Herbs", "Mushrooms"],
-      "marsh": ["Reed", "Clay", "Herbs"],
-      "grassland": ["Hay", "Game", "Herbs"],
-      "savanna": ["Fibers", "Game"],
-      "desert_scrub": ["Cactus", "Minerals"],
-      
-      // Low land biomes
-      "bog": ["Peat", "Special Plants"],
-      "wetland": ["Reed", "Herbs", "Fish"],
-      "plains": ["Crops", "Game"],
-      "dry_plains": ["Grains", "Game"],
-      "desert": ["Sand", "Rare Herbs"]
-    };
-    
-    return resourceMap[biomeName] || ["Unknown"];
-  }
   
   // Watch for show prop changes to open/close the details element
   let detailsElement;
@@ -171,7 +102,7 @@
         <div class="biome-info">
           <!-- Use the processed color from the map instead of the raw biome color -->
           <div class="biome-color" style="background-color: {displayColor}"></div>
-          <p>{biome.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
+          <p>{biomeDisplayName}</p>
         </div>
       </div>
       
