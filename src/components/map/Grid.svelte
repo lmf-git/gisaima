@@ -7,7 +7,7 @@
   import { setupKeyboardNavigation, calculateKeyboardMove,startDrag, stopDrag,checkDragState, createMouseEventHandlers } from "../../lib/map/controls.js";
 
   // Initialize the terrain generator with a fixed seed
-  const WORLD_SEED = 12345;
+  const WORLD_SEED = 4544532;
   const terrain = new TerrainGenerator(WORLD_SEED);
   
   // Position and drag state

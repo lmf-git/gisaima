@@ -171,8 +171,10 @@ export class PerlinNoise {
       lacunarity: 2
     });
     
-    // Check if river density threshold is met
-    if (baseRiverNoise < 1 - riverDensity) return 0;
+    // CHANGE: Always consider river probability rather than using hard threshold
+    // Previously this was returning 0 if below threshold
+    const riverProbability = baseRiverNoise > (1 - riverDensity) ? 
+      Math.pow((baseRiverNoise - (1 - riverDensity)) / riverDensity, 0.7) : 0;
     
     // Calculate river channel pattern
     const riverPattern = this.getNoise(x * 3 + 7000, y * 3 + 7000, {
@@ -193,20 +195,17 @@ export class PerlinNoise {
     const heightDownhill = heightMap(x, y + 1);
     
     // Rivers are more likely in valleys (where current height is lower than surroundings)
-    const valleyFactor = Math.max(0, (heightUphill + heightDownhill) / 2 - heightValue);
+    // CHANGE: Made valley detection more sensitive
+    const valleyFactor = Math.max(0, (heightUphill + heightDownhill) / 2 - heightValue + 0.05);
     
     // Combine factors to determine river strength
     let riverValue = 
-      (baseRiverNoise > riverThreshold ? 1 : 0) * // River network threshold
-      (1 + valleyFactor * 5) * // Valley bonus
+      riverProbability * // Use continuous probability instead of hard threshold
+      (1 + valleyFactor * 8) * // Increased valley influence
       (riverPattern * noiseFactor + (1 - noiseFactor)); // Apply noise variation
       
-    // Calculate final river value (0 = no river, higher values = wider river)
-    if (riverValue > 0.1) {
-      return Math.min(1, riverValue * riverWidth);
-    }
-    
-    return 0;
+    // CHANGE: Reduce final width multiplier from 1.5 to 0.85
+    return Math.min(1, riverValue * riverWidth * 0.85); // Increased final multiplier
   }
   
   // Add method to detect lakes based on height map and river network
@@ -284,10 +283,10 @@ export const TERRAIN_OPTIONS = {
   // Continent generation options
   continent: {
     scale: 0.0008,
-    threshold: 0.55,       // Increased threshold to generate more water
-    edgeScale: 0.003,
-    edgeAmount: 0.25,
-    sharpness: 2.7         // Slightly reduced to soften coastlines
+    threshold: 0.48,       // Lowered to create more water separation (islands)
+    edgeScale: 0.004,      // Increased for more detailed coastlines
+    edgeAmount: 0.35,      // Increased to make island shapes more varied
+    sharpness: 2.2         // Reduced to create more varied coastal shapes
   },
   
   // Height map options
@@ -314,31 +313,31 @@ export const TERRAIN_OPTIONS = {
     lacunarity: 2
   },
   
-  // River generation options
+  // River generation options - reduced width but maintain visibility
   river: {
-    scale: 0.005,
-    riverDensity: 0.85,    // Increased for many more rivers (was 0.75)
-    riverThreshold: 0.68,  // Lowered threshold for easier river formation (was 0.72)
-    minContinentValue: 0.28, // Reduced to allow rivers in more coastal areas
-    riverWidth: 1.0,       // Increased river width for more visibility (was 0.8)
-    noiseFactor: 0.3,      // Slightly reduced for smoother rivers
-    branchFactor: 0.8      // Increased to encourage more branching
+    scale: 0.003,          // Keep small scale for river frequency
+    riverDensity: 0.9,     // Slightly reduced from 0.95
+    riverThreshold: 0.35,  // Slightly increased from 0.3
+    minContinentValue: 0.2,
+    riverWidth: 0.8,       // Reduced from 2.0 to 0.8
+    noiseFactor: 0.25,     // Slightly increased for more natural variation
+    branchFactor: 0.9      // Slightly reduced from 0.95
   },
   
   // Lake generation options
   lake: {
     scale: 0.003,
-    lakeThreshold: 0.78,   // Lowered to create more lakes
+    lakeThreshold: 0.75,   // Lowered to create more lakes
     minHeight: 0.25,       // Lowered to allow lakes in more areas
     maxHeight: 0.7,        // Maximum height for lakes (avoid mountains)
-    minRiverInfluence: 0.3, // Min river value to influence lake formation
+    minRiverInfluence: 0.2, // Lowered to allow more lakes to form
     lakeSmoothness: 0.7    // Higher values make lakes more circular
   },
   
   // Constants related to terrain generation
   constants: {
-    continentInfluence: 0.75, // Increased to make continental borders more pronounced
-    waterLevel: 0.35        // Added explicit water level control
+    continentInfluence: 0.65, // Reduced to allow more height variation on islands
+    waterLevel: 0.38        // Raised water level to help create more islands
   }
 };
 
@@ -412,19 +411,24 @@ export class TerrainGenerator {
 
 // Expanded biome classification utility with more terrain types
 export function getBiome(height, moisture, continentValue = 1.0, riverValue = 0, lakeValue = 0) {
-  // Special case for rivers (overrides other biomes when strong enough)
-  if (riverValue > 0.4 && continentValue > 0.3) { // Lowered threshold to show more rivers
+  // Special case for rivers - increased thresholds slightly
+  if (riverValue > 0.12 && continentValue > 0.2) { // Increased from 0.08
     if (height > 0.7) return { name: "mountain_stream", color: "#8fbbde" };
     if (height > 0.5) return { name: "river", color: "#689ad3" };
     return { name: "wide_river", color: "#4a91d6" };
   }
   
   // Special case for smaller streams and tributaries
-  if (riverValue > 0.25 && riverValue <= 0.4 && continentValue > 0.3) {
+  if (riverValue > 0.06 && riverValue <= 0.12 && continentValue > 0.2) { // Increased from 0.04/0.08
     if (height > 0.6) return { name: "stream", color: "#a3c7e8" };
     return { name: "tributary", color: "#8bb5dd" };
   }
   
+  // Lakes (make them more prominent)
+  if (lakeValue > 0.3) { // Lowered from 0.5
+    if (height > 0.6) return { name: "mountain_lake", color: "#5e99cf" };
+    return { name: "lake", color: "#4a91d6" };
+  }
   
   // Ocean biomes - deep ocean is far from continents
   if (continentValue < 0.15) { // Increased range for deep oceans
