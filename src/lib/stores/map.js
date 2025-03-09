@@ -79,7 +79,44 @@ export function updateChunks(gridArray) {
 let terrainCache = new Map();
 const CACHE_SIZE_LIMIT = 1000; // Limit cache size to prevent memory issues
 
-// Get terrain data for a specific coordinate
+// Improved terrain caching and update system
+const TARGET_TILE_STORE = writable({
+  coordinates: { x: 0, y: 0 },
+  data: null
+});
+
+// Create a derived store specifically for the target tile data
+// This only updates when coordinates change
+export const targetTileStore = derived(
+  [mapState, TARGET_TILE_STORE],
+  ([$mapState, $targetTileStore]) => {
+    const { x, y } = $mapState.targetCoord;
+    
+    // Only recalculate if coordinates changed
+    if (x !== $targetTileStore.coordinates.x || y !== $targetTileStore.coordinates.y) {
+      const tileData = getTerrainData(x, y);
+      
+      // Update the store behind the scenes
+      TARGET_TILE_STORE.set({
+        coordinates: { x, y },
+        data: tileData
+      });
+      
+      return {
+        x, y,
+        ...tileData
+      };
+    }
+    
+    // Return cached data if coordinates haven't changed
+    return {
+      x, y,
+      ...$targetTileStore.data
+    };
+  }
+);
+
+// Optimize terrain data fetching
 export function getTerrainData(x, y) {
   // Create a cache key
   const cacheKey = `${x},${y}`;
@@ -89,9 +126,9 @@ export function getTerrainData(x, y) {
     return terrainCache.get(cacheKey);
   }
   
-  // Throttle logging - only log every 10th call or on specific events
-  if (Math.random() < 0.1) {
-    console.log(`Fetching terrain data for: (${x}, ${y})`);
+  // Reduce logging frequency even further
+  if (Math.random() < 0.01) {
+    console.log(`Computing new terrain data for: (${x}, ${y})`);
   }
   
   // Calculate the terrain data
@@ -408,13 +445,40 @@ export const expandedGridArray = derived(
   []
 );
 
-// Create a derived store for the visible grid (subset of expanded grid)
-export const gridArray = derived(
-  expandedGridArray,
-  ($expandedGrid) => {
-    return $expandedGrid.filter(cell => cell.isInMainView);
-  }
-);
+// Optimize the grid array generation with better memoization
+export const gridArray = (() => {
+  let lastOffsetX = null;
+  let lastOffsetY = null;
+  let lastCols = null;
+  let lastRows = null;
+  let cachedResult = [];
+
+  return derived(
+    expandedGridArray,
+    ($expandedGrid) => {
+      const state = get(mapState);
+      
+      // Check if we really need to recalculate
+      if (lastOffsetX === state.offsetX && 
+          lastOffsetY === state.offsetY && 
+          lastCols === state.cols &&
+          lastRows === state.rows &&
+          cachedResult.length > 0) {
+        return cachedResult;
+      }
+      
+      // Update our tracking variables
+      lastOffsetX = state.offsetX;
+      lastOffsetY = state.offsetY;
+      lastCols = state.cols;
+      lastRows = state.rows;
+      
+      // Filter the grid
+      cachedResult = $expandedGrid.filter(cell => cell.isInMainView);
+      return cachedResult;
+    }
+  );
+})();
 
 // Replace axis arrays with memoized versions
 export const xAxisArray = derived(

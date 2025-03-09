@@ -1,39 +1,56 @@
 <script>
-  const { x = 0, y = 0, openDetails } = $props();
+  const { x = 0, y = 0, openDetails, displayColor = "#16393F" } = $props();
+
+  // Handle clicks with stopPropagation to prevent header interference
+  function handleClick(event) {
+    event.stopPropagation();
+    openDetails();
+  }
+  
+  // Handle keyboard accessibility
+  function handleKeyPress(event) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openDetails();
+    }
+  }
 </script>
 
-<!-- Make the entire component clickable -->
-<div class="legend-container" on:click={openDetails} role="button" tabindex="0">
-  <div class="coordinate-legend">
-    <div class="coordinates">({x}, {y})</div>
-  </div>
+<!-- Make the entire component clickable with explicit handlers -->
+<div 
+  class="legend-container" 
+  on:click={handleClick}
+  on:keypress={handleKeyPress}
+  role="button" 
+  tabindex="0"
+  style="background-color: {displayColor};"
+>
+  <div class="coordinates">({x}, {y})</div>
 </div>
 
 <style>
   .legend-container {
     position: absolute;
-    top: 1em;
+    top: 4em; /* Moved up from 5.5em */
     right: 1em;
-    z-index: 10;
+    z-index: 1001; /* Higher than header to ensure clickability */
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  
-  .legend-container:hover {
-    transform: translateY(-2px);
-  }
-  
-  .legend-container:active {
-    transform: translateY(0);
-  }
-  
-  .coordinate-legend {
-    background: var(--color-dark-teal);
     border-radius: 0.3em;
     padding: 0.6em 1em;
     color: var(--color-text);
     box-shadow: 0 0.1em 0.3em var(--color-shadow);
     text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 0.1em solid rgba(255, 255, 255, 0.15);
+  }
+  
+  .legend-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.2em 0.5em var(--color-shadow);
+  }
+  
+  .legend-container:active {
+    transform: translateY(0);
   }
   
   .coordinates {

@@ -20,7 +20,8 @@
     checkDragState,
     moveMapByKeys,
     openDetailsModal,
-    closeDetailsModal
+    closeDetailsModal,
+    targetTileStore
   } from "../../lib/stores/map.js";
   
   // Local component state
@@ -131,60 +132,23 @@
   // Cache grid data
   const grid = $derived($gridArray);
 
-  // Simplify what we pass to Details
-  const detailsProps = $derived(() => {
-    // Find the center cell data for the current color
-    const centerCell = grid.find(cell => cell.isCenter);
-    
-    return {
-      x: $mapState.targetCoord.x, 
-      y: $mapState.targetCoord.y,
-      show: $mapState.showDetailsModal,
-      displayColor: centerCell?.color // Pass current color from the grid
-    };
-  });
-
-  // Create a single source of truth for coordinate data that both
-  // Legend and Details can use
-  const sharedCoordData = $derived(() => {
-    // Find the center cell for consistent terrain data
-    const centerCell = grid.find(cell => cell.isCenter);
-    
-    return {
-      x: $mapState.targetCoord.x,
-      y: $mapState.targetCoord.y,
-      color: centerCell?.color,
-      biome: centerCell?.biome,
-      showModal: $mapState.showDetailsModal
-    };
+  // Use the optimized target tile store
+  const targetTileData = $derived($targetTileStore);
+  
+  // Use unified versions that use the targetTileStore for better performance
+  const legendProps = $derived({
+    x: targetTileData.x,
+    y: targetTileData.y,
+    displayColor: targetTileData.color || '#16393F'
   });
   
-  // Debug function to track opening of details
-  function debugOpenDetailsModal() {
-    console.log("Opening details from Grid.svelte");
-    openDetailsModal(); // Call the store function
-  }
-
-  // Simplify coordinate data tracking for reactive updates
-  const legendProps = $derived({
-    x: $mapState.targetCoord.x,
-    y: $mapState.targetCoord.y
+  const detailsProps = $derived({
+    x: targetTileData.x,
+    y: targetTileData.y,
+    show: $mapState.showDetailsModal,
+    displayColor: targetTileData.color,
+    biomeName: targetTileData.biome?.name
   });
-
-  // Force update Details when needed
-  function forceOpenDetailsModal() {
-    console.log("Forcing details modal open");
-    // Simply calling the store function
-    openDetailsModal(); 
-    
-    // Extra measure to ensure the modal opens
-    setTimeout(() => {
-      mapState.update(state => ({
-        ...state, 
-        showDetailsModal: true
-      }));
-    }, 0);
-  }
 </script>
 
 <svelte:window
@@ -227,8 +191,9 @@
 
   <Legend 
     x={legendProps.x} 
-    y={legendProps.y} 
-    openDetails={forceOpenDetailsModal} 
+    y={legendProps.y}
+    displayColor={legendProps.displayColor}
+    openDetails={openDetailsModal} 
   />
 
   {#if showAxisBars && $mapState.isReady}
@@ -241,11 +206,11 @@
   {/if}
 
   <Details 
-    x={$mapState.targetCoord.x} 
-    y={$mapState.targetCoord.y}
-    show={$mapState.showDetailsModal}
-    displayColor={grid.find(cell => cell.isCenter)?.color || '#808080'}
-    biomeName={grid.find(cell => cell.isCenter)?.biome?.name}
+    x={detailsProps.x}
+    y={detailsProps.y}
+    show={detailsProps.show}
+    displayColor={detailsProps.displayColor}
+    biomeName={detailsProps.biomeName}
     onClose={closeDetailsModal}
   />
 

@@ -1,5 +1,5 @@
 <script>
-  import { mapState, getTerrainData } from '../../lib/stores/map.js';
+  import { mapState, getTerrainData, targetTileStore } from '../../lib/stores/map.js';
   
   // Fixed dimensions for the minimap
   const MINI_TILE_SIZE_EM = 0.5;
@@ -61,8 +61,20 @@
   
   // Update grid when map state changes
   $effect(() => {
-    if ($mapState.isReady) {
+    if ($mapState.isReady && $targetTileStore.x !== undefined) {
       minimapGrid = generateMinimapGrid();
+    }
+  });
+
+  // Throttle minimap updates during drag
+  $effect(() => {
+    // Only update during drag operations at a lower frequency
+    if ($mapState.isDragging) {
+      const dragThrottleId = setTimeout(() => {
+        minimapGrid = generateMinimapGrid();
+      }, 100); // 100ms throttle during drag
+      
+      return () => clearTimeout(dragThrottleId);
     }
   });
 </script>
@@ -91,7 +103,7 @@
 <style>
   .minimap-container {
     position: absolute;
-    bottom: 1.5em;
+    bottom: 4em; /* Moved up from 1.5em */
     right: 1.5em;
     z-index: 1000;
     /* Removed padding, background-color, and border-radius */
