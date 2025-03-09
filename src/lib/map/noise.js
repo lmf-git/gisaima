@@ -402,146 +402,106 @@ export class TerrainGenerator {
     const dy = ((heightNW - heightSW) + (heightNE - heightSE)) / 2;
     const slope = Math.sqrt(dx * dx + dy * dy);
     
-    // Get biome and color
-    const biome = getBiome(height, moisture, continent, riverValue, lakeValue);
-    const color = getTerrainColor(biome, height, slope, riverValue, lakeValue);
+    // Get biome without color processing
+    const biome = this.getBiome(height, moisture, continent, riverValue, lakeValue);
     
-    return { height, moisture, continent, slope, biome, color, riverValue, lakeValue };
-  }
-}
-
-// Expanded biome classification utility with more terrain types
-export function getBiome(height, moisture, continentValue = 1.0, riverValue = 0, lakeValue = 0) {
-  // Special case for rivers (overrides other biomes when strong enough)
-  if (riverValue > 0.4 && continentValue > 0.3) { // Lowered threshold to show more rivers
-    if (height > 0.7) return { name: "mountain_stream", color: "#8fbbde" };
-    if (height > 0.5) return { name: "river", color: "#689ad3" };
-    return { name: "wide_river", color: "#4a91d6" };
+    return { height, moisture, continent, slope, biome, color: biome.color, riverValue, lakeValue };
   }
   
-  // Special case for smaller streams and tributaries
-  if (riverValue > 0.25 && riverValue <= 0.4 && continentValue > 0.3) {
-    if (height > 0.6) return { name: "stream", color: "#a3c7e8" };
-    return { name: "tributary", color: "#8bb5dd" };
-  }
+  // Determine biome based on terrain characteristics
+  getBiome(height, moisture, continentValue = 1.0, riverValue = 0, lakeValue = 0) {
+    // Special case for rivers (overrides other biomes when strong enough)
+    if (riverValue > 0.4 && continentValue > 0.3) {
+      if (height > 0.7) return { name: "mountain_stream", color: "#8fbbde" };
+      if (height > 0.5) return { name: "river", color: "#689ad3" };
+      return { name: "wide_river", color: "#4a91d6" };
+    }
+    
+    // Special case for smaller streams and tributaries
+    if (riverValue > 0.25 && riverValue <= 0.4 && continentValue > 0.3) {
+      if (height > 0.6) return { name: "stream", color: "#a3c7e8" };
+      return { name: "tributary", color: "#8bb5dd" };
+    }
+    
+    // Ocean biomes - deep ocean is far from continents
+    if (continentValue < 0.15) {
+      return { name: "abyssal_ocean", color: "#000033" }; 
+    }
+    
+    // Ocean depth based on continental value
+    if (continentValue < 0.45) {
+      return { name: "deep_ocean", color: "#000080" };
+    }
   
-  
-  // Ocean biomes - deep ocean is far from continents
-  if (continentValue < 0.15) { // Increased range for deep oceans
-    return { name: "abyssal_ocean", color: "#000033" }; 
-  }
-  
-  // Ocean depth based on continental value
-  if (continentValue < 0.45) { // Increased range for shallow oceans
-    return { name: "deep_ocean", color: "#000080" };
-  }
-
-  // Water biomes based on height, affected by continent value
-  if (height < TERRAIN_OPTIONS.constants.waterLevel - (continentValue * 0.05)) {
-    if (height < 0.15) return { name: "ocean_trench", color: "#00004d" };
-    if (height < 0.25) return { name: "deep_ocean", color: "#000080" };
-    return { name: "ocean", color: "#0066cc" };
-  }
-  
-  // River influence zones (marshy areas near rivers)
-  if (riverValue > 0.2 && riverValue <= 0.6) {
-    if (height < 0.4) return { name: "riverbank", color: "#82a67d" };
-    if (moisture > 0.7) return { name: "riverine_forest", color: "#2e593f" };
-    return { name: "flood_plain", color: "#789f6a" };
-  }
-  
-  // Lake influence zones (shoreline)
-  if (lakeValue > 0.2 && lakeValue <= 0.5) {
+    // Water biomes based on height, affected by continent value
+    const waterLevel = TERRAIN_OPTIONS.constants.waterLevel - (continentValue * 0.05);
+    if (height < waterLevel) {
+      if (height < 0.15) return { name: "ocean_trench", color: "#00004d" };
+      if (height < 0.25) return { name: "deep_ocean", color: "#000080" };
+      return { name: "ocean", color: "#0066cc" };
+    }
+    
+    // River influence zones (marshy areas near rivers)
+    if (riverValue > 0.2 && riverValue <= 0.6) {
+      if (height < 0.4) return { name: "riverbank", color: "#82a67d" };
+      if (moisture > 0.7) return { name: "riverine_forest", color: "#2e593f" };
+      return { name: "flood_plain", color: "#789f6a" };
+    }
+    
+    // Lake influence zones (shoreline)
+    if (lakeValue > 0.2 && lakeValue <= 0.5) {
+      if (moisture > 0.6) return { name: "wetland", color: "#517d46" };
+      return { name: "lakeshore", color: "#6a9b5e" };
+    }
+    
+    // Normal biomes when no water features are present
+    // Coastal and beach areas
+    if (height < 0.35) {
+      if (moisture < 0.3) return { name: "sandy_beach", color: "#f5e6c9" };
+      if (moisture < 0.6) return { name: "pebble_beach", color: "#d9c8a5" };
+      return { name: "rocky_shore", color: "#9e9e83" };
+    }
+    
+    // Mountains and high elevation
+    if (height > 0.8) {
+      if (moisture > 0.8) return { name: "snow_cap", color: "#ffffff" };
+      if (moisture > 0.6) return { name: "alpine", color: "#e0e0e0" };
+      if (moisture > 0.3) return { name: "mountain", color: "#7d7d7d" };
+      if (moisture > 0.2) return { name: "dry_mountain", color: "#8b6b4c" }; // Fixed value from 2 to 0.2
+      return { name: "desert_mountains", color: "#9c6b4f" };
+    }
+    
+    if (height > 0.7) {
+      if (moisture > 0.8) return { name: "glacier", color: "#c9eeff" };
+      if (moisture > 0.6) return { name: "highland_forest", color: "#1d6d53" };
+      if (moisture > 0.4) return { name: "highland", color: "#5d784c" };
+      if (moisture > 0.2) return { name: "rocky_highland", color: "#787c60" };
+      return { name: "mesa", color: "#9e6b54" };
+    }
+    
+    // Mid-elevation terrain
+    if (height > 0.5) {
+      if (moisture > 0.8) return { name: "tropical_rainforest", color: "#0e6e1e" };
+      if (moisture > 0.6) return { name: "temperate_forest", color: "#147235" };
+      if (moisture > 0.4) return { name: "woodland", color: "#448d37" };
+      if (moisture > 0.2) return { name: "shrubland", color: "#8d9c4c" };
+      return { name: "badlands", color: "#9c7450" };
+    }
+    
+    // Lower elevation terrain
+    if (height > 0.4) {
+      if (moisture > 0.8) return { name: "swamp", color: "#2f4d2a" };
+      if (moisture > 0.6) return { name: "marsh", color: "#3d6d38" };
+      if (moisture > 0.4) return { name: "grassland", color: "#68a246" };
+      if (moisture > 0.2) return { name: "savanna", color: "#c4b257" };
+      return { name: "desert_scrub", color: "#d1ba70" };
+    }
+    
+    // Low lands
+    if (moisture > 0.8) return { name: "bog", color: "#4f5d40" };
     if (moisture > 0.6) return { name: "wetland", color: "#517d46" };
-    return { name: "lakeshore", color: "#6a9b5e" };
+    if (moisture > 0.4) return { name: "plains", color: "#7db356" };
+    if (moisture > 0.2) return { name: "dry_plains", color: "#c3be6a" };
+    return { name: "desert", color: "#e3d59e" };
   }
-  
-  // Normal biomes when no water features are present
-  // Coastal and beach areas
-  if (height < 0.35) {
-    if (moisture < 0.3) return { name: "sandy_beach", color: "#f5e6c9" };
-    if (moisture < 0.6) return { name: "pebble_beach", color: "#d9c8a5" };
-    return { name: "rocky_shore", color: "#9e9e83" };
-  }
-  
-  // Mountains and high elevation
-  if (height > 0.8) {
-    if (moisture > 0.8) return { name: "snow_cap", color: "#ffffff" };
-    if (moisture > 0.6) return { name: "alpine", color: "#e0e0e0" };
-    if (moisture > 0.3) return { name: "mountain", color: "#7d7d7d" };
-    if (moisture > 0.2) return { name: "dry_mountain", color: "#8b6b4c" };
-    return { name: "desert_mountains", color: "#9c6b4f" };
-  }
-  
-  if (height > 0.7) {
-    if (moisture > 0.8) return { name: "glacier", color: "#c9eeff" };
-    if (moisture > 0.6) return { name: "highland_forest", color: "#1d6d53" };
-    if (moisture > 0.4) return { name: "highland", color: "#5d784c" };
-    if (moisture > 0.2) return { name: "rocky_highland", color: "#787c60" };
-    return { name: "mesa", color: "#9e6b54" };
-  }
-  
-  // Mid-elevation terrain
-  if (height > 0.5) {
-    if (moisture > 0.8) return { name: "tropical_rainforest", color: "#0e6e1e" };
-    if (moisture > 0.6) return { name: "temperate_forest", color: "#147235" };
-    if (moisture > 0.4) return { name: "woodland", color: "#448d37" };
-    if (moisture > 0.2) return { name: "shrubland", color: "#8d9c4c" };
-    return { name: "badlands", color: "#9c7450" };
-  }
-  
-  // Lower elevation terrain
-  if (height > 0.4) {
-    if (moisture > 0.8) return { name: "swamp", color: "#2f4d2a" };
-    if (moisture > 0.6) return { name: "marsh", color: "#3d6d38" };
-    if (moisture > 0.4) return { name: "grassland", color: "#68a246" };
-    if (moisture > 0.2) return { name: "savanna", color: "#c4b257" };
-    return { name: "desert_scrub", color: "#d1ba70" };
-  }
-  
-  // Low lands
-  if (moisture > 0.8) return { name: "bog", color: "#4f5d40" };
-  if (moisture > 0.6) return { name: "wetland", color: "#517d46" };
-  if (moisture > 0.4) return { name: "plains", color: "#7db356" };
-  if (moisture > 0.2) return { name: "dry_plains", color: "#c3be6a" };
-  return { name: "desert", color: "#e3d59e" };
-}
-
-// New function to get terrain color with enhanced shading
-export function getTerrainColor(biome, height, slope = 0, riverValue = 0, lakeValue = 0) {
-  // Base color from biome
-  let color = biome.color;
-  
-  // Convert hex to RGB for easy manipulation
-  const r = parseInt(color.substring(1, 3), 16);
-  const g = parseInt(color.substring(3, 5), 16);
-  const b = parseInt(color.substring(5, 7), 16);
-  
-  // Apply height-based shading (higher = slightly lighter)
-  const heightFactor = height > 0.5 ? (height - 0.5) * 0.2 : 0;
-  
-  // Apply slope-based shading (steeper = slightly darker)
-  const slopeFactor = slope * 0.3;
-  
-  // Apply water reflection for rivers and lakes
-  let waterFactor = 0;
-  
-  if (riverValue > 0) {
-    // Add slight blue tint and reflection to rivers
-    waterFactor = riverValue * 0.3;
-  }
-  
-  if (lakeValue > 0) {
-    // Lakes have stronger blue tint
-    waterFactor = Math.max(waterFactor, lakeValue * 0.4);
-  }
-  
-  // Calculate new RGB values - add blue tint for water
-  const waterAdjustment = waterFactor > 0 ? 0.2 : 0;
-  const newR = Math.min(255, Math.max(0, Math.round(r * (1 + heightFactor - slopeFactor - waterAdjustment))));
-  const newG = Math.min(255, Math.max(0, Math.round(g * (1 + heightFactor - slopeFactor - waterAdjustment * 0.5))));
-  const newB = Math.min(255, Math.max(0, Math.round(b * (1 + heightFactor - slopeFactor + waterFactor))));
-  
-  // Convert back to hex
-  return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
-}
+};
