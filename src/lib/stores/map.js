@@ -150,10 +150,11 @@ export function moveMapByKeys() {
   let yChange = 0;
 
   mapState.update(state => {
-    if (state.keysPressed.has("a") || state.keysPressed.has("arrowleft")) xChange -= 1;
-    if (state.keysPressed.has("d") || state.keysPressed.has("arrowright")) xChange += 1;
-    if (state.keysPressed.has("w") || state.keysPressed.has("arrowup")) yChange -= 1;
-    if (state.keysPressed.has("s") || state.keysPressed.has("arrowdown")) yChange += 1;
+    // These values were inverted - change sign to fix the direction
+    if (state.keysPressed.has("a") || state.keysPressed.has("arrowleft")) xChange += 1;  // Changed from -=
+    if (state.keysPressed.has("d") || state.keysPressed.has("arrowright")) xChange -= 1; // Changed from +=
+    if (state.keysPressed.has("w") || state.keysPressed.has("arrowup")) yChange += 1;    // Changed from -=
+    if (state.keysPressed.has("s") || state.keysPressed.has("arrowdown")) yChange -= 1;  // Changed from +=
 
     if (xChange === 0 && yChange === 0) return state;
     
@@ -259,30 +260,19 @@ export function stopDrag() {
   return false;
 }
 
-// Open details modal - fixing target tile to match details
+// Open details modal - simplify and make more reliable
 export function openDetailsModal() {
-  console.log("openDetailsModal called from store");
+  console.log("openDetailsModal called with more direct implementation");
   
-  // Force a more obvious state change
-  mapState.update(state => {
-    if (state.showDetailsModal) {
-      console.log("Details modal was already open - toggling off and on for refresh");
-      // If already open, toggle it off briefly to ensure re-render
-      setTimeout(() => {
-        mapState.update(s => ({ ...s, showDetailsModal: true }));
-      }, 10);
-      
-      return {
-        ...state,
-        showDetailsModal: false
-      };
-    }
-    
-    console.log(`Setting showDetailsModal to true for coordinates: (${state.targetCoord.x}, ${state.targetCoord.y})`);
-    return {
-      ...state,
-      showDetailsModal: true
-    };
+  const state = get(mapState);
+  const { x, y } = state.targetCoord;
+  
+  console.log(`Opening details for (${x}, ${y})`);
+  
+  // Set it directly without complex conditionals
+  mapState.set({
+    ...state,
+    showDetailsModal: true
   });
 }
 

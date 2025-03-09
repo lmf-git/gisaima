@@ -4,6 +4,7 @@
   import Axes from "./Axes.svelte";
   import Details from "./Details.svelte";
   import MiniMap from "./MiniMap.svelte"; // Fixed capitalization
+  import Tutorial from "./Tutorial.svelte";
 
   import { 
     mapState, 
@@ -163,6 +164,27 @@
     console.log("Opening details from Grid.svelte");
     openDetailsModal(); // Call the store function
   }
+
+  // Simplify coordinate data tracking for reactive updates
+  const legendProps = $derived({
+    x: $mapState.targetCoord.x,
+    y: $mapState.targetCoord.y
+  });
+
+  // Force update Details when needed
+  function forceOpenDetailsModal() {
+    console.log("Forcing details modal open");
+    // Simply calling the store function
+    openDetailsModal(); 
+    
+    // Extra measure to ensure the modal opens
+    setTimeout(() => {
+      mapState.update(state => ({
+        ...state, 
+        showDetailsModal: true
+      }));
+    }, 0);
+  }
 </script>
 
 <svelte:window
@@ -204,9 +226,9 @@
   </div>
 
   <Legend 
-    x={sharedCoordData.x} 
-    y={sharedCoordData.y} 
-    openDetails={debugOpenDetailsModal}
+    x={legendProps.x} 
+    y={legendProps.y} 
+    openDetails={forceOpenDetailsModal} 
   />
 
   {#if showAxisBars && $mapState.isReady}
@@ -219,15 +241,17 @@
   {/if}
 
   <Details 
-    x={sharedCoordData.x} 
-    y={sharedCoordData.y} 
-    show={sharedCoordData.showModal}
-    displayColor={sharedCoordData.color}
-    biomeName={sharedCoordData.biome?.name}
+    x={$mapState.targetCoord.x} 
+    y={$mapState.targetCoord.y}
+    show={$mapState.showDetailsModal}
+    displayColor={grid.find(cell => cell.isCenter)?.color || '#808080'}
+    biomeName={grid.find(cell => cell.isCenter)?.biome?.name}
     onClose={closeDetailsModal}
   />
 
-  <!-- Add the minimap component with correct capitalization -->
+  <!-- Add the Tutorial component at the bottom left -->
+  <Tutorial show={true} />
+
   <MiniMap />
 </div>
 

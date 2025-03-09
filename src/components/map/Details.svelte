@@ -1,13 +1,13 @@
 <script>
   import { fly } from 'svelte/transition';
+  import { mapState } from '../../lib/stores/map.js';
   
-  // Simplified props with biomeName directly passed in
   const {
     x = 0,
     y = 0,
     show = false,
     displayColor = "#808080",
-    biomeName: rawBiomeName = "Unknown", // Accept biomeName directly
+    biomeName: rawBiomeName = "Unknown",
     onClose
   } = $props();
   
@@ -16,9 +16,12 @@
     rawBiomeName?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown'
   );
   
-  // Log when show state changes for debugging
+  // Force render log to debug visibility
   $effect(() => {
-    console.log(`Details component show state: ${show ? 'visible' : 'hidden'}`);
+    console.log(`Details visibility changed: ${show}`);
+    if (show) {
+      console.log(`Details shown for: (${x}, ${y}) - ${biomeName}`);
+    }
   });
   
   function handleKeydown(event) {
@@ -30,7 +33,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<!-- Simplified container that's always in DOM for better transitions -->
+<!-- Simplified markup with better visibility control -->
 <div class="details-container" class:visible={show}>
   {#if show}
     <div 
@@ -42,7 +45,7 @@
         <h2>Coordinates ({x}, {y})</h2>
         <p>Biome: {biomeName}</p>
       </div>
-      <button class="close-button" onclick={onClose}>×</button>
+      <button class="close-button" on:click={onClose}>×</button>
     </div>
   {/if}
 </div>
@@ -71,8 +74,8 @@
     border-radius: 0.5em;
     color: white;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    box-shadow: 0 0.2em 0.6em rgba(0, 0, 0, 0.3);
-    border: 0.25em solid rgba(255, 255, 255, 0.3); /* More visible border */
+    box-shadow: 0 0.3em 0.8em rgba(0, 0, 0, 0.5);
+    border: 0.3em solid rgba(255, 255, 255, 0.4); /* More visible border */
     backdrop-filter: brightness(1.1) saturate(1.2);
     min-width: 200px; /* Ensure the card has a minimum size */
   }
