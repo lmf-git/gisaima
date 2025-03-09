@@ -154,7 +154,7 @@
   <details 
     class="location-details" 
     bind:this={detailsElement}
-    on:toggle={handleToggle}
+    ontoggle={handleToggle}
   >
     <summary class="details-summary">
       <h2>Location Details: ({x}, {y})</h2>
@@ -213,7 +213,7 @@
       </div>
       
       <div class="details-footer">
-        <button class="close-button" on:click={handleClose}>Close</button>
+        <button class="close-button" onclick={handleClose}>Close</button>
       </div>
     </div>
   </details>

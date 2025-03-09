@@ -130,19 +130,19 @@
 </script>
 
 <svelte:window
-  on:mousedown={globalMouseDown}
-  on:mouseup={globalMouseUp}
-  on:mousemove={globalMouseMove}
-  on:mouseleave={handleStopDrag}
-  on:blur={() => $mapState.isDragging && handleStopDrag()}
-  on:visibilitychange={() => document.visibilityState === 'hidden' && handleStopDrag()}
+  onmousedown={globalMouseDown}
+  onmouseup={globalMouseUp}
+  onmousemove={globalMouseMove}
+  onmouseleave={handleStopDrag}
+  onblur={() => $mapState.isDragging && handleStopDrag()}
+  onvisibilitychange={() => document.visibilityState === 'hidden' && handleStopDrag()}
 />
 
 <div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={$mapState.showDetailsModal}>
   <div
     class="map"
     bind:this={mapElement}
-    on:mousedown={handleStartDrag}
+    onmousedown={handleStartDrag}
     class:dragging={isDragging}
     role="grid"
     tabindex="0"
