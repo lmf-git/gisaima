@@ -1,5 +1,4 @@
 <script>
-  // Accept arrays of coordinates for x and y axes with $props()
   const { 
     xAxisArray = [],
     yAxisArray = [],

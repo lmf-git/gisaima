@@ -1,8 +1,6 @@
 <script>
   import { fly } from 'svelte/transition';
-  import { onMount } from 'svelte';
   
-  // Props for the component
   const {
     x = 0,
     y = 0,
@@ -14,65 +12,50 @@
     slope = 0,
     riverValue = 0,
     lakeValue = 0,
-    displayColor = "#808080", // This should be the exact color from the map
-    onClose // Add onClose prop for better component communication
+    displayColor = "#808080",
+    onClose
   } = $props();
   
-  // Internal state as a simple let variable
   let detailsElement = null;
   
-  // Optimize debugging - reduces console noise
+  // Convert $effect blocks to $derived for elegance
+  const elevationCategory = $derived(
+    height < 0.1 ? "Very Low" :
+    height < 0.3 ? "Low" :
+    height < 0.5 ? "Medium" :
+    height < 0.7 ? "High" :
+    height < 0.85 ? "Very High" : "Extreme"
+  );
+    
+  const moistureCategory = $derived(
+    moisture < 0.2 ? "Very Dry" :
+    moisture < 0.4 ? "Dry" :
+    moisture < 0.6 ? "Moderate" :
+    moisture < 0.8 ? "Wet" : "Very Wet"
+  );
+  
+  const waterFeature = $derived(
+    riverValue > 0.4 ? "River" :
+    lakeValue > 0.5 ? "Lake" :
+    riverValue > 0.25 ? "Stream" :
+    riverValue > 0.2 ? "Riverbank" :
+    lakeValue > 0.2 ? "Lake Shore" : "None"
+  );
+    
+  const resources = $derived(
+    biome && biome.name ? getBiomeResources(biome.name) : ["Unknown"]
+  );
+  
+  // Synchronize details element open state with show prop
   $effect(() => {
-    if (show && biome) {
-      // Only log when props actually change to reduce console spam
-      console.log(
-        `Details visible with biome: ${biome.name} at (${x}, ${y})`
-      );
+    if (detailsElement) {
+      detailsElement.open = show;
     }
   });
   
-  // Handle close action
-  function handleClose() {
-    onClose?.(); // Call the onClose callback passed as a prop
+  function formatPercent(value) {
+    return `${Math.round(value * 100)}%`;
   }
-  
-  // Helper function to format percentage
-  const formatPercent = (value) => `${Math.round(value * 100)}%`;
-  
-  // Initialize derived values with defaults to prevent undefined errors
-  let elevationCategory = "Unknown";
-  let moistureCategory = "Unknown";
-  let waterFeature = "None";
-  let resources = []; // Initialize with empty array to avoid undefined
-  
-  // Calculate derived values reactively within the $effect blocks
-  $effect(() => {
-    // Elevation category
-    elevationCategory = 
-      height < 0.1 ? "Very Low" :
-      height < 0.3 ? "Low" :
-      height < 0.5 ? "Medium" :
-      height < 0.7 ? "High" :
-      height < 0.85 ? "Very High" : "Extreme";
-      
-    // Moisture category
-    moistureCategory = 
-      moisture < 0.2 ? "Very Dry" :
-      moisture < 0.4 ? "Dry" :
-      moisture < 0.6 ? "Moderate" :
-      moisture < 0.8 ? "Wet" : "Very Wet";
-    
-    // Water feature
-    waterFeature = 
-      riverValue > 0.4 ? "River" :
-      lakeValue > 0.5 ? "Lake" :
-      riverValue > 0.25 ? "Stream" :
-      riverValue > 0.2 ? "Riverbank" :
-      lakeValue > 0.2 ? "Lake Shore" : "None";
-      
-    // Resources - ensure biome.name is defined before calling getBiomeResources
-    resources = biome && biome.name ? getBiomeResources(biome.name) : ["Unknown"];
-  });
   
   // Function to determine resources based on biome type
   function getBiomeResources(biomeName) {
@@ -147,26 +130,21 @@
     return resourceMap[biomeName] || ["Unknown"];
   }
   
-  // Watch for show prop changes to open/close the details element
-  $effect(() => {
-    if (detailsElement) {
-      if (show && !detailsElement.open) detailsElement.open = true;
-      else if (!show && detailsElement.open) detailsElement.open = false;
-    }
-  });
-  
-  // Handle the toggle event to keep the show prop in sync
   function handleToggle(event) {
     if (!detailsElement.open) {
-      handleClose(); // Call onClose when details are closed
+      onClose?.();
     }
   }
   
-  // Allow ESC key to close the details
   function handleKeydown(event) {
     if (event.key === 'Escape' && show) {
-      handleClose();
+      onClose?.();
     }
+  }
+
+  // Add the missing handleClose function
+  function handleClose() {
+    onClose?.();
   }
 </script>
 

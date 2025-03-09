@@ -50,18 +50,19 @@ export function getChunkKey(x, y) {
   return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
 }
 
+// Use a more functional approach for the updateChunks function
 export function updateChunks(gridArray) {
   mapState.update(state => {
-    const newChunkKeys = gridArray.map(cell => getChunkKey(cell.x, cell.y));
-    const newVisibleChunks = new Set(newChunkKeys);
+    const newVisibleChunks = new Set(
+      gridArray.map(cell => getChunkKey(cell.x, cell.y))
+    );
 
-    Array.from(newVisibleChunks)
-      .filter(chunkKey => !state.visibleChunks.has(chunkKey))
-      .forEach(chunkKey => console.log(`Chunk loaded: ${chunkKey}`));
-
-    Array.from(state.visibleChunks)
-      .filter(chunkKey => !newVisibleChunks.has(chunkKey))
-      .forEach(chunkKey => console.log(`Chunk unloaded: ${chunkKey}`));
+    // Log only the changes for better performance
+    const added = [...newVisibleChunks].filter(key => !state.visibleChunks.has(key));
+    const removed = [...state.visibleChunks].filter(key => !newVisibleChunks.has(key));
+    
+    if (added.length > 0) console.log(`Chunks loaded: ${added.join(', ')}`);
+    if (removed.length > 0) console.log(`Chunks unloaded: ${removed.join(', ')}`);
 
     return {
       ...state,
@@ -172,7 +173,7 @@ export function moveMapByKeys() {
   });
 }
 
-// Drag handling functions
+// Simplify the drag functionality
 export function startDrag(event) {
   if (event.button !== 0) return false;
   
@@ -185,7 +186,7 @@ export function startDrag(event) {
   }));
   
   document.body.style.cursor = "grabbing";
-  return true; // Indicate success
+  return true;
 }
 
 export function drag(event) {

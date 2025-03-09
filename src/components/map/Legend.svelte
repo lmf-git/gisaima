@@ -1,15 +1,7 @@
 <script>
-  // Use $props() syntax for Svelte 5's runes mode
   const { x = 0, y = 0, title = "Current Position", openDetails } = $props();
-  
-  // Function to handle the view details button click
-  function handleViewDetails() {
-    // Call the openDetails prop
-    openDetails?.();
-  }
 </script>
 
-<!-- Use native <details> element for accessible disclosure widget -->
 <div class="legend-container">
   <details class="coordinate-legend" open>
     <summary class="legend-summary">
@@ -21,7 +13,7 @@
       <div class="legend-keyboard-hint">WASD/Arrows to Navigate</div>
       <button 
         class="details-button" 
-        on:click={handleViewDetails}
+        on:click={openDetails}
         type="button"
       >
         View Full Details

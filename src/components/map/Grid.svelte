@@ -17,75 +17,85 @@
     checkDragState,
     moveMapByKeys,
     openDetailsModal,
-    closeDetailsModal,
-    getTerrainData  // Import the function properly
+    closeDetailsModal
   } from "../../lib/stores/map.js";
   
-  // Local component state as separate constants
+  // Local component state
   let mapElement = null;
   let resizeObserver = null;
   let dragStateCheckInterval = null;
-  let keyboardNavigationInterval = null;
   
   // Display settings
   const showAxisBars = true;
   
   // Initialize when mounted
   onMount(() => {
+    // Setup resize observer
     resizeObserver = new ResizeObserver(() => resizeMap(mapElement));
     resizeObserver.observe(mapElement);
     resizeMap(mapElement);
-    setupKeyboardNavigation();
+    
+    // Setup keyboard navigation
+    const keyboardCleanup = setupKeyboardNavigation();
+    
+    // Setup drag state check interval
     dragStateCheckInterval = setInterval(checkDragState, DRAG_CHECK_INTERVAL);
 
-    return () => {
-      // Proper cleanup to prevent memory leaks
+    // Define cleanup function properly
+    return function() {
       if (resizeObserver) resizeObserver.disconnect();
-      if (keyboardNavigationInterval) clearInterval(keyboardNavigationInterval);
-      if (dragStateCheckInterval) clearInterval(dragStateCheckInterval);
+      if (keyboardCleanup) keyboardCleanup();
       if ($mapState.keyboardNavigationInterval) {
         clearInterval($mapState.keyboardNavigationInterval);
         mapState.update(state => ({...state, keyboardNavigationInterval: null}));
       }
+      if (dragStateCheckInterval) clearInterval(dragStateCheckInterval);
     };
   });
-
-  // Setup keyboard navigation
+  
+  // Setup keyboard navigation with simplified handlers
   const setupKeyboardNavigation = () => {
-    window.addEventListener("keydown", event => {
+    const keyHandler = event => {
       const key = event.key.toLowerCase();
-      if (["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright"].includes(key)) {
+      const isNavigationKey = ["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright"].includes(key);
+      
+      if (!isNavigationKey) return;
+      
+      if (event.type === "keydown") {
         $mapState.keysPressed.add(key);
-
+        
         if (!$mapState.keyboardNavigationInterval) {
           moveMapByKeys();
           $mapState.keyboardNavigationInterval = setInterval(moveMapByKeys, 200);
         }
-
+        
         if (key.startsWith("arrow")) event.preventDefault();
-      }
-    });
-
-    window.addEventListener("keyup", event => {
-      const key = event.key.toLowerCase();
-      if (["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright"].includes(key)) {
+      } else if (event.type === "keyup") {
         $mapState.keysPressed.delete(key);
-
+        
         if ($mapState.keysPressed.size === 0 && $mapState.keyboardNavigationInterval) {
           clearInterval($mapState.keyboardNavigationInterval);
           $mapState.keyboardNavigationInterval = null;
         }
       }
-    });
+    };
+    
+    window.addEventListener("keydown", keyHandler);
+    window.addEventListener("keyup", keyHandler);
+    
+    return () => {
+      window.removeEventListener("keydown", keyHandler);
+      window.removeEventListener("keyup", keyHandler);
+    };
   };
 
-  // Drag handling
+  // Simplified drag handlers
   const handleStartDrag = event => {
-    if (startMapDrag(event)) {
-      if (mapElement) {
-        mapElement.style.cursor = "grabbing";
-        mapElement.classList.add("dragging");
-      }
+    if (event.button !== 0) return;
+    
+    if (startMapDrag(event) && mapElement) {
+      mapElement.style.cursor = "grabbing";
+      mapElement.classList.add("dragging");
     }
     event.preventDefault();
   };
@@ -96,76 +106,36 @@
       mapElement.classList.remove("dragging");
     }
   };
-
-  // Global mouse events
+  
+  // Simplified global event handlers
   const globalMouseDown = () => $mapState.isMouseActuallyDown = true;
   const globalMouseUp = () => {
     $mapState.isMouseActuallyDown = false;
     if ($mapState.isDragging) handleStopDrag();
-    document.body.style.cursor = "default";
   };
   const globalMouseMove = event => {
     if ($mapState.isMouseActuallyDown && $mapState.isDragging) dragMap(event);
     else if (!$mapState.isMouseActuallyDown && $mapState.isDragging) handleStopDrag();
   };
-  const globalMouseLeave = () => { if ($mapState.isDragging) handleStopDrag(); };
-  const visibilityChange = () => { 
-    if (document.visibilityState === 'hidden' && $mapState.isDragging) handleStopDrag(); 
-  };
-
-  // Effect for tracking map changes
+  
+  // Simple effect for map updates logging
   $effect(() => {
     if ($mapState.isReady && $gridArray.length > 0) {
-      // Log updates
       console.log(`Map updated: ${$mapState.targetCoord.x}, ${$mapState.targetCoord.y}`);
     }
   });
-  
-  // Fix dragging class effect
-  $effect(() => {
-    if (!$mapState.isDragging && mapElement && mapElement.classList.contains('dragging'))
-      mapElement.classList.remove('dragging');
-  });
 
-  // Effect to update center tile data whenever target coordinates change
-  $effect(() => {
-    // When target coordinates change, make sure center tile data is updated
-    if ($mapState.isReady) {
-      const coords = $mapState.targetCoord;
-      
-      // Log the update to help with debugging
-      console.log(`Target coordinates updated: (${coords.x}, ${coords.y})`);
-    }
-  });
-
-  // Modified effect - use a local variable to store coordinates to avoid recursive updates
-  $effect(() => {
-    if ($mapState.isReady && $mapState.targetCoord) {
-      // Store coordinates locally instead of triggering new data fetch here
-      const target = $mapState.targetCoord;
-      console.log(`Target coordinates updated: (${target.x}, ${target.y})`);
-    }
-  });
-
-  // Remove the problematic effect that was causing recursive updates
-  // $effect(() => {
-  //   if ($mapState.isReady && $mapState.targetCoord) {
-  //     const target = $mapState.targetCoord;
-  //     requestAnimationFrame(() => {
-  //       const terrainData = getTerrainData(target.x, target.y);
-  //       console.log(`Grid component updating terrain data for: (${target.x}, ${target.y}) - Biome: ${terrainData.biome.name}`);
-  //     });
-  //   }
-  // });
+  // Simple derived value for dragging class
+  const isDragging = $derived($mapState.isDragging);
 </script>
 
 <svelte:window
   on:mousedown={globalMouseDown}
   on:mouseup={globalMouseUp}
   on:mousemove={globalMouseMove}
-  on:mouseleave={globalMouseLeave}
+  on:mouseleave={handleStopDrag}
   on:blur={() => $mapState.isDragging && handleStopDrag()}
-  on:visibilitychange={visibilityChange}
+  on:visibilitychange={() => document.visibilityState === 'hidden' && handleStopDrag()}
 />
 
 <div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={$mapState.showDetailsModal}>
@@ -173,7 +143,7 @@
     class="map"
     bind:this={mapElement}
     on:mousedown={handleStartDrag}
-    class:dragging={$mapState.isDragging}
+    class:dragging={isDragging}
     role="grid"
     tabindex="0"
     aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
@@ -197,10 +167,19 @@
     {/if}
   </div>
 
-  <Legend x={$mapState.targetCoord.x} y={$mapState.targetCoord.y} openDetails={openDetailsModal} />
+  <Legend 
+    x={$mapState.targetCoord.x} 
+    y={$mapState.targetCoord.y} 
+    openDetails={openDetailsModal} 
+  />
 
   {#if showAxisBars && $mapState.isReady}
-    <Axes xAxisArray={$xAxisArray} yAxisArray={$yAxisArray} cols={$mapState.cols} rows={$mapState.rows} />
+    <Axes 
+      xAxisArray={$xAxisArray} 
+      yAxisArray={$yAxisArray} 
+      cols={$mapState.cols} 
+      rows={$mapState.rows} 
+    />
   {/if}
 
   <Details 
