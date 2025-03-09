@@ -310,6 +310,8 @@ export function setupMinimapControls(state, tileSize, tilesRatio, cache, terrain
     buildGridArray,
     handleBackgroundClick,
     handleMinimapKeydown,
-    setupTileInteraction
+    setupTileInteraction,
+    // ADDED: Expose the getCachedTerrainData function
+    getCachedTerrainData
   };
 }

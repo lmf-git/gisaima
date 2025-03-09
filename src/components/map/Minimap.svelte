@@ -69,32 +69,37 @@
   
   // FIXED: Simplify grid generation to be more reliable
   function rebuildGridArray() {
-    if (!state.cols || !state.rows) return [];
+    if (!state.cols || !state.rows || !controls.getCachedTerrainData) return;
     
-    // Calculate world coordinates of top-left corner of minimap
-    const topLeftX = Math.floor(targetCoord.x - state.centerX);
-    const topLeftY = Math.floor(targetCoord.y - state.centerY);
-    
-    // Build grid from sequential world coordinates without using offset calculation
-    state.minimapGridArray = Array.from({ length: state.rows }, (_, y) =>
-      Array.from({ length: state.cols }, (_, x) => {
-        // Direct mapping from grid position to world coordinates
-        const globalX = topLeftX + x;
-        const globalY = topLeftY + y;
-        
-        // Get terrain data for this coordinate
-        const terrainData = controls.getCachedTerrainData(globalX, globalY);
-        
-        return {
-          x: globalX,
-          y: globalY,
-          gridX: x,
-          gridY: y,
-          isCenter: x === state.centerX && y === state.centerY,
-          ...terrainData
-        };
-      })
-    ).flat();
+    try {
+      // Calculate world coordinates of top-left corner of minimap
+      const topLeftX = Math.floor(targetCoord.x - state.centerX);
+      const topLeftY = Math.floor(targetCoord.y - state.centerY);
+      
+      // Build grid from sequential world coordinates without using offset calculation
+      state.minimapGridArray = Array.from({ length: state.rows }, (_, y) =>
+        Array.from({ length: state.cols }, (_, x) => {
+          // Direct mapping from grid position to world coordinates
+          const globalX = topLeftX + x;
+          const globalY = topLeftY + y;
+          
+          // Get terrain data for this coordinate
+          const terrainData = controls.getCachedTerrainData(globalX, globalY);
+          
+          return {
+            x: globalX,
+            y: globalY,
+            gridX: x,
+            gridY: y,
+            isCenter: x === state.centerX && y === state.centerY,
+            ...terrainData
+          };
+        })
+      ).flat();
+    } catch (error) {
+      console.error("Error building minimap grid array:", error);
+      state.minimapGridArray = [];
+    }
   }
 
   onMount(() => {
