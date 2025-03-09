@@ -45,7 +45,7 @@
         <h2>Coordinates ({x}, {y})</h2>
         <p>Biome: {biomeName}</p>
       </div>
-      <button class="close-button" on:click={onClose}>×</button>
+      <button class="close-button" onclick={onClose}>×</button>
     </div>
   {/if}
 </div>

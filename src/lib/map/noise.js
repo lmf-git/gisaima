@@ -331,20 +331,20 @@ export const TERRAIN_OPTIONS = {
     sharpness: 2.7        
   },
   
-  // Height map options - reduce extreme peaks
+  // Height map options - create more middle-range elevations with less variation
   height: {
     scale: 0.01,    
-    octaves: 6,          // Reduced from 7 for fewer height variations
-    persistence: 0.6,    // Reduced from 0.65 for less extreme terrain
-    lacunarity: 2.4      // Reduced from 2.6 for smoother terrain
+    octaves: 4,          // Reduced from 5 for more uniform terrain
+    persistence: 0.45,   // Reduced from 0.5 for smoother, flatter terrain
+    lacunarity: 1.8      // Reduced from 2.0 for less extreme height changes
   },
   
-  // Moisture map options - make world drier overall
+  // Moisture map options - slightly less dry in mid-elevations
   moisture: {
-    scale: 0.016,        // Slightly increased from 0.015 for larger dry/wet regions
-    octaves: 4,
-    persistence: 0.45,   // Reduced from 0.5 to create much more dry areas
-    lacunarity: 2.5      // Increased from 2.3 for sharper moisture transitions
+    scale: 0.016,
+    octaves: 3,          // Reduced from 4 for larger cohesive dry regions
+    persistence: 0.38,   // Increased from 0.35 for slightly less extreme dryness
+    lacunarity: 2.5      // Reduced from 2.7 for smoother transitions
   },
   
   // Small-scale detail noise - enhance peaks and valleys
@@ -386,9 +386,9 @@ export const TERRAIN_OPTIONS = {
   
   // Constants related to terrain generation
   constants: {
-    continentInfluence: 0.65,  // Increased from 0.6 to reduce terrain variation
+    continentInfluence: 0.8,    // Increased from 0.75 for much flatter terrain
     waterLevel: 0.32,      // Lowered from 0.35 to reduce ocean coverage
-    heightBias: 0.20           // Reduced from 0.24 for fewer high elevation areas
+    heightBias: 0.08            // Reduced from 0.12 for less overall elevation
   }
 };
 
@@ -419,21 +419,22 @@ export class TerrainGenerator {
     let height = baseHeight * (1 - TERRAIN_OPTIONS.constants.continentInfluence) + 
                  continent * TERRAIN_OPTIONS.constants.continentInfluence;
     
-    // Apply height bias to shift distribution upward but less extreme
+    // Apply height bias to shift distribution upward with even less extreme values
     height = Math.min(1, height + TERRAIN_OPTIONS.constants.heightBias);
     
-    // Apply less aggressive non-linear transformation
-    height = Math.pow(height, 0.95);  // Changed from 0.9 for less contrast
+    // Apply a more aggressive bell curve transformation to concentrate heights in lower-mid range
+    // This will push more terrain toward the middle-low values rather than extremes
+    height = Math.pow(Math.sin((height * Math.PI) - (Math.PI/2)) * 0.5 + 0.5, 1.2);
     
-    // Add small-scale detail noise with increased influence
-    const detail = this.detailNoise.getNoise(x, y, TERRAIN_OPTIONS.detail) * 0.15; // Increased from 0.12
+    // Reduce detail noise influence
+    const detail = this.detailNoise.getNoise(x, y, TERRAIN_OPTIONS.detail) * 0.1; // Reduced from 0.15
     height = Math.min(1, Math.max(0, height + detail - 0.05));
     
     // Generate moisture independent of continents
     let moisture = this.moistureNoise.getNoise(x, y, TERRAIN_OPTIONS.moisture);
     
-    // Apply non-linear transformation to moisture to create more extreme desert/wet areas
-    moisture = Math.pow(moisture, 1.2);  // Added: Creates more dry areas
+    // Apply stronger non-linear transformation to moisture to create more extreme desert areas
+    moisture = Math.pow(moisture, 1.7);  // Increased from 1.5 for even more desert
     
     // Create height map function
     const heightMap = (tx, ty) => {
@@ -544,47 +545,53 @@ export class TerrainGenerator {
       return { name: "rocky_shore", color: "#9e9e83" };
     }
     
-    // Mountains and high elevation - make them much rarer
-    if (height > 0.8) {          // Increased from 0.7 for fewer mountains
-      if (moisture > 0.75) return { name: "snow_cap", color: "#ffffff" };     // Increased from 0.6 for rarer snow
-      if (moisture > 0.6) return { name: "alpine", color: "#e0e0e0" };        // Increased from 0.5
-      if (moisture > 0.45) return { name: "mountain", color: "#7d7d7d" };      // Increased from 0.35
-      if (moisture > 0.3) return { name: "dry_mountain", color: "#8b6b4c" };
-      return { name: "desert_mountains", color: "#9c6b4f" };
+    // Mountains and high elevation - make even rarer
+    if (height > 0.92) {          // Increased from 0.88 for far fewer mountains
+      if (moisture > 0.8) return { name: "snow_cap", color: "var(--color-biome-snow-cap)" };     // Increased from 0.75
+      if (moisture > 0.65) return { name: "alpine", color: "var(--color-biome-alpine)" };        // Increased from 0.6
+      if (moisture > 0.5) return { name: "mountain", color: "var(--color-biome-mountain)" };      // Increased from 0.45
+      if (moisture > 0.35) return { name: "dry_mountain", color: "var(--color-biome-dry-mountain)" }; // Increased from 0.3
+      return { name: "desert_mountains", color: "var(--color-biome-desert-mountains)" };
     }
     
-    if (height > 0.65) {         // Increased from 0.6 for fewer highlands
-      if (moisture > 0.75) return { name: "glacier", color: "#c9eeff" };      // Increased from 0.65 for rarer glaciers
-      if (moisture > 0.6) return { name: "highland_forest", color: "#1d6d53" };
-      if (moisture > 0.45) return { name: "highland", color: "#5d784c" };     // Increased from 0.4
-      if (moisture > 0.3) return { name: "rocky_highland", color: "#787c60" };
-      return { name: "mesa", color: "#9e6b54" };
+    if (height > 0.78) {         // Increased from 0.75 for far fewer highlands
+      if (moisture > 0.8) return { name: "glacier", color: "var(--color-biome-glacier)" };      // Increased from 0.75
+      if (moisture > 0.65) return { name: "highland_forest", color: "var(--color-biome-highland-forest)" }; // Increased from 0.6
+      if (moisture > 0.5) return { name: "highland", color: "var(--color-biome-highland)" };     // Increased from 0.45
+      if (moisture > 0.35) return { name: "rocky_highland", color: "var(--color-biome-rocky-highland)" }; // Increased from 0.3
+      return { name: "mesa", color: "var(--color-biome-mesa)" };
     }
     
-    // Mid-elevation terrain - adjust moisture for more deserts
+    // More balanced mid-elevation terrain with reduced badlands
     if (height > 0.5) {
-      if (moisture > 0.8) return { name: "tropical_rainforest", color: "#0e6e1e" }; // Reduced from 0.85
-      if (moisture > 0.65) return { name: "temperate_forest", color: "#147235" };    // Reduced from 0.7
-      if (moisture > 0.5) return { name: "woodland", color: "#448d37" };
-      if (moisture > 0.35) return { name: "shrubland", color: "#8d9c4c" };         // Increased from 0.28
-      return { name: "badlands", color: "#9c7450" };
+      if (moisture > 0.75) return { name: "tropical_rainforest", color: "var(--color-biome-tropical-rainforest)" }; // Further reduced
+      if (moisture > 0.62) return { name: "temperate_forest", color: "var(--color-biome-temperate-forest)" }; // Further reduced
+      if (moisture > 0.48) return { name: "woodland", color: "var(--color-biome-woodland)" }; // Further reduced
+      if (moisture > 0.35) return { name: "shrubland", color: "var(--color-biome-shrubland)" }; // Further reduced
+      if (moisture > 0.22) return { name: "dry_shrubland", color: "#a8a76c" }; // Keep as is
+      if (moisture > 0.12) return { name: "scrubland", color: "#b9a77c" }; // NEW biome between dry shrubland and badlands
+      return { name: "badlands", color: "var(--color-biome-badlands)" }; // Now requires truly dry conditions
     }
     
-    // Lower elevation terrain - more desert
-    if (height > 0.4) {
-      if (moisture > 0.8) return { name: "swamp", color: "#2f4d2a" };
-      if (moisture > 0.65) return { name: "marsh", color: "#3d6d38" };          // Reduced from 0.7
-      if (moisture > 0.5) return { name: "grassland", color: "#68a246" };
-      if (moisture > 0.35) return { name: "savanna", color: "#c4b257" };        // Increased from 0.28
-      return { name: "desert_scrub", color: "#d1ba70" };
+    // Expand lower elevation terrain - more variety and coverage
+    if (height > 0.34) {        // Slightly reduced from 0.35 for even more mid-to-low terrain
+      if (moisture > 0.75) return { name: "swamp", color: "var(--color-biome-swamp)" };
+      if (moisture > 0.60) return { name: "marsh", color: "var(--color-biome-marsh)" };
+      if (moisture > 0.45) return { name: "grassland", color: "var(--color-biome-grassland)" };
+      if (moisture > 0.32) return { name: "savanna", color: "var(--color-biome-savanna)" };
+      if (moisture > 0.20) return { name: "desert_scrub", color: "var(--color-biome-desert-scrub)" };
+      if (moisture > 0.12) return { name: "rocky_desert", color: "#bfa678" };
+      return { name: "stony_desert", color: "#c79b68" }; // NEW biome for very dry low-mid terrain
     }
     
-    // Low lands - significantly more desert
-    if (moisture > 0.75) return { name: "bog", color: "#4f5d40" };              // Reduced from 0.85
-    if (moisture > 0.6) return { name: "wetland", color: "#517d46" };           // Reduced from 0.7
-    if (moisture > 0.45) return { name: "plains", color: "#7db356" };           // Reduced from 0.5
-    if (moisture > 0.3) return { name: "dry_plains", color: "#c3be6a" };        // Slightly increased
-    return { name: "desert", color: "#e3d59e" }; // More pure desert
+    // Low lands - expand desert types even more
+    if (moisture > 0.75) return { name: "bog", color: "var(--color-biome-bog)" };
+    if (moisture > 0.60) return { name: "wetland", color: "var(--color-biome-wetland)" };
+    if (moisture > 0.45) return { name: "plains", color: "var(--color-biome-plains)" };
+    if (moisture > 0.30) return { name: "dry_plains", color: "var(--color-biome-dry-plains)" };
+    if (moisture > 0.18) return { name: "sandy_desert", color: "#e8dec6" };
+    if (moisture > 0.08) return { name: "desert", color: "var(--color-biome-desert)" };
+    return { name: "barren_desert", color: "#eeddbb" }; // NEW biome for extremely dry terrain
   }
 };
 

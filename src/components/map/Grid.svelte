@@ -149,6 +149,23 @@
     displayColor: targetTileData.color,
     biomeName: targetTileData.biome?.name
   });
+
+  // Add a visible derived state to track and expose for MiniMap synchronization
+  const visibleGridState = $derived({
+    centerX: $mapState.targetCoord.x,
+    centerY: $mapState.targetCoord.y,
+    width: $mapState.cols,
+    height: $mapState.rows
+  });
+
+  // Make the visibleGridState changes available to other components
+  $effect(() => {
+    if ($mapState.isReady) {
+      document.dispatchEvent(new CustomEvent('gridViewChanged', {
+        detail: visibleGridState
+      }));
+    }
+  });
 </script>
 
 <svelte:window
@@ -228,6 +245,7 @@
     overflow: hidden;
     background: var(--color-dark-blue);
     user-select: none;
+    z-index: 1; /* Set base z-index for proper layering */
   }
 
   /* Map takes full container space */
@@ -322,5 +340,14 @@
 
   .map-container.modal-open .map {
     pointer-events: all; /* Ensure map still receives pointer events when modal is open */
+  }
+
+  /* Ensure MiniMap container doesn't interfere with grid interactions */
+  :global(.minimap-container) {
+    pointer-events: none; /* Let events pass through to grid by default */
+  }
+  
+  :global(.minimap) {
+    pointer-events: auto; /* But enable events on the minimap itself */
   }
 </style>

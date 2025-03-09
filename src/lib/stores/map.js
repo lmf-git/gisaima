@@ -2,7 +2,7 @@ import { writable, derived, get } from 'svelte/store';
 import { TerrainGenerator } from '../map/noise.js';
 
 // Initialize the terrain generator with a fixed seed
-const WORLD_SEED = 95395;
+const WORLD_SEED = 454232;
 const terrain = new TerrainGenerator(WORLD_SEED);
 
 // Configuration constants

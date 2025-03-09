@@ -19,8 +19,8 @@
 <!-- Make the entire component clickable with explicit handlers -->
 <div 
   class="legend-container" 
-  on:click={handleClick}
-  on:keypress={handleKeyPress}
+  onclick={handleClick}
+  onkeypress={handleKeyPress}
   role="button" 
   tabindex="0"
   style="background-color: {displayColor};"
