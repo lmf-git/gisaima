@@ -279,28 +279,28 @@ export class PerlinNoise {
   }
 }
 
-// Export terrain generation options with significantly less water
+// Export terrain generation options with larger scale features and more ocean
 export const TERRAIN_OPTIONS = {
-  // Continent generation options
+  // Continent generation options - much larger scale for bigger landmasses and oceans
   continent: {
-    scale: 0.0008,
-    threshold: 0.49,       // Further increased to create even more land
-    edgeScale: 0.004,
-    edgeAmount: 0.35,
-    sharpness: 2.2
+    scale: 0.0004,         // Significantly reduced for larger continental features (was 0.0006)
+    threshold: 0.53,        // Increased to create more ocean (was 0.49)
+    edgeScale: 0.0025,      // Reduced for smoother, larger coastlines (was 0.003)
+    edgeAmount: 0.32,       // Slightly reduced edge noise (was 0.35)
+    sharpness: 2.0          // Reduced for gentler transitions (was 2.2)
   },
   
-  // Height map options
+  // Height map options - larger scale for bigger terrain features
   height: {
-    scale: 0.01,     // Increased for more local variance
+    scale: 0.006,           // Further reduced for larger mountain ranges (was 0.008)
     octaves: 6,
-    persistence: 0.5,
-    lacunarity: 2.2  // Slightly increased for more variation
+    persistence: 0.55,
+    lacunarity: 2.3
   },
   
-  // Moisture map options
+  // Moisture map options - larger scale for broader climate zones
   moisture: {
-    scale: 0.015,    // Increased for more local variance
+    scale: 0.009,          // Reduced for larger moisture zones (was 0.012)
     octaves: 4,
     persistence: 0.6,
     lacunarity: 2
@@ -314,31 +314,34 @@ export const TERRAIN_OPTIONS = {
     lacunarity: 2
   },
   
-  // River generation options - even more conservative
+  // River generation options - adjusted for fewer riverbanks
   river: {
-    scale: 0.0045,         // Increased scale to further reduce river frequency
-    riverDensity: 0.6,     // Significantly reduced density
-    riverThreshold: 0.5,   // Increased threshold for much fewer rivers
-    minContinentValue: 0.3, // Further increased to keep rivers inland
-    riverWidth: 0.55,      // Further reduced width
-    noiseFactor: 0.3,
-    branchFactor: 0.65     // Reduced branching even more
+    scale: 0.0025,         // Reduced for longer rivers (was 0.0028)
+    riverDensity: 0.6,      // Slightly reduced (was 0.65)
+    riverThreshold: 0.44,
+    minContinentValue: 0.3, // Increased to move rivers more inland (was 0.28)
+    riverWidth: 0.32,       // Reduced width to make them thinner (was 0.35)
+    noiseFactor: 0.35,
+    branchFactor: 0.65,     // Reduced for fewer branches (was 0.75)
+    moistureInfluence: 0.4
   },
   
-  // Lake generation options - significantly fewer lakes
+  // Lake generation options - fewer lakes
   lake: {
-    scale: 0.003,
-    lakeThreshold: 0.88,   // Dramatically increased threshold for very few lakes
-    minHeight: 0.32,       // Further increased minimum height for lakes
-    maxHeight: 0.68,       // Slightly reduced maximum height 
-    minRiverInfluence: 0.35, // Increased to reduce lake creation further
+    scale: 0.0025,          // Reduced for larger lakes (was 0.003)
+    lakeThreshold: 0.87,    // Increased for fewer lakes (was 0.85)
+    minHeight: 0.34,        // Increased to move lakes more inland (was 0.32)
+    maxHeight: 0.68,
+    minRiverInfluence: 0.38, // Higher threshold for lake formation near rivers
     lakeSmoothness: 0.7
   },
   
-  // Constants related to terrain generation - more focused on land
+  // Constants related to terrain generation
   constants: {
-    continentInfluence: 0.72, // Further increased for more distinct continental areas
-    waterLevel: 0.30        // Dramatically lowered to reduce shallow water
+    continentInfluence: 0.65,  // Reduced to make height less dependent on continents (was 0.7)
+    waterLevel: 0.35,          // Increased for more ocean (was 0.32)
+    mountainBoostFactor: 0.15,
+    riverMoistureBoost: 0.12   // Reduced to decrease riverbank formation (was 0.15)
   }
 };
 
@@ -372,25 +375,93 @@ export class TerrainGenerator {
     const detail = this.detailNoise.getNoise(x, y, TERRAIN_OPTIONS.detail) * 0.1;
     height = Math.min(1, Math.max(0, height + detail - 0.05));
     
-    // Generate moisture independent of continents
-    const moisture = this.moistureNoise.getNoise(x, y, TERRAIN_OPTIONS.moisture);
+    // Add mountain boost - make mountains more dramatic
+    // Apply extra height to already high areas
+    if (height > 0.65) {
+      // Apply an exponential boost to higher elevations
+      const mountainBoost = Math.pow((height - 0.65) / 0.35, 1.4) * TERRAIN_OPTIONS.constants.mountainBoostFactor;
+      height = Math.min(1.0, height + mountainBoost);
+    }
+    
+    // Generate BASE moisture independent of rivers (we'll enhance this later)
+    const baseMoisture = this.moistureNoise.getNoise(x, y, TERRAIN_OPTIONS.moisture);
     
     // Create height map function
     const heightMap = (tx, ty) => {
       const tContinent = this.continentNoise.getContinentValue(tx, ty, TERRAIN_OPTIONS.continent);
       const tBaseHeight = this.heightNoise.getNoise(tx, ty, TERRAIN_OPTIONS.height);
-      return tBaseHeight * (1 - TERRAIN_OPTIONS.constants.continentInfluence) + 
-             tContinent * TERRAIN_OPTIONS.constants.continentInfluence;
+      let tHeight = tBaseHeight * (1 - TERRAIN_OPTIONS.constants.continentInfluence) + 
+                    tContinent * TERRAIN_OPTIONS.constants.continentInfluence;
+      
+      // Add mountain boost here too for consistency
+      if (tHeight > 0.65) {
+        const tMountainBoost = Math.pow((tHeight - 0.65) / 0.35, 1.4) * TERRAIN_OPTIONS.constants.mountainBoostFactor;
+        tHeight = Math.min(1.0, tHeight + tMountainBoost);
+      }
+      
+      return tHeight;
     };
     
-    // Generate river value
-    const riverValue = this.riverNoise.getRiverValue(x, y, TERRAIN_OPTIONS.river, heightMap);
+    // NEW: Create moisture map function
+    const moistureMap = (tx, ty) => {
+      return this.moistureNoise.getNoise(tx, ty, TERRAIN_OPTIONS.moisture);
+    };
+    
+    // Generate river value with moisture influence
+    // Pass base moisture to river generation
+    const riverOptions = { ...TERRAIN_OPTIONS.river };
+    
+    // Enhance river density based on moisture for more realistic distribution
+    if (baseMoisture > 0.6) {
+      // More rivers in wet areas
+      riverOptions.riverDensity *= (1 + (baseMoisture - 0.6) * TERRAIN_OPTIONS.river.moistureInfluence);
+    } else if (baseMoisture < 0.3) {
+      // Fewer rivers in dry areas
+      riverOptions.riverDensity *= (1 - (0.3 - baseMoisture) * TERRAIN_OPTIONS.river.moistureInfluence);
+    }
+    
+    // Also adjust width based on elevation - narrower at high elevations
+    if (height > 0.7) {
+      riverOptions.riverWidth *= 0.7; // Narrower streams in mountains
+    } else if (height < 0.4) {
+      riverOptions.riverWidth *= 1.2; // Wider rivers in lowlands
+    }
+    
+    // Generate river value with these adjustments
+    let riverValue = this.riverNoise.getRiverValue(x, y, riverOptions, heightMap);
+    
+    // Apply thinning with adaptive threshold based on elevation
+    if (riverValue > 0 && riverValue < 0.2) {
+      const streamNoise = this.detailNoise.getNoise(x * 5 + 8000, y * 5 + 8000, {
+        scale: 0.1,
+        octaves: 1
+      });
+      
+      // Higher threshold in mountains (more breaks), lower in valleys
+      const breakThreshold = height > 0.7 ? 0.45 : height > 0.5 ? 0.4 : 0.35;
+      
+      if (streamNoise < breakThreshold) {
+        riverValue *= 0.6;
+      }
+    }
     
     // Create river map function
-    const riverMap = (tx, ty) => this.riverNoise.getRiverValue(tx, ty, TERRAIN_OPTIONS.river, heightMap);
+    const riverMap = (tx, ty) => this.riverNoise.getRiverValue(tx, ty, riverOptions, heightMap);
     
     // Generate lake value
     const lakeValue = this.lakeNoise.getLakeValue(x, y, TERRAIN_OPTIONS.lake, heightMap, riverMap);
+    
+    // ENHANCE: Final moisture value is influenced by rivers and lakes
+    let moisture = baseMoisture;
+    
+    // Rivers and lakes increase local moisture
+    if (riverValue > 0.1) {
+      moisture = Math.min(1.0, moisture + riverValue * TERRAIN_OPTIONS.constants.riverMoistureBoost);
+    }
+    
+    if (lakeValue > 0.1) {
+      moisture = Math.min(1.0, moisture + lakeValue * TERRAIN_OPTIONS.constants.riverMoistureBoost * 1.5);
+    }
     
     // Calculate slope
     const heightNE = this.heightNoise.getNoise(x + 1, y - 1, TERRAIN_OPTIONS.height);

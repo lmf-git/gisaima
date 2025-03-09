@@ -181,6 +181,32 @@ export const BIOMES = {
     description: "Mountains in desert regions"
   },
   
+  // Add new mountain biomes
+  snow_capped_peaks: {
+    name: "snow_capped_peaks",
+    displayName: "Snow-Capped Peaks",
+    color: "#ffffff",
+    category: BIOME_CATEGORIES.MOUNTAINS,
+    resources: ["Ice", "Crystal", "Pure Water"],
+    description: "The highest mountain peaks, permanently covered in snow"
+  },
+  jagged_peaks: {
+    name: "jagged_peaks",
+    displayName: "Jagged Peaks",
+    color: "#a8a8a8",
+    category: BIOME_CATEGORIES.MOUNTAINS,
+    resources: ["Stone", "Rare Minerals", "Crystals"],
+    description: "Sharp, rugged mountain peaks with steep cliffs"
+  },
+  volcanic_mountain: {
+    name: "volcanic_mountain",
+    displayName: "Volcanic Mountain",
+    color: "#5a4a45",
+    category: BIOME_CATEGORIES.MOUNTAINS,
+    resources: ["Obsidian", "Sulfur", "Volcanic Glass"],
+    description: "Mountains formed by volcanic activity, rich in rare minerals"
+  },
+  
   // Highland biomes
   glacier: {
     name: "glacier",
@@ -221,6 +247,32 @@ export const BIOMES = {
     category: BIOME_CATEGORIES.HIGHLANDS,
     resources: ["Red Clay", "Minerals"],
     description: "Elevated area with a flat top and steep sides"
+  },
+  
+  // Add new snow biomes
+  tundra: {
+    name: "tundra",
+    displayName: "Tundra",
+    color: "#e0e8eb",
+    category: BIOME_CATEGORIES.HIGHLANDS,
+    resources: ["Lichens", "Arctic Herbs", "Furs"],
+    description: "Cold plains with permafrost and minimal vegetation"
+  },
+  ice_sheet: {
+    name: "ice_sheet",
+    displayName: "Ice Sheet",
+    color: "#dce9ef",
+    category: BIOME_CATEGORIES.HIGHLANDS,
+    resources: ["Ice", "Ancient Artifacts", "Frozen Specimens"],
+    description: "Vast expanses of permanent ice"
+  },
+  frozen_forest: {
+    name: "frozen_forest",
+    displayName: "Frozen Forest",
+    color: "#a4c4d4",
+    category: BIOME_CATEGORIES.HIGHLANDS,
+    resources: ["Frost Wood", "Winter Berries", "Fur"],
+    description: "Forest in perpetually frozen conditions"
   },
   
   // Mid-elevation terrain
@@ -380,7 +432,7 @@ export function getBiomeResources(biomeName) {
 }
 
 /**
- * Determine biome based on terrain parameters
+ * Determine biome based on terrain parameters with environment-integrated water features
  * @param {number} height - The height value (0-1)
  * @param {number} moisture - The moisture value (0-1)
  * @param {number} continentValue - The continent value (0-1)
@@ -389,60 +441,115 @@ export function getBiomeResources(biomeName) {
  * @returns {object} The biome object
  */
 export function determineBiome(height, moisture, continentValue = 1.0, riverValue = 0, lakeValue = 0) {
-  // Higher thresholds for rivers
-  if (riverValue > 0.22 && continentValue > 0.3) {
-    if (height > 0.6) return BIOMES.stream;
-    return BIOMES.river;
+  // WATER FEATURES WITH BETTER ENVIRONMENTAL INTEGRATION:
+  
+  // Rivers - size varies by elevation and moisture
+  if (riverValue > 0.22) {
+    if (height < 0.4) {
+      // Major river in lowlands
+      return BIOMES.river;
+    } else if (height < 0.65) {
+      // Mid-elevation river (slightly smaller)
+      if (moisture > 0.6) {
+        return BIOMES.river; // Still a river in wet areas
+      } else {
+        return BIOMES.stream; // Stream in drier mid-elevations
+      }
+    } else {
+      // High elevation - always a stream
+      return BIOMES.stream;
+    }
   }
   
-  // Lakes with much higher threshold
-  if (lakeValue > 0.6) {
+  // Smaller streams with elevation and moisture context
+  if (riverValue > 0.17 && riverValue <= 0.22) {
+    // In wet areas at high elevations, we get mountain streams
+    if (height > 0.6 && moisture > 0.5) {
+      return BIOMES.stream;
+    }
+    // In wet lowlands, small rivers still form
+    else if (height < 0.4 && moisture > 0.7) {
+      return BIOMES.stream;
+    }
+    // Otherwise, only moderate threshold streams in mid-elevation wet areas
+    else if (moisture > 0.5 && continentValue > 0.4) { // More restrictive (was 0.45 and 0.35)
+      return BIOMES.stream;
+    }
+  }
+  
+  // Lakes with moisture context
+  if (lakeValue > 0.5) {
     return BIOMES.lake;
   }
   
-  // Ocean biomes - less ocean coverage
-  if (continentValue < 0.12) {
+  // DRASTICALLY REDUCED RIVERBANK DETECTION - much more restrictive conditions
+  if (riverValue > 0.1 && riverValue <= 0.13) { // Very narrow range (was 0.09-0.16)
+    // Riverbanks ONLY in fertile lowland areas - all criteria must be met
+    if (height < 0.45 && moisture > 0.6 && continentValue > 0.5) { // All thresholds increased
+      return BIOMES.riverbank;
+    }
+    // OR very close to major rivers with high moisture
+    else if (riverValue > 0.12 && moisture > 0.7 && height < 0.4 && continentValue > 0.5) {
+      return BIOMES.riverbank;
+    }
+    // In very wet areas, create wetlands/marshes near water features instead of riverbanks
+    else if (moisture > 0.8 && riverValue > 0.11 && height < 0.42) {
+      return BIOMES.wetland;
+    }
+  }
+  
+  // EXPANDED OCEAN HIERARCHY
+  
+  // Deep ocean - very far from continents
+  if (continentValue < 0.15) { // Increased coverage (was 0.12)
     return BIOMES.abyssal_ocean;
   }
   
-  // Reduced ocean coverage
-  if (continentValue < 0.42) {
+  // Deep seas - moderately far from continents
+  if (continentValue < 0.40) { // Increased coverage (was 0.35)
     return BIOMES.deep_ocean;
   }
 
-  // Water biomes based on height
-  if (height < 0.30 - (continentValue * 0.05)) {
-    if (height < 0.12) return BIOMES.ocean_trench;
-    if (height < 0.22) return BIOMES.deep_ocean;
+  // Coastal waters - shallow seas near land
+  if (height < 0.35 - (continentValue * 0.06)) { // More sea area (was 0.32 and 0.05)
+    if (height < 0.15) return BIOMES.ocean_trench; // Slightly increased (was 0.12)
+    if (height < 0.25) return BIOMES.deep_ocean; // Slightly increased (was 0.22)
     return BIOMES.ocean;
   }
   
-  // Reduce riverbank areas even further
-  if (riverValue > 0.15 && riverValue <= 0.22 && continentValue > 0.35) {
-    return BIOMES.riverbank;
+  // Expanded mountain and snow detection with more variety
+  if (height > 0.9) {
+    // Highest peaks - various types of snow-capped mountains
+    if (moisture > 0.7) return BIOMES.snow_capped_peaks;
+    if (moisture > 0.4) return BIOMES.snow_cap;
+    return BIOMES.jagged_peaks;
   }
   
-  // Reduce lake influence zones dramatically
-  if (lakeValue > 0.45 && lakeValue <= 0.6) {
-    return BIOMES.lakeshore;
+  if (height > 0.85) {
+    // Very high elevation - alpine and volcanic
+    if (moisture > 0.7) return BIOMES.alpine;
+    if (moisture < 0.3 && Math.random() < 0.3) return BIOMES.volcanic_mountain; // Some randomness for volcanoes
+    return BIOMES.mountain;
   }
   
-  // Coastal and beach areas
-  if (height < 0.35) {
-    if (moisture < 0.3) return BIOMES.sandy_beach;
-    if (moisture < 0.6) return BIOMES.pebble_beach;
-    return BIOMES.rocky_shore;
-  }
-  
-  // Mountains and high elevation
-  if (height > 0.8) {
-    if (moisture > 0.8) return BIOMES.snow_cap;
+  if (height > 0.75) {
+    // High mountains with variation
+    if (moisture > 0.8) return BIOMES.glacier;
     if (moisture > 0.6) return BIOMES.alpine;
-    if (moisture > 0.3) return BIOMES.mountain;
+    if (moisture > 0.4) return BIOMES.mountain;
     if (moisture > 0.2) return BIOMES.dry_mountain;
     return BIOMES.desert_mountains;
   }
   
+  // Cold high-elevation regions
+  if (height > 0.65 && moisture > 0.7) {
+    // Snow and ice biomes at high elevation
+    if (moisture > 0.9) return BIOMES.ice_sheet;
+    if (moisture > 0.8) return BIOMES.frozen_forest;
+    return BIOMES.tundra;
+  }
+  
+  // Regular highland biomes
   if (height > 0.7) {
     if (moisture > 0.8) return BIOMES.glacier;
     if (moisture > 0.6) return BIOMES.highland_forest;

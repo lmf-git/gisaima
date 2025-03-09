@@ -3,6 +3,7 @@
   import Legend from "./Legend.svelte";
   import Axes from "./Axes.svelte";
   import Details from "./Details.svelte";
+  import Minimap from "./Minimap.svelte";
   import { TerrainGenerator } from "../../lib/map/noise.js";
   import { setupKeyboardNavigation, calculateKeyboardMove,startDrag, stopDrag,checkDragState, createMouseEventHandlers } from "../../lib/map/controls.js";
 
@@ -19,6 +20,8 @@
 
   // UI state
   let showDetailsModal = false;
+  let showMinimap = true; // Control minimap visibility
+  let minimapPosition = "bottom-right"; // Fixed position for the minimap
   let keysPressed = new Set();
   let navInterval = null;
   
@@ -54,7 +57,7 @@
         targetCoord.y += yChange;
         offsetX = centerX + targetCoord.x;
         offsetY = centerY + targetCoord.y;
-        targetCoord = { ...targetCoord };
+        targetCoord = { ...targetCoord }; // Force reactivity for minimap
       }
     }
   };
@@ -170,6 +173,34 @@
   // Create mouse event handlers
   const eventHandlers = createMouseEventHandlers(controlsState, mapElement);
 
+  // Handle position changes from minimap - FIXED
+  const handleMinimapPositionChange = (event) => {
+    console.log("Grid received position change:", event.detail);
+    
+    // Update target coordinates with a brand new object
+    targetCoord = { ...event.detail };
+    
+    // Update offsets to match
+    offsetX = centerX + targetCoord.x;
+    offsetY = centerY + targetCoord.y;
+    
+    // Force immediate grid redraw
+    gridArray = Array.from({ length: rows }, (_, y) =>
+      Array.from({ length: cols }, (_, x) => {
+        const globalX = x - offsetX;
+        const globalY = y - offsetY;
+        const terrainData = terrain.getTerrainData(globalX, globalY);
+        
+        return {
+          x: globalX,
+          y: globalY,
+          isCenter: x === centerX && y === centerY,
+          ...terrainData
+        };
+      })
+    ).flat();
+  };
+
   // Open details modal
   const openDetails = () => {
     // Get fresh data before opening the modal
@@ -179,6 +210,16 @@
     showDetailsModal = true;
   };
 
+  // Toggle minimap visibility
+  const toggleMinimap = () => {
+    showMinimap = !showMinimap;
+  };
+
+  // Handle minimap close event
+  const handleMinimapClose = () => {
+    showMinimap = false;
+  };
+
   // Ensure dragging class is removed
   $: if (!isDragging && mapElement && mapElement.classList.contains('dragging'))
     mapElement.classList.remove('dragging');
@@ -186,15 +227,15 @@
   // Generate center tile data for Details component
   let centerTileData = null;
   
-  // Update terrain data with negated coordinates
+  // Update terrain data - ensure we're consistent with the coordinate system
   $: if (isReady) {
-    // Get fresh terrain data when coordinates change or modal opens
-    centerTileData = terrain.getTerrainData(-targetCoord.x, -targetCoord.y);
+    // Use the actual targetCoord values directly (without negation)
+    centerTileData = terrain.getTerrainData(targetCoord.x, targetCoord.y);
   }
   
-  // Update the details whenever the modal is opened
+  // Same consistency for modal updates
   $: if (showDetailsModal && isReady) {
-    centerTileData = terrain.getTerrainData(-targetCoord.x, -targetCoord.y);
+    centerTileData = terrain.getTerrainData(targetCoord.x, targetCoord.y);
   }
 
   // Sync state with controls state
@@ -208,6 +249,12 @@
   on:mouseleave={eventHandlers.globalMouseLeave}
   on:blur={() => isDragging && handleStopDrag()}
   on:visibilitychange={eventHandlers.visibilityChange}
+  on:keydown={(e) => {
+    // Toggle minimap with 'M' key
+    if (e.key === 'm' && !e.repeat) {
+      toggleMinimap();
+    }
+  }}
 />
 
 <div class="map-container" style="--tile-size: {tileSize}em;" class:modal-open={showDetailsModal}>
@@ -260,6 +307,19 @@
     lakeValue={centerTileData?.lakeValue || 0}
     displayColor={centerTileData?.color || "#808080"}
   />
+
+  <!-- Minimap component with position change and close handlers -->
+  {#if showMinimap && isReady}
+    <Minimap 
+      {terrain}
+      bind:targetCoord
+      mainViewportSize={{ cols, rows }}
+      position={minimapPosition}
+      size="20%"
+      on:positionchange={handleMinimapPositionChange}
+      on:close={handleMinimapClose}
+    />
+  {/if}
 </div>
 
 <style>
