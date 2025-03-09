@@ -8,22 +8,32 @@
   export let show = false;
   
   // Props for terrain data
-  export let biome = { name: "unknown", color: "#808080" };
+  export let biome = { name: "unknown", displayName: "Unknown", color: "#808080" };
   export let height = 0;
   export let moisture = 0;
   export let continent = 0;
-  export let riverValue = 0; // Added river value
-  export let lakeValue = 0;  // Added lake value
-  export let displayColor = "#808080"; // New prop for the processed color
+  export let riverValue = 0;
+  export let lakeValue = 0;
+  export let slope = 0; // Added missing prop
+  export let displayColor = "#808080";
   
-  // Add debugging to verify correct data is received when props change
+  // FIXED: Verify proper biome data is received
   $: if (biome) {
-    console.log(`Details component receiving biome: ${biome?.name} at coordinates (${x}, ${y})`);
+    // Ensure biome always has a displayName
+    if (!biome.displayName) {
+      biome.displayName = biome.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+    console.log(`Details received biome: ${biome?.name}, displayName: ${biome?.displayName}`);
   }
   
-  // Log when details are shown with current terrain data
-  $: if (show) {
-    console.log(`Details visible with biome: ${biome?.name}, moisture: ${moisture}, height: ${height}`);
+  // Improve performance by avoiding unnecessary re-renders
+  let lastBiomeName = '';
+  let resourcesList = [];
+  
+  $: if (biome?.name && biome.name !== lastBiomeName) {
+    lastBiomeName = biome.name;
+    resourcesList = getBiomeResources(biome.name);
+    console.log(`Updated resources for biome ${biome.name}:`, resourcesList);
   }
   
   // Handle close action
@@ -49,22 +59,13 @@
     moisture < 0.6 ? "Moderate" :
     moisture < 0.8 ? "Wet" : "Very Wet";
   
-  // Get formatted biome display name
-  $: biomeDisplayName = biome.displayName || biome.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  
-  // Determine potential resources based on biome
-  $: resources = getBiomeResources(biome.name);
-  
-  // Watch for show prop changes to open/close the details element
-  let detailsElement;
-  $: if (detailsElement) {
-    if (show && !detailsElement.open) detailsElement.open = true;
-    else if (!show && detailsElement.open) detailsElement.open = false;
-  }
+  // FIXED: Get biome display name reliably
+  $: biomeDisplayName = biome.displayName || 
+    biome.name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
   // Handle the toggle event to keep the show prop in sync
   function handleToggle(event) {
-    show = detailsElement.open;
+    show = event.target.open;
   }
   
   // Allow ESC key to close the details
@@ -85,22 +86,20 @@
 
 <svelte:window on:keydown={handleKeydown} />
 
-<div class="details-container" class:visible={show}>
+<div class="details-container" class:visible={show} aria-hidden={!show}>
   <details 
     class="location-details" 
-    bind:this={detailsElement}
+    open={show}
     on:toggle={handleToggle}
   >
     <summary class="details-summary">
       <h2>Location Details: ({x}, {y})</h2>
-      <!-- Custom toggle icon added in CSS -->
     </summary>
     
     <div class="details-content" transition:fly={{ y: -10, duration: 200 }}>
       <div class="info-section">
         <h3>Biome</h3>
         <div class="biome-info">
-          <!-- Use the processed color from the map instead of the raw biome color -->
           <div class="biome-color" style="background-color: {displayColor}"></div>
           <p>{biomeDisplayName}</p>
         </div>
@@ -130,9 +129,9 @@
       
       <div class="info-section">
         <h3>Resources</h3>
-        {#if resources.length > 0}
+        {#if resourcesList.length > 0}
           <ul>
-            {#each resources as resource}
+            {#each resourcesList as resource}
               <li>{resource}</li>
             {/each}
           </ul>
@@ -280,5 +279,11 @@
   .close-button:hover {
     background: var(--color-button-secondary-hover);
     transform: translateY(-0.125em);
+  }
+
+  /* Ensure focus styles for keyboard accessibility */
+  .close-button:focus {
+    outline: 2px solid var(--color-button-secondary-hover);
+    outline-offset: 2px;
   }
 </style>

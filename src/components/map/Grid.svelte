@@ -1,58 +1,23 @@
 <script>
-  import { onMount } from "svelte";
+  import { onMount, createEventDispatcher } from "svelte";
   import { browser } from "$app/environment";
   import Legend from "./Legend.svelte";
   import Axes from "./Axes.svelte";
   import Details from "./Details.svelte";
-  import Minimap from "./Minimap.svelte";
-  import { TerrainGenerator } from "../../lib/map/noise.js";
-  import { setupKeyboardNavigation, calculateKeyboardMove,startDrag, stopDrag,checkDragState, createMouseEventHandlers } from "../../lib/map/controls.js";
+  import { setupKeyboardNavigation, calculateKeyboardMove, startDrag, stopDrag, checkDragState, createMouseEventHandlers } from "../../lib/map/controls.js";
 
-  // Initialize the terrain generator with a fixed seed
-  const WORLD_SEED = 532534;
-  const terrain = new TerrainGenerator(WORLD_SEED);
+  const dispatch = createEventDispatcher();
   
-  // Create a module-scoped terrain cache
-  // This avoids using window directly and works with SSR
-  let terrainCache = new Map();
-  
-  // Get terrain data with caching for consistency across the app
-  function getCachedTerrainData(x, y) {
-    // Use integer coordinates for deterministic results
-    const intX = Math.floor(x);
-    const intY = Math.floor(y);
-    
-    const key = `${intX},${intY}`;
-    
-    if (terrainCache.has(key)) {
-      return terrainCache.get(key);
-    }
-    
-    const terrainData = terrain.getTerrainData(intX, intY);
-    
-    // Create a stable copy to ensure consistent data across the app
-    const stableData = {
-      biome: terrainData.biome,
-      color: terrainData.color,
-      height: terrainData.height,
-      moisture: terrainData.moisture,
-      continent: terrainData.continent,
-      riverValue: terrainData.riverValue,
-      lakeValue: terrainData.lakeValue,
-      slope: terrainData.slope
-    };
-    
-    terrainCache.set(key, stableData);
-    
-    return stableData;
-  }
+  // Props - terrain is now received from the parent
+  export let terrain;
+  export let terrainCache;
+  export let targetCoord = { x: 0, y: 0 };
 
   // Position and drag state
   let isDragging = false;
   let isMouseDown = false;
   let dragStartX = 0;
   let dragStartY = 0;
-  let targetCoord = { x: 0, y: 0 };
 
   // UI state
   let showDetailsModal = false;
@@ -79,7 +44,42 @@
   let centerX = 0;
   let centerY = 0;
   
-  // Controls state object
+  // Get terrain data with caching - now uses the shared cache from props
+  function getCachedTerrainData(x, y) {
+    const intX = Math.floor(x);
+    const intY = Math.floor(y);
+    
+    const key = `${intX},${intY}`;
+    
+    if (terrainCache.has(key)) {
+      return terrainCache.get(key);
+    }
+    
+    // IMPROVED: Add console log for debugging cache misses of important coordinates
+    if ((intX === Math.floor(targetCoord.x) && intY === Math.floor(targetCoord.y))) {
+      console.log(`Cache miss for center coordinates (${intX}, ${intY})`);
+    }
+    
+    const terrainData = terrain.getTerrainData(intX, intY);
+    
+    // Create a stable copy to ensure consistent data across the app
+    const stableData = {
+      biome: terrainData.biome,
+      color: terrainData.color,
+      height: terrainData.height,
+      moisture: terrainData.moisture,
+      continent: terrainData.continent,
+      riverValue: terrainData.riverValue,
+      lakeValue: terrainData.lakeValue,
+      slope: terrainData.slope
+    };
+    
+    terrainCache.set(key, stableData);
+    
+    return stableData;
+  }
+
+  // Controls state object with coordinate update function
   const controlsState = {
     isDragging,
     isMouseDown,
@@ -90,11 +90,16 @@
     tileSize,
     updateCoordinates: (xChange, yChange) => {
       if (xChange !== 0 || yChange !== 0) {
-        targetCoord.x += xChange;
-        targetCoord.y += yChange;
+        const newX = targetCoord.x + xChange;
+        const newY = targetCoord.y + yChange;
+        
+        // Dispatch event when coordinates change via keyboard/drag
+        dispatch('positionchange', { x: newX, y: newY });
+        
+        // Update local targetCoord for immediate visual feedback
+        targetCoord = { x: newX, y: newY };
         offsetX = centerX + targetCoord.x;
         offsetY = centerY + targetCoord.y;
-        targetCoord = { ...targetCoord }; // Force reactivity for minimap
       }
     }
   };
@@ -118,19 +123,15 @@
     centerY = Math.floor(rows / 2);
     offsetX = centerX + targetCoord.x;
     offsetY = centerY + targetCoord.y;
+    
+    // Notify parent about viewport size change
+    dispatch('viewportsizechange', { cols, rows });
 
     if (!isReady) isReady = true;
   };
 
   // Initialize when mounted - only runs in browser
   onMount(() => {
-    // Make terrain cache available to Minimap
-    if (!globalThis.globalTerrainCache) {
-      globalThis.globalTerrainCache = terrainCache;
-    } else {
-      terrainCache = globalThis.globalTerrainCache;
-    }
-    
     resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(mapElement);
     resize();
@@ -177,6 +178,17 @@
         Array.from({ length: cols }, (_, x) => {
           const globalX = Math.floor(x - offsetX); // Ensure integer coordinates
           const globalY = Math.floor(y - offsetY);
+          
+          // Special case for center tile to ensure consistency with minimap
+          if (x === centerX && y === centerY && centerTileData) {
+            return {
+              x: globalX,
+              y: globalY,
+              isCenter: true,
+              ...centerTileData // Use exact same data as centerTileData
+            };
+          }
+          
           const terrainData = getCachedTerrainData(globalX, globalY);
           
           return {
@@ -219,7 +231,7 @@
   // Create mouse event handlers
   const eventHandlers = createMouseEventHandlers(controlsState, mapElement);
 
-  // Handle position changes from minimap - with improved consistency
+  // Handle position changes from minimap with guaranteed biome consistency
   const handleMinimapPositionChange = (event) => {
     console.log("Grid received position change:", event.detail);
     
@@ -236,11 +248,27 @@
     offsetX = centerX + targetCoord.x;
     offsetY = centerY + targetCoord.y;
     
-    // Force immediate update of center tile data for consistent UI feedback
-    centerTileData = getCachedTerrainData(targetCoord.x, targetCoord.y);
+    // Force use of cached data to ensure biome consistency
+    const key = `${newCoords.x},${newCoords.y}`;
     
-    // IMPROVED: Log for debugging
-    console.log(`Main map updated to: (${targetCoord.x}, ${targetCoord.y}), offsets: (${offsetX}, ${offsetY})`);
+    if (event.detail.fromMinimapClick) {
+      console.log(`Click from minimap at (${newCoords.x}, ${newCoords.y})`);
+      
+      // For minimap clicks, ensure we use the cached data which should be set by the minimap
+      if (terrainCache.has(key)) {
+        centerTileData = terrainCache.get(key);
+        console.log(`Grid using cached data for (${newCoords.x}, ${newCoords.y}), biome: ${centerTileData.biome.name}`);
+      } else {
+        // This shouldn't normally happen if minimap is properly setting cache
+        console.warn(`Cache miss for minimap click at (${newCoords.x}, ${newCoords.y})`);
+        centerTileData = getCachedTerrainData(newCoords.x, newCoords.y);
+      }
+    } else {
+      // For other position changes, get data normally
+      centerTileData = getCachedTerrainData(newCoords.x, newCoords.y);
+    }
+    
+    console.log(`Main map updated to: (${newCoords.x}, ${newCoords.y}), biome: ${centerTileData.biome.name}`);
   };
 
   // Open details modal
@@ -269,6 +297,33 @@
   // Generate center tile data for Details component
   let centerTileData = null;
   
+  // FIXED: Ensure centerTileData is properly updated whenever targetCoord changes
+  $: if (isReady && targetCoord) {
+    // Use cached data when available to improve consistency
+    const key = `${Math.floor(targetCoord.x)},${Math.floor(targetCoord.y)}`;
+    centerTileData = terrainCache.has(key) 
+      ? terrainCache.get(key) 
+      : getCachedTerrainData(targetCoord.x, targetCoord.y);
+    
+    // Debug to ensure proper data is being passed
+    console.log(`Updated centerTileData for Details: ${centerTileData?.biome?.name}`);
+  }
+  
+  // Same consistency for modal updates - IMPROVED to avoid redundant calls
+  $: if (showDetailsModal && isReady && centerTileData) {
+    console.log(`Showing Details modal with biome: ${centerTileData.biome.name}`);
+  }
+
+  // ENHANCED: Handle keyboard navigation for grid elements
+  function handleGridKeydown(e, cell) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      // Set current cell as center
+      targetCoord = { x: cell.x, y: cell.y };
+      dispatch('positionchange', targetCoord);
+    }
+  }
+
   // Update terrain data - ensure we're consistent with the coordinate system
   $: if (isReady) {
     // Use the actual targetCoord values directly (without negation)
@@ -282,6 +337,16 @@
 
   // Sync state with controls state
   $: isDragging = controlsState.isDragging;
+
+  // ENHANCED: Watch for targetCoord changes and update offsets accordingly
+  $: {
+    if (isReady && centerX && centerY) {
+      // This ensures the grid responds to targetCoord changes from any source
+      offsetX = centerX + targetCoord.x;
+      offsetY = centerY + targetCoord.y;
+      console.log(`Grid updated offsets to: (${offsetX}, ${offsetY}) based on targetCoord: (${targetCoord.x}, ${targetCoord.y})`);
+    }
+  }
 </script>
 
 <svelte:window
@@ -312,17 +377,20 @@
     {#if isReady}
       <div class="grid main-grid" style="--cols: {cols}; --rows: {rows};" role="presentation">
         {#each gridArray as cell}
-          <div
+          <!-- FIXED: Use button instead of div for interactive cells -->
+          <button
             class="tile"
             class:center={cell.isCenter}
             role="gridcell"
+            tabindex="0"
+            on:keydown={(e) => handleGridKeydown(e, cell)}
             aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}"
             aria-current={cell.isCenter ? "location" : undefined}
             style="background-color: {cell.color};"
             title="{cell.biome.name} ({cell.x},{cell.y})"
           >
             <span class="coords">{cell.x},{cell.y}</span>
-          </div>
+          </button>
         {/each}
       </div>
     {/if}
@@ -336,11 +404,12 @@
     <Axes {xAxisArray} {yAxisArray} {cols} {rows} />
   {/if}
 
+  <!-- FIXED: Pass complete and correct biome data to Details component -->
   <Details 
     x={targetCoord.x} 
     y={targetCoord.y} 
     bind:show={showDetailsModal}
-    biome={centerTileData?.biome || { name: "unknown", color: "#808080" }}
+    biome={centerTileData?.biome || { name: "unknown", displayName: "Unknown", color: "#808080" }}
     height={centerTileData?.height || 0}
     moisture={centerTileData?.moisture || 0}
     continent={centerTileData?.continent || 0}
@@ -349,19 +418,6 @@
     lakeValue={centerTileData?.lakeValue || 0}
     displayColor={centerTileData?.color || "#808080"}
   />
-
-  <!-- Minimap component with updated props -->
-  {#if showMinimap && isReady}
-    <Minimap 
-      {terrain}
-      bind:targetCoord
-      mainViewportSize={{ cols, rows }}
-      position={minimapPosition}
-      size="20%"
-      on:positionchange={handleMinimapPositionChange}
-      on:close={handleMinimapClose}
-    />
-  {/if}
 </div>
 
 <style>
@@ -416,6 +472,15 @@
     -moz-user-select: none;
     -ms-user-select: none;
     transition: filter 0.1s ease-in-out, transform 0.1s ease-in-out;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  /* Add focus styles for keyboard navigation */
+  .tile:focus {
+    outline: 0.15em solid rgba(255, 255, 255, 0.7);
+    z-index: 5;
   }
 
   /* Replace the hover and drag state CSS */
