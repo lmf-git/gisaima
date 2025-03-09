@@ -4,15 +4,6 @@
     import { browser } from '$app/environment';
     import Logo from '../components/Logo.svelte';
     
-    // Import analytics only on client side
-    if (browser) {
-        import('$lib/firebase/analytics')
-            .then(module => {
-                module.initializeAnalytics();
-            })
-            .catch(e => console.error('Analytics import failed:', e));
-    }
-    
     // Check if current page is the map page
     $: isMapPage = $page.url.pathname === '/map';
 
@@ -28,7 +19,7 @@
             <div class="navlinks">
                 <a href="/" class="logolink">
                     <Logo extraClass="navlogo" />
-                </a>i
+                </a>
                 <a href="/map" class="button navlink">Map</a>
                 {#if !$user}
                     <a href="/login" class="button navlink">Login</a>
