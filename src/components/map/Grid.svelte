@@ -166,6 +166,9 @@
       }));
     }
   });
+
+  // Add keyboard movement tracking
+  const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null);
 </script>
 
 <svelte:window
@@ -182,7 +185,7 @@
     class="map"
     bind:this={mapElement}
     onmousedown={handleStartDrag}
-    class:dragging={isDragging}
+    class:moving={isMoving}
     role="grid"
     tabindex="0"
     aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
@@ -293,12 +296,12 @@
   }
 
   /* Replace the hover and dragstate CSS */
-  .map:not(.dragging) .tile:hover {
+  .map:not(.moving) .tile:hover {
     z-index: 2;
     filter: brightness(1.2);
   }
   
-  .map.dragging .tile {
+  .map.moving .tile {
     pointer-events: none;
     cursor: grabbing;
     filter: none;
