@@ -3,6 +3,8 @@
   import Legend from "./Legend.svelte";
   import Axes from "./Axes.svelte";
   import Details from "./Details.svelte";
+  import MiniMap from "./MiniMap.svelte"; // Fixed capitalization
+
   import { 
     mapState, 
     gridArray, 
@@ -127,6 +129,40 @@
 
   // Cache grid data
   const grid = $derived($gridArray);
+
+  // Simplify what we pass to Details
+  const detailsProps = $derived(() => {
+    // Find the center cell data for the current color
+    const centerCell = grid.find(cell => cell.isCenter);
+    
+    return {
+      x: $mapState.targetCoord.x, 
+      y: $mapState.targetCoord.y,
+      show: $mapState.showDetailsModal,
+      displayColor: centerCell?.color // Pass current color from the grid
+    };
+  });
+
+  // Create a single source of truth for coordinate data that both
+  // Legend and Details can use
+  const sharedCoordData = $derived(() => {
+    // Find the center cell for consistent terrain data
+    const centerCell = grid.find(cell => cell.isCenter);
+    
+    return {
+      x: $mapState.targetCoord.x,
+      y: $mapState.targetCoord.y,
+      color: centerCell?.color,
+      biome: centerCell?.biome,
+      showModal: $mapState.showDetailsModal
+    };
+  });
+  
+  // Debug function to track opening of details
+  function debugOpenDetailsModal() {
+    console.log("Opening details from Grid.svelte");
+    openDetailsModal(); // Call the store function
+  }
 </script>
 
 <svelte:window
@@ -168,9 +204,9 @@
   </div>
 
   <Legend 
-    x={targetCoord.x} 
-    y={targetCoord.y} 
-    openDetails={openDetailsModal} 
+    x={sharedCoordData.x} 
+    y={sharedCoordData.y} 
+    openDetails={debugOpenDetailsModal}
   />
 
   {#if showAxisBars && $mapState.isReady}
@@ -183,13 +219,16 @@
   {/if}
 
   <Details 
-    x={$mapState.targetCoord.x} 
-    y={$mapState.targetCoord.y} 
-    show={$mapState.showDetailsModal}
-    biome={$mapState.centerTileData?.biome || { name: "unknown", color: "#808080" }}
-    displayColor={$mapState.centerTileData?.color || "#808080"}
+    x={sharedCoordData.x} 
+    y={sharedCoordData.y} 
+    show={sharedCoordData.showModal}
+    displayColor={sharedCoordData.color}
+    biomeName={sharedCoordData.biome?.name}
     onClose={closeDetailsModal}
   />
+
+  <!-- Add the minimap component with correct capitalization -->
+  <MiniMap />
 </div>
 
 <style>

@@ -11,6 +11,9 @@ export const CHUNK_SIZE = 20;
 export const TILE_SIZE = 7.5;
 export const DRAG_CHECK_INTERVAL = 500;
 
+// Expansion factor for calculating larger grid area
+export const GRID_EXPANSION_FACTOR = 3;
+
 // Create a store using Svelte's store API since $state is only for component scripts
 export const mapState = writable({
   // Position and drag state
@@ -258,20 +261,24 @@ export function stopDrag() {
 
 // Open details modal - fixing target tile to match details
 export function openDetailsModal() {
+  console.log("openDetailsModal called from store");
+  
+  // Force a more obvious state change
   mapState.update(state => {
-    if (state.isReady) {
-      const targetX = state.targetCoord.x;
-      const targetY = state.targetCoord.y;
-      
-      const centerTileData = getTerrainData(targetX, targetY);
-      console.log(`Opening Details modal for coordinates: (${targetX}, ${targetY}) - Biome: ${centerTileData.biome.name}`);
+    if (state.showDetailsModal) {
+      console.log("Details modal was already open - toggling off and on for refresh");
+      // If already open, toggle it off briefly to ensure re-render
+      setTimeout(() => {
+        mapState.update(s => ({ ...s, showDetailsModal: true }));
+      }, 10);
       
       return {
         ...state,
-        showDetailsModal: true,
-        centerTileData: { ...centerTileData, x: targetX, y: targetY }
+        showDetailsModal: false
       };
     }
+    
+    console.log(`Setting showDetailsModal to true for coordinates: (${state.targetCoord.x}, ${state.targetCoord.y})`);
     return {
       ...state,
       showDetailsModal: true
@@ -281,6 +288,8 @@ export function openDetailsModal() {
 
 // Close details modal
 export function closeDetailsModal() {
+  console.log("closeDetailsModal called");
+  
   mapState.update(state => ({
     ...state,
     showDetailsModal: false
@@ -341,8 +350,8 @@ function memoize(fn) {
   };
 }
 
-// Replace gridArray with memoized version
-export const gridArray = derived(
+// Replace expandedGridArray with a more reliable implementation
+export const expandedGridArray = derived(
   [mapState],
   ([$mapState], set) => {
     if (!$mapState.isReady) {
@@ -356,30 +365,65 @@ export const gridArray = derived(
     };
 
     const currentKey = getGridKey();
-    if (gridArray.lastKey === currentKey) {
+    if (expandedGridArray.lastKey === currentKey) {
       return; // Skip update if nothing changed
     }
-    gridArray.lastKey = currentKey;
+    expandedGridArray.lastKey = currentKey;
 
-    const result = Array.from({ length: $mapState.rows }, (_, y) =>
-      Array.from({ length: $mapState.cols }, (_, x) => {
-        const globalX = x - $mapState.offsetX;
-        const globalY = y - $mapState.offsetY;
-        const terrainData = getTerrainData(globalX, globalY);
-        const isCenter = x === $mapState.centerX && y === $mapState.centerY;
-        
-        return {
-          x: globalX,
-          y: globalY,
-          isCenter,
-          ...terrainData
-        };
-      })
-    ).flat();
+    // Calculate expanded dimensions (ensure odd numbers for center tile)
+    const expandedCols = Math.min($mapState.cols * GRID_EXPANSION_FACTOR, 51); // Limit to reasonable size
+    const expandedRows = Math.min($mapState.rows * GRID_EXPANSION_FACTOR, 51); // Limit to reasonable size
     
-    set(result);
+    // Calculate offset for the larger grid
+    const centerOffsetX = Math.floor(expandedCols / 2);
+    const centerOffsetY = Math.floor(expandedRows / 2);
+    
+    console.log(`Calculating expanded grid: ${expandedCols}x${expandedRows}`);
+    
+    try {
+      const result = [];
+      
+      for (let y = 0; y < expandedRows; y++) {
+        for (let x = 0; x < expandedCols; x++) {
+          const globalX = x - centerOffsetX + $mapState.targetCoord.x;
+          const globalY = y - centerOffsetY + $mapState.targetCoord.y;
+          const terrainData = getTerrainData(globalX, globalY);
+          
+          // Check if this cell is visible in the main grid view
+          const isInMainView = 
+            x >= centerOffsetX - Math.floor($mapState.cols / 2) && 
+            x <= centerOffsetX + Math.floor($mapState.cols / 2) &&
+            y >= centerOffsetY - Math.floor($mapState.rows / 2) && 
+            y <= centerOffsetY + Math.floor($mapState.rows / 2);
+            
+          const isCenter = x === centerOffsetX && y === centerOffsetY;
+          
+          result.push({
+            x: globalX,
+            y: globalY,
+            isCenter,
+            isInMainView,
+            ...terrainData
+          });
+        }
+      }
+      
+      console.log(`Generated expanded grid with ${result.length} tiles`);
+      set(result);
+    } catch (error) {
+      console.error("Error generating expanded grid:", error);
+      set([]);
+    }
   },
   []
+);
+
+// Create a derived store for the visible grid (subset of expanded grid)
+export const gridArray = derived(
+  expandedGridArray,
+  ($expandedGrid) => {
+    return $expandedGrid.filter(cell => cell.isInMainView);
+  }
 );
 
 // Replace axis arrays with memoized versions
@@ -404,9 +448,3 @@ export const yAxisArray = derived(
     }));
   })
 );
-
-// Cleanup function to be called when the app unmounts
-export function cleanupMapResources() {
-  terrainCache.clear();
-  terrainCache = null;
-}
