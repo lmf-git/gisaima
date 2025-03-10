@@ -1,19 +1,8 @@
 <script>
   const { x = 0, y = 0, openDetails, displayColor = "#16393F" } = $props();
 
-  // Handle clicks with stopPropagation to prevent header interference
-  function handleClick(event) {
-    event.stopPropagation();
-    openDetails();
-  }
-  
-  // Handle keyboard accessibility
-  function handleKeyPress(event) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      openDetails();
-    }
-  }
+  const handleClick = e => (e.stopPropagation(), openDetails());
+  const handleKeyPress = e => ['Enter', ' '].includes(e.key) && (e.preventDefault(), openDetails());
 </script>
 
 <!-- Make the entire component clickable with explicit handlers -->

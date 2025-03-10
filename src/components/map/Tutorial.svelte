@@ -1,32 +1,13 @@
 <script>
   import { onMount } from 'svelte';
   
-  // Component to display game controls and hints
   const { show = true } = $props();
-  
-  // Track if tutorial is closed
   let isClosed = $state(false);
   
-  // On component mount, check localStorage for saved preference
-  onMount(() => {
-    const savedPreference = localStorage.getItem('tutorial-closed');
-    if (savedPreference === 'true') {
-      isClosed = true;
-    }
-  });
+  onMount(() => isClosed = localStorage.getItem('tutorial-closed') === 'true');
   
-  // Function to handle closing the tutorial
-  function closeTutorial() {
-    isClosed = true;
-    // Save preference to localStorage
-    localStorage.setItem('tutorial-closed', 'true');
-  }
-  
-  // Function to reopen the tutorial
-  function reopenTutorial() {
-    isClosed = false;
-    localStorage.setItem('tutorial-closed', 'false');
-  }
+  const closeTutorial = () => (isClosed = true, localStorage.setItem('tutorial-closed', 'true'));
+  const reopenTutorial = () => (isClosed = false, localStorage.setItem('tutorial-closed', 'false'));
 </script>
 
 {#if !isClosed}

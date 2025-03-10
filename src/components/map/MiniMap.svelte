@@ -441,68 +441,48 @@
     overflow: hidden;
     background-color: rgba(0,0,0,0.2);
     border: 1px solid rgba(255,255,255,0.2);
-    cursor: grab; /* Default to grab cursor */
-    transition: box-shadow 0.2s ease; /* Remove transform from transition */
-    outline: none; /* Remove default focus outline */
+    cursor: grab;
+    transition: box-shadow 0.2s ease;
+    outline: none;
   }
   
   .minimap:hover {
-    /* Remove transform: scale(1.02) to keep consistent size */
-    box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.6); /* Add subtle shadow instead */
+    box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.6);
   }
   
-  /* Add custom focus styles for accessibility */
   .minimap:focus {
     box-shadow: 0 0 0 0.2em rgba(255, 255, 255, 0.5);
-    /* Remove transform: scale(1.02) */
+  }
+  
+  .mini-tile {
+    position: absolute;
+    box-sizing: border-box;
+    transition: background-color 0.2s ease;
+  }
+  
+  .mini-tile.center {
+    z-index: 3;
+    background-color: rgba(255, 255, 255, 0.7) !important;
+  }
+  
+  .mini-tile.visible {
+    z-index: 2;
+  }
+  
+  .mini-tile.hovered {
+    z-index: 4;
+    background-color: rgba(255, 255, 255, 0.7) !important;
   }
   
   .minimap.dragging {
     cursor: grabbing;
   }
 
-  .mini-tile {
-    position: absolute;
-    box-sizing: border-box;
-    transition: background-color 0.2s ease;
-    /* Store original color for reset during drag */
-    data-original-color: attr(style background-color);
-  }
-  
-  .mini-tile.center {
-    z-index: 3;
-    /* Make center tile use white background like hovered tiles */
-    background-color: rgba(255, 255, 255, 0.7) !important;
-  }
-  
-  .mini-tile.visible {
-    /* Use a slight background overlay instead of filter */
-    z-index: 2;
-  }
-  
-  /* Replace brightness filter with background color change */
-  .mini-tile.hovered {
-    z-index: 4; /* Higher z-index */
-    /* Add white overlay instead of brightness filter */
-    background-color: rgba(255, 255, 255, 0.7) !important;
-  }
-  
-  .minimap.dragging .mini-tile {
-    /* Ensure all tile effects are disabled during dragging */
-    filter: none !important;
-    background-color: attr(data-original-color) !important;
-    transform: none !important;
-    box-shadow: none !important;
-  }
-  
   .visible-area-frame {
     position: absolute;
-    border: 0.125em solid white; /* Changed from 2px to 0.125em */
-    box-shadow: 0 0 0 0.0625em rgba(0,0,0,0.5); /* Changed from 1px to 0.0625em */
+    border: 0.125em solid white;
+    box-shadow: 0 0 0 0.0625em rgba(0,0,0,0.5);
     pointer-events: none;
     z-index: 4;
   }
-  
-  /* Delete loading-indicator class and keyframes */
-
 </style>

@@ -2,33 +2,13 @@
   import { fly } from 'svelte/transition';
   import { mapState } from '../../lib/stores/map.js';
   
-  const {
-    x = 0,
-    y = 0,
-    show = false,
-    displayColor = "#808080",
-    biomeName: rawBiomeName = "Unknown",
-    onClose
-  } = $props();
+  const { x = 0, y = 0, show = false, displayColor = "#808080", biomeName: rawBiomeName = "Unknown", onClose } = $props();
   
-  // Format the biomeName
-  const biomeName = $derived(
-    rawBiomeName?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown'
-  );
+  const biomeName = $derived(rawBiomeName?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown');
   
-  // Force render log to debug visibility
-  $effect(() => {
-    console.log(`Details visibility changed: ${show}`);
-    if (show) {
-      console.log(`Details shown for: (${x}, ${y}) - ${biomeName}`);
-    }
-  });
+  $effect(() => show && console.log(`Details shown for: (${x}, ${y}) - ${biomeName}`));
   
-  function handleKeydown(event) {
-    if (event.key === 'Escape' && show) {
-      onClose?.();
-    }
-  }
+  const handleKeydown = event => event.key === 'Escape' && show && onClose?.();
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
