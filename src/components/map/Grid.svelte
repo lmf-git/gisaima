@@ -161,18 +161,16 @@
   // Use the optimized target tile store
   const targetTileData = $derived($targetTileStore);
   
-  // Fix prop names for Legend and Details
+  // Fix prop names for Legend and Details - remove terrainColour
   const legendProps = $derived({
     x: targetTileData.x,
-    y: targetTileData.y,
-    terrainColour: targetTileData.color || '#16393F'  // Using terrainColour as preferred
+    y: targetTileData.y
   });
   
   const detailsProps = $derived({
     x: targetTileData.x,
     y: targetTileData.y,
     show: $mapState.showDetailsModal,
-    terrainColour: targetTileData.color,  // Using terrainColour as preferred
     biomeName: targetTileData.biome?.name
   });
 
@@ -327,11 +325,10 @@
   </div>
 
   {#if !$mapState.showDetailsModal}
-    <!-- Show Legend only when Details modal is not shown -->
+    <!-- Show Legend only when Details modal is not shown - remove terrainColour -->
     <Legend 
       x={legendProps.x} 
       y={legendProps.y}
-      terrainColour={legendProps.terrainColour}
       openDetails={openDetailsModal} 
     />
   {/if}
@@ -346,11 +343,11 @@
     />
   {/if}
 
+  <!-- Remove terrainColour from Details -->
   <Details 
     x={detailsProps.x}
     y={detailsProps.y}
     show={detailsProps.show}
-    terrainColour={detailsProps.terrainColour}
     biomeName={detailsProps.biomeName}
     onClose={closeDetailsModal}
   />

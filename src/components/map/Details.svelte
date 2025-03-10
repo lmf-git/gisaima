@@ -1,7 +1,8 @@
 <script>
   import { fly } from 'svelte/transition';
   
-  const { x = 0, y = 0, show = true, terrainColour = "#808080", biomeName: rawBiomeName = "Unknown", onClose } = $props();
+  // Remove terrainColour from props
+  const { x = 0, y = 0, show = true, biomeName: rawBiomeName = "Unknown", onClose } = $props();
   
   const biomeName = $derived(rawBiomeName?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown');
   
@@ -12,12 +13,11 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<!-- Simplified markup with better visibility control -->
+<!-- Remove inline style for terrainColour -->
 <div class="details-container" class:visible={show}>
   {#if show}
     <div 
       class="details-card"
-      style="background-color: {terrainColour};"
       transition:fly={{ y: 10, duration: 200 }}
     >
       <div class="content">
@@ -58,6 +58,7 @@
     border: 0.3em solid rgba(255, 255, 255, 0.4); /* More visible border */
     backdrop-filter: brightness(1.1) saturate(1.2);
     min-width: 12.5em; /* Changed from 200px to 12.5em */
+    background-color: rgba(20, 30, 50, 0.8); /* Fixed background color */
   }
   
   .content {

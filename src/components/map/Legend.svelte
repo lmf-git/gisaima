@@ -1,18 +1,17 @@
 <script>
-  // Change 'open' to 'openDetails' to match the prop name from Grid.svelte
-  const { x = 0, y = 0, openDetails, terrainColour = "#16393F" } = $props();
+  // Remove terrainColour from props
+  const { x = 0, y = 0, openDetails } = $props();
   // Update keypress to use openDetails instead of open
   const keypress = e => ['Enter', ' '].includes(e.key) && (e.preventDefault(), openDetails());
 </script>
 
-<!-- Update onclick to use openDetails instead of open -->
+<!-- Remove inline style for terrainColour -->
 <div 
   class="legend-container" 
   onclick={openDetails}
   onkeypress={keypress}
   role="button" 
-  tabindex="0"
-  style="background-color: {terrainColour};">
+  tabindex="0">
   <div class="coordinates">({x}, {y})</div>
 </div>
 
@@ -30,6 +29,7 @@
     text-align: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     border: 0.1em solid rgba(255, 255, 255, 0.15);
+    background-color: rgba(0, 0, 0, 0.6); /* Fixed background color */
   }
   
   .legend-container:hover {
