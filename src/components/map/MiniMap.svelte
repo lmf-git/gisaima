@@ -1,15 +1,19 @@
 <script>
   import { mapState, getTerrainData, updateHoveredTile, clearHoveredTile } from '../../lib/stores/map.js';
   
-  // Fixed dimensions for the minimap
+  // Fixed dimensions for the minimap - change to rectangular shape
   const MINI_TILE_SIZE_EM = 0.5;
-  const MINIMAP_SIZE_EM = 15; // Fixed physical size
+  const MINIMAP_WIDTH_EM = 18; // Increased width for rectangular shape
+  const MINIMAP_HEIGHT_EM = 12; // Keep height smaller than width
   const LOADING_THROTTLE = 200; // ms between minimap updates during interaction
   
-  // Calculate how many tiles fit in our fixed minimap size
-  const tileCount = $derived(Math.floor(MINIMAP_SIZE_EM / MINI_TILE_SIZE_EM));
-  // Make it odd so we can center properly
-  const viewRange = $derived(Math.floor(tileCount / 2));
+  // Calculate how many tiles fit in our minimap dimensions
+  const tileCountX = $derived(Math.floor(MINIMAP_WIDTH_EM / MINI_TILE_SIZE_EM));
+  const tileCountY = $derived(Math.floor(MINIMAP_HEIGHT_EM / MINI_TILE_SIZE_EM));
+  
+  // Make them odd so we can center properly
+  const viewRangeX = $derived(Math.floor(tileCountX / 2));
+  const viewRangeY = $derived(Math.floor(tileCountY / 2));
   
   // Track visible area with default values
   let visibleArea = $state({
@@ -71,8 +75,8 @@
     
     try {
       // Only generate the exact tiles needed for the minimap
-      for (let y = -viewRange; y <= viewRange; y++) {
-        for (let x = -viewRange; x <= viewRange; x++) {
+      for (let y = -viewRangeY; y <= viewRangeY; y++) {
+        for (let x = -viewRangeX; x <= viewRangeX; x++) {
           const globalX = centerX + x;
           const globalY = centerY + y;
           const terrainData = getTerrainData(globalX, globalY);
@@ -89,8 +93,8 @@
           result.push({
             x: globalX,
             y: globalY,
-            displayX: x + viewRange,
-            displayY: y + viewRange,
+            displayX: x + viewRangeX,
+            displayY: y + viewRangeY,
             isCenter,
             isVisible,
             color: terrainData.color
@@ -146,8 +150,8 @@
       
       // Since we can't directly get cursor position with keyboard,
       // use the center of the current visible area as reference
-      const centerTileX = Math.floor(tileCount / 2);
-      const centerTileY = Math.floor(tileCount / 2);
+      const centerTileX = Math.floor(tileCountX / 2);
+      const centerTileY = Math.floor(tileCountY / 2);
       
       navigateToPosition(centerTileX, centerTileY);
     }
@@ -156,8 +160,8 @@
   // Helper function to navigate to a position on the minimap
   function navigateToPosition(tileX, tileY) {
     // Convert to world coordinates
-    const worldX = $mapState.targetCoord.x - viewRange + tileX;
-    const worldY = $mapState.targetCoord.y - viewRange + tileY;
+    const worldX = $mapState.targetCoord.x - viewRangeX + tileX;
+    const worldY = $mapState.targetCoord.y - viewRangeY + tileY;
     
     // Update the map target coordinate
     mapState.update(state => ({
@@ -168,31 +172,64 @@
     }));
   }
 
-  // Add function to determine if a minimap tile is hovered
-  const isTileHovered = (cell) => {
-    return $mapState.hoveredTile && 
-           cell.x === $mapState.hoveredTile.x && 
-           cell.y === $mapState.hoveredTile.y;
-  };
-  
-  // Add hover handler for minimap tiles
+  // Track hover state locally to prevent flickering
+  let localHoveredTile = $state(null);
+  let clearHoverTimeout = null;
+
+  // Improved hover handler for minimap tiles
   function handleMiniTileHover(cell) {
     if (!$mapState.isDragging) {
+      // Clear any pending timeouts
+      if (clearHoverTimeout) {
+        clearTimeout(clearHoverTimeout);
+        clearHoverTimeout = null;
+      }
+      
+      // Update local state immediately
+      localHoveredTile = { x: cell.x, y: cell.y };
+      
+      // Update global state
       updateHoveredTile(cell.x, cell.y);
     }
   }
   
   function handleMiniTileLeave() {
     if (!$mapState.isDragging) {
-      setTimeout(() => clearHoveredTile(), 50);
+      // Use timeout for global state but keep local state a bit longer
+      clearHoverTimeout = setTimeout(() => {
+        clearHoveredTile();
+        localHoveredTile = null;
+      }, 100); // Longer delay to prevent flickering
     }
   }
+  
+  // Enhanced tile hover check that uses both global and local state
+  const isTileHovered = (cell) => {
+    // Check local state first for immediate feedback
+    if (localHoveredTile && cell.x === localHoveredTile.x && cell.y === localHoveredTile.y) {
+      return true;
+    }
+    
+    // Fall back to global state
+    return $mapState.hoveredTile && 
+           cell.x === $mapState.hoveredTile.x && 
+           cell.y === $mapState.hoveredTile.y;
+  };
+  
+  // Clean up timeout on component destroy
+  $effect(() => {
+    return () => {
+      if (clearHoverTimeout) {
+        clearTimeout(clearHoverTimeout);
+      }
+    };
+  });
 </script>
 
 <div class="minimap-container">
   <div 
     class="minimap" 
-    style="width: {MINIMAP_SIZE_EM}em; height: {MINIMAP_SIZE_EM}em;"
+    style="width: {MINIMAP_WIDTH_EM}em; height: {MINIMAP_HEIGHT_EM}em;"
     onclick={handleMinimapClick}
     onkeydown={handleKeyDown}
     class:loading={isLoading}
@@ -223,8 +260,8 @@
       <div 
         class="visible-area-frame"
         style="
-          left: {(viewRange + visibleArea.startX - $mapState.targetCoord.x) * MINI_TILE_SIZE_EM}em;
-          top: {(viewRange + visibleArea.startY - $mapState.targetCoord.y) * MINI_TILE_SIZE_EM}em;
+          left: {(viewRangeX + visibleArea.startX - $mapState.targetCoord.x) * MINI_TILE_SIZE_EM}em;
+          top: {(viewRangeY + visibleArea.startY - $mapState.targetCoord.y) * MINI_TILE_SIZE_EM}em;
           width: {visibleArea.width * MINI_TILE_SIZE_EM}em;
           height: {visibleArea.height * MINI_TILE_SIZE_EM}em;
         "

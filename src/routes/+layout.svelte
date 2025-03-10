@@ -13,7 +13,7 @@
 </script>
 
 <div class="app">
-    <header class={`appheader ${isMapPage ? 'absolute' : ''}`}>
+    <header class={`appheader ${isMapPage ? 'map-header' : ''}`}>
         <nav class="navbar">
             <div class="navlinks">
                 <a href="/" class="logolink">
@@ -190,11 +190,22 @@
         right: 0;
         justify-content: center;
     }
-
+    
+    /* New styles for map page header */
+    .appheader.map-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        pointer-events: none;
+    }
+    
+    /* Ensure nav elements remain clickable */
     .navbar {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        pointer-events: all;
     }
 
     .navlinks {

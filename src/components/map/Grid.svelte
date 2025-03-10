@@ -172,26 +172,58 @@
   // Add keyboard movement tracking
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null);
 
-  // Add functions to track hover state
+  // Track hover state locally to prevent flickering
+  let localHoveredTile = $state(null);
+  let clearHoverTimeout = null;
+
+  // Add improved functions to track hover state
   function handleTileHover(cell) {
     if (!isMoving) {
+      // Clear any pending timeouts
+      if (clearHoverTimeout) {
+        clearTimeout(clearHoverTimeout);
+        clearHoverTimeout = null;
+      }
+      
+      // Update local state immediately
+      localHoveredTile = { x: cell.x, y: cell.y };
+      
+      // Update global state
       updateHoveredTile(cell.x, cell.y);
     }
   }
   
   function handleTileLeave() {
     if (!isMoving) {
-      // Don't clear immediately to avoid flicker during grid navigation
-      setTimeout(() => clearHoveredTile(), 50);
+      // Use timeout for global state but keep local state a bit longer
+      clearHoverTimeout = setTimeout(() => {
+        clearHoveredTile();
+        localHoveredTile = null;
+      }, 100); // Longer delay to prevent flickering
     }
   }
   
   // Track if a tile is currently hovered - for minimap sync
   const isHovered = (cell) => {
+    // Check local state first for immediate feedback
+    if (localHoveredTile && cell.x === localHoveredTile.x && cell.y === localHoveredTile.y) {
+      return true;
+    }
+    
+    // Fall back to global state
     return $mapState.hoveredTile && 
            cell.x === $mapState.hoveredTile.x && 
            cell.y === $mapState.hoveredTile.y;
   };
+  
+  // Clean up timeout on component unmount
+  $effect(() => {
+    return () => {
+      if (clearHoverTimeout) {
+        clearTimeout(clearHoverTimeout);
+      }
+    };
+  });
 </script>
 
 <svelte:window
@@ -223,6 +255,7 @@
             onmouseenter={() => handleTileHover(cell)}
             onmouseleave={handleTileLeave}
             role="gridcell"
+            tabindex="-1"
             aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}"
             aria-current={cell.isCenter ? "location" : undefined}
             style="background-color: {cell.color};"
