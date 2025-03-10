@@ -257,6 +257,7 @@
     // Prevent drag from non-primary clicks
     if (event.button !== 0) return;
     
+    
     startDrag(event, controlsState, state.mapElement);
     
     // Update the component state from control state
