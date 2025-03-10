@@ -307,31 +307,6 @@
     
     return Math.min(baseDelay, 800);
   }
-
-  // Extract colors from the grid for the axes
-  const axesColors = $derived(() => {
-    if (!grid || grid.length === 0) {
-      return { xColors: {}, yColors: {} };
-    }
-    
-    const xColors = {};
-    const yColors = {};
-    
-    // Extract colors from the actual grid cells
-    grid.forEach(cell => {
-      // For x-axis: cells that share the center y-coordinate
-      if (cell.y === $mapState.targetCoord.y) {
-        xColors[cell.x] = cell.color;
-      }
-      
-      // For y-axis: cells that share the center x-coordinate
-      if (cell.x === $mapState.targetCoord.x) {
-        yColors[cell.y] = cell.color;
-      }
-    });
-    
-    return { xColors, yColors };
-  });
 </script>
 
 <svelte:window
@@ -394,8 +369,6 @@
     <Axes 
       xAxisArray={$xAxisArray}
       yAxisArray={$yAxisArray}
-      xColors={axesColors.xColors}
-      yColors={axesColors.yColors}
       cols={$mapState.cols}
       rows={$mapState.rows}
     />
