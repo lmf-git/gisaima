@@ -1,5 +1,5 @@
 <script>
-  import { mapState, getTerrainData } from '../../lib/stores/map.js';
+  import { mapState, getTerrainData, updateHoveredTile, clearHoveredTile } from '../../lib/stores/map.js';
   
   // Fixed dimensions for the minimap
   const MINI_TILE_SIZE_EM = 0.5;
@@ -167,6 +167,26 @@
       offsetY: state.centerY + worldY
     }));
   }
+
+  // Add function to determine if a minimap tile is hovered
+  const isTileHovered = (cell) => {
+    return $mapState.hoveredTile && 
+           cell.x === $mapState.hoveredTile.x && 
+           cell.y === $mapState.hoveredTile.y;
+  };
+  
+  // Add hover handler for minimap tiles
+  function handleMiniTileHover(cell) {
+    if (!$mapState.isDragging) {
+      updateHoveredTile(cell.x, cell.y);
+    }
+  }
+  
+  function handleMiniTileLeave() {
+    if (!$mapState.isDragging) {
+      setTimeout(() => clearHoveredTile(), 50);
+    }
+  }
 </script>
 
 <div class="minimap-container">
@@ -186,6 +206,7 @@
           class="mini-tile"
           class:center={cell.isCenter}
           class:visible={cell.isVisible}
+          class:hovered={isTileHovered(cell)}
           style="
             background-color: {cell.color};
             width: {MINI_TILE_SIZE_EM}em;
@@ -193,6 +214,8 @@
             left: {cell.displayX * MINI_TILE_SIZE_EM}em;
             top: {cell.displayY * MINI_TILE_SIZE_EM}em;
           "
+          onmouseenter={() => handleMiniTileHover(cell)}
+          onmouseleave={handleMiniTileLeave}
         ></div>
       {/each}
       
@@ -255,6 +278,7 @@
     position: absolute;
     box-sizing: border-box;
     transition: filter 0.1s ease;
+    z-index: 1;
   }
   
   .mini-tile.center {
@@ -265,6 +289,13 @@
   .mini-tile.visible {
     filter: brightness(1.3);
     z-index: 2;
+  }
+  
+  .mini-tile.hovered {
+    filter: brightness(1.5);
+    box-shadow: 0 0 0.2em white;
+    z-index: 4; /* Higher than center to be visible when hovered */
+    transform: scale(1.2);
   }
   
   .visible-area-frame {

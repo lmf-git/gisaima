@@ -40,7 +40,10 @@ export const mapState = writable({
   centerY: 0,
   
   // Center tile data for Details component
-  centerTileData: null
+  centerTileData: null,
+  
+  // Hover state for highlighting tiles
+  hoveredTile: null
 });
 
 // Helper function to update state
@@ -502,3 +505,19 @@ export const yAxisArray = derived(
     }));
   })
 );
+
+// Add a new function to handle hover state updates
+export function updateHoveredTile(x, y) {
+  mapState.update(state => ({
+    ...state,
+    hoveredTile: x !== null && y !== null ? { x, y } : null
+  }));
+}
+
+// Add a function to clear hover state
+export function clearHoveredTile() {
+  mapState.update(state => ({
+    ...state,
+    hoveredTile: null
+  }));
+}

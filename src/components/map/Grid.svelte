@@ -21,7 +21,9 @@
     moveMapByKeys,
     openDetailsModal,
     closeDetailsModal,
-    targetTileStore
+    targetTileStore,
+    updateHoveredTile,
+    clearHoveredTile
   } from "../../lib/stores/map.js";
   
   // Local component state
@@ -169,6 +171,27 @@
 
   // Add keyboard movement tracking
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null);
+
+  // Add functions to track hover state
+  function handleTileHover(cell) {
+    if (!isMoving) {
+      updateHoveredTile(cell.x, cell.y);
+    }
+  }
+  
+  function handleTileLeave() {
+    if (!isMoving) {
+      // Don't clear immediately to avoid flicker during grid navigation
+      setTimeout(() => clearHoveredTile(), 50);
+    }
+  }
+  
+  // Track if a tile is currently hovered - for minimap sync
+  const isHovered = (cell) => {
+    return $mapState.hoveredTile && 
+           cell.x === $mapState.hoveredTile.x && 
+           cell.y === $mapState.hoveredTile.y;
+  };
 </script>
 
 <svelte:window
@@ -196,6 +219,9 @@
           <div
             class="tile"
             class:center={cell.isCenter}
+            class:hovered={isHovered(cell)}
+            onmouseenter={() => handleTileHover(cell)}
+            onmouseleave={handleTileLeave}
             role="gridcell"
             aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}"
             aria-current={cell.isCenter ? "location" : undefined}
@@ -296,9 +322,11 @@
   }
 
   /* Replace the hover and dragstate CSS */
-  .map:not(.moving) .tile:hover {
+  .map:not(.moving) .tile:hover,
+  .tile.hovered {
     z-index: 2;
     filter: brightness(1.2);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
   }
   
   .map.moving .tile {
