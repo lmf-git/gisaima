@@ -1,8 +1,7 @@
 <script>
   import { fly } from 'svelte/transition';
-  import { mapState } from '../../lib/stores/map.js';
   
-  const { x = 0, y = 0, show = true, displayColor = "#808080", biomeName: rawBiomeName = "Unknown", onClose } = $props();
+  const { x = 0, y = 0, show = true, terrainColour = "#808080", biomeName: rawBiomeName = "Unknown", onClose } = $props();
   
   const biomeName = $derived(rawBiomeName?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown');
   
@@ -18,7 +17,7 @@
   {#if show}
     <div 
       class="details-card"
-      style="background-color: {displayColor};"
+      style="background-color: {terrainColour};"
       transition:fly={{ y: -10, duration: 200 }}
     >
       <div class="content">

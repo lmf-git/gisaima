@@ -1,5 +1,5 @@
 <script>
-  import { mapState, getTerrainData, updateHoveredTile, clearHoveredTile } from '../../lib/stores/map.js';
+  import { mapState, getTerrainData, updateHoveredTile, clearHoveredTile, updateMinimapRange } from '../../lib/stores/map.js';
   
   // Fixed dimensions for the minimap - larger rectangular shape
   const MINI_TILE_SIZE_EM = 0.5;  // Keep original tile size
@@ -83,6 +83,9 @@
     const result = [];
     const centerX = $mapState.targetCoord.x;
     const centerY = $mapState.targetCoord.y;
+    
+    // Register minimap range to avoid duplicate terrain generation
+    updateMinimapRange(centerX, centerY, viewRangeX, viewRangeY);
     
     try {
       // Only generate the exact tiles needed for the minimap

@@ -119,7 +119,27 @@ export const targetTileStore = derived(
   }
 );
 
+// Define minimap range to prevent duplicate terrain generation
+let minimapRange = {
+  centerX: 0,
+  centerY: 0,
+  rangeX: 24,  // Default based on minimap width (matches MINIMAP_WIDTH_EM / MINI_TILE_SIZE_EM)
+  rangeY: 16   // Default based on minimap height (matches MINIMAP_HEIGHT_EM / MINI_TILE_SIZE_EM)
+};
+
+// Track if minimap has been initialized with terrain data
+let isMinimapTerrainsLoaded = false;
+
+// Add a function to update the minimap range
+export function updateMinimapRange(centerX, centerY, rangeX, rangeY) {
+  minimapRange = { centerX, centerY, rangeX, rangeY };
+  isMinimapTerrainsLoaded = true;
+}
+
 // Optimize terrain data fetching
+let logThrottleTime = 0;
+const LOG_THROTTLE_INTERVAL = 5000; // Only log every 5 seconds max
+
 export function getTerrainData(x, y) {
   // Create a cache key
   const cacheKey = `${x},${y}`;
@@ -129,9 +149,26 @@ export function getTerrainData(x, y) {
     return terrainCache.get(cacheKey);
   }
   
-  // Reduce logging frequency even further
-  if (Math.random() < 0.01) {
-    console.log(`Computing new terrain data for: (${x}, ${y})`);
+  // Check if we're within minimap range and minimap has generated terrain already
+  // If so, we can assume the terrain will be loaded soon to reduce duplication
+  if (isMinimapTerrainsLoaded) {
+    const inMinimapRangeX = Math.abs(x - minimapRange.centerX) <= minimapRange.rangeX;
+    const inMinimapRangeY = Math.abs(y - minimapRange.centerY) <= minimapRange.rangeY;
+    
+    if (inMinimapRangeX && inMinimapRangeY) {
+      // Skip logging for coordinates that will be handled by minimap
+      // Just generate the terrain data without logging
+      const result = terrain.getTerrainData(x, y);
+      terrainCache.set(cacheKey, result);
+      return result;
+    }
+  }
+  
+  // Only log when generating terrain outside minimap range
+  const now = Date.now();
+  if (now - logThrottleTime > LOG_THROTTLE_INTERVAL) {
+    console.log(`Computing terrain for coordinates outside minimap range: (${x}, ${y})`);
+    logThrottleTime = now;
   }
   
   // Calculate the terrain data
@@ -142,7 +179,7 @@ export function getTerrainData(x, y) {
   
   // If cache gets too large, delete oldest entries
   if (terrainCache.size > CACHE_SIZE_LIMIT) {
-    const keysToRemove = Array.from(terrainCache.keys()).slice(0, 100);
+    const keysToRemove = Array.from(terrainCache.keys()).slice(0, 200); // Remove more at once
     keysToRemove.forEach(key => terrainCache.delete(key));
   }
   
@@ -442,6 +479,10 @@ export const expandedGridArray = derived(
     try {
       const result = [];
       
+      // Skip logging for most terrain generations
+      const oldLogTime = logThrottleTime;
+      logThrottleTime = Date.now() + LOG_THROTTLE_INTERVAL; // Temporarily suppress logs
+      
       for (let y = 0; y < expandedRows; y++) {
         for (let x = 0; x < expandedCols; x++) {
           const globalX = x - centerOffsetX + $mapState.targetCoord.x;
@@ -467,6 +508,9 @@ export const expandedGridArray = derived(
         }
       }
       
+      // Restore log throttling
+      logThrottleTime = oldLogTime;
+      
       console.log(`Generated expanded grid with ${result.length} tiles`);
       set(result);
     } catch (error) {
@@ -477,17 +521,21 @@ export const expandedGridArray = derived(
   []
 );
 
-// Optimize the grid array generation with better memoization
+// Optimize the grid array generation
 export const gridArray = (() => {
   let lastOffsetX = null;
   let lastOffsetY = null;
   let lastCols = null;
   let lastRows = null;
   let cachedResult = [];
+  let isGenerating = false;
 
   return derived(
     expandedGridArray,
-    ($expandedGrid) => {
+    ($expandedGrid, set) => {
+      // Prevent concurrent generation
+      if (isGenerating) return;
+      
       const state = get(mapState);
       
       // Check if we really need to recalculate
@@ -499,16 +547,24 @@ export const gridArray = (() => {
         return cachedResult;
       }
       
-      // Update our tracking variables
-      lastOffsetX = state.offsetX;
-      lastOffsetY = state.offsetY;
-      lastCols = state.cols;
-      lastRows = state.rows;
+      // Set generation flag
+      isGenerating = true;
       
-      // Filter the grid
-      cachedResult = $expandedGrid.filter(cell => cell.isInMainView);
-      return cachedResult;
-    }
+      try {
+        // Update tracking variables
+        lastOffsetX = state.offsetX;
+        lastOffsetY = state.offsetY;
+        lastCols = state.cols;
+        lastRows = state.rows;
+        
+        // Filter the grid
+        cachedResult = $expandedGrid.filter(cell => cell.isInMainView);
+        set(cachedResult);
+      } finally {
+        isGenerating = false;
+      }
+    },
+    []
   );
 })();
 

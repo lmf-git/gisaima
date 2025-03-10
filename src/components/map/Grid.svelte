@@ -141,18 +141,18 @@
   // Use the optimized target tile store
   const targetTileData = $derived($targetTileStore);
   
-  // Use unified versions that use the targetTileStore for better performance
+  // Fix prop names for Legend and Details
   const legendProps = $derived({
     x: targetTileData.x,
     y: targetTileData.y,
-    displayColor: targetTileData.color || '#16393F'
+    terrainColour: targetTileData.color || '#16393F'  // Using terrainColour as preferred
   });
   
   const detailsProps = $derived({
     x: targetTileData.x,
     y: targetTileData.y,
     show: $mapState.showDetailsModal,
-    displayColor: targetTileData.color,
+    terrainColour: targetTileData.color,  // Using terrainColour as preferred
     biomeName: targetTileData.biome?.name
   });
 
@@ -256,6 +256,33 @@
       }
     };
   });
+
+  // Helper function to calculate transition delay based on distance from center
+  function getTransitionDelay(cell) {
+    if (cell.isCenter) return 0;
+    
+    const dx = Math.abs(cell.x - targetCoord.x);
+    const dy = Math.abs(cell.y - targetCoord.y);
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Maximum delay (ms) for furthest tiles
+    const maxDelay = 800;
+    // Calculate delay proportional to distance, with shorter delays for closer tiles
+    return Math.min(distance * 40, maxDelay);
+  }
+  
+  // Track grid render to trigger animations
+  let gridKey = $state(0);
+  
+  // Update grid key when target coordinates change significantly
+  $effect(() => {
+    const { x, y } = $mapState.targetCoord;
+    // Check if coordinates have changed by more than 10 units in any direction
+    if (Math.abs(x - (gridKey & 0xFFFF)) > 10 || Math.abs(y - (gridKey >> 16)) > 10) {
+      // Store a version of coordinates in the key for comparison
+      gridKey = (y << 16) | (x & 0xFFFF);
+    }
+  });
 </script>
 
 <svelte:window
@@ -290,7 +317,10 @@
             tabindex="-1"
             aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}"
             aria-current={cell.isCenter ? "location" : undefined}
-            style="background-color: {cell.color};"
+            style="
+              background-color: {cell.color};
+              --transition-delay: {getTransitionDelay(cell)}ms;
+            "
           >
             <span class="coords">{cell.x},{cell.y}</span>
           </div>
@@ -304,7 +334,7 @@
     <Legend 
       x={legendProps.x} 
       y={legendProps.y}
-      displayColor={legendProps.displayColor}
+      terrainColour={legendProps.terrainColour}
       openDetails={openDetailsModal} 
     />
   {/if}
@@ -322,7 +352,7 @@
     x={detailsProps.x}
     y={detailsProps.y}
     show={detailsProps.show}
-    displayColor={detailsProps.displayColor}
+    terrainColour={detailsProps.terrainColour}
     biomeName={detailsProps.biomeName}
     onClose={closeDetailsModal}
   />
@@ -389,8 +419,46 @@
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
-    transition: filter 0.1s ease-in-out, transform 0.1s ease-in-out;
     -webkit-touch-callout: none;
+    z-index: 1;
+    
+    /* Initial state */
+    opacity: 0;
+    transform: scale(0.95);
+    
+    /* Transitions */
+    transition: 
+      opacity 600ms cubic-bezier(0.4, 0.0, 0.2, 1) var(--transition-delay),
+      transform 500ms cubic-bezier(0.4, 0.0, 0.2, 1) var(--transition-delay),
+      filter 0.2s ease-in-out,
+      box-shadow 0.2s ease-in-out;
+  }
+
+  /* Make all tiles visible by default */
+  .tile {
+    opacity: 1;
+    transform: scale(1);
+  }
+  
+  /* Moving state - prevent transitions during movement */
+  .map.moving .tile {
+    transition: none;
+    pointer-events: none;
+    cursor: grabbing;
+    filter: none;
+  }
+
+  /* Center tile styles */
+  .map .grid .tile.center {
+    z-index: 3;
+    position: relative;
+    filter: brightness(1.1);
+    border: 0.12em solid rgba(255, 255, 255, 0.5);
+    box-shadow: 
+      inset 0 0 0.5em rgba(255, 255, 255, 0.3),
+      0 0 1em rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+    animation: pulse 2s infinite ease-in-out;
   }
 
   /* Replace the hover and dragstate CSS */
@@ -405,27 +473,17 @@
     pointer-events: none;
     cursor: grabbing;
     filter: none;
-    transform: none;
     z-index: auto;
+    
+    /* Ensure tiles remain visible during movement */
+    opacity: 1;
+    transform: scale(1);
   }
 
   /* Additional styles to ensure no hover effects during movement */
   .map.moving .tile.hovered {
     filter: none;
     box-shadow: none;
-    transform: none;
-  }
-
-  /* Enhanced center tile styling */
-  .center {
-    z-index: 3;
-    position: relative;
-    filter: brightness(1.1);
-    border: 0.12em solid rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 
-      inset 0 0 0.5em rgba(255, 255, 255, 0.3),
-      0 0 1em rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
   }
 
   /* Create a subtle pulsing animation for the center tile */
@@ -433,10 +491,6 @@
     0% { box-shadow: inset 0 0 0.5em rgba(255, 255, 255, 0.3), 0 0 1em rgba(255, 255, 255, 0.2); }
     50% { box-shadow: inset 0 0 0.8em rgba(255, 255, 255, 0.4), 0 0 1.5em rgba(255, 255, 255, 0.3); }
     100% { box-shadow: inset 0 0 0.5em rgba(255, 255, 255, 0.3), 0 0 1em rgba(255, 255, 255, 0.2); }
-  }
-
-  .center {
-    animation: pulse 2s infinite ease-in-out;
   }
 
   .coords {

@@ -1,19 +1,16 @@
 <script>
-  const { x = 0, y = 0, openDetails, displayColor = "#16393F" } = $props();
-
-  const handleClick = e => (e.stopPropagation(), openDetails());
-  const handleKeyPress = e => ['Enter', ' '].includes(e.key) && (e.preventDefault(), openDetails());
+  const { x = 0, y = 0, open, terrainColour = "#16393F" } = $props();
+  const keypress = e => ['Enter', ' '].includes(e.key) && (e.preventDefault(), open());
 </script>
 
 <!-- Make the entire component clickable with explicit handlers -->
 <div 
   class="legend-container" 
-  onclick={handleClick}
-  onkeypress={handleKeyPress}
+  onclick={open}
+  onkeypress={keypress}
   role="button" 
   tabindex="0"
-  style="background-color: {displayColor};"
->
+  style="background-color: {terrainColour};">
   <div class="coordinates">({x}, {y})</div>
 </div>
 
