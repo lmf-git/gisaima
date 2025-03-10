@@ -18,7 +18,7 @@
     <div 
       class="details-card"
       style="background-color: {terrainColour};"
-      transition:fly={{ y: 10, duration: 200 }} <!-- Changed from -10 to 10 to animate from bottom -->
+      transition:fly={{ y: 10, duration: 200 }}
     >
       <div class="content">
         <h2>Coordinates ({x}, {y})</h2>

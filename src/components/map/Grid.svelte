@@ -257,19 +257,8 @@
     };
   });
 
-  // Enhanced helper to calculate animation delay based on TRUE radial distance
-  function getTransitionDelay(cell) {
-    if (cell.isCenter) return 0;
-    
-    const dx = Math.abs(cell.x - targetCoord.x);
-    const dy = Math.abs(cell.y - targetCoord.y);
-    
-    // Use Euclidean distance for true radial effect
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Create more distinct steps with smoother radial progression
-    return Math.min(distance * 120, 2000);
-  }
+  // Add a tracker for previously seen tiles
+  let seenTiles = $state(new Set());
   
   // Track grid render to trigger animations
   let gridKey = $state(0);
@@ -277,12 +266,47 @@
   // Update grid key when target coordinates change significantly
   $effect(() => {
     const { x, y } = $mapState.targetCoord;
+    
     // Check if coordinates have changed by more than 10 units in any direction
     if (Math.abs(x - (gridKey & 0xFFFF)) > 10 || Math.abs(y - (gridKey >> 16)) > 10) {
       // Store a version of coordinates in the key for comparison
       gridKey = (y << 16) | (x & 0xFFFF);
+      
+      // Reset seen tiles when moving large distances
+      seenTiles = new Set();
     }
   });
+  
+  // Update seen tiles after every grid render
+  $effect(() => {
+    if (grid && grid.length > 0) {
+      // Add all current tiles to the seen set
+      grid.forEach(cell => {
+        seenTiles.add(`${cell.x},${cell.y}`);
+      });
+    }
+  });
+  
+  // Check if a tile is new (should animate) or has been seen before
+  function isTileNew(cell) {
+    return !seenTiles.has(`${cell.x},${cell.y}`);
+  }
+  
+  // Simplified transition delay function - much gentler and smoother
+  function getTransitionDelay(cell) {
+    if (cell.isCenter || !isTileNew(cell)) return 0;
+    
+    const dx = Math.abs(cell.x - targetCoord.x);
+    const dy = Math.abs(cell.y - targetCoord.y);
+    
+    // Use a modified Euclidean distance with more weight on rings
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Create a gentle wave effect with quick reveal
+    const baseDelay = distance * 80; 
+    
+    return Math.min(baseDelay, 800);
+  }
 </script>
 
 <svelte:window
@@ -311,6 +335,7 @@
             class="tile"
             class:center={cell.isCenter}
             class:hovered={isHovered(cell)}
+            class:new-tile={isTileNew(cell)}
             onmouseenter={() => handleTileHover(cell)}
             onmouseleave={handleTileLeave}
             role="gridcell"
@@ -423,67 +448,31 @@
     -ms-user-select: none;
     -webkit-touch-callout: none;
     z-index: 1;
-    
-    /* Reset all inline transitions and animations */
-    transition: none;
-    animation: none;
-    
-    /* Start invisible */
-    opacity: 0;
-    transform: scale(0.92);
-    pointer-events: none; /* Disable interactions until visible */
+    opacity: 1; /* Default visible for pre-existing tiles */
+    transform: scale(1); /* Default normal scale for pre-existing tiles */
   }
   
-  /* Delayed appearance animation applied to regular tiles */
-  .tile:not(.center) {
-    animation: tileReveal 500ms forwards;
+  /* Apply animation only to new tiles */
+  .tile.new-tile {
+    opacity: 0;
+    transform: scale(0.9);
+    animation: simpleReveal 400ms ease-out forwards;
     animation-delay: var(--transition-delay);
   }
   
-  /* Center tile is always immediately visible */
-  .tile.center {
-    opacity: 1;
-    transform: scale(1.05);
-    animation: pulse 2s infinite ease-in-out;
-    pointer-events: auto;
-    z-index: 3;
-    position: relative;
-    filter: brightness(1.1);
-    border: 0.12em solid rgba(255, 255, 255, 0.5);
-    box-shadow: 
-      inset 0 0 0.5em rgba(255, 255, 255, 0.3),
-      0 0 1em rgba(255, 255, 255, 0.2);
-  }
-  
-  /* Animation for regular tiles to appear */
-  @keyframes tileReveal {
+  /* Simpler, smoother animation keyframes */
+  @keyframes simpleReveal {
     0% {
       opacity: 0;
-      transform: scale(0.92);
-      pointer-events: none;
-    }
-    80% {
-      pointer-events: auto;
+      transform: scale(0.9);
     }
     100% {
       opacity: 1;
       transform: scale(1);
-      pointer-events: auto;
     }
   }
   
-  /* Fix: Make sure tiles don't animate during movement */
-  .map.moving .tile {
-    animation: none !important;
-    transition: none !important;
-    pointer-events: none;
-    cursor: grabbing;
-    filter: none;
-    opacity: 1 !important;
-    transform: scale(1) !important;
-  }
-
-  /* Center tile styles */
+  /* Center tile is always immediately visible without animation */
   .map .grid .tile.center {
     z-index: 3;
     position: relative;
@@ -493,7 +482,23 @@
       inset 0 0 0.5em rgba(255, 255, 255, 0.3),
       0 0 1em rgba(255, 255, 255, 0.2);
     transform: scale(1.05);
+    opacity: 1;
+    animation: none;
+  }
+  
+  /* Apply pulse animation specifically to center tile */
+  .map .grid .tile.center {
     animation: pulse 2s infinite ease-in-out;
+  }
+  
+  /* Stop animations during movement */
+  .map.moving .tile {
+    animation: none;
+    transition: none;
+    transform: scale(1);
+    opacity: 1;
+    pointer-events: none;
+    cursor: grabbing;
   }
 
   /* Replace the hover and dragstate CSS */
