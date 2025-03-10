@@ -3,7 +3,7 @@
   import Legend from "./Legend.svelte";
   import Axes from "./Axes.svelte";
   import Details from "./Details.svelte";
-  import MiniMap from "./MiniMap.svelte"; // Fixed capitalization
+  import MiniMap from "./MiniMap.svelte";
   import Tutorial from "./Tutorial.svelte";
 
   import { 
@@ -256,57 +256,6 @@
       }
     };
   });
-
-  // Add a tracker for previously seen tiles
-  let seenTiles = $state(new Set());
-  
-  // Track grid render to trigger animations
-  let gridKey = $state(0);
-  
-  // Update grid key when target coordinates change significantly
-  $effect(() => {
-    const { x, y } = $mapState.targetCoord;
-    
-    // Check if coordinates have changed by more than 10 units in any direction
-    if (Math.abs(x - (gridKey & 0xFFFF)) > 10 || Math.abs(y - (gridKey >> 16)) > 10) {
-      // Store a version of coordinates in the key for comparison
-      gridKey = (y << 16) | (x & 0xFFFF);
-      
-      // Reset seen tiles when moving large distances
-      seenTiles = new Set();
-    }
-  });
-  
-  // Update seen tiles after every grid render
-  $effect(() => {
-    if (grid && grid.length > 0) {
-      // Add all current tiles to the seen set
-      grid.forEach(cell => {
-        seenTiles.add(`${cell.x},${cell.y}`);
-      });
-    }
-  });
-  
-  // Check if a tile is new (should animate) or has been seen before
-  function isTileNew(cell) {
-    return !seenTiles.has(`${cell.x},${cell.y}`);
-  }
-  
-  // Simplified transition delay function - much gentler and smoother
-  function getTransitionDelay(cell) {
-    if (cell.isCenter || !isTileNew(cell)) return 0;
-    
-    const dx = Math.abs(cell.x - targetCoord.x);
-    const dy = Math.abs(cell.y - targetCoord.y);
-    
-    // Use a modified Euclidean distance with more weight on rings
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Create a gentle wave effect with quick reveal
-    const baseDelay = distance * 80; 
-    
-    return Math.min(baseDelay, 800);
-  }
 </script>
 
 <svelte:window
@@ -335,17 +284,13 @@
             class="tile"
             class:center={cell.isCenter}
             class:hovered={isHovered(cell)}
-            class:new-tile={isTileNew(cell)}
             onmouseenter={() => handleTileHover(cell)}
             onmouseleave={handleTileLeave}
             role="gridcell"
             tabindex="-1"
             aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}"
             aria-current={cell.isCenter ? "location" : undefined}
-            style="
-              --final-color: {cell.color};
-              --transition-delay: {getTransitionDelay(cell)}ms;
-            "
+            style="background-color: {cell.color};"
           >
             <span class="coords">{cell.x},{cell.y}</span>
           </div>
@@ -448,45 +393,9 @@
     -ms-user-select: none;
     -webkit-touch-callout: none;
     z-index: 1;
-    opacity: 1; /* Default visible for pre-existing tiles */
-    transform: scale(1); /* Default normal scale for pre-existing tiles */
-    
-    /* Start with maroon default color */
-    background-color: #6D1A36;
-    
-    /* Separate transitions for different properties */
-    transition:
-      background-color 2.5s ease-out var(--transition-delay),
-      filter 0.2s ease-in-out,
-      box-shadow 0.2s ease-in-out;
   }
   
-  /* Transition to the final terrain color after the delay */
-  .tile:not(.moving *) {
-    background-color: var(--final-color);
-  }
-  
-  /* Apply animation only to new tiles */
-  .tile.new-tile {
-    opacity: 0;
-    transform: scale(0.9);
-    animation: simpleReveal 400ms ease-out forwards;
-    animation-delay: var(--transition-delay);
-  }
-  
-  /* Simpler, smoother animation keyframes */
-  @keyframes simpleReveal {
-    0% {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  
-  /* Center tile is always immediately visible without animation */
+  /* Center tile style */
   .map .grid .tile.center {
     z-index: 3;
     position: relative;
@@ -496,24 +405,9 @@
       inset 0 0 0.5em rgba(255, 255, 255, 0.3),
       0 0 1em rgba(255, 255, 255, 0.2);
     transform: scale(1.05);
-    opacity: 1;
-    background-color: var(--final-color); /* Center tile shows correct color immediately */
-    transition: none; /* No transition for center tile */
-    animation: pulse 2s infinite ease-in-out;
   }
   
-  /* Stop animations during movement */
-  .map.moving .tile {
-    animation: none;
-    transition: none;
-    transform: scale(1);
-    opacity: 1;
-    pointer-events: none;
-    cursor: grabbing;
-    background-color: var(--final-color); /* Show final colors immediately during movement */
-  }
-
-  /* Replace the hover and dragstate CSS */
+  /* Hover effects */
   .map:not(.moving) .tile:hover,
   .tile.hovered {
     z-index: 2;
@@ -521,28 +415,18 @@
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
   }
   
+  /* Moving state */
   .map.moving .tile {
     pointer-events: none;
     cursor: grabbing;
     filter: none;
     z-index: auto;
-    
-    /* Ensure tiles remain visible during movement */
-    opacity: 1;
-    transform: scale(1);
   }
 
   /* Additional styles to ensure no hover effects during movement */
   .map.moving .tile.hovered {
     filter: none;
     box-shadow: none;
-  }
-
-  /* Create a subtle pulsing animation for the center tile */
-  @keyframes pulse {
-    0% { box-shadow: inset 0 0 0.5em rgba(255, 255, 255, 0.3), 0 0 1em rgba(255, 255, 255, 0.2); }
-    50% { box-shadow: inset 0 0 0.8em rgba(255, 255, 255, 0.4), 0 0 1.5em rgba(255, 255, 255, 0.3); }
-    100% { box-shadow: inset 0 0 0.5em rgba(255, 255, 255, 0.3), 0 0 1em rgba(255, 255, 255, 0.2); }
   }
 
   .coords {
