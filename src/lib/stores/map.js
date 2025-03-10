@@ -190,16 +190,16 @@ export function moveMapByKeys() {
   let yChange = 0;
 
   mapState.update(state => {
-    // These values were inverted - change sign to fix the direction
-    if (state.keysPressed.has("a") || state.keysPressed.has("arrowleft")) xChange += 1;  // Changed from -=
-    if (state.keysPressed.has("d") || state.keysPressed.has("arrowright")) xChange -= 1; // Changed from +=
-    if (state.keysPressed.has("w") || state.keysPressed.has("arrowup")) yChange += 1;    // Changed from -=
-    if (state.keysPressed.has("s") || state.keysPressed.has("arrowdown")) yChange -= 1;  // Changed from +=
+    if (state.keysPressed.has("a") || state.keysPressed.has("arrowleft")) xChange += 1;
+    if (state.keysPressed.has("d") || state.keysPressed.has("arrowright")) xChange -= 1;
+    if (state.keysPressed.has("w") || state.keysPressed.has("arrowup")) yChange += 1;
+    if (state.keysPressed.has("s") || state.keysPressed.has("arrowdown")) yChange -= 1;
 
     if (xChange === 0 && yChange === 0) return state;
     
-    const newTargetX = state.targetCoord.x - xChange;
-    const newTargetY = state.targetCoord.y - yChange;
+    // Round the coordinates for consistent movement, especially diagonal
+    const newTargetX = Math.round(state.targetCoord.x - xChange);
+    const newTargetY = Math.round(state.targetCoord.y - yChange);
     const newOffsetX = state.centerX + newTargetX;
     const newOffsetY = state.centerY + newTargetY;
     
@@ -272,8 +272,9 @@ export function drag(event) {
     }
     
     result = true;
-    const newTargetX = state.targetCoord.x - cellsMovedX;
-    const newTargetY = state.targetCoord.y - cellsMovedY;
+    // Round the coordinates for consistent movement, especially diagonal
+    const newTargetX = Math.round(state.targetCoord.x - cellsMovedX);
+    const newTargetY = Math.round(state.targetCoord.y - cellsMovedY);
     
     // Keep remaining sub-tile movement for next drag event
     const remainderX = dragAccumX - (cellsMovedX * adjustedTileSize);
@@ -548,4 +549,18 @@ export function clearHoveredTile() {
     ...state,
     hoveredTile: null
   }));
+}
+
+// Update the minimap navigation to also use rounded coordinates
+export function navigateToPosition(tileX, tileY, currentState) {
+  // Round the coordinates for consistent movement
+  const worldX = Math.round(currentState.targetCoord.x - viewRangeX + tileX);
+  const worldY = Math.round(currentState.targetCoord.y - viewRangeY + tileY);
+  
+  return {
+    ...currentState,
+    targetCoord: { x: worldX, y: worldY },
+    offsetX: currentState.centerX + worldX,
+    offsetY: currentState.centerY + worldY
+  };
 }
