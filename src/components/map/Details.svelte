@@ -33,8 +33,8 @@
 <style>
   .details-container {
     position: absolute;
-    bottom: 23em;  /* Moved up to make room for minimap */
-    right: 1.5em;
+    bottom: 4.5em;  /* Match minimap positioning */
+    right: 0;       /* Flush with edge like minimap */
     z-index: 1001;
     opacity: 0;
     pointer-events: none;
@@ -51,10 +51,10 @@
     align-items: flex-start;
     gap: 1em;
     padding: 1em;
-    border-radius: 0.5em;
+    border-radius: 4px;  /* Match minimap border-radius */
     color: white;
     text-shadow: 0 0.0625em 0.125em rgba(0, 0, 0, 0.5); /* Changed from px to em */
-    box-shadow: 0 0.3em 0.8em rgba(0, 0, 0, 0.5);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);  /* Match minimap shadow */
     border: 0.3em solid rgba(255, 255, 255, 0.4); /* More visible border */
     backdrop-filter: brightness(1.1) saturate(1.2);
     min-width: 12.5em; /* Changed from 200px to 12.5em */

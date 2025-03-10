@@ -291,7 +291,6 @@
             aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}"
             aria-current={cell.isCenter ? "location" : undefined}
             style="background-color: {cell.color};"
-            title="{cell.biome.name} ({cell.x},{cell.y})"
           >
             <span class="coords">{cell.x},{cell.y}</span>
           </div>
@@ -343,6 +342,10 @@
     background: var(--color-dark-blue);
     user-select: none;
     z-index: 1; /* Set base z-index for proper layering */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
   }
 
   /* Map takes full container space */
@@ -387,6 +390,7 @@
     -moz-user-select: none;
     -ms-user-select: none;
     transition: filter 0.1s ease-in-out, transform 0.1s ease-in-out;
+    -webkit-touch-callout: none;
   }
 
   /* Replace the hover and dragstate CSS */
