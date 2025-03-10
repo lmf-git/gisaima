@@ -256,6 +256,32 @@
       }
     };
   });
+
+  // Helper to calculate animation delay based on distance from center
+  const getAnimationDelay = (cell) => {
+    if (cell.isCenter) {
+      return 0; // Center tile appears immediately
+    }
+    
+    const dx = Math.abs(cell.x - targetCoord.x);
+    const dy = Math.abs(cell.y - targetCoord.y);
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    return Math.min(distance * 50, 1000); // 50ms per unit distance, max 1s
+  };
+
+  // Helper to calculate animation duration based on distance
+  const getAnimationDuration = (cell) => {
+    if (cell.isCenter) {
+      return 200; // Quicker animation for center tile
+    }
+    
+    const dx = Math.abs(cell.x - targetCoord.x);
+    const dy = Math.abs(cell.y - targetCoord.y);
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    return Math.min(300 + distance * 30, 600); // Base 300ms + 30ms per unit
+  };
 </script>
 
 <svelte:window
@@ -290,7 +316,11 @@
             tabindex="-1"
             aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}"
             aria-current={cell.isCenter ? "location" : undefined}
-            style="background-color: {cell.color};"
+            style="
+              background-color: {cell.color};
+              animation-delay: {getAnimationDelay(cell)}ms;
+              animation-duration: {getAnimationDuration(cell)}ms;
+            "
           >
             <span class="coords">{cell.x},{cell.y}</span>
           </div>
@@ -342,10 +372,6 @@
     background: var(--color-dark-blue);
     user-select: none;
     z-index: 1; /* Set base z-index for proper layering */
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
   }
 
   /* Map takes full container space */
@@ -390,7 +416,22 @@
     -moz-user-select: none;
     -ms-user-select: none;
     transition: filter 0.1s ease-in-out, transform 0.1s ease-in-out;
-    -webkit-touch-callout: none;
+    opacity: 0;
+    transform: scale(0.8);
+    animation-name: tileReveal;
+    animation-fill-mode: forwards;
+    animation-timing-function: ease-out;
+  }
+
+  @keyframes tileReveal {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   /* Replace the hover and dragstate CSS */
@@ -418,25 +459,38 @@
 
   /* Enhanced center tile styling */
   .center {
-    z-index: 3;
+    z-index: 10; /* Ensure center appears above other tiles */
     position: relative;
     filter: brightness(1.1);
     border: 0.12em solid rgba(255, 255, 255, 0.5) !important;
     box-shadow: 
       inset 0 0 0.5em rgba(255, 255, 255, 0.3),
       0 0 1em rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
+    /* Override the transform from tileReveal */
+    transform: scale(1.05) !important;
+    animation-name: centerReveal, pulse !important;
+    animation-duration: 0.2s, 2s !important;
+    animation-delay: 0ms, 0.2s !important; /* Pulse starts after reveal completes */
+    animation-fill-mode: forwards, infinite !important;
+    animation-timing-function: ease-out, ease-in-out !important;
+    animation-iteration-count: 1, infinite !important;
   }
 
-  /* Create a subtle pulsing animation for the center tile */
+  @keyframes centerReveal {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+  }
+
   @keyframes pulse {
     0% { box-shadow: inset 0 0 0.5em rgba(255, 255, 255, 0.3), 0 0 1em rgba(255, 255, 255, 0.2); }
     50% { box-shadow: inset 0 0 0.8em rgba(255, 255, 255, 0.4), 0 0 1.5em rgba(255, 255, 255, 0.3); }
     100% { box-shadow: inset 0 0 0.5em rgba(255, 255, 255, 0.3), 0 0 1em rgba(255, 255, 255, 0.2); }
-  }
-
-  .center {
-    animation: pulse 2s infinite ease-in-out;
   }
 
   .coords {

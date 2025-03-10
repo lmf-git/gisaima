@@ -36,7 +36,6 @@
     display: flex;
     position: absolute;
     background: var(--color-deep-blue);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);  /* Match other components */
   }
   
   .x-grid {
@@ -45,7 +44,6 @@
     right: 0;
     height: 2em;
     flex-direction: row;
-    border-radius: 4px 4px 0 0;  /* Match radius on top edges */
   }
   
   .y-grid {
@@ -54,7 +52,6 @@
     width: 2em;
     height: 100%;
     flex-direction: column;
-    border-radius: 0 4px 0 0;  /* Match radius on top-right corner */
   }
   
   .axis-label {

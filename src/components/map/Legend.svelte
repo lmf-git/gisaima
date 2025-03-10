@@ -20,8 +20,9 @@
 <style>
   .legend-container {
     position: absolute;
-    top: 0.5em;    /* Small offset from very top */
-    right: 0.5em;  /* Small offset from very right */
+    top: -2.5em;  /* Position above minimap */
+    right: 0;     /* Align with minimap right edge */
+    margin-right: 1em;
     z-index: 1001;
     cursor: pointer;
     border-radius: 0.3em;
