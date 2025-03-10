@@ -2,7 +2,7 @@
   import { fly } from 'svelte/transition';
   import { mapState } from '../../lib/stores/map.js';
   
-  const { x = 0, y = 0, show = false, displayColor = "#808080", biomeName: rawBiomeName = "Unknown", onClose } = $props();
+  const { x = 0, y = 0, show = true, displayColor = "#808080", biomeName: rawBiomeName = "Unknown", onClose } = $props();
   
   const biomeName = $derived(rawBiomeName?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown');
   
@@ -32,10 +32,10 @@
 
 <style>
   .details-container {
-    position: absolute; /* Changed from fixed to maintain consistent positioning with Legend */
-    top: 1em; /* Match Legend exactly */
-    right: 1em; /* Match Legend exactly */
-    z-index: 1001; /* Match Legend's z-index */
+    position: absolute;
+    bottom: 23em;  /* Moved up to make room for minimap */
+    right: 1.5em;
+    z-index: 1001;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;

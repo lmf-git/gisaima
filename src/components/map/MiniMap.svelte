@@ -1,10 +1,10 @@
 <script>
   import { mapState, getTerrainData, updateHoveredTile, clearHoveredTile } from '../../lib/stores/map.js';
   
-  // Fixed dimensions for the minimap - change to rectangular shape
-  const MINI_TILE_SIZE_EM = 0.5;
-  const MINIMAP_WIDTH_EM = 18; // Increased width for rectangular shape
-  const MINIMAP_HEIGHT_EM = 12; // Keep height smaller than width
+  // Fixed dimensions for the minimap - larger rectangular shape
+  const MINI_TILE_SIZE_EM = 0.5;  // Keep original tile size
+  const MINIMAP_WIDTH_EM = 24;    // Increased from 18
+  const MINIMAP_HEIGHT_EM = 16;    // Increased from 12
   const LOADING_THROTTLE = 200; // ms between minimap updates during interaction
   
   // Calculate how many tiles fit in our minimap dimensions
@@ -175,9 +175,9 @@
   
   // Helper function to navigate to a position on the minimap
   function navigateToPosition(tileX, tileY) {
-    // Convert to world coordinates
-    const worldX = $mapState.targetCoord.x - viewRangeX + tileX;
-    const worldY = $mapState.targetCoord.y - viewRangeY + tileY;
+    // Convert to world coordinates using local viewRange values
+    const worldX = Math.round($mapState.targetCoord.x - viewRangeX + tileX);
+    const worldY = Math.round($mapState.targetCoord.y - viewRangeY + tileY);
     
     // Update the map target coordinate
     mapState.update(state => ({
@@ -428,7 +428,7 @@
 <style>
   .map {
     position: absolute;
-    bottom: 4em;
+    bottom: 5em;   /* Moved up from previous position */
     right: 1.5em;
     z-index: 1000;
     border-radius: 4px;
@@ -458,6 +458,7 @@
     position: absolute;
     box-sizing: border-box;
     transition: background-color 0.2s ease;
+    border: 0.02em solid rgba(0, 0, 0, 0.15);
   }
   
   .mini-tile.center {

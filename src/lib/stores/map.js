@@ -550,17 +550,3 @@ export function clearHoveredTile() {
     hoveredTile: null
   }));
 }
-
-// Update the minimap navigation to also use rounded coordinates
-export function navigateToPosition(tileX, tileY, currentState) {
-  // Round the coordinates for consistent movement
-  const worldX = Math.round(currentState.targetCoord.x - viewRangeX + tileX);
-  const worldY = Math.round(currentState.targetCoord.y - viewRangeY + tileY);
-  
-  return {
-    ...currentState,
-    targetCoord: { x: worldX, y: worldY },
-    offsetX: currentState.centerX + worldX,
-    offsetY: currentState.centerY + worldY
-  };
-}
