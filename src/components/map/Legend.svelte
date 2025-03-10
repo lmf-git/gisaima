@@ -31,9 +31,9 @@
 <style>
   .legend-container {
     position: absolute;
-    top: 4em; /* Moved up from 5.5em */
+    top: 1em; /* Align with header padding */
     right: 1em;
-    z-index: 1001; /* Higher than header to ensure clickability */
+    z-index: 1001;
     cursor: pointer;
     border-radius: 0.3em;
     padding: 0.6em 1em;

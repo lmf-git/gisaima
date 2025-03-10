@@ -52,10 +52,10 @@
 
 <style>
   .details-container {
-    position: fixed;
-    top: 3.5em;
-    right: 1em;
-    z-index: 1000; /* Higher z-index to ensure visibility */
+    position: absolute; /* Changed from fixed to maintain consistent positioning with Legend */
+    top: 1em; /* Match Legend exactly */
+    right: 1em; /* Match Legend exactly */
+    z-index: 1001; /* Match Legend's z-index */
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;

@@ -226,7 +226,10 @@ export function startDrag(event) {
     isDragging: true,
     isMouseActuallyDown: true,
     dragStartX: event.clientX,
-    dragStartY: event.clientY
+    dragStartY: event.clientY,
+    // Track accumulated sub-tile movements for smoother dragging
+    dragAccumX: 0,
+    dragAccumY: 0
   }));
   
   document.body.style.cursor = "grabbing";
@@ -245,15 +248,36 @@ export function drag(event) {
     const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
     const tileSizePx = TILE_SIZE * baseFontSize;
     
-    const cellsMovedX = Math.round(deltaX / tileSizePx);
-    const cellsMovedY = Math.round(deltaY / tileSizePx);
+    // Calculate movement with increased sensitivity (60% of original tile size)
+    const sensitivity = 0.6; 
+    const adjustedTileSize = tileSizePx * sensitivity;
     
-    // Only update if we've moved at least one cell
-    if (cellsMovedX === 0 && cellsMovedY === 0) return state;
+    // Add current movement to accumulated sub-tile movements
+    const dragAccumX = (state.dragAccumX || 0) + deltaX;
+    const dragAccumY = (state.dragAccumY || 0) + deltaY;
+    
+    // Calculate cells moved including fractional movement
+    const cellsMovedX = Math.round(dragAccumX / adjustedTileSize);
+    const cellsMovedY = Math.round(dragAccumY / adjustedTileSize);
+    
+    // Only update if we've accumulated enough movement
+    if (cellsMovedX === 0 && cellsMovedY === 0) {
+      return {
+        ...state,
+        dragStartX: event.clientX,
+        dragStartY: event.clientY,
+        dragAccumX,
+        dragAccumY
+      };
+    }
     
     result = true;
     const newTargetX = state.targetCoord.x - cellsMovedX;
     const newTargetY = state.targetCoord.y - cellsMovedY;
+    
+    // Keep remaining sub-tile movement for next drag event
+    const remainderX = dragAccumX - (cellsMovedX * adjustedTileSize);
+    const remainderY = dragAccumY - (cellsMovedY * adjustedTileSize);
     
     return {
       ...state,
@@ -261,7 +285,9 @@ export function drag(event) {
       offsetX: state.centerX + newTargetX,
       offsetY: state.centerY + newTargetY,
       dragStartX: event.clientX,
-      dragStartY: event.clientY
+      dragStartY: event.clientY,
+      dragAccumX: remainderX,
+      dragAccumY: remainderY
     };
   });
   
@@ -288,7 +314,9 @@ export function stopDrag() {
     wasDragging = true;
     return {
       ...state,
-      isDragging: false
+      isDragging: false,
+      dragAccumX: 0, // Reset accumulated movement
+      dragAccumY: 0
     };
   });
   

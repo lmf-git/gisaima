@@ -1,15 +1,49 @@
 <script>
+  import { onMount } from 'svelte';
+  
   // Component to display game controls and hints
   const { show = true } = $props();
+  
+  // Track if tutorial is closed
+  let isClosed = $state(false);
+  
+  // On component mount, check localStorage for saved preference
+  onMount(() => {
+    const savedPreference = localStorage.getItem('tutorial-closed');
+    if (savedPreference === 'true') {
+      isClosed = true;
+    }
+  });
+  
+  // Function to handle closing the tutorial
+  function closeTutorial() {
+    isClosed = true;
+    // Save preference to localStorage
+    localStorage.setItem('tutorial-closed', 'true');
+  }
+  
+  // Function to reopen the tutorial
+  function reopenTutorial() {
+    isClosed = false;
+    localStorage.setItem('tutorial-closed', 'false');
+  }
 </script>
 
-<div class="tutorial-container" class:hidden={!show}>
-  <div class="tutorial-content">
-    <div class="tutorial-item">
-      <span class="key-hint">WASD</span> or <span class="key-hint">↑←↓→</span> to navigate
+{#if !isClosed}
+  <div class="tutorial-container" class:hidden={!show}>
+    <div class="tutorial-content">
+      <button class="close-button" aria-label="Close tutorial" on:click={closeTutorial}>×</button>
+      <div class="tutorial-item">
+        <span class="key-hint">WASD</span> or <span class="key-hint">↑←↓→</span> to navigate
+      </div>
     </div>
   </div>
-</div>
+{:else if show}
+  <!-- Show a minimized indicator when closed -->
+  <button class="reopen-button" on:click={reopenTutorial} aria-label="Show tutorial">
+    ?
+  </button>
+{/if}
 
 <style>
   .tutorial-container {
@@ -30,6 +64,7 @@
   }
   
   .tutorial-content {
+    position: relative;
     background-color: rgba(0, 0, 0, 0.6);
     padding: 0.6em 1em;
     border-radius: 0.3em;
@@ -48,5 +83,53 @@
     color: var(--color-accent);
     font-weight: bold;
     letter-spacing: 0.05em;
+  }
+  
+  /* Close button styling */
+  .close-button {
+    position: absolute;
+    top: 0.2em;
+    right: 0.2em;
+    background: transparent;
+    border: none;
+    color: var(--color-text);
+    font-size: 1.2em;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 0.3em;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+  
+  .close-button:hover {
+    opacity: 1;
+  }
+  
+  /* Reopen button styling */
+  .reopen-button {
+    position: absolute;
+    bottom: 1.5em;
+    left: 1.5em;
+    width: 1.8em;
+    height: 1.8em;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: var(--color-text);
+    border: none;
+    border-radius: 50%;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.8;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 10;
+    box-shadow: 0 0.1em 0.3em var(--color-shadow);
+  }
+  
+  .reopen-button:hover {
+    opacity: 1;
+    transform: scale(1.1);
   }
 </style>
