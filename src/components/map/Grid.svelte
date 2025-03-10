@@ -307,6 +307,31 @@
     
     return Math.min(baseDelay, 800);
   }
+
+  // Extract colors from the grid for the axes
+  const axesColors = $derived(() => {
+    if (!grid || grid.length === 0) {
+      return { xColors: {}, yColors: {} };
+    }
+    
+    const xColors = {};
+    const yColors = {};
+    
+    // Extract colors from the actual grid cells
+    grid.forEach(cell => {
+      // For x-axis: cells that share the center y-coordinate
+      if (cell.y === $mapState.targetCoord.y) {
+        xColors[cell.x] = cell.color;
+      }
+      
+      // For y-axis: cells that share the center x-coordinate
+      if (cell.x === $mapState.targetCoord.x) {
+        yColors[cell.y] = cell.color;
+      }
+    });
+    
+    return { xColors, yColors };
+  });
 </script>
 
 <svelte:window
@@ -343,7 +368,7 @@
             aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}"
             aria-current={cell.isCenter ? "location" : undefined}
             style="
-              background-color: {cell.color};
+              --final-color: {cell.color};
               --transition-delay: {getTransitionDelay(cell)}ms;
             "
           >
@@ -367,10 +392,12 @@
   <!-- Axes component should appear above the grid - move it after the grid for proper layering -->
   {#if showAxisBars && $mapState.isReady}
     <Axes 
-      xAxisArray={$xAxisArray} 
-      yAxisArray={$yAxisArray} 
-      cols={$mapState.cols} 
-      rows={$mapState.rows} 
+      xAxisArray={$xAxisArray}
+      yAxisArray={$yAxisArray}
+      xColors={axesColors.xColors}
+      yColors={axesColors.yColors}
+      cols={$mapState.cols}
+      rows={$mapState.rows}
     />
   {/if}
 
@@ -450,6 +477,20 @@
     z-index: 1;
     opacity: 1; /* Default visible for pre-existing tiles */
     transform: scale(1); /* Default normal scale for pre-existing tiles */
+    
+    /* Start with maroon default color */
+    background-color: #6D1A36;
+    
+    /* Separate transitions for different properties */
+    transition:
+      background-color 2.5s ease-out var(--transition-delay),
+      filter 0.2s ease-in-out,
+      box-shadow 0.2s ease-in-out;
+  }
+  
+  /* Transition to the final terrain color after the delay */
+  .tile:not(.moving *) {
+    background-color: var(--final-color);
   }
   
   /* Apply animation only to new tiles */
@@ -483,11 +524,8 @@
       0 0 1em rgba(255, 255, 255, 0.2);
     transform: scale(1.05);
     opacity: 1;
-    animation: none;
-  }
-  
-  /* Apply pulse animation specifically to center tile */
-  .map .grid .tile.center {
+    background-color: var(--final-color); /* Center tile shows correct color immediately */
+    transition: none; /* No transition for center tile */
     animation: pulse 2s infinite ease-in-out;
   }
   
@@ -499,6 +537,7 @@
     opacity: 1;
     pointer-events: none;
     cursor: grabbing;
+    background-color: var(--final-color); /* Show final colors immediately during movement */
   }
 
   /* Replace the hover and dragstate CSS */
