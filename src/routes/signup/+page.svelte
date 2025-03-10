@@ -1,5 +1,5 @@
 <script>
-    import { signUp } from '$lib/stores/authStore';
+    import { signUp } from '$lib/stores/auth';
     import { goto } from '$app/navigation';
     
     let email = '';

@@ -1,17 +1,7 @@
 <script>
     import { page } from '$app/stores';
-    import { user, signOut } from '$lib/stores/authStore';
-    import { browser } from '$app/environment';
+    import { user, signOut } from '$lib/stores/auth';
     import Logo from '../components/Logo.svelte';
-    
-    // Import analytics only on client side
-    if (browser) {
-        import('$lib/firebase/analytics')
-            .then(module => {
-                module.initializeAnalytics();
-            })
-            .catch(e => console.error('Analytics import failed:', e));
-    }
     
     // Check if current page is the map page
     $: isMapPage = $page.url.pathname === '/map';
@@ -23,7 +13,7 @@
 </script>
 
 <div class="app">
-    <header class={`appheader ${isMapPage ? 'absolute' : ''}`}>
+    <header class={`appheader ${isMapPage ? 'map-header' : ''}`}>
         <nav class="navbar">
             <div class="navlinks">
                 <a href="/" class="logolink">
@@ -72,6 +62,81 @@
         --color-light-yellow: #F9F8E2;
         --color-cream-white: #FBFBD8;
         
+        /* Adding volcano/lava colors */
+        --color-lava: #FF4400;
+        --color-magma: #FF6600;
+        --color-volcanic-rock: #783C28;
+        --color-volcanic-soil: #9A5D42;
+        
+        /* Biome colors - organized by type */
+        /* Water biomes */
+        --color-biome-ocean: #0066cc;
+        --color-biome-deep-ocean: #000080;
+        --color-biome-abyssal-ocean: #000033;
+        --color-biome-ocean-trench: #00004d;
+        
+        /* River biomes */
+        --color-biome-wide-river: #4a91d6;
+        --color-biome-river: #689ad3;
+        --color-biome-rocky-river: #75a5d1;
+        --color-biome-mountain-stream: #8fbbde;
+        --color-biome-stream: #a3c7e8;
+        --color-biome-highland-stream: #a8cbe9;
+        --color-biome-tributary: #8bb5dd;
+        --color-biome-creek: #b5d5ed;
+        
+        /* Wetland biomes */
+        --color-biome-riverbank: #82a67d;
+        --color-biome-flood-plain: #789f6a;
+        --color-biome-riverine-forest: #2e593f;
+        --color-biome-wetland: #517d46;
+        --color-biome-lakeshore: #6a9b5e;
+        --color-biome-swamp: #2f4d2a;
+        --color-biome-marsh: #3d6d38;
+        --color-biome-bog: #4f5d40;
+        
+        /* Beach biomes */
+        --color-biome-sandy-beach: #f5e6c9;
+        --color-biome-pebble-beach: #d9c8a5;
+        --color-biome-rocky-shore: #9e9e83;
+        
+        /* Mountain biomes */
+        --color-biome-snow-cap: #ffffff;
+        --color-biome-alpine: #e0e0e0;
+        --color-biome-mountain: #7d7d7d;
+        --color-biome-dry-mountain: #8b6b4c;
+        --color-biome-desert-mountains: #9c6b4f;
+        
+        /* Highland biomes */
+        --color-biome-glacier: #c9eeff;
+        --color-biome-highland-forest: #1d6d53;
+        --color-biome-highland: #5d784c;
+        --color-biome-rocky-highland: #787c60;
+        --color-biome-mesa: #9e6b54;
+        
+        /* Forest biomes */
+        --color-biome-tropical-rainforest: #0e6e1e;
+        --color-biome-temperate-forest: #147235;
+        --color-biome-woodland: #448d37;
+        
+        /* Grassland biomes */
+        --color-biome-shrubland: #8d9c4c;
+        --color-biome-grassland: #68a246;
+        --color-biome-plains: #7db356;
+        --color-biome-savanna: #c4b257;
+        --color-biome-dry-plains: #c3be6a;
+        
+        /* Arid biomes */
+        --color-biome-badlands: #9c7450;
+        --color-biome-desert-scrub: #d1ba70;
+        --color-biome-desert: #e3d59e;
+        
+        /* Volcanic biomes */
+        --color-biome-active-volcano: #FF4400;
+        --color-biome-lava-flow: #FF6600;
+        --color-biome-volcanic-rock: #783C28;
+        --color-biome-volcanic-soil: #9A5D42;
+        
         /* Semantic color assignments */
         --color-background: var(--color-dark-navy);
         --color-background-gradient-start: var(--color-dark-navy);
@@ -117,19 +182,18 @@
         padding: 2.2em 1.7em;
         box-sizing: border-box;
     }
-
-    .appheader.absolute {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
+    
+    .appheader.map-header {
+        pointer-events: none;
         justify-content: center;
     }
-
+    
+    /* Ensure nav elements remain clickable */
     .navbar {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        pointer-events: all;
     }
 
     .navlinks {

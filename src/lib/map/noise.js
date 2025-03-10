@@ -1,6 +1,5 @@
 // Implementation of Perlin Noise based on the algorithm by Ken Perlin
 // Adapted for terrain generation with height and moisture maps
-import { determineBiome } from './biomes.js';
 
 export class PerlinNoise {
   constructor(seed = Math.random()) {
@@ -172,10 +171,8 @@ export class PerlinNoise {
       lacunarity: 2
     });
     
-    // CHANGE: Always consider river probability rather than using hard threshold
-    // Previously this was returning 0 if below threshold
-    const riverProbability = baseRiverNoise > (1 - riverDensity) ? 
-      Math.pow((baseRiverNoise - (1 - riverDensity)) / riverDensity, 0.7) : 0;
+    // Check if river density threshold is met
+    if (baseRiverNoise < 1 - riverDensity) return 0;
     
     // Calculate river channel pattern
     const riverPattern = this.getNoise(x * 3 + 7000, y * 3 + 7000, {
@@ -196,17 +193,20 @@ export class PerlinNoise {
     const heightDownhill = heightMap(x, y + 1);
     
     // Rivers are more likely in valleys (where current height is lower than surroundings)
-    // CHANGE: Made valley detection more sensitive
-    const valleyFactor = Math.max(0, (heightUphill + heightDownhill) / 2 - heightValue + 0.05);
+    const valleyFactor = Math.max(0, (heightUphill + heightDownhill) / 2 - heightValue);
     
     // Combine factors to determine river strength
     let riverValue = 
-      riverProbability * // Use continuous probability instead of hard threshold
-      (1 + valleyFactor * 8) * // Increased valley influence
+      (baseRiverNoise > riverThreshold ? 1 : 0) * // River network threshold
+      (1 + valleyFactor * 5) * // Valley bonus
       (riverPattern * noiseFactor + (1 - noiseFactor)); // Apply noise variation
       
-    // CHANGE: Reduce final width multiplier from 1.5 to 0.85
-    return Math.min(1, riverValue * riverWidth * 0.85); // Increased final multiplier
+    // Calculate final river value (0 = no river, higher values = wider river)
+    if (riverValue > 0.1) {
+      return Math.min(1, riverValue * riverWidth);
+    }
+    
+    return 0;
   }
   
   // Add method to detect lakes based on height map and river network
@@ -277,71 +277,118 @@ export class PerlinNoise {
     // Return lake intensity if above threshold
     return lakeValue > lakeThreshold ? Math.min(1, (lakeValue - lakeThreshold) * 5) : 0;
   }
+  
+  // Add method to detect volcanic activity based on height and other factors
+  getLavaValue(x, y, options = {}, heightMap = null) {
+    const {
+      scale = 0.004,
+      lavaThreshold = 0.92,  // High threshold ensures rarity
+      minHeight = 0.7,      // Only appear in high elevations
+      lavaConcentration = 0.6 // How concentrated lava pools are
+    } = options;
+    
+    // If no height map function provided, return 0 (no lava)
+    if (!heightMap) return 0;
+    
+    // Only generate lava in high terrain
+    const localHeight = heightMap(x, y);
+    if (localHeight < minHeight) return 0;
+    
+    // Generate specific noise for volcanic distribution
+    const baseVolcanicNoise = this.getNoise(x * 2 + 7000, y * 2 + 7000, {
+      scale,
+      octaves: 3,
+      persistence: 0.7,
+      lacunarity: 2.2
+    });
+    
+    // More detailed noise for lava flow patterns
+    const lavaPatternNoise = this.getNoise(x * 4 + 8000, y * 4 + 8000, {
+      scale: scale * 3,
+      octaves: 2,
+      persistence: 0.5
+    });
+    
+    // Calculate if this should be volcanic
+    if (baseVolcanicNoise > lavaThreshold) {
+      // Determine intensity based on pattern noise
+      const lavaIntensity = Math.pow(lavaPatternNoise, lavaConcentration);
+      return Math.min(1, lavaIntensity * 2);
+    }
+    
+    return 0;
+  }
 }
 
-// Export terrain generation options with larger scale features and more ocean
+// Export terrain generation options as a single configuration object
 export const TERRAIN_OPTIONS = {
-  // Continent generation options - much larger scale for bigger landmasses and oceans
+  // Continent generation options
   continent: {
-    scale: 0.0004,         // Significantly reduced for larger continental features (was 0.0006)
-    threshold: 0.53,        // Increased to create more ocean (was 0.49)
-    edgeScale: 0.0025,      // Reduced for smoother, larger coastlines (was 0.003)
-    edgeAmount: 0.32,       // Slightly reduced edge noise (was 0.35)
-    sharpness: 2.0          // Reduced for gentler transitions (was 2.2)
+    scale: 0.0008,
+    threshold: 0.6,       // Increased from 0.55 to reduce ocean size
+    edgeScale: 0.003,
+    edgeAmount: 0.25,
+    sharpness: 2.7        
   },
   
-  // Height map options - larger scale for bigger terrain features
+  // Height map options - create more middle-range elevations with less variation
   height: {
-    scale: 0.006,           // Further reduced for larger mountain ranges (was 0.008)
-    octaves: 6,
-    persistence: 0.55,
-    lacunarity: 2.3
+    scale: 0.01,    
+    octaves: 4,          // Reduced from 5 for more uniform terrain
+    persistence: 0.45,   // Reduced from 0.5 for smoother, flatter terrain
+    lacunarity: 1.8      // Reduced from 2.0 for less extreme height changes
   },
   
-  // Moisture map options - larger scale for broader climate zones
+  // Moisture map options - slightly less dry in mid-elevations
   moisture: {
-    scale: 0.009,          // Reduced for larger moisture zones (was 0.012)
-    octaves: 4,
-    persistence: 0.6,
-    lacunarity: 2
+    scale: 0.016,
+    octaves: 3,          // Reduced from 4 for larger cohesive dry regions
+    persistence: 0.38,   // Increased from 0.35 for slightly less extreme dryness
+    lacunarity: 2.5      // Reduced from 2.7 for smoother transitions
   },
   
-  // Small-scale detail noise options
+  // Small-scale detail noise - enhance peaks and valleys
   detail: {
-    scale: 0.08,     // High frequency for small details
-    octaves: 2,
-    persistence: 0.4,
-    lacunarity: 2
+    scale: 0.1,          // Increased from 0.09 for more detailed terrain
+    octaves: 3,
+    persistence: 0.6,    // Increased from 0.5 for stronger terrain features
+    lacunarity: 2.4      // Increased from 2.2 for sharper terrain details
   },
   
-  // River generation options - adjusted for fewer riverbanks
+  // River generation options
   river: {
-    scale: 0.0025,         // Reduced for longer rivers (was 0.0028)
-    riverDensity: 0.6,      // Slightly reduced (was 0.65)
-    riverThreshold: 0.44,
-    minContinentValue: 0.3, // Increased to move rivers more inland (was 0.28)
-    riverWidth: 0.32,       // Reduced width to make them thinner (was 0.35)
-    noiseFactor: 0.35,
-    branchFactor: 0.65,     // Reduced for fewer branches (was 0.75)
-    moistureInfluence: 0.4
+    scale: 0.005,
+    riverDensity: 0.95,    // Increased from 0.85 for many more rivers
+    riverThreshold: 0.58,  // Lowered from 0.68 for easier river formation
+    minContinentValue: 0.25, // Lowered to allow rivers closer to coast
+    riverWidth: 1.2,       // Increased from 1.0 for wider rivers
+    noiseFactor: 0.25,     // Slightly reduced for smoother rivers
+    branchFactor: 0.9      // Increased to encourage more branching
   },
   
-  // Lake generation options - fewer lakes
+  // Lake generation options
   lake: {
-    scale: 0.0025,          // Reduced for larger lakes (was 0.003)
-    lakeThreshold: 0.87,    // Increased for fewer lakes (was 0.85)
-    minHeight: 0.34,        // Increased to move lakes more inland (was 0.32)
-    maxHeight: 0.68,
-    minRiverInfluence: 0.38, // Higher threshold for lake formation near rivers
+    scale: 0.003,
+    lakeThreshold: 0.78,
+    minHeight: 0.25,
+    maxHeight: 0.7,
+    minRiverInfluence: 0.3,
     lakeSmoothness: 0.7
+  },
+  
+  // Add volcanic/lava options
+  lava: {
+    scale: 0.004,
+    lavaThreshold: 0.92,
+    minHeight: 0.7,
+    lavaConcentration: 0.6
   },
   
   // Constants related to terrain generation
   constants: {
-    continentInfluence: 0.65,  // Reduced to make height less dependent on continents (was 0.7)
-    waterLevel: 0.35,          // Increased for more ocean (was 0.32)
-    mountainBoostFactor: 0.15,
-    riverMoistureBoost: 0.12   // Reduced to decrease riverbank formation (was 0.15)
+    continentInfluence: 0.8,    // Increased from 0.75 for much flatter terrain
+    waterLevel: 0.32,      // Lowered from 0.35 to reduce ocean coverage
+    heightBias: 0.08            // Reduced from 0.12 for less overall elevation
   }
 };
 
@@ -357,6 +404,7 @@ export class TerrainGenerator {
     this.detailNoise = new PerlinNoise(this.WORLD_SEED + 30000);
     this.riverNoise = new PerlinNoise(this.WORLD_SEED + 40000);
     this.lakeNoise = new PerlinNoise(this.WORLD_SEED + 50000);
+    this.lavaNoise = new PerlinNoise(this.WORLD_SEED + 60000);  // New noise generator for lava
   }
   
   // Get terrain data for a specific coordinate
@@ -367,101 +415,47 @@ export class TerrainGenerator {
     // Generate base height influenced by continental structure
     const baseHeight = this.heightNoise.getNoise(x, y, TERRAIN_OPTIONS.height);
     
-    // Apply continental influence to height
+    // Apply continental influence to height with bias toward higher elevations
     let height = baseHeight * (1 - TERRAIN_OPTIONS.constants.continentInfluence) + 
                  continent * TERRAIN_OPTIONS.constants.continentInfluence;
     
-    // Add small-scale detail noise
-    const detail = this.detailNoise.getNoise(x, y, TERRAIN_OPTIONS.detail) * 0.1;
+    // Apply height bias to shift distribution upward with even less extreme values
+    height = Math.min(1, height + TERRAIN_OPTIONS.constants.heightBias);
+    
+    // Apply a more aggressive bell curve transformation to concentrate heights in lower-mid range
+    // This will push more terrain toward the middle-low values rather than extremes
+    height = Math.pow(Math.sin((height * Math.PI) - (Math.PI/2)) * 0.5 + 0.5, 1.2);
+    
+    // Reduce detail noise influence
+    const detail = this.detailNoise.getNoise(x, y, TERRAIN_OPTIONS.detail) * 0.1; // Reduced from 0.15
     height = Math.min(1, Math.max(0, height + detail - 0.05));
     
-    // Add mountain boost - make mountains more dramatic
-    // Apply extra height to already high areas
-    if (height > 0.65) {
-      // Apply an exponential boost to higher elevations
-      const mountainBoost = Math.pow((height - 0.65) / 0.35, 1.4) * TERRAIN_OPTIONS.constants.mountainBoostFactor;
-      height = Math.min(1.0, height + mountainBoost);
-    }
+    // Generate moisture independent of continents
+    let moisture = this.moistureNoise.getNoise(x, y, TERRAIN_OPTIONS.moisture);
     
-    // Generate BASE moisture independent of rivers (we'll enhance this later)
-    const baseMoisture = this.moistureNoise.getNoise(x, y, TERRAIN_OPTIONS.moisture);
+    // Apply stronger non-linear transformation to moisture to create more extreme desert areas
+    moisture = Math.pow(moisture, 1.7);  // Increased from 1.5 for even more desert
     
     // Create height map function
     const heightMap = (tx, ty) => {
       const tContinent = this.continentNoise.getContinentValue(tx, ty, TERRAIN_OPTIONS.continent);
       const tBaseHeight = this.heightNoise.getNoise(tx, ty, TERRAIN_OPTIONS.height);
-      let tHeight = tBaseHeight * (1 - TERRAIN_OPTIONS.constants.continentInfluence) + 
-                    tContinent * TERRAIN_OPTIONS.constants.continentInfluence;
-      
-      // Add mountain boost here too for consistency
-      if (tHeight > 0.65) {
-        const tMountainBoost = Math.pow((tHeight - 0.65) / 0.35, 1.4) * TERRAIN_OPTIONS.constants.mountainBoostFactor;
-        tHeight = Math.min(1.0, tHeight + tMountainBoost);
-      }
-      
-      return tHeight;
+      return tBaseHeight * (1 - TERRAIN_OPTIONS.constants.continentInfluence) + 
+             tContinent * TERRAIN_OPTIONS.constants.continentInfluence;
     };
     
-    // NEW: Create moisture map function
-    const moistureMap = (tx, ty) => {
-      return this.moistureNoise.getNoise(tx, ty, TERRAIN_OPTIONS.moisture);
-    };
-    
-    // Generate river value with moisture influence
-    // Pass base moisture to river generation
-    const riverOptions = { ...TERRAIN_OPTIONS.river };
-    
-    // Enhance river density based on moisture for more realistic distribution
-    if (baseMoisture > 0.6) {
-      // More rivers in wet areas
-      riverOptions.riverDensity *= (1 + (baseMoisture - 0.6) * TERRAIN_OPTIONS.river.moistureInfluence);
-    } else if (baseMoisture < 0.3) {
-      // Fewer rivers in dry areas
-      riverOptions.riverDensity *= (1 - (0.3 - baseMoisture) * TERRAIN_OPTIONS.river.moistureInfluence);
-    }
-    
-    // Also adjust width based on elevation - narrower at high elevations
-    if (height > 0.7) {
-      riverOptions.riverWidth *= 0.7; // Narrower streams in mountains
-    } else if (height < 0.4) {
-      riverOptions.riverWidth *= 1.2; // Wider rivers in lowlands
-    }
-    
-    // Generate river value with these adjustments
-    let riverValue = this.riverNoise.getRiverValue(x, y, riverOptions, heightMap);
-    
-    // Apply thinning with adaptive threshold based on elevation
-    if (riverValue > 0 && riverValue < 0.2) {
-      const streamNoise = this.detailNoise.getNoise(x * 5 + 8000, y * 5 + 8000, {
-        scale: 0.1,
-        octaves: 1
-      });
-      
-      // Higher threshold in mountains (more breaks), lower in valleys
-      const breakThreshold = height > 0.7 ? 0.45 : height > 0.5 ? 0.4 : 0.35;
-      
-      if (streamNoise < breakThreshold) {
-        riverValue *= 0.6;
-      }
-    }
+    // Generate river value
+    const riverValue = this.riverNoise.getRiverValue(x, y, TERRAIN_OPTIONS.river, heightMap);
     
     // Create river map function
-    const riverMap = (tx, ty) => this.riverNoise.getRiverValue(tx, ty, riverOptions, heightMap);
+    const riverMap = (tx, ty) => this.riverNoise.getRiverValue(tx, ty, TERRAIN_OPTIONS.river, heightMap);
     
     // Generate lake value
     const lakeValue = this.lakeNoise.getLakeValue(x, y, TERRAIN_OPTIONS.lake, heightMap, riverMap);
     
-    // ENHANCE: Final moisture value is influenced by rivers and lakes
-    let moisture = baseMoisture;
-    
-    // Rivers and lakes increase local moisture
-    if (riverValue > 0.1) {
-      moisture = Math.min(1.0, moisture + riverValue * TERRAIN_OPTIONS.constants.riverMoistureBoost);
-    }
-    
-    if (lakeValue > 0.1) {
-      moisture = Math.min(1.0, moisture + lakeValue * TERRAIN_OPTIONS.constants.riverMoistureBoost * 1.5);
-    }
+    // Generate lava/volcanic value
+    // FIX: Use the lavaNoise instance instead of calling method directly on this
+    const lavaValue = this.lavaNoise.getLavaValue(x, y, TERRAIN_OPTIONS.lava, heightMap);
     
     // Calculate slope
     const heightNE = this.heightNoise.getNoise(x + 1, y - 1, TERRAIN_OPTIONS.height);
@@ -473,49 +467,168 @@ export class TerrainGenerator {
     const dy = ((heightNW - heightSW) + (heightNE - heightSE)) / 2;
     const slope = Math.sqrt(dx * dx + dy * dy);
     
-    // Get biome and color using the standardized biome system
-    const biome = determineBiome(height, moisture, continent, riverValue, lakeValue);
-    const color = getTerrainColor(biome, height, slope, riverValue, lakeValue);
+    // Get biome with updated parameters including lava
+    const biome = this.getBiome(height, moisture, continent, riverValue, lakeValue, lavaValue);
     
-    return { height, moisture, continent, slope, biome, color, riverValue, lakeValue };
+    return { 
+      height, moisture, continent, slope, biome, 
+      color: biome.color, riverValue, lakeValue, lavaValue 
+    };
   }
-}
+  
+  // Determine biome based on terrain characteristics
+  getBiome(height, moisture, continentValue = 1.0, riverValue = 0, lakeValue = 0, lavaValue = 0) {
+    // Volcanic biomes take highest precedence
+    if (lavaValue > 0) {
+      if (lavaValue > 0.8) return { name: "active_volcano", color: "var(--color-biome-active-volcano)" };
+      if (lavaValue > 0.6) return { name: "lava_flow", color: "var(--color-biome-lava-flow)" };
+      if (lavaValue > 0.4) return { name: "volcanic_rock", color: "var(--color-biome-volcanic-rock)" };
+      return { name: "volcanic_soil", color: "var(--color-biome-volcanic-soil)" };
+    }
 
-// New function to get terrain color with enhanced shading - updated to use biome object
-export function getTerrainColor(biome, height, slope = 0, riverValue = 0, lakeValue = 0) {
-  // Base color from biome
-  let color = biome.color;
+    // Special case for rivers (overrides other biomes when strong enough)
+    if (riverValue > 0.35 && continentValue > 0.3) {
+      if (height > 0.75) return { name: "mountain_stream", color: "var(--color-biome-mountain-stream)" };
+      if (height > 0.6) return { name: "rocky_river", color: "var(--color-biome-rocky-river)" };
+      if (height > 0.5) return { name: "river", color: "var(--color-biome-river)" };
+      return { name: "wide_river", color: "var(--color-biome-wide-river)" };
+    }
+    
+    // Make smaller streams more common
+    if (riverValue > 0.2 && riverValue <= 0.35 && continentValue > 0.3) {
+      if (height > 0.7) return { name: "highland_stream", color: "var(--color-biome-highland-stream)" };
+      if (height > 0.6) return { name: "stream", color: "var(--color-biome-stream)" };
+      return { name: "tributary", color: "var(--color-biome-tributary)" };
+    }
+    
+    // Add even smaller streams/creeks for more water variety
+    if (riverValue > 0.15 && riverValue <= 0.2 && continentValue > 0.3) {
+      return { name: "creek", color: "var(--color-biome-creek)" };
+    }
+    
+    // Ocean biomes - deep ocean is far from continents
+    if (continentValue < 0.12) {
+      return { name: "abyssal_ocean", color: "var(--color-biome-abyssal-ocean)" }; 
+    }
+    
+    // Ocean depth based on continental value
+    if (continentValue < 0.42) {
+      return { name: "deep_ocean", color: "var(--color-biome-deep-ocean)" };
+    }
   
-  // Convert hex to RGB for easy manipulation
-  const r = parseInt(color.substring(1, 3), 16);
-  const g = parseInt(color.substring(3, 5), 16);
-  const b = parseInt(color.substring(5, 7), 16);
-  
-  // Apply height-based shading (higher = slightly lighter)
-  const heightFactor = height > 0.5 ? (height - 0.5) * 0.2 : 0;
-  
-  // Apply slope-based shading (steeper = slightly darker)
-  const slopeFactor = slope * 0.3;
-  
-  // Apply water reflection for rivers and lakes
-  let waterFactor = 0;
-  
-  if (riverValue > 0) {
-    // Add slight blue tint and reflection to rivers
-    waterFactor = riverValue * 0.3;
+    // Water biomes based on height, affected by continent value
+    const waterLevel = TERRAIN_OPTIONS.constants.waterLevel - (continentValue * 0.05);
+    if (height < waterLevel) {
+      if (height < 0.15) return { name: "ocean_trench", color: "var(--color-biome-ocean-trench)" };
+      if (height < 0.25) return { name: "deep_ocean", color: "var(--color-biome-deep-ocean)" };
+      return { name: "ocean", color: "var(--color-biome-ocean)" };
+    }
+    
+    // River influence zones (marshy areas near rivers)
+    if (riverValue > 0.2 && riverValue <= 0.6) {
+      if (height < 0.4) return { name: "riverbank", color: "#82a67d" };
+      if (moisture > 0.7) return { name: "riverine_forest", color: "#2e593f" };
+      return { name: "flood_plain", color: "#789f6a" };
+    }
+    
+    // Lake influence zones (shoreline)
+    if (lakeValue > 0.2 && lakeValue <= 0.5) {
+      if (moisture > 0.6) return { name: "wetland", color: "#517d46" };
+      return { name: "lakeshore", color: "#6a9b5e" };
+    }
+    
+    // Normal biomes when no water features are present
+    // Coastal and beach areas
+    if (height < 0.35) {
+      if (moisture < 0.3) return { name: "sandy_beach", color: "#f5e6c9" };
+      if (moisture < 0.6) return { name: "pebble_beach", color: "#d9c8a5" };
+      return { name: "rocky_shore", color: "#9e9e83" };
+    }
+    
+    // Mountains and high elevation - make even rarer
+    if (height > 0.92) {          // Increased from 0.88 for far fewer mountains
+      if (moisture > 0.8) return { name: "snow_cap", color: "var(--color-biome-snow-cap)" };     // Increased from 0.75
+      if (moisture > 0.65) return { name: "alpine", color: "var(--color-biome-alpine)" };        // Increased from 0.6
+      if (moisture > 0.5) return { name: "mountain", color: "var(--color-biome-mountain)" };      // Increased from 0.45
+      if (moisture > 0.35) return { name: "dry_mountain", color: "var(--color-biome-dry-mountain)" }; // Increased from 0.3
+      return { name: "desert_mountains", color: "var(--color-biome-desert-mountains)" };
+    }
+    
+    if (height > 0.78) {         // Increased from 0.75 for far fewer highlands
+      if (moisture > 0.8) return { name: "glacier", color: "var(--color-biome-glacier)" };      // Increased from 0.75
+      if (moisture > 0.65) return { name: "highland_forest", color: "var(--color-biome-highland-forest)" }; // Increased from 0.6
+      if (moisture > 0.5) return { name: "highland", color: "var(--color-biome-highland)" };     // Increased from 0.45
+      if (moisture > 0.35) return { name: "rocky_highland", color: "var(--color-biome-rocky-highland)" }; // Increased from 0.3
+      return { name: "mesa", color: "var(--color-biome-mesa)" };
+    }
+    
+    // More balanced mid-elevation terrain with reduced badlands
+    if (height > 0.5) {
+      if (moisture > 0.75) return { name: "tropical_rainforest", color: "var(--color-biome-tropical-rainforest)" }; // Further reduced
+      if (moisture > 0.62) return { name: "temperate_forest", color: "var(--color-biome-temperate-forest)" }; // Further reduced
+      if (moisture > 0.48) return { name: "woodland", color: "var(--color-biome-woodland)" }; // Further reduced
+      if (moisture > 0.35) return { name: "shrubland", color: "var(--color-biome-shrubland)" }; // Further reduced
+      if (moisture > 0.22) return { name: "dry_shrubland", color: "#a8a76c" }; // Keep as is
+      if (moisture > 0.12) return { name: "scrubland", color: "#b9a77c" }; // NEW biome between dry shrubland and badlands
+      return { name: "badlands", color: "var(--color-biome-badlands)" }; // Now requires truly dry conditions
+    }
+    
+    // Expand lower elevation terrain - more variety and coverage
+    if (height > 0.34) {        // Slightly reduced from 0.35 for even more mid-to-low terrain
+      if (moisture > 0.75) return { name: "swamp", color: "var(--color-biome-swamp)" };
+      if (moisture > 0.60) return { name: "marsh", color: "var(--color-biome-marsh)" };
+      if (moisture > 0.45) return { name: "grassland", color: "var(--color-biome-grassland)" };
+      if (moisture > 0.32) return { name: "savanna", color: "var(--color-biome-savanna)" };
+      if (moisture > 0.20) return { name: "desert_scrub", color: "var(--color-biome-desert-scrub)" };
+      if (moisture > 0.12) return { name: "rocky_desert", color: "#bfa678" };
+      return { name: "stony_desert", color: "#c79b68" }; // NEW biome for very dry low-mid terrain
+    }
+    
+    // Low lands - expand desert types even more
+    if (moisture > 0.75) return { name: "bog", color: "var(--color-biome-bog)" };
+    if (moisture > 0.60) return { name: "wetland", color: "var(--color-biome-wetland)" };
+    if (moisture > 0.45) return { name: "plains", color: "var(--color-biome-plains)" };
+    if (moisture > 0.30) return { name: "dry_plains", color: "var(--color-biome-dry-plains)" };
+    if (moisture > 0.18) return { name: "sandy_desert", color: "#e8dec6" };
+    if (moisture > 0.08) return { name: "desert", color: "var(--color-biome-desert)" };
+    return { name: "barren_desert", color: "#eeddbb" }; // NEW biome for extremely dry terrain
   }
-  
-  if (lakeValue > 0) {
-    // Lakes have stronger blue tint
-    waterFactor = Math.max(waterFactor, lakeValue * 0.4);
-  }
-  
-  // Calculate new RGB values - add blue tint for water
-  const waterAdjustment = waterFactor > 0 ? 0.2 : 0;
-  const newR = Math.min(255, Math.max(0, Math.round(r * (1 + heightFactor - slopeFactor - waterAdjustment))));
-  const newG = Math.min(255, Math.max(0, Math.round(g * (1 + heightFactor - slopeFactor - waterAdjustment * 0.5))));
-  const newB = Math.min(255, Math.max(0, Math.round(b * (1 + heightFactor - slopeFactor + waterFactor))));
-  
-  // Convert back to hex
-  return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
+};
+
+// Add the getLavaValue method to the PerlinNoise prototype if not already there
+if (!PerlinNoise.prototype.getLavaValue) {
+  // This ensures we don't overwrite it if it exists
+  PerlinNoise.prototype.getLavaValue = function(x, y, options = {}, heightMap = null) {
+    const {
+      scale = 0.004,
+      lavaThreshold = 0.92,
+      minHeight = 0.7,
+      lavaConcentration = 0.6
+    } = options;
+    
+    if (!heightMap) return 0;
+    
+    const localHeight = heightMap(x, y);
+    if (localHeight < minHeight) return 0;
+    
+    const baseVolcanicNoise = this.getNoise(x * 2 + 7000, y * 2 + 7000, {
+      scale,
+      octaves: 3,
+      persistence: 0.7,
+      lacunarity: 2.2
+    });
+    
+    const lavaPatternNoise = this.getNoise(x * 4 + 8000, y * 4 + 8000, {
+      scale: scale * 3,
+      octaves: 2,
+      persistence: 0.5
+    });
+    
+    if (baseVolcanicNoise > lavaThreshold) {
+      const lavaIntensity = Math.pow(lavaPatternNoise, lavaConcentration);
+      return Math.min(1, lavaIntensity * 2);
+    }
+    
+    return 0;
+  };
 }

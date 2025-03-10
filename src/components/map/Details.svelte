@@ -1,179 +1,44 @@
 <script>
   import { fly } from 'svelte/transition';
-  import { getBiomeResources } from '../../lib/map/biomes.js';
-  import { createEventDispatcher } from 'svelte';
-
-  const dispatch = createEventDispatcher();
-
-  // Use correct runes syntax for props
-  const { 
-    x = 0, 
-    y = 0, 
-    show = false,
-    biome = { name: "unknown", displayName: "Unknown", color: "#808080" },
-    height = 0,
-    moisture = 0,
-    continent = 0,
-    riverValue = 0,
-    lakeValue = 0, 
-    displayColor = "#808080",
-    slope = 0 
-  } = $props();
   
-  // Replace $events with standard event dispatch
-  function updateShow(value) {
-    dispatch('showChange', value);
-  }
+  const { x = 0, y = 0, show = true, terrainColour = "#808080", biomeName: rawBiomeName = "Unknown", onClose } = $props();
   
-  // State for biomeName tracking
-  const state = $state({
-    lastBiomeName: '',
-    resourcesList: []
-  });
-
-  // Convert reactive declarations to derived values
-  const biomeDisplayName = $derived(
-    biome?.displayName || (biome?.name || "Unknown").replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-  );
-
-  const elevationCategory = $derived(
-    height < 0.1 ? "Very Low" :
-    height < 0.3 ? "Low" :
-    height < 0.5 ? "Medium" :
-    height < 0.7 ? "High" :
-    height < 0.85 ? "Very High" : "Extreme"
-  );
+  const biomeName = $derived(rawBiomeName?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown');
   
-  const moistureCategory = $derived(
-    moisture < 0.2 ? "Very Dry" :
-    moisture < 0.4 ? "Dry" :
-    moisture < 0.6 ? "Moderate" :
-    moisture < 0.8 ? "Wet" : "Very Wet"
-  );
-
-  const waterFeature = $derived(
-    riverValue > 0.4 ? "River" :
-    lakeValue > 0.5 ? "Lake" :
-    riverValue > 0.25 ? "Stream" :
-    riverValue > 0.2 ? "Riverbank" :
-    lakeValue > 0.2 ? "Lake Shore" : "None"
-  );
-
-  const slopeCategory = $derived(
-    slope < 0.05 ? "Flat" :
-    slope < 0.1 ? "Gentle" :
-    slope < 0.2 ? "Moderate" :
-    slope < 0.3 ? "Steep" : "Extreme"
-  );
-
-  // Use effect for biome resources update
-  $effect(() => {
-    if (biome?.name && biome.name !== state.lastBiomeName) {
-      state.lastBiomeName = biome.name;
-      state.resourcesList = getBiomeResources(biome.name);
-    }
-  });
-
-  // Handle close action
-  function handleClose() {
-    updateShow(false);
-  }
+  $effect(() => show && console.log(`Details shown for: (${x}, ${y}) - ${biomeName}`));
   
-  // Helper function to format percentage
-  const formatPercent = (value) => `${Math.round(value * 100)}%`;
-  
-  // Handle the toggle event to keep the show prop in sync
-  function handleToggle(event) {
-    updateShow(event.target.open);
-  }
-  
-  // Allow ESC key to close the details
-  function handleKeydown(event) {
-    if (event.key === 'Escape' && show) {
-      updateShow(false);
-    }
-  }
+  const handleKeydown = event => event.key === 'Escape' && show && onClose?.();
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
-<div class="details-container" class:visible={show} aria-hidden={!show}>
-  <details 
-    class="location-details" 
-    open={show}
-    ontoggle={handleToggle}
-  >
-    <summary class="details-summary">
-      <h2>Location Details: ({x}, {y})</h2>
-    </summary>
-    
-    <div class="details-content" transition:fly={{ y: -10, duration: 200 }}>
-      <div class="info-section">
-        <h3>Biome</h3>
-        <div class="biome-info">
-          <div class="biome-color" style="background-color: {displayColor}"></div>
-          <p>{biomeDisplayName}</p>
-        </div>
+<!-- Simplified markup with better visibility control -->
+<div class="details-container" class:visible={show}>
+  {#if show}
+    <div 
+      class="details-card"
+      style="background-color: {terrainColour};"
+      transition:fly={{ y: 10, duration: 200 }}
+    >
+      <div class="content">
+        <h2>Coordinates ({x}, {y})</h2>
+        <p>Biome: {biomeName}</p>
       </div>
-      
-      <div class="info-grid">
-        <div class="info-section">
-          <h3>Elevation</h3>
-          <p>{elevationCategory} ({formatPercent(height)})</p>
-        </div>
-        
-        <div class="info-section">
-          <h3>Moisture</h3>
-          <p>{moistureCategory} ({formatPercent(moisture)})</p>
-        </div>
-        
-        <div class="info-section">
-          <h3>Continent</h3>
-          <p>{formatPercent(continent)}</p>
-        </div>
-        
-        <div class="info-section">
-          <h3>Water Feature</h3>
-          <p>{waterFeature}</p>
-        </div>
-      </div>
-      
-      <div class="info-section">
-        <h3>Resources</h3>
-        {#if state.resourcesList.length > 0}
-          <ul>
-            {#each state.resourcesList as resource}
-              <li>{resource}</li>
-            {/each}
-          </ul>
-        {:else}
-          <p>No resources found</p>
-        {/if}
-      </div>
-      
-      <div class="info-section">
-        <h3>Terrain</h3>
-        <p>{slopeCategory}</p>
-      </div>
-      
-      <div class="details-footer">
-        <button class="close-button" onclick={handleClose}>Close</button>
-      </div>
+      <button class="close-button" onclick={onClose}>×</button>
     </div>
-  </details>
+  {/if}
 </div>
 
 <style>
   .details-container {
-    position: fixed;
-    top: 3.5em; /* Position below the header */
-    right: 1em;
-    max-width: 25em;
-    width: 90%;
-    z-index: 1000;
+    position: absolute;
+    bottom: 0.5em; /* Position at bottom edge with small offset */
+    right: 0.5em;  /* Position at right edge with small offset */
+    z-index: 1001;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
+    max-width: 50vw; /* Limit width to half the viewport */
   }
   
   .details-container.visible {
@@ -181,125 +46,48 @@
     pointer-events: all;
   }
   
-  .location-details {
-    background: var(--color-dark-teal);
-    border-radius: 0.5em;
-    box-shadow: 0 0.5em 1.5em var(--color-shadow);
-    overflow: hidden;
-    width: 100%;
-    color: var(--color-text);
-    border: 0.0625em solid var(--color-card-border);
-  }
-  
-  .details-summary {
-    padding: 1em 1.5em;
-    background: var(--color-deep-blue);
-    border-bottom: 0.0625em solid var(--color-dark-gray-blue);
-    cursor: pointer;
-    user-select: none;
-    list-style: none; /* Remove default marker */
+  .details-card {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative;
+    align-items: flex-start;
+    gap: 1em;
+    padding: 1em;
+    border-radius: 4px;  /* Match minimap border-radius */
+    color: white;
+    text-shadow: 0 0.0625em 0.125em rgba(0, 0, 0, 0.5); /* Changed from px to em */
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);  /* Match minimap shadow */
+    border: 0.3em solid rgba(255, 255, 255, 0.4); /* More visible border */
+    backdrop-filter: brightness(1.1) saturate(1.2);
+    min-width: 12.5em; /* Changed from 200px to 12.5em */
   }
   
-  /* Remove the default disclosure triangle */
-  .details-summary::-webkit-details-marker {
-    display: none;
+  .content {
+    flex: 1;
   }
   
-  /* Add custom disclosure triangle */
-  .details-summary::after {
-    content: "▼";
-    font-size: 0.8em;
-    color: var(--color-muted-teal);
-    transition: transform 0.2s ease;
-  }
-  
-  /* Rotate arrow when open */
-  details[open] .details-summary::after {
-    transform: rotate(180deg);
-  }
-  
-  .details-summary h2 {
+  h2 {
     margin: 0;
     font-size: 1.3em;
-    color: var(--color-heading);
+    font-weight: bold;
   }
   
-  .details-content {
-    padding: 1.5em;
-  }
-  
-  .info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1em;
-    margin-bottom: 1.5em;
-  }
-  
-  .biome-info {
-    display: flex;
-    align-items: center;
-    gap: 0.8em;
-  }
-  
-  .biome-color {
-    width: 1.5em;
-    height: 1.5em;
-    border-radius: 0.25em;
-    border: 0.0625em solid var(--color-card-border);
-  }
-  
-  .info-section {
-    margin-bottom: 1.5em;
-  }
-  
-  .info-section h3 {
+  p {
+    margin: 0.3em 0 0;
     font-size: 1.1em;
-    margin: 0 0 0.5em 0;
-    color: var(--color-subheading);
-  }
-  
-  .info-section p {
-    margin: 0;
-    color: var(--color-text);
-  }
-  
-  .info-section ul {
-    margin: 0;
-    padding-left: 1.2em;
-    color: var(--color-text);
-  }
-  
-  .details-footer {
-    margin-top: 1em;
-    display: flex;
-    justify-content: flex-end;
-    border-top: 0.0625em solid var(--color-dark-gray-blue);
-    padding-top: 1em;
   }
   
   .close-button {
-    background: var(--color-button-secondary);
-    color: var(--color-text);
+    background: none;
     border: none;
-    padding: 0.5em 1.2em;
-    border-radius: 0.3em;
+    color: white;
+    font-size: 1.5em;
+    line-height: 1;
+    padding: 0;
     cursor: pointer;
-    font-size: 0.9em;
-    transition: background 0.2s ease;
+    opacity: 0.8;
+    transition: opacity 0.2s;
   }
   
   .close-button:hover {
-    background: var(--color-button-secondary-hover);
-    transform: translateY(-0.125em);
-  }
-
-  /* Ensure focus styles for keyboard accessibility */
-  .close-button:focus {
-    outline: 2px solid var(--color-button-secondary-hover);
-    outline-offset: 2px;
+    opacity: 1;
   }
 </style>

@@ -1,10 +1,9 @@
 <script>
-  // Use correct runes syntax for props
   const { 
-    xAxisArray = [], 
-    yAxisArray = [], 
-    cols = 0, 
-    rows = 0 
+    xAxisArray = [],
+    yAxisArray = [],
+    cols = 0,
+    rows = 0
   } = $props();
 </script>
 
@@ -29,14 +28,19 @@
 <style>
   .axes-container {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
+    z-index: 3; /* Ensure axes appear above grid */
   }
   
   .x-grid, .y-grid {
     display: flex;
     position: absolute;
     background: var(--color-deep-blue);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);  /* Match other components */
   }
   
   .x-grid {
@@ -45,6 +49,7 @@
     right: 0;
     height: 2em;
     flex-direction: row;
+    border-radius: 4px 4px 0 0;  /* Match radius on top edges */
   }
   
   .y-grid {
@@ -53,6 +58,7 @@
     width: 2em;
     height: 100%;
     flex-direction: column;
+    border-radius: 0 4px 0 0;  /* Match radius on top-right corner */
   }
   
   .axis-label {

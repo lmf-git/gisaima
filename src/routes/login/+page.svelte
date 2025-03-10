@@ -1,7 +1,8 @@
 <script>
-    import { signIn } from '$lib/stores/authStore';
+    import { signIn } from '$lib/stores/auth';
     import { goto } from '$app/navigation';
     
+    // Use separate variables instead of a state object
     let email = '';
     let password = '';
     let error = null;
