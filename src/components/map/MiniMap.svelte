@@ -29,6 +29,17 @@
   let isLoading = $state(false);
   let loadingTimer = null;
   
+  // Add minimap drag state tracking - MOVED UP to define before use
+  let isMinimapDragging = $state(false);
+  let dragStartX = $state(0);
+  let dragStartY = $state(0);
+  let minimapElement;
+  
+  // Add tracking for drag vs click distinction
+  let wasDragging = $state(false);
+  let dragDistance = $state(0);
+  const DRAG_THRESHOLD = 5; // Minimum pixels to consider as a drag
+  
   // Listen for grid updates from Grid component
   function setupGridViewListener() {
     document.addEventListener('gridViewChanged', (e) => {
@@ -181,46 +192,74 @@
   let localHoveredTile = $state(null);
   let clearHoverTimeout = null;
 
+  // Check if any movement/dragging is happening - now isMinimapDragging is defined
+  const isAnyMovementActive = $derived(
+    $mapState.isDragging || 
+    $mapState.keyboardNavigationInterval !== null || 
+    isMinimapDragging
+  );
+
   // Improved hover handler for minimap tiles
   function handleMiniTileHover(cell) {
-    if (!$mapState.isDragging) {
-      // Clear any pending timeouts
-      if (clearHoverTimeout) {
-        clearTimeout(clearHoverTimeout);
-        clearHoverTimeout = null;
-      }
-      
-      // Update local state immediately
-      localHoveredTile = { x: cell.x, y: cell.y };
-      
-      // Update global state
-      updateHoveredTile(cell.x, cell.y);
+    if (isAnyMovementActive) {
+      // Clear any hover state immediately when moving
+      if (localHoveredTile) localHoveredTile = null;
+      clearHoveredTile();
+      return;
     }
+    
+    // Clear any pending timeouts
+    if (clearHoverTimeout) {
+      clearTimeout(clearHoverTimeout);
+      clearHoverTimeout = null;
+    }
+    
+    // Update local state immediately
+    localHoveredTile = { x: cell.x, y: cell.y };
+    
+    // Update global state
+    updateHoveredTile(cell.x, cell.y);
   }
   
   function handleMiniTileLeave() {
-    if (!$mapState.isDragging) {
-      // Use timeout for global state but keep local state a bit longer
-      clearHoverTimeout = setTimeout(() => {
-        clearHoveredTile();
-        localHoveredTile = null;
-      }, 100); // Longer delay to prevent flickering
+    if (isAnyMovementActive) {
+      // When moving, clear state immediately
+      localHoveredTile = null;
+      clearHoveredTile();
+      return;
     }
+    
+    // Use timeout for global state but keep local state a bit longer
+    clearHoverTimeout = setTimeout(() => {
+      clearHoveredTile();
+      localHoveredTile = null;
+    }, 100); // Longer delay to prevent flickering
   }
   
   // Enhanced tile hover check that uses both global and local state
   const isTileHovered = (cell) => {
+    // Never show hover effects when any movement is happening
+    if (isAnyMovementActive) return false;
+    
     // Check local state first for immediate feedback
     if (localHoveredTile && cell.x === localHoveredTile.x && cell.y === localHoveredTile.y) {
       return true;
     }
     
     // Fall back to global state
-    return $mapState.hoveredTile && 
+    return !isAnyMovementActive && $mapState.hoveredTile && 
            cell.x === $mapState.hoveredTile.x && 
            cell.y === $mapState.hoveredTile.y;
   };
   
+  // Clear hover state when movement begins
+  $effect(() => {
+    if (isAnyMovementActive && (localHoveredTile || $mapState.hoveredTile)) {
+      localHoveredTile = null;
+      clearHoveredTile();
+    }
+  });
+
   // Clean up timeout on component destroy
   $effect(() => {
     return () => {
@@ -230,20 +269,13 @@
     };
   });
 
-  // Add minimap drag state tracking
-  let isMinimapDragging = $state(false);
-  let dragStartX = $state(0);
-  let dragStartY = $state(0);
-  let minimapElement;
-  
-  // Add tracking for drag vs click distinction
-  let wasDragging = $state(false);
-  let dragDistance = $state(0);
-  const DRAG_THRESHOLD = 5; // Minimum pixels to consider as a drag
-  
-  // Handle minimap drag start
+  // Handle minimap drag start - leave this function in its original position
   function handleMinimapDragStart(event) {
     if (event.button !== 0 || !$mapState.isReady) return;
+    
+    // Clear hover states immediately
+    localHoveredTile = null;
+    clearHoveredTile();
     
     // Capture starting positions
     isMinimapDragging = true;
@@ -433,7 +465,8 @@
     position: absolute;
     box-sizing: border-box;
     transition: background-color 0.2s ease;
-    /* Remove any transformations or filters that might cause glitches */
+    /* Store original color for reset during drag */
+    data-original-color: attr(style background-color);
   }
   
   .mini-tile.center {
@@ -449,12 +482,18 @@
   
   /* Replace brightness filter with background color change */
   .mini-tile.hovered {
-    z-index: 4; /* Keep higher z-index */
+    z-index: 4; /* Higher z-index */
     /* Add white overlay instead of brightness filter */
     background-color: rgba(255, 255, 255, 0.7) !important;
   }
   
-  /* Remove any problematic ::after pseudo-elements */
+  .minimap.dragging .mini-tile {
+    /* Ensure all tile effects are disabled during dragging */
+    filter: none !important;
+    background-color: attr(data-original-color) !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
   
   .visible-area-frame {
     position: absolute;
