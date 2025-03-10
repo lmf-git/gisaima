@@ -428,10 +428,9 @@
 <style>
   .map {
     position: absolute;
-    bottom: 5em;   /* Moved up from previous position */
-    right: 1.5em;
+    top: 0;     /* Changed from bottom to top, removed offset */
+    right: 0;   /* Changed from right: 1.5em to 0 */
     z-index: 1000;
-    border-radius: 4px;
     overflow: hidden;
     box-shadow: 0 3px 10px rgba(0,0,0,0.4);
   }
