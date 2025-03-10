@@ -131,8 +131,9 @@
     const clickY = event.clientY - minimapRect.top;
     
     // Calculate coordinate in minimap tiles
-    const tileX = Math.floor(clickX / (MINI_TILE_SIZE_EM * 16)); // 16 is approx. 1em in px
-    const tileY = Math.floor(clickY / (MINI_TILE_SIZE_EM * 16));
+    // Use relative units rather than hardcoded pixel approximation
+    const tileX = Math.floor(clickX / (minimapRect.width / tileCountX));
+    const tileY = Math.floor(clickY / (minimapRect.height / tileCountY));
     
     navigateToPosition(tileX, tileY);
     
@@ -232,7 +233,6 @@
     style="width: {MINIMAP_WIDTH_EM}em; height: {MINIMAP_HEIGHT_EM}em;"
     onclick={handleMinimapClick}
     onkeydown={handleKeyDown}
-    class:loading={isLoading}
     tabindex="0"
     role="button"
     aria-label="Mini map for navigation"
@@ -253,6 +253,8 @@
           "
           onmouseenter={() => handleMiniTileHover(cell)}
           onmouseleave={handleMiniTileLeave}
+          role="presentation"
+          aria-hidden="true"
         ></div>
       {/each}
       
@@ -269,10 +271,7 @@
       ></div>
     {/if}
     
-    <!-- Loading indicator -->
-    {#if isLoading}
-      <div class="loading-indicator" aria-hidden="true"></div>
-    {/if}
+    <!-- Remove loading indicator -->
   </div>
 </div>
 
@@ -293,72 +292,56 @@
     background-color: rgba(0,0,0,0.2);
     border: 1px solid rgba(255,255,255,0.2);
     cursor: pointer;
-    transition: transform 0.2s ease;
+    transition: box-shadow 0.2s ease; /* Remove transform from transition */
     outline: none; /* Remove default focus outline */
   }
   
   .minimap:hover {
-    transform: scale(1.02);
-  }
-  
-  .minimap.loading {
-    opacity: 0.8;
+    /* Remove transform: scale(1.02) to keep consistent size */
+    box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.6); /* Add subtle shadow instead */
   }
   
   /* Add custom focus styles for accessibility */
   .minimap:focus {
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
-    transform: scale(1.02);
+    box-shadow: 0 0 0 0.2em rgba(255, 255, 255, 0.5);
+    /* Remove transform: scale(1.02) */
   }
   
   .mini-tile {
     position: absolute;
     box-sizing: border-box;
-    transition: filter 0.1s ease;
-    z-index: 1;
+    transition: background-color 0.2s ease;
+    /* Remove any transformations or filters that might cause glitches */
   }
   
   .mini-tile.center {
     z-index: 3;
-    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.9);
+    /* Make center tile use white background like hovered tiles */
+    background-color: rgba(255, 255, 255, 0.7) !important;
   }
   
   .mini-tile.visible {
-    filter: brightness(1.3);
+    /* Use a slight background overlay instead of filter */
     z-index: 2;
   }
   
+  /* Replace brightness filter with background color change */
   .mini-tile.hovered {
-    filter: brightness(1.5);
-    box-shadow: 0 0 0.2em white;
-    z-index: 4; /* Higher than center to be visible when hovered */
-    transform: scale(1.2);
+    z-index: 4; /* Keep higher z-index */
+    /* Add white overlay instead of brightness filter */
+    background-color: rgba(255, 255, 255, 0.7) !important;
   }
+  
+  /* Remove any problematic ::after pseudo-elements */
   
   .visible-area-frame {
     position: absolute;
-    border: 2px solid white;
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.5);
+    border: 0.125em solid white; /* Changed from 2px to 0.125em */
+    box-shadow: 0 0 0 0.0625em rgba(0,0,0,0.5); /* Changed from 1px to 0.0625em */
     pointer-events: none;
     z-index: 4;
   }
   
-  .loading-indicator {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 20px;
-    height: 20px;
-    margin: -10px 0 0 -10px;
-    border: 3px solid rgba(255,255,255,0.3);
-    border-radius: 50%;
-    border-top-color: white;
-    animation: spin 1s linear infinite;
-    z-index: 5;
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
+  /* Delete loading-indicator class and keyframes */
+
 </style>

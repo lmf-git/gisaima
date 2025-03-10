@@ -182,22 +182,10 @@
         padding: 2.2em 1.7em;
         box-sizing: border-box;
     }
-
-    .appheader.absolute {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        justify-content: center;
-    }
     
-    /* New styles for map page header */
     .appheader.map-header {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
         pointer-events: none;
+        justify-content: center;
     }
     
     /* Ensure nav elements remain clickable */

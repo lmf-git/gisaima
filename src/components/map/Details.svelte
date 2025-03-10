@@ -73,11 +73,11 @@
     padding: 1em;
     border-radius: 0.5em;
     color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 0.0625em 0.125em rgba(0, 0, 0, 0.5); /* Changed from px to em */
     box-shadow: 0 0.3em 0.8em rgba(0, 0, 0, 0.5);
     border: 0.3em solid rgba(255, 255, 255, 0.4); /* More visible border */
     backdrop-filter: brightness(1.1) saturate(1.2);
-    min-width: 200px; /* Ensure the card has a minimum size */
+    min-width: 12.5em; /* Changed from 200px to 12.5em */
   }
   
   .content {
