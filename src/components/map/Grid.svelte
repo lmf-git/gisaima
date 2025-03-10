@@ -268,12 +268,15 @@
     {/if}
   </div>
 
-  <Legend 
-    x={legendProps.x} 
-    y={legendProps.y}
-    displayColor={legendProps.displayColor}
-    openDetails={openDetailsModal} 
-  />
+  {#if !$mapState.showDetailsModal}
+    <!-- Show Legend only when Details modal is not shown -->
+    <Legend 
+      x={legendProps.x} 
+      y={legendProps.y}
+      displayColor={legendProps.displayColor}
+      openDetails={openDetailsModal} 
+    />
+  {/if}
 
   {#if showAxisBars && $mapState.isReady}
     <Axes 

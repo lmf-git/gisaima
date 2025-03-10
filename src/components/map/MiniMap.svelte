@@ -124,7 +124,11 @@
 
   // Allow clicking and keyboard navigation on the minimap
   function handleMinimapClick(event) {
-    if (!$mapState.isReady) return;
+    // Skip click handling if we were dragging or map isn't ready
+    if (wasDragging || !$mapState.isReady) {
+      event.stopPropagation();
+      return;
+    }
     
     const minimapRect = event.currentTarget.getBoundingClientRect();
     const clickX = event.clientX - minimapRect.left;
@@ -225,17 +229,131 @@
       }
     };
   });
+
+  // Add minimap drag state tracking
+  let isMinimapDragging = $state(false);
+  let dragStartX = $state(0);
+  let dragStartY = $state(0);
+  let minimapElement;
+  
+  // Add tracking for drag vs click distinction
+  let wasDragging = $state(false);
+  let dragDistance = $state(0);
+  const DRAG_THRESHOLD = 5; // Minimum pixels to consider as a drag
+  
+  // Handle minimap drag start
+  function handleMinimapDragStart(event) {
+    if (event.button !== 0 || !$mapState.isReady) return;
+    
+    // Capture starting positions
+    isMinimapDragging = true;
+    dragStartX = event.clientX;
+    dragStartY = event.clientY;
+    dragDistance = 0;
+    wasDragging = false; // Reset at start of potential new drag
+    
+    // Visual feedback
+    if (minimapElement) {
+      minimapElement.style.cursor = "grabbing";
+      minimapElement.classList.add("dragging");
+    }
+    
+    event.preventDefault();
+  }
+  
+  // Handle minimap drag movement
+  function handleMinimapDrag(event) {
+    if (!isMinimapDragging || !$mapState.isReady) return;
+    
+    // Calculate drag deltas
+    const deltaX = event.clientX - dragStartX;
+    const deltaY = event.clientY - dragStartY;
+    
+    // Track total drag distance to distinguish drag from click
+    dragDistance += Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    // If we've moved past threshold, mark as a drag operation
+    if (dragDistance > DRAG_THRESHOLD) {
+      wasDragging = true;
+    }
+    
+    // Get minimap dimensions for scaling
+    const minimapRect = minimapElement.getBoundingClientRect();
+    const pixelsPerTileX = minimapRect.width / tileCountX;
+    const pixelsPerTileY = minimapRect.height / tileCountY;
+    
+    // Calculate world cells moved
+    const cellsMovedX = Math.round(deltaX / pixelsPerTileX);
+    const cellsMovedY = Math.round(deltaY / pixelsPerTileY);
+    
+    // Only update if we've moved at least one cell
+    if (cellsMovedX === 0 && cellsMovedY === 0) return;
+    
+    // Update map position (opposite direction of drag)
+    const newTargetX = $mapState.targetCoord.x - cellsMovedX;
+    const newTargetY = $mapState.targetCoord.y - cellsMovedY;
+    
+    // Update map state
+    mapState.update(state => ({
+      ...state,
+      targetCoord: { x: newTargetX, y: newTargetY },
+      offsetX: state.centerX + newTargetX,
+      offsetY: state.centerY + newTargetY
+    }));
+    
+    // Update drag start positions for next movement
+    dragStartX = event.clientX;
+    dragStartY = event.clientY;
+  }
+  
+  // Handle minimap drag end
+  function handleMinimapDragEnd() {
+    if (!isMinimapDragging) return;
+    
+    isMinimapDragging = false;
+    
+    // Visual feedback
+    if (minimapElement) {
+      minimapElement.style.cursor = "grab";
+      minimapElement.classList.remove("dragging");
+    }
+    
+    // Don't reset wasDragging here - it needs to persist until click is processed
+    // It will be automatically cleared on the next mousedown
+  }
+  
+  // Global mouse handlers for reliable drag ending
+  function globalMinimapMouseUp() {
+    if (isMinimapDragging) {
+      handleMinimapDragEnd();
+    }
+  }
+  
+  function globalMinimapMouseMove(event) {
+    if (isMinimapDragging) {
+      handleMinimapDrag(event);
+    }
+  }
 </script>
+
+<svelte:window
+  onmouseup={globalMinimapMouseUp}
+  onmousemove={globalMinimapMouseMove}
+  onmouseleave={globalMinimapMouseUp}
+/>
 
 <div class="minimap-container">
   <div 
     class="minimap" 
     style="width: {MINIMAP_WIDTH_EM}em; height: {MINIMAP_HEIGHT_EM}em;"
+    bind:this={minimapElement}
     onclick={handleMinimapClick}
+    onmousedown={handleMinimapDragStart}
     onkeydown={handleKeyDown}
     tabindex="0"
     role="button"
     aria-label="Mini map for navigation"
+    class:dragging={isMinimapDragging}
   >
     {#if $mapState.isReady && minimapGrid.length > 0}
       {#each minimapGrid as cell}
@@ -291,7 +409,7 @@
     overflow: hidden;
     background-color: rgba(0,0,0,0.2);
     border: 1px solid rgba(255,255,255,0.2);
-    cursor: pointer;
+    cursor: grab; /* Default to grab cursor */
     transition: box-shadow 0.2s ease; /* Remove transform from transition */
     outline: none; /* Remove default focus outline */
   }
@@ -307,6 +425,10 @@
     /* Remove transform: scale(1.02) */
   }
   
+  .minimap.dragging {
+    cursor: grabbing;
+  }
+
   .mini-tile {
     position: absolute;
     box-sizing: border-box;
