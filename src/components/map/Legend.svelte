@@ -1,12 +1,14 @@
 <script>
-  const { x = 0, y = 0, open, terrainColour = "#16393F" } = $props();
-  const keypress = e => ['Enter', ' '].includes(e.key) && (e.preventDefault(), open());
+  // Change 'open' to 'openDetails' to match the prop name from Grid.svelte
+  const { x = 0, y = 0, openDetails, terrainColour = "#16393F" } = $props();
+  // Update keypress to use openDetails instead of open
+  const keypress = e => ['Enter', ' '].includes(e.key) && (e.preventDefault(), openDetails());
 </script>
 
-<!-- Make the entire component clickable with explicit handlers -->
+<!-- Update onclick to use openDetails instead of open -->
 <div 
   class="legend-container" 
-  onclick={open}
+  onclick={openDetails}
   onkeypress={keypress}
   role="button" 
   tabindex="0"

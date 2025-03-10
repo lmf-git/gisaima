@@ -368,18 +368,24 @@ export function stopDrag() {
 
 // Open details modal - simplify and make more reliable
 export function openDetailsModal() {
-  console.log("openDetailsModal called with more direct implementation");
+  console.log("openDetailsModal called");
   
+  // Get current state
   const state = get(mapState);
   const { x, y } = state.targetCoord;
   
   console.log(`Opening details for (${x}, ${y})`);
   
-  // Set it directly without complex conditionals
-  mapState.set({
-    ...state,
-    showDetailsModal: true
-  });
+  // First make sure we have valid coordinates
+  if (x !== undefined && y !== undefined) {
+    // Set the modal state to true (open)
+    mapState.update(state => ({
+      ...state,
+      showDetailsModal: true
+    }));
+  } else {
+    console.error("Cannot open details: Invalid coordinates");
+  }
 }
 
 // Close details modal

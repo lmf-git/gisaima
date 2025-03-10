@@ -18,7 +18,7 @@
     <div 
       class="details-card"
       style="background-color: {terrainColour};"
-      transition:fly={{ y: -10, duration: 200 }}
+      transition:fly={{ y: 10, duration: 200 }} <!-- Changed from -10 to 10 to animate from bottom -->
     >
       <div class="content">
         <h2>Coordinates ({x}, {y})</h2>
@@ -32,12 +32,13 @@
 <style>
   .details-container {
     position: absolute;
-    bottom: 4.5em;  /* Match minimap positioning */
-    right: 0;       /* Flush with edge like minimap */
+    bottom: 0.5em; /* Position at bottom edge with small offset */
+    right: 0.5em;  /* Position at right edge with small offset */
     z-index: 1001;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
+    max-width: 50vw; /* Limit width to half the viewport */
   }
   
   .details-container.visible {

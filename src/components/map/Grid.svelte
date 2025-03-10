@@ -257,18 +257,18 @@
     };
   });
 
-  // Helper function to calculate transition delay based on distance from center
+  // Enhanced helper to calculate animation delay based on TRUE radial distance
   function getTransitionDelay(cell) {
     if (cell.isCenter) return 0;
     
     const dx = Math.abs(cell.x - targetCoord.x);
     const dy = Math.abs(cell.y - targetCoord.y);
+    
+    // Use Euclidean distance for true radial effect
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    // Maximum delay (ms) for furthest tiles
-    const maxDelay = 800;
-    // Calculate delay proportional to distance, with shorter delays for closer tiles
-    return Math.min(distance * 40, maxDelay);
+    // Create more distinct steps with smoother radial progression
+    return Math.min(distance * 120, 2000);
   }
   
   // Track grid render to trigger animations
@@ -339,6 +339,7 @@
     />
   {/if}
 
+  <!-- Axes component should appear above the grid - move it after the grid for proper layering -->
   {#if showAxisBars && $mapState.isReady}
     <Axes 
       xAxisArray={$xAxisArray} 
@@ -395,6 +396,7 @@
   .grid {
     display: grid;
     box-sizing: border-box;
+    z-index: 1; /* Set grid z-index lower than axes */
   }
 
   .main-grid {
@@ -422,30 +424,63 @@
     -webkit-touch-callout: none;
     z-index: 1;
     
-    /* Initial state */
-    opacity: 0;
-    transform: scale(0.95);
+    /* Reset all inline transitions and animations */
+    transition: none;
+    animation: none;
     
-    /* Transitions */
-    transition: 
-      opacity 600ms cubic-bezier(0.4, 0.0, 0.2, 1) var(--transition-delay),
-      transform 500ms cubic-bezier(0.4, 0.0, 0.2, 1) var(--transition-delay),
-      filter 0.2s ease-in-out,
-      box-shadow 0.2s ease-in-out;
-  }
-
-  /* Make all tiles visible by default */
-  .tile {
-    opacity: 1;
-    transform: scale(1);
+    /* Start invisible */
+    opacity: 0;
+    transform: scale(0.92);
+    pointer-events: none; /* Disable interactions until visible */
   }
   
-  /* Moving state - prevent transitions during movement */
+  /* Delayed appearance animation applied to regular tiles */
+  .tile:not(.center) {
+    animation: tileReveal 500ms forwards;
+    animation-delay: var(--transition-delay);
+  }
+  
+  /* Center tile is always immediately visible */
+  .tile.center {
+    opacity: 1;
+    transform: scale(1.05);
+    animation: pulse 2s infinite ease-in-out;
+    pointer-events: auto;
+    z-index: 3;
+    position: relative;
+    filter: brightness(1.1);
+    border: 0.12em solid rgba(255, 255, 255, 0.5);
+    box-shadow: 
+      inset 0 0 0.5em rgba(255, 255, 255, 0.3),
+      0 0 1em rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Animation for regular tiles to appear */
+  @keyframes tileReveal {
+    0% {
+      opacity: 0;
+      transform: scale(0.92);
+      pointer-events: none;
+    }
+    80% {
+      pointer-events: auto;
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+      pointer-events: auto;
+    }
+  }
+  
+  /* Fix: Make sure tiles don't animate during movement */
   .map.moving .tile {
-    transition: none;
+    animation: none !important;
+    transition: none !important;
     pointer-events: none;
     cursor: grabbing;
     filter: none;
+    opacity: 1 !important;
+    transform: scale(1) !important;
   }
 
   /* Center tile styles */
@@ -513,5 +548,15 @@
   
   :global(.minimap) {
     pointer-events: auto; /* But enable events on the minimap itself */
+  }
+
+  /* Ensure Axes appear above the grid */
+  :global(.axes-container) {
+    z-index: 3 !important; /* Ensure axes are above grid tiles */
+    pointer-events: none; /* Allow clicking through to tiles */
+  }
+  
+  :global(.axis) {
+    pointer-events: auto; /* But enable clicks on axis labels */
   }
 </style>
