@@ -2,32 +2,29 @@
   import { onMount } from 'svelte';
   
   const { show = true } = $props();
-  let isClosed = $state(false);
+  let closed = $state(false);
   
-  onMount(() => isClosed = localStorage.getItem('tutorial-closed') === 'true');
+  onMount(() => closed = localStorage.getItem('tutorial-closed') === 'true');
   
-  const closeTutorial = () => (isClosed = true, localStorage.setItem('tutorial-closed', 'true'));
-  const reopenTutorial = () => (isClosed = false, localStorage.setItem('tutorial-closed', 'false'));
+  const close = () => (closed = true, localStorage.setItem('tutorial-closed', 'true'));
+  const open = () => (closed = false, localStorage.setItem('tutorial-closed', 'false'));
 </script>
 
-{#if !isClosed}
-  <div class="tutorial-container" class:hidden={!show}>
-    <div class="tutorial-content">
-      <button class="close-button" aria-label="Close tutorial" on:click={closeTutorial}>×</button>
-      <div class="tutorial-item">
-        <span class="key-hint">WASD</span> or <span class="key-hint">↑←↓→</span> to navigate
+{#if !closed}
+  <div class="tut" class:hide={!show}>
+    <div class="box">
+      <button class="close" aria-label="Close tutorial" on:click={close}>×</button>
+      <div class="item">
+        <span class="key">WASD</span> or <span class="key">↑←↓→</span> to move
       </div>
     </div>
   </div>
 {:else if show}
-  <!-- Show a minimized indicator when closed -->
-  <button class="reopen-button" on:click={reopenTutorial} aria-label="Show tutorial">
-    ?
-  </button>
+  <button class="help" on:click={open} aria-label="Show tutorial">?</button>
 {/if}
 
 <style>
-  .tutorial-container {
+  .tut {
     position: absolute;
     bottom: 1.5em;
     left: 1.5em;
@@ -36,17 +33,17 @@
     transition: opacity 0.3s ease;
   }
   
-  .tutorial-container:hover {
+  .tut:hover {
     opacity: 1;
   }
   
-  .tutorial-container.hidden {
+  .tut.hide {
     display: none;
   }
   
-  .tutorial-content {
+  .box {
     position: relative;
-    background-color: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.6);
     padding: 0.6em 1em;
     border-radius: 0.3em;
     box-shadow: 0 0.1em 0.3em var(--color-shadow);
@@ -54,20 +51,19 @@
     color: var(--color-text);
   }
   
-  .tutorial-item {
+  .item {
     display: flex;
     align-items: center;
     gap: 0.5em;
   }
   
-  .key-hint {
+  .key {
     color: var(--color-accent);
     font-weight: bold;
     letter-spacing: 0.05em;
   }
   
-  /* Close button styling */
-  .close-button {
+  .close {
     position: absolute;
     top: 0.2em;
     right: 0.2em;
@@ -82,12 +78,11 @@
     transition: opacity 0.2s ease;
   }
   
-  .close-button:hover {
+  .close:hover {
     opacity: 1;
   }
   
-  /* Reopen button styling */
-  .reopen-button {
+  .help {
     position: absolute;
     bottom: 1.5em;
     left: 1.5em;
@@ -109,7 +104,7 @@
     box-shadow: 0 0.1em 0.3em var(--color-shadow);
   }
   
-  .reopen-button:hover {
+  .help:hover {
     opacity: 1;
     transform: scale(1.1);
   }

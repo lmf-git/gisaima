@@ -16,7 +16,7 @@
   const viewRangeY = $derived(Math.floor(tileCountY / 2));
   
   // Track visible area with default values
-  let visibleArea = $state({
+  let area = $state({
     startX: 0,
     startY: 0,
     width: 0,
@@ -26,24 +26,24 @@
   });
   
   // Track loading state
-  let isLoading = $state(false);
-  let loadingTimer = null;
+  let isLoad = $state(false);
+  let loadTimer = null;
   
   // Add minimap drag state tracking - MOVED UP to define before use
-  let isMinimapDragging = $state(false);
-  let dragStartX = $state(0);
-  let dragStartY = $state(0);
-  let minimapElement;
+  let isDrag = $state(false);
+  let dragX = $state(0);
+  let dragY = $state(0);
+  let map;
   
   // Add tracking for drag vs click distinction
-  let wasDragging = $state(false);
-  let dragDistance = $state(0);
+  let wasDrag = $state(false);
+  let dist = $state(0);
   const DRAG_THRESHOLD = 5; // Minimum pixels to consider as a drag
   
   // Listen for grid updates from Grid component
   function setupGridViewListener() {
     document.addEventListener('gridViewChanged', (e) => {
-      visibleArea = {
+      area = {
         startX: e.detail.centerX - Math.floor(e.detail.width / 2),
         startY: e.detail.centerY - Math.floor(e.detail.height / 2),
         width: e.detail.width,
@@ -70,13 +70,13 @@
   function generateMinimapGrid() {
     if (!$mapState.isReady) return [];
     
-    isLoading = true;
+    isLoad = true;
     const now = Date.now();
     
     // Throttle updates during drag or other operations
     if (now - lastUpdateTime < LOADING_THROTTLE && $mapState.isDragging) {
-      if (loadingTimer) clearTimeout(loadingTimer);
-      loadingTimer = setTimeout(() => generateMinimapGrid(), LOADING_THROTTLE);
+      if (loadTimer) clearTimeout(loadTimer);
+      loadTimer = setTimeout(() => generateMinimapGrid(), LOADING_THROTTLE);
       return minimapGrid; // Return existing grid while loading
     }
     
@@ -94,10 +94,10 @@
           
           // Is this cell in the visible area?
           const isVisible = 
-            globalX >= visibleArea.startX && 
-            globalX < visibleArea.startX + visibleArea.width &&
-            globalY >= visibleArea.startY && 
-            globalY < visibleArea.startY + visibleArea.height;
+            globalX >= area.startX && 
+            globalX < area.startX + area.width &&
+            globalY >= area.startY && 
+            globalY < area.startY + area.height;
           
           const isCenter = x === 0 && y === 0;
           
@@ -118,7 +118,7 @@
     } catch (error) {
       console.error("Error generating minimap grid:", error);
     } finally {
-      isLoading = false;
+      isLoad = false;
     }
     
     return result;
@@ -136,7 +136,7 @@
   // Allow clicking and keyboard navigation on the minimap
   function handleMinimapClick(event) {
     // Skip click handling if we were dragging or map isn't ready
-    if (wasDragging || !$mapState.isReady) {
+    if (wasDrag || !$mapState.isReady) {
       event.stopPropagation();
       return;
     }
@@ -196,7 +196,7 @@
   const isAnyMovementActive = $derived(
     $mapState.isDragging || 
     $mapState.keyboardNavigationInterval !== null || 
-    isMinimapDragging
+    isDrag
   );
 
   // Improved hover handler for minimap tiles
@@ -278,16 +278,16 @@
     clearHoveredTile();
     
     // Capture starting positions
-    isMinimapDragging = true;
-    dragStartX = event.clientX;
-    dragStartY = event.clientY;
-    dragDistance = 0;
-    wasDragging = false; // Reset at start of potential new drag
+    isDrag = true;
+    dragX = event.clientX;
+    dragY = event.clientY;
+    dist = 0;
+    wasDrag = false; // Reset at start of potential new drag
     
     // Visual feedback
-    if (minimapElement) {
-      minimapElement.style.cursor = "grabbing";
-      minimapElement.classList.add("dragging");
+    if (map) {
+      map.style.cursor = "grabbing";
+      map.classList.add("dragging");
     }
     
     event.preventDefault();
@@ -295,22 +295,22 @@
   
   // Handle minimap drag movement
   function handleMinimapDrag(event) {
-    if (!isMinimapDragging || !$mapState.isReady) return;
+    if (!isDrag || !$mapState.isReady) return;
     
     // Calculate drag deltas
-    const deltaX = event.clientX - dragStartX;
-    const deltaY = event.clientY - dragStartY;
+    const deltaX = event.clientX - dragX;
+    const deltaY = event.clientY - dragY;
     
     // Track total drag distance to distinguish drag from click
-    dragDistance += Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    dist += Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     
     // If we've moved past threshold, mark as a drag operation
-    if (dragDistance > DRAG_THRESHOLD) {
-      wasDragging = true;
+    if (dist > DRAG_THRESHOLD) {
+      wasDrag = true;
     }
     
     // Get minimap dimensions for scaling
-    const minimapRect = minimapElement.getBoundingClientRect();
+    const minimapRect = map.getBoundingClientRect();
     const pixelsPerTileX = minimapRect.width / tileCountX;
     const pixelsPerTileY = minimapRect.height / tileCountY;
     
@@ -334,20 +334,20 @@
     }));
     
     // Update drag start positions for next movement
-    dragStartX = event.clientX;
-    dragStartY = event.clientY;
+    dragX = event.clientX;
+    dragY = event.clientY;
   }
   
   // Handle minimap drag end
   function handleMinimapDragEnd() {
-    if (!isMinimapDragging) return;
+    if (!isDrag) return;
     
-    isMinimapDragging = false;
+    isDrag = false;
     
     // Visual feedback
-    if (minimapElement) {
-      minimapElement.style.cursor = "grab";
-      minimapElement.classList.remove("dragging");
+    if (map) {
+      map.style.cursor = "grab";
+      map.classList.remove("dragging");
     }
     
     // Don't reset wasDragging here - it needs to persist until click is processed
@@ -356,13 +356,13 @@
   
   // Global mouse handlers for reliable drag ending
   function globalMinimapMouseUp() {
-    if (isMinimapDragging) {
+    if (isDrag) {
       handleMinimapDragEnd();
     }
   }
   
   function globalMinimapMouseMove(event) {
-    if (isMinimapDragging) {
+    if (isDrag) {
       handleMinimapDrag(event);
     }
   }
@@ -374,18 +374,18 @@
   onmouseleave={globalMinimapMouseUp}
 />
 
-<div class="minimap-container">
+<div class="map">
   <div 
-    class="minimap" 
+    class="mini" 
     style="width: {MINIMAP_WIDTH_EM}em; height: {MINIMAP_HEIGHT_EM}em;"
-    bind:this={minimapElement}
+    bind:this={map}
     onclick={handleMinimapClick}
     onmousedown={handleMinimapDragStart}
     onkeydown={handleKeyDown}
     tabindex="0"
     role="button"
     aria-label="Mini map for navigation"
-    class:dragging={isMinimapDragging}
+    class:drag={isDrag}
   >
     {#if $mapState.isReady && minimapGrid.length > 0}
       {#each minimapGrid as cell}
@@ -412,10 +412,10 @@
       <div 
         class="visible-area-frame"
         style="
-          left: {(viewRangeX + visibleArea.startX - $mapState.targetCoord.x) * MINI_TILE_SIZE_EM}em;
-          top: {(viewRangeY + visibleArea.startY - $mapState.targetCoord.y) * MINI_TILE_SIZE_EM}em;
-          width: {visibleArea.width * MINI_TILE_SIZE_EM}em;
-          height: {visibleArea.height * MINI_TILE_SIZE_EM}em;
+          left: {(viewRangeX + area.startX - $mapState.targetCoord.x) * MINI_TILE_SIZE_EM}em;
+          top: {(viewRangeY + area.startY - $mapState.targetCoord.y) * MINI_TILE_SIZE_EM}em;
+          width: {area.width * MINI_TILE_SIZE_EM}em;
+          height: {area.height * MINI_TILE_SIZE_EM}em;
         "
         aria-hidden="true"
       ></div>
@@ -426,7 +426,7 @@
 </div>
 
 <style>
-  .minimap-container {
+  .map {
     position: absolute;
     bottom: 4em;
     right: 1.5em;
@@ -436,21 +436,21 @@
     box-shadow: 0 3px 10px rgba(0,0,0,0.4);
   }
   
-  .minimap {
+  .mini {
     position: relative;
     overflow: hidden;
-    background-color: rgba(0,0,0,0.2);
+    background: rgba(0,0,0,0.2);
     border: 1px solid rgba(255,255,255,0.2);
     cursor: grab;
     transition: box-shadow 0.2s ease;
     outline: none;
   }
   
-  .minimap:hover {
+  .mini:hover {
     box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.6);
   }
   
-  .minimap:focus {
+  .mini:focus {
     box-shadow: 0 0 0 0.2em rgba(255, 255, 255, 0.5);
   }
   
@@ -474,7 +474,7 @@
     background-color: rgba(255, 255, 255, 0.7) !important;
   }
   
-  .minimap.dragging {
+  .mini.drag {
     cursor: grabbing;
   }
 
