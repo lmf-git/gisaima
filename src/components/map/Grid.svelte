@@ -34,6 +34,16 @@
   // Display settings
   const showAxisBars = true;
   
+  // All state variables declared at the top
+  let localHoveredTile = $state(null);
+  let clearHoverTimeout = null;
+  let lastKeyboardState = $state(false);
+  let movementJustEnded = $state(false);
+  let movementDebounceTimer = null;
+  
+  // Movement state tracking
+  const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null);
+  
   // Initialize when mounted
   onMount(() => {
     // Setup resize observer
@@ -56,6 +66,8 @@
         mapState.update(state => ({...state, keyboardNavigationInterval: null}));
       }
       if (dragStateCheckInterval) clearInterval(dragStateCheckInterval);
+      if (clearHoverTimeout) clearTimeout(clearHoverTimeout);
+      if (movementDebounceTimer) clearTimeout(movementDebounceTimer);
     };
   });
   
@@ -68,6 +80,10 @@
       if (!isNavigationKey) return;
       
       if (event.type === "keydown") {
+        // Clear hover states immediately when ANY navigation key is pressed
+        localHoveredTile = null;
+        clearHoveredTile();
+        
         $mapState.keysPressed.add(key);
         
         if (!$mapState.keyboardNavigationInterval) {
@@ -82,6 +98,10 @@
         if ($mapState.keysPressed.size === 0 && $mapState.keyboardNavigationInterval) {
           clearInterval($mapState.keyboardNavigationInterval);
           $mapState.keyboardNavigationInterval = null;
+          
+          // Clear hover state when keyboard navigation stops too
+          localHoveredTile = null;
+          clearHoveredTile();
         }
       }
     };
@@ -173,29 +193,22 @@
     }
   });
 
-  // Add keyboard movement tracking
-  const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null);
-
-  // Track hover state locally to prevent flickering
-  let localHoveredTile = $state(null);
-  let clearHoverTimeout = null;
-
   // Add improved functions to track hover state
   function handleTileHover(cell) {
-    if (isMoving) {
-      // Clear any hover state immediately when moving
-      if (localHoveredTile) localHoveredTile = null;
+    // Block hover immediately during or right after movement
+    if (isMoving || movementJustEnded) {
+      localHoveredTile = null;
       clearHoveredTile();
       return;
     }
     
-    // Only process hover when not moving
+    // Process hover when not moving
     if (clearHoverTimeout) {
       clearTimeout(clearHoverTimeout);
       clearHoverTimeout = null;
     }
     
-    // Update local state immediately
+    // Update local state
     localHoveredTile = { x: cell.x, y: cell.y };
     
     // Update global state
@@ -203,24 +216,15 @@
   }
   
   function handleTileLeave() {
-    if (isMoving) {
-      // When moving, clear state immediately
-      localHoveredTile = null;
-      clearHoveredTile();
-      return;
-    }
-    
-    // Use timeout for global state but keep local state a bit longer
-    clearHoverTimeout = setTimeout(() => {
-      clearHoveredTile();
-      localHoveredTile = null;
-    }, 100); // Longer delay to prevent flickering
+    // Clear state immediately
+    localHoveredTile = null;
+    clearHoveredTile();
   }
   
   // Track if a tile is currently hovered - for minimap sync
   const isHovered = (cell) => {
-    // Never show hover effects when moving
-    if (isMoving) return false;
+    // Never show hover effects during or right after movement
+    if (isMoving || movementJustEnded) return false;
     
     // Check local state first for immediate feedback
     if (localHoveredTile && cell.x === localHoveredTile.x && cell.y === localHoveredTile.y) {
@@ -228,33 +232,56 @@
     }
     
     // Fall back to global state
-    return !isMoving && $mapState.hoveredTile && 
+    return $mapState.hoveredTile && 
            cell.x === $mapState.hoveredTile.x && 
            cell.y === $mapState.hoveredTile.y;
   };
   
-  // More aggressive clearing of hover state when movement begins or ends
+  // Watch for movement state changes
   $effect(() => {
-    // When movement state changes (either begins or ends), clear all hover states
-    localHoveredTile = null;
-    clearHoveredTile();
-  });
-  
-  // Clean up hover state when movement begins
-  $effect(() => {
-    if (isMoving && (localHoveredTile || $mapState.hoveredTile)) {
+    // Track movement changes
+    if (isMoving) {
+      // Movement active - clear hover and cancel debounce
       localHoveredTile = null;
       clearHoveredTile();
+      
+      if (movementDebounceTimer) {
+        clearTimeout(movementDebounceTimer);
+        movementDebounceTimer = null;
+      }
+      
+      // Not in post-movement state anymore
+      movementJustEnded = false;
+    } else {
+      // Movement just ended - enter temporary post-movement state
+      localHoveredTile = null;
+      clearHoveredTile();
+      movementJustEnded = true;
+      
+      // Setup debounce to exit post-movement after a delay
+      if (movementDebounceTimer) clearTimeout(movementDebounceTimer);
+      
+      movementDebounceTimer = setTimeout(() => {
+        movementJustEnded = false;
+        // One final clear of hover states
+        localHoveredTile = null;
+        clearHoveredTile();
+      }, 250); // Small delay after movement ends
     }
   });
   
-  // Clean up timeout on component unmount
+  // Watch specifically for keyboard movement changes
   $effect(() => {
-    return () => {
-      if (clearHoverTimeout) {
-        clearTimeout(clearHoverTimeout);
-      }
-    };
+    const keyboardMoving = $mapState.keyboardNavigationInterval !== null;
+    
+    // Only do something when keyboard state changes
+    if (keyboardMoving !== lastKeyboardState) {
+      lastKeyboardState = keyboardMoving;
+      
+      // Always clear hover state on keyboard movement change
+      localHoveredTile = null;
+      clearHoveredTile();
+    }
   });
 </script>
 
@@ -272,7 +299,7 @@
     class="map"
     bind:this={mapElement}
     onmousedown={handleStartDrag}
-    class:moving={isMoving}
+    class:moving={isMoving || movementJustEnded}
     role="grid"
     tabindex="0"
     aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
