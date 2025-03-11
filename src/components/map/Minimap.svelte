@@ -22,21 +22,21 @@
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
   const viewRangeY = $derived(Math.floor(tileCountY / 2));
   
-  // Track visible area with default values
-  let area = $state({
-    startX: 0,
-    startY: 0,
-    width: 0,
-    height: 0,
-    centerX: 0,
-    centerY: 0
+  // Track visible area with direct access to mapState instead of event listener
+  const area = $derived({
+    startX: $mapState.targetCoord.x - Math.floor($mapState.cols / 2),
+    startY: $mapState.targetCoord.y - Math.floor($mapState.rows / 2),
+    width: $mapState.cols,
+    height: $mapState.rows,
+    centerX: $mapState.targetCoord.x,
+    centerY: $mapState.targetCoord.y
   });
   
   // Track loading state
   let isLoad = $state(false);
   let loadTimer = null;
   
-  // Add minimap drag state tracking - MOVED UP to define before use
+  // Add minimap drag state tracking
   let isDrag = $state(false);
   let dragX = $state(0);
   let dragY = $state(0);
@@ -46,29 +46,6 @@
   let wasDrag = $state(false);
   let dist = $state(0);
   const DRAG_THRESHOLD = 5; // Minimum pixels to consider as a drag
-  
-  // Listen for grid updates from Grid component
-  function setupGridViewListener() {
-    document.addEventListener('gridViewChanged', (e) => {
-      area = {
-        startX: e.detail.centerX - Math.floor(e.detail.width / 2),
-        startY: e.detail.centerY - Math.floor(e.detail.height / 2),
-        width: e.detail.width,
-        height: e.detail.height,
-        centerX: e.detail.centerX,
-        centerY: e.detail.centerY
-      };
-    });
-    
-    return () => document.removeEventListener('gridViewChanged', () => {});
-  }
-  
-  // Run once on component mount
-  let cleanup = null;
-  $effect(() => {
-    cleanup = setupGridViewListener();
-    return cleanup;
-  });
   
   // Simple direct grid generation - only generate what we need
   let minimapGrid = $state([]);
