@@ -1,9 +1,17 @@
 import { writable, derived, get } from 'svelte/store';
 import { TerrainGenerator } from '../map/noise.js';
+// Fix Firebase imports to avoid name conflict with Svelte's get
+import { ref, onValue, off } from "firebase/database";
+import { getDatabase } from "firebase/database";
+import { get as fbGet } from "firebase/database";
+import { app } from "../firebase/firebase.js";
 
 // Initialize the terrain generator with a fixed seed
 const WORLD_SEED = 454232;
 const terrain = new TerrainGenerator(WORLD_SEED);
+
+// Initialize Firebase database
+const db = getDatabase(app);
 
 // Configuration constants
 export const KEYBOARD_MOVE_SPEED = 200;
@@ -13,6 +21,9 @@ export const DRAG_CHECK_INTERVAL = 500;
 
 // Expansion factor for calculating larger grid area
 export const GRID_EXPANSION_FACTOR = 3;
+
+// Track active chunk subscriptions
+const activeChunkSubscriptions = new Map();
 
 // Create a store using Svelte's store API since $state is only for component scripts
 export const mapState = writable({
@@ -43,7 +54,14 @@ export const mapState = writable({
   centerTileData: null,
   
   // Hover state for highlighting tiles
-  hoveredTile: null
+  hoveredTile: null,
+  
+  // Entity data from Firebase chunks
+  loadedEntities: {
+    structures: {}, // key: "x,y", value: structure data
+    unitGroups: {}, // key: "x,y", value: unit group data
+    players: {}     // key: "x,y", value: player data
+  }
 });
 
 // Helper function to update state
@@ -56,25 +74,259 @@ export function getChunkKey(x, y) {
   return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
 }
 
-// Use a more functional approach for the updateChunks function
+// Function to get world coordinates from chunk key
+export function getChunkCoordinates(chunkKey) {
+  const [chunkX, chunkY] = chunkKey.split(',').map(Number);
+  return {
+    minX: chunkX * CHUNK_SIZE,
+    minY: chunkY * CHUNK_SIZE,
+    maxX: (chunkX + 1) * CHUNK_SIZE - 1,
+    maxY: (chunkY + 1) * CHUNK_SIZE - 1
+  };
+}
+
+// Subscribe to a chunk in Firebase
+function subscribeToChunk(chunkKey) {
+  // Don't create duplicate subscriptions
+  if (activeChunkSubscriptions.has(chunkKey)) {
+    return;
+  }
+  
+  console.log(`Subscribing to chunk: ${chunkKey}`);
+  
+  // Create reference to this chunk
+  const chunkRef = ref(db, `chunks/${chunkKey}`);
+  
+  // Fix: Create the listener function properly
+  const unsubscribe = onValue(chunkRef, (snapshot) => {
+    const data = snapshot.exists() ? snapshot.val() : {};
+    
+    // Process chunk data
+    const processedData = {
+      structures: data.structures || {},
+      unitGroups: data.unitGroups || {},
+      players: data.players || {},
+      lastUpdated: data.lastUpdated || Date.now()
+    };
+    
+    handleChunkData(chunkKey, processedData);
+  }, 
+  (error) => {
+    console.error(`Error subscribing to chunk ${chunkKey}:`, error);
+  });
+  
+  // Store the unsubscribe function itself
+  activeChunkSubscriptions.set(chunkKey, unsubscribe);
+}
+
+// Unsubscribe from a chunk
+function unsubscribeFromChunk(chunkKey) {
+  if (activeChunkSubscriptions.has(chunkKey)) {
+    console.log(`Unsubscribing from chunk: ${chunkKey}`);
+    const unsubscribe = activeChunkSubscriptions.get(chunkKey);
+    unsubscribe(); // Just call the unsubscribe function directly
+    activeChunkSubscriptions.delete(chunkKey);
+    
+    // Clean up entity data for this chunk
+    cleanEntitiesForChunk(chunkKey);
+    
+    return true;
+  }
+  return false;
+}
+
+// Handler for chunk data updates from Firebase
+function handleChunkData(chunkKey, data) {
+  mapState.update(state => {
+    // Create a new entities object to avoid direct mutation
+    const newEntities = {
+      structures: { ...state.loadedEntities.structures },
+      unitGroups: { ...state.loadedEntities.unitGroups },
+      players: { ...state.loadedEntities.players }
+    };
+    
+    // Get the coordinates for this chunk
+    const { minX, minY, maxX, maxY } = getChunkCoordinates(chunkKey);
+    
+    // Process and merge structures
+    if (data.structures) {
+      Object.entries(data.structures).forEach(([locationKey, structureData]) => {
+        // Parse the location key "x,y" to validate it's in this chunk
+        const [x, y] = locationKey.split(',').map(Number);
+        if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+          newEntities.structures[locationKey] = {
+            ...structureData,
+            chunkKey // Add reference to parent chunk
+          };
+        }
+      });
+    }
+    
+    // Process and merge unit groups
+    if (data.unitGroups) {
+      Object.entries(data.unitGroups).forEach(([locationKey, unitData]) => {
+        const [x, y] = locationKey.split(',').map(Number);
+        if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+          newEntities.unitGroups[locationKey] = {
+            ...unitData,
+            chunkKey
+          };
+        }
+      });
+    }
+    
+    // Process and merge players
+    if (data.players) {
+      Object.entries(data.players).forEach(([locationKey, playerData]) => {
+        const [x, y] = locationKey.split(',').map(Number);
+        if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+          newEntities.players[locationKey] = {
+            ...playerData,
+            chunkKey
+          };
+        }
+      });
+    }
+    
+    return {
+      ...state,
+      loadedEntities: newEntities
+    };
+  });
+  
+  console.log(`Updated data for chunk ${chunkKey}`);
+}
+
+// Function to clean entities when chunks are unloaded
+function cleanEntitiesForChunk(chunkKey) {
+  mapState.update(state => {
+    // Create a new entities object to avoid direct mutation
+    const newEntities = {
+      structures: { ...state.loadedEntities.structures },
+      unitGroups: { ...state.loadedEntities.unitGroups },
+      players: { ...state.loadedEntities.players }
+    };
+    
+    // Remove all entities belonging to this chunk
+    Object.keys(newEntities.structures).forEach(locationKey => {
+      if (newEntities.structures[locationKey]?.chunkKey === chunkKey) {
+        delete newEntities.structures[locationKey];
+      }
+    });
+    
+    Object.keys(newEntities.unitGroups).forEach(locationKey => {
+      if (newEntities.unitGroups[locationKey]?.chunkKey === chunkKey) {
+        delete newEntities.unitGroups[locationKey];
+      }
+    });
+    
+    Object.keys(newEntities.players).forEach(locationKey => {
+      if (newEntities.players[locationKey]?.chunkKey === chunkKey) {
+        delete newEntities.players[locationKey];
+      }
+    });
+    
+    return {
+      ...state,
+      loadedEntities: newEntities
+    };
+  });
+  
+  console.log(`Cleaned entities for chunk ${chunkKey}`);
+}
+
+// Enhanced updateChunks function that syncs with Firebase
 export function updateChunks(gridArray) {
   mapState.update(state => {
     const newVisibleChunks = new Set(
       gridArray.map(cell => getChunkKey(cell.x, cell.y))
     );
 
-    // Log only the changes for better performance
+    // Track changes to handle Firebase subscriptions
     const added = [...newVisibleChunks].filter(key => !state.visibleChunks.has(key));
     const removed = [...state.visibleChunks].filter(key => !newVisibleChunks.has(key));
     
+    // Log changes
     if (added.length > 0) console.log(`Chunks loaded: ${added.join(', ')}`);
     if (removed.length > 0) console.log(`Chunks unloaded: ${removed.join(', ')}`);
+    
+    // Subscribe to new chunks
+    added.forEach(chunkKey => {
+      subscribeToChunk(chunkKey);
+    });
+    
+    // Unsubscribe from old chunks and clean up entity data
+    removed.forEach(chunkKey => {
+      unsubscribeFromChunk(chunkKey);
+    });
 
     return {
       ...state,
       visibleChunks: newVisibleChunks
     };
   });
+}
+
+// Get entities for a specific coordinate
+export function getEntitiesAt(x, y) {
+  const state = get(mapState);
+  const locationKey = `${x},${y}`;
+  
+  return {
+    structure: state.loadedEntities.structures[locationKey],
+    unitGroup: state.loadedEntities.unitGroups[locationKey],
+    player: state.loadedEntities.players[locationKey]
+  };
+}
+
+// Check if a coordinate has any entity
+export function hasEntityAt(x, y) {
+  const entities = getEntitiesAt(x, y);
+  return !!(entities.structure || entities.unitGroup || entities.player);
+}
+
+// Get all entities within a chunk
+export function getEntitiesInChunk(chunkKey) {
+  const state = get(mapState);
+  const result = {
+    structures: {},
+    unitGroups: {},
+    players: {}
+  };
+  
+  // Filter entities by chunk key
+  Object.entries(state.loadedEntities.structures).forEach(([locationKey, data]) => {
+    if (data?.chunkKey === chunkKey) {
+      result.structures[locationKey] = data;
+    }
+  });
+  
+  Object.entries(state.loadedEntities.unitGroups).forEach(([locationKey, data]) => {
+    if (data?.chunkKey === chunkKey) {
+      result.unitGroups[locationKey] = data;
+    }
+  });
+  
+  Object.entries(state.loadedEntities.players).forEach(([locationKey, data]) => {
+    if (data?.chunkKey === chunkKey) {
+      result.players[locationKey] = data;
+    }
+  });
+  
+  return result;
+}
+
+// Add cleanup function to be called when the grid component is destroyed
+export function cleanupChunkSubscriptions() {
+  // Get all active subscription keys
+  const activeChunkKeys = Array.from(activeChunkSubscriptions.keys());
+  
+  // Unsubscribe from all chunks
+  activeChunkKeys.forEach(chunkKey => {
+    unsubscribeFromChunk(chunkKey);
+  });
+  
+  console.log(`Cleaned up ${activeChunkKeys.length} chunk subscriptions`);
 }
 
 // Get terrain data for a specific coordinate - with logging throttling

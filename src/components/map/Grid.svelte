@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import Legend from "./Legend.svelte";
   import Axes from "./Axes.svelte";
   import Details from "./Details.svelte";
@@ -23,7 +23,10 @@
     closeDetailsModal,
     targetTileStore,
     updateHoveredTile,
-    clearHoveredTile
+    clearHoveredTile,
+    cleanupChunkSubscriptions,
+    getEntitiesAt,
+    hasEntityAt
   } from "../../lib/stores/map.js";
   
   // Local component state
@@ -60,6 +63,11 @@
       }
       if (dragStateCheckInterval) clearInterval(dragStateCheckInterval);
     };
+  });
+  
+  // Make sure to clean up Firebase subscriptions when component is destroyed
+  onDestroy(() => {
+    cleanupChunkSubscriptions();
   });
   
   // Simplify keyboard navigation without redundant hover clearing
@@ -184,6 +192,16 @@
   const backgroundColor = $derived(
     $targetTileStore && $targetTileStore.color ? $targetTileStore.color : "var(--color-dark-blue)"
   );
+
+  // Check if a tile has entities to show indicators
+  function checkEntityIndicators(x, y) {
+    const entities = getEntitiesAt(x, y);
+    return {
+      hasStructure: !!entities.structure,
+      hasUnitGroup: !!entities.unitGroup,
+      hasPlayer: !!entities.player
+    };
+  }
 </script>
 
 <svelte:window
@@ -213,10 +231,14 @@
             Math.pow(cell.x - $mapState.targetCoord.x, 2) + 
             Math.pow(cell.y - $mapState.targetCoord.y, 2)
           )}
+          {@const entityIndicators = checkEntityIndicators(cell.x, cell.y)}
           <div
             class="tile"
             class:center={cell.isCenter}
             class:highlighted={isHighlighted(cell)}
+            class:has-structure={entityIndicators.hasStructure}
+            class:has-unit-group={entityIndicators.hasUnitGroup}
+            class:has-player={entityIndicators.hasPlayer}
             onmouseenter={() => higlight(cell)}
             onmouseleave={unhighlight}
             role="gridcell"
@@ -229,6 +251,15 @@
             "
           >
             <span class="coords">{cell.x},{cell.y}</span>
+            {#if entityIndicators.hasStructure}
+              <div class="entity-indicator structure-indicator" aria-hidden="true"></div>
+            {/if}
+            {#if entityIndicators.hasUnitGroup}
+              <div class="entity-indicator unit-group-indicator" aria-hidden="true"></div>
+            {/if}
+            {#if entityIndicators.hasPlayer}
+              <div class="entity-indicator player-indicator" aria-hidden="true"></div>
+            {/if}
           </div>
         {/each}
       </div>
@@ -468,5 +499,53 @@
   
   :global(.axis) {
     pointer-events: auto; /* But enable clicks on axis labels */
+  }
+
+  /* Add styles for entity indicators */
+  .entity-indicator {
+    position: absolute;
+    pointer-events: none;
+  }
+  
+  .structure-indicator {
+    bottom: 0.2em;
+    left: 0.2em;
+    width: 0.5em;
+    height: 0.5em;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+  }
+  
+  .unit-group-indicator {
+    top: 0.2em;
+    right: 0.2em;
+    width: 0.4em;
+    height: 0.4em;
+    border-radius: 50%;
+    background: rgba(255, 100, 100, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+  }
+  
+  .player-indicator {
+    top: 0.2em;
+    left: 0.2em;
+    width: 0.4em;
+    height: 0.4em;
+    background: rgba(100, 100, 255, 0.8);
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Add styles for tiles with entities */
+  .tile.has-structure {
+    box-shadow: inset 0 -0.1em 0.2em rgba(255, 255, 255, 0.2);
+  }
+  
+  .tile.has-unit-group {
+    box-shadow: inset 0 0 0.2em rgba(255, 100, 100, 0.3);
+  }
+  
+  .tile.has-player {
+    box-shadow: inset 0 0 0.2em rgba(100, 100, 255, 0.3);
   }
 </style>
