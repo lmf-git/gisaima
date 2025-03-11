@@ -400,7 +400,7 @@
   
   .mini-tile.center {
     z-index: 3;
-    background-color: rgba(255, 255, 255, 0.7) !important;
+    background-color: rgba(255, 255, 255, 0.7); /* Removed !important */
   }
   
   .mini-tile.visible {
@@ -409,7 +409,7 @@
   
   .mini-tile.highlighted { /* Renamed from hovered */
     z-index: 4;
-    background-color: rgba(255, 255, 255, 0.7) !important;
+    background-color: rgba(255, 255, 255, 0.7); /* Removed !important */
   }
   
   .mini.drag {

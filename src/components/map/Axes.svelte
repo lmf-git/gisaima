@@ -46,7 +46,7 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 3;
+    z-index: 3; /* Higher z-index without !important */
   }
   
   /* Ensure proper positioning for both axes */

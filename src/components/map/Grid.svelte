@@ -180,6 +180,10 @@
     }
   });
 
+  // Track the background color based on target tile
+  const backgroundColor = $derived(
+    $targetTileStore && $targetTileStore.color ? $targetTileStore.color : "var(--color-dark-blue)"
+  );
 </script>
 
 <svelte:window
@@ -197,6 +201,7 @@
     bind:this={mapElement}
     onmousedown={handleStartDrag}
     class:moving={isMoving}
+    style="--terrain-color: {backgroundColor};"
     role="grid"
     tabindex="0"
     aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
@@ -279,7 +284,7 @@
     -ms-user-select: none;
   }
 
-  /* Map takes full container space */
+  /* Map takes full container space with dynamic background */
   .map {
     width: 100%;
     height: 100%;
@@ -288,9 +293,10 @@
     box-sizing: border-box;
     background: linear-gradient(
       135deg,
-      var(--color-dark-navy),
-      var(--color-dark-blue)
+      color-mix(in srgb, var(--terrain-color) 30%, var(--color-dark-navy)),
+      color-mix(in srgb, var(--terrain-color) 15%, var(--color-dark-blue))
     );
+    transition: background 1s ease;
   }
 
   .grid {
@@ -352,7 +358,7 @@
       0 0 1em rgba(255, 255, 255, 0.2);
     transform: scale(1.05);
     animation: revealCenterTile 0.6s ease-out forwards;
-    animation-delay: 0s !important; /* Always show center tile first */
+    animation-delay: 0s;
   }
   
   @keyframes revealCenterTile {
@@ -425,7 +431,7 @@
 
   /* Ensure Axes appear above the grid */
   :global(.axes-container) {
-    z-index: 3 !important; /* Ensure axes are above grid tiles */
+    z-index: 3; /* Removed !important */
     pointer-events: none; /* Allow clicking through to tiles */
     animation: fadeIn 0.7s ease-out forwards;
     animation-delay: 0.5s; /* Slightly later than the legend */
