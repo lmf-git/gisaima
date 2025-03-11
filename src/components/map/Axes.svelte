@@ -40,16 +40,11 @@
     height: 100%;
     pointer-events: none;
     z-index: 3;
-    opacity: 0; /* Start hidden */
-    /* Remove duplicate and conflicting animations */
-    animation: fadeIn 0.7s ease-out forwards;
-    animation-delay: 1.5s; /* Match with minimap delay (after grid animation) */
+    /* Remove opacity: 0 and animation - make axes visible immediately */
+    opacity: 1;
   }
   
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
+  /* Remove the fadeIn animation keyframes and references */
   
   /* x positioning and style */
   .x {
@@ -84,54 +79,32 @@
     box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;
-    border: 0.05em solid transparent; /* Start with transparent border */
+    border: 0.05em solid rgba(255, 255, 255, 0.1); /* Show border immediately */
     pointer-events: auto;
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7); /* Reversed shadow for dark text */
     background-color: rgba(255, 255, 255, 0.4); /* Increased opacity for better readability */
     font-weight: 500; /* Slightly bolder text for better readability */
     
-    /* Use separate animation for labels with a slight delay */
-    opacity: 0;
-    animation: fadeInLabel 0.4s ease-out forwards;
-    animation-delay: calc(1.5s + 0.02s * var(--index, 0)); /* Adjusted base delay to match container */
+    /* Remove animation delays and opacity:0 - show immediately */
+    opacity: 1;
     
-    /* Remove problematic effects */
+    /* Keep the transition for hover effects */
     transition: background-color 0.2s ease, border-color 0.2s ease;
   }
   
-  /* Simplified animation without filter/blur effects */
-  @keyframes fadeInLabel {
-    0% {
-      opacity: 0;
-      border-color: transparent;
-    }
-    100% {
-      opacity: 1;
-      border-color: rgba(255, 255, 255, 0.1);
-    }
-  }
+  /* Remove fadeIn animations */
   
   .label.center {
     font-weight: bold;
     background-color: rgba(192, 192, 192, 0.7); /* Changed from blue to silver */
     color: rgba(0, 0, 0, 0.9); /* Changed to dark text for better contrast on silver */
     text-shadow: 0 0 0.1875em rgba(255, 255, 255, 0.8); /* Reversed shadow for dark text */
-    /* Also start with transparent border */
-    border-color: transparent;
-    animation: fadeInCenterLabel 0.5s ease-out forwards;
-    animation-delay: 1.5s; /* Center appears first, synchronized with container */
+    /* Set border color immediately */
+    border-color: rgba(255, 255, 255, 0.5);
+    /* Remove animation */
   }
   
-  @keyframes fadeInCenterLabel {
-    0% {
-      opacity: 0;
-      border-color: transparent;
-    }
-    100% {
-      opacity: 1;
-      border-color: rgba(255, 255, 255, 0.5);
-    }
-  }
+  /* Remove fadeInCenterLabel animation */
   
   .label:hover {
     /* Remove filter: brightness */
@@ -148,7 +121,7 @@
   /* Also adjust the axis animations to be in sync with container */
   :global(.x-axis),
   :global(.y-axis) {
-    opacity: 1; /* Let the cell animations handle the fading */
+    opacity: 1; /* Show immediately */
   }
 </style>
 
