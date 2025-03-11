@@ -160,23 +160,6 @@
     biomeName: targetTileData.biome?.name
   });
 
-  // Add a visible derived state to track and expose for MiniMap synchronization
-  const visibleGridState = $derived({
-    centerX: $mapState.targetCoord.x,
-    centerY: $mapState.targetCoord.y,
-    width: $mapState.cols,
-    height: $mapState.rows
-  });
-
-  // Make the visibleGridState changes available to other components
-  $effect(() => {
-    if ($mapState.isReady) {
-      document.dispatchEvent(new CustomEvent('gridViewChanged', {
-        detail: visibleGridState
-      }));
-    }
-  });
-
   // Add improved functions to track hover state
   function handleTileHover(cell) {
     if (!isMoving) {
