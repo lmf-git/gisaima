@@ -29,6 +29,23 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     border: 0.1em solid rgba(255, 255, 255, 0.15);
     background-color: rgba(0, 0, 0, 0.6);
+    
+    /* Add animation for fade-in and slide-up */
+    animation: fadeInUp 0.7s ease-out forwards;
+    animation-delay: 0.3s; /* Slightly faster than minimap */
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  
+  @keyframes fadeInUp {
+    0% {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
   
   .legend-container:hover {

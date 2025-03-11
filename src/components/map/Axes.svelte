@@ -8,26 +8,32 @@
 </script>
 
 <div class="axes-container">
-  <div class="x-grid">
-    {#each xAxisArray as coord}
-      <div 
-        class="axis-label" 
-        class:center={coord.isCenter} 
-        style="width: calc(100% / {cols});">
-        {coord.value}
-      </div>
-    {/each}
+  <!-- Add the x-axis class for animation -->
+  <div class="axis x-axis">
+    <div class="x-grid">
+      {#each xAxisArray as coord}
+        <div 
+          class="axis-label" 
+          class:center={coord.isCenter} 
+          style="width: calc(100% / {cols});">
+          {coord.value}
+        </div>
+      {/each}
+    </div>
   </div>
   
-  <div class="y-grid">
-    {#each yAxisArray as coord}
-      <div 
-        class="axis-label" 
-        class:center={coord.isCenter} 
-        style="height: calc(100% / {rows});">
-        {coord.value}
-      </div>
-    {/each}
+  <!-- Add the y-axis class for animation -->
+  <div class="axis y-axis">
+    <div class="y-grid">
+      {#each yAxisArray as coord}
+        <div 
+          class="axis-label" 
+          class:center={coord.isCenter} 
+          style="height: calc(100% / {rows});">
+          {coord.value}
+        </div>
+      {/each}
+    </div>
   </div>
 </div>
 

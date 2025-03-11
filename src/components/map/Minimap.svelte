@@ -355,6 +355,22 @@
     z-index: 1000;
     overflow: hidden;
     box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+    /* Add animation for slide-in from right */
+    animation: slideInFromRight 0.8s ease-out forwards;
+    animation-delay: 0.6s; /* Delay animation to let grid load first */
+    transform: translateX(100%); /* Start off-screen */
+    opacity: 0;
+  }
+
+  @keyframes slideInFromRight {
+    0% {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0);
+      opacity: 1;
+    }
   }
   
   .mini {

@@ -378,6 +378,48 @@
   :global(.axes-container) {
     z-index: 3 !important; /* Ensure axes are above grid tiles */
     pointer-events: none; /* Allow clicking through to tiles */
+    animation: fadeIn 0.7s ease-out forwards;
+    animation-delay: 0.5s; /* Slightly later than the legend */
+    opacity: 0;
+  }
+  
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  
+  :global(.x-axis) {
+    animation: slideInFromTop 0.7s ease-out forwards;
+    animation-delay: 0.5s;
+    transform: translateY(-10px);
+  }
+  
+  :global(.y-axis) {
+    animation: slideInFromLeft 0.7s ease-out forwards;
+    animation-delay: 0.5s;
+    transform: translateX(-10px);
+  }
+  
+  @keyframes slideInFromTop {
+    0% {
+      transform: translateY(-10px);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slideInFromLeft {
+    0% {
+      transform: translateX(-10px);
+    }
+    100% {
+      transform: translateX(0);
+    }
   }
   
   :global(.axis) {
