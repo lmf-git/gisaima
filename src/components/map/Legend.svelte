@@ -33,7 +33,7 @@
     
     /* Animation timing adjusted to appear after minimap and axes */
     animation: fadeInLegend 0.7s ease-out forwards;
-    animation-delay: 2s; /* Appear after minimap and axes */
+    /* animation-delay: 2s; Appear after minimap and axes */
     opacity: 0;
     transform: translateY(0);
   }

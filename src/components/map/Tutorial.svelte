@@ -248,7 +248,7 @@
     /* Add animation with delay */
     opacity: 0;
     animation: fadeInHelp 0.7s ease-out forwards;
-    animation-delay: 2s; /* Set to appear last at 2s */
+    /* animation-delay: 2s; Set to appear last at 2s */
   }
   
   @keyframes fadeInHelp {
@@ -278,7 +278,7 @@
 
   .tutorial-container {
     animation: fadeInTutorial 0.7s ease-out forwards;
-    animation-delay: 2s; /* Appear with legend */
+    /* animation-delay: 2s; Appear with legend */
     opacity: 0;
   }
   
