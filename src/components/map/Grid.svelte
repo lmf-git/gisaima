@@ -204,6 +204,10 @@
     {#if $mapState.isReady}
       <div class="grid main-grid" style="--cols: {$mapState.cols}; --rows: {$mapState.rows};" role="presentation">
         {#each $gridArray as cell (cell.x + ':' + cell.y)}
+          {@const distance = Math.sqrt(
+            Math.pow(cell.x - $mapState.targetCoord.x, 2) + 
+            Math.pow(cell.y - $mapState.targetCoord.y, 2)
+          )}
           <div
             class="tile"
             class:center={cell.isCenter}
@@ -214,7 +218,10 @@
             tabindex="-1"
             aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}"
             aria-current={cell.isCenter ? "location" : undefined}
-            style="background-color: {cell.color};"
+            style="
+              background-color: {cell.color};
+              animation-delay: {cell.isCenter ? 0 : 0.05 * distance}s;
+            "
           >
             <span class="coords">{cell.x},{cell.y}</span>
           </div>
@@ -316,9 +323,25 @@
     -ms-user-select: none;
     -webkit-touch-callout: none;
     z-index: 1;
+    
+    /* Add radial reveal animation */
+    opacity: 0;
+    transform: scale(0.8);
+    animation: revealTile 0.5s ease-out forwards;
   }
   
-  /* Center tile style */
+  @keyframes revealTile {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  /* Center tile style - make it appear first */
   .map .grid .tile.center {
     z-index: 3;
     position: relative;
@@ -328,8 +351,34 @@
       inset 0 0 0.5em rgba(255, 255, 255, 0.3),
       0 0 1em rgba(255, 255, 255, 0.2);
     transform: scale(1.05);
+    animation: revealCenterTile 0.6s ease-out forwards;
+    animation-delay: 0s !important; /* Always show center tile first */
   }
   
+  @keyframes revealCenterTile {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+      box-shadow: 
+        inset 0 0 1em rgba(255, 255, 255, 0.6),
+        0 0 2em rgba(255, 255, 255, 0.4);
+    }
+    30% {
+      opacity: 1;
+      transform: scale(1.1);
+      box-shadow: 
+        inset 0 0 1em rgba(255, 255, 255, 0.6),
+        0 0 2em rgba(255, 255, 255, 0.4);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1.05);
+      box-shadow: 
+        inset 0 0 0.5em rgba(255, 255, 255, 0.3),
+        0 0 1em rgba(255, 255, 255, 0.2);
+    }
+  }
+
   /* Hover effects - renamed to highlight */
   .map:not(.moving) .tile:hover,
   .tile.highlighted {
