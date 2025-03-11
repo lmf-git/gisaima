@@ -35,11 +35,7 @@
   const showAxisBars = true;
   
   // All state variables declared at the top
-  let localHoveredTile = $state(null);
-  let clearHoverTimeout = null;
-  let lastKeyboardState = $state(false);
-  let movementJustEnded = $state(false);
-  let movementDebounceTimer = null;
+  let hoveredTile = $state(null);
   
   // Movement state tracking
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null);
@@ -66,8 +62,6 @@
         mapState.update(state => ({...state, keyboardNavigationInterval: null}));
       }
       if (dragStateCheckInterval) clearInterval(dragStateCheckInterval);
-      if (clearHoverTimeout) clearTimeout(clearHoverTimeout);
-      if (movementDebounceTimer) clearTimeout(movementDebounceTimer);
     };
   });
   
@@ -81,7 +75,7 @@
       
       if (event.type === "keydown") {
         // Clear hover states when navigation begins
-        localHoveredTile = null;
+        hoveredTile = null;
         
         $mapState.keysPressed.add(key);
         
@@ -115,7 +109,7 @@
     if (event.button !== 0) return;
     
     // Clear any hover state when drag begins
-    localHoveredTile = null;
+    hoveredTile = null;
     clearHoveredTile();
     
     if (startMapDrag(event) && mapElement) {
@@ -149,9 +143,6 @@
     x: $mapState.targetCoord.x,
     y: $mapState.targetCoord.y
   });
-
-  // Cache grid data
-  const grid = $derived($gridArray);
 
   // Use the optimized target tile store
   const targetTileData = $derived($targetTileStore);
@@ -188,91 +179,26 @@
 
   // Add improved functions to track hover state
   function handleTileHover(cell) {
-    // Block hover immediately during or right after movement
-    if (isMoving || movementJustEnded) {
-      localHoveredTile = null;
-      clearHoveredTile();
-      return;
+    if (!isMoving) {
+      hoveredTile = cell;
+      updateHoveredTile(cell.x, cell.y);
     }
-    
-    // Process hover when not moving
-    if (clearHoverTimeout) {
-      clearTimeout(clearHoverTimeout);
-      clearHoverTimeout = null;
-    }
-    
-    // Update local state
-    localHoveredTile = { x: cell.x, y: cell.y };
-    
-    // Update global state
-    updateHoveredTile(cell.x, cell.y);
   }
   
   function handleTileLeave() {
-    // Clear state immediately
-    localHoveredTile = null;
+    hoveredTile = null;
     clearHoveredTile();
   }
   
   // Track if a tile is currently hovered - for minimap sync
-  const isHovered = (cell) => {
-    // Never show hover effects during or right after movement
-    if (isMoving || movementJustEnded) return false;
-    
-    // Check local state first for immediate feedback
-    if (localHoveredTile && cell.x === localHoveredTile.x && cell.y === localHoveredTile.y) {
-      return true;
-    }
-    
-    // Fall back to global state
-    return $mapState.hoveredTile && 
-           cell.x === $mapState.hoveredTile.x && 
-           cell.y === $mapState.hoveredTile.y;
-  };
+  const isHovered = (cell) => !isMoving && 
+    ((hoveredTile && cell.x === hoveredTile.x && cell.y === hoveredTile.y) || 
+    ($mapState.hoveredTile && cell.x === $mapState.hoveredTile.x && cell.y === $mapState.hoveredTile.y));
   
   // Watch for movement state changes
   $effect(() => {
-    // Track movement changes
-    if (isMoving) {
-      // Movement active - clear hover and cancel debounce
-      localHoveredTile = null;
-      clearHoveredTile();
-      
-      if (movementDebounceTimer) {
-        clearTimeout(movementDebounceTimer);
-        movementDebounceTimer = null;
-      }
-      
-      // Not in post-movement state anymore
-      movementJustEnded = false;
-    } else {
-      // Movement just ended - enter temporary post-movement state
-      localHoveredTile = null;
-      clearHoveredTile();
-      movementJustEnded = true;
-      
-      // Setup debounce to exit post-movement after a delay
-      if (movementDebounceTimer) clearTimeout(movementDebounceTimer);
-      
-      movementDebounceTimer = setTimeout(() => {
-        movementJustEnded = false;
-        // One final clear of hover states
-        localHoveredTile = null;
-        clearHoveredTile();
-      }, 250); // Small delay after movement ends
-    }
-  });
-  
-  // Watch specifically for keyboard movement changes
-  $effect(() => {
-    const keyboardMoving = $mapState.keyboardNavigationInterval !== null;
-    
-    // Only do something when keyboard state changes
-    if (keyboardMoving !== lastKeyboardState) {
-      lastKeyboardState = keyboardMoving;
-      
-      // Always clear hover state on keyboard movement change
-      localHoveredTile = null;
+    if (isMoving && hoveredTile) {
+      hoveredTile = null;
       clearHoveredTile();
     }
   });
@@ -293,14 +219,14 @@
     class="map"
     bind:this={mapElement}
     onmousedown={handleStartDrag}
-    class:moving={isMoving || movementJustEnded}
+    class:moving={isMoving}
     role="grid"
     tabindex="0"
     aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
   >
     {#if $mapState.isReady}
       <div class="grid main-grid" style="--cols: {$mapState.cols}; --rows: {$mapState.rows};" role="presentation">
-        {#each grid as cell (cell.x + ':' + cell.y)}
+        {#each $gridArray as cell (cell.x + ':' + cell.y)}
           <div
             class="tile"
             class:center={cell.isCenter}

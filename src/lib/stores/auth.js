@@ -2,22 +2,19 @@ import { writable } from 'svelte/store'
 import { browser } from '$app/environment'
 import { auth } from '$lib/firebase/firebase'
 
-export const user = writable(null)
-export const loading = writable(true)
+export const user = writable(null);
+export const loading = writable(true);
 
 // Initialize auth state listener
 export const initAuthListener = async () => {
-  if (!browser) {
-    loading.set(false)
-    return
-  }
+  if (!browser) return loading.set(false);
   
-  const { onAuthStateChanged } = await import('firebase/auth')
+  const { onAuthStateChanged } = await import('firebase/auth');
   onAuthStateChanged(auth, userData => {
-    user.set(userData)
-    loading.set(false)
-  })
-}
+    user.set(userData);
+    loading.set(false);
+  });
+};
 
 // Auth helper functions
 export const signIn = async (email, password) => {

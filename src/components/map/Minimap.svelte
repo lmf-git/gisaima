@@ -170,93 +170,44 @@
     moveMapTo(worldX, worldY);
   }
 
-  // Track hover state locally to prevent flickering
-  let localHoveredTile = $state(null);
-  let clearHoverTimeout = null;
-
-  // Check if any movement/dragging is happening - now isMinimapDragging is defined
-  const isAnyMovementActive = $derived(
-    $mapState.isDragging || 
-    $mapState.keyboardNavigationInterval !== null || 
-    isDrag
-  );
-
-  // Improved hover handler for minimap tiles
-  function handleMiniTileHover(cell) {
-    if (isAnyMovementActive) {
-      // Clear any hover state immediately when moving
-      if (localHoveredTile) localHoveredTile = null;
+  // Simplified hover management - just one variable
+  let hoveredCell = $state(null);
+  
+  // Simple movement check
+  const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isDrag);
+  
+  // Clear hover when moving
+  $effect(() => {
+    if (isMoving && hoveredCell) {
+      hoveredCell = null;
       clearHoveredTile();
-      return;
     }
-    
-    // Clear any pending timeouts
-    if (clearHoverTimeout) {
-      clearTimeout(clearHoverTimeout);
-      clearHoverTimeout = null;
+  });
+  
+  // Simple hover handlers - no timeouts needed
+  function handleMiniTileHover(cell) {
+    if (!isMoving) {
+      hoveredCell = cell;
+      updateHoveredTile(cell.x, cell.y);
     }
-    
-    // Update local state immediately
-    localHoveredTile = { x: cell.x, y: cell.y };
-    
-    // Update global state
-    updateHoveredTile(cell.x, cell.y);
   }
   
   function handleMiniTileLeave() {
-    if (isAnyMovementActive) {
-      // When moving, clear state immediately
-      localHoveredTile = null;
-      clearHoveredTile();
-      return;
-    }
-    
-    // Use timeout for global state but keep local state a bit longer
-    clearHoverTimeout = setTimeout(() => {
-      clearHoveredTile();
-      localHoveredTile = null;
-    }, 100); // Longer delay to prevent flickering
+    hoveredCell = null;
+    clearHoveredTile();
   }
   
-  // Enhanced tile hover check that uses both global and local state
-  const isTileHovered = (cell) => {
-    // Never show hover effects when any movement is happening
-    if (isAnyMovementActive) return false;
-    
-    // Check local state first for immediate feedback
-    if (localHoveredTile && cell.x === localHoveredTile.x && cell.y === localHoveredTile.y) {
-      return true;
-    }
-    
-    // Fall back to global state
-    return !isAnyMovementActive && $mapState.hoveredTile && 
-           cell.x === $mapState.hoveredTile.x && 
-           cell.y === $mapState.hoveredTile.y;
-  };
-  
-  // Clear hover state when movement begins
-  $effect(() => {
-    if (isAnyMovementActive && (localHoveredTile || $mapState.hoveredTile)) {
-      localHoveredTile = null;
-      clearHoveredTile();
-    }
-  });
-
-  // Clean up timeout on component destroy
-  $effect(() => {
-    return () => {
-      if (clearHoverTimeout) {
-        clearTimeout(clearHoverTimeout);
-      }
-    };
-  });
+  // Simpler hover check
+  const isTileHovered = (cell) => !isMoving && 
+    ((hoveredCell && cell.x === hoveredCell.x && cell.y === hoveredCell.y) || 
+    ($mapState.hoveredTile && cell.x === $mapState.hoveredTile.x && cell.y === $mapState.hoveredTile.y));
 
   // Handle minimap drag start - leave this function in its original position
   function handleMinimapDragStart(event) {
     if (event.button !== 0 || !$mapState.isReady) return;
     
     // Clear hover states immediately
-    localHoveredTile = null;
+    hoveredCell = null;
     clearHoveredTile();
     
     // Capture starting positions
