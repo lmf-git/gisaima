@@ -7,12 +7,12 @@
   } = $props()
 </script>
 
-<div class="axes-container">
-  <!-- Replace nested divs with direct x-axis -->
-  <div class="x-axis">
+<div class="axes">
+  <!-- Replace nested divs with direct x -->
+  <div class="x">
     {#each xAxisArray as coord}
       <div 
-        class="axis-label" 
+        class="label" 
         class:center={coord.isCenter} 
         style="width: calc(100% / {cols});">
         {coord.value}
@@ -20,11 +20,11 @@
     {/each}
   </div>
   
-  <!-- Replace nested divs with direct y-axis -->
-  <div class="y-axis">
+  <!-- Replace nested divs with direct y -->
+  <div class="y">
     {#each yAxisArray as coord}
       <div 
-        class="axis-label" 
+        class="label" 
         class:center={coord.isCenter} 
         style="height: calc(100% / {rows});">
         {coord.value}
@@ -34,7 +34,7 @@
 </div>
 
 <style>
-  .axes-container {
+  .axes {
     position: absolute;
     top: 0;
     left: 0;
@@ -44,8 +44,8 @@
     z-index: 3;
   }
   
-  /* x-axis positioning and style */
-  .x-axis {
+  /* x positioning and style */
+  .x {
     display: flex;
     position: absolute;
     bottom: 0;
@@ -56,8 +56,8 @@
     background: transparent;
   }
   
-  /* y-axis positioning and style */
-  .y-axis {
+  /* y positioning and style */
+  .y {
     display: flex;
     position: absolute;
     top: 0;
@@ -68,7 +68,7 @@
     background: transparent;
   }
   
-  .axis-label {
+  .label {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -84,18 +84,14 @@
     text-shadow: 0 0 0.1875em rgba(0, 0, 0, 0.7);
   }
   
-  .y-grid .axis-label {
-    padding: 0.1em;
-  }
-  
-  .axis-label.center {
+  .label.center {
     font-weight: bold;
     background-color: rgba(50, 100, 150, 0.7);
     text-shadow: 0 0 0.1875em rgba(0, 0, 0, 0.8);
     border-color: rgba(255, 255, 255, 0.3);
   }
   
-  .axis-label:hover {
+  .label:hover {
     filter: brightness(1.2);
     background-color: rgba(60, 80, 120, 0.8);
     border-color: rgba(255, 255, 255, 0.5);
