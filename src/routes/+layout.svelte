@@ -3,13 +3,9 @@
     import { user, signOut } from '$lib/stores/auth';
     import Logo from '../components/Logo.svelte';
     
-    // Check if current page is the map page
-    $: isMapPage = $page.url.pathname === '/map';
 
-    // Handle sign out
-    const handleSignOut = async () => {
-        await signOut();
-    };
+    // TODO: This needs refactoring to runes.
+    $: isMapPage = $page.url.pathname === '/map';
 </script>
 
 <div class="app">
@@ -37,7 +33,7 @@
             {#if !isMapPage && $user}
                 <div class="authlinks">
                     <span class="greeting">Hello, {$user.email}</span>
-                    <button class="button" on:click={handleSignOut}>Sign Out</button>
+                    <button class="button" onclick={() => signOut}>Sign Out</button>
                 </div>
             {/if}
         </nav>

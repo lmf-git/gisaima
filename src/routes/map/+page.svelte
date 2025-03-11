@@ -2,6 +2,11 @@
     import Grid from '../../components/map/Grid.svelte';
 </script>
 
+<!-- TODO: 
+    Control should be moved here grid/minimap pretty similar controls,
+    Legend/Tutorial/Etc should be here instead of in Grid to lessen complexity of Grid
+-->
+
 <div class="mappage">
     <Grid />
 </div>
