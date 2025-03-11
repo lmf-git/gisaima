@@ -33,7 +33,7 @@
 </script>
 
 {#if ready && !closed}
-  <div class="tut" class:hide={!show}>
+  <div class="tut tutorial-container" class:hide={!show}>
     <div class="box">
       <button class="close" aria-label="Close tutorial" onclick={close}>⨯</button>
       <h2>Welcome to Gisaima</h2>
@@ -273,6 +273,23 @@
     
     h2 {
       font-size: 1.6em;
+    }
+  }
+
+  .tutorial-container {
+    animation: fadeInTutorial 0.7s ease-out forwards;
+    animation-delay: 2s; /* Appear with legend */
+    opacity: 0;
+  }
+  
+  @keyframes fadeInTutorial {
+    0% {
+      opacity: 0;
+      transform: translateY(1em); /* Assuming similar entrance animation as legend */
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 </style>

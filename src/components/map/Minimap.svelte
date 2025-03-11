@@ -355,9 +355,9 @@
     z-index: 1000;
     overflow: hidden;
     box-shadow: 0 0.1875em 0.625em var(--color-shadow);
-    /* Add animation for slide-in from right */
+    /* Adjust animation to appear after grid but with axes */
     animation: slideInFromRight 0.8s ease-out forwards;
-    animation-delay: 0.6s; /* Delay animation to let grid load first */
+    animation-delay: 1.5s; /* Match with axes delay */
     transform: translateX(100%); /* Start off-screen */
     opacity: 0;
   }

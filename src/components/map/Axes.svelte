@@ -63,10 +63,9 @@
     pointer-events: none;
     z-index: 3;
     opacity: 0; /* Start hidden */
+    /* Remove duplicate and conflicting animations */
     animation: fadeIn 0.7s ease-out forwards;
-    animation-delay: 1.2s; /* Wait for grid animation to complete */
-    animation: fadeIn 1.5s ease 2s forwards;
-    opacity: 0;
+    animation-delay: 1.5s; /* Match with minimap delay (after grid animation) */
   }
   
   @keyframes fadeIn {
@@ -116,7 +115,7 @@
     /* Use separate animation for labels with a slight delay */
     opacity: 0;
     animation: fadeInLabel 0.4s ease-out forwards;
-    animation-delay: calc(1.2s + 0.02s * var(--index, 0)); /* Stagger effect */
+    animation-delay: calc(1.5s + 0.02s * var(--index, 0)); /* Adjusted base delay to match container */
     
     /* Remove problematic effects */
     transition: background-color 0.2s ease, border-color 0.2s ease;
@@ -142,7 +141,7 @@
     /* Also start with transparent border */
     border-color: transparent;
     animation: fadeInCenterLabel 0.5s ease-out forwards;
-    animation-delay: 1.2s; /* Center appears first */
+    animation-delay: 1.5s; /* Center appears first, synchronized with container */
   }
   
   @keyframes fadeInCenterLabel {
@@ -166,15 +165,6 @@
   :global(.axes-container) {
     z-index: 3;
     pointer-events: none;
-  }
-  
-  @keyframes fadeIn {
-    0% {
-      opacity: 0;
-    }
-    100% {
-      opacity: 1;
-    }
   }
   
   /* Also adjust the axis animations to be in sync with container */

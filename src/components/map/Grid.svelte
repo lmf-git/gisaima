@@ -60,7 +60,7 @@
     setTimeout(() => {
       initialAnimationComplete = true;
       console.log('Initial grid animation complete');
-    }, 1000); // Set slightly longer than the animation duration
+    }, 1200); // Set to match the grid animation duration
 
     // Define cleanup function properly
     return function() {
@@ -362,6 +362,7 @@
     opacity: 0;
     transform: scale(0.8);
     animation: revealTile 0.5s ease-out forwards;
+    /* No need to specify delay here, it's calculated for each tile */
   }
   
   /* For non-animated grid, tiles are always visible */
@@ -507,7 +508,7 @@
     z-index: 3; /* Removed !important */
     pointer-events: none; /* Allow clicking through to tiles */
     animation: fadeIn 0.7s ease-out forwards;
-    animation-delay: 0.5s; /* Slightly later than the legend */
+    animation-delay: 1.5s; /* Match with axes and minimap */
     opacity: 0;
   }
   
@@ -523,14 +524,14 @@
   /* Remove transformations that could break positioning */
   :global(.x-axis) {
     animation: fadeIn 0.7s ease-out forwards;
-    animation-delay: 0.5s;
+    animation-delay: 1.5s;
     opacity: 0;
     /* Remove transform that breaks positioning */
   }
   
   :global(.y-axis) {
     animation: fadeIn 0.7s ease-out forwards;
-    animation-delay: 0.5s;
+    animation-delay: 1.5s;
     opacity: 0;
     /* Remove transform that breaks positioning */
   }

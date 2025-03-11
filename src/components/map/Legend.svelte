@@ -31,9 +31,9 @@
     box-shadow: none;
     font-weight: 500;
     
-    /* Animation matching axes approach */
+    /* Animation timing adjusted to appear after minimap and axes */
     animation: fadeInLegend 0.7s ease-out forwards;
-    animation-delay: .5s; /* Changed from 0.3s to 1.5s */
+    animation-delay: 2s; /* Appear after minimap and axes */
     opacity: 0;
     transform: translateY(0);
   }
