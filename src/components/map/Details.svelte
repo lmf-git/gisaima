@@ -50,27 +50,31 @@
     align-items: flex-start;
     gap: 1em;
     padding: 1em;
-    border-radius: 0.25em;
-    color: var(--color-text-primary);
-    text-shadow: 0 0.0625em 0.125em rgba(0, 0, 0, 0.5);
-    box-shadow: 0 0.1875em 0.625em var(--color-shadow);
-    border: 0.15em solid var(--color-panel-border);
-    backdrop-filter: blur(0.3125em);
+    border-radius: 0.3em;
+    /* Axes-like styling */
+    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(255, 255, 255, 0.4);
+    border: 0.05em solid rgba(255, 255, 255, 0.1);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    box-shadow: none;
+    font-weight: 500;
     min-width: 12.5em;
-    background-color: var(--color-panel-bg);
-    /* Add animation for the card */
-    animation: fadeIn 0.2s ease-out forwards;
+    
+    /* Animation similar to axes components */
+    animation: fadeInDetails 0.4s ease-out forwards;
     transform-origin: bottom right;
   }
   
-  @keyframes fadeIn {
+  @keyframes fadeInDetails {
     from {
       opacity: 0;
       transform: scale(0.95);
+      border-color: transparent;
     }
     to {
       opacity: 1;
       transform: scale(1);
+      border-color: rgba(255, 255, 255, 0.1);
     }
   }
   
@@ -82,19 +86,20 @@
     margin: 0;
     font-size: 1.3em;
     font-weight: bold;
-    color: var(--color-bright-accent);
+    color: rgba(0, 0, 0, 0.9);
+    text-shadow: 0 0 0.1875em rgba(255, 255, 255, 0.8);
   }
   
   p {
     margin: 0.3em 0 0;
     font-size: 1.1em;
-    color: var(--color-text-secondary);
+    color: rgba(0, 0, 0, 0.8);
   }
   
   .close-button {
     background: none;
     border: none;
-    color: var(--color-bright-accent);
+    color: rgba(0, 0, 0, 0.8);
     font-size: 1.5em;
     line-height: 1;
     padding: 0;

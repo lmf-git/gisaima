@@ -17,50 +17,52 @@
 <style>
   .legend-container {
     position: absolute;
-    bottom: 0.5em; /* Changed from top to bottom */
+    bottom: 0.5em;
     right: 0.5em;
     z-index: 1001;
     cursor: pointer;
     border-radius: 0.3em;
     padding: 0.6em 1em;
-    color: var(--color-text-primary);
-    box-shadow: 0 0.1em 0.3em var(--color-shadow);
-    text-align: center;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border: 0.1em solid var(--color-panel-border);
-    background-color: var(--color-panel-bg);
+    /* Axes-like styling */
+    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(255, 255, 255, 0.4);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    border: 0.05em solid rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+    font-weight: 500;
     
-    /* Update animation to slide from bottom instead of top */
-    animation: fadeInUp 0.7s ease-out forwards;
+    /* Animation matching axes approach */
+    animation: fadeInLegend 0.7s ease-out forwards;
     animation-delay: 0.3s;
-    transform: translateY(-1.25em); /* Changed direction to come from below */
     opacity: 0;
+    transform: translateY(0);
   }
   
-  @keyframes fadeInUp {
+  @keyframes fadeInLegend {
     0% {
-      transform: translateY(1.25em); /* Changed to move up from below */
       opacity: 0;
+      transform: translateY(1em);
     }
     100% {
-      transform: translateY(0);
       opacity: 1;
+      transform: translateY(0);
     }
   }
   
   .legend-container:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0.2em 0.5em var(--color-shadow);
-    border-color: var(--color-bright-accent);
+    background-color: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: none;
+    box-shadow: none;
   }
   
   .legend-container:active {
-    transform: translateY(0);
+    transform: scale(0.98);
   }
   
   .coordinates {
     font-size: 1.2em;
     font-weight: bold;
-    color: var(--color-bright-accent);
+    color: rgba(0, 0, 0, 0.9);
   }
 </style>
