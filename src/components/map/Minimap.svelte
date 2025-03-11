@@ -8,21 +8,17 @@
     moveMapTo 
   } from '../../lib/stores/map.js';
   
-  // Fixed dimensions for the minimap - larger rectangular shape
-  const MINI_TILE_SIZE_EM = 0.5;  // Keep original tile size
-  const MINIMAP_WIDTH_EM = 24;    // Increased from 18
-  const MINIMAP_HEIGHT_EM = 16;    // Increased from 12
-  const LOADING_THROTTLE = 200; // ms between minimap updates during interaction
+  const MINI_TILE_SIZE_EM = 0.5;
+  const MINIMAP_WIDTH_EM = 24;
+  const MINIMAP_HEIGHT_EM = 16;
+  const LOADING_THROTTLE = 200;
   
-  // Calculate how many tiles fit in our minimap dimensions
   const tileCountX = $derived(Math.floor(MINIMAP_WIDTH_EM / MINI_TILE_SIZE_EM));
   const tileCountY = $derived(Math.floor(MINIMAP_HEIGHT_EM / MINI_TILE_SIZE_EM));
   
-  // Make them odd so we can center properly
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
   const viewRangeY = $derived(Math.floor(tileCountY / 2));
   
-  // Track visible area with direct access to mapState instead of event listener
   const area = $derived({
     startX: $mapState.targetCoord.x - Math.floor($mapState.cols / 2),
     startY: $mapState.targetCoord.y - Math.floor($mapState.rows / 2),
@@ -32,22 +28,18 @@
     centerY: $mapState.targetCoord.y
   });
   
-  // Track loading state
   let isLoad = $state(false);
   let loadTimer = null;
   
-  // Add minimap drag state tracking
   let isDrag = $state(false);
   let dragX = $state(0);
   let dragY = $state(0);
   let map;
   
-  // Add tracking for drag vs click distinction
   let wasDrag = $state(false);
   let dist = $state(0);
-  const DRAG_THRESHOLD = 5; // Minimum pixels to consider as a drag
+  const DRAG_THRESHOLD = 5;
   
-  // Simple direct grid generation - only generate what we need
   let minimapGrid = $state([]);
   let lastUpdateTime = 0;
   
@@ -57,29 +49,25 @@
     isLoad = true;
     const now = Date.now();
     
-    // Throttle updates during drag or other operations
     if (now - lastUpdateTime < LOADING_THROTTLE && $mapState.isDragging) {
       if (loadTimer) clearTimeout(loadTimer);
       loadTimer = setTimeout(() => generateMinimapGrid(), LOADING_THROTTLE);
-      return minimapGrid; // Return existing grid while loading
+      return minimapGrid;
     }
     
     const result = [];
     const centerX = $mapState.targetCoord.x;
     const centerY = $mapState.targetCoord.y;
     
-    // Register minimap range to avoid duplicate terrain generation
     updateMinimapRange(centerX, centerY, viewRangeX, viewRangeY);
     
     try {
-      // Only generate the exact tiles needed for the minimap
       for (let y = -viewRangeY; y <= viewRangeY; y++) {
         for (let x = -viewRangeX; x <= viewRangeX; x++) {
           const globalX = centerX + x;
           const globalY = centerY + y;
           const terrainData = getTerrainData(globalX, globalY);
           
-          // Is this cell in the visible area?
           const isVisible = 
             globalX >= area.startX && 
             globalX < area.startX + area.width &&
@@ -111,7 +99,6 @@
     return result;
   }
   
-  // Update grid when map state changes - with better dependency tracking
   $effect(() => {
     const { targetCoord } = $mapState;
     
@@ -120,9 +107,7 @@
     }
   });
 
-  // Allow clicking and keyboard navigation on the minimap
   function handleMinimapClick(event) {
-    // Skip click handling if we were dragging or map isn't ready
     if (wasDrag || !$mapState.isReady) {
       event.stopPropagation();
       return;
@@ -132,27 +117,20 @@
     const clickX = event.clientX - minimapRect.left;
     const clickY = event.clientY - minimapRect.top;
     
-    // Calculate coordinate in minimap tiles
-    // Use relative units rather than hardcoded pixel approximation
     const tileX = Math.floor(clickX / (minimapRect.width / tileCountX));
     const tileY = Math.floor(clickY / (minimapRect.height / tileCountY));
     
     navigateToPosition(tileX, tileY);
     
-    // Prevent default to avoid interfering with grid events
     event.stopPropagation();
   }
 
-  // Add keyboard event handler for accessibility
   function handleKeyDown(event) {
     if (!$mapState.isReady) return;
     
     if (event.key === 'Enter' || event.key === ' ') {
-      // For Enter or Space keys, navigate to center or handle focus
       event.preventDefault();
       
-      // Since we can't directly get cursor position with keyboard,
-      // use the center of the current visible area as reference
       const centerTileX = Math.floor(tileCountX / 2);
       const centerTileY = Math.floor(tileCountY / 2);
       
@@ -160,27 +138,21 @@
     }
   }
   
-  // Helper function to navigate to a position on the minimap
   function navigateToPosition(tileX, tileY) {
-    // Convert to world coordinates using local viewRange values
     const worldX = Math.round($mapState.targetCoord.x - viewRangeX + tileX);
     const worldY = Math.round($mapState.targetCoord.y - viewRangeY + tileY);
     
-    // Use the centralized movement function
     moveMapTo(worldX, worldY);
   }
   
-  // Simple movement check
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isDrag);
   
-  // Clear highlight when moving
   $effect(() => {
     if (isMoving && $mapState.hoveredTile) {
       clearHoveredTile();
     }
   });
   
-  // Simplify highlight functions to only use the store
   function highlightMiniTile(cell) {
     if (!isMoving) {
       updateHoveredTile(cell.x, cell.y);
@@ -191,27 +163,22 @@
     clearHoveredTile();
   }
   
-  // Simplify highlighted check to only use store
   const isTileHighlighted = (cell) => 
     !isMoving && $mapState.hoveredTile && 
     cell.x === $mapState.hoveredTile.x && 
     cell.y === $mapState.hoveredTile.y;
 
-  // Handle minimap drag start - leave this function in its original position
   function handleMinimapDragStart(event) {
     if (event.button !== 0 || !$mapState.isReady) return;
     
-    // Just clear the hover in store
     clearHoveredTile();
     
-    // Capture starting positions
     isDrag = true;
     dragX = event.clientX;
     dragY = event.clientY;
     dist = 0;
-    wasDrag = false; // Reset at start of potential new drag
+    wasDrag = false;
     
-    // Visual feedback
     if (map) {
       map.style.cursor = "grabbing";
       map.classList.add("dragging");
@@ -220,63 +187,47 @@
     event.preventDefault();
   }
   
-  // Handle minimap drag movement
   function handleMinimapDrag(event) {
     if (!isDrag || !$mapState.isReady) return;
     
-    // Calculate drag deltas
     const deltaX = event.clientX - dragX;
     const deltaY = event.clientY - dragY;
     
-    // Track total drag distance to distinguish drag from click
     dist += Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     
-    // If we've moved past threshold, mark as a drag operation
     if (dist > DRAG_THRESHOLD) {
       wasDrag = true;
     }
     
-    // Get minimap dimensions for scaling
     const minimapRect = map.getBoundingClientRect();
     const pixelsPerTileX = minimapRect.width / tileCountX;
     const pixelsPerTileY = minimapRect.height / tileCountY;
     
-    // Calculate world cells moved
     const cellsMovedX = Math.round(deltaX / pixelsPerTileX);
     const cellsMovedY = Math.round(deltaY / pixelsPerTileY);
     
-    // Only update if we've moved at least one cell
     if (cellsMovedX === 0 && cellsMovedY === 0) return;
     
-    // Update map position (opposite direction of drag)
     const newTargetX = $mapState.targetCoord.x - cellsMovedX;
     const newTargetY = $mapState.targetCoord.y - cellsMovedY;
     
-    // Use the centralized movement function
     moveMapTo(newTargetX, newTargetY);
     
-    // Update drag start positions for next movement
     dragX = event.clientX;
     dragY = event.clientY;
   }
   
-  // Handle minimap drag end
   function handleMinimapDragEnd() {
     if (!isDrag) return;
     
     isDrag = false;
     
-    // Visual feedback
     if (map) {
       map.style.cursor = "grab";
       map.classList.remove("dragging");
     }
-    
-    // Don't reset wasDragging here - it needs to persist until click is processed
-    // It will be automatically cleared on the next mousedown
   }
   
-  // Global mouse handlers for reliable drag ending
   function globalMinimapMouseUp() {
     if (isDrag) {
       handleMinimapDragEnd();
@@ -330,7 +281,6 @@
         ></div>
       {/each}
       
-      <!-- Visible area indicator frame -->
       <div 
         class="visible-area-frame"
         style="
@@ -342,8 +292,6 @@
         aria-hidden="true"
       ></div>
     {/if}
-    
-    <!-- Remove loading indicator -->
   </div>
 </div>
 
@@ -355,10 +303,9 @@
     z-index: 1000;
     overflow: hidden;
     box-shadow: 0 0.1875em 0.625em var(--color-shadow);
-    /* Adjust animation to appear after grid but with axes */
     animation: slideInFromRight 0.8s ease-out forwards;
-    animation-delay: 1.5s; /* Match with axes delay */
-    transform: translateX(100%); /* Start off-screen */
+    animation-delay: 1.5s;
+    transform: translateX(100%);
     opacity: 0;
   }
 
@@ -385,7 +332,6 @@
   
   .mini:hover {
     box-shadow: 0 0.15em 0.3em var(--color-shadow);
-    /* Removed border-color change on hover */
   }
   
   .mini:focus {
@@ -400,10 +346,10 @@
   
   .tile.center {
     z-index: 3;
-    background-color: white !important; /* Changed from accent color to white */
+    background-color: white !important;
     opacity: 0.8;
-    border: 0.125em solid white; /* White border */
-    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7); /* Glow effect */
+    border: 0.125em solid white;
+    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
   }
   
   .tile.visible {
@@ -412,7 +358,7 @@
   
   .tile.highlighted {
     z-index: 4;
-    background-color: white !important; /* Changed from accent color to white */
+    background-color: white !important;
     opacity: 0.8;
   }
   
@@ -422,8 +368,8 @@
 
   .visible-area-frame {
     position: absolute;
-    border: 0.125em solid white; /* Changed from accent color to white */
-    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7); /* Added white glow */
+    border: 0.125em solid white;
+    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
     pointer-events: none;
     z-index: 4;
   }

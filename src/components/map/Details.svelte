@@ -1,24 +1,18 @@
 <script>
-  // Remove fly import
-  
   const { x = 0, y = 0, show = true, biomeName: rawBiomeName = "Unknown", onClose } = $props()
   
-  // Format biome name to be readable (convert snake_case to Title Case)
   const biomeName = $derived(
     rawBiomeName?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown'
   )
   
-  // Debug log when details are shown
   $effect(() => show && console.log(`Details shown for: (${x}, ${y}) - ${biomeName}`))
   
-  // Handle escape key to close modal
   const handleKeydown = event => event.key === 'Escape' && show && onClose?.()
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="details-container" class:visible={show}>
-  <!-- Always render the card but control visibility with CSS -->
   <div class="details-card">
     <div class="content">
       <h2>Coordinates ({x}, {y})</h2>
@@ -31,8 +25,8 @@
 <style>
   .details-container {
     position: absolute;
-    bottom: 2.5em; /* Match the Legend position exactly */
-    right: 0.5em; /* Match the Legend position exactly */
+    bottom: 2.5em;
+    right: 0.5em;
     z-index: 1001;
     opacity: 0;
     pointer-events: none;
@@ -51,7 +45,6 @@
     gap: 1em;
     padding: 1em;
     border-radius: 0.3em;
-    /* Axes-like styling */
     color: rgba(0, 0, 0, 0.8);
     background-color: rgba(255, 255, 255, 0.4);
     border: 0.05em solid rgba(255, 255, 255, 0.1);
@@ -60,7 +53,6 @@
     font-weight: 500;
     min-width: 12.5em;
     
-    /* Animation similar to axes components */
     animation: fadeInDetails 0.4s ease-out forwards;
     transform-origin: bottom right;
   }

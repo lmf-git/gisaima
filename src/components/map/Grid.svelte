@@ -150,13 +150,6 @@
     if ($mapState.isMouseActuallyDown && $mapState.isDragging) dragMap(event);
     else if (!$mapState.isMouseActuallyDown && $mapState.isDragging) handleStopDrag();
   };
-  
-  // Simple derived value for dragging class
-  const isDragging = $derived($mapState.isDragging);
-  const targetCoord = $derived({
-    x: $mapState.targetCoord.x,
-    y: $mapState.targetCoord.y
-  });
 
   // Use the optimized target tile store
   const targetTileData = $derived($targetTileStore);

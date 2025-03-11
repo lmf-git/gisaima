@@ -4,8 +4,8 @@
     yAxisArray = [],
     cols = 0,
     rows = 0,
-    onXAxisClick = () => {},  // New prop for X axis click handler
-    onYAxisClick = () => {}   // New prop for Y axis click handler
+    onXAxisClick = () => {},
+    onYAxisClick = () => {}
   } = $props();
 </script>
 
@@ -44,11 +44,8 @@
     height: 100%;
     pointer-events: none;
     z-index: 3;
-    /* Remove opacity: 0 and animation - make axes visible immediately */
     opacity: 1;
   }
-  
-  /* Remove the fadeIn animation keyframes and references */
   
   /* x positioning and style */
   .x {
@@ -91,58 +88,42 @@
     align-items: center;
     justify-content: center;
     font-size: 0.9em;
-    color: rgba(0, 0, 0, 0.8); /* Changed to dark text color for better contrast */
+    color: rgba(0, 0, 0, 0.8);
     box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;
-    border: 0.05em solid rgba(255, 255, 255, 0.1); /* Show border immediately */
+    border: 0.05em solid rgba(255, 255, 255, 0.1);
     pointer-events: auto;
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7); /* Reversed shadow for dark text */
-    background-color: rgba(255, 255, 255, 0.4); /* Increased opacity for better readability */
-    font-weight: 500; /* Slightly bolder text for better readability */
-    
-    /* Remove animation delays and opacity:0 - show immediately */
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    background-color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
     opacity: 1;
-    
-    /* Keep the transition for hover effects */
     transition: background-color 0.2s ease, border-color 0.2s ease;
-    cursor: pointer; /* Add cursor pointer to indicate clickability */
+    cursor: pointer;
   }
-  
-  /* Remove fadeIn animations */
   
   .label.center {
     font-weight: bold;
-    background-color: rgba(192, 192, 192, 0.7); /* Changed from blue to silver */
-    color: rgba(0, 0, 0, 0.9); /* Changed to dark text for better contrast on silver */
-    text-shadow: 0 0 0.1875em rgba(255, 255, 255, 0.8); /* Reversed shadow for dark text */
-    /* Set border color immediately */
+    background-color: rgba(192, 192, 192, 0.7);
+    color: rgba(0, 0, 0, 0.9);
+    text-shadow: 0 0 0.1875em rgba(255, 255, 255, 0.8);
     border-color: rgba(255, 255, 255, 0.5);
-    /* Remove animation */
   }
-  
-  /* Remove fadeInCenterLabel animation */
   
   .label:hover {
-    /* Remove filter: brightness */
-    background-color: rgba(255, 255, 255, 0.6); /* Even brighter on hover */
-    border-color: rgba(255, 255, 255, 0.5);
-    /* Enhanced hover effect to make clickability more obvious */
-    background-color: rgba(255, 255, 255, 0.7); /* Brighter on hover */
-    border-color: rgba(255, 255, 255, 0.7); /* More visible border */
-    box-shadow: 0 0 0.3em rgba(255, 255, 255, 0.5); /* Add glow effect */
+    background-color: rgba(255, 255, 255, 0.7);
+    border-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 0.3em rgba(255, 255, 255, 0.5);
   }
   
-  /* Remove duplicate animation on container */
   :global(.axes-container) {
     z-index: 3;
     pointer-events: none;
   }
   
-  /* Also adjust the axis animations to be in sync with container */
   :global(.x-axis),
   :global(.y-axis) {
-    opacity: 1; /* Show immediately */
+    opacity: 1;
   }
 </style>
 
