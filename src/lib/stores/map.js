@@ -221,37 +221,57 @@ export function resizeMap(mapElement) {
   });
 }
 
-// Move map via keyboard
-export function moveMapByKeys() {
-  let xChange = 0;
-  let yChange = 0;
-
+// Create a centralized movement function that all navigation methods will use
+export function moveMapTo(newX, newY) {
+  // Always clear hover state during any movement
+  clearHoveredTile();
+  
   mapState.update(state => {
-    if (state.keysPressed.has("a") || state.keysPressed.has("arrowleft")) xChange += 1;
-    if (state.keysPressed.has("d") || state.keysPressed.has("arrowright")) xChange -= 1;
-    if (state.keysPressed.has("w") || state.keysPressed.has("arrowup")) yChange += 1;
-    if (state.keysPressed.has("s") || state.keysPressed.has("arrowdown")) yChange -= 1;
-
-    if (xChange === 0 && yChange === 0) return state;
+    // Round the coordinates for consistent movement
+    const roundedX = Math.round(newX);
+    const roundedY = Math.round(newY);
     
-    // Round the coordinates for consistent movement, especially diagonal
-    const newTargetX = Math.round(state.targetCoord.x - xChange);
-    const newTargetY = Math.round(state.targetCoord.y - yChange);
-    const newOffsetX = state.centerX + newTargetX;
-    const newOffsetY = state.centerY + newTargetY;
+    // Calculate new offsets
+    const newOffsetX = state.centerX + roundedX;
+    const newOffsetY = state.centerY + roundedY;
     
-    // Get fresh terrain data for the new target coordinates
-    const centerTileData = getTerrainData(newTargetX, newTargetY);
-    console.log(`Keyboard movement to (${newTargetX}, ${newTargetY}) - Biome: ${centerTileData.biome.name}`);
+    // Get terrain data for new position
+    const centerTileData = getTerrainData(roundedX, roundedY);
+    
+    console.log(`Moving to (${roundedX}, ${roundedY}) - Biome: ${centerTileData.biome.name}`);
     
     return {
       ...state,
-      targetCoord: { x: newTargetX, y: newTargetY },
+      targetCoord: { x: roundedX, y: roundedY },
       offsetX: newOffsetX,
       offsetY: newOffsetY,
-      centerTileData
+      centerTileData,
+      hoveredTile: null // Explicitly clear hover state
     };
   });
+}
+
+// Refactor moveMapByKeys to use the central movement function
+export function moveMapByKeys() {
+  let xChange = 0;
+  let yChange = 0;
+  
+  // Calculate movement direction based on pressed keys
+  const state = get(mapState);
+  if (state.keysPressed.has("a") || state.keysPressed.has("arrowleft")) xChange += 1;
+  if (state.keysPressed.has("d") || state.keysPressed.has("arrowright")) xChange -= 1;
+  if (state.keysPressed.has("w") || state.keysPressed.has("arrowup")) yChange += 1;
+  if (state.keysPressed.has("s") || state.keysPressed.has("arrowdown")) yChange -= 1;
+
+  // Skip if no movement
+  if (xChange === 0 && yChange === 0) return;
+  
+  // Calculate new coordinates
+  const newX = state.targetCoord.x - xChange;
+  const newY = state.targetCoord.y - yChange;
+  
+  // Use the centralized movement function
+  moveMapTo(newX, newY);
 }
 
 // Simplify the drag functionality
@@ -273,72 +293,65 @@ export function startDrag(event) {
   return true;
 }
 
+// Update drag function to use the central movement function
 export function drag(event) {
   let result = false;
   
-  mapState.update(state => {
-    if (!state.isDragging) return state;
+  const state = get(mapState);
+  if (!state.isDragging) return result;
 
-    const deltaX = event.clientX - state.dragStartX;
-    const deltaY = event.clientY - state.dragStartY;
-    
-    const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    const tileSizePx = TILE_SIZE * baseFontSize;
-    
-    // Calculate movement with increased sensitivity (60% of original tile size)
-    const sensitivity = 0.6; 
-    const adjustedTileSize = tileSizePx * sensitivity;
-    
-    // Add current movement to accumulated sub-tile movements
-    const dragAccumX = (state.dragAccumX || 0) + deltaX;
-    const dragAccumY = (state.dragAccumY || 0) + deltaY;
-    
-    // Calculate cells moved including fractional movement
-    const cellsMovedX = Math.round(dragAccumX / adjustedTileSize);
-    const cellsMovedY = Math.round(dragAccumY / adjustedTileSize);
-    
-    // Only update if we've accumulated enough movement
-    if (cellsMovedX === 0 && cellsMovedY === 0) {
-      return {
-        ...state,
-        dragStartX: event.clientX,
-        dragStartY: event.clientY,
-        dragAccumX,
-        dragAccumY
-      };
-    }
-    
-    result = true;
-    // Round the coordinates for consistent movement, especially diagonal
-    const newTargetX = Math.round(state.targetCoord.x - cellsMovedX);
-    const newTargetY = Math.round(state.targetCoord.y - cellsMovedY);
-    
-    // Keep remaining sub-tile movement for next drag event
-    const remainderX = dragAccumX - (cellsMovedX * adjustedTileSize);
-    const remainderY = dragAccumY - (cellsMovedY * adjustedTileSize);
-    
-    return {
-      ...state,
-      targetCoord: { x: newTargetX, y: newTargetY },
-      offsetX: state.centerX + newTargetX,
-      offsetY: state.centerY + newTargetY,
-      dragStartX: event.clientX,
-      dragStartY: event.clientY,
-      dragAccumX: remainderX,
-      dragAccumY: remainderY
-    };
-  });
+  const deltaX = event.clientX - state.dragStartX;
+  const deltaY = event.clientY - state.dragStartY;
   
-  // Get terrain data outside of the state update to reduce redraws
-  if (result) {
-    const state = get(mapState);
-    const { x, y } = state.targetCoord;
-    const freshTerrainData = getTerrainData(x, y);
+  const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const tileSizePx = TILE_SIZE * baseFontSize;
+  
+  // Calculate movement with increased sensitivity
+  const sensitivity = 0.6; 
+  const adjustedTileSize = tileSizePx * sensitivity;
+  
+  // Add current movement to accumulated sub-tile movements
+  const dragAccumX = (state.dragAccumX || 0) + deltaX;
+  const dragAccumY = (state.dragAccumY || 0) + deltaY;
+  
+  // Calculate cells moved including fractional movement
+  const cellsMovedX = Math.round(dragAccumX / adjustedTileSize);
+  const cellsMovedY = Math.round(dragAccumY / adjustedTileSize);
+  
+  // Only update if we've accumulated enough movement
+  if (cellsMovedX === 0 && cellsMovedY === 0) {
+    // Update drag start position but don't move
     mapState.update(state => ({
       ...state,
-      centerTileData: freshTerrainData
+      dragStartX: event.clientX,
+      dragStartY: event.clientY,
+      dragAccumX,
+      dragAccumY
     }));
+    return result;
   }
+  
+  result = true;
+  
+  // Calculate new position
+  const newX = state.targetCoord.x - cellsMovedX;
+  const newY = state.targetCoord.y - cellsMovedY;
+  
+  // Keep remaining sub-tile movement
+  const remainderX = dragAccumX - (cellsMovedX * adjustedTileSize);
+  const remainderY = dragAccumY - (cellsMovedY * adjustedTileSize);
+  
+  // Use the central move function
+  moveMapTo(newX, newY);
+  
+  // Update drag state separately
+  mapState.update(state => ({
+    ...state,
+    dragStartX: event.clientX,
+    dragStartY: event.clientY,
+    dragAccumX: remainderX,
+    dragAccumY: remainderY
+  }));
   
   return result;
 }

@@ -1,5 +1,12 @@
 <script>
-  import { mapState, getTerrainData, updateHoveredTile, clearHoveredTile, updateMinimapRange } from '../../lib/stores/map.js';
+  import { 
+    mapState, 
+    getTerrainData, 
+    updateHoveredTile, 
+    clearHoveredTile, 
+    updateMinimapRange,
+    moveMapTo 
+  } from '../../lib/stores/map.js';
   
   // Fixed dimensions for the minimap - larger rectangular shape
   const MINI_TILE_SIZE_EM = 0.5;  // Keep original tile size
@@ -182,13 +189,8 @@
     const worldX = Math.round($mapState.targetCoord.x - viewRangeX + tileX);
     const worldY = Math.round($mapState.targetCoord.y - viewRangeY + tileY);
     
-    // Update the map target coordinate
-    mapState.update(state => ({
-      ...state,
-      targetCoord: { x: worldX, y: worldY },
-      offsetX: state.centerX + worldX,
-      offsetY: state.centerY + worldY
-    }));
+    // Use the centralized movement function
+    moveMapTo(worldX, worldY);
   }
 
   // Track hover state locally to prevent flickering
@@ -328,13 +330,8 @@
     const newTargetX = $mapState.targetCoord.x - cellsMovedX;
     const newTargetY = $mapState.targetCoord.y - cellsMovedY;
     
-    // Update map state
-    mapState.update(state => ({
-      ...state,
-      targetCoord: { x: newTargetX, y: newTargetY },
-      offsetX: state.centerX + newTargetX,
-      offsetY: state.centerY + newTargetY
-    }));
+    // Use the centralized movement function
+    moveMapTo(newTargetX, newTargetY);
     
     // Update drag start positions for next movement
     dragX = event.clientX;
