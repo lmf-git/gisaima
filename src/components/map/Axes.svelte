@@ -8,37 +8,32 @@
 </script>
 
 <div class="axes-container">
-  <!-- Add the x-axis class for animation -->
-  <div class="axis x-axis">
-    <div class="x-grid">
-      {#each xAxisArray as coord}
-        <div 
-          class="axis-label" 
-          class:center={coord.isCenter} 
-          style="width: calc(100% / {cols});">
-          {coord.value}
-        </div>
-      {/each}
-    </div>
+  <!-- Replace nested divs with direct x-axis -->
+  <div class="x-axis">
+    {#each xAxisArray as coord}
+      <div 
+        class="axis-label" 
+        class:center={coord.isCenter} 
+        style="width: calc(100% / {cols});">
+        {coord.value}
+      </div>
+    {/each}
   </div>
   
-  <!-- Add the y-axis class for animation -->
-  <div class="axis y-axis">
-    <div class="y-grid">
-      {#each yAxisArray as coord}
-        <div 
-          class="axis-label" 
-          class:center={coord.isCenter} 
-          style="height: calc(100% / {rows});">
-          {coord.value}
-        </div>
-      {/each}
-    </div>
+  <!-- Replace nested divs with direct y-axis -->
+  <div class="y-axis">
+    {#each yAxisArray as coord}
+      <div 
+        class="axis-label" 
+        class:center={coord.isCenter} 
+        style="height: calc(100% / {rows});">
+        {coord.value}
+      </div>
+    {/each}
   </div>
 </div>
 
 <style>
-  /* Add better specificity to ensure styles are correctly applied */
   .axes-container {
     position: absolute;
     top: 0;
@@ -46,37 +41,31 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 3; /* Higher z-index without !important */
+    z-index: 3;
   }
   
-  /* Ensure proper positioning for both axes */
-  .x-axis, .y-axis {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-  }
-  
-  .x-grid, .y-grid {
+  /* x-axis positioning and style */
+  .x-axis {
     display: flex;
     position: absolute;
-    background: transparent;
-    box-shadow: none;
-  }
-  
-  .x-grid {
     bottom: 0;
     left: 0;
     right: 0;
     height: 2em;
     flex-direction: row;
+    background: transparent;
   }
   
-  .y-grid {
+  /* y-axis positioning and style */
+  .y-axis {
+    display: flex;
+    position: absolute;
     top: 0;
     left: 0;
     width: 2em;
     height: 100%;
     flex-direction: column;
+    background: transparent;
   }
   
   .axis-label {
