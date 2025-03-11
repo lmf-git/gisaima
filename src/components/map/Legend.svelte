@@ -1,5 +1,6 @@
 <script>
-  const { x = 0, y = 0, openDetails } = $props()
+  const { x = 0, y = 0, openDetails } = $props();
+  
   // Handle keyboard interaction
   const keypress = e => ['Enter', ' '].includes(e.key) && e.preventDefault() && openDetails()
 </script>
