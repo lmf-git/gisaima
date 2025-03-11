@@ -45,13 +45,11 @@ export const mapState = writable({
   centerX: 0,
   centerY: 0,
   
-  // Remove centerTileData as it's now maintained in TARGET_TILE_STORE
-  
   // Hover state for highlighting tiles
   hoveredTile: null,
   
   // Entity data from Firebase chunks
-  loadedEntities: {
+  entities: {
     structures: {}, // key: "x,y", value: structure data
     unitGroups: {}, // key: "x,y", value: unit group data
     players: {}     // key: "x,y", value: player data
@@ -129,9 +127,9 @@ function handleChunkData(chunkKey, data) {
   mapState.update(state => {
     // Create a new entities object to avoid direct mutation
     const newEntities = {
-      structures: { ...state.loadedEntities.structures },
-      unitGroups: { ...state.loadedEntities.unitGroups },
-      players: { ...state.loadedEntities.players }
+      structures: { ...state.entities.structures },
+      unitGroups: { ...state.entities.unitGroups },
+      players: { ...state.entities.players }
     };
     
     // Get the coordinates for this chunk
@@ -179,7 +177,7 @@ function handleChunkData(chunkKey, data) {
     
     return {
       ...state,
-      loadedEntities: newEntities
+      entities: newEntities
     };
   });
   
@@ -191,9 +189,9 @@ function cleanEntitiesForChunk(chunkKey) {
   mapState.update(state => {
     // Create a new entities object to avoid direct mutation
     const newEntities = {
-      structures: { ...state.loadedEntities.structures },
-      unitGroups: { ...state.loadedEntities.unitGroups },
-      players: { ...state.loadedEntities.players }
+      structures: { ...state.entities.structures },
+      unitGroups: { ...state.entities.unitGroups },
+      players: { ...state.entities.players }
     };
     
     // Remove all entities belonging to this chunk
@@ -217,7 +215,7 @@ function cleanEntitiesForChunk(chunkKey) {
     
     return {
       ...state,
-      loadedEntities: newEntities
+      entities: newEntities
     };
   });
   
@@ -262,9 +260,9 @@ export function getEntitiesAt(x, y) {
   const locationKey = `${x},${y}`;
   
   return {
-    structure: state.loadedEntities.structures[locationKey],
-    unitGroup: state.loadedEntities.unitGroups[locationKey],
-    player: state.loadedEntities.players[locationKey]
+    structure: state.entities.structures[locationKey],
+    unitGroup: state.entities.unitGroups[locationKey],
+    player: state.entities.players[locationKey]
   };
 }
 
@@ -284,19 +282,19 @@ export function getEntitiesInChunk(chunkKey) {
   };
   
   // Filter entities by chunk key
-  Object.entries(state.loadedEntities.structures).forEach(([locationKey, data]) => {
+  Object.entries(state.entities.structures).forEach(([locationKey, data]) => {
     if (data?.chunkKey === chunkKey) {
       result.structures[locationKey] = data;
     }
   });
   
-  Object.entries(state.loadedEntities.unitGroups).forEach(([locationKey, data]) => {
+  Object.entries(state.entities.unitGroups).forEach(([locationKey, data]) => {
     if (data?.chunkKey === chunkKey) {
       result.unitGroups[locationKey] = data;
     }
   });
   
-  Object.entries(state.loadedEntities.players).forEach(([locationKey, data]) => {
+  Object.entries(state.entities.players).forEach(([locationKey, data]) => {
     if (data?.chunkKey === chunkKey) {
       result.players[locationKey] = data;
     }
@@ -430,8 +428,6 @@ export function getTerrainData(x, y) {
 
 // Resize the map grid
 export function resizeMap(mapElement) {
-  if (!mapElement) return;
-  
   mapState.update(state => {
     const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
     const tileSizePx = TILE_SIZE * baseFontSize;
@@ -475,24 +471,21 @@ export function resizeMap(mapElement) {
 }
 
 // Create a centralized movement function that all navigation methods will use
-export function moveMapTo(newX, newY) {
-  // Always clear hover state during any movement
-  clearHoveredTile();
-  
-  mapState.update(state => {
+export function moveMapTo(newX, newY) {  
+  mapState.update(prev => {
     // Use current values when coordinates are undefined
-    const roundedX = newX !== undefined ? Math.round(newX) : state.targetCoord.x;
-    const roundedY = newY !== undefined ? Math.round(newY) : state.targetCoord.y;
+    const roundedX = newX !== undefined ? Math.round(newX) : prev.targetCoord.x;
+    const roundedY = newY !== undefined ? Math.round(newY) : prev.targetCoord.y;
     
     // Calculate new offsets
-    const newOffsetX = state.centerX + roundedX;
-    const newOffsetY = state.centerY + roundedY;
+    const newOffsetX = prev.centerX + roundedX;
+    const newOffsetY = prev.centerY + roundedY;
     
     const biome = getTerrainData(roundedX, roundedY).biome;
     console.log(`Moving to (${roundedX}, ${roundedY}) - Biome: ${biome.name}`);
     
     return {
-      ...state,
+      ...prev,
       targetCoord: { x: roundedX, y: roundedY },
       offsetX: newOffsetX,
       offsetY: newOffsetY,
@@ -862,13 +855,5 @@ export function updateHoveredTile(x, y) {
   mapState.update(state => ({
     ...state,
     hoveredTile: x !== null && y !== null ? { x, y } : null
-  }));
-}
-
-// Add a function to clear hover state
-export function clearHoveredTile() {
-  mapState.update(state => ({
-    ...state,
-    hoveredTile: null
   }));
 }

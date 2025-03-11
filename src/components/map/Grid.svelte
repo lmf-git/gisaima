@@ -24,7 +24,6 @@
     closeDetailsModal,
     targetTileStore,
     updateHoveredTile,
-    clearHoveredTile,
     cleanupChunkSubscriptions,
     getEntitiesAt,
     hasEntityAt
@@ -88,10 +87,7 @@
       
       if (!isNavigationKey) return;
       
-      if (event.type === "keydown") {
-        // Just clear hover in store
-        clearHoveredTile();
-        
+      if (event.type === "keydown") {       
         $mapState.keysPressed.add(key);
         
         if (!$mapState.keyboardNavigationInterval) {
@@ -122,9 +118,6 @@
   // Simplified drag handlers
   const handleStartDrag = event => {
     if (event.button !== 0) return;
-    
-    // Just clear hover in store
-    clearHoveredTile();
     
     if (startMapDrag(event) && mapElement) {
       mapElement.style.cursor = "grabbing";
@@ -169,13 +162,7 @@
 
   // Add improved functions to track hover state
   function higlight(cell) {
-    if (!isMoving) {
-      updateHoveredTile(cell.x, cell.y);
-    }
-  }
-  
-  function unhighlight() {
-    clearHoveredTile();
+    if (!isMoving) updateHoveredTile(cell.x, cell.y);
   }
   
   // Track if a tile is currently hovered - for minimap sync
@@ -187,7 +174,7 @@
   // Watch for movement state changes
   $effect(() => {
     if (isMoving && $mapState.hoveredTile) {
-      clearHoveredTile();
+
     }
   });
 
@@ -247,7 +234,6 @@
             class:has-unit-group={entityIndicators.hasUnitGroup}
             class:has-player={entityIndicators.hasPlayer}
             onmouseenter={() => higlight(cell)}
-            onmouseleave={unhighlight}
             role="gridcell"
             tabindex="-1"
             aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}"
@@ -495,37 +481,6 @@
   
   :global(.minimap) {
     pointer-events: auto; /* But enable events on the minimap itself */
-  }
-
-  /* Ensure Axes appear above the grid */
-  :global(.axes-container) {
-    z-index: 3; /* Removed !important */
-    pointer-events: none; /* Allow clicking through to tiles */
-    /* Remove animation and delay - make axes appear immediately */
-    opacity: 1;
-  }
-  
-  /* Remove the fadeIn animation since we want immediate visibility */
-  
-  /* Remove transformations that could break positioning */
-  :global(.x-axis) {
-    /* Remove animation and delay - make axes appear immediately */
-    opacity: 1;
-    /* Remove transform that breaks positioning */
-  }
-  
-  :global(.y-axis) {
-    /* Remove animation and delay - make axes appear immediately */
-    opacity: 1;
-    /* Remove transform that breaks positioning */
-  }
-  
-  /* Delete these keyframes that could be causing positioning issues */
-  /* @keyframes slideInFromTop { ... } */
-  /* @keyframes slideInFromLeft { ... } */
-  
-  :global(.axis) {
-    pointer-events: auto; /* But enable clicks on axis labels */
   }
 
   /* Add styles for entity indicators */

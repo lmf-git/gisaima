@@ -8,9 +8,8 @@
     rows = 0
   } = $props();
   
-  // Direct handlers that call moveMapTo
-  const handleXAxisClick = (x) => moveMapTo(x, undefined);
-  const handleYAxisClick = (y) => moveMapTo(undefined, y);
+  const moveX = x => moveMapTo(x, undefined);
+  const moveY = y => moveMapTo(undefined, y);
 </script>
 
 <div class="axes">
@@ -19,9 +18,9 @@
       <button 
         class="label" 
         class:center={coord.isCenter} 
-        onclick={() => handleXAxisClick(coord.value)}
+        onclick={() => moveX(coord.value)}
         style="width: calc(100% / {cols}); --index: {i};">
-        {coord.value}
+        { coord.value }
       </button>
     {/each}
   </div>
@@ -31,7 +30,7 @@
       <button 
         class="label" 
         class:center={coord.isCenter} 
-        onclick={() => handleYAxisClick(coord.value)}
+        onclick={() => moveY(coord.value)}
         style="height: calc(100% / {rows}); --index: {i};">
         {coord.value}
       </button>
@@ -51,19 +50,16 @@
     opacity: 1;
   }
   
-  /* x positioning and style */
   .x {
     display: flex;
     position: absolute;
     bottom: 0;
     left: 0;
-    right: 0;
+    width:100%;
     height: 2em;
     flex-direction: row;
-    background: transparent;
   }
   
-  /* y positioning and style */
   .y {
     display: flex;
     position: absolute;
@@ -72,22 +68,9 @@
     width: 2em;
     height: 100%;
     flex-direction: column;
-    background: transparent;
   }
   
-  .label {
-    /* Reset button styling */
-    appearance: none;
-    background: none;
-    border: none;
-    padding: 0;
-    margin: 0;
-    font: inherit;
-    color: inherit;
-    text-align: inherit;
-    cursor: pointer;
-    
-    /* Existing label styling */
+  .label {   
     display: flex;
     align-items: center;
     justify-content: center;
@@ -100,10 +83,16 @@
     pointer-events: auto;
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
     background-color: rgba(255, 255, 255, 0.4);
+    font: inherit;
     font-weight: 500;
     opacity: 1;
     transition: background-color 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
+
+    appearance: none;
+    padding: 0;
+    margin: 0;
+    text-align: inherit;
   }
   
   .label.center {
@@ -118,16 +107,6 @@
     background-color: rgba(255, 255, 255, 0.7);
     border-color: rgba(255, 255, 255, 0.7);
     box-shadow: 0 0 0.3em rgba(255, 255, 255, 0.5);
-  }
-  
-  :global(.axes-container) {
-    z-index: 3;
-    pointer-events: none;
-  }
-  
-  :global(.x-axis),
-  :global(.y-axis) {
-    opacity: 1;
   }
 </style>
 

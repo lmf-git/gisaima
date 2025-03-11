@@ -3,7 +3,6 @@
     mapState, 
     getTerrainData, 
     updateHoveredTile, 
-    clearHoveredTile, 
     updateMinimapRange,
     moveMapTo 
   } from '../../lib/stores/map.js';
@@ -147,11 +146,6 @@
   
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isDrag);
   
-  $effect(() => {
-    if (isMoving && $mapState.hoveredTile) {
-      clearHoveredTile();
-    }
-  });
   
   function highlightMiniTile(cell) {
     if (!isMoving) {
@@ -160,7 +154,7 @@
   }
   
   function unhighlightMiniTile() {
-    clearHoveredTile();
+
   }
   
   const isTileHighlighted = (cell) => 
@@ -170,8 +164,6 @@
 
   function handleMinimapDragStart(event) {
     if (event.button !== 0 || !$mapState.isReady) return;
-    
-    clearHoveredTile();
     
     isDrag = true;
     dragX = event.clientX;
