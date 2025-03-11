@@ -42,6 +42,13 @@
     height: 100%;
     pointer-events: none;
     z-index: 3;
+    animation: fadeIn 1.5s ease 2s forwards;
+    opacity: 0;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
   
   /* x positioning and style */
@@ -73,27 +80,24 @@
     align-items: center;
     justify-content: center;
     font-size: 0.9em;
-    color: var(--color-text);
-    backdrop-filter: blur(0.125em);
+    color: #333;
+    background-color: rgba(255, 255, 255, 0.6);
     box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;
     border: 0.05em solid rgba(255, 255, 255, 0.1);
     pointer-events: auto;
     transition: all 0.2s ease;
-    text-shadow: 0 0 0.1875em rgba(0, 0, 0, 0.7);
   }
   
   .label.center {
     font-weight: bold;
-    background-color: rgba(50, 100, 150, 0.7);
-    text-shadow: 0 0 0.1875em rgba(0, 0, 0, 0.8);
+    background-color: rgba(192, 192, 192, 0.85);
     border-color: rgba(255, 255, 255, 0.3);
   }
   
   .label:hover {
-    filter: brightness(1.2);
-    background-color: rgba(60, 80, 120, 0.8);
+    background-color: rgba(210, 210, 210, 0.9);
     border-color: rgba(255, 255, 255, 0.5);
   }
 </style>

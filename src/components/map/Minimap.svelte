@@ -312,7 +312,7 @@
     {#if $mapState.isReady && minimapGrid.length > 0}
       {#each minimapGrid as cell}
         <div
-          class="mini-tile"
+          class="tile"
           class:center={cell.isCenter}
           class:visible={cell.isVisible}
           class:highlighted={isTileHighlighted(cell)} 
@@ -391,25 +391,24 @@
     box-shadow: 0 0 0 0.2em rgba(255, 255, 255, 0.5);
   }
   
-  .mini-tile {
+  .tile {
     position: absolute;
     box-sizing: border-box;
     transition: background-color 0.2s ease;
-    border: 0.02em solid rgba(0, 0, 0, 0.15);
   }
   
-  .mini-tile.center {
+  .tile.center {
     z-index: 3;
-    background-color: rgba(255, 255, 255, 0.7); /* Removed !important */
+    background-color: rgba(255, 255, 255, 0.7);
   }
   
-  .mini-tile.visible {
+  .tile.visible {
     z-index: 2;
   }
   
-  .mini-tile.highlighted { /* Renamed from hovered */
+  .tile.highlighted {
     z-index: 4;
-    background-color: rgba(255, 255, 255, 0.7); /* Removed !important */
+    background-color: rgba(255, 255, 255, 0.7);
   }
   
   .mini.drag {
