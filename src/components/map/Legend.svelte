@@ -10,7 +10,7 @@
   onkeypress={keypress}
   role="button" 
   tabindex="0">
-  {x}, {y}
+  {x} | {y}
 </div>
 
 <style>
@@ -33,7 +33,7 @@
     font-weight: bold;
     color: rgba(0, 0, 0, 0.9);
     
-    animation: fadeInLegend 0.7s ease-out forwards;
+    animation: reveal 0.7s ease-out forwards;
     opacity: 0;
     transform: translateY(0);
   }
@@ -45,7 +45,7 @@
     box-shadow: none;
   }
 
-  @keyframes fadeInLegend {
+  @keyframes reveal {
     0% {
       opacity: 0;
       transform: translateY(1em);

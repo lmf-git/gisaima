@@ -19,14 +19,13 @@
     drag as dragMap,
     checkDragState,
     moveMapByKeys,
-    moveMapTo,  // Add this import!
     openDetailsModal,
     closeDetailsModal,
     targetTileStore,
     updateHoveredTile,
     cleanupChunkSubscriptions,
     getEntitiesAt,
-    hasEntityAt
+
   } from "../../lib/stores/map.js";
   
   // Local component state
@@ -60,7 +59,7 @@
     setTimeout(() => {
       initialAnimationComplete = true;
       console.log('Initial grid animation complete');
-    }, 1200); // Set to match the grid animation duration
+    }, 1200);
 
     // Define cleanup function properly
     return function() {
@@ -75,9 +74,7 @@
   });
   
   // Make sure to clean up Firebase subscriptions when component is destroyed
-  onDestroy(() => {
-    cleanupChunkSubscriptions();
-  });
+  onDestroy(() => cleanupChunkSubscriptions());
   
   // Simplify keyboard navigation without redundant hover clearing
   const setupKeyboardNavigation = () => {
@@ -147,11 +144,6 @@
   // Use the optimized target tile store
   const targetTileData = $derived($targetTileStore);
   
-  // Fix prop names for Legend and Details - remove terrainColour
-  const legendProps = $derived({
-    x: targetTileData.x,
-    y: targetTileData.y
-  });
   
   const detailsProps = $derived({
     x: targetTileData.x,
@@ -244,6 +236,7 @@
             "
           >
             <span class="coords">{cell.x},{cell.y}</span>
+
             {#if entityIndicators.hasStructure}
               <div class="entity-indicator structure-indicator" aria-hidden="true"></div>
             {/if}
@@ -262,16 +255,16 @@
   <!-- Show either Legend or Details in the same position -->
   {#if $mapState.showDetails}
     <Details 
-      x={detailsProps.x}
-      y={detailsProps.y}
+      x={targetTileData.x}
+      y={targetTileData.y}
       show={detailsProps.show}
       terrain={detailsProps.biomeName}
       onClose={closeDetailsModal}
     />
   {:else}
     <Legend 
-      x={legendProps.x} 
-      y={legendProps.y}
+      x={targetTileData.x} 
+      y={targetTileData.y}
       openDetails={openDetailsModal} 
     />
   {/if}
@@ -348,6 +341,124 @@
     opacity: 1;
     transform: scale(1);
   }
+  
+  /* Center tile style - make it appear first */
+  .main-grid.animated .tile.center {
+    z-index: 3;
+    position: relative;
+    animation: revealCenterTile 0.6s ease-out forwards;
+    animation-delay: 0s;
+  }
+  
+  /* For non-animated grid, center tile is styled without animation */
+  .main-grid:not(.animated) .tile.center {
+    position: relative;
+    border: 0.12em solid rgba(255, 255, 255, 0.5);
+    box-shadow: 
+      inset 0 0 0 2px rgba(255, 255, 255, 0.7),
+      inset 0 0 0.5em rgba(255, 255, 255, 0.3),
+      0 0 1em rgba(255, 255, 255, 0.2);
+    z-index: 3;
+  }
+  
+  .tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 1.2em;
+    color: rgba(255, 255, 255, 0.7);
+    text-shadow: 0 0 0.1875em rgba(0, 0, 0, 0.5);
+    user-select: none;
+    z-index: 1;
+  }
+
+  /* All center tiles need the border */
+  .tile.center {
+    z-index: 3;
+    position: relative;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
+    border: 0.12em solid rgba(255, 255, 255, 0.5);
+  }
+  
+  /* Hover effects - renamed to highlight */
+  .map:not(.moving) .tile:hover,
+  .tile.highlighted {
+    z-index: 2;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
+  }
+  
+  /* Moving state */
+  .map.moving .tile {
+    pointer-events: none;
+    cursor: grabbing;
+    z-index: auto;
+  }
+
+  .map.moving .tile.highlighted {
+    box-shadow: none;
+  }
+
+  .coords {
+    font-size: 0.7em;
+    opacity: 0.6;
+  }
+
+  .map-container.modal-open {
+    cursor: grab;
+  }
+
+  .map-container.modal-open .map {
+    pointer-events: all;
+  }
+
+  .entity-indicator {
+    position: absolute;
+    pointer-events: none;
+  }
+  
+  .structure-indicator {
+    bottom: 0.2em;
+    left: 0.2em;
+    width: 0.5em;
+    height: 0.5em;
+    background: rgba(255, 255, 255, 0.8);
+    border: 0.0625em solid rgba(0, 0, 0, 0.2);
+  }
+  
+  .unit-group-indicator {
+    top: 0.2em;
+    right: 0.2em;
+    width: 0.4em;
+    height: 0.4em;
+    border-radius: 50%;
+    background: rgba(255, 100, 100, 0.8);
+    border: 0.0625em solid rgba(0, 0, 0, 0.2);
+  }
+  
+  .player-indicator {
+    top: 0.2em;
+    left: 0.2em;
+    width: 0.4em;
+    height: 0.4em;
+    background: rgba(100, 100, 255, 0.8);
+    border-radius: 50%;
+    border: 0.0625em solid rgba(0, 0, 0, 0.2);
+  }
+  
+  .tile.has-structure {
+    box-shadow: inset 0 -0.1em 0.2em rgba(255, 255, 255, 0.2);
+  }
+  
+  .tile.has-unit-group {
+    box-shadow: inset 0 0 0.2em rgba(255, 100, 100, 0.3);
+  }
+  
+  .tile.has-player {
+    box-shadow: inset 0 0 0.2em rgba(100, 100, 255, 0.3);
+  }
 
   @keyframes revealTile {
     0% {
@@ -359,30 +470,7 @@
       transform: scale(1);
     }
   }
-  
-  /* Center tile style - make it appear first */
-  .main-grid.animated .tile.center {
-    z-index: 3;
-    position: relative;
-    /* Remove: filter: brightness(1.1); */
-    transform: scale(1.05);
-    animation: revealCenterTile 0.6s ease-out forwards;
-    animation-delay: 0s;
-  }
-  
-  /* For non-animated grid, center tile is styled without animation */
-  .main-grid:not(.animated) .tile.center {
-    z-index: 3;
-    position: relative;
-    /* Remove: filter: brightness(1.1); */
-    transform: scale(1.05);
-    border: 0.12em solid rgba(255, 255, 255, 0.5);
-    box-shadow: 
-      inset 0 0 0 2px rgba(255, 255, 255, 0.7), /* Added inset white border like hover */
-      inset 0 0 0.5em rgba(255, 255, 255, 0.3),
-      0 0 1em rgba(255, 255, 255, 0.2);
-  }
-  
+
   @keyframes revealCenterTile {
     0% {
       opacity: 0;
@@ -405,127 +493,5 @@
         inset 0 0 0.5em rgba(255, 255, 255, 0.3),
         0 0 1em rgba(255, 255, 255, 0.2);
     }
-  }
-
-  /* All tiles need the styling without borders */
-  .tile {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* Remove the border: 0.05em solid rgba(0, 0, 0, 0.1); */
-    box-sizing: border-box;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 1.2em;
-    color: rgba(255, 255, 255, 0.7);
-    text-shadow: 0 0 0.1875em rgba(0, 0, 0, 0.5); /* Changed from 3px to 0.1875em */
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    -webkit-touch-callout: none;
-    z-index: 1;
-  }
-
-  /* All center tiles need the border */
-  .tile.center {
-    z-index: 3;
-    position: relative;
-    /* Remove: filter: brightness(1.1); */
-    transform: scale(1.05);
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7); /* Added inset white border like hover */
-    border: 0.12em solid rgba(255, 255, 255, 0.5);
-  }
-  
-  /* Hover effects - renamed to highlight */
-  .map:not(.moving) .tile:hover,
-  .tile.highlighted {
-    z-index: 2;
-    /* Remove: filter: brightness(1.2); */
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
-  }
-  
-  /* Moving state */
-  .map.moving .tile {
-    pointer-events: none;
-    cursor: grabbing;
-    /* Remove: filter: none; */
-    z-index: auto;
-  }
-
-  /* Additional styles - renamed from hovered to highlighted */
-  .map.moving .tile.highlighted {
-    /* Remove: filter: none; */
-    box-shadow: none;
-  }
-
-  .coords {
-    font-size: 0.7em;
-    opacity: 0.6;
-  }
-
-  .map-container.modal-open {
-    cursor: grab;
-  }
-
-  .map-container.modal-open .map {
-    pointer-events: all; /* Ensure map still receives pointer events when modal is open */
-  }
-
-  /* Ensure MiniMap container doesn't interfere with grid interactions */
-  :global(.minimap-container) {
-    pointer-events: none; /* Let events pass through to grid by default */
-  }
-  
-  :global(.minimap) {
-    pointer-events: auto; /* But enable events on the minimap itself */
-  }
-
-  /* Add styles for entity indicators */
-  .entity-indicator {
-    position: absolute;
-    pointer-events: none;
-  }
-  
-  .structure-indicator {
-    bottom: 0.2em;
-    left: 0.2em;
-    width: 0.5em;
-    height: 0.5em;
-    background: rgba(255, 255, 255, 0.8);
-    border: 0.0625em solid rgba(0, 0, 0, 0.2); /* Changed from 1px to 0.0625em */
-  }
-  
-  .unit-group-indicator {
-    top: 0.2em;
-    right: 0.2em;
-    width: 0.4em;
-    height: 0.4em;
-    border-radius: 50%;
-    background: rgba(255, 100, 100, 0.8);
-    border: 0.0625em solid rgba(0, 0, 0, 0.2); /* Changed from 1px to 0.0625em */
-  }
-  
-  .player-indicator {
-    top: 0.2em;
-    left: 0.2em;
-    width: 0.4em;
-    height: 0.4em;
-    background: rgba(100, 100, 255, 0.8);
-    border-radius: 50%;
-    border: 0.0625em solid rgba(0, 0, 0, 0.2); /* Changed from 1px to 0.0625em */
-  }
-  
-  /* Add styles for tiles with entities */
-  .tile.has-structure {
-    box-shadow: inset 0 -0.1em 0.2em rgba(255, 255, 255, 0.2);
-  }
-  
-  .tile.has-unit-group {
-    box-shadow: inset 0 0 0.2em rgba(255, 100, 100, 0.3);
-  }
-  
-  .tile.has-player {
-    box-shadow: inset 0 0 0.2em rgba(100, 100, 255, 0.3);
   }
 </style>
