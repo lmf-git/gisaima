@@ -15,23 +15,31 @@
 <div class="app">
     <header class={`appheader ${isMapPage ? 'map-header' : ''}`}>
         <nav class="navbar">
-            <div class="navlinks">
+            <!-- Separate logo container that's always visible -->
+            <div class="logo-container">
                 <a href="/" class="logolink">
                     <Logo extraClass="navlogo" />
                 </a>
-                <a href="/map" class="button navlink">Map</a>
-                {#if !$user}
-                    <a href="/login" class="button navlink">Login</a>
-                    <a href="/signup" class="button navlink">Sign Up</a>
-                {/if}
             </div>
             
-            <div class="authlinks">
-                {#if $user}
+            <!-- Only render navigation links when not on map page -->
+            {#if !isMapPage}
+                <div class="navlinks">
+                    <a href="/map" class="button navlink">Map</a>
+                    {#if !$user}
+                        <a href="/login" class="button navlink">Login</a>
+                        <a href="/signup" class="button navlink">Sign Up</a>
+                    {/if}
+                </div>
+            {/if}
+            
+            <!-- Only render auth links when not on map page -->
+            {#if !isMapPage && $user}
+                <div class="authlinks">
                     <span class="greeting">Hello, {$user.email}</span>
                     <button class="button" on:click={handleSignOut}>Sign Out</button>
-                {/if}
-            </div>
+                </div>
+            {/if}
         </nav>
     </header>
 
@@ -183,12 +191,22 @@
         justify-content: space-between;
         align-items: center;
         pointer-events: all;
+        width: 100%;
     }
 
+    /* Logo container is always visible */
+    .logo-container {
+        display: flex;
+        align-items: center;
+    }
+
+    /* Remove the .hidden class since we're not using it anymore */
+    
     .navlinks {
         display: flex;
         gap: 1em;
         align-items: center;
+        margin-left: 1em;
     }
     
     .authlinks {
