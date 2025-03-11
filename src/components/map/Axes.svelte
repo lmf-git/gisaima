@@ -12,25 +12,25 @@
 <div class="axes">
   <div class="x">
     {#each xAxisArray as coord, i}
-      <div 
+      <button 
         class="label" 
         class:center={coord.isCenter} 
         onclick={() => onXAxisClick(coord.value)}
         style="width: calc(100% / {cols}); --index: {i};">
         {coord.value}
-      </div>
+      </button>
     {/each}
   </div>
   
   <div class="y">
     {#each yAxisArray as coord, i}
-      <div 
+      <button 
         class="label" 
         class:center={coord.isCenter} 
         onclick={() => onYAxisClick(coord.value)}
         style="height: calc(100% / {rows}); --index: {i};">
         {coord.value}
-      </div>
+      </button>
     {/each}
   </div>
 </div>
@@ -75,6 +75,18 @@
   }
   
   .label {
+    /* Reset button styling */
+    appearance: none;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    text-align: inherit;
+    cursor: pointer;
+    
+    /* Existing label styling */
     display: flex;
     align-items: center;
     justify-content: center;
