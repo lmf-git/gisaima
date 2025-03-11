@@ -1,5 +1,4 @@
 <script>
-  // Explicitly export the class prop
   export let extraClass = '';
 </script>
 

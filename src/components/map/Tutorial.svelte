@@ -1,13 +1,14 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount } from 'svelte'
   
-  const { show = true } = $props();
-  let closed = $state(false);
+  const { show = true } = $props()
+  let closed = $state(false)
   
-  onMount(() => closed = localStorage.getItem('tutorial-closed') === 'true');
+  // Load previous preference from localStorage
+  onMount(() => closed = localStorage.getItem('tutorial-closed') === 'true')
   
-  const close = () => (closed = true, localStorage.setItem('tutorial-closed', 'true'));
-  const open = () => (closed = false, localStorage.setItem('tutorial-closed', 'false'));
+  const close = () => (closed = true, localStorage.setItem('tutorial-closed', 'true'))
+  const open = () => (closed = false, localStorage.setItem('tutorial-closed', 'false'))
 </script>
 
 {#if !closed}
@@ -44,7 +45,7 @@
   .box {
     position: relative;
     background: rgba(0, 0, 0, 0.6);
-    padding: 0.6em 2.5em 0.6em 1em; /* Increased right padding for close button */
+    padding: 0.6em 2.5em 0.6em 1em;
     border-radius: 0.3em;
     box-shadow: 0 0.1em 0.3em var(--color-shadow);
     font-size: 0.9em;
@@ -89,14 +90,14 @@
   
   .help {
     position: absolute;
-    bottom: 0;  /* Changed from 1.5em */
-    left: 0;    /* Changed from 1.5em */
-    width: 2em;  /* Slightly increased size */
+    bottom: 0;
+    left: 0;
+    width: 2em;
     height: 2em;
-    background-color: rgba(0, 0, 0, 0.4);  /* Made slightly more transparent */
+    background-color: rgba(0, 0, 0, 0.4);
     color: var(--color-text);
     border: none;
-    border-radius: 0 0.3em 0 0;  /* Only round top-right corner */
+    border-radius: 0 0.3em 0 0;
     font-size: 1em;
     font-weight: bold;
     cursor: pointer;
@@ -112,6 +113,6 @@
   .help:hover {
     opacity: 1;
     transform: scale(1.1);
-    background-color: rgba(0, 0, 0, 0.6);  /* Darken on hover */
+    background-color: rgba(0, 0, 0, 0.6);
   }
 </style>

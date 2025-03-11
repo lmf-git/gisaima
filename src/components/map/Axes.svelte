@@ -4,7 +4,7 @@
     yAxisArray = [],
     cols = 0,
     rows = 0
-  } = $props();
+  } = $props()
 </script>
 
 <div class="axes-container">
@@ -13,8 +13,7 @@
       <div 
         class="axis-label" 
         class:center={coord.isCenter} 
-        style="width: calc(100% / {cols});"
-      >
+        style="width: calc(100% / {cols});">
         {coord.value}
       </div>
     {/each}
@@ -25,8 +24,7 @@
       <div 
         class="axis-label" 
         class:center={coord.isCenter} 
-        style="height: calc(100% / {rows});"
-      >
+        style="height: calc(100% / {rows});">
         {coord.value}
       </div>
     {/each}
@@ -73,7 +71,6 @@
     justify-content: center;
     font-size: 0.9em;
     color: var(--color-text);
-    /* background-color: rgba(20, 30, 50, 0.6); */
     backdrop-filter: blur(0.125em);
     box-sizing: border-box;
     overflow: hidden;

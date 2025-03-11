@@ -1,7 +1,7 @@
-import { writable } from 'svelte/store';
+import { writable } from 'svelte/store'
 
+// Initialize user state with basic info only
 export const userState = writable({
-    id: 1,
-    isActive: true,
-    map: Array(10).fill(null).map(() => Array(10).fill(0))
-});
+  id: 1,
+  isActive: true
+})

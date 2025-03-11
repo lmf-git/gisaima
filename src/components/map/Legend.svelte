@@ -1,11 +1,9 @@
 <script>
-  // Remove terrainColour from props
-  const { x = 0, y = 0, openDetails } = $props();
-  // Update keypress to use openDetails instead of open
-  const keypress = e => ['Enter', ' '].includes(e.key) && (e.preventDefault(), openDetails());
+  const { x = 0, y = 0, openDetails } = $props()
+  // Handle keyboard interaction
+  const keypress = e => ['Enter', ' '].includes(e.key) && e.preventDefault() && openDetails()
 </script>
 
-<!-- Remove inline style for terrainColour -->
 <div 
   class="legend-container" 
   onclick={openDetails}
@@ -18,8 +16,8 @@
 <style>
   .legend-container {
     position: absolute;
-    top: 0.5em;    /* Small offset from very top */
-    right: 0.5em;  /* Small offset from very right */
+    top: 0.5em;
+    right: 0.5em;
     z-index: 1001;
     cursor: pointer;
     border-radius: 0.3em;
@@ -29,7 +27,7 @@
     text-align: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     border: 0.1em solid rgba(255, 255, 255, 0.15);
-    background-color: rgba(0, 0, 0, 0.6); /* Fixed background color */
+    background-color: rgba(0, 0, 0, 0.6);
   }
   
   .legend-container:hover {

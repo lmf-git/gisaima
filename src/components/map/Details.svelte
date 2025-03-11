@@ -1,19 +1,22 @@
 <script>
-  import { fly } from 'svelte/transition';
+  import { fly } from 'svelte/transition'
   
-  // Remove terrainColour from props
-  const { x = 0, y = 0, show = true, biomeName: rawBiomeName = "Unknown", onClose } = $props();
+  const { x = 0, y = 0, show = true, biomeName: rawBiomeName = "Unknown", onClose } = $props()
   
-  const biomeName = $derived(rawBiomeName?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown');
+  // Format biome name to be readable (convert snake_case to Title Case)
+  const biomeName = $derived(
+    rawBiomeName?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown'
+  )
   
-  $effect(() => show && console.log(`Details shown for: (${x}, ${y}) - ${biomeName}`));
+  // Debug log when details are shown
+  $effect(() => show && console.log(`Details shown for: (${x}, ${y}) - ${biomeName}`))
   
-  const handleKeydown = event => event.key === 'Escape' && show && onClose?.();
+  // Handle escape key to close modal
+  const handleKeydown = event => event.key === 'Escape' && show && onClose?.()
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<!-- Remove inline style for terrainColour -->
 <div class="details-container" class:visible={show}>
   {#if show}
     <div 
@@ -32,13 +35,13 @@
 <style>
   .details-container {
     position: absolute;
-    bottom: 0.5em; /* Position at bottom edge with small offset */
-    right: 0.5em;  /* Position at right edge with small offset */
+    bottom: 0.5em;
+    right: 0.5em;
     z-index: 1001;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
-    max-width: 50vw; /* Limit width to half the viewport */
+    max-width: 50vw;
   }
   
   .details-container.visible {
@@ -51,14 +54,14 @@
     align-items: flex-start;
     gap: 1em;
     padding: 1em;
-    border-radius: 4px;  /* Match minimap border-radius */
+    border-radius: 4px;
     color: white;
-    text-shadow: 0 0.0625em 0.125em rgba(0, 0, 0, 0.5); /* Changed from px to em */
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);  /* Match minimap shadow */
-    border: 0.3em solid rgba(255, 255, 255, 0.4); /* More visible border */
+    text-shadow: 0 0.0625em 0.125em rgba(0, 0, 0, 0.5);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+    border: 0.3em solid rgba(255, 255, 255, 0.4);
     backdrop-filter: brightness(1.1) saturate(1.2);
-    min-width: 12.5em; /* Changed from 200px to 12.5em */
-    background-color: rgba(20, 30, 50, 0.8); /* Fixed background color */
+    min-width: 12.5em;
+    background-color: rgba(20, 30, 50, 0.8);
   }
   
   .content {
