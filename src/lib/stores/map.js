@@ -71,7 +71,7 @@ export function getChunkCoordinates(chunkKey) {
     minX: chunkX * CHUNK_SIZE,
     minY: chunkY * CHUNK_SIZE,
     maxX: (chunkX + 1) * CHUNK_SIZE - 1,
-    maxY: (chunkY + 1) * CHUNK_SIZE - 1
+    maxY: (chunkX + 1) * CHUNK_SIZE - 1
   };
 }
 
@@ -450,6 +450,15 @@ export function resizeMap(mapElement) {
     const offsetX = centerX + state.targetCoord.x;
     const offsetY = centerY + state.targetCoord.y;
     
+    // Initialize terrain data for the target coordinates
+    const centerTileData = getTerrainData(state.targetCoord.x, state.targetCoord.y);
+    
+    // Also update the TARGET_TILE_STORE to initialize the targetTileStore for components
+    TARGET_TILE_STORE.set({
+      coordinates: { x: state.targetCoord.x, y: state.targetCoord.y },
+      data: centerTileData
+    });
+    
     return {
       ...state,
       cols,
@@ -458,6 +467,7 @@ export function resizeMap(mapElement) {
       centerY,
       offsetX,
       offsetY,
+      centerTileData,
       isReady: true
     };
   });

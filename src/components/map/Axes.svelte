@@ -1,32 +1,10 @@
 <script>
-  // Add index to labels for staggered animation
-  import { onMount } from 'svelte';
-
   const { 
     xAxisArray = [],
     yAxisArray = [],
     cols = 0,
     rows = 0
-  } = $props()
-
-  
-  onMount(() => {
-    // Set index CSS variables for staggered animation
-    const xLabels = document.querySelectorAll('.axes .x .label');
-    const yLabels = document.querySelectorAll('.axes .y .label');
-    
-    [...xLabels].forEach((el, i) => {
-      if (!el.classList.contains('center')) {
-        el.style.setProperty('--index', i);
-      }
-    });
-    
-    [...yLabels].forEach((el, i) => {
-      if (!el.classList.contains('center')) {
-        el.style.setProperty('--index', i);
-      }
-    });
-  });
+  } = $props();
 </script>
 
 <div class="axes">
