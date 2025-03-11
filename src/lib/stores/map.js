@@ -22,10 +22,11 @@ const activeChunkSubscriptions = new Map();
 
 // Create a store using Svelte's store API since $state is only for component scripts
 export const mapState = writable({ 
-  // Map elements
+  isReady: false,
   cols: 0, 
   rows: 0,
 
+  // Is the offset necessary when we are tracking center and target? lol
   offsetX: 0, 
   offsetY: 0,
 
@@ -36,25 +37,25 @@ export const mapState = writable({
 
   chunks: new Set(),
   
+  // Allows shared hover highlighting of minimap and grid tiles.
+  hoveredTile: null,
+
+  showDetails: false,
   
-  isReady: false,
+  
   isDragging: false,
   isMouseActuallyDown: false,
   dragStartX: 0,
   dragStartY: 0,
   dragStateCheckInterval: null,
-  showDetails: false,
   keysPressed: new Set(),
   keyboardNavigationInterval: null,
-  hoveredTile: null,
   
-  
-  // Hover state for highlighting tiles
   
   // Entity data from Firebase chunks
   entities: {
     structures: {}, // key: "x,y", value: structure data
-    unitGroups: {}, // key: "x,y", value: unit group data
+    groups: {}, // key: "x,y", value: unit group data
     players: {}     // key: "x,y", value: player data
   }
 });
@@ -94,7 +95,7 @@ function subscribeToChunk(chunkKey) {
     // Process chunk data
     const processedData = {
       structures: data.structures || {},
-      unitGroups: data.unitGroups || {},
+      groups: data.groups || {},
       players: data.players || {},
       lastUpdated: data.lastUpdated || Date.now()
     };
@@ -131,7 +132,7 @@ function handleChunkData(chunkKey, data) {
     // Create a new entities object to avoid direct mutation
     const newEntities = {
       structures: { ...state.entities.structures },
-      unitGroups: { ...state.entities.unitGroups },
+      groups: { ...state.entities.groups },
       players: { ...state.entities.players }
     };
     
@@ -153,11 +154,11 @@ function handleChunkData(chunkKey, data) {
     }
     
     // Process and merge unit groups
-    if (data.unitGroups) {
-      Object.entries(data.unitGroups).forEach(([locationKey, unitData]) => {
+    if (data.groups) {
+      Object.entries(data.groups).forEach(([locationKey, unitData]) => {
         const [x, y] = locationKey.split(',').map(Number);
         if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-          newEntities.unitGroups[locationKey] = {
+          newEntities.groups[locationKey] = {
             ...unitData,
             chunkKey
           };
@@ -193,7 +194,7 @@ function cleanEntitiesForChunk(chunkKey) {
     // Create a new entities object to avoid direct mutation
     const newEntities = {
       structures: { ...state.entities.structures },
-      unitGroups: { ...state.entities.unitGroups },
+      groups: { ...state.entities.groups },
       players: { ...state.entities.players }
     };
     
@@ -204,9 +205,9 @@ function cleanEntitiesForChunk(chunkKey) {
       }
     });
     
-    Object.keys(newEntities.unitGroups).forEach(locationKey => {
-      if (newEntities.unitGroups[locationKey]?.chunkKey === chunkKey) {
-        delete newEntities.unitGroups[locationKey];
+    Object.keys(newEntities.groups).forEach(locationKey => {
+      if (newEntities.groups[locationKey]?.chunkKey === chunkKey) {
+        delete newEntities.groups[locationKey];
       }
     });
     
@@ -264,7 +265,7 @@ export function getEntitiesAt(x, y) {
   
   return {
     structure: state.entities.structures[locationKey],
-    unitGroup: state.entities.unitGroups[locationKey],
+    unitGroup: state.entities.groups[locationKey],
     player: state.entities.players[locationKey]
   };
 }
@@ -280,7 +281,7 @@ export function getEntitiesInChunk(chunkKey) {
   const state = get(mapState);
   const result = {
     structures: {},
-    unitGroups: {},
+    groups: {},
     players: {}
   };
   
@@ -291,9 +292,9 @@ export function getEntitiesInChunk(chunkKey) {
     }
   });
   
-  Object.entries(state.entities.unitGroups).forEach(([locationKey, data]) => {
+  Object.entries(state.entities.groups).forEach(([locationKey, data]) => {
     if (data?.chunkKey === chunkKey) {
-      result.unitGroups[locationKey] = data;
+      result.groups[locationKey] = data;
     }
   });
   
