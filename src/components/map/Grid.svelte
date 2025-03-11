@@ -19,6 +19,7 @@
     drag as dragMap,
     checkDragState,
     moveMapByKeys,
+    moveMapTo,  // Add this import!
     openDetailsModal,
     closeDetailsModal,
     targetTileStore,
@@ -149,13 +150,6 @@
     if ($mapState.isMouseActuallyDown && $mapState.isDragging) dragMap(event);
     else if (!$mapState.isMouseActuallyDown && $mapState.isDragging) handleStopDrag();
   };
-  
-  // Simple derived value for dragging class
-  const isDragging = $derived($mapState.isDragging);
-  const targetCoord = $derived({
-    x: $mapState.targetCoord.x,
-    y: $mapState.targetCoord.y
-  });
 
   // Use the optimized target tile store
   const targetTileData = $derived($targetTileStore);
@@ -507,32 +501,22 @@
   :global(.axes-container) {
     z-index: 3; /* Removed !important */
     pointer-events: none; /* Allow clicking through to tiles */
-    animation: fadeIn 0.7s ease-out forwards;
-    animation-delay: 1.5s; /* Match with axes and minimap */
-    opacity: 0;
+    /* Remove animation and delay - make axes appear immediately */
+    opacity: 1;
   }
   
-  @keyframes fadeIn {
-    0% {
-      opacity: 0;
-    }
-    100% {
-      opacity: 1;
-    }
-  }
+  /* Remove the fadeIn animation since we want immediate visibility */
   
   /* Remove transformations that could break positioning */
   :global(.x-axis) {
-    animation: fadeIn 0.7s ease-out forwards;
-    animation-delay: 1.5s;
-    opacity: 0;
+    /* Remove animation and delay - make axes appear immediately */
+    opacity: 1;
     /* Remove transform that breaks positioning */
   }
   
   :global(.y-axis) {
-    animation: fadeIn 0.7s ease-out forwards;
-    animation-delay: 1.5s;
-    opacity: 0;
+    /* Remove animation and delay - make axes appear immediately */
+    opacity: 1;
     /* Remove transform that breaks positioning */
   }
   

@@ -45,8 +45,7 @@ export const mapState = writable({
   centerX: 0,
   centerY: 0,
   
-  // Center tile data for Details component
-  centerTileData: null,
+  // Remove centerTileData as it's now maintained in TARGET_TILE_STORE
   
   // Hover state for highlighting tiles
   hoveredTile: null,
@@ -71,7 +70,7 @@ export function getChunkCoordinates(chunkKey) {
     minX: chunkX * CHUNK_SIZE,
     minY: chunkY * CHUNK_SIZE,
     maxX: (chunkX + 1) * CHUNK_SIZE - 1,
-    maxY: (chunkY + 1) * CHUNK_SIZE - 1
+    maxY: (chunkX + 1) * CHUNK_SIZE - 1
   };
 }
 
@@ -325,6 +324,7 @@ let terrainCache = new Map();
 const CACHE_SIZE_LIMIT = 1000; // Limit cache size to prevent memory issues
 
 // Improved terrain caching and update system
+// Renamed to be more descriptive of its role as the central source of target tile data
 const TARGET_TILE_STORE = writable({
   coordinates: { x: 0, y: 0 },
   data: null
@@ -450,6 +450,16 @@ export function resizeMap(mapElement) {
     const offsetX = centerX + state.targetCoord.x;
     const offsetY = centerY + state.targetCoord.y;
     
+    // Initialize terrain data for the target coordinates
+    // This ensures targetTileStore has data as soon as map is ready
+    const initialTileData = getTerrainData(state.targetCoord.x, state.targetCoord.y);
+    
+    // Update TARGET_TILE_STORE directly - this will make data available via targetTileStore
+    TARGET_TILE_STORE.set({
+      coordinates: { x: state.targetCoord.x, y: state.targetCoord.y },
+      data: initialTileData
+    });
+    
     return {
       ...state,
       cols,
@@ -458,6 +468,7 @@ export function resizeMap(mapElement) {
       centerY,
       offsetX,
       offsetY,
+      // Removed centerTileData since we're now using targetTileStore
       isReady: true
     };
   });
@@ -469,28 +480,28 @@ export function moveMapTo(newX, newY) {
   clearHoveredTile();
   
   mapState.update(state => {
-    // Round the coordinates for consistent movement
-    const roundedX = Math.round(newX);
-    const roundedY = Math.round(newY);
+    // Use current values when coordinates are undefined
+    const roundedX = newX !== undefined ? Math.round(newX) : state.targetCoord.x;
+    const roundedY = newY !== undefined ? Math.round(newY) : state.targetCoord.y;
     
     // Calculate new offsets
     const newOffsetX = state.centerX + roundedX;
     const newOffsetY = state.centerY + roundedY;
     
-    // Get terrain data for new position
-    const centerTileData = getTerrainData(roundedX, roundedY);
-    
-    console.log(`Moving to (${roundedX}, ${roundedY}) - Biome: ${centerTileData.biome.name}`);
+    const biome = getTerrainData(roundedX, roundedY).biome;
+    console.log(`Moving to (${roundedX}, ${roundedY}) - Biome: ${biome.name}`);
     
     return {
       ...state,
       targetCoord: { x: roundedX, y: roundedY },
       offsetX: newOffsetX,
       offsetY: newOffsetY,
-      centerTileData,
       hoveredTile: null // Explicitly clear hover state
     };
   });
+  
+  // The targetTileStore will automatically update via its derived subscription
+  // when it detects the change to targetCoord
 }
 
 // Refactor moveMapByKeys to use the central movement function
@@ -625,11 +636,12 @@ export function stopDrag() {
 export function openDetailsModal() {
   console.log("openDetailsModal called");
   
-  // Get current state
+  // Get current state and use targetTileStore to ensure we have the most current data
   const state = get(mapState);
+  const tileData = get(targetTileStore);
   const { x, y } = state.targetCoord;
   
-  console.log(`Opening details for (${x}, ${y})`);
+  console.log(`Opening details for (${x}, ${y}), biome: ${tileData.biome?.name || 'unknown'}`);
   
   // First make sure we have valid coordinates
   if (x !== undefined && y !== undefined) {
@@ -826,7 +838,8 @@ export const xAxisArray = derived(
   memoize(($mapState) => {
     if (!$mapState.isReady) return [];
     return Array.from({ length: $mapState.cols }, (_, x) => ({
-      value: x - $mapState.offsetX,
+      // Fix the direction by inverting the calculation
+      value: $mapState.targetCoord.x - ($mapState.centerX - x),
       isCenter: x === $mapState.centerX
     }));
   })
@@ -837,7 +850,8 @@ export const yAxisArray = derived(
   memoize(($mapState) => {
     if (!$mapState.isReady) return [];
     return Array.from({ length: $mapState.rows }, (_, y) => ({
-      value: y - $mapState.offsetY,
+      // Also fix the y-axis for consistency
+      value: $mapState.targetCoord.y - ($mapState.centerY - y),
       isCenter: y === $mapState.centerY
     }));
   })

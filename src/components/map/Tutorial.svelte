@@ -4,18 +4,14 @@
   
   const { show = true } = $props()
   
-  // Initialize closed state from localStorage before rendering
-  // Default to not closed if we're not in a browser or no localStorage value exists
   let closed = $state(false)
-  let ready = $state(false) // Track if we've checked localStorage
+  let ready = $state(false)
   
-  // Check localStorage immediately if in browser environment
   if (browser) {
     closed = localStorage.getItem('tutorial-state') === 'closed'
-    ready = true // Mark as ready since we've checked localStorage
+    ready = true
   }
   
-  // Fallback for server-side rendering
   onMount(() => {
     closed = localStorage.getItem('tutorial-state') === 'closed'
     ready = true
@@ -91,7 +87,7 @@
     justify-content: center;
     z-index: 1000;
     background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(0.3125em); /* Changed from 5px to 0.3125em */
+    backdrop-filter: blur(0.3125em);
     transition: opacity 0.3s ease;
   }
   
@@ -245,10 +241,8 @@
     transition: opacity 0.2s, transform 0.2s;
     z-index: 10;
     box-shadow: 0 0.1em 0.3em var(--color-shadow);
-    /* Add animation with delay */
     opacity: 0;
     animation: fadeInHelp 0.7s ease-out forwards;
-    animation-delay: 2s; /* Set to appear last at 2s */
   }
   
   @keyframes fadeInHelp {
@@ -278,14 +272,13 @@
 
   .tutorial-container {
     animation: fadeInTutorial 0.7s ease-out forwards;
-    animation-delay: 2s; /* Appear with legend */
     opacity: 0;
   }
   
   @keyframes fadeInTutorial {
     0% {
       opacity: 0;
-      transform: translateY(1em); /* Assuming similar entrance animation as legend */
+      transform: translateY(1em);
     }
     100% {
       opacity: 1;
