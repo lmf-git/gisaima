@@ -354,7 +354,7 @@
     right: 0;
     z-index: 1000;
     overflow: hidden;
-    box-shadow: 0 3px 10px var(--color-shadow);
+    box-shadow: 0 0.1875em 0.625em var(--color-shadow);
     /* Add animation for slide-in from right */
     animation: slideInFromRight 0.8s ease-out forwards;
     animation-delay: 0.6s; /* Delay animation to let grid load first */
@@ -385,7 +385,7 @@
   
   .mini:hover {
     box-shadow: 0 0.15em 0.3em var(--color-shadow);
-    border-color: var(--color-bright-accent);
+    /* Removed border-color change on hover */
   }
   
   .mini:focus {
@@ -400,8 +400,10 @@
   
   .tile.center {
     z-index: 3;
-    background-color: var(--color-bright-accent) !important;
+    background-color: white !important; /* Changed from accent color to white */
     opacity: 0.8;
+    border: 0.125em solid white; /* White border */
+    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7); /* Glow effect */
   }
   
   .tile.visible {
@@ -410,7 +412,7 @@
   
   .tile.highlighted {
     z-index: 4;
-    background-color: var(--color-bright-accent) !important;
+    background-color: white !important; /* Changed from accent color to white */
     opacity: 0.8;
   }
   
@@ -420,8 +422,8 @@
 
   .visible-area-frame {
     position: absolute;
-    border: 0.125em solid var(--color-bright-accent);
-    box-shadow: 0 0 0 0.0625em rgba(0,0,0,0.5);
+    border: 0.125em solid white; /* Changed from accent color to white */
+    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7); /* Added white glow */
     pointer-events: none;
     z-index: 4;
   }

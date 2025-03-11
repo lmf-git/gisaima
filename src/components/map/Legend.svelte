@@ -17,7 +17,7 @@
 <style>
   .legend-container {
     position: absolute;
-    top: 0.5em; /* Fixed: removed extra 'em' */
+    bottom: 0.5em; /* Changed from top to bottom */
     right: 0.5em;
     z-index: 1001;
     cursor: pointer;
@@ -30,16 +30,16 @@
     border: 0.1em solid var(--color-panel-border);
     background-color: var(--color-panel-bg);
     
-    /* Add animation for fade-in and slide-up */ /* Fixed: removed stray slash */
+    /* Update animation to slide from bottom instead of top */
     animation: fadeInUp 0.7s ease-out forwards;
-    animation-delay: 0.3s; /* Slightly faster than minimap */
-    transform: translateY(20px);
+    animation-delay: 0.3s;
+    transform: translateY(-1.25em); /* Changed direction to come from below */
     opacity: 0;
   }
   
   @keyframes fadeInUp {
     0% {
-      transform: translateY(20px);
+      transform: translateY(1.25em); /* Changed to move up from below */
       opacity: 0;
     }
     100% {

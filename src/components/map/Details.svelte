@@ -1,5 +1,5 @@
 <script>
-  import { fly } from 'svelte/transition'
+  // Remove fly import
   
   const { x = 0, y = 0, show = true, biomeName: rawBiomeName = "Unknown", onClose } = $props()
   
@@ -18,25 +18,21 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="details-container" class:visible={show}>
-  {#if show}
-    <div 
-      class="details-card"
-      transition:fly={{ y: 10, duration: 200 }}
-    >
-      <div class="content">
-        <h2>Coordinates ({x}, {y})</h2>
-        <p>Biome: {biomeName}</p>
-      </div>
-      <button class="close-button" onclick={onClose}>×</button>
+  <!-- Always render the card but control visibility with CSS -->
+  <div class="details-card">
+    <div class="content">
+      <h2>Coordinates ({x}, {y})</h2>
+      <p>Biome: {biomeName}</p>
     </div>
-  {/if}
+    <button class="close-button" onclick={onClose}>×</button>
+  </div>
 </div>
 
 <style>
   .details-container {
     position: absolute;
     bottom: 0.5em;
-    right: 0.5em;
+    right: 7em; /* Move to the left of the Legend component */
     z-index: 1001;
     opacity: 0;
     pointer-events: none;
@@ -54,14 +50,28 @@
     align-items: flex-start;
     gap: 1em;
     padding: 1em;
-    border-radius: 4px;
+    border-radius: 0.25em;
     color: var(--color-text-primary);
     text-shadow: 0 0.0625em 0.125em rgba(0, 0, 0, 0.5);
-    box-shadow: 0 3px 10px var(--color-shadow);
+    box-shadow: 0 0.1875em 0.625em var(--color-shadow);
     border: 0.15em solid var(--color-panel-border);
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(0.3125em);
     min-width: 12.5em;
     background-color: var(--color-panel-bg);
+    /* Add animation for the card */
+    animation: fadeIn 0.2s ease-out forwards;
+    transform-origin: bottom right;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
   
   .content {

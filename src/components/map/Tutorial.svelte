@@ -91,7 +91,7 @@
     justify-content: center;
     z-index: 1000;
     background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(0.3125em); /* Changed from 5px to 0.3125em */
     transition: opacity 0.3s ease;
   }
   

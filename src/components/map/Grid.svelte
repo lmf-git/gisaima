@@ -384,7 +384,7 @@
   .main-grid.animated .tile.center {
     z-index: 3;
     position: relative;
-    filter: brightness(1.1);
+    /* Remove: filter: brightness(1.1); */
     transform: scale(1.05);
     animation: revealCenterTile 0.6s ease-out forwards;
     animation-delay: 0s;
@@ -394,9 +394,11 @@
   .main-grid:not(.animated) .tile.center {
     z-index: 3;
     position: relative;
-    filter: brightness(1.1);
+    /* Remove: filter: brightness(1.1); */
     transform: scale(1.05);
+    border: 0.12em solid rgba(255, 255, 255, 0.5);
     box-shadow: 
+      inset 0 0 0 2px rgba(255, 255, 255, 0.7), /* Added inset white border like hover */
       inset 0 0 0.5em rgba(255, 255, 255, 0.3),
       0 0 1em rgba(255, 255, 255, 0.2);
   }
@@ -436,7 +438,7 @@
     text-overflow: ellipsis;
     font-size: 1.2em;
     color: rgba(255, 255, 255, 0.7);
-    text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 0 0.1875em rgba(0, 0, 0, 0.5); /* Changed from 3px to 0.1875em */
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -445,18 +447,21 @@
     z-index: 1;
   }
 
-  /* All center tiles - keep subtle highlight but remove border */
+  /* All center tiles need the border */
   .tile.center {
-    /* Remove border: 0.12em solid rgba(255, 255, 255, 0.5); */
-    /* Add a subtle glow instead */
-    box-shadow: 0 0 1em rgba(255, 255, 255, 0.3);
+    z-index: 3;
+    position: relative;
+    /* Remove: filter: brightness(1.1); */
+    transform: scale(1.05);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7); /* Added inset white border like hover */
+    border: 0.12em solid rgba(255, 255, 255, 0.5);
   }
   
   /* Hover effects - renamed to highlight */
   .map:not(.moving) .tile:hover,
   .tile.highlighted {
     z-index: 2;
-    filter: brightness(1.2);
+    /* Remove: filter: brightness(1.2); */
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
   }
   
@@ -464,13 +469,13 @@
   .map.moving .tile {
     pointer-events: none;
     cursor: grabbing;
-    filter: none;
+    /* Remove: filter: none; */
     z-index: auto;
   }
 
   /* Additional styles - renamed from hovered to highlighted */
   .map.moving .tile.highlighted {
-    filter: none;
+    /* Remove: filter: none; */
     box-shadow: none;
   }
 
@@ -549,7 +554,7 @@
     width: 0.5em;
     height: 0.5em;
     background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    border: 0.0625em solid rgba(0, 0, 0, 0.2); /* Changed from 1px to 0.0625em */
   }
   
   .unit-group-indicator {
@@ -559,7 +564,7 @@
     height: 0.4em;
     border-radius: 50%;
     background: rgba(255, 100, 100, 0.8);
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    border: 0.0625em solid rgba(0, 0, 0, 0.2); /* Changed from 1px to 0.0625em */
   }
   
   .player-indicator {
@@ -569,7 +574,7 @@
     height: 0.4em;
     background: rgba(100, 100, 255, 0.8);
     border-radius: 50%;
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    border: 0.0625em solid rgba(0, 0, 0, 0.2); /* Changed from 1px to 0.0625em */
   }
   
   /* Add styles for tiles with entities */
