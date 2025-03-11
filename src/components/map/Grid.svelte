@@ -34,9 +34,6 @@
   // Display settings
   const showAxisBars = true;
   
-  // All state variables declared at the top
-  let highlightedTile = $state(null);
-  
   // Movement state tracking
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null);
   
@@ -74,8 +71,8 @@
       if (!isNavigationKey) return;
       
       if (event.type === "keydown") {
-        // Clear hover states when navigation begins
-        highlightedTile = null;
+        // Just clear hover in store
+        clearHoveredTile();
         
         $mapState.keysPressed.add(key);
         
@@ -108,8 +105,7 @@
   const handleStartDrag = event => {
     if (event.button !== 0) return;
     
-    // Clear any hover state when drag begins
-    highlightedTile = null;
+    // Just clear hover in store
     clearHoveredTile();
     
     if (startMapDrag(event) && mapElement) {
@@ -163,25 +159,23 @@
   // Add improved functions to track hover state
   function higlight(cell) {
     if (!isMoving) {
-      highlightedTile = cell;
       updateHoveredTile(cell.x, cell.y);
     }
   }
   
   function unhighlight() {
-    highlightedTile = null;
     clearHoveredTile();
   }
   
   // Track if a tile is currently hovered - for minimap sync
-  const isHighlighted = (cell) => !isMoving && 
-    ((highlightedTile && cell.x === highlightedTile.x && cell.y === highlightedTile.y) || 
-    ($mapState.hoveredTile && cell.x === $mapState.hoveredTile.x && cell.y === $mapState.hoveredTile.y));
+  const isHighlighted = (cell) => 
+    !isMoving && $mapState.hoveredTile && 
+    cell.x === $mapState.hoveredTile.x && 
+    cell.y === $mapState.hoveredTile.y;
   
   // Watch for movement state changes
   $effect(() => {
-    if (isMoving && highlightedTile) {
-      highlightedTile = null;
+    if (isMoving && $mapState.hoveredTile) {
       clearHoveredTile();
     }
   });

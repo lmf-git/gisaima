@@ -169,46 +169,39 @@
     // Use the centralized movement function
     moveMapTo(worldX, worldY);
   }
-
-  // Renamed from hoveredCell to highlightedCell
-  let highlightedCell = $state(null);
   
   // Simple movement check
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isDrag);
   
   // Clear highlight when moving
   $effect(() => {
-    if (isMoving && highlightedCell) {
-      highlightedCell = null;
-      clearHoveredTile(); // Note: you might want to rename this in map.js too
+    if (isMoving && $mapState.hoveredTile) {
+      clearHoveredTile();
     }
   });
   
-  // Renamed from handleMiniTileHover to highlightMiniTile
+  // Simplify highlight functions to only use the store
   function highlightMiniTile(cell) {
     if (!isMoving) {
-      highlightedCell = cell;
-      updateHoveredTile(cell.x, cell.y); // Note: you might want to rename this in map.js too
+      updateHoveredTile(cell.x, cell.y);
     }
   }
   
-  // Renamed from handleMiniTileLeave to unhighlightMiniTile
   function unhighlightMiniTile() {
-    highlightedCell = null;
-    clearHoveredTile(); // Note: you might want to rename this in map.js too
+    clearHoveredTile();
   }
   
-  // Renamed from isTileHovered to isTileHighlighted
-  const isTileHighlighted = (cell) => !isMoving && 
-    ((highlightedCell && cell.x === highlightedCell.x && cell.y === highlightedCell.y) || 
-    ($mapState.hoveredTile && cell.x === $mapState.hoveredTile.x && cell.y === $mapState.hoveredTile.y));
+  // Simplify highlighted check to only use store
+  const isTileHighlighted = (cell) => 
+    !isMoving && $mapState.hoveredTile && 
+    cell.x === $mapState.hoveredTile.x && 
+    cell.y === $mapState.hoveredTile.y;
 
   // Handle minimap drag start - leave this function in its original position
   function handleMinimapDragStart(event) {
     if (event.button !== 0 || !$mapState.isReady) return;
     
-    // Clear highlight states immediately (renamed)
-    highlightedCell = null;
+    // Just clear the hover in store
     clearHoveredTile();
     
     // Capture starting positions
