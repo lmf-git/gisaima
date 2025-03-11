@@ -170,44 +170,45 @@
     moveMapTo(worldX, worldY);
   }
 
-  // Simplified hover management - just one variable
-  let hoveredCell = $state(null);
+  // Renamed from hoveredCell to highlightedCell
+  let highlightedCell = $state(null);
   
   // Simple movement check
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isDrag);
   
-  // Clear hover when moving
+  // Clear highlight when moving
   $effect(() => {
-    if (isMoving && hoveredCell) {
-      hoveredCell = null;
-      clearHoveredTile();
+    if (isMoving && highlightedCell) {
+      highlightedCell = null;
+      clearHoveredTile(); // Note: you might want to rename this in map.js too
     }
   });
   
-  // Simple hover handlers - no timeouts needed
-  function handleMiniTileHover(cell) {
+  // Renamed from handleMiniTileHover to highlightMiniTile
+  function highlightMiniTile(cell) {
     if (!isMoving) {
-      hoveredCell = cell;
-      updateHoveredTile(cell.x, cell.y);
+      highlightedCell = cell;
+      updateHoveredTile(cell.x, cell.y); // Note: you might want to rename this in map.js too
     }
   }
   
-  function handleMiniTileLeave() {
-    hoveredCell = null;
-    clearHoveredTile();
+  // Renamed from handleMiniTileLeave to unhighlightMiniTile
+  function unhighlightMiniTile() {
+    highlightedCell = null;
+    clearHoveredTile(); // Note: you might want to rename this in map.js too
   }
   
-  // Simpler hover check
-  const isTileHovered = (cell) => !isMoving && 
-    ((hoveredCell && cell.x === hoveredCell.x && cell.y === hoveredCell.y) || 
+  // Renamed from isTileHovered to isTileHighlighted
+  const isTileHighlighted = (cell) => !isMoving && 
+    ((highlightedCell && cell.x === highlightedCell.x && cell.y === highlightedCell.y) || 
     ($mapState.hoveredTile && cell.x === $mapState.hoveredTile.x && cell.y === $mapState.hoveredTile.y));
 
   // Handle minimap drag start - leave this function in its original position
   function handleMinimapDragStart(event) {
     if (event.button !== 0 || !$mapState.isReady) return;
     
-    // Clear hover states immediately
-    hoveredCell = null;
+    // Clear highlight states immediately (renamed)
+    highlightedCell = null;
     clearHoveredTile();
     
     // Capture starting positions
@@ -321,7 +322,7 @@
           class="mini-tile"
           class:center={cell.isCenter}
           class:visible={cell.isVisible}
-          class:hovered={isTileHovered(cell)}
+          class:highlighted={isTileHighlighted(cell)} 
           style="
             background-color: {cell.color};
             width: {MINI_TILE_SIZE_EM}em;
@@ -329,8 +330,8 @@
             left: {cell.displayX * MINI_TILE_SIZE_EM}em;
             top: {cell.displayY * MINI_TILE_SIZE_EM}em;
           "
-          onmouseenter={() => handleMiniTileHover(cell)}
-          onmouseleave={handleMiniTileLeave}
+          onmouseenter={() => highlightMiniTile(cell)} 
+          onmouseleave={unhighlightMiniTile} 
           role="presentation"
           aria-hidden="true"
         ></div>
@@ -397,7 +398,7 @@
     z-index: 2;
   }
   
-  .mini-tile.hovered {
+  .mini-tile.highlighted { /* Renamed from hovered */
     z-index: 4;
     background-color: rgba(255, 255, 255, 0.7) !important;
   }

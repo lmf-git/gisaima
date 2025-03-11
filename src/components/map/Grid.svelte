@@ -35,7 +35,7 @@
   const showAxisBars = true;
   
   // All state variables declared at the top
-  let hoveredTile = $state(null);
+  let highlightedTile = $state(null);
   
   // Movement state tracking
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null);
@@ -75,7 +75,7 @@
       
       if (event.type === "keydown") {
         // Clear hover states when navigation begins
-        hoveredTile = null;
+        highlightedTile = null;
         
         $mapState.keysPressed.add(key);
         
@@ -109,7 +109,7 @@
     if (event.button !== 0) return;
     
     // Clear any hover state when drag begins
-    hoveredTile = null;
+    highlightedTile = null;
     clearHoveredTile();
     
     if (startMapDrag(event) && mapElement) {
@@ -161,27 +161,27 @@
   });
 
   // Add improved functions to track hover state
-  function handleTileHover(cell) {
+  function higlight(cell) {
     if (!isMoving) {
-      hoveredTile = cell;
+      highlightedTile = cell;
       updateHoveredTile(cell.x, cell.y);
     }
   }
   
-  function handleTileLeave() {
-    hoveredTile = null;
+  function unhighlight() {
+    highlightedTile = null;
     clearHoveredTile();
   }
   
   // Track if a tile is currently hovered - for minimap sync
-  const isHovered = (cell) => !isMoving && 
-    ((hoveredTile && cell.x === hoveredTile.x && cell.y === hoveredTile.y) || 
+  const isHighlighted = (cell) => !isMoving && 
+    ((highlightedTile && cell.x === highlightedTile.x && cell.y === highlightedTile.y) || 
     ($mapState.hoveredTile && cell.x === $mapState.hoveredTile.x && cell.y === $mapState.hoveredTile.y));
   
   // Watch for movement state changes
   $effect(() => {
-    if (isMoving && hoveredTile) {
-      hoveredTile = null;
+    if (isMoving && highlightedTile) {
+      highlightedTile = null;
       clearHoveredTile();
     }
   });
@@ -213,9 +213,9 @@
           <div
             class="tile"
             class:center={cell.isCenter}
-            class:hovered={isHovered(cell)}
-            onmouseenter={() => handleTileHover(cell)}
-            onmouseleave={handleTileLeave}
+            class:highlighted={isHighlighted(cell)}
+            onmouseenter={() => higlight(cell)}
+            onmouseleave={unhighlight}
             role="gridcell"
             tabindex="-1"
             aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}"
@@ -336,9 +336,9 @@
     transform: scale(1.05);
   }
   
-  /* Hover effects */
+  /* Hover effects - renamed to highlight */
   .map:not(.moving) .tile:hover,
-  .tile.hovered {
+  .tile.highlighted {
     z-index: 2;
     filter: brightness(1.2);
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
@@ -352,8 +352,8 @@
     z-index: auto;
   }
 
-  /* Additional styles to ensure no hover effects during movement */
-  .map.moving .tile.hovered {
+  /* Additional styles - renamed from hovered to highlighted */
+  .map.moving .tile.highlighted {
     filter: none;
     box-shadow: none;
   }
