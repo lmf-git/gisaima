@@ -17,7 +17,7 @@
 <style>
   .legend-container {
     position: absolute;
-    bottom: 0.5em;
+    bottom: 2.5em; /* Position above the axes */
     right: 0.5em;
     z-index: 1001;
     cursor: pointer;

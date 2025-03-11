@@ -279,8 +279,18 @@
     {/if}
   </div>
 
-  {#if !$mapState.showDetailsModal}
-    <!-- Show Legend only when Details modal is not shown - remove terrainColour -->
+  <!-- Show either Legend or Details in the same position -->
+  {#if $mapState.showDetailsModal}
+    <!-- Show Details when modal is active -->
+    <Details 
+      x={detailsProps.x}
+      y={detailsProps.y}
+      show={detailsProps.show}
+      biomeName={detailsProps.biomeName}
+      onClose={closeDetailsModal}
+    />
+  {:else}
+    <!-- Show Legend when details modal is not shown -->
     <Legend 
       x={legendProps.x} 
       y={legendProps.y}
@@ -288,7 +298,7 @@
     />
   {/if}
 
-  <!-- Axes component should appear above the grid - move it after the grid for proper layering -->
+  <!-- Axes component should appear above the grid -->
   {#if showAxisBars && $mapState.isReady}
     <Axes 
       xAxisArray={$xAxisArray}
@@ -297,15 +307,6 @@
       rows={$mapState.rows}
     />
   {/if}
-
-  <!-- Remove terrainColour from Details -->
-  <Details 
-    x={detailsProps.x}
-    y={detailsProps.y}
-    show={detailsProps.show}
-    biomeName={detailsProps.biomeName}
-    onClose={closeDetailsModal}
-  />
 
   <!-- Add the Tutorial component at the bottom left -->
   <Tutorial show={true} />

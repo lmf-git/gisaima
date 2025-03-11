@@ -31,8 +31,8 @@
 <style>
   .details-container {
     position: absolute;
-    bottom: 0.5em;
-    right: 7em; /* Move to the left of the Legend component */
+    bottom: 2.5em; /* Match the Legend position exactly */
+    right: 0.5em; /* Match the Legend position exactly */
     z-index: 1001;
     opacity: 0;
     pointer-events: none;
