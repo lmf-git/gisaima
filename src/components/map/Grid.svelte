@@ -392,35 +392,24 @@
     }
   }
   
+  /* Remove transformations that could break positioning */
   :global(.x-axis) {
-    animation: slideInFromTop 0.7s ease-out forwards;
+    animation: fadeIn 0.7s ease-out forwards;
     animation-delay: 0.5s;
-    transform: translateY(-10px);
+    opacity: 0;
+    /* Remove transform that breaks positioning */
   }
   
   :global(.y-axis) {
-    animation: slideInFromLeft 0.7s ease-out forwards;
+    animation: fadeIn 0.7s ease-out forwards;
     animation-delay: 0.5s;
-    transform: translateX(-10px);
+    opacity: 0;
+    /* Remove transform that breaks positioning */
   }
   
-  @keyframes slideInFromTop {
-    0% {
-      transform: translateY(-10px);
-    }
-    100% {
-      transform: translateY(0);
-    }
-  }
-  
-  @keyframes slideInFromLeft {
-    0% {
-      transform: translateX(-10px);
-    }
-    100% {
-      transform: translateX(0);
-    }
-  }
+  /* Delete these keyframes that could be causing positioning issues */
+  /* @keyframes slideInFromTop { ... } */
+  /* @keyframes slideInFromLeft { ... } */
   
   :global(.axis) {
     pointer-events: auto; /* But enable clicks on axis labels */

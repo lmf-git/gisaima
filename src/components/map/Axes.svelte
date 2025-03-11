@@ -38,6 +38,7 @@
 </div>
 
 <style>
+  /* Add better specificity to ensure styles are correctly applied */
   .axes-container {
     position: absolute;
     top: 0;
@@ -46,6 +47,13 @@
     height: 100%;
     pointer-events: none;
     z-index: 3;
+  }
+  
+  /* Ensure proper positioning for both axes */
+  .x-axis, .y-axis {
+    position: absolute;
+    width: 100%;
+    height: 100%;
   }
   
   .x-grid, .y-grid {
