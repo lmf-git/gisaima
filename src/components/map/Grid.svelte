@@ -34,6 +34,9 @@
   let resizeObserver = null;
   let dragStateCheckInterval = null;
   
+  // Add flag to track initial animation state
+  let initialAnimationComplete = $state(false);
+  
   // Display settings
   const showAxisBars = true;
   
@@ -52,6 +55,12 @@
     
     // Setup drag state check interval
     dragStateCheckInterval = setInterval(checkDragState, DRAG_CHECK_INTERVAL);
+
+    // Set a timer to mark initial animation as complete
+    setTimeout(() => {
+      initialAnimationComplete = true;
+      console.log('Initial grid animation complete');
+    }, 1000); // Set slightly longer than the animation duration
 
     // Define cleanup function properly
     return function() {
@@ -225,7 +234,11 @@
     aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
   >
     {#if $mapState.isReady}
-      <div class="grid main-grid" style="--cols: {$mapState.cols}; --rows: {$mapState.rows};" role="presentation">
+      <div class="grid main-grid" 
+        style="--cols: {$mapState.cols}; --rows: {$mapState.rows};" 
+        role="presentation"
+        class:animated={!initialAnimationComplete}
+      >
         {#each $gridArray as cell (cell.x + ':' + cell.y)}
           {@const distance = Math.sqrt(
             Math.pow(cell.x - $mapState.targetCoord.x, 2) + 
@@ -247,7 +260,7 @@
             aria-current={cell.isCenter ? "location" : undefined}
             style="
               background-color: {cell.color};
-              animation-delay: {cell.isCenter ? 0 : 0.05 * distance}s;
+              animation-delay: {!initialAnimationComplete && cell.isCenter ? 0 : (!initialAnimationComplete ? 0.05 * distance : 0)}s;
             "
           >
             <span class="coords">{cell.x},{cell.y}</span>
@@ -343,30 +356,19 @@
     height: 100%;
   }
 
-  .tile {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 0.05em solid rgba(0, 0, 0, 0.1);
-    box-sizing: border-box;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 1.2em;
-    color: rgba(255, 255, 255, 0.7);
-    text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
-    user-select: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    -webkit-touch-callout: none;
-    z-index: 1;
-    
-    /* Add radial reveal animation */
+  /* Only animate tiles within animated grid */
+  .main-grid.animated .tile {
     opacity: 0;
     transform: scale(0.8);
     animation: revealTile 0.5s ease-out forwards;
   }
   
+  /* For non-animated grid, tiles are always visible */
+  .main-grid:not(.animated) .tile {
+    opacity: 1;
+    transform: scale(1);
+  }
+
   @keyframes revealTile {
     0% {
       opacity: 0;
@@ -379,17 +381,25 @@
   }
   
   /* Center tile style - make it appear first */
-  .map .grid .tile.center {
+  .main-grid.animated .tile.center {
     z-index: 3;
     position: relative;
     filter: brightness(1.1);
+    transform: scale(1.05);
+    animation: revealCenterTile 0.6s ease-out forwards;
+    animation-delay: 0s;
+  }
+  
+  /* For non-animated grid, center tile is styled without animation */
+  .main-grid:not(.animated) .tile.center {
+    z-index: 3;
+    position: relative;
+    filter: brightness(1.1);
+    transform: scale(1.05);
     border: 0.12em solid rgba(255, 255, 255, 0.5);
     box-shadow: 
       inset 0 0 0.5em rgba(255, 255, 255, 0.3),
       0 0 1em rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
-    animation: revealCenterTile 0.6s ease-out forwards;
-    animation-delay: 0s;
   }
   
   @keyframes revealCenterTile {
@@ -414,6 +424,31 @@
         inset 0 0 0.5em rgba(255, 255, 255, 0.3),
         0 0 1em rgba(255, 255, 255, 0.2);
     }
+  }
+
+  /* All tiles need the border and other styling regardless of animation state */
+  .tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0.05em solid rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 1.2em;
+    color: rgba(255, 255, 255, 0.7);
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-touch-callout: none;
+    z-index: 1;
+  }
+
+  /* All center tiles need the border */
+  .tile.center {
+    border: 0.12em solid rgba(255, 255, 255, 0.5);
   }
 
   /* Hover effects - renamed to highlight */
