@@ -9,6 +9,7 @@
     rows = 0
   } = $props()
 
+  
   onMount(() => {
     // Set index CSS variables for staggered animation
     const xLabels = document.querySelectorAll('.axes .x .label');
