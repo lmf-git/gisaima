@@ -1,17 +1,12 @@
 import { writable, derived, get } from 'svelte/store';
 import { TerrainGenerator } from '../map/noise.js';
-// Fix Firebase imports to avoid name conflict with Svelte's get
-import { ref, onValue, off } from "firebase/database";
-import { getDatabase } from "firebase/database";
-import { get as fbGet } from "firebase/database";
-import { app } from "../firebase/firebase.js";
+// Remove unused Firebase imports and use database from our database.js file
+import { ref, onValue } from "firebase/database";
+import { db } from "../firebase/database.js";
 
 // Initialize the terrain generator with a fixed seed
 const WORLD_SEED = 454232;
 const terrain = new TerrainGenerator(WORLD_SEED);
-
-// Initialize Firebase database
-const db = getDatabase(app);
 
 // Configuration constants
 export const KEYBOARD_MOVE_SPEED = 200;
@@ -63,11 +58,6 @@ export const mapState = writable({
     players: {}     // key: "x,y", value: player data
   }
 });
-
-// Helper function to update state
-function updateMapState(updates) {
-  mapState.update(state => ({ ...state, ...updates }));
-}
 
 // Map computation functions
 export function getChunkKey(x, y) {
@@ -694,15 +684,6 @@ function debounce(fn, ms) {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => fn(...args), ms);
   };
-}
-
-// Add new helper for grid state comparison
-function gridStateChanged($mapState, prevState) {
-  return !prevState || 
-    prevState.cols !== $mapState.cols ||
-    prevState.rows !== $mapState.rows ||
-    prevState.offsetX !== $mapState.offsetX ||
-    prevState.offsetY !== $mapState.offsetY;
 }
 
 // Add memoization helper
