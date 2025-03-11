@@ -300,7 +300,7 @@
     position: absolute;
     top: 0;
     right: 0;
-    z-index: 1000;
+    z-index: 998;
     overflow: hidden;
     box-shadow: 0 0.1875em 0.625em var(--color-shadow);
     animation: slideInFromRight 0.8s ease-out forwards;
