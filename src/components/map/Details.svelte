@@ -1,22 +1,20 @@
 <script>
-  const { x = 0, y = 0, show = true, biomeName: rawBiomeName = "Unknown", onClose } = $props()
+  const { x = 0, y = 0, show = true, terrain, onClose } = $props()
   
-  const biomeName = $derived(
-    rawBiomeName?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown'
-  )
+  const formattedName = $derived(
+    terrain?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+  );
   
-  $effect(() => show && console.log(`Details shown for: (${x}, ${y}) - ${biomeName}`))
-  
-  const handleKeydown = event => event.key === 'Escape' && show && onClose?.()
+  const escape = event => event.key === 'Escape' && show && onClose?.();
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydown={escape} />
 
 <div class="details-container" class:visible={show}>
   <div class="details-card">
     <div class="content">
       <h2>Coordinates ({x}, {y})</h2>
-      <p>Biome: {biomeName}</p>
+      <p>Biome: {formattedName}</p>
     </div>
     <button class="close-button" onclick={onClose}>×</button>
   </div>

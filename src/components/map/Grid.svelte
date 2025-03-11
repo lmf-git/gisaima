@@ -156,7 +156,7 @@
   const detailsProps = $derived({
     x: targetTileData.x,
     y: targetTileData.y,
-    show: $mapState.showDetailsModal,
+    show: $mapState.showDetails,
     biomeName: targetTileData.biome?.name
   });
 
@@ -203,7 +203,7 @@
   onvisibilitychange={() => document.visibilityState === 'hidden' && handleStopDrag()}
 />
 
-<div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={$mapState.showDetailsModal}>
+<div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={$mapState.showDetails}>
   <div
     class="map"
     bind:this={mapElement}
@@ -260,17 +260,15 @@
   </div>
 
   <!-- Show either Legend or Details in the same position -->
-  {#if $mapState.showDetailsModal}
-    <!-- Show Details when modal is active -->
+  {#if $mapState.showDetails}
     <Details 
       x={detailsProps.x}
       y={detailsProps.y}
       show={detailsProps.show}
-      biomeName={detailsProps.biomeName}
+      terrain={detailsProps.biomeName}
       onClose={closeDetailsModal}
     />
   {:else}
-    <!-- Show Legend when details modal is not shown -->
     <Legend 
       x={legendProps.x} 
       y={legendProps.y}

@@ -21,32 +21,35 @@ export const GRID_EXPANSION_FACTOR = 3;
 const activeChunkSubscriptions = new Map();
 
 // Create a store using Svelte's store API since $state is only for component scripts
-export const mapState = writable({
-  // Position and drag state
+export const mapState = writable({ 
+  // Map elements
+  cols: 0, 
+  rows: 0,
+
+  offsetX: 0, 
+  offsetY: 0,
+
+  // Aren't these the same?
+  centerX: 0,
+  centerY: 0,
+  targetCoord: { x: 0, y: 0 },
+
+  chunks: new Set(),
+  
+  
+  isReady: false,
   isDragging: false,
   isMouseActuallyDown: false,
   dragStartX: 0,
   dragStartY: 0,
-  targetCoord: { x: 0, y: 0 },
-  
-  // UI state
-  showDetailsModal: false,
+  dragStateCheckInterval: null,
+  showDetails: false,
   keysPressed: new Set(),
   keyboardNavigationInterval: null,
+  hoveredTile: null,
   
-  // Map elements
-  cols: 0, 
-  rows: 0,
-  isReady: false,
-  offsetX: 0, 
-  offsetY: 0,
-  visibleChunks: new Set(),
-  dragStateCheckInterval: null,
-  centerX: 0,
-  centerY: 0,
   
   // Hover state for highlighting tiles
-  hoveredTile: null,
   
   // Entity data from Firebase chunks
   entities: {
@@ -230,8 +233,8 @@ export function updateChunks(gridArray) {
     );
 
     // Track changes to handle Firebase subscriptions
-    const added = [...newVisibleChunks].filter(key => !state.visibleChunks.has(key));
-    const removed = [...state.visibleChunks].filter(key => !newVisibleChunks.has(key));
+    const added = [...newVisibleChunks].filter(key => !state.chunks.has(key));
+    const removed = [...state.chunks].filter(key => !newVisibleChunks.has(key));
     
     // Log changes
     if (added.length > 0) console.log(`Chunks loaded: ${added.join(', ')}`);
@@ -249,7 +252,7 @@ export function updateChunks(gridArray) {
 
     return {
       ...state,
-      visibleChunks: newVisibleChunks
+      chunks: newVisibleChunks
     };
   });
 }
@@ -641,7 +644,7 @@ export function openDetailsModal() {
     // Set the modal state to true (open)
     mapState.update(state => ({
       ...state,
-      showDetailsModal: true
+      showDetails: true
     }));
   } else {
     console.error("Cannot open details: Invalid coordinates");
@@ -654,7 +657,7 @@ export function closeDetailsModal() {
   
   mapState.update(state => ({
     ...state,
-    showDetailsModal: false
+    showDetails: false
   }));
 }
 
