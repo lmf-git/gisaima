@@ -396,7 +396,6 @@
     position: relative;
     filter: brightness(1.1);
     transform: scale(1.05);
-    border: 0.12em solid rgba(255, 255, 255, 0.5);
     box-shadow: 
       inset 0 0 0.5em rgba(255, 255, 255, 0.3),
       0 0 1em rgba(255, 255, 255, 0.2);
@@ -426,12 +425,12 @@
     }
   }
 
-  /* All tiles need the border and other styling regardless of animation state */
+  /* All tiles need the styling without borders */
   .tile {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 0.05em solid rgba(0, 0, 0, 0.1);
+    /* Remove the border: 0.05em solid rgba(0, 0, 0, 0.1); */
     box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -446,11 +445,13 @@
     z-index: 1;
   }
 
-  /* All center tiles need the border */
+  /* All center tiles - keep subtle highlight but remove border */
   .tile.center {
-    border: 0.12em solid rgba(255, 255, 255, 0.5);
+    /* Remove border: 0.12em solid rgba(255, 255, 255, 0.5); */
+    /* Add a subtle glow instead */
+    box-shadow: 0 0 1em rgba(255, 255, 255, 0.3);
   }
-
+  
   /* Hover effects - renamed to highlight */
   .map:not(.moving) .tile:hover,
   .tile.highlighted {

@@ -17,7 +17,7 @@
 <style>
   .legend-container {
     position: absolute;
-    top: 0.5em;
+    bottom: 0.5em; /* Changed from top to bottom */
     right: 0.5em;
     z-index: 1001;
     cursor: pointer;
@@ -30,9 +30,9 @@
     border: 0.1em solid rgba(255, 255, 255, 0.15);
     background-color: rgba(0, 0, 0, 0.6);
     
-    /* Add animation for fade-in and slide-up */
+    /* Adjust animation for coming from bottom */
     animation: fadeInUp 0.7s ease-out forwards;
-    animation-delay: 0.3s; /* Slightly faster than minimap */
+    animation-delay: 0.3s;
     transform: translateY(20px);
     opacity: 0;
   }
