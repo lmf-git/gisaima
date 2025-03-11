@@ -480,16 +480,14 @@ export function moveMapTo(newX, newY) {
   clearHoveredTile();
   
   mapState.update(state => {
-    // Round the coordinates for consistent movement
-    const roundedX = Math.round(newX);
-    const roundedY = Math.round(newY);
+    // Use current values when coordinates are undefined
+    const roundedX = newX !== undefined ? Math.round(newX) : state.targetCoord.x;
+    const roundedY = newY !== undefined ? Math.round(newY) : state.targetCoord.y;
     
     // Calculate new offsets
     const newOffsetX = state.centerX + roundedX;
     const newOffsetY = state.centerY + roundedY;
     
-    // Get terrain data for new position will be handled automatically by targetTileStore
-    // when the derived store detects the changed coordinates
     const biome = getTerrainData(roundedX, roundedY).biome;
     console.log(`Moving to (${roundedX}, ${roundedY}) - Biome: ${biome.name}`);
     
@@ -498,7 +496,6 @@ export function moveMapTo(newX, newY) {
       targetCoord: { x: roundedX, y: roundedY },
       offsetX: newOffsetX,
       offsetY: newOffsetY,
-      // Removed centerTileData update, letting targetTileStore handle it
       hoveredTile: null // Explicitly clear hover state
     };
   });

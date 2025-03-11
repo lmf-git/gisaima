@@ -1,12 +1,16 @@
 <script>
+  import { moveMapTo } from "../../lib/stores/map.js";
+
   const { 
     xAxisArray = [],
     yAxisArray = [],
     cols = 0,
-    rows = 0,
-    onXAxisClick = () => {},
-    onYAxisClick = () => {}
+    rows = 0
   } = $props();
+  
+  // Direct handlers that call moveMapTo
+  const handleXAxisClick = (x) => moveMapTo(x, undefined);
+  const handleYAxisClick = (y) => moveMapTo(undefined, y);
 </script>
 
 <div class="axes">
@@ -15,7 +19,7 @@
       <button 
         class="label" 
         class:center={coord.isCenter} 
-        onclick={() => onXAxisClick(coord.value)}
+        onclick={() => handleXAxisClick(coord.value)}
         style="width: calc(100% / {cols}); --index: {i};">
         {coord.value}
       </button>
@@ -27,7 +31,7 @@
       <button 
         class="label" 
         class:center={coord.isCenter} 
-        onclick={() => onYAxisClick(coord.value)}
+        onclick={() => handleYAxisClick(coord.value)}
         style="height: calc(100% / {rows}); --index: {i};">
         {coord.value}
       </button>
