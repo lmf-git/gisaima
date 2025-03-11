@@ -33,7 +33,7 @@
     
     /* Animation matching axes approach */
     animation: fadeInLegend 0.7s ease-out forwards;
-    animation-delay: 0.3s;
+    animation-delay: .5s; /* Changed from 0.3s to 1.5s */
     opacity: 0;
     transform: translateY(0);
   }

@@ -227,8 +227,8 @@
   
   .help {
     position: absolute;
-    bottom: 1.5em;
-    left: 1.5em;
+    bottom: 2.5em;
+    left: 2.5em;
     width: 3em;
     height: 3em;
     background-color: var(--color-dark-teal);
@@ -245,12 +245,21 @@
     transition: opacity 0.2s, transform 0.2s;
     z-index: 10;
     box-shadow: 0 0.1em 0.3em var(--color-shadow);
+    /* Add animation with delay */
+    opacity: 0;
+    animation: fadeInHelp 0.7s ease-out forwards;
+    animation-delay: 2s; /* Set to appear last at 2s */
   }
   
-  .help:hover {
-    opacity: 1;
-    transform: scale(1.1);
-    background-color: var(--color-button-primary);
+  @keyframes fadeInHelp {
+    0% {
+      opacity: 0;
+      transform: translateY(1em) scale(0.9);
+    }
+    100% {
+      opacity: 0.8;
+      transform: scale(1);
+    }
   }
   
   @media (max-width: 768px) {
