@@ -841,7 +841,8 @@ export const xAxisArray = derived(
   memoize(($mapState) => {
     if (!$mapState.isReady) return [];
     return Array.from({ length: $mapState.cols }, (_, x) => ({
-      value: x - $mapState.offsetX,
+      // Fix the direction by inverting the calculation
+      value: $mapState.targetCoord.x - ($mapState.centerX - x),
       isCenter: x === $mapState.centerX
     }));
   })
@@ -852,7 +853,8 @@ export const yAxisArray = derived(
   memoize(($mapState) => {
     if (!$mapState.isReady) return [];
     return Array.from({ length: $mapState.rows }, (_, y) => ({
-      value: y - $mapState.offsetY,
+      // Also fix the y-axis for consistency
+      value: $mapState.targetCoord.y - ($mapState.centerY - y),
       isCenter: y === $mapState.centerY
     }));
   })

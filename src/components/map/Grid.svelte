@@ -19,6 +19,7 @@
     drag as dragMap,
     checkDragState,
     moveMapByKeys,
+    moveMapTo,  // Add this import!
     openDetailsModal,
     closeDetailsModal,
     targetTileStore,
@@ -211,6 +212,18 @@
       hasPlayer: !!entities.player
     };
   }
+
+  // Fix handlers for axis label clicks
+  function handleXAxisClick(newX) {
+    // When clicking on an axis label, we need to move to the absolute
+    // coordinate that would make that label appear at the center
+    moveMapTo(newX, $mapState.targetCoord.y);
+  }
+  
+  function handleYAxisClick(newY) {
+    // Same logic for Y axis
+    moveMapTo($mapState.targetCoord.x, newY);
+  }
 </script>
 
 <svelte:window
@@ -305,6 +318,8 @@
       yAxisArray={$yAxisArray}
       cols={$mapState.cols}
       rows={$mapState.rows}
+      onXAxisClick={handleXAxisClick}
+      onYAxisClick={handleYAxisClick}
     />
   {/if}
 

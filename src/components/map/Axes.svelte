@@ -3,7 +3,9 @@
     xAxisArray = [],
     yAxisArray = [],
     cols = 0,
-    rows = 0
+    rows = 0,
+    onXAxisClick = () => {},  // New prop for X axis click handler
+    onYAxisClick = () => {}   // New prop for Y axis click handler
   } = $props();
 </script>
 
@@ -13,6 +15,7 @@
       <div 
         class="label" 
         class:center={coord.isCenter} 
+        on:click={() => onXAxisClick(coord.value)}
         style="width: calc(100% / {cols}); --index: {i};">
         {coord.value}
       </div>
@@ -24,6 +27,7 @@
       <div 
         class="label" 
         class:center={coord.isCenter} 
+        on:click={() => onYAxisClick(coord.value)}
         style="height: calc(100% / {rows}); --index: {i};">
         {coord.value}
       </div>
@@ -90,6 +94,7 @@
     
     /* Keep the transition for hover effects */
     transition: background-color 0.2s ease, border-color 0.2s ease;
+    cursor: pointer; /* Add cursor pointer to indicate clickability */
   }
   
   /* Remove fadeIn animations */
@@ -110,6 +115,10 @@
     /* Remove filter: brightness */
     background-color: rgba(255, 255, 255, 0.6); /* Even brighter on hover */
     border-color: rgba(255, 255, 255, 0.5);
+    /* Enhanced hover effect to make clickability more obvious */
+    background-color: rgba(255, 255, 255, 0.7); /* Brighter on hover */
+    border-color: rgba(255, 255, 255, 0.7); /* More visible border */
+    box-shadow: 0 0 0.3em rgba(255, 255, 255, 0.5); /* Add glow effect */
   }
   
   /* Remove duplicate animation on container */
