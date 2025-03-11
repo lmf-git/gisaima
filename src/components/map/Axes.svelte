@@ -15,7 +15,7 @@
       <div 
         class="label" 
         class:center={coord.isCenter} 
-        on:click={() => onXAxisClick(coord.value)}
+        onclick={() => onXAxisClick(coord.value)}
         style="width: calc(100% / {cols}); --index: {i};">
         {coord.value}
       </div>
@@ -27,7 +27,7 @@
       <div 
         class="label" 
         class:center={coord.isCenter} 
-        on:click={() => onYAxisClick(coord.value)}
+        onclick={() => onYAxisClick(coord.value)}
         style="height: calc(100% / {rows}); --index: {i};">
         {coord.value}
       </div>

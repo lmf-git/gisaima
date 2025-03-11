@@ -183,6 +183,7 @@
     .appheader.map-header {
         pointer-events: none;
         justify-content: center;
+        padding: 2.2em 3.7em;
     }
     
     /* Ensure nav elements remain clickable */
