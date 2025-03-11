@@ -55,13 +55,13 @@
     gap: 1em;
     padding: 1em;
     border-radius: 4px;
-    color: white;
+    color: var(--color-text-primary);
     text-shadow: 0 0.0625em 0.125em rgba(0, 0, 0, 0.5);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
-    border: 0.3em solid rgba(255, 255, 255, 0.4);
-    backdrop-filter: brightness(1.1) saturate(1.2);
+    box-shadow: 0 3px 10px var(--color-shadow);
+    border: 0.15em solid var(--color-panel-border);
+    backdrop-filter: blur(5px);
     min-width: 12.5em;
-    background-color: rgba(20, 30, 50, 0.8);
+    background-color: var(--color-panel-bg);
   }
   
   .content {
@@ -72,17 +72,19 @@
     margin: 0;
     font-size: 1.3em;
     font-weight: bold;
+    color: var(--color-bright-accent);
   }
   
   p {
     margin: 0.3em 0 0;
     font-size: 1.1em;
+    color: var(--color-text-secondary);
   }
   
   .close-button {
     background: none;
     border: none;
-    color: white;
+    color: var(--color-bright-accent);
     font-size: 1.5em;
     line-height: 1;
     padding: 0;

@@ -46,29 +46,18 @@
     }
     
     :global(:root) {
-        /* Base colors from palette */
-        --color-dark-navy: #15263C;
-        --color-dark-red: #260602;
-        --color-dark-blue: #0C0821;
-        --color-bright-red: #C11316;
-        --color-dark-teal: #16393F;
-        --color-muted-teal: #6F9490;
-        --color-muted-blue-gray: #456163;
-        --color-dark-gray-blue: #38424E;
-        --color-deep-blue: #1A2738;
-        --color-dark-teal-blue: #122A38;
-        --color-soft-green: #A7BC9D;
-        --color-pale-green: #DAFBEA;
-        --color-light-yellow: #F9F8E2;
-        --color-cream-white: #FBFBD8;
+        /* Modern color palette */
+        --color-dark-navy: #0A192F;       /* Darker navy for backgrounds */
+        --color-dark-blue: #112240;       /* Deep blue for panels */
+        --color-bright-accent: #64FFDA;   /* Bright teal accent */
+        --color-accent-dark: #388F7F;     /* Darker version of accent */
+        --color-muted-accent: #8892B0;    /* Muted blue-gray */
+        --color-text-primary: #E6F1FF;    /* Bright white-blue text */
+        --color-text-secondary: #A8B2D1;  /* Secondary text */
+        --color-panel-bg: rgba(17, 34, 64, 0.8); /* Panel background */
+        --color-panel-border: rgba(100, 255, 218, 0.3); /* Panel border */
         
-        /* Adding volcano/lava colors */
-        --color-lava: #FF4400;
-        --color-magma: #FF6600;
-        --color-volcanic-rock: #783C28;
-        --color-volcanic-soil: #9A5D42;
-        
-        /* Biome colors - organized by type */
+        /* Keep existing biome colors */
         /* Water biomes */
         --color-biome-ocean: #0066cc;
         --color-biome-deep-ocean: #000080;
@@ -140,23 +129,23 @@
         /* Semantic color assignments */
         --color-background: var(--color-dark-navy);
         --color-background-gradient-start: var(--color-dark-navy);
-        --color-background-gradient-end: var(--color-dark-red);
-        --color-text: var(--color-cream-white);
-        --color-text-secondary: var(--color-soft-green);
-        --color-heading: var(--color-light-yellow);
-        --color-subheading: var(--color-muted-teal);
+        --color-background-gradient-end: var(--color-dark-blue);
+        --color-text: var(--color-text-primary);
+        --color-text-secondary: var(--color-text-secondary);
+        --color-heading: var(--color-bright-accent);
+        --color-subheading: var(--color-muted-accent);
         
-        --color-button: var(--color-dark-teal);
-        --color-button-hover: var(--color-dark-gray-blue);
-        --color-button-primary: var(--color-bright-red);
-        --color-button-primary-hover: #9c1012;
-        --color-button-secondary: var(--color-muted-blue-gray);
-        --color-button-secondary-hover: #38504f;
+        --color-button: var(--color-dark-blue);
+        --color-button-hover: #233554;
+        --color-button-primary: var(--color-accent-dark);
+        --color-button-primary-hover: var(--color-bright-accent);
+        --color-button-secondary: var(--color-muted-accent);
+        --color-button-secondary-hover: #6D7A99;
         
-        --color-card-bg: var(--color-dark-teal);
-        --color-card-border: rgba(111, 148, 144, 0.3);
-        --color-link: var(--color-soft-green);
-        --color-link-hover: var(--color-pale-green);
+        --color-card-bg: var(--color-panel-bg);
+        --color-card-border: var(--color-panel-border);
+        --color-link: var(--color-bright-accent);
+        --color-link-hover: #9FFFEA;
         --color-shadow: rgba(0, 0, 0, 0.4);
     }
     

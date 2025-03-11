@@ -350,11 +350,11 @@
 <style>
   .map {
     position: absolute;
-    top: 0;     /* Changed from bottom to top, removed offset */
-    right: 0;   /* Changed from right: 1.5em to 0 */
+    top: 0;
+    right: 0;
     z-index: 1000;
     overflow: hidden;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+    box-shadow: 0 3px 10px var(--color-shadow);
     /* Add animation for slide-in from right */
     animation: slideInFromRight 0.8s ease-out forwards;
     animation-delay: 0.6s; /* Delay animation to let grid load first */
@@ -376,19 +376,20 @@
   .mini {
     position: relative;
     overflow: hidden;
-    background: rgba(0,0,0,0.2);
-    border: 1px solid rgba(255,255,255,0.2);
+    background: var(--color-panel-bg);
+    border: 1px solid var(--color-panel-border);
     cursor: grab;
     transition: box-shadow 0.2s ease;
     outline: none;
   }
   
   .mini:hover {
-    box-shadow: 0 0.15em 0.3em rgba(0,0,0,0.6);
+    box-shadow: 0 0.15em 0.3em var(--color-shadow);
+    border-color: var(--color-bright-accent);
   }
   
   .mini:focus {
-    box-shadow: 0 0 0 0.2em rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0 0.2em var(--color-bright-accent);
   }
   
   .tile {
@@ -399,7 +400,8 @@
   
   .tile.center {
     z-index: 3;
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: var(--color-bright-accent) !important;
+    opacity: 0.8;
   }
   
   .tile.visible {
@@ -408,7 +410,8 @@
   
   .tile.highlighted {
     z-index: 4;
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: var(--color-bright-accent) !important;
+    opacity: 0.8;
   }
   
   .mini.drag {
@@ -417,7 +420,7 @@
 
   .visible-area-frame {
     position: absolute;
-    border: 0.125em solid white;
+    border: 0.125em solid var(--color-bright-accent);
     box-shadow: 0 0 0 0.0625em rgba(0,0,0,0.5);
     pointer-events: none;
     z-index: 4;
