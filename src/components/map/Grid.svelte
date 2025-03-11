@@ -71,7 +71,7 @@
     };
   });
   
-  // Setup keyboard navigation with simplified handlers
+  // Simplify keyboard navigation without redundant hover clearing
   const setupKeyboardNavigation = () => {
     const keyHandler = event => {
       const key = event.key.toLowerCase();
@@ -80,14 +80,13 @@
       if (!isNavigationKey) return;
       
       if (event.type === "keydown") {
-        // Clear hover states immediately when ANY navigation key is pressed
+        // Clear hover states when navigation begins
         localHoveredTile = null;
-        clearHoveredTile();
         
         $mapState.keysPressed.add(key);
         
         if (!$mapState.keyboardNavigationInterval) {
-          moveMapByKeys();
+          moveMapByKeys(); // This will use our unified moveMapTo function now
           $mapState.keyboardNavigationInterval = setInterval(moveMapByKeys, 200);
         }
         
@@ -98,10 +97,6 @@
         if ($mapState.keysPressed.size === 0 && $mapState.keyboardNavigationInterval) {
           clearInterval($mapState.keyboardNavigationInterval);
           $mapState.keyboardNavigationInterval = null;
-          
-          // Clear hover state when keyboard navigation stops too
-          localHoveredTile = null;
-          clearHoveredTile();
         }
       }
     };
@@ -281,6 +276,7 @@
       clearHoveredTile();
     }
   });
+
 </script>
 
 <svelte:window
