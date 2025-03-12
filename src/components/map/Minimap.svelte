@@ -3,10 +3,11 @@
     mapState, 
     getTerrainData, 
     updateHoveredTile, 
-    clearHoveredTile, 
     updateMinimapRange,
     moveMapTo 
   } from '../../lib/stores/map.js';
+
+  // Minimap doesn't need to handle keyboard movement because Grid already does.
   
   const MINI_TILE_SIZE_EM = 0.5;
   const MINIMAP_WIDTH_EM = 24;
@@ -147,11 +148,6 @@
   
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isDrag);
   
-  $effect(() => {
-    if (isMoving && $mapState.hoveredTile) {
-      clearHoveredTile();
-    }
-  });
   
   function highlightMiniTile(cell) {
     if (!isMoving) {
@@ -159,9 +155,7 @@
     }
   }
   
-  function unhighlightMiniTile() {
-    clearHoveredTile();
-  }
+ 
   
   const isTileHighlighted = (cell) => 
     !isMoving && $mapState.hoveredTile && 
@@ -170,8 +164,6 @@
 
   function handleMinimapDragStart(event) {
     if (event.button !== 0 || !$mapState.isReady) return;
-    
-    clearHoveredTile();
     
     isDrag = true;
     dragX = event.clientX;
@@ -258,8 +250,7 @@
     tabindex="0"
     role="button"
     aria-label="Mini map for navigation"
-    class:drag={isDrag}
-  >
+    class:drag={isDrag}>
     {#if $mapState.isReady && minimapGrid.length > 0}
       {#each minimapGrid as cell}
         <div
@@ -268,17 +259,17 @@
           class:visible={cell.isVisible}
           class:highlighted={isTileHighlighted(cell)} 
           style="
-            background-color: {cell.color};
+            background-color: {isTileHighlighted(cell) ? 'white' : cell.color};
             width: {MINI_TILE_SIZE_EM}em;
             height: {MINI_TILE_SIZE_EM}em;
             left: {cell.displayX * MINI_TILE_SIZE_EM}em;
             top: {cell.displayY * MINI_TILE_SIZE_EM}em;
           "
           onmouseenter={() => highlightMiniTile(cell)} 
-          onmouseleave={unhighlightMiniTile} 
+
           role="presentation"
-          aria-hidden="true"
-        ></div>
+          aria-hidden="true">
+      </div>
       {/each}
       
       <div 
@@ -289,8 +280,8 @@
           width: {area.width * MINI_TILE_SIZE_EM}em;
           height: {area.height * MINI_TILE_SIZE_EM}em;
         "
-        aria-hidden="true"
-      ></div>
+        aria-hidden="true">
+      </div>
     {/if}
   </div>
 </div>
@@ -300,7 +291,7 @@
     position: absolute;
     top: 0;
     right: 0;
-    z-index: 1000;
+    z-index: 998;
     overflow: hidden;
     box-shadow: 0 0.1875em 0.625em var(--color-shadow);
     animation: slideInFromRight 0.8s ease-out forwards;
@@ -345,8 +336,6 @@
   }
   
   .tile.center {
-    z-index: 3;
-    background-color: white !important;
     opacity: 0.8;
     border: 0.125em solid white;
     box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
@@ -356,9 +345,9 @@
     z-index: 2;
   }
   
-  .tile.highlighted {
+  div.tile.highlighted {
     z-index: 4;
-    background-color: white !important;
+    background-color: white;
     opacity: 0.8;
   }
   

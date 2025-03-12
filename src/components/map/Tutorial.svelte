@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { browser } from '$app/environment'
   
-  const { show = true } = $props()
+  const { show = true } = $props();
   
   let closed = $state(false)
   let ready = $state(false)

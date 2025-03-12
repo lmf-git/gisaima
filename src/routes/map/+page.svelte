@@ -1,13 +1,65 @@
 <script>
     import Grid from '../../components/map/Grid.svelte';
+    import MiniMap from '../../components/map/MiniMap.svelte';
+    import Axes from '../../components/map/Axes.svelte';
+
+    import Legend from '../../components/map/Legend.svelte';
+    import Details from '../../components/map/Details.svelte';
+
+    import Tutorial from '../../components/map/Tutorial.svelte';
+
+    import { 
+        mapState, 
+        xAxisArray, 
+        yAxisArray,
+        openDetailsModal,
+        closeDetailsModal,
+        targetTileStore
+    } from "../../lib/stores/map.js";
+
+    const detailsProps = $derived({
+        x: targetTileStore.x,
+        y: targetTileStore.y,
+        show: $mapState.showDetails,
+        biomeName: targetTileStore.biome?.name
+    });
 </script>
 
-<div class="mappage">
+<div class="map">
     <Grid />
+
+    <MiniMap />
+
+    <!-- Show either Legend or Details in the same position -->
+    {#if $mapState.showDetails}
+        <Details 
+        x={targetTileStore.x}
+        y={targetTileStore.y}
+        terrain={detailsProps.biomeName}
+        onClose={closeDetailsModal}
+        />
+    {:else}
+        <Legend 
+        x={targetTileStore.x} 
+        y={targetTileStore.y}
+        openDetails={openDetailsModal} 
+        />
+    {/if}
+
+    {#if $mapState.isReady}
+        <Axes 
+        xAxisArray={$xAxisArray}
+        yAxisArray={$yAxisArray}
+        cols={$mapState.cols}
+        rows={$mapState.rows}
+        />
+    {/if}
+
+    <Tutorial show={true} />
 </div>
 
 <style>
-    .mappage {
+    .map {
         position: absolute;
         top: 0;
         left: 0;

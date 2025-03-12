@@ -1,45 +1,37 @@
 <script>
-  const { x = 0, y = 0, show = true, biomeName: rawBiomeName = "Unknown", onClose } = $props()
+  const { x = 0, y = 0, terrain, onClose } = $props()
   
-  const biomeName = $derived(
-    rawBiomeName?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown'
-  )
+  const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const formattedName = $derived(_fmt(terrain));
   
-  $effect(() => show && console.log(`Details shown for: (${x}, ${y}) - ${biomeName}`))
-  
-  const handleKeydown = event => event.key === 'Escape' && show && onClose?.()
+  const escape = event => event.key === 'Escape' && onClose?.();
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydown={escape} />
 
-<div class="details-container" class:visible={show}>
-  <div class="details-card">
+<div class="details">
+  <div class="info">
     <div class="content">
-      <h2>Coordinates ({x}, {y})</h2>
-      <p>Biome: {biomeName}</p>
+      <h2>Details {x}, {y}</h2>
+      <p>Terrain: {formattedName}</p>
     </div>
-    <button class="close-button" onclick={onClose}>×</button>
+    <button class="close" onclick={onClose}>
+      X
+    </button>
   </div>
 </div>
 
 <style>
-  .details-container {
+  .details {
     position: absolute;
     bottom: 2.5em;
-    right: 0.5em;
-    z-index: 1001;
-    opacity: 0;
-    pointer-events: none;
+    right: .5em;
+    z-index: 2;
     transition: opacity 0.2s ease;
-    max-width: 50vw;
+    font-size: 1.2em;
   }
   
-  .details-container.visible {
-    opacity: 1;
-    pointer-events: all;
-  }
-  
-  .details-card {
+  .info {
     display: flex;
     align-items: flex-start;
     gap: 1em;
@@ -49,15 +41,14 @@
     background-color: rgba(255, 255, 255, 0.4);
     border: 0.05em solid rgba(255, 255, 255, 0.1);
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    box-shadow: none;
     font-weight: 500;
-    min-width: 12.5em;
+    width: 22.5em;
     
-    animation: fadeInDetails 0.4s ease-out forwards;
+    animation: reveal 0.4s ease-out forwards;
     transform-origin: bottom right;
   }
   
-  @keyframes fadeInDetails {
+  @keyframes reveal {
     from {
       opacity: 0;
       transform: scale(0.95);
@@ -88,7 +79,7 @@
     color: rgba(0, 0, 0, 0.8);
   }
   
-  .close-button {
+  .close {
     background: none;
     border: none;
     color: rgba(0, 0, 0, 0.8);
@@ -100,7 +91,7 @@
     transition: opacity 0.2s;
   }
   
-  .close-button:hover {
+  .close:hover {
     opacity: 1;
   }
 </style>

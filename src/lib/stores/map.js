@@ -1,6 +1,5 @@
 import { writable, derived, get } from 'svelte/store';
 import { TerrainGenerator } from '../map/noise.js';
-// Remove unused Firebase imports and use database from our database.js file
 import { ref, onValue } from "firebase/database";
 import { db } from "../firebase/database.js";
 
@@ -21,39 +20,41 @@ export const GRID_EXPANSION_FACTOR = 3;
 const activeChunkSubscriptions = new Map();
 
 // Create a store using Svelte's store API since $state is only for component scripts
-export const mapState = writable({
-  // Position and drag state
+export const mapState = writable({ 
+  isReady: false,
+  cols: 0, 
+  rows: 0,
+
+  // Is the offset necessary when we are tracking center and target? lol
+  offsetX: 0, 
+  offsetY: 0,
+
+  // Aren't these the same?
+  centerX: 0,
+  centerY: 0,
+  targetCoord: { x: 0, y: 0 },
+
+  chunks: new Set(),
+  
+  // Allows shared hover highlighting of minimap and grid tiles.
+  hoveredTile: null,
+
+  showDetails: false,
+  
+  
   isDragging: false,
   isMouseActuallyDown: false,
   dragStartX: 0,
   dragStartY: 0,
-  targetCoord: { x: 0, y: 0 },
-  
-  // UI state
-  showDetailsModal: false,
+  dragStateCheckInterval: null,
   keysPressed: new Set(),
   keyboardNavigationInterval: null,
   
-  // Map elements
-  cols: 0, 
-  rows: 0,
-  isReady: false,
-  offsetX: 0, 
-  offsetY: 0,
-  visibleChunks: new Set(),
-  dragStateCheckInterval: null,
-  centerX: 0,
-  centerY: 0,
-  
-  // Remove centerTileData as it's now maintained in TARGET_TILE_STORE
-  
-  // Hover state for highlighting tiles
-  hoveredTile: null,
   
   // Entity data from Firebase chunks
-  loadedEntities: {
+  entities: {
     structures: {}, // key: "x,y", value: structure data
-    unitGroups: {}, // key: "x,y", value: unit group data
+    groups: {}, // key: "x,y", value: unit group data
     players: {}     // key: "x,y", value: player data
   }
 });
@@ -61,7 +62,7 @@ export const mapState = writable({
 // Map computation functions
 export function getChunkKey(x, y) {
   return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
-}
+};
 
 // Function to get world coordinates from chunk key
 export function getChunkCoordinates(chunkKey) {
@@ -72,7 +73,7 @@ export function getChunkCoordinates(chunkKey) {
     maxX: (chunkX + 1) * CHUNK_SIZE - 1,
     maxY: (chunkX + 1) * CHUNK_SIZE - 1
   };
-}
+};
 
 // Subscribe to a chunk in Firebase
 function subscribeToChunk(chunkKey) {
@@ -93,7 +94,7 @@ function subscribeToChunk(chunkKey) {
     // Process chunk data
     const processedData = {
       structures: data.structures || {},
-      unitGroups: data.unitGroups || {},
+      groups: data.groups || {},
       players: data.players || {},
       lastUpdated: data.lastUpdated || Date.now()
     };
@@ -106,7 +107,7 @@ function subscribeToChunk(chunkKey) {
   
   // Store the unsubscribe function itself
   activeChunkSubscriptions.set(chunkKey, unsubscribe);
-}
+};
 
 // Unsubscribe from a chunk
 function unsubscribeFromChunk(chunkKey) {
@@ -122,16 +123,16 @@ function unsubscribeFromChunk(chunkKey) {
     return true;
   }
   return false;
-}
+};
 
 // Handler for chunk data updates from Firebase
 function handleChunkData(chunkKey, data) {
   mapState.update(state => {
     // Create a new entities object to avoid direct mutation
     const newEntities = {
-      structures: { ...state.loadedEntities.structures },
-      unitGroups: { ...state.loadedEntities.unitGroups },
-      players: { ...state.loadedEntities.players }
+      structures: { ...state.entities.structures },
+      groups: { ...state.entities.groups },
+      players: { ...state.entities.players }
     };
     
     // Get the coordinates for this chunk
@@ -152,11 +153,11 @@ function handleChunkData(chunkKey, data) {
     }
     
     // Process and merge unit groups
-    if (data.unitGroups) {
-      Object.entries(data.unitGroups).forEach(([locationKey, unitData]) => {
+    if (data.groups) {
+      Object.entries(data.groups).forEach(([locationKey, unitData]) => {
         const [x, y] = locationKey.split(',').map(Number);
         if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-          newEntities.unitGroups[locationKey] = {
+          newEntities.groups[locationKey] = {
             ...unitData,
             chunkKey
           };
@@ -179,21 +180,21 @@ function handleChunkData(chunkKey, data) {
     
     return {
       ...state,
-      loadedEntities: newEntities
+      entities: newEntities
     };
   });
   
   console.log(`Updated data for chunk ${chunkKey}`);
-}
+};
 
 // Function to clean entities when chunks are unloaded
 function cleanEntitiesForChunk(chunkKey) {
   mapState.update(state => {
     // Create a new entities object to avoid direct mutation
     const newEntities = {
-      structures: { ...state.loadedEntities.structures },
-      unitGroups: { ...state.loadedEntities.unitGroups },
-      players: { ...state.loadedEntities.players }
+      structures: { ...state.entities.structures },
+      groups: { ...state.entities.groups },
+      players: { ...state.entities.players }
     };
     
     // Remove all entities belonging to this chunk
@@ -203,9 +204,9 @@ function cleanEntitiesForChunk(chunkKey) {
       }
     });
     
-    Object.keys(newEntities.unitGroups).forEach(locationKey => {
-      if (newEntities.unitGroups[locationKey]?.chunkKey === chunkKey) {
-        delete newEntities.unitGroups[locationKey];
+    Object.keys(newEntities.groups).forEach(locationKey => {
+      if (newEntities.groups[locationKey]?.chunkKey === chunkKey) {
+        delete newEntities.groups[locationKey];
       }
     });
     
@@ -217,12 +218,12 @@ function cleanEntitiesForChunk(chunkKey) {
     
     return {
       ...state,
-      loadedEntities: newEntities
+      entities: newEntities
     };
   });
   
   console.log(`Cleaned entities for chunk ${chunkKey}`);
-}
+};
 
 // Enhanced updateChunks function that syncs with Firebase
 export function updateChunks(gridArray) {
@@ -232,8 +233,8 @@ export function updateChunks(gridArray) {
     );
 
     // Track changes to handle Firebase subscriptions
-    const added = [...newVisibleChunks].filter(key => !state.visibleChunks.has(key));
-    const removed = [...state.visibleChunks].filter(key => !newVisibleChunks.has(key));
+    const added = [...newVisibleChunks].filter(key => !state.chunks.has(key));
+    const removed = [...state.chunks].filter(key => !newVisibleChunks.has(key));
     
     // Log changes
     if (added.length > 0) console.log(`Chunks loaded: ${added.join(', ')}`);
@@ -251,10 +252,10 @@ export function updateChunks(gridArray) {
 
     return {
       ...state,
-      visibleChunks: newVisibleChunks
+      chunks: newVisibleChunks
     };
   });
-}
+};
 
 // Get entities for a specific coordinate
 export function getEntitiesAt(x, y) {
@@ -262,48 +263,48 @@ export function getEntitiesAt(x, y) {
   const locationKey = `${x},${y}`;
   
   return {
-    structure: state.loadedEntities.structures[locationKey],
-    unitGroup: state.loadedEntities.unitGroups[locationKey],
-    player: state.loadedEntities.players[locationKey]
+    structure: state.entities.structures[locationKey],
+    unitGroup: state.entities.groups[locationKey],
+    player: state.entities.players[locationKey]
   };
-}
+};
 
 // Check if a coordinate has any entity
 export function hasEntityAt(x, y) {
   const entities = getEntitiesAt(x, y);
   return !!(entities.structure || entities.unitGroup || entities.player);
-}
+};
 
 // Get all entities within a chunk
 export function getEntitiesInChunk(chunkKey) {
   const state = get(mapState);
   const result = {
     structures: {},
-    unitGroups: {},
+    groups: {},
     players: {}
   };
   
   // Filter entities by chunk key
-  Object.entries(state.loadedEntities.structures).forEach(([locationKey, data]) => {
+  Object.entries(state.entities.structures).forEach(([locationKey, data]) => {
     if (data?.chunkKey === chunkKey) {
       result.structures[locationKey] = data;
     }
   });
   
-  Object.entries(state.loadedEntities.unitGroups).forEach(([locationKey, data]) => {
+  Object.entries(state.entities.groups).forEach(([locationKey, data]) => {
     if (data?.chunkKey === chunkKey) {
-      result.unitGroups[locationKey] = data;
+      result.groups[locationKey] = data;
     }
   });
   
-  Object.entries(state.loadedEntities.players).forEach(([locationKey, data]) => {
+  Object.entries(state.entities.players).forEach(([locationKey, data]) => {
     if (data?.chunkKey === chunkKey) {
       result.players[locationKey] = data;
     }
   });
   
   return result;
-}
+};
 
 // Add cleanup function to be called when the grid component is destroyed
 export function cleanupChunkSubscriptions() {
@@ -316,7 +317,7 @@ export function cleanupChunkSubscriptions() {
   });
   
   console.log(`Cleaned up ${activeChunkKeys.length} chunk subscriptions`);
-}
+};
 
 // Get terrain data for a specific coordinate - with logging throttling
 // Create a cache to prevent redundant terrain calculations
@@ -376,7 +377,7 @@ let isMinimapTerrainsLoaded = false;
 export function updateMinimapRange(centerX, centerY, rangeX, rangeY) {
   minimapRange = { centerX, centerY, rangeX, rangeY };
   isMinimapTerrainsLoaded = true;
-}
+};
 
 // Optimize terrain data fetching
 let logThrottleTime = 0;
@@ -426,12 +427,10 @@ export function getTerrainData(x, y) {
   }
   
   return result;
-}
+};
 
 // Resize the map grid
 export function resizeMap(mapElement) {
-  if (!mapElement) return;
-  
   mapState.update(state => {
     const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
     const tileSizePx = TILE_SIZE * baseFontSize;
@@ -472,27 +471,24 @@ export function resizeMap(mapElement) {
       isReady: true
     };
   });
-}
+};
 
 // Create a centralized movement function that all navigation methods will use
-export function moveMapTo(newX, newY) {
-  // Always clear hover state during any movement
-  clearHoveredTile();
-  
-  mapState.update(state => {
+export function moveMapTo(newX, newY) {  
+  mapState.update(prev => {
     // Use current values when coordinates are undefined
-    const roundedX = newX !== undefined ? Math.round(newX) : state.targetCoord.x;
-    const roundedY = newY !== undefined ? Math.round(newY) : state.targetCoord.y;
+    const roundedX = newX !== undefined ? Math.round(newX) : prev.targetCoord.x;
+    const roundedY = newY !== undefined ? Math.round(newY) : prev.targetCoord.y;
     
     // Calculate new offsets
-    const newOffsetX = state.centerX + roundedX;
-    const newOffsetY = state.centerY + roundedY;
+    const newOffsetX = prev.centerX + roundedX;
+    const newOffsetY = prev.centerY + roundedY;
     
     const biome = getTerrainData(roundedX, roundedY).biome;
     console.log(`Moving to (${roundedX}, ${roundedY}) - Biome: ${biome.name}`);
     
     return {
-      ...state,
+      ...prev,
       targetCoord: { x: roundedX, y: roundedY },
       offsetX: newOffsetX,
       offsetY: newOffsetY,
@@ -502,7 +498,7 @@ export function moveMapTo(newX, newY) {
   
   // The targetTileStore will automatically update via its derived subscription
   // when it detects the change to targetCoord
-}
+};
 
 // Refactor moveMapByKeys to use the central movement function
 export function moveMapByKeys() {
@@ -525,7 +521,7 @@ export function moveMapByKeys() {
   
   // Use the centralized movement function
   moveMapTo(newX, newY);
-}
+};
 
 // Simplify the drag functionality
 export function startDrag(event) {
@@ -544,7 +540,7 @@ export function startDrag(event) {
   
   document.body.style.cursor = "grabbing";
   return true;
-}
+};
 
 // Update drag function to use the central movement function
 export function drag(event) {
@@ -607,7 +603,7 @@ export function drag(event) {
   }));
   
   return result;
-}
+};
 
 export function stopDrag() {
   let wasDragging = false;
@@ -630,7 +626,7 @@ export function stopDrag() {
   }
   
   return false;
-}
+};
 
 // Open details modal - simplify and make more reliable
 export function openDetailsModal() {
@@ -648,12 +644,12 @@ export function openDetailsModal() {
     // Set the modal state to true (open)
     mapState.update(state => ({
       ...state,
-      showDetailsModal: true
+      showDetails: true
     }));
   } else {
     console.error("Cannot open details: Invalid coordinates");
   }
-}
+};
 
 // Close details modal
 export function closeDetailsModal() {
@@ -661,10 +657,13 @@ export function closeDetailsModal() {
   
   mapState.update(state => ({
     ...state,
-    showDetailsModal: false
+    showDetails: false
   }));
-}
+};
 
+
+
+// This is a minimap function primarily and should be moved there.
 // Check if drag state is consistent
 export function checkDragState() {
   let fixed = false;
@@ -686,29 +685,7 @@ export function checkDragState() {
   }
   
   return false;
-}
-
-// Create derived stores for grid and axis arrays - with optimization
-// Add debounce helper at the top with other helpers
-function debounce(fn, ms) {
-  let timeoutId;
-  return (...args) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => fn(...args), ms);
-  };
-}
-
-// Add memoization helper
-function memoize(fn) {
-  const cache = new Map();
-  return (...args) => {
-    const key = JSON.stringify(args);
-    if (!cache.has(key)) {
-      cache.set(key, fn(...args));
-    }
-    return cache.get(key);
-  };
-}
+};
 
 // Replace expandedGridArray with a more reliable implementation
 export const expandedGridArray = derived(
@@ -760,12 +737,10 @@ export const expandedGridArray = derived(
             y >= centerOffsetY - Math.floor($mapState.rows / 2) && 
             y <= centerOffsetY + Math.floor($mapState.rows / 2);
             
-          const isCenter = x === centerOffsetX && y === centerOffsetY;
-          
           result.push({
             x: globalX,
             y: globalY,
-            isCenter,
+            isCenter: x === centerOffsetX && y === centerOffsetY,
             isInMainView,
             ...terrainData
           });
@@ -835,26 +810,26 @@ export const gridArray = (() => {
 // Replace axis arrays with memoized versions
 export const xAxisArray = derived(
   mapState,
-  memoize(($mapState) => {
+  ($mapState) => {
     if (!$mapState.isReady) return [];
     return Array.from({ length: $mapState.cols }, (_, x) => ({
       // Fix the direction by inverting the calculation
       value: $mapState.targetCoord.x - ($mapState.centerX - x),
       isCenter: x === $mapState.centerX
     }));
-  })
+  }
 );
 
 export const yAxisArray = derived(
   mapState,
-  memoize(($mapState) => {
+  ($mapState) => {
     if (!$mapState.isReady) return [];
     return Array.from({ length: $mapState.rows }, (_, y) => ({
       // Also fix the y-axis for consistency
       value: $mapState.targetCoord.y - ($mapState.centerY - y),
       isCenter: y === $mapState.centerY
     }));
-  })
+  }
 );
 
 // Add a new function to handle hover state updates
@@ -863,12 +838,4 @@ export function updateHoveredTile(x, y) {
     ...state,
     hoveredTile: x !== null && y !== null ? { x, y } : null
   }));
-}
-
-// Add a function to clear hover state
-export function clearHoveredTile() {
-  mapState.update(state => ({
-    ...state,
-    hoveredTile: null
-  }));
-}
+};

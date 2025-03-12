@@ -2,18 +2,10 @@
     import { page } from '$app/stores';
     import { user, signOut } from '$lib/stores/auth';
     import Logo from '../components/Logo.svelte';
-    
-    // Check if current page is the map page
-    $: isMapPage = $page.url.pathname === '/map';
-
-    // Handle sign out
-    const handleSignOut = async () => {
-        await signOut();
-    };
 </script>
 
 <div class="app">
-    <header class={`appheader ${isMapPage ? 'map-header' : ''}`}>
+    <header class={`appheader ${$page.url.pathname === '/map' ? 'map-header' : ''}`}>
         <nav class="navbar">
             <!-- Separate logo container that's always visible -->
             <div class="logo-container">
@@ -23,7 +15,7 @@
             </div>
             
             <!-- Only render navigation links when not on map page -->
-            {#if !isMapPage}
+            {#if !$page.url.pathname === '/map'}
                 <div class="navlinks">
                     <a href="/map" class="button navlink">Map</a>
                     {#if !$user}
@@ -34,10 +26,10 @@
             {/if}
             
             <!-- Only render auth links when not on map page -->
-            {#if !isMapPage && $user}
+            {#if !$page.url.pathname === '/map' && $user}
                 <div class="authlinks">
                     <span class="greeting">Hello, {$user.email}</span>
-                    <button class="button" on:click={handleSignOut}>Sign Out</button>
+                    <button class="button" onclick={() => signOut}>Sign Out</button>
                 </div>
             {/if}
         </nav>
@@ -201,8 +193,6 @@
         align-items: center;
     }
 
-    /* Remove the .hidden class since we're not using it anymore */
-    
     .navlinks {
         display: flex;
         gap: 1em;
@@ -214,6 +204,16 @@
         display: flex;
         gap: 1em;
         align-items: center;
+    }
+
+    .navlink {
+        border: none;
+        font-size: 1.3em;
+    }
+    
+    .greeting {
+        color: var(--color-heading);
+        margin-right: 0.5em;
     }
     
     :global(.button) {
@@ -235,16 +235,6 @@
         background-color: var(--color-button-hover);
         transform: translateY(-0.125em);
         box-shadow: 0 0.1875em 0.3125em var(--color-shadow);
-    }
-
-    .navlink {
-        border: none;
-        font-size: 1.3em;
-    }
-    
-    .greeting {
-        color: var(--color-heading);
-        margin-right: 0.5em;
     }
 
     /* Button variations - make global */

@@ -1,20 +1,25 @@
 <script>
+  import { targetTileStore } from "../../lib/stores/map";
+
   const { x = 0, y = 0, openDetails } = $props();
   
   const keypress = e => ['Enter', ' '].includes(e.key) && e.preventDefault() && openDetails()
+
+  console.log(targetTileStore);
+
 </script>
 
 <div 
-  class="legend-container" 
+  class="legend" 
   onclick={openDetails}
   onkeypress={keypress}
   role="button" 
   tabindex="0">
-  <div class="coordinates">({x}, {y})</div>
+  {targetTileStore.x} | {targetTileStore.y}
 </div>
 
 <style>
-  .legend-container {
+  .legend {
     position: absolute;
     bottom: 2.5em;
     right: 0.5em;
@@ -28,13 +33,24 @@
     border: 0.05em solid rgba(255, 255, 255, 0.1);
     box-shadow: none;
     font-weight: 500;
+
+    font-size: 1.2em;
+    font-weight: bold;
+    color: rgba(0, 0, 0, 0.9);
     
-    animation: fadeInLegend 0.7s ease-out forwards;
+    animation: reveal 0.7s ease-out forwards;
     opacity: 0;
     transform: translateY(0);
   }
   
-  @keyframes fadeInLegend {
+  .legend:hover {
+    background-color: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: none;
+    box-shadow: none;
+  }
+
+  @keyframes reveal {
     0% {
       opacity: 0;
       transform: translateY(1em);
@@ -43,22 +59,5 @@
       opacity: 1;
       transform: translateY(0);
     }
-  }
-  
-  .legend-container:hover {
-    background-color: rgba(255, 255, 255, 0.6);
-    border-color: rgba(255, 255, 255, 0.5);
-    transform: none;
-    box-shadow: none;
-  }
-  
-  .legend-container:active {
-    transform: scale(0.98);
-  }
-  
-  .coordinates {
-    font-size: 1.2em;
-    font-weight: bold;
-    color: rgba(0, 0, 0, 0.9);
   }
 </style>
