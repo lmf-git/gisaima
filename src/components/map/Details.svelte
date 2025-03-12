@@ -1,5 +1,6 @@
 <script>
   import { targetTileStore } from "../../lib/stores/map";
+  import Close from '../../components/icons/Close.svelte';
   
   const { x = 0, y = 0, terrain, onClose } = $props()
   
@@ -21,8 +22,8 @@
       <h2>Details {x}, {y}</h2>
       <p>Terrain: {formattedName}</p>
     </div>
-    <button class="close" onclick={onClose}>
-      X
+    <button class="close-btn" onclick={onClose}>
+      <Close size="1.8em" color="rgba(0, 0, 0, 0.8)" />
     </button>
   </div>
 </div>
@@ -35,6 +36,7 @@
     z-index: 2;
     transition: opacity 0.2s ease;
     font-size: 1.2em;
+    font-family: var(--font-body);
   }
   
   .info {
@@ -74,30 +76,37 @@
   h2 {
     margin: 0;
     font-size: 1.3em;
-    font-weight: bold;
+    font-weight: 700; /* Bold for important headers */
     color: rgba(0, 0, 0, 0.9);
     text-shadow: 0 0 0.1875em rgba(255, 255, 255, 0.8);
+    font-family: var(--font-heading);
   }
   
   p {
     margin: 0.3em 0 0;
     font-size: 1.1em;
     color: rgba(0, 0, 0, 0.8);
+    font-family: var(--font-body);
+    font-weight: 400; /* Regular for details text */
   }
   
-  .close {
+  .close-btn {
     background: none;
     border: none;
-    color: rgba(0, 0, 0, 0.8);
-    font-size: 1.5em;
-    line-height: 1;
-    padding: 0;
+    padding: 0.3em;
     cursor: pointer;
     opacity: 0.8;
-    transition: opacity 0.2s;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2em;
+    min-height: 2em;
+    border-radius: 0.3em;
   }
   
-  .close:hover {
+  .close-btn:hover {
     opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
   }
 </style>

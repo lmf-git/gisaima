@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte'
   import { browser } from '$app/environment'
+  import Close from '../../components/icons/Close.svelte';
   
   const { show = true } = $props();
   
@@ -33,7 +34,9 @@
 {#if ready && !closed && show}
   <div class="tut tutorial-container">
     <div class="box">
-      <button class="close" aria-label="Close tutorial" onclick={close}>⨯</button>
+      <button class="close-btn" aria-label="Close tutorial" onclick={close}>
+        <Close size="1.8em" color="var(--color-text)" />
+      </button>
       <h2>Welcome to Gisaima</h2>
       
       <div class="content">
@@ -115,17 +118,22 @@
     font-size: 2em;
     margin: 0 0 0.8em 0;
     text-shadow: 0 0 0.5em rgba(0, 0, 0, 0.5);
+    font-family: var(--font-heading);
+    font-weight: 700; /* Bold for main tutorial header */
   }
   
   h3 {
     color: var(--color-muted-teal);
     margin: 0 0 0.5em 0;
+    font-family: var(--font-heading);
+    font-weight: 600; /* Semi-bold for section headers */
   }
   
   .content {
     display: flex;
     flex-direction: column;
     gap: 1.5em;
+    font-family: var(--font-body);
   }
   
   .summary {
@@ -133,6 +141,7 @@
     line-height: 1.5;
     text-align: center;
     margin: 0;
+    font-weight: 500; /* Medium weight for important summary */
   }
   
   .features {
@@ -145,6 +154,7 @@
     margin: 0;
     padding-left: 1.5em;
     line-height: 1.4;
+    font-weight: 400; /* Regular weight for list items */
   }
   
   .feature li {
@@ -176,14 +186,15 @@
     border-radius: 0.2em;
     border: 1px solid var(--color-muted-teal);
     box-shadow: 0 0.1em 0.2em rgba(0, 0, 0, 0.3);
+    font-family: var(--font-heading);
   }
   
-  .close {
+  .close-btn {
     position: absolute;
     top: 0.8em;
     right: 0.8em;
-    height: 2em;
-    width: 2em;
+    height: 2.5em;
+    width: 2.5em;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -191,15 +202,16 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 50%;
     color: var(--color-text);
-    font-size: 1.2em;
     cursor: pointer;
     opacity: 0.7;
     transition: all 0.2s ease;
+    padding: 0;
   }
   
-  .close:hover {
+  .close-btn:hover {
     opacity: 1;
     background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
   }
   
   .start-button {
@@ -213,6 +225,8 @@
     cursor: pointer;
     transition: all 0.2s ease;
     margin-top: 1em;
+    font-family: var(--font-heading);
+    font-weight: 600;
   }
   
   .start-button:hover {

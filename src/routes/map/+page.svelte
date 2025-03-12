@@ -2,12 +2,9 @@
     import Grid from '../../components/map/Grid.svelte';
     import Minimap from '../../components/map/Minimap.svelte';
     import Axes from '../../components/map/Axes.svelte';
-
     import Legend from '../../components/map/Legend.svelte';
     import Details from '../../components/map/Details.svelte';
-
     import Tutorial from '../../components/map/Tutorial.svelte';
-
     import { 
         mapState, 
         xAxisArray, 
@@ -19,11 +16,19 @@
     
     // Add reactive variable to track if any drag is happening
     const isDragging = $derived($mapState.isDragging);
+    
+    // Add onMount to apply body styles only when this page is active
+    import { onMount, onDestroy } from 'svelte';
+    
+    // Apply map-specific body styles when component mounts
+    onMount(() => document.body.classList.add('map-page-active'));
+    
+    // Remove map-specific body styles when component is destroyed
+    onDestroy(() => document.body.classList.remove('map-page-active'));
 </script>
 
 <div class="map" class:dragging={isDragging}>
     <Grid />
-
     <Minimap />
 
     <!-- Show either Legend or Details in the same position -->
@@ -69,8 +74,9 @@
         touch-action: none;
     }
     
-    /* This prevents bounce scroll effects on iOS */
-    :global(body) {
+    /* Apply map-specific body styles using a global selector, 
+       but only when the map-page-active class is present */
+    :global(body.map-page-active) {
         overscroll-behavior: none;
         overflow: hidden;
         position: fixed;

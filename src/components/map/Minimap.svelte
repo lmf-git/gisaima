@@ -8,6 +8,7 @@
     setMinimapVisibility
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
+  import Close from '../../components/icons/Close.svelte';
 
   // Simplify state variables
   let open = $state(true);
@@ -351,9 +352,9 @@
     onclick={toggleMinimap} 
     aria-label={open ? "Hide minimap" : "Show minimap"}>
     {#if open}
-      ×
+      <Close size="1.2em" color="rgba(0, 0, 0, 0.8)" />
     {:else}
-      M
+      <span class="toggle-text">M</span>
     {/if}
   </button>
   
@@ -421,12 +422,13 @@
     position: absolute;
     top: 0.5em;
     right: 0.5em;
-    width: 2em;
+    min-width: 2em;
     height: 2em;
-    background: var(--color-panel-bg);
-    border: 1px solid var(--color-panel-border);
-    border-radius: 0.25em;
-    color: white;
+    background-color: rgba(255, 255, 255, 0.4);
+    border: 0.05em solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.3em;
+    color: rgba(0, 0, 0, 0.8);
+    padding: 0.3em 0.6em;
     font-size: 1em;
     font-weight: bold;
     cursor: pointer;
@@ -434,25 +436,31 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0.1em 0.3em var(--color-shadow);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
     transition: all 0.2s ease;
-    opacity: 0; /* Start invisible */
-    animation: fadeInToggle 0.7s ease-out 0.3s forwards; /* Add slight delay for better UX */
+    opacity: 0;
+    animation: fadeInToggle 0.7s ease-out 0.3s forwards;
+  }
+  
+  .toggle-text {
+    font-weight: bold;
+    color: rgba(0, 0, 0, 0.8);
   }
   
   @keyframes fadeInToggle {
     0% {
       opacity: 0;
-      transform: translateY(-0.5em) scale(0.9);
+      transform: translateY(-1em);
     }
     100% {
       opacity: 1;
-      transform: scale(1);
+      transform: translateY(0);
     }
   }
   
   .toggle-button:hover {
-    background: var(--color-panel-hover);
+    background-color: rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.5);
   }
   
   .minimap {
@@ -544,8 +552,7 @@
     }
     
     .toggle-button {
-      padding: 0.3em; /* Slightly larger touch target */
-      font-size: 1.1em;
+      padding: 0.4em 0.7em; /* Slightly larger touch target */
     }
   }
 
