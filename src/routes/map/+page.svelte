@@ -16,9 +16,12 @@
         closeDetailsModal,
         targetTileStore
     } from "../../lib/stores/map.js";
+    
+    // Add reactive variable to track if any drag is happening
+    const isDragging = $derived($mapState.isDragging);
 </script>
 
-<div class="map">
+<div class="map" class:dragging={isDragging}>
     <Grid />
 
     <Minimap />
@@ -58,5 +61,20 @@
         left: 0;
         width: 100%;
         height: 100dvh;
+    }
+    
+    /* Prevent any scrolling of the page when dragging is active */
+    .map.dragging {
+        overflow: hidden;
+        touch-action: none;
+    }
+    
+    /* This prevents bounce scroll effects on iOS */
+    :global(body) {
+        overscroll-behavior: none;
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+        height: 100%;
     }
 </style>

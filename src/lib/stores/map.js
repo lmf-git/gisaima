@@ -698,7 +698,7 @@ export function setMinimapVisibility(isVisible) {
   }));
 }
 
-// Replace expandedGridArray with a more reliable implementation that respects minimap visibility
+// Replace expandedGridArray with a properly fixed implementation
 export const expandedGridArray = derived(
   [mapState],
   ([$mapState], set) => {
@@ -719,89 +719,61 @@ export const expandedGridArray = derived(
     }
     expandedGridArray.lastKey = currentKey;
     
-    // Generate either expanded grid or just visible grid based on minimap visibility
-    if ($mapState.minimapVisible) {
-      // Full expanded grid for minimap
-      const expandedCols = Math.min($mapState.cols * GRID_EXPANSION_FACTOR, 51);
-      const expandedRows = Math.min($mapState.rows * GRID_EXPANSION_FACTOR, 51);
+    try {
+      // Determine grid dimensions based on minimap visibility
+      const useExpanded = $mapState.minimapVisible;
+      const gridCols = useExpanded 
+        ? Math.min($mapState.cols * GRID_EXPANSION_FACTOR, 51)
+        : $mapState.cols;
+      const gridRows = useExpanded 
+        ? Math.min($mapState.rows * GRID_EXPANSION_FACTOR, 51)
+        : $mapState.rows;
       
-      const centerOffsetX = Math.floor(expandedCols / 2);
-      const centerOffsetY = Math.floor(expandedRows / 2);
+      const centerOffsetX = Math.floor(gridCols / 2);
+      const centerOffsetY = Math.floor(gridRows / 2);
       
-      console.log(`Calculating expanded grid: ${expandedCols}x${expandedRows}`);
+      console.log(`Generating ${useExpanded ? 'expanded' : 'visible-only'} grid: ${gridCols}x${gridRows}`);
       
-      try {
-        const result = [];
-        
-        // Skip logging for most terrain generations
-        const oldLogTime = logThrottleTime;
-        logThrottleTime = Date.now() + LOG_THROTTLE_INTERVAL;
-        
-        for (let y = 0; y < expandedRows; y++) {
-          for (let x = 0; x < expandedCols; x++) {
-            const globalX = x - centerOffsetX + $mapState.targetCoord.x;
-            const globalY = y - centerOffsetY + $mapState.targetCoord.y;
-            const terrainData = getTerrainData(globalX, globalY);
-            
-            const isInMainView = 
+      // Skip logging for most terrain generations
+      const oldLogTime = logThrottleTime;
+      logThrottleTime = Date.now() + LOG_THROTTLE_INTERVAL;
+      
+      const result = [];
+      
+      for (let y = 0; y < gridRows; y++) {
+        for (let x = 0; x < gridCols; x++) {
+          const globalX = x - centerOffsetX + $mapState.targetCoord.x;
+          const globalY = y - centerOffsetY + $mapState.targetCoord.y;
+          const terrainData = getTerrainData(globalX, globalY);
+          
+          // Calculate isInMainView properly based on whether we're using expanded view
+          let isInMainView = true; // Default for non-expanded grid
+          
+          if (useExpanded) {
+            // For expanded grid, check if the cell is within main view bounds
+            isInMainView = 
               x >= centerOffsetX - Math.floor($mapState.cols / 2) && 
               x <= centerOffsetX + Math.floor($mapState.cols / 2) &&
               y >= centerOffsetY - Math.floor($mapState.rows / 2) && 
               y <= centerOffsetY + Math.floor($mapState.rows / 2);
-              
-            result.push({
-              x: globalX,
-              y: globalY,
-              isCenter: x === centerOffsetX && y === centerOffsetY,
-              isInMainView,
-              ...terrainData
-            });
           }
+          
+          result.push({
+            x: globalX,
+            y: globalY,
+            isCenter: x === centerOffsetX && y === centerOffsetY,
+            isInMainView,
+            ...terrainData
+          });
         }
-        
-        logThrottleTime = oldLogTime;
-        console.log(`Generated expanded grid with ${result.length} tiles`);
-        set(result);
-      } catch (error) {
-        console.error("Error generating expanded grid:", error);
-        set([]);
       }
-    } else {
-      // Generate only the visible grid when minimap is closed
-      // This is more efficient but still provides data for Grid component
-      const cols = $mapState.cols;
-      const rows = $mapState.rows;
       
-      const centerOffsetX = Math.floor(cols / 2);
-      const centerOffsetY = Math.floor(rows / 2);
-      
-      console.log(`Generating visible-only grid: ${cols}x${rows}`);
-      
-      try {
-        const result = [];
-        
-        for (let y = 0; y < rows; y++) {
-          for (let x = 0; x < cols; x++) {
-            const globalX = x - centerOffsetX + $mapState.targetCoord.x;
-            const globalY = y - centerOffsetY + $mapState.targetCoord.y;
-            const terrainData = getTerrainData(globalX, globalY);
-            
-            result.push({
-              x: globalX, 
-              y: globalY,
-              isCenter: x === centerOffsetX && y === centerOffsetY,
-              isInMainView: true, // All tiles are in main view
-              ...terrainData
-            });
-          }
-        }
-        
-        console.log(`Generated visible-only grid with ${result.length} tiles`);
-        set(result);
-      } catch (error) {
-        console.error("Error generating visible grid:", error);
-        set([]);
-      }
+      logThrottleTime = oldLogTime;
+      console.log(`Generated grid with ${result.length} tiles`);
+      set(result);
+    } catch (error) {
+      console.error("Error generating grid:", error);
+      set([]);
     }
   },
   []

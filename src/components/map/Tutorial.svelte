@@ -7,15 +7,17 @@
   let closed = $state(false)
   let ready = $state(false)
   
-  if (browser) {
-    closed = localStorage.getItem('tutorial-state') === 'closed'
-    ready = true
+  // Combine browser check and onMount initialization
+  function initializeTutorialState() {
+    if (browser) {
+      closed = localStorage.getItem('tutorial-state') === 'closed'
+      ready = true
+    }
   }
   
-  onMount(() => {
-    closed = localStorage.getItem('tutorial-state') === 'closed'
-    ready = true
-  })
+  // Run initialization immediately and on mount
+  initializeTutorialState();
+  onMount(initializeTutorialState);
   
   const close = () => {
     closed = true

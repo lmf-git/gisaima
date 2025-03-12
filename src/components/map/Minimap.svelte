@@ -229,43 +229,41 @@
 
   let minimapContainerWidth = $state(900); // Default fallback value
   
-  function toggleMinimap() {
-    open = !open;
-    
-    // Store preference in localStorage
-    if (browser) {
-      localStorage.setItem('minimapVisible', open.toString());
-    }
-    
-    // Update the global state synchronously to avoid unnecessary grid generation
-    setMinimapVisibility(open);
-    
-    // If we're opening the minimap and map is ready, generate grid
-    if (open && $mapState.isReady) {
-      generateMinimapGrid();
-    }
-  }
-  
-  // Simplified initialization for small screens
+  // Combined initialization logic
   function initializeVisibility() {
     if (browser) {
       const storedVisibility = localStorage.getItem('minimapVisible');
       
-      if (storedVisibility !== null) {
-        // Use stored preference if available
-        open = storedVisibility === 'true';
-      } else {
-        // Default based on screen size
-        open = windowWidth >= BREAKPOINT;
-      }
+      // Set the local and global visibility state
+      open = storedVisibility === 'true' || 
+        (storedVisibility === null && windowWidth >= BREAKPOINT);
       
-      // Also set the global state
       setMinimapVisibility(open);
       initialized = true;
     }
   }
   
-  // Initialize on component load
+  // Combined state update function for changing visibility
+  function updateMinimapVisibility(isOpen) {
+    open = isOpen;
+    setMinimapVisibility(isOpen);
+    
+    if (browser) {
+      localStorage.setItem('minimapVisible', isOpen.toString());
+    }
+    
+    // Regenerate grid if opening
+    if (isOpen && $mapState.isReady) {
+      generateMinimapGrid();
+    }
+  }
+  
+  // Simplified toggle function
+  function toggleMinimap() {
+    updateMinimapVisibility(!open);
+  }
+
+  // Initialize on component load (once)
   $effect(() => {
     if (!initialized) {
       initializeVisibility();
@@ -285,6 +283,8 @@
   
   function handleTouchStart(event) {
     if (!$mapState.isReady) return;
+    
+    // Always prevent default to stop page scrolling
     event.preventDefault();
     
     const touch = event.touches[0];
@@ -345,7 +345,7 @@
 />
 
 <!-- Always render the container and toggle button -->
-<div class="map-container">
+<div class="map-container" class:touch-active={isTouching}>
   <button 
     class="toggle-button" 
     onclick={toggleMinimap} 
@@ -547,5 +547,10 @@
       padding: 0.3em; /* Slightly larger touch target */
       font-size: 1.1em;
     }
+  }
+
+  /* Prevent scrolling when touch interacting */
+  .map-container.touch-active {
+    touch-action: none;
   }
 </style>

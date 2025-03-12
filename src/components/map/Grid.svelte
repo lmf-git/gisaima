@@ -28,8 +28,13 @@
   // Add flag to track initial animation state
   let introduced = $state(false);
   
-  // Movement state tracking
-  const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null);
+  // Add touch support state variables
+  let isTouching = $state(false);
+  let touchStartX = $state(0);
+  let touchStartY = $state(0);
+  
+  // Update movement state tracking to include touch
+  const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isTouching);
   
   // Initialize when mounted
   onMount(() => {
@@ -127,7 +132,53 @@
     else if (!$mapState.isMouseActuallyDown && $mapState.isDragging) handleStopDrag();
   };
 
-
+  // Add touch handling functions
+  function handleTouchStart(event) {
+    if (!$mapState.isReady) return;
+    
+    // Prevent default to stop page scrolling immediately
+    event.preventDefault();
+    
+    const touch = event.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    isTouching = true;
+    
+    // Update the map state similar to mouse drag start
+    if (startDrag({
+      clientX: touch.clientX,
+      clientY: touch.clientY,
+      button: 0, // Simulate left button
+      preventDefault: () => {}
+    }) && mapElement) {
+      mapElement.style.cursor = "grabbing";
+      mapElement.classList.add("dragging");
+    }
+  }
+  
+  function handleTouchMove(event) {
+    if (!isTouching || !$mapState.isReady) return;
+    event.preventDefault(); // Prevent scrolling when dragging
+    
+    // Update the map via the drag function
+    drag({
+      clientX: event.touches[0].clientX,
+      clientY: event.touches[0].clientY
+    });
+  }
+  
+  function handleTouchEnd() {
+    if (!isTouching) return;
+    isTouching = false;
+    
+    if (mapElement) {
+      mapElement.style.cursor = "grab";
+      mapElement.classList.remove("dragging");
+    }
+    
+    // End the drag
+    stopDrag();
+  }
 
   // Add improved functions to track hover state
   function higlight(cell) {
@@ -172,11 +223,15 @@
   onvisibilitychange={() => document.visibilityState === 'hidden' && handleStopDrag()}
 />
 
-<div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={$mapState.showDetails}>
+<div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={$mapState.showDetails} class:touch-active={isTouching}>
   <div
     class="map"
     bind:this={mapElement}
     onmousedown={handleStartDrag}
+    ontouchstart={handleTouchStart}
+    ontouchmove={handleTouchMove}
+    ontouchend={handleTouchEnd}
+    ontouchcancel={handleTouchEnd}
     class:moving={isMoving}
     style="--terrain-color: {backgroundColor};"
     role="grid"
@@ -405,6 +460,29 @@
   
   .tile.has-player {
     box-shadow: inset 0 0 0.2em rgba(100, 100, 255, 0.3);
+  }
+
+  @media (hover: none) {
+    .map {
+      cursor: default; /* Better default for touch devices */
+    }
+    
+    .map.moving {
+      cursor: default;
+    }
+  }
+
+  /* Prevent scrolling while dragging */
+  .map-container.touch-active {
+    touch-action: none;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
   }
 
   @keyframes revealTile {
