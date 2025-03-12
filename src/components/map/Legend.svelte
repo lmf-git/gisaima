@@ -1,7 +1,12 @@
 <script>
+  import { targetTileStore } from "../../lib/stores/map";
+
   const { x = 0, y = 0, openDetails } = $props();
   
   const keypress = e => ['Enter', ' '].includes(e.key) && e.preventDefault() && openDetails()
+
+  console.log(targetTileStore);
+
 </script>
 
 <div 
@@ -10,7 +15,7 @@
   onkeypress={keypress}
   role="button" 
   tabindex="0">
-  {x} | {y}
+  {targetTileStore.x} | {targetTileStore.y}
 </div>
 
 <style>
