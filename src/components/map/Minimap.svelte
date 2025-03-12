@@ -274,6 +274,63 @@
   function handleResize() {
     checkScreenSize();
   }
+
+  // Touch support for mobile devices
+  let touchStartX = $state(0);
+  let touchStartY = $state(0);
+  let isTouching = $state(false);
+  
+  function handleTouchStart(event) {
+    if (!$mapState.isReady) return;
+    event.preventDefault();
+    
+    const touch = event.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    isTouching = true;
+    
+    if (map) {
+      map.style.cursor = "grabbing";
+      map.classList.add("dragging");
+    }
+  }
+  
+  function handleTouchMove(event) {
+    if (!isTouching || !$mapState.isReady) return;
+    event.preventDefault();
+    
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - touchStartX;
+    const deltaY = touch.clientY - touchStartY;
+    
+    const minimapRect = map.getBoundingClientRect();
+    const pixelsPerTileX = minimapRect.width / tileCountX;
+    const pixelsPerTileY = minimapRect.height / tileCountY;
+    
+    const cellsMovedX = Math.round(deltaX / pixelsPerTileX);
+    const cellsMovedY = Math.round(deltaY / pixelsPerTileY);
+    
+    if (cellsMovedX === 0 && cellsMovedY === 0) return;
+    
+    const newTargetX = $mapState.targetCoord.x - cellsMovedX;
+    const newTargetY = $mapState.targetCoord.y - cellsMovedY;
+    
+    moveMapTo(newTargetX, newTargetY);
+    
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+  }
+  
+  function handleTouchEnd() {
+    if (!isTouching) return;
+    
+    isTouching = false;
+    
+    if (map) {
+      map.style.cursor = "grab";
+      map.classList.remove("dragging");
+    }
+  }
 </script>
 
 <svelte:window
@@ -305,10 +362,14 @@
       onclick={handleMinimapClick}
       onmousedown={handleMinimapDragStart}
       onkeydown={handleKeyDown}
+      ontouchstart={handleTouchStart}
+      ontouchmove={handleTouchMove}
+      ontouchend={handleTouchEnd}
+      ontouchcancel={handleTouchEnd}
       tabindex="0"
       role="button"
       aria-label="Mini map for navigation"
-      class:drag={isDrag}>
+      class:drag={isDrag || isTouching}>
       {#if $mapState.isReady && minimapGrid.length > 0}
         {#each minimapGrid as cell}
           <div
@@ -459,6 +520,22 @@
     .toggle-button {
       top: 0.5em;
       right: 0.5em;
+    }
+  }
+
+  /* Add a small enhancement for touch devices */
+  @media (hover: none) {
+    .mini {
+      cursor: default; /* Remove grab cursor on touch devices */
+    }
+    
+    .mini.drag {
+      cursor: default;
+    }
+    
+    .toggle-button {
+      padding: 0.3em; /* Slightly larger touch target */
+      font-size: 1.1em;
     }
   }
 </style>
