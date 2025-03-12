@@ -7,12 +7,12 @@
     Legend/Tutorial/Etc should be here instead of in Grid to lessen complexity of Grid
 -->
 
-<div class="mappage">
+<div class="map">
     <Grid />
 </div>
 
 <style>
-    .mappage {
+    .map {
         position: absolute;
         top: 0;
         left: 0;

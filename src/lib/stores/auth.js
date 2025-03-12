@@ -1,6 +1,6 @@
-import { writable } from 'svelte/store'
-import { browser } from '$app/environment'
-import { auth } from '$lib/firebase/firebase'
+import { writable } from 'svelte/store';
+import { browser } from '$app/environment';
+import { auth } from '$lib/firebase/firebase';
 
 export const user = writable(null);
 export const loading = writable(true);
@@ -27,7 +27,7 @@ export const signIn = async (email, password) => {
   } catch (error) {
     return { success: false, error: error.message }
   }
-}
+};
 
 export const signUp = async (email, password) => {
   if (!browser) return { success: false, error: 'Cannot sign up on server' }
@@ -39,7 +39,7 @@ export const signUp = async (email, password) => {
   } catch (error) {
     return { success: false, error: error.message }
   }
-}
+};
 
 export const signOut = async () => {
   if (!browser) return { success: false, error: 'Cannot sign out on server' }
@@ -51,4 +51,4 @@ export const signOut = async () => {
   } catch (error) {
     return { success: false, error: error.message }
   }
-}
+};

@@ -197,8 +197,6 @@
         align-items: center;
     }
 
-    /* Remove the .hidden class since we're not using it anymore */
-    
     .navlinks {
         display: flex;
         gap: 1em;
@@ -210,6 +208,16 @@
         display: flex;
         gap: 1em;
         align-items: center;
+    }
+
+    .navlink {
+        border: none;
+        font-size: 1.3em;
+    }
+    
+    .greeting {
+        color: var(--color-heading);
+        margin-right: 0.5em;
     }
     
     :global(.button) {
@@ -231,16 +239,6 @@
         background-color: var(--color-button-hover);
         transform: translateY(-0.125em);
         box-shadow: 0 0.1875em 0.3125em var(--color-shadow);
-    }
-
-    .navlink {
-        border: none;
-        font-size: 1.3em;
-    }
-    
-    .greeting {
-        color: var(--color-heading);
-        margin-right: 0.5em;
     }
 
     /* Button variations - make global */

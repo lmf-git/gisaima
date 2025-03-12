@@ -1,6 +1,5 @@
 import { writable, derived, get } from 'svelte/store';
 import { TerrainGenerator } from '../map/noise.js';
-// Remove unused Firebase imports and use database from our database.js file
 import { ref, onValue } from "firebase/database";
 import { db } from "../firebase/database.js";
 
@@ -63,7 +62,7 @@ export const mapState = writable({
 // Map computation functions
 export function getChunkKey(x, y) {
   return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
-}
+};
 
 // Function to get world coordinates from chunk key
 export function getChunkCoordinates(chunkKey) {
@@ -74,7 +73,7 @@ export function getChunkCoordinates(chunkKey) {
     maxX: (chunkX + 1) * CHUNK_SIZE - 1,
     maxY: (chunkX + 1) * CHUNK_SIZE - 1
   };
-}
+};
 
 // Subscribe to a chunk in Firebase
 function subscribeToChunk(chunkKey) {
@@ -108,7 +107,7 @@ function subscribeToChunk(chunkKey) {
   
   // Store the unsubscribe function itself
   activeChunkSubscriptions.set(chunkKey, unsubscribe);
-}
+};
 
 // Unsubscribe from a chunk
 function unsubscribeFromChunk(chunkKey) {
@@ -124,7 +123,7 @@ function unsubscribeFromChunk(chunkKey) {
     return true;
   }
   return false;
-}
+};
 
 // Handler for chunk data updates from Firebase
 function handleChunkData(chunkKey, data) {
@@ -186,7 +185,7 @@ function handleChunkData(chunkKey, data) {
   });
   
   console.log(`Updated data for chunk ${chunkKey}`);
-}
+};
 
 // Function to clean entities when chunks are unloaded
 function cleanEntitiesForChunk(chunkKey) {
@@ -224,7 +223,7 @@ function cleanEntitiesForChunk(chunkKey) {
   });
   
   console.log(`Cleaned entities for chunk ${chunkKey}`);
-}
+};
 
 // Enhanced updateChunks function that syncs with Firebase
 export function updateChunks(gridArray) {
@@ -256,7 +255,7 @@ export function updateChunks(gridArray) {
       chunks: newVisibleChunks
     };
   });
-}
+};
 
 // Get entities for a specific coordinate
 export function getEntitiesAt(x, y) {
@@ -268,13 +267,13 @@ export function getEntitiesAt(x, y) {
     unitGroup: state.entities.groups[locationKey],
     player: state.entities.players[locationKey]
   };
-}
+};
 
 // Check if a coordinate has any entity
 export function hasEntityAt(x, y) {
   const entities = getEntitiesAt(x, y);
   return !!(entities.structure || entities.unitGroup || entities.player);
-}
+};
 
 // Get all entities within a chunk
 export function getEntitiesInChunk(chunkKey) {
@@ -305,7 +304,7 @@ export function getEntitiesInChunk(chunkKey) {
   });
   
   return result;
-}
+};
 
 // Add cleanup function to be called when the grid component is destroyed
 export function cleanupChunkSubscriptions() {
@@ -318,7 +317,7 @@ export function cleanupChunkSubscriptions() {
   });
   
   console.log(`Cleaned up ${activeChunkKeys.length} chunk subscriptions`);
-}
+};
 
 // Get terrain data for a specific coordinate - with logging throttling
 // Create a cache to prevent redundant terrain calculations
@@ -378,7 +377,7 @@ let isMinimapTerrainsLoaded = false;
 export function updateMinimapRange(centerX, centerY, rangeX, rangeY) {
   minimapRange = { centerX, centerY, rangeX, rangeY };
   isMinimapTerrainsLoaded = true;
-}
+};
 
 // Optimize terrain data fetching
 let logThrottleTime = 0;
@@ -428,7 +427,7 @@ export function getTerrainData(x, y) {
   }
   
   return result;
-}
+};
 
 // Resize the map grid
 export function resizeMap(mapElement) {
@@ -472,7 +471,7 @@ export function resizeMap(mapElement) {
       isReady: true
     };
   });
-}
+};
 
 // Create a centralized movement function that all navigation methods will use
 export function moveMapTo(newX, newY) {  
@@ -499,7 +498,7 @@ export function moveMapTo(newX, newY) {
   
   // The targetTileStore will automatically update via its derived subscription
   // when it detects the change to targetCoord
-}
+};
 
 // Refactor moveMapByKeys to use the central movement function
 export function moveMapByKeys() {
@@ -522,7 +521,7 @@ export function moveMapByKeys() {
   
   // Use the centralized movement function
   moveMapTo(newX, newY);
-}
+};
 
 // Simplify the drag functionality
 export function startDrag(event) {
@@ -541,7 +540,7 @@ export function startDrag(event) {
   
   document.body.style.cursor = "grabbing";
   return true;
-}
+};
 
 // Update drag function to use the central movement function
 export function drag(event) {
@@ -604,7 +603,7 @@ export function drag(event) {
   }));
   
   return result;
-}
+};
 
 export function stopDrag() {
   let wasDragging = false;
@@ -627,7 +626,7 @@ export function stopDrag() {
   }
   
   return false;
-}
+};
 
 // Open details modal - simplify and make more reliable
 export function openDetailsModal() {
@@ -650,7 +649,7 @@ export function openDetailsModal() {
   } else {
     console.error("Cannot open details: Invalid coordinates");
   }
-}
+};
 
 // Close details modal
 export function closeDetailsModal() {
@@ -660,7 +659,7 @@ export function closeDetailsModal() {
     ...state,
     showDetails: false
   }));
-}
+};
 
 // Check if drag state is consistent
 export function checkDragState() {
@@ -683,17 +682,9 @@ export function checkDragState() {
   }
   
   return false;
-}
+};
 
-// Create derived stores for grid and axis arrays - with optimization
-// Add debounce helper at the top with other helpers
-function debounce(fn, ms) {
-  let timeoutId;
-  return (...args) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => fn(...args), ms);
-  };
-}
+// I hate the look of this moization helper lol.. try without
 
 // Add memoization helper
 function memoize(fn) {
@@ -705,7 +696,7 @@ function memoize(fn) {
     }
     return cache.get(key);
   };
-}
+};
 
 // Replace expandedGridArray with a more reliable implementation
 export const expandedGridArray = derived(
@@ -757,12 +748,10 @@ export const expandedGridArray = derived(
             y >= centerOffsetY - Math.floor($mapState.rows / 2) && 
             y <= centerOffsetY + Math.floor($mapState.rows / 2);
             
-          const isCenter = x === centerOffsetX && y === centerOffsetY;
-          
           result.push({
             x: globalX,
             y: globalY,
-            isCenter,
+            isCenter: x === centerOffsetX && y === centerOffsetY,
             isInMainView,
             ...terrainData
           });
@@ -860,4 +849,4 @@ export function updateHoveredTile(x, y) {
     ...state,
     hoveredTile: x !== null && y !== null ? { x, y } : null
   }));
-}
+};
