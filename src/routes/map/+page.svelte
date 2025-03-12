@@ -1,14 +1,62 @@
 <script>
     import Grid from '../../components/map/Grid.svelte';
-</script>
+    import MiniMap from '../../components/map/MiniMap.svelte';
+    import Axes from '../../components/map/Axes.svelte';
 
-<!-- TODO: 
-    Control should be moved here grid/minimap pretty similar controls,
-    Legend/Tutorial/Etc should be here instead of in Grid to lessen complexity of Grid
--->
+    import Legend from '../../components/map/Legend.svelte';
+    import Details from '../../components/map/Details.svelte';
+
+    import Tutorial from '../../components/map/Tutorial.svelte';
+
+    import { 
+        mapState, 
+        xAxisArray, 
+        yAxisArray,
+        openDetailsModal,
+        closeDetailsModal,
+        targetTileStore
+    } from "../../lib/stores/map.js";
+
+    const detailsProps = $derived({
+        x: targetTileStore.x,
+        y: targetTileStore.y,
+        show: $mapState.showDetails,
+        biomeName: targetTileStore.biome?.name
+    });
+</script>
 
 <div class="map">
     <Grid />
+
+    <Tutorial show={true} />
+
+    <!-- Show either Legend or Details in the same position -->
+    {#if $mapState.showDetails}
+        <Details 
+        x={targetTileStore.x}
+        y={targetTileStore.y}
+        terrain={detailsProps.biomeName}
+        onClose={closeDetailsModal}
+        />
+    {:else}
+        <Legend 
+        x={targetTileStore.x} 
+        y={targetTileStore.y}
+        openDetails={openDetailsModal} 
+        />
+    {/if}
+
+    <!-- Axes component should appear above the grid -->
+    {#if $mapState.isReady}
+        <Axes 
+        xAxisArray={$xAxisArray}
+        yAxisArray={$yAxisArray}
+        cols={$mapState.cols}
+        rows={$mapState.rows}
+        />
+    {/if}
+
+    <MiniMap />
 </div>
 
 <style>

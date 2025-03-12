@@ -1,15 +1,15 @@
 <script>
-  const { x = 0, y = 0, show = true, terrain, onClose } = $props()
+  const { x = 0, y = 0, terrain, onClose } = $props()
   
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   const formattedName = $derived(_fmt(terrain));
   
-  const escape = event => event.key === 'Escape' && show && onClose?.();
+  const escape = event => event.key === 'Escape' && onClose?.();
 </script>
 
 <svelte:window onkeydown={escape} />
 
-<div class="details" class:visible={show}>
+<div class="details">
   <div class="info">
     <div class="content">
       <h2>Details {x}, {y}</h2>
@@ -27,14 +27,8 @@
     bottom: 2.5em;
     right: .5em;
     z-index: 2;
-    opacity: 0;
     transition: opacity 0.2s ease;
     font-size: 1.2em;
-  }
-  
-  .details.visible {
-    opacity: 1;
-    pointer-events: all;
   }
   
   .info {

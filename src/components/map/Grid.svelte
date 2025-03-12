@@ -1,16 +1,10 @@
 <script>
   import { onMount, onDestroy } from "svelte";
-  import Legend from "./Legend.svelte";
-  import Axes from "./Axes.svelte";
-  import Details from "./Details.svelte";
-  import MiniMap from "./MiniMap.svelte";
-  import Tutorial from "./Tutorial.svelte";
+
 
   import { 
     mapState, 
     gridArray, 
-    xAxisArray, 
-    yAxisArray,
     TILE_SIZE,
     DRAG_CHECK_INTERVAL,
     resizeMap,
@@ -19,12 +13,10 @@
     drag as dragMap,
     checkDragState,
     moveMapByKeys,
-    openDetailsModal,
-    closeDetailsModal,
     targetTileStore,
     updateHoveredTile,
     cleanupChunkSubscriptions,
-    getEntitiesAt,
+    getEntitiesAt
 
   } from "../../lib/stores/map.js";
   
@@ -35,9 +27,6 @@
   
   // Add flag to track initial animation state
   let initialAnimationComplete = $state(false);
-  
-  // Display settings
-  const showAxisBars = true;
   
   // Movement state tracking
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null);
@@ -141,16 +130,7 @@
     else if (!$mapState.isMouseActuallyDown && $mapState.isDragging) handleStopDrag();
   };
 
-  // Use the optimized target tile store
-  const targetTileData = $derived($targetTileStore);
-  
-  
-  const detailsProps = $derived({
-    x: targetTileData.x,
-    y: targetTileData.y,
-    show: $mapState.showDetails,
-    biomeName: targetTileData.biome?.name
-  });
+
 
   // Add improved functions to track hover state
   function higlight(cell) {
@@ -252,37 +232,7 @@
     {/if}
   </div>
 
-  <!-- Show either Legend or Details in the same position -->
-  {#if $mapState.showDetails}
-    <Details 
-      x={targetTileData.x}
-      y={targetTileData.y}
-      show={detailsProps.show}
-      terrain={detailsProps.biomeName}
-      onClose={closeDetailsModal}
-    />
-  {:else}
-    <Legend 
-      x={targetTileData.x} 
-      y={targetTileData.y}
-      openDetails={openDetailsModal} 
-    />
-  {/if}
 
-  <!-- Axes component should appear above the grid -->
-  {#if showAxisBars && $mapState.isReady}
-    <Axes 
-      xAxisArray={$xAxisArray}
-      yAxisArray={$yAxisArray}
-      cols={$mapState.cols}
-      rows={$mapState.rows}
-    />
-  {/if}
-
-  <!-- Add the Tutorial component at the bottom left -->
-  <Tutorial show={true} />
-
-  <MiniMap />
 </div>
 
 <style>
