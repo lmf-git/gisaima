@@ -4,7 +4,8 @@
     getTerrainData, 
     updateHoveredTile, 
     updateMinimapRange,
-    moveMapTo 
+    moveMapTo,
+    setMinimapVisibility
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
 
@@ -236,6 +237,9 @@
       localStorage.setItem('minimapVisible', open.toString());
     }
     
+    // Update the global state synchronously to avoid unnecessary grid generation
+    setMinimapVisibility(open);
+    
     // If we're opening the minimap and map is ready, generate grid
     if (open && $mapState.isReady) {
       generateMinimapGrid();
@@ -255,6 +259,8 @@
         open = windowWidth >= BREAKPOINT;
       }
       
+      // Also set the global state
+      setMinimapVisibility(open);
       initialized = true;
     }
   }
@@ -323,6 +329,11 @@
     if ($mapState.isReady && ($mapState.targetCoord.x !== undefined)) {
       updateMinimapRange($mapState.targetCoord.x, $mapState.targetCoord.y, viewRangeX, viewRangeY);
     }
+  });
+
+  // Effect to update global minimap visibility state when local state changes
+  $effect(() => {
+    setMinimapVisibility(open);
   });
 </script>
 
