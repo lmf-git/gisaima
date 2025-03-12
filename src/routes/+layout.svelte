@@ -4,8 +4,8 @@
     import Logo from '../components/Logo.svelte';
 </script>
 
-<div class="app">
-    <header class={`appheader ${$page.url.pathname === '/map' ? 'map-header' : ''}`}>
+<div class={`app ${$page.url.pathname === '/map' ? 'map' : ''}`}>
+    <header class={`header`}>
         <nav class="navbar">
             <div class="logo-container">
                 <a href="/" class="logolink">
@@ -155,13 +155,16 @@
     .app {
         display: flex;
         flex-direction: column;
-        min-height: 100vh;
         background: linear-gradient(to bottom, 
                    var(--color-background-gradient-start), 
                    var(--color-background-gradient-end));
     }
 
-    .appheader {
+    .app.map {
+        height: 100%;
+    }
+
+    .header {
         display: flex;
         align-items: center;
         z-index: 100;
@@ -169,7 +172,7 @@
         box-sizing: border-box;
     }
     
-    .appheader.map-header {
+    .app.map .header {
         pointer-events: none;
         justify-content: center;
         padding: 2.2em 3.7em;
