@@ -1,5 +1,5 @@
 <script>
-  export let extraClass = '';
+  const { extraClass = '' } = $props();
 </script>
 
 <svg class={extraClass} viewBox="0 0 267 291" fill="none">

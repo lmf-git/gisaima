@@ -2,14 +2,10 @@
     import { page } from '$app/stores';
     import { user, signOut } from '$lib/stores/auth';
     import Logo from '../components/Logo.svelte';
-    
-
-    // TODO: This needs refactoring to runes.
-    $: isMapPage = $page.url.pathname === '/map';
 </script>
 
 <div class="app">
-    <header class={`appheader ${isMapPage ? 'map-header' : ''}`}>
+    <header class={`appheader ${$page.url.pathname === '/map' ? 'map-header' : ''}`}>
         <nav class="navbar">
             <!-- Separate logo container that's always visible -->
             <div class="logo-container">
@@ -19,7 +15,7 @@
             </div>
             
             <!-- Only render navigation links when not on map page -->
-            {#if !isMapPage}
+            {#if !$page.url.pathname === '/map'}
                 <div class="navlinks">
                     <a href="/map" class="button navlink">Map</a>
                     {#if !$user}
@@ -30,7 +26,7 @@
             {/if}
             
             <!-- Only render auth links when not on map page -->
-            {#if !isMapPage && $user}
+            {#if !$page.url.pathname === '/map' && $user}
                 <div class="authlinks">
                     <span class="greeting">Hello, {$user.email}</span>
                     <button class="button" onclick={() => signOut}>Sign Out</button>
