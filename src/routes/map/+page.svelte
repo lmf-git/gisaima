@@ -28,7 +28,7 @@
 <div class="map">
     <Grid />
 
-    <Tutorial show={true} />
+    <MiniMap />
 
     <!-- Show either Legend or Details in the same position -->
     {#if $mapState.showDetails}
@@ -46,7 +46,6 @@
         />
     {/if}
 
-    <!-- Axes component should appear above the grid -->
     {#if $mapState.isReady}
         <Axes 
         xAxisArray={$xAxisArray}
@@ -56,7 +55,7 @@
         />
     {/if}
 
-    <MiniMap />
+    <Tutorial show={true} />
 </div>
 
 <style>
