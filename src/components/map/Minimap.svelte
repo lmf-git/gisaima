@@ -6,6 +6,7 @@
     updateMinimapRange,
     moveMapTo 
   } from '../../lib/stores/map.js';
+  import { browser } from '$app/environment';
 
   // Minimap doesn't need to handle keyboard movement because Grid already does.
   
@@ -231,73 +232,164 @@
       handleMinimapDrag(event);
     }
   }
+
+  let isVisible = $state(true);
+  let minimapContainerWidth = $state(900); // Default fallback value
+  
+  const BREAKPOINT = 900; // px
+  
+  function toggleVisibility() {
+    isVisible = !isVisible;
+    // Store preference in localStorage
+    if (browser) {
+      localStorage.setItem('minimapVisible', isVisible.toString());
+    }
+  }
+  
+  function checkScreenSize() {
+    if (browser) {
+      minimapContainerWidth = window.innerWidth;
+      // Default to hidden on small screens unless explicitly set to visible before
+      if (!localStorage.getItem('minimapVisible')) {
+        isVisible = minimapContainerWidth >= BREAKPOINT;
+      }
+    }
+  }
+  
+  // Initialize visibility based on screen size or stored preference
+  let initialized = $state(false);
+  $effect(() => {
+    if (!initialized && browser) {
+      const storedVisibility = localStorage.getItem('minimapVisible');
+      
+      if (storedVisibility !== null) {
+        isVisible = storedVisibility === 'true';
+      } else {
+        checkScreenSize();
+      }
+      initialized = true;
+    }
+  });
+
+  function handleResize() {
+    checkScreenSize();
+  }
 </script>
 
 <svelte:window
   onmouseup={globalMinimapMouseUp}
   onmousemove={globalMinimapMouseMove}
   onmouseleave={globalMinimapMouseUp}
+  onresize={handleResize}
 />
 
-<div class="map">
-  <div 
-    class="mini" 
-    style="width: {MINIMAP_WIDTH_EM}em; height: {MINIMAP_HEIGHT_EM}em;"
-    bind:this={map}
-    onclick={handleMinimapClick}
-    onmousedown={handleMinimapDragStart}
-    onkeydown={handleKeyDown}
-    tabindex="0"
-    role="button"
-    aria-label="Mini map for navigation"
-    class:drag={isDrag}>
-    {#if $mapState.isReady && minimapGrid.length > 0}
-      {#each minimapGrid as cell}
-        <div
-          class="tile"
-          class:center={cell.isCenter}
-          class:visible={cell.isVisible}
-          class:highlighted={isTileHighlighted(cell)} 
-          style="
-            background-color: {isTileHighlighted(cell) ? 'white' : cell.color};
-            width: {MINI_TILE_SIZE_EM}em;
-            height: {MINI_TILE_SIZE_EM}em;
-            left: {cell.displayX * MINI_TILE_SIZE_EM}em;
-            top: {cell.displayY * MINI_TILE_SIZE_EM}em;
-          "
-          onmouseenter={() => highlightMiniTile(cell)} 
-
-          role="presentation"
-          aria-hidden="true">
-      </div>
-      {/each}
-      
-      <div 
-        class="visible-area-frame"
-        style="
-          left: {(viewRangeX + area.startX - $mapState.targetCoord.x) * MINI_TILE_SIZE_EM}em;
-          top: {(viewRangeY + area.startY - $mapState.targetCoord.y) * MINI_TILE_SIZE_EM}em;
-          width: {area.width * MINI_TILE_SIZE_EM}em;
-          height: {area.height * MINI_TILE_SIZE_EM}em;
-        "
-        aria-hidden="true">
-      </div>
+{#if isVisible || minimapContainerWidth >= BREAKPOINT}
+<div class="map-container">
+  <button 
+    class="toggle-button" 
+    onclick={toggleVisibility} 
+    aria-label={isVisible ? "Hide minimap" : "Show minimap"}>
+    {#if isVisible}
+      ×
+    {:else}
+      M
     {/if}
+  </button>
+  
+  {#if isVisible}
+  <div class="map">
+    <div 
+      class="mini" 
+      style="width: {MINIMAP_WIDTH_EM}em; height: {MINIMAP_HEIGHT_EM}em;"
+      bind:this={map}
+      onclick={handleMinimapClick}
+      onmousedown={handleMinimapDragStart}
+      onkeydown={handleKeyDown}
+      tabindex="0"
+      role="button"
+      aria-label="Mini map for navigation"
+      class:drag={isDrag}>
+      {#if $mapState.isReady && minimapGrid.length > 0}
+        {#each minimapGrid as cell}
+          <div
+            class="tile"
+            class:center={cell.isCenter}
+            class:visible={cell.isVisible}
+            class:highlighted={isTileHighlighted(cell)} 
+            style="
+              background-color: {isTileHighlighted(cell) ? 'white' : cell.color};
+              width: {MINI_TILE_SIZE_EM}em;
+              height: {MINI_TILE_SIZE_EM}em;
+              left: {cell.displayX * MINI_TILE_SIZE_EM}em;
+              top: {cell.displayY * MINI_TILE_SIZE_EM}em;
+            "
+            
+            onmouseenter={() => highlightMiniTile(cell)} 
+
+            role="presentation"
+            aria-hidden="true">
+        </div>
+        {/each}
+        
+        <div 
+          class="visible-area-frame"
+          style="
+            left: {(viewRangeX + area.startX - $mapState.targetCoord.x) * MINI_TILE_SIZE_EM}em;
+            top: {(viewRangeY + area.startY - $mapState.targetCoord.y) * MINI_TILE_SIZE_EM}em;
+            width: {area.width * MINI_TILE_SIZE_EM}em;
+            height: {area.height * MINI_TILE_SIZE_EM}em;
+          "
+          aria-hidden="true">
+        </div>
+      {/if}
+    </div>
   </div>
+  {/if}
 </div>
+{/if}
 
 <style>
-  .map {
+  .map-container {
     position: absolute;
     top: 0;
     right: 0;
     z-index: 998;
+  }
+  
+  .toggle-button {
+    position: absolute;
+    top: 0.5em;
+    right: 0.5em;
+    width: 2em;
+    height: 2em;
+    background: var(--color-panel-bg);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 0.25em;
+    color: white;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0.1em 0.3em var(--color-shadow);
+    transition: all 0.2s ease;
+  }
+  
+  .toggle-button:hover {
+    background: var(--color-panel-hover);
+  }
+  
+  .map {
+    position: absolute;
+    top: 0;
+    right: 0;
     overflow: hidden;
     box-shadow: 0 0.1875em 0.625em var(--color-shadow);
     animation: slideInFromRight 0.8s ease-out forwards;
-    animation-delay: 1.5s;
-    transform: translateX(100%);
     opacity: 0;
+    transform: translateX(100%);
   }
 
   @keyframes slideInFromRight {
@@ -361,5 +453,12 @@
     box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
     pointer-events: none;
     z-index: 4;
+  }
+
+  @media (max-width: 900px) {
+    .toggle-button {
+      top: 0.5em;
+      right: 0.5em;
+    }
   }
 </style>
