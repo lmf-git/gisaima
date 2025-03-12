@@ -1,6 +1,6 @@
 <script>
     import Grid from '../../components/map/Grid.svelte';
-    import MiniMap from '../../components/map/MiniMap.svelte';
+    import Minimap from '../../components/map/Minimap.svelte';
     import Axes from '../../components/map/Axes.svelte';
 
     import Legend from '../../components/map/Legend.svelte';
@@ -21,7 +21,7 @@
 <div class="map">
     <Grid />
 
-    <MiniMap />
+    <Minimap />
 
     <!-- Show either Legend or Details in the same position -->
     {#if $mapState.showDetails}

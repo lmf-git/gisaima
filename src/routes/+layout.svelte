@@ -7,14 +7,12 @@
 <div class="app">
     <header class={`appheader ${$page.url.pathname === '/map' ? 'map-header' : ''}`}>
         <nav class="navbar">
-            <!-- Separate logo container that's always visible -->
             <div class="logo-container">
                 <a href="/" class="logolink">
                     <Logo extraClass="navlogo" />
                 </a>
             </div>
             
-            <!-- Only render navigation links when not on map page -->
             {#if !$page.url.pathname === '/map'}
                 <div class="navlinks">
                     <a href="/map" class="button navlink">Map</a>
@@ -25,7 +23,6 @@
                 </div>
             {/if}
             
-            <!-- Only render auth links when not on map page -->
             {#if !$page.url.pathname === '/map' && $user}
                 <div class="authlinks">
                     <span class="greeting">Hello, {$user.email}</span>
@@ -178,7 +175,6 @@
         padding: 2.2em 3.7em;
     }
     
-    /* Ensure nav elements remain clickable */
     .navbar {
         display: flex;
         justify-content: space-between;
@@ -187,7 +183,6 @@
         width: 100%;
     }
 
-    /* Logo container is always visible */
     .logo-container {
         display: flex;
         align-items: center;
