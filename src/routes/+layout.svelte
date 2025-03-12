@@ -2,7 +2,7 @@
     import { page } from '$app/stores';
     import { user, signOut } from '$lib/stores/auth';
     import Logo from '../components/Logo.svelte';
-    // Remove the global.css import
+// Remove the global.css import
 </script>
 
 <div class={`app ${$page.url.pathname === '/map' ? 'map' : ''}`}>
@@ -44,10 +44,6 @@
     }
     
     :global(:root) {
-        /* Font family variables - Medieval theme */
-        --font-heading: 'MedievalSharp', cursive;
-        --font-body: 'Modern Antiqua', serif;
-        
         /* Modern color palette */
         --color-dark-navy: #0A192F;       /* Darker navy for backgrounds */
         --color-dark-blue: #112240;       /* Deep blue for panels */
@@ -151,54 +147,10 @@
         --color-shadow: rgba(0, 0, 0, 0.4);
     }
     
-    /* Apply font families to elements with improved weight hierarchy */
     :global(body) {
         background: var(--color-background);
         color: var(--color-text);
-        font-family: var(--font-body);
-        font-weight: 400;
-        line-height: 1.5; /* Better readability for the ornate font */
-    }
-
-    :global(h1) {
-        font-family: var(--font-heading);
-        font-weight: 700; /* Bolder for main headings */
-        letter-spacing: 0.03em;
-    }
-    
-    :global(h2) {
-        font-family: var(--font-heading);
-        font-weight: 600; /* Medium-bold for secondary headings */
-        letter-spacing: 0.025em;
-    }
-    
-    :global(h3), :global(h4), :global(h5), :global(h6) {
-        font-family: var(--font-heading);
-        font-weight: 500; /* Medium for tertiary headings */
-        letter-spacing: 0.02em;
-    }
-    
-    :global(.title) {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        letter-spacing: 0.04em;
-    }
-
-    :global(button), :global(.button) {
-        font-family: var(--font-heading);
-        font-weight: 600; /* Semi-bold for interactive elements */
-    }
-    
-    :global(strong), :global(b) {
-        font-weight: 700;
-    }
-    
-    :global(.light-text) {
-        font-weight: 300;
-    }
-    
-    :global(.numeric) {
-        font-weight: 600; /* Make numbers stand out */
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     .app {

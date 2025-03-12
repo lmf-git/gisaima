@@ -67,7 +67,6 @@
         border-radius: 0.5em;
         box-shadow: 0 0.3em 1em var(--color-shadow);
         color: var(--color-text);
-        font-family: var(--font-body);
     }
     
     :global(.logo) {
@@ -84,8 +83,6 @@
         color: var(--color-pale-green);
         font-size: 1.8em;
         text-shadow: 0 0 0.3em rgba(0, 0, 0, 0.4);
-        font-family: var(--font-heading);
-        font-weight: 700; /* Bold for page title */
     }
     
     .form-group {
@@ -95,9 +92,8 @@
     label {
         display: block;
         margin-bottom: 0.5em;
-        font-weight: 600; /* Semi-bold for form labels */
+        font-weight: 600;
         color: var(--color-muted-teal);
-        font-family: var(--font-heading);
     }
     
     input {
@@ -109,7 +105,6 @@
         border-radius: 0.25em;
         font-size: 1em;
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        font-family: var(--font-body);
     }
     
     input:focus {
@@ -141,7 +136,6 @@
     .signup-link {
         text-align: center;
         margin-top: 1.5em;
-        font-weight: 400; /* Regular for link text */
     }
     
     a {

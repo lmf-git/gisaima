@@ -83,8 +83,8 @@
     pointer-events: auto;
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
     background-color: rgba(255, 255, 255, 0.4);
-    font-family: var(--font-body);
-    font-weight: 400; /* Regular for most labels */
+    font: inherit;
+    font-weight: 500;
     opacity: 1;
     transition: background-color 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
@@ -96,8 +96,7 @@
   }
   
   .label.center {
-    font-weight: 700; /* Bold for central/important axes */
-    font-family: var(--font-heading);
+    font-weight: bold;
     background-color: rgba(192, 192, 192, 0.7);
     color: rgba(0, 0, 0, 0.9);
     text-shadow: 0 0 0.1875em rgba(255, 255, 255, 0.8);

@@ -85,7 +85,6 @@
         border-radius: 0.5em;
         box-shadow: 0 0.3em 1em var(--color-shadow);
         color: var(--color-text);
-        font-family: var(--font-body);
     }
     
     :global(.logo) {
@@ -137,7 +136,6 @@
         margin-top: 0.5em;
         color: var(--color-text-secondary);
         font-size: 0.85em;
-        font-family: var(--font-body);
     }
     
     button {

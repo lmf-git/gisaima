@@ -35,8 +35,6 @@
     z-index: 2;
     transition: opacity 0.2s ease;
     font-size: 1.2em;
-    font-family: var(--font-body);
-    font-weight: 400;
   }
   
   .info {
@@ -76,18 +74,15 @@
   h2 {
     margin: 0;
     font-size: 1.3em;
-    font-weight: 700; /* Bold for important headers */
+    font-weight: bold;
     color: rgba(0, 0, 0, 0.9);
     text-shadow: 0 0 0.1875em rgba(255, 255, 255, 0.8);
-    font-family: var(--font-heading);
   }
   
   p {
     margin: 0.3em 0 0;
     font-size: 1.1em;
     color: rgba(0, 0, 0, 0.8);
-    font-family: var(--font-body);
-    font-weight: 400; /* Regular for details text */
   }
   
   .close {
@@ -100,7 +95,6 @@
     cursor: pointer;
     opacity: 0.8;
     transition: opacity 0.2s;
-    font-family: var(--font-heading);
   }
   
   .close:hover {

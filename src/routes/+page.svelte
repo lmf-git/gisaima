@@ -74,7 +74,6 @@
     margin: 0 auto;
     padding: 2em;
     color: var(--color-text);
-    font-family: var(--font-body);
   }
 
   .showcase {
@@ -88,16 +87,12 @@
     letter-spacing: 0.2em;
     color: var(--color-heading);
     text-shadow: 0 0 0.625em rgba(193, 19, 22, 0.5);
-    font-family: var(--font-heading);
-    font-weight: 700; /* Bold for main title */
   }
 
   .subtitle {
     font-size: 1.2em;
     color: var(--color-text-secondary);
     margin-bottom: 2em;
-    font-family: var(--font-body);
-    font-weight: 500; /* Medium for subtitle */
   }
 
   .actions {
@@ -154,7 +149,6 @@
     margin-bottom: 2em;
     color: var(--color-pale-green);
     text-shadow: 0 0 0.3125em rgba(12, 8, 33, 0.7);
-    font-weight: 700; /* Bold for section headers */
   }
 
   .grid {
@@ -180,14 +174,10 @@
   .subheading {
     color: var(--color-muted-teal);
     margin-bottom: 0.75em;
-    font-family: var(--font-heading);
-    font-weight: 600; /* Semi-bold for card headers */
   }
 
   .text {
     color: var(--color-text);
-    font-family: var(--font-body);
-    font-weight: 400; /* Regular for most text */
   }
 
   .overview {
@@ -251,7 +241,6 @@
   .copyright {
     color: var(--color-text-secondary);
     font-size: 0.9em;
-    font-weight: 300; /* Light weight for footer text */
   }
 
   .showcase :global(.logo) {
