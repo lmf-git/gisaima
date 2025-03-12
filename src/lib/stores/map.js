@@ -684,20 +684,6 @@ export function checkDragState() {
   return false;
 };
 
-// I hate the look of this moization helper lol.. try without
-
-// Add memoization helper
-function memoize(fn) {
-  const cache = new Map();
-  return (...args) => {
-    const key = JSON.stringify(args);
-    if (!cache.has(key)) {
-      cache.set(key, fn(...args));
-    }
-    return cache.get(key);
-  };
-};
-
 // Replace expandedGridArray with a more reliable implementation
 export const expandedGridArray = derived(
   [mapState],
@@ -821,26 +807,26 @@ export const gridArray = (() => {
 // Replace axis arrays with memoized versions
 export const xAxisArray = derived(
   mapState,
-  memoize(($mapState) => {
+  ($mapState) => {
     if (!$mapState.isReady) return [];
     return Array.from({ length: $mapState.cols }, (_, x) => ({
       // Fix the direction by inverting the calculation
       value: $mapState.targetCoord.x - ($mapState.centerX - x),
       isCenter: x === $mapState.centerX
     }));
-  })
+  }
 );
 
 export const yAxisArray = derived(
   mapState,
-  memoize(($mapState) => {
+  ($mapState) => {
     if (!$mapState.isReady) return [];
     return Array.from({ length: $mapState.rows }, (_, y) => ({
       // Also fix the y-axis for consistency
       value: $mapState.targetCoord.y - ($mapState.centerY - y),
       isCenter: y === $mapState.centerY
     }));
-  })
+  }
 );
 
 // Add a new function to handle hover state updates
