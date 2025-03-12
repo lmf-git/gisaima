@@ -37,6 +37,7 @@
     border: 0.05em solid rgba(255, 255, 255, 0.1);
     box-shadow: none;
     font-weight: 500;
+    font-family: var(--font-body);
     
     animation: reveal 0.7s ease-out forwards;
     opacity: 0;
@@ -47,14 +48,16 @@
   
   .coordinates {
     font-size: 1.2em;
-    font-weight: bold;
+    font-weight: 700; /* Bolder for important coordinates */
     color: rgba(0, 0, 0, 0.9);
+    font-family: var(--font-heading);
   }
   
   .terrain {
     font-size: 0.9em;
     margin-top: 0.2em;
     color: rgba(0, 0, 0, 0.8);
+    font-weight: 400; /* Regular for descriptive text */
   }
   
   .legend:hover {

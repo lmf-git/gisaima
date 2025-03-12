@@ -57,6 +57,15 @@
       </div>
     </div>
   </section>
+  
+  <footer class="footer">
+    <div class="links">
+      <a href="/login">Login</a>
+      <a href="/signup">Sign Up</a>
+      <a href="/map">Play</a>
+    </div>
+    <p class="copyright">© 2023 Gisaima</p>
+  </footer>
 </main>
 
 <style>
@@ -65,6 +74,7 @@
     margin: 0 auto;
     padding: 2em;
     color: var(--color-text);
+    font-family: var(--font-body);
   }
 
   .showcase {
@@ -78,12 +88,16 @@
     letter-spacing: 0.2em;
     color: var(--color-heading);
     text-shadow: 0 0 0.625em rgba(193, 19, 22, 0.5);
+    font-family: var(--font-heading);
+    font-weight: 700; /* Bold for main title */
   }
 
   .subtitle {
     font-size: 1.2em;
     color: var(--color-text-secondary);
     margin-bottom: 2em;
+    font-family: var(--font-body);
+    font-weight: 500; /* Medium for subtitle */
   }
 
   .actions {
@@ -91,6 +105,7 @@
     justify-content: center;
     gap: 1.5em;
     margin-top: 2.5em;
+    flex-wrap: wrap;
   }
 
   /* Hero CTA buttons styling - make them more imposing */
@@ -102,6 +117,7 @@
     transition: all 0.3s ease;
     box-shadow: 0 0.3em 0.8em var(--color-shadow);
     text-transform: uppercase;
+    text-decoration: none;
   }
   
   .actions :global(.button:hover) {
@@ -110,11 +126,23 @@
   }
   
   .actions :global(.button.primary) {
-    border: 0.05em solid rgba(255, 255, 255, 0.3);
+    background-color: var(--color-button-primary);
+    color: var(--color-text);
+    border: 0.05em solid var(--color-muted-teal);
+  }
+  
+  .actions :global(.button.primary:hover) {
+    background-color: var(--color-button-primary-hover);
   }
   
   .actions :global(.button.secondary) {
-    border: 0.05em solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.3);
+    color: var(--color-text);
+    border: 0.05em solid var(--color-panel-border);
+  }
+  
+  .actions :global(.button.secondary:hover) {
+    background-color: rgba(0, 0, 0, 0.4);
   }
 
   .features, .howto {
@@ -126,6 +154,7 @@
     margin-bottom: 2em;
     color: var(--color-pale-green);
     text-shadow: 0 0 0.3125em rgba(12, 8, 33, 0.7);
+    font-weight: 700; /* Bold for section headers */
   }
 
   .grid {
@@ -137,18 +166,28 @@
   .card {
     padding: 1.5em;
     border-radius: 0.5em;
-    background-color: var(--color-card-bg);
+    background-color: var(--color-panel-bg);
     box-shadow: 0 0.25em 0.375em var(--color-shadow);
-    border: 0.0625em solid var(--color-card-border);
+    border: 0.0625em solid var(--color-panel-border);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .card:hover {
+    transform: translateY(-0.2em);
+    box-shadow: 0 0.4em 0.6em var(--color-shadow);
   }
 
   .subheading {
-    color: var(--color-subheading);
+    color: var(--color-muted-teal);
     margin-bottom: 0.75em;
+    font-family: var(--font-heading);
+    font-weight: 600; /* Semi-bold for card headers */
   }
 
   .text {
     color: var(--color-text);
+    font-family: var(--font-body);
+    font-weight: 400; /* Regular for most text */
   }
 
   .overview {
@@ -159,18 +198,19 @@
   }
 
   .content, .visual {
-    flex: 1 1 18.75em;
+    flex: 1 1 20em;
   }
 
   .link {
-    color: var(--color-link);
+    color: var(--color-pale-green);
     text-decoration: none;
     font-weight: 500;
+    transition: color 0.2s ease;
   }
 
   .link:hover {
     text-decoration: underline;
-    color: var(--color-link-hover);
+    color: var(--color-muted-teal);
   }
 
   .preview {
@@ -183,10 +223,35 @@
     border: 0.125em dashed var(--color-muted-teal);
   }
 
-  @media (max-width: 768px) {
-    .title {
-      font-size: 2.5em;
-    }
+  .footer {
+    margin-top: 3em;
+    padding-top: 2em;
+    border-top: 1px solid var(--color-panel-border);
+    text-align: center;
+  }
+  
+  .links {
+    display: flex;
+    justify-content: center;
+    gap: 2em;
+    margin-bottom: 1em;
+    flex-wrap: wrap;
+  }
+  
+  .footer a {
+    color: var(--color-pale-green);
+    text-decoration: none;
+  }
+  
+  .footer a:hover {
+    color: var(--color-muted-teal);
+    text-decoration: underline;
+  }
+  
+  .copyright {
+    color: var(--color-text-secondary);
+    font-size: 0.9em;
+    font-weight: 300; /* Light weight for footer text */
   }
 
   .showcase :global(.logo) {
@@ -194,5 +259,43 @@
     height: auto;
     margin: 0 auto;
     filter: drop-shadow(0 0 0.5em rgba(193, 19, 22, 0.6));
+  }
+  
+  @media (max-width: 768px) {
+    .container {
+      padding: 1em;
+    }
+    
+    .title {
+      font-size: 2.5em;
+    }
+    
+    .actions :global(.button) {
+      font-size: 1.2em;
+      padding: 0.8em 1.5em;
+      width: 100%;
+    }
+    
+    .grid {
+      gap: 1em;
+    }
+    
+    .links {
+      gap: 1em;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .showcase {
+      padding: 2em 0.5em;
+    }
+    
+    .title {
+      font-size: 2em;
+    }
+    
+    .subtitle {
+      font-size: 1em;
+    }
   }
 </style>

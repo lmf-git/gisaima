@@ -115,17 +115,22 @@
     font-size: 2em;
     margin: 0 0 0.8em 0;
     text-shadow: 0 0 0.5em rgba(0, 0, 0, 0.5);
+    font-family: var(--font-heading);
+    font-weight: 700; /* Bold for main tutorial header */
   }
   
   h3 {
     color: var(--color-muted-teal);
     margin: 0 0 0.5em 0;
+    font-family: var(--font-heading);
+    font-weight: 600; /* Semi-bold for section headers */
   }
   
   .content {
     display: flex;
     flex-direction: column;
     gap: 1.5em;
+    font-family: var(--font-body);
   }
   
   .summary {
@@ -133,6 +138,7 @@
     line-height: 1.5;
     text-align: center;
     margin: 0;
+    font-weight: 500; /* Medium weight for important summary */
   }
   
   .features {
@@ -145,6 +151,7 @@
     margin: 0;
     padding-left: 1.5em;
     line-height: 1.4;
+    font-weight: 400; /* Regular weight for list items */
   }
   
   .feature li {
@@ -176,6 +183,7 @@
     border-radius: 0.2em;
     border: 1px solid var(--color-muted-teal);
     box-shadow: 0 0.1em 0.2em rgba(0, 0, 0, 0.3);
+    font-family: var(--font-heading);
   }
   
   .close {
@@ -213,6 +221,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
     margin-top: 1em;
+    font-family: var(--font-heading);
   }
   
   .start-button:hover {

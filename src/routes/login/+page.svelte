@@ -1,8 +1,8 @@
 <script>
     import { signIn } from '$lib/stores/auth';
     import { goto } from '$app/navigation';
+    import Logo from '../../components/Logo.svelte';
     
-    // Use separate variables instead of a state object
     let email = '';
     let password = '';
     let error = null;
@@ -22,7 +22,8 @@
 </script>
 
 <div class="login-container">
-    <h1>Login</h1>
+    <Logo extraClass="logo" />
+    <h1>Login to Gisaima</h1>
     
     {#if error}
         <div class="error">{error}</div>
@@ -49,82 +50,130 @@
             />
         </div>
         
-        <button type="submit">Login</button>
+        <button type="submit" class="primary">Login</button>
     </form>
     
-    <p>Don't have an account? <a href="/signup">Sign Up</a></p>
+    <p class="signup-link">Don't have an account? <a href="/signup">Sign Up</a></p>
 </div>
 
 <style>
     .login-container {
-        max-width: 400px;
-        margin: 2rem auto;
-        padding: 2rem;
-        background-color: #f8f8f8;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        max-width: 26em;
+        width: 90%;
+        margin: 3em auto;
+        padding: 2em;
+        background-color: var(--color-panel-bg);
+        border: 1px solid var(--color-panel-border);
+        border-radius: 0.5em;
+        box-shadow: 0 0.3em 1em var(--color-shadow);
+        color: var(--color-text);
+        font-family: var(--font-body);
+    }
+    
+    :global(.logo) {
+        width: 5em;
+        height: auto;
+        margin: 0 auto 1em;
+        display: block;
+        filter: drop-shadow(0 0 0.5em rgba(193, 19, 22, 0.6));
     }
     
     h1 {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.5em;
         text-align: center;
-        color: #333;
+        color: var(--color-pale-green);
+        font-size: 1.8em;
+        text-shadow: 0 0 0.3em rgba(0, 0, 0, 0.4);
+        font-family: var(--font-heading);
+        font-weight: 700; /* Bold for page title */
     }
     
     .form-group {
-        margin-bottom: 1rem;
+        margin-bottom: 1.5em;
     }
     
     label {
         display: block;
-        margin-bottom: 0.5rem;
-        font-weight: bold;
-        color: #555;
+        margin-bottom: 0.5em;
+        font-weight: 600; /* Semi-bold for form labels */
+        color: var(--color-muted-teal);
+        font-family: var(--font-heading);
     }
     
     input {
         width: 100%;
-        padding: 0.5rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 1rem;
+        padding: 0.75em;
+        background: rgba(0, 0, 0, 0.2);
+        color: var(--color-text);
+        border: 1px solid var(--color-panel-border);
+        border-radius: 0.25em;
+        font-size: 1em;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        font-family: var(--font-body);
+    }
+    
+    input:focus {
+        outline: none;
+        border-color: var(--color-muted-teal);
+        box-shadow: 0 0 0 0.1em var(--color-muted-teal);
     }
     
     button {
         width: 100%;
-        padding: 0.75rem;
-        background-color: #3f51b5;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        font-size: 1rem;
+        padding: 0.75em;
+        background-color: var(--color-button-primary);
+        color: var(--color-text);
+        border: 1px solid var(--color-muted-teal);
+        border-radius: 0.25em;
+        font-size: 1.1em;
+        font-weight: bold;
         cursor: pointer;
-        margin-top: 1rem;
+        margin-top: 1em;
+        transition: all 0.2s ease;
     }
     
     button:hover {
-        background-color: #303f9f;
+        background-color: var(--color-button-primary-hover);
+        transform: translateY(-0.1em);
+        box-shadow: 0 0.2em 0.5em var(--color-shadow);
     }
     
-    p {
+    .signup-link {
         text-align: center;
-        margin-top: 1rem;
+        margin-top: 1.5em;
+        font-weight: 400; /* Regular for link text */
     }
     
     a {
-        color: #3f51b5;
+        color: var(--color-pale-green);
         text-decoration: none;
+        font-weight: 600;
+        transition: color 0.2s ease;
     }
     
     a:hover {
         text-decoration: underline;
+        color: var(--color-muted-teal);
     }
     
     .error {
-        background-color: #ffebee;
-        color: #c62828;
-        padding: 0.75rem;
-        border-radius: 4px;
-        margin-bottom: 1rem;
+        background-color: rgba(198, 40, 40, 0.2);
+        color: #ff5757;
+        padding: 0.75em;
+        border-radius: 0.25em;
+        margin-bottom: 1.5em;
+        border: 1px solid rgba(198, 40, 40, 0.4);
+    }
+
+    @media (max-width: 480px) {
+        .login-container {
+            width: 95%;
+            padding: 1.5em;
+            margin: 1.5em auto;
+        }
+        
+        h1 {
+            font-size: 1.5em;
+        }
     }
 </style>

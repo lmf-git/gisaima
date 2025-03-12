@@ -375,6 +375,8 @@
     text-shadow: 0 0 0.1875em rgba(0, 0, 0, 0.5);
     user-select: none;
     z-index: 1;
+    font-family: var(--font-body);
+    font-weight: 400; /* Regular weight for most tiles */
   }
 
   /* All center tiles need the border */
@@ -383,6 +385,7 @@
     position: relative;
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
     border: 0.12em solid rgba(255, 255, 255, 0.5);
+    font-weight: 700; /* Emphasize center tile with bold */
   }
   
   /* Hover effects - renamed to highlight */
@@ -406,6 +409,8 @@
   .coords {
     font-size: 0.7em;
     opacity: 0.6;
+    font-family: var(--font-heading);
+    font-weight: 600; /* Semi-bold for coordinates */
   }
 
   .map-container.modal-open {
