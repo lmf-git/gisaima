@@ -1,8 +1,14 @@
 <script>
+  import { targetTileStore } from "../../lib/stores/map";
+  
   const { x = 0, y = 0, terrain, onClose } = $props()
   
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  const formattedName = $derived(_fmt(terrain));
+  
+  // Use either passed terrain or check targetTileStore directly
+  const formattedName = $derived(
+    _fmt(terrain || $targetTileStore.biome?.name) || "Unknown"
+  );
   
   const escape = event => event.key === 'Escape' && onClose?.();
 </script>

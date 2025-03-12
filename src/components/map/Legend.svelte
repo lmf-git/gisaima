@@ -5,8 +5,11 @@
   
   const keypress = e => ['Enter', ' '].includes(e.key) && e.preventDefault() && openDetails()
 
-  console.log(targetTileStore);
-
+  // Format terrain name for display
+  const formatTerrainName = (name) => {
+    if (!name) return "Unknown";
+    return name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  }
 </script>
 
 <div 
@@ -15,7 +18,8 @@
   onkeypress={keypress}
   role="button" 
   tabindex="0">
-  {targetTileStore.x} | {targetTileStore.y}
+  <div class="coordinates">{$targetTileStore.x} | {$targetTileStore.y}</div>
+  <div class="terrain">{formatTerrainName($targetTileStore.biome?.name)}</div>
 </div>
 
 <style>
@@ -33,14 +37,24 @@
     border: 0.05em solid rgba(255, 255, 255, 0.1);
     box-shadow: none;
     font-weight: 500;
-
-    font-size: 1.2em;
-    font-weight: bold;
-    color: rgba(0, 0, 0, 0.9);
     
     animation: reveal 0.7s ease-out forwards;
     opacity: 0;
     transform: translateY(0);
+    min-width: 8em;
+    text-align: center;
+  }
+  
+  .coordinates {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: rgba(0, 0, 0, 0.9);
+  }
+  
+  .terrain {
+    font-size: 0.9em;
+    margin-top: 0.2em;
+    color: rgba(0, 0, 0, 0.8);
   }
   
   .legend:hover {

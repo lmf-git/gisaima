@@ -16,13 +16,6 @@
         closeDetailsModal,
         targetTileStore
     } from "../../lib/stores/map.js";
-
-    const detailsProps = $derived({
-        x: targetTileStore.x,
-        y: targetTileStore.y,
-        show: $mapState.showDetails,
-        biomeName: targetTileStore.biome?.name
-    });
 </script>
 
 <div class="map">
@@ -33,15 +26,15 @@
     <!-- Show either Legend or Details in the same position -->
     {#if $mapState.showDetails}
         <Details 
-        x={targetTileStore.x}
-        y={targetTileStore.y}
-        terrain={detailsProps.biomeName}
+        x={$targetTileStore.x}
+        y={$targetTileStore.y}
+        terrain={$targetTileStore.biome?.name}
         onClose={closeDetailsModal}
         />
     {:else}
         <Legend 
-        x={targetTileStore.x} 
-        y={targetTileStore.y}
+        x={$targetTileStore.x} 
+        y={$targetTileStore.y}
         openDetails={openDetailsModal} 
         />
     {/if}
@@ -55,7 +48,7 @@
         />
     {/if}
 
-    <Tutorial show={true} />
+    <Tutorial />
 </div>
 
 <style>
