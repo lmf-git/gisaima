@@ -8,9 +8,9 @@
     TILE_SIZE,
     DRAG_CHECK_INTERVAL,
     resizeMap,
-    startDrag as startMapDrag,
-    stopDrag as stopMapDrag,
-    drag as dragMap,
+    startDrag,
+    stopDrag,
+    drag,
     checkDragState,
     moveMapByKeys,
     targetTileStore,
@@ -26,7 +26,7 @@
   let dragStateCheckInterval = null;
   
   // Add flag to track initial animation state
-  let initialAnimationComplete = $state(false);
+  let introduced = $state(false);
   
   // Movement state tracking
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null);
@@ -44,11 +44,8 @@
     // Setup drag state check interval
     dragStateCheckInterval = setInterval(checkDragState, DRAG_CHECK_INTERVAL);
 
-    // Set a timer to mark initial animation as complete
-    setTimeout(() => {
-      initialAnimationComplete = true;
-      console.log('Initial grid animation complete');
-    }, 1200);
+    // Tiles should not animate into view after the introduction completes.
+    setTimeout(() => introduced = true, 1200);
 
     // Define cleanup function properly
     return function() {
@@ -105,7 +102,7 @@
   const handleStartDrag = event => {
     if (event.button !== 0) return;
     
-    if (startMapDrag(event) && mapElement) {
+    if (startDrag(event) && mapElement) {
       mapElement.style.cursor = "grabbing";
       mapElement.classList.add("dragging");
     }
@@ -113,7 +110,7 @@
   };
 
   const handleStopDrag = () => {
-    if (stopMapDrag() && mapElement) {
+    if (stopDrag() && mapElement) {
       mapElement.style.cursor = "grab";
       mapElement.classList.remove("dragging");
     }
@@ -126,7 +123,7 @@
     if ($mapState.isDragging) handleStopDrag();
   };
   const globalMouseMove = event => {
-    if ($mapState.isMouseActuallyDown && $mapState.isDragging) dragMap(event);
+    if ($mapState.isMouseActuallyDown && $mapState.isDragging) drag(event);
     else if (!$mapState.isMouseActuallyDown && $mapState.isDragging) handleStopDrag();
   };
 
@@ -190,7 +187,7 @@
       <div class="grid main-grid" 
         style="--cols: {$mapState.cols}; --rows: {$mapState.rows};" 
         role="presentation"
-        class:animated={!initialAnimationComplete}
+        class:animated={!introduced}
       >
         {#each $gridArray as cell (cell.x + ':' + cell.y)}
           {@const distance = Math.sqrt(
@@ -212,7 +209,7 @@
             aria-current={cell.isCenter ? "location" : undefined}
             style="
               background-color: {cell.color};
-              animation-delay: {!initialAnimationComplete && cell.isCenter ? 0 : (!initialAnimationComplete ? 0.05 * distance : 0)}s;
+              animation-delay: {!introduced && cell.isCenter ? 0 : (!introduced ? 0.05 * distance : 0)}s;
             "
           >
             <span class="coords">{cell.x},{cell.y}</span>

@@ -661,6 +661,9 @@ export function closeDetailsModal() {
   }));
 };
 
+
+
+// This is a minimap function primarily and should be moved there.
 // Check if drag state is consistent
 export function checkDragState() {
   let fixed = false;
