@@ -8,12 +8,17 @@
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
 
-  // Minimap doesn't need to handle keyboard movement because Grid already does.
-  
+  // Simplify state variables
+  let open = $state(true);
+  let initialized = $state(false);
+  let windowWidth = $state(browser ? window.innerWidth : 0);
+
+  // Constants
   const MINI_TILE_SIZE_EM = 0.5;
   const MINIMAP_WIDTH_EM = 24;
   const MINIMAP_HEIGHT_EM = 16;
   const LOADING_THROTTLE = 200;
+  const BREAKPOINT = 900; // px
   
   const tileCountX = $derived(Math.floor(MINIMAP_WIDTH_EM / MINI_TILE_SIZE_EM));
   const tileCountY = $derived(Math.floor(MINIMAP_HEIGHT_EM / MINI_TILE_SIZE_EM));
@@ -36,7 +41,9 @@
   let isDrag = $state(false);
   let dragX = $state(0);
   let dragY = $state(0);
-  let map;
+  
+  // Use proper Svelte 5 state for DOM reference
+  let minimap = $state(null);
   
   let wasDrag = $state(false);
   let dist = $state(0);
@@ -46,7 +53,7 @@
   let lastUpdateTime = 0;
   
   function generateMinimapGrid() {
-    if (!$mapState.isReady) return [];
+    if (!$mapState.isReady || !open) return [];
     
     isLoad = true;
     const now = Date.now();
@@ -101,14 +108,14 @@
     return result;
   }
   
+  // Simplified effect for grid generation
   $effect(() => {
-    const { targetCoord } = $mapState;
-    
-    if ($mapState.isReady && (targetCoord.x !== undefined)) {
+    // Generate grid when map is ready and minimap is open
+    if ($mapState.isReady && open && ($mapState.targetCoord.x !== undefined)) {
       generateMinimapGrid();
     }
   });
-
+  
   function handleMinimapClick(event) {
     if (wasDrag || !$mapState.isReady) {
       event.stopPropagation();
@@ -149,14 +156,11 @@
   
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isDrag);
   
-  
   function highlightMiniTile(cell) {
     if (!isMoving) {
       updateHoveredTile(cell.x, cell.y);
     }
   }
-  
- 
   
   const isTileHighlighted = (cell) => 
     !isMoving && $mapState.hoveredTile && 
@@ -171,11 +175,6 @@
     dragY = event.clientY;
     dist = 0;
     wasDrag = false;
-    
-    if (map) {
-      map.style.cursor = "grabbing";
-      map.classList.add("dragging");
-    }
     
     event.preventDefault();
   }
@@ -192,7 +191,7 @@
       wasDrag = true;
     }
     
-    const minimapRect = map.getBoundingClientRect();
+    const minimapRect = minimap.getBoundingClientRect();
     const pixelsPerTileX = minimapRect.width / tileCountX;
     const pixelsPerTileY = minimapRect.height / tileCountY;
     
@@ -212,13 +211,7 @@
   
   function handleMinimapDragEnd() {
     if (!isDrag) return;
-    
     isDrag = false;
-    
-    if (map) {
-      map.style.cursor = "grab";
-      map.classList.remove("dragging");
-    }
   }
   
   function globalMinimapMouseUp() {
@@ -233,46 +226,50 @@
     }
   }
 
-  let isVisible = $state(true);
   let minimapContainerWidth = $state(900); // Default fallback value
   
-  const BREAKPOINT = 900; // px
-  
-  function toggleVisibility() {
-    isVisible = !isVisible;
+  function toggleMinimap() {
+    open = !open;
+    
     // Store preference in localStorage
     if (browser) {
-      localStorage.setItem('minimapVisible', isVisible.toString());
+      localStorage.setItem('minimapVisible', open.toString());
+    }
+    
+    // If we're opening the minimap and map is ready, generate grid
+    if (open && $mapState.isReady) {
+      generateMinimapGrid();
     }
   }
   
-  function checkScreenSize() {
+  // Simplified initialization for small screens
+  function initializeVisibility() {
     if (browser) {
-      minimapContainerWidth = window.innerWidth;
-      // Default to hidden on small screens unless explicitly set to visible before
-      if (!localStorage.getItem('minimapVisible')) {
-        isVisible = minimapContainerWidth >= BREAKPOINT;
-      }
-    }
-  }
-  
-  // Initialize visibility based on screen size or stored preference
-  let initialized = $state(false);
-  $effect(() => {
-    if (!initialized && browser) {
       const storedVisibility = localStorage.getItem('minimapVisible');
       
       if (storedVisibility !== null) {
-        isVisible = storedVisibility === 'true';
+        // Use stored preference if available
+        open = storedVisibility === 'true';
       } else {
-        checkScreenSize();
+        // Default based on screen size
+        open = windowWidth >= BREAKPOINT;
       }
+      
       initialized = true;
+    }
+  }
+  
+  // Initialize on component load
+  $effect(() => {
+    if (!initialized) {
+      initializeVisibility();
     }
   });
 
   function handleResize() {
-    checkScreenSize();
+    if (browser) {
+      windowWidth = window.innerWidth;
+    }
   }
 
   // Touch support for mobile devices
@@ -288,11 +285,6 @@
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
     isTouching = true;
-    
-    if (map) {
-      map.style.cursor = "grabbing";
-      map.classList.add("dragging");
-    }
   }
   
   function handleTouchMove(event) {
@@ -303,7 +295,7 @@
     const deltaX = touch.clientX - touchStartX;
     const deltaY = touch.clientY - touchStartY;
     
-    const minimapRect = map.getBoundingClientRect();
+    const minimapRect = minimap.getBoundingClientRect();
     const pixelsPerTileX = minimapRect.width / tileCountX;
     const pixelsPerTileY = minimapRect.height / tileCountY;
     
@@ -323,14 +315,15 @@
   
   function handleTouchEnd() {
     if (!isTouching) return;
-    
     isTouching = false;
-    
-    if (map) {
-      map.style.cursor = "grab";
-      map.classList.remove("dragging");
-    }
   }
+
+  // Always update range info even when minimap is closed
+  $effect(() => {
+    if ($mapState.isReady && ($mapState.targetCoord.x !== undefined)) {
+      updateMinimapRange($mapState.targetCoord.x, $mapState.targetCoord.y, viewRangeX, viewRangeY);
+    }
+  });
 </script>
 
 <svelte:window
@@ -340,25 +333,24 @@
   onresize={handleResize}
 />
 
-{#if isVisible || minimapContainerWidth >= BREAKPOINT}
+<!-- Always render the container and toggle button -->
 <div class="map-container">
   <button 
     class="toggle-button" 
-    onclick={toggleVisibility} 
-    aria-label={isVisible ? "Hide minimap" : "Show minimap"}>
-    {#if isVisible}
+    onclick={toggleMinimap} 
+    aria-label={open ? "Hide minimap" : "Show minimap"}>
+    {#if open}
       ×
     {:else}
       M
     {/if}
   </button>
   
-  {#if isVisible}
-  <div class="map">
+  {#if open}
     <div 
-      class="mini" 
+      class="minimap" 
       style="width: {MINIMAP_WIDTH_EM}em; height: {MINIMAP_HEIGHT_EM}em;"
-      bind:this={map}
+      bind:this={minimap}
       onclick={handleMinimapClick}
       onmousedown={handleMinimapDragStart}
       onkeydown={handleKeyDown}
@@ -369,7 +361,8 @@
       tabindex="0"
       role="button"
       aria-label="Mini map for navigation"
-      class:drag={isDrag || isTouching}>
+      class:drag={isDrag}
+      class:touch-drag={isTouching}>
       {#if $mapState.isReady && minimapGrid.length > 0}
         {#each minimapGrid as cell}
           <div
@@ -384,9 +377,7 @@
               left: {cell.displayX * MINI_TILE_SIZE_EM}em;
               top: {cell.displayY * MINI_TILE_SIZE_EM}em;
             "
-            
             onmouseenter={() => highlightMiniTile(cell)} 
-
             role="presentation"
             aria-hidden="true">
         </div>
@@ -404,10 +395,8 @@
         </div>
       {/if}
     </div>
-  </div>
   {/if}
 </div>
-{/if}
 
 <style>
   .map-container {
@@ -436,23 +425,49 @@
     justify-content: center;
     box-shadow: 0 0.1em 0.3em var(--color-shadow);
     transition: all 0.2s ease;
+    opacity: 0; /* Start invisible */
+    animation: fadeInToggle 0.7s ease-out 0.3s forwards; /* Add slight delay for better UX */
+  }
+  
+  @keyframes fadeInToggle {
+    0% {
+      opacity: 0;
+      transform: translateY(-0.5em) scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
   
   .toggle-button:hover {
     background: var(--color-panel-hover);
   }
   
-  .map {
+  .minimap {
     position: absolute;
     top: 0;
     right: 0;
     overflow: hidden;
+    background: var(--color-panel-bg);
+    border: 1px solid var(--color-panel-border);
     box-shadow: 0 0.1875em 0.625em var(--color-shadow);
+    cursor: grab;
+    transition: box-shadow 0.2s ease;
+    outline: none;
     animation: slideInFromRight 0.8s ease-out forwards;
     opacity: 0;
     transform: translateX(100%);
   }
 
+  .minimap:hover {
+    box-shadow: 0 0.15em 0.3em var(--color-shadow);
+  }
+  
+  .minimap:focus {
+    box-shadow: 0 0 0 0.2em var(--color-bright-accent);
+  }
+  
   @keyframes slideInFromRight {
     0% {
       transform: translateX(100%);
@@ -462,24 +477,6 @@
       transform: translateX(0);
       opacity: 1;
     }
-  }
-  
-  .mini {
-    position: relative;
-    overflow: hidden;
-    background: var(--color-panel-bg);
-    border: 1px solid var(--color-panel-border);
-    cursor: grab;
-    transition: box-shadow 0.2s ease;
-    outline: none;
-  }
-  
-  .mini:hover {
-    box-shadow: 0 0.15em 0.3em var(--color-shadow);
-  }
-  
-  .mini:focus {
-    box-shadow: 0 0 0 0.2em var(--color-bright-accent);
   }
   
   .tile {
@@ -504,7 +501,8 @@
     opacity: 0.8;
   }
   
-  .mini.drag {
+  .minimap.drag,
+  .minimap.touch-drag {
     cursor: grabbing;
   }
 
@@ -525,11 +523,12 @@
 
   /* Add a small enhancement for touch devices */
   @media (hover: none) {
-    .mini {
+    .minimap {
       cursor: default; /* Remove grab cursor on touch devices */
     }
     
-    .mini.drag {
+    .minimap.drag,
+    .minimap.touch-drag {
       cursor: default;
     }
     

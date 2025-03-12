@@ -28,8 +28,8 @@
   }
 </script>
 
-{#if ready && !closed}
-  <div class="tut tutorial-container" class:hide={!show}>
+{#if ready && !closed && show}
+  <div class="tut tutorial-container">
     <div class="box">
       <button class="close" aria-label="Close tutorial" onclick={close}>⨯</button>
       <h2>Welcome to Gisaima</h2>
@@ -71,7 +71,7 @@
       </div>
     </div>
   </div>
-{:else if ready && show}
+{:else if ready && closed && show}
   <button class="help" onclick={open} aria-label="Show tutorial">?</button>
 {/if}
 
@@ -91,10 +91,6 @@
     transition: opacity 0.3s ease;
   }
   
-  .tut.hide {
-    display: none;
-  }
-  
   .box {
     position: relative;
     background: rgba(21, 38, 60, 0.95);
@@ -106,6 +102,8 @@
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* Enable momentum scrolling on iOS */
+    overscroll-behavior: contain; /* Prevent scroll chaining */
     color: var(--color-text);
   }
   
@@ -259,6 +257,8 @@
   @media (max-width: 768px) {
     .box {
       padding: 1.5em;
+      max-height: 80vh; /* Slightly smaller height on mobile for better visibility of scrollable area */
+      margin: 1em 0;
     }
     
     .features {
@@ -267,6 +267,11 @@
     
     h2 {
       font-size: 1.6em;
+    }
+    
+    /* Additional padding for better touch area when scrolling */
+    .content {
+      padding-bottom: 1.5em;
     }
   }
 
