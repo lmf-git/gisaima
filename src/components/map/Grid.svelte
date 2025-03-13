@@ -10,12 +10,12 @@
     drag,
     checkDragState,
     moveMapByKeys,
-    targetTileStore,
+    centerTileStore,
     updateHoveredTile,
     cleanupChunkSubscriptions,
     getEntitiesAt,
-    loadInitialChunksForTarget,  // Add this import
-    forceEntityDisplay  // Add this import
+    loadInitialChunksForCenter,
+    forceEntityDisplay
   } from "../../lib/stores/map.js";
   
   // Local component state
@@ -49,7 +49,7 @@
     // 1. Entity change counter updates
     // 2. Map position changes
     // 3. Initial entity load completes
-    if (entityChangeCounter > 0 || $mapState.targetCoord || initialEntityLoadComplete) {
+    if (entityChangeCounter > 0 || $mapState.centerCoord || initialEntityLoadComplete) {
       entityIndicatorsCache.clear();
     }
   });
@@ -81,7 +81,7 @@
       resizeMap(mapElement);
       // After resizing, force load entity data
       if ($mapState.isReady) {
-        loadInitialChunksForTarget();
+        loadInitialChunksForCenter();
         forceEntityDisplay();
       }
     });
@@ -99,7 +99,7 @@
         console.log("Map is ready, loading initial entities");
         
         // Force immediate chunk loading without waiting for grid calculation
-        loadInitialChunksForTarget();
+        loadInitialChunksForCenter();
         
         // Set up a sequence of entity loading attempts with increasing delays
         // This helps ensure entities display even if Firebase is slow
@@ -309,9 +309,9 @@
     }
   });
 
-  // Track the background color based on target tile
+  // Track the background color based on center tile
   const backgroundColor = $derived(
-    $targetTileStore && $targetTileStore.color ? $targetTileStore.color : "var(--color-dark-blue)"
+    $centerTileStore && $centerTileStore.color ? $centerTileStore.color : "var(--color-dark-blue)"
   );
 
 </script>
@@ -348,8 +348,8 @@
       >
         {#each $gridArray as cell (cell.x + ':' + cell.y)}
           {@const distance = Math.sqrt(
-            Math.pow(cell.x - $mapState.targetCoord.x, 2) + 
-            Math.pow(cell.y - $mapState.targetCoord.y, 2)
+            Math.pow(cell.x - $mapState.centerCoord.x, 2) + 
+            Math.pow(cell.y - $mapState.centerCoord.y, 2)
           )}
           {@const entityIndicators = checkEntityIndicators(cell.x, cell.y)}
           <div

@@ -9,7 +9,6 @@
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
   import Close from '../../components/icons/Close.svelte';
-  // Add missing import for onDestroy
   import { onDestroy } from 'svelte';
 
   // Simplify state variables
@@ -19,7 +18,6 @@
 
   // Constants
   const MINI_TILE_SIZE_EM = 0.5;
-  // Replace fixed dimensions with dynamic ones based on grid size
   const MINIMAP_COLS_FACTOR = 3.5;
   const MINIMAP_ROWS_FACTOR = 2.85;
   
@@ -41,13 +39,14 @@
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
   const viewRangeY = $derived(Math.floor(tileCountY / 2));
   
+  // Update area calculation to use centerCoord instead of targetCoord
   const area = $derived({
-    startX: $mapState.targetCoord.x - Math.floor($mapState.cols / 2),
-    startY: $mapState.targetCoord.y - Math.floor($mapState.rows / 2),
+    startX: $mapState.centerCoord.x - Math.floor($mapState.cols / 2),
+    startY: $mapState.centerCoord.y - Math.floor($mapState.rows / 2),
     width: $mapState.cols,
     height: $mapState.rows,
-    centerX: $mapState.targetCoord.x,
-    centerY: $mapState.targetCoord.y
+    centerX: $mapState.centerCoord.x,
+    centerY: $mapState.centerCoord.y
   });
   
   let isLoad = $state(false);
@@ -77,8 +76,8 @@
   
   // Track only necessary state to determine if grid needs regeneration
   const mapCoords = $derived({
-    x: $mapState.targetCoord.x,
-    y: $mapState.targetCoord.y
+    x: $mapState.centerCoord.x,
+    y: $mapState.centerCoord.y
   });
   
   // Improved grid generation that only regenerates when needed
@@ -88,16 +87,16 @@
     isLoad = true;
     
     // Skip generation if coordinates haven't changed and we have data
-    if ($mapState.targetCoord.x === lastCenterX && 
-        $mapState.targetCoord.y === lastCenterY && 
+    if ($mapState.centerCoord.x === lastCenterX && 
+        $mapState.centerCoord.y === lastCenterY && 
         minimapGrid.length > 0) {
       isLoad = false;
       return minimapGrid;
     }
     
     // Update last known coordinates
-    lastCenterX = $mapState.targetCoord.x;
-    lastCenterY = $mapState.targetCoord.y;
+    lastCenterX = $mapState.centerCoord.x;
+    lastCenterY = $mapState.centerCoord.y;
     
     // Update range info
     updateMinimapRange(lastCenterX, lastCenterY, viewRangeX, viewRangeY);
@@ -173,7 +172,7 @@
     if ($mapState.isReady) {
       const now = Date.now();
       if (now - lastRangeUpdate > 250) {
-        updateMinimapRange($mapState.targetCoord.x, $mapState.targetCoord.y, viewRangeX, viewRangeY);
+        updateMinimapRange($mapState.centerCoord.x, $mapState.centerCoord.y, viewRangeX, viewRangeY);
         lastRangeUpdate = now;
       }
     }
@@ -211,8 +210,8 @@
   }
   
   function navigateToPosition(tileX, tileY) {
-    const worldX = Math.round($mapState.targetCoord.x - viewRangeX + tileX);
-    const worldY = Math.round($mapState.targetCoord.y - viewRangeY + tileY);
+    const worldX = Math.round($mapState.centerCoord.x - viewRangeX + tileX);
+    const worldY = Math.round($mapState.centerCoord.y - viewRangeY + tileY);
     
     moveMapTo(worldX, worldY);
   }
@@ -263,8 +262,8 @@
     
     if (cellsMovedX === 0 && cellsMovedY === 0) return;
     
-    const newTargetX = $mapState.targetCoord.x - cellsMovedX;
-    const newTargetY = $mapState.targetCoord.y - cellsMovedY;
+    const newTargetX = $mapState.centerCoord.x - cellsMovedX;
+    const newTargetY = $mapState.centerCoord.y - cellsMovedY;
     
     moveMapTo(newTargetX, newTargetY);
     
@@ -372,8 +371,8 @@
     
     if (cellsMovedX === 0 && cellsMovedY === 0) return;
     
-    const newTargetX = $mapState.targetCoord.x - cellsMovedX;
-    const newTargetY = $mapState.targetCoord.y - cellsMovedY;
+    const newTargetX = $mapState.centerCoord.x - cellsMovedX;
+    const newTargetY = $mapState.centerCoord.y - cellsMovedY;
     
     moveMapTo(newTargetX, newTargetY);
     
@@ -388,8 +387,8 @@
 
   // Always update range info even when minimap is closed
   $effect(() => {
-    if ($mapState.isReady && ($mapState.targetCoord.x !== undefined)) {
-      updateMinimapRange($mapState.targetCoord.x, $mapState.targetCoord.y, viewRangeX, viewRangeY);
+    if ($mapState.isReady && ($mapState.centerCoord.x !== undefined)) {
+      updateMinimapRange($mapState.centerCoord.x, $mapState.centerCoord.y, viewRangeX, viewRangeY);
     }
   });
 
@@ -464,8 +463,8 @@
         <div 
           class="visible-area-frame"
           style="
-            left: {(viewRangeX + area.startX - $mapState.targetCoord.x) * MINI_TILE_SIZE_EM}em;
-            top: {(viewRangeY + area.startY - $mapState.targetCoord.y) * MINI_TILE_SIZE_EM}em;
+            left: {(viewRangeX + area.startX - $mapState.centerCoord.x) * MINI_TILE_SIZE_EM}em;
+            top: {(viewRangeY + area.startY - $mapState.centerCoord.y) * MINI_TILE_SIZE_EM}em;
             width: {area.width * MINI_TILE_SIZE_EM}em;
             height: {area.height * MINI_TILE_SIZE_EM}em;
           "

@@ -26,7 +26,7 @@ export const mapState = writable({
   offsetY: 0,
   centerX: 0,
   centerY: 0,
-  targetCoord: { x: 0, y: 0 },
+  centerCoord: { x: 0, y: 0 }, // Renamed from targetCoord for clarity
   chunks: new Set(),
   hoveredTile: null,
   showDetails: false,
@@ -37,17 +37,13 @@ export const mapState = writable({
   keysPressed: new Set(),
   keyboardNavigationInterval: null,
   
-  // Simplified entity data structure
   entities: {
-    structure: {},   // key: "x,y", value: structure data
-    groups: {},      // key: "x,y", value: unit group data
-    players: {},     // key: "x,y", value: player data
+    structure: {},
+    groups: {},   
+    players: {},  
   },
 
-  // Entity change counter for reactivity
   _entityChangeCounter: 0,
-  
-  // Minimap visibility
   minimapVisible: true,
 });
 
@@ -63,9 +59,9 @@ export function getChunkCoordinates(chunkKey) {
   const [chunkX, chunkY] = chunkKey.split(',').map(Number);
   return {
     minX: chunkX * CHUNK_SIZE,
-    minY: chunkY * CHUNK_SIZE,
+    minY: chunkX * CHUNK_SIZE,
     maxX: (chunkX + 1) * CHUNK_SIZE - 1,
-    maxY: (chunkY + 1) * CHUNK_SIZE - 1
+    maxY: (chunkX + 1) * CHUNK_SIZE - 1
   };
 }
 
@@ -309,21 +305,21 @@ export function cleanupChunkSubscriptions() {
   }
 }
 
-// Target tile store
-const TARGET_TILE_STORE = writable({
+// Simplify the TARGET_TILE_STORE to CENTERED_TILE_STORE for clarity
+const CENTERED_TILE_STORE = writable({
   coordinates: { x: 0, y: 0 },
   data: null
 });
 
-export const targetTileStore = derived(
-  [mapState, TARGET_TILE_STORE],
-  ([$mapState, $targetTileStore]) => {
-    const { x, y } = $mapState.targetCoord;
+export const centerTileStore = derived(
+  [mapState, CENTERED_TILE_STORE],
+  ([$mapState, $centeredTileStore]) => {
+    const { x, y } = $mapState.centerCoord;
     
-    if (x !== $targetTileStore.coordinates.x || y !== $targetTileStore.coordinates.y) {
+    if (x !== $centeredTileStore.coordinates.x || y !== $centeredTileStore.coordinates.y) {
       const tileData = getTerrainData(x, y);
       
-      TARGET_TILE_STORE.set({
+      CENTERED_TILE_STORE.set({
         coordinates: { x, y },
         data: tileData
       });
@@ -331,9 +327,13 @@ export const targetTileStore = derived(
       return { x, y, ...tileData };
     }
     
-    return { x, y, ...$targetTileStore.data };
+    return { x, y, ...$centeredTileStore.data };
   }
 );
+
+// Rename targetTileStore export to centerTileStore but keep targetTileStore 
+// for backward compatibility
+export const targetTileStore = centerTileStore;
 
 // Map dimensions and positioning
 export function resizeMap(mapElement) {
@@ -355,19 +355,19 @@ export function resizeMap(mapElement) {
     const centerX = Math.floor(cols / 2);
     const centerY = Math.floor(rows / 2);
     
-    const offsetX = centerX + state.targetCoord.x;
-    const offsetY = centerY + state.targetCoord.y;
+    const offsetX = centerX + state.centerCoord.x;
+    const offsetY = centerY + state.centerCoord.y;
     
-    const initialTileData = getTerrainData(state.targetCoord.x, state.targetCoord.y);
+    const initialTileData = getTerrainData(state.centerCoord.x, state.centerCoord.y);
     
-    TARGET_TILE_STORE.set({
-      coordinates: { x: state.targetCoord.x, y: state.targetCoord.y },
+    CENTERED_TILE_STORE.set({
+      coordinates: { x: state.centerCoord.x, y: state.centerCoord.y },
       data: initialTileData
     });
     
     setTimeout(() => {
       if (state.isReady) {
-        loadInitialChunksForTarget();
+        loadInitialChunksForCenter();
       }
     }, 0);
     
@@ -384,18 +384,18 @@ export function resizeMap(mapElement) {
   });
 }
 
-// Movement functions
-export function moveMapTo(newX, newY) {  
+// Movement functions - rename moveMapTo for clarity
+export function moveCenterTo(newX, newY) {  
   mapState.update(prev => {
-    const roundedX = newX !== undefined ? Math.round(newX) : prev.targetCoord.x;
-    const roundedY = newY !== undefined ? Math.round(newY) : prev.targetCoord.y;
+    const roundedX = newX !== undefined ? Math.round(newX) : prev.centerCoord.x;
+    const roundedY = newY !== undefined ? Math.round(newY) : prev.centerCoord.y;
     
     const newOffsetX = prev.centerX + roundedX;
     const newOffsetY = prev.centerY + roundedY;
     
     return {
       ...prev,
-      targetCoord: { x: roundedX, y: roundedY },
+      centerCoord: { x: roundedX, y: roundedY },
       offsetX: newOffsetX,
       offsetY: newOffsetY,
       hoveredTile: null
@@ -403,6 +403,10 @@ export function moveMapTo(newX, newY) {
   });
 }
 
+// Keep moveMapTo for backward compatibility
+export const moveMapTo = moveCenterTo;
+
+// Update all other functions that use targetCoord to use centerCoord instead
 export function moveMapByKeys() {
   let xChange = 0;
   let yChange = 0;
@@ -415,7 +419,7 @@ export function moveMapByKeys() {
 
   if (xChange === 0 && yChange === 0) return;
   
-  moveMapTo(state.targetCoord.x - xChange, state.targetCoord.y - yChange);
+  moveCenterTo(state.centerCoord.x - xChange, state.centerCoord.y - yChange);
 }
 
 // Drag functionality
@@ -467,13 +471,13 @@ export function drag(event) {
     return false;
   }
   
-  const newX = state.targetCoord.x - cellsMovedX;
-  const newY = state.targetCoord.y - cellsMovedY;
+  const newX = state.centerCoord.x - cellsMovedX;
+  const newY = state.centerCoord.y - cellsMovedY;
   
   const remainderX = dragAccumX - (cellsMovedX * adjustedTileSize);
   const remainderY = dragAccumY - (cellsMovedY * adjustedTileSize);
   
-  moveMapTo(newX, newY);
+  moveCenterTo(newX, newY);
   
   mapState.update(state => ({
     ...state,
@@ -575,7 +579,7 @@ export const expandedGridArray = derived(
     const now = Date.now();
     if (now - lastGridGenTime < GRID_GEN_THROTTLE) return;
 
-    const targetChanged = $mapState.targetCoord.x !== lastTargetX || $mapState.targetCoord.y !== lastTargetY;
+    const targetChanged = $mapState.centerCoord.x !== lastTargetX || $mapState.centerCoord.y !== lastTargetY;
     const sizeChanged = $mapState.cols !== lastGridCols || $mapState.rows !== lastGridRows;
     const minimapToggled = $mapState.minimapVisible !== lastMinimapVisible;
 
@@ -584,8 +588,8 @@ export const expandedGridArray = derived(
       return;
     }
 
-    lastTargetX = $mapState.targetCoord.x;
-    lastTargetY = $mapState.targetCoord.y;
+    lastTargetX = $mapState.centerCoord.x;
+    lastTargetY = $mapState.centerCoord.y;
     lastGridCols = $mapState.cols;
     lastGridRows = $mapState.rows;
     lastMinimapVisible = $mapState.minimapVisible;
@@ -607,8 +611,8 @@ export const expandedGridArray = derived(
       
       for (let y = 0; y < gridRows; y++) {
         for (let x = 0; x < gridCols; x++) {
-          const globalX = x - centerOffsetX + $mapState.targetCoord.x;
-          const globalY = y - centerOffsetY + $mapState.targetCoord.y;
+          const globalX = x - centerOffsetX + $mapState.centerCoord.x;
+          const globalY = y - centerOffsetY + $mapState.centerCoord.y;
           
           const chunkKey = getChunkKey(globalX, globalY);
           const terrainData = getTerrainData(globalX, globalY);
@@ -692,7 +696,7 @@ export const xAxisArray = derived(
   ($mapState) => {
     if (!$mapState.isReady) return [];
     return Array.from({ length: $mapState.cols }, (_, x) => ({
-      value: $mapState.targetCoord.x - ($mapState.centerX - x),
+      value: $mapState.centerCoord.x - ($mapState.centerX - x),
       isCenter: x === $mapState.centerX
     }));
   }
@@ -703,7 +707,7 @@ export const yAxisArray = derived(
   ($mapState) => {
     if (!$mapState.isReady) return [];
     return Array.from({ length: $mapState.rows }, (_, y) => ({
-      value: $mapState.targetCoord.y - ($mapState.centerY - y),
+      value: $mapState.centerCoord.y - ($mapState.centerY - y),
       isCenter: y === $mapState.centerY
     }));
   }
@@ -755,17 +759,17 @@ export function getMinimapRange() {
 }
 
 // Entity loading
-export function loadInitialChunksForTarget() {
+export function loadInitialChunksForCenter() {
   const state = get(mapState);
-  if (!state.isReady || !state.targetCoord) return;
+  if (!state.isReady || !state.centerCoord) return;
   
   const halfWidth = Math.floor(state.cols / 2) + 1;
   const halfHeight = Math.floor(state.rows / 2) + 1;
   
-  const minX = state.targetCoord.x - halfWidth;
-  const maxX = state.targetCoord.x + halfWidth;
-  const minY = state.targetCoord.y - halfHeight;
-  const maxY = state.targetCoord.y + halfHeight;
+  const minX = state.centerCoord.x - halfWidth;
+  const maxX = state.centerCoord.x + halfWidth;
+  const minY = state.centerCoord.y - halfHeight;
+  const maxY = state.centerCoord.y + halfHeight;
   
   const chunkKeys = new Set();
   
@@ -795,6 +799,9 @@ export function loadInitialChunksForTarget() {
   
   return chunksArray.length;
 }
+
+// For backward compatibility
+export { loadInitialChunksForCenter as loadInitialChunksForTarget };
 
 export function forceEntityDisplay() {
   mapState.update(state => {
