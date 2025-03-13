@@ -1,6 +1,7 @@
 <script>
   import { 
     mapState, 
+    mapReady,
     getTerrainData, 
     updateHoveredTile, 
     updateMinimapRange,
@@ -23,10 +24,10 @@
   
   // Calculate minimap tile counts based on main grid dimensions
   const tileCountX = $derived(
-    $mapState.isReady ? $mapState.cols * MINIMAP_COLS_FACTOR : 48
+    $mapReady ? $mapState.cols * MINIMAP_COLS_FACTOR : 48
   );
   const tileCountY = $derived(
-    $mapState.isReady ? $mapState.rows * MINIMAP_ROWS_FACTOR : 32
+    $mapReady ? $mapState.rows * MINIMAP_ROWS_FACTOR : 32
   );
   
   // Calculate dimensions from the derived tile counts
@@ -48,6 +49,7 @@
     centerY: $mapState.centerCoord.y
   });
   
+  // Add back missing drag-related state variables
   let isDrag = $state(false);
   let dragX = $state(0);
   let dragY = $state(0);
@@ -61,42 +63,41 @@
   
   let minimapGrid = $state([]);
   
-  // Track last coordinates to prevent redundant updates
-  let lastCenterX = $state(0);
-  let lastCenterY = $state(0);
-  
-  // Track only necessary state to determine if grid needs regeneration
-  const mapCoords = $derived({
+  // Track map position for updates
+  const mapPos = $derived({
     x: $mapState.centerCoord.x,
-    y: $mapState.centerCoord.y
+    y: $mapState.centerCoord.y,
+    isReady: $mapReady,
+    visible: open
   });
   
-  // Improved grid generation that only regenerates when needed
-  function generateMinimapGrid() {
-    if (!$mapState.isReady || !open) return minimapGrid;
-    
-    // Skip generation if coordinates haven't changed and we have data
-    if ($mapState.centerCoord.x === lastCenterX && 
-        $mapState.centerCoord.y === lastCenterY && 
-        minimapGrid.length > 0) {
-      return minimapGrid;
+  // Generate the grid directly based on position changes
+  $effect(() => {
+    if (mapPos.isReady && mapPos.visible) {
+      generateMinimapGrid();
     }
-    
-    // Update last known coordinates
-    lastCenterX = $mapState.centerCoord.x;
-    lastCenterY = $mapState.centerCoord.y;
+  });
+  
+  // Improved grid generation without caching
+  function generateMinimapGrid() {
+    if (!$mapReady || !open) return;
     
     // Update range info
-    updateMinimapRange(lastCenterX, lastCenterY, viewRangeX, viewRangeY);
+    updateMinimapRange(
+      $mapState.centerCoord.x, 
+      $mapState.centerCoord.y, 
+      viewRangeX, 
+      viewRangeY
+    );
     
     // Generate the grid in one pass
-    const newGrid = [];
-    
     try {
+      const newGrid = [];
+      
       for (let y = -viewRangeY; y <= viewRangeY; y++) {
         for (let x = -viewRangeX; x <= viewRangeX; x++) {
-          const globalX = lastCenterX + x;
-          const globalY = lastCenterY + y;
+          const globalX = $mapState.centerCoord.x + x;
+          const globalY = $mapState.centerCoord.y + y;
           
           // Get terrain data
           const terrainData = getTerrainData(globalX, globalY);
@@ -121,30 +122,27 @@
         }
       }
       
-      // Update the grid all at once
       minimapGrid = newGrid;
     } catch (error) {
       console.error("Error generating minimap grid:", error);
     }
-    
-    return minimapGrid;
   }
   
   // Clean up resources on component destruction
   onDestroy(() => {
-    // Clear minimap grid to free memory
     minimapGrid = [];
   });
 
-  // Only react to coordinate changes
-  $effect(() => {
+  // Remove the problematic effect causing the error
+  // This effect was redundant with the mapPos effect above
+  /* $effect(() => {
     if ($mapState.isReady && open && 
         (mapCoords.x !== lastCenterX || 
          mapCoords.y !== lastCenterY || 
          minimapGrid.length === 0)) {
       generateMinimapGrid();
     }
-  });
+  }); */
 
   // Remove redundant range update effect since we already update in generateMinimapGrid
   // This also removes the need for lastRangeUpdate variable
@@ -378,7 +376,7 @@
 />
 
 <!-- Always render the container and toggle button -->
-<div class="map-container" class:touch-active={isTouching} class:ready={isGridReady}>
+<div class="map-container" class:touch-active={isTouching} class:ready={$mapReady}>
   <button 
     class="toggle-button" 
     onclick={toggleMinimap} 

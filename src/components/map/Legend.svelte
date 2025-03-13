@@ -1,5 +1,5 @@
 <script>
-  import { centerTileStore, mapState } from "../../lib/stores/map";
+  import { centerTileStore, mapReady } from "../../lib/stores/map";
 
   // Remove unused props, keep only what's needed
   const { openDetails } = $props();
@@ -11,14 +11,11 @@
     if (!name) return "Unknown";
     return name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
-  
-  // Add a derived state to track grid ready status
-  const isGridReady = $derived($mapState.isReady);
 </script>
 
 <div 
   class="legend"
-  class:ready={isGridReady} 
+  class:ready={$mapReady} 
   onclick={openDetails}
   onkeypress={keypress}
   role="button" 

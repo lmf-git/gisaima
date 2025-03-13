@@ -7,6 +7,7 @@
     import Tutorial from '../../components/map/Tutorial.svelte';
     import { 
         mapState, 
+        mapReady,
         xAxisArray, 
         yAxisArray,
         openDetailsModal,
@@ -52,7 +53,7 @@
         />
     {/if}
 
-    {#if $mapState.isReady}
+    {#if $mapReady}
         <Axes 
         xAxisArray={$xAxisArray}
         yAxisArray={$yAxisArray}

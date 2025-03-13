@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import { 
     mapState, 
+    mapReady,
     gridArray, 
     TILE_SIZE,
     resizeMap,
@@ -41,7 +42,7 @@
   // Add a new state variable to track initial entity loading
   let initialEntityLoadComplete = $state(false);
   
-  // Simplify entity change tracking
+  // Clear cache on any entity or position changes
   $effect(() => {
     if (entityChangeCounter > 0 || $mapState.centerCoord) {
       entityIndicatorsCache.clear();
@@ -52,7 +53,7 @@
   function checkEntityIndicators(x, y) {
     const cacheKey = `${x},${y}`;
     
-    if (!initialEntityLoadComplete || !entityIndicatorsCache.has(cacheKey)) {
+    if (!entityIndicatorsCache.has(cacheKey)) {
       const entities = getEntitiesAt(x, y);
       const result = {
         hasStructure: !!entities.structure,
@@ -72,7 +73,9 @@
     // Setup resize observer
     resizeObserver = new ResizeObserver(() => {
       resizeMap(mapElement);
-      loadEntities(); // Reload entities if map is resized
+      if ($mapReady) {
+        loadEntities();
+      }
     });
     resizeObserver.observe(mapElement);
     
@@ -82,24 +85,21 @@
     // Setup keyboard navigation
     const keyboardCleanup = setupKeyboardNavigation();
     
-    // Attempt entity loading or set up an observer
-    if ($mapState.isReady) {
-      loadEntities();
-    } else {
-      // Try once rather than using an interval
-      Promise.resolve().then(() => {
-        if ($mapState.isReady) loadEntities();
-      });
-    }
+    // Use effect for entity loading
+    const unsubscribeReady = mapReady.subscribe(isReady => {
+      if (isReady && !initialEntityLoadComplete) {
+        loadEntities();
+      }
+    });
     
     // Use CSS animation-fill-mode instead of setTimeout
-    introduced = false;
     setTimeout(() => introduced = true, 1000);
 
     // Define cleanup function
     return function() {
       if (resizeObserver) resizeObserver.disconnect();
       if (keyboardCleanup) keyboardCleanup();
+      if (unsubscribeReady) unsubscribeReady();
       if ($mapState.keyboardNavigationInterval) {
         clearInterval($mapState.keyboardNavigationInterval);
         mapState.update(state => ({...state, keyboardNavigationInterval: null}));
@@ -109,11 +109,9 @@
   
   // Unified entity loading function
   function loadEntities() {
-    if ($mapState.isReady) {
-      loadInitialChunksForCenter();
-      forceEntityDisplay();
-      initialEntityLoadComplete = true;
-    }
+    loadInitialChunksForCenter();
+    forceEntityDisplay();
+    initialEntityLoadComplete = true;
   }
   
   // Make sure to clean up Firebase subscriptions when component is destroyed
@@ -306,7 +304,7 @@
     tabindex="0"
     aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
   >
-    {#if $mapState.isReady}
+    {#if $mapReady}
       <div class="grid main-grid" 
         style="--cols: {$mapState.cols}; --rows: {$mapState.rows};" 
         role="presentation"

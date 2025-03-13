@@ -49,6 +49,12 @@ export const mapState = writable({
   minimapVisible: true,
 });
 
+// Export mapReady derived store for use across components
+export const mapReady = derived(
+  mapState,
+  $mapState => $mapState.isReady
+);
+
 // Centralized cache for terrain data
 const terrainCache = new Map();
 
@@ -222,18 +228,16 @@ const UPDATE_THROTTLE = 300; // ms between chunk updates
 export function updateChunks(gridArray) {
   if (!gridArray || gridArray.length === 0) return;
   
-  const now = Date.now();
-  if (now - lastUpdateTime < UPDATE_THROTTLE) return;
-  lastUpdateTime = now;
-  
   const chunkKeys = new Set();
   gridArray.forEach(cell => {
     chunkKeys.add(getChunkKey(cell.x, cell.y));
   });
   
-  const newGridHash = [...chunkKeys].sort().join(',');
-  if (newGridHash === lastGridHash) return;
-  lastGridHash = newGridHash;
+  // Simple comparison without hash
+  const state = get(mapState);
+  const currentKeys = [...state.chunks].sort().join(',');
+  const newKeys = [...chunkKeys].sort().join(',');
+  if (currentKeys === newKeys) return;
   
   mapState.update(state => {
     const added = [...chunkKeys].filter(key => !state.chunks.has(key));
@@ -546,38 +550,17 @@ const GRID_GEN_THROTTLE = 200; // ms between grid generations
 let expandedGridCache = [];
 
 export const expandedGridArray = derived(
-  [mapState],
-  ([$mapState], set) => {
+  mapState,
+  ($mapState, set) => {
+    // Early return if not ready
     if (!$mapState.isReady) {
       set([]);
       return;
     }
 
-    const now = Date.now();
-    if (now - lastGridGenTime < GRID_GEN_THROTTLE) return;
-
-    // Use simple comparison of main state properties instead of tracking variables
-    const state = {
-      x: $mapState.centerCoord.x,
-      y: $mapState.centerCoord.y, 
-      cols: $mapState.cols,
-      rows: $mapState.rows,
-      mini: $mapState.minimapVisible
-    };
-    
-    // Create a hash of current state to check for changes
-    const stateHash = `${state.x},${state.y},${state.cols},${state.rows},${state.mini}`;
-    
-    // Compare with previous hash stored in the cache array
-    if (expandedGridCache.hash === stateHash) {
-      set(expandedGridCache);
-      return;
-    }
-    
-    lastGridGenTime = now;
-    
     try {
       const useExpanded = $mapState.minimapVisible;
+      
       // Use separate factors for columns and rows
       const gridCols = useExpanded 
         ? Math.min($mapState.cols * GRID_COLS_FACTOR, 51)
@@ -622,12 +605,7 @@ export const expandedGridArray = derived(
       }
       
       updateChunks(result);
-      
-      // Store hash with result for next comparison
-      expandedGridCache = result;
-      expandedGridCache.hash = stateHash;
-      
-      set(expandedGridCache);
+      set(result);
     } catch (error) {
       console.error("Error generating grid:", error);
       set([]);
