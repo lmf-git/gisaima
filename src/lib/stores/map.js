@@ -10,7 +10,7 @@ const terrain = new TerrainGenerator(WORLD_SEED);
 // Configuration constants
 export const KEYBOARD_MOVE_SPEED = 200;
 export const CHUNK_SIZE = 20;
-export const TILE_SIZE = 7.5;
+export const TILE_SIZE = 5.5;  // Base tile size (will be modified by CSS for mobile)
 export const DRAG_CHECK_INTERVAL = 500;
 
 // Expansion factor for calculating larger grid area
@@ -440,11 +440,16 @@ export function resizeMap(mapElement) {
     const width = mapElement.clientWidth;
     const height = mapElement.clientHeight;
     
+    // Calculate responsive grid size
     let cols = Math.ceil(width / tileSizePx);
     cols = cols % 2 === 0 ? cols - 1 : cols;
     
     let rows = Math.ceil(height / tileSizePx);
     rows = rows % 2 === 0 ? rows - 1 : rows;
+    
+    // Make sure we have at least a 5x5 grid on small screens
+    cols = Math.max(cols, 5);
+    rows = Math.max(rows, 5);
     
     const centerX = Math.floor(cols / 2);
     const centerY = Math.floor(rows / 2);

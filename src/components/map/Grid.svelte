@@ -70,6 +70,9 @@
   // Simplify keyboard navigation without redundant hover clearing
   const setupKeyboardNavigation = () => {
     const keyHandler = event => {
+      // Prevent keyboard navigation until introduction completes
+      if (!introduced) return;
+      
       const key = event.key.toLowerCase();
       const isNavigationKey = ["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright"].includes(key);
       
@@ -105,6 +108,9 @@
 
   // Simplified drag handlers
   const handleStartDrag = event => {
+    // Prevent drag until introduction completes
+    if (!introduced) return;
+    
     if (event.button !== 0) return;
     
     if (startDrag(event) && mapElement) {
@@ -134,7 +140,8 @@
 
   // Add touch handling functions
   function handleTouchStart(event) {
-    if (!$mapState.isReady) return;
+    // Prevent touch actions until introduction completes
+    if (!introduced || !$mapState.isReady) return;
     
     // Prevent default to stop page scrolling immediately
     event.preventDefault();
@@ -483,6 +490,28 @@
     bottom: 0;
     width: 100%;
     height: 100%;
+  }
+
+  /* Make tile sizes responsive for mobile devices */
+  @media (max-width: 768px) {
+    .tile {
+      font-size: 0.9em;
+    }
+    
+    .coords {
+      font-size: 0.6em;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .tile {
+      font-size: 0.7em;
+    }
+    
+    .coords {
+      opacity: 0.5;
+      font-size: 0.5em;
+    }
   }
 
   @keyframes revealTile {
