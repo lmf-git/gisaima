@@ -18,8 +18,8 @@
   // Constants
   const MINI_TILE_SIZE_EM = 0.5;
   // Replace fixed dimensions with dynamic ones based on grid size
-  const MINIMAP_COLS_FACTOR = 3;
-  const MINIMAP_ROWS_FACTOR = 2;
+  const MINIMAP_COLS_FACTOR = 3.5;
+  const MINIMAP_ROWS_FACTOR = 2.85;
   
   // Calculate minimap tile counts based on main grid dimensions
   const tileCountX = $derived(
