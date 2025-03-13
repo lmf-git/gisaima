@@ -145,12 +145,18 @@
         --color-link: var(--color-bright-accent);
         --color-link-hover: #9FFFEA;
         --color-shadow: rgba(0, 0, 0, 0.4);
+
+        /* Add responsive grid sizing variables */
+        --grid-tile-base-size: 5;      /* Mobile first smaller size (matches TILE_SIZE) */
+        --grid-tile-size-sm: 5.5em;    /* Small screens */
+        --grid-tile-size-md: 6.5em;    /* Medium screens */
+        --grid-tile-size-lg: 7.5em;    /* Large screens */
     }
     
     :global(body) {
         background: var(--color-background);
         color: var(--color-text);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: var(--font-body);
     }
 
     .app {
@@ -274,5 +280,24 @@
     
     :global(.navlogo) {
         height: 4em;
+    }
+
+    /* Apply responsive grid styles based on screen size */
+    @media (min-width: 640px) {
+        :global(:root) {
+            --grid-tile-size: var(--grid-tile-size-sm);
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        :global(:root) {
+            --grid-tile-size: var(--grid-tile-size-md);
+        }
+    }
+    
+    @media (min-width: 1440px) {
+        :global(:root) {
+            --grid-tile-size: var(--grid-tile-size-lg);
+        }
     }
 </style>

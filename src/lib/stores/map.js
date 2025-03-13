@@ -10,7 +10,7 @@ const terrain = new TerrainGenerator(WORLD_SEED);
 // Configuration constants
 export const KEYBOARD_MOVE_SPEED = 200;
 export const CHUNK_SIZE = 20;
-export const TILE_SIZE = 5.5;  // Base tile size (will be modified by CSS for mobile)
+export const TILE_SIZE = 5; // Smaller default size for mobile-first approach
 export const DRAG_CHECK_INTERVAL = 500;
 
 // Expansion factor for calculating larger grid area

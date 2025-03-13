@@ -377,7 +377,7 @@
     box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 1.2em;
+    font-size: 1em; /* Base size for mobile */
     color: rgba(255, 255, 255, 0.7);
     text-shadow: 0 0 0.1875em rgba(0, 0, 0, 0.5);
     user-select: none;
@@ -411,8 +411,8 @@
   }
 
   .coords {
-    font-size: 0.7em;
-    opacity: 0.6;
+    font-size: 0.6em; /* Smaller coords for mobile */
+    opacity: 0.5;
   }
 
   .map-container.modal-open {
@@ -511,6 +511,37 @@
     .coords {
       opacity: 0.5;
       font-size: 0.5em;
+    }
+  }
+
+  /* Medium screens */
+  @media (min-width: 640px) {
+    .tile {
+      font-size: 1.1em;
+    }
+    
+    .coords {
+      font-size: 0.65em;
+      opacity: 0.55;
+    }
+  }
+
+  /* Large screens */
+  @media (min-width: 1024px) {
+    .tile {
+      font-size: 1.2em;
+    }
+    
+    .coords {
+      font-size: 0.7em;
+      opacity: 0.6;
+    }
+  }
+
+  /* Very large screens */
+  @media (min-width: 1440px) {
+    .tile {
+      font-size: 1.3em;
     }
   }
 
