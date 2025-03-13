@@ -10,7 +10,7 @@
 <main class="container">
   <section class="showcase">
     <Logo extraClass="logo" />
-    <h1 class="title">GISAIMA</h1>
+    <h1 class="title">The Gisaima Realm</h1>
     <p class="subtitle">A territory control strategy game inspired by ancient board games</p>
     <div class="actions">
       <a href="/map" class="button primary">Play Now</a>

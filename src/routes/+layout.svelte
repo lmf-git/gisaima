@@ -8,11 +8,13 @@
 <div class={`app ${$page.url.pathname === '/map' ? 'map' : ''}`}>
     <header class={`header`}>
         <nav class="navbar">
-            <div class="logo-container">
-                <a href="/" class="logolink">
-                    <Logo extraClass="navlogo" />
-                </a>
-            </div>
+            {#if $page.url.pathname !== '/'}
+                <div class="logo-container">
+                    <a href="/" class="logolink">
+                        <Logo extraClass="navlogo" />
+                    </a>
+                </div>
+            {/if}
             
             {#if !$page.url.pathname === '/map'}
                 <div class="navlinks">

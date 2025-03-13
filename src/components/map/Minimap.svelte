@@ -34,7 +34,7 @@
   const MINIMAP_HEIGHT_EM = $derived(tileCountY * MINI_TILE_SIZE_EM);
   
   const LOADING_THROTTLE = 200;
-  const BREAKPOINT = 900; // px
+  const BREAKPOINT = 768;
   
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
   const viewRangeY = $derived(Math.floor(tileCountY / 2));

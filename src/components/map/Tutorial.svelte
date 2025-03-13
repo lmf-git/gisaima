@@ -3,8 +3,7 @@
   import { browser } from '$app/environment'
   import Close from '../../components/icons/Close.svelte';
   import { mapState } from "../../lib/stores/map.js";
-  
-  const { show = true } = $props();
+
   
   let closed = $state(false)
   let ready = $state(false)
@@ -32,7 +31,7 @@
   }
 </script>
 
-{#if ready && !closed && show && !$mapState.showDetails}
+{#if ready && !closed && !$mapState.showDetails}
   <div class="tut tutorial-container">
     <div class="box">
       <button class="close-btn" aria-label="Close tutorial" onclick={close}>
@@ -77,7 +76,7 @@
       </div>
     </div>
   </div>
-{:else if ready && closed && show && !$mapState.showDetails}
+{:else if ready && closed && !$mapState.showDetails}
   <button class="help" onclick={open} aria-label="Show tutorial">?</button>
 {/if}
 
