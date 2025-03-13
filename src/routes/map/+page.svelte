@@ -19,12 +19,19 @@
     
     // Add onMount to apply body styles only when this page is active
     import { onMount, onDestroy } from 'svelte';
+    import { browser } from '$app/environment';
     
-    // Apply map-specific body styles when component mounts
-    onMount(() => document.body.classList.add('map-page-active'));
+    // Apply map-specific body styles when component mounts, only in browser
+    onMount(() => {
+        if (browser) document.body.classList.add('map-page-active');
+    });
     
-    // Remove map-specific body styles when component is destroyed
-    onDestroy(() => document.body.classList.remove('map-page-active'));
+    // Remove map-specific body styles when component is destroyed, only in browser
+    onDestroy(() => {
+        if (browser) {
+            document.body.classList.remove('map-page-active');
+        }
+    });
 </script>
 
 <div class="map" class:dragging={isDragging}>

@@ -90,7 +90,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 1010; /* Increase from 1000 to be higher than legend's 1001 */
     background-color: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(0.3125em);
     transition: opacity 0.3s ease;
@@ -253,7 +253,7 @@
     justify-content: center;
     opacity: 0.8;
     transition: opacity 0.2s, transform 0.2s;
-    z-index: 10;
+    z-index: 1010; /* Increase from 10 to be consistent with tutorial overlay */
     box-shadow: 0 0.1em 0.3em var(--color-shadow);
     opacity: 0;
     animation: fadeInHelp 0.7s ease-out forwards;

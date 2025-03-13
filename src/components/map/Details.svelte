@@ -37,6 +37,7 @@
     transition: opacity 0.2s ease;
     font-size: 1.2em;
     font-family: var(--font-body);
+    max-width: calc(100% - 1em); /* Ensure it doesn't overflow screen width */
   }
   
   .info {
@@ -50,7 +51,9 @@
     border: 0.05em solid rgba(255, 255, 255, 0.1);
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
     font-weight: 500;
-    width: 22.5em;
+    width: 100%;
+    max-width: 22.5em; /* Maximum width on larger screens */
+    box-sizing: border-box;
     
     animation: reveal 0.4s ease-out forwards;
     transform-origin: bottom right;
@@ -108,5 +111,28 @@
   .close-btn:hover {
     opacity: 1;
     background: rgba(0, 0, 0, 0.1);
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 480px) {
+    .details {
+      left: 0.5em;
+      right: 0.5em;
+      bottom: 1em;
+      font-size: 1em;
+    }
+    
+    .info {
+      width: 100%;
+      padding: 0.8em;
+    }
+    
+    h2 {
+      font-size: 1.2em;
+    }
+    
+    p {
+      font-size: 1em;
+    }
   }
 </style>

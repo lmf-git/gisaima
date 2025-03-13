@@ -75,16 +75,17 @@
     align-items: center;
     justify-content: center;
     font-size: 0.9em;
-    color: rgba(0, 0, 0, 0.8);
+    color: black;
     box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;
-    border: 0.05em solid rgba(255, 255, 255, 0.1);
+    /* border: 0.05em solid rgba(255, 255, 255, 0.1); */
+    border: none;
     pointer-events: auto;
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    background-color: rgba(255, 255, 255, 0.4);
+    background-color: transparent;
     font: inherit;
-    font-weight: 500;
+    font-weight: 300;
     opacity: 1;
     transition: background-color 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
@@ -96,16 +97,14 @@
   }
   
   .label.center {
-    font-weight: bold;
-    background-color: rgba(192, 192, 192, 0.7);
+    font-weight: 500;
     color: rgba(0, 0, 0, 0.9);
     text-shadow: 0 0 0.1875em rgba(255, 255, 255, 0.8);
-    border-color: rgba(255, 255, 255, 0.5);
   }
   
   .label:hover {
     background-color: rgba(255, 255, 255, 0.7);
-    border-color: rgba(255, 255, 255, 0.7);
+    /* border-color: rgba(255, 255, 255, 0.7); */
     box-shadow: 0 0 0.3em rgba(255, 255, 255, 0.5);
   }
 </style>
