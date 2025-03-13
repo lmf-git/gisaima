@@ -65,23 +65,43 @@
   let minimapGrid = $state([]);
   let lastUpdateTime = 0;
   
+  // Track last coordinates to prevent redundant updates
+  let lastCenterX = $state(0);
+  let lastCenterY = $state(0);
+  
+  // Improved grid generation with proper change detection
   function generateMinimapGrid() {
-    if (!$mapState.isReady || !open) return [];
+    // Skip if minimap is closed or map isn't ready
+    if (!$mapState.isReady || !open) return minimapGrid;
     
     isLoad = true;
     const now = Date.now();
     
+    // Skip frequent updates during dragging
     if (now - lastUpdateTime < LOADING_THROTTLE && $mapState.isDragging) {
       if (loadTimer) clearTimeout(loadTimer);
       loadTimer = setTimeout(() => generateMinimapGrid(), LOADING_THROTTLE);
       return minimapGrid;
     }
     
-    const result = [];
+    // Get current center coordinates
     const centerX = $mapState.targetCoord.x;
     const centerY = $mapState.targetCoord.y;
     
+    // Skip regeneration if the coordinates haven't changed
+    if (centerX === lastCenterX && centerY === lastCenterY && minimapGrid.length > 0) {
+      isLoad = false;
+      return minimapGrid;
+    }
+    
+    // Update last known coordinates
+    lastCenterX = centerX;
+    lastCenterY = centerY;
+    
+    // Update the minimap range
     updateMinimapRange(centerX, centerY, viewRangeX, viewRangeY);
+    
+    const result = [];
     
     try {
       for (let y = -viewRangeY; y <= viewRangeY; y++) {
@@ -121,14 +141,34 @@
     return result;
   }
   
-  // Simplified effect for grid generation
+  // Replace effect with more specific change detection
+  let lastMovementTime = 0;
   $effect(() => {
-    // Generate grid when map is ready and minimap is open
-    if ($mapState.isReady && open && ($mapState.targetCoord.x !== undefined)) {
-      generateMinimapGrid();
+    // Only regenerate grid when position changes or when first opened
+    const { x, y } = $mapState.targetCoord;
+    const now = Date.now();
+    
+    if ($mapState.isReady && open) {
+      // Throttle updates to prevent excessive regeneration
+      if (now - lastMovementTime > 100 && (x !== lastCenterX || y !== lastCenterY || minimapGrid.length === 0)) {
+        lastMovementTime = now;
+        generateMinimapGrid();
+      }
     }
   });
-  
+
+  // Update range info even when minimap is closed, but throttled
+  let lastRangeUpdate = 0;
+  $effect(() => {
+    if ($mapState.isReady) {
+      const now = Date.now();
+      if (now - lastRangeUpdate > 250) {
+        updateMinimapRange($mapState.targetCoord.x, $mapState.targetCoord.y, viewRangeX, viewRangeY);
+        lastRangeUpdate = now;
+      }
+    }
+  });
+
   function handleMinimapClick(event) {
     if (wasDrag || !$mapState.isReady) {
       event.stopPropagation();

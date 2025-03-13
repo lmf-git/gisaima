@@ -5,14 +5,15 @@
     import Legend from '../../components/map/Legend.svelte';
     import Details from '../../components/map/Details.svelte';
     import Tutorial from '../../components/map/Tutorial.svelte';
-    import Debug from '../../components/map/Debug.svelte'; // Add this import
+    // Removed Debug import
     import { 
         mapState, 
         xAxisArray, 
         yAxisArray,
         openDetailsModal,
         closeDetailsModal,
-        targetTileStore
+        targetTileStore,
+        cleanupInternalIntervals
     } from "../../lib/stores/map.js";
     
     // Add reactive variable to track if any drag is happening
@@ -31,6 +32,7 @@
     onDestroy(() => {
         if (browser) {
             document.body.classList.remove('map-page-active');
+            cleanupInternalIntervals(); // Clean up any running intervals
         }
     });
 </script>
@@ -65,7 +67,7 @@
     {/if}
 
     <Tutorial />
-    <Debug /> <!-- Add this line -->
+    <!-- Removed Debug component -->
 </div>
 
 <style>

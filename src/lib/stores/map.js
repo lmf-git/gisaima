@@ -19,8 +19,8 @@ export const GRID_EXPANSION_FACTOR = 3;
 // Track active chunk subscriptions
 const activeChunkSubscriptions = new Map();
 
-// Add a debug mode flag to control logging
-const DEBUG_MODE = false; // Set to true for verbose logging
+// Remove DEBUG_MODE flag and directly set to false
+const DEBUG_MODE = false;
 
 // Create a store using Svelte's store API since $state is only for component scripts
 export const mapState = writable({ 
@@ -90,16 +90,12 @@ export function getRawChunkData(chunkKey) {
   return rawChunkData.get(chunkKey);
 }
 
-// Subscribe to a chunk in Firebase - add throttling for logs
-let lastChunkLogTime = 0;
+// Subscribe to a chunk in Firebase - remove logging
 function subscribeToChunk(chunkKey) {
   // Don't create duplicate subscriptions
   if (activeChunkSubscriptions.has(chunkKey)) {
-    if (DEBUG_MODE) console.log(`Skipping subscription to chunk ${chunkKey} - already subscribed`);
     return;
   }
-  
-  console.log(`🔌 Subscribing to chunk: ${chunkKey}`);
   
   try {
     // Create reference to this chunk
@@ -107,13 +103,6 @@ function subscribeToChunk(chunkKey) {
     
     const unsubscribe = onValue(chunkRef, (snapshot) => {
       const exists = snapshot.exists();
-      const now = Date.now();
-      
-      // Throttle logging to prevent console spam
-      if (now - lastChunkLogTime > 1000 || DEBUG_MODE) {
-        console.log(`📥 Received data for chunk ${chunkKey} - Has data: ${exists}`);
-        lastChunkLogTime = now;
-      }
       
       if (exists) {
         const data = snapshot.val();
@@ -153,33 +142,24 @@ function unsubscribeFromChunk(chunkKey) {
   return false;
 }
 
-// Handler for chunk data updates from Firebase - Completely rewritten for correct structure
+// Simplify handleChunkData by removing excessive logging
 const chunkLastUpdated = new Map();
 function handleChunkData(chunkKey, data) {
-  console.log(`Processing chunk data for ${chunkKey}`);
-  
   // Skip if no data
-  if (!data) {
-    console.log(`No data for chunk ${chunkKey}`);
-    return;
-  }
+  if (!data) return;
   
-  // Get the last updated timestamp for this chunk (might be in metadata or generated)
+  // Get the last updated timestamp for this chunk
   const lastUpdated = data.lastUpdated || Date.now();
   const prevUpdated = chunkLastUpdated.get(chunkKey) || 0;
   
-  // Skip redundant updates (happens with Firebase sometimes)
-  if (lastUpdated <= prevUpdated && lastUpdated !== 0) {
-    console.log(`Skipping redundant update for chunk ${chunkKey}`);
-    return;
-  }
+  // Skip redundant updates
+  if (lastUpdated <= prevUpdated && lastUpdated !== 0) return;
   
   // Store the new timestamp
   chunkLastUpdated.set(chunkKey, lastUpdated);
   
   // Extract the chunk bounds
   const bounds = getChunkCoordinates(chunkKey);
-  console.log(`Chunk ${chunkKey} bounds: (${bounds.minX},${bounds.minY}) to (${bounds.maxX},${bounds.maxY})`);
   
   // Prepare to update map state
   mapState.update(state => {
@@ -191,38 +171,26 @@ function handleChunkData(chunkKey, data) {
       test: state.entities.test
     };
     
-    // Counts for debugging
-    let structuresAdded = 0;
-    let groupsAdded = 0;
-    let playersAdded = 0;
-
     // Process each tile in the chunk data
     Object.entries(data).forEach(([tileKey, tileData]) => {
       // Skip metadata fields
       if (tileKey === 'lastUpdated') return;
       
-      // Parse the tile coordinate key (these are coordinates within the chunk)
+      // Parse the tile coordinate key
       const [tileX, tileY] = tileKey.split(',').map(Number);
       
-      // Process structure (singular) at this tile
+      // Process structure at this tile
       if (tileData.structure) {
-        console.log(`Found structure at tile ${tileKey} in chunk ${chunkKey}`);
-        
         newEntities.structure[tileKey] = {
           ...tileData.structure,
           chunkKey,
           x: tileX,
           y: tileY
         };
-        
-        structuresAdded++;
       }
       
-      // Process players at this tile (they are nested under player IDs)
+      // Process players at this tile
       if (tileData.players) {
-        console.log(`Found players at tile ${tileKey} in chunk ${chunkKey}`);
-        
-        // Get the first player ID (usually there's just one per tile)
         const playerIds = Object.keys(tileData.players);
         if (playerIds.length > 0) {
           const playerId = playerIds[0];
@@ -235,16 +203,11 @@ function handleChunkData(chunkKey, data) {
             x: tileX,
             y: tileY
           };
-          
-          playersAdded++;
         }
       }
       
-      // Process groups at this tile (they are nested under group IDs)
+      // Process groups at this tile
       if (tileData.groups) {
-        console.log(`Found groups at tile ${tileKey} in chunk ${chunkKey}`);
-        
-        // Get the first group ID (usually there's just one per tile)
         const groupIds = Object.keys(tileData.groups);
         if (groupIds.length > 0) {
           const groupId = groupIds[0];
@@ -257,16 +220,9 @@ function handleChunkData(chunkKey, data) {
             x: tileX,
             y: tileY
           };
-          
-          groupsAdded++;
         }
       }
     });
-    
-    // Log summary of entities found
-    if (structuresAdded > 0 || groupsAdded > 0 || playersAdded > 0) {
-      console.log(`✅ Added from chunk ${chunkKey}: ${structuresAdded} structures, ${groupsAdded} groups, ${playersAdded} players`);
-    }
     
     return {
       ...state,
@@ -313,22 +269,18 @@ function cleanEntitiesForChunk(chunkKey) {
   console.log(`Cleaned entities for chunk ${chunkKey}`);
 }
 
-// Enhanced updateChunks function - Add caching to prevent redundant updates
+// Enhanced updateChunks function - more efficient
 let lastGridHash = '';
 let lastUpdateTime = 0;
 const UPDATE_THROTTLE = 300; // ms between chunk updates
 
 export function updateChunks(gridArray) {
   // Skip empty grid updates
-  if (!gridArray || gridArray.length === 0) {
-    return;
-  }
+  if (!gridArray || gridArray.length === 0) return;
   
   // Throttle updates by time
   const now = Date.now();
-  if (now - lastUpdateTime < UPDATE_THROTTLE) {
-    return;
-  }
+  if (now - lastUpdateTime < UPDATE_THROTTLE) return;
   lastUpdateTime = now;
   
   // Calculate a hash of the involved chunks to detect changes
@@ -341,14 +293,9 @@ export function updateChunks(gridArray) {
   const newGridHash = [...chunkKeys].sort().join(',');
   
   // Skip redundant updates if chunks haven't changed
-  if (newGridHash === lastGridHash) {
-    if (DEBUG_MODE) console.log("Skipping chunk update - no changes detected");
-    return;
-  }
+  if (newGridHash === lastGridHash) return;
   
   lastGridHash = newGridHash;
-  
-  console.log(`Chunks update (${chunkKeys.size} chunks): ${[...chunkKeys].join(', ')}`);
   
   mapState.update(state => {
     const newVisibleChunks = chunkKeys;
@@ -359,7 +306,6 @@ export function updateChunks(gridArray) {
     
     // Subscribe to new chunks immediately
     if (added.length > 0) {
-      console.log(`Loading ${added.length} new chunks: ${added.join(', ')}`);
       added.forEach(chunkKey => {
         subscribeToChunk(chunkKey);
       });
@@ -367,7 +313,6 @@ export function updateChunks(gridArray) {
     
     // Unsubscribe from old chunks and clean up entity data
     if (removed.length > 0) {
-      console.log(`Unloading ${removed.length} chunks: ${removed.join(', ')}`);
       removed.forEach(chunkKey => {
         unsubscribeFromChunk(chunkKey);
       });
@@ -827,9 +772,7 @@ export const expandedGridArray = derived(
 
     // Throttle grid generation by time 
     const now = Date.now();
-    if (now - lastGridGenTime < GRID_GEN_THROTTLE) {
-      return;
-    }
+    if (now - lastGridGenTime < GRID_GEN_THROTTLE) return;
 
     // Specific change detection - only regenerate when these values actually change
     const targetChanged = $mapState.targetCoord.x !== lastTargetX || $mapState.targetCoord.y !== lastTargetY;
@@ -838,17 +781,10 @@ export const expandedGridArray = derived(
 
     // Skip update if nothing significant has changed
     if (!targetChanged && !sizeChanged && !minimapToggled && expandedGridCache.length > 0) {
-      // Return the cached result without recalculating
-      console.log("↩️ Reusing cached expanded grid - no movement or resize detected");
       set(expandedGridCache);
       return;
     }
 
-    // Regenerate when we get here - log the reason
-    if (targetChanged) console.log(`🔄 Regenerating grid - moved to (${$mapState.targetCoord.x},${$mapState.targetCoord.y})`);
-    if (sizeChanged) console.log(`🔄 Regenerating grid - resized to ${$mapState.cols}x${$mapState.rows}`);
-    if (minimapToggled) console.log(`🔄 Regenerating grid - minimap visibility changed to ${$mapState.minimapVisible}`);
-    
     // Update tracking values for next comparison
     lastTargetX = $mapState.targetCoord.x;
     lastTargetY = $mapState.targetCoord.y;
@@ -917,7 +853,6 @@ export const expandedGridArray = derived(
       
       // Store in cache before setting
       expandedGridCache = result;
-      console.log(`✅ Generated ${result.length} expanded grid cells`);
       
       set(result);
     } catch (error) {
@@ -1048,40 +983,6 @@ export function forceLoadChunk(chunkKey) {
   });
 }
 
-// Add function to force a manual scan of entity data for debugging
-export function scanEntityData() {
-  console.log("🔍 Scanning all entity data in mapState...");
-  
-  const state = get(mapState);
-  
-  // Check structures
-  const structures = Object.entries(state.entities.structure); // Changed from structures to structure
-  console.log(`Found ${structures.length} structures:`);
-  structures.forEach(([key, data]) => {
-    console.log(`- Structure at ${key}: ${data.type} (${data.name}), Level ${data.level}`);
-  });
-  
-  // Check unit groups
-  const groups = Object.entries(state.entities.groups);
-  console.log(`Found ${groups.length} unit groups:`);
-  groups.forEach(([key, data]) => {
-    console.log(`- Unit group at ${key}: ${data.type} (${data.units} units)`);
-  });
-  
-  // Check players
-  const players = Object.entries(state.entities.players);
-  console.log(`Found ${players.length} players:`);
-  players.forEach(([key, data]) => {
-    console.log(`- Player at ${key}: ${data.displayName}`);
-  });
-  
-  return {
-    structures: structures.length,
-    groups: groups.length,
-    players: players.length
-  };
-}
-
 // Add function to manually load and parse a specific tile - Updated for correct path
 export function inspectTile(chunkKey, tileX, tileY) {
   console.log(`🔍 Inspecting tile (${tileX},${tileY}) in chunk ${chunkKey}`);
@@ -1171,38 +1072,6 @@ export function getTerrainData(x, y) {
     return terrainCache.get(cacheKey);
   }
   
-  // IMPORTANT FIX: Always calculate terrain data, just control logging
-  // This ensures terrain is always generated regardless of coverage checks
-  
-  // Determine if we should log about this calculation
-  let shouldLog = false;
-  
-  // Check if coordinate is within expanded grid coverage
-  const isWithinExpandedGrid = 
-    expandedGridCoverage.lastUpdated > 0 &&
-    x >= expandedGridCoverage.minX &&
-    x <= expandedGridCoverage.maxX &&
-    y >= expandedGridCoverage.minY &&
-    y <= expandedGridCoverage.maxY;
-  
-  // Check if we're within minimap range
-  let isWithinMinimap = false;
-  if (isMinimapTerrainsLoaded) {
-    const inMinimapRangeX = Math.abs(x - minimapRange.centerX) <= minimapRange.rangeX;
-    const inMinimapRangeY = Math.abs(y - minimapRange.centerY) <= minimapRange.rangeY;
-    isWithinMinimap = inMinimapRangeX && inMinimapRangeY;
-  }
-  
-  // Only log when generating terrain outside both minimap and expanded grid
-  if (!isWithinExpandedGrid && !isWithinMinimap) {
-    const now = Date.now();
-    if (now - logThrottleTime > LOG_THROTTLE_INTERVAL) {
-      console.log(`Computing terrain for uncached coordinates: (${x}, ${y})`);
-      logThrottleTime = now;
-      shouldLog = true;
-    }
-  }
-  
   // Always calculate the terrain data regardless of coverage checks
   const result = terrain.getTerrainData(x, y);
   
@@ -1269,4 +1138,21 @@ export function detectStructureFormat() {
     
     return state;
   });
+}
+
+// Add new function to clean up intervals
+export function cleanupInternalIntervals() {
+  // Clear any timers or intervals that may be running
+  if (get(mapState).dragStateCheckInterval) {
+    clearInterval(get(mapState).dragStateCheckInterval);
+    mapState.update(state => ({ ...state, dragStateCheckInterval: null }));
+  }
+  
+  if (get(mapState).keyboardNavigationInterval) {
+    clearInterval(get(mapState).keyboardNavigationInterval);
+    mapState.update(state => ({ ...state, keyboardNavigationInterval: null }));
+  }
+  
+  // Return success
+  return true;
 }

@@ -1,12 +1,9 @@
 <script>
   import { onMount, onDestroy } from "svelte";
-
-
   import { 
     mapState, 
     gridArray, 
     TILE_SIZE,
-    DRAG_CHECK_INTERVAL,
     resizeMap,
     startDrag,
     stopDrag,
@@ -16,9 +13,7 @@
     targetTileStore,
     updateHoveredTile,
     cleanupChunkSubscriptions,
-    getEntitiesAt,
-    debugCheckEntityAt // Add this import
-
+    getEntitiesAt
   } from "../../lib/stores/map.js";
   
   // Local component state
@@ -34,7 +29,10 @@
   let touchStartX = $state(0);
   let touchStartY = $state(0);
   
-  // Update movement state tracking to include touch
+  // Add memoization for entity indicators to prevent unnecessary recalculations
+  const entityIndicatorsCache = new Map();
+  
+  // Update movement state tracking to include touch with memoization
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isTouching);
   
   // Initialize when mounted
@@ -47,9 +45,6 @@
     // Setup keyboard navigation
     const keyboardCleanup = setupKeyboardNavigation();
     
-    // Setup drag state check interval
-    dragStateCheckInterval = setInterval(checkDragState, DRAG_CHECK_INTERVAL);
-
     // Tiles should not animate into view after the introduction completes.
     setTimeout(() => introduced = true, 1200);
 
@@ -128,18 +123,27 @@
     }
   };
   
+  // Add a check after mouse/touch operations instead of continuous interval
+  function checkDragStateManually() {
+    checkDragState();
+  }
+  
   // Simplified global event handlers
   const globalMouseDown = () => $mapState.isMouseActuallyDown = true;
   const globalMouseUp = () => {
     $mapState.isMouseActuallyDown = false;
     if ($mapState.isDragging) handleStopDrag();
+    checkDragStateManually(); // Check once after mouse up
   };
   const globalMouseMove = event => {
     if ($mapState.isMouseActuallyDown && $mapState.isDragging) drag(event);
-    else if (!$mapState.isMouseActuallyDown && $mapState.isDragging) handleStopDrag();
+    else if (!$mapState.isMouseActuallyDown && $mapState.isDragging) {
+      handleStopDrag();
+      checkDragStateManually(); // Check once after state change
+    }
   };
 
-  // Add touch handling functions
+  // Touch handling functions
   function handleTouchStart(event) {
     // Prevent touch actions until introduction completes
     if (!introduced || !$mapState.isReady) return;
@@ -192,8 +196,9 @@
       mapElement.classList.remove("dragging");
     }
     
-    // End the drag
+    // End the drag and check state once
     stopDrag();
+    checkDragStateManually();
   }
 
   // Add improved functions to track hover state
@@ -207,10 +212,10 @@
     cell.x === $mapState.hoveredTile.x && 
     cell.y === $mapState.hoveredTile.y;
   
-  // Watch for movement state changes
+  // Only clear hover on movement when necessary
   $effect(() => {
     if (isMoving && $mapState.hoveredTile) {
-
+      updateHoveredTile(null, null);
     }
   });
 
@@ -219,60 +224,39 @@
     $targetTileStore && $targetTileStore.color ? $targetTileStore.color : "var(--color-dark-blue)"
   );
 
-  // Improved function to check for entities with better logging
+  // Improved function to check for entities with better caching
   function checkEntityIndicators(x, y) {
-    const entities = getEntitiesAt(x, y);
+    // Create a cache key for this coordinate
+    const cacheKey = `${x},${y}`;
     
-    // Debug log for center tile
-    if (x === $mapState.targetCoord.x && y === $mapState.targetCoord.y) {
-      console.log("Center tile entity check:", {
-        x, y, 
-        hasStructure: !!entities.structure, // Already using singular structure
-        hasUnitGroup: !!entities.unitGroup,
-        hasPlayer: !!entities.player
-      });
+    // Return cached result if available
+    if (entityIndicatorsCache.has(cacheKey)) {
+      return entityIndicatorsCache.get(cacheKey);
     }
     
-    return {
-      hasStructure: !!entities.structure, // Already using singular structure
+    const entities = getEntitiesAt(x, y);
+    
+    const result = {
+      hasStructure: !!entities.structure,
       hasUnitGroup: !!entities.unitGroup,
       hasPlayer: !!entities.player
     };
+    
+    // Cache the result
+    entityIndicatorsCache.set(cacheKey, result);
+    
+    return result;
   }
   
-  // Add a function to debug entity data when the map is ready
+  // Add a cache cleanup function for entity indicators
+  function clearEntityIndicatorsCache() {
+    entityIndicatorsCache.clear();
+  }
+  
+  // Clear cache on movement to ensure fresh data
   $effect(() => {
-    if ($mapState.isReady) {
-      // Check for entities at the center and surrounding tiles
-      setTimeout(() => {
-        const { x, y } = $mapState.targetCoord;
-        console.log("🔍 DEBUG: Checking entities on center and nearby tiles");
-        debugCheckEntityAt(x, y);      // Center
-        debugCheckEntityAt(x-1, y);    // Left
-        debugCheckEntityAt(x+1, y);    // Right
-        debugCheckEntityAt(x, y-1);    // Top
-        debugCheckEntityAt(x, y+1);    // Bottom
-        
-        // Check total entity count - updated to use singular structure
-        console.log("Structures loaded:", Object.keys($mapState.entities.structure).length); // Changed from structures to structure
-        console.log("Unit groups loaded:", Object.keys($mapState.entities.groups).length);
-        console.log("Players loaded:", Object.keys($mapState.entities.players).length);
-      }, 2000); // Small delay to ensure data is loaded
-    }
-  });
-
-  // Add a defensive check for entity data structure
-  $effect(() => {
-    if ($mapState.isReady) {
-      // Check if we're using the correct property name
-      if ($mapState.entities.structures !== undefined && $mapState.entities.structure === undefined) {
-        console.error("Error: Map state is using 'structures' (plural) but code expects 'structure' (singular)");
-      }
-      if ($mapState.entities.structure !== undefined && $mapState.entities.structures === undefined) {
-        console.log("Correctly using singular 'structure' field in map state");
-      }
-      
-      // ...existing code...
+    if ($mapState.targetCoord) {
+      clearEntityIndicatorsCache();
     }
   });
 </script>
