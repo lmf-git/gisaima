@@ -443,7 +443,7 @@ export function cleanupChunkSubscriptions() {
 // Get terrain data for a specific coordinate - with logging throttling
 // Create a cache to prevent redundant terrain calculations
 let terrainCache = new Map();
-const CACHE_SIZE_LIMIT = 1000; // Limit cache size to prevent memory issues
+// Removed unused CACHE_SIZE_LIMIT constant
 
 // Improved terrain caching and update system
 // Renamed to be more descriptive of its role as the central source of target tile data
@@ -482,36 +482,6 @@ export const targetTileStore = derived(
     };
   }
 );
-
-// Define minimap range to prevent duplicate terrain generation - improve tracking
-let minimapRange = {
-  centerX: 0,
-  centerY: 0,
-  rangeX: 24, 
-  rangeY: 16
-};
-
-// Track expanded grid coverage to prevent redundant calculations
-// But initialize with values that won't block terrain generation
-let expandedGridCoverage = {
-  minX: Number.MAX_SAFE_INTEGER,
-  maxX: Number.MIN_SAFE_INTEGER,
-  minY: Number.MAX_SAFE_INTEGER, 
-  maxY: Number.MIN_SAFE_INTEGER,
-  lastUpdated: 0
-};
-
-// Track if minimap has been initialized with terrain data
-let isMinimapTerrainsLoaded = false;
-
-// Add a function to update the minimap range - improve to track last update time
-export function updateMinimapRange(centerX, centerY, rangeX, rangeY) {
-  minimapRange = { centerX, centerY, rangeX, rangeY };
-  isMinimapTerrainsLoaded = true;
-  
-  // Update the expanded coverage area - include minimap coverage
-  expandedGridCoverage.lastUpdated = Date.now();
-}
 
 // Resize the map grid
 export function resizeMap(mapElement) {

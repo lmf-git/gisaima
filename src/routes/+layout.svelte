@@ -190,7 +190,7 @@
     .app.map .header {
         pointer-events: none;
         justify-content: center;
-        /* padding: 2.2em 3.7em; */
+        padding: 0 2.2em 3.7em;
     }
     
     .navbar {
