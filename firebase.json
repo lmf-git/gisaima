@@ -13,7 +13,7 @@
     }
   ],
   "hosting": {
-    "public": ".svelte-kit/output/client",
+    "public": "build",
     "ignore": [
       "firebase.json",
       "**/.*",
