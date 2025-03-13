@@ -440,21 +440,22 @@
     right: 0.5em;
     min-width: 2em;
     height: 2em;
-    background-color: rgba(255, 255, 255, 0.4);
-    border: 0.05em solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.85); /* Increased opacity from 0.6 to 0.85 */
+    border: 0.05em solid rgba(255, 255, 255, 0.2); /* Standardize border */
     border-radius: 0.3em;
     color: rgba(0, 0, 0, 0.8);
     padding: 0.3em 0.6em;
     font-size: 1em;
     font-weight: bold;
     cursor: pointer;
-    z-index: 999;
+    z-index: 1001; /* Standardize z-index to 1001 */
     display: flex;
     align-items: center;
     justify-content: center;
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
     transition: all 0.2s ease;
-    /* Start with opacity 0 and don't animate until ready */
+    backdrop-filter: blur(0.5em); /* Add consistent backdrop blur */
+    -webkit-backdrop-filter: blur(0.5em);
     opacity: 0;
     transform: translateY(-1em);
   }
@@ -481,7 +482,7 @@
   }
   
   .toggle-button:hover {
-    background-color: rgba(255, 255, 255, 0.6);
+    background-color: rgba(255, 255, 255, 0.95); /* Increased hover opacity from 0.8 to 0.95 */
     border-color: rgba(255, 255, 255, 0.5);
   }
   

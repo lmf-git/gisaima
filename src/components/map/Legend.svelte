@@ -34,15 +34,16 @@
     z-index: 1001;
     cursor: pointer;
     border-radius: 0.3em;
-    padding: 0.6em 1em;
+    padding: 0.8em 1em; /* Standardize padding */
     color: rgba(0, 0, 0, 0.8);
-    background-color: rgba(255, 255, 255, 0.4);
+    background-color: rgba(255, 255, 255, 0.85); /* Increased opacity from 0.6 to 0.85 */
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    border: 0.05em solid rgba(255, 255, 255, 0.1);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
     box-shadow: none;
     font-weight: 500;
-    
-    /* Initially hidden, no animation */
+    backdrop-filter: blur(0.5em);
+    -webkit-backdrop-filter: blur(0.5em);
+    transition: all 0.2s ease;
     opacity: 0;
     transform: translateY(1em);
     min-width: 8em;
@@ -66,12 +67,7 @@
     color: rgba(0, 0, 0, 0.8);
   }
   
-  .legend:hover {
-    background-color: rgba(255, 255, 255, 0.6);
-    border-color: rgba(255, 255, 255, 0.5);
-    transform: none;
-    box-shadow: none;
-  }
+  /* Removed the hover styles */
 
   @keyframes reveal {
     0% {

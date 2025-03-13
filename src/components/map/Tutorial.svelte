@@ -36,7 +36,7 @@
   <div class="tut tutorial-container">
     <div class="box">
       <button class="close-btn" aria-label="Close tutorial" onclick={close}>
-        <Close size="1.8em" color="var(--color-text)" />
+        <Close size="2.2em" color="var(--color-text)" />
       </button>
       <h2>Welcome to Gisaima</h2>
       
@@ -93,7 +93,7 @@
     justify-content: center;
     z-index: 1010; /* Increase from 1000 to be higher than legend's 1001 */
     background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(0.3125em);
+
     transition: opacity 0.3s ease;
   }
   
@@ -194,8 +194,7 @@
     position: absolute;
     top: 0.8em;
     right: 0.8em;
-    height: 2.5em;
-    width: 2.5em;
+    height: 3em;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -238,36 +237,42 @@
   
   .help {
     position: absolute;
-    bottom: 2.5em;
-    left: 2.5em;
-    width: 3em;
-    height: 3em;
-    background-color: var(--color-dark-teal);
-    color: var(--color-text);
-    border: 1px solid var(--color-muted-teal);
-    border-radius: 50%;
+    bottom: 2em;
+    left: 2em;
+    height: 1.75em;
+    background-color: rgba(255, 255, 255, 0.85); /* Increased opacity from 0.6 to 0.85 */
+    color: rgba(0, 0, 0, 0.8);
+    border: 0.05em solid rgba(255, 255, 255, 0.2); /* Match Legend's border */
+    border-radius: 0.3em;
     font-size: 1.2em;
     font-weight: bold;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.8;
-    transition: opacity 0.2s, transform 0.2s;
-    z-index: 1010; /* Increase from 10 to be consistent with tutorial overlay */
-    box-shadow: 0 0.1em 0.3em var(--color-shadow);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    padding: 0.3em 0.6em;
+    transition: all 0.2s ease;
+    z-index: 1001;
+    backdrop-filter: blur(0.5em);
+    -webkit-backdrop-filter: blur(0.5em);
     opacity: 0;
     animation: fadeInHelp 0.7s ease-out forwards;
+  }
+  
+  .help:hover {
+    background-color: rgba(255, 255, 255, 0.95); /* Increased hover opacity from 0.8 to 0.95 */
+    border-color: rgba(255, 255, 255, 0.5);
   }
   
   @keyframes fadeInHelp {
     0% {
       opacity: 0;
-      transform: translateY(1em) scale(0.9);
+      transform: translateY(1em);
     }
     100% {
-      opacity: 0.8;
-      transform: scale(1);
+      opacity: 1;
+      transform: translateY(0);
     }
   }
   

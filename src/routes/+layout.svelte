@@ -181,14 +181,13 @@
         display: flex;
         align-items: center;
         z-index: 100;
-        padding: 2.2em 1.7em;
         box-sizing: border-box;
     }
     
     .app.map .header {
         pointer-events: none;
         justify-content: center;
-        padding: 2.2em 3.7em;
+        /* padding: 2.2em 3.7em; */
     }
     
     .navbar {
@@ -226,6 +225,50 @@
         color: var(--color-heading);
         margin-right: 0.5em;
     }
+
+
+    .logolink {
+        display: flex;
+        align-items: center;
+        padding: 1em;
+    }
+
+    :global(.navlogo) {
+        height: 3em;
+    }
+
+    /* Apply responsive grid styles based on screen size */
+    @media (min-width: 640px) {
+        :global(:root) {
+            --grid-tile-size: var(--grid-tile-size-sm);
+        }
+
+
+        .header {
+            padding: 2.2em 1.7em;
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        :global(:root) {
+            --grid-tile-size: var(--grid-tile-size-md);
+        }
+    }
+    
+    @media (min-width: 1440px) {
+        :global(:root) {
+            --grid-tile-size: var(--grid-tile-size-lg);
+        }
+    }
+
+
+
+
+
+
+
+    /* Common styles for re-use across app. */
+
     
     :global(.button) {
         padding: 0.4em 1em;
@@ -268,42 +311,5 @@
         background-color: var(--color-button-secondary-hover);
     }
 
-    .logolink {
-        background-color: transparent;
-        padding: 0;
-        box-shadow: none;
-        height: 2.5em;
-        display: flex;
-        align-items: center;
-        margin-right: 0.5em;
-    }
-    
-    .logolink:hover {
-        background-color: transparent;
-        transform: none;
-        box-shadow: none;
-    }
-    
-    :global(.navlogo) {
-        height: 4em;
-    }
 
-    /* Apply responsive grid styles based on screen size */
-    @media (min-width: 640px) {
-        :global(:root) {
-            --grid-tile-size: var(--grid-tile-size-sm);
-        }
-    }
-    
-    @media (min-width: 1024px) {
-        :global(:root) {
-            --grid-tile-size: var(--grid-tile-size-md);
-        }
-    }
-    
-    @media (min-width: 1440px) {
-        :global(:root) {
-            --grid-tile-size: var(--grid-tile-size-lg);
-        }
-    }
 </style>
