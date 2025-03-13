@@ -365,11 +365,10 @@ export function resizeMap(mapElement) {
       data: initialTileData
     });
     
-    setTimeout(() => {
-      if (state.isReady) {
-        loadInitialChunksForCenter();
-      }
-    }, 0);
+    // Load chunks directly if ready instead of using setTimeout
+    if (state.isReady) {
+      loadInitialChunksForCenter();
+    }
     
     return {
       ...state,
@@ -651,44 +650,18 @@ export const expandedGridArray = derived(
   []
 );
 
-// Optimized grid array
-export const gridArray = (() => {
-  let lastExpandedRef = null;
-  let cachedResult = [];
-  let isGenerating = false;
-
-  return derived(
-    expandedGridArray,
-    ($expandedGrid, set) => {
-      if (isGenerating) return;
-      
-      if ($expandedGrid === lastExpandedRef && cachedResult.length > 0) {
-        return;
-      }
-      
-      lastExpandedRef = $expandedGrid;
-      isGenerating = true;
-      
-      try {
-        if ($expandedGrid && $expandedGrid.length > 0) {
-          const mainViewCells = $expandedGrid.filter(cell => cell.isInMainView);
-          cachedResult = mainViewCells;
-          set(mainViewCells);
-        } else {
-          cachedResult = [];
-          set([]);
-        }
-      } catch (error) {
-        console.error("Error filtering grid array:", error);
-        cachedResult = [];
-        set([]);
-      } finally {
-        isGenerating = false;
-      }
-    },
-    []
-  );
-})();
+// Simplified grid array derived store
+export const gridArray = derived(
+  expandedGridArray,
+  ($expandedGrid) => {
+    if (!$expandedGrid || $expandedGrid.length === 0) {
+      return [];
+    }
+    
+    return $expandedGrid.filter(cell => cell.isInMainView);
+  },
+  []
+);
 
 // Axis arrays
 export const xAxisArray = derived(
@@ -786,6 +759,7 @@ export function loadInitialChunksForCenter() {
     chunks: chunkKeys
   }));
   
+  // Process existing chunks immediately
   chunksArray.forEach(chunkKey => {
     subscribeToChunk(chunkKey);
     
@@ -795,7 +769,8 @@ export function loadInitialChunksForCenter() {
     }
   });
   
-  setTimeout(forceEntityDisplay, 50);
+  // Force entity display immediately instead of using setTimeout
+  forceEntityDisplay();
   
   return chunksArray.length;
 }

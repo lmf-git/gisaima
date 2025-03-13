@@ -33,7 +33,6 @@
   // Add memoization for entity indicators to prevent unnecessary recalculations
   const entityIndicatorsCache = new Map();
   
-  // Only define isMoving once - remove the duplicate declaration
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isTouching);
   
   // Rather than tracking entity count, track entity change counter directly from the store
@@ -44,20 +43,15 @@
   
   // Add more robust effect to clear cache when entities change
   $effect(() => {
-    // This will now run on any of these changes:
-    // 1. Entity change counter updates
-    // 2. Map position changes
-    // 3. Initial entity load completes
     if (entityChangeCounter > 0 || $mapState.centerCoord || initialEntityLoadComplete) {
       entityIndicatorsCache.clear();
     }
   });
 
-  // Improved entity indicator check that handles both caching and initial load
+  // Improved entity indicator check with caching
   function checkEntityIndicators(x, y) {
     const cacheKey = `${x},${y}`;
     
-    // Always check fresh data when initial load isn't complete yet
     if (!initialEntityLoadComplete || !entityIndicatorsCache.has(cacheKey)) {
       const entities = getEntitiesAt(x, y);
       const result = {
@@ -92,52 +86,24 @@
     // Setup keyboard navigation
     const keyboardCleanup = setupKeyboardNavigation();
     
-    // Improved entity loading with guaranteed success
-    const checkAndLoadEntities = () => {
-      if ($mapState.isReady) {
-        console.log("Map is ready, loading initial entities");
-        
-        // Force immediate chunk loading without waiting for grid calculation
-        loadInitialChunksForCenter();
-        
-        // Set up a sequence of entity loading attempts with increasing delays
-        // This helps ensure entities display even if Firebase is slow
-        const loadSequence = [10, 100, 500, 1000, 2000];
-        
-        loadSequence.forEach(delay => {
-          setTimeout(() => {
-            console.log(`Entity display attempt at ${delay}ms`);
-            forceEntityDisplay();
-            
-            // Clear the entity cache to force fresh check
-            entityIndicatorsCache.clear();
-            
-            // Only mark complete after final attempt
-            if (delay === loadSequence[loadSequence.length - 1]) {
-              initialEntityLoadComplete = true;
-              console.log("Initial entity loading sequence complete");
-            }
-          }, delay);
-        });
-        
-        return true;
-      }
-      return false;
-    };
-    
-    // Try immediately, then set interval to check
-    if (!checkAndLoadEntities()) {
+    // Simplified entity loading - single attempt with completion callback
+    if ($mapState.isReady) {
+      loadEntities();
+    } else {
+      // Only use interval if map isn't ready yet
       const readyCheckInterval = setInterval(() => {
-        if (checkAndLoadEntities()) {
+        if ($mapState.isReady) {
           clearInterval(readyCheckInterval);
+          loadEntities();
         }
-      }, 50);
+      }, 100); // Check faster but less often
     }
     
-    // Tiles should not animate into view after the introduction completes.
-    setTimeout(() => introduced = true, 1200);
+    // Use CSS animation-fill-mode instead of setTimeout for animation state
+    // Set timeout just for safety, should be handled by animation
+    setTimeout(() => introduced = true, 1000);
 
-    // Define cleanup function properly
+    // Define cleanup function
     return function() {
       if (resizeObserver) resizeObserver.disconnect();
       if (keyboardCleanup) keyboardCleanup();
@@ -147,6 +113,16 @@
       }
     };
   });
+  
+  // Unified entity loading function
+  function loadEntities() {
+    console.log("Loading entities");
+    loadInitialChunksForCenter();
+    forceEntityDisplay();
+    // Mark complete after a single attempt - the store's 
+    // _entityChangeCounter will trigger cache clearing if needed
+    initialEntityLoadComplete = true;
+  }
   
   // Make sure to clean up Firebase subscriptions when component is destroyed
   onDestroy(() => cleanupChunkSubscriptions());
@@ -435,7 +411,7 @@
     opacity: 0;
     transform: scale(0.8);
     animation: revealTile 0.5s ease-out forwards;
-    /* No need to specify delay here, it's calculated for each tile */
+    animation-fill-mode: both; /* Ensures final state is maintained */
   }
   
   /* For non-animated grid, tiles are always visible */
@@ -450,6 +426,7 @@
     position: relative;
     animation: revealCenterTile 0.6s ease-out forwards;
     animation-delay: 0s;
+    animation-fill-mode: both; /* Ensures final state is maintained */
   }
   
   /* For non-animated grid, center tile is styled without animation */

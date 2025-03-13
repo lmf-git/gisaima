@@ -49,7 +49,7 @@
   });
   
   let isLoad = $state(false);
-  let loadTimer = null;
+  // Remove unused loadTimer
   
   let isDrag = $state(false);
   let dragX = $state(0);
@@ -140,11 +140,6 @@
   
   // Clean up resources on component destruction
   onDestroy(() => {
-    // Clear any pending timers
-    if (loadTimer) {
-      clearTimeout(loadTimer);
-    }
-    
     // Clear minimap grid to free memory
     minimapGrid = [];
   });
@@ -159,17 +154,8 @@
     }
   });
 
-  // Update range info even when minimap is closed, but throttled
-  let lastRangeUpdate = 0;
-  $effect(() => {
-    if ($mapState.isReady) {
-      const now = Date.now();
-      if (now - lastRangeUpdate > 250) {
-        updateMinimapRange($mapState.centerCoord.x, $mapState.centerCoord.y, viewRangeX, viewRangeY);
-        lastRangeUpdate = now;
-      }
-    }
-  });
+  // Remove redundant range update effect since we already update in generateMinimapGrid
+  // This also removes the need for lastRangeUpdate variable
 
   function handleMinimapClick(event) {
     if (wasDrag || !$mapState.isReady) {
