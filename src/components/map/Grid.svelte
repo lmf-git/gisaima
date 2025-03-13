@@ -21,7 +21,6 @@
   // Local component state
   let mapElement = null;
   let resizeObserver = null;
-  let dragStateCheckInterval = null;
   
   // Add flag to track initial animation state
   let introduced = $state(false);
@@ -146,7 +145,6 @@
         clearInterval($mapState.keyboardNavigationInterval);
         mapState.update(state => ({...state, keyboardNavigationInterval: null}));
       }
-      if (dragStateCheckInterval) clearInterval(dragStateCheckInterval);
     };
   });
   

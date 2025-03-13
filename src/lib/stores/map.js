@@ -800,9 +800,6 @@ export function loadInitialChunksForCenter() {
   return chunksArray.length;
 }
 
-// For backward compatibility
-export { loadInitialChunksForCenter as loadInitialChunksForTarget };
-
 export function forceEntityDisplay() {
   mapState.update(state => {
     const chunks = [...state.chunks];

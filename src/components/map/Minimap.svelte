@@ -33,7 +33,6 @@
   const MINIMAP_WIDTH_EM = $derived(tileCountX * MINI_TILE_SIZE_EM);
   const MINIMAP_HEIGHT_EM = $derived(tileCountY * MINI_TILE_SIZE_EM);
   
-  const LOADING_THROTTLE = 200;
   const BREAKPOINT = 768;
   
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
@@ -64,15 +63,10 @@
   const DRAG_THRESHOLD = 5;
   
   let minimapGrid = $state([]);
-  let lastUpdateTime = 0;
   
   // Track last coordinates to prevent redundant updates
   let lastCenterX = $state(0);
   let lastCenterY = $state(0);
-  
-  // Add cleanup and memory management
-  let minimapGridCacheSize = 0;
-  const MAX_MINIMAP_GRID_SIZE = 5000;
   
   // Track only necessary state to determine if grid needs regeneration
   const mapCoords = $derived({
@@ -135,7 +129,6 @@
       
       // Update the grid all at once
       minimapGrid = newGrid;
-      lastUpdateTime = Date.now();
     } catch (error) {
       console.error("Error generating minimap grid:", error);
     } finally {
@@ -288,8 +281,6 @@
     }
   }
 
-  let minimapContainerWidth = $state(900); // Default fallback value
-  
   // Combined initialization logic
   function initializeVisibility() {
     if (browser) {

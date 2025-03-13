@@ -1,7 +1,8 @@
 <script>
   import { centerTileStore, mapState } from "../../lib/stores/map";
 
-  const { x = 0, y = 0, openDetails } = $props();
+  // Remove unused props, keep only what's needed
+  const { openDetails } = $props();
   
   const keypress = e => ['Enter', ' '].includes(e.key) && e.preventDefault() && openDetails()
 
