@@ -17,13 +17,24 @@
 
   // Constants
   const MINI_TILE_SIZE_EM = 0.5;
-  const MINIMAP_WIDTH_EM = 24;
-  const MINIMAP_HEIGHT_EM = 16;
+  // Replace fixed dimensions with dynamic ones based on grid size
+  const MINIMAP_COLS_FACTOR = 3;
+  const MINIMAP_ROWS_FACTOR = 2;
+  
+  // Calculate minimap tile counts based on main grid dimensions
+  const tileCountX = $derived(
+    $mapState.isReady ? $mapState.cols * MINIMAP_COLS_FACTOR : 48
+  );
+  const tileCountY = $derived(
+    $mapState.isReady ? $mapState.rows * MINIMAP_ROWS_FACTOR : 32
+  );
+  
+  // Calculate dimensions from the derived tile counts
+  const MINIMAP_WIDTH_EM = $derived(tileCountX * MINI_TILE_SIZE_EM);
+  const MINIMAP_HEIGHT_EM = $derived(tileCountY * MINI_TILE_SIZE_EM);
+  
   const LOADING_THROTTLE = 200;
   const BREAKPOINT = 900; // px
-  
-  const tileCountX = $derived(Math.floor(MINIMAP_WIDTH_EM / MINI_TILE_SIZE_EM));
-  const tileCountY = $derived(Math.floor(MINIMAP_HEIGHT_EM / MINI_TILE_SIZE_EM));
   
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
   const viewRangeY = $derived(Math.floor(tileCountY / 2));
@@ -472,7 +483,7 @@
     border: 1px solid var(--color-panel-border);
     box-shadow: 0 0.1875em 0.625em var(--color-shadow);
     cursor: grab;
-    transition: box-shadow 0.2s ease;
+    transition: box-shadow 0.2s ease, width 0.3s ease, height 0.3s ease;
     outline: none;
     animation: slideInFromRight 0.8s ease-out forwards;
     opacity: 0;
