@@ -1,5 +1,5 @@
 <script>
-  import { targetTileStore } from "../../lib/stores/map";
+  import { targetTileStore, mapState } from "../../lib/stores/map";
 
   const { x = 0, y = 0, openDetails } = $props();
   
@@ -10,10 +10,14 @@
     if (!name) return "Unknown";
     return name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
+  
+  // Add a derived state to track grid ready status
+  const isGridReady = $derived($mapState.isReady);
 </script>
 
 <div 
-  class="legend" 
+  class="legend"
+  class:ready={isGridReady} 
   onclick={openDetails}
   onkeypress={keypress}
   role="button" 
@@ -38,11 +42,16 @@
     box-shadow: none;
     font-weight: 500;
     
-    animation: reveal 0.7s ease-out forwards;
+    /* Initially hidden, no animation */
     opacity: 0;
-    transform: translateY(0);
+    transform: translateY(1em);
     min-width: 8em;
     text-align: center;
+  }
+  
+  /* Only animate when grid is ready */
+  .legend.ready {
+    animation: reveal 0.7s ease-out 0.4s forwards;
   }
   
   .coordinates {

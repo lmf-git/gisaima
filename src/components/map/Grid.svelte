@@ -167,10 +167,18 @@
     if (!isTouching || !$mapState.isReady) return;
     event.preventDefault(); // Prevent scrolling when dragging
     
-    // Update the map via the drag function
+    // Increase touch sensitivity by applying a multiplier to touch movements
+    const touchSensitivity = 1.5; // Increase sensitivity for touch dragging
+    const touch = event.touches[0];
+    
+    // Apply the sensitivity multiplier to make touch movement more responsive
+    const adjustedClientX = touchStartX + (touch.clientX - touchStartX) * touchSensitivity;
+    const adjustedClientY = touchStartY + (touch.clientY - touchStartY) * touchSensitivity;
+    
+    // Update the map via the drag function with enhanced sensitivity
     drag({
-      clientX: event.touches[0].clientX,
-      clientY: event.touches[0].clientY
+      clientX: adjustedClientX,
+      clientY: adjustedClientY
     });
   }
   

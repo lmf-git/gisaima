@@ -347,6 +347,9 @@
   $effect(() => {
     setMinimapVisibility(open);
   });
+
+  // Add a derived state to track grid ready status
+  const isGridReady = $derived($mapState.isReady);
 </script>
 
 <svelte:window
@@ -357,11 +360,12 @@
 />
 
 <!-- Always render the container and toggle button -->
-<div class="map-container" class:touch-active={isTouching}>
+<div class="map-container" class:touch-active={isTouching} class:ready={isGridReady}>
   <button 
     class="toggle-button" 
     onclick={toggleMinimap} 
-    aria-label={open ? "Hide minimap" : "Show minimap"}>
+    aria-label={open ? "Hide minimap" : "Show minimap"}
+    class:ready={isGridReady}>
     {#if open}
       <Close size="1.2em" color="rgba(0, 0, 0, 0.8)" />
     {:else}
@@ -371,7 +375,8 @@
   
   {#if open}
     <div 
-      class="minimap" 
+      class="minimap"
+      class:ready={isGridReady}
       style="width: {MINIMAP_WIDTH_EM}em; height: {MINIMAP_HEIGHT_EM}em;"
       bind:this={minimap}
       onclick={handleMinimapClick}
@@ -449,8 +454,14 @@
     justify-content: center;
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
     transition: all 0.2s ease;
+    /* Start with opacity 0 and don't animate until ready */
     opacity: 0;
-    animation: fadeInToggle 0.7s ease-out 0.3s forwards;
+    transform: translateY(-1em);
+  }
+  
+  /* Only animate when grid is ready */
+  .toggle-button.ready {
+    animation: fadeInToggle 0.7s ease-out 0.5s forwards;
   }
   
   .toggle-text {
@@ -485,11 +496,16 @@
     cursor: grab;
     transition: box-shadow 0.2s ease, width 0.3s ease, height 0.3s ease;
     outline: none;
-    animation: slideInFromRight 0.8s ease-out forwards;
+    /* Keep opacity 0 and don't animate until ready */
     opacity: 0;
     transform: translateX(100%);
   }
 
+  /* Only animate when grid is ready */
+  .minimap.ready {
+    animation: slideInFromRight 0.8s ease-out 0.5s forwards;
+  }
+  
   .minimap:hover {
     box-shadow: 0 0.15em 0.3em var(--color-shadow);
   }

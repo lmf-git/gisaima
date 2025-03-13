@@ -564,7 +564,9 @@ export function drag(event) {
   const tileSizePx = TILE_SIZE * baseFontSize;
   
   // Calculate movement with increased sensitivity
-  const sensitivity = 0.6; 
+  // Use higher sensitivity for touch events (detected by checking userAgent)
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const sensitivity = isTouchDevice ? 0.8 : 0.6; 
   const adjustedTileSize = tileSizePx * sensitivity;
   
   // Add current movement to accumulated sub-tile movements
