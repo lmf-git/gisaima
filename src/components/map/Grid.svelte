@@ -32,8 +32,37 @@
   // Add memoization for entity indicators to prevent unnecessary recalculations
   const entityIndicatorsCache = new Map();
   
-  // Update movement state tracking to include touch with memoization
+  // Only define isMoving once - remove the duplicate declaration
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isTouching);
+  
+  // Rather than tracking entity count, track entity change counter directly from the store
+  const entityChangeCounter = $derived($mapState._entityChangeCounter || 0);
+  
+  // Only clear the cache when absolutely necessary - when entities change or location changes
+  $effect(() => {
+    if (entityChangeCounter > 0 || $mapState.targetCoord) {
+      entityIndicatorsCache.clear();
+    }
+  });
+
+  // Simplified entity indicator check that doesn't create new objects on each call
+  function checkEntityIndicators(x, y) {
+    const cacheKey = `${x},${y}`;
+    
+    if (entityIndicatorsCache.has(cacheKey)) {
+      return entityIndicatorsCache.get(cacheKey);
+    }
+    
+    const entities = getEntitiesAt(x, y);
+    const result = {
+      hasStructure: !!entities.structure,
+      hasUnitGroup: !!entities.unitGroup,
+      hasPlayer: !!entities.player
+    };
+    
+    entityIndicatorsCache.set(cacheKey, result);
+    return result;
+  }
   
   // Initialize when mounted
   onMount(() => {
@@ -224,41 +253,6 @@
     $targetTileStore && $targetTileStore.color ? $targetTileStore.color : "var(--color-dark-blue)"
   );
 
-  // Improved function to check for entities with better caching
-  function checkEntityIndicators(x, y) {
-    // Create a cache key for this coordinate
-    const cacheKey = `${x},${y}`;
-    
-    // Return cached result if available
-    if (entityIndicatorsCache.has(cacheKey)) {
-      return entityIndicatorsCache.get(cacheKey);
-    }
-    
-    const entities = getEntitiesAt(x, y);
-    
-    const result = {
-      hasStructure: !!entities.structure,
-      hasUnitGroup: !!entities.unitGroup,
-      hasPlayer: !!entities.player
-    };
-    
-    // Cache the result
-    entityIndicatorsCache.set(cacheKey, result);
-    
-    return result;
-  }
-  
-  // Add a cache cleanup function for entity indicators
-  function clearEntityIndicatorsCache() {
-    entityIndicatorsCache.clear();
-  }
-  
-  // Clear cache on movement to ensure fresh data
-  $effect(() => {
-    if ($mapState.targetCoord) {
-      clearEntityIndicatorsCache();
-    }
-  });
 </script>
 
 <svelte:window

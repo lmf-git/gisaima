@@ -9,6 +9,8 @@
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
   import Close from '../../components/icons/Close.svelte';
+  // Add missing import for onDestroy
+  import { onDestroy } from 'svelte';
 
   // Simplify state variables
   let open = $state(true);
@@ -69,91 +71,99 @@
   let lastCenterX = $state(0);
   let lastCenterY = $state(0);
   
-  // Improved grid generation with proper change detection
+  // Add cleanup and memory management
+  let minimapGridCacheSize = 0;
+  const MAX_MINIMAP_GRID_SIZE = 5000;
+  
+  // Track only necessary state to determine if grid needs regeneration
+  const mapCoords = $derived({
+    x: $mapState.targetCoord.x,
+    y: $mapState.targetCoord.y
+  });
+  
+  // Improved grid generation that only regenerates when needed
   function generateMinimapGrid() {
-    // Skip if minimap is closed or map isn't ready
     if (!$mapState.isReady || !open) return minimapGrid;
     
     isLoad = true;
-    const now = Date.now();
     
-    // Skip frequent updates during dragging
-    if (now - lastUpdateTime < LOADING_THROTTLE && $mapState.isDragging) {
-      if (loadTimer) clearTimeout(loadTimer);
-      loadTimer = setTimeout(() => generateMinimapGrid(), LOADING_THROTTLE);
-      return minimapGrid;
-    }
-    
-    // Get current center coordinates
-    const centerX = $mapState.targetCoord.x;
-    const centerY = $mapState.targetCoord.y;
-    
-    // Skip regeneration if the coordinates haven't changed
-    if (centerX === lastCenterX && centerY === lastCenterY && minimapGrid.length > 0) {
+    // Skip generation if coordinates haven't changed and we have data
+    if ($mapState.targetCoord.x === lastCenterX && 
+        $mapState.targetCoord.y === lastCenterY && 
+        minimapGrid.length > 0) {
       isLoad = false;
       return minimapGrid;
     }
     
     // Update last known coordinates
-    lastCenterX = centerX;
-    lastCenterY = centerY;
+    lastCenterX = $mapState.targetCoord.x;
+    lastCenterY = $mapState.targetCoord.y;
     
-    // Update the minimap range
-    updateMinimapRange(centerX, centerY, viewRangeX, viewRangeY);
+    // Update range info
+    updateMinimapRange(lastCenterX, lastCenterY, viewRangeX, viewRangeY);
     
-    const result = [];
+    // Generate the grid in one pass
+    const newGrid = [];
     
     try {
       for (let y = -viewRangeY; y <= viewRangeY; y++) {
         for (let x = -viewRangeX; x <= viewRangeX; x++) {
-          const globalX = centerX + x;
-          const globalY = centerY + y;
+          const globalX = lastCenterX + x;
+          const globalY = lastCenterY + y;
+          
+          // Get terrain data
           const terrainData = getTerrainData(globalX, globalY);
           
+          // Calculate visibility once
           const isVisible = 
             globalX >= area.startX && 
             globalX < area.startX + area.width &&
             globalY >= area.startY && 
             globalY < area.startY + area.height;
           
-          const isCenter = x === 0 && y === 0;
-          
-          result.push({
+          // Add to new grid
+          newGrid.push({
             x: globalX,
             y: globalY,
             displayX: x + viewRangeX,
             displayY: y + viewRangeY,
-            isCenter,
+            isCenter: x === 0 && y === 0,
             isVisible,
             color: terrainData.color
           });
         }
       }
       
-      lastUpdateTime = now;
-      minimapGrid = result;
+      // Update the grid all at once
+      minimapGrid = newGrid;
+      lastUpdateTime = Date.now();
     } catch (error) {
       console.error("Error generating minimap grid:", error);
     } finally {
       isLoad = false;
     }
     
-    return result;
+    return minimapGrid;
   }
   
-  // Replace effect with more specific change detection
-  let lastMovementTime = 0;
-  $effect(() => {
-    // Only regenerate grid when position changes or when first opened
-    const { x, y } = $mapState.targetCoord;
-    const now = Date.now();
+  // Clean up resources on component destruction
+  onDestroy(() => {
+    // Clear any pending timers
+    if (loadTimer) {
+      clearTimeout(loadTimer);
+    }
     
-    if ($mapState.isReady && open) {
-      // Throttle updates to prevent excessive regeneration
-      if (now - lastMovementTime > 100 && (x !== lastCenterX || y !== lastCenterY || minimapGrid.length === 0)) {
-        lastMovementTime = now;
-        generateMinimapGrid();
-      }
+    // Clear minimap grid to free memory
+    minimapGrid = [];
+  });
+
+  // Only react to coordinate changes
+  $effect(() => {
+    if ($mapState.isReady && open && 
+        (mapCoords.x !== lastCenterX || 
+         mapCoords.y !== lastCenterY || 
+         minimapGrid.length === 0)) {
+      generateMinimapGrid();
     }
   });
 
