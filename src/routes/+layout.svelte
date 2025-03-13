@@ -146,6 +146,10 @@
         --color-link-hover: #9FFFEA;
         --color-shadow: rgba(0, 0, 0, 0.4);
 
+        /* Font family definitions */
+        --font-heading: 'Cormorant Unicase', serif;
+        --font-body: 'Fira Sans Condensed', sans-serif;
+        
         /* Add responsive grid sizing variables */
         --grid-tile-base-size: 5;      /* Mobile first smaller size (matches TILE_SIZE) */
         --grid-tile-size-sm: 5.5em;    /* Small screens */
@@ -157,6 +161,8 @@
         background: var(--color-background);
         color: var(--color-text);
         font-family: var(--font-body);
+        font-weight: 400;
+        line-height: 1.5;
     }
 
     .app {

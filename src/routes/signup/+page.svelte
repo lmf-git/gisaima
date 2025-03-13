@@ -101,6 +101,8 @@
         color: var(--color-pale-green);
         font-size: 1.8em;
         text-shadow: 0 0 0.3em rgba(0, 0, 0, 0.4);
+        font-family: var(--font-heading); /* Added heading font */
+        font-weight: 400; /* Reduced font weight */
     }
     
     .form-group {
@@ -110,7 +112,7 @@
     label {
         display: block;
         margin-bottom: 0.5em;
-        font-weight: 600;
+        font-weight: 400; /* Reduced from 600 to 400 */
         color: var(--color-muted-teal);
     }
     
@@ -136,6 +138,7 @@
         margin-top: 0.5em;
         color: var(--color-text-secondary);
         font-size: 0.85em;
+        font-weight: 300; /* Added light font weight */
     }
     
     button {
@@ -146,10 +149,11 @@
         border: 1px solid var(--color-muted-teal);
         border-radius: 0.25em;
         font-size: 1.1em;
-        font-weight: bold;
+        font-weight: 500; /* Reduced from bold/700 to 500 */
         cursor: pointer;
         margin-top: 1em;
         transition: all 0.2s ease;
+        font-family: var(--font-heading);
     }
     
     button:hover {
@@ -166,7 +170,7 @@
     a {
         color: var(--color-pale-green);
         text-decoration: none;
-        font-weight: 600;
+        font-weight: 400; /* Reduced from 600 to 400 */
         transition: color 0.2s ease;
     }
     

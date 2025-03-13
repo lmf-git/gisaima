@@ -90,6 +90,8 @@
     transition: background-color 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
 
+    font-family: var(--font-heading);
+
     appearance: none;
     padding: 0;
     margin: 0;

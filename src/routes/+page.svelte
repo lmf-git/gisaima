@@ -87,12 +87,15 @@
     letter-spacing: 0.2em;
     color: var(--color-heading);
     text-shadow: 0 0 0.625em rgba(193, 19, 22, 0.5);
+    font-weight: 400; /* Reduced font weight */
+    font-family: var(--font-heading); /* Added heading font */
   }
 
   .subtitle {
     font-size: 1.2em;
     color: var(--color-text-secondary);
     margin-bottom: 2em;
+    font-weight: 300; /* Added leaner font weight */
   }
 
   .actions {
@@ -113,6 +116,7 @@
     box-shadow: 0 0.3em 0.8em var(--color-shadow);
     text-transform: uppercase;
     text-decoration: none;
+    font-family: var(--font-heading); /* Added font-family property */
   }
   
   .actions :global(.button:hover) {
@@ -124,10 +128,13 @@
     background-color: var(--color-button-primary);
     color: var(--color-text);
     border: 0.05em solid var(--color-muted-teal);
+    text-shadow: 0 0 0.5em rgba(0, 0, 0, 0.5); /* Add text shadow to improve contrast */
   }
   
   .actions :global(.button.primary:hover) {
     background-color: var(--color-button-primary-hover);
+    color: #ffffff; /* Brighter text on hover for better contrast */
+    text-shadow: 0 0 0.8em rgba(0, 0, 0, 0.7); /* Enhanced text shadow on hover */
   }
   
   .actions :global(.button.secondary) {
@@ -138,6 +145,8 @@
   
   .actions :global(.button.secondary:hover) {
     background-color: rgba(0, 0, 0, 0.4);
+    border-color: var(--color-muted-teal); /* Match the primary button's border on hover */
+    text-shadow: 0 0 0.5em rgba(0, 0, 0, 0.5); /* Add text shadow for consistency */
   }
 
   .features, .howto {
@@ -149,6 +158,8 @@
     margin-bottom: 2em;
     color: var(--color-pale-green);
     text-shadow: 0 0 0.3125em rgba(12, 8, 33, 0.7);
+    font-family: var(--font-heading); /* Added heading font */
+    font-weight: 400; /* Reduced font weight */
   }
 
   .grid {
@@ -174,6 +185,8 @@
   .subheading {
     color: var(--color-muted-teal);
     margin-bottom: 0.75em;
+    font-family: var(--font-heading); /* Added heading font */
+    font-weight: 400; /* Reduced font weight */
   }
 
   .text {
