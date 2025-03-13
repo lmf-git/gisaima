@@ -21,47 +21,36 @@
   const MINI_TILE_SIZE_EM = 0.5;
   const MINIMAP_COLS_FACTOR = 3.5;
   const MINIMAP_ROWS_FACTOR = 2.85;
+  const BREAKPOINT = 768;
+  const DRAG_THRESHOLD = 5;
   
-  // Calculate minimap tile counts based on main grid dimensions
-  const tileCountX = $derived(
-    $mapReady ? $mapState.cols * MINIMAP_COLS_FACTOR : 48
-  );
-  const tileCountY = $derived(
-    $mapReady ? $mapState.rows * MINIMAP_ROWS_FACTOR : 32
-  );
-  
-  // Calculate dimensions from the derived tile counts
+  // Calculate minimap dimensions
+  const tileCountX = $derived($mapReady ? $mapState.cols * MINIMAP_COLS_FACTOR : 48);
+  const tileCountY = $derived($mapReady ? $mapState.rows * MINIMAP_ROWS_FACTOR : 32);
   const MINIMAP_WIDTH_EM = $derived(tileCountX * MINI_TILE_SIZE_EM);
   const MINIMAP_HEIGHT_EM = $derived(tileCountY * MINI_TILE_SIZE_EM);
-  
-  const BREAKPOINT = 768;
-  
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
   const viewRangeY = $derived(Math.floor(tileCountY / 2));
   
-  // Update area calculation to use centerCoord instead of targetCoord
+  // Update area calculation
   const area = $derived({
     startX: $mapState.centerCoord.x - Math.floor($mapState.cols / 2),
     startY: $mapState.centerCoord.y - Math.floor($mapState.rows / 2),
     width: $mapState.cols,
-    height: $mapState.rows,
-    centerX: $mapState.centerCoord.x,
-    centerY: $mapState.centerCoord.y
+    height: $mapState.rows
   });
   
-  // Add back missing drag-related state variables
+  // State variables
   let isDrag = $state(false);
   let dragX = $state(0);
   let dragY = $state(0);
-  
-  // Use proper Svelte 5 state for DOM reference
   let minimap = $state(null);
-  
   let wasDrag = $state(false);
   let dist = $state(0);
-  const DRAG_THRESHOLD = 5;
-  
   let minimapGrid = $state([]);
+  let touchStartX = $state(0);
+  let touchStartY = $state(0);
+  let isTouching = $state(false);
   
   // Track map position for updates
   const mapPos = $derived({
@@ -70,19 +59,18 @@
     isReady: $mapReady,
     visible: open
   });
-  
-  // Generate the grid directly based on position changes
+
+  // Generate grid when position changes
   $effect(() => {
     if (mapPos.isReady && mapPos.visible) {
       generateMinimapGrid();
     }
   });
   
-  // Improved grid generation without caching
+  // Grid generation
   function generateMinimapGrid() {
     if (!$mapReady || !open) return;
     
-    // Update range info
     updateMinimapRange(
       $mapState.centerCoord.x, 
       $mapState.centerCoord.y, 
@@ -90,7 +78,6 @@
       viewRangeY
     );
     
-    // Generate the grid in one pass
     try {
       const newGrid = [];
       
@@ -99,17 +86,14 @@
           const globalX = $mapState.centerCoord.x + x;
           const globalY = $mapState.centerCoord.y + y;
           
-          // Get terrain data
           const terrainData = getTerrainData(globalX, globalY);
           
-          // Calculate visibility once
           const isVisible = 
             globalX >= area.startX && 
             globalX < area.startX + area.width &&
             globalY >= area.startY && 
             globalY < area.startY + area.height;
           
-          // Add to new grid
           newGrid.push({
             x: globalX,
             y: globalY,
@@ -128,27 +112,14 @@
     }
   }
   
-  // Clean up resources on component destruction
+  // Clean up resources
   onDestroy(() => {
     minimapGrid = [];
   });
 
-  // Remove the problematic effect causing the error
-  // This effect was redundant with the mapPos effect above
-  /* $effect(() => {
-    if ($mapState.isReady && open && 
-        (mapCoords.x !== lastCenterX || 
-         mapCoords.y !== lastCenterY || 
-         minimapGrid.length === 0)) {
-      generateMinimapGrid();
-    }
-  }); */
-
-  // Remove redundant range update effect since we already update in generateMinimapGrid
-  // This also removes the need for lastRangeUpdate variable
-
+  // Click handling
   function handleMinimapClick(event) {
-    if (wasDrag || !$mapState.isReady) {
+    if (wasDrag || !$mapReady) {
       event.stopPropagation();
       return;
     }
@@ -166,15 +137,11 @@
   }
 
   function handleKeyDown(event) {
-    if (!$mapState.isReady) return;
+    if (!$mapReady) return;
     
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      
-      const centerTileX = Math.floor(tileCountX / 2);
-      const centerTileY = Math.floor(tileCountY / 2);
-      
-      navigateToPosition(centerTileX, centerTileY);
+      navigateToPosition(Math.floor(tileCountX / 2), Math.floor(tileCountY / 2));
     }
   }
   
@@ -185,6 +152,7 @@
     moveMapTo(worldX, worldY);
   }
   
+  // Movement and interaction state
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isDrag);
   
   function highlightMiniTile(cell) {
@@ -198,8 +166,9 @@
     cell.x === $mapState.hoveredTile.x && 
     cell.y === $mapState.hoveredTile.y;
 
+  // Drag handling
   function handleMinimapDragStart(event) {
-    if (event.button !== 0 || !$mapState.isReady) return;
+    if (event.button !== 0 || !$mapReady) return;
     
     isDrag = true;
     dragX = event.clientX;
@@ -211,7 +180,7 @@
   }
   
   function handleMinimapDrag(event) {
-    if (!isDrag || !$mapState.isReady) return;
+    if (!isDrag || !$mapReady) return;
     
     const deltaX = event.clientX - dragX;
     const deltaY = event.clientY - dragY;
@@ -231,10 +200,7 @@
     
     if (cellsMovedX === 0 && cellsMovedY === 0) return;
     
-    const newTargetX = $mapState.centerCoord.x - cellsMovedX;
-    const newTargetY = $mapState.centerCoord.y - cellsMovedY;
-    
-    moveMapTo(newTargetX, newTargetY);
+    moveMapTo($mapState.centerCoord.x - cellsMovedX, $mapState.centerCoord.y - cellsMovedY);
     
     dragX = event.clientX;
     dragY = event.clientY;
@@ -246,23 +212,18 @@
   }
   
   function globalMinimapMouseUp() {
-    if (isDrag) {
-      handleMinimapDragEnd();
-    }
+    if (isDrag) handleMinimapDragEnd();
   }
   
   function globalMinimapMouseMove(event) {
-    if (isDrag) {
-      handleMinimapDrag(event);
-    }
+    if (isDrag) handleMinimapDrag(event);
   }
 
-  // Combined initialization logic
+  // Visibility and localStorage
   function initializeVisibility() {
     if (browser) {
       const storedVisibility = localStorage.getItem('minimapVisible');
       
-      // Set the local and global visibility state
       open = storedVisibility === 'true' || 
         (storedVisibility === null && windowWidth >= BREAKPOINT);
       
@@ -271,7 +232,6 @@
     }
   }
   
-  // Combined state update function for changing visibility
   function updateMinimapVisibility(isOpen) {
     open = isOpen;
     setMinimapVisibility(isOpen);
@@ -280,18 +240,16 @@
       localStorage.setItem('minimapVisible', isOpen.toString());
     }
     
-    // Regenerate grid if opening
-    if (isOpen && $mapState.isReady) {
+    if (isOpen && $mapReady) {
       generateMinimapGrid();
     }
   }
   
-  // Simplified toggle function
   function toggleMinimap() {
     updateMinimapVisibility(!open);
   }
 
-  // Initialize on component load (once)
+  // Initialize on component load
   $effect(() => {
     if (!initialized) {
       initializeVisibility();
@@ -304,15 +262,10 @@
     }
   }
 
-  // Touch support for mobile devices
-  let touchStartX = $state(0);
-  let touchStartY = $state(0);
-  let isTouching = $state(false);
-  
+  // Touch handling
   function handleTouchStart(event) {
-    if (!$mapState.isReady) return;
+    if (!$mapReady) return;
     
-    // Always prevent default to stop page scrolling
     event.preventDefault();
     
     const touch = event.touches[0];
@@ -322,7 +275,7 @@
   }
   
   function handleTouchMove(event) {
-    if (!isTouching || !$mapState.isReady) return;
+    if (!isTouching || !$mapReady) return;
     event.preventDefault();
     
     const touch = event.touches[0];
@@ -338,10 +291,7 @@
     
     if (cellsMovedX === 0 && cellsMovedY === 0) return;
     
-    const newTargetX = $mapState.centerCoord.x - cellsMovedX;
-    const newTargetY = $mapState.centerCoord.y - cellsMovedY;
-    
-    moveMapTo(newTargetX, newTargetY);
+    moveMapTo($mapState.centerCoord.x - cellsMovedX, $mapState.centerCoord.y - cellsMovedY);
     
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
@@ -352,20 +302,12 @@
     isTouching = false;
   }
 
-  // Always update range info even when minimap is closed
+  // Always update range info
   $effect(() => {
-    if ($mapState.isReady && ($mapState.centerCoord.x !== undefined)) {
+    if ($mapReady && $mapState.centerCoord.x !== undefined) {
       updateMinimapRange($mapState.centerCoord.x, $mapState.centerCoord.y, viewRangeX, viewRangeY);
     }
   });
-
-  // Effect to update global minimap visibility state when local state changes
-  $effect(() => {
-    setMinimapVisibility(open);
-  });
-
-  // Add a derived state to track grid ready status
-  const isGridReady = $derived($mapState.isReady);
 </script>
 
 <svelte:window
@@ -381,7 +323,7 @@
     class="toggle-button" 
     onclick={toggleMinimap} 
     aria-label={open ? "Hide minimap" : "Show minimap"}
-    class:ready={isGridReady}>
+    class:ready={$mapReady}>
     {#if open}
       <Close size="1.2em" color="rgba(0, 0, 0, 0.8)" />
     {:else}
@@ -392,7 +334,7 @@
   {#if open}
     <div 
       class="minimap"
-      class:ready={isGridReady}
+      class:ready={$mapReady}
       style="width: {MINIMAP_WIDTH_EM}em; height: {MINIMAP_HEIGHT_EM}em;"
       bind:this={minimap}
       onclick={handleMinimapClick}
@@ -407,7 +349,7 @@
       aria-label="Mini map for navigation"
       class:drag={isDrag}
       class:touch-drag={isTouching}>
-      {#if $mapState.isReady && minimapGrid.length > 0}
+      {#if $mapReady && minimapGrid.length > 0}
         {#each minimapGrid as cell}
           <div
             class="tile"

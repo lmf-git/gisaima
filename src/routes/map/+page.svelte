@@ -16,7 +16,6 @@
         cleanupInternalIntervals
     } from "../../lib/stores/map.js";
     
-    // Track drag state
     const isDragging = $derived($mapState.isDragging);
     
     import { onMount, onDestroy } from 'svelte';

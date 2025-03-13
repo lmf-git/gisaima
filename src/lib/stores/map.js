@@ -11,7 +11,6 @@ const terrain = new TerrainGenerator(WORLD_SEED);
 export const KEYBOARD_MOVE_SPEED = 200;
 export const CHUNK_SIZE = 20;
 export const TILE_SIZE = 5;
-// Replace single expansion factor with separate factors for columns and rows
 export const GRID_COLS_FACTOR = 3.5;
 export const GRID_ROWS_FACTOR = 2.85;
 
@@ -28,7 +27,7 @@ export const mapState = writable({
   offsetY: 0,
   centerX: 0,
   centerY: 0,
-  centerCoord: { x: 0, y: 0 }, // Renamed from targetCoord for clarity
+  centerCoord: { x: 0, y: 0 },
   chunks: new Set(),
   hoveredTile: null,
   showDetails: false,
@@ -221,10 +220,6 @@ function cleanEntitiesForChunk(chunkKey) {
 }
 
 // Chunk management
-let lastGridHash = '';
-let lastUpdateTime = 0;
-const UPDATE_THROTTLE = 300; // ms between chunk updates
-
 export function updateChunks(gridArray) {
   if (!gridArray || gridArray.length === 0) return;
   
@@ -233,7 +228,7 @@ export function updateChunks(gridArray) {
     chunkKeys.add(getChunkKey(cell.x, cell.y));
   });
   
-  // Simple comparison without hash
+  // Simple comparison
   const state = get(mapState);
   const currentKeys = [...state.chunks].sort().join(',');
   const newKeys = [...chunkKeys].sort().join(',');
@@ -545,14 +540,9 @@ export function setMinimapVisibility(isVisible) {
 }
 
 // Grid generation with better caching
-let lastGridGenTime = 0;
-const GRID_GEN_THROTTLE = 200; // ms between grid generations
-let expandedGridCache = [];
-
 export const expandedGridArray = derived(
   mapState,
   ($mapState, set) => {
-    // Early return if not ready
     if (!$mapState.isReady) {
       set([]);
       return;
@@ -561,7 +551,6 @@ export const expandedGridArray = derived(
     try {
       const useExpanded = $mapState.minimapVisible;
       
-      // Use separate factors for columns and rows
       const gridCols = useExpanded 
         ? Math.min($mapState.cols * GRID_COLS_FACTOR, 51)
         : $mapState.cols;

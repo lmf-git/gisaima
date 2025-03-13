@@ -22,27 +22,18 @@
   // Local component state
   let mapElement = null;
   let resizeObserver = null;
-  
-  // Add flag to track initial animation state
   let introduced = $state(false);
-  
-  // Add touch support state variables
   let isTouching = $state(false);
   let touchStartX = $state(0);
   let touchStartY = $state(0);
   
-  // Add memoization for entity indicators to prevent unnecessary recalculations
   const entityIndicatorsCache = new Map();
   
   const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isTouching);
-  
-  // Rather than tracking entity count, track entity change counter directly from the store
   const entityChangeCounter = $derived($mapState._entityChangeCounter || 0);
-  
-  // Add a new state variable to track initial entity loading
   let initialEntityLoadComplete = $state(false);
   
-  // Clear cache on any entity or position changes
+  // Clear cache on entity changes
   $effect(() => {
     if (entityChangeCounter > 0 || $mapState.centerCoord) {
       entityIndicatorsCache.clear();
@@ -275,7 +266,7 @@
 
   // Track the background color based on center tile
   const backgroundColor = $derived(
-    $centerTileStore && $centerTileStore.color ? $centerTileStore.color : "var(--color-dark-blue)"
+    $centerTileStore?.color || "var(--color-dark-blue)"
   );
 
 </script>

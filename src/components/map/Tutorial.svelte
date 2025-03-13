@@ -4,11 +4,9 @@
   import Close from '../../components/icons/Close.svelte';
   import { mapState } from "../../lib/stores/map.js";
 
-  
   let closed = $state(false)
   let ready = $state(false)
   
-  // Simplify initialization by only running once
   function initializeTutorialState() {
     if (browser) {
       closed = localStorage.getItem('tutorial-state') === 'closed'
@@ -16,7 +14,6 @@
     }
   }
   
-  // Only run initialization on mount, avoid redundant immediate call
   onMount(initializeTutorialState);
   
   const close = () => {

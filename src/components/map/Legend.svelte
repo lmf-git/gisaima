@@ -1,15 +1,12 @@
 <script>
   import { centerTileStore, mapReady } from "../../lib/stores/map";
 
-  // Remove unused props, keep only what's needed
   const { openDetails } = $props();
   
-  const keypress = e => ['Enter', ' '].includes(e.key) && e.preventDefault() && openDetails()
+  const keypress = e => ['Enter', ' '].includes(e.key) && e.preventDefault() && openDetails();
 
-  // Format terrain name for display
-  const formatTerrainName = (name) => {
-    if (!name) return "Unknown";
-    return name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  function formatTerrainName(name) {
+    return name ? name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : "Unknown";
   }
 </script>
 
