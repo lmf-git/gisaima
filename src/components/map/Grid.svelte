@@ -40,32 +40,40 @@
   // Rather than tracking entity count, track entity change counter directly from the store
   const entityChangeCounter = $derived($mapState._entityChangeCounter || 0);
   
-  // Only clear the cache when absolutely necessary - when entities change or location changes
+  // Add a new state variable to track initial entity loading
+  let initialEntityLoadComplete = $state(false);
+  
+  // Add more robust effect to clear cache when entities change
   $effect(() => {
-    if (entityChangeCounter > 0 || $mapState.targetCoord) {
+    // This will now run on any of these changes:
+    // 1. Entity change counter updates
+    // 2. Map position changes
+    // 3. Initial entity load completes
+    if (entityChangeCounter > 0 || $mapState.targetCoord || initialEntityLoadComplete) {
       entityIndicatorsCache.clear();
     }
   });
 
-  // Simplified entity indicator check that doesn't create new objects on each call
+  // Improved entity indicator check that handles both caching and initial load
   function checkEntityIndicators(x, y) {
     const cacheKey = `${x},${y}`;
     
-    if (entityIndicatorsCache.has(cacheKey)) {
-      return entityIndicatorsCache.get(cacheKey);
+    // Always check fresh data when initial load isn't complete yet
+    if (!initialEntityLoadComplete || !entityIndicatorsCache.has(cacheKey)) {
+      const entities = getEntitiesAt(x, y);
+      const result = {
+        hasStructure: !!entities.structure,
+        hasUnitGroup: !!entities.unitGroup,
+        hasPlayer: !!entities.player
+      };
+      
+      entityIndicatorsCache.set(cacheKey, result);
+      return result;
     }
     
-    const entities = getEntitiesAt(x, y);
-    const result = {
-      hasStructure: !!entities.structure,
-      hasUnitGroup: !!entities.unitGroup,
-      hasPlayer: !!entities.player
-    };
-    
-    entityIndicatorsCache.set(cacheKey, result);
-    return result;
+    return entityIndicatorsCache.get(cacheKey);
   }
-  
+
   // Initialize when mounted
   onMount(() => {
     // Setup resize observer
@@ -85,15 +93,34 @@
     // Setup keyboard navigation
     const keyboardCleanup = setupKeyboardNavigation();
     
-    // Add immediate entity loading check with better handling
+    // Improved entity loading with guaranteed success
     const checkAndLoadEntities = () => {
       if ($mapState.isReady) {
-        // Force load chunks and entities for initial view - but don't create reactive loops
-        setTimeout(() => {
-          loadInitialChunksForTarget();
-          // Use the setTimeout to break potential reactive loops
-          setTimeout(forceEntityDisplay, 10);
-        }, 0);
+        console.log("Map is ready, loading initial entities");
+        
+        // Force immediate chunk loading without waiting for grid calculation
+        loadInitialChunksForTarget();
+        
+        // Set up a sequence of entity loading attempts with increasing delays
+        // This helps ensure entities display even if Firebase is slow
+        const loadSequence = [10, 100, 500, 1000, 2000];
+        
+        loadSequence.forEach(delay => {
+          setTimeout(() => {
+            console.log(`Entity display attempt at ${delay}ms`);
+            forceEntityDisplay();
+            
+            // Clear the entity cache to force fresh check
+            entityIndicatorsCache.clear();
+            
+            // Only mark complete after final attempt
+            if (delay === loadSequence[loadSequence.length - 1]) {
+              initialEntityLoadComplete = true;
+              console.log("Initial entity loading sequence complete");
+            }
+          }, delay);
+        });
+        
         return true;
       }
       return false;

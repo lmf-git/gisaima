@@ -1202,6 +1202,13 @@ export function loadInitialChunksForTarget() {
   // Then subscribe to each chunk - do this synchronously to ensure immediate loading
   chunksArray.forEach(chunkKey => {
     subscribeToChunk(chunkKey);
+    
+    // Also try to immediately parse any cached chunk data we might already have
+    const existingData = rawChunkData.get(chunkKey);
+    if (existingData) {
+      console.log(`Re-processing existing chunk data for ${chunkKey}`);
+      handleChunkData(chunkKey, existingData);
+    }
   });
   
   // Force entity display after loading chunks
@@ -1210,13 +1217,28 @@ export function loadInitialChunksForTarget() {
   return chunksArray.length;
 }
 
-// Add function to force entity display refresh
+// Improve function to force entity display refresh
 export function forceEntityDisplay() {
-  // Trigger reactivity by incrementing the entity counter
-  mapState.update(state => ({
-    ...state,
-    _entityChangeCounter: (state._entityChangeCounter || 0) + 1
-  }));
+  console.log("Forcing entity display refresh");
+  
+  // First try to reprocess any existing raw chunk data
+  mapState.update(state => {
+    const chunks = [...state.chunks];
+    
+    // Re-process any chunk data we already have
+    chunks.forEach(chunkKey => {
+      const data = rawChunkData.get(chunkKey);
+      if (data) {
+        handleChunkData(chunkKey, data);
+      }
+    });
+    
+    // Trigger reactivity by incrementing the entity counter
+    return {
+      ...state,
+      _entityChangeCounter: (state._entityChangeCounter || 0) + 1
+    };
+  });
 }
 
 // Add missing updateMinimapRange function - stores the current minimap view range
