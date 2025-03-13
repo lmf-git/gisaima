@@ -28,11 +28,10 @@
 </script>
 
 <div class="signup-container">
-    <Logo extraClass="logo" />
     <h1>Join Gisaima</h1>
     
     {#if error}
-        <div class="error">{error}</div>
+        <div class="error">{ error }</div>
     {/if}
     
     <form on:submit={handleSubmit}>

@@ -22,7 +22,6 @@
 </script>
 
 <div class="login-container">
-    <Logo extraClass="logo" />
     <h1>Login to Gisaima</h1>
     
     {#if error}

@@ -16,7 +16,7 @@
                 </div>
             {/if}
             
-            {#if !$page.url.pathname === '/map'}
+            {#if $page.url.pathname !== '/map'}
                 <div class="navlinks">
                     <a href="/map" class="button navlink">Map</a>
                     {#if !$user}
@@ -26,10 +26,10 @@
                 </div>
             {/if}
             
-            {#if !$page.url.pathname === '/map' && $user}
+            {#if $page.url.pathname !== '/map' && $user}
                 <div class="authlinks">
                     <span class="greeting">Hello, {$user.email}</span>
-                    <button class="button" onclick={() => signOut}>Sign Out</button>
+                    <button class="button" onclick={() => signOut()}>Sign Out</button>
                 </div>
             {/if}
         </nav>
@@ -170,6 +170,7 @@
     .app {
         display: flex;
         flex-direction: column;
+        min-height: 100vh;
         background: linear-gradient(to bottom, 
                    var(--color-background-gradient-start), 
                    var(--color-background-gradient-end));
@@ -209,7 +210,7 @@
         display: flex;
         gap: 1em;
         align-items: center;
-        margin-left: 1em;
+        margin-left: auto;
     }
     
     .authlinks {

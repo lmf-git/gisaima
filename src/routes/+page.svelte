@@ -49,11 +49,8 @@
         <p class="text">Players can capture opponent's pieces by surrounding them, adding strategic depth to each move.</p>
         <a href="/rules" class="link">Read the full rules →</a>
       </div>
-      <div class="visual">
-        <!-- Game board placeholder -->
-        <div class="preview">
-          <p class="text">Game Board Preview</p>
-        </div>
+      <div class="preview">
+        <img src="/screenshot.png" alt="Game Board Screenshot" class="preview-image">
       </div>
     </div>
   </section>
@@ -72,20 +69,20 @@
   .container {
     max-width: 75em;
     margin: 0 auto;
-    padding: 2em;
+    padding: 0 2em;
     color: var(--color-text);
   }
 
   .showcase {
     text-align: center;
-    padding: 3em 1em;
+    padding: 0 3em 1em;
   }
 
   .title {
     font-size: 3.5em;
     margin: 0.5em 0;
     letter-spacing: 0.2em;
-    color: var(--color-heading);
+    color: #b21114;
     text-shadow: 0 0 0.625em rgba(193, 19, 22, 0.5);
     font-weight: 400; /* Reduced font weight */
     font-family: var(--font-heading); /* Added heading font */
@@ -160,6 +157,7 @@
     text-shadow: 0 0 0.3125em rgba(12, 8, 33, 0.7);
     font-family: var(--font-heading); /* Added heading font */
     font-weight: 400; /* Reduced font weight */
+    font-size: 2.6em; /* Increased from default h2 size */
   }
 
   .grid {
@@ -187,6 +185,7 @@
     margin-bottom: 0.75em;
     font-family: var(--font-heading); /* Added heading font */
     font-weight: 400; /* Reduced font weight */
+    font-size: 1.6em; /* Increased from default h3 size */
   }
 
   .text {
@@ -200,7 +199,7 @@
     gap: 2em;
   }
 
-  .content, .visual {
+  .content, .preview {
     flex: 1 1 20em;
   }
 
@@ -224,6 +223,14 @@
     justify-content: center;
     border-radius: 0.5em;
     border: 0.125em dashed var(--color-muted-teal);
+    overflow: hidden; /* Ensure image doesn't overflow rounded corners */
+  }
+  
+  .preview-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Maintain aspect ratio */
+    border-radius: 0.3em; /* Add slight border radius to the image */
   }
 
   .footer {
@@ -285,6 +292,14 @@
     .links {
       gap: 1em;
     }
+
+    .heading {
+      font-size: 2.2em;
+    }
+    
+    .subheading {
+      font-size: 1.4em;
+    }
   }
   
   @media (max-width: 480px) {
@@ -298,6 +313,10 @@
     
     .subtitle {
       font-size: 1em;
+    }
+
+    .heading {
+      font-size: 1.8em;
     }
   }
 </style>
