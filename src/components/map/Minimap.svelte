@@ -48,9 +48,6 @@
     centerY: $mapState.centerCoord.y
   });
   
-  let isLoad = $state(false);
-  // Remove unused loadTimer
-  
   let isDrag = $state(false);
   let dragX = $state(0);
   let dragY = $state(0);
@@ -78,13 +75,10 @@
   function generateMinimapGrid() {
     if (!$mapState.isReady || !open) return minimapGrid;
     
-    isLoad = true;
-    
     // Skip generation if coordinates haven't changed and we have data
     if ($mapState.centerCoord.x === lastCenterX && 
         $mapState.centerCoord.y === lastCenterY && 
         minimapGrid.length > 0) {
-      isLoad = false;
       return minimapGrid;
     }
     
@@ -131,8 +125,6 @@
       minimapGrid = newGrid;
     } catch (error) {
       console.error("Error generating minimap grid:", error);
-    } finally {
-      isLoad = false;
     }
     
     return minimapGrid;

@@ -11,7 +11,9 @@ const terrain = new TerrainGenerator(WORLD_SEED);
 export const KEYBOARD_MOVE_SPEED = 200;
 export const CHUNK_SIZE = 20;
 export const TILE_SIZE = 5;
-export const GRID_EXPANSION_FACTOR = 3;
+// Replace single expansion factor with separate factors for columns and rows
+export const GRID_COLS_FACTOR = 3.5;
+export const GRID_ROWS_FACTOR = 2.85;
 
 // Track active chunk subscriptions
 const activeChunkSubscriptions = new Map();
@@ -53,16 +55,6 @@ const terrainCache = new Map();
 // Chunk utilities
 export function getChunkKey(x, y) {
   return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
-}
-
-export function getChunkCoordinates(chunkKey) {
-  const [chunkX, chunkY] = chunkKey.split(',').map(Number);
-  return {
-    minX: chunkX * CHUNK_SIZE,
-    minY: chunkX * CHUNK_SIZE,
-    maxX: (chunkX + 1) * CHUNK_SIZE - 1,
-    maxY: (chunkX + 1) * CHUNK_SIZE - 1
-  };
 }
 
 // Store raw chunk data for debugging
@@ -269,11 +261,6 @@ export function getEntitiesAt(x, y) {
   return { structure, unitGroup, player };
 }
 
-export function hasEntityAt(x, y) {
-  const entities = getEntitiesAt(x, y);
-  return !!(entities.structure || entities.unitGroup || entities.player);
-}
-
 // Cleanup function
 export function cleanupChunkSubscriptions() {
   if (isCleaningUp) return;
@@ -330,10 +317,6 @@ export const centerTileStore = derived(
     return { x, y, ...$centeredTileStore.data };
   }
 );
-
-// Rename targetTileStore export to centerTileStore but keep targetTileStore 
-// for backward compatibility
-export const targetTileStore = centerTileStore;
 
 // Map dimensions and positioning
 export function resizeMap(mapElement) {
@@ -561,11 +544,6 @@ export function setMinimapVisibility(isVisible) {
 let lastGridGenTime = 0;
 const GRID_GEN_THROTTLE = 200; // ms between grid generations
 let expandedGridCache = [];
-let lastTargetX = 0;
-let lastTargetY = 0;
-let lastGridCols = 0;
-let lastGridRows = 0;
-let lastMinimapVisible = true;
 
 export const expandedGridArray = derived(
   [mapState],
@@ -578,29 +556,34 @@ export const expandedGridArray = derived(
     const now = Date.now();
     if (now - lastGridGenTime < GRID_GEN_THROTTLE) return;
 
-    const targetChanged = $mapState.centerCoord.x !== lastTargetX || $mapState.centerCoord.y !== lastTargetY;
-    const sizeChanged = $mapState.cols !== lastGridCols || $mapState.rows !== lastGridRows;
-    const minimapToggled = $mapState.minimapVisible !== lastMinimapVisible;
-
-    if (!targetChanged && !sizeChanged && !minimapToggled && expandedGridCache.length > 0) {
+    // Use simple comparison of main state properties instead of tracking variables
+    const state = {
+      x: $mapState.centerCoord.x,
+      y: $mapState.centerCoord.y, 
+      cols: $mapState.cols,
+      rows: $mapState.rows,
+      mini: $mapState.minimapVisible
+    };
+    
+    // Create a hash of current state to check for changes
+    const stateHash = `${state.x},${state.y},${state.cols},${state.rows},${state.mini}`;
+    
+    // Compare with previous hash stored in the cache array
+    if (expandedGridCache.hash === stateHash) {
       set(expandedGridCache);
       return;
     }
-
-    lastTargetX = $mapState.centerCoord.x;
-    lastTargetY = $mapState.centerCoord.y;
-    lastGridCols = $mapState.cols;
-    lastGridRows = $mapState.rows;
-    lastMinimapVisible = $mapState.minimapVisible;
+    
     lastGridGenTime = now;
     
     try {
       const useExpanded = $mapState.minimapVisible;
+      // Use separate factors for columns and rows
       const gridCols = useExpanded 
-        ? Math.min($mapState.cols * GRID_EXPANSION_FACTOR, 51)
+        ? Math.min($mapState.cols * GRID_COLS_FACTOR, 51)
         : $mapState.cols;
       const gridRows = useExpanded 
-        ? Math.min($mapState.rows * GRID_EXPANSION_FACTOR, 51)
+        ? Math.min($mapState.rows * GRID_ROWS_FACTOR, 51)
         : $mapState.rows;
       
       const centerOffsetX = Math.floor(gridCols / 2);
@@ -639,9 +622,12 @@ export const expandedGridArray = derived(
       }
       
       updateChunks(result);
-      expandedGridCache = result;
       
-      set(result);
+      // Store hash with result for next comparison
+      expandedGridCache = result;
+      expandedGridCache.hash = stateHash;
+      
+      set(expandedGridCache);
     } catch (error) {
       console.error("Error generating grid:", error);
       set([]);
@@ -653,14 +639,7 @@ export const expandedGridArray = derived(
 // Simplified grid array derived store
 export const gridArray = derived(
   expandedGridArray,
-  ($expandedGrid) => {
-    if (!$expandedGrid || $expandedGrid.length === 0) {
-      return [];
-    }
-    
-    return $expandedGrid.filter(cell => cell.isInMainView);
-  },
-  []
+  ($expandedGrid) => $expandedGrid?.filter(cell => cell.isInMainView) || []
 );
 
 // Axis arrays

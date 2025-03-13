@@ -41,9 +41,9 @@
   // Add a new state variable to track initial entity loading
   let initialEntityLoadComplete = $state(false);
   
-  // Add more robust effect to clear cache when entities change
+  // Simplify entity change tracking
   $effect(() => {
-    if (entityChangeCounter > 0 || $mapState.centerCoord || initialEntityLoadComplete) {
+    if (entityChangeCounter > 0 || $mapState.centerCoord) {
       entityIndicatorsCache.clear();
     }
   });
@@ -72,11 +72,7 @@
     // Setup resize observer
     resizeObserver = new ResizeObserver(() => {
       resizeMap(mapElement);
-      // After resizing, force load entity data
-      if ($mapState.isReady) {
-        loadInitialChunksForCenter();
-        forceEntityDisplay();
-      }
+      loadEntities(); // Reload entities if map is resized
     });
     resizeObserver.observe(mapElement);
     
@@ -86,21 +82,18 @@
     // Setup keyboard navigation
     const keyboardCleanup = setupKeyboardNavigation();
     
-    // Simplified entity loading - single attempt with completion callback
+    // Attempt entity loading or set up an observer
     if ($mapState.isReady) {
       loadEntities();
     } else {
-      // Only use interval if map isn't ready yet
-      const readyCheckInterval = setInterval(() => {
-        if ($mapState.isReady) {
-          clearInterval(readyCheckInterval);
-          loadEntities();
-        }
-      }, 100); // Check faster but less often
+      // Try once rather than using an interval
+      Promise.resolve().then(() => {
+        if ($mapState.isReady) loadEntities();
+      });
     }
     
-    // Use CSS animation-fill-mode instead of setTimeout for animation state
-    // Set timeout just for safety, should be handled by animation
+    // Use CSS animation-fill-mode instead of setTimeout
+    introduced = false;
     setTimeout(() => introduced = true, 1000);
 
     // Define cleanup function
@@ -116,12 +109,11 @@
   
   // Unified entity loading function
   function loadEntities() {
-    console.log("Loading entities");
-    loadInitialChunksForCenter();
-    forceEntityDisplay();
-    // Mark complete after a single attempt - the store's 
-    // _entityChangeCounter will trigger cache clearing if needed
-    initialEntityLoadComplete = true;
+    if ($mapState.isReady) {
+      loadInitialChunksForCenter();
+      forceEntityDisplay();
+      initialEntityLoadComplete = true;
+    }
   }
   
   // Make sure to clean up Firebase subscriptions when component is destroyed
@@ -265,8 +257,8 @@
     checkDragStateManually();
   }
 
-  // Add improved functions to track hover state
-  function higlight(cell) {
+  // Consolidate highlighting functions
+  function handleTileHover(cell) {
     if (!isMoving) updateHoveredTile(cell.x, cell.y);
   }
   
@@ -333,7 +325,7 @@
             class:has-structure={entityIndicators.hasStructure}
             class:has-unit-group={entityIndicators.hasUnitGroup}
             class:has-player={entityIndicators.hasPlayer}
-            onmouseenter={() => higlight(cell)}
+            onmouseenter={() => handleTileHover(cell)}
             role="gridcell"
             tabindex="-1"
             aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}"
