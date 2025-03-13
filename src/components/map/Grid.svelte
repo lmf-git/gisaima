@@ -13,7 +13,9 @@
     targetTileStore,
     updateHoveredTile,
     cleanupChunkSubscriptions,
-    getEntitiesAt
+    getEntitiesAt,
+    loadInitialChunksForTarget,  // Add this import
+    forceEntityDisplay  // Add this import
   } from "../../lib/stores/map.js";
   
   // Local component state
@@ -67,12 +69,44 @@
   // Initialize when mounted
   onMount(() => {
     // Setup resize observer
-    resizeObserver = new ResizeObserver(() => resizeMap(mapElement));
+    resizeObserver = new ResizeObserver(() => {
+      resizeMap(mapElement);
+      // After resizing, force load entity data
+      if ($mapState.isReady) {
+        loadInitialChunksForTarget();
+        forceEntityDisplay();
+      }
+    });
     resizeObserver.observe(mapElement);
+    
+    // Initial resize to set up dimensions
     resizeMap(mapElement);
     
     // Setup keyboard navigation
     const keyboardCleanup = setupKeyboardNavigation();
+    
+    // Add immediate entity loading check with better handling
+    const checkAndLoadEntities = () => {
+      if ($mapState.isReady) {
+        // Force load chunks and entities for initial view - but don't create reactive loops
+        setTimeout(() => {
+          loadInitialChunksForTarget();
+          // Use the setTimeout to break potential reactive loops
+          setTimeout(forceEntityDisplay, 10);
+        }, 0);
+        return true;
+      }
+      return false;
+    };
+    
+    // Try immediately, then set interval to check
+    if (!checkAndLoadEntities()) {
+      const readyCheckInterval = setInterval(() => {
+        if (checkAndLoadEntities()) {
+          clearInterval(readyCheckInterval);
+        }
+      }, 50);
+    }
     
     // Tiles should not animate into view after the introduction completes.
     setTimeout(() => introduced = true, 1200);
@@ -464,35 +498,35 @@
   }
   
   .structure-indicator {
-    bottom: 0.2em;
-    left: 0.2em;
-    width: 0.6em; /* Slightly larger */
-    height: 0.6em; /* Slightly larger */
+    bottom: .2em;
+    left: .2em;
+    width: .6em; /* Slightly larger */
+    height: .6em; /* Slightly larger */
     background: rgba(255, 255, 255, 0.9); /* Increased opacity */
-    border: 0.0625em solid rgba(0, 0, 0, 0.3);
-    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.6); /* Added glow */
+    border: .0625em solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 .15em rgba(255, 255, 255, 0.6); /* Added glow */
   }
   
   .unit-group-indicator {
-    top: 0.2em;
-    right: 0.2em;
-    width: 0.5em; /* Slightly larger */
-    height: 0.5em; /* Slightly larger */
+    top: .2em;
+    right: .2em;
+    width: .5em; /* Slightly larger */
+    height: .5em; /* Slightly larger */
     border-radius: 50%;
     background: rgba(255, 100, 100, 0.9); /* Increased opacity */
-    border: 0.0625em solid rgba(0, 0, 0, 0.3);
-    box-shadow: 0 0 0.15em rgba(255, 100, 100, 0.6); /* Added red glow */
+    border: .0625em solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 .15em rgba(255, 100, 100, 0.6); /* Added red glow */
   }
   
   .player-indicator {
-    top: 0.2em;
-    left: 0.2em;
-    width: 0.5em; /* Slightly larger */
-    height: 0.5em; /* Slightly larger */
+    top: .2em;
+    left: .2em;
+    width: .5em; /* Slightly larger */
+    height: .5em; /* Slightly larger */
     background: rgba(100, 100, 255, 0.9); /* Increased opacity */
     border-radius: 50%;
-    border: 0.0625em solid rgba(0, 0, 0, 0.3);
-    box-shadow: 0 0 0.15em rgba(100, 100, 255, 0.6); /* Added blue glow */
+    border: .0625em solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 .15em rgba(100, 100, 255, 0.6); /* Added blue glow */
   }
   
   .tile.has-structure {

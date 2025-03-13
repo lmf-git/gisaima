@@ -10,7 +10,7 @@ const terrain = new TerrainGenerator(WORLD_SEED);
 // Configuration constants
 export const KEYBOARD_MOVE_SPEED = 200;
 export const CHUNK_SIZE = 20;
-export const TILE_SIZE = 5; // Smaller default size for mobile-first approach
+export const TILE_SIZE = 5;
 export const DRAG_CHECK_INTERVAL = 500;
 
 // Expansion factor for calculating larger grid area
@@ -161,7 +161,7 @@ function handleChunkData(chunkKey, data) {
   if (lastUpdated <= prevUpdated && lastUpdated !== 0) return;
   chunkLastUpdated.set(chunkKey, lastUpdated);
   
-  // Process all entities in one batch
+  // Process all entities in one batch with high priority
   let structureUpdates = {};
   let groupUpdates = {};
   let playerUpdates = {};
@@ -216,22 +216,28 @@ function handleChunkData(chunkKey, data) {
   
   // Only update the store once with all changes
   if (entitiesChanged) {
-    mapState.update(state => {
-      // Create new entity objects only once
-      const newStructure = { ...state.entities.structure, ...structureUpdates };
-      const newGroups = { ...state.entities.groups, ...groupUpdates };
-      const newPlayers = { ...state.entities.players, ...playerUpdates };
-      
-      return {
-        ...state,
-        entities: {
-          structure: newStructure,
-          groups: newGroups,
-          players: newPlayers,
-          test: state.entities.test
-        },
-        _entityChangeCounter: (state._entityChangeCounter || 0) + 1
-      };
+    // Use a Promise.resolve().then to move this update to the next microtask
+    // This ensures that data is processed and rendered as soon as it's available
+    Promise.resolve().then(() => {
+      mapState.update(state => {
+        // Create new entity objects only once
+        const newStructure = { ...state.entities.structure, ...structureUpdates };
+        const newGroups = { ...state.entities.groups, ...groupUpdates };
+        const newPlayers = { ...state.entities.players, ...playerUpdates };
+        
+        console.log(`Loaded entities from chunk ${chunkKey}: ${Object.keys(structureUpdates).length} structures, ${Object.keys(groupUpdates).length} groups, ${Object.keys(playerUpdates).length} players`);
+        
+        return {
+          ...state,
+          entities: {
+            structure: newStructure,
+            groups: newGroups,
+            players: newPlayers,
+            test: state.entities.test
+          },
+          _entityChangeCounter: (state._entityChangeCounter || 0) + 1
+        };
+      });
     });
   }
 }
@@ -541,6 +547,14 @@ export function resizeMap(mapElement) {
       coordinates: { x: state.targetCoord.x, y: state.targetCoord.y },
       data: initialTileData
     });
+    
+    // After updating map state, trigger loading initial entity data
+    // by scheduling it after the state update
+    setTimeout(() => {
+      if (state.isReady) {
+        loadInitialChunksForTarget();
+      }
+    }, 0);
     
     return {
       ...state,
@@ -1176,4 +1190,61 @@ export function cleanupInternalIntervals() {
     console.error("Error cleaning up intervals:", err);
     return false;
   }
+}
+
+// Add new function to load chunks for initial view without waiting for expandedGridArray
+export function loadInitialChunksForTarget() {
+  const state = get(mapState);
+  if (!state.isReady || !state.targetCoord) return;
+  
+  console.log("Loading initial chunks for target coordinates:", state.targetCoord);
+  
+  // Calculate visible range based on grid size
+  const halfWidth = Math.floor(state.cols / 2) + 1; // Add buffer
+  const halfHeight = Math.floor(state.rows / 2) + 1; // Add buffer
+  
+  const minX = state.targetCoord.x - halfWidth;
+  const maxX = state.targetCoord.x + halfWidth;
+  const minY = state.targetCoord.y - halfHeight;
+  const maxY = state.targetCoord.y + halfHeight;
+  
+  // Track all chunk keys that should be loaded
+  const chunkKeys = new Set();
+  
+  // Calculate all chunk keys within view
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      const chunkKey = getChunkKey(x, y);
+      chunkKeys.add(chunkKey);
+    }
+  }
+  
+  // Subscribe to all chunks in view
+  const chunksArray = Array.from(chunkKeys);
+  console.log(`Loading ${chunksArray.length} initial chunks`);
+  
+  // First update the map state to track these chunks
+  mapState.update(state => ({
+    ...state,
+    chunks: chunkKeys
+  }));
+  
+  // Then subscribe to each chunk - do this synchronously to ensure immediate loading
+  chunksArray.forEach(chunkKey => {
+    subscribeToChunk(chunkKey);
+  });
+  
+  // Force entity display after loading chunks
+  setTimeout(forceEntityDisplay, 50);
+  
+  return chunksArray.length;
+}
+
+// Add function to force entity display refresh
+export function forceEntityDisplay() {
+  // Trigger reactivity by incrementing the entity counter
+  mapState.update(state => ({
+    ...state,
+    _entityChangeCounter: (state._entityChangeCounter || 0) + 1
+  }));
 }
