@@ -77,7 +77,7 @@
     .signup-container {
         max-width: 26em;
         width: 90%;
-        margin: 3em auto;
+        margin: 0 auto; /* Removed top margin, keeping horizontal centering */
         padding: 2em;
         background-color: var(--color-panel-bg);
         border: 1px solid var(--color-panel-border);
