@@ -1218,3 +1218,35 @@ export function forceEntityDisplay() {
     _entityChangeCounter: (state._entityChangeCounter || 0) + 1
   }));
 }
+
+// Add missing updateMinimapRange function - stores the current minimap view range
+let minimapRange = {
+  centerX: 0,
+  centerY: 0,
+  rangeX: 0,
+  rangeY: 0,
+  lastUpdate: 0
+};
+
+export function updateMinimapRange(centerX, centerY, rangeX, rangeY) {
+  // Update the stored minimap range
+  minimapRange = {
+    centerX,
+    centerY,
+    rangeX,
+    rangeY,
+    lastUpdate: Date.now()
+  };
+  
+  // For debugging
+  if (DEBUG_MODE) {
+    console.log(`Updated minimap range: Center (${centerX},${centerY}), Range: ${rangeX}x${rangeY}`);
+  }
+  
+  return minimapRange;
+}
+
+// Get current minimap range (for other components that might need it)
+export function getMinimapRange() {
+  return minimapRange;
+}
