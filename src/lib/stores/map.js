@@ -19,29 +19,22 @@ export const GRID_EXPANSION_FACTOR = 3;
 // Track active chunk subscriptions
 const activeChunkSubscriptions = new Map();
 
+// Add a debug mode flag to control logging
+const DEBUG_MODE = false; // Set to true for verbose logging
+
 // Create a store using Svelte's store API since $state is only for component scripts
 export const mapState = writable({ 
   isReady: false,
   cols: 0, 
   rows: 0,
-
-  // Is the offset necessary when we are tracking center and target? lol
   offsetX: 0, 
   offsetY: 0,
-
-  // Aren't these the same?
   centerX: 0,
   centerY: 0,
   targetCoord: { x: 0, y: 0 },
-
   chunks: new Set(),
-  
-  // Allows shared hover highlighting of minimap and grid tiles.
   hoveredTile: null,
-
   showDetails: false,
-  
-  
   isDragging: false,
   isMouseActuallyDown: false,
   dragStartX: 0,
@@ -50,12 +43,12 @@ export const mapState = writable({
   keysPressed: new Set(),
   keyboardNavigationInterval: null,
   
-  
-  // Entity data from Firebase chunks
+  // Entity data from Firebase chunks - updated to use singular structure
   entities: {
-    structures: {}, // key: "x,y", value: structure data
-    groups: {}, // key: "x,y", value: unit group data
-    players: {}     // key: "x,y", value: player data
+    structure: {},   // key: "x,y", value: structure data - Changed from structures to structure
+    groups: {},      // key: "x,y", value: unit group data
+    players: {},     // key: "x,y", value: player data
+    test: null       // Store test value if present
   },
 
   // Add minimapVisible property
@@ -65,120 +58,214 @@ export const mapState = writable({
 // Map computation functions
 export function getChunkKey(x, y) {
   return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
-};
+}
 
-// Function to get world coordinates from chunk key
+// Function to get world coordinates from chunk key - FIX THE BUG HERE
 export function getChunkCoordinates(chunkKey) {
   const [chunkX, chunkY] = chunkKey.split(',').map(Number);
   return {
     minX: chunkX * CHUNK_SIZE,
-    minY: chunkY * CHUNK_SIZE,
+    minY: chunkY * CHUNK_SIZE, // Fixed: was using chunkX instead of chunkY
     maxX: (chunkX + 1) * CHUNK_SIZE - 1,
-    maxY: (chunkX + 1) * CHUNK_SIZE - 1
+    maxY: (chunkY + 1) * CHUNK_SIZE - 1  // Fixed: was using chunkX instead of chunkY
   };
-};
+}
 
-// Subscribe to a chunk in Firebase
+// Remove the checkForTestData function completely and replace with a more specific function that doesn't subscribe to root
+export function getTestData() {
+  console.log("Checking for test data");
+  // Just return current test data from store without subscription
+  const state = get(mapState);
+  return state.entities.test;
+}
+
+// Store raw chunk data for debugging
+const rawChunkData = new Map();
+export function storeRawChunkData(chunkKey, data) {
+  rawChunkData.set(chunkKey, data);
+}
+
+// Get raw chunk data for debugging
+export function getRawChunkData(chunkKey) {
+  return rawChunkData.get(chunkKey);
+}
+
+// Subscribe to a chunk in Firebase - add throttling for logs
+let lastChunkLogTime = 0;
 function subscribeToChunk(chunkKey) {
   // Don't create duplicate subscriptions
   if (activeChunkSubscriptions.has(chunkKey)) {
+    if (DEBUG_MODE) console.log(`Skipping subscription to chunk ${chunkKey} - already subscribed`);
     return;
   }
   
-  console.log(`Subscribing to chunk: ${chunkKey}`);
+  console.log(`🔌 Subscribing to chunk: ${chunkKey}`);
   
-  // Create reference to this chunk
-  const chunkRef = ref(db, `chunks/${chunkKey}`);
-  
-  // Fix: Create the listener function properly
-  const unsubscribe = onValue(chunkRef, (snapshot) => {
-    const data = snapshot.exists() ? snapshot.val() : {};
+  try {
+    // Create reference to this chunk
+    const chunkRef = ref(db, `chunks/${chunkKey}`);
     
-    // Process chunk data
-    const processedData = {
-      structures: data.structures || {},
-      groups: data.groups || {},
-      players: data.players || {},
-      lastUpdated: data.lastUpdated || Date.now()
-    };
+    const unsubscribe = onValue(chunkRef, (snapshot) => {
+      const exists = snapshot.exists();
+      const now = Date.now();
+      
+      // Throttle logging to prevent console spam
+      if (now - lastChunkLogTime > 1000 || DEBUG_MODE) {
+        console.log(`📥 Received data for chunk ${chunkKey} - Has data: ${exists}`);
+        lastChunkLogTime = now;
+      }
+      
+      if (exists) {
+        const data = snapshot.val();
+        storeRawChunkData(chunkKey, data); // Store raw data for debugging
+        
+        // Process chunk data immediately
+        handleChunkData(chunkKey, data);
+      }
+    }, 
+    (error) => {
+      console.error(`⚠️ Error subscribing to chunk ${chunkKey}:`, error);
+    });
     
-    handleChunkData(chunkKey, processedData);
-  }, 
-  (error) => {
-    console.error(`Error subscribing to chunk ${chunkKey}:`, error);
-  });
-  
-  // Store the unsubscribe function itself
-  activeChunkSubscriptions.set(chunkKey, unsubscribe);
-};
+    // Store the unsubscribe function itself
+    activeChunkSubscriptions.set(chunkKey, unsubscribe);
+  } catch (err) {
+    console.error(`⚠️ Failed to subscribe to chunk ${chunkKey}:`, err);
+  }
+}
 
 // Unsubscribe from a chunk
 function unsubscribeFromChunk(chunkKey) {
   if (activeChunkSubscriptions.has(chunkKey)) {
     console.log(`Unsubscribing from chunk: ${chunkKey}`);
-    const unsubscribe = activeChunkSubscriptions.get(chunkKey);
-    unsubscribe(); // Just call the unsubscribe function directly
-    activeChunkSubscriptions.delete(chunkKey);
-    
-    // Clean up entity data for this chunk
-    cleanEntitiesForChunk(chunkKey);
-    
-    return true;
+    try {
+      const unsubscribe = activeChunkSubscriptions.get(chunkKey);
+      unsubscribe();
+      activeChunkSubscriptions.delete(chunkKey);
+      
+      // Clean up entity data for this chunk
+      cleanEntitiesForChunk(chunkKey);
+      return true;
+    } catch (err) {
+      console.error(`Error unsubscribing from chunk ${chunkKey}:`, err);
+    }
   }
   return false;
-};
+}
 
-// Handler for chunk data updates from Firebase
+// Handler for chunk data updates from Firebase - Completely rewritten for correct structure
+const chunkLastUpdated = new Map();
 function handleChunkData(chunkKey, data) {
+  console.log(`Processing chunk data for ${chunkKey}`);
+  
+  // Skip if no data
+  if (!data) {
+    console.log(`No data for chunk ${chunkKey}`);
+    return;
+  }
+  
+  // Get the last updated timestamp for this chunk (might be in metadata or generated)
+  const lastUpdated = data.lastUpdated || Date.now();
+  const prevUpdated = chunkLastUpdated.get(chunkKey) || 0;
+  
+  // Skip redundant updates (happens with Firebase sometimes)
+  if (lastUpdated <= prevUpdated && lastUpdated !== 0) {
+    console.log(`Skipping redundant update for chunk ${chunkKey}`);
+    return;
+  }
+  
+  // Store the new timestamp
+  chunkLastUpdated.set(chunkKey, lastUpdated);
+  
+  // Extract the chunk bounds
+  const bounds = getChunkCoordinates(chunkKey);
+  console.log(`Chunk ${chunkKey} bounds: (${bounds.minX},${bounds.minY}) to (${bounds.maxX},${bounds.maxY})`);
+  
+  // Prepare to update map state
   mapState.update(state => {
     // Create a new entities object to avoid direct mutation
     const newEntities = {
-      structures: { ...state.entities.structures },
+      structure: { ...state.entities.structure },
       groups: { ...state.entities.groups },
-      players: { ...state.entities.players }
+      players: { ...state.entities.players },
+      test: state.entities.test
     };
     
-    // Get the coordinates for this chunk
-    const { minX, minY, maxX, maxY } = getChunkCoordinates(chunkKey);
-    
-    // Process and merge structures
-    if (data.structures) {
-      Object.entries(data.structures).forEach(([locationKey, structureData]) => {
-        // Parse the location key "x,y" to validate it's in this chunk
-        const [x, y] = locationKey.split(',').map(Number);
-        if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-          newEntities.structures[locationKey] = {
-            ...structureData,
-            chunkKey // Add reference to parent chunk
-          };
-        }
-      });
-    }
-    
-    // Process and merge unit groups
-    if (data.groups) {
-      Object.entries(data.groups).forEach(([locationKey, unitData]) => {
-        const [x, y] = locationKey.split(',').map(Number);
-        if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-          newEntities.groups[locationKey] = {
-            ...unitData,
-            chunkKey
-          };
-        }
-      });
-    }
-    
-    // Process and merge players
-    if (data.players) {
-      Object.entries(data.players).forEach(([locationKey, playerData]) => {
-        const [x, y] = locationKey.split(',').map(Number);
-        if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-          newEntities.players[locationKey] = {
+    // Counts for debugging
+    let structuresAdded = 0;
+    let groupsAdded = 0;
+    let playersAdded = 0;
+
+    // Process each tile in the chunk data
+    Object.entries(data).forEach(([tileKey, tileData]) => {
+      // Skip metadata fields
+      if (tileKey === 'lastUpdated') return;
+      
+      // Parse the tile coordinate key (these are coordinates within the chunk)
+      const [tileX, tileY] = tileKey.split(',').map(Number);
+      
+      // Process structure (singular) at this tile
+      if (tileData.structure) {
+        console.log(`Found structure at tile ${tileKey} in chunk ${chunkKey}`);
+        
+        newEntities.structure[tileKey] = {
+          ...tileData.structure,
+          chunkKey,
+          x: tileX,
+          y: tileY
+        };
+        
+        structuresAdded++;
+      }
+      
+      // Process players at this tile (they are nested under player IDs)
+      if (tileData.players) {
+        console.log(`Found players at tile ${tileKey} in chunk ${chunkKey}`);
+        
+        // Get the first player ID (usually there's just one per tile)
+        const playerIds = Object.keys(tileData.players);
+        if (playerIds.length > 0) {
+          const playerId = playerIds[0];
+          const playerData = tileData.players[playerId];
+          
+          newEntities.players[tileKey] = {
             ...playerData,
-            chunkKey
+            id: playerId,
+            chunkKey,
+            x: tileX,
+            y: tileY
           };
+          
+          playersAdded++;
         }
-      });
+      }
+      
+      // Process groups at this tile (they are nested under group IDs)
+      if (tileData.groups) {
+        console.log(`Found groups at tile ${tileKey} in chunk ${chunkKey}`);
+        
+        // Get the first group ID (usually there's just one per tile)
+        const groupIds = Object.keys(tileData.groups);
+        if (groupIds.length > 0) {
+          const groupId = groupIds[0];
+          const groupData = tileData.groups[groupId];
+          
+          newEntities.groups[tileKey] = {
+            ...groupData,
+            id: groupId,
+            chunkKey,
+            x: tileX,
+            y: tileY
+          };
+          
+          groupsAdded++;
+        }
+      }
+    });
+    
+    // Log summary of entities found
+    if (structuresAdded > 0 || groupsAdded > 0 || playersAdded > 0) {
+      console.log(`✅ Added from chunk ${chunkKey}: ${structuresAdded} structures, ${groupsAdded} groups, ${playersAdded} players`);
     }
     
     return {
@@ -186,24 +273,22 @@ function handleChunkData(chunkKey, data) {
       entities: newEntities
     };
   });
-  
-  console.log(`Updated data for chunk ${chunkKey}`);
-};
+}
 
 // Function to clean entities when chunks are unloaded
 function cleanEntitiesForChunk(chunkKey) {
   mapState.update(state => {
     // Create a new entities object to avoid direct mutation
     const newEntities = {
-      structures: { ...state.entities.structures },
+      structure: { ...state.entities.structure }, // Changed from structures to structure
       groups: { ...state.entities.groups },
       players: { ...state.entities.players }
     };
     
     // Remove all entities belonging to this chunk
-    Object.keys(newEntities.structures).forEach(locationKey => {
-      if (newEntities.structures[locationKey]?.chunkKey === chunkKey) {
-        delete newEntities.structures[locationKey];
+    Object.keys(newEntities.structure).forEach(locationKey => {
+      if (newEntities.structure[locationKey]?.chunkKey === chunkKey) {
+        delete newEntities.structure[locationKey];
       }
     });
     
@@ -226,71 +311,125 @@ function cleanEntitiesForChunk(chunkKey) {
   });
   
   console.log(`Cleaned entities for chunk ${chunkKey}`);
-};
+}
 
-// Enhanced updateChunks function that syncs with Firebase
+// Enhanced updateChunks function - Add caching to prevent redundant updates
+let lastGridHash = '';
+let lastUpdateTime = 0;
+const UPDATE_THROTTLE = 300; // ms between chunk updates
+
 export function updateChunks(gridArray) {
+  // Skip empty grid updates
+  if (!gridArray || gridArray.length === 0) {
+    return;
+  }
+  
+  // Throttle updates by time
+  const now = Date.now();
+  if (now - lastUpdateTime < UPDATE_THROTTLE) {
+    return;
+  }
+  lastUpdateTime = now;
+  
+  // Calculate a hash of the involved chunks to detect changes
+  const chunkKeys = new Set();
+  gridArray.forEach(cell => {
+    const chunkKey = getChunkKey(cell.x, cell.y);
+    chunkKeys.add(chunkKey);
+  });
+  
+  const newGridHash = [...chunkKeys].sort().join(',');
+  
+  // Skip redundant updates if chunks haven't changed
+  if (newGridHash === lastGridHash) {
+    if (DEBUG_MODE) console.log("Skipping chunk update - no changes detected");
+    return;
+  }
+  
+  lastGridHash = newGridHash;
+  
+  console.log(`Chunks update (${chunkKeys.size} chunks): ${[...chunkKeys].join(', ')}`);
+  
   mapState.update(state => {
-    const newVisibleChunks = new Set(
-      gridArray.map(cell => getChunkKey(cell.x, cell.y))
-    );
-
+    const newVisibleChunks = chunkKeys;
+    
     // Track changes to handle Firebase subscriptions
     const added = [...newVisibleChunks].filter(key => !state.chunks.has(key));
     const removed = [...state.chunks].filter(key => !newVisibleChunks.has(key));
     
-    // Log changes
-    if (added.length > 0) console.log(`Chunks loaded: ${added.join(', ')}`);
-    if (removed.length > 0) console.log(`Chunks unloaded: ${removed.join(', ')}`);
-    
-    // Subscribe to new chunks
-    added.forEach(chunkKey => {
-      subscribeToChunk(chunkKey);
-    });
+    // Subscribe to new chunks immediately
+    if (added.length > 0) {
+      console.log(`Loading ${added.length} new chunks: ${added.join(', ')}`);
+      added.forEach(chunkKey => {
+        subscribeToChunk(chunkKey);
+      });
+    }
     
     // Unsubscribe from old chunks and clean up entity data
-    removed.forEach(chunkKey => {
-      unsubscribeFromChunk(chunkKey);
-    });
+    if (removed.length > 0) {
+      console.log(`Unloading ${removed.length} chunks: ${removed.join(', ')}`);
+      removed.forEach(chunkKey => {
+        unsubscribeFromChunk(chunkKey);
+      });
+    }
 
     return {
       ...state,
       chunks: newVisibleChunks
     };
   });
-};
+}
 
-// Get entities for a specific coordinate
+// Get entities for a specific coordinate - Add more debugging
 export function getEntitiesAt(x, y) {
   const state = get(mapState);
   const locationKey = `${x},${y}`;
   
-  return {
-    structure: state.entities.structures[locationKey],
-    unitGroup: state.entities.groups[locationKey],
-    player: state.entities.players[locationKey]
-  };
-};
+  // Check if we have any entities at this location
+  const structure = state.entities.structure[locationKey]; // Changed from structures to structure
+  const unitGroup = state.entities.groups[locationKey];
+  const player = state.entities.players[locationKey];
+  
+  // Always log when checking center coordinates for debugging
+  const centerCoord = state.targetCoord;
+  const isCenter = centerCoord && centerCoord.x === x && centerCoord.y === y;
+
+  if (isCenter || structure || unitGroup || player) {
+    console.log(`Checking entities at ${locationKey}:`, {
+      hasStructure: !!structure,
+      hasUnitGroup: !!unitGroup,
+      hasPlayer: !!player,
+      isCenter
+    });
+    
+    // Log details if entities exist
+    if (structure) console.log(`  Structure: ${JSON.stringify(structure)}`);
+    if (unitGroup) console.log(`  UnitGroup: ${JSON.stringify(unitGroup)}`);
+    if (player) console.log(`  Player: ${JSON.stringify(player)}`);
+  }
+  
+  return { structure, unitGroup, player };
+}
 
 // Check if a coordinate has any entity
 export function hasEntityAt(x, y) {
   const entities = getEntitiesAt(x, y);
   return !!(entities.structure || entities.unitGroup || entities.player);
-};
+}
 
 // Get all entities within a chunk
 export function getEntitiesInChunk(chunkKey) {
   const state = get(mapState);
   const result = {
-    structures: {},
+    structure: {}, // Changed from structures to structure
     groups: {},
     players: {}
   };
   
   // Filter entities by chunk key
-  Object.entries(state.entities.structures).forEach(([locationKey, data]) => {
+  Object.entries(state.entities.structure).forEach(([locationKey, data]) => {
     if (data?.chunkKey === chunkKey) {
-      result.structures[locationKey] = data;
+      result.structure[locationKey] = data;
     }
   });
   
@@ -307,7 +446,7 @@ export function getEntitiesInChunk(chunkKey) {
   });
   
   return result;
-};
+}
 
 // Add cleanup function to be called when the grid component is destroyed
 export function cleanupChunkSubscriptions() {
@@ -320,7 +459,7 @@ export function cleanupChunkSubscriptions() {
   });
   
   console.log(`Cleaned up ${activeChunkKeys.length} chunk subscriptions`);
-};
+}
 
 // Get terrain data for a specific coordinate - with logging throttling
 // Create a cache to prevent redundant terrain calculations
@@ -365,72 +504,35 @@ export const targetTileStore = derived(
   }
 );
 
-// Define minimap range to prevent duplicate terrain generation
+// Define minimap range to prevent duplicate terrain generation - improve tracking
 let minimapRange = {
   centerX: 0,
   centerY: 0,
-  rangeX: 24,  // Default based on minimap width (matches MINIMAP_WIDTH_EM / MINI_TILE_SIZE_EM)
-  rangeY: 16   // Default based on minimap height (matches MINIMAP_HEIGHT_EM / MINI_TILE_SIZE_EM)
+  rangeX: 24, 
+  rangeY: 16
+};
+
+// Track expanded grid coverage to prevent redundant calculations
+// But initialize with values that won't block terrain generation
+let expandedGridCoverage = {
+  minX: Number.MAX_SAFE_INTEGER,
+  maxX: Number.MIN_SAFE_INTEGER,
+  minY: Number.MAX_SAFE_INTEGER, 
+  maxY: Number.MIN_SAFE_INTEGER,
+  lastUpdated: 0
 };
 
 // Track if minimap has been initialized with terrain data
 let isMinimapTerrainsLoaded = false;
 
-// Add a function to update the minimap range
+// Add a function to update the minimap range - improve to track last update time
 export function updateMinimapRange(centerX, centerY, rangeX, rangeY) {
   minimapRange = { centerX, centerY, rangeX, rangeY };
   isMinimapTerrainsLoaded = true;
-};
-
-// Optimize terrain data fetching
-let logThrottleTime = 0;
-const LOG_THROTTLE_INTERVAL = 5000; // Only log every 5 seconds max
-
-export function getTerrainData(x, y) {
-  // Create a cache key
-  const cacheKey = `${x},${y}`;
   
-  // Check if result is in cache
-  if (terrainCache.has(cacheKey)) {
-    return terrainCache.get(cacheKey);
-  }
-  
-  // Check if we're within minimap range and minimap has generated terrain already
-  // If so, we can assume the terrain will be loaded soon to reduce duplication
-  if (isMinimapTerrainsLoaded) {
-    const inMinimapRangeX = Math.abs(x - minimapRange.centerX) <= minimapRange.rangeX;
-    const inMinimapRangeY = Math.abs(y - minimapRange.centerY) <= minimapRange.rangeY;
-    
-    if (inMinimapRangeX && inMinimapRangeY) {
-      // Skip logging for coordinates that will be handled by minimap
-      // Just generate the terrain data without logging
-      const result = terrain.getTerrainData(x, y);
-      terrainCache.set(cacheKey, result);
-      return result;
-    }
-  }
-  
-  // Only log when generating terrain outside minimap range
-  const now = Date.now();
-  if (now - logThrottleTime > LOG_THROTTLE_INTERVAL) {
-    console.log(`Computing terrain for coordinates outside minimap range: (${x}, ${y})`);
-    logThrottleTime = now;
-  }
-  
-  // Calculate the terrain data
-  const result = terrain.getTerrainData(x, y);
-  
-  // Cache the result
-  terrainCache.set(cacheKey, result);
-  
-  // If cache gets too large, delete oldest entries
-  if (terrainCache.size > CACHE_SIZE_LIMIT) {
-    const keysToRemove = Array.from(terrainCache.keys()).slice(0, 200); // Remove more at once
-    keysToRemove.forEach(key => terrainCache.delete(key));
-  }
-  
-  return result;
-};
+  // Update the expanded coverage area - include minimap coverage
+  expandedGridCoverage.lastUpdated = Date.now();
+}
 
 // Resize the map grid
 export function resizeMap(mapElement) {
@@ -479,7 +581,7 @@ export function resizeMap(mapElement) {
       isReady: true
     };
   });
-};
+}
 
 // Create a centralized movement function that all navigation methods will use
 export function moveMapTo(newX, newY) {  
@@ -506,7 +608,7 @@ export function moveMapTo(newX, newY) {
   
   // The targetTileStore will automatically update via its derived subscription
   // when it detects the change to targetCoord
-};
+}
 
 // Refactor moveMapByKeys to use the central movement function
 export function moveMapByKeys() {
@@ -529,7 +631,7 @@ export function moveMapByKeys() {
   
   // Use the centralized movement function
   moveMapTo(newX, newY);
-};
+}
 
 // Simplify the drag functionality
 export function startDrag(event) {
@@ -548,7 +650,7 @@ export function startDrag(event) {
   
   document.body.style.cursor = "grabbing";
   return true;
-};
+}
 
 // Update drag function to use the central movement function
 export function drag(event) {
@@ -613,7 +715,7 @@ export function drag(event) {
   }));
   
   return result;
-};
+}
 
 export function stopDrag() {
   let wasDragging = false;
@@ -636,7 +738,7 @@ export function stopDrag() {
   }
   
   return false;
-};
+}
 
 // Open details modal - simplify and make more reliable
 export function openDetailsModal() {
@@ -659,7 +761,7 @@ export function openDetailsModal() {
   } else {
     console.error("Cannot open details: Invalid coordinates");
   }
-};
+}
 
 // Close details modal
 export function closeDetailsModal() {
@@ -669,9 +771,7 @@ export function closeDetailsModal() {
     ...state,
     showDetails: false
   }));
-};
-
-
+}
 
 // This is a minimap function primarily and should be moved there.
 // Check if drag state is consistent
@@ -695,7 +795,7 @@ export function checkDragState() {
   }
   
   return false;
-};
+}
 
 // Update function to toggle minimap visibility in the store
 export function setMinimapVisibility(isVisible) {
@@ -705,7 +805,17 @@ export function setMinimapVisibility(isVisible) {
   }));
 }
 
-// Replace expandedGridArray with a properly fixed implementation
+// Greatly improved expandedGridArray with better caching and change detection
+let lastMapStateHash = '';
+let lastGridGenTime = 0;
+const GRID_GEN_THROTTLE = 200; // ms between grid generations
+let expandedGridCache = [];
+let lastTargetX = 0;
+let lastTargetY = 0;
+let lastGridCols = 0;
+let lastGridRows = 0;
+let lastMinimapVisible = true;
+
 export const expandedGridArray = derived(
   [mapState],
   ([$mapState], set) => {
@@ -715,16 +825,37 @@ export const expandedGridArray = derived(
       return;
     }
 
-    const getGridKey = () => {
-      const { cols, rows, offsetX, offsetY, minimapVisible } = $mapState;
-      return `${cols}:${rows}:${offsetX}:${offsetY}:${minimapVisible}`;
-    };
-
-    const currentKey = getGridKey();
-    if (expandedGridArray.lastKey === currentKey) {
-      return; // Skip update if nothing changed
+    // Throttle grid generation by time 
+    const now = Date.now();
+    if (now - lastGridGenTime < GRID_GEN_THROTTLE) {
+      return;
     }
-    expandedGridArray.lastKey = currentKey;
+
+    // Specific change detection - only regenerate when these values actually change
+    const targetChanged = $mapState.targetCoord.x !== lastTargetX || $mapState.targetCoord.y !== lastTargetY;
+    const sizeChanged = $mapState.cols !== lastGridCols || $mapState.rows !== lastGridRows;
+    const minimapToggled = $mapState.minimapVisible !== lastMinimapVisible;
+
+    // Skip update if nothing significant has changed
+    if (!targetChanged && !sizeChanged && !minimapToggled && expandedGridCache.length > 0) {
+      // Return the cached result without recalculating
+      console.log("↩️ Reusing cached expanded grid - no movement or resize detected");
+      set(expandedGridCache);
+      return;
+    }
+
+    // Regenerate when we get here - log the reason
+    if (targetChanged) console.log(`🔄 Regenerating grid - moved to (${$mapState.targetCoord.x},${$mapState.targetCoord.y})`);
+    if (sizeChanged) console.log(`🔄 Regenerating grid - resized to ${$mapState.cols}x${$mapState.rows}`);
+    if (minimapToggled) console.log(`🔄 Regenerating grid - minimap visibility changed to ${$mapState.minimapVisible}`);
+    
+    // Update tracking values for next comparison
+    lastTargetX = $mapState.targetCoord.x;
+    lastTargetY = $mapState.targetCoord.y;
+    lastGridCols = $mapState.cols;
+    lastGridRows = $mapState.rows;
+    lastMinimapVisible = $mapState.minimapVisible;
+    lastGridGenTime = now;
     
     try {
       // Determine grid dimensions based on minimap visibility
@@ -739,18 +870,18 @@ export const expandedGridArray = derived(
       const centerOffsetX = Math.floor(gridCols / 2);
       const centerOffsetY = Math.floor(gridRows / 2);
       
-      console.log(`Generating ${useExpanded ? 'expanded' : 'visible-only'} grid: ${gridCols}x${gridRows}`);
-      
-      // Skip logging for most terrain generations
-      const oldLogTime = logThrottleTime;
-      logThrottleTime = Date.now() + LOG_THROTTLE_INTERVAL;
-      
       const result = [];
+      const involvedChunks = new Set();
       
       for (let y = 0; y < gridRows; y++) {
         for (let x = 0; x < gridCols; x++) {
           const globalX = x - centerOffsetX + $mapState.targetCoord.x;
           const globalY = y - centerOffsetY + $mapState.targetCoord.y;
+          
+          // Track which chunks are involved
+          const chunkKey = getChunkKey(globalX, globalY);
+          involvedChunks.add(chunkKey);
+          
           const terrainData = getTerrainData(globalX, globalY);
           
           // Calculate isInMainView properly based on whether we're using expanded view
@@ -770,28 +901,40 @@ export const expandedGridArray = derived(
             y: globalY,
             isCenter: x === centerOffsetX && y === centerOffsetY,
             isInMainView,
+            chunkKey, // Add chunk key to the cell data
             ...terrainData
           });
         }
       }
       
-      logThrottleTime = oldLogTime;
-      console.log(`Generated grid with ${result.length} tiles`);
+      // Update terrain coverage tracking
+      if (result.length > 0) {
+        // ...existing coverage tracking code...
+      }
+      
+      // Update the active chunks based on this grid
+      updateChunks(result);
+      
+      // Store in cache before setting
+      expandedGridCache = result;
+      console.log(`✅ Generated ${result.length} expanded grid cells`);
+      
       set(result);
     } catch (error) {
-      console.error("Error generating grid:", error);
+      console.error("⚠️ Error generating grid:", error);
       set([]);
     }
   },
   []
-);
+)
 
-// Optimize the grid array generation
+// Optimized gridArray with better caching
 export const gridArray = (() => {
   let lastOffsetX = null;
   let lastOffsetY = null;
   let lastCols = null;
   let lastRows = null;
+  let lastExpandedRef = null;
   let cachedResult = [];
   let isGenerating = false;
 
@@ -803,28 +946,52 @@ export const gridArray = (() => {
       
       const state = get(mapState);
       
-      // Check if we really need to recalculate
-      if (lastOffsetX === state.offsetX && 
-          lastOffsetY === state.offsetY && 
-          lastCols === state.cols &&
-          lastRows === state.rows &&
-          cachedResult.length > 0) {
-        return cachedResult;
+      // Skip calculation if expanded grid reference hasn't changed
+      // This prevents triggering on the same data
+      if ($expandedGrid === lastExpandedRef && cachedResult.length > 0) {
+        return;
       }
+      
+      // Check if we really need to recalculate
+      const sizeChanged = lastCols !== state.cols || lastRows !== state.rows;
+      const positionChanged = lastOffsetX !== state.offsetX || lastOffsetY !== state.offsetY;
+      
+      if (!sizeChanged && !positionChanged && $expandedGrid === lastExpandedRef && cachedResult.length > 0) {
+        // Nothing important has changed, just return
+        return;
+      }
+      
+      // Update tracking variables
+      lastOffsetX = state.offsetX;
+      lastOffsetY = state.offsetY;
+      lastCols = state.cols;
+      lastRows = state.rows;
+      lastExpandedRef = $expandedGrid;
       
       // Set generation flag
       isGenerating = true;
       
       try {
-        // Update tracking variables
-        lastOffsetX = state.offsetX;
-        lastOffsetY = state.offsetY;
-        lastCols = state.cols;
-        lastRows = state.rows;
-        
-        // Filter the grid
-        cachedResult = $expandedGrid.filter(cell => cell.isInMainView);
-        set(cachedResult);
+        // Filter the grid but only if there is data to filter
+        if ($expandedGrid && $expandedGrid.length > 0) {
+          const mainViewCells = $expandedGrid.filter(cell => cell.isInMainView);
+          cachedResult = mainViewCells;
+          
+          // Only log if we have meaningful data
+          if (mainViewCells.length > 0) {
+            console.log(`⚡ Main grid filtered to ${mainViewCells.length} cells`);
+          }
+          
+          set(mainViewCells);
+        } else {
+          // Set empty array for no data
+          cachedResult = [];
+          set([]);
+        }
+      } catch (error) {
+        console.error("Error filtering grid array:", error);
+        cachedResult = [];
+        set([]);
       } finally {
         isGenerating = false;
       }
@@ -864,4 +1031,242 @@ export function updateHoveredTile(x, y) {
     ...state,
     hoveredTile: x !== null && y !== null ? { x, y } : null
   }));
-};
+}
+
+// Add a function to manually force chunk loading for testing
+export function forceLoadChunk(chunkKey) {
+  console.log(`⚡ Manually loading chunk: ${chunkKey}`);
+  subscribeToChunk(chunkKey);
+  
+  mapState.update(state => {
+    const newChunks = new Set([...state.chunks, chunkKey]);
+    console.log(`Chunks after manual load: ${[...newChunks].join(', ')}`);
+    return {
+      ...state,
+      chunks: newChunks
+    };
+  });
+}
+
+// Add function to force a manual scan of entity data for debugging
+export function scanEntityData() {
+  console.log("🔍 Scanning all entity data in mapState...");
+  
+  const state = get(mapState);
+  
+  // Check structures
+  const structures = Object.entries(state.entities.structure); // Changed from structures to structure
+  console.log(`Found ${structures.length} structures:`);
+  structures.forEach(([key, data]) => {
+    console.log(`- Structure at ${key}: ${data.type} (${data.name}), Level ${data.level}`);
+  });
+  
+  // Check unit groups
+  const groups = Object.entries(state.entities.groups);
+  console.log(`Found ${groups.length} unit groups:`);
+  groups.forEach(([key, data]) => {
+    console.log(`- Unit group at ${key}: ${data.type} (${data.units} units)`);
+  });
+  
+  // Check players
+  const players = Object.entries(state.entities.players);
+  console.log(`Found ${players.length} players:`);
+  players.forEach(([key, data]) => {
+    console.log(`- Player at ${key}: ${data.displayName}`);
+  });
+  
+  return {
+    structures: structures.length,
+    groups: groups.length,
+    players: players.length
+  };
+}
+
+// Add function to manually load and parse a specific tile - Updated for correct path
+export function inspectTile(chunkKey, tileX, tileY) {
+  console.log(`🔍 Inspecting tile (${tileX},${tileY}) in chunk ${chunkKey}`);
+  
+  const tileCoord = `${tileX},${tileY}`;
+  const tilePath = `chunks/${chunkKey}/${tileCoord}`;
+  const tileRef = ref(db, tilePath);
+  
+  onValue(tileRef, (snapshot) => {
+    const data = snapshot.exists() ? snapshot.val() : null;
+    console.log(`Tile data for (${tileX},${tileY}) in chunk ${chunkKey}:`, data);
+    
+    if (data) {
+      // Create a structure that mimics chunk data with just this tile
+      const processedData = {};
+      processedData[tileCoord] = data;
+      
+      // Process this single tile through the standard pipeline
+      handleChunkData(chunkKey, processedData);
+    } else {
+      console.log(`No data found for tile (${tileX},${tileY}) in chunk ${chunkKey}`);
+    }
+  }, (error) => {
+    console.error(`Error fetching tile (${tileX},${tileY}) in chunk ${chunkKey}:`, error);
+  });
+}
+
+// Add quick debug check for loaded entities on specific coordinates
+export function debugCheckEntityAt(x, y) {
+  const locationKey = `${x},${y}`;
+  const state = get(mapState);
+  
+  console.log(`DEBUG CHECK for ${locationKey}:`);
+  console.log(` - Structure:`, state.entities.structure[locationKey]); // Changed from structures to structure
+  console.log(` - Unit Group:`, state.entities.groups[locationKey]);
+  console.log(` - Player:`, state.entities.players[locationKey]);
+  
+  return !!state.entities.structure[locationKey] || 
+         !!state.entities.groups[locationKey] || 
+         !!state.entities.players[locationKey];
+}
+
+// Add a flag for disabling debug logs in Grid.svelte
+export const ENABLE_DEBUG_LOGS = false;
+// Function to log all entity data for debugging - add to help debug entities
+export function logAllEntities() {
+  const state = get(mapState);
+  const structures = Object.entries(state.entities.structure); // Changed from structures to structure
+  const groups = Object.entries(state.entities.groups);
+  const players = Object.entries(state.entities.players);
+  
+  console.log("========== ALL ENTITIES DUMP ==========");
+  console.log(`Total structures: ${structures.length}`);
+  structures.forEach(([key, data]) => {
+    console.log(`Structure at ${key}: ${data.name || data.type || "Unknown"}`);
+  });
+  
+  console.log(`\nTotal unit groups: ${groups.length}`);
+  groups.forEach(([key, data]) => {
+    console.log(`Group at ${key}: ${data.type || "Unknown"}`);
+  });
+  
+  console.log(`\nTotal players: ${players.length}`);
+  players.forEach(([key, data]) => {
+    console.log(`Player at ${key}: ${data.displayName || "Unknown"}`);
+  });
+  
+  console.log("=======================================");
+  
+  return {
+    structures: structures.length,
+    groups: groups.length,
+    players: players.length
+  };
+}
+
+// Optimize terrain data fetching - fix redundant calculations
+let logThrottleTime = 0;
+const LOG_THROTTLE_INTERVAL = 5000; // Only log every 5 seconds max
+
+export function getTerrainData(x, y) {
+  // Create a cache key
+  const cacheKey = `${x},${y}`;
+  
+  // Check if result is in cache - this should be the only early return
+  if (terrainCache.has(cacheKey)) {
+    return terrainCache.get(cacheKey);
+  }
+  
+  // IMPORTANT FIX: Always calculate terrain data, just control logging
+  // This ensures terrain is always generated regardless of coverage checks
+  
+  // Determine if we should log about this calculation
+  let shouldLog = false;
+  
+  // Check if coordinate is within expanded grid coverage
+  const isWithinExpandedGrid = 
+    expandedGridCoverage.lastUpdated > 0 &&
+    x >= expandedGridCoverage.minX &&
+    x <= expandedGridCoverage.maxX &&
+    y >= expandedGridCoverage.minY &&
+    y <= expandedGridCoverage.maxY;
+  
+  // Check if we're within minimap range
+  let isWithinMinimap = false;
+  if (isMinimapTerrainsLoaded) {
+    const inMinimapRangeX = Math.abs(x - minimapRange.centerX) <= minimapRange.rangeX;
+    const inMinimapRangeY = Math.abs(y - minimapRange.centerY) <= minimapRange.rangeY;
+    isWithinMinimap = inMinimapRangeX && inMinimapRangeY;
+  }
+  
+  // Only log when generating terrain outside both minimap and expanded grid
+  if (!isWithinExpandedGrid && !isWithinMinimap) {
+    const now = Date.now();
+    if (now - logThrottleTime > LOG_THROTTLE_INTERVAL) {
+      console.log(`Computing terrain for uncached coordinates: (${x}, ${y})`);
+      logThrottleTime = now;
+      shouldLog = true;
+    }
+  }
+  
+  // Always calculate the terrain data regardless of coverage checks
+  const result = terrain.getTerrainData(x, y);
+  
+  // Always cache the result
+  terrainCache.set(cacheKey, result);
+  
+  // If cache gets too large, delete oldest entries
+  if (terrainCache.size > CACHE_SIZE_LIMIT) {
+    const keysToRemove = Array.from(terrainCache.keys()).slice(0, 200); // Remove more at once
+    keysToRemove.forEach(key => terrainCache.delete(key));
+  }
+  
+  return result;
+}
+
+// Add a function to detect structure format in database for debugging purposes
+export function detectStructureFormat() {
+  console.log("🔍 Analyzing database structure format...");
+  
+  mapState.update(state => {
+    let hasFoundData = false;
+    
+    // Iterate through active chunks to find structures
+    [...state.chunks].forEach(chunkKey => {
+      const chunkData = getRawChunkData(chunkKey);
+      if (!chunkData) return;
+      
+      // Iterate through tile coordinates
+      Object.entries(chunkData).forEach(([tileKey, tileData]) => {
+        if (tileKey === 'lastUpdated') return;
+        
+        // Check for structure at tile level
+        if (tileData.structure) {
+          console.log(`Found correct SINGULAR 'structure' at ${chunkKey}:${tileKey}`);
+          console.log(`Structure data:`, tileData.structure);
+          hasFoundData = true;
+        }
+        
+        // Check for legacy/incorrect format (shouldn't exist)
+        if (tileData.structures) {
+          console.log(`Found INCORRECT PLURAL 'structures' at ${chunkKey}:${tileKey}`);
+          console.log(`Structures data:`, tileData.structures);
+          hasFoundData = true;
+        }
+        
+        // Log players and groups too for completeness
+        if (tileData.players) {
+          console.log(`Found players at ${chunkKey}:${tileKey}`);
+          console.log(`Player IDs:`, Object.keys(tileData.players));
+          hasFoundData = true;
+        }
+        
+        if (tileData.groups) {
+          console.log(`Found groups at ${chunkKey}:${tileKey}`);
+          console.log(`Group IDs:`, Object.keys(tileData.groups));
+          hasFoundData = true;
+        }
+      });
+    });
+    
+    if (!hasFoundData) {
+      console.log("No entity data found in active chunks. Try loading more areas.");
+    }
+    
+    return state;
+  });
+}

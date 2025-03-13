@@ -5,6 +5,7 @@
     import Legend from '../../components/map/Legend.svelte';
     import Details from '../../components/map/Details.svelte';
     import Tutorial from '../../components/map/Tutorial.svelte';
+    import Debug from '../../components/map/Debug.svelte'; // Add this import
     import { 
         mapState, 
         xAxisArray, 
@@ -64,6 +65,7 @@
     {/if}
 
     <Tutorial />
+    <Debug /> <!-- Add this line -->
 </div>
 
 <style>

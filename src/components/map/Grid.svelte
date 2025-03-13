@@ -16,7 +16,8 @@
     targetTileStore,
     updateHoveredTile,
     cleanupChunkSubscriptions,
-    getEntitiesAt
+    getEntitiesAt,
+    debugCheckEntityAt // Add this import
 
   } from "../../lib/stores/map.js";
   
@@ -218,15 +219,62 @@
     $targetTileStore && $targetTileStore.color ? $targetTileStore.color : "var(--color-dark-blue)"
   );
 
-  // Check if a tile has entities to show indicators
+  // Improved function to check for entities with better logging
   function checkEntityIndicators(x, y) {
     const entities = getEntitiesAt(x, y);
+    
+    // Debug log for center tile
+    if (x === $mapState.targetCoord.x && y === $mapState.targetCoord.y) {
+      console.log("Center tile entity check:", {
+        x, y, 
+        hasStructure: !!entities.structure, // Already using singular structure
+        hasUnitGroup: !!entities.unitGroup,
+        hasPlayer: !!entities.player
+      });
+    }
+    
     return {
-      hasStructure: !!entities.structure,
+      hasStructure: !!entities.structure, // Already using singular structure
       hasUnitGroup: !!entities.unitGroup,
       hasPlayer: !!entities.player
     };
   }
+  
+  // Add a function to debug entity data when the map is ready
+  $effect(() => {
+    if ($mapState.isReady) {
+      // Check for entities at the center and surrounding tiles
+      setTimeout(() => {
+        const { x, y } = $mapState.targetCoord;
+        console.log("🔍 DEBUG: Checking entities on center and nearby tiles");
+        debugCheckEntityAt(x, y);      // Center
+        debugCheckEntityAt(x-1, y);    // Left
+        debugCheckEntityAt(x+1, y);    // Right
+        debugCheckEntityAt(x, y-1);    // Top
+        debugCheckEntityAt(x, y+1);    // Bottom
+        
+        // Check total entity count - updated to use singular structure
+        console.log("Structures loaded:", Object.keys($mapState.entities.structure).length); // Changed from structures to structure
+        console.log("Unit groups loaded:", Object.keys($mapState.entities.groups).length);
+        console.log("Players loaded:", Object.keys($mapState.entities.players).length);
+      }, 2000); // Small delay to ensure data is loaded
+    }
+  });
+
+  // Add a defensive check for entity data structure
+  $effect(() => {
+    if ($mapState.isReady) {
+      // Check if we're using the correct property name
+      if ($mapState.entities.structures !== undefined && $mapState.entities.structure === undefined) {
+        console.error("Error: Map state is using 'structures' (plural) but code expects 'structure' (singular)");
+      }
+      if ($mapState.entities.structure !== undefined && $mapState.entities.structures === undefined) {
+        console.log("Correctly using singular 'structure' field in map state");
+      }
+      
+      // ...existing code...
+    }
+  });
 </script>
 
 <svelte:window
@@ -434,47 +482,58 @@
   .entity-indicator {
     position: absolute;
     pointer-events: none;
+    z-index: 4; /* Increased z-index to ensure visibility */
   }
   
   .structure-indicator {
     bottom: 0.2em;
     left: 0.2em;
-    width: 0.5em;
-    height: 0.5em;
-    background: rgba(255, 255, 255, 0.8);
-    border: 0.0625em solid rgba(0, 0, 0, 0.2);
+    width: 0.6em; /* Slightly larger */
+    height: 0.6em; /* Slightly larger */
+    background: rgba(255, 255, 255, 0.9); /* Increased opacity */
+    border: 0.0625em solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.6); /* Added glow */
   }
   
   .unit-group-indicator {
     top: 0.2em;
     right: 0.2em;
-    width: 0.4em;
-    height: 0.4em;
+    width: 0.5em; /* Slightly larger */
+    height: 0.5em; /* Slightly larger */
     border-radius: 50%;
-    background: rgba(255, 100, 100, 0.8);
-    border: 0.0625em solid rgba(0, 0, 0, 0.2);
+    background: rgba(255, 100, 100, 0.9); /* Increased opacity */
+    border: 0.0625em solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0.15em rgba(255, 100, 100, 0.6); /* Added red glow */
   }
   
   .player-indicator {
     top: 0.2em;
     left: 0.2em;
-    width: 0.4em;
-    height: 0.4em;
-    background: rgba(100, 100, 255, 0.8);
+    width: 0.5em; /* Slightly larger */
+    height: 0.5em; /* Slightly larger */
+    background: rgba(100, 100, 255, 0.9); /* Increased opacity */
     border-radius: 50%;
-    border: 0.0625em solid rgba(0, 0, 0, 0.2);
+    border: 0.0625em solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0.15em rgba(100, 100, 255, 0.6); /* Added blue glow */
   }
   
   .tile.has-structure {
-    box-shadow: inset 0 -0.1em 0.2em rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 -0.1em 0.3em rgba(255, 255, 255, 0.3); /* Enhanced glow */
   }
   
   .tile.has-unit-group {
-    box-shadow: inset 0 0 0.2em rgba(255, 100, 100, 0.3);
+    box-shadow: inset 0 0 0.3em rgba(255, 100, 100, 0.4); /* Enhanced glow */
   }
   
   .tile.has-player {
-    box-shadow: inset 0 0 0.2em rgba(100, 100, 255, 0.3);
+    box-shadow: inset 0 0 0.3em rgba(100, 100, 255, 0.4); /* Enhanced glow */
+  }
+  
+  /* Combined entity indicator styles for better visibility */
+  .tile.has-structure.has-unit-group,
+  .tile.has-structure.has-player,
+  .tile.has-unit-group.has-player {
+    box-shadow: inset 0 0 0.4em rgba(255, 255, 255, 0.5); /* Enhanced combined glow */
   }
 
   @media (hover: none) {
