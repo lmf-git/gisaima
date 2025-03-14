@@ -603,13 +603,7 @@ export const expandedGridArray = derived(
   []
 );
 
-// Simplified grid array derived store
-export const gridArray = derived(
-  expandedGridArray,
-  ($expandedGrid) => $expandedGrid?.filter(cell => cell.isInMainView) || []
-);
-
-// Remove xAxisArray and yAxisArray derived stores - now generated in Axes.svelte
+// Remove the gridArray derived store - it will be moved to Grid.svelte
 
 // Hover state management
 export function updateHoveredTile(x, y) {

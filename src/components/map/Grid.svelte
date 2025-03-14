@@ -1,9 +1,10 @@
 <script>
   import { onMount, onDestroy } from "svelte";
+  import { derived } from "svelte/store";
   import { 
     mapState, 
     mapReady,
-    gridArray, 
+    expandedGridArray, // Import expandedGridArray instead of gridArray
     TILE_SIZE,
     resizeMap,
     startDrag,
@@ -267,6 +268,12 @@
   // Track the background color based on center tile
   const backgroundColor = $derived(
     $centerTileStore?.color || "var(--color-dark-blue)"
+  );
+
+  // Move gridArray derived store to local component
+  const gridArray = derived(
+    expandedGridArray,
+    ($expandedGrid) => $expandedGrid?.filter(cell => cell.isInMainView) || []
   );
 
 </script>
