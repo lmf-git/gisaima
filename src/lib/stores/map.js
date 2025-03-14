@@ -494,15 +494,6 @@ export function stopDrag() {
   return false;
 }
 
-
-
-export function setMinimapVisibility(isVisible) {
-  mapState.update(state => ({
-    ...state,
-    minimapVisible: isVisible
-  }));
-}
-
 // Grid generation with better caching
 export const coordinates = derived(
   mapState,

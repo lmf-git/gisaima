@@ -8,7 +8,7 @@
     GRID_ROWS_FACTOR,
     updateHoveredTile, 
     moveMapTo,
-    setMinimapVisibility
+    // Remove setMinimapVisibility import
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
   import Close from '../../components/icons/Close.svelte';
@@ -187,6 +187,14 @@
     if (isDrag) handleMinimapDrag(event);
   }
 
+  // Add local implementation of setMinimapVisibility
+  function setMinimapVisibility(isVisible) {
+    mapState.update(state => ({
+      ...state,
+      minimapVisible: isVisible
+    }));
+  }
+  
   // Visibility and localStorage
   function initializeVisibility() {
     if (browser) {
@@ -195,14 +203,14 @@
       open = storedVisibility === 'true' || 
         (storedVisibility === null && windowWidth >= BREAKPOINT);
       
-      setMinimapVisibility(open);
+      setMinimapVisibility(open); // Now using local function
       dd = true;
     }
   }
   
   function updateMinimapVisibility(isOpen) {
     open = isOpen;
-    setMinimapVisibility(isOpen);
+    setMinimapVisibility(isOpen); // Now using local function
     
     if (browser) {
       localStorage.setItem('minimapVisible', isOpen.toString());
