@@ -10,7 +10,6 @@
     startDrag,
     stopDrag,
     drag,
-    checkDragState,
     moveMapByKeys,
     centerTileStore,
     updateHoveredTile,
@@ -169,23 +168,16 @@
     }
   };
   
-  // Add a check after mouse/touch operations instead of continuous interval
-  function checkDragStateManually() {
-    checkDragState();
-  }
-  
   // Simplified global event handlers
   const globalMouseDown = () => $mapState.isMouseActuallyDown = true;
   const globalMouseUp = () => {
     $mapState.isMouseActuallyDown = false;
     if ($mapState.isDragging) handleStopDrag();
-    checkDragStateManually(); // Check once after mouse up
   };
   const globalMouseMove = event => {
     if ($mapState.isMouseActuallyDown && $mapState.isDragging) drag(event);
     else if (!$mapState.isMouseActuallyDown && $mapState.isDragging) {
       handleStopDrag();
-      checkDragStateManually(); // Check once after state change
     }
   };
 

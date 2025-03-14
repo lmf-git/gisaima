@@ -8,8 +8,6 @@
     import { 
         mapState, 
         mapReady,
-        openDetailsModal,
-        closeDetailsModal,
         centerTileStore,
         cleanupInternalIntervals
     } from "../../lib/stores/map.js";
@@ -18,6 +16,20 @@
     
     import { onMount, onDestroy } from 'svelte';
     import { browser } from '$app/environment';
+    
+    function openDetailsModal() {
+        mapState.update(state => ({
+            ...state,
+            showDetails: true
+        }));
+    }
+    
+    function closeDetailsModal() {
+        mapState.update(state => ({
+            ...state,
+            showDetails: false
+        }));
+    }
     
     onMount(() => {
         if (browser) document.body.classList.add('map-page-active');

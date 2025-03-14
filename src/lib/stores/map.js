@@ -494,43 +494,7 @@ export function stopDrag() {
   return false;
 }
 
-// Modal functionality
-export function openDetailsModal() {
-  mapState.update(state => ({
-    ...state,
-    showDetails: true
-  }));
-}
 
-export function closeDetailsModal() {
-  mapState.update(state => ({
-    ...state,
-    showDetails: false
-  }));
-}
-
-// Misc utilities
-export function checkDragState() {
-  let fixed = false;
-
-  mapState.update(state => {
-    if (!state.isMouseActuallyDown && state.isDragging) {
-      fixed = true;
-      return {
-        ...state,
-        isDragging: false
-      };
-    }
-    return state;
-  });
-
-  if (fixed) {
-    document.body.style.cursor = "default";
-    return true;
-  }
-
-  return false;
-}
 
 export function setMinimapVisibility(isVisible) {
   mapState.update(state => ({
