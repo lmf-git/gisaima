@@ -1,13 +1,13 @@
 <script>
   import { derived } from 'svelte/store';
   import { 
-    mapState, 
+    map, 
     mapReady,
     coordinates,
     GRID_COLS_FACTOR,
     GRID_ROWS_FACTOR,
     updateHoveredTile, 
-    moveMapTo
+    moveCenterTo
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
   import Close from '../../components/icons/Close.svelte';
@@ -23,8 +23,8 @@
   const DRAG_THRESHOLD = 5;
   
   // Calculate minimap dimensions - keep this unchanged
-  const tileCountX = $derived($mapReady ? $mapState.cols * GRID_COLS_FACTOR : 48);
-  const tileCountY = $derived($mapReady ? $mapState.rows * GRID_ROWS_FACTOR : 32);
+  const tileCountX = $derived($mapReady ? $map.cols * GRID_COLS_FACTOR : 48);
+  const tileCountY = $derived($mapReady ? $map.rows * GRID_ROWS_FACTOR : 32);
   const MINIMAP_WIDTH_EM = $derived(tileCountX * MINI_TILE_SIZE_EM);
   const MINIMAP_HEIGHT_EM = $derived(tileCountY * MINI_TILE_SIZE_EM);
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
@@ -32,10 +32,10 @@
   
   // Update area calculation - keep this unchanged
   const area = $derived({
-    startX: $mapState.centerCoord.x - Math.floor($mapState.cols / 2),
-    startY: $mapState.centerCoord.y - Math.floor($mapState.rows / 2),
-    width: $mapState.cols,
-    height: $mapState.rows
+    startX: $map.centerCoord.x - Math.floor($map.cols / 2),
+    startY: $map.centerCoord.y - Math.floor($map.rows / 2),
+    width: $map.cols,
+    height: $map.rows
   });
   
   // State variables
@@ -51,17 +51,17 @@
   
   // Create a simpler derived store that just adds display coordinates
   const minimapGrid = derived(
-    [coordinates, mapState],
-    ([$expandedGrid, $mapState]) => {
-      if (!$expandedGrid || $expandedGrid.length === 0 || !open || !$mapState.isReady) {
+    [coordinates, map],
+    ([$expandedGrid, $map]) => {
+      if (!$expandedGrid || $expandedGrid.length === 0 || !open || !$map.isReady) {
         return [];
       }
       
       // Calculate displayX and displayY for each cell
       return $expandedGrid.map(cell => {
         // Calculate position relative to center for minimap display
-        const displayX = cell.x - $mapState.centerCoord.x + viewRangeX;
-        const displayY = cell.y - $mapState.centerCoord.y + viewRangeY;
+        const displayX = cell.x - $map.centerCoord.x + viewRangeX;
+        const displayY = cell.y - $map.centerCoord.y + viewRangeY;
         
         // Check if this cell is within the main view
         const isVisible = 
@@ -71,9 +71,9 @@
           cell.y < area.startY + area.height;
         
         // Pre-calculate highlight state directly on the cell
-        const highlighted = !isMoving && $mapState.hoveredTile && 
-          cell.x === $mapState.hoveredTile.x && 
-          cell.y === $mapState.hoveredTile.y;
+        const highlighted = !isMoving && $map.hoveredTile && 
+          cell.x === $map.hoveredTile.x && 
+          cell.y === $map.hoveredTile.y;
         
         return {
           x: cell.x,
@@ -91,7 +91,7 @@
   );
   
   // Movement and interaction state
-  const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isDrag);
+  const isMoving = $derived($map.isDragging || $map.keyboardNavigationInterval !== null || isDrag);
   
   function highlightMiniTile(cell) {
     if (!isMoving) {
@@ -130,10 +130,10 @@
   }
   
   function navigateToPosition(tileX, tileY) {
-    const worldX = Math.round($mapState.centerCoord.x - viewRangeX + tileX);
-    const worldY = Math.round($mapState.centerCoord.y - viewRangeY + tileY);
+    const worldX = Math.round($map.centerCoord.x - viewRangeX + tileX);
+    const worldY = Math.round($map.centerCoord.y - viewRangeY + tileY);
     
-    moveMapTo(worldX, worldY);
+    moveCenterTo(worldX, worldY);
   }
 
   // Drag handling
@@ -170,7 +170,7 @@
     
     if (cellsMovedX === 0 && cellsMovedY === 0) return;
     
-    moveMapTo($mapState.centerCoord.x - cellsMovedX, $mapState.centerCoord.y - cellsMovedY);
+    moveCenterTo($map.centerCoord.x - cellsMovedX, $map.centerCoord.y - cellsMovedY);
     
     dragX = event.clientX;
     dragY = event.clientY;
@@ -191,7 +191,7 @@
 
   // Add local implementation of setMinimapVisibility
   function setMinimapVisibility(isVisible) {
-    mapState.update(state => ({
+    map.update(state => ({
       ...state,
       minimapVisible: isVisible
     }));
@@ -265,7 +265,7 @@
     
     if (cellsMovedX === 0 && cellsMovedY === 0) return;
     
-    moveMapTo($mapState.centerCoord.x - cellsMovedX, $mapState.centerCoord.y - cellsMovedY);
+    moveCenterTo($map.centerCoord.x - cellsMovedX, $map.centerCoord.y - cellsMovedY);
     
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
@@ -338,8 +338,8 @@
           <div 
             class="visible-area-frame"
             style="
-              grid-column-start: {viewRangeX + area.startX - $mapState.centerCoord.x + 1};
-              grid-row-start: {viewRangeY + area.startY - $mapState.centerCoord.y + 1};
+              grid-column-start: {viewRangeX + area.startX - $map.centerCoord.x + 1};
+              grid-row-start: {viewRangeY + area.startY - $map.centerCoord.y + 1};
               grid-column-end: span {area.width};
               grid-row-end: span {area.height};
             "

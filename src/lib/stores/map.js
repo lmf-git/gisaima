@@ -15,10 +15,9 @@ export const GRID_ROWS_FACTOR = 2.85;
 
 // Track active chunk subscriptions
 const activeChunkSubscriptions = new Map();
-let isCleaningUp = false;
 
 // Create a store using Svelte's store API
-export const mapState = writable({
+export const map = writable({
   isReady: false,
   cols: 0,
   rows: 0,
@@ -46,8 +45,8 @@ export const mapState = writable({
 
 // Export mapReady derived store for use across components
 export const mapReady = derived(
-  mapState,
-  $mapState => $mapState.isReady
+  map,
+  $map => $map.isReady
 );
 
 // Chunk utilities
@@ -161,7 +160,7 @@ const handleChunkData = (() => {
     });
 
     if (entitiesChanged) {
-      mapState.update(state => {
+      map.update(state => {
         return {
           ...state,
           entities: {
@@ -177,7 +176,7 @@ const handleChunkData = (() => {
 })();
 
 function cleanEntitiesForChunk(chunkKey) {
-  mapState.update(state => {
+  map.update(state => {
     const newEntities = {
       structure: { ...state.entities.structure },
       groups: { ...state.entities.groups },
@@ -220,12 +219,12 @@ export function updateChunks(gridArray) {
   });
 
   // Simple comparison
-  const state = get(mapState);
+  const state = get(map);
   const currentKeys = [...state.chunks].sort().join(',');
   const newKeys = [...chunkKeys].sort().join(',');
   if (currentKeys === newKeys) return;
 
-  mapState.update(state => {
+  map.update(state => {
     const added = [...chunkKeys].filter(key => !state.chunks.has(key));
     const removed = [...state.chunks].filter(key => !chunkKeys.has(key));
 
@@ -241,7 +240,7 @@ export function updateChunks(gridArray) {
 
 // Entity access functions
 export function getEntitiesAt(x, y) {
-  const state = get(mapState);
+  const state = get(map);
   const locationKey = `${x},${y}`;
 
   const structure = state.entities.structure[locationKey];
@@ -251,40 +250,33 @@ export function getEntitiesAt(x, y) {
   return { structure, unitGroup, player };
 }
 
-// Cleanup function
+// Cleanup function - simplified without the isCleaningUp flag
 export function cleanupChunkSubscriptions() {
-  if (isCleaningUp) return;
-  isCleaningUp = true;
+  const activeChunkKeys = Array.from(activeChunkSubscriptions.keys());
 
-  try {
-    const activeChunkKeys = Array.from(activeChunkSubscriptions.keys());
-
-    activeChunkKeys.forEach(chunkKey => {
-      try {
-        const unsubscribe = activeChunkSubscriptions.get(chunkKey);
-        if (typeof unsubscribe === 'function') {
-          unsubscribe();
-        }
-        activeChunkSubscriptions.delete(chunkKey);
-      } catch (err) {
-        console.error(`Error unsubscribing from chunk ${chunkKey}:`, err);
+  activeChunkKeys.forEach(chunkKey => {
+    try {
+      const unsubscribe = activeChunkSubscriptions.get(chunkKey);
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
       }
-    });
+      activeChunkSubscriptions.delete(chunkKey);
+    } catch (err) {
+      console.error(`Error unsubscribing from chunk ${chunkKey}:`, err);
+    }
+  });
 
-    mapState.update(state => ({
-      ...state,
-      chunks: new Set()
-    }));
-  } finally {
-    isCleaningUp = false;
-  }
+  map.update(state => ({
+    ...state,
+    chunks: new Set()
+  }));
 }
 
 // This is the public exported store that components use - simplified without cache
 export const centerTileStore = derived(
-  mapState,
-  ($mapState) => {
-    const { x, y } = $mapState.centerCoord;
+  map,
+  ($map) => {
+    const { x, y } = $map.centerCoord;
     const tileData = getTerrainData(x, y);
     return { x, y, ...tileData };
   }
@@ -292,7 +284,7 @@ export const centerTileStore = derived(
 
 // Map dimensions and positioning
 export function resizeMap(mapElement) {
-  mapState.update(state => {
+  map.update(state => {
     const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
     const tileSizePx = TILE_SIZE * baseFontSize;
     const width = mapElement.clientWidth;
@@ -335,7 +327,7 @@ export function resizeMap(mapElement) {
 
 // Movement functions - rename moveMapTo for clarity
 export function moveCenterTo(newX, newY) {
-  mapState.update(prev => {
+  map.update(prev => {
     const roundedX = newX !== undefined ? Math.round(newX) : prev.centerCoord.x;
     const roundedY = newY !== undefined ? Math.round(newY) : prev.centerCoord.y;
 
@@ -356,15 +348,12 @@ export function moveCenterTo(newX, newY) {
   });
 }
 
-// Keep moveMapTo for backward compatibility
-export const moveMapTo = moveCenterTo;
-
 // Update all other functions that use targetCoord to use centerCoord instead
 export function moveMapByKeys() {
   let xChange = 0;
   let yChange = 0;
 
-  const state = get(mapState);
+  const state = get(map);
   if (state.keysPressed.has("a") || state.keysPressed.has("arrowleft")) xChange += 1;
   if (state.keysPressed.has("d") || state.keysPressed.has("arrowright")) xChange -= 1;
   if (state.keysPressed.has("w") || state.keysPressed.has("arrowup")) yChange += 1;
@@ -379,7 +368,7 @@ export function moveMapByKeys() {
 export function startDrag(event) {
   if (event.button !== 0) return false;
 
-  mapState.update(state => ({
+  map.update(state => ({
     ...state,
     isDragging: true,
     dragStartX: event.clientX,
@@ -393,7 +382,7 @@ export function startDrag(event) {
 }
 
 export function drag(event) {
-  const state = get(mapState);
+  const state = get(map);
   if (!state.isDragging) return false;
 
   const deltaX = event.clientX - state.dragStartX;
@@ -413,7 +402,7 @@ export function drag(event) {
   const cellsMovedY = Math.round(dragAccumY / adjustedTileSize);
 
   if (cellsMovedX === 0 && cellsMovedY === 0) {
-    mapState.update(state => ({
+    map.update(state => ({
       ...state,
       dragStartX: event.clientX,
       dragStartY: event.clientY,
@@ -431,7 +420,7 @@ export function drag(event) {
 
   moveCenterTo(newX, newY);
 
-  mapState.update(state => ({
+  map.update(state => ({
     ...state,
     dragStartX: event.clientX,
     dragStartY: event.clientY,
@@ -445,7 +434,7 @@ export function drag(event) {
 export function stopDrag() {
   let wasDragging = false;
 
-  mapState.update(state => {
+  map.update(state => {
     if (!state.isDragging) return state;
 
     wasDragging = true;
@@ -467,17 +456,17 @@ export function stopDrag() {
 
 // Grid generation with better caching
 export const coordinates = derived(
-  mapState,
-  ($mapState, set) => {
+  map,
+  ($map, set) => {
     try {
-      const useExpanded = $mapState.minimapVisible;
+      const useExpanded = $map.minimapVisible;
 
       const gridCols = useExpanded
-        ? Math.min($mapState.cols * GRID_COLS_FACTOR)
-        : $mapState.cols;
+        ? Math.min($map.cols * GRID_COLS_FACTOR)
+        : $map.cols;
       const gridRows = useExpanded
-        ? Math.min($mapState.rows * GRID_ROWS_FACTOR)
-        : $mapState.rows;
+        ? Math.min($map.rows * GRID_ROWS_FACTOR)
+        : $map.rows;
 
       // Calculate viewport center directly when needed
       const viewportCenterX = Math.floor(gridCols / 2);
@@ -487,8 +476,8 @@ export const coordinates = derived(
 
       for (let y = 0; y < gridRows; y++) {
         for (let x = 0; x < gridCols; x++) {
-          const globalX = x - viewportCenterX + $mapState.centerCoord.x;
-          const globalY = y - viewportCenterY + $mapState.centerCoord.y;
+          const globalX = x - viewportCenterX + $map.centerCoord.x;
+          const globalY = y - viewportCenterY + $map.centerCoord.y;
 
           const chunkKey = getChunkKey(globalX, globalY);
           const terrainData = getTerrainData(globalX, globalY);
@@ -497,10 +486,10 @@ export const coordinates = derived(
 
           if (useExpanded) {
             isInMainView =
-              x >= viewportCenterX - Math.floor($mapState.cols / 2) &&
-              x <= viewportCenterX + Math.floor($mapState.cols / 2) &&
-              y >= viewportCenterY - Math.floor($mapState.rows / 2) &&
-              y <= viewportCenterY + Math.floor($mapState.rows / 2);
+              x >= viewportCenterX - Math.floor($map.cols / 2) &&
+              x <= viewportCenterX + Math.floor($map.cols / 2) &&
+              y >= viewportCenterY - Math.floor($map.rows / 2) &&
+              y <= viewportCenterY + Math.floor($map.rows / 2);
           }
 
           result.push({
@@ -527,7 +516,7 @@ export const coordinates = derived(
 
 // Hover state management
 export function updateHoveredTile(x, y) {
-  mapState.update(state => ({
+  map.update(state => ({
     ...state,
     hoveredTile: x !== null && y !== null ? { x, y } : null
   }));
@@ -540,7 +529,7 @@ export function getTerrainData(x, y) {
 
 // Entity loading
 export function loadInitialChunksForCenter() {
-  const state = get(mapState);
+  const state = get(map);
   if (!state.isReady || !state.centerCoord) return;
 
   const halfWidth = Math.floor(state.cols / 2) + 1;
@@ -561,7 +550,7 @@ export function loadInitialChunksForCenter() {
 
   const chunksArray = Array.from(chunkKeys);
 
-  mapState.update(state => ({
+  map.update(state => ({
     ...state,
     chunks: chunkKeys
   }));

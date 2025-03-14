@@ -6,27 +6,27 @@
     import Details from '../../components/map/Details.svelte';
     import Tutorial from '../../components/map/Tutorial.svelte';
     import { 
-        mapState, 
+        map, 
         mapReady,
         centerTileStore,
     } from "../../lib/stores/map.js";
     import { get } from 'svelte/store';
     
-    const isDragging = $derived($mapState.isDragging);
+    const isDragging = $derived($map.isDragging);
     
     import { onMount, onDestroy } from 'svelte';
     import { browser } from '$app/environment';
     
     // UI state management functions
     function openDetailsModal() {
-        mapState.update(state => ({
+        map.update(state => ({
             ...state,
             showDetails: true
         }));
     }
     
     function closeDetailsModal() {
-        mapState.update(state => ({
+        map.update(state => ({
             ...state,
             showDetails: false
         }));
@@ -35,11 +35,11 @@
     // Add locally implemented cleanupInternalIntervals function
     function cleanupInternalIntervals() {
       try {
-        const state = get(mapState);
+        const state = get(map);
         
         if (state.keyboardNavigationInterval) {
           clearInterval(state.keyboardNavigationInterval);
-          mapState.update(state => ({ ...state, keyboardNavigationInterval: null }));
+          map.update(state => ({ ...state, keyboardNavigationInterval: null }));
         }
         
         return true;
@@ -65,7 +65,7 @@
     <Grid />
     <Minimap />
 
-    {#if $mapState.showDetails}
+    {#if $map.showDetails}
         <Details 
         x={$centerTileStore.x}
         y={$centerTileStore.y}

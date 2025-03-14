@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from "svelte";
   import { derived } from "svelte/store";
   import { 
-    mapState, 
+    map, 
     mapReady,
     coordinates,
     TILE_SIZE,
@@ -29,8 +29,8 @@
   
   const entityIndicatorsCache = new Map();
   
-  const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isTouching);
-  const entityChangeCounter = $derived($mapState._entityChangeCounter || 0);
+  const isMoving = $derived($map.isDragging || $map.keyboardNavigationInterval !== null || isTouching);
+  const entityChangeCounter = $derived($map._entityChangeCounter || 0);
   let initialEntityLoadComplete = $state(false);
   
   // Clear cache on entity changes - optimize to only clear when entities change,
@@ -92,9 +92,9 @@
       if (resizeObserver) resizeObserver.disconnect();
       if (keyboardCleanup) keyboardCleanup();
       if (unsubscribeReady) unsubscribeReady();
-      if ($mapState.keyboardNavigationInterval) {
-        clearInterval($mapState.keyboardNavigationInterval);
-        mapState.update(state => ({...state, keyboardNavigationInterval: null}));
+      if ($map.keyboardNavigationInterval) {
+        clearInterval($map.keyboardNavigationInterval);
+        map.update(state => ({...state, keyboardNavigationInterval: null}));
       }
     };
   });
@@ -121,20 +121,20 @@
       if (!isNavigationKey) return;
       
       if (event.type === "keydown") {       
-        $mapState.keysPressed.add(key);
+        $map.keysPressed.add(key);
         
-        if (!$mapState.keyboardNavigationInterval) {
+        if (!$map.keyboardNavigationInterval) {
           moveMapByKeys(); // This will use our unified moveMapTo function now
-          $mapState.keyboardNavigationInterval = setInterval(moveMapByKeys, 200);
+          $map.keyboardNavigationInterval = setInterval(moveMapByKeys, 200);
         }
         
         if (key.startsWith("arrow")) event.preventDefault();
       } else if (event.type === "keyup") {
-        $mapState.keysPressed.delete(key);
+        $map.keysPressed.delete(key);
         
-        if ($mapState.keysPressed.size === 0 && $mapState.keyboardNavigationInterval) {
-          clearInterval($mapState.keyboardNavigationInterval);
-          $mapState.keyboardNavigationInterval = null;
+        if ($map.keysPressed.size === 0 && $map.keyboardNavigationInterval) {
+          clearInterval($map.keyboardNavigationInterval);
+          $map.keyboardNavigationInterval = null;
         }
       }
     };
@@ -173,11 +173,11 @@
   const globalMouseDown = () => isMouseActuallyDown = true;
   const globalMouseUp = () => {
     isMouseActuallyDown = false;
-    if ($mapState.isDragging) handleStopDrag();
+    if ($map.isDragging) handleStopDrag();
   };
   const globalMouseMove = event => {
-    if (isMouseActuallyDown && $mapState.isDragging) drag(event);
-    else if (!isMouseActuallyDown && $mapState.isDragging) {
+    if (isMouseActuallyDown && $map.isDragging) drag(event);
+    else if (!isMouseActuallyDown && $map.isDragging) {
       handleStopDrag();
     }
   };
@@ -185,7 +185,7 @@
   // Touch handling functions
   function handleTouchStart(event) {
     // Prevent touch actions until introduction completes
-    if (!introduced || !$mapState.isReady) return;
+    if (!introduced || !$map.isReady) return;
     
     // Prevent default to stop page scrolling immediately
     event.preventDefault();
@@ -208,7 +208,7 @@
   }
   
   function handleTouchMove(event) {
-    if (!isTouching || !$mapState.isReady) return;
+    if (!isTouching || !$map.isReady) return;
     event.preventDefault(); // Prevent scrolling when dragging
     
     // Increase touch sensitivity by applying a multiplier to touch movements
@@ -246,13 +246,13 @@
   
   // Track if a tile is currently hovered - for minimap sync
   const isHighlighted = (cell) => 
-    !isMoving && $mapState.hoveredTile && 
-    cell.x === $mapState.hoveredTile.x && 
-    cell.y === $mapState.hoveredTile.y;
+    !isMoving && $map.hoveredTile && 
+    cell.x === $map.hoveredTile.x && 
+    cell.y === $map.hoveredTile.y;
   
   // Only clear hover on movement when necessary
   $effect(() => {
-    if (isMoving && $mapState.hoveredTile) {
+    if (isMoving && $map.hoveredTile) {
       updateHoveredTile(null, null);
     }
   });
@@ -275,11 +275,11 @@
   onmouseup={globalMouseUp}
   onmousemove={globalMouseMove}
   onmouseleave={handleStopDrag}
-  onblur={() => $mapState.isDragging && handleStopDrag()}
+  onblur={() => $map.isDragging && handleStopDrag()}
   onvisibilitychange={() => document.visibilityState === 'hidden' && handleStopDrag()}
 />
 
-<div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={$mapState.showDetails} class:touch-active={isTouching}>
+<div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={$map.showDetails} class:touch-active={isTouching}>
   <div
     class="map"
     bind:this={mapElement}
@@ -296,14 +296,14 @@
   >
     {#if $mapReady}
       <div class="grid main-grid" 
-        style="--cols: {$mapState.cols}; --rows: {$mapState.rows};" 
+        style="--cols: {$map.cols}; --rows: {$map.rows};" 
         role="presentation"
         class:animated={!introduced}
       >
         {#each $gridArray as cell (cell.x + ':' + cell.y)}
           {@const distance = Math.sqrt(
-            Math.pow(cell.x - $mapState.centerCoord.x, 2) + 
-            Math.pow(cell.y - $mapState.centerCoord.y, 2)
+            Math.pow(cell.x - $map.centerCoord.x, 2) + 
+            Math.pow(cell.y - $map.centerCoord.y, 2)
           )}
           {@const entityIndicators = checkEntityIndicators(cell.x, cell.y)}
           <div
