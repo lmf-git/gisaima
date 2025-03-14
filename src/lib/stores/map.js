@@ -8,7 +8,6 @@ const WORLD_SEED = 454232;
 const terrain = new TerrainGenerator(WORLD_SEED);
 
 // Configuration constants
-export const KEYBOARD_MOVE_SPEED = 200;
 export const CHUNK_SIZE = 20;
 export const TILE_SIZE = 5;
 export const GRID_COLS_FACTOR = 3.5;
