@@ -16,7 +16,14 @@ export const GRID_ROWS_FACTOR = 2.85;
 // Track active chunk subscriptions
 const activeChunkSubscriptions = new Map();
 
-// Create a store using Svelte's store API
+// Move entity state to a separate writable store to trigger coordinates updates
+export const entityStore = writable({
+  structure: {},
+  groups: {},
+  players: {},
+});
+
+// Create a store using Svelte's store API - simplify by removing entities
 export const map = writable({
   isReady: false,
   cols: 0,
@@ -32,13 +39,6 @@ export const map = writable({
   dragStartY: 0,
   keysPressed: new Set(),
   keyboardNavigationInterval: null,
-
-  entities: {
-    structure: {},
-    groups: {},
-    players: {},
-  },
-
   minimapVisible: true,
 });
 
@@ -94,7 +94,7 @@ function unsubscribeFromChunk(chunkKey) {
   return false;
 }
 
-// Simplified chunk data handling with closure
+// Simplified chunk data handling with closure - update to use entityStore
 const handleChunkData = (() => {
   // Private state within closure
   const chunkLastUpdated = new Map();
@@ -159,14 +159,12 @@ const handleChunkData = (() => {
     });
 
     if (entitiesChanged) {
-      map.update(state => {
+      // Update the entityStore instead of map
+      entityStore.update(entities => {
         return {
-          ...state,
-          entities: {
-            structure: { ...state.entities.structure, ...structureUpdates },
-            groups: { ...state.entities.groups, ...groupUpdates },
-            players: { ...state.entities.players, ...playerUpdates }
-          }
+          structure: { ...entities.structure, ...structureUpdates },
+          groups: { ...entities.groups, ...groupUpdates },
+          players: { ...entities.players, ...playerUpdates }
         };
       });
     }
@@ -174,11 +172,12 @@ const handleChunkData = (() => {
 })();
 
 function cleanEntitiesForChunk(chunkKey) {
-  map.update(state => {
+  // Update entityStore instead of map
+  entityStore.update(entities => {
     const newEntities = {
-      structure: { ...state.entities.structure },
-      groups: { ...state.entities.groups },
-      players: { ...state.entities.players }
+      structure: { ...entities.structure },
+      groups: { ...entities.groups },
+      players: { ...entities.players }
     };
 
     // Remove entities belonging to this chunk
@@ -200,10 +199,7 @@ function cleanEntitiesForChunk(chunkKey) {
       }
     });
 
-    return {
-      ...state,
-      entities: newEntities
-    };
+    return newEntities;
   });
 }
 
@@ -236,16 +232,16 @@ export function updateChunks(gridArray) {
   });
 }
 
-// Entity access functions
+// Entity access functions - simplified to use entityStore
 export function getEntitiesAt(x, y) {
-  const state = get(map);
+  const entities = get(entityStore);
   const locationKey = `${x},${y}`;
 
-  const structure = state.entities.structure[locationKey];
-  const unitGroup = state.entities.groups[locationKey];
-  const player = state.entities.players[locationKey];
-
-  return { structure, unitGroup, player };
+  return {
+    structure: entities.structure[locationKey],
+    unitGroup: entities.groups[locationKey],
+    player: entities.players[locationKey]
+  };
 }
 
 // Cleanup function - simplified without the isCleaningUp flag
@@ -452,10 +448,10 @@ export function stopDrag() {
   return false;
 }
 
-// Grid generation with better caching
+// Grid generation with entities integrated
 export const coordinates = derived(
-  map,
-  ($map, set) => {
+  [map, entityStore],
+  ([$map, $entities], set) => {
     try {
       const useExpanded = $map.minimapVisible;
 
@@ -476,6 +472,7 @@ export const coordinates = derived(
         for (let x = 0; x < gridCols; x++) {
           const globalX = x - viewportCenterX + $map.centerCoord.x;
           const globalY = y - viewportCenterY + $map.centerCoord.y;
+          const locationKey = `${globalX},${globalY}`;
 
           const chunkKey = getChunkKey(globalX, globalY);
           const terrainData = getTerrainData(globalX, globalY);
@@ -490,11 +487,16 @@ export const coordinates = derived(
               y <= viewportCenterY + Math.floor($map.rows / 2);
           }
           
-          // Add highlighted property directly to coordinates
+          // Add highlighted property directly
           const highlighted = $map.hoveredTile && 
             globalX === $map.hoveredTile.x && 
             globalY === $map.hoveredTile.y;
-
+          
+          // Add entity information directly
+          const structure = $entities.structure[locationKey];
+          const unitGroup = $entities.groups[locationKey];
+          const player = $entities.players[locationKey];
+          
           result.push({
             x: globalX,
             y: globalY,
@@ -503,7 +505,15 @@ export const coordinates = derived(
             chunkKey,
             biome: terrainData.biome,
             color: terrainData.color,
-            highlighted
+            highlighted,
+            // Entity flags for easy rendering
+            hasStructure: !!structure,
+            hasUnitGroup: !!unitGroup,
+            hasPlayer: !!player,
+            // Include actual entity data if needed
+            structure, 
+            unitGroup,
+            player
           });
         }
       }

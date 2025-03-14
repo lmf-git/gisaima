@@ -14,7 +14,6 @@
     centerTileStore,
     updateHoveredTile,
     cleanupChunkSubscriptions,
-    getEntitiesAt,
     loadInitialChunksForCenter,
   } from "../../lib/stores/map.js";
   
@@ -27,44 +26,14 @@
   let touchStartY = $state(0);
   let isMouseActuallyDown = $state(false);
   
-  const entityIndicatorsCache = new Map();
+  // No need for entity cache anymore!
   
   const isMoving = $derived($map.isDragging || $map.keyboardNavigationInterval !== null || isTouching);
   
-  // Replace entityChangeCounter with direct entity monitoring
-  const entities = derived(
-    map,
-    $map => $map.entities
-  );
+  // No need for entities derived store or effect to clear cache
   
-  // Clear cache when the entities structure changes - fix the $effect syntax
-  $effect(() => {
-    // Access $entities inside the effect to create the dependency
-    $entities; // This makes the effect depend on entities changes
-    entityIndicatorsCache.clear();
-  });
-
   let initialEntityLoadComplete = $state(false);
   
-  // Improved entity indicator check with caching
-  function checkEntityIndicators(x, y) {
-    const cacheKey = `${x},${y}`;
-    
-    if (!entityIndicatorsCache.has(cacheKey)) {
-      const entities = getEntitiesAt(x, y);
-      const result = {
-        hasStructure: !!entities.structure,
-        hasUnitGroup: !!entities.unitGroup,
-        hasPlayer: !!entities.player
-      };
-      
-      entityIndicatorsCache.set(cacheKey, result);
-      return result;
-    }
-    
-    return entityIndicatorsCache.get(cacheKey);
-  }
-
   // Initialize when mounted
   onMount(() => {
     // Setup resize observer
@@ -249,12 +218,6 @@
     if (!isMoving) updateHoveredTile(cell.x, cell.y);
   }
   
-  // Track if a tile is currently hovered - for minimap sync
-  const isHighlighted = (cell) => 
-    !isMoving && $map.hoveredTile && 
-    cell.x === $map.hoveredTile.x && 
-    cell.y === $map.hoveredTile.y;
-  
   // Only clear hover on movement when necessary
   $effect(() => {
     if (isMoving && $map.hoveredTile) {
@@ -310,14 +273,14 @@
             Math.pow(cell.x - $map.centerCoord.x, 2) + 
             Math.pow(cell.y - $map.centerCoord.y, 2)
           )}
-          {@const entityIndicators = checkEntityIndicators(cell.x, cell.y)}
+          <!-- No need to check entity indicators separately! -->
           <div
             class="tile"
             class:center={cell.isCenter}
-            class:highlighted={isHighlighted(cell)}
-            class:has-structure={entityIndicators.hasStructure}
-            class:has-unit-group={entityIndicators.hasUnitGroup}
-            class:has-player={entityIndicators.hasPlayer}
+            class:highlighted={cell.highlighted}
+            class:has-structure={cell.hasStructure}
+            class:has-unit-group={cell.hasUnitGroup}
+            class:has-player={cell.hasPlayer}
             onmouseenter={() => handleTileHover(cell)}
             role="gridcell"
             tabindex="-1"
@@ -330,13 +293,13 @@
           >
             <span class="coords">{cell.x},{cell.y}</span>
 
-            {#if entityIndicators.hasStructure}
+            {#if cell.hasStructure}
               <div class="entity-indicator structure-indicator" aria-hidden="true"></div>
             {/if}
-            {#if entityIndicators.hasUnitGroup}
+            {#if cell.hasUnitGroup}
               <div class="entity-indicator unit-group-indicator" aria-hidden="true"></div>
             {/if}
-            {#if entityIndicators.hasPlayer}
+            {#if cell.hasPlayer}
               <div class="entity-indicator player-indicator" aria-hidden="true"></div>
             {/if}
           </div>
@@ -344,8 +307,6 @@
       </div>
     {/if}
   </div>
-
-
 </div>
 
 <style>
