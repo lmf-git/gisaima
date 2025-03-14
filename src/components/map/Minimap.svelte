@@ -18,15 +18,12 @@
   let windowWidth = $state(browser ? window.innerWidth : 0);
 
   // Constants
-  const MINI_TILE_SIZE_EM = 0.5;
   const BREAKPOINT = 768;
   const DRAG_THRESHOLD = 5;
   
   // Calculate minimap dimensions - keep this unchanged
   const tileCountX = $derived($mapReady ? $map.cols * GRID_COLS_FACTOR : 48);
   const tileCountY = $derived($mapReady ? $map.rows * GRID_ROWS_FACTOR : 32);
-  const MINIMAP_WIDTH_EM = $derived(tileCountX * MINI_TILE_SIZE_EM);
-  const MINIMAP_HEIGHT_EM = $derived(tileCountY * MINI_TILE_SIZE_EM);
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
   const viewRangeY = $derived(Math.floor(tileCountY / 2));
   
@@ -49,58 +46,9 @@
   let touchStartY = $state(0);
   let isTouching = $state(false);
   
-  // Create a simpler derived store that just adds display coordinates
-  const minimapGrid = derived(
-    [coordinates, map],
-    ([$expandedGrid, $map]) => {
-      if (!$expandedGrid || $expandedGrid.length === 0 || !open || !$map.isReady) {
-        return [];
-      }
-      
-      // Calculate displayX and displayY for each cell
-      return $expandedGrid.map(cell => {
-        // Calculate position relative to center for minimap display
-        const displayX = cell.x - $map.centerCoord.x + viewRangeX;
-        const displayY = cell.y - $map.centerCoord.y + viewRangeY;
-        
-        // Check if this cell is within the main view
-        const isVisible = 
-          cell.x >= area.startX && 
-          cell.x < area.startX + area.width &&
-          cell.y >= area.startY && 
-          cell.y < area.startY + area.height;
-        
-        // Pre-calculate highlight state directly on the cell
-        const highlighted = !isMoving && $map.hoveredTile && 
-          cell.x === $map.hoveredTile.x && 
-          cell.y === $map.hoveredTile.y;
-        
-        return {
-          x: cell.x,
-          y: cell.y,
-          displayX,
-          displayY,
-          isCenter: cell.isCenter,
-          isVisible,
-          color: cell.color,
-          highlighted
-        };
-      });
-    },
-    []
-  );
+  // Filter coordinates for minimap - much simpler now, doesn't remap
+  const grid = $derived(coordinates);
   
-  // Movement and interaction state
-  const isMoving = $derived($map.isDragging || $map.keyboardNavigationInterval !== null || isDrag);
-  
-  function highlightMiniTile(cell) {
-    if (!isMoving) {
-      updateHoveredTile(cell.x, cell.y);
-    }
-  }
-  
-  // Remove the isTileHighlighted function since we now have it as a property
-
   // Click handling
   function handleMinimapClick(event) {
     if (wasDrag || !$mapReady) {
@@ -316,20 +264,22 @@
       aria-label="Mini map for navigation"
       class:drag={isDrag}
       class:touch-drag={isTouching}>
-      {#if $mapReady && $minimapGrid.length > 0}
+      {#if $mapReady && $grid.length > 0}
         <div class="minimap-grid" style="--grid-cols: {tileCountX}; --grid-rows: {tileCountY};">
-          {#each $minimapGrid as cell}
+          {#each $grid as cell}
+            {@const relativeX = cell.x - $map.centerCoord.x + viewRangeX}
+            {@const relativeY = cell.y - $map.centerCoord.y + viewRangeY}
             <div
               class="tile"
               class:center={cell.isCenter}
-              class:visible={cell.isVisible}
+              class:visible={cell.isInMainView}
               class:highlighted={cell.highlighted}
               style="
                 background-color: {cell.highlighted ? 'white' : cell.color};
-                grid-column-start: {cell.displayX + 1};
-                grid-row-start: {cell.displayY + 1};
+                grid-column-start: {relativeX + 1};
+                grid-row-start: {relativeY + 1};
               "
-              onmouseenter={() => highlightMiniTile(cell)} 
+              onmouseenter={() => updateHoveredTile(cell.x, cell.y)} 
               role="presentation"
               aria-hidden="true">
             </div>

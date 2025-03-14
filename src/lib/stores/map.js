@@ -489,6 +489,11 @@ export const coordinates = derived(
               y >= viewportCenterY - Math.floor($map.rows / 2) &&
               y <= viewportCenterY + Math.floor($map.rows / 2);
           }
+          
+          // Add highlighted property directly to coordinates
+          const highlighted = $map.hoveredTile && 
+            globalX === $map.hoveredTile.x && 
+            globalY === $map.hoveredTile.y;
 
           result.push({
             x: globalX,
@@ -497,7 +502,8 @@ export const coordinates = derived(
             isInMainView,
             chunkKey,
             biome: terrainData.biome,
-            color: terrainData.color
+            color: terrainData.color,
+            highlighted
           });
         }
       }
