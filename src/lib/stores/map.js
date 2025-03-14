@@ -29,7 +29,6 @@ export const mapState = writable({
   hoveredTile: null,
   showDetails: false,
   isDragging: false,
-  isMouseActuallyDown: false,
   dragStartX: 0,
   dragStartY: 0,
   keysPressed: new Set(),
@@ -51,16 +50,10 @@ export const mapReady = derived(
   $mapState => $mapState.isReady
 );
 
-// Centralized cache for terrain data
-const terrainCache = new Map();
-
 // Chunk utilities
 export function getChunkKey(x, y) {
   return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
 }
-
-// Store raw chunk data for debugging
-const rawChunkData = new Map();
 
 // Firebase interaction
 function subscribeToChunk(chunkKey) {
@@ -72,7 +65,6 @@ function subscribeToChunk(chunkKey) {
     const unsubscribe = onValue(chunkRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val();
-        rawChunkData.set(chunkKey, data);
         handleChunkData(chunkKey, data);
       }
     },
@@ -104,69 +96,71 @@ function unsubscribeFromChunk(chunkKey) {
   return false;
 }
 
-// Simplified chunk data handling
-const chunkLastUpdated = new Map();
-function handleChunkData(chunkKey, data) {
-  if (!data) return;
+// Simplified chunk data handling with closure
+const handleChunkData = (() => {
+  // Private state within closure
+  const chunkLastUpdated = new Map();
+  
+  return (chunkKey, data) => {
+    if (!data) return;
 
-  const lastUpdated = data.lastUpdated || Date.now();
-  const prevUpdated = chunkLastUpdated.get(chunkKey) || 0;
-  if (lastUpdated <= prevUpdated && lastUpdated !== 0) return;
-  chunkLastUpdated.set(chunkKey, lastUpdated);
+    const lastUpdated = data.lastUpdated || Date.now();
+    const prevUpdated = chunkLastUpdated.get(chunkKey) || 0;
+    if (lastUpdated <= prevUpdated && lastUpdated !== 0) return;
+    chunkLastUpdated.set(chunkKey, lastUpdated);
 
-  let structureUpdates = {};
-  let groupUpdates = {};
-  let playerUpdates = {};
-  let entitiesChanged = false;
+    let structureUpdates = {};
+    let groupUpdates = {};
+    let playerUpdates = {};
+    let entitiesChanged = false;
 
-  Object.entries(data).forEach(([tileKey, tileData]) => {
-    if (tileKey === 'lastUpdated') return;
+    Object.entries(data).forEach(([tileKey, tileData]) => {
+      if (tileKey === 'lastUpdated') return;
 
-    const [tileX, tileY] = tileKey.split(',').map(Number);
+      const [tileX, tileY] = tileKey.split(',').map(Number);
 
-    if (tileData.structure) {
-      structureUpdates[tileKey] = {
-        ...tileData.structure,
-        chunkKey,
-        x: tileX,
-        y: tileY
-      };
-      entitiesChanged = true;
-    }
-
-    if (tileData.players) {
-      const playerIds = Object.keys(tileData.players);
-      if (playerIds.length > 0) {
-        const playerId = playerIds[0];
-        playerUpdates[tileKey] = {
-          ...tileData.players[playerId],
-          id: playerId,
+      if (tileData.structure) {
+        structureUpdates[tileKey] = {
+          ...tileData.structure,
           chunkKey,
           x: tileX,
           y: tileY
         };
         entitiesChanged = true;
       }
-    }
 
-    if (tileData.groups) {
-      const groupIds = Object.keys(tileData.groups);
-      if (groupIds.length > 0) {
-        const groupId = groupIds[0];
-        groupUpdates[tileKey] = {
-          ...tileData.groups[groupId],
-          id: groupId,
-          chunkKey,
-          x: tileX,
-          y: tileY
-        };
-        entitiesChanged = true;
+      if (tileData.players) {
+        const playerIds = Object.keys(tileData.players);
+        if (playerIds.length > 0) {
+          const playerId = playerIds[0];
+          playerUpdates[tileKey] = {
+            ...tileData.players[playerId],
+            id: playerId,
+            chunkKey,
+            x: tileX,
+            y: tileY
+          };
+          entitiesChanged = true;
+        }
       }
-    }
-  });
 
-  if (entitiesChanged) {
-    Promise.resolve().then(() => {
+      if (tileData.groups) {
+        const groupIds = Object.keys(tileData.groups);
+        if (groupIds.length > 0) {
+          const groupId = groupIds[0];
+          groupUpdates[tileKey] = {
+            ...tileData.groups[groupId],
+            id: groupId,
+            chunkKey,
+            x: tileX,
+            y: tileY
+          };
+          entitiesChanged = true;
+        }
+      }
+    });
+
+    if (entitiesChanged) {
       mapState.update(state => {
         return {
           ...state,
@@ -178,9 +172,9 @@ function handleChunkData(chunkKey, data) {
           _entityChangeCounter: state._entityChangeCounter + 1
         };
       });
-    });
-  }
-}
+    }
+  };
+})();
 
 function cleanEntitiesForChunk(chunkKey) {
   mapState.update(state => {
@@ -281,37 +275,18 @@ export function cleanupChunkSubscriptions() {
       ...state,
       chunks: new Set()
     }));
-
-    rawChunkData.clear();
   } finally {
     isCleaningUp = false;
   }
 }
 
-// Change from CENTERED_TILE_STORE to a more descriptive name
-const centerTileCache = writable({
-  coordinates: { x: 0, y: 0 },
-  data: null
-});
-
-// This is the public exported store that components use
+// This is the public exported store that components use - simplified without cache
 export const centerTileStore = derived(
-  [mapState, centerTileCache],
-  ([$mapState, $centerTileCache]) => {
+  mapState,
+  ($mapState) => {
     const { x, y } = $mapState.centerCoord;
-
-    if (x !== $centerTileCache.coordinates.x || y !== $centerTileCache.coordinates.y) {
-      const tileData = getTerrainData(x, y);
-
-      centerTileCache.set({
-        coordinates: { x, y },
-        data: tileData
-      });
-
-      return { x, y, ...tileData };
-    }
-
-    return { x, y, ...$centerTileCache.data };
+    const tileData = getTerrainData(x, y);
+    return { x, y, ...tileData };
   }
 );
 
@@ -340,11 +315,6 @@ export function resizeMap(mapElement) {
     const offsetY = viewportCenterY + state.centerCoord.y;
 
     const initialTileData = getTerrainData(state.centerCoord.x, state.centerCoord.y);
-
-    centerTileCache.set({
-      coordinates: { x: state.centerCoord.x, y: state.centerCoord.y },
-      data: initialTileData
-    });
 
     // Load chunks directly if ready instead of using setTimeout
     if (state.isReady) {
@@ -412,7 +382,6 @@ export function startDrag(event) {
   mapState.update(state => ({
     ...state,
     isDragging: true,
-    isMouseActuallyDown: true,
     dragStartX: event.clientX,
     dragStartY: event.clientY,
     dragAccumX: 0,
@@ -556,8 +525,6 @@ export const coordinates = derived(
   []
 );
 
-// Remove the gridArray derived store - it will be moved to Grid.svelte
-
 // Hover state management
 export function updateHoveredTile(x, y) {
   mapState.update(state => ({
@@ -566,18 +533,9 @@ export function updateHoveredTile(x, y) {
   }));
 }
 
-// Terrain data with better caching
+// Terrain data without caching - directly use terrain generator
 export function getTerrainData(x, y) {
-  const cacheKey = `${x},${y}`;
-
-  if (terrainCache.has(cacheKey)) {
-    return terrainCache.get(cacheKey);
-  }
-
-  const result = terrain.getTerrainData(x, y);
-  terrainCache.set(cacheKey, result);
-
-  return result;
+  return terrain.getTerrainData(x, y);
 }
 
 // Entity loading
@@ -611,15 +569,7 @@ export function loadInitialChunksForCenter() {
   // Process existing chunks immediately
   chunksArray.forEach(chunkKey => {
     subscribeToChunk(chunkKey);
-
-    const existingData = rawChunkData.get(chunkKey);
-    if (existingData) {
-      handleChunkData(chunkKey, existingData);
-    }
   });
-
-  // Force entity display immediately instead of using setTimeout
-
 
   return chunksArray.length;
 }

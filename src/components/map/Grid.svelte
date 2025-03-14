@@ -25,6 +25,7 @@
   let isTouching = $state(false);
   let touchStartX = $state(0);
   let touchStartY = $state(0);
+  let isMouseActuallyDown = $state(false);
   
   const entityIndicatorsCache = new Map();
   
@@ -32,9 +33,10 @@
   const entityChangeCounter = $derived($mapState._entityChangeCounter || 0);
   let initialEntityLoadComplete = $state(false);
   
-  // Clear cache on entity changes
+  // Clear cache on entity changes - optimize to only clear when entities change,
+  // not on every center coord change
   $effect(() => {
-    if (entityChangeCounter > 0 || $mapState.centerCoord) {
+    if (entityChangeCounter > 0) {
       entityIndicatorsCache.clear();
     }
   });
@@ -168,14 +170,14 @@
   };
   
   // Simplified global event handlers
-  const globalMouseDown = () => $mapState.isMouseActuallyDown = true;
+  const globalMouseDown = () => isMouseActuallyDown = true;
   const globalMouseUp = () => {
-    $mapState.isMouseActuallyDown = false;
+    isMouseActuallyDown = false;
     if ($mapState.isDragging) handleStopDrag();
   };
   const globalMouseMove = event => {
-    if ($mapState.isMouseActuallyDown && $mapState.isDragging) drag(event);
-    else if (!$mapState.isMouseActuallyDown && $mapState.isDragging) {
+    if (isMouseActuallyDown && $mapState.isDragging) drag(event);
+    else if (!isMouseActuallyDown && $mapState.isDragging) {
       handleStopDrag();
     }
   };
@@ -233,9 +235,8 @@
       mapElement.classList.remove("dragging");
     }
     
-    // End the drag and check state once
+    // End the drag - remove non-existent function call
     stopDrag();
-    checkDragStateManually();
   }
 
   // Consolidate highlighting functions

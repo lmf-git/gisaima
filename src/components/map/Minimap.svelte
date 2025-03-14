@@ -7,8 +7,7 @@
     GRID_COLS_FACTOR,
     GRID_ROWS_FACTOR,
     updateHoveredTile, 
-    moveMapTo,
-    // Remove setMinimapVisibility import
+    moveMapTo
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
   import Close from '../../components/icons/Close.svelte';
@@ -71,6 +70,11 @@
           cell.y >= area.startY && 
           cell.y < area.startY + area.height;
         
+        // Pre-calculate highlight state directly on the cell
+        const highlighted = !isMoving && $mapState.hoveredTile && 
+          cell.x === $mapState.hoveredTile.x && 
+          cell.y === $mapState.hoveredTile.y;
+        
         return {
           x: cell.x,
           y: cell.y,
@@ -78,7 +82,8 @@
           displayY,
           isCenter: cell.isCenter,
           isVisible,
-          color: cell.color
+          color: cell.color,
+          highlighted
         };
       });
     },
@@ -94,10 +99,7 @@
     }
   }
   
-  const isTileHighlighted = (cell) => 
-    !isMoving && $mapState.hoveredTile && 
-    cell.x === $mapState.hoveredTile.x && 
-    cell.y === $mapState.hoveredTile.y;
+  // Remove the isTileHighlighted function since we now have it as a property
 
   // Click handling
   function handleMinimapClick(event) {
@@ -321,9 +323,9 @@
               class="tile"
               class:center={cell.isCenter}
               class:visible={cell.isVisible}
-              class:highlighted={isTileHighlighted(cell)} 
+              class:highlighted={cell.highlighted}
               style="
-                background-color: {isTileHighlighted(cell) ? 'white' : cell.color};
+                background-color: {cell.highlighted ? 'white' : cell.color};
                 grid-column-start: {cell.displayX + 1};
                 grid-row-start: {cell.displayY + 1};
               "
