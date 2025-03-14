@@ -1,12 +1,16 @@
 <script>
-  import { moveMapTo } from "../../lib/stores/map.js";
+  import { moveMapTo, mapState } from "../../lib/stores/map.js";
 
-  const { 
-    xAxisArray = [],
-    yAxisArray = [],
-    cols = 0,
-    rows = 0
-  } = $props();
+  // Generate the axis arrays locally using $derived rune
+  const xAxisArray = $derived($mapState.isReady ? Array.from({ length: $mapState.cols }, (_, x) => ({
+    value: $mapState.centerCoord.x - ($mapState.centerX - x),
+    isCenter: x === $mapState.centerX
+  })) : []);
+
+  const yAxisArray = $derived($mapState.isReady ? Array.from({ length: $mapState.rows }, (_, y) => ({
+    value: $mapState.centerCoord.y - ($mapState.centerY - y),
+    isCenter: y === $mapState.centerY
+  })) : []);
   
   const moveX = x => moveMapTo(x, undefined);
   const moveY = y => moveMapTo(undefined, y);
@@ -19,7 +23,7 @@
         class="label" 
         class:center={coord.isCenter} 
         onclick={() => moveX(coord.value)}
-        style="width: calc(100% / {cols}); --index: {i};">
+        style="width: calc(100% / {$mapState.cols}); --index: {i};">
         { coord.value }
       </button>
     {/each}
@@ -31,7 +35,7 @@
         class="label" 
         class:center={coord.isCenter} 
         onclick={() => moveY(coord.value)}
-        style="height: calc(100% / {rows}); --index: {i};">
+        style="height: calc(100% / {$mapState.rows}); --index: {i};">
         {coord.value}
       </button>
     {/each}

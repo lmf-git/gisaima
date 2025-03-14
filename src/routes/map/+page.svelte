@@ -8,8 +8,6 @@
     import { 
         mapState, 
         mapReady,
-        xAxisArray, 
-        yAxisArray,
         openDetailsModal,
         closeDetailsModal,
         centerTileStore,
@@ -53,12 +51,7 @@
     {/if}
 
     {#if $mapReady}
-        <Axes 
-        xAxisArray={$xAxisArray}
-        yAxisArray={$yAxisArray}
-        cols={$mapState.cols}
-        rows={$mapState.rows}
-        />
+        <Axes />
     {/if}
 
     <Tutorial />

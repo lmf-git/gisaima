@@ -609,28 +609,7 @@ export const gridArray = derived(
   ($expandedGrid) => $expandedGrid?.filter(cell => cell.isInMainView) || []
 );
 
-// Axis arrays
-export const xAxisArray = derived(
-  mapState,
-  ($mapState) => {
-    if (!$mapState.isReady) return [];
-    return Array.from({ length: $mapState.cols }, (_, x) => ({
-      value: $mapState.centerCoord.x - ($mapState.centerX - x),
-      isCenter: x === $mapState.centerX
-    }));
-  }
-);
-
-export const yAxisArray = derived(
-  mapState,
-  ($mapState) => {
-    if (!$mapState.isReady) return [];
-    return Array.from({ length: $mapState.rows }, (_, y) => ({
-      value: $mapState.centerCoord.y - ($mapState.centerY - y),
-      isCenter: y === $mapState.centerY
-    }));
-  }
-);
+// Remove xAxisArray and yAxisArray derived stores - now generated in Axes.svelte
 
 // Hover state management
 export function updateHoveredTile(x, y) {
