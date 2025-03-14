@@ -19,11 +19,11 @@ const activeChunkSubscriptions = new Map();
 let isCleaningUp = false;
 
 // Create a store using Svelte's store API
-export const mapState = writable({ 
+export const mapState = writable({
   isReady: false,
-  cols: 0, 
+  cols: 0,
   rows: 0,
-  offsetX: 0, 
+  offsetX: 0,
   offsetY: 0,
   centerX: 0,
   centerY: 0,
@@ -37,11 +37,11 @@ export const mapState = writable({
   dragStartY: 0,
   keysPressed: new Set(),
   keyboardNavigationInterval: null,
-  
+
   entities: {
     structure: {},
-    groups: {},   
-    players: {},  
+    groups: {},
+    players: {},
   },
 
   _entityChangeCounter: 0,
@@ -68,21 +68,21 @@ const rawChunkData = new Map();
 // Firebase interaction
 function subscribeToChunk(chunkKey) {
   if (activeChunkSubscriptions.has(chunkKey)) return;
-  
+
   try {
     const chunkRef = ref(db, `chunks/${chunkKey}`);
-    
+
     const unsubscribe = onValue(chunkRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val();
         rawChunkData.set(chunkKey, data);
         handleChunkData(chunkKey, data);
       }
-    }, 
-    (error) => {
-      console.error(`Error subscribing to chunk ${chunkKey}:`, error);
-    });
-    
+    },
+      (error) => {
+        console.error(`Error subscribing to chunk ${chunkKey}:`, error);
+      });
+
     activeChunkSubscriptions.set(chunkKey, unsubscribe);
   } catch (err) {
     console.error(`Failed to subscribe to chunk ${chunkKey}:`, err);
@@ -91,7 +91,7 @@ function subscribeToChunk(chunkKey) {
 
 function unsubscribeFromChunk(chunkKey) {
   if (!activeChunkSubscriptions.has(chunkKey)) return false;
-  
+
   try {
     const unsubscribe = activeChunkSubscriptions.get(chunkKey);
     if (typeof unsubscribe === 'function') {
@@ -111,22 +111,22 @@ function unsubscribeFromChunk(chunkKey) {
 const chunkLastUpdated = new Map();
 function handleChunkData(chunkKey, data) {
   if (!data) return;
-  
+
   const lastUpdated = data.lastUpdated || Date.now();
   const prevUpdated = chunkLastUpdated.get(chunkKey) || 0;
   if (lastUpdated <= prevUpdated && lastUpdated !== 0) return;
   chunkLastUpdated.set(chunkKey, lastUpdated);
-  
+
   let structureUpdates = {};
   let groupUpdates = {};
   let playerUpdates = {};
   let entitiesChanged = false;
-  
+
   Object.entries(data).forEach(([tileKey, tileData]) => {
     if (tileKey === 'lastUpdated') return;
-    
+
     const [tileX, tileY] = tileKey.split(',').map(Number);
-    
+
     if (tileData.structure) {
       structureUpdates[tileKey] = {
         ...tileData.structure,
@@ -136,7 +136,7 @@ function handleChunkData(chunkKey, data) {
       };
       entitiesChanged = true;
     }
-    
+
     if (tileData.players) {
       const playerIds = Object.keys(tileData.players);
       if (playerIds.length > 0) {
@@ -151,7 +151,7 @@ function handleChunkData(chunkKey, data) {
         entitiesChanged = true;
       }
     }
-    
+
     if (tileData.groups) {
       const groupIds = Object.keys(tileData.groups);
       if (groupIds.length > 0) {
@@ -167,7 +167,7 @@ function handleChunkData(chunkKey, data) {
       }
     }
   });
-  
+
   if (entitiesChanged) {
     Promise.resolve().then(() => {
       mapState.update(state => {
@@ -192,26 +192,26 @@ function cleanEntitiesForChunk(chunkKey) {
       groups: { ...state.entities.groups },
       players: { ...state.entities.players }
     };
-    
+
     // Remove entities belonging to this chunk
     Object.keys(newEntities.structure).forEach(locationKey => {
       if (newEntities.structure[locationKey]?.chunkKey === chunkKey) {
         delete newEntities.structure[locationKey];
       }
     });
-    
+
     Object.keys(newEntities.groups).forEach(locationKey => {
       if (newEntities.groups[locationKey]?.chunkKey === chunkKey) {
         delete newEntities.groups[locationKey];
       }
     });
-    
+
     Object.keys(newEntities.players).forEach(locationKey => {
       if (newEntities.players[locationKey]?.chunkKey === chunkKey) {
         delete newEntities.players[locationKey];
       }
     });
-    
+
     return {
       ...state,
       entities: newEntities
@@ -222,22 +222,22 @@ function cleanEntitiesForChunk(chunkKey) {
 // Chunk management
 export function updateChunks(gridArray) {
   if (!gridArray || gridArray.length === 0) return;
-  
+
   const chunkKeys = new Set();
   gridArray.forEach(cell => {
     chunkKeys.add(getChunkKey(cell.x, cell.y));
   });
-  
+
   // Simple comparison
   const state = get(mapState);
   const currentKeys = [...state.chunks].sort().join(',');
   const newKeys = [...chunkKeys].sort().join(',');
   if (currentKeys === newKeys) return;
-  
+
   mapState.update(state => {
     const added = [...chunkKeys].filter(key => !state.chunks.has(key));
     const removed = [...state.chunks].filter(key => !chunkKeys.has(key));
-    
+
     added.forEach(subscribeToChunk);
     removed.forEach(unsubscribeFromChunk);
 
@@ -252,11 +252,11 @@ export function updateChunks(gridArray) {
 export function getEntitiesAt(x, y) {
   const state = get(mapState);
   const locationKey = `${x},${y}`;
-  
+
   const structure = state.entities.structure[locationKey];
   const unitGroup = state.entities.groups[locationKey];
   const player = state.entities.players[locationKey];
-  
+
   return { structure, unitGroup, player };
 }
 
@@ -264,10 +264,10 @@ export function getEntitiesAt(x, y) {
 export function cleanupChunkSubscriptions() {
   if (isCleaningUp) return;
   isCleaningUp = true;
-  
+
   try {
     const activeChunkKeys = Array.from(activeChunkSubscriptions.keys());
-    
+
     activeChunkKeys.forEach(chunkKey => {
       try {
         const unsubscribe = activeChunkSubscriptions.get(chunkKey);
@@ -279,12 +279,12 @@ export function cleanupChunkSubscriptions() {
         console.error(`Error unsubscribing from chunk ${chunkKey}:`, err);
       }
     });
-    
+
     mapState.update(state => ({
       ...state,
       chunks: new Set()
     }));
-    
+
     rawChunkData.clear();
   } finally {
     isCleaningUp = false;
@@ -301,18 +301,18 @@ export const centerTileStore = derived(
   [mapState, CENTERED_TILE_STORE],
   ([$mapState, $centeredTileStore]) => {
     const { x, y } = $mapState.centerCoord;
-    
+
     if (x !== $centeredTileStore.coordinates.x || y !== $centeredTileStore.coordinates.y) {
       const tileData = getTerrainData(x, y);
-      
+
       CENTERED_TILE_STORE.set({
         coordinates: { x, y },
         data: tileData
       });
-      
+
       return { x, y, ...tileData };
     }
-    
+
     return { x, y, ...$centeredTileStore.data };
   }
 );
@@ -324,34 +324,34 @@ export function resizeMap(mapElement) {
     const tileSizePx = TILE_SIZE * baseFontSize;
     const width = mapElement.clientWidth;
     const height = mapElement.clientHeight;
-    
+
     let cols = Math.ceil(width / tileSizePx);
     cols = cols % 2 === 0 ? cols - 1 : cols;
-    
+
     let rows = Math.ceil(height / tileSizePx);
     rows = rows % 2 === 0 ? rows - 1 : rows;
-    
+
     cols = Math.max(cols, 5);
     rows = Math.max(rows, 5);
-    
+
     const centerX = Math.floor(cols / 2);
     const centerY = Math.floor(rows / 2);
-    
+
     const offsetX = centerX + state.centerCoord.x;
     const offsetY = centerY + state.centerCoord.y;
-    
+
     const initialTileData = getTerrainData(state.centerCoord.x, state.centerCoord.y);
-    
+
     CENTERED_TILE_STORE.set({
       coordinates: { x: state.centerCoord.x, y: state.centerCoord.y },
       data: initialTileData
     });
-    
+
     // Load chunks directly if ready instead of using setTimeout
     if (state.isReady) {
       loadInitialChunksForCenter();
     }
-    
+
     return {
       ...state,
       cols,
@@ -366,14 +366,14 @@ export function resizeMap(mapElement) {
 }
 
 // Movement functions - rename moveMapTo for clarity
-export function moveCenterTo(newX, newY) {  
+export function moveCenterTo(newX, newY) {
   mapState.update(prev => {
     const roundedX = newX !== undefined ? Math.round(newX) : prev.centerCoord.x;
     const roundedY = newY !== undefined ? Math.round(newY) : prev.centerCoord.y;
-    
+
     const newOffsetX = prev.centerX + roundedX;
     const newOffsetY = prev.centerY + roundedY;
-    
+
     return {
       ...prev,
       centerCoord: { x: roundedX, y: roundedY },
@@ -391,7 +391,7 @@ export const moveMapTo = moveCenterTo;
 export function moveMapByKeys() {
   let xChange = 0;
   let yChange = 0;
-  
+
   const state = get(mapState);
   if (state.keysPressed.has("a") || state.keysPressed.has("arrowleft")) xChange += 1;
   if (state.keysPressed.has("d") || state.keysPressed.has("arrowright")) xChange -= 1;
@@ -399,14 +399,14 @@ export function moveMapByKeys() {
   if (state.keysPressed.has("s") || state.keysPressed.has("arrowdown")) yChange -= 1;
 
   if (xChange === 0 && yChange === 0) return;
-  
+
   moveCenterTo(state.centerCoord.x - xChange, state.centerCoord.y - yChange);
 }
 
 // Drag functionality
 export function startDrag(event) {
   if (event.button !== 0) return false;
-  
+
   mapState.update(state => ({
     ...state,
     isDragging: true,
@@ -416,7 +416,7 @@ export function startDrag(event) {
     dragAccumX: 0,
     dragAccumY: 0
   }));
-  
+
   document.body.style.cursor = "grabbing";
   return true;
 }
@@ -427,20 +427,20 @@ export function drag(event) {
 
   const deltaX = event.clientX - state.dragStartX;
   const deltaY = event.clientY - state.dragStartY;
-  
+
   const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
   const tileSizePx = TILE_SIZE * baseFontSize;
-  
+
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  const sensitivity = isTouchDevice ? 0.8 : 0.6; 
+  const sensitivity = isTouchDevice ? 0.8 : 0.6;
   const adjustedTileSize = tileSizePx * sensitivity;
-  
+
   const dragAccumX = (state.dragAccumX || 0) + deltaX;
   const dragAccumY = (state.dragAccumY || 0) + deltaY;
-  
+
   const cellsMovedX = Math.round(dragAccumX / adjustedTileSize);
   const cellsMovedY = Math.round(dragAccumY / adjustedTileSize);
-  
+
   if (cellsMovedX === 0 && cellsMovedY === 0) {
     mapState.update(state => ({
       ...state,
@@ -451,15 +451,15 @@ export function drag(event) {
     }));
     return false;
   }
-  
+
   const newX = state.centerCoord.x - cellsMovedX;
   const newY = state.centerCoord.y - cellsMovedY;
-  
+
   const remainderX = dragAccumX - (cellsMovedX * adjustedTileSize);
   const remainderY = dragAccumY - (cellsMovedY * adjustedTileSize);
-  
+
   moveCenterTo(newX, newY);
-  
+
   mapState.update(state => ({
     ...state,
     dragStartX: event.clientX,
@@ -467,16 +467,16 @@ export function drag(event) {
     dragAccumX: remainderX,
     dragAccumY: remainderY
   }));
-  
+
   return true;
 }
 
 export function stopDrag() {
   let wasDragging = false;
-  
+
   mapState.update(state => {
     if (!state.isDragging) return state;
-    
+
     wasDragging = true;
     return {
       ...state,
@@ -485,12 +485,12 @@ export function stopDrag() {
       dragAccumY: 0
     };
   });
-  
+
   if (wasDragging) {
     document.body.style.cursor = "default";
     return true;
   }
-  
+
   return false;
 }
 
@@ -512,7 +512,7 @@ export function closeDetailsModal() {
 // Misc utilities
 export function checkDragState() {
   let fixed = false;
-  
+
   mapState.update(state => {
     if (!state.isMouseActuallyDown && state.isDragging) {
       fixed = true;
@@ -523,12 +523,12 @@ export function checkDragState() {
     }
     return state;
   });
-  
+
   if (fixed) {
     document.body.style.cursor = "default";
     return true;
   }
-  
+
   return false;
 }
 
@@ -550,37 +550,37 @@ export const expandedGridArray = derived(
 
     try {
       const useExpanded = $mapState.minimapVisible;
-      
-      const gridCols = useExpanded 
+
+      const gridCols = useExpanded
         ? Math.min($mapState.cols * GRID_COLS_FACTOR, 51)
         : $mapState.cols;
-      const gridRows = useExpanded 
+      const gridRows = useExpanded
         ? Math.min($mapState.rows * GRID_ROWS_FACTOR, 51)
         : $mapState.rows;
-      
+
       const centerOffsetX = Math.floor(gridCols / 2);
       const centerOffsetY = Math.floor(gridRows / 2);
-      
+
       const result = [];
-      
+
       for (let y = 0; y < gridRows; y++) {
         for (let x = 0; x < gridCols; x++) {
           const globalX = x - centerOffsetX + $mapState.centerCoord.x;
           const globalY = y - centerOffsetY + $mapState.centerCoord.y;
-          
+
           const chunkKey = getChunkKey(globalX, globalY);
           const terrainData = getTerrainData(globalX, globalY);
-          
+
           let isInMainView = true;
-          
+
           if (useExpanded) {
-            isInMainView = 
-              x >= centerOffsetX - Math.floor($mapState.cols / 2) && 
+            isInMainView =
+              x >= centerOffsetX - Math.floor($mapState.cols / 2) &&
               x <= centerOffsetX + Math.floor($mapState.cols / 2) &&
-              y >= centerOffsetY - Math.floor($mapState.rows / 2) && 
+              y >= centerOffsetY - Math.floor($mapState.rows / 2) &&
               y <= centerOffsetY + Math.floor($mapState.rows / 2);
           }
-          
+
           result.push({
             x: globalX,
             y: globalY,
@@ -592,7 +592,7 @@ export const expandedGridArray = derived(
           });
         }
       }
-      
+
       updateChunks(result);
       set(result);
     } catch (error) {
@@ -616,14 +616,14 @@ export function updateHoveredTile(x, y) {
 // Terrain data with better caching
 export function getTerrainData(x, y) {
   const cacheKey = `${x},${y}`;
-  
+
   if (terrainCache.has(cacheKey)) {
     return terrainCache.get(cacheKey);
   }
-  
+
   const result = terrain.getTerrainData(x, y);
   terrainCache.set(cacheKey, result);
-  
+
   return result;
 }
 
@@ -642,7 +642,7 @@ export function updateMinimapRange(centerX, centerY, rangeX, rangeY) {
     rangeX,
     rangeY
   });
-  
+
   return minimapRange;
 }
 
@@ -654,57 +654,57 @@ export function getMinimapRange() {
 export function loadInitialChunksForCenter() {
   const state = get(mapState);
   if (!state.isReady || !state.centerCoord) return;
-  
+
   const halfWidth = Math.floor(state.cols / 2) + 1;
   const halfHeight = Math.floor(state.rows / 2) + 1;
-  
+
   const minX = state.centerCoord.x - halfWidth;
   const maxX = state.centerCoord.x + halfWidth;
   const minY = state.centerCoord.y - halfHeight;
   const maxY = state.centerCoord.y + halfHeight;
-  
+
   const chunkKeys = new Set();
-  
+
   for (let y = minY; y <= maxY; y++) {
     for (let x = minX; x <= maxX; x++) {
       chunkKeys.add(getChunkKey(x, y));
     }
   }
-  
+
   const chunksArray = Array.from(chunkKeys);
-  
+
   mapState.update(state => ({
     ...state,
     chunks: chunkKeys
   }));
-  
+
   // Process existing chunks immediately
   chunksArray.forEach(chunkKey => {
     subscribeToChunk(chunkKey);
-    
+
     const existingData = rawChunkData.get(chunkKey);
     if (existingData) {
       handleChunkData(chunkKey, existingData);
     }
   });
-  
+
   // Force entity display immediately instead of using setTimeout
   forceEntityDisplay();
-  
+
   return chunksArray.length;
 }
 
 export function forceEntityDisplay() {
   mapState.update(state => {
     const chunks = [...state.chunks];
-    
+
     chunks.forEach(chunkKey => {
       const data = rawChunkData.get(chunkKey);
       if (data) {
         handleChunkData(chunkKey, data);
       }
     });
-    
+
     return {
       ...state,
       _entityChangeCounter: state._entityChangeCounter + 1
@@ -715,12 +715,12 @@ export function forceEntityDisplay() {
 export function cleanupInternalIntervals() {
   try {
     const state = get(mapState);
-    
+
     if (state.keyboardNavigationInterval) {
       clearInterval(state.keyboardNavigationInterval);
       mapState.update(state => ({ ...state, keyboardNavigationInterval: null }));
     }
-    
+
     return true;
   } catch (err) {
     console.error("Error cleaning up intervals:", err);
