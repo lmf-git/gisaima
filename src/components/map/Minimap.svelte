@@ -1,8 +1,11 @@
 <script>
+  import { derived } from 'svelte/store';
   import { 
     mapState, 
     mapReady,
-    getTerrainData, 
+    expandedGridArray,
+    GRID_COLS_FACTOR,
+    GRID_ROWS_FACTOR,
     updateHoveredTile, 
     updateMinimapRange,
     moveMapTo,
@@ -19,20 +22,18 @@
 
   // Constants
   const MINI_TILE_SIZE_EM = 0.5;
-  const MINIMAP_COLS_FACTOR = 3.5;
-  const MINIMAP_ROWS_FACTOR = 2.85;
   const BREAKPOINT = 768;
   const DRAG_THRESHOLD = 5;
   
-  // Calculate minimap dimensions
-  const tileCountX = $derived($mapReady ? $mapState.cols * MINIMAP_COLS_FACTOR : 48);
-  const tileCountY = $derived($mapReady ? $mapState.rows * MINIMAP_ROWS_FACTOR : 32);
+  // Calculate minimap dimensions - keep this unchanged
+  const tileCountX = $derived($mapReady ? $mapState.cols * GRID_COLS_FACTOR : 48);
+  const tileCountY = $derived($mapReady ? $mapState.rows * GRID_ROWS_FACTOR : 32);
   const MINIMAP_WIDTH_EM = $derived(tileCountX * MINI_TILE_SIZE_EM);
   const MINIMAP_HEIGHT_EM = $derived(tileCountY * MINI_TILE_SIZE_EM);
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
   const viewRangeY = $derived(Math.floor(tileCountY / 2));
   
-  // Update area calculation
+  // Update area calculation - keep this unchanged
   const area = $derived({
     startX: $mapState.centerCoord.x - Math.floor($mapState.cols / 2),
     startY: $mapState.centerCoord.y - Math.floor($mapState.rows / 2),
@@ -47,75 +48,66 @@
   let minimap = $state(null);
   let wasDrag = $state(false);
   let dist = $state(0);
-  let minimapGrid = $state([]);
   let touchStartX = $state(0);
   let touchStartY = $state(0);
   let isTouching = $state(false);
   
-  // Track map position for updates
-  const mapPos = $derived({
-    x: $mapState.centerCoord.x,
-    y: $mapState.centerCoord.y,
-    isReady: $mapReady,
-    visible: open
-  });
-
-  // Generate grid when position changes
-  $effect(() => {
-    if (mapPos.isReady && mapPos.visible) {
-      generateMinimapGrid();
-    }
-  });
-  
-  // Grid generation
-  function generateMinimapGrid() {
-    if (!$mapReady || !open) return;
-    
-    updateMinimapRange(
-      $mapState.centerCoord.x, 
-      $mapState.centerCoord.y, 
-      viewRangeX, 
-      viewRangeY
-    );
-    
-    try {
-      const newGrid = [];
-      
-      for (let y = -viewRangeY; y <= viewRangeY; y++) {
-        for (let x = -viewRangeX; x <= viewRangeX; x++) {
-          const globalX = $mapState.centerCoord.x + x;
-          const globalY = $mapState.centerCoord.y + y;
-          
-          const terrainData = getTerrainData(globalX, globalY);
-          
-          const isVisible = 
-            globalX >= area.startX && 
-            globalX < area.startX + area.width &&
-            globalY >= area.startY && 
-            globalY < area.startY + area.height;
-          
-          newGrid.push({
-            x: globalX,
-            y: globalY,
-            displayX: x + viewRangeX,
-            displayY: y + viewRangeY,
-            isCenter: x === 0 && y === 0,
-            isVisible,
-            color: terrainData.color
-          });
-        }
+  // Create a simpler derived store that just adds display coordinates
+  const minimapGrid = derived(
+    [expandedGridArray, mapState],
+    ([$expandedGrid, $mapState]) => {
+      if (!$expandedGrid || $expandedGrid.length === 0 || !open || !$mapState.isReady) {
+        return [];
       }
       
-      minimapGrid = newGrid;
-    } catch (error) {
-      console.error("Error generating minimap grid:", error);
+      // Update range tracking
+      updateMinimapRange(
+        $mapState.centerCoord.x, 
+        $mapState.centerCoord.y, 
+        viewRangeX, 
+        viewRangeY
+      );
+      
+      // Calculate displayX and displayY for each cell
+      return $expandedGrid.map(cell => {
+        // Calculate position relative to center for minimap display
+        const displayX = cell.x - $mapState.centerCoord.x + viewRangeX;
+        const displayY = cell.y - $mapState.centerCoord.y + viewRangeY;
+        
+        // Check if this cell is within the main view
+        const isVisible = 
+          cell.x >= area.startX && 
+          cell.x < area.startX + area.width &&
+          cell.y >= area.startY && 
+          cell.y < area.startY + area.height;
+        
+        return {
+          x: cell.x,
+          y: cell.y,
+          displayX,
+          displayY,
+          isCenter: cell.isCenter,
+          isVisible,
+          color: cell.color
+        };
+      });
+    },
+    []
+  );
+  
+  // Movement and interaction state
+  const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isDrag);
+  
+  function highlightMiniTile(cell) {
+    if (!isMoving) {
+      updateHoveredTile(cell.x, cell.y);
     }
   }
   
-  // Clean up resources
-  onDestroy(() => {
-    minimapGrid = [];
-  });
+  const isTileHighlighted = (cell) => 
+    !isMoving && $mapState.hoveredTile && 
+    cell.x === $mapState.hoveredTile.x && 
+    cell.y === $mapState.hoveredTile.y;
 
   // Click handling
   function handleMinimapClick(event) {
@@ -151,20 +143,6 @@
     
     moveMapTo(worldX, worldY);
   }
-  
-  // Movement and interaction state
-  const isMoving = $derived($mapState.isDragging || $mapState.keyboardNavigationInterval !== null || isDrag);
-  
-  function highlightMiniTile(cell) {
-    if (!isMoving) {
-      updateHoveredTile(cell.x, cell.y);
-    }
-  }
-  
-  const isTileHighlighted = (cell) => 
-    !isMoving && $mapState.hoveredTile && 
-    cell.x === $mapState.hoveredTile.x && 
-    cell.y === $mapState.hoveredTile.y;
 
   // Drag handling
   function handleMinimapDragStart(event) {
@@ -238,10 +216,6 @@
     
     if (browser) {
       localStorage.setItem('minimapVisible', isOpen.toString());
-    }
-    
-    if (isOpen && $mapReady) {
-      generateMinimapGrid();
     }
   }
   
@@ -335,7 +309,6 @@
     <div 
       class="minimap"
       class:ready={$mapReady}
-      style="width: {MINIMAP_WIDTH_EM}em; height: {MINIMAP_HEIGHT_EM}em;"
       bind:this={minimap}
       onclick={handleMinimapClick}
       onmousedown={handleMinimapDragStart}
@@ -349,35 +322,35 @@
       aria-label="Mini map for navigation"
       class:drag={isDrag}
       class:touch-drag={isTouching}>
-      {#if $mapReady && minimapGrid.length > 0}
-        {#each minimapGrid as cell}
-          <div
-            class="tile"
-            class:center={cell.isCenter}
-            class:visible={cell.isVisible}
-            class:highlighted={isTileHighlighted(cell)} 
+      {#if $mapReady && $minimapGrid.length > 0}
+        <div class="minimap-grid" style="--grid-cols: {tileCountX}; --grid-rows: {tileCountY};">
+          {#each $minimapGrid as cell}
+            <div
+              class="tile"
+              class:center={cell.isCenter}
+              class:visible={cell.isVisible}
+              class:highlighted={isTileHighlighted(cell)} 
+              style="
+                background-color: {isTileHighlighted(cell) ? 'white' : cell.color};
+                grid-column-start: {cell.displayX + 1};
+                grid-row-start: {cell.displayY + 1};
+              "
+              onmouseenter={() => highlightMiniTile(cell)} 
+              role="presentation"
+              aria-hidden="true">
+            </div>
+          {/each}
+          
+          <div 
+            class="visible-area-frame"
             style="
-              background-color: {isTileHighlighted(cell) ? 'white' : cell.color};
-              width: {MINI_TILE_SIZE_EM}em;
-              height: {MINI_TILE_SIZE_EM}em;
-              left: {cell.displayX * MINI_TILE_SIZE_EM}em;
-              top: {cell.displayY * MINI_TILE_SIZE_EM}em;
+              grid-column-start: {viewRangeX + area.startX - $mapState.centerCoord.x + 1};
+              grid-row-start: {viewRangeY + area.startY - $mapState.centerCoord.y + 1};
+              grid-column-end: span {area.width};
+              grid-row-end: span {area.height};
             "
-            onmouseenter={() => highlightMiniTile(cell)} 
-            role="presentation"
             aria-hidden="true">
-        </div>
-        {/each}
-        
-        <div 
-          class="visible-area-frame"
-          style="
-            left: {(viewRangeX + area.startX - $mapState.centerCoord.x) * MINI_TILE_SIZE_EM}em;
-            top: {(viewRangeY + area.startY - $mapState.centerCoord.y) * MINI_TILE_SIZE_EM}em;
-            width: {area.width * MINI_TILE_SIZE_EM}em;
-            height: {area.height * MINI_TILE_SIZE_EM}em;
-          "
-          aria-hidden="true">
+          </div>
         </div>
       {/if}
     </div>
@@ -453,13 +426,19 @@
     border: 1px solid var(--color-panel-border);
     box-shadow: 0 0.1875em 0.625em var(--color-shadow);
     cursor: grab;
-    transition: box-shadow 0.2s ease, width 0.3s ease, height 0.3s ease;
+    transition: box-shadow 0.2s ease;
     outline: none;
-    /* Keep opacity 0 and don't animate until ready */
     opacity: 0;
     transform: translateX(100%);
   }
 
+  .minimap-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--grid-cols), var(--mini-tile-size, 0.5em));
+    grid-template-rows: repeat(var(--grid-rows), var(--mini-tile-size, 0.5em));
+    --mini-tile-size: 0.5em;
+  }
+  
   /* Only animate when grid is ready */
   .minimap.ready {
     animation: slideInFromRight 0.8s ease-out 0.5s forwards;
@@ -485,7 +464,8 @@
   }
   
   .tile {
-    position: absolute;
+    width: var(--mini-tile-size);
+    height: var(--mini-tile-size);
     box-sizing: border-box;
     transition: background-color 0.2s ease;
   }
@@ -512,7 +492,6 @@
   }
 
   .visible-area-frame {
-    position: absolute;
     border: 0.125em solid white;
     box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
     pointer-events: none;

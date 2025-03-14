@@ -694,6 +694,7 @@ export function loadInitialChunksForCenter() {
   return chunksArray.length;
 }
 
+GRID_COLS_FACTOR
 export function forceEntityDisplay() {
   mapState.update(state => {
     const chunks = [...state.chunks];
