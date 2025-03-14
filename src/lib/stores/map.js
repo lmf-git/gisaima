@@ -540,22 +540,17 @@ export function setMinimapVisibility(isVisible) {
 }
 
 // Grid generation with better caching
-export const expandedGridArray = derived(
+export const coordinates = derived(
   mapState,
   ($mapState, set) => {
-    if (!$mapState.isReady) {
-      set([]);
-      return;
-    }
-
     try {
       const useExpanded = $mapState.minimapVisible;
 
       const gridCols = useExpanded
-        ? Math.min($mapState.cols * GRID_COLS_FACTOR, 51)
+        ? Math.min($mapState.cols * GRID_COLS_FACTOR)
         : $mapState.cols;
       const gridRows = useExpanded
-        ? Math.min($mapState.rows * GRID_ROWS_FACTOR, 51)
+        ? Math.min($mapState.rows * GRID_ROWS_FACTOR)
         : $mapState.rows;
 
       const centerOffsetX = Math.floor(gridCols / 2);
@@ -627,29 +622,6 @@ export function getTerrainData(x, y) {
   return result;
 }
 
-// Minimap range tracking
-const minimapRange = {
-  centerX: 0,
-  centerY: 0,
-  rangeX: 0,
-  rangeY: 0
-};
-
-export function updateMinimapRange(centerX, centerY, rangeX, rangeY) {
-  Object.assign(minimapRange, {
-    centerX,
-    centerY,
-    rangeX,
-    rangeY
-  });
-
-  return minimapRange;
-}
-
-export function getMinimapRange() {
-  return minimapRange;
-}
-
 // Entity loading
 export function loadInitialChunksForCenter() {
   const state = get(mapState);
@@ -694,7 +666,6 @@ export function loadInitialChunksForCenter() {
   return chunksArray.length;
 }
 
-GRID_COLS_FACTOR
 export function forceEntityDisplay() {
   mapState.update(state => {
     const chunks = [...state.chunks];

@@ -3,21 +3,19 @@
   import { 
     mapState, 
     mapReady,
-    expandedGridArray,
+    coordinates,
     GRID_COLS_FACTOR,
     GRID_ROWS_FACTOR,
     updateHoveredTile, 
-    updateMinimapRange,
     moveMapTo,
     setMinimapVisibility
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
   import Close from '../../components/icons/Close.svelte';
-  import { onDestroy } from 'svelte';
 
   // Simplify state variables
   let open = $state(true);
-  let initialized = $state(false);
+  let dd = $state(false);
   let windowWidth = $state(browser ? window.innerWidth : 0);
 
   // Constants
@@ -54,19 +52,11 @@
   
   // Create a simpler derived store that just adds display coordinates
   const minimapGrid = derived(
-    [expandedGridArray, mapState],
+    [coordinates, mapState],
     ([$expandedGrid, $mapState]) => {
       if (!$expandedGrid || $expandedGrid.length === 0 || !open || !$mapState.isReady) {
         return [];
       }
-      
-      // Update range tracking
-      updateMinimapRange(
-        $mapState.centerCoord.x, 
-        $mapState.centerCoord.y, 
-        viewRangeX, 
-        viewRangeY
-      );
       
       // Calculate displayX and displayY for each cell
       return $expandedGrid.map(cell => {
@@ -206,7 +196,7 @@
         (storedVisibility === null && windowWidth >= BREAKPOINT);
       
       setMinimapVisibility(open);
-      initialized = true;
+      dd = true;
     }
   }
   
@@ -225,7 +215,7 @@
 
   // Initialize on component load
   $effect(() => {
-    if (!initialized) {
+    if (!dd) {
       initializeVisibility();
     }
   });
@@ -276,12 +266,6 @@
     isTouching = false;
   }
 
-  // Always update range info
-  $effect(() => {
-    if ($mapReady && $mapState.centerCoord.x !== undefined) {
-      updateMinimapRange($mapState.centerCoord.x, $mapState.centerCoord.y, viewRangeX, viewRangeY);
-    }
-  });
 </script>
 
 <svelte:window

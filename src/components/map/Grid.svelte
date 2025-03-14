@@ -4,7 +4,7 @@
   import { 
     mapState, 
     mapReady,
-    expandedGridArray, // Import expandedGridArray instead of gridArray
+    coordinates, // Import coordinates instead of gridArray
     TILE_SIZE,
     resizeMap,
     startDrag,
@@ -272,7 +272,7 @@
 
   // Move gridArray derived store to local component
   const gridArray = derived(
-    expandedGridArray,
+    coordinates,
     ($expandedGrid) => $expandedGrid?.filter(cell => cell.isInMainView) || []
   );
 
