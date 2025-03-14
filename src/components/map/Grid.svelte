@@ -16,7 +16,6 @@
     cleanupChunkSubscriptions,
     getEntitiesAt,
     loadInitialChunksForCenter,
-    forceEntityDisplay
   } from "../../lib/stores/map.js";
   
   // Local component state
@@ -101,7 +100,7 @@
   // Unified entity loading function
   function loadEntities() {
     loadInitialChunksForCenter();
-    forceEntityDisplay();
+
     initialEntityLoadComplete = true;
   }
   

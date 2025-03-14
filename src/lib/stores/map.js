@@ -620,25 +620,7 @@ export function loadInitialChunksForCenter() {
   });
 
   // Force entity display immediately instead of using setTimeout
-  forceEntityDisplay();
+
 
   return chunksArray.length;
-}
-
-export function forceEntityDisplay() {
-  mapState.update(state => {
-    const chunks = [...state.chunks];
-
-    chunks.forEach(chunkKey => {
-      const data = rawChunkData.get(chunkKey);
-      if (data) {
-        handleChunkData(chunkKey, data);
-      }
-    });
-
-    return {
-      ...state,
-      _entityChangeCounter: state._entityChangeCounter + 1
-    };
-  });
 }
