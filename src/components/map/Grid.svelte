@@ -4,7 +4,7 @@
   import { 
     mapState, 
     mapReady,
-    coordinates, // Import coordinates instead of gridArray
+    coordinates,
     TILE_SIZE,
     resizeMap,
     startDrag,
