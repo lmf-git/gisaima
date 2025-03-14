@@ -30,17 +30,22 @@
   const entityIndicatorsCache = new Map();
   
   const isMoving = $derived($map.isDragging || $map.keyboardNavigationInterval !== null || isTouching);
-  const entityChangeCounter = $derived($map._entityChangeCounter || 0);
-  let initialEntityLoadComplete = $state(false);
   
-  // Clear cache on entity changes - optimize to only clear when entities change,
-  // not on every center coord change
+  // Replace entityChangeCounter with direct entity monitoring
+  const entities = derived(
+    map,
+    $map => $map.entities
+  );
+  
+  // Clear cache when the entities structure changes - fix the $effect syntax
   $effect(() => {
-    if (entityChangeCounter > 0) {
-      entityIndicatorsCache.clear();
-    }
+    // Access $entities inside the effect to create the dependency
+    $entities; // This makes the effect depend on entities changes
+    entityIndicatorsCache.clear();
   });
 
+  let initialEntityLoadComplete = $state(false);
+  
   // Improved entity indicator check with caching
   function checkEntityIndicators(x, y) {
     const cacheKey = `${x},${y}`;

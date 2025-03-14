@@ -39,7 +39,6 @@ export const map = writable({
     players: {},
   },
 
-  _entityChangeCounter: 0,
   minimapVisible: true,
 });
 
@@ -167,8 +166,7 @@ const handleChunkData = (() => {
             structure: { ...state.entities.structure, ...structureUpdates },
             groups: { ...state.entities.groups, ...groupUpdates },
             players: { ...state.entities.players, ...playerUpdates }
-          },
-          _entityChangeCounter: state._entityChangeCounter + 1
+          }
         };
       });
     }
