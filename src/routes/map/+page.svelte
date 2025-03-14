@@ -9,14 +9,15 @@
         mapState, 
         mapReady,
         centerTileStore,
-        cleanupInternalIntervals
     } from "../../lib/stores/map.js";
+    import { get } from 'svelte/store';
     
     const isDragging = $derived($mapState.isDragging);
     
     import { onMount, onDestroy } from 'svelte';
     import { browser } from '$app/environment';
     
+    // UI state management functions
     function openDetailsModal() {
         mapState.update(state => ({
             ...state,
@@ -31,6 +32,23 @@
         }));
     }
     
+    // Add locally implemented cleanupInternalIntervals function
+    function cleanupInternalIntervals() {
+      try {
+        const state = get(mapState);
+        
+        if (state.keyboardNavigationInterval) {
+          clearInterval(state.keyboardNavigationInterval);
+          mapState.update(state => ({ ...state, keyboardNavigationInterval: null }));
+        }
+        
+        return true;
+      } catch (err) {
+        console.error("Error cleaning up intervals:", err);
+        return false;
+      }
+    }
+    
     onMount(() => {
         if (browser) document.body.classList.add('map-page-active');
     });
@@ -38,7 +56,7 @@
     onDestroy(() => {
         if (browser) {
             document.body.classList.remove('map-page-active');
-            cleanupInternalIntervals();
+            cleanupInternalIntervals(); // Now using local function
         }
     });
 </script>

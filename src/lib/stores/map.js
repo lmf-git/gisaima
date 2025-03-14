@@ -25,8 +25,6 @@ export const mapState = writable({
   rows: 0,
   offsetX: 0,
   offsetY: 0,
-  centerX: 0,
-  centerY: 0,
   centerCoord: { x: 0, y: 0 },
   chunks: new Set(),
   hoveredTile: null,
@@ -291,21 +289,22 @@ export function cleanupChunkSubscriptions() {
   }
 }
 
-// Simplify the TARGET_TILE_STORE to CENTERED_TILE_STORE for clarity
-const CENTERED_TILE_STORE = writable({
+// Change from CENTERED_TILE_STORE to a more descriptive name
+const centerTileCache = writable({
   coordinates: { x: 0, y: 0 },
   data: null
 });
 
+// This is the public exported store that components use
 export const centerTileStore = derived(
-  [mapState, CENTERED_TILE_STORE],
-  ([$mapState, $centeredTileStore]) => {
+  [mapState, centerTileCache],
+  ([$mapState, $centerTileCache]) => {
     const { x, y } = $mapState.centerCoord;
 
-    if (x !== $centeredTileStore.coordinates.x || y !== $centeredTileStore.coordinates.y) {
+    if (x !== $centerTileCache.coordinates.x || y !== $centerTileCache.coordinates.y) {
       const tileData = getTerrainData(x, y);
 
-      CENTERED_TILE_STORE.set({
+      centerTileCache.set({
         coordinates: { x, y },
         data: tileData
       });
@@ -313,7 +312,7 @@ export const centerTileStore = derived(
       return { x, y, ...tileData };
     }
 
-    return { x, y, ...$centeredTileStore.data };
+    return { x, y, ...$centerTileCache.data };
   }
 );
 
@@ -334,15 +333,16 @@ export function resizeMap(mapElement) {
     cols = Math.max(cols, 5);
     rows = Math.max(rows, 5);
 
-    const centerX = Math.floor(cols / 2);
-    const centerY = Math.floor(rows / 2);
+    // Calculate center directly - no need to store as separate state properties
+    const viewportCenterX = Math.floor(cols / 2);
+    const viewportCenterY = Math.floor(rows / 2);
 
-    const offsetX = centerX + state.centerCoord.x;
-    const offsetY = centerY + state.centerCoord.y;
+    const offsetX = viewportCenterX + state.centerCoord.x;
+    const offsetY = viewportCenterY + state.centerCoord.y;
 
     const initialTileData = getTerrainData(state.centerCoord.x, state.centerCoord.y);
 
-    CENTERED_TILE_STORE.set({
+    centerTileCache.set({
       coordinates: { x: state.centerCoord.x, y: state.centerCoord.y },
       data: initialTileData
     });
@@ -356,8 +356,7 @@ export function resizeMap(mapElement) {
       ...state,
       cols,
       rows,
-      centerX,
-      centerY,
+      // No longer store centerX/centerY
       offsetX,
       offsetY,
       isReady: true
@@ -371,8 +370,12 @@ export function moveCenterTo(newX, newY) {
     const roundedX = newX !== undefined ? Math.round(newX) : prev.centerCoord.x;
     const roundedY = newY !== undefined ? Math.round(newY) : prev.centerCoord.y;
 
-    const newOffsetX = prev.centerX + roundedX;
-    const newOffsetY = prev.centerY + roundedY;
+    // Calculate viewport center directly when needed
+    const viewportCenterX = Math.floor(prev.cols / 2);
+    const viewportCenterY = Math.floor(prev.rows / 2);
+
+    const newOffsetX = viewportCenterX + roundedX;
+    const newOffsetY = viewportCenterY + roundedY;
 
     return {
       ...prev,
@@ -508,15 +511,16 @@ export const coordinates = derived(
         ? Math.min($mapState.rows * GRID_ROWS_FACTOR)
         : $mapState.rows;
 
-      const centerOffsetX = Math.floor(gridCols / 2);
-      const centerOffsetY = Math.floor(gridRows / 2);
+      // Calculate viewport center directly when needed
+      const viewportCenterX = Math.floor(gridCols / 2);
+      const viewportCenterY = Math.floor(gridRows / 2);
 
       const result = [];
 
       for (let y = 0; y < gridRows; y++) {
         for (let x = 0; x < gridCols; x++) {
-          const globalX = x - centerOffsetX + $mapState.centerCoord.x;
-          const globalY = y - centerOffsetY + $mapState.centerCoord.y;
+          const globalX = x - viewportCenterX + $mapState.centerCoord.x;
+          const globalY = y - viewportCenterY + $mapState.centerCoord.y;
 
           const chunkKey = getChunkKey(globalX, globalY);
           const terrainData = getTerrainData(globalX, globalY);
@@ -525,16 +529,16 @@ export const coordinates = derived(
 
           if (useExpanded) {
             isInMainView =
-              x >= centerOffsetX - Math.floor($mapState.cols / 2) &&
-              x <= centerOffsetX + Math.floor($mapState.cols / 2) &&
-              y >= centerOffsetY - Math.floor($mapState.rows / 2) &&
-              y <= centerOffsetY + Math.floor($mapState.rows / 2);
+              x >= viewportCenterX - Math.floor($mapState.cols / 2) &&
+              x <= viewportCenterX + Math.floor($mapState.cols / 2) &&
+              y >= viewportCenterY - Math.floor($mapState.rows / 2) &&
+              y <= viewportCenterY + Math.floor($mapState.rows / 2);
           }
 
           result.push({
             x: globalX,
             y: globalY,
-            isCenter: x === centerOffsetX && y === centerOffsetY,
+            isCenter: x === viewportCenterX && y === viewportCenterY,
             isInMainView,
             chunkKey,
             biome: terrainData.biome,
@@ -637,20 +641,4 @@ export function forceEntityDisplay() {
       _entityChangeCounter: state._entityChangeCounter + 1
     };
   });
-}
-
-export function cleanupInternalIntervals() {
-  try {
-    const state = get(mapState);
-
-    if (state.keyboardNavigationInterval) {
-      clearInterval(state.keyboardNavigationInterval);
-      mapState.update(state => ({ ...state, keyboardNavigationInterval: null }));
-    }
-
-    return true;
-  } catch (err) {
-    console.error("Error cleaning up intervals:", err);
-    return false;
-  }
 }

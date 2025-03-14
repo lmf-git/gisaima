@@ -1,43 +1,32 @@
 <script>
-  import { moveMapTo, mapState } from "../../lib/stores/map.js";
-
-  // Generate the axis arrays locally using $derived rune
-  const xAxisArray = $derived($mapState.isReady ? Array.from({ length: $mapState.cols }, (_, x) => ({
-    value: $mapState.centerCoord.x - ($mapState.centerX - x),
-    isCenter: x === $mapState.centerX
-  })) : []);
-
-  const yAxisArray = $derived($mapState.isReady ? Array.from({ length: $mapState.rows }, (_, y) => ({
-    value: $mapState.centerCoord.y - ($mapState.centerY - y),
-    isCenter: y === $mapState.centerY
-  })) : []);
+  import { mapState } from '../../lib/stores/map.js';
   
-  const moveX = x => moveMapTo(x, undefined);
-  const moveY = y => moveMapTo(undefined, y);
+  // Generate arrays for x and y axis labels that exactly match grid cells (not grid lines)
+  const xLabels = $derived(Array.from({ length: $mapState.cols }, (_, i) => 
+    $mapState.centerCoord.x - Math.floor($mapState.cols / 2) + i
+  ));
+  
+  const yLabels = $derived(Array.from({ length: $mapState.rows }, (_, i) => 
+    $mapState.centerCoord.y - Math.floor($mapState.rows / 2) + i
+  ));
 </script>
 
 <div class="axes">
-  <div class="x">
-    {#each xAxisArray as coord, i}
-      <button 
-        class="label" 
-        class:center={coord.isCenter} 
-        onclick={() => moveX(coord.value)}
-        style="width: calc(100% / {$mapState.cols}); --index: {i};">
-        { coord.value }
-      </button>
+  <div class="x-axis" style="--cell-count: {$mapState.cols}">
+    {#each xLabels as x}
+      <div class="tick" class:center={x === $mapState.centerCoord.x}>
+        <div class="tick-mark"></div>
+        <div class="tick-label">{x}</div>
+      </div>
     {/each}
   </div>
   
-  <div class="y">
-    {#each yAxisArray as coord, i}
-      <button 
-        class="label" 
-        class:center={coord.isCenter} 
-        onclick={() => moveY(coord.value)}
-        style="height: calc(100% / {$mapState.rows}); --index: {i};">
-        {coord.value}
-      </button>
+  <div class="y-axis" style="--cell-count: {$mapState.rows}">
+    {#each yLabels as y}
+      <div class="tick" class:center={y === $mapState.centerCoord.y}>
+        <div class="tick-label">{y}</div>
+        <div class="tick-mark"></div>
+      </div>
     {/each}
   </div>
 </div>
@@ -50,68 +39,71 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 3;
-    opacity: 1;
+    z-index: 2;
   }
-  
-  .x {
-    display: flex;
+
+  .x-axis {
     position: absolute;
     bottom: 0;
     left: 0;
-    width:100%;
-    height: 2em;
-    flex-direction: row;
+    right: 0;
+    height: 1.5em;
+    display: grid;
+    grid-template-columns: repeat(var(--cell-count), 1fr);
   }
-  
-  .y {
-    display: flex;
+
+  .y-axis {
     position: absolute;
     top: 0;
+    bottom: 0;
     left: 0;
-    width: 2em;
-    height: 100%;
-    flex-direction: column;
+    width: 1.5em;
+    display: grid;
+    grid-template-rows: repeat(var(--cell-count), 1fr);
   }
-  
-  .label {   
+
+  /* Center ticks with grid */
+  .tick {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 0.9em;
-    color: black;
-    box-sizing: border-box;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    /* border: 0.05em solid rgba(255, 255, 255, 0.1); */
-    border: none;
-    pointer-events: auto;
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    background-color: transparent;
-    font: inherit;
-    font-weight: 300;
-    opacity: 1;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-    cursor: pointer;
-
-    font-family: var(--font-heading);
-
-    appearance: none;
-    padding: 0;
-    margin: 0;
-    text-align: inherit;
+    font-size: 0.75em;
+    color: rgba(255, 255, 255, 0.7);
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
   }
   
-  .label.center {
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.9);
-    text-shadow: 0 0 0.1875em rgba(255, 255, 255, 0.8);
+  .y-axis .tick {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding-left: 0.25em;
   }
   
-  .label:hover {
-    background-color: rgba(255, 255, 255, 0.7);
-    /* border-color: rgba(255, 255, 255, 0.7); */
-    box-shadow: 0 0 0.3em rgba(255, 255, 255, 0.5);
+  .tick.center {
+    color: rgba(255, 255, 255, 1);
+    font-weight: bold;
+  }
+
+  .tick.center .tick-mark {
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+
+  .tick-mark {
+    width: 6px;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.4);
+  }
+
+  .x-axis .tick-mark {
+    margin-bottom: 2px;
+  }
+  
+  .y-axis .tick-mark {
+    margin-left: 4px;
+  }
+
+  .tick-label {
+    line-height: 1;
   }
 </style>
 
