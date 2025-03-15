@@ -7,19 +7,22 @@
     import Tutorial from '../../components/map/Tutorial.svelte';
     import { 
         map, 
-        mapReady,
+        ready,
         targetStore,
         setup
     } from "../../lib/stores/map.js";
     import { browser } from '$app/environment';
     import { onMount, onDestroy } from 'svelte';
     
+    // Use $state for local component state
+    let detailed = $state(false);
+    
     // Simplified derived state
     const isDragging = $derived($map.isDragging);
     
-    // UI state management functions
+    // Updated UI state management function
     function toggleDetailsModal(show) {
-        map.update(state => ({ ...state, showDetails: show }));
+        detailed = show;
     }
     
     onMount(() => {
@@ -35,10 +38,11 @@
 </script>
 
 <div class="map" class:dragging={isDragging}>
-    <Grid />
+    <!-- Use prop binding with runes syntax -->
+    <Grid {detailed} />
     <Minimap />
 
-    {#if $map.showDetails}
+    {#if detailed}
         <Details 
             x={$targetStore.x} 
             y={$targetStore.y} 
@@ -53,11 +57,12 @@
         />
     {/if}
 
-    {#if $mapReady}
+    {#if $ready}
         <Axes />
     {/if}
 
-    <Tutorial />
+    <!-- Use prop binding with runes syntax -->
+    <Tutorial {detailed} />
 </div>
 
 <style>

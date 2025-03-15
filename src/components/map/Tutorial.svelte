@@ -4,6 +4,9 @@
   import Close from '../../components/icons/Close.svelte';
   import { map } from "../../lib/stores/map.js";
 
+  // Convert to $props syntax
+  const { detailed = false } = $props();
+  
   let closed = $state(false)
   let ready = $state(false)
   
@@ -25,9 +28,10 @@
     closed = false
     localStorage.setItem('tutorial-state', 'open')
   }
+
 </script>
 
-{#if ready && !closed && !$map.showDetails}
+{#if ready && !closed && !detailed}
   <div class="tut tutorial-container">
     <div class="box">
       <button class="close-btn" aria-label="Close tutorial" onclick={close}>
@@ -72,7 +76,7 @@
       </div>
     </div>
   </div>
-{:else if ready && closed && !$map.showDetails}
+{:else if ready && closed && !detailed}
   <button class="help" onclick={open} aria-label="Show tutorial">?</button>
 {/if}
 

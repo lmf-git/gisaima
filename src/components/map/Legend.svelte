@@ -1,5 +1,5 @@
 <script>
-  import { targetStore, mapReady } from "../../lib/stores/map";  // Changed from centerTileStore to targetStore
+  import { targetStore, ready } from "../../lib/stores/map";  // Changed from centerTileStore to targetStore
 
   const { openDetails } = $props();
   
@@ -12,7 +12,7 @@
 
 <div 
   class="legend"
-  class:ready={$mapReady} 
+  class:ready={$ready} 
   onclick={openDetails}
   onkeypress={keypress}
   role="button" 

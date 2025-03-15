@@ -3,13 +3,16 @@
   import { derived } from "svelte/store";
   import { 
     map, 
-    mapReady,
+    ready,
     coordinates,
     TILE_SIZE,
     moveTarget,
     targetStore,
     updateHoveredTile
   } from "../../lib/stores/map.js";
+  
+  // Convert to $props syntax
+  const { detailed = false } = $props();
   
   // Local component state
   let mapElement = null;
@@ -310,7 +313,8 @@
   onvisibilitychange={() => document.visibilityState === 'hidden' && handleMouseUp()}
 />
 
-<div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={$map.showDetails} class:touch-active={$map.isDragging && $map.dragSource === 'map'}>
+<!-- Update class binding to use prop instead of store value -->
+<div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={detailed} class:touch-active={$map.isDragging && $map.dragSource === 'map'}>
   <div
     class="map"
     bind:this={mapElement}
@@ -325,7 +329,7 @@
     tabindex="0"
     aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
   >
-    {#if $mapReady}
+    {#if $ready}
       <div class="grid main-grid" 
         style="--cols: {$map.cols}; --rows: {$map.rows};" 
         role="presentation"

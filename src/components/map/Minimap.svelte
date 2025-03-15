@@ -2,7 +2,7 @@
   import { derived } from 'svelte/store';
   import { 
     map, 
-    mapReady,
+    ready,
     coordinates,
     GRID_COLS_FACTOR,
     GRID_ROWS_FACTOR,
@@ -30,8 +30,8 @@
   const DRAG_THRESHOLD = 5;
   
   // Calculate minimap dimensions - keep this unchanged
-  const tileCountX = $derived($mapReady ? $map.cols * GRID_COLS_FACTOR : 48);
-  const tileCountY = $derived($mapReady ? $map.rows * GRID_ROWS_FACTOR : 32);
+  const tileCountX = $derived($ready ? $map.cols * GRID_COLS_FACTOR : 48);
+  const tileCountY = $derived($ready ? $map.rows * GRID_ROWS_FACTOR : 32);
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
   const viewRangeY = $derived(Math.floor(tileCountY / 2));
   
@@ -99,7 +99,7 @@
   
   // Drag handling
   function handleMinimapDragStart(event) {
-    if (event.button !== 0 || !$mapReady) return;
+    if (event.button !== 0 || !$ready) return;
     minimapDragAction({
       type: 'dragstart',
       clientX: event.clientX,
@@ -109,7 +109,7 @@
   }
   
   function handleMinimapDrag(event) {
-    if (!isDrag || !$mapReady) return;
+    if (!isDrag || !$ready) return;
     minimapDragAction({
       type: 'dragmove',
       clientX: event.clientX,
@@ -179,7 +179,7 @@
 
   // Touch handling
   function handleTouchStart(event) {
-    if (!$mapReady) return;
+    if (!$ready) return;
     
     event.preventDefault();
     
@@ -190,7 +190,7 @@
   }
   
   function handleTouchMove(event) {
-    if (!isTouching || !$mapReady) return;
+    if (!isTouching || !$ready) return;
     event.preventDefault();
     
     minimapDragAction({
@@ -206,7 +206,7 @@
 
   // Click handler now directly uses the hovered tile
   function handleMinimapClick() {
-    if (wasDrag || !$mapReady || !$map.hoveredTile) return;
+    if (wasDrag || !$ready || !$map.hoveredTile) return;
     moveTarget($map.hoveredTile.x, $map.hoveredTile.y);
   }
 
@@ -220,12 +220,12 @@
 />
 
 <!-- Always render the container and toggle button -->
-<div class="map-container" class:touch-active={isTouching} class:ready={$mapReady}>
+<div class="map-container" class:touch-active={isTouching} class:ready={$ready}>
   <button 
     class="toggle-button" 
     onclick={toggleMinimap} 
     aria-label={open ? "Hide minimap" : "Show minimap"}
-    class:ready={$mapReady}>
+    class:ready={$ready}>
     {#if open}
       <Close size="1.2em" color="rgba(0, 0, 0, 0.8)" />
     {:else}
@@ -237,7 +237,7 @@
     <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
     <div 
       class="minimap"
-      class:ready={$mapReady}
+      class:ready={$ready}
       aria-hidden="true"
       bind:this={minimap}
       onclick={handleMinimapClick}
@@ -248,7 +248,7 @@
       ontouchcancel={handleTouchEnd}
       class:drag={isDrag}
       class:touch-drag={isTouching}>
-      {#if $mapReady && $grid.length > 0}
+      {#if $ready && $grid.length > 0}
         <div class="minimap-grid" style="--grid-cols: {tileCountX}; --grid-rows: {tileCountY};">
           {#each $grid as cell}
             {@const relativeX = cell.x - $map.target.x + viewRangeX} 

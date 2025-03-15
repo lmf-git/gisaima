@@ -1,6 +1,6 @@
 <script>
   // Update import to use targetStore instead of centerTileStore
-  import { targetStore, mapReady } from "../../lib/stores/map";
+  import { targetStore, ready } from "../../lib/stores/map";
   import Close from '../../components/icons/Close.svelte';
   
   const { x = 0, y = 0, terrain, onClose } = $props()

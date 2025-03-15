@@ -8,7 +8,7 @@ const WORLD_SEED = 454232;
 const terrain = new TerrainGenerator(WORLD_SEED);
 
 // Configuration constants
-export const CHUNK_SIZE = 20;
+const CHUNK_SIZE = 20;
 export const TILE_SIZE = 5;
 export const GRID_COLS_FACTOR = 3.5;
 export const GRID_ROWS_FACTOR = 2.85;
@@ -28,12 +28,11 @@ export const map = writable({
   rows: 0,
   target: { x: 0, y: 0 },
   hoveredTile: null,
-  showDetails: false,
   minimap: true,
 });
 
-// Export mapReady derived store for use across components
-export const mapReady = derived(map, $map => $map.ready);
+// Export ready derived store for use across components
+export const ready = derived(map, $map => $map.ready);
 
 // Unified grid generation
 export const coordinates = derived(

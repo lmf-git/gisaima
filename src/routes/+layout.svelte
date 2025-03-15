@@ -151,12 +151,6 @@
         /* Font family definitions */
         --font-heading: 'Cormorant Unicase', serif;
         --font-body: 'Fira Sans Condensed', sans-serif;
-        
-        /* Add responsive grid sizing variables */
-        --grid-tile-base-size: 5;      /* Mobile first smaller size (matches TILE_SIZE) */
-        --grid-tile-size-sm: 5.5em;    /* Small screens */
-        --grid-tile-size-md: 6.5em;    /* Medium screens */
-        --grid-tile-size-lg: 7.5em;    /* Large screens */
     }
     
     :global(body) {
