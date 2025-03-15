@@ -4,8 +4,8 @@
     map, 
     ready,
     coordinates,
-    GRID_COLS_FACTOR,
-    GRID_ROWS_FACTOR,
+    EXPANDED_COLS_FACTOR,
+    EXPANDED_ROWS_FACTOR,
     updateHoveredTile, 
     moveTarget
   } from '../../lib/stores/map.js';
@@ -30,8 +30,8 @@
   const DRAG_THRESHOLD = 5;
   
   // Calculate minimap dimensions - keep this unchanged
-  const tileCountX = $derived($ready ? $map.cols * GRID_COLS_FACTOR : 48);
-  const tileCountY = $derived($ready ? $map.rows * GRID_ROWS_FACTOR : 32);
+  const tileCountX = $derived($ready ? $map.cols * EXPANDED_COLS_FACTOR : 48);
+  const tileCountY = $derived($ready ? $map.rows * EXPANDED_ROWS_FACTOR : 32);
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
   const viewRangeY = $derived(Math.floor(tileCountY / 2));
   

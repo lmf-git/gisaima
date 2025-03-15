@@ -10,9 +10,8 @@ const terrain = new TerrainGenerator(WORLD_SEED);
 // Configuration constants
 const CHUNK_SIZE = 20;
 export const TILE_SIZE = 5;
-export const GRID_COLS_FACTOR = 3.5;
-export const GRID_ROWS_FACTOR = 2.85;
-
+export const EXPANDED_COLS_FACTOR = 3.5;
+export const EXPANDED_ROWS_FACTOR = 2.85;
 
 // Move entity state to a separate writable store to trigger coordinates updates
 export const entities = writable({
@@ -42,8 +41,8 @@ export const coordinates = derived(
     if (!$map.ready) return set([]);
     
     const useExpanded = $map.minimap;
-    const gridCols = useExpanded ? Math.min($map.cols * GRID_COLS_FACTOR) : $map.cols;
-    const gridRows = useExpanded ? Math.min($map.rows * GRID_ROWS_FACTOR) : $map.rows;
+    const gridCols = useExpanded ? Math.min($map.cols * EXPANDED_COLS_FACTOR) : $map.cols;
+    const gridRows = useExpanded ? Math.min($map.rows * EXPANDED_ROWS_FACTOR) : $map.rows;
     const viewportCenterX = Math.floor(gridCols / 2);
     const viewportCenterY = Math.floor(gridRows / 2);
     const targetX = $map.target.x;
