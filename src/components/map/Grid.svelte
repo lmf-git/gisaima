@@ -11,7 +11,7 @@
     stopDrag,
     drag,
     moveMapByKeys,
-    centerTileStore,
+    targetStore, // Renamed from centerTileStore
     updateHoveredTile,
     cleanupChunkSubscriptions,
     loadInitialChunksForCenter,
@@ -225,9 +225,9 @@
     }
   });
 
-  // Track the background color based on center tile
+  // Track the background color based on target tile
   const backgroundColor = $derived(
-    $centerTileStore?.color || "var(--color-dark-blue)"
+    $targetStore?.color || "var(--color-dark-blue)" // Renamed from centerTileStore
   );
 
   // Move gridArray derived store to local component
@@ -270,8 +270,8 @@
       >
         {#each $gridArray as cell (cell.x + ':' + cell.y)}
           {@const distance = Math.sqrt(
-            Math.pow(cell.x - $map.centerCoord.x, 2) + 
-            Math.pow(cell.y - $map.centerCoord.y, 2)
+            Math.pow(cell.x - $map.target.x, 2) + // Renamed from centerCoord
+            Math.pow(cell.y - $map.target.y, 2)   // Renamed from centerCoord
           )}
           <!-- No need to check entity indicators separately! -->
           <div

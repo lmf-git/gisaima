@@ -1,20 +1,20 @@
 <script>
-  import { map } from '../../lib/stores/map.js';
+  import { map, targetStore } from "../../lib/stores/map.js";
   
   // Generate arrays for x and y axis labels that exactly match grid cells (not grid lines)
   const xLabels = $derived(Array.from({ length: $map.cols }, (_, i) => 
-    $map.centerCoord.x - Math.floor($map.cols / 2) + i
+    $map.target.x - Math.floor($map.cols / 2) + i  // Changed from centerCoord to target
   ));
   
   const yLabels = $derived(Array.from({ length: $map.rows }, (_, i) => 
-    $map.centerCoord.y - Math.floor($map.rows / 2) + i
+    $map.target.y - Math.floor($map.rows / 2) + i  // Changed from centerCoord to target
   ));
 </script>
 
 <div class="axes">
   <div class="x-axis" style="--cell-count: {$map.cols}">
     {#each xLabels as x}
-      <div class="tick" class:center={x === $map.centerCoord.x}>
+      <div class="tick" class:center={x === $map.target.x}>  <!-- Changed from centerCoord to target -->
         <div class="tick-mark"></div>
         <div class="tick-label">{x}</div>
       </div>
@@ -23,7 +23,7 @@
   
   <div class="y-axis" style="--cell-count: {$map.rows}">
     {#each yLabels as y}
-      <div class="tick" class:center={y === $map.centerCoord.y}>
+      <div class="tick" class:center={y === $map.target.y}>  <!-- Changed from centerCoord to target -->
         <div class="tick-label">{y}</div>
         <div class="tick-mark"></div>
       </div>

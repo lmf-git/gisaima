@@ -1,5 +1,5 @@
 <script>
-  import { centerTileStore, mapReady } from "../../lib/stores/map";
+  import { targetStore, mapReady } from "../../lib/stores/map";  // Changed from centerTileStore to targetStore
 
   const { openDetails } = $props();
   
@@ -17,8 +17,8 @@
   onkeypress={keypress}
   role="button" 
   tabindex="0">
-  <div class="coordinates">{$centerTileStore.x} | {$centerTileStore.y}</div>
-  <div class="terrain">{formatTerrainName($centerTileStore.biome?.name)}</div>
+  <div class="coordinates">{$targetStore.x} | {$targetStore.y}</div>  <!-- Changed from centerTileStore to targetStore -->
+  <div class="terrain">{formatTerrainName($targetStore.biome?.name)}</div>  <!-- Changed from centerTileStore to targetStore -->
 </div>
 
 <style>

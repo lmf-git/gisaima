@@ -1,5 +1,6 @@
 <script>
-  import { centerTileStore } from "../../lib/stores/map";
+  // Update import to use targetStore instead of centerTileStore
+  import { targetStore, mapReady } from "../../lib/stores/map";
   import Close from '../../components/icons/Close.svelte';
   
   const { x = 0, y = 0, terrain, onClose } = $props()
@@ -8,7 +9,7 @@
   
   // Use either passed terrain or check centerTileStore directly
   const formattedName = $derived(
-    _fmt(terrain || $centerTileStore.biome?.name) || "Unknown"
+    _fmt(terrain || $targetStore.biome?.name) || "Unknown"
   );
   
   const escape = event => event.key === 'Escape' && onClose?.();

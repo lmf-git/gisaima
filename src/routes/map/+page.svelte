@@ -8,7 +8,7 @@
     import { 
         map, 
         mapReady,
-        centerTileStore,
+        targetStore, // Renamed from centerTileStore
     } from "../../lib/stores/map.js";
     import { get } from 'svelte/store';
     
@@ -67,15 +67,15 @@
 
     {#if $map.showDetails}
         <Details 
-        x={$centerTileStore.x}
-        y={$centerTileStore.y}
-        terrain={$centerTileStore.biome?.name}
+        x={$targetStore.x} 
+        y={$targetStore.y} 
+        terrain={$targetStore.biome?.name} 
         onClose={closeDetailsModal}
         />
     {:else}
         <Legend 
-        x={$centerTileStore.x} 
-        y={$centerTileStore.y}
+        x={$targetStore.x}  
+        y={$targetStore.y}  
         openDetails={openDetailsModal} 
         />
     {/if}

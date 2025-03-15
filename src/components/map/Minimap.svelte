@@ -7,7 +7,7 @@
     GRID_COLS_FACTOR,
     GRID_ROWS_FACTOR,
     updateHoveredTile, 
-    moveCenterTo
+    moveTarget // Renamed from moveCenterTo
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
   import Close from '../../components/icons/Close.svelte';
@@ -29,8 +29,8 @@
   
   // Update area calculation - keep this unchanged
   const area = $derived({
-    startX: $map.centerCoord.x - Math.floor($map.cols / 2),
-    startY: $map.centerCoord.y - Math.floor($map.rows / 2),
+    startX: $map.target.x - Math.floor($map.cols / 2), // Renamed from centerCoord
+    startY: $map.target.y - Math.floor($map.rows / 2), // Renamed from centerCoord
     width: $map.cols,
     height: $map.rows
   });
@@ -78,10 +78,10 @@
   }
   
   function navigateToPosition(tileX, tileY) {
-    const worldX = Math.round($map.centerCoord.x - viewRangeX + tileX);
-    const worldY = Math.round($map.centerCoord.y - viewRangeY + tileY);
+    const worldX = Math.round($map.target.x - viewRangeX + tileX); // Renamed from centerCoord
+    const worldY = Math.round($map.target.y - viewRangeY + tileY); // Renamed from centerCoord
     
-    moveCenterTo(worldX, worldY);
+    moveTarget(worldX, worldY); // Renamed from moveCenterTo
   }
 
   // Drag handling
@@ -118,7 +118,7 @@
     
     if (cellsMovedX === 0 && cellsMovedY === 0) return;
     
-    moveCenterTo($map.centerCoord.x - cellsMovedX, $map.centerCoord.y - cellsMovedY);
+    moveTarget($map.target.x - cellsMovedX, $map.target.y - cellsMovedY); // Renamed from centerCoord and moveCenterTo
     
     dragX = event.clientX;
     dragY = event.clientY;
@@ -213,7 +213,7 @@
     
     if (cellsMovedX === 0 && cellsMovedY === 0) return;
     
-    moveCenterTo($map.centerCoord.x - cellsMovedX, $map.centerCoord.y - cellsMovedY);
+    moveTarget($map.target.x - cellsMovedX, $map.target.y - cellsMovedY); // Renamed from centerCoord and moveCenterTo
     
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
@@ -267,8 +267,8 @@
       {#if $mapReady && $grid.length > 0}
         <div class="minimap-grid" style="--grid-cols: {tileCountX}; --grid-rows: {tileCountY};">
           {#each $grid as cell}
-            {@const relativeX = cell.x - $map.centerCoord.x + viewRangeX}
-            {@const relativeY = cell.y - $map.centerCoord.y + viewRangeY}
+            {@const relativeX = cell.x - $map.target.x + viewRangeX} <!-- Renamed from centerCoord -->
+            {@const relativeY = cell.y - $map.target.y + viewRangeY} <!-- Renamed from centerCoord -->
             <div
               class="tile"
               class:center={cell.isCenter}
@@ -284,17 +284,6 @@
               aria-hidden="true">
             </div>
           {/each}
-          
-          <div 
-            class="visible-area-frame"
-            style="
-              grid-column-start: {viewRangeX + area.startX - $map.centerCoord.x + 1};
-              grid-row-start: {viewRangeY + area.startY - $map.centerCoord.y + 1};
-              grid-column-end: span {area.width};
-              grid-row-end: span {area.height};
-            "
-            aria-hidden="true">
-          </div>
         </div>
       {/if}
     </div>
@@ -422,6 +411,7 @@
   
   .tile.visible {
     z-index: 2;
+    filter: brightness(1.2);
   }
   
   div.tile.highlighted {
@@ -433,13 +423,6 @@
   .minimap.drag,
   .minimap.touch-drag {
     cursor: grabbing;
-  }
-
-  .visible-area-frame {
-    border: 0.125em solid white;
-    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    pointer-events: none;
-    z-index: 4;
   }
 
   @media (max-width: 900px) {
