@@ -267,15 +267,16 @@
       {#if $mapReady && $grid.length > 0}
         <div class="minimap-grid" style="--grid-cols: {tileCountX}; --grid-rows: {tileCountY};">
           {#each $grid as cell}
-            {@const relativeX = cell.x - $map.target.x + viewRangeX} <!-- Renamed from centerCoord -->
-            {@const relativeY = cell.y - $map.target.y + viewRangeY} <!-- Renamed from centerCoord -->
+            {@const relativeX = cell.x - $map.target.x + viewRangeX} 
+            {@const relativeY = cell.y - $map.target.y + viewRangeY} 
+            {@const isTarget = cell.x === $map.target.x && cell.y === $map.target.y}
             <div
               class="tile"
-              class:center={cell.isCenter}
+              class:center={isTarget} 
               class:visible={cell.isInMainView}
               class:highlighted={cell.highlighted}
               style="
-                background-color: {cell.highlighted ? 'white' : cell.color};
+                background-color: {cell.color};
                 grid-column-start: {relativeX + 1};
                 grid-row-start: {relativeY + 1};
               "
@@ -400,13 +401,30 @@
     width: var(--mini-tile-size);
     height: var(--mini-tile-size);
     box-sizing: border-box;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+    position: relative; /* Add this for proper stacking context */
   }
   
+  /* Make center tile more stable */
   .tile.center {
-    opacity: 0.8;
-    border: 0.125em solid white;
-    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    z-index: 5; /* Always on top */
+    opacity: 1;
+    border: none; /* Remove border */
+    position: relative;
+  }
+
+  .tile.center::after {
+    content: '';
+    position: absolute;
+    top: 0; 
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0.125em solid white; /* Add border with ::after */
+    box-shadow: 0 0 0.2em rgba(255, 255, 255, 0.8);
+    box-sizing: border-box;
+    pointer-events: none;
+    z-index: 5;
   }
   
   .tile.visible {
@@ -414,10 +432,12 @@
     filter: brightness(1.2);
   }
   
-  div.tile.highlighted {
+  /* Change highlight approach to avoid background-color conflict */
+  .tile.highlighted {
     z-index: 4;
-    background-color: white;
-    opacity: 0.8;
+    filter: brightness(1.5); /* Use brightness filter instead of setting background-color */
+    box-shadow: inset 0 0 0 0.1em rgba(255, 255, 255, 0.9), 0 0 0.25em rgba(255, 255, 255, 0.7); /* Add white inner and outer glow */
+    opacity: 1;
   }
   
   .minimap.drag,
