@@ -9,6 +9,7 @@
         map, 
         mapReady,
         targetStore, // Renamed from centerTileStore
+        setup
     } from "../../lib/stores/map.js";
     import { get } from 'svelte/store';
     
@@ -51,6 +52,7 @@
     
     onMount(() => {
         if (browser) document.body.classList.add('map-page-active');
+        setup(); // Call setup once when the page loads to initialize the map
     });
     
     onDestroy(() => {

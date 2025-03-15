@@ -7,6 +7,7 @@
     coordinates,
     TILE_SIZE,
     resizeMap,
+    // Remove initializeMap import, now using setup() from page
     startDrag,
     stopDrag,
     drag,
@@ -14,7 +15,6 @@
     targetStore, // Renamed from centerTileStore
     updateHoveredTile,
     cleanupChunkSubscriptions,
-    loadInitialChunksForCenter,
   } from "../../lib/stores/map.js";
   
   // Local component state
@@ -26,37 +26,23 @@
   let touchStartY = $state(0);
   let isMouseActuallyDown = $state(false);
   
-  // No need for entity cache anymore!
-  
   const isMoving = $derived($map.isDragging || $map.keyboardNavigationInterval !== null || isTouching);
-  
-  // No need for entities derived store or effect to clear cache
-  
-  let initialEntityLoadComplete = $state(false);
   
   // Initialize when mounted
   onMount(() => {
     // Setup resize observer
     resizeObserver = new ResizeObserver(() => {
       resizeMap(mapElement);
-      if ($mapReady) {
-        loadEntities();
-      }
     });
     resizeObserver.observe(mapElement);
     
     // Initial resize to set up dimensions
     resizeMap(mapElement);
     
+    // Remove initializeMap/setup call - it's now in the page component
+    
     // Setup keyboard navigation
     const keyboardCleanup = setupKeyboardNavigation();
-    
-    // Use effect for entity loading
-    const unsubscribeReady = mapReady.subscribe(isReady => {
-      if (isReady && !initialEntityLoadComplete) {
-        loadEntities();
-      }
-    });
     
     // Use CSS animation-fill-mode instead of setTimeout
     setTimeout(() => introduced = true, 1000);
@@ -65,20 +51,12 @@
     return function() {
       if (resizeObserver) resizeObserver.disconnect();
       if (keyboardCleanup) keyboardCleanup();
-      if (unsubscribeReady) unsubscribeReady();
       if ($map.keyboardNavigationInterval) {
         clearInterval($map.keyboardNavigationInterval);
         map.update(state => ({...state, keyboardNavigationInterval: null}));
       }
     };
   });
-  
-  // Unified entity loading function
-  function loadEntities() {
-    loadInitialChunksForCenter();
-
-    initialEntityLoadComplete = true;
-  }
   
   // Make sure to clean up Firebase subscriptions when component is destroyed
   onDestroy(() => cleanupChunkSubscriptions());
@@ -159,7 +137,7 @@
   // Touch handling functions
   function handleTouchStart(event) {
     // Prevent touch actions until introduction completes
-    if (!introduced || !$map.isReady) return;
+    if (!introduced || !$map.ready) return; // Renamed from isReady
     
     // Prevent default to stop page scrolling immediately
     event.preventDefault();
@@ -182,7 +160,7 @@
   }
   
   function handleTouchMove(event) {
-    if (!isTouching || !$map.isReady) return;
+    if (!isTouching || !$map.ready) return; // Renamed from isReady
     event.preventDefault(); // Prevent scrolling when dragging
     
     // Increase touch sensitivity by applying a multiplier to touch movements

@@ -25,7 +25,7 @@ export const entityStore = writable({
 
 // Create a store using Svelte's store API - remove chunks from map state
 export const map = writable({
-  isReady: false,
+  ready: false, // Renamed from isReady
   cols: 0,
   rows: 0,
   offsetX: 0,
@@ -50,7 +50,7 @@ export const activeChunks = derived(
 // Export mapReady derived store for use across components
 export const mapReady = derived(
   map,
-  $map => $map.isReady
+  $map => $map.ready // Renamed from isReady
 );
 
 // Chunk utilities
@@ -271,7 +271,7 @@ export const targetStore = derived(
   }
 );
 
-// Map dimensions and positioning
+// Map dimensions and positioning - simplified to remove chunk loading
 export function resizeMap(mapElement) {
   map.update(state => {
     const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
@@ -292,22 +292,31 @@ export function resizeMap(mapElement) {
     const viewportCenterX = Math.floor(cols / 2);
     const viewportCenterY = Math.floor(rows / 2);
 
-    const offsetX = viewportCenterX + state.target.x; // Renamed from centerCoord
-    const offsetY = viewportCenterY + state.target.y; // Renamed from centerCoord
+    const offsetX = viewportCenterX + state.target.x;
+    const offsetY = viewportCenterY + state.target.y;
 
-    // Load chunks directly if ready instead of using setTimeout
-    if (state.isReady) {
-      loadInitialChunksForCenter();
-    }
-
+    // Remove loadInitialChunksForCenter call - not needed
     return {
       ...state,
       cols,
       rows,
       offsetX,
       offsetY,
-      isReady: true
     };
+  });
+}
+
+// Renamed from initializeMap - setup the map once
+export function setup() {
+  map.update(state => {
+    if (state.ready) return state; // Renamed from isReady
+    
+    // Set initial ready state
+    return {
+      ...state,
+      ready: true // Renamed from isReady
+    };
+    // Coordinates derived store will automatically trigger chunk loading
   });
 }
 
@@ -526,7 +535,7 @@ export function updateHoveredTile(x, y) {
 // Entity loading - simplified to use only activeChunkSubscriptions
 export function loadInitialChunksForCenter() {
   const state = get(map);
-  if (!state.isReady || !state.target) return; // Renamed from centerCoord
+  if (!state.ready || !state.target) return; // Renamed from isReady
 
   const halfWidth = Math.floor(state.cols / 2) + 1;
   const halfHeight = Math.floor(state.rows / 2) + 1;

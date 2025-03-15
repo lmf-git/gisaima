@@ -7,7 +7,8 @@
     GRID_COLS_FACTOR,
     GRID_ROWS_FACTOR,
     updateHoveredTile, 
-    moveTarget
+    moveTarget,
+    resizeMap // Import the shared resize function
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
   import Close from '../../components/icons/Close.svelte';
@@ -189,6 +190,16 @@
     isTouching = false;
   }
 
+  // Click handler now directly uses the hovered tile
+  function handleMinimapClick() {
+    if (wasDrag || !$mapReady) return;
+    
+    // Check if we have a hovered tile and use that
+    if ($map.hoveredTile) {
+      moveTarget($map.hoveredTile.x, $map.hoveredTile.y);
+    }
+  }
+
 </script>
 
 <svelte:window
@@ -219,7 +230,7 @@
       class:ready={$mapReady}
       aria-hidden="true"
       bind:this={minimap}
-      onclick={() => moveTarget($map.hoveredTile.x, $map.hoveredTile.y)}
+      onclick={handleMinimapClick}
       onmousedown={handleMinimapDragStart}
       ontouchstart={handleTouchStart}
       ontouchmove={handleTouchMove}
