@@ -163,8 +163,6 @@ export const coordinates = derived(
 export const targetStore = derived(
   [map, coordinates],
   ([$map, $coordinates]) => {
-    if (!$coordinates.length) return { x: $map.target.x, y: $map.target.y };
-    
     // Find the center tile in coordinates
     const targetTile = $coordinates.find(c => c.x === $map.target.x && c.y === $map.target.y);
     
@@ -174,9 +172,7 @@ export const targetStore = derived(
 );
 
 // Helper function to process chunk data
-function processChunkData(data) {
-  if (!data) return;
-  
+function processChunkData(data = {}) {
   // Structure for batch entity updates
   const updates = {
     structure: {},
