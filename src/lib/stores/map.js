@@ -513,34 +513,3 @@ export function updateHoveredTile(x, y) {
     hoveredTile: x !== null && y !== null ? { x, y } : null
   }));
 }
-
-// Entity loading - simplified to use only activeChunkSubscriptions
-export function loadInitialChunksForCenter() {
-  const state = get(map);
-  if (!state.ready || !state.target) return; // Renamed from isReady
-
-  const halfWidth = Math.floor(state.cols / 2) + 1;
-  const halfHeight = Math.floor(state.rows / 2) + 1;
-
-  const minX = state.target.x - halfWidth; // Renamed from centerCoord
-  const maxX = state.target.x + halfWidth; // Renamed from centerCoord
-  const minY = state.target.y - halfHeight; // Renamed from centerCoord
-  const maxY = state.target.y + halfHeight; // Renamed from centerCoord
-
-  const chunkKeys = new Set();
-
-  for (let y = minY; y <= maxY; y++) {
-    for (let x = minX; x <= maxX; x++) {
-      chunkKeys.add(getChunkKey(x, y));
-    }
-  }
-
-  // Process chunks directly without updating map state
-  chunkKeys.forEach(chunkKey => {
-    if (!activeChunkSubscriptions.has(chunkKey)) {
-      subscribeToChunk(chunkKey);
-    }
-  });
-
-  return chunkKeys.size;
-}

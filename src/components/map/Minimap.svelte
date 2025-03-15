@@ -17,6 +17,15 @@
   let open = $state(true);
   let dd = $state(false);
   let windowWidth = $state(browser ? window.innerWidth : 0);
+  let isDrag = $state(false);
+  let dragX = $state(0);
+  let dragY = $state(0);
+  let minimap = $state(null);
+  let wasDrag = $state(false);
+  let dist = $state(0);
+  let touchStartX = $state(0);
+  let touchStartY = $state(0);
+  let isTouching = $state(false);
 
   // Constants
   const BREAKPOINT = 768;
@@ -28,27 +37,10 @@
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
   const viewRangeY = $derived(Math.floor(tileCountY / 2));
   
-  // State variables
-  let isDrag = $state(false);
-  let dragX = $state(0);
-  let dragY = $state(0);
-  let minimap = $state(null);
-  let wasDrag = $state(false);
-  let dist = $state(0);
-  let touchStartX = $state(0);
-  let touchStartY = $state(0);
-  let isTouching = $state(false);
-  
   // Filter coordinates for minimap - much simpler now, doesn't remap
   const grid = $derived(coordinates);
   
-  
-  function navigateToPosition(tileX, tileY) {
-    const worldX = Math.round($map.target.x - viewRangeX + tileX); // Renamed from centerCoord
-    const worldY = Math.round($map.target.y - viewRangeY + tileY); // Renamed from centerCoord
-    
-    moveTarget(worldX, worldY); // Renamed from moveCenterTo
-  }
+  // Remove navigateToPosition - unused now that we use hoveredTile directly
 
   // Drag handling
   function handleMinimapDragStart(event) {
@@ -192,12 +184,8 @@
 
   // Click handler now directly uses the hovered tile
   function handleMinimapClick() {
-    if (wasDrag || !$mapReady) return;
-    
-    // Check if we have a hovered tile and use that
-    if ($map.hoveredTile) {
-      moveTarget($map.hoveredTile.x, $map.hoveredTile.y);
-    }
+    if (wasDrag || !$mapReady || !$map.hoveredTile) return;
+    moveTarget($map.hoveredTile.x, $map.hoveredTile.y);
   }
 
 </script>
