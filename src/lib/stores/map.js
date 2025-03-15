@@ -80,9 +80,13 @@ export const chunks = derived(
     }
     
     // Unsubscribe from any chunks that are no longer visible
-    for (const [chunkKey, unsubscribe] of chunksToRemove) {
-      unsubscribe();
-      chunkSubscriptions.delete(chunkKey);
+    // FIX: chunksToRemove is a Set of keys, not a Map of entries
+    for (const chunkKey of chunksToRemove) {
+      const unsubscribe = chunkSubscriptions.get(chunkKey);
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+        chunkSubscriptions.delete(chunkKey);
+      }
     }
     
     // Return visible chunks set
@@ -184,8 +188,6 @@ function processChunkData(data = {}) {
   
   // Skip lastUpdated metadata field
   Object.entries(data).forEach(([tileKey, tileData]) => {
-    if (tileKey === 'lastUpdated') return;
-    
     const [x, y] = tileKey.split(',').map(Number);
     
     // Process structure
