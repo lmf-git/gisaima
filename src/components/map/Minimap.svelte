@@ -7,7 +7,7 @@
     GRID_COLS_FACTOR,
     GRID_ROWS_FACTOR,
     updateHoveredTile, 
-    moveTarget // Renamed from moveCenterTo
+    moveTarget
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
   import Close from '../../components/icons/Close.svelte';
@@ -26,14 +26,6 @@
   const tileCountY = $derived($mapReady ? $map.rows * GRID_ROWS_FACTOR : 32);
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
   const viewRangeY = $derived(Math.floor(tileCountY / 2));
-  
-  // Update area calculation - keep this unchanged
-  const area = $derived({
-    startX: $map.target.x - Math.floor($map.cols / 2), // Renamed from centerCoord
-    startY: $map.target.y - Math.floor($map.rows / 2), // Renamed from centerCoord
-    width: $map.cols,
-    height: $map.rows
-  });
   
   // State variables
   let isDrag = $state(false);
@@ -56,14 +48,20 @@
       return;
     }
     
-    const minimapRect = event.currentTarget.getBoundingClientRect();
-    const clickX = event.clientX - minimapRect.left;
-    const clickY = event.clientY - minimapRect.top;
-    
-    const tileX = Math.floor(clickX / (minimapRect.width / tileCountX));
-    const tileY = Math.floor(clickY / (minimapRect.height / tileCountY));
-    
-    navigateToPosition(tileX, tileY);
+    // Check if we have a hovered tile and use that instead of calculating coordinates
+    if ($map.hoveredTile) {
+      moveTarget($map.hoveredTile.x, $map.hoveredTile.y);
+    } else {
+      // Fall back to original calculation if no tile is hovered
+      const minimapRect = event.currentTarget.getBoundingClientRect();
+      const clickX = event.clientX - minimapRect.left;
+      const clickY = event.clientY - minimapRect.top;
+      
+      const tileX = Math.floor(clickX / (minimapRect.width / tileCountX));
+      const tileY = Math.floor(clickY / (minimapRect.height / tileCountY));
+      
+      navigateToPosition(tileX, tileY);
+    }
     
     event.stopPropagation();
   }

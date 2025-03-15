@@ -31,7 +31,6 @@ export const map = writable({
   offsetX: 0,
   offsetY: 0,
   target: { x: 0, y: 0 },
-  // Remove chunks: new Set() - we'll use activeChunkSubscriptions instead
   hoveredTile: null,
   showDetails: false,
   isDragging: false,
@@ -305,7 +304,6 @@ export function resizeMap(mapElement) {
       ...state,
       cols,
       rows,
-      // No longer store centerX/centerY
       offsetX,
       offsetY,
       isReady: true
@@ -446,78 +444,73 @@ export function stopDrag() {
 export const coordinates = derived(
   [map, entityStore],
   ([$map, $entities], set) => {
-    try {
-      const useExpanded = $map.minimapVisible;
+    const useExpanded = $map.minimapVisible;
 
-      const gridCols = useExpanded
-        ? Math.min($map.cols * GRID_COLS_FACTOR)
-        : $map.cols;
-      const gridRows = useExpanded
-        ? Math.min($map.rows * GRID_ROWS_FACTOR)
-        : $map.rows;
+    const gridCols = useExpanded
+      ? Math.min($map.cols * GRID_COLS_FACTOR)
+      : $map.cols;
+    const gridRows = useExpanded
+      ? Math.min($map.rows * GRID_ROWS_FACTOR)
+      : $map.rows;
 
-      // Calculate viewport center directly when needed
-      const viewportCenterX = Math.floor(gridCols / 2);
-      const viewportCenterY = Math.floor(gridRows / 2);
+    // Calculate viewport center directly when needed
+    const viewportCenterX = Math.floor(gridCols / 2);
+    const viewportCenterY = Math.floor(gridRows / 2);
 
-      const result = [];
+    const result = [];
 
-      for (let y = 0; y < gridRows; y++) {
-        for (let x = 0; x < gridCols; x++) {
-          const globalX = x - viewportCenterX + $map.target.x; // Renamed from centerCoord
-          const globalY = y - viewportCenterY + $map.target.y; // Renamed from centerCoord
-          const locationKey = `${globalX},${globalY}`;
+    for (let y = 0; y < gridRows; y++) {
+      for (let x = 0; x < gridCols; x++) {
+        const globalX = x - viewportCenterX + $map.target.x; // Renamed from centerCoord
+        const globalY = y - viewportCenterY + $map.target.y; // Renamed from centerCoord
+        const locationKey = `${globalX},${globalY}`;
 
-          const chunkKey = getChunkKey(globalX, globalY);
-          const terrainData = terrain.getTerrainData(globalX, globalY);
+        const chunkKey = getChunkKey(globalX, globalY);
+        const terrainData = terrain.getTerrainData(globalX, globalY);
 
-          let isInMainView = true;
+        let isInMainView = true;
 
-          if (useExpanded) {
-            isInMainView =
-              x >= viewportCenterX - Math.floor($map.cols / 2) &&
-              x <= viewportCenterX + Math.floor($map.cols / 2) &&
-              y >= viewportCenterY - Math.floor($map.rows / 2) &&
-              y <= viewportCenterY + Math.floor($map.rows / 2);
-          }
-          
-          // Add highlighted property directly
-          const highlighted = $map.hoveredTile && 
-            globalX === $map.hoveredTile.x && 
-            globalY === $map.hoveredTile.y;
-          
-          // Add entity information directly
-          const structure = $entities.structure[locationKey];
-          const unitGroup = $entities.groups[locationKey];
-          const player = $entities.players[locationKey];
-          
-          result.push({
-            x: globalX,
-            y: globalY,
-            isCenter: x === viewportCenterX && y === viewportCenterY,
-            isInMainView,
-            chunkKey,
-            biome: terrainData.biome,
-            color: terrainData.color,
-            highlighted,
-            // Entity flags for easy rendering
-            hasStructure: !!structure,
-            hasUnitGroup: !!unitGroup,
-            hasPlayer: !!player,
-            // Include actual entity data if needed
-            structure, 
-            unitGroup,
-            player
-          });
+        if (useExpanded) {
+          isInMainView =
+            x >= viewportCenterX - Math.floor($map.cols / 2) &&
+            x <= viewportCenterX + Math.floor($map.cols / 2) &&
+            y >= viewportCenterY - Math.floor($map.rows / 2) &&
+            y <= viewportCenterY + Math.floor($map.rows / 2);
         }
+        
+        // Add highlighted property directly
+        const highlighted = $map.hoveredTile && 
+          globalX === $map.hoveredTile.x && 
+          globalY === $map.hoveredTile.y;
+        
+        // Add entity information directly
+        const structure = $entities.structure[locationKey];
+        const unitGroup = $entities.groups[locationKey];
+        const player = $entities.players[locationKey];
+        
+        result.push({
+          x: globalX,
+          y: globalY,
+          isCenter: x === viewportCenterX && y === viewportCenterY,
+          isInMainView,
+          chunkKey,
+          biome: terrainData.biome,
+          color: terrainData.color,
+          highlighted,
+          // Entity flags for easy rendering
+          hasStructure: !!structure,
+          hasUnitGroup: !!unitGroup,
+          hasPlayer: !!player,
+          // Include actual entity data if needed
+          structure, 
+          unitGroup,
+          player
+        });
       }
-
-      updateChunks(result);
-      set(result);
-    } catch (error) {
-      console.error("Error generating grid:", error);
-      set([]);
     }
+
+    updateChunks(result);
+    set(result);
   },
   []
 );
