@@ -17,6 +17,9 @@
     // Use $state for local component state
     let detailed = $state(false);
     
+    // Could set a different seed from URL parameters or other sources
+    let seed = $state(454232);
+    
     // Simplified derived state
     const isDragging = $derived($map.isDragging);
     
@@ -27,7 +30,9 @@
     
     onMount(() => {
         if (browser) document.body.classList.add('map-page-active');
-        setup();
+        
+        // Pass the seed to setup
+        setup({ seed });
     });
     
     onDestroy(() => {

@@ -1,11 +1,10 @@
-import { writable, derived, get } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 import { TerrainGenerator } from '../map/noise.js';
 import { ref, onValue } from "firebase/database";
 import { db } from '../firebase/database.js';
 
-// Initialize the terrain generator with a fixed seed
-const WORLD_SEED = 454232;
-const terrain = new TerrainGenerator(WORLD_SEED);
+// Keep a referance to the terrain generator for grid creation.
+let terrain;
 
 // Configuration constants
 const CHUNK_SIZE = 20;
@@ -121,8 +120,10 @@ export const targetStore = derived(
   }
 );
 
-// Simplified setup function
-export function setup() {
+// Enhanced setup function that accepts an optional seed
+export function setup(seed = 52532532523) {
+  terrain = new TerrainGenerator(seed);
+  
   map.update(state => state.ready ? state : { ...state, ready: true });
 }
 
