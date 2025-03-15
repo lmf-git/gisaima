@@ -25,7 +25,7 @@ export const map = writable({
   cols: 0,
   rows: 0,
   target: { x: 0, y: 0 },
-  hoveredTile: null,
+  highlighted: null,  // Renamed from hoveredTile
   minimap: true,
 });
 
@@ -48,8 +48,8 @@ export const coordinates = derived(
     const targetY = $map.target.y;
 
     const result = [];
-    const hoveredX = $map.hoveredTile?.x;
-    const hoveredY = $map.hoveredTile?.y;
+    const highlightedX = $map.highlighted?.x;  // Renamed from hoveredX/hoveredTile
+    const highlightedY = $map.highlighted?.y;  // Renamed from hoveredY/hoveredTile
 
     // Precompute main view boundaries for faster checks
     const mainViewMinX = viewportCenterX - Math.floor($map.cols / 2);
@@ -74,10 +74,10 @@ export const coordinates = derived(
         const chunkKey = getChunkKey(globalX, globalY);
         const terrainData = terrain.getTerrainData(globalX, globalY);
         
-        // Add entity information
+        // Add entity information - renamed unitGroups to groups for consistency
         const structure = $entities.structure[locationKey];
-        const unitGroup = $entities.groups[locationKey];
-        const player = $entities.players[locationKey];
+        const groups = $entities.groups[locationKey] || [];
+        const players = $entities.players[locationKey] || [];
         
         result.push({
           x: globalX,
@@ -87,13 +87,10 @@ export const coordinates = derived(
           chunkKey,
           biome: terrainData.biome,
           color: terrainData.color,
-          highlighted: hoveredX === globalX && hoveredY === globalY,
-          hasStructure: !!structure,
-          hasUnitGroup: !!unitGroup,
-          hasPlayer: !!player,
+          highlighted: highlightedX === globalX && highlightedY === globalY,
           structure,
-          unitGroup,
-          player,
+          groups,
+          players,
           terrain: terrainData
         });
       }
@@ -136,16 +133,16 @@ export function moveTarget(newX, newY) {
     return {
       ...prev,
       target: { x, y },
-      hoveredTile: null // Reset hover when moving
+      highlighted: null  // Renamed from hoveredTile
     };
   });
 }
 
-// Simple hover state management
-export function updateHoveredTile(x, y) {
+// Renamed from updateHoveredTile
+export function setHighlighted(x, y) {
   map.update(state => ({
     ...state,
-    hoveredTile: x !== null && y !== null ? { x, y } : null
+    highlighted: x !== null && y !== null ? { x, y } : null
   }));
 }
 
@@ -200,7 +197,7 @@ function unsubscribeFromChunk(chunkKey) {
   return false;
 }
 
-// Simplified chunk data handling with closure - update to use entities
+// Simplified chunk data handling with closure - update to support multiple entities per location
 const handleChunkData = (() => {
   // Private state within closure
   const chunkLastUpdated = new Map();
@@ -229,7 +226,7 @@ const handleChunkData = (() => {
 
       const [tileX, tileY] = tileKey.split(',').map(Number);
       
-      // Process structure
+      // Process structure (still only one structure per tile)
       if (tileData.structure) {
         updates.structure[tileKey] = {
           ...tileData.structure,
@@ -238,28 +235,34 @@ const handleChunkData = (() => {
         entitiesChanged = true;
       }
 
-      // Process players (take first one only)
+      // Process all players at this location
       if (tileData.players) {
-        const playerIds = Object.keys(tileData.players);
-        if (playerIds.length > 0) {
-          updates.players[tileKey] = {
-            ...tileData.players[playerIds[0]],
-            id: playerIds[0], chunkKey, x: tileX, y: tileY
-          };
-          entitiesChanged = true;
-        }
+        updates.players[tileKey] = [];
+        Object.entries(tileData.players).forEach(([playerId, playerData]) => {
+          updates.players[tileKey].push({
+            ...playerData,
+            id: playerId,
+            chunkKey, 
+            x: tileX, 
+            y: tileY
+          });
+        });
+        entitiesChanged = true;
       }
 
-      // Process groups (take first one only)
+      // Process all unit groups at this location
       if (tileData.groups) {
-        const groupIds = Object.keys(tileData.groups);
-        if (groupIds.length > 0) {
-          updates.groups[tileKey] = {
-            ...tileData.groups[groupIds[0]],
-            id: groupIds[0], chunkKey, x: tileX, y: tileY
-          };
-          entitiesChanged = true;
-        }
+        updates.groups[tileKey] = [];
+        Object.entries(tileData.groups).forEach(([groupId, groupData]) => {
+          updates.groups[tileKey].push({
+            ...groupData,
+            id: groupId,
+            chunkKey, 
+            x: tileX, 
+            y: tileY
+          });
+        });
+        entitiesChanged = true;
       }
     });
 

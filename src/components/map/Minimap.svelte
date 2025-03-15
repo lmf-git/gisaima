@@ -6,7 +6,7 @@
     coordinates,
     EXPANDED_COLS_FACTOR,
     EXPANDED_ROWS_FACTOR,
-    updateHoveredTile, 
+    setHighlighted,  // Renamed from updateHoveredTile
     moveTarget
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
@@ -204,10 +204,10 @@
     isTouching = false;
   }
 
-  // Click handler now directly uses the hovered tile
+  // Click handler now directly uses the highlighted tile
   function handleMinimapClick() {
-    if (wasDrag || !$ready || !$map.hoveredTile) return;
-    moveTarget($map.hoveredTile.x, $map.hoveredTile.y);
+    if (wasDrag || !$ready || !$map.highlighted) return;  // Renamed from hoveredTile
+    moveTarget($map.highlighted.x, $map.highlighted.y);  // Renamed from hoveredTile
   }
 
 </script>
@@ -264,7 +264,7 @@
                 grid-column-start: {relativeX + 1};
                 grid-row-start: {relativeY + 1};
               "
-              onmouseenter={() => updateHoveredTile(cell.x, cell.y)} 
+              onmouseenter={() => setHighlighted(cell.x, cell.y)}
               role="presentation"
               aria-hidden="true">
             </div>

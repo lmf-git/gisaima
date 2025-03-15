@@ -8,7 +8,7 @@
     TILE_SIZE,
     moveTarget,
     targetStore,
-    updateHoveredTile
+    setHighlighted  // Renamed from updateHoveredTile
   } from "../../lib/stores/map.js";
   
   // Convert to $props syntax
@@ -264,13 +264,13 @@
   
   // Tile hover handling
   function handleTileHover(cell) {
-    if (!isMoving) updateHoveredTile(cell.x, cell.y);
+    if (!isMoving) setHighlighted(cell.x, cell.y);  // Renamed from updateHoveredTile
   }
   
-  // Clear hover state when moving
+  // Clear highlight state when moving
   $effect(() => {
-    if (isMoving && $map.hoveredTile) {
-      updateHoveredTile(null, null);
+    if (isMoving && $map.highlighted) {  // Renamed from hoveredTile
+      setHighlighted(null, null);  // Renamed from updateHoveredTile
     }
   });
   
@@ -344,9 +344,9 @@
             class="tile"
             class:center={cell.isCenter}
             class:highlighted={cell.highlighted}
-            class:has-structure={cell.hasStructure}
-            class:has-unit-group={cell.hasUnitGroup}
-            class:has-player={cell.hasPlayer}
+            class:has-structure={cell.structure}
+            class:has-groups={cell.groups?.length > 0}
+            class:has-players={cell.players?.length > 0}
             onmouseenter={() => handleTileHover(cell)}
             role="gridcell"
             tabindex="-1"
@@ -359,14 +359,22 @@
           >
             <span class="coords">{cell.x},{cell.y}</span>
 
-            {#if cell.hasStructure}
+            {#if cell.structure}
               <div class="entity-indicator structure-indicator" aria-hidden="true"></div>
             {/if}
-            {#if cell.hasUnitGroup}
-              <div class="entity-indicator unit-group-indicator" aria-hidden="true"></div>
+            {#if cell.groups?.length > 0}
+              <div class="entity-indicator group-indicator" aria-hidden="true">
+                {#if cell.groups.length > 1}
+                  <span class="count">{cell.groups.length}</span>
+                {/if}
+              </div>
             {/if}
-            {#if cell.hasPlayer}
-              <div class="entity-indicator player-indicator" aria-hidden="true"></div>
+            {#if cell.players?.length > 0}
+              <div class="entity-indicator player-indicator" aria-hidden="true">
+                {#if cell.players.length > 1}
+                  <span class="count">{cell.players.length}</span>
+                {/if}
+              </div>
             {/if}
           </div>
         {/each}
@@ -508,58 +516,73 @@
   .entity-indicator {
     position: absolute;
     pointer-events: none;
-    z-index: 4; /* Increased z-index to ensure visibility */
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .structure-indicator {
     bottom: .2em;
     left: .2em;
-    width: .6em; /* Slightly larger */
-    height: .6em; /* Slightly larger */
-    background: rgba(255, 255, 255, 0.9); /* Increased opacity */
+    width: .6em;
+    height: .6em;
+    background: rgba(255, 255, 255, 0.9);
     border: .0625em solid rgba(0, 0, 0, 0.3);
-    box-shadow: 0 0 .15em rgba(255, 255, 255, 0.6); /* Added glow */
+    box-shadow: 0 0 .15em rgba(255, 255, 255, 0.6);
   }
   
-  .unit-group-indicator {
+  .group-indicator {
     top: .2em;
     right: .2em;
-    width: .5em; /* Slightly larger */
-    height: .5em; /* Slightly larger */
+    width: .5em;
+    height: .5em;
     border-radius: 50%;
-    background: rgba(255, 100, 100, 0.9); /* Increased opacity */
+    background: rgba(255, 100, 100, 0.9);
     border: .0625em solid rgba(0, 0, 0, 0.3);
-    box-shadow: 0 0 .15em rgba(255, 100, 100, 0.6); /* Added red glow */
+    box-shadow: 0 0 .15em rgba(255, 100, 100, 0.6);
+    position: relative;
   }
   
   .player-indicator {
     top: .2em;
     left: .2em;
-    width: .5em; /* Slightly larger */
-    height: .5em; /* Slightly larger */
-    background: rgba(100, 100, 255, 0.9); /* Increased opacity */
+    width: .5em;
+    height: .5em;
+    background: rgba(100, 100, 255, 0.9);
     border-radius: 50%;
     border: .0625em solid rgba(0, 0, 0, 0.3);
-    box-shadow: 0 0 .15em rgba(100, 100, 255, 0.6); /* Added blue glow */
+    box-shadow: 0 0 .15em rgba(100, 100, 255, 0.6);
+    position: relative;
   }
+
+  /* Style for count text inside indicators */
+  .count {
+    font-size: 0.6em;
+    font-weight: bold;
+    color: rgba(0, 0, 0, 0.8);
+    line-height: 1;
+  }
+  
+  /* Remove the pseudo element styles for data-count */
   
   .tile.has-structure {
-    box-shadow: inset 0 -0.1em 0.3em rgba(255, 255, 255, 0.3); /* Enhanced glow */
+    box-shadow: inset 0 -0.1em 0.3em rgba(255, 255, 255, 0.3);
   }
   
-  .tile.has-unit-group {
-    box-shadow: inset 0 0 0.3em rgba(255, 100, 100, 0.4); /* Enhanced glow */
+  .tile.has-groups {
+    box-shadow: inset 0 0 0.3em rgba(255, 100, 100, 0.4);
   }
   
-  .tile.has-player {
-    box-shadow: inset 0 0 0.3em rgba(100, 100, 255, 0.4); /* Enhanced glow */
+  .tile.has-players {
+    box-shadow: inset 0 0 0.3em rgba(100, 100, 255, 0.4);
   }
   
   /* Combined entity indicator styles for better visibility */
-  .tile.has-structure.has-unit-group,
-  .tile.has-structure.has-player,
-  .tile.has-unit-group.has-player {
-    box-shadow: inset 0 0 0.4em rgba(255, 255, 255, 0.5); /* Enhanced combined glow */
+  .tile.has-structure.has-groups,
+  .tile.has-structure.has-players,
+  .tile.has-groups.has-players {
+    box-shadow: inset 0 0 0.4em rgba(255, 255, 255, 0.5);
   }
 
   @media (hover: none) {
