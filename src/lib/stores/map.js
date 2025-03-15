@@ -12,10 +12,8 @@ export const TILE_SIZE = 5;
 export const EXPANDED_COLS_FACTOR = 3.5;
 export const EXPANDED_ROWS_FACTOR = 2.85;
 
-// Store subscriptions but don't export this Map
 const chunkSubscriptions = new Map();
 
-// 1. DEFINE BASE WRITABLE STORES FIRST
 export const map = writable({
   ready: false,
   cols: 0,
@@ -31,10 +29,8 @@ export const entities = writable({
   players: {}
 });
 
-// 2. SIMPLE DERIVED STORES
 export const ready = derived(map, $map => $map.ready);
 
-// 3. CHUNKS DERIVED STORE THAT UPDATES ENTITIES
 export const chunks = derived(
   map,
   ($map, set) => {
@@ -95,10 +91,9 @@ export const chunks = derived(
   new Set()
 );
 
-// 4. COORDINATES DEPENDS ON ENTITIES STORE
 export const coordinates = derived(
-  [map, entities, chunks], // Make sure to depend on chunks to ensure entities are loaded
-  ([$map, $entities, $chunks], set) => {
+  [map, entities, chunks],
+  ([$map, $entities], set) => {
     // Check if map is ready before computing
     if (!$map.ready || !terrain) return set([]);
     
@@ -260,54 +255,4 @@ export function setHighlighted(x, y) {
 // Simplified chunk key utility
 export function getChunkKey(x, y) {
   return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
-};
-
-// Consolidated chunk data processor
-function attachEntities(data) {
-  if (!data) return;
-  
-  // Structure for batch entity updates
-  const updates = {
-    structure: {},
-    groups: {},
-    players: {}
-  };
-  
-  let entitiesChanged = false;
-  
-  // Skip lastUpdated metadata field
-  Object.entries(data).forEach(([tileKey, tileData]) => {
-    if (tileKey === 'lastUpdated') return;
-    
-    const [x, y] = tileKey.split(',').map(Number);
-    
-    // Process structure (one per tile)
-    if (tileData.structure) {
-      updates.structure[tileKey] = { ...tileData.structure, x, y };
-      entitiesChanged = true;
-    }
-    
-    // Process player groups (multiple per tile)
-    if (tileData.players) {
-      updates.players[tileKey] = Object.entries(tileData.players)
-        .map(([id, data]) => ({ ...data, id, x, y }));
-      entitiesChanged = true;
-    }
-    
-    // Process unit groups (multiple per tile)
-    if (tileData.groups) {
-      updates.groups[tileKey] = Object.entries(tileData.groups)
-        .map(([id, data]) => ({ ...data, id, x, y }));
-      entitiesChanged = true;
-    }
-  });
-  
-  // Only update if entities changed
-  if (entitiesChanged) {
-    entities.update(current => ({
-      structure: { ...current.structure, ...updates.structure },
-      groups: { ...current.groups, ...updates.groups },
-      players: { ...current.players, ...updates.players }
-    }));
-  }
 };
