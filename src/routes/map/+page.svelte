@@ -10,41 +10,28 @@
         mapReady,
         targetStore,
         setup,
-        cleanupChunkSubscriptions // Add import for cleanup
+        cleanupChunkSubscriptions
     } from "../../lib/stores/map.js";
-    import { get } from 'svelte/store';
+    import { browser } from '$app/environment';
+    import { onMount, onDestroy } from 'svelte';
     
+    // Simplified derived state
     const isDragging = $derived($map.isDragging);
     
-    import { onMount, onDestroy } from 'svelte';
-    import { browser } from '$app/environment';
-    
     // UI state management functions
-    function openDetailsModal() {
-        map.update(state => ({
-            ...state,
-            showDetails: true
-        }));
+    function toggleDetailsModal(show) {
+        map.update(state => ({ ...state, showDetails: show }));
     }
-    
-    function closeDetailsModal() {
-        map.update(state => ({
-            ...state,
-            showDetails: false
-        }));
-    }
-    
-    // Remove redundant cleanupInternalIntervals function
     
     onMount(() => {
         if (browser) document.body.classList.add('map-page-active');
-        setup(); // Call setup once when the page loads to initialize the map
+        setup();
     });
     
     onDestroy(() => {
         if (browser) {
             document.body.classList.remove('map-page-active');
-            cleanupChunkSubscriptions(); // Centralize all cleanup here
+            cleanupChunkSubscriptions();
         }
     });
 </script>
@@ -55,16 +42,16 @@
 
     {#if $map.showDetails}
         <Details 
-        x={$targetStore.x} 
-        y={$targetStore.y} 
-        terrain={$targetStore.biome?.name} 
-        onClose={closeDetailsModal}
+            x={$targetStore.x} 
+            y={$targetStore.y} 
+            terrain={$targetStore.biome?.name} 
+            onClose={() => toggleDetailsModal(false)}
         />
     {:else}
         <Legend 
-        x={$targetStore.x}  
-        y={$targetStore.y}  
-        openDetails={openDetailsModal} 
+            x={$targetStore.x}  
+            y={$targetStore.y}  
+            openDetails={() => toggleDetailsModal(true)} 
         />
     {/if}
 

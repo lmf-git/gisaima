@@ -7,61 +7,29 @@
     coordinates,
     TILE_SIZE,
     resizeMap,
-    startDrag,
-    stopDrag,
-    drag,
+    handleDragAction,
     moveTarget,
     targetStore,
-    updateHoveredTile,
-    // Remove cleanupChunkSubscriptions import
+    updateHoveredTile
   } from "../../lib/stores/map.js";
   
   // Local component state
   let mapElement = null;
   let resizeObserver = null;
   let introduced = $state(false);
-  let isTouching = $state(false);
-  let touchStartX = $state(0);
-  let touchStartY = $state(0);
-  let isMouseActuallyDown = $state(false);
-  
-  // Add keyboard navigation state locally
-  let keyboardNavigationInterval = $state(null);
   let keysPressed = $state(new Set());
+  let keyboardNavigationInterval = $state(null);
   
-  const isMoving = $derived($map.isDragging || keyboardNavigationInterval !== null || isTouching);
+  // Simplified derived state
+  const isMoving = $derived($map.isDragging || keyboardNavigationInterval !== null);
   
-  // Initialize when mounted
-  onMount(() => {
-    // Setup resize observer
-    resizeObserver = new ResizeObserver(() => {
-      resizeMap(mapElement);
-    });
-    resizeObserver.observe(mapElement);
+  // Only include grid cells that are in the main view
+  const gridArray = derived(
+    coordinates,
+    $coordinates => $coordinates?.filter(cell => cell.isInMainView) || []
+  );
     
-    // Initial resize to set up dimensions
-    resizeMap(mapElement);
-    
-    // Setup keyboard navigation
-    const keyboardCleanup = setupKeyboardNavigation();
-    
-    // Use CSS animation-fill-mode instead of setTimeout
-    setTimeout(() => introduced = true, 1000);
-
-    // Define cleanup function
-    return function() {
-      if (resizeObserver) resizeObserver.disconnect();
-      if (keyboardCleanup) keyboardCleanup();
-      if (keyboardNavigationInterval) {
-        clearInterval(keyboardNavigationInterval);
-        keyboardNavigationInterval = null;
-      }
-    };
-  });
-  
-  // Remove Firebase subscription cleanup - moved to page
-  
-  // Move map by keys function - moved from store
+  // Simplified keyboard navigation
   function moveMapByKeys() {
     let xChange = 0;
     let yChange = 0;
@@ -75,11 +43,10 @@
 
     moveTarget($map.target.x - xChange, $map.target.y - yChange);
   }
-  
-  // Simplify keyboard navigation - now fully contained in Grid component
-  const setupKeyboardNavigation = () => {
+
+  // Set up keyboard events
+  function setupKeyboardNavigation() {
     const keyHandler = event => {
-      // Prevent keyboard navigation until introduction completes
       if (!introduced) return;
       
       const key = event.key.toLowerCase();
@@ -91,7 +58,7 @@
         keysPressed.add(key);
         
         if (!keyboardNavigationInterval) {
-          moveMapByKeys(); // Now using local function
+          moveMapByKeys();
           keyboardNavigationInterval = setInterval(moveMapByKeys, 200);
         }
         
@@ -113,138 +80,125 @@
       window.removeEventListener("keydown", keyHandler);
       window.removeEventListener("keyup", keyHandler);
     };
-  };
-
-  // Simplified drag handlers
-  const handleStartDrag = event => {
-    // Prevent drag until introduction completes
-    if (!introduced) return;
-    
-    if (event.button !== 0) return;
-    
-    if (startDrag(event) && mapElement) {
-      mapElement.style.cursor = "grabbing";
-      mapElement.classList.add("dragging");
-    }
-    event.preventDefault();
-  };
-
-  const handleStopDrag = () => {
-    if (stopDrag() && mapElement) {
-      mapElement.style.cursor = "grab";
-      mapElement.classList.remove("dragging");
-    }
-  };
+  }
   
-  // Simplified global event handlers
-  const globalMouseDown = () => isMouseActuallyDown = true;
-  const globalMouseUp = () => {
-    isMouseActuallyDown = false;
-    if ($map.isDragging) handleStopDrag();
-  };
-  const globalMouseMove = event => {
-    if (isMouseActuallyDown && $map.isDragging) drag(event);
-    else if (!isMouseActuallyDown && $map.isDragging) {
-      handleStopDrag();
-    }
-  };
-
-  // Touch handling functions
-  function handleTouchStart(event) {
-    // Prevent touch actions until introduction completes
-    if (!introduced || !$map.ready) return; // Renamed from isReady
+  // Unified drag event handlers
+  function handleMouseDown(event) {
+    if (!introduced || event.button !== 0) return;
     
-    // Prevent default to stop page scrolling immediately
-    event.preventDefault();
-    
-    const touch = event.touches[0];
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
-    isTouching = true;
-    
-    // Update the map state similar to mouse drag start
-    if (startDrag({
-      clientX: touch.clientX,
-      clientY: touch.clientY,
-      button: 0, // Simulate left button
-      preventDefault: () => {}
+    if (handleDragAction({ 
+      type: 'dragstart', 
+      clientX: event.clientX, 
+      clientY: event.clientY, 
+      button: event.button 
     }) && mapElement) {
       mapElement.style.cursor = "grabbing";
-      mapElement.classList.add("dragging");
+    }
+    
+    event.preventDefault();
+  }
+  
+  function handleMouseMove(event) {
+    if ($map.isDragging && $map.dragSource === 'map') {
+      handleDragAction({ 
+        type: 'dragmove', 
+        clientX: event.clientX, 
+        clientY: event.clientY 
+      });
     }
   }
   
-  function handleTouchMove(event) {
-    if (!isTouching || !$map.ready) return; // Renamed from isReady
-    event.preventDefault(); // Prevent scrolling when dragging
+  function handleMouseUp() {
+    if ($map.isDragging && $map.dragSource === 'map') {
+      handleDragAction({ type: 'dragend' });
+      if (mapElement) mapElement.style.cursor = "grab";
+    }
+  }
+  
+  // Touch event handlers
+  function handleTouchStart(event) {
+    if (!introduced || !$map.ready) return;
+    event.preventDefault();
     
-    // Increase touch sensitivity by applying a multiplier to touch movements
-    const touchSensitivity = 1.5; // Increase sensitivity for touch dragging
     const touch = event.touches[0];
-    
-    // Apply the sensitivity multiplier to make touch movement more responsive
-    const adjustedClientX = touchStartX + (touch.clientX - touchStartX) * touchSensitivity;
-    const adjustedClientY = touchStartY + (touch.clientY - touchStartY) * touchSensitivity;
-    
-    // Update the map via the drag function with enhanced sensitivity
-    drag({
-      clientX: adjustedClientX,
-      clientY: adjustedClientY
+    handleDragAction({ 
+      type: 'touchstart', 
+      touches: [touch] 
     });
   }
   
-  function handleTouchEnd() {
-    if (!isTouching) return;
-    isTouching = false;
+  function handleTouchMove(event) {
+    if (!$map.isDragging || $map.dragSource !== 'map') return;
+    event.preventDefault();
     
-    if (mapElement) {
-      mapElement.style.cursor = "grab";
-      mapElement.classList.remove("dragging");
-    }
-    
-    // End the drag - remove non-existent function call
-    stopDrag();
+    handleDragAction({ 
+      type: 'touchmove', 
+      touches: event.touches 
+    }, 1.5); // Higher sensitivity for touch
   }
-
-  // Consolidate highlighting functions
+  
+  function handleTouchEnd() {
+    if ($map.isDragging && $map.dragSource === 'map') {
+      handleDragAction({ type: 'touchend' });
+    }
+  }
+  
+  // Tile hover handling
   function handleTileHover(cell) {
     if (!isMoving) updateHoveredTile(cell.x, cell.y);
   }
   
-  // Only clear hover on movement when necessary
+  // Clear hover state when moving
   $effect(() => {
     if (isMoving && $map.hoveredTile) {
       updateHoveredTile(null, null);
     }
   });
+  
+  // Component initialization
+  onMount(() => {
+    // Setup resize observer
+    resizeObserver = new ResizeObserver(() => {
+      if (mapElement) resizeMap(mapElement);
+    });
+    
+    if (mapElement) {
+      resizeObserver.observe(mapElement);
+      resizeMap(mapElement);
+    }
+    
+    // Setup keyboard navigation
+    const keyboardCleanup = setupKeyboardNavigation();
+    
+    // Show grid after a short delay
+    setTimeout(() => introduced = true, 1000);
 
-  // Track the background color based on target tile
-  const backgroundColor = $derived(
-    $targetStore?.color || "var(--color-dark-blue)" // Renamed from centerTileStore
-  );
+    return () => {
+      if (resizeObserver) resizeObserver.disconnect();
+      if (keyboardCleanup) keyboardCleanup();
+      if (keyboardNavigationInterval) {
+        clearInterval(keyboardNavigationInterval);
+      }
+    };
+  });
 
-  // Move gridArray derived store to local component
-  const gridArray = derived(
-    coordinates,
-    ($expandedGrid) => $expandedGrid?.filter(cell => cell.isInMainView) || []
-  );
-
+  // Get background color from target tile
+  const backgroundColor = $derived($targetStore?.color || "var(--color-dark-blue)");
 </script>
 
 <svelte:window
-  onmousedown={globalMouseDown}
-  onmouseup={globalMouseUp}
-  onmousemove={globalMouseMove}
-  onmouseleave={handleStopDrag}
-  onblur={() => $map.isDragging && handleStopDrag()}
-  onvisibilitychange={() => document.visibilityState === 'hidden' && handleStopDrag()}
+  onmouseup={handleMouseUp}
+  onmousemove={handleMouseMove}
+  onmouseleave={handleMouseUp}
+  onblur={() => $map.isDragging && handleMouseUp()}
+  onvisibilitychange={() => document.visibilityState === 'hidden' && handleMouseUp()}
 />
 
-<div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={$map.showDetails} class:touch-active={isTouching}>
+<div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={$map.showDetails} class:touch-active={$map.isDragging && $map.dragSource === 'map'}>
   <div
     class="map"
     bind:this={mapElement}
-    onmousedown={handleStartDrag}
+    onmousedown={handleMouseDown}
     ontouchstart={handleTouchStart}
     ontouchmove={handleTouchMove}
     ontouchend={handleTouchEnd}
@@ -263,10 +217,9 @@
       >
         {#each $gridArray as cell (cell.x + ':' + cell.y)}
           {@const distance = Math.sqrt(
-            Math.pow(cell.x - $map.target.x, 2) + // Renamed from centerCoord
-            Math.pow(cell.y - $map.target.y, 2)   // Renamed from centerCoord
+            Math.pow(cell.x - $map.target.x, 2) + 
+            Math.pow(cell.y - $map.target.y, 2)
           )}
-          <!-- No need to check entity indicators separately! -->
           <div
             class="tile"
             class:center={cell.isCenter}
