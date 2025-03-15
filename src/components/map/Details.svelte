@@ -7,10 +7,15 @@
   
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
-  // Use either passed terrain or check centerTileStore directly
+  // Use either passed terrain or check targetStore directly
   const formattedName = $derived(
     _fmt(terrain || $targetStore.biome?.name) || "Unknown"
   );
+  
+  // Access entity data from targetStore
+  const structure = $derived($targetStore.structure);
+  const players = $derived($targetStore.players || []);
+  const groups = $derived($targetStore.groups || []);
   
   const escape = event => event.key === 'Escape' && onClose?.();
 </script>
@@ -22,6 +27,35 @@
     <div class="content">
       <h2>Details {x}, {y}</h2>
       <p>Terrain: {formattedName}</p>
+      
+      {#if structure}
+        <div class="section">
+          <h3>Structure</h3>
+          <p>{structure.name || "Unknown structure"}</p>
+        </div>
+      {/if}
+      
+      {#if players.length > 0}
+        <div class="section">
+          <h3>Players ({players.length})</h3>
+          <ul>
+            {#each players as player}
+              <li>{player.name || player.id}</li>
+            {/each}
+          </ul>
+        </div>
+      {/if}
+      
+      {#if groups.length > 0}
+        <div class="section">
+          <h3>Unit Groups ({groups.length})</h3>
+          <ul>
+            {#each groups as group}
+              <li>{group.name || group.id} - Units: {group.unitCount || "?"}</li>
+            {/each}
+          </ul>
+        </div>
+      {/if}
     </div>
     <button class="close-btn" onclick={onClose}>
       <Close size="2.2em" color="rgba(0, 0, 0, 0.8)" />
@@ -136,5 +170,28 @@
     p {
       font-size: 1em;
     }
+  }
+
+  .section {
+    margin-top: 1em;
+    padding-top: 0.8em;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  h3 {
+    margin: 0 0 0.5em 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  ul {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+    font-size: 0.9em;
+  }
+  
+  li {
+    margin-bottom: 0.3em;
   }
 </style>

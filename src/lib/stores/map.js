@@ -3,7 +3,7 @@ import { TerrainGenerator } from '../map/noise.js';
 import { ref, onValue } from "firebase/database";
 import { db } from '../firebase/database.js';
 
-// Keep a referance to the terrain generator for grid creation.
+// Keep a reference to the terrain generator for grid creation
 let terrain;
 
 // Configuration constants
@@ -12,12 +12,95 @@ export const TILE_SIZE = 5;
 export const EXPANDED_COLS_FACTOR = 3.5;
 export const EXPANDED_ROWS_FACTOR = 2.85;
 
-// Unified grid generation
+// Store subscriptions but don't export this Map
+const chunkSubscriptions = new Map();
+
+// 1. DEFINE BASE WRITABLE STORES FIRST
+export const map = writable({
+  ready: false,
+  cols: 0,
+  rows: 0,
+  target: { x: 0, y: 0 },
+  highlighted: null,
+  minimap: true,
+});
+
+export const entities = writable({
+  structure: {},
+  groups: {},
+  players: {}
+});
+
+// 2. SIMPLE DERIVED STORES
+export const ready = derived(map, $map => $map.ready);
+
+// 3. CHUNKS DERIVED STORE THAT UPDATES ENTITIES
+export const chunks = derived(
+  map,
+  ($map, set) => {
+    if (!$map.ready || !terrain) return set(new Set());
+    
+    // Calculate visible area chunk bounds
+    const expandedFactor = $map.minimap ? 1 : 0;
+    const colsRadius = Math.ceil($map.cols * (1 + expandedFactor * (EXPANDED_COLS_FACTOR - 1)) / 2);
+    const rowsRadius = Math.ceil($map.rows * (1 + expandedFactor * (EXPANDED_ROWS_FACTOR - 1)) / 2);
+    
+    const minX = $map.target.x - colsRadius;
+    const maxX = $map.target.x + colsRadius;
+    const minY = $map.target.y - rowsRadius;
+    const maxY = $map.target.y + rowsRadius;
+    
+    const minChunkX = Math.floor(minX / CHUNK_SIZE);
+    const maxChunkX = Math.floor(maxX / CHUNK_SIZE);
+    const minChunkY = Math.floor(minY / CHUNK_SIZE);
+    const maxChunkY = Math.floor(maxY / CHUNK_SIZE);
+    
+    // Track chunks to remove
+    const chunksToRemove = new Set(chunkSubscriptions.keys());
+    const visibleChunks = new Set();
+    
+    // Process visible chunks
+    for (let y = minChunkY; y <= maxChunkY; y++) {
+      for (let x = minChunkX; x <= maxChunkX; x++) {
+        const chunkKey = `${x},${y}`;
+        visibleChunks.add(chunkKey);
+        
+        // Keep if already active, add if new
+        if (chunkSubscriptions.has(chunkKey)) {
+          chunksToRemove.delete(chunkKey);
+        } else {
+          // Subscribe directly
+          const chunkRef = ref(db, `chunks/${chunkKey}`);
+          const unsubscribe = onValue(chunkRef, snapshot => {
+            if (snapshot.exists()) {
+              const data = snapshot.val();
+              processChunkData(data);
+            }
+          });
+          
+          chunkSubscriptions.set(chunkKey, unsubscribe);
+        }
+      }
+    }
+    
+    // Unsubscribe from any chunks that are no longer visible
+    for (const [chunkKey, unsubscribe] of chunksToRemove) {
+      unsubscribe();
+      chunkSubscriptions.delete(chunkKey);
+    }
+    
+    // Return visible chunks set
+    return visibleChunks;
+  },
+  new Set()
+);
+
+// 4. COORDINATES DEPENDS ON ENTITIES STORE
 export const coordinates = derived(
-  [map, entities],
-  ([$map, $entities], set) => {
-    // Check if map is ready before computing.
-    if (!$map.ready) return set([]);
+  [map, entities, chunks], // Make sure to depend on chunks to ensure entities are loaded
+  ([$map, $entities, $chunks], set) => {
+    // Check if map is ready before computing
+    if (!$map.ready || !terrain) return set([]);
     
     const useExpanded = $map.minimap;
     const gridCols = useExpanded ? Math.min($map.cols * EXPANDED_COLS_FACTOR) : $map.cols;
@@ -54,7 +137,7 @@ export const coordinates = derived(
         const chunkKey = getChunkKey(globalX, globalY);
         const terrainData = terrain.getTerrainData(globalX, globalY);
         
-        // Add entity information - renamed unitGroups to groups for consistency
+        // Add entity information - make sure to access from entities store
         const structure = $entities.structure[locationKey];
         const groups = $entities.groups[locationKey] || [];
         const players = $entities.players[locationKey] || [];
@@ -81,87 +164,7 @@ export const coordinates = derived(
   []
 );
 
-// Move entity state to a separate writable store to trigger coordinates updates
-export const entities = writable({
-  structure: {},
-  groups: {},
-  players: {}
-});
-
-// Create a store using Svelte's store API - remove chunks from map state
-export const map = writable({
-  ready: false,
-  cols: 0,
-  rows: 0,
-  target: { x: 0, y: 0 },
-  highlighted: null,  // Renamed from hoveredTile
-  minimap: true,
-});
-
-// Export ready derived store for use across components
-export const ready = derived(map, $map => $map.ready);
-
-// Store subscriptions but don't export this Map
-const chunkSubscriptions = new Map();
-
-// Make chunks the single source of truth for visible chunks AND subscriptions
-export const chunks = derived(
-  map,
-  ($map, set) => {
-    if (!$map.ready) return set(new Set());
-    
-    // Calculate view dimensions
-    const expandedFactor = $map.minimap ? 1 : 0;
-    const colsRadius = Math.ceil($map.cols * (1 + expandedFactor * (EXPANDED_COLS_FACTOR - 1)) / 2);
-    const rowsRadius = Math.ceil($map.rows * (1 + expandedFactor * (EXPANDED_ROWS_FACTOR - 1)) / 2);
-    
-    // Calculate visible area chunk bounds
-    const minX = $map.target.x - colsRadius;
-    const maxX = $map.target.x + colsRadius;
-    const minY = $map.target.y - rowsRadius;
-    const maxY = $map.target.y + rowsRadius;
-    
-    const minChunkX = Math.floor(minX / CHUNK_SIZE);
-    const maxChunkX = Math.floor(maxX / CHUNK_SIZE);
-    const minChunkY = Math.floor(minY / CHUNK_SIZE);
-    const maxChunkY = Math.floor(maxY / CHUNK_SIZE);
-    
-    // Current set of chunk keys to keep visible
-    const visibleChunks = new Set();
-    
-    // Create the new visible chunk set and subscribe to new chunks
-    for (let y = minChunkY; y <= maxChunkY; y++) {
-      for (let x = minChunkX; x <= maxChunkX; x++) {
-        const chunkKey = `${x},${y}`;
-        visibleChunks.add(chunkKey);
-        
-        // Subscribe to new chunks
-        if (!chunkSubscriptions.has(chunkKey)) {
-          const chunkRef = ref(db, `chunks/${chunkKey}`);
-          const unsubscribe = onValue(chunkRef, snapshot => attachEntities(snapshot.val()));
-          
-          chunkSubscriptions.set(chunkKey, unsubscribe);
-        }
-      }
-    }
-    
-    // Unsubscribe from chunks that are no longer visible
-    for (const [chunkKey, unsubscribe] of chunkSubscriptions.entries()) {
-      if (!visibleChunks.has(chunkKey)) {
-        unsubscribe();
-        chunkSubscriptions.delete(chunkKey);
-      }
-    }
-    
-    // Return visible chunks set
-    return visibleChunks;
-  },
-  new Set()
-);
-
-
-
-// Modified derived store to use coordinates instead of calling terrain separately
+// 5. TARGET STORE DEPENDS ON COORDINATES
 export const targetStore = derived(
   [map, coordinates],
   ([$map, $coordinates]) => {
@@ -174,6 +177,56 @@ export const targetStore = derived(
     return targetTile || { x: $map.target.x, y: $map.target.y };
   }
 );
+
+// Helper function to process chunk data
+function processChunkData(data) {
+  if (!data) return;
+  
+  // Structure for batch entity updates
+  const updates = {
+    structure: {},
+    groups: {},
+    players: {}
+  };
+  
+  let entitiesChanged = false;
+  
+  // Skip lastUpdated metadata field
+  Object.entries(data).forEach(([tileKey, tileData]) => {
+    if (tileKey === 'lastUpdated') return;
+    
+    const [x, y] = tileKey.split(',').map(Number);
+    
+    // Process structure
+    if (tileData.structure) {
+      updates.structure[tileKey] = { ...tileData.structure, x, y };
+      entitiesChanged = true;
+    }
+    
+    // Process player groups (multiple per tile)
+    if (tileData.players) {
+      updates.players[tileKey] = Object.entries(tileData.players)
+        .map(([id, data]) => ({ ...data, id, x, y }));
+      entitiesChanged = true;
+    }
+    
+    // Process unit groups (multiple per tile)
+    if (tileData.groups) {
+      updates.groups[tileKey] = Object.entries(tileData.groups)
+        .map(([id, data]) => ({ ...data, id, x, y }));
+      entitiesChanged = true;
+    }
+  });
+  
+  // Only update if entities changed
+  if (entitiesChanged) {
+    entities.update(current => ({
+      structure: { ...current.structure, ...updates.structure },
+      groups: { ...current.groups, ...updates.groups },
+      players: { ...current.players, ...updates.players }
+    }));
+  }
+}
 
 // Enhanced setup function that accepts an optional seed
 export function setup(seed = 52532532523) {
