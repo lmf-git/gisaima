@@ -6,8 +6,6 @@
     mapReady,
     coordinates,
     TILE_SIZE,
-    resizeMap,
-    handleDragAction,
     moveTarget,
     targetStore,
     updateHoveredTile
@@ -28,7 +26,130 @@
     coordinates,
     $coordinates => $coordinates?.filter(cell => cell.isInMainView) || []
   );
+  
+  // Add resizeMap function here
+  function resizeMap(mapElement) {
+    if (!mapElement) return;
     
+    map.update(state => {
+      const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const tileSizePx = TILE_SIZE * baseFontSize;
+      const width = mapElement.clientWidth;
+      const height = mapElement.clientHeight;
+
+      // Ensure odd numbers for centered positioning
+      let cols = Math.ceil(width / tileSizePx);
+      cols = cols % 2 === 0 ? cols - 1 : cols;
+
+      let rows = Math.ceil(height / tileSizePx);
+      rows = rows % 2 === 0 ? rows - 1 : rows;
+
+      cols = Math.max(cols, 5);
+      rows = Math.max(rows, 5);
+
+      // Calculate center position directly
+      const viewportCenterX = Math.floor(cols / 2);
+      const viewportCenterY = Math.floor(rows / 2);
+
+      return {
+        ...state,
+        cols,
+        rows,
+        offsetX: viewportCenterX + state.target.x,
+        offsetY: viewportCenterY + state.target.y,
+      };
+    });
+  }
+  
+  // Add handleDragAction for Grid
+  function handleDragAction(event, sensitivity = 1) {
+    const state = $map;
+    
+    // Start drag
+    if (event.type === 'dragstart' || event.type === 'touchstart') {
+      const clientX = event.clientX || event.touches?.[0]?.clientX || 0;
+      const clientY = event.clientY || event.touches?.[0]?.clientY || 0;
+      
+      map.update(state => ({
+        ...state,
+        isDragging: true,
+        dragStartX: clientX,
+        dragStartY: clientY,
+        dragAccumX: 0,
+        dragAccumY: 0,
+        dragSource: 'map'
+      }));
+      
+      return true;
+    }
+    
+    // Process drag
+    else if (event.type === 'dragmove' || event.type === 'touchmove') {
+      if (!state.isDragging || state.dragSource !== 'map') return false;
+      
+      const clientX = event.clientX || event.touches?.[0]?.clientX || 0;
+      const clientY = event.clientY || event.touches?.[0]?.clientY || 0;
+      
+      const deltaX = clientX - state.dragStartX;
+      const deltaY = clientY - state.dragStartY;
+
+      const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      const tileSizePx = TILE_SIZE * baseFontSize;
+      const adjustedTileSize = tileSizePx * sensitivity;
+
+      const dragAccumX = (state.dragAccumX || 0) + deltaX;
+      const dragAccumY = (state.dragAccumY || 0) + deltaY;
+
+      const cellsMovedX = Math.round(dragAccumX / adjustedTileSize);
+      const cellsMovedY = Math.round(dragAccumY / adjustedTileSize);
+
+      if (cellsMovedX === 0 && cellsMovedY === 0) {
+        map.update(state => ({
+          ...state,
+          dragStartX: clientX,
+          dragStartY: clientY,
+          dragAccumX,
+          dragAccumY
+        }));
+        return false;
+      }
+
+      const newX = state.target.x - cellsMovedX;
+      const newY = state.target.y - cellsMovedY;
+      const remainderX = dragAccumX - (cellsMovedX * adjustedTileSize);
+      const remainderY = dragAccumY - (cellsMovedY * adjustedTileSize);
+
+      moveTarget(newX, newY);
+
+      map.update(state => ({
+        ...state,
+        dragStartX: clientX,
+        dragStartY: clientY,
+        dragAccumX: remainderX,
+        dragAccumY: remainderY
+      }));
+
+      return true;
+    }
+    
+    // End drag
+    else if (event.type === 'dragend' || event.type === 'touchend' || event.type === 'touchcancel') {
+      if (!state.isDragging || state.dragSource !== 'map') return false;
+      
+      map.update(state => ({
+        ...state,
+        isDragging: false,
+        dragAccumX: 0,
+        dragAccumY: 0,
+        dragSource: null
+      }));
+      
+      return true;
+    }
+    
+    return false;
+  }
+
   // Simplified keyboard navigation
   function moveMapByKeys() {
     let xChange = 0;

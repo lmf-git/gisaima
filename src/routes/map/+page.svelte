@@ -9,8 +9,7 @@
         map, 
         mapReady,
         targetStore,
-        setup,
-        cleanupChunkSubscriptions
+        setup
     } from "../../lib/stores/map.js";
     import { browser } from '$app/environment';
     import { onMount, onDestroy } from 'svelte';
@@ -31,7 +30,6 @@
     onDestroy(() => {
         if (browser) {
             document.body.classList.remove('map-page-active');
-            cleanupChunkSubscriptions();
         }
     });
 </script>

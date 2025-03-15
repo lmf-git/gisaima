@@ -81,7 +81,7 @@ function unsubscribeFromChunk(chunkKey) {
     if (typeof unsubscribe === 'function') unsubscribe();
     
     activeChunkSubscriptions.delete(chunkKey);
-    cleanEntitiesForChunk(chunkKey);
+
     return true;
   } catch (err) {
     console.error(`Error unsubscribing from chunk ${chunkKey}:`, err);
@@ -164,26 +164,6 @@ const handleChunkData = (() => {
   };
 })();
 
-// Simplified entity cleanup function
-function cleanEntitiesForChunk(chunkKey) {
-  entityStore.update(entities => {
-    // Create a cleanup function to reuse for each entity type
-    const removeChunkEntities = (entityMap) => {
-      const result = { ...entityMap };
-      Object.keys(result).forEach(key => {
-        if (result[key]?.chunkKey === chunkKey) delete result[key];
-      });
-      return result;
-    };
-    
-    return {
-      structure: removeChunkEntities(entities.structure),
-      groups: removeChunkEntities(entities.groups),
-      players: removeChunkEntities(entities.players)
-    };
-  });
-}
-
 // Simplified chunk management
 export function updateChunks(gridArray) {
   if (!gridArray?.length) return;
@@ -217,14 +197,6 @@ export function getEntitiesAt(x, y) {
   };
 }
 
-// Unified cleanup function
-export function cleanupChunkSubscriptions() {
-  for (const [chunkKey, unsubscribe] of activeChunkSubscriptions.entries()) {
-    if (typeof unsubscribe === 'function') unsubscribe();
-    activeChunkSubscriptions.delete(chunkKey);
-  }
-}
-
 // Simplified derived store
 export const targetStore = derived(
   map,
@@ -233,40 +205,6 @@ export const targetStore = derived(
     return { x, y, ...terrain.getTerrainData(x, y) };
   }
 );
-
-// Simplified map resizing function
-export function resizeMap(mapElement) {
-  if (!mapElement) return;
-  
-  map.update(state => {
-    const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    const tileSizePx = TILE_SIZE * baseFontSize;
-    const width = mapElement.clientWidth;
-    const height = mapElement.clientHeight;
-
-    // Ensure odd numbers for centered positioning
-    let cols = Math.ceil(width / tileSizePx);
-    cols = cols % 2 === 0 ? cols - 1 : cols;
-
-    let rows = Math.ceil(height / tileSizePx);
-    rows = rows % 2 === 0 ? rows - 1 : rows;
-
-    cols = Math.max(cols, 5);
-    rows = Math.max(rows, 5);
-
-    // Calculate center position directly
-    const viewportCenterX = Math.floor(cols / 2);
-    const viewportCenterY = Math.floor(rows / 2);
-
-    return {
-      ...state,
-      cols,
-      rows,
-      offsetX: viewportCenterX + state.target.x,
-      offsetY: viewportCenterY + state.target.y,
-    };
-  });
-}
 
 // Simplified setup function
 export function setup() {
@@ -293,95 +231,6 @@ export function moveTarget(newX, newY) {
   });
 }
 
-// Unified drag handling
-export function handleDragAction(event, sensitivity = 1, dragSource = 'map') {
-  const state = get(map);
-  
-  // Start drag
-  if (event.type === 'dragstart' || event.type === 'touchstart') {
-    const clientX = event.clientX || event.touches?.[0]?.clientX || 0;
-    const clientY = event.clientY || event.touches?.[0]?.clientY || 0;
-    
-    map.update(state => ({
-      ...state,
-      isDragging: true,
-      dragStartX: clientX,
-      dragStartY: clientY,
-      dragAccumX: 0,
-      dragAccumY: 0,
-      dragSource
-    }));
-    
-    return true;
-  }
-  
-  // Process drag
-  else if (event.type === 'dragmove' || event.type === 'touchmove') {
-    if (!state.isDragging || state.dragSource !== dragSource) return false;
-    
-    const clientX = event.clientX || event.touches?.[0]?.clientX || 0;
-    const clientY = event.clientY || event.touches?.[0]?.clientY || 0;
-    
-    const deltaX = clientX - state.dragStartX;
-    const deltaY = clientY - state.dragStartY;
-
-    const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
-    const tileSizePx = TILE_SIZE * baseFontSize;
-    const adjustedTileSize = tileSizePx * sensitivity;
-
-    const dragAccumX = (state.dragAccumX || 0) + deltaX;
-    const dragAccumY = (state.dragAccumY || 0) + deltaY;
-
-    const cellsMovedX = Math.round(dragAccumX / adjustedTileSize);
-    const cellsMovedY = Math.round(dragAccumY / adjustedTileSize);
-
-    if (cellsMovedX === 0 && cellsMovedY === 0) {
-      map.update(state => ({
-        ...state,
-        dragStartX: clientX,
-        dragStartY: clientY,
-        dragAccumX,
-        dragAccumY
-      }));
-      return false;
-    }
-
-    const newX = state.target.x - cellsMovedX;
-    const newY = state.target.y - cellsMovedY;
-    const remainderX = dragAccumX - (cellsMovedX * adjustedTileSize);
-    const remainderY = dragAccumY - (cellsMovedY * adjustedTileSize);
-
-    moveTarget(newX, newY);
-
-    map.update(state => ({
-      ...state,
-      dragStartX: clientX,
-      dragStartY: clientY,
-      dragAccumX: remainderX,
-      dragAccumY: remainderY
-    }));
-
-    return true;
-  }
-  
-  // End drag
-  else if (event.type === 'dragend' || event.type === 'touchend' || event.type === 'touchcancel') {
-    if (!state.isDragging || state.dragSource !== dragSource) return false;
-    
-    map.update(state => ({
-      ...state,
-      isDragging: false,
-      dragAccumX: 0,
-      dragAccumY: 0,
-      dragSource: null
-    }));
-    
-    return true;
-  }
-  
-  return false;
-}
-
 // Simple hover state management
 export function updateHoveredTile(x, y) {
   map.update(state => ({
@@ -394,11 +243,8 @@ export function updateHoveredTile(x, y) {
 export const coordinates = derived(
   [map, entityStore],
   ([$map, $entities], set) => {
-    // Check if map is ready before computing
-    if (!$map.ready) {
-      set([]);
-      return;
-    }
+    // Check if map is ready before computing.
+    if (!$map.ready) return set([]);
     
     const useExpanded = $map.minimapVisible;
     const gridCols = useExpanded ? Math.min($map.cols * GRID_COLS_FACTOR) : $map.cols;

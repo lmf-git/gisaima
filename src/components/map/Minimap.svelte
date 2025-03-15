@@ -7,8 +7,7 @@
     GRID_COLS_FACTOR,
     GRID_ROWS_FACTOR,
     updateHoveredTile, 
-    moveTarget,
-    resizeMap // Import the shared resize function
+    moveTarget
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
   import Close from '../../components/icons/Close.svelte';
@@ -23,8 +22,7 @@
   let minimap = $state(null);
   let wasDrag = $state(false);
   let dist = $state(0);
-  let touchStartX = $state(0);
-  let touchStartY = $state(0);
+
   let isTouching = $state(false);
 
   // Constants
@@ -42,49 +40,86 @@
   
   // Remove navigateToPosition - unused now that we use hoveredTile directly
 
+  // Add minimapDragAction for Minimap-specific logic
+  function minimapDragAction(event) {
+    if (event.button !== undefined && event.button !== 0) return false;
+    
+    // Start drag
+    if (event.type === 'dragstart' || event.type === 'touchstart') {
+      isDrag = true;
+      dragX = event.clientX || event.touches?.[0]?.clientX;
+      dragY = event.clientY || event.touches?.[0]?.clientY;
+      dist = 0;
+      wasDrag = false;
+      
+      event.preventDefault();
+      return true;
+    }
+    
+    // Process drag
+    else if ((event.type === 'dragmove' || event.type === 'touchmove') && isDrag) {
+      const currentX = event.clientX || event.touches?.[0]?.clientX;
+      const currentY = event.clientY || event.touches?.[0]?.clientY;
+      
+      const deltaX = currentX - dragX;
+      const deltaY = currentY - dragY;
+      
+      dist += Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      
+      if (dist > DRAG_THRESHOLD) {
+        wasDrag = true;
+      }
+      
+      const minimapRect = minimap.getBoundingClientRect();
+      const pixelsPerTileX = minimapRect.width / tileCountX;
+      const pixelsPerTileY = minimapRect.height / tileCountY;
+      
+      const cellsMovedX = Math.round(deltaX / pixelsPerTileX);
+      const cellsMovedY = Math.round(deltaY / pixelsPerTileY);
+      
+      if (cellsMovedX === 0 && cellsMovedY === 0) return false;
+      
+      moveTarget($map.target.x - cellsMovedX, $map.target.y - cellsMovedY);
+      
+      dragX = currentX;
+      dragY = currentY;
+      
+      return true;
+    }
+    
+    // End drag
+    else if (event.type === 'dragend' || event.type === 'touchend') {
+      const wasDragging = isDrag;
+      isDrag = false;
+      return wasDragging;
+    }
+    
+    return false;
+  }
+  
   // Drag handling
   function handleMinimapDragStart(event) {
     if (event.button !== 0 || !$mapReady) return;
-    
-    isDrag = true;
-    dragX = event.clientX;
-    dragY = event.clientY;
-    dist = 0;
-    wasDrag = false;
-    
-    event.preventDefault();
+    minimapDragAction({
+      type: 'dragstart',
+      clientX: event.clientX,
+      clientY: event.clientY,
+      button: event.button
+    });
   }
   
   function handleMinimapDrag(event) {
     if (!isDrag || !$mapReady) return;
-    
-    const deltaX = event.clientX - dragX;
-    const deltaY = event.clientY - dragY;
-    
-    dist += Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    
-    if (dist > DRAG_THRESHOLD) {
-      wasDrag = true;
-    }
-    
-    const minimapRect = minimap.getBoundingClientRect();
-    const pixelsPerTileX = minimapRect.width / tileCountX;
-    const pixelsPerTileY = minimapRect.height / tileCountY;
-    
-    const cellsMovedX = Math.round(deltaX / pixelsPerTileX);
-    const cellsMovedY = Math.round(deltaY / pixelsPerTileY);
-    
-    if (cellsMovedX === 0 && cellsMovedY === 0) return;
-    
-    moveTarget($map.target.x - cellsMovedX, $map.target.y - cellsMovedY); // Renamed from centerCoord and moveCenterTo
-    
-    dragX = event.clientX;
-    dragY = event.clientY;
+    minimapDragAction({
+      type: 'dragmove',
+      clientX: event.clientX,
+      clientY: event.clientY
+    });
   }
   
   function handleMinimapDragEnd() {
     if (!isDrag) return;
-    isDrag = false;
+    minimapDragAction({ type: 'dragend' });
   }
   
   function globalMinimapMouseUp() {
@@ -148,37 +183,24 @@
     
     event.preventDefault();
     
-    const touch = event.touches[0];
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
-    isTouching = true;
+    minimapDragAction({
+      type: 'touchstart',
+      touches: event.touches
+    });
   }
   
   function handleTouchMove(event) {
     if (!isTouching || !$mapReady) return;
     event.preventDefault();
     
-    const touch = event.touches[0];
-    const deltaX = touch.clientX - touchStartX;
-    const deltaY = touch.clientY - touchStartY;
-    
-    const minimapRect = minimap.getBoundingClientRect();
-    const pixelsPerTileX = minimapRect.width / tileCountX;
-    const pixelsPerTileY = minimapRect.height / tileCountY;
-    
-    const cellsMovedX = Math.round(deltaX / pixelsPerTileX);
-    const cellsMovedY = Math.round(deltaY / pixelsPerTileY);
-    
-    if (cellsMovedX === 0 && cellsMovedY === 0) return;
-    
-    moveTarget($map.target.x - cellsMovedX, $map.target.y - cellsMovedY); // Renamed from centerCoord and moveCenterTo
-    
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
+    minimapDragAction({
+      type: 'dragmove',
+      touches: event.touches
+    });
   }
   
   function handleTouchEnd() {
-    if (!isTouching) return;
+    minimapDragAction({ type: 'dragend' });
     isTouching = false;
   }
 
