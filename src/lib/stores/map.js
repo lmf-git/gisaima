@@ -36,8 +36,6 @@ export const map = writable({
   isDragging: false,
   dragStartX: 0,
   dragStartY: 0,
-  keysPressed: new Set(),
-  keyboardNavigationInterval: null,
   minimapVisible: true,
 });
 
@@ -341,22 +339,6 @@ export function moveTarget(newX, newY) { // Renamed from moveCenterTo
       hoveredTile: null
     };
   });
-}
-
-// Update all other functions that use target to use target instead
-export function moveMapByKeys() {
-  let xChange = 0;
-  let yChange = 0;
-
-  const state = get(map);
-  if (state.keysPressed.has("a") || state.keysPressed.has("arrowleft")) xChange += 1;
-  if (state.keysPressed.has("d") || state.keysPressed.has("arrowright")) xChange -= 1;
-  if (state.keysPressed.has("w") || state.keysPressed.has("arrowup")) yChange += 1;
-  if (state.keysPressed.has("s") || state.keysPressed.has("arrowdown")) yChange -= 1;
-
-  if (xChange === 0 && yChange === 0) return;
-
-  moveTarget(state.target.x - xChange, state.target.y - yChange); // Renamed from centerCoord and moveCenterTo
 }
 
 // Drag functionality

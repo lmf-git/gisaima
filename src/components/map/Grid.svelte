@@ -7,14 +7,13 @@
     coordinates,
     TILE_SIZE,
     resizeMap,
-    // Remove initializeMap import, now using setup() from page
     startDrag,
     stopDrag,
     drag,
-    moveMapByKeys,
-    targetStore, // Renamed from centerTileStore
+    moveTarget,
+    targetStore,
     updateHoveredTile,
-    cleanupChunkSubscriptions,
+    // Remove cleanupChunkSubscriptions import
   } from "../../lib/stores/map.js";
   
   // Local component state
@@ -26,7 +25,11 @@
   let touchStartY = $state(0);
   let isMouseActuallyDown = $state(false);
   
-  const isMoving = $derived($map.isDragging || $map.keyboardNavigationInterval !== null || isTouching);
+  // Add keyboard navigation state locally
+  let keyboardNavigationInterval = $state(null);
+  let keysPressed = $state(new Set());
+  
+  const isMoving = $derived($map.isDragging || keyboardNavigationInterval !== null || isTouching);
   
   // Initialize when mounted
   onMount(() => {
@@ -39,8 +42,6 @@
     // Initial resize to set up dimensions
     resizeMap(mapElement);
     
-    // Remove initializeMap/setup call - it's now in the page component
-    
     // Setup keyboard navigation
     const keyboardCleanup = setupKeyboardNavigation();
     
@@ -51,17 +52,31 @@
     return function() {
       if (resizeObserver) resizeObserver.disconnect();
       if (keyboardCleanup) keyboardCleanup();
-      if ($map.keyboardNavigationInterval) {
-        clearInterval($map.keyboardNavigationInterval);
-        map.update(state => ({...state, keyboardNavigationInterval: null}));
+      if (keyboardNavigationInterval) {
+        clearInterval(keyboardNavigationInterval);
+        keyboardNavigationInterval = null;
       }
     };
   });
   
-  // Make sure to clean up Firebase subscriptions when component is destroyed
-  onDestroy(() => cleanupChunkSubscriptions());
+  // Remove Firebase subscription cleanup - moved to page
   
-  // Simplify keyboard navigation without redundant hover clearing
+  // Move map by keys function - moved from store
+  function moveMapByKeys() {
+    let xChange = 0;
+    let yChange = 0;
+
+    if (keysPressed.has("a") || keysPressed.has("arrowleft")) xChange += 1;
+    if (keysPressed.has("d") || keysPressed.has("arrowright")) xChange -= 1;
+    if (keysPressed.has("w") || keysPressed.has("arrowup")) yChange += 1;
+    if (keysPressed.has("s") || keysPressed.has("arrowdown")) yChange -= 1;
+
+    if (xChange === 0 && yChange === 0) return;
+
+    moveTarget($map.target.x - xChange, $map.target.y - yChange);
+  }
+  
+  // Simplify keyboard navigation - now fully contained in Grid component
   const setupKeyboardNavigation = () => {
     const keyHandler = event => {
       // Prevent keyboard navigation until introduction completes
@@ -73,20 +88,20 @@
       if (!isNavigationKey) return;
       
       if (event.type === "keydown") {       
-        $map.keysPressed.add(key);
+        keysPressed.add(key);
         
-        if (!$map.keyboardNavigationInterval) {
-          moveMapByKeys(); // This will use our unified moveMapTo function now
-          $map.keyboardNavigationInterval = setInterval(moveMapByKeys, 200);
+        if (!keyboardNavigationInterval) {
+          moveMapByKeys(); // Now using local function
+          keyboardNavigationInterval = setInterval(moveMapByKeys, 200);
         }
         
         if (key.startsWith("arrow")) event.preventDefault();
       } else if (event.type === "keyup") {
-        $map.keysPressed.delete(key);
+        keysPressed.delete(key);
         
-        if ($map.keysPressed.size === 0 && $map.keyboardNavigationInterval) {
-          clearInterval($map.keyboardNavigationInterval);
-          $map.keyboardNavigationInterval = null;
+        if (keysPressed.size === 0 && keyboardNavigationInterval) {
+          clearInterval(keyboardNavigationInterval);
+          keyboardNavigationInterval = null;
         }
       }
     };

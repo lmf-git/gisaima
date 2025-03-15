@@ -8,8 +8,9 @@
     import { 
         map, 
         mapReady,
-        targetStore, // Renamed from centerTileStore
-        setup
+        targetStore,
+        setup,
+        cleanupChunkSubscriptions // Add import for cleanup
     } from "../../lib/stores/map.js";
     import { get } from 'svelte/store';
     
@@ -33,22 +34,7 @@
         }));
     }
     
-    // Add locally implemented cleanupInternalIntervals function
-    function cleanupInternalIntervals() {
-      try {
-        const state = get(map);
-        
-        if (state.keyboardNavigationInterval) {
-          clearInterval(state.keyboardNavigationInterval);
-          map.update(state => ({ ...state, keyboardNavigationInterval: null }));
-        }
-        
-        return true;
-      } catch (err) {
-        console.error("Error cleaning up intervals:", err);
-        return false;
-      }
-    }
+    // Remove redundant cleanupInternalIntervals function
     
     onMount(() => {
         if (browser) document.body.classList.add('map-page-active');
@@ -58,7 +44,7 @@
     onDestroy(() => {
         if (browser) {
             document.body.classList.remove('map-page-active');
-            cleanupInternalIntervals(); // Now using local function
+            cleanupChunkSubscriptions(); // Centralize all cleanup here
         }
     });
 </script>
