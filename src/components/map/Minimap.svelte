@@ -134,14 +134,14 @@
   function setMinimapVisibility(isVisible) {
     map.update(state => ({
       ...state,
-      minimapVisible: isVisible
+      minimap: isVisible
     }));
   }
   
   // Visibility and localStorage
   function initializeVisibility() {
     if (browser) {
-      const storedVisibility = localStorage.getItem('minimapVisible');
+      const storedVisibility = localStorage.getItem('minimap');
       
       open = storedVisibility === 'true' || 
         (storedVisibility === null && windowWidth >= BREAKPOINT);
@@ -156,7 +156,7 @@
     setMinimapVisibility(isOpen); // Now using local function
     
     if (browser) {
-      localStorage.setItem('minimapVisible', isOpen.toString());
+      localStorage.setItem('minimap', isOpen.toString());
     }
   }
   

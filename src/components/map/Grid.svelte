@@ -47,16 +47,11 @@
       cols = Math.max(cols, 5);
       rows = Math.max(rows, 5);
 
-      // Calculate center position directly
-      const viewportCenterX = Math.floor(cols / 2);
-      const viewportCenterY = Math.floor(rows / 2);
-
       return {
         ...state,
         cols,
         rows,
-        offsetX: viewportCenterX + state.target.x,
-        offsetY: viewportCenterY + state.target.y,
+        // Remove offsetX and offsetY calculation
       };
     });
   }
