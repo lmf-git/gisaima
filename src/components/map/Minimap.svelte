@@ -41,39 +41,6 @@
   // Filter coordinates for minimap - much simpler now, doesn't remap
   const grid = $derived(coordinates);
   
-  // Click handling
-  function handleMinimapClick(event) {
-    if (wasDrag || !$mapReady) {
-      event.stopPropagation();
-      return;
-    }
-    
-    // Check if we have a hovered tile and use that instead of calculating coordinates
-    if ($map.hoveredTile) {
-      moveTarget($map.hoveredTile.x, $map.hoveredTile.y);
-    } else {
-      // Fall back to original calculation if no tile is hovered
-      const minimapRect = event.currentTarget.getBoundingClientRect();
-      const clickX = event.clientX - minimapRect.left;
-      const clickY = event.clientY - minimapRect.top;
-      
-      const tileX = Math.floor(clickX / (minimapRect.width / tileCountX));
-      const tileY = Math.floor(clickY / (minimapRect.height / tileCountY));
-      
-      navigateToPosition(tileX, tileY);
-    }
-    
-    event.stopPropagation();
-  }
-
-  function handleKeyDown(event) {
-    if (!$mapReady) return;
-    
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      navigateToPosition(Math.floor(tileCountX / 2), Math.floor(tileCountY / 2));
-    }
-  }
   
   function navigateToPosition(tileX, tileY) {
     const worldX = Math.round($map.target.x - viewRangeX + tileX); // Renamed from centerCoord
@@ -246,20 +213,18 @@
   </button>
   
   {#if open}
+    <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
     <div 
       class="minimap"
       class:ready={$mapReady}
+      aria-hidden="true"
       bind:this={minimap}
-      onclick={handleMinimapClick}
+      onclick={() => moveTarget($map.hoveredTile.x, $map.hoveredTile.y)}
       onmousedown={handleMinimapDragStart}
-      onkeydown={handleKeyDown}
       ontouchstart={handleTouchStart}
       ontouchmove={handleTouchMove}
       ontouchend={handleTouchEnd}
       ontouchcancel={handleTouchEnd}
-      tabindex="0"
-      role="button"
-      aria-label="Mini map for navigation"
       class:drag={isDrag}
       class:touch-drag={isTouching}>
       {#if $mapReady && $grid.length > 0}
