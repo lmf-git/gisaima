@@ -107,44 +107,34 @@
         }
     }
     
-    // Flag to track if we've already attempted map initialization
+    // Flag to track map initialization state
     let initAttempted = $state(false);
-    let retryAttempts = $state(0);
-    const MAX_RETRY_ATTEMPTS = 3;
     
     // Use the reactive statement to initialize map when world data is ready
     $effect(() => {
-        // Skip if there's an error and we're not retrying
-        if (error && retryAttempts >= MAX_RETRY_ATTEMPTS) return;
+        // Skip if we've already tried to initialize or if there's an error
+        if (initAttempted || error) return;
         
         // Check if world data is fully loaded from Firebase
         if (!$game.worldLoading && $game.currentWorld && $game.worldInfo[$game.currentWorld]?.seed !== undefined) {
             console.log('World data loaded from Firebase, initializing map');
+            initAttempted = true;
             
             try {
                 if (setupFromGameStore()) {
                     console.log('Map initialized successfully');
                     loading = false;
                     error = null;
-                    initAttempted = true;
                 } else {
                     console.error('Failed to initialize map - setupFromGameStore returned false');
                     console.log('Current game state:', $game);
-                    if (retryAttempts < MAX_RETRY_ATTEMPTS) {
-                        console.log(`Retry attempt ${retryAttempts + 1}/${MAX_RETRY_ATTEMPTS}`);
-                        retryAttempts++;
-                        // Reset initialization flag to try again on next tick
-                        initAttempted = false;
-                    } else {
-                        error = 'Failed to initialize map with world data';
-                        initAttempted = true;
-                    }
+                    error = 'Failed to initialize map with world data';
+                    loading = false;
                 }
             } catch (err) {
                 console.error('Error initializing map:', err);
                 error = err.message || 'Failed to initialize map';
                 loading = false;
-                initAttempted = true;
             }
         } else if (!$game.worldLoading && $game.currentWorld) {
             // World loading finished but data is incomplete
@@ -153,26 +143,12 @@
                 $game.worldInfo[$game.currentWorld]
             );
             
-            // If Firebase loading is done but we don't have the seed, we should retry
+            // If Firebase loading is done but we don't have the seed, something went wrong
             if (!$game.worldInfo[$game.currentWorld]?.seed) {
-                if (retryAttempts < MAX_RETRY_ATTEMPTS) {
-                    console.log(`Missing seed, retrying (${retryAttempts + 1}/${MAX_RETRY_ATTEMPTS})`);
-                    // Implement exponential backoff for retries
-                    const delay = Math.pow(2, retryAttempts) * 500;
-                    retryAttempts++;
-                    
-                    setTimeout(() => {
-                        console.log(`Retrying to fetch world data for: ${$game.currentWorld}`);
-                        // Force a refresh of world data
-                        getWorldInfo($game.currentWorld)
-                            .catch(err => console.error('Error during retry:', err));
-                    }, delay);
-                } else {
-                    console.error(`Failed to load seed after ${MAX_RETRY_ATTEMPTS} attempts`);
-                    error = `Missing seed for world: ${$game.currentWorld}`;
-                    loading = false;
-                    initAttempted = true;
-                }
+                console.error('World data loaded but seed is missing');
+                error = `Missing seed for world: ${$game.currentWorld}`;
+                loading = false;
+                initAttempted = true;
             }
         } else if ($game.worldLoading) {
             console.log('Waiting for world data to load from Firebase...');
@@ -203,55 +179,42 @@
         if ($game.currentWorld !== worldId) {
             console.log(`Setting current world from URL parameter: ${worldId}`);
             
-            // Check if we already have world info with seed
-            if ($game.worldInfo[worldId]?.seed !== undefined) {
-                console.log(`World info already loaded for ${worldId}, initializing map`);
-                setCurrentWorld(worldId).then(() => {
-                    // We need to reset these flags since we already have data
-                    initAttempted = false;
-                    retryAttempts = 0;
-                });
-            } else {
-                // First attempt to load world info with forced refresh
-                console.log(`Loading world info for ${worldId} with forced refresh`);
-                loading = true;
-                getWorldInfo(worldId)
-                    .then(worldInfo => {
-                        console.log(`World info loaded for ${worldId}:`, worldInfo);
-                        return setCurrentWorld(worldId, worldInfo);
-                    })
-                    .then(() => {
-                        console.log(`Current world set to ${worldId}, initializing map`);
-                        // Reset initialization flags
-                        initAttempted = false;
-                        retryAttempts = 0;
-                    })
-                    .catch(err => {
-                        console.error(`Error loading world ${worldId}:`, err);
-                        error = err.message || `Failed to load world ${worldId}`;
-                        loading = false;
-                    });
-            }
-        } else {
-            // We already have the current world set to the worldId
-            console.log('Current world already matches URL parameter:', worldId);
+            // Use the initializeMap function to handle loading the world in a more controlled way
             loading = true;
+            error = null;
+            initializeMap(worldId)
+                .catch(err => {
+                    console.error(`Failed to initialize map for world ${worldId}:`, err);
+                    error = err.message || `Failed to load world ${worldId}`;
+                    loading = false;
+                });
+        } else {
+            // We're already on the correct world - check if we need to initialize the map
+            console.log('Using current world:', worldId);
             
-            // Ensure we have world info loaded
-            if (!$game.worldInfo[worldId] || $game.worldInfo[worldId].seed === undefined) {
-                console.log(`Forcing reload of world info for ${worldId}`);
-                getWorldInfo(worldId)
-                    .then(worldInfo => {
-                        console.log(`World info reloaded for ${worldId}:`, worldInfo);
-                        // Reset flags to retry initialization
-                        initAttempted = false;
-                        retryAttempts = 0;
-                    })
-                    .catch(err => {
-                        console.error(`Error reloading world ${worldId}:`, err);
-                        error = err.message || `Failed to reload world ${worldId}`;
+            if (!$map.ready && $game.worldInfo[worldId]?.seed !== undefined) {
+                console.log(`World info already loaded for ${worldId}, initializing map directly`);
+                try {
+                    if (setupFromGameStore()) {
+                        console.log('Map initialized successfully');
                         loading = false;
-                    });
+                    } else {
+                        console.error('Failed to initialize map with existing world data');
+                        error = 'Failed to initialize map with existing world data';
+                        loading = false;
+                    }
+                } catch (err) {
+                    console.error('Error initializing map with existing data:', err);
+                    error = err.message || 'Failed to initialize map';
+                    loading = false;
+                }
+            } else if ($map.ready) {
+                console.log('Map is already initialized');
+                loading = false;
+            } else {
+                console.log('Waiting for world data to load before initializing map...');
+                // The reactive effect will handle initialization once data is loaded
+                loading = true;
             }
         }
     });

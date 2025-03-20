@@ -153,9 +153,10 @@ export function getWorldInfo(worldId) {
     error: null
   }));
   
-  // Check if we already have this world's info in the store
+  // Check if we already have this world's info in the store with valid seed
   const currentGameState = getStore(game);
-  if (currentGameState.worldInfo && currentGameState.worldInfo[worldId] && 
+  if (currentGameState.worldInfo && 
+      currentGameState.worldInfo[worldId] && 
       currentGameState.worldInfo[worldId].seed !== undefined) {
     console.log(`Using cached world info for ${worldId}:`, currentGameState.worldInfo[worldId]);
     
@@ -164,7 +165,7 @@ export function getWorldInfo(worldId) {
     return Promise.resolve(currentGameState.worldInfo[worldId]);
   }
   
-  // Check cache first
+  // Check memory cache next
   if (worldInfoCache.has(worldId) && worldInfoCache.get(worldId).seed !== undefined) {
     console.log(`Using memory-cached world info for ${worldId}:`, worldInfoCache.get(worldId));
     
@@ -182,8 +183,8 @@ export function getWorldInfo(worldId) {
     return Promise.resolve(worldInfo);
   }
   
+  // No valid cache, fetch from database with direct path to ensure we get the seed
   console.log(`Fetching world info for ${worldId} from database`);
-  // Fetch from database if not cached
   const worldRef = ref(db, `worlds/${worldId}/info`);
   return dbGet(worldRef).then(snapshot => {
     if (snapshot.exists()) {
@@ -193,7 +194,6 @@ export function getWorldInfo(worldId) {
       if (worldInfo.seed === undefined || worldInfo.seed === null) {
         console.error(`World ${worldId} has no seed in database`);
         
-        // Make sure to set worldLoading to false
         game.update(state => ({ 
           ...state, 
           worldLoading: false,
@@ -205,7 +205,7 @@ export function getWorldInfo(worldId) {
       
       console.log(`Retrieved world info for ${worldId}:`, worldInfo);
       
-      // Update cache
+      // Update both caches
       worldInfoCache.set(worldId, worldInfo);
       
       // Update store with the world info
@@ -220,7 +220,6 @@ export function getWorldInfo(worldId) {
       
       return worldInfo;
     } else {
-      // Make sure to set worldLoading to false
       game.update(state => ({ 
         ...state, 
         worldLoading: false,
@@ -232,7 +231,6 @@ export function getWorldInfo(worldId) {
   }).catch(error => {
     console.error(`Error fetching world info for ${worldId}:`, error);
     
-    // Make sure to set worldLoading to false on error
     game.update(state => ({ 
       ...state, 
       worldLoading: false,

@@ -321,6 +321,13 @@ export function setupFromGameStore() {
     return false;
   }
   
+  // If the map is already set up for this world, don't reinitialize
+  const mapState = get(map);
+  if (mapState.ready && mapState.world === gameState.currentWorld) {
+    console.log(`Map is already initialized for world ${gameState.currentWorld}`);
+    return true;
+  }
+  
   // Log success and set up map
   console.log(`World data found in Firebase. Setting up map for ${gameState.currentWorld} with seed:`, seedValue);
   
