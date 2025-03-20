@@ -175,21 +175,60 @@
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
-    transition: background-color 0.3s;
+    transition: all 0.3s ease;
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
   
-  .enter-btn {
-    background-color: #4A90E2;
-    color: white;
+  .world-action-button {
+    background-color: var(--color-button-primary);
+    color: var(--color-text);
+    border: 0.05em solid var(--color-muted-teal);
+    text-shadow: 0 0 0.5em rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0.3em 0.8em var(--color-shadow);
+    padding: 0.8em 1.2em;
   }
   
-  .join-btn {
-    background-color: #50C878;
-    color: white;
+  .world-action-button:hover {
+    transform: translateY(-0.1em);
+    background-color: var(--color-button-primary-hover);
+    box-shadow: 0 0.4em 1em var(--color-shadow);
+    color: #ffffff;
+    text-shadow: 0 0 0.8em rgba(0, 0, 0, 0.7);
   }
   
-  button:hover {
-    opacity: 0.9;
+  .world-action-button.joined {
+    background-color: var(--color-success);
+    border-color: var(--color-pale-green);
+  }
+  
+  .world-action-button.joined:hover {
+    background-color: color-mix(in srgb, var(--color-success) 85%, white);
+  }
+  
+  .world-action-button:disabled {
+    background-color: var(--color-muted-grey);
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 0.2em solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 0.5em;
+    vertical-align: middle;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
   
   .user-info {

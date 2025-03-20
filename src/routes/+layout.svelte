@@ -2,6 +2,7 @@
     import { page } from '$app/stores';
     import { user, signOut } from '$lib/stores/user';
     import Logo from '../components/Logo.svelte';
+    import SignOut from '../components/icons/SignOut.svelte'; // Import the new SignOut component
     import MobileMenu from '../components/MobileMenu.svelte';
     import { onMount, onDestroy } from 'svelte';
     import { initGameStore, game } from '../lib/stores/game.js';
@@ -88,58 +89,32 @@
 </script>
 
 <div class={`app ${$page.url.pathname === '/map' ? 'map' : ''}`}>
-    <header class={`header`}>
-        <nav class="navbar">
-            {#if $page.url.pathname !== '/'}
-                <div class="logo-container">
-                    <a href="/" class="logolink">
-                        <Logo extraClass="navlogo" />
-                    </a>
-                </div>
-            {/if}
-            
-            <div class="mobile-menu-container">
-                {#if $page.url.pathname !== '/map'}
-                    <MobileMenu 
-                        menuOpen={mobileMenuOpen}
-                        onToggle={toggleMobileMenu}
-                        onClose={closeMobileMenu}
-                    />
-                {/if}
-            </div>
-            
-            {#if $page.url.pathname !== '/map'}
-                <div class="navlinks desktop-only">
-                    <a href="/worlds" class="button navlink">Worlds</a>
-                    <a href="/map" class="button navlink">Map</a>
-                    {#if !$user}
-                        <a href="/login" class="button navlink">Login</a>
-                        <a href="/signup" class="button navlink">Sign Up</a>
-                    {/if}
-                </div>
-            {/if}
-            
-            {#if $page.url.pathname !== '/map' && $user}
-                <div class="authlinks desktop-only">
-                    {#if playerLoading}
-                        <span class="greeting">Loading profile...</span>
-                    {:else if playerData}
-                        <div class="player-info">
-                            <span class="greeting">Hello, {playerData.displayName || $user.email}</span>
-                            <div class="player-details">
-                                <span class="join-date">Joined: {formatDate(playerData.joinDate)}</span>
-                                {#if playerData.lastLogin}
-                                    <span class="last-login">Last login: {formatDate(playerData.lastLogin)}</span>
-                                {/if}
-                            </div>
-                        </div>
-                    {:else}
-                        <span class="greeting">Hello, {$user.email}</span>
-                    {/if}
-                    <button class="button" onclick={() => signOut()}>Sign Out</button>
-                </div>
-            {/if}
+    <header class="site-header">
+        <div class="logo-container">
+            <a href="/" class="logo-link" aria-label="Gisaima Home">
+                <Logo extraClass="header-logo" />
+            </a>
+        </div>
+        
+        <nav class="main-nav">
+            <ul class="nav-links">
+                <li><a href="/worlds" class:active={$page.url.pathname === '/worlds'}>Worlds</a></li>
+                <li><a href="/map" class:active={$page.url.pathname === '/map'}>Map</a></li>
+                <li><a href="/about" class:active={$page.url.pathname === '/about'}>About</a></li>
+            </ul>
         </nav>
+        
+        <div class="auth-container">
+            {#if $user}
+                <div class="user-greeting">Hello, {$user.displayName || $user.email.split('@')[0]}</div>
+                <button class="sign-out-btn" on:click={signOut} aria-label="Sign Out">
+                    <SignOut size="1.2em" color="var(--color-pale-green)" />
+                </button>
+            {:else}
+                <a href="/login" class="login-link">Log In</a>
+                <a href="/signup" class="signup-link">Sign Up</a>
+            {/if}
+        </div>
     </header>
 
     {@render children?.()}
@@ -446,5 +421,97 @@
     .authlinks {
         display: flex;
         align-items: center;
+    }
+
+    .auth-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .sign-out-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.4em;
+        background-color: var(--color-dark-navy);
+        color: var(--color-pale-green);
+        border: 1px solid var(--color-muted-teal);
+        border-radius: 50%;
+        font-size: 0.9em;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 2.2em;
+        height: 2.2em;
+    }
+    
+    .sign-out-btn:hover {
+        background-color: var(--color-deep-blue);
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px var(--color-shadow);
+    }
+    
+    .user-greeting {
+        font-size: 0.9em;
+        color: var(--color-pale-green);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+        order: -1; /* This makes the greeting appear before the sign out button */
+    }
+    
+    .login-link, .signup-link {
+        padding: 0.4em 0.8em;
+        font-size: 0.9em;
+        text-decoration: none;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+    
+    .login-link {
+        color: var(--color-pale-green);
+        border: 1px solid var(--color-muted-teal);
+    }
+    
+    .signup-link {
+        background-color: var(--color-button-primary);
+        color: var (--color-text);
+        border: 1px solid var(--color-muted-teal);
+    }
+    
+    .login-link:hover, .signup-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px var(--color-shadow);
+    }
+    
+    @media (max-width: 768px) {
+        .site-header {
+            flex-direction: column;
+            padding: 0.5rem;
+        }
+        
+        .logo-container, .main-nav, .auth-container {
+            margin: 0.3rem 0;
+        }
+        
+        .nav-links {
+            gap: 1rem;
+        }
+        
+        .user-greeting {
+            max-width: 120px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .auth-container {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .user-greeting {
+            font-size: 0.8em;
+        }
     }
 </style>
