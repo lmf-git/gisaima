@@ -146,11 +146,21 @@ export function joinWorld(worldId, userId) {
 export function getWorldInfo(worldId) {
   if (!worldId) return Promise.reject(new Error('Missing worldId'));
   
+  // Set loading state first to ensure UI responds correctly
+  game.update(state => ({ 
+    ...state, 
+    worldLoading: true,
+    error: null
+  }));
+  
   // Check if we already have this world's info in the store
   const currentGameState = getStore(game);
   if (currentGameState.worldInfo && currentGameState.worldInfo[worldId] && 
       currentGameState.worldInfo[worldId].seed !== undefined) {
     console.log(`Using cached world info for ${worldId}:`, currentGameState.worldInfo[worldId]);
+    
+    // Set loading state to false even when using cached data
+    game.update(state => ({ ...state, worldLoading: false }));
     return Promise.resolve(currentGameState.worldInfo[worldId]);
   }
   
@@ -162,6 +172,7 @@ export function getWorldInfo(worldId) {
     const worldInfo = worldInfoCache.get(worldId);
     game.update(state => ({
       ...state,
+      worldLoading: false,
       worldInfo: {
         ...state.worldInfo,
         [worldId]: worldInfo
@@ -181,6 +192,14 @@ export function getWorldInfo(worldId) {
       // Validate seed - it's critical for map generation
       if (worldInfo.seed === undefined || worldInfo.seed === null) {
         console.error(`World ${worldId} has no seed in database`);
+        
+        // Make sure to set worldLoading to false
+        game.update(state => ({ 
+          ...state, 
+          worldLoading: false,
+          error: `World ${worldId} has no seed defined`
+        }));
+        
         throw new Error(`World ${worldId} has no seed defined`);
       }
       
@@ -192,6 +211,7 @@ export function getWorldInfo(worldId) {
       // Update store with the world info
       game.update(state => ({
         ...state,
+        worldLoading: false,
         worldInfo: {
           ...state.worldInfo,
           [worldId]: worldInfo
@@ -200,8 +220,26 @@ export function getWorldInfo(worldId) {
       
       return worldInfo;
     } else {
+      // Make sure to set worldLoading to false
+      game.update(state => ({ 
+        ...state, 
+        worldLoading: false,
+        error: `World ${worldId} not found in database`
+      }));
+      
       throw new Error(`World ${worldId} not found in database`);
     }
+  }).catch(error => {
+    console.error(`Error fetching world info for ${worldId}:`, error);
+    
+    // Make sure to set worldLoading to false on error
+    game.update(state => ({ 
+      ...state, 
+      worldLoading: false,
+      error: error.message || `Failed to load world ${worldId}`
+    }));
+    
+    throw error;
   });
 }
 

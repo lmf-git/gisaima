@@ -182,37 +182,49 @@
   }
   
   .world-action-button {
-    background-color: var(--color-button-primary);
-    color: var(--color-text);
+    background-color: #2a6b7a;  /* Solid color instead of using var */
+    color: white;
     border: 0.05em solid var(--color-muted-teal);
     text-shadow: 0 0 0.5em rgba(0, 0, 0, 0.5);
     box-shadow: 0 0.3em 0.8em var(--color-shadow);
     padding: 0.8em 1.2em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
   }
   
   .world-action-button:hover {
     transform: translateY(-0.1em);
-    background-color: var(--color-button-primary-hover);
+    background-color: #3a7d8c;
     box-shadow: 0 0.4em 1em var(--color-shadow);
     color: #ffffff;
     text-shadow: 0 0 0.8em rgba(0, 0, 0, 0.7);
   }
   
   .world-action-button.joined {
-    background-color: var(--color-success);
-    border-color: var(--color-pale-green);
+    background-color: #2e8b57;  /* Solid sea green for "Enter World" */
+    border-color: #3c9f68;
+    color: white;
   }
   
   .world-action-button.joined:hover {
-    background-color: color-mix(in srgb, var(--color-success) 85%, white);
+    background-color: #39a367;
   }
   
   .world-action-button:disabled {
-    background-color: var(--color-muted-grey);
+    background-color: #6c757d;
+    border-color: #5a6268;
     cursor: not-allowed;
-    opacity: 0.7;
+    opacity: 0.8;
     transform: none;
-    box-shadow: none;
+    box-shadow: 0 0.2em 0.4em rgba(0, 0, 0, 0.2);
+  }
+  
+  .world-action-button:active {
+    transform: translateY(0.05em);
+    box-shadow: 0 0.1em 0.3em var(--color-shadow);
   }
   
   .spinner {
@@ -259,10 +271,5 @@
     font-size: 0.8rem;
     padding: 0.3rem 0.6rem;
     margin-bottom: 0.5rem;
-  }
-
-  /* Add style for joined worlds */
-  .world-action-button.joined {
-    background-color: var(--color-success);  /* Different color for Enter World */
   }
 </style>

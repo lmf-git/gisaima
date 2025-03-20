@@ -284,6 +284,8 @@ export function setup({ seed, world = null } = {}) {
   // Verify the update took effect
   const mapState = get(map);
   console.log('Map state after update:', { ready: mapState.ready, world: mapState.world, cols: mapState.cols, rows: mapState.rows });
+  
+  return true;
 }
 
 // New function to initialize map directly from game store
@@ -324,11 +326,10 @@ export function setupFromGameStore() {
   
   // We have all required data, proceed with setup
   try {
-    setup({
+    return setup({
       seed: seedValue,
       world: gameState.currentWorld
     });
-    return true;
   } catch (err) {
     console.error('Error in map setup:', err);
     return false;

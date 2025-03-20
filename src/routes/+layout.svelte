@@ -107,7 +107,7 @@
         <div class="auth-container">
             {#if $user}
                 <div class="user-greeting">Hello, {$user.displayName || $user.email.split('@')[0]}</div>
-                <button class="sign-out-btn" on:click={signOut} aria-label="Sign Out">
+                <button class="sign-out-btn" onclick={signOut} aria-label="Sign Out">
                     <SignOut size="1.2em" color="var(--color-pale-green)" />
                 </button>
             {:else}
@@ -261,12 +261,6 @@
         align-items: center;
         z-index: 100;
         box-sizing: border-box;
-    }
-    
-    .app.map .header {
-        pointer-events: none;
-        justify-content: center;
-        padding: 0 2.2em 3.7em;
     }
     
     .navbar {
