@@ -68,7 +68,7 @@
         color: var(--color-text);
     }
     
-    :global(.logo) {
+    header > :global(.logo) {
         width: 5em;
         height: auto;
         margin: 0 auto 1em;

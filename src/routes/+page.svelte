@@ -263,7 +263,7 @@
     font-size: 0.9em;
   }
 
-  .showcase :global(.logo) {
+  .showcase > :global(.logo) {
     width: 7.5em;
     height: auto;
     margin: 0 auto;

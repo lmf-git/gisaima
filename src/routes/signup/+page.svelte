@@ -86,7 +86,7 @@
         color: var(--color-text);
     }
     
-    :global(.logo) {
+    .signup-container :global(.logo) {
         width: 5em;
         height: auto;
         margin: 0 auto 1em;

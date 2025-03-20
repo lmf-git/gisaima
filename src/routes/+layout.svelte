@@ -322,7 +322,6 @@
     :global(.headerlogo) {
         width: 40px;
         height: 40px;
-        /* Removed margin-right: 0.5em; */
     }
 
     /* Navigation styling */
@@ -410,8 +409,6 @@
         text-decoration: none;
         border-radius: 0.25em;
         transition: all 0.2s ease;
-        position: relative; /* Add position relative */
-        margin-bottom: 0.125em; /* Add space for hover lift effect */
     }
     
     .login {
@@ -428,7 +425,6 @@
     .login:hover, .signup:hover {
         transform: translateY(-0.125em);
         box-shadow: 0 0.125em 0.3125em var (--color-shadow);
-        /* No layout shift because we added margin-bottom */
     }
 
     /* Common button styles */
