@@ -9,46 +9,66 @@ export const loading = writable(true);
 export const initAuthListener = async () => {
   if (!browser) return loading.set(false);
   
-  const { onAuthStateChanged } = await import('firebase/auth');
-  onAuthStateChanged(auth, userData => {
-    user.set(userData);
+  try {
+    const { onAuthStateChanged } = await import('firebase/auth');
+    onAuthStateChanged(auth, userData => {
+      console.log('Auth state changed:', userData ? 'User logged in' : 'No user');
+      user.set(userData);
+      loading.set(false);
+    });
+  } catch (error) {
+    console.error('Error initializing auth listener:', error);
     loading.set(false);
-  });
+  }
 };
 
 // Auth helper functions
 export const signIn = async (email, password) => {
-  if (!browser) return { success: false, error: 'Cannot sign in on server' }
+  if (!browser) return { success: false, error: 'Cannot sign in on server' };
   
   try {
-    const { signInWithEmailAndPassword } = await import('firebase/auth')
-    await signInWithEmailAndPassword(auth, email, password)
-    return { success: true }
+    console.log('Attempting sign in for:', email);
+    const { signInWithEmailAndPassword } = await import('firebase/auth');
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    console.log('Sign in successful:', userCredential.user.uid);
+    return { success: true };
   } catch (error) {
-    return { success: false, error: error.message }
+    console.error('Sign in error:', error.code, error.message);
+    return { 
+      success: false, 
+      error: error.message || 'Failed to sign in. Please check your credentials.'
+    };
   }
 };
 
 export const signUp = async (email, password) => {
-  if (!browser) return { success: false, error: 'Cannot sign up on server' }
+  if (!browser) return { success: false, error: 'Cannot sign up on server' };
   
   try {
-    const { createUserWithEmailAndPassword } = await import('firebase/auth')
-    await createUserWithEmailAndPassword(auth, email, password)
-    return { success: true }
+    console.log('Attempting sign up for:', email);
+    const { createUserWithEmailAndPassword } = await import('firebase/auth');
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    console.log('Sign up successful:', userCredential.user.uid);
+    return { success: true };
   } catch (error) {
-    return { success: false, error: error.message }
+    console.error('Sign up error:', error.code, error.message);
+    return { 
+      success: false, 
+      error: error.message || 'Failed to create account. Please try again.'
+    };
   }
 };
 
 export const signOut = async () => {
-  if (!browser) return { success: false, error: 'Cannot sign out on server' }
+  if (!browser) return { success: false, error: 'Cannot sign out on server' };
   
   try {
-    const { signOut: firebaseSignOut } = await import('firebase/auth')
-    await firebaseSignOut(auth)
-    return { success: true }
+    const { signOut: firebaseSignOut } = await import('firebase/auth');
+    await firebaseSignOut(auth);
+    console.log('Sign out successful');
+    return { success: true };
   } catch (error) {
-    return { success: false, error: error.message }
+    console.error('Sign out error:', error);
+    return { success: false, error: error.message };
   }
 };
