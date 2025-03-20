@@ -8,7 +8,7 @@ import {
   signOut as firebaseSignOut
 } from 'firebase/auth';
 
-export const user = writable(null);
+export const user = writable(undefined);  // Start as undefined (not determined)
 export const loading = writable(true);
 
 // Initialize auth state listener
@@ -26,6 +26,17 @@ export const initAuthListener = () => {
     loading.set(false);
   }
 };
+
+// Make sure the user store properly signals when auth state is determined
+onAuthStateChanged(auth, (firebaseUser) => {
+  if (firebaseUser) {
+    // User is signed in
+    user.set(firebaseUser);
+  } else {
+    // User is signed out
+    user.set(null);  // Set to null (not undefined) to indicate "determined, but not logged in"
+  }
+});
 
 // Auth helper functions
 export const signIn = async (email, password) => {

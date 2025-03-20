@@ -230,6 +230,9 @@
         --color-link-hover: #9FFFEA;
         --color-shadow: rgba(0, 0, 0, 0.4);
 
+        --color-pale-green: var(--color-bright-accent);
+        --color-muted-teal: var(--color-accent-dark);
+
         /* Font family definitions */
         --font-heading: 'Cormorant Unicase', serif;
         --font-body: 'Fira Sans Condensed', sans-serif;
@@ -256,97 +259,194 @@
         height: 100%;
     }
 
-    .header {
+    /* Header styling */
+    .site-header {
         display: flex;
         align-items: center;
-        z-index: 100;
-        box-sizing: border-box;
-    }
-    
-    .navbar {
-        display: flex;
         justify-content: space-between;
-        align-items: center;
-        pointer-events: all;
-        width: 100%;
+        padding: 1em 2em;
+        background-color: rgba(10, 25, 47, 0.8);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        position: relative;
+        z-index: 100;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
     }
 
+    /* Logo styling */
     .logo-container {
         display: flex;
         align-items: center;
     }
 
-    .navlinks {
+    .logo-link {
         display: flex;
-        gap: 1em;
         align-items: center;
-        margin-left: auto;
+        text-decoration: none;
+    }
+
+    /* Navigation styling */
+    .main-nav {
+        display: flex;
+    }
+
+    .nav-links {
+        display: flex;
+        list-style: none;
+        gap: 1.5em;
+        margin: 0;
+        padding: 0;
+    }
+
+    .nav-links a {
+        color: var(--color-text-secondary);
+        text-decoration: none;
+        font-size: 1.1em;
+        transition: color 0.2s ease;
+        position: relative;
+        padding: 0.3em 0;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+        color: var(--color-bright-accent);
+    }
+
+    .nav-links a::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background-color: var(--color-bright-accent);
+        transition: width 0.3s ease;
+    }
+
+    .nav-links a:hover::after,
+    .nav-links a.active::after {
+        width: 100%;
+    }
+
+    /* Auth container styling */
+    .auth-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
     }
     
-    .authlinks {
-        display: flex;
-        gap: 1em;
-        align-items: center;
-    }
-
-    .navlink {
-        border: none;
-        font-size: 1.3em;
+    .user-greeting {
+        font-size: 0.9em;
+        color: var(--color-bright-accent);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
     }
     
-    .greeting {
-        color: var(--color-heading);
-        margin-right: 0.5em;
-    }
-
-
-    .logolink {
+    .sign-out-btn {
         display: flex;
         align-items: center;
-        padding: 1em;
+        justify-content: center;
+        padding: 0.4em;
+        background-color: var(--color-dark-navy);
+        color: var(--color-bright-accent);
+        border: 1px solid var(--color-accent-dark);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 2.2em;
+        height: 2.2em;
+    }
+    
+    .sign-out-btn:hover {
+        background-color: var(--color-dark-blue);
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px var(--color-shadow);
+    }
+    
+    .login-link, .signup-link {
+        padding: 0.4em 0.8em;
+        font-size: 0.9em;
+        text-decoration: none;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+    
+    .login-link {
+        color: var(--color-bright-accent);
+        border: 1px solid var(--color-accent-dark);
+    }
+    
+    .signup-link {
+        background-color: var(--color-accent-dark);
+        color: var(--color-text-primary);
+        border: 1px solid var(--color-accent-dark);
+    }
+    
+    .login-link:hover, .signup-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px var(--color-shadow);
     }
 
-    :global(.navlogo) {
-        height: 3em;
-    }
-
-    .mobile-menu-container {
-        display: block;
-        margin-left: auto;
-    }
-
-    .desktop-only {
-        display: none;
-    }
-
-    /* Apply responsive grid styles based on screen size */
-    @media (min-width: 640px) {
-        :global(:root) {
-            --grid-tile-size: var(--grid-tile-size-sm);
-        }
-
-        .header {
-            padding: 2.2em 1.7em;
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .site-header {
+            flex-wrap: wrap;
+            padding: 0.8em 1em;
         }
         
-        .desktop-only {
-            display: flex;
+        .logo-container {
+            flex: 1;
         }
         
-        .mobile-menu-container {
-            display: none;
+        .main-nav {
+            order: 3;
+            width: 100%;
+            margin-top: 0.8em;
+            justify-content: center;
+        }
+        
+        .nav-links {
+            gap: 1em;
+        }
+        
+        .auth-container {
+            flex: 1;
+            justify-content: flex-end;
+        }
+        
+        .user-greeting {
+            max-width: 100px;
+            font-size: 0.8em;
         }
     }
-    
-    @media (min-width: 1024px) {
-        :global(:root) {
-            --grid-tile-size: var(--grid-tile-size-md);
+
+    @media (max-width: 480px) {
+        .nav-links {
+            gap: 0.5em;
         }
-    }
-    
-    @media (min-width: 1440px) {
-        :global(:root) {
-            --grid-tile-size: var(--grid-tile-size-lg);
+        
+        .nav-links a {
+            font-size: 0.9em;
+        }
+        
+        .auth-container {
+            gap: 0.5rem;
+        }
+        
+        .login-link, .signup-link {
+            padding: 0.3em 0.6em;
+            font-size: 0.8em;
+        }
+        
+        .user-greeting {
+            max-width: 80px;
+        }
+        
+        .sign-out-btn {
+            width: 2em;
+            height: 2em;
         }
     }
 
@@ -447,7 +547,7 @@
     
     .user-greeting {
         font-size: 0.9em;
-        color: var(--color-pale-green);
+        color: var (--color-pale-green);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

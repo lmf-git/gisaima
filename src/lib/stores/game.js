@@ -7,6 +7,9 @@ import { user } from './user.js';
 // Cache for world info to reduce database calls
 const worldInfoCache = new Map();
 
+// Add a store to track auth status
+export const isAuthReady = writable(false);
+
 // Store for game state with more detailed loading states
 export const game = writable({
   currentWorld: null,
@@ -143,7 +146,7 @@ export function joinWorld(worldId, userId) {
 }
 
 // Get world information including seed with caching
-export function getWorldInfo(worldId) {
+export function getWorldInfo(worldId, forceRefresh = false) {
   if (!worldId) return Promise.reject(new Error('Missing worldId'));
   
   // Set loading state first to ensure UI responds correctly
@@ -153,9 +156,10 @@ export function getWorldInfo(worldId) {
     error: null
   }));
   
-  // Check if we already have this world's info in the store with valid seed
+  // Check if we have valid cached data and aren't forcing a refresh
   const currentGameState = getStore(game);
-  if (currentGameState.worldInfo && 
+  if (!forceRefresh && 
+      currentGameState.worldInfo && 
       currentGameState.worldInfo[worldId] && 
       currentGameState.worldInfo[worldId].seed !== undefined) {
     console.log(`Using cached world info for ${worldId}:`, currentGameState.worldInfo[worldId]);
@@ -165,8 +169,10 @@ export function getWorldInfo(worldId) {
     return Promise.resolve(currentGameState.worldInfo[worldId]);
   }
   
-  // Check memory cache next
-  if (worldInfoCache.has(worldId) && worldInfoCache.get(worldId).seed !== undefined) {
+  // Check memory cache if not forcing refresh
+  if (!forceRefresh && 
+      worldInfoCache.has(worldId) && 
+      worldInfoCache.get(worldId).seed !== undefined) {
     console.log(`Using memory-cached world info for ${worldId}:`, worldInfoCache.get(worldId));
     
     // Update the store
@@ -246,12 +252,17 @@ export function initGameStore() {
   if (browser) {
     // Set initial loading state
     game.update(state => ({ ...state, loading: true }));
+    isAuthReady.set(false);
     
     // Subscribe to auth changes to load joined worlds
     const unsubscribe = user.subscribe($user => {
       if ($user?.uid) {
+        // Set auth as ready once we have a user
+        isAuthReady.set(true);
         loadJoinedWorlds($user.uid);
-      } else {
+      } else if ($user === null) {
+        // User is definitely not logged in (not just undefined/loading)
+        isAuthReady.set(true);
         game.update(state => ({ 
           ...state, 
           joinedWorlds: [], 

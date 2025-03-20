@@ -8,7 +8,8 @@
       getWorldInfo, 
       setCurrentWorld, 
       currentWorldInfo, 
-      currentWorldSeed 
+      currentWorldSeed,
+      isAuthReady 
     } from "../../lib/stores/game.js";
     
     import { 
@@ -32,11 +33,14 @@
     let loading = $state(true);
     let error = $state(null);
     
+    // Flag to track initialization attempts
+    let initAttempted = $state(false);
+    
+    // Enhanced loading state that includes auth and game loading
+    const combinedLoading = $derived(loading || $game.worldLoading || !$isAuthReady);
+    
     // Simplified derived state
     const isDragging = $derived($map.isDragging);
-    
-    // Convert $: statement to $derived runes syntax
-    const combinedLoading = $derived(loading || $game.worldLoading);
     
     // Updated UI state management function
     function toggleDetailsModal(show) {
@@ -50,42 +54,27 @@
             error = null;
             console.log('Initializing map for world:', worldId);
             
-            // Make sure the game store has the current world set
-            await setCurrentWorld(worldId);
-            
-            // Wait for world data to be loaded
-            if ($game.worldLoading) {
-                console.log('Waiting for world data to load...');
-                
-                // Create a promise to wait for world loading to finish
-                await new Promise((resolve, reject) => {
-                    const unsubscribe = game.subscribe(gameState => {
-                        if (!gameState.worldLoading) {
+            // First, wait for auth to be ready
+            if (!$isAuthReady) {
+                console.log('Waiting for auth to be ready before loading world...');
+                await new Promise(resolve => {
+                    const unsubscribe = isAuthReady.subscribe(ready => {
+                        if (ready) {
                             unsubscribe();
-                            
-                            if (gameState.error) {
-                                reject(new Error(gameState.error));
-                            } else if (
-                                !gameState.worldInfo[worldId] || 
-                                gameState.worldInfo[worldId].seed === undefined
-                            ) {
-                                reject(new Error(`Missing seed data for world ${worldId}`));
-                            } else {
-                                resolve();
-                            }
+                            resolve();
                         }
                     });
-                    
-                    // Add a timeout to prevent hanging
-                    setTimeout(() => {
-                        unsubscribe();
-                        reject(new Error('Timed out waiting for world data'));
-                    }, 10000); // 10 second timeout
                 });
             }
             
+            // Make sure the game store has the current world set
+            console.log('Auth ready, setting current world and loading data...');
+            await setCurrentWorld(worldId);
+            
+            // Force a fresh world info fetch to ensure we have the seed
+            const worldInfo = await getWorldInfo(worldId, true);
+            
             // Check that we have the world data with a seed
-            const worldInfo = $game.worldInfo[worldId];
             if (!worldInfo) {
                 throw new Error(`World info not found for ${worldId}`);
             }
@@ -97,7 +86,10 @@
             console.log('World seed:', worldInfo.seed, typeof worldInfo.seed);
             
             // Initialize map with data from the game store
-            setupFromGameStore();
+            if (!setupFromGameStore()) {
+                throw new Error('Failed to initialize map with world data');
+            }
+            
             loading = false;
             
         } catch (err) {
@@ -107,15 +99,12 @@
         }
     }
     
-    // Flag to track map initialization state
-    let initAttempted = $state(false);
-    
     // Use the reactive statement to initialize map when world data is ready
     $effect(() => {
         // Skip if we've already tried to initialize or if there's an error
-        if (initAttempted || error) return;
+        if (initAttempted || error || !$isAuthReady) return;
         
-        // Check if world data is fully loaded from Firebase
+        // Check if world data is fully loaded from Firebase with valid seed
         if (!$game.worldLoading && $game.currentWorld && $game.worldInfo[$game.currentWorld]?.seed !== undefined) {
             console.log('World data loaded from Firebase, initializing map');
             initAttempted = true;
@@ -137,21 +126,12 @@
                 loading = false;
             }
         } else if (!$game.worldLoading && $game.currentWorld) {
-            // World loading finished but data is incomplete
+            // World loading finished but data is incomplete - this shouldn't happen
+            // with updated flow, but we'll handle it anyway
             console.warn('World loading finished but seed is missing:', 
                 $game.currentWorld, 
                 $game.worldInfo[$game.currentWorld]
             );
-            
-            // If Firebase loading is done but we don't have the seed, something went wrong
-            if (!$game.worldInfo[$game.currentWorld]?.seed) {
-                console.error('World data loaded but seed is missing');
-                error = `Missing seed for world: ${$game.currentWorld}`;
-                loading = false;
-                initAttempted = true;
-            }
-        } else if ($game.worldLoading) {
-            console.log('Waiting for world data to load from Firebase...');
         }
     });
     
@@ -167,56 +147,17 @@
             goto('/worlds');
             return;
         }
+
+        // Don't immediately check if the worldId is in joinedWorlds - this can be empty until auth is complete
+        // Instead, handle this check inside initializeMap after auth is ready
         
-        // Check if the worldId is in joined worlds
-        if ($game.joinedWorlds.length > 0 && !$game.joinedWorlds.includes(worldId)) {
-            console.log('World not in joined list, redirecting to worlds page');
-            goto('/worlds');
-            return;
-        }
-        
-        // Ensure the URL parameter becomes the current world in game store
-        if ($game.currentWorld !== worldId) {
-            console.log(`Setting current world from URL parameter: ${worldId}`);
-            
-            // Use the initializeMap function to handle loading the world in a more controlled way
-            loading = true;
-            error = null;
-            initializeMap(worldId)
-                .catch(err => {
-                    console.error(`Failed to initialize map for world ${worldId}:`, err);
-                    error = err.message || `Failed to load world ${worldId}`;
-                    loading = false;
-                });
-        } else {
-            // We're already on the correct world - check if we need to initialize the map
-            console.log('Using current world:', worldId);
-            
-            if (!$map.ready && $game.worldInfo[worldId]?.seed !== undefined) {
-                console.log(`World info already loaded for ${worldId}, initializing map directly`);
-                try {
-                    if (setupFromGameStore()) {
-                        console.log('Map initialized successfully');
-                        loading = false;
-                    } else {
-                        console.error('Failed to initialize map with existing world data');
-                        error = 'Failed to initialize map with existing world data';
-                        loading = false;
-                    }
-                } catch (err) {
-                    console.error('Error initializing map with existing data:', err);
-                    error = err.message || 'Failed to initialize map';
-                    loading = false;
-                }
-            } else if ($map.ready) {
-                console.log('Map is already initialized');
+        // Initialize the map with the worldId - this will properly coordinate with auth
+        initializeMap(worldId)
+            .catch(err => {
+                console.error(`Failed to initialize map for world ${worldId}:`, err);
+                error = err.message || `Failed to load world ${worldId}`;
                 loading = false;
-            } else {
-                console.log('Waiting for world data to load before initializing map...');
-                // The reactive effect will handle initialization once data is loaded
-                loading = true;
-            }
-        }
+            });
     });
     
     // Add another effect to update loading state when map is ready
@@ -237,7 +178,15 @@
     {#if combinedLoading}
         <div class="loading-overlay">
             <div class="loading-spinner"></div>
-            <div>Loading world{#if $game.worldLoading} data{/if}...</div>
+            <div>
+                {#if !$isAuthReady}
+                    Loading user data...
+                {:else if $game.worldLoading}
+                    Loading world data...
+                {:else}
+                    Initializing world...
+                {/if}
+            </div>
         </div>
     {:else if error || $game.error}
         <div class="error-overlay">
