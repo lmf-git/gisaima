@@ -1,5 +1,5 @@
 <script>
-    import { signUp } from '$lib/stores/auth';
+    import { signUp } from '$lib/stores/user';
     import { goto } from '$app/navigation';
     import Logo from '../../components/Logo.svelte';
     

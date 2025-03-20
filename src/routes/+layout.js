@@ -1,4 +1,4 @@
-import { initAuthListener } from '$lib/stores/auth';
+import { initAuthListener } from '$lib/stores/user';
 import { browser } from '$app/environment';
 
 // Only initialise auth listener in the browser.

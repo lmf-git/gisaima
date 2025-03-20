@@ -1,6 +1,6 @@
 <script>
     import { page } from '$app/stores';
-    import { user, signOut } from '$lib/stores/auth';
+    import { user, signOut } from '$lib/stores/user';
     import Logo from '../components/Logo.svelte';
     import MobileMenu from '../components/MobileMenu.svelte';
     import { onMount, onDestroy } from 'svelte';

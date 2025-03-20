@@ -1,5 +1,5 @@
 <script>
-    import { user, signOut } from '$lib/stores/auth';
+    import { user, signOut } from '$lib/stores/user';
     
     // Accept props directly without event dispatching
     let { menuOpen = false, onToggle, onClose } = $props();
