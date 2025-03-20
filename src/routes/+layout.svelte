@@ -3,6 +3,8 @@
     import { user, signOut } from '$lib/stores/auth';
     import Logo from '../components/Logo.svelte';
     import MobileMenu from '../components/MobileMenu.svelte';
+    import { onMount, onDestroy } from 'svelte';
+    import { initGameStore } from '../lib/stores/game.js';
 
     const { children } = $props();
 
@@ -16,6 +18,18 @@
     function closeMobileMenu() {
         mobileMenuOpen = false;
     }
+
+    let unsubscribe;
+    
+    onMount(() => {
+        unsubscribe = initGameStore();
+    });
+    
+    onDestroy(() => {
+        if (typeof unsubscribe === 'function') {
+            unsubscribe();
+        }
+    });
 </script>
 
 <div class={`app ${$page.url.pathname === '/map' ? 'map' : ''}`}>

@@ -2,6 +2,7 @@ import { writable, derived, get } from 'svelte/store';
 import { TerrainGenerator } from '../map/noise.js';
 import { ref, onValue } from "firebase/database";
 import { db } from '../firebase/database.js';
+import { game } from './game.js';
 
 // Keep a reference to the terrain generator for grid creation
 let terrain;
@@ -21,6 +22,7 @@ export const map = writable({
   target: { x: 0, y: 0 },
   highlighted: null,
   minimap: true,
+  world: get(game).currentWorld || 'default', // Initialize from game store
 });
 
 export const entities = writable({
@@ -32,8 +34,11 @@ export const entities = writable({
 export const ready = derived(map, $map => $map.ready);
 
 export const chunks = derived(
-  map,
-  ($map, set) => {
+  [map, game],
+  ([$map, $game], set) => {
+    // Use the world from game store if available
+    const worldId = $map.world || $game.currentWorld || 'default';
+    
     if (!$map.ready || !terrain) return set(new Set());
     
     // Calculate visible area chunk bounds
@@ -65,8 +70,8 @@ export const chunks = derived(
         if (chunkSubscriptions.has(chunkKey)) {
           chunksToRemove.delete(chunkKey);
         } else {
-          // Subscribe directly
-          const chunkRef = ref(db, `chunks/${chunkKey}`);
+          // Subscribe with updated path using worldId from game store when available
+          const chunkRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}`);
           const unsubscribe = onValue(chunkRef, snapshot => {
             if (snapshot.exists()) {
               const data = snapshot.val();
@@ -221,12 +226,44 @@ function processChunkData(data = {}) {
   }
 }
 
-// Enhanced setup function that accepts an optional seed
-export function setup(seed = 52532532523) {
+// Enhanced setup function that accepts an optional seed and world ID
+export function setup({ seed = 52532532523, world = null } = {}) {
+  // Get world ID from game store if not provided
+  const worldId = world || get(game).currentWorld || 'default';
+  
+  // Initialize the terrain generator
   terrain = new TerrainGenerator(seed);
   
-  map.update(state => state.ready ? state : { ...state, ready: true });
-};
+  // Update the map store with ready state and world ID
+  map.update(state => ({
+    ...state,
+    ready: true,
+    world: worldId
+  }));
+}
+
+// Get the current world ID
+export function getCurrentWorld() {
+  return get(map).world || get(game).currentWorld || 'default';
+}
+
+// Switch to a different world
+export function switchWorld(worldId) {
+  const currentWorldId = get(map).world;
+  
+  if (worldId && worldId !== currentWorldId) {
+    // Clear existing subscriptions
+    for (const [_, unsubscribe] of chunkSubscriptions.entries()) {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    }
+    chunkSubscriptions.clear();
+    
+    // Update map store with new world ID
+    map.update(state => ({ ...state, world: worldId }));
+  }
+}
 
 // Unified map movement function
 export function moveTarget(newX, newY) {
