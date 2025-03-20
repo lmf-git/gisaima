@@ -14,6 +14,7 @@
 
   // Simplify state variables
   let open = $state(true);
+  let closing = $state(false);  // New state to track closing animation
   let dd = $state(false);
   let windowWidth = $state(browser ? window.innerWidth : 0);
   let isDrag = $state(false);
@@ -28,6 +29,7 @@
   // Constants
   const BREAKPOINT = 768;
   const DRAG_THRESHOLD = 5;
+  const ANIMATION_DURATION = 800;  // Match the slide-in duration
   
   // Calculate minimap dimensions
   const tileCountX = $derived($ready ? $map.cols * EXPANDED_COLS_FACTOR : 48);
@@ -151,12 +153,27 @@
     }
   }
   
+  // Function to handle minimap visibility with animation
   function updateMinimapVisibility(isOpen) {
-    open = isOpen;
-    setMinimapVisibility(isOpen); // Now using local function
-    
-    if (browser) {
-      localStorage.setItem('minimap', isOpen.toString());
+    if (open && !isOpen) {
+      // Handle closing with animation
+      closing = true;
+      setTimeout(() => {
+        open = false;
+        closing = false;
+        setMinimapVisibility(false);
+        if (browser) {
+          localStorage.setItem('minimap', 'false');
+        }
+      }, ANIMATION_DURATION);
+    } else {
+      // For opening or direct state changes
+      open = isOpen;
+      setMinimapVisibility(isOpen);
+      
+      if (browser) {
+        localStorage.setItem('minimap', isOpen.toString());
+      }
     }
   }
   
@@ -235,18 +252,19 @@
     onclick={toggleMinimap} 
     aria-label={open ? "Hide minimap" : "Show minimap"}
     class:ready={$ready}>
-    {#if open}
+    {#if open || closing}
       <Close size="1.2em" extraClass="close-icon-dark" />
     {:else}
       <span class="toggle-text">M</span>
     {/if}
   </button>
   
-  {#if open}
+  {#if open || closing}
     <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
     <div 
       class="minimap"
       class:ready={$ready}
+      class:closing={closing}
       aria-hidden="true"
       bind:this={minimap}
       onclick={handleMinimapClick}
@@ -371,6 +389,11 @@
     animation: slideInFromRight 0.8s ease-out 0.5s forwards;
   }
   
+  /* New animation for closing */
+  .minimap.closing {
+    animation: slideOutToRight 0.8s ease-in forwards;
+  }
+  
   .minimap:hover {
     box-shadow: 0 0.15em 0.3em var(--color-shadow);
   }
@@ -387,6 +410,18 @@
     100% {
       transform: translateX(0);
       opacity: 1;
+    }
+  }
+  
+  /* Add the slide-out animation */
+  @keyframes slideOutToRight {
+    0% {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(100%);
+      opacity: 0;
     }
   }
   
