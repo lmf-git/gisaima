@@ -20,11 +20,11 @@
     } from "../../lib/stores/map.js";
 
     import Tutorial from '../../components/map/Tutorial.svelte';
-    import Grid from '../../components/map/Tutorial.svelte';
-    import Minimap from '../../components/map/Tutorial.svelte';
-    import Axes from '../../components/map/Tutorial.svelte';
-    import Legend from '../../components/map/Tutorial.svelte';
-    import Details from '../../components/map/Tutorial.svelte';
+    import Grid from '../../components/map/Grid.svelte';
+    import Minimap from '../../components/map/Minimap.svelte';
+    import Axes from '../../components/map/Axes.svelte';
+    import Legend from '../../components/map/Legend.svelte';
+    import Details from '../../components/map/Details.svelte';
 
     
     // Use $state for local component state
