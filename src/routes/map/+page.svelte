@@ -3,13 +3,20 @@
     import { browser } from '$app/environment';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
-    import { game, getWorldInfo, setCurrentWorld } from "../../lib/stores/game.js";
+    import { 
+      game, 
+      getWorldInfo, 
+      setCurrentWorld, 
+      currentWorldInfo, 
+      currentWorldSeed 
+    } from "../../lib/stores/game.js";
     
     import { 
         map, 
         ready,
         targetStore,
-        setup
+        setup,
+        setupFromGameStore
     } from "../../lib/stores/map.js";
 
     import Tutorial from '../../components/map/Tutorial.svelte';
@@ -28,35 +35,71 @@
     // Simplified derived state
     const isDragging = $derived($map.isDragging);
     
+    // Convert $: statement to $derived runes syntax
+    const combinedLoading = $derived(loading || $game.worldLoading);
+    
     // Updated UI state management function
     function toggleDetailsModal(show) {
         detailed = show;
     }
     
+    // Simplified initialize map function that uses game store
     async function initializeMap(worldId) {
         try {
             loading = true;
             error = null;
+            console.log('Initializing map for world:', worldId);
             
-            // Check if we already have this world's info in the store
-            let worldInfo;
-            if ($game.worldInfo && $game.worldInfo[worldId]) {
-                worldInfo = $game.worldInfo[worldId];
-            } else {
-                // Fetch world info if not already cached
-                worldInfo = await getWorldInfo(worldId);
+            // Make sure the game store has the current world set
+            await setCurrentWorld(worldId);
+            
+            // Wait for world data to be loaded
+            if ($game.worldLoading) {
+                console.log('Waiting for world data to load...');
+                
+                // Create a promise to wait for world loading to finish
+                await new Promise((resolve, reject) => {
+                    const unsubscribe = game.subscribe(gameState => {
+                        if (!gameState.worldLoading) {
+                            unsubscribe();
+                            
+                            if (gameState.error) {
+                                reject(new Error(gameState.error));
+                            } else if (
+                                !gameState.worldInfo[worldId] || 
+                                gameState.worldInfo[worldId].seed === undefined
+                            ) {
+                                reject(new Error(`Missing seed data for world ${worldId}`));
+                            } else {
+                                resolve();
+                            }
+                        }
+                    });
+                    
+                    // Add a timeout to prevent hanging
+                    setTimeout(() => {
+                        unsubscribe();
+                        reject(new Error('Timed out waiting for world data'));
+                    }, 10000); // 10 second timeout
+                });
             }
             
-            // Update the current world in the game store with info
-            setCurrentWorld(worldId, worldInfo);
+            // Check that we have the world data with a seed
+            const worldInfo = $game.worldInfo[worldId];
+            if (!worldInfo) {
+                throw new Error(`World info not found for ${worldId}`);
+            }
+            if (worldInfo.seed === undefined) {
+                throw new Error(`World ${worldId} has no seed defined`);
+            }
             
-            // Initialize the map with world ID and seedded
-            setup({ 
-                seed: worldInfo.seed || 454232, 
-                world: worldId 
-            });
+            console.log('World info loaded:', worldInfo);
+            console.log('World seed:', worldInfo.seed, typeof worldInfo.seed);
             
+            // Initialize map with data from the game store
+            setupFromGameStore();
             loading = false;
+            
         } catch (err) {
             error = err.message || 'Failed to load world';
             loading = false;
@@ -72,6 +115,7 @@
         
         if (!worldId) {
             // No world ID, redirect to worlds page
+            console.log('No world selected, redirecting to worlds page');
             goto('/worlds');
             return;
         }
@@ -79,11 +123,12 @@
         // Check if the worldId is in joined worlds
         if ($game.joinedWorlds.length > 0 && !$game.joinedWorlds.includes(worldId)) {
             // If we have joined worlds but this one isn't in the list, redirect
-            // This prevents accessing worlds the user hasn't joined
+            console.log('World not in joined list, redirecting to worlds page');
             goto('/worlds');
             return;
         }
         
+        // Only initialize map if we have a valid world ID
         initializeMap(worldId);
     });
     
@@ -95,16 +140,16 @@
 </script>
 
 <div class="map" class:dragging={isDragging}>
-    {#if loading}
+    {#if combinedLoading}
         <div class="loading-overlay">
             <div class="loading-spinner"></div>
-            <div>Loading world...</div>
+            <div>Loading world{#if $game.worldLoading} data{/if}...</div>
         </div>
-    {:else if error}
+    {:else if error || $game.error}
         <div class="error-overlay">
             <h3>Error</h3>
-            <p>{error}</p>
-            <button onclick={() => goto('/worlds')}>Go to Worlds</button>>
+            <p>{error || $game.error}</p>
+            <button on:click={() => goto('/worlds')}>Go to Worlds</button>
         </div>
     {:else}
         <!-- Use prop binding with runes syntax -->

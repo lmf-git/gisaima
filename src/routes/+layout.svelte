@@ -4,7 +4,7 @@
     import Logo from '../components/Logo.svelte';
     import MobileMenu from '../components/MobileMenu.svelte';
     import { onMount, onDestroy } from 'svelte';
-    import { initGameStore } from '../lib/stores/game.js';
+    import { initGameStore, game } from '../lib/stores/game.js';
     import { ref, onValue } from "firebase/database";
     import { db } from '../lib/firebase/database.js';
 
@@ -63,7 +63,12 @@
     });
     
     onMount(() => {
-        gameUnsubscribe = initGameStore();
+        // Initialize the game store without localStorage dependency
+        try {
+            gameUnsubscribe = initGameStore();
+        } catch (e) {
+            console.error('Error initializing game store:', e);
+        }
     });
     
     onDestroy(() => {

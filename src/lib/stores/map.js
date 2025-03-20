@@ -226,13 +226,27 @@ function processChunkData(data = {}) {
   }
 }
 
-// Enhanced setup function that accepts an optional seed and world ID
-export function setup({ seed = 52532532523, world = null } = {}) {
+// Enhanced setup function that uses game store data
+export function setup({ seed, world = null } = {}) {
   // Get world ID from game store if not provided
   const worldId = world || get(game).currentWorld || 'default';
   
-  // Initialize the terrain generator
-  terrain = new TerrainGenerator(seed);
+  console.log('Setting up map with:', { seed, worldId });
+  
+  // Validate seed - it's required and must be a valid number
+  if (seed === undefined || seed === null) {
+    throw new Error('No seed provided for map setup - seed is required');
+  }
+  
+  // Ensure seed is a valid number
+  const seedNumber = typeof seed === 'string' ? Number(seed) : seed;
+  if (isNaN(seedNumber)) {
+    throw new Error(`Invalid seed value provided: ${seed}`);
+  }
+  
+  // Initialize the terrain generator with seed
+  terrain = new TerrainGenerator(seedNumber);
+  console.log('Terrain generator initialized with seed:', seedNumber);
   
   // Update the map store with ready state and world ID
   map.update(state => ({
@@ -240,6 +254,25 @@ export function setup({ seed = 52532532523, world = null } = {}) {
     ready: true,
     world: worldId
   }));
+}
+
+// New function to initialize map directly from game store
+export function setupFromGameStore() {
+  const gameState = get(game);
+  
+  if (!gameState.currentWorld) {
+    throw new Error('No current world selected');
+  }
+  
+  const worldInfo = gameState.worldInfo[gameState.currentWorld];
+  if (!worldInfo || worldInfo.seed === undefined) {
+    throw new Error(`World info or seed not available for ${gameState.currentWorld}`);
+  }
+  
+  return setup({
+    seed: worldInfo.seed,
+    world: gameState.currentWorld
+  });
 }
 
 // Get the current world ID
