@@ -99,7 +99,6 @@
         <nav class="main-nav">
             <ul class="nav-links">
                 <li><a href="/worlds" class:active={$page.url.pathname === '/worlds'}>Worlds</a></li>
-                <li><a href="/map" class:active={$page.url.pathname === '/map'}>Map</a></li>
             </ul>
         </nav>
         
