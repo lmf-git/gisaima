@@ -18,7 +18,9 @@
     
     <div class="menu-content" class:is-open={menuOpen}>
         <div class="menu-header">
-            <button class="close-button" onclick={onClose} aria-label="Close menu">×</button>
+            <button class="close-button" onclick={onClose} aria-label="Close menu">
+                <span class="close-icon">X</span>
+            </button>
         </div>
         
         <nav class="menu-links">
@@ -55,6 +57,8 @@
         justify-content: center;
         padding: 0.5rem;
         z-index: 1001;
+        width: 3rem;
+        height: 3rem;
     }
 
     .hamburger-icon {
@@ -126,7 +130,7 @@
     .menu-header {
         display: flex;
         justify-content: flex-end;
-        padding: 1rem;
+        padding: 0;
         border-bottom: 1px solid var(--color-panel-border);
     }
 
@@ -134,9 +138,22 @@
         background: transparent;
         border: none;
         color: var(--color-bright-accent);
-        font-size: 2rem;
         cursor: pointer;
         transition: color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 3rem;
+        height: 3rem;
+        padding: 0.5rem;
+    }
+    
+    .close-icon {
+        font-size: 1.5rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .close-button:hover {
