@@ -78,7 +78,7 @@
 
 <div class={`app ${isMapPage ? 'map' : ''}`}>
     <header class="header">
-        <!-- Only show logo on non-home pages -->
+        <!-- Show logo everywhere except home page -->
         {#if !isHomePage}
             <div class="logo">
                 <a href="/" aria-label="Gisaima Home">
@@ -87,7 +87,7 @@
             </div>
         {/if}
         
-        <!-- Hide nav and auth on map page -->
+        <!-- Show nav and auth everywhere except map page -->
         {#if !isMapPage}
             <nav class="nav">
                 <ul class="links">
