@@ -107,36 +107,49 @@
         }
     }
     
+    // Flag to track if we've already attempted map initialization
+    let initAttempted = $state(false);
+    
     // Use the reactive statement to initialize map when world data is ready
     $effect(() => {
-        // Wait for game data to finish loading first
-        if ($game.worldLoading) {
-            console.log('Waiting for world data to finish loading...');
-            return;
-        }
+        // Skip if we've already tried to initialize or if there's an error
+        if (initAttempted || error) return;
         
-        // Only attempt to initialize map if:
-        // 1. Game data finished loading
-        // 2. We have a current world
-        // 3. We're not already showing an error
-        // 4. Map isn't already ready
-        if ($game.currentWorld && !error && !$ready) {
-            // Add a small delay to ensure world info is fully processed
-            setTimeout(() => {
-                console.log('World data loaded, initializing map');
-                try {
-                    if (setupFromGameStore()) {
-                        console.log('Map initialized successfully');
-                    } else {
-                        console.error('Failed to initialize map - missing world data');
-                        console.log('Current game state:', $game);
-                        error = 'Missing or incomplete world data';
-                    }
-                } catch (err) {
-                    console.error('Error initializing map:', err);
-                    error = err.message || 'Failed to initialize map';
+        // Check if world data is fully loaded from Firebase
+        if (!$game.worldLoading && $game.currentWorld && $game.worldInfo[$game.currentWorld]?.seed !== undefined) {
+            console.log('World data loaded from Firebase, initializing map');
+            initAttempted = true;
+            
+            try {
+                if (setupFromGameStore()) {
+                    console.log('Map initialized successfully');
+                    loading = false;
+                } else {
+                    console.error('Failed to initialize map - setupFromGameStore returned false');
+                    console.log('Current game state:', $game);
+                    error = 'Failed to initialize map with world data';
                 }
-            }, 100); // Small delay to ensure world info is ready
+            } catch (err) {
+                console.error('Error initializing map:', err);
+                error = err.message || 'Failed to initialize map';
+                loading = false;
+            }
+        } else if (!$game.worldLoading && $game.currentWorld) {
+            // World loading finished but data is incomplete
+            console.warn('World loading finished but seed is missing:', 
+                $game.currentWorld, 
+                $game.worldInfo[$game.currentWorld]
+            );
+            
+            // If Firebase loading is done but we don't have the seed, something went wrong
+            if (!$game.worldLoading && $game.currentWorld && !$game.worldInfo[$game.currentWorld]?.seed) {
+                console.error('World data loaded but seed is missing');
+                error = `Missing seed for world: ${$game.currentWorld}`;
+                loading = false;
+                initAttempted = true;
+            }
+        } else if ($game.worldLoading) {
+            console.log('Waiting for world data to load from Firebase...');
         }
     });
     
@@ -160,8 +173,9 @@
             return;
         }
         
-        // Just set the current world and let the effect handle initialization
-        loading = true; // Keep loading true until map is ready
+        // Set current world - this will trigger Firebase to load the world data
+        console.log('Setting current world:', worldId);
+        loading = true;
         setCurrentWorld(worldId);
     });
     

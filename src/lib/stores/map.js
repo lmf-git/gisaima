@@ -292,36 +292,47 @@ export function setupFromGameStore() {
   
   // More detailed checks with specific error messages
   if (!gameState.currentWorld) {
-    console.warn('World information not completely loaded yet: No current world selected');
+    console.warn('World information not completely loaded: No current world selected');
     return false;
   }
   
   if (!gameState.worldInfo || Object.keys(gameState.worldInfo).length === 0) {
-    console.warn('World information not completely loaded yet: No world info available');
+    console.warn('World information not completely loaded: No world info available');
     return false;
   }
   
   const worldInfo = gameState.worldInfo[gameState.currentWorld];
   if (!worldInfo) {
-    console.warn(`World information not completely loaded yet: No data for world ${gameState.currentWorld}`);
+    console.warn(`World information not completely loaded: No data for world ${gameState.currentWorld}`);
     return false;
   }
   
   if (worldInfo.seed === undefined) {
-    console.warn(`World information not completely loaded yet: No seed for world ${gameState.currentWorld}`);
+    console.warn(`World information not completely loaded: No seed for world ${gameState.currentWorld}`);
     return false;
   }
   
-  // We have all required data, proceed with setup
-  console.log('Setting up map using world data:', {
-    world: gameState.currentWorld,
-    seed: worldInfo.seed
-  });
+  // Get seed value and ensure it's a proper number
+  const seedValue = worldInfo.seed;
+  if (isNaN(Number(seedValue))) {
+    console.error(`Invalid seed value in world data: ${seedValue}`);
+    return false;
+  }
   
-  return setup({
-    seed: worldInfo.seed,
-    world: gameState.currentWorld
-  });
+  // Log success and set up map
+  console.log(`World data found in Firebase. Setting up map for ${gameState.currentWorld} with seed:`, seedValue);
+  
+  // We have all required data, proceed with setup
+  try {
+    setup({
+      seed: seedValue,
+      world: gameState.currentWorld
+    });
+    return true;
+  } catch (err) {
+    console.error('Error in map setup:', err);
+    return false;
+  }
 }
 
 // Get the current world ID
