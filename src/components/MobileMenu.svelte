@@ -158,6 +158,8 @@
         font-size: 1em;
         transition: all 0.2s ease;
         font-weight: 500;
+        position: relative; /* Add position relative */
+        margin-bottom: 0.125em; /* Add space for hover lift effect */
     }
     
     .auth-buttons .login {
@@ -176,6 +178,7 @@
     .auth-buttons .signup:hover {
         transform: translateY(-0.125em);
         box-shadow: 0 0.25em 0.5em var(--color-shadow);
+        /* No layout shift because we added margin-bottom */
     }
     
     :global(.icon-pale-green) {

@@ -96,8 +96,8 @@
 
 <div class={`app ${isMapPage ? 'map' : ''}`}>
     <header class="header">
-        <!-- Show logo everywhere except home page -->
-        {#if !isHomePage}
+        <!-- Show logo everywhere except home page, or on home page when menu is open -->
+        {#if !isHomePage || (isHomePage && (mobileMenuOpen || menuAnimatingOut))}
             <div class="logo">
                 <a href="/" aria-label="Gisaima Home">
                     <Logo extraClass="headerlogo" />
@@ -303,6 +303,7 @@
         padding: 1em 2em;
         position: relative;
         z-index: 100;
+        height: 6em;
     }
 
     /* Logo styling */
@@ -321,7 +322,7 @@
     :global(.headerlogo) {
         width: 40px;
         height: 40px;
-        margin-right: 0.5em;
+        /* Removed margin-right: 0.5em; */
     }
 
     /* Navigation styling */
@@ -409,6 +410,8 @@
         text-decoration: none;
         border-radius: 0.25em;
         transition: all 0.2s ease;
+        position: relative; /* Add position relative */
+        margin-bottom: 0.125em; /* Add space for hover lift effect */
     }
     
     .login {
@@ -418,13 +421,14 @@
     
     .signup {
         background-color: var(--color-button-primary);
-        color: var(--color-text);
+        color: var (--color-text);
         border: 1px solid var(--color-muted-teal);
     }
     
     .login:hover, .signup:hover {
         transform: translateY(-0.125em);
         box-shadow: 0 0.125em 0.3125em var (--color-shadow);
+        /* No layout shift because we added margin-bottom */
     }
 
     /* Common button styles */
