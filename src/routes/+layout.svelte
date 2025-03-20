@@ -90,9 +90,17 @@
         <!-- Show nav and auth everywhere except map page -->
         {#if !isMapPage}
             <nav class="nav">
-                <ul class="links">
-                    <li><a href="/worlds" class:active={$page.url.pathname === '/worlds'}>Worlds</a></li>
-                </ul>
+                <div class="links">
+                    {#if $page.url.pathname !== '/worlds'}
+                        <a href="/worlds" class:active={$page.url.pathname === '/worlds'}>Worlds</a>
+                    {/if}
+                    {#if $page.url.pathname !== '/map'}
+                        <a href="/map" class:active={isMapPage}>Map</a>
+                    {/if}
+                    {#if $page.url.pathname !== '/about'}
+                        <a href="/about" class:active={$page.url.pathname === '/about'}>About</a>
+                    {/if}
+                </div>
             </nav>
             
             <div class="auth">
@@ -273,6 +281,13 @@
         text-decoration: none;
     }
 
+    /* Add global styling for the logo in header */
+    :global(.headerlogo) {
+        width: 40px;
+        height: 40px;
+        margin-right: 0.5em;
+    }
+
     /* Navigation styling */
     .nav {
         display: flex;
@@ -280,10 +295,7 @@
 
     .links {
         display: flex;
-        list-style: none;
         gap: 1.5em;
-        margin: 0;
-        padding: 0;
     }
 
     .links a {
@@ -321,6 +333,8 @@
         display: flex;
         align-items: center;
         gap: 1em;
+        height: 2.5em; /* Add minimum height to prevent layout shifting */
+        transition: opacity 0.3s ease; /* Smooth transition for loading state */
     }
     
     .greeting {
@@ -443,44 +457,12 @@
         .auth {
             flex: 1;
             justify-content: flex-end;
+            min-height: 2.2em; /* Adjust minimum height for smaller screens */
         }
         
         .greeting {
             max-width: 100px;
             font-size: 0.8em;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .links {
-            gap: 0.5em;
-        }
-        
-        .links a {
-            font-size: 0.9em;
-        }
-        
-        .auth {
-            gap: 0.5em;
-        }
-        
-        .login, .signup {
-            padding: 0.3em 0.6em;
-            font-size: 0.8em;
-        }
-        
-        .greeting {
-            max-width: 80px;
-        }
-        
-        .signout {
-            width: 2em;
-            height: 2em;
-        }
-        
-        .auth {
-            flex-direction: column;
-            gap: 0.5em;
         }
     }
 </style>
