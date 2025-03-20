@@ -109,28 +109,34 @@
     
     // Use the reactive statement to initialize map when world data is ready
     $effect(() => {
+        // Wait for game data to finish loading first
+        if ($game.worldLoading) {
+            console.log('Waiting for world data to finish loading...');
+            return;
+        }
+        
         // Only attempt to initialize map if:
-        // 1. Not loading world data anymore
+        // 1. Game data finished loading
         // 2. We have a current world
         // 3. We're not already showing an error
         // 4. Map isn't already ready
-        if (!$game.worldLoading && 
-            $game.currentWorld && 
-            !error && 
-            !$ready) {
-            
-            console.log('World data loaded, initializing map');
-            try {
-                if (setupFromGameStore()) {
-                    console.log('Map initialized successfully');
-                } else {
-                    console.error('Failed to initialize map - missing world data');
-                    error = 'Missing or incomplete world data';
+        if ($game.currentWorld && !error && !$ready) {
+            // Add a small delay to ensure world info is fully processed
+            setTimeout(() => {
+                console.log('World data loaded, initializing map');
+                try {
+                    if (setupFromGameStore()) {
+                        console.log('Map initialized successfully');
+                    } else {
+                        console.error('Failed to initialize map - missing world data');
+                        console.log('Current game state:', $game);
+                        error = 'Missing or incomplete world data';
+                    }
+                } catch (err) {
+                    console.error('Error initializing map:', err);
+                    error = err.message || 'Failed to initialize map';
                 }
-            } catch (err) {
-                console.error('Error initializing map:', err);
-                error = err.message || 'Failed to initialize map';
-            }
+            }, 100); // Small delay to ensure world info is ready
         }
     });
     
@@ -155,8 +161,15 @@
         }
         
         // Just set the current world and let the effect handle initialization
-        loading = $game.worldLoading;
+        loading = true; // Keep loading true until map is ready
         setCurrentWorld(worldId);
+    });
+    
+    // Add another effect to update loading state when map is ready
+    $effect(() => {
+        if ($ready) {
+            loading = false;
+        }
     });
     
     onDestroy(() => {

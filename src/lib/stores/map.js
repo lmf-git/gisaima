@@ -290,23 +290,36 @@ export function setup({ seed, world = null } = {}) {
 export function setupFromGameStore() {
   const gameState = get(game);
   
-  // Check if we have the necessary data
-  if (!gameState.currentWorld || 
-      !gameState.worldInfo || 
-      !gameState.worldInfo[gameState.currentWorld] ||
-      gameState.worldInfo[gameState.currentWorld].seed === undefined) {
-    console.warn('World information not completely loaded yet. Cannot setup map.');
+  // More detailed checks with specific error messages
+  if (!gameState.currentWorld) {
+    console.warn('World information not completely loaded yet: No current world selected');
+    return false;
+  }
+  
+  if (!gameState.worldInfo || Object.keys(gameState.worldInfo).length === 0) {
+    console.warn('World information not completely loaded yet: No world info available');
+    return false;
+  }
+  
+  const worldInfo = gameState.worldInfo[gameState.currentWorld];
+  if (!worldInfo) {
+    console.warn(`World information not completely loaded yet: No data for world ${gameState.currentWorld}`);
+    return false;
+  }
+  
+  if (worldInfo.seed === undefined) {
+    console.warn(`World information not completely loaded yet: No seed for world ${gameState.currentWorld}`);
     return false;
   }
   
   // We have all required data, proceed with setup
   console.log('Setting up map using world data:', {
     world: gameState.currentWorld,
-    seed: gameState.worldInfo[gameState.currentWorld].seed
+    seed: worldInfo.seed
   });
   
   return setup({
-    seed: gameState.worldInfo[gameState.currentWorld].seed,
+    seed: worldInfo.seed,
     world: gameState.currentWorld
   });
 }
