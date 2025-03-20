@@ -3,7 +3,9 @@
     import { user, signOut } from '$lib/stores/auth';
     import Logo from '../components/Logo.svelte';
     import MobileMenu from '../components/MobileMenu.svelte';
-    
+
+    const { children } = $props();
+
     // Manage mobile menu state at the layout level with correct $state syntax
     let mobileMenuOpen = $state(false);
     
@@ -56,7 +58,7 @@
         </nav>
     </header>
 
-    <slot />
+    {@render children?.()}
 </div>
 
 <style>
