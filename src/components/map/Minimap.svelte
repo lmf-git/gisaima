@@ -29,13 +29,13 @@
   const BREAKPOINT = 768;
   const DRAG_THRESHOLD = 5;
   
-  // Calculate minimap dimensions - keep this unchanged
+  // Calculate minimap dimensions
   const tileCountX = $derived($ready ? $map.cols * EXPANDED_COLS_FACTOR : 48);
   const tileCountY = $derived($ready ? $map.rows * EXPANDED_ROWS_FACTOR : 32);
   const viewRangeX = $derived(Math.floor(tileCountX / 2));
   const viewRangeY = $derived(Math.floor(tileCountY / 2));
   
-  // Filter coordinates for minimap - much simpler now, doesn't remap
+  // Filter coordinates for minimap
   const grid = $derived(coordinates);
   
   // Remove navigateToPosition - unused now that we use hoveredTile directly

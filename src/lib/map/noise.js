@@ -454,7 +454,6 @@ export class TerrainGenerator {
     const lakeValue = this.lakeNoise.getLakeValue(x, y, TERRAIN_OPTIONS.lake, heightMap, riverMap);
     
     // Generate lava/volcanic value
-    // FIX: Use the lavaNoise instance instead of calling method directly on this
     const lavaValue = this.lavaNoise.getLavaValue(x, y, TERRAIN_OPTIONS.lava, heightMap);
     
     // Calculate slope
