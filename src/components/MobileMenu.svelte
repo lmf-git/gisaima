@@ -2,25 +2,34 @@
     import SignOut from './icons/SignOut.svelte';
     
     // Props
-    const { onClose, currentPath, user, signOut } = $props();
+    const { onClose, currentPath, user, signOut, animatingOut = false } = $props();
 </script>
 
 <div class="mobile-menu">
-    <div class="mobile-menu-header animate-item">
+    <div class={`mobile-menu-header ${animatingOut ? 'animate-out' : 'animate-item'}`}
+         style={animatingOut ? 'animation-delay: 0.2s;' : ''}>
         <h2>Menu</h2>
-        <!-- Close button removed -->
     </div>
     
     <nav class="mobile-nav">
         {#if currentPath !== '/'}
-            <a href="/" class="animate-item" class:active={currentPath === '/'}>Home</a>
+            <a href="/" 
+               class={animatingOut ? 'animate-out' : 'animate-item'} 
+               class:active={currentPath === '/'}
+               style={animatingOut ? 'animation-delay: 0.15s;' : ''}
+            >Home</a>
         {/if}
         {#if currentPath !== '/worlds'}
-            <a href="/worlds" class="animate-item" class:active={currentPath === '/worlds'}>Worlds</a>
+            <a href="/worlds" 
+               class={animatingOut ? 'animate-out' : 'animate-item'} 
+               class:active={currentPath === '/worlds'}
+               style={animatingOut ? 'animation-delay: 0.1s;' : ''}
+            >Worlds</a>
         {/if}
     </nav>
     
-    <div class="mobile-auth animate-item">
+    <div class={`mobile-auth ${animatingOut ? 'animate-out' : 'animate-item'}`}
+         style={animatingOut ? 'animation-delay: 0s;' : ''}>
         {#if user}
             <div class="mobile-user-info">
                 <p>Signed in as:</p>
@@ -182,6 +191,12 @@
         animation: fadeIn 0.3s ease forwards;
     }
     
+    .animate-out {
+        opacity: 1;
+        transform: translateY(0);
+        animation: fadeOut 0.3s ease forwards;
+    }
+    
     .mobile-nav a.animate-item:nth-child(1) {
         animation-delay: 0.1s;
     }
@@ -202,6 +217,17 @@
         to {
             opacity: 1;
             transform: translateY(0);
+        }
+    }
+    
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(10px);
         }
     }
 </style>

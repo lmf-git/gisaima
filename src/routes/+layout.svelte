@@ -14,6 +14,7 @@
 
     // State
     let mobileMenuOpen = $state(false);
+    let menuAnimatingOut = $state(false);
     let playerData = $state(null);
     let playerLoading = $state(false);
     let playerUnsubscribe = null;
@@ -23,11 +24,27 @@
     const isMapPage = $derived($page.url.pathname === '/map');
     
     function toggleMobileMenu() {
-        mobileMenuOpen = !mobileMenuOpen;
+        if (mobileMenuOpen) {
+            // Start close animation
+            menuAnimatingOut = true;
+            // Remove menu after animation completes with additional time for staggered items
+            setTimeout(() => {
+                mobileMenuOpen = false;
+                menuAnimatingOut = false;
+            }, 500); // Extended to account for staggered animations
+        } else {
+            mobileMenuOpen = true;
+        }
     }
     
     function closeMobileMenu() {
-        mobileMenuOpen = false;
+        if (mobileMenuOpen) {
+            menuAnimatingOut = true;
+            setTimeout(() => {
+                mobileMenuOpen = false;
+                menuAnimatingOut = false;
+            }, 500); // Match the delay in toggleMobileMenu
+        }
     }
 
     let gameUnsubscribe;
@@ -122,13 +139,14 @@
             </div>
         {/if}
 
-        {#if mobileMenuOpen && !isMapPage}
-            <div class="mobile-menu-container animate-in">
+        {#if (mobileMenuOpen || menuAnimatingOut) && !isMapPage}
+            <div class={`mobile-menu-container ${menuAnimatingOut ? 'animate-out' : 'animate-in'}`}>
                 <MobileMenu 
                     onClose={closeMobileMenu} 
                     currentPath={$page.url.pathname} 
                     user={$user}
-                    signOut={signOut} 
+                    signOut={signOut}
+                    animatingOut={menuAnimatingOut}
                 />
             </div>
         {/if}
@@ -528,6 +546,10 @@
     .animate-in {
         animation-name: slideDown;
     }
+    
+    .animate-out {
+        animation-name: slideUp;
+    }
 
     @keyframes slideDown {
         from {
@@ -537,6 +559,17 @@
         to {
             opacity: 1;
             transform: translateY(0);
+        }
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(-10px);
         }
     }
 </style>
