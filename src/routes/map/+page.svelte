@@ -173,10 +173,21 @@
             return;
         }
         
-        // Set current world - this will trigger Firebase to load the world data
-        console.log('Setting current world:', worldId);
-        loading = true;
-        setCurrentWorld(worldId);
+        // Ensure the URL parameter becomes the current world in game store
+        // This is crucial to ensure the correct world is loaded after page refresh
+        if ($game.currentWorld !== worldId) {
+            console.log(`Setting current world from URL parameter: ${worldId}`);
+            // This will trigger the reactive effect to initialize the map with this world
+            setCurrentWorld(worldId).then(() => {
+                console.log(`Current world set to ${worldId}, initializing map`);
+                // Reset initAttempted to allow initialization to happen with the new world
+                initAttempted = false;
+            });
+        } else {
+            // Set current world - this will trigger Firebase to load the world data
+            console.log('Setting current world:', worldId);
+            loading = true;
+        }
     });
     
     // Add another effect to update loading state when map is ready
