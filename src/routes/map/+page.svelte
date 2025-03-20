@@ -149,7 +149,7 @@
         <div class="error-overlay">
             <h3>Error</h3>
             <p>{error || $game.error}</p>
-            <button on:click={() => goto('/worlds')}>Go to Worlds</button>
+            <button onclick={() => goto('/worlds')}>Go to Worlds</button>
         </div>
     {:else}
         <!-- Use prop binding with runes syntax -->
