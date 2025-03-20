@@ -210,6 +210,15 @@
     moveTarget($map.highlighted.x, $map.highlighted.y);  // Renamed from hoveredTile
   }
 
+  // Add debugging effect
+  $effect(() => {
+    if ($ready) {
+      console.log('Minimap: map ready state is true');
+      console.log('Minimap: grid has', $grid.length, 'items');
+    } else {
+      console.log('Minimap: waiting for map ready state...');
+    }
+  });
 </script>
 
 <svelte:window

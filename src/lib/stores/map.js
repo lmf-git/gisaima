@@ -104,11 +104,23 @@ export const coordinates = derived(
   [map, entities, chunks],
   ([$map, $entities], set) => {
     // Check if map is ready before computing
-    if (!$map.ready || !terrain) return set([]);
+    if (!$map.ready || !terrain) {
+      console.log('Map not ready or terrain not initialized:', { mapReady: $map.ready, terrainExists: !!terrain });
+      return set([]);
+    }
     
     const useExpanded = $map.minimap;
+    // Fix: Math.min without a second argument doesn't work properly
     const gridCols = useExpanded ? Math.floor($map.cols * EXPANDED_COLS_FACTOR) : $map.cols;
     const gridRows = useExpanded ? Math.floor($map.rows * EXPANDED_ROWS_FACTOR) : $map.rows;
+    
+    console.log('Calculating coordinates grid:', { 
+      cols: gridCols, 
+      rows: gridRows, 
+      target: $map.target,
+      expanded: useExpanded
+    });
+    
     const viewportCenterX = Math.floor(gridCols / 2);
     const viewportCenterY = Math.floor(gridRows / 2);
     const targetX = $map.target.x;
@@ -163,6 +175,8 @@ export const coordinates = derived(
       }
     }
 
+    // Add debug info at end
+    console.log(`Generated ${result.length} coordinates`);
     set(result);
   },
   []
@@ -249,11 +263,18 @@ export function setup({ seed, world = null } = {}) {
   console.log('Terrain generator initialized with seed:', seedNumber);
   
   // Update the map store with ready state and world ID
-  map.update(state => ({
-    ...state,
-    ready: true,
-    world: worldId
-  }));
+  map.update(state => {
+    console.log('Setting map ready state to true');
+    return {
+      ...state,
+      ready: true,
+      world: worldId
+    };
+  });
+  
+  // Verify the update took effect
+  const mapState = get(map);
+  console.log('Map state after update:', { ready: mapState.ready, world: mapState.world });
 }
 
 // New function to initialize map directly from game store
