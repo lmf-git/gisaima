@@ -121,17 +121,19 @@
                 {/if}
             </div>
         {/if}
+
+        {#if mobileMenuOpen && !isMapPage}
+            <div class="mobile-menu-container animate-in">
+                <MobileMenu 
+                    onClose={closeMobileMenu} 
+                    currentPath={$page.url.pathname} 
+                    user={$user}
+                    signOut={signOut} 
+                />
+            </div>
+        {/if}
     </header>
 
-    <!-- Mobile menu overlay -->
-    {#if mobileMenuOpen && !isMapPage}
-        <MobileMenu 
-            onClose={closeMobileMenu} 
-            currentPath={$page.url.pathname} 
-            user={$user}
-            signOut={signOut} 
-        />
-    {/if}
 
     {@render children?.()}
 </div>
@@ -404,7 +406,7 @@
     
     .login:hover, .signup:hover {
         transform: translateY(-0.125em);
-        box-shadow: 0 0.125em 0.3125em var(--color-shadow);
+        box-shadow: 0 0.125em 0.3125em var (--color-shadow);
     }
 
     /* Common button styles */
@@ -459,13 +461,7 @@
             flex: 1;
         }
         
-        /* Hide regular nav and show mobile menu toggle */
-        .mobile-menu-toggle {
-            display: flex; /* Changed from block to flex for better centering */
-            align-items: center;
-            justify-content: center;
-            order: 3;
-        }
+        /* Remove the mobile-menu-toggle style since it's now handled above */
         
         .nav {
             display: none; /* Hide on mobile */
@@ -485,12 +481,23 @@
 
     /* Mobile Menu Toggle Button - Updated CSS */
     .mobile-menu-toggle {
-        display: none; /* Hidden by default on desktop */
+        display: flex; /* Show by default */
+        align-items: center;
+        justify-content: center;
         background: transparent;
         border: none;
         cursor: pointer;
         z-index: 110;
         padding: 0.5em;
+        order: 3; /* Position after other elements */
+        margin-left: 1em; /* Add spacing between menu toggle and other elements */
+    }
+    
+    /* Hide menu toggle on larger screens */
+    @media (min-width: 769px) {
+        .mobile-menu-toggle {
+            display: none;
+        }
     }
 
     /* Remove the hamburger styles since they're now in the component */
@@ -503,5 +510,33 @@
     
     :global(.hamburger-icon span) {
         background-color: var(--color-pale-green);
+    }
+
+    /* Add positioning for mobile menu container */
+    .mobile-menu-container {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        z-index: 100;
+        transform-origin: top center;
+        animation-duration: 0.3s;
+        animation-fill-mode: forwards;
+    }
+
+    /* Animation for mobile menu container */
+    .animate-in {
+        animation-name: slideDown;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>

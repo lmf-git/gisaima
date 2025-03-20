@@ -6,27 +6,21 @@
 </script>
 
 <div class="mobile-menu">
-    <div class="mobile-menu-header">
+    <div class="mobile-menu-header animate-item">
         <h2>Menu</h2>
         <!-- Close button removed -->
     </div>
     
     <nav class="mobile-nav">
         {#if currentPath !== '/'}
-            <a href="/" class:active={currentPath === '/'}>Home</a>
+            <a href="/" class="animate-item" class:active={currentPath === '/'}>Home</a>
         {/if}
         {#if currentPath !== '/worlds'}
-            <a href="/worlds" class:active={currentPath === '/worlds'}>Worlds</a>
-        {/if}
-        {#if currentPath !== '/map'}
-            <a href="/map" class:active={currentPath === '/map'}>Map</a>
-        {/if}
-        {#if currentPath !== '/about'}
-            <a href="/about" class:active={currentPath === '/about'}>About</a>
+            <a href="/worlds" class="animate-item" class:active={currentPath === '/worlds'}>Worlds</a>
         {/if}
     </nav>
     
-    <div class="mobile-auth">
+    <div class="mobile-auth animate-item">
         {#if user}
             <div class="mobile-user-info">
                 <p>Signed in as:</p>
@@ -47,16 +41,14 @@
 
 <style>
     .mobile-menu {
-        width: 85%;
-        max-width: 25em;
+        width: 100%;
         background-color: var(--color-dark-blue);
-        border-radius: 0.5em;
-        border: 0.0625em solid var(--color-panel-border);
+        border-top: 0.0625em solid var(--color-panel-border);
         box-shadow: 0 0.625em 1.875em rgba(0, 0, 0, 0.25);
         padding: 1.5em;
         display: flex;
         flex-direction: column;
-        max-height: 80vh;
+        max-height: calc(100vh - 60px);
         overflow-y: auto;
     }
     
@@ -181,5 +173,35 @@
         color: var(--color-pale-green);
         fill: var(--color-pale-green);
         stroke: var(--color-pale-green);
+    }
+
+    /* Animation for individual menu items */
+    .animate-item {
+        opacity: 0;
+        transform: translateY(10px);
+        animation: fadeIn 0.3s ease forwards;
+    }
+    
+    .mobile-nav a.animate-item:nth-child(1) {
+        animation-delay: 0.1s;
+    }
+    
+    .mobile-nav a.animate-item:nth-child(2) {
+        animation-delay: 0.15s;
+    }
+    
+    .mobile-auth.animate-item {
+        animation-delay: 0.2s;
+    }
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>
