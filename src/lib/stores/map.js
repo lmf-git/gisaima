@@ -270,7 +270,7 @@ export function setup({ seed, world = null } = {}) {
   
   // Update the map store with ready state, world ID, AND INITIAL DIMENSIONS
   map.update(state => {
-    console.log('Setting map ready state to true');
+    console.log('Setting map ready state to true with initial dimensions');
     return {
       ...state,
       ready: true,
@@ -290,17 +290,41 @@ export function setup({ seed, world = null } = {}) {
 export function setupFromGameStore() {
   const gameState = get(game);
   
-  if (!gameState.currentWorld) {
-    throw new Error('No current world selected');
+  // Check for current world and wait if not available
+  if (!gameState.currentWorld || !gameState.worldInfo) {
+    console.warn('World information not yet loaded. Map setup will be delayed.');
+    // Return a promise that resolves when the world is ready
+    return new Promise((resolve, reject) => {
+      const unsubscribe = game.subscribe(($game) => {
+        if ($game.currentWorld && $game.worldInfo && $game.worldInfo[$game.currentWorld]?.seed !== undefined) {
+          unsubscribe();
+          console.log('World information now available. Proceeding with map setup.');
+          try {
+            const result = setup({
+              seed: $game.worldInfo[$game.currentWorld].seed,
+              world: $game.currentWorld
+            });
+            resolve(result);
+          } catch (err) {
+            reject(err);
+          }
+        }
+      });
+      
+      // Set a timeout to prevent hanging forever
+      setTimeout(() => {
+        unsubscribe();
+        reject(new Error('Timed out waiting for world information'));
+      }, 10000); // 10 second timeout
+    });
   }
   
-  const worldInfo = gameState.worldInfo[gameState.currentWorld];
-  if (!worldInfo || worldInfo.seed === undefined) {
+  if (!gameState.worldInfo[gameState.currentWorld] || gameState.worldInfo[gameState.currentWorld].seed === undefined) {
     throw new Error(`World info or seed not available for ${gameState.currentWorld}`);
   }
   
   return setup({
-    seed: worldInfo.seed,
+    seed: gameState.worldInfo[gameState.currentWorld].seed,
     world: gameState.currentWorld
   });
 }

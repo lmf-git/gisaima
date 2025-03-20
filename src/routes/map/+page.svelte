@@ -122,11 +122,25 @@
         
         // Check if the worldId is in joined worlds
         if ($game.joinedWorlds.length > 0 && !$game.joinedWorlds.includes(worldId)) {
-            // If we have joined worlds but this one isn't in the list, redirect
             console.log('World not in joined list, redirecting to worlds page');
             goto('/worlds');
             return;
         }
+        
+        // Add loading state indicator
+        let mapInitialized = false;
+        
+        // Only initialize map if we have a valid world ID, and do it asynchronously
+        console.log('Initializing map with world ID:', worldId);
+        setupFromGameStore()
+            .then(() => {
+                console.log('Map initialization complete');
+                mapInitialized = true;
+            })
+            .catch(error => {
+                console.error('Error initializing map:', error);
+                // Set error state to display to the user
+            });
         
         // Only initialize map if we have a valid world ID
         initializeMap(worldId);
