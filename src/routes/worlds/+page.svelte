@@ -70,11 +70,11 @@
           </div>
           
           {#if world.joined}
-            <button class="enter-btn" on:click={() => handleEnterWorld(world.id)}>
+            <button class="enter-btn" onclick={() => handleEnterWorld(world.id)}>
               Enter World
             </button>
           {:else}
-            <button class="join-btn" on:click={() => handleJoinWorld(world.id)}>
+            <button class="join-btn" onclick={() => handleJoinWorld(world.id)}>
               Join World
             </button>
           {/if}
