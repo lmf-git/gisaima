@@ -290,38 +290,20 @@ export function setup({ seed, world = null } = {}) {
 export function setupFromGameStore() {
   const gameState = get(game);
   
-  // Check for current world and wait if not available
-  if (!gameState.currentWorld || !gameState.worldInfo) {
-    console.warn('World information not yet loaded. Map setup will be delayed.');
-    // Return a promise that resolves when the world is ready
-    return new Promise((resolve, reject) => {
-      const unsubscribe = game.subscribe(($game) => {
-        if ($game.currentWorld && $game.worldInfo && $game.worldInfo[$game.currentWorld]?.seed !== undefined) {
-          unsubscribe();
-          console.log('World information now available. Proceeding with map setup.');
-          try {
-            const result = setup({
-              seed: $game.worldInfo[$game.currentWorld].seed,
-              world: $game.currentWorld
-            });
-            resolve(result);
-          } catch (err) {
-            reject(err);
-          }
-        }
-      });
-      
-      // Set a timeout to prevent hanging forever
-      setTimeout(() => {
-        unsubscribe();
-        reject(new Error('Timed out waiting for world information'));
-      }, 10000); // 10 second timeout
-    });
+  // Check if we have the necessary data
+  if (!gameState.currentWorld || 
+      !gameState.worldInfo || 
+      !gameState.worldInfo[gameState.currentWorld] ||
+      gameState.worldInfo[gameState.currentWorld].seed === undefined) {
+    console.warn('World information not completely loaded yet. Cannot setup map.');
+    return false;
   }
   
-  if (!gameState.worldInfo[gameState.currentWorld] || gameState.worldInfo[gameState.currentWorld].seed === undefined) {
-    throw new Error(`World info or seed not available for ${gameState.currentWorld}`);
-  }
+  // We have all required data, proceed with setup
+  console.log('Setting up map using world data:', {
+    world: gameState.currentWorld,
+    seed: gameState.worldInfo[gameState.currentWorld].seed
+  });
   
   return setup({
     seed: gameState.worldInfo[gameState.currentWorld].seed,

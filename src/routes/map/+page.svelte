@@ -107,6 +107,33 @@
         }
     }
     
+    // Use the reactive statement to initialize map when world data is ready
+    $effect(() => {
+        // Only attempt to initialize map if:
+        // 1. Not loading world data anymore
+        // 2. We have a current world
+        // 3. We're not already showing an error
+        // 4. Map isn't already ready
+        if (!$game.worldLoading && 
+            $game.currentWorld && 
+            !error && 
+            !$ready) {
+            
+            console.log('World data loaded, initializing map');
+            try {
+                if (setupFromGameStore()) {
+                    console.log('Map initialized successfully');
+                } else {
+                    console.error('Failed to initialize map - missing world data');
+                    error = 'Missing or incomplete world data';
+                }
+            } catch (err) {
+                console.error('Error initializing map:', err);
+                error = err.message || 'Failed to initialize map';
+            }
+        }
+    });
+    
     onMount(() => {
         if (browser) document.body.classList.add('map-page-active');
         
@@ -127,23 +154,9 @@
             return;
         }
         
-        // Add loading state indicator
-        let mapInitialized = false;
-        
-        // Only initialize map if we have a valid world ID, and do it asynchronously
-        console.log('Initializing map with world ID:', worldId);
-        setupFromGameStore()
-            .then(() => {
-                console.log('Map initialization complete');
-                mapInitialized = true;
-            })
-            .catch(error => {
-                console.error('Error initializing map:', error);
-                // Set error state to display to the user
-            });
-        
-        // Only initialize map if we have a valid world ID
-        initializeMap(worldId);
+        // Just set the current world and let the effect handle initialization
+        loading = $game.worldLoading;
+        setCurrentWorld(worldId);
     });
     
     onDestroy(() => {
