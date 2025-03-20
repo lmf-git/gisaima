@@ -82,7 +82,7 @@
     font-size: 3.5em;
     margin: 0.5em 0;
     letter-spacing: 0.2em;
-    color: #b21114;
+    color: #e24144;
     text-shadow: 0 0 0.625em rgba(193, 19, 22, 0.5);
     font-weight: 400; /* Reduced font weight */
     font-family: var(--font-heading); /* Added heading font */

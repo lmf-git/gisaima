@@ -58,7 +58,7 @@
       {/if}
     </div>
     <button class="close-btn" onclick={onClose}>
-      <Close size="2.2em" color="rgba(0, 0, 0, 0.8)" />
+      <Close size="2.2em" extraClass="close-icon-dark" />
     </button>
   </div>
 </div>
@@ -193,5 +193,10 @@
   
   li {
     margin-bottom: 0.3em;
+  }
+
+  :global(.close-icon-dark) {
+    color: rgba(0, 0, 0, 0.8);
+    stroke: rgba(0, 0, 0, 0.8);
   }
 </style>

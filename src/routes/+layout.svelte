@@ -93,7 +93,7 @@
             <button class="mobile-menu-toggle" aria-label="Toggle Menu" onclick={toggleMobileMenu}>
                 <HamburgerIcon 
                     size="2em" 
-                    color="var(--color-pale-green)" 
+                    extraClass="hamburger-icon" 
                     active={mobileMenuOpen} 
                 />
             </button>
@@ -103,14 +103,8 @@
         {#if !isMapPage}
             <nav class="nav">
                 <div class="links">
-                    {#if $page.url.pathname !== '/worlds'}
+                    {#if $user && $page.url.pathname !== '/worlds'}
                         <a href="/worlds" class:active={$page.url.pathname === '/worlds'}>Worlds</a>
-                    {/if}
-                    {#if $page.url.pathname !== '/map'}
-                        <a href="/map" class:active={isMapPage}>Map</a>
-                    {/if}
-                    {#if $page.url.pathname !== '/about'}
-                        <a href="/about" class:active={$page.url.pathname === '/about'}>About</a>
                     {/if}
                 </div>
             </nav>
@@ -119,7 +113,7 @@
                 {#if $user}
                     <div class="greeting">Hello, {$user.displayName || $user.email.split('@')[0]}</div>
                     <button class="signout" onclick={signOut} aria-label="Sign Out">
-                        <SignOut size="1.2em" color="var(--color-pale-green)" />
+                        <SignOut size="1.2em" extraClass="icon-pale-green" />
                     </button>
                 {:else}
                     <a href="/login" class="login">Log In</a>
@@ -467,7 +461,9 @@
         
         /* Hide regular nav and show mobile menu toggle */
         .mobile-menu-toggle {
-            display: block;
+            display: flex; /* Changed from block to flex for better centering */
+            align-items: center;
+            justify-content: center;
             order: 3;
         }
         
@@ -487,9 +483,9 @@
         }
     }
 
-    /* Mobile Menu Toggle Button */
+    /* Mobile Menu Toggle Button - Updated CSS */
     .mobile-menu-toggle {
-        display: none;
+        display: none; /* Hidden by default on desktop */
         background: transparent;
         border: none;
         cursor: pointer;
@@ -499,5 +495,13 @@
 
     /* Remove the hamburger styles since they're now in the component */
 
-    /* ...existing code... */
+    :global(.icon-pale-green) {
+        color: var(--color-pale-green);
+        fill: var(--color-pale-green);
+        stroke: var(--color-pale-green);
+    }
+    
+    :global(.hamburger-icon span) {
+        background-color: var(--color-pale-green);
+    }
 </style>

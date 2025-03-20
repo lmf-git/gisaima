@@ -1,5 +1,5 @@
 <script>
-  const { extraClass = '', size = '1em', color = 'currentColor' } = $props();
+  const { size = '1em', extraClass = '' } = $props();
 </script>
 
 <svg 
@@ -8,7 +8,6 @@
   width={size} 
   height={size} 
   fill="none" 
-  stroke={color}
   stroke-width="2"
   stroke-linecap="round"
   stroke-linejoin="round"

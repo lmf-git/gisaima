@@ -1,16 +1,16 @@
 <script>
-  // Accept props for customization
-  const { size = "24px", color = "currentColor", active = false } = $props();
+  // Accept props for customization with extraClass instead of className
+  const { size = "24px", extraClass = "", active = false } = $props();
 </script>
 
 <div 
-  class="hamburger" 
+  class="hamburger {extraClass}" 
   class:active={active}
   style="width: {size}; height: calc({size} * 0.75);"
 >
-  <span style="background-color: {color};"></span>
-  <span style="background-color: {color};"></span>
-  <span style="background-color: {color};"></span>
+  <span></span>
+  <span></span>
+  <span></span>
 </div>
 
 <style>

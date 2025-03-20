@@ -236,7 +236,7 @@
     aria-label={open ? "Hide minimap" : "Show minimap"}
     class:ready={$ready}>
     {#if open}
-      <Close size="1.2em" color="rgba(0, 0, 0, 0.8)" />
+      <Close size="1.2em" extraClass="close-icon-dark" />
     {:else}
       <span class="toggle-text">M</span>
     {/if}
@@ -464,5 +464,10 @@
   /* Prevent scrolling when touch interacting */
   .map-container.touch-active {
     touch-action: none;
+  }
+
+  :global(.close-icon-dark) {
+    color: rgba(0, 0, 0, 0.8);
+    stroke: rgba(0, 0, 0, 0.8);
   }
 </style>

@@ -38,7 +38,7 @@
                 <p class="user-email">{user.displayName || user.email}</p>
             </div>
             <button class="mobile-signout" onclick={signOut}>
-                <SignOut size="1.2em" color="var(--color-pale-green)" />
+                <SignOut size="1.2em" extraClass="icon-pale-green" />
                 <span>Sign Out</span>
             </button>
         {:else}
@@ -212,5 +212,11 @@
     .auth-buttons .signup:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 8px var(--color-shadow);
+    }
+    
+    :global(.icon-pale-green) {
+        color: var(--color-pale-green);
+        fill: var(--color-pale-green);
+        stroke: var(--color-pale-green);
     }
 </style>
