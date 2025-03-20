@@ -15,6 +15,7 @@
     // State
     let mobileMenuOpen = $state(false);
     let menuAnimatingOut = $state(false);
+    let logoAnimatingOut = $state(false);
     let playerData = $state(null);
     let playerLoading = $state(false);
     let playerUnsubscribe = null;
@@ -22,11 +23,20 @@
     // Computed values for conditional rendering
     const isHomePage = $derived($page.url.pathname === '/');
     const isMapPage = $derived($page.url.pathname === '/map');
+    const isLoginPage = $derived($page.url.pathname === '/login');
+    const isSignupPage = $derived($page.url.pathname === '/signup');
     
     function toggleMobileMenu() {
         if (mobileMenuOpen) {
             // Start close animation
             menuAnimatingOut = true;
+            logoAnimatingOut = true;
+            
+            // Hide logo more quickly (after 150ms)
+            setTimeout(() => {
+                logoAnimatingOut = false;
+            }, 150);
+            
             // Remove menu after animation completes with additional time for staggered items
             setTimeout(() => {
                 mobileMenuOpen = false;
@@ -40,6 +50,13 @@
     function closeMobileMenu() {
         if (mobileMenuOpen) {
             menuAnimatingOut = true;
+            logoAnimatingOut = true;
+            
+            // Hide logo more quickly
+            setTimeout(() => {
+                logoAnimatingOut = false;
+            }, 150);
+            
             setTimeout(() => {
                 mobileMenuOpen = false;
                 menuAnimatingOut = false;
@@ -96,11 +113,11 @@
 
 <div class={`app ${isMapPage ? 'map' : ''}`}>
     <header class="header">
-        <!-- Show logo everywhere except home page, or on home page when menu is open -->
-        {#if !isHomePage || (isHomePage && (mobileMenuOpen || menuAnimatingOut))}
+        <!-- Update logo visibility condition to use the shorter animation timing -->
+        {#if !isHomePage || (isHomePage && (mobileMenuOpen || logoAnimatingOut))}
             <div class="logo">
                 <a href="/" aria-label="Gisaima Home">
-                    <Logo extraClass="headerlogo" />
+                    <Logo extraClass="nav-logo" />
                 </a>
             </div>
         {/if}
@@ -133,8 +150,15 @@
                         <SignOut size="1.2em" extraClass="icon-pale-green" />
                     </button>
                 {:else}
-                    <a href="/login" class="login">Log In</a>
-                    <a href="/signup" class="signup">Sign Up</a>
+                    <!-- Only show login link if not on login page -->
+                    {#if !isLoginPage}
+                        <a href="/login" class="login">Log In</a>
+                    {/if}
+                    
+                    <!-- Only show signup link if not on signup page -->
+                    {#if !isSignupPage}
+                        <a href="/signup" class="signup">Sign Up</a>
+                    {/if}
                 {/if}
             </div>
         {/if}
@@ -310,6 +334,7 @@
     .logo {
         display: flex;
         align-items: center;
+        animation: fadeIn 0.15s ease-in-out;
     }
 
     .logo a {
@@ -318,8 +343,8 @@
         text-decoration: none;
     }
 
-    /* Add global styling for the logo in header */
-    :global(.headerlogo) {
+    /* Target the logo component directly in the header using stronger specificity */
+    .header .logo :global(.nav-logo) {
         width: 40px;
         height: 40px;
     }
@@ -417,14 +442,22 @@
     }
     
     .signup {
-        background-color: var(--color-button-primary);
-        color: var (--color-text);
-        border: 1px solid var(--color-muted-teal);
+        /* Update background color for better contrast */
+        background-color: var(--color-pale-green);
+        color: var(--color-dark-navy);
+        font-weight: 500;
+        border: 1px solid var(--color-pale-green);
     }
     
     .login:hover, .signup:hover {
         transform: translateY(-0.125em);
-        box-shadow: 0 0.125em 0.3125em var (--color-shadow);
+        box-shadow: 0 0.125em 0.3125em var(--color-shadow);
+    }
+    
+    /* Add specific hover effect for signup */
+    .signup:hover {
+        background-color: #7AFFDF; /* Brighter version of pale green */
+        border-color: #7AFFDF;
     }
 
     /* Common button styles */

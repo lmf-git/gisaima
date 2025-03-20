@@ -1,7 +1,6 @@
 <script>
     import { signUp } from '$lib/stores/user';
     import { goto } from '$app/navigation';
-    import Logo from '../../components/Logo.svelte';
     
     let email = '';
     let password = '';
@@ -84,14 +83,6 @@
         border-radius: 0.5em;
         box-shadow: 0 0.3em 1em var(--color-shadow);
         color: var(--color-text);
-    }
-    
-    .signup-container :global(.logo) {
-        width: 5em;
-        height: auto;
-        margin: 0 auto 1em;
-        display: block;
-        filter: drop-shadow(0 0 0.5em rgba(193, 19, 22, 0.6));
     }
     
     h1 {
