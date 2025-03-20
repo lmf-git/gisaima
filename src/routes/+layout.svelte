@@ -2,7 +2,18 @@
     import { page } from '$app/stores';
     import { user, signOut } from '$lib/stores/auth';
     import Logo from '../components/Logo.svelte';
-// Remove the global.css import
+    import MobileMenu from '../components/MobileMenu.svelte';
+    
+    // Manage mobile menu state at the layout level with correct $state syntax
+    let mobileMenuOpen = $state(false);
+    
+    function toggleMobileMenu() {
+        mobileMenuOpen = !mobileMenuOpen;
+    }
+    
+    function closeMobileMenu() {
+        mobileMenuOpen = false;
+    }
 </script>
 
 <div class={`app ${$page.url.pathname === '/map' ? 'map' : ''}`}>
@@ -16,8 +27,18 @@
                 </div>
             {/if}
             
+            <div class="mobile-menu-container">
+                {#if $page.url.pathname !== '/map'}
+                    <MobileMenu 
+                        menuOpen={mobileMenuOpen}
+                        onToggle={toggleMobileMenu}
+                        onClose={closeMobileMenu}
+                    />
+                {/if}
+            </div>
+            
             {#if $page.url.pathname !== '/map'}
-                <div class="navlinks">
+                <div class="navlinks desktop-only">
                     <a href="/map" class="button navlink">Map</a>
                     {#if !$user}
                         <a href="/login" class="button navlink">Login</a>
@@ -27,7 +48,7 @@
             {/if}
             
             {#if $page.url.pathname !== '/map' && $user}
-                <div class="authlinks">
+                <div class="authlinks desktop-only">
                     <span class="greeting">Hello, {$user.email}</span>
                     <button class="button" onclick={() => signOut()}>Sign Out</button>
                 </div>
@@ -234,15 +255,31 @@
         height: 3em;
     }
 
+    .mobile-menu-container {
+        display: block;
+        margin-left: auto;
+    }
+
+    .desktop-only {
+        display: none;
+    }
+
     /* Apply responsive grid styles based on screen size */
     @media (min-width: 640px) {
         :global(:root) {
             --grid-tile-size: var(--grid-tile-size-sm);
         }
 
-
         .header {
             padding: 2.2em 1.7em;
+        }
+        
+        .desktop-only {
+            display: flex;
+        }
+        
+        .mobile-menu-container {
+            display: none;
         }
     }
     
@@ -257,12 +294,6 @@
             --grid-tile-size: var(--grid-tile-size-lg);
         }
     }
-
-
-
-
-
-
 
     /* Common styles for re-use across app. */
 
