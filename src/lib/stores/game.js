@@ -2,7 +2,7 @@ import { writable, derived, get as getStore } from 'svelte/store';
 import { browser } from '$app/environment';
 import { ref, onValue, get as dbGet, set } from "firebase/database";
 import { db } from '../firebase/database.js';
-import { user } from '../firebase/auth.js'; // Assuming you have an auth store
+import { user } from '../firebase/user.js'; // Assuming you have an auth store
 
 // Cache for world info to reduce database calls
 const worldInfoCache = new Map();

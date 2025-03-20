@@ -1,16 +1,24 @@
 <script>
-    import { Grid, Minimap, Axes, Legend, Details, Tutorial } from '../../components/map/';
+    import { onMount, onDestroy } from 'svelte';
+    import { browser } from '$app/environment';
+    import { goto } from '$app/navigation';
+    import { page } from '$app/stores';
+    import { game, getWorldInfo, setCurrentWorld } from "../../lib/stores/game.js";
+    
     import { 
         map, 
         ready,
         targetStore,
         setup
     } from "../../lib/stores/map.js";
-    import { browser } from '$app/environment';
-    import { onMount, onDestroy } from 'svelte';
-    import { page } from '$app/stores';
-    import { goto } from '$app/navigation';
-    import { game, getWorldInfo, setCurrentWorld } from "../../lib/stores/game.js";
+
+    import Tutorial from '../../components/map/Tutorial.svelte';
+    import Grid from '../../components/map/Tutorial.svelte';
+    import Minimap from '../../components/map/Tutorial.svelte';
+    import Axes from '../../components/map/Tutorial.svelte';
+    import Legend from '../../components/map/Tutorial.svelte';
+    import Details from '../../components/map/Tutorial.svelte';
+
     
     // Use $state for local component state
     let detailed = $state(false);

@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { user } from '../../lib/firebase/auth.js';
+  import { user } from '../../lib/stores/user.js';
   import { game, joinWorld, setCurrentWorld } from '../../lib/stores/game.js';
   import { ref, onValue } from "firebase/database";
   import { db } from '../../lib/firebase/database.js';
