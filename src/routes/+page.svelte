@@ -3,14 +3,14 @@
 </script>
 
 <svelte:head>
-  <title>Gisaima - A Territory Control Strategy Game</title>
+  <title>Gisaima - Territory Strategy MMO</title>
   <meta name="description" content="A territory control strategy game based on ancient board games" />
 </svelte:head>
 
 <main class="container">
   <section class="showcase">
     <Logo extraClass="logo" />
-    <h1 class="title">The Gisaima Realm</h1>
+    <h1 class="title">Gisaima Realm</h1>
     <p class="subtitle">A territory control strategy game inspired by ancient board games</p>
     <div class="actions">
       <a href="/map" class="button primary">Play Now</a>

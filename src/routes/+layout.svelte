@@ -8,6 +8,7 @@
     import { initGameStore, game } from '../lib/stores/game.js';
     import { ref, onValue } from "firebase/database";
     import { db } from '../lib/firebase/database.js';
+    import HamburgerIcon from '../components/icons/HamburgerIcon.svelte';
 
     const { children } = $props();
 
@@ -87,6 +88,17 @@
             </div>
         {/if}
         
+        <!-- Hamburger menu button - only visible on mobile -->
+        {#if !isMapPage}
+            <button class="mobile-menu-toggle" aria-label="Toggle Menu" onclick={toggleMobileMenu}>
+                <HamburgerIcon 
+                    size="2em" 
+                    color="var(--color-pale-green)" 
+                    active={mobileMenuOpen} 
+                />
+            </button>
+        {/if}
+        
         <!-- Show nav and auth everywhere except map page -->
         {#if !isMapPage}
             <nav class="nav">
@@ -116,6 +128,16 @@
             </div>
         {/if}
     </header>
+
+    <!-- Mobile menu overlay -->
+    {#if mobileMenuOpen && !isMapPage}
+        <MobileMenu 
+            onClose={closeMobileMenu} 
+            currentPath={$page.url.pathname} 
+            user={$user}
+            signOut={signOut} 
+        />
+    {/if}
 
     {@render children?.()}
 </div>
@@ -443,21 +465,20 @@
             flex: 1;
         }
         
-        .nav {
+        /* Hide regular nav and show mobile menu toggle */
+        .mobile-menu-toggle {
+            display: block;
             order: 3;
-            width: 100%;
-            margin-top: 0.8em;
-            justify-content: center;
         }
         
-        .links {
-            gap: 1em;
+        .nav {
+            display: none; /* Hide on mobile */
         }
         
         .auth {
             flex: 1;
             justify-content: flex-end;
-            min-height: 2.2em; /* Adjust minimum height for smaller screens */
+            min-height: 2.2em;
         }
         
         .greeting {
@@ -465,4 +486,18 @@
             font-size: 0.8em;
         }
     }
+
+    /* Mobile Menu Toggle Button */
+    .mobile-menu-toggle {
+        display: none;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        z-index: 110;
+        padding: 0.5em;
+    }
+
+    /* Remove the hamburger styles since they're now in the component */
+
+    /* ...existing code... */
 </style>

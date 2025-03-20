@@ -10,8 +10,8 @@ let terrain;
 // Configuration constants
 const CHUNK_SIZE = 20;
 export const TILE_SIZE = 5;
-export const EXPANDED_COLS_FACTOR = 3.5;
-export const EXPANDED_ROWS_FACTOR = 2.85;
+export const EXPANDED_COLS_FACTOR = 3;
+export const EXPANDED_ROWS_FACTOR = 2;
 
 const chunkSubscriptions = new Map();
 
