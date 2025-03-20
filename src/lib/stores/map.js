@@ -109,6 +109,12 @@ export const coordinates = derived(
       return set([]);
     }
     
+    // Additional validation to catch edge cases
+    if ($map.cols <= 0 || $map.rows <= 0) {
+      console.error('Invalid grid dimensions:', { cols: $map.cols, rows: $map.rows });
+      return set([]);
+    }
+    
     const useExpanded = $map.minimap;
     // Fix: Math.min without a second argument doesn't work properly
     const gridCols = useExpanded ? Math.floor($map.cols * EXPANDED_COLS_FACTOR) : $map.cols;
@@ -262,19 +268,22 @@ export function setup({ seed, world = null } = {}) {
   terrain = new TerrainGenerator(seedNumber);
   console.log('Terrain generator initialized with seed:', seedNumber);
   
-  // Update the map store with ready state and world ID
+  // Update the map store with ready state, world ID, AND INITIAL DIMENSIONS
   map.update(state => {
     console.log('Setting map ready state to true');
     return {
       ...state,
       ready: true,
-      world: worldId
+      world: worldId,
+      // Add initial dimensions to avoid circular dependency
+      cols: state.cols || 20,  // Default to 20 if not set
+      rows: state.rows || 15   // Default to 15 if not set
     };
   });
   
   // Verify the update took effect
   const mapState = get(map);
-  console.log('Map state after update:', { ready: mapState.ready, world: mapState.world });
+  console.log('Map state after update:', { ready: mapState.ready, world: mapState.world, cols: mapState.cols, rows: mapState.rows });
 }
 
 // New function to initialize map directly from game store
