@@ -42,7 +42,7 @@
             // Update the current world in the game store with info
             setCurrentWorld(worldId, worldInfo);
             
-            // Initialize the map with world ID and seed
+            // Initialize the map with world ID and seedded
             setup({ 
                 seed: worldInfo.seed || 454232, 
                 world: worldId 
@@ -96,7 +96,7 @@
         <div class="error-overlay">
             <h3>Error</h3>
             <p>{error}</p>
-            <button onclick={() => goto('/worlds')}>Go to Worlds</button>
+            <button onclick={() => goto('/worlds')}>Go to Worlds</button>>
         </div>
     {:else}
         <!-- Use prop binding with runes syntax -->

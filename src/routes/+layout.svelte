@@ -5,11 +5,18 @@
     import MobileMenu from '../components/MobileMenu.svelte';
     import { onMount, onDestroy } from 'svelte';
     import { initGameStore } from '../lib/stores/game.js';
+    import { ref, onValue } from "firebase/database";
+    import { db } from '../lib/firebase/database.js';
 
     const { children } = $props();
 
     // Manage mobile menu state at the layout level with correct $state syntax
     let mobileMenuOpen = $state(false);
+    
+    // Player data state
+    let playerData = $state(null);
+    let playerLoading = $state(false);
+    let playerUnsubscribe = null;
     
     function toggleMobileMenu() {
         mobileMenuOpen = !mobileMenuOpen;
@@ -19,17 +26,60 @@
         mobileMenuOpen = false;
     }
 
-    let unsubscribe;
+    let gameUnsubscribe;
+    
+    // Subscribe to player data when auth changes
+    $effect(() => {
+        if ($user?.uid) {
+            playerLoading = true;
+            
+            // Clean up any existing subscription
+            if (playerUnsubscribe) {
+                playerUnsubscribe();
+                playerUnsubscribe = null;
+            }
+            
+            // Subscribe to player profile data
+            const playerRef = ref(db, `players/${$user.uid}/profile`);
+            playerUnsubscribe = onValue(playerRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    playerData = snapshot.val();
+                } else {
+                    playerData = null;
+                }
+                playerLoading = false;
+            }, (error) => {
+                console.error("Error fetching player data:", error);
+                playerLoading = false;
+            });
+        } else {
+            // Reset player data when user logs out
+            playerData = null;
+            if (playerUnsubscribe) {
+                playerUnsubscribe();
+                playerUnsubscribe = null;
+            }
+        }
+    });
     
     onMount(() => {
-        unsubscribe = initGameStore();
+        gameUnsubscribe = initGameStore();
     });
     
     onDestroy(() => {
-        if (typeof unsubscribe === 'function') {
-            unsubscribe();
+        if (typeof gameUnsubscribe === 'function') {
+            gameUnsubscribe();
+        }
+        if (playerUnsubscribe) {
+            playerUnsubscribe();
         }
     });
+    
+    // Format date for display
+    function formatDate(timestamp) {
+        if (!timestamp) return 'N/A';
+        return new Date(timestamp).toLocaleDateString();
+    }
 </script>
 
 <div class={`app ${$page.url.pathname === '/map' ? 'map' : ''}`}>
@@ -55,6 +105,7 @@
             
             {#if $page.url.pathname !== '/map'}
                 <div class="navlinks desktop-only">
+                    <a href="/worlds" class="button navlink">Worlds</a>
                     <a href="/map" class="button navlink">Map</a>
                     {#if !$user}
                         <a href="/login" class="button navlink">Login</a>
@@ -65,7 +116,21 @@
             
             {#if $page.url.pathname !== '/map' && $user}
                 <div class="authlinks desktop-only">
-                    <span class="greeting">Hello, {$user.email}</span>
+                    {#if playerLoading}
+                        <span class="greeting">Loading profile...</span>
+                    {:else if playerData}
+                        <div class="player-info">
+                            <span class="greeting">Hello, {playerData.displayName || $user.email}</span>
+                            <div class="player-details">
+                                <span class="join-date">Joined: {formatDate(playerData.joinDate)}</span>
+                                {#if playerData.lastLogin}
+                                    <span class="last-login">Last login: {formatDate(playerData.lastLogin)}</span>
+                                {/if}
+                            </div>
+                        </div>
+                    {:else}
+                        <span class="greeting">Hello, {$user.email}</span>
+                    {/if}
                     <button class="button" onclick={() => signOut()}>Sign Out</button>
                 </div>
             {/if}
@@ -355,5 +420,26 @@
         background-color: var(--color-button-secondary-hover);
     }
 
-
+    .player-info {
+        display: flex;
+        flex-direction: column;
+        margin-right: 1em;
+    }
+    
+    .player-details {
+        display: flex;
+        gap: 1em;
+        font-size: 0.8em;
+        color: var(--color-text-secondary);
+    }
+    
+    .greeting {
+        color: var(--color-heading);
+        margin-right: 0.5em;
+    }
+    
+    .authlinks {
+        display: flex;
+        align-items: center;
+    }
 </style>
