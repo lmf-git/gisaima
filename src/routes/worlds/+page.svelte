@@ -6,6 +6,8 @@
   import { ref, onValue } from "firebase/database";
   import { db } from '../../lib/firebase/database.js';
   
+  // Add state variable for tracking the currently joining world
+  let joiningWorldId = $state(null);
   let worlds = $state([]);
   let loading = $state(true);
   let debugInfo = $state({});
@@ -55,19 +57,18 @@
       return;
     }
     
+    joiningWorldId = worldId; // Set the joining state
+    
     joinWorld(worldId, $user.uid)
       .then(() => {
         refreshDebugInfo();
+        joiningWorldId = null; // Clear joining state
         goto(`/map?world=${worldId}`);
       })
       .catch(error => {
         console.error('Failed to join world:', error);
+        joiningWorldId = null; // Clear joining state on error
       });
-  }
-  
-  function handleEnterWorld(worldId) {
-    setCurrentWorld(worldId);
-    goto(`/map?world=${worldId}`);
   }
 </script>
 
@@ -96,15 +97,21 @@
             <span>Created: {new Date(world.created || Date.now()).toLocaleDateString()}</span>
           </div>
           
-          {#if world.joined}
-            <button class="enter-btn" onclick={() => handleEnterWorld(world.id)}>
-              Enter World
-            </button>
-          {:else}
-            <button class="join-btn" onclick={() => handleJoinWorld(world.id)}>
-              Join World
-            </button>
-          {/if}
+          <button 
+            class="world-action-button" 
+            class:joined={$game.joinedWorlds.includes(world.id)}
+            onclick={() => $game.joinedWorlds.includes(world.id) 
+              ? goto(`/map?world=${world.id}`) 
+              : handleJoinWorld(world.id)}
+            disabled={joiningWorldId === world.id}
+          >
+            {#if joiningWorldId === world.id}
+              <div class="spinner"></div>
+              Joining...
+            {:else}
+              {$game.joinedWorlds.includes(world.id) ? "Enter World" : "Join World"}
+            {/if}
+          </button>
         </div>
       {/each}
     </div>
@@ -213,5 +220,10 @@
     font-size: 0.8rem;
     padding: 0.3rem 0.6rem;
     margin-bottom: 0.5rem;
+  }
+
+  /* Add style for joined worlds */
+  .world-action-button.joined {
+    background-color: var(--color-success);  /* Different color for Enter World */
   }
 </style>
