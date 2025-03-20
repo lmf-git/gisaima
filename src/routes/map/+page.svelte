@@ -262,11 +262,11 @@
     }
     
     .loading-spinner {
-        border: 4px solid rgba(255, 255, 255, 0.3);
+        border: 0.25em solid rgba(255, 255, 255, 0.3);
         border-radius: 50%;
-        border-top: 4px solid white;
-        width: 40px;
-        height: 40px;
+        border-top: 0.25em solid white;
+        width: 2.5em;
+        height: 2.5em;
         animation: spin 1s linear infinite;
         margin-bottom: 1rem;
     }
@@ -282,7 +282,7 @@
         background: #4A90E2;
         color: white;
         border: none;
-        border-radius: 4px;
+        border-radius: 0.25em;
         cursor: pointer;
     }
 </style>

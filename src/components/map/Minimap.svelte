@@ -368,7 +368,7 @@
     right: 0;
     overflow: hidden;
     background: var(--color-panel-bg);
-    border: 1px solid var(--color-panel-border);
+    border: 0.0625em solid var(--color-panel-border);
     box-shadow: 0 0.1875em 0.625em var(--color-shadow);
     cursor: grab;
     transition: box-shadow 0.2s ease;

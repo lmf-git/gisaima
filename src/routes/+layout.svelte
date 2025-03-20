@@ -88,11 +88,11 @@
             </div>
         {/if}
         
-        <!-- Hamburger menu button - only visible on mobile -->
+        <!-- Modified condition: Show hamburger menu on all pages except map page -->
         {#if !isMapPage}
             <button class="mobile-menu-toggle" aria-label="Toggle Menu" onclick={toggleMobileMenu}>
                 <HamburgerIcon 
-                    size="2em" 
+                    size="2em"
                     extraClass="hamburger-icon" 
                     active={mobileMenuOpen} 
                 />

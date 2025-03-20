@@ -1,6 +1,6 @@
 <script>
   // Accept props for customization with extraClass instead of className
-  const { size = "24px", extraClass = "", active = false } = $props();
+  const { size = "1.5em", extraClass = "", active = false } = $props();
 </script>
 
 <div 
@@ -23,9 +23,9 @@
 
   .hamburger span {
     display: block;
-    height: 3px;
+    height: 0.1875em;
     width: 100%;
-    border-radius: 3px;
+    border-radius: 0.1875em;
     transition: all 0.3s ease;
   }
 
@@ -43,6 +43,6 @@
 
   /* Dynamic variable for better position calculation */
   .hamburger {
-    --span-distance: calc(0.75 * var(--size, 24px));
+    --span-distance: calc(0.75 * var(--size, 1.5em));
   }
 </style>
