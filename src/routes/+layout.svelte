@@ -2,7 +2,7 @@
     import { page } from '$app/stores';
     import { user, signOut } from '$lib/stores/user';
     import Logo from '../components/Logo.svelte';
-    import SignOut from '../components/icons/SignOut.svelte'; // Import the new SignOut component
+    import SignOut from '../components/icons/SignOut.svelte';
     import MobileMenu from '../components/MobileMenu.svelte';
     import { onMount, onDestroy } from 'svelte';
     import { initGameStore, game } from '../lib/stores/game.js';
@@ -11,13 +11,15 @@
 
     const { children } = $props();
 
-    // Manage mobile menu state at the layout level with correct $state syntax
+    // State
     let mobileMenuOpen = $state(false);
-    
-    // Player data state
     let playerData = $state(null);
     let playerLoading = $state(false);
     let playerUnsubscribe = null;
+    
+    // Computed values for conditional rendering
+    const isHomePage = $derived($page.url.pathname === '/');
+    const isMapPage = $derived($page.url.pathname === '/map');
     
     function toggleMobileMenu() {
         mobileMenuOpen = !mobileMenuOpen;
@@ -34,27 +36,20 @@
         if ($user?.uid) {
             playerLoading = true;
             
-            // Clean up any existing subscription
             if (playerUnsubscribe) {
                 playerUnsubscribe();
                 playerUnsubscribe = null;
             }
             
-            // Subscribe to player profile data
             const playerRef = ref(db, `players/${$user.uid}/profile`);
             playerUnsubscribe = onValue(playerRef, (snapshot) => {
-                if (snapshot.exists()) {
-                    playerData = snapshot.val();
-                } else {
-                    playerData = null;
-                }
+                playerData = snapshot.exists() ? snapshot.val() : null;
                 playerLoading = false;
             }, (error) => {
                 console.error("Error fetching player data:", error);
                 playerLoading = false;
             });
         } else {
-            // Reset player data when user logs out
             playerData = null;
             if (playerUnsubscribe) {
                 playerUnsubscribe();
@@ -64,7 +59,6 @@
     });
     
     onMount(() => {
-        // Initialize the game store without localStorage dependency
         try {
             gameUnsubscribe = initGameStore();
         } catch (e) {
@@ -80,39 +74,41 @@
             playerUnsubscribe();
         }
     });
-    
-    // Format date for display
-    function formatDate(timestamp) {
-        if (!timestamp) return 'N/A';
-        return new Date(timestamp).toLocaleDateString();
-    }
 </script>
 
-<div class={`app ${$page.url.pathname === '/map' ? 'map' : ''}`}>
-    <header class="site-header">
-        <div class="logo-container">
-            <a href="/" class="logo-link" aria-label="Gisaima Home">
-                <Logo extraClass="header-logo" />
-            </a>
-        </div>
+<div class={`app ${isMapPage ? 'map' : ''}`}>
+    <header class="header">
+        <!-- Only show logo on non-home pages -->
+        {#if !isHomePage}
+            <div class="logo">
+                <a href="/" aria-label="Gisaima Home">
+                    <Logo extraClass="headerlogo" />
+                </a>
+            </div>
+        {/if}
         
-        <nav class="main-nav">
-            <ul class="nav-links">
-                <li><a href="/worlds" class:active={$page.url.pathname === '/worlds'}>Worlds</a></li>
-            </ul>
-        </nav>
-        
-        <div class="auth-container">
-            {#if $user}
-                <div class="user-greeting">Hello, {$user.displayName || $user.email.split('@')[0]}</div>
-                <button class="sign-out-btn" onclick={signOut} aria-label="Sign Out">
-                    <SignOut size="1.2em" color="var(--color-pale-green)" />
-                </button>
-            {:else}
-                <a href="/login" class="login-link">Log In</a>
-                <a href="/signup" class="signup-link">Sign Up</a>
-            {/if}
-        </div>
+        <!-- Hide nav and auth on map page -->
+        {#if !isMapPage}
+            <nav class="nav">
+                <ul class="links">
+                    <li><a href="/worlds" class:active={$page.url.pathname === '/worlds'}>Worlds</a></li>
+                    <li><a href="/map" class:active={isMapPage}>Map</a></li>
+                    <li><a href="/about" class:active={$page.url.pathname === '/about'}>About</a></li>
+                </ul>
+            </nav>
+            
+            <div class="auth">
+                {#if $user}
+                    <div class="greeting">Hello, {$user.displayName || $user.email.split('@')[0]}</div>
+                    <button class="signout" onclick={signOut} aria-label="Sign Out">
+                        <SignOut size="1.2em" color="var(--color-pale-green)" />
+                    </button>
+                {:else}
+                    <a href="/login" class="login">Log In</a>
+                    <a href="/signup" class="signup">Sign Up</a>
+                {/if}
+            </div>
+        {/if}
     </header>
 
     {@render children?.()}
@@ -127,15 +123,15 @@
     
     :global(:root) {
         /* Modern color palette */
-        --color-dark-navy: #0A192F;       /* Darker navy for backgrounds */
-        --color-dark-blue: #112240;       /* Deep blue for panels */
-        --color-bright-accent: #64FFDA;   /* Bright teal accent */
-        --color-accent-dark: #388F7F;     /* Darker version of accent */
-        --color-muted-accent: #8892B0;    /* Muted blue-gray */
-        --color-text-primary: #E6F1FF;    /* Bright white-blue text */
-        --color-text-secondary: #A8B2D1;  /* Secondary text */
-        --color-panel-bg: rgba(17, 34, 64, 0.8); /* Panel background */
-        --color-panel-border: rgba(100, 255, 218, 0.3); /* Panel border */
+        --color-dark-navy: #0A192F;
+        --color-dark-blue: #112240;
+        --color-bright-accent: #64FFDA;
+        --color-accent-dark: #388F7F;
+        --color-muted-accent: #8892B0;
+        --color-text-primary: #E6F1FF;
+        --color-text-secondary: #A8B2D1;
+        --color-panel-bg: rgba(17, 34, 64, 0.8);
+        --color-panel-border: rgba(100, 255, 218, 0.3);
         
         /* Keep existing biome colors */
         /* Water biomes */
@@ -257,38 +253,34 @@
         height: 100%;
     }
 
-    /* Header styling */
-    .site-header {
+    /* Simplified header styling - no background or shadow */
+    .header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 1em 2em;
-        background-color: rgba(10, 25, 47, 0.8);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         position: relative;
         z-index: 100;
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
     }
 
     /* Logo styling */
-    .logo-container {
+    .logo {
         display: flex;
         align-items: center;
     }
 
-    .logo-link {
+    .logo a {
         display: flex;
         align-items: center;
         text-decoration: none;
     }
 
     /* Navigation styling */
-    .main-nav {
+    .nav {
         display: flex;
     }
 
-    .nav-links {
+    .links {
         display: flex;
         list-style: none;
         gap: 1.5em;
@@ -296,7 +288,7 @@
         padding: 0;
     }
 
-    .nav-links a {
+    .links a {
         color: var(--color-text-secondary);
         text-decoration: none;
         font-size: 1.1em;
@@ -305,12 +297,12 @@
         padding: 0.3em 0;
     }
 
-    .nav-links a:hover,
-    .nav-links a.active {
+    .links a:hover,
+    .links a.active {
         color: var(--color-bright-accent);
     }
 
-    .nav-links a::after {
+    .links a::after {
         content: '';
         position: absolute;
         bottom: 0;
@@ -321,35 +313,36 @@
         transition: width 0.3s ease;
     }
 
-    .nav-links a:hover::after,
-    .nav-links a.active::after {
+    .links a:hover::after,
+    .links a.active::after {
         width: 100%;
     }
 
     /* Auth container styling */
-    .auth-container {
+    .auth {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 1em;
     }
     
-    .user-greeting {
+    .greeting {
         font-size: 0.9em;
-        color: var(--color-bright-accent);
+        color: var(--color-pale-green);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 150px;
+        order: -1;
     }
     
-    .sign-out-btn {
+    .signout {
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 0.4em;
-        background-color: var(--color-dark-navy);
-        color: var(--color-bright-accent);
-        border: 1px solid var(--color-accent-dark);
+        background-color: transparent;
+        color: var(--color-pale-green);
+        border: 1px solid var(--color-muted-teal);
         border-radius: 50%;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -357,100 +350,36 @@
         height: 2.2em;
     }
     
-    .sign-out-btn:hover {
-        background-color: var(--color-dark-blue);
-        transform: translateY(-2px);
-        box-shadow: 0 2px 5px var(--color-shadow);
+    .signout:hover {
+        transform: translateY(-0.125em);
+        box-shadow: 0 0.125em 0.3125em var(--color-shadow);
     }
     
-    .login-link, .signup-link {
+    .login, .signup {
         padding: 0.4em 0.8em;
         font-size: 0.9em;
         text-decoration: none;
-        border-radius: 4px;
+        border-radius: 0.25em;
         transition: all 0.2s ease;
     }
     
-    .login-link {
-        color: var(--color-bright-accent);
-        border: 1px solid var(--color-accent-dark);
+    .login {
+        color: var(--color-pale-green);
+        border: 1px solid var(--color-muted-teal);
     }
     
-    .signup-link {
-        background-color: var(--color-accent-dark);
-        color: var(--color-text-primary);
-        border: 1px solid var(--color-accent-dark);
+    .signup {
+        background-color: var(--color-button-primary);
+        color: var(--color-text);
+        border: 1px solid var(--color-muted-teal);
     }
     
-    .login-link:hover, .signup-link:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 2px 5px var(--color-shadow);
+    .login:hover, .signup:hover {
+        transform: translateY(-0.125em);
+        box-shadow: 0 0.125em 0.3125em var(--color-shadow);
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .site-header {
-            flex-wrap: wrap;
-            padding: 0.8em 1em;
-        }
-        
-        .logo-container {
-            flex: 1;
-        }
-        
-        .main-nav {
-            order: 3;
-            width: 100%;
-            margin-top: 0.8em;
-            justify-content: center;
-        }
-        
-        .nav-links {
-            gap: 1em;
-        }
-        
-        .auth-container {
-            flex: 1;
-            justify-content: flex-end;
-        }
-        
-        .user-greeting {
-            max-width: 100px;
-            font-size: 0.8em;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .nav-links {
-            gap: 0.5em;
-        }
-        
-        .nav-links a {
-            font-size: 0.9em;
-        }
-        
-        .auth-container {
-            gap: 0.5rem;
-        }
-        
-        .login-link, .signup-link {
-            padding: 0.3em 0.6em;
-            font-size: 0.8em;
-        }
-        
-        .user-greeting {
-            max-width: 80px;
-        }
-        
-        .sign-out-btn {
-            width: 2em;
-            height: 2em;
-        }
-    }
-
-    /* Common styles for re-use across app. */
-
-    
+    /* Common button styles */
     :global(.button) {
         padding: 0.4em 1em;
         cursor: pointer;
@@ -472,7 +401,6 @@
         box-shadow: 0 0.1875em 0.3125em var(--color-shadow);
     }
 
-    /* Button variations - make global */
     :global(.button.primary) {
         background-color: var(--color-button-primary);
         border: none;
@@ -491,119 +419,70 @@
     :global(.button.secondary:hover) {
         background-color: var(--color-button-secondary-hover);
     }
-
-    .player-info {
-        display: flex;
-        flex-direction: column;
-        margin-right: 1em;
-    }
     
-    .player-details {
-        display: flex;
-        gap: 1em;
-        font-size: 0.8em;
-        color: var(--color-text-secondary);
-    }
-    
-    .greeting {
-        color: var(--color-heading);
-        margin-right: 0.5em;
-    }
-    
-    .authlinks {
-        display: flex;
-        align-items: center;
-    }
-
-    .auth-container {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-    
-    .sign-out-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.4em;
-        background-color: var(--color-dark-navy);
-        color: var(--color-pale-green);
-        border: 1px solid var(--color-muted-teal);
-        border-radius: 50%;
-        font-size: 0.9em;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        width: 2.2em;
-        height: 2.2em;
-    }
-    
-    .sign-out-btn:hover {
-        background-color: var(--color-deep-blue);
-        transform: translateY(-2px);
-        box-shadow: 0 2px 5px var(--color-shadow);
-    }
-    
-    .user-greeting {
-        font-size: 0.9em;
-        color: var (--color-pale-green);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 150px;
-        order: -1; /* This makes the greeting appear before the sign out button */
-    }
-    
-    .login-link, .signup-link {
-        padding: 0.4em 0.8em;
-        font-size: 0.9em;
-        text-decoration: none;
-        border-radius: 4px;
-        transition: all 0.2s ease;
-    }
-    
-    .login-link {
-        color: var(--color-pale-green);
-        border: 1px solid var(--color-muted-teal);
-    }
-    
-    .signup-link {
-        background-color: var(--color-button-primary);
-        color: var (--color-text);
-        border: 1px solid var(--color-muted-teal);
-    }
-    
-    .login-link:hover, .signup-link:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 2px 5px var(--color-shadow);
-    }
-    
+    /* Responsive adjustments */
     @media (max-width: 768px) {
-        .site-header {
-            flex-direction: column;
-            padding: 0.5rem;
+        .header {
+            flex-wrap: wrap;
+            padding: 0.8em 1em;
         }
         
-        .logo-container, .main-nav, .auth-container {
-            margin: 0.3rem 0;
+        .logo {
+            flex: 1;
         }
         
-        .nav-links {
-            gap: 1rem;
+        .nav {
+            order: 3;
+            width: 100%;
+            margin-top: 0.8em;
+            justify-content: center;
         }
         
-        .user-greeting {
-            max-width: 120px;
+        .links {
+            gap: 1em;
+        }
+        
+        .auth {
+            flex: 1;
+            justify-content: flex-end;
+        }
+        
+        .greeting {
+            max-width: 100px;
+            font-size: 0.8em;
         }
     }
-    
+
     @media (max-width: 480px) {
-        .auth-container {
-            flex-direction: column;
-            gap: 0.5rem;
+        .links {
+            gap: 0.5em;
         }
         
-        .user-greeting {
+        .links a {
+            font-size: 0.9em;
+        }
+        
+        .auth {
+            gap: 0.5em;
+        }
+        
+        .login, .signup {
+            padding: 0.3em 0.6em;
             font-size: 0.8em;
+        }
+        
+        .greeting {
+            max-width: 80px;
+        }
+        
+        .signout {
+            width: 2em;
+            height: 2em;
+        }
+        
+        .auth {
+            flex-direction: column;
+            gap: 0.5em;
         }
     }
 </style>
