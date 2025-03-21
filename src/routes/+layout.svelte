@@ -155,7 +155,7 @@
             <div class="auth" class:loading={headerLoading}>
                 {#if !headerLoading}
                     {#if $user}
-                        <div class="greeting">Hello, {$user.displayName || $user.email.split('@')[0]}</div>
+                        <div class="greeting">Hello, {$user.isAnonymous ? 'Guest' : ($user.displayName || $user.email.split('@')[0])}</div>
                         <button class="signout" onclick={signOut} aria-label="Sign Out">
                             <SignOut size="1.2em" extraClass="icon-pale-green" />
                         </button>

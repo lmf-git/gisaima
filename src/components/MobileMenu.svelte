@@ -50,7 +50,7 @@
         {#if user}
             <div class="mobile-user-info">
                 <p>Signed in as:</p>
-                <p class="user-email">{user.displayName || user.email}</p>
+                <p class="user-email">{user.isAnonymous ? 'Guest' : (user.displayName || user.email)}</p>
             </div>
             <button class="mobile-signout" onclick={signOut}>
                 <SignOut size="1.2em" extraClass="icon-pale-green" />
