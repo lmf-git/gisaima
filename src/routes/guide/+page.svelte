@@ -46,7 +46,7 @@
         <li>
           <button 
             class:active={activeSection === 'getting-started'}
-            on:click={() => scrollToSection('getting-started')}
+            onclick={() => scrollToSection('getting-started')}
           >
             Getting Started
           </button>
@@ -54,7 +54,7 @@
         <li>
           <button 
             class:active={activeSection === 'game-concepts'}
-            on:click={() => scrollToSection('game-concepts')}
+            onclick={() => scrollToSection('game-concepts')}
           >
             Game Concepts
           </button>
@@ -62,7 +62,7 @@
         <li>
           <button 
             class:active={activeSection === 'game-mechanics'}
-            on:click={() => scrollToSection('game-mechanics')}
+            onclick={() => scrollToSection('game-mechanics')}
           >
             Game Mechanics
           </button>
@@ -70,7 +70,7 @@
         <li>
           <button 
             class:active={activeSection === 'strategy-tips'}
-            on:click={() => scrollToSection('strategy-tips')}
+            onclick={() => scrollToSection('strategy-tips')}
           >
             Strategy Tips
           </button>
@@ -78,7 +78,7 @@
         <li>
           <button 
             class:active={activeSection === 'faq'}
-            on:click={() => scrollToSection('faq')}
+            onclick={() => scrollToSection('faq')}
           >
             FAQ
           </button>
