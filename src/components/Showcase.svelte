@@ -82,7 +82,11 @@
     Play for free across all devices • No pay-to-win • Real-time multiplayer
   </p>
   <div class="actions" class:loaded={!actionsLoading}>
-    {#if !actionsLoading}
+    <!-- Use placeholder divs that take up the same space as real buttons -->
+    {#if actionsLoading}
+      <div class="button-placeholder"></div>
+      <div class="button-placeholder"></div>
+    {:else}
       {#if $user}
         {#if $game.currentWorld}
           <a href={`/map?world=${$game.currentWorld}`} class="button primary">Return to Game</a>
@@ -145,6 +149,22 @@
 
   .actions.loaded {
     opacity: 1;
+  }
+
+  /* Button placeholders to maintain layout during loading */
+  .button-placeholder {
+    display: inline-block;
+    height: 3em; /* Roughly the height of a button */
+    width: 10em; /* Approximate button width */
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 0.25em;
+  }
+
+  /* At mobile sizes, make placeholders take full width */
+  @media (max-width: 768px) {
+    .button-placeholder {
+      width: 100%;
+    }
   }
 
   :global(.showcase > .logo) {
@@ -255,6 +275,10 @@
     .subtitle {
       font-size: 1.3em;
     }
+
+    .button-placeholder {
+      width: 12em; /* Slightly wider placeholders for tablet */
+    }
   }
 
   @media (min-width: 769px) {
@@ -275,6 +299,10 @@
       font-size: 1.5em;
       padding: 0.6em 1.8em;
       width: auto;
+    }
+
+    .button-placeholder {
+      width: 14em; /* Wider placeholders for desktop */
     }
   }
 </style>
