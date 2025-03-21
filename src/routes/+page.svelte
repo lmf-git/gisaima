@@ -118,6 +118,9 @@
 
   // Derived state for UI loading conditions
   const actionsLoading = $derived($userLoading || !$isAuthReady || $game.loading);
+
+  // New state to track feature content loading
+  let featuresLoaded = $state(true); // Assume loaded initially
 </script>
 
 <svelte:head>
@@ -130,7 +133,7 @@
     <Logo extraClass="logo" />
     <h1 class="title">Gisaima Realm</h1>
     <p class="subtitle">A territory control strategy game inspired by ancient board games</p>
-    <div class="actions" class:loading={actionsLoading}>
+    <div class="actions">
       {#if actionsLoading}
         <!-- Placeholder buttons with same dimensions to prevent layout shift -->
         <div class="button-placeholder primary"></div>
@@ -262,11 +265,7 @@
     min-height: 5em; /* Ensure consistent height during loading */
   }
 
-  /* Loading state styles */
-  .actions.loading {
-    opacity: 0.7;
-  }
-
+  /* Remove the .actions.loading class and separate the loading styles */
   .button-placeholder {
     width: 12em;
     height: 4em;
@@ -277,6 +276,7 @@
       var(--color-panel-bg) 100%);
     background-size: 200% 100%;
     animation: loading-pulse 1.5s infinite;
+    opacity: 0.7;
   }
 
   .button-placeholder.primary {
@@ -292,8 +292,8 @@
     100% { background-position: -100% 0; }
   }
 
-  /* Hero CTA buttons styling - make them more imposing */
-  .actions :global(.button) {
+  /* Hero CTA buttons styling - make them more specific with child selectors */
+  .actions > :global(.button) {
     font-size: 1.5em;
     padding: 0.8em 1.8em;
     font-weight: 700;
@@ -305,31 +305,31 @@
     font-family: var(--font-heading); /* Added font-family property */
   }
   
-  .actions :global(.button:hover) {
+  .actions > :global(.button):hover {
     transform: translateY(-0.2em) scale(1.05);
     box-shadow: 0 0.5em 1em var(--color-shadow);
   }
   
-  .actions :global(.button.primary) {
+  .actions > :global(.button).primary {
     background-color: var(--color-button-primary);
     color: var(--color-text);
     border: 0.05em solid var(--color-muted-teal);
     text-shadow: 0 0 0.5em rgba(0, 0, 0, 0.5); /* Add text shadow to improve contrast */
   }
   
-  .actions :global(.button.primary:hover) {
+  .actions > :global(.button).primary:hover {
     background-color: var(--color-button-primary-hover);
     color: #ffffff; /* Brighter text on hover for better contrast */
     text-shadow: 0 0 0.8em rgba(0, 0, 0, 0.7); /* Enhanced text shadow on hover */
   }
   
-  .actions :global(.button.secondary) {
+  .actions > :global(.button).secondary {
     background-color: rgba(0, 0, 0, 0.3);
     color: var(--color-text);
     border: 0.05em solid var(--color-panel-border);
   }
   
-  .actions :global(.button.secondary:hover) {
+  .actions > :global(.button).secondary:hover {
     background-color: rgba(0, 0, 0, 0.4);
     border-color: var(--color-muted-teal); /* Match the primary button's border on hover */
     text-shadow: 0 0 0.5em rgba(0, 0, 0, 0.5); /* Add text shadow for consistency */
@@ -353,6 +353,8 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(15em, 1fr));
     gap: 2em;
+    /* Add these properties to maintain consistent card sizing */
+    grid-auto-rows: minmax(12em, auto);
   }
 
   .card {
@@ -362,6 +364,11 @@
     box-shadow: 0 0.25em 0.375em var(--color-shadow);
     border: 0.0625em solid var(--color-panel-border);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    /* Add these properties to prevent layout shift */
+    display: flex;
+    flex-direction: column;
+    min-height: 12em; /* Set minimum height */
+    height: 100%;
   }
   
   .card:hover {
@@ -375,10 +382,20 @@
     font-family: var(--font-heading); /* Added heading font */
     font-weight: 400; /* Reduced font weight */
     font-size: 1.6em; /* Increased from default h3 size */
+    /* Add min-height to heading so it takes consistent space */
+    min-height: 1.5em;
+    display: flex;
+    align-items: center;
   }
 
   .text {
     color: var(--color-text);
+    /* Ensure text takes up the remaining height in the card */
+    flex: 1;
+    /* Set line height and other text properties to control height */
+    line-height: 1.5;
+    /* Fix text size to prevent resizing */
+    font-size: 1em;
   }
 
   .overview {
@@ -452,8 +469,8 @@
     font-size: 0.9em;
   }
 
-  /* Update the logo selector to be more specific */
-  .showcase :global(.logo) {
+  /* Update the logo selector to be more specific with child selector */
+  .showcase > :global(.logo) {
     width: 7.5em;
     height: auto;
     margin: 0 auto;
@@ -467,9 +484,12 @@
     
     .title {
       font-size: 2.5em;
+      /* Keep the font-weight and font-family consistent */
+      font-weight: 400;
+      font-family: var(--font-heading);
     }
     
-    .actions :global(.button) {
+    .actions > :global(.button) {
       font-size: 1.2em;
       padding: 0.8em 1.5em;
       width: 100%;
@@ -477,28 +497,14 @@
     
     .grid {
       gap: 1em;
+      grid-auto-rows: minmax(10em, auto); /* Adjust for mobile */
     }
     
-    .links {
-      gap: 1em;
-    }
-
-    .heading {
-      font-size: 2.2em;
+    .card {
+      min-height: 10em; /* Reduce minimum height for mobile */
     }
     
-    .subheading {
-      font-size: 1.4em;
-    }
-
-    .gallery-container {
-      aspect-ratio: 4 / 3;  /* Adjusted for mobile screens */
-    }
-
-    .button-placeholder {
-      width: 100%;
-      height: 3.5em;
-    }
+    /* ...existing code... */
   }
   
   @media (max-width: 480px) {
@@ -508,6 +514,9 @@
     
     .title {
       font-size: 2em;
+      /* Ensure consistency in mobile view too */
+      font-weight: 400;
+      font-family: var(--font-heading);
     }
     
     .subtitle {

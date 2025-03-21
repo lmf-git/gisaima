@@ -191,6 +191,12 @@
         stroke: var(--color-pale-green);
     }
 
+    :global(.mobile-signout) > :global(.icon-pale-green) {
+        color: var(--color-pale-green);
+        fill: var(--color-pale-green);
+        stroke: var(--color-pale-green);
+    }
+
     /* Animation for individual menu items */
     .animate-item {
         opacity: 0;

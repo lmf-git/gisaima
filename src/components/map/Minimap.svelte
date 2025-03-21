@@ -513,4 +513,9 @@
     color: rgba(0, 0, 0, 0.8);
     stroke: rgba(0, 0, 0, 0.8);
   }
+
+  .toggle-button > :global(.close-icon-dark) {
+    color: rgba(0, 0, 0, 0.8);
+    stroke: rgba(0, 0, 0, 0.8);
+  }
 </style>

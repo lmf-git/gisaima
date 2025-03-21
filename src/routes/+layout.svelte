@@ -447,6 +447,7 @@
         height: 2.5em; /* Add minimum height to prevent layout shifting */
         transition: opacity 0.3s ease; /* Smooth transition for loading state */
         min-width: 8em; /* Ensure minimum width for auth area */
+        justify-content: flex-end;
     }
     
     .auth.loading {
@@ -532,8 +533,8 @@
         border-color: #7AFFDF;
     }
 
-    /* Common button styles */
-    :global(.button) {
+    /* Common button styles - make more specific with child selector */
+    :global(.button) > * {
         padding: 0.4em 1em;
         cursor: pointer;
         background-color: var(--color-button);
@@ -548,29 +549,46 @@
         display: inline-block;
     }
     
-    :global(.button:hover) {
+    :global(.button):hover {
         background-color: var(--color-button-hover);
         transform: translateY(-0.125em);
         box-shadow: 0 0.1875em 0.3125em var(--color-shadow);
     }
 
-    :global(.button.primary) {
+    :global(.button).primary {
         background-color: var(--color-button-primary);
         border: none;
     }
     
-    :global(.button.primary:hover) {
+    :global(.button).primary:hover {
         background-color: var(--color-button-primary-hover);
     }
     
-    :global(.button.secondary) {
-        background-color: var (--color-button-secondary);
+    :global(.button).secondary {
+        background-color: var(--color-button-secondary);
         color: var(--color-text);
         border: none;
     }
     
-    :global(.button.secondary:hover) {
+    :global(.button).secondary:hover {
         background-color: var(--color-button-secondary-hover);
+    }
+    
+    /* Responsive image styling with child selectors */
+    :global(.screenshot-container) {
+        width: 100%;
+        max-height: 80vh;
+        overflow: hidden;
+        border-radius: 0.5em;
+        margin: 1em 0;
+        box-shadow: 0 0.3em 1em var(--color-shadow);
+    }
+    
+    :global(.screenshot-container) > img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
     }
     
     /* Responsive adjustments */
@@ -780,7 +798,7 @@
         box-shadow: 0 0.3em 1em var(--color-shadow);
     }
     
-    :global(.screenshot-container img) {
+    :global(.screenshot-container) > img {
         width: 100%;
         height: 100%;
         object-fit: cover;

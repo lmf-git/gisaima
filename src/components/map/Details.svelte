@@ -195,7 +195,7 @@
     margin-bottom: 0.3em;
   }
 
-  :global(.close-icon-dark) {
+  .close-btn > :global(.close-icon-dark) {
     color: rgba(0, 0, 0, 0.8);
     stroke: rgba(0, 0, 0, 0.8);
   }
