@@ -77,13 +77,6 @@
 <div class="worlds-page">
   <h1>Available Worlds</h1>
   
-  {#if $user}
-    <div class="user-info">
-      <p>Logged in as: {$user.email}</p>
-      <p>Joined worlds: {$game.joinedWorlds.join(', ') || 'None'}</p>
-    </div>
-  {/if}
-  
   {#if loading}
     <div class="loading">Loading worlds...</div>
   {:else if worlds.length === 0}
@@ -255,12 +248,5 @@
   
   @keyframes spin {
     to { transform: rotate(360deg); }
-  }
-  
-  .user-info {
-    background: var(--color-card-bg);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
   }
 </style>
