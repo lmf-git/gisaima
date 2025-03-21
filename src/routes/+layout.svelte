@@ -196,6 +196,9 @@
                         <a href="/">Home</a>
                         {#if $user}
                             <a href="/worlds">Worlds</a>
+                            {#if $game.currentWorld}
+                                <a href={`/map?world=${$game.currentWorld}`}>Return to Game</a>
+                            {/if}
                         {/if}
                     </div>
                 </div>
@@ -321,7 +324,7 @@
         --color-button-hover: #233554;
         --color-button-primary: var(--color-accent-dark);
         --color-button-primary-hover: var(--color-bright-accent);
-        --color-button-secondary: var(--color-muted-accent);
+        --color-button-secondary: var (--color-muted-accent);
         --color-button-secondary-hover: #6D7A99;
         
         --color-card-bg: var(--color-panel-bg);

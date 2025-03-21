@@ -1,6 +1,7 @@
 <script>
   import Logo from '../components/Logo.svelte';
   import { user } from '$lib/stores/user';
+  import { game } from '$lib/stores/game';
 </script>
 
 <svelte:head>
@@ -15,7 +16,7 @@
     <p class="subtitle">A territory control strategy game inspired by ancient board games</p>
     <div class="actions">
       {#if $user}
-        <a href="/map" class="button primary">Return to Game</a>
+        <a href={$game.currentWorld ? `/map?world=${$game.currentWorld}` : '/map'} class="button primary">Return to Game</a>
         <a href="/worlds" class="button secondary">See Worlds</a>
       {:else}
         <a href="/login" class="button primary">Play Now</a>
@@ -65,7 +66,7 @@
     <div class="links">
       {#if $user}
         <a href="/worlds">Worlds</a>
-        <a href="/map">Return to Game</a>
+        <a href={$game.currentWorld ? `/map?world=${$game.currentWorld}` : '/map'}>Return to Game</a>
         <a href="/profile">Profile</a>
       {:else}
         <a href="/login">Login</a>
