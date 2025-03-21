@@ -56,8 +56,8 @@
   
   // Function to transition to the next background image
   function transitionToNextBg() {
-    // Don't transition if already in progress
-    if (bgTransitioning) return;
+    // Don't transition if already in progress or images aren't loaded
+    if (bgTransitioning || !initialBgLoaded) return;
     
     // Find the next available image
     const totalImages = backgroundImages.length;
@@ -107,24 +107,20 @@
 </script>
 
 <section class="showcase {extraClass}">
-  <!-- Simplified background handling with just 2 layers -->
+  <!-- Fixed background handling with always-present layers -->
   <div class="bg-wrapper">
-    {#if initialBgLoaded}
-      <!-- Current background layer (always visible when not transitioning) -->
-      <div 
-        class="bg-overlay current"
-        class:fading={bgTransitioning}
-        style={`background-image: url('${backgroundImages[bgIndex]}');`}>
-      </div>
-      
-      <!-- Next background layer (only visible during transition) -->
-      {#if bgTransitioning}
-        <div 
-          class="bg-overlay next"
-          style={`background-image: url('${backgroundImages[nextBgIndex]}');`}>
-        </div>
-      {/if}
-    {/if}
+    <!-- Both layers always present, opacity controls visibility -->
+    <div 
+      class="bg-layer current"
+      class:fading={bgTransitioning}
+      style={`background-image: url('${backgroundImages[bgIndex]}');`}>
+    </div>
+    
+    <div 
+      class="bg-layer next"
+      class:active={bgTransitioning}
+      style={`background-image: url('${backgroundImages[nextBgIndex]}');`}>
+    </div>
   </div>
   
   <Logo extraClass="logo" />
@@ -262,30 +258,36 @@
     background-color: var(--color-bg);
   }
   
-  .bg-overlay {
+  /* Improved background layers for smooth transitions */
+  .bg-layer {
     position: absolute;
     inset: 0;
     background-size: cover;
-    background-position: center;
-    transition: opacity 1.5s ease-in-out;
+    background-position: center center;
+    background-repeat: no-repeat;
     will-change: opacity;
   }
   
-  /* Current bg is visible by default */
-  .bg-overlay.current {
+  /* Current background layer */
+  .bg-layer.current {
     opacity: 0.15;
-    z-index: -5;
+    transition: opacity 1.5s ease-in-out;
   }
   
-  /* Current bg fades out during transition */
-  .bg-overlay.current.fading {
+  /* Current layer fades out during transition */
+  .bg-layer.current.fading {
     opacity: 0;
   }
   
-  /* Next bg starts invisible and fades in */
-  .bg-overlay.next {
+  /* Next background layer */
+  .bg-layer.next {
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+  }
+  
+  /* Next layer fades in during transition */
+  .bg-layer.next.active {
     opacity: 0.15;
-    z-index: -6;
   }
 
   /* Responsive styles */
