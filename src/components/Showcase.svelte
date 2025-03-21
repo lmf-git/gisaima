@@ -39,16 +39,16 @@
     setTimeout(() => {
       bgIndex = nextBgIndex;
       bgTransitioning = false;
-    }, 1000); // Match CSS transition duration
+    }, 3000); // Match the longer CSS transition duration (3s)
   }
   
   onMount(() => {
     // Start rotation after component is mounted, with initial delay
     // This prevents any issues with reactivity before the component is ready
     const initialDelay = setTimeout(() => {
-      // Setup interval to rotate backgrounds every 10 seconds
-      rotationInterval = setInterval(rotateBackground, 10000);
-    }, 1000);
+      // Setup interval to rotate backgrounds every 15 seconds (longer to enjoy each image)
+      rotationInterval = setInterval(rotateBackground, 15000);
+    }, 3000); // Longer initial delay for first viewing
     
     // Cleanup function
     return () => {
@@ -223,7 +223,7 @@
   /* Current background layer */
   .bg-layer.current {
     opacity: 0.15;
-    transition: opacity 1s ease-in-out;
+    transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother easing function with longer duration */
   }
   
   /* Current layer fades out during transition */
@@ -234,7 +234,7 @@
   /* Next background layer */
   .bg-layer.next {
     opacity: 0;
-    transition: opacity 1s ease-in-out;
+    transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1); /* Matching transition for next layer */
   }
   
   /* Next layer fades in during transition */
