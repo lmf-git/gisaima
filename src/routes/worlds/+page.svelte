@@ -12,6 +12,12 @@
   let loading = $state(true);
   
   onMount(() => {
+    // Check if user is authenticated, redirect if not
+    if ($user === null) { // Check for null (not logged in) rather than undefined (still loading)
+      goto('/login?redirect=/worlds');
+      return;
+    }
+
     // Load all available worlds
     const worldsRef = ref(db, 'worlds');
     const unsubscribe = onValue(worldsRef, (snapshot) => {
