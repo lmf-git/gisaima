@@ -182,8 +182,9 @@
         {/if}
     </header>
 
-
-    {@render children?.()}
+    <main class="main-content">
+        {@render children?.()}
+    </main>
     
     <!-- Add footer if not on map page -->
     {#if !isMapPage}
@@ -368,13 +369,38 @@
         height: 100%;
     }
 
+    /* Main content area with padding for absolute header */
+    .main-content {
+        flex: 1;
+        padding-top: 6em; /* Match header height */
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Position header as absolute for all pages */
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1em 2em;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        height: 6em;
+        background: linear-gradient(to bottom,
+            rgba(10, 25, 47, 0.9) 0%,
+            rgba(10, 25, 47, 0.8) 50%,
+            rgba(10, 25, 47, 0) 100%);
+    }
+
     /* Simplified header styling - no background or shadow */
     .header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 1em 2em;
-        position: relative;
         z-index: 100;
         height: 6em;
     }
@@ -587,7 +613,6 @@
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .header {
-            flex-wrap: wrap;
             padding: 0.8em 1.5em; /* Increased horizontal padding from 1em to 1.5em */
             justify-content: space-between; /* Ensure good spacing in mobile view */
         }

@@ -20,46 +20,55 @@
     };
 </script>
 
-<div class="login-container">
-    <h1>Login to Gisaima</h1>
-    
-    {#if error}
-        <div class="error">{error}</div>
-    {/if}
-    
-    <form on:submit={handleSubmit}>
-        <div class="form-group">
-            <label for="email">Email</label>
-            <input 
-                type="email" 
-                id="email" 
-                bind:value={email} 
-                required
-            />
-        </div>
+<div class="login-page">
+    <div class="login-container">
+        <h1>Login to Gisaima</h1>
         
-        <div class="form-group">
-            <label for="password">Password</label>
-            <input 
-                type="password" 
-                id="password" 
-                bind:value={password} 
-                required
-            />
-        </div>
+        {#if error}
+            <div class="error">{error}</div>
+        {/if}
         
-        <button type="submit" class="primary">Login</button>
-    </form>
-    
-    <p class="signup-link">Don't have an account? <a href="/signup">Sign Up</a></p>
+        <form on:submit={handleSubmit}>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    bind:value={email} 
+                    required
+                />
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    bind:value={password} 
+                    required
+                />
+            </div>
+            
+            <button type="submit" class="primary">Login</button>
+        </form>
+        
+        <p class="signup-link">Don't have an account? <a href="/signup">Sign Up</a></p>
+    </div>
 </div>
 
 <style>
+    .login-page {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 2em;
+    }
+
     .login-container {
         max-width: 26em;
-        width: 90%;
-        margin: 2em auto 6em; /* Changed from 2em auto to 2em auto 6em to add bottom margin */
-        padding: 2em;
+        width: 100%;
+        padding: 2.5em;
         background-color: var(--color-panel-bg);
         border: 1px solid var(--color-panel-border);
         border-radius: 0.5em;
@@ -154,9 +163,12 @@
 
     @media (max-width: 480px) {
         .login-container {
-            width: 95%;
+            width: 100%;
             padding: 1.5em;
-            margin: 3em auto 4em; /* Changed from 3em auto 2em to 3em auto 4em */
+        }
+        
+        .login-page {
+            padding: 1em;
         }
         
         h1 {

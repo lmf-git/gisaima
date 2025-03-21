@@ -172,20 +172,28 @@
 
   <section class="media">
     <h2 class="heading">Media</h2>
+    
     <div class="media-intro">
-      <div class="highlight-item">
-        <span class="highlight-icon">▶️</span>
-        <span class="highlight-text">Real gameplay footage</span>
-      </div>
-      <div class="highlight-item">
-        <span class="highlight-icon">🌍</span>
-        <span class="highlight-text">World map views</span>
-      </div>
-      <div class="highlight-item">
-        <span class="highlight-icon">⚔️</span>
-        <span class="highlight-text">Strategic battles</span>
+      <p class="media-desc">
+        Journey into the realm of Gisaima through our immersive media gallery. Watch as territories fall and empires rise in real-time strategic gameplay. These visuals showcase the dynamic world where resource management, tactical combat, and territorial conquest blend together in a unique gaming experience inspired by ancient board game principles.
+      </p>
+      
+      <div class="media-highlights">
+        <div class="highlight-item">
+          <span class="highlight-icon">▶️</span>
+          <span class="highlight-text">Real gameplay footage</span>
+        </div>
+        <div class="highlight-item">
+          <span class="highlight-icon">🌍</span>
+          <span class="highlight-text">World map views</span>
+        </div>
+        <div class="highlight-item">
+          <span class="highlight-icon">⚔️</span>
+          <span class="highlight-text">Strategic battles</span>
+        </div>
       </div>
     </div>
+    
     <div class="gallery">
       <div class="gallery-container">
         <div class={`gallery-media ${fadeOut ? 'fade-out' : 'fade-in'}`}>
@@ -354,7 +362,7 @@
 
   .heading {
     text-align: center;
-    margin-bottom: 2em;
+    margin-bottom: 1.5em; /* Reduced from 2em to 1.5em */
     color: var(--color-pale-green);
     text-shadow: 0 0 0.3125em rgba(12, 8, 33, 0.7);
     font-family: var(--font-heading); /* Added heading font */
@@ -627,15 +635,33 @@
     background-color: var(--color-pale-green);
   }
 
-  /* Media section introduction styling - simplified */
+  /* Media section introduction styling */
   .media-intro {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5em;
+    margin-bottom: 2em;
+    padding: 0 1em;
+  }
+  
+  .media-desc {
+    text-align: center;
+    color: var(--color-text);
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin: 0 0 1.5em 0;
+    font-family: var(--font-body);
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .media-highlights {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 1.5em;
-    margin-bottom: 2em;
-    padding: 0 1em;
+    gap: 1em;
   }
   
   .highlight-item {
@@ -657,6 +683,20 @@
     color: var(--color-pale-green);
     font-size: 1em;
     font-weight: 400;
-    font-family: var(--font-body); /* Add body font */
+    font-family: var(--font-body);
+  }
+  
+  /* Media section specific heading adjustment */
+  .media .heading {
+    margin-bottom: 1em; /* Even smaller margin specifically for media section heading */
+  }
+  
+  /* Desktop (large devices) */
+  @media (min-width: 769px) {
+    .media-desc {
+      font-size: 1.2em;
+      max-width: 80%;
+      margin: 0 auto 1.5em auto;
+    }
   }
 </style>

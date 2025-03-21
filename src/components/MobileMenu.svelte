@@ -67,7 +67,7 @@
     
     .mobile-menu-header {
         display: flex;
-        justify-content: center; /* Changed from space-between to center */
+        justify-content: center;
         align-items: center;
         margin-bottom: 1.5em;
         padding-bottom: 1em;
