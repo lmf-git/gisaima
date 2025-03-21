@@ -2,7 +2,7 @@
   import Logo from './Logo.svelte';
   import { user, loading as userLoading } from '$lib/stores/user';
   import { game, isAuthReady } from '$lib/stores/game';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   
   // Update to use $props() runes API
   const { extraClass = '' } = $props();
@@ -11,7 +11,6 @@
   let bgIndex = $state(0);
   let nextBgIndex = $state(1);
   let bgTransitioning = $state(false);
-  let initialBgLoaded = $state(false);
   let rotationInterval = $state(null);
   
   // Derived state for UI loading conditions 
@@ -27,47 +26,34 @@
     '/banners/6.jpeg',
     '/banners/7.jpeg'
   ];
-  
-  // Function to preload the first background image
-  function preloadFirstImage() {
-    const firstImg = new Image();
-    firstImg.onload = () => {
-      initialBgLoaded = true;
-      startBackgroundRotation();
-    };
-    firstImg.src = backgroundImages[0];
-  }
-  
-  // Function to transition to the next background
-  function transitionToNextBackground() {
+
+  // Simple function to handle the background transition
+  function rotateBackground() {
     if (bgTransitioning) return;
     
+    // Start transition to next image
     bgTransitioning = true;
     nextBgIndex = (bgIndex + 1) % backgroundImages.length;
     
-    // Complete transition after animation finishes (match CSS transition time)
+    // After transition completes, update the current index and reset state
     setTimeout(() => {
       bgIndex = nextBgIndex;
       bgTransitioning = false;
-    }, 1000);
-  }
-  
-  // Function to start the background rotation
-  function startBackgroundRotation() {
-    // Clear any existing interval
-    if (rotationInterval) clearInterval(rotationInterval);
-    
-    // Start the rotation interval - change image every 10 seconds
-    rotationInterval = setInterval(() => {
-      transitionToNextBackground();
-    }, 10000);
+    }, 1000); // Match CSS transition duration
   }
   
   onMount(() => {
-    preloadFirstImage();
+    // Start rotation after component is mounted, with initial delay
+    // This prevents any issues with reactivity before the component is ready
+    const initialDelay = setTimeout(() => {
+      // Setup interval to rotate backgrounds every 10 seconds
+      rotationInterval = setInterval(rotateBackground, 10000);
+    }, 1000);
     
+    // Cleanup function
     return () => {
-      if (rotationInterval) clearInterval(rotationInterval);
+      clearTimeout(initialDelay);
+      clearInterval(rotationInterval);
     };
   });
 </script>

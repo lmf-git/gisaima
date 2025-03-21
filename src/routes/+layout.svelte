@@ -412,7 +412,7 @@
         right: 0;
         z-index: 100;
         height: 6em;
-        gap: 1em; /* Add gap between header elements */
+        gap: 3em;
     }
 
     /* Simplified header styling - no background or shadow */
