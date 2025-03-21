@@ -258,12 +258,10 @@
   // Derived state for UI loading conditions
   const actionsLoading = $derived($userLoading || !$isAuthReady || $game.loading);
 
-  // Background image state
+  // Background image state - simplified approach
   let currentBgIndex = $state(0);
-  let nextBgIndex = $state(1);
   let bgFadeOut = $state(false);
   let bgLoaded = $state(false); // Track initial background load
-  let bgImages = $state(Array(7).fill(false)); // Track loaded state for each image
   // Update paths to the correct banner locations
   const backgroundImages = [
     '/banners/1.jpeg',
@@ -280,65 +278,30 @@
     const img = new Image();
     img.onload = () => {
       bgLoaded = true; // Mark as loaded once the image is ready
-      bgImages[0] = true; // Mark the first image as loaded
     };
     img.src = backgroundImages[0];
 
-    // Preload the rest of the images
-    backgroundImages.slice(1).forEach((src, idx) => {
+    // Preload the rest of the images in the background
+    backgroundImages.slice(1).forEach((src) => {
       const bgImg = new Image();
-      bgImg.onload = () => {
-        bgImages[idx + 1] = true; // Mark this image as loaded
-      };
       bgImg.src = src;
     });
   }
   
-  // Effect to handle background crossfade
+  // Effect to handle background crossfade - simplified
   $effect(() => {
+    if (!bgLoaded) return; // Wait for first image to load
+    
     const interval = setInterval(() => {
-      // Only proceed with transition if next image is loaded
-      if (bgImages[nextBgIndex]) {
-        bgFadeOut = true;
-        
-        setTimeout(() => {
-          currentBgIndex = nextBgIndex;
-          nextBgIndex = (nextBgIndex + 1) % backgroundImages.length;
-          bgFadeOut = false;
-        }, 1000); // Wait for fade-out to complete
-      } else {
-        // If next image isn't loaded yet, try the one after
-        nextBgIndex = (nextBgIndex + 1) % backgroundImages.length;
-      }
+      bgFadeOut = true;
+      
+      setTimeout(() => {
+        currentBgIndex = (currentBgIndex + 1) % backgroundImages.length;
+        bgFadeOut = false;
+      }, 1000); // Wait for fade-out to complete
     }, 8000); // Change background every 8 seconds
     
     return () => clearInterval(interval);
-  });
-  
-  onMount(() => {
-    // Preload the first background image
-    preloadFirstBackground();
-    
-    // Preload gallery media
-    preloadGalleryMedia();
-    
-    // Video should start playing automatically (first item is video)
-    setTimeout(() => {
-      if (mediaItems[0].type === 'video' && videoElement) {
-        videoElement.play().catch(err => {
-          console.error("Initial video playback error:", err);
-          // If autoplay fails (common on mobile), set up the gallery interval
-          startImageInterval();
-        });
-      }
-    }, 100);
-    
-    return () => {
-      // Clean up interval on component destruction
-      if (galleryInterval) {
-        clearInterval(galleryInterval);
-      }
-    };
   });
 </script>
 
@@ -349,20 +312,18 @@
 
 <main class="container">
   <section class="showcase">
-    <!-- Updated background handling with three elements for smoother transitions -->
+    <!-- Simplified background handling with just two layers -->
     <div class="bg-wrapper">
       {#if bgLoaded}
         <div 
           class="bg-overlay" 
           style={`background-image: url('${backgroundImages[currentBgIndex]}'); 
-                opacity: ${bgFadeOut ? 0 : 0.15};
-                z-index: ${bgFadeOut ? -3 : -1};`}>
+                opacity: ${bgFadeOut ? 0 : 0.15};`}>
         </div>
         <div 
-          class="bg-overlay" 
-          style={`background-image: url('${backgroundImages[nextBgIndex]}'); 
-                opacity: ${bgFadeOut ? 0.15 : 0};
-                z-index: ${bgFadeOut ? -1 : -2};`}>
+          class="bg-overlay next-bg" 
+          style={`background-image: url('${backgroundImages[(currentBgIndex + 1) % backgroundImages.length]}'); 
+                opacity: ${bgFadeOut ? 0.15 : 0};`}>
         </div>
       {/if}
     </div>
@@ -902,8 +863,12 @@
     inset: 0;
     background-size: cover;
     background-position: center;
-    transition: opacity 1.5s ease, z-index 0s 1.5s; /* Add transition delay for z-index */
+    transition: opacity 1.5s ease;
     will-change: opacity; /* Performance optimization for smoother transitions */
+  }
+  
+  .bg-overlay.next-bg {
+    z-index: -2;
   }
 
   /* Tablet (medium devices) */
