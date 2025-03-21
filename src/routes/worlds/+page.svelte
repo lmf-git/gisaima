@@ -17,10 +17,8 @@
     if (browser && !$userLoading) {
       // Auth has been determined
       if ($user === null) {
-        console.log('User is not authenticated, redirecting to login');
         goto('/login?redirect=/worlds');
       } else {
-        console.log('User is authenticated:', $user.uid);
         loadWorlds();
       }
     }

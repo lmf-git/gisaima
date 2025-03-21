@@ -423,7 +423,6 @@
         padding: 1em 2em;
         z-index: 100;
         height: 6em;
-        gap: 1em; /* Add gap between header elements */
     }
 
     /* Logo styling */
@@ -742,7 +741,7 @@
     .footer-nav {
         display: flex;
         justify-content: flex-end;
-        gap: 2.5em; /* Increased from 1.5em to 2.5em for more spacing between categories */
+        gap: 3.5em; /* Increased from 2.5em to 3.5em for more spacing between categories */
         flex-wrap: wrap;
         /* Default layout is columns for mobile first approach */
         flex-direction: column;
