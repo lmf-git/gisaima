@@ -4,9 +4,6 @@ import { ref, onValue, get as dbGet, set } from "firebase/database";
 import { db } from '../firebase/database.js';
 import { user } from './user.js';
 
-// Cache for world info to reduce database calls
-const worldInfoCache = new Map();
-
 // Add a store to track auth status
 export const isAuthReady = writable(false);
 
@@ -86,11 +83,10 @@ export function setCurrentWorld(worldId, worldInfo = null) {
   
   // Update the store with the new world ID
   game.update(state => {
-    // If worldInfo was passed, cache it
+    // If worldInfo was passed, store it
     const updatedWorldInfo = { ...state.worldInfo };
     if (worldInfo) {
       updatedWorldInfo[worldId] = worldInfo;
-      worldInfoCache.set(worldId, worldInfo);
       
       return { 
         ...state, 
@@ -156,7 +152,7 @@ export function getWorldInfo(worldId, forceRefresh = false) {
     error: null
   }));
   
-  // Check if we have valid cached data and aren't forcing a refresh
+  // Check if we have valid cached data in the store and aren't forcing a refresh
   const currentGameState = getStore(game);
   if (!forceRefresh && 
       currentGameState.worldInfo && 
@@ -165,25 +161,6 @@ export function getWorldInfo(worldId, forceRefresh = false) {
     
     game.update(state => ({ ...state, worldLoading: false }));
     return Promise.resolve(currentGameState.worldInfo[worldId]);
-  }
-  
-  // Check memory cache if not forcing refresh
-  if (!forceRefresh && 
-      worldInfoCache.has(worldId) && 
-      worldInfoCache.get(worldId).seed !== undefined) {
-    
-    // Update the store
-    const worldInfo = worldInfoCache.get(worldId);
-    game.update(state => ({
-      ...state,
-      worldLoading: false,
-      worldInfo: {
-        ...state.worldInfo,
-        [worldId]: worldInfo
-      }
-    }));
-    
-    return Promise.resolve(worldInfo);
   }
   
   // No valid cache, fetch from database with direct path to ensure we get the seed
@@ -202,9 +179,6 @@ export function getWorldInfo(worldId, forceRefresh = false) {
         
         throw new Error(`World ${worldId} has no seed defined`);
       }
-      
-      // Update both caches
-      worldInfoCache.set(worldId, worldInfo);
       
       // Update store with the world info
       game.update(state => ({

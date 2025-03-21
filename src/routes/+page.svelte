@@ -1,5 +1,6 @@
 <script>
   import Logo from '../components/Logo.svelte';
+  import { user } from '$lib/stores/user';
 </script>
 
 <svelte:head>
@@ -13,8 +14,13 @@
     <h1 class="title">Gisaima Realm</h1>
     <p class="subtitle">A territory control strategy game inspired by ancient board games</p>
     <div class="actions">
-      <a href="/map" class="button primary">Play Now</a>
-      <a href="/map" class="button secondary">Learn How to Play</a>
+      {#if $user}
+        <a href="/map" class="button primary">Return to Game</a>
+        <a href="/worlds" class="button secondary">See Worlds</a>
+      {:else}
+        <a href="/login" class="button primary">Play Now</a>
+        <a href="/signup" class="button secondary">Learn How to Play</a>
+      {/if}
     </div>
   </section>
 
@@ -57,9 +63,15 @@
   
   <footer class="footer">
     <div class="links">
-      <a href="/login">Login</a>
-      <a href="/signup">Sign Up</a>
-      <a href="/map">Play</a>
+      {#if $user}
+        <a href="/worlds">Worlds</a>
+        <a href="/map">Return to Game</a>
+        <a href="/profile">Profile</a>
+      {:else}
+        <a href="/login">Login</a>
+        <a href="/signup">Sign Up</a>
+        <a href="/map">Play</a>
+      {/if}
     </div>
     <p class="copyright">© 2023 Gisaima</p>
   </footer>
