@@ -1,11 +1,11 @@
 <script>
     import { page } from '$app/stores';
-    import { user, signOut } from '$lib/stores/user';
+    import { user, signOut, loading as userLoading } from '$lib/stores/user';
     import Logo from '../components/Logo.svelte';
     import SignOut from '../components/icons/SignOut.svelte';
     import MobileMenu from '../components/MobileMenu.svelte';
     import { onMount, onDestroy } from 'svelte';
-    import { initGameStore, game } from '../lib/stores/game.js';
+    import { initGameStore, game, isAuthReady } from '../lib/stores/game.js';
     import { ref, onValue } from "firebase/database";
     import { db } from '../lib/firebase/database.js';
     import HamburgerIcon from '../components/icons/HamburgerIcon.svelte';
@@ -109,6 +109,9 @@
             playerUnsubscribe();
         }
     });
+
+    // Derived state for UI loading conditions
+    const headerLoading = $derived($userLoading || !$isAuthReady);
 </script>
 
 <div class={`app ${isMapPage ? 'map' : ''}`}>
@@ -137,14 +140,17 @@
         {#if !isMapPage}
             <nav class="nav">
                 <div class="links">
-                    {#if $user && $page.url.pathname !== '/worlds'}
+                    {#if $user && $page.url.pathname !== '/worlds' && !headerLoading}
                         <a href="/worlds" class:active={$page.url.pathname === '/worlds'}>Worlds</a>
                     {/if}
                 </div>
             </nav>
             
-            <div class="auth">
-                {#if $user}
+            <div class="auth" class:loading={headerLoading}>
+                {#if headerLoading}
+                    <!-- Auth loading placeholder with same height as content -->
+                    <div class="auth-loading"></div>
+                {:else if $user}
                     <div class="greeting">Hello, {$user.displayName || $user.email.split('@')[0]}</div>
                     <button class="signout" onclick={signOut} aria-label="Sign Out">
                         <SignOut size="1.2em" extraClass="icon-pale-green" />
@@ -440,6 +446,28 @@
         gap: 1.5em; /* Increased from 1em to 1.5em */
         height: 2.5em; /* Add minimum height to prevent layout shifting */
         transition: opacity 0.3s ease; /* Smooth transition for loading state */
+        min-width: 8em; /* Ensure minimum width for auth area */
+    }
+    
+    .auth.loading {
+        justify-content: flex-end;
+    }
+    
+    .auth-loading {
+        width: 8em;
+        height: 2em;
+        background: linear-gradient(90deg, 
+            var(--color-panel-bg) 0%, 
+            var(--color-dark-blue) 50%, 
+            var(--color-panel-bg) 100%);
+        background-size: 200% 100%;
+        animation: loading-pulse 1.5s infinite;
+        border-radius: 0.25em;
+    }
+    
+    @keyframes loading-pulse {
+        0% { background-position: 100% 0; }
+        100% { background-position: -100% 0; }
     }
     
     .greeting {
@@ -536,7 +564,7 @@
     }
     
     :global(.button.secondary) {
-        background-color: var(--color-button-secondary);
+        background-color: var (--color-button-secondary);
         color: var(--color-text);
         border: none;
     }

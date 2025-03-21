@@ -1,7 +1,123 @@
 <script>
   import Logo from '../components/Logo.svelte';
-  import { user } from '$lib/stores/user';
-  import { game } from '$lib/stores/game';
+  import { user, loading as userLoading } from '$lib/stores/user';
+  import { game, isAuthReady } from '$lib/stores/game';
+  import { onMount, onDestroy } from 'svelte';
+  
+  // Media gallery state
+  let currentMediaIndex = $state(0);
+  let fadeOut = $state(false);
+  let galleryInterval;
+  // Fix the reactivity issue by declaring videoElement with $state
+  let videoElement = $state(null);
+  
+  // Array of media items (both videos and images) to display in the gallery
+  const mediaItems = [
+    { type: 'video', src: '/media/1.mp4', alt: 'Gameplay Video' },
+    { type: 'image', src: '/media/screenshot.png', alt: 'Game Board Screenshot' },
+    { type: 'image', src: '/media/screenshot2.png', alt: 'Game Gameplay' },
+    { type: 'image', src: '/media/screenshot3.png', alt: 'World Map View' }
+  ];
+  
+  // Function to advance to the next media item with crossfade
+  function nextMedia() {
+    fadeOut = true;
+    
+    setTimeout(() => {
+      currentMediaIndex = (currentMediaIndex + 1) % mediaItems.length;
+      fadeOut = false;
+      
+      // If we switched to a video, we need to let it render first
+      setTimeout(() => {
+        if (mediaItems[currentMediaIndex].type === 'video' && videoElement) {
+          videoElement.play().catch(err => console.error("Video playback error:", err));
+        }
+      }, 50);
+    }, 750); // Half of the total transition time
+  }
+  
+  // Function to handle video end event
+  function handleVideoEnd() {
+    // Only auto-advance if this is still the current media item
+    if (mediaItems[currentMediaIndex].type === 'video') {
+      nextMedia();
+    }
+  }
+  
+  // Function to manually select a media item
+  function selectMedia(index) {
+    if (currentMediaIndex !== index) {
+      // Clear any scheduled transitions
+      if (galleryInterval) {
+        clearInterval(galleryInterval);
+        galleryInterval = null;
+      }
+      
+      fadeOut = true;
+      setTimeout(() => {
+        currentMediaIndex = index;
+        fadeOut = false;
+        
+        // If we switched to a video, play it
+        setTimeout(() => {
+          if (mediaItems[currentMediaIndex].type === 'video' && videoElement) {
+            videoElement.play().catch(err => console.error("Video playback error:", err));
+          } else {
+            // For images, restart the interval
+            startImageInterval();
+          }
+        }, 50);
+      }, 750);
+    }
+  }
+  
+  // Function to start interval for image rotation
+  function startImageInterval() {
+    // Only set up interval for images, not videos
+    if (mediaItems[currentMediaIndex].type === 'image') {
+      // Clear any existing interval first
+      if (galleryInterval) {
+        clearInterval(galleryInterval);
+      }
+      // Change image every 5 seconds
+      galleryInterval = setInterval(nextMedia, 5000);
+    }
+  }
+  
+  // Set up media handling on mount
+  onMount(() => {
+    // Video should start playing automatically (first item is video)
+    setTimeout(() => {
+      if (mediaItems[0].type === 'video' && videoElement) {
+        videoElement.play().catch(err => {
+          console.error("Initial video playback error:", err);
+          // If autoplay fails (common on mobile), set up the gallery interval
+          startImageInterval();
+        });
+      }
+    }, 100);
+    
+    return () => {
+      // Clean up interval on component destruction
+      if (galleryInterval) {
+        clearInterval(galleryInterval);
+      }
+    };
+  });
+  
+  // Effect to manage the interval based on the current media type
+  $effect(() => {
+    // When the media changes, reset the interval appropriately
+    if (mediaItems[currentMediaIndex].type === 'image') {
+      startImageInterval();
+    } else if (galleryInterval) {
+      clearInterval(galleryInterval);
+      galleryInterval = null;
+    }
+  });
+
+  // Derived state for UI loading conditions
+  const actionsLoading = $derived($userLoading || !$isAuthReady || $game.loading);
 </script>
 
 <svelte:head>
@@ -14,8 +130,12 @@
     <Logo extraClass="logo" />
     <h1 class="title">Gisaima Realm</h1>
     <p class="subtitle">A territory control strategy game inspired by ancient board games</p>
-    <div class="actions">
-      {#if $user}
+    <div class="actions" class:loading={actionsLoading}>
+      {#if actionsLoading}
+        <!-- Placeholder buttons with same dimensions to prevent layout shift -->
+        <div class="button-placeholder primary"></div>
+        <div class="button-placeholder secondary"></div>
+      {:else if $user}
         {#if $game.currentWorld}
           <a href={`/map?world=${$game.currentWorld}`} class="button primary">Return to Game</a>
         {/if}
@@ -49,17 +169,38 @@
     </div>
   </section>
 
-  <section class="howto">
-    <h2 class="heading">How To Play</h2>
-    <div class="overview">
-      <div class="content">
-        <p class="text">Gisaima is played on a grid where players take turns placing stones to capture territory. 
-        The goal is to control the most territory by the end of the game.</p>
-        <p class="text">Players can capture opponent's pieces by surrounding them, adding strategic depth to each move.</p>
-        <a href="/rules" class="link">Read the full rules →</a>
-      </div>
-      <div class="preview">
-        <img src="/screenshot.png" alt="Game Board Screenshot" class="preview-image">
+  <section class="media">
+    <h2 class="heading">Media</h2>
+    <div class="gallery">
+      <div class="gallery-container">
+        <div class={`gallery-media ${fadeOut ? 'fade-out' : 'fade-in'}`}>
+          {#if mediaItems[currentMediaIndex].type === 'video'}
+            <video 
+              bind:this={videoElement}
+              class="media-content video"
+              src={mediaItems[currentMediaIndex].src}
+              muted
+              playsInline
+              onended={handleVideoEnd}
+            ></video>
+          {:else}
+            <img 
+              src={mediaItems[currentMediaIndex].src} 
+              alt={mediaItems[currentMediaIndex].alt} 
+              class="media-content screenshot" 
+            />
+          {/if}
+        </div>
+        
+        <div class="gallery-dots">
+          {#each mediaItems as _, index}
+            <button 
+              class="gallery-dot {currentMediaIndex === index ? 'active' : ''}" 
+              aria-label={`View media ${index + 1}`}
+              onclick={() => selectMedia(index)}
+            ></button>
+          {/each}
+        </div>
       </div>
     </div>
   </section>
@@ -118,6 +259,37 @@
     gap: 1.5em;
     margin-top: 2.5em;
     flex-wrap: wrap;
+    min-height: 5em; /* Ensure consistent height during loading */
+  }
+
+  /* Loading state styles */
+  .actions.loading {
+    opacity: 0.7;
+  }
+
+  .button-placeholder {
+    width: 12em;
+    height: 4em;
+    border-radius: 0.25em;
+    background: linear-gradient(90deg, 
+      var(--color-panel-bg) 0%, 
+      var(--color-dark-blue) 50%, 
+      var(--color-panel-bg) 100%);
+    background-size: 200% 100%;
+    animation: loading-pulse 1.5s infinite;
+  }
+
+  .button-placeholder.primary {
+    border: 0.05em solid var(--color-muted-teal);
+  }
+
+  .button-placeholder.secondary {
+    border: 0.05em solid var(--color-panel-border);
+  }
+
+  @keyframes loading-pulse {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
   }
 
   /* Hero CTA buttons styling - make them more imposing */
@@ -163,7 +335,7 @@
     text-shadow: 0 0 0.5em rgba(0, 0, 0, 0.5); /* Add text shadow for consistency */
   }
 
-  .features, .howto {
+  .features, .media {
     padding: 3em 0;
   }
 
@@ -318,6 +490,15 @@
     .subheading {
       font-size: 1.4em;
     }
+
+    .gallery-container {
+      aspect-ratio: 4 / 3;  /* Adjusted for mobile screens */
+    }
+
+    .button-placeholder {
+      width: 100%;
+      height: 3.5em;
+    }
   }
   
   @media (max-width: 480px) {
@@ -336,5 +517,95 @@
     .heading {
       font-size: 1.8em;
     }
+
+    .gallery-dot {
+      width: 0.6em;
+      height: 0.6em;
+    }
+  }
+
+  /* Gallery styles */
+  .gallery {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 1em;
+  }
+  
+  .gallery-container {
+    width: 100%;
+    max-width: 960px;
+    position: relative;
+    border-radius: 0.5em;
+    overflow: hidden;
+    box-shadow: 0 0.3em 1em var(--color-shadow);
+    background: linear-gradient(135deg, var(--color-dark-blue), var(--color-dark-navy));
+    aspect-ratio: 16 / 9;
+  }
+  
+  .gallery-media {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 1.5s ease;
+  }
+  
+  .fade-in {
+    opacity: 1;
+  }
+  
+  .fade-out {
+    opacity: 0;
+  }
+  
+  .media-content {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 0.3em;
+  }
+  
+  .media-content.video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Video fills the container */
+  }
+  
+  .gallery-dots {
+    position: absolute;
+    bottom: 1em;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 0.8em;
+    z-index: 5;
+  }
+  
+  .gallery-dot {
+    width: 0.8em;
+    height: 0.8em;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.3);
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    padding: 0;
+  }
+  
+  .gallery-dot.active {
+    background-color: var(--color-pale-green);
+    transform: scale(1.2);
+  }
+  
+  .gallery-dot:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+  
+  .gallery-dot.active:hover {
+    background-color: var(--color-pale-green);
   }
 </style>
