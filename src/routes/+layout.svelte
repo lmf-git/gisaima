@@ -352,11 +352,12 @@
     /* Navigation styling */
     .nav {
         display: flex;
+        margin-right: 2em; /* Add right margin to create space between nav and auth */
     }
 
     .links {
         display: flex;
-        gap: 1.5em;
+        gap: 2.5em; /* Increased from 1.5em to 2.5em */
     }
 
     .links a {
@@ -393,7 +394,7 @@
     .auth {
         display: flex;
         align-items: center;
-        gap: 1em;
+        gap: 1.5em; /* Increased from 1em to 1.5em */
         height: 2.5em; /* Add minimum height to prevent layout shifting */
         transition: opacity 0.3s ease; /* Smooth transition for loading state */
     }
@@ -505,7 +506,8 @@
     @media (max-width: 768px) {
         .header {
             flex-wrap: wrap;
-            padding: 0.8em 1em;
+            padding: 0.8em 1.5em; /* Increased horizontal padding from 1em to 1.5em */
+            justify-content: space-between; /* Ensure good spacing in mobile view */
         }
         
         .logo {
@@ -522,11 +524,16 @@
             flex: 1;
             justify-content: flex-end;
             min-height: 2.2em;
+            gap: 1.2em; /* Increase gap in mobile view */
         }
         
         .greeting {
             max-width: 100px;
             font-size: 0.8em;
+        }
+
+        .mobile-menu-toggle {
+            margin-left: 1.5em; /* Increased spacing on mobile */
         }
     }
 
@@ -541,7 +548,7 @@
         z-index: 110;
         padding: 0.5em;
         order: 3; /* Position after other elements */
-        margin-left: 1em; /* Add spacing between menu toggle and other elements */
+        margin-left: 2em; /* Increased from 1em to 2em */
     }
     
     /* Hide menu toggle on larger screens */
@@ -569,7 +576,7 @@
         top: 100%;
         left: 0;
         right: 0;
-        width: calc(100% - 1em); /* Match the menu width */
+        width: 90%; /* Changed from calc(100% - 1em) to 90% to match mobile menu width */
         margin: 0 auto; /* Center the container */
         z-index: 100;
         transform-origin: top center;

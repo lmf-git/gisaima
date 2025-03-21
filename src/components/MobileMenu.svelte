@@ -19,7 +19,9 @@
                style={animatingOut ? 'animation-delay: 0.15s;' : ''}
             >Home</a>
         {/if}
-        {#if currentPath !== '/worlds'}
+        
+        <!-- Only show worlds link if user is logged in -->
+        {#if user && currentPath !== '/worlds'}
             <a href="/worlds" 
                class={animatingOut ? 'animate-out' : 'animate-item'} 
                class:active={currentPath === '/worlds'}
@@ -50,11 +52,11 @@
 
 <style>
     .mobile-menu {
-        width: 100%; /* Changed from calc(100% - 1em) to 100% */
+        width: 90%; /* Changed from 100% to 90% to make it narrower */
         background-color: var(--color-dark-blue);
         border-top: 0.0625em solid var(--color-panel-border);
-        border-bottom-left-radius: 0.5em; /* Retain rounded corners */
-        border-bottom-right-radius: 0.5em; /* Retain rounded corners */
+        border-bottom-left-radius: 0.5em; 
+        border-bottom-right-radius: 0.5em; 
         box-shadow: 0 0.625em 1.875em rgba(0, 0, 0, 0.25);
         padding: 1.5em;
         display: flex;

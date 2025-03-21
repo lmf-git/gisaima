@@ -76,7 +76,7 @@
     .signup-container {
         max-width: 26em;
         width: 90%;
-        margin: 0 auto; /* Removed top margin, keeping horizontal centering */
+        margin: 2em auto; /* Added top/bottom margin of 2em for all screen sizes */
         padding: 2em;
         background-color: var(--color-panel-bg);
         border: 1px solid var(--color-panel-border);
@@ -182,7 +182,7 @@
         .signup-container {
             width: 95%;
             padding: 1.5em;
-            margin: 1.5em auto;
+            margin: 3em auto 2em; /* Increased top margin specifically for mobile */
         }
         
         h1 {
