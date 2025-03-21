@@ -93,7 +93,7 @@
             <span>or</span>
         </div>
         
-        <button class="secondary" on:click={handleAnonymousLogin} disabled={loading}>
+        <button class="secondary" onclick={handleAnonymousLogin} disabled={loading}>
             {loading ? 'Logging in...' : 'Continue as Guest'}
         </button>
         
