@@ -178,6 +178,46 @@
 
 
     {@render children?.()}
+    
+    <!-- Add footer if not on map page -->
+    {#if !isMapPage}
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <a href="/" class="footer-logo">
+                        <Logo extraClass="footer-logo-icon" />
+                    </a>
+                    <p class="footer-tagline">Explore and create worlds together</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Navigation</h3>
+                    <div class="footer-links">
+                        <a href="/">Home</a>
+                        {#if $user}
+                            <a href="/worlds">Worlds</a>
+                        {/if}
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Account</h3>
+                    <div class="footer-links">
+                        {#if $user}
+                            <button class="footer-signout" onclick={signOut}>Sign Out</button>
+                        {:else}
+                            <a href="/login">Log In</a>
+                            <a href="/signup">Sign Up</a>
+                        {/if}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; {new Date().getFullYear()} Gisaima. All Knights Declared</p>
+            </div>
+        </footer>
+    {/if}
 </div>
 
 <style>
@@ -401,7 +441,7 @@
     
     .greeting {
         font-size: 0.9em;
-        color: var(--color-pale-green);
+        color: var (--color-pale-green);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -612,6 +652,128 @@
         to {
             opacity: 0;
             transform: translateY(-10px);
+        }
+    }
+
+    /* Footer styles */
+    .footer {
+        margin-top: auto; /* Push footer to the bottom of flex container */
+        padding: 2em 0 1em;
+        background-color: var(--color-dark-blue);
+        border-top: 1px solid var(--color-panel-border);
+    }
+    
+    .footer-content {
+        width: 90%;
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2em;
+        padding-bottom: 2em;
+    }
+    
+    .footer-section h3 {
+        color: var(--color-pale-green);
+        font-family: var(--font-heading);
+        font-weight: 400;
+        margin-bottom: 1em;
+        font-size: 1.2em;
+        letter-spacing: 0.05em;
+    }
+    
+    .footer-logo {
+        display: inline-block;
+        margin-bottom: 1em;
+    }
+    
+    .footer-logo :global(.footer-logo-icon) {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .footer-tagline {
+        color: var(--color-text-secondary);
+        font-style: italic;
+        margin-bottom: 1em;
+    }
+    
+    .footer-links {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8em;
+    }
+    
+    .footer-links a, .footer-signout {
+        color: var(--color-text-secondary);
+        text-decoration: none;
+        transition: color 0.2s ease;
+        font-size: 0.9em;
+        display: inline-block;
+    }
+    
+    .footer-links a:hover, .footer-signout:hover {
+        color: var(--color-pale-green);
+    }
+    
+    .footer-signout {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        text-align: left;
+        font-family: var(--font-body);
+    }
+    
+    .footer-bottom {
+        padding-top: 1em;
+        text-align: center;
+        font-size: 0.8em;
+        color: var(--color-text-secondary);
+        border-top: 1px solid rgba(100, 255, 218, 0.1);
+    }
+    
+    /* Responsive image styling for the entire application */
+    :global(img.responsive) {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+    }
+    
+    :global(.screenshot-container) {
+        width: 100%;
+        max-height: 80vh;
+        overflow: hidden;
+        border-radius: 0.5em;
+        margin: 1em 0;
+        box-shadow: 0 0.3em 1em var(--color-shadow);
+    }
+    
+    :global(.screenshot-container img) {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    
+    @media (max-width: 768px) {
+        .footer-content {
+            grid-template-columns: 1fr;
+            text-align: center;
+            gap: 1.5em;
+        }
+        
+        .footer-links {
+            align-items: center;
+        }
+        
+        .footer-signout {
+            text-align: center;
+        }
+        
+        :global(.screenshot-container) {
+            border-radius: 0.25em;
+            max-height: 50vh;
         }
     }
 </style>
