@@ -107,6 +107,7 @@
         align-items: center;
         justify-content: center;
         min-height: 100vh;
+        padding: 2em 0;
     }
     
     .signup-container {
@@ -215,14 +216,37 @@
     }
 
     @media (max-width: 480px) {
+        .signup-page {
+            padding: 1em 0;
+            align-items: flex-start;
+        }
+        
         .signup-container {
             width: 100%;
-            padding: 1.5em;
+            padding: 1.25em;
             margin: 0 0.5em; /* Reduced margin on smaller screens */
         }
         
         h1 {
             font-size: 1.5em;
+            margin-bottom: 1em;
+        }
+
+        .form-group {
+            margin-bottom: 1em;
+        }
+
+        button {
+            padding: 0.6em;
+            font-size: 1em;
+        }
+
+        .separator {
+            margin: 1em 0;
+        }
+
+        .help-text {
+            font-size: 0.8em;
         }
     }
 

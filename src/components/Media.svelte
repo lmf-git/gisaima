@@ -23,11 +23,23 @@
   let minVideoPlayTime = $state(5000);
   let videoStartTime = $state(0);
   
+  // Add mobile detection and fallback state
+  let isMobileBrowser = $state(false);
+  let videoPlaybackFailed = $state(false);
+  let userInteracted = $state(false);
+  
   // Derived state
   const currentMedia = $derived(mediaItems[currentMediaIndex]);
   const isCurrentVideo = $derived(currentMedia.type === 'video');
   const isCurrentImage = $derived(currentMedia.type === 'image');
   const canAdvance = $derived(!videoPlaying || Date.now() - videoStartTime >= minVideoPlayTime);
+  const showPlayButton = $derived(isCurrentVideo && (isMobileBrowser || videoPlaybackFailed) && !videoPlaying);
+  
+  // Function to detect mobile browsers
+  function detectMobileBrowser() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    return /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+  }
   
   // Function to preload gallery media
   function preloadGalleryMedia() {
@@ -60,8 +72,37 @@
   function handleVideoPlay() {
     if (isCurrentVideo) {
       videoPlaying = true;
+      videoPlaybackFailed = false;
       videoStartTime = Date.now();
       console.log("Video started playing");
+    }
+  }
+  
+  // Function to handle video play error
+  function handleVideoPlayError(error) {
+    console.error("Video playback error:", error);
+    videoPlaybackFailed = true;
+    videoPlaying = false;
+    mediaLoaded[currentMediaIndex] = true;
+  }
+  
+  // Function to manually play video when button is clicked
+  function handlePlayButtonClick() {
+    if (videoElement && isCurrentVideo) {
+      userInteracted = true;
+      
+      // iOS requires user interaction
+      const playPromise = videoElement.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            videoPlaybackFailed = false;
+            console.log("Video playing after user interaction");
+          })
+          .catch(err => {
+            handleVideoPlayError(err);
+          });
+      }
     }
   }
   
@@ -76,6 +117,7 @@
     mediaLoading = true;
     fadeOut = true;
     videoPlaying = false;
+    videoPlaybackFailed = false;
     
     setTimeout(() => {
       currentMediaIndex = (currentMediaIndex + 1) % mediaItems.length;
@@ -91,21 +133,28 @@
           console.log("Video can play now");
           fadeOut = false;
           
-          // Start playing the video
-          const playPromise = videoElement.play();
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => {
-                console.log("Video playback started");
-              })
-              .catch(err => {
-                console.error("Video playback error:", err);
-                fadeOut = false;
-                mediaLoaded[currentMediaIndex] = true;
-                setTimeout(() => {
-                  mediaLoading = false;
-                }, 700);
-              });
+          // Only try to autoplay if not on mobile or user has interacted
+          if (!isMobileBrowser || userInteracted) {
+            // Start playing the video
+            const playPromise = videoElement.play();
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  console.log("Video playback started");
+                })
+                .catch(err => {
+                  handleVideoPlayError(err);
+                  setTimeout(() => {
+                    mediaLoading = false;
+                  }, 700);
+                });
+            }
+          } else {
+            // On mobile without interaction, just show the play button
+            mediaLoaded[currentMediaIndex] = true;
+            setTimeout(() => {
+              mediaLoading = false;
+            }, 700);
           }
         };
       } else {
@@ -145,6 +194,7 @@
       mediaLoading = true;
       fadeOut = true;
       videoPlaying = false;
+      videoPlaybackFailed = false;
       
       setTimeout(() => {
         currentMediaIndex = index;
@@ -158,20 +208,28 @@
           videoElement.oncanplay = () => {
             fadeOut = false;
             
-            // Start playing the video
-            const playPromise = videoElement.play();
-            if (playPromise !== undefined) {
-              playPromise
-                .then(() => {
-                  console.log("Video playing after manual selection");
-                })
-                .catch(err => {
-                  console.error("Video playback error:", err);
-                  mediaLoaded[currentMediaIndex] = true;
-                  setTimeout(() => {
-                    mediaLoading = false;
-                  }, 700);
-                });
+            // Only try to autoplay if not on mobile or user has interacted
+            if (!isMobileBrowser || userInteracted) {
+              // Start playing the video
+              const playPromise = videoElement.play();
+              if (playPromise !== undefined) {
+                playPromise
+                  .then(() => {
+                    console.log("Video playing after manual selection");
+                  })
+                  .catch(err => {
+                    handleVideoPlayError(err);
+                    setTimeout(() => {
+                      mediaLoading = false;
+                    }, 700);
+                  });
+              }
+            } else {
+              // On mobile without interaction, just show the play button
+              mediaLoaded[currentMediaIndex] = true;
+              setTimeout(() => {
+                mediaLoading = false;
+              }, 700);
             }
           };
         } else {
@@ -215,6 +273,10 @@
   });
   
   onMount(() => {
+    // Detect if we're on a mobile device
+    isMobileBrowser = detectMobileBrowser();
+    console.log("Mobile browser detected:", isMobileBrowser);
+    
     // Preload gallery media
     preloadGalleryMedia();
     
@@ -223,18 +285,24 @@
       if (mediaItems[0].type === 'video' && videoElement) {
         // Set up oncanplay handler for initial video
         videoElement.oncanplay = () => {
-          const playPromise = videoElement.play();
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => {
-                console.log("Initial video playing");
-                videoPlaying = true;
-                videoStartTime = Date.now();
-              })
-              .catch(err => {
-                console.error("Initial video playback error:", err);
-                startImageInterval();
-              });
+          // Only try auto-playing if not on mobile or if user has interacted
+          if (!isMobileBrowser || userInteracted) {
+            const playPromise = videoElement.play();
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  console.log("Initial video playing");
+                  videoPlaying = true;
+                  videoStartTime = Date.now();
+                })
+                .catch(err => {
+                  handleVideoPlayError(err);
+                  startImageInterval();
+                });
+            }
+          } else {
+            // On mobile, mark as loaded but don't auto-play
+            mediaLoaded[currentMediaIndex] = true;
           }
         };
         
@@ -242,6 +310,11 @@
         videoElement.load();
       }
     }, 100);
+    
+    // Add document-level click handler to detect user interaction
+    document.addEventListener('click', () => {
+      userInteracted = true;
+    }, {once: true});
   });
   
   onDestroy(() => {
@@ -272,13 +345,25 @@
                 class="media-content video"
                 src={currentMedia.src}
                 muted
-                playsInline
+                playsinline
                 preload="auto"
+                autoplay={!isMobileBrowser}
                 onloadeddata={handleVideoLoaded}
                 onplay={handleVideoPlay}
                 onended={handleVideoEnd}
                 class:visible={mediaLoaded[currentMediaIndex]}
               ></video>
+              
+              <!-- Play button overlay for mobile devices -->
+              {#if showPlayButton}
+                <button 
+                  class="play-button"
+                  aria-label="Play video"
+                  onclick={handlePlayButtonClick}
+                >
+                  <span class="play-icon">▶</span>
+                </button>
+              {/if}
             </div>
           {:else}
             <div class="media-wrapper image-wrapper">
@@ -491,6 +576,37 @@
     background-color: var(--color-pale-green);
   }
 
+  /* Play button styles for mobile devices */
+  .play-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 5em;
+    height: 5em;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.6);
+    border: 2px solid var(--color-pale-green);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.3s ease;
+    padding: 0;
+  }
+  
+  .play-button:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  
+  .play-icon {
+    color: var(--color-pale-green);
+    font-size: 2em;
+    margin-left: 0.2em; /* Adjust for visual centering of triangle */
+  }
+
   /* Responsive styles */
   @media (min-width: 481px) {
     .heading {
@@ -500,6 +616,15 @@
     .gallery-dot {
       width: 0.7em;
       height: 0.7em;
+    }
+    
+    .play-button {
+      width: 6em;
+      height: 6em;
+    }
+    
+    .play-icon {
+      font-size: 2.2em;
     }
   }
 

@@ -14,6 +14,7 @@
     <nav class="mobile-nav">
         {#if currentPath !== '/'}
             <a href="/" 
+               on:click={onClose}
                class={animatingOut ? 'animate-out' : 'animate-item'} 
                class:active={currentPath === '/'}
                style={animatingOut ? 'animation-delay: 0.15s;' : ''}
@@ -22,6 +23,7 @@
         
         {#if currentPath !== '/guide'}
             <a href="/guide" 
+               on:click={onClose}
                class={animatingOut ? 'animate-out' : 'animate-item'} 
                class:active={currentPath === '/guide'}
                style={animatingOut ? 'animation-delay: 0.125s;' : ''}
@@ -31,6 +33,7 @@
         <!-- Only show worlds link if user is logged in -->
         {#if user && currentPath !== '/worlds'}
             <a href="/worlds" 
+               on:click={onClose}
                class={animatingOut ? 'animate-out' : 'animate-item'} 
                class:active={currentPath === '/worlds'}
                style={animatingOut ? 'animation-delay: 0.1s;' : ''}
@@ -51,8 +54,8 @@
             </button>
         {:else}
             <div class="auth-buttons">
-                <a href="/login" class="login">Log In</a>
-                <a href="/signup" class="signup">Sign Up</a>
+                <a href="/login" on:click={onClose} class="login">Log In</a>
+                <a href="/signup" on:click={onClose} class="signup">Sign Up</a>
             </div>
         {/if}
     </div>
