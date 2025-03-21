@@ -14,9 +14,7 @@
   // Array of media items (both videos and images) to display in the gallery
   const mediaItems = [
     { type: 'video', src: '/media/1.mp4', alt: 'Gameplay Video' },
-    { type: 'image', src: '/media/2.png', alt: 'Game Board Screenshot' },
-    { type: 'image', src: '/media32.png', alt: 'Game Gameplay' },
-    { type: 'image', src: '/media/3.png', alt: 'World Map View' }
+    { type: 'image', src: '/media/2.png', alt: 'Game Board Screenshot' }
   ];
   
   // Function to advance to the next media item with crossfade
@@ -174,6 +172,20 @@
 
   <section class="media">
     <h2 class="heading">Media</h2>
+    <div class="media-intro">
+      <div class="highlight-item">
+        <span class="highlight-icon">▶️</span>
+        <span class="highlight-text">Real gameplay footage</span>
+      </div>
+      <div class="highlight-item">
+        <span class="highlight-icon">🌍</span>
+        <span class="highlight-text">World map views</span>
+      </div>
+      <div class="highlight-item">
+        <span class="highlight-icon">⚔️</span>
+        <span class="highlight-text">Strategic battles</span>
+      </div>
+    </div>
     <div class="gallery">
       <div class="gallery-container">
         <div class={`gallery-media ${fadeOut ? 'fade-out' : 'fade-in'}`}>
@@ -208,22 +220,7 @@
     </div>
   </section>
   
-  <footer class="footer">
-    <div class="links">
-      {#if $user}
-        <a href="/worlds">Worlds</a>
-        {#if $game.currentWorld}
-          <a href={`/map?world=${$game.currentWorld}`}>Return to Game</a>
-        {/if}
-        <a href="/profile">Profile</a>
-      {:else}
-        <a href="/login">Login</a>
-        <a href="/signup">Sign Up</a>
-        <a href="/map">Play</a>
-      {/if}
-    </div>
-    <p class="copyright">© 2023 Gisaima</p>
-  </footer>
+  <!-- Footer removed -->
 </main>
 
 <style>
@@ -235,7 +232,9 @@
 
   .showcase {
     text-align: center;
-    padding: 0 0.5em 1em;
+    padding: 0 0.5em 2.5em; /* Increased padding at bottom from 2em to 2.5em */
+    border-bottom: 1px solid var(--color-panel-border);
+    margin-bottom: 2em; /* Increased margin from 1em to 2em */
   }
 
   .title {
@@ -340,12 +339,16 @@
   }
 
   .features, .media {
-    padding: 3em 0;
+    padding: 3em 0 3em; /* Increased padding at the bottom */
+    border-bottom: 1px solid var(--color-panel-border);
+    margin-bottom: 2em; /* Increased margin at the bottom */
   }
   
-  /* Add specific bottom margin to the media section */
+  /* Add specific bottom margin to the media section and remove border */
   .media {
-    margin-bottom: 3em; /* Add dedicated bottom margin to create space before the footer */
+    padding: 3em 0 4em; /* Increased padding at the bottom to 4em */
+    margin-bottom: 5em; /* Keep the large bottom margin */
+    border-bottom: none; /* No border since it's the last section */
   }
 
   .heading {
@@ -448,36 +451,6 @@
     border-radius: 0.3em; /* Add slight border radius to the image */
   }
 
-  .footer {
-    margin-top: 3em;
-    padding-top: 2em;
-    border-top: 1px solid var(--color-panel-border);
-    text-align: center;
-  }
-  
-  .links {
-    display: flex;
-    justify-content: center;
-    gap: 2em;
-    margin-bottom: 1em;
-    flex-wrap: wrap;
-  }
-  
-  .footer a {
-    color: var(--color-pale-green);
-    text-decoration: none;
-  }
-  
-  .footer a:hover {
-    color: var(--color-muted-teal);
-    text-decoration: underline;
-  }
-  
-  .copyright {
-    color: var(--color-text-secondary);
-    font-size: 0.9em;
-  }
-
   /* Update the logo selector to be more specific with child selector */
   .showcase > :global(.logo) {
     width: 7.5em;
@@ -493,7 +466,7 @@
     }
     
     .showcase {
-      padding: 0 1em 1em;
+      padding: 0 1em 2em;
     }
     
     .title {
@@ -522,7 +495,7 @@
     }
     
     .showcase {
-      padding: 0 3em 1em;
+      padding: 0 3em 3em; /* Increased padding at bottom from 2em to 3em for desktop */
     }
     
     .title {
@@ -551,6 +524,14 @@
     
     .card {
       min-height: 12em;
+    }
+    
+    .features {
+      padding: 4em 0 5em; /* Increased padding at bottom from 4em to 5em for desktop */
+    }
+    
+    .media {
+      padding: 4em 0 5em; /* Increased padding at bottom to 5em for desktop */
     }
     
     .gallery-dot {
@@ -642,5 +623,37 @@
   
   .gallery-dot.active:hover {
     background-color: var(--color-pale-green);
+  }
+
+  /* Media section introduction styling - simplified */
+  .media-intro {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5em;
+    margin-bottom: 2em;
+    padding: 0 1em;
+  }
+  
+  .highlight-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8em;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0.5em;
+    border: 1px solid var(--color-panel-border);
+    padding: 0.7em 1em;
+    min-width: 12em;
+  }
+  
+  .highlight-icon {
+    font-size: 1.2em;
+  }
+  
+  .highlight-text {
+    color: var(--color-pale-green);
+    font-size: 1em;
+    font-weight: 400;
   }
 </style>
