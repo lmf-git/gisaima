@@ -51,7 +51,7 @@
             <div class="error">{ error }</div>
         {/if}
         
-        <form on:submit={handleSubmit}>
+        <form onsubmit={handleSubmit}>
             <div class="form-group">
                 <label for="email">Email</label>
                 <input 
