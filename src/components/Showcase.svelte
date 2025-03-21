@@ -9,10 +9,12 @@
   
   // Background image state with runes
   let currentBgIndex = $state(0);
+  let nextBgIndex = $state(1);
   let activeBgLayer = $state(1);
   let bgTransitioning = $state(false);
   let bgImagesLoaded = $state(Array(7).fill(false));
   let initialBgLoaded = $state(false);
+  let rotationInterval = $state(null);
   
   // Derived state for UI loading conditions 
   const actionsLoading = $derived($userLoading || !$isAuthReady || $game.loading);
@@ -52,42 +54,53 @@
   function transitionToNextBg() {
     // Don't transition if already in progress
     if (bgTransitioning) {
-      console.log("Transition already in progress, skipping");
       return;
     }
     
-    // Determine the next image index
-    const nextIndex = (currentBgIndex + 1) % backgroundImages.length;
+    // Calculate next image index
+    const newNextIndex = (nextBgIndex + 1) % backgroundImages.length;
     
     // Only proceed if the next image is loaded
-    if (!bgImagesLoaded[nextIndex]) {
-      console.log(`Next image (${nextIndex}) not loaded yet, skipping transition`);
+    if (!bgImagesLoaded[nextBgIndex]) {
       return;
     }
     
     // Start the transition
-    console.log(`Starting transition from image ${currentBgIndex} to ${nextIndex}`);
     bgTransitioning = true;
     
     // Toggle which layer is active (this triggers the CSS transition)
     activeBgLayer = activeBgLayer === 1 ? 2 : 1;
     
-    // After transition completes, update the current index and clear the transition flag
+    // After transition completes, update the indices and clear the transition flag
     setTimeout(() => {
-      currentBgIndex = nextIndex;
+      currentBgIndex = nextBgIndex;
+      nextBgIndex = newNextIndex;
       bgTransitioning = false;
-      console.log(`Transition complete, current image is now ${currentBgIndex}`);
-    }, 2000);
+    }, 1500); // Match this to the CSS transition time
+  }
+  
+  // Start/stop background rotation
+  function startBackgroundRotation() {
+    if (rotationInterval) clearInterval(rotationInterval);
+    rotationInterval = setInterval(transitionToNextBg, 10000);
+  }
+  
+  function stopBackgroundRotation() {
+    if (rotationInterval) {
+      clearInterval(rotationInterval);
+      rotationInterval = null;
+    }
   }
   
   // Effect to handle automatic background rotation
   $effect(() => {
     if (!initialBgLoaded) return;
     
-    console.log("Setting up background rotation interval");
-    const interval = setInterval(transitionToNextBg, 10000);
+    // Start rotation when initial image is loaded
+    startBackgroundRotation();
     
-    return () => clearInterval(interval);
+    // Cleanup on component destroy
+    return stopBackgroundRotation;
   });
   
   onMount(() => {
@@ -99,18 +112,18 @@
   <!-- Improved background handling with explicit layers -->
   <div class="bg-wrapper">
     {#if initialBgLoaded}
-      <!-- Layer 1: One of our alternating background layers -->
+      <!-- Layer 1: Shows either current or next image depending on which is active -->
       <div 
         class="bg-overlay"
         class:active={activeBgLayer === 1}
-        style={`background-image: url('${backgroundImages[currentBgIndex]}');`}>
+        style={`background-image: url('${backgroundImages[activeBgLayer === 1 ? currentBgIndex : nextBgIndex]}');`}>
       </div>
       
-      <!-- Layer 2: The other alternating background layer -->
+      <!-- Layer 2: Shows the other image -->
       <div 
         class="bg-overlay"
         class:active={activeBgLayer === 2}
-        style={`background-image: url('${backgroundImages[(currentBgIndex + 1) % backgroundImages.length]}');`}>
+        style={`background-image: url('${backgroundImages[activeBgLayer === 2 ? currentBgIndex : nextBgIndex]}');`}>
       </div>
     {/if}
   </div>
@@ -255,14 +268,15 @@
     inset: 0;
     background-size: cover;
     background-position: center;
-    transition: opacity 1.5s ease;
+    transition: opacity 1.5s ease-in-out;
     opacity: 0;
     z-index: -10;
+    will-change: opacity;
   }
   
   .bg-overlay.active {
     opacity: 0.15;
-    z-index: -1;
+    z-index: -5;
   }
 
   /* Responsive styles */
