@@ -147,23 +147,22 @@
             </nav>
             
             <div class="auth" class:loading={headerLoading}>
-                {#if headerLoading}
-                    <!-- Auth loading placeholder with same height as content -->
-                    <div class="auth-loading"></div>
-                {:else if $user}
-                    <div class="greeting">Hello, {$user.displayName || $user.email.split('@')[0]}</div>
-                    <button class="signout" onclick={signOut} aria-label="Sign Out">
-                        <SignOut size="1.2em" extraClass="icon-pale-green" />
-                    </button>
-                {:else}
-                    <!-- Only show login link if not on login page -->
-                    {#if !isLoginPage}
-                        <a href="/login" class="login">Log In</a>
-                    {/if}
-                    
-                    <!-- Only show signup link if not on signup page -->
-                    {#if !isSignupPage}
-                        <a href="/signup" class="signup">Sign Up</a>
+                {#if !headerLoading}
+                    {#if $user}
+                        <div class="greeting">Hello, {$user.displayName || $user.email.split('@')[0]}</div>
+                        <button class="signout" onclick={signOut} aria-label="Sign Out">
+                            <SignOut size="1.2em" extraClass="icon-pale-green" />
+                        </button>
+                    {:else}
+                        <!-- Only show login link if not on login page and not on home page -->
+                        {#if !isLoginPage && !isHomePage}
+                            <a href="/login" class="login">Log In</a>
+                        {/if}
+                        
+                        <!-- Only show signup link if not on signup page and not on home page -->
+                        {#if !isSignupPage && !isHomePage}
+                            <a href="/signup" class="signup">Sign Up</a>
+                        {/if}
                     {/if}
                 {/if}
             </div>
@@ -474,27 +473,12 @@
         transition: opacity 0.3s ease; /* Smooth transition for loading state */
         min-width: 8em; /* Ensure minimum width for auth area */
         justify-content: flex-end;
+        opacity: 0;
+        transition: opacity 0.3s ease;
     }
     
-    .auth.loading {
-        justify-content: flex-end;
-    }
-    
-    .auth-loading {
-        width: 8em;
-        height: 2em;
-        background: linear-gradient(90deg, 
-            var(--color-panel-bg) 0%, 
-            var(--color-dark-blue) 50%, 
-            var(--color-panel-bg) 100%);
-        background-size: 200% 100%;
-        animation: loading-pulse 1.5s infinite;
-        border-radius: 0.25em;
-    }
-    
-    @keyframes loading-pulse {
-        0% { background-position: 100% 0; }
-        100% { background-position: -100% 0; }
+    .auth:not(.loading) {
+        opacity: 1;
     }
     
     .greeting {

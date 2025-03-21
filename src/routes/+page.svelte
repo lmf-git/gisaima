@@ -131,19 +131,17 @@
     <Logo extraClass="logo" />
     <h1 class="title">Gisaima Realm</h1>
     <p class="subtitle">A territory control strategy game inspired by ancient board games</p>
-    <div class="actions">
-      {#if actionsLoading}
-        <!-- Placeholder buttons with same dimensions to prevent layout shift -->
-        <div class="button-placeholder primary"></div>
-        <div class="button-placeholder secondary"></div>
-      {:else if $user}
-        {#if $game.currentWorld}
-          <a href={`/map?world=${$game.currentWorld}`} class="button primary">Return to Game</a>
+    <div class="actions" class:loaded={!actionsLoading}>
+      {#if !actionsLoading}
+        {#if $user}
+          {#if $game.currentWorld}
+            <a href={`/map?world=${$game.currentWorld}`} class="button primary">Return to Game</a>
+          {/if}
+          <a href="/worlds" class="button secondary">See Worlds</a>
+        {:else}
+          <a href="/login" class="button primary">Play Now</a>
+          <a href="/signup" class="button secondary">Register Here</a>
         {/if}
-        <a href="/worlds" class="button secondary">See Worlds</a>
-      {:else}
-        <a href="/login" class="button primary">Play Now</a>
-        <a href="/signup" class="button secondary">Register Here</a>
       {/if}
     </div>
   </section>
@@ -270,33 +268,12 @@
     margin-top: 2.5em;
     flex-wrap: wrap;
     min-height: 5em; /* Ensure consistent height during loading */
+    opacity: 0;
+    transition: opacity 0.5s ease;
   }
 
-  /* Remove the .actions.loading class and separate the loading styles */
-  .button-placeholder {
-    width: 12em;
-    height: 4em;
-    border-radius: 0.25em;
-    background: linear-gradient(90deg, 
-      var(--color-panel-bg) 0%, 
-      var(--color-dark-blue) 50%, 
-      var(--color-panel-bg) 100%);
-    background-size: 200% 100%;
-    animation: loading-pulse 1.5s infinite;
-    opacity: 0.7;
-  }
-
-  .button-placeholder.primary {
-    border: 0.05em solid var(--color-muted-teal);
-  }
-
-  .button-placeholder.secondary {
-    border: 0.05em solid var(--color-panel-border);
-  }
-
-  @keyframes loading-pulse {
-    0% { background-position: 100% 0; }
-    100% { background-position: -100% 0; }
+  .actions.loaded {
+    opacity: 1;
   }
 
   /* Hero CTA buttons styling - update to fix vertical alignment */
