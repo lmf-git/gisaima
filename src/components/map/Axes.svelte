@@ -71,6 +71,7 @@
     font-size: 0.75em;
     color: rgba(255, 255, 255, 0.7);
     text-shadow: 0 0 3px rgba(0, 0, 0, 0.8);
+    font-family: var(--font-heading); /* Add heading font for coordinate ticks */
   }
   
   .y-axis .tick {

@@ -471,6 +471,7 @@
     text-shadow: 0 0 0.1875em rgba(0, 0, 0, 0.5);
     user-select: none;
     z-index: 1;
+    font-family: var(--font-body); /* Add body font for any text in tiles */
   }
 
   /* All center tiles need the border */
@@ -502,6 +503,7 @@
   .coords {
     font-size: 0.6em; /* Smaller coords for mobile */
     opacity: 0.5;
+    font-family: var(--font-heading); /* Add heading font for coordinates */
   }
 
   .map-container.modal-open {
@@ -561,6 +563,7 @@
     font-weight: bold;
     color: rgba(0, 0, 0, 0.8);
     line-height: 1;
+    font-family: var(--font-heading); /* Add heading font for counts */
   }
   
   /* Remove the pseudo element styles for data-count */

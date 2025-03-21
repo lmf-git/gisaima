@@ -43,6 +43,7 @@
     transform: translateY(1em);
     min-width: 8em;
     text-align: center;
+    font-family: var(--font-body); /* Add body font */
   }
   
   /* Only animate when grid is ready */
@@ -54,12 +55,14 @@
     font-size: 1.2em;
     font-weight: bold;
     color: rgba(0, 0, 0, 0.9);
+    font-family: var(--font-heading); /* Add heading font for coordinates */
   }
   
   .terrain {
     font-size: 0.9em;
     margin-top: 0.2em;
     color: rgba(0, 0, 0, 0.8);
+    font-family: var(--font-body); /* Add body font */
   }
   
   /* Removed the hover styles */

@@ -98,6 +98,7 @@
         transition: all 0.2s ease;
         font-weight: 500;
         text-align: center;
+        font-family: var(--font-body); /* Add body font */
     }
     
     .mobile-nav a:hover,
@@ -115,6 +116,7 @@
     .mobile-user-info {
         margin-bottom: 1em;
         text-align: center;
+        font-family: var(--font-body); /* Add body font */
     }
     
     .user-email {
@@ -122,6 +124,7 @@
         font-weight: 600;
         margin-top: 0.25em;
         word-break: break-all;
+        font-family: var(--font-heading); /* Add heading font for emphasis */
     }
     
     .mobile-signout {
@@ -164,6 +167,7 @@
         font-weight: 500;
         position: relative; /* Add position relative */
         margin-bottom: 0.125em; /* Add space for hover lift effect */
+        font-family: var(--font-heading); /* Add heading font for buttons */
     }
     
     .auth-buttons .login {

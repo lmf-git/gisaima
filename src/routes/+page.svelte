@@ -252,6 +252,7 @@
     color: var(--color-text-secondary);
     margin-bottom: 2em;
     font-weight: 300; /* Added leaner font weight */
+    font-family: var(--font-body); /* Add body font */
   }
 
   .actions {
@@ -408,6 +409,7 @@
     line-height: 1.5;
     /* Fix text size to prevent resizing */
     font-size: 1em;
+    font-family: var(--font-body); /* Add body font */
   }
 
   .overview {
@@ -655,5 +657,6 @@
     color: var(--color-pale-green);
     font-size: 1em;
     font-weight: 400;
+    font-family: var(--font-body); /* Add body font */
   }
 </style>

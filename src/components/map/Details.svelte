@@ -183,12 +183,14 @@
     font-size: 1.1em;
     font-weight: 600;
     color: rgba(0, 0, 0, 0.7);
+    font-family: var(--font-heading); /* Add heading font */
   }
   
   ul {
     margin: 0.5em 0;
     padding-left: 1.5em;
     font-size: 0.9em;
+    font-family: var(--font-body); /* Add body font */
   }
   
   li {
