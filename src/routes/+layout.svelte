@@ -584,13 +584,6 @@
         box-shadow: 0 0.3em 1em var(--color-shadow);
     }
     
-    :global(.screenshot-container) > img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-    
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .header {
@@ -796,13 +789,6 @@
         border-radius: 0.5em;
         margin: 1em 0;
         box-shadow: 0 0.3em 1em var(--color-shadow);
-    }
-    
-    :global(.screenshot-container) > img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
     }
     
     @media (max-width: 768px) {

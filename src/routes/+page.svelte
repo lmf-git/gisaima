@@ -228,19 +228,18 @@
 
 <style>
   .container {
-    max-width: 75em;
+    width: calc(100% - 1.5em);
     margin: 0 auto;
-    padding: 0 2em;
     color: var(--color-text);
   }
 
   .showcase {
     text-align: center;
-    padding: 0 3em 1em;
+    padding: 0 0.5em 1em;
   }
 
   .title {
-    font-size: 3.5em;
+    font-size: 2em;
     margin: 0.5em 0;
     letter-spacing: 0.2em;
     color: #e24144;
@@ -250,7 +249,7 @@
   }
 
   .subtitle {
-    font-size: 1.2em;
+    font-size: 1em;
     color: var(--color-text-secondary);
     margin-bottom: 2em;
     font-weight: 300; /* Added leaner font weight */
@@ -294,8 +293,8 @@
 
   /* Hero CTA buttons styling - update to fix vertical alignment */
   .actions > :global(.button) {
-    font-size: 1.5em;
-    padding: 0.6em 1.8em;  /* Reduced vertical padding from 0.8em to 0.6em */
+    font-size: 1.2em;
+    padding: 0.6em 1.5em;  /* Reduced vertical padding from 0.8em to 0.6em */
     font-weight: 700;
     letter-spacing: 0.05em;
     transition: all 0.3s ease;
@@ -307,6 +306,7 @@
     display: inline-flex;  /* Change to inline-flex for better content alignment */
     align-items: center;  /* Center content vertically */
     justify-content: center;  /* Center content horizontally */
+    width: 100%;
   }
   
   .actions > :global(.button):hover {
@@ -355,15 +355,15 @@
     text-shadow: 0 0 0.3125em rgba(12, 8, 33, 0.7);
     font-family: var(--font-heading); /* Added heading font */
     font-weight: 400; /* Reduced font weight */
-    font-size: 2.6em; /* Increased from default h2 size */
+    font-size: 1.8em; /* Increased from default h2 size */
   }
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(15em, 1fr));
-    gap: 2em;
+    grid-template-columns: 1fr;
+    gap: 1em;
     /* Add these properties to maintain consistent card sizing */
-    grid-auto-rows: minmax(12em, auto);
+    grid-auto-rows: minmax(10em, auto);
   }
 
   .card {
@@ -376,7 +376,7 @@
     /* Add these properties to prevent layout shift */
     display: flex;
     flex-direction: column;
-    min-height: 12em; /* Set minimum height */
+    min-height: 10em; /* Set minimum height */
     height: 100%;
   }
   
@@ -486,59 +486,76 @@
     filter: drop-shadow(0 0 0.5em rgba(193, 19, 22, 0.6));
   }
   
-  @media (max-width: 768px) {
+  /* Tablet (medium devices) */
+  @media (min-width: 481px) {
     .container {
-      padding: 1em;
+      width: calc(100% - 2.5em);
+    }
+    
+    .showcase {
+      padding: 0 1em 1em;
     }
     
     .title {
       font-size: 2.5em;
-      /* Keep the font-weight and font-family consistent */
-      font-weight: 400;
-      font-family: var(--font-heading);
-    }
-    
-    .actions > :global(.button) {
-      font-size: 1.2em;
-      padding: 0.6em 1.5em;  /* Consistent vertical padding here too */
-      width: 100%;
-    }
-    
-    .grid {
-      gap: 1em;
-      grid-auto-rows: minmax(10em, auto); /* Adjust for mobile */
-    }
-    
-    .card {
-      min-height: 10em; /* Reduce minimum height for mobile */
-    }
-    
-    /* ...existing code... */
-  }
-  
-  @media (max-width: 480px) {
-    .showcase {
-      padding: 2em 0.5em;
-    }
-    
-    .title {
-      font-size: 2em;
-      /* Ensure consistency in mobile view too */
-      font-weight: 400;
-      font-family: var(--font-heading);
     }
     
     .subtitle {
-      font-size: 1em;
+      font-size: 1.1em;
     }
-
+    
     .heading {
-      font-size: 1.8em;
+      font-size: 2.2em;
     }
-
+    
     .gallery-dot {
-      width: 0.6em;
-      height: 0.6em;
+      width: 0.7em;
+      height: 0.7em;
+    }
+  }
+
+  /* Desktop (large devices) */
+  @media (min-width: 769px) {
+    .container {
+      width: calc(100% - 5em);
+      padding: 0;
+    }
+    
+    .showcase {
+      padding: 0 3em 1em;
+    }
+    
+    .title {
+      font-size: 3.5em;
+    }
+    
+    .subtitle {
+      font-size: 1.2em;
+    }
+    
+    .actions > :global(.button) {
+      font-size: 1.5em;
+      padding: 0.6em 1.8em;
+      width: auto;
+    }
+    
+    .heading {
+      font-size: 2.6em;
+    }
+    
+    .grid {
+      grid-template-columns: repeat(auto-fit, minmax(15em, 1fr));
+      gap: 2em;
+      grid-auto-rows: minmax(12em, auto);
+    }
+    
+    .card {
+      min-height: 12em;
+    }
+    
+    .gallery-dot {
+      width: 0.8em;
+      height: 0.8em;
     }
   }
 
