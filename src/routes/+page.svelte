@@ -292,17 +292,21 @@
     100% { background-position: -100% 0; }
   }
 
-  /* Hero CTA buttons styling - make them more specific with child selectors */
+  /* Hero CTA buttons styling - update to fix vertical alignment */
   .actions > :global(.button) {
     font-size: 1.5em;
-    padding: 0.8em 1.8em;
+    padding: 0.6em 1.8em;  /* Reduced vertical padding from 0.8em to 0.6em */
     font-weight: 700;
     letter-spacing: 0.05em;
     transition: all 0.3s ease;
     box-shadow: 0 0.3em 0.8em var(--color-shadow);
     text-transform: uppercase;
     text-decoration: none;
-    font-family: var(--font-heading); /* Added font-family property */
+    font-family: var(--font-heading);
+    line-height: 1;  /* Add line-height to normalize text spacing */
+    display: inline-flex;  /* Change to inline-flex for better content alignment */
+    align-items: center;  /* Center content vertically */
+    justify-content: center;  /* Center content horizontally */
   }
   
   .actions > :global(.button):hover {
@@ -491,7 +495,7 @@
     
     .actions > :global(.button) {
       font-size: 1.2em;
-      padding: 0.8em 1.5em;
+      padding: 0.6em 1.5em;  /* Consistent vertical padding here too */
       width: 100%;
     }
     
