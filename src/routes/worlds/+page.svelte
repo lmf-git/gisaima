@@ -1,24 +1,35 @@
 <script>
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { user } from '../../lib/stores/user.js';
+  import { user, loading as userLoading } from '../../lib/stores/user.js';
   import { game, joinWorld, setCurrentWorld } from '../../lib/stores/game.js';
   import { ref, onValue } from "firebase/database";
   import { db } from '../../lib/firebase/database.js';
+  import { browser } from '$app/environment';
   
-  // Add state variable for tracking the currently joining world
+  // Add state variables
   let joiningWorldId = $state(null);
   let worlds = $state([]);
   let loading = $state(true);
   
-  onMount(() => {
-    // Check if user is authenticated, redirect if not
-    if ($user === null) { // Check for null (not logged in) rather than undefined (still loading)
-      goto('/login?redirect=/worlds');
-      return;
+  // Effect to handle authentication and redirection
+  $effect(() => {
+    if (browser && !$userLoading) {
+      // Auth has been determined
+      if ($user === null) {
+        console.log('User is not authenticated, redirecting to login');
+        goto('/login?redirect=/worlds');
+      } else {
+        console.log('User is authenticated:', $user.uid);
+        loadWorlds();
+      }
     }
-
-    // Load all available worlds
+  });
+  
+  // Function to load worlds data
+  function loadWorlds() {
+    if (!browser || !$user) return;
+    
     const worldsRef = ref(db, 'worlds');
     const unsubscribe = onValue(worldsRef, (snapshot) => {
       if (snapshot.exists()) {
@@ -35,6 +46,13 @@
     });
     
     return unsubscribe;
+  }
+  
+  onMount(() => {
+    // We'll use the effect for auth check and loading worlds
+    return () => {
+      // Any cleanup when component unmounts
+    };
   });
   
   function handleJoinWorld(worldId) {

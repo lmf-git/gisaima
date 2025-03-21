@@ -568,7 +568,9 @@
         position: absolute;
         top: 100%;
         left: 0;
-        width: 100%;
+        right: 0;
+        width: calc(100% - 1em); /* Match the menu width */
+        margin: 0 auto; /* Center the container */
         z-index: 100;
         transform-origin: top center;
         animation-duration: 0.3s;

@@ -54,7 +54,6 @@
       dist = 0;
       wasDrag = false;
       
-      event.preventDefault();
       return true;
     }
     
@@ -102,16 +101,26 @@
   // Drag handling
   function handleMinimapDragStart(event) {
     if (event.button !== 0 || !$ready) return;
+    
+    // Create a new event object with only the properties we need
+    // Instead of trying to call preventDefault on the synthetic event
     minimapDragAction({
       type: 'dragstart',
       clientX: event.clientX,
       clientY: event.clientY,
       button: event.button
     });
+    
+    // Call preventDefault on the original DOM event
+    if (event.preventDefault) {
+      event.preventDefault();
+    }
   }
   
   function handleMinimapDrag(event) {
     if (!isDrag || !$ready) return;
+    
+    // Create a new event object with only the properties we need
     minimapDragAction({
       type: 'dragmove',
       clientX: event.clientX,
@@ -198,7 +207,12 @@
   function handleTouchStart(event) {
     if (!$ready) return;
     
-    event.preventDefault();
+    // Always use the original DOM event's preventDefault
+    if (event.preventDefault) {
+      event.preventDefault();
+    }
+    
+    isTouching = true;
     
     minimapDragAction({
       type: 'touchstart',
@@ -208,10 +222,14 @@
   
   function handleTouchMove(event) {
     if (!isTouching || !$ready) return;
-    event.preventDefault();
+    
+    // Always use the original DOM event's preventDefault
+    if (event.preventDefault) {
+      event.preventDefault();
+    }
     
     minimapDragAction({
-      type: 'dragmove',
+      type: 'touchmove',
       touches: event.touches
     });
   }

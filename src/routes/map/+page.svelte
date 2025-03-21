@@ -3,12 +3,11 @@
     import { browser } from '$app/environment';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
+    import { user, loading as userLoading } from '../../lib/stores/user.js'; 
     import { 
       game, 
       getWorldInfo, 
-      setCurrentWorld, 
-      currentWorldInfo, 
-      currentWorldSeed,
+      setCurrentWorld,
       isAuthReady 
     } from "../../lib/stores/game.js";
     
@@ -65,6 +64,8 @@
                 });
             }
             
+            // TODO: This indicates ordering problem and could be ensure it's the right value,
+            // rather than refetching it here.
             // Make sure the game store has the current world set
             await setCurrentWorld(worldId);
             
@@ -119,11 +120,23 @@
         }
     });
     
+    // Use $effect to handle auth state changes
+    $effect(() => {
+      // Only redirect if user state is determined and user is not authenticated
+      if (browser && !$userLoading && $user === null) {
+        const worldId = $page.url.searchParams.get('world') || $game.currentWorld;
+        const redirectPath = worldId ? `/map?world=${worldId}` : '/map';
+        goto(`/login?redirect=${encodeURIComponent(redirectPath)}`);
+      }
+    });
+    
     onMount(() => {
         if (browser) document.body.classList.add('map-page-active');
         
         // Get world ID from URL or current world
         const worldId = $page.url.searchParams.get('world') || $game.currentWorld;
+        
+        // Auth check is now handled in the effect above
         
         if (!worldId) {
             // No world ID, redirect to worlds page
