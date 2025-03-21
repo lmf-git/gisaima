@@ -7,12 +7,11 @@
   // Update to use $props() runes API
   const { extraClass = '' } = $props();
   
-  // Background image state with runes
-  let currentBgIndex = $state(0);
+  // Simplified background image state with runes
+  let bgIndex = $state(0);
   let nextBgIndex = $state(1);
-  let activeBgLayer = $state(1);
   let bgTransitioning = $state(false);
-  let bgImagesLoaded = $state(Array(7).fill(false));
+  let bgImagesLoaded = $state([]);
   let initialBgLoaded = $state(false);
   let rotationInterval = $state(null);
   
@@ -32,6 +31,9 @@
   
   // Function to preload the background images
   function preloadBackgroundImages() {
+    // Initialize the loaded status array
+    bgImagesLoaded = Array(backgroundImages.length).fill(false);
+
     // Load the first image with priority
     const firstImg = new Image();
     firstImg.onload = () => {
@@ -41,40 +43,36 @@
     firstImg.src = backgroundImages[0];
 
     // Preload the rest of the images in the background
-    backgroundImages.slice(1).forEach((src, idx) => {
-      const bgImg = new Image();
-      bgImg.onload = () => {
-        bgImagesLoaded[idx + 1] = true;
-      };
-      bgImg.src = src;
+    backgroundImages.forEach((src, idx) => {
+      if (idx > 0) {
+        const bgImg = new Image();
+        bgImg.onload = () => {
+          bgImagesLoaded[idx] = true;
+        };
+        bgImg.src = src;
+      }
     });
   }
   
   // Function to transition to the next background image
   function transitionToNextBg() {
     // Don't transition if already in progress
-    if (bgTransitioning) {
-      return;
-    }
+    if (bgTransitioning) return;
     
-    // Calculate next image index
-    const newNextIndex = (nextBgIndex + 1) % backgroundImages.length;
+    // Find the next available image
+    const totalImages = backgroundImages.length;
+    let newNextIndex = (bgIndex + 1) % totalImages;
     
     // Only proceed if the next image is loaded
-    if (!bgImagesLoaded[nextBgIndex]) {
-      return;
-    }
+    if (!bgImagesLoaded[newNextIndex]) return;
     
     // Start the transition
     bgTransitioning = true;
-    
-    // Toggle which layer is active (this triggers the CSS transition)
-    activeBgLayer = activeBgLayer === 1 ? 2 : 1;
+    nextBgIndex = newNextIndex;
     
     // After transition completes, update the indices and clear the transition flag
     setTimeout(() => {
-      currentBgIndex = nextBgIndex;
-      nextBgIndex = newNextIndex;
+      bgIndex = nextBgIndex;
       bgTransitioning = false;
     }, 1500); // Match this to the CSS transition time
   }
@@ -109,22 +107,23 @@
 </script>
 
 <section class="showcase {extraClass}">
-  <!-- Improved background handling with explicit layers -->
+  <!-- Simplified background handling with just 2 layers -->
   <div class="bg-wrapper">
     {#if initialBgLoaded}
-      <!-- Layer 1: Shows either current or next image depending on which is active -->
+      <!-- Current background layer (always visible when not transitioning) -->
       <div 
-        class="bg-overlay"
-        class:active={activeBgLayer === 1}
-        style={`background-image: url('${backgroundImages[activeBgLayer === 1 ? currentBgIndex : nextBgIndex]}');`}>
+        class="bg-overlay current"
+        class:fading={bgTransitioning}
+        style={`background-image: url('${backgroundImages[bgIndex]}');`}>
       </div>
       
-      <!-- Layer 2: Shows the other image -->
-      <div 
-        class="bg-overlay"
-        class:active={activeBgLayer === 2}
-        style={`background-image: url('${backgroundImages[activeBgLayer === 2 ? currentBgIndex : nextBgIndex]}');`}>
-      </div>
+      <!-- Next background layer (only visible during transition) -->
+      {#if bgTransitioning}
+        <div 
+          class="bg-overlay next"
+          style={`background-image: url('${backgroundImages[nextBgIndex]}');`}>
+        </div>
+      {/if}
     {/if}
   </div>
   
@@ -269,14 +268,24 @@
     background-size: cover;
     background-position: center;
     transition: opacity 1.5s ease-in-out;
-    opacity: 0;
-    z-index: -10;
     will-change: opacity;
   }
   
-  .bg-overlay.active {
+  /* Current bg is visible by default */
+  .bg-overlay.current {
     opacity: 0.15;
     z-index: -5;
+  }
+  
+  /* Current bg fades out during transition */
+  .bg-overlay.current.fading {
+    opacity: 0;
+  }
+  
+  /* Next bg starts invisible and fades in */
+  .bg-overlay.next {
+    opacity: 0.15;
+    z-index: -6;
   }
 
   /* Responsive styles */
