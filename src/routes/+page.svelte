@@ -158,8 +158,8 @@
     <div class="bg-overlay" class:fade-out={bgFadeOut}></div>
     <Logo extraClass="logo" />
     <h1 class="title">Gisaima Realm</h1>
-    <p class="subtitle">An open source territory control strategy game inspired by ancient board games</p>
-    <p class="tagline">Real-time synchronization across devices • 100% Free • No pay-to-win ever</p>
+    <p class="subtitle">Open source territory control game with infinite worlds</p>
+    <p class="tagline">Play for free across all devices • No pay-to-win • Real-time multiplayer</p>
     <div class="actions" class:loaded={!actionsLoading}>
       {#if !actionsLoading}
         {#if $user}
@@ -172,48 +172,6 @@
           <a href="/signup" class="button secondary">Register Here</a>
         {/if}
       {/if}
-    </div>
-  </section>
-
-  <section class="features">
-    <h2 class="heading">Game Features</h2>
-    <div class="grid">
-        <div class="card">
-            <h3 class="subheading">Infinite Worlds</h3>
-            <p class="text">Explore endless procedurally generated realms, each with unique challenges and opportunities</p>
-        </div>
-        <div class="card">
-            <h3 class="subheading">Territory Control</h3>
-            <p class="text">Capture territory and expand your influence across the board</p>
-        </div>
-        <div class="card">
-            <h3 class="subheading">Strategic Depth</h3>
-            <p class="text">Plan several moves ahead and outmaneuver your opponents</p>
-        </div>
-        <div class="card">
-            <h3 class="subheading">Open Source</h3>
-            <p class="text">Community-driven development with full transparency and collaboration</p>
-        </div>
-        <div class="card">
-            <h3 class="subheading">No Pay-to-Win</h3>
-            <p class="text">Equal playing field for all - success depends solely on skill and strategy</p>
-        </div>
-        <div class="card">
-            <h3 class="subheading">Cross-Device Sync</h3>
-            <p class="text">Real-time gameplay synchronization across all your devices</p>
-        </div>
-        <div class="card">
-            <h3 class="subheading">Procedural Maps</h3>
-            <p class="text">Every game board is uniquely generated, ensuring fresh experiences every time</p>
-        </div>
-        <div class="card">
-            <h3 class="subheading">Ancient Inspiration</h3>
-            <p class="text">Based on traditional board game concepts with modern twists</p>
-        </div>
-        <div class="card">
-            <h3 class="subheading">Multiplayer</h3>
-            <p class="text">Challenge friends or match with opponents online</p>
-        </div>
     </div>
   </section>
 
@@ -259,6 +217,48 @@
           </div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section class="features">
+    <h2 class="heading">Game Features</h2>
+    <div class="grid">
+        <div class="card">
+            <h3 class="subheading">Infinite Worlds</h3>
+            <p class="text">Explore endless procedurally generated realms, each with unique challenges and opportunities</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">Territory Control</h3>
+            <p class="text">Capture territory and expand your influence across the board</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">Strategic Depth</h3>
+            <p class="text">Plan several moves ahead and outmaneuver your opponents</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">Open Source</h3>
+            <p class="text">Community-driven development with full transparency and collaboration</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">No Pay-to-Win</h3>
+            <p class="text">Equal playing field for all - success depends solely on skill and strategy</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">Cross-Device Sync</h3>
+            <p class="text">Real-time gameplay synchronization across all your devices</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">Procedural Maps</h3>
+            <p class="text">Every game board is uniquely generated, ensuring fresh experiences every time</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">Ancient Inspiration</h3>
+            <p class="text">Based on traditional board game concepts with modern twists</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">Multiplayer</h3>
+            <p class="text">Challenge friends or match with opponents online</p>
+        </div>
     </div>
   </section>
 </main>
@@ -373,15 +373,19 @@
 
   .features, .media {
     padding: 4em 0 4em; /* Increased padding from 3em to 4em */
-    border-bottom: 1px solid var(--color-panel-border);
     margin-bottom: 3em; /* Increased margin from 2em to 3em */
   }
-  
-  /* Add specific bottom margin to the media section and remove border */
+
+  /* Add specific styling for media section since it's now in the middle */
   .media {
-    padding: 3em 0 4em; /* Increased padding at the bottom to 4em */
-    margin-bottom: 5em; /* Keep the large bottom margin */
-    border-bottom: none; /* No border since it's the last section */
+    border-bottom: 1px solid var(--color-panel-border);
+  }
+
+  /* Remove border and update features section */
+  .features {
+    border-bottom: none;
+    padding-bottom: 6em; /* Increase bottom padding since it's the last section */
+    margin-bottom: 0; /* Remove margin since it's the last section */
   }
 
   .heading {
