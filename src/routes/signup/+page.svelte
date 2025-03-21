@@ -1,11 +1,12 @@
 <script>
-    import { signUp } from '$lib/stores/user';
+    import { signUp, signInAnonymously } from '$lib/stores/user';
     import { goto } from '$app/navigation';
     
     let email = '';
     let password = '';
     let confirmPassword = '';
     let error = null;
+    let loading = false;
     
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -16,8 +17,24 @@
             return;
         }
         
+        loading = true;
         const result = await signUp(email, password);
+        loading = false;
         
+        if (result.success) {
+            goto('/');
+        } else {
+            error = result.error;
+        }
+    };
+    
+    const handleAnonymousLogin = async () => {
+        error = null;
+        loading = true;
+        
+        const result = await signInAnonymously();
+        
+        loading = false;
         if (result.success) {
             goto('/');
         } else {
@@ -67,8 +84,18 @@
                 />
             </div>
             
-            <button type="submit" class="primary">Create Account</button>
+            <button type="submit" class="primary" disabled={loading}>
+                {loading ? 'Creating Account...' : 'Create Account'}
+            </button>
         </form>
+        
+        <div class="separator">
+            <span>or</span>
+        </div>
+        
+        <button class="secondary" on:click={handleAnonymousLogin} disabled={loading}>
+            {loading ? 'Logging in...' : 'Continue as Guest'}
+        </button>
         
         <p class="login-link">Already have an account? <a href="/login">Login</a></p>
     </div>
@@ -197,5 +224,43 @@
         h1 {
             font-size: 1.5em;
         }
+    }
+
+    .separator {
+        display: flex;
+        align-items: center;
+        text-align: center;
+        margin: 1.5em 0;
+    }
+    
+    .separator::before,
+    .separator::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid var(--color-panel-border);
+    }
+    
+    .separator span {
+        padding: 0 0.75em;
+        color: var(--color-text-secondary);
+        font-size: 0.9em;
+    }
+    
+    button.secondary {
+        background-color: transparent;
+        border: 1px solid var(--color-muted-teal);
+        color: var(--color-text);
+        margin-top: 0;
+    }
+    
+    button.secondary:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
     }
 </style>

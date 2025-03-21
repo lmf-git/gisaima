@@ -150,7 +150,7 @@
 
 <svelte:head>
   <title>Gisaima - Territory Strategy MMO</title>
-  <meta name="description" content="A territory control strategy game based on ancient board games" />
+  <meta name="description" content="An open source territory control strategy game with infinite procedurally generated worlds. No pay-to-win mechanics, based on ancient board games with modern twists." />
 </svelte:head>
 
 <main class="container">
@@ -158,7 +158,8 @@
     <div class="bg-overlay" class:fade-out={bgFadeOut}></div>
     <Logo extraClass="logo" />
     <h1 class="title">Gisaima Realm</h1>
-    <p class="subtitle">A territory control strategy game inspired by ancient board games</p>
+    <p class="subtitle">An open source territory control strategy game inspired by ancient board games</p>
+    <p class="tagline">Real-time synchronization across devices • 100% Free • No pay-to-win ever</p>
     <div class="actions" class:loaded={!actionsLoading}>
       {#if !actionsLoading}
         {#if $user}
@@ -177,22 +178,42 @@
   <section class="features">
     <h2 class="heading">Game Features</h2>
     <div class="grid">
-      <div class="card">
-        <h3 class="subheading">Territory Control</h3>
-        <p class="text">Capture territory and expand your influence across the board</p>
-      </div>
-      <div class="card">
-        <h3 class="subheading">Strategic Depth</h3>
-        <p class="text">Plan several moves ahead and outmaneuver your opponents</p>
-      </div>
-      <div class="card">
-        <h3 class="subheading">Ancient Inspiration</h3>
-        <p class="text">Based on traditional board game concepts with modern twists</p>
-      </div>
-      <div class="card">
-        <h3 class="subheading">Multiplayer</h3>
-        <p class="text">Challenge friends or match with opponents online</p>
-      </div>
+        <div class="card">
+            <h3 class="subheading">Infinite Worlds</h3>
+            <p class="text">Explore endless procedurally generated realms, each with unique challenges and opportunities</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">Territory Control</h3>
+            <p class="text">Capture territory and expand your influence across the board</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">Strategic Depth</h3>
+            <p class="text">Plan several moves ahead and outmaneuver your opponents</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">Open Source</h3>
+            <p class="text">Community-driven development with full transparency and collaboration</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">No Pay-to-Win</h3>
+            <p class="text">Equal playing field for all - success depends solely on skill and strategy</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">Cross-Device Sync</h3>
+            <p class="text">Real-time gameplay synchronization across all your devices</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">Procedural Maps</h3>
+            <p class="text">Every game board is uniquely generated, ensuring fresh experiences every time</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">Ancient Inspiration</h3>
+            <p class="text">Based on traditional board game concepts with modern twists</p>
+        </div>
+        <div class="card">
+            <h3 class="subheading">Multiplayer</h3>
+            <p class="text">Challenge friends or match with opponents online</p>
+        </div>
     </div>
   </section>
 
@@ -202,7 +223,7 @@
     <div class="media-container">
       <div class="media-intro">
         <p class="media-desc">
-          Journey into the realm of Gisaima through our immersive media gallery. Watch as territories fall and empires rise in real-time strategic gameplay. These visuals showcase the dynamic world where resource management, tactical combat, and territorial conquest blend together in a unique gaming experience inspired by ancient board game principles.
+          Journey into the realm of Gisaima through our immersive media gallery. As an open source project, Gisaima offers infinite procedurally generated worlds with a fair and balanced gaming environment - no pay-to-win mechanics ever. Watch as territories fall and empires rise in real-time strategic gameplay that synchronizes instantly across all your devices. These visuals showcase the dynamic worlds where resource management, tactical combat, and territorial conquest blend together in a unique gaming experience inspired by ancient board game principles.
         </p>
       </div>
       
@@ -275,6 +296,16 @@
     margin-bottom: 2em;
     font-weight: 200; /* Reduced from 300 */
     font-family: var(--font-body);
+  }
+
+  .tagline {
+    font-size: 1em;
+    color: var(--color-muted-teal);
+    margin-top: 0.5em;
+    margin-bottom: 1.5em;
+    font-weight: 400;
+    font-family: var(--font-body);
+    letter-spacing: 0.05em;
   }
 
   .actions {
@@ -618,6 +649,10 @@
       font-size: 1.4em;
     }
     
+    .tagline {
+      font-size: 1.1em;
+    }
+
     .heading {
       font-size: 2.2em;
     }
@@ -647,6 +682,11 @@
       font-size: 1.6em;
     }
     
+    .tagline {
+      font-size: 1.2em;
+      margin-bottom: 2em;
+    }
+
     .actions > :global(.button) {
       font-size: 1.5em;
       padding: 0.6em 1.8em;
@@ -658,7 +698,7 @@
     }
     
     .grid {
-      grid-template-columns: repeat(auto-fit, minmax(15em, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 2em;
       grid-auto-rows: minmax(12em, auto);
       width: 100%; /* Full width within the max-width constraint */

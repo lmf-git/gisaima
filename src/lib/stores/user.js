@@ -5,7 +5,8 @@ import {
   onAuthStateChanged, 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signOut as firebaseSignOut
+  signOut as firebaseSignOut,
+  signInAnonymously as firebaseSignInAnonymously
 } from 'firebase/auth';
 
 export const user = writable(undefined);  // Start as undefined (not determined)
@@ -83,5 +84,22 @@ export const signOut = async () => {
   } catch (error) {
     console.error('Sign out error:', error);
     return { success: false, error: error.message };
+  }
+};
+
+export const signInAnonymously = async () => {
+  if (!browser) return { success: false, error: 'Cannot sign in on server' };
+  
+  try {
+    console.log('Attempting anonymous sign in');
+    const userCredential = await firebaseSignInAnonymously(auth);
+    console.log('Anonymous sign in successful:', userCredential.user.uid);
+    return { success: true };
+  } catch (error) {
+    console.error('Anonymous sign in error:', error.code, error.message);
+    return { 
+      success: false, 
+      error: error.message || 'Failed to sign in anonymously. Please try again.'
+    };
   }
 };
