@@ -52,7 +52,7 @@
 
 <style>
     .mobile-menu {
-        width: 90%; /* Changed from 100% to 90% to make it narrower */
+        width: 100%; /* Changed from calc(100% - 2em) to 100% to match container */
         background-color: var(--color-dark-blue);
         border-top: 0.0625em solid var(--color-panel-border);
         border-bottom-left-radius: 0.5em; 

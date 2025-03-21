@@ -116,8 +116,8 @@
 
 <div class={`app ${isMapPage ? 'map' : ''}`}>
     <header class="header">
-        <!-- Update logo visibility condition to use the shorter animation timing -->
-        {#if !isHomePage || (isHomePage && (mobileMenuOpen || logoAnimatingOut))}
+        <!-- Simplified logo visibility - never show on home page -->
+        {#if !isHomePage}
             <div class="logo">
                 <a href="/" aria-label="Gisaima Home">
                     <Logo extraClass="nav-logo" />
@@ -683,7 +683,7 @@
         top: 100%;
         left: 0;
         right: 0;
-        width: 90%; /* Changed from calc(100% - 1em) to 90% to match mobile menu width */
+        width: calc(100% - 1em); /* Changed from 90% to calc(100% - 1em) for nearly full width */
         margin: 0 auto; /* Center the container */
         z-index: 100;
         transform-origin: top center;

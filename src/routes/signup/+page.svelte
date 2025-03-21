@@ -80,7 +80,7 @@
         align-items: center;
         justify-content: center;
         min-height: 100vh;
-        padding: 2em;
+        /* Removed unnecessary padding: 0; */
     }
     
     .signup-container {
@@ -92,6 +92,7 @@
         border-radius: 0.5em;
         box-shadow: 0 0.3em 1em var(--color-shadow);
         color: var(--color-text);
+        margin: 0 1em; /* Added horizontal margin instead of padding */
     }
     
     h1 {
@@ -191,11 +192,10 @@
         .signup-container {
             width: 100%;
             padding: 1.5em;
+            margin: 0 0.5em; /* Reduced margin on smaller screens */
         }
         
-        .signup-page {
-            padding: 1em;
-        }
+        /* Removed unnecessary .signup-page padding reset */
         
         h1 {
             font-size: 1.5em;
