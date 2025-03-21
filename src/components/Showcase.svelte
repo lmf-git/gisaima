@@ -2,7 +2,7 @@
   import Logo from './Logo.svelte';
   import { user, loading as userLoading } from '$lib/stores/user';
   import { game, isAuthReady } from '$lib/stores/game';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   
   // Update to use $props() runes API
   const { extraClass = '' } = $props();
@@ -54,55 +54,91 @@
     });
   }
   
-  // Function to transition to the next background image
-  function transitionToNextBg() {
-    // Don't transition if already in progress or images aren't loaded
-    if (bgTransitioning || !initialBgLoaded) return;
+  // Track if component is mounted
+  let isMounted = $state(false);
+  
+  // Track background transition
+  let lastTransitionTime = $state(0);
+  let transitionTimer = $state(null);
+  
+  // Function to find the next available loaded image
+  function findNextLoadedImage() {
+    if (!bgImagesLoaded.length) return null;
     
-    // Find the next available image
     const totalImages = backgroundImages.length;
-    let newNextIndex = (bgIndex + 1) % totalImages;
+    let nextIdx = (bgIndex + 1) % totalImages;
+    let attempts = 0;
     
-    // Only proceed if the next image is loaded
-    if (!bgImagesLoaded[newNextIndex]) return;
+    // Try to find the next loaded image
+    while (!bgImagesLoaded[nextIdx] && attempts < totalImages) {
+      nextIdx = (nextIdx + 1) % totalImages;
+      attempts++;
+    }
     
-    // Start the transition
+    if (bgImagesLoaded[nextIdx]) {
+      return nextIdx;
+    }
+    
+    return null; // No loaded images found
+  }
+  
+  // Function to start a transition
+  function startBackgroundTransition() {
+    if (bgTransitioning) return;
+    
+    const nextIdx = findNextLoadedImage();
+    if (nextIdx === null) return;
+    
+    // Start transition
     bgTransitioning = true;
-    nextBgIndex = newNextIndex;
+    nextBgIndex = nextIdx;
+    lastTransitionTime = Date.now();
     
-    // After transition completes, update the indices and clear the transition flag
-    setTimeout(() => {
+    // Complete transition after animation finishes (match CSS transition time)
+    if (transitionTimer) clearTimeout(transitionTimer);
+    transitionTimer = setTimeout(() => {
       bgIndex = nextBgIndex;
       bgTransitioning = false;
-    }, 1500); // Match this to the CSS transition time
+    }, 1000);
   }
   
-  // Start/stop background rotation
+  // Function to start the background rotation with proper interval
   function startBackgroundRotation() {
     if (rotationInterval) clearInterval(rotationInterval);
-    rotationInterval = setInterval(transitionToNextBg, 10000);
-  }
-  
-  function stopBackgroundRotation() {
-    if (rotationInterval) {
-      clearInterval(rotationInterval);
-      rotationInterval = null;
-    }
-  }
-  
-  // Effect to handle automatic background rotation
-  $effect(() => {
-    if (!initialBgLoaded) return;
     
-    // Start rotation when initial image is loaded
+    rotationInterval = setInterval(() => {
+      // Only start a new transition if we're not already transitioning
+      // and enough time has passed (10 seconds)
+      if (!bgTransitioning && Date.now() - lastTransitionTime >= 10000) {
+        startBackgroundTransition();
+      }
+    }, 1000); // Check every second
+  }
+  
+  // Simple effect for initial background loading
+  $effect(() => {
+    if (!isMounted || !initialBgLoaded) return;
+    
+    // Set initial timestamp
+    lastTransitionTime = Date.now();
+    
+    // Start rotation when component mounts and initial image is loaded
     startBackgroundRotation();
     
-    // Cleanup on component destroy
-    return stopBackgroundRotation;
+    return () => {
+      if (rotationInterval) clearInterval(rotationInterval);
+      if (transitionTimer) clearTimeout(transitionTimer);
+    };
   });
   
   onMount(() => {
     preloadBackgroundImages();
+    isMounted = true;
+    
+    return () => {
+      if (rotationInterval) clearInterval(rotationInterval);
+      if (transitionTimer) clearTimeout(transitionTimer);
+    };
   });
 </script>
 
@@ -271,7 +307,7 @@
   /* Current background layer */
   .bg-layer.current {
     opacity: 0.15;
-    transition: opacity 1.5s ease-in-out;
+    transition: opacity 1s ease-in-out;
   }
   
   /* Current layer fades out during transition */
@@ -282,7 +318,7 @@
   /* Next background layer */
   .bg-layer.next {
     opacity: 0;
-    transition: opacity 1.5s ease-in-out;
+    transition: opacity 1s ease-in-out;
   }
   
   /* Next layer fades in during transition */

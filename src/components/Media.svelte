@@ -186,18 +186,41 @@
     }
   }
   
-  // Transition state management effect
-  $effect(() => {
+  // Track component lifecycle
+  let isMounted = $state(false);
+  
+  // Simplified state updates
+  const handleTransition = $derived(() => {
+    if (!isMounted || transitionState === 'idle') return null;
+    
     if (transitionState === 'fade-out') {
-      // When fade out completes, update the media index
+      return {
+        type: 'update-media',
+        nextIndex: targetMediaIndex
+      };
+    }
+    
+    if (transitionState === 'fade-in' && !mediaLoading) {
+      return {
+        type: 'complete-transition'
+      };
+    }
+    
+    return null;
+  });
+  
+  // Split effects for transition handling
+  $effect(() => {
+    const transition = handleTransition;
+    if (!transition) return;
+    
+    if (transition.type === 'update-media') {
       const timer = setTimeout(() => {
-        currentMediaIndex = targetMediaIndex;
+        currentMediaIndex = transition.nextIndex;
         fadeOut = false;
         
-        // If we switched to a video, we need to reset it
         if (isCurrentVideo) {
           resetVideoElement();
-          // Next state will be handled by the video loaded event
           transitionState = 'loading';
         } else {
           transitionState = 'fade-in';
@@ -206,8 +229,8 @@
       
       return () => clearTimeout(timer);
     }
-    else if (transitionState === 'fade-in') {
-      // When fade-in completes, return to idle state and restart interval if needed
+    
+    if (transition.type === 'complete-transition') {
       const timer = setTimeout(() => {
         transitionState = 'idle';
         if (isCurrentImage) {
@@ -219,35 +242,19 @@
     }
   });
   
-  // Video state management effect
+  // Simplified video loading effect
   $effect(() => {
-    if (transitionState === 'loading' && isCurrentVideo && mediaLoaded[currentMediaIndex]) {
-      // Video is loaded, begin fade-in
+    if (transitionState !== 'loading' || !isCurrentVideo) return;
+    if (mediaLoaded[currentMediaIndex]) {
       transitionState = 'fade-in';
     }
   });
   
-  // Effect to mark videos as loaded after a reasonable time if they don't trigger events
+  // Effect for handling intervals
   $effect(() => {
-    if (transitionState === 'loading' && isCurrentVideo) {
-      const timer = setTimeout(() => {
-        if (!mediaLoaded[currentMediaIndex]) {
-          mediaLoaded[currentMediaIndex] = true;
-        }
-      }, 2000);
-      
-      return () => clearTimeout(timer);
-    }
-  });
-  
-  // Effect to manage the interval based on the current media type
-  $effect(() => {
-    // When the media changes, reset the interval appropriately
+    if (!isMounted) return;
     if (isCurrentImage && transitionState === 'idle') {
-      startImageInterval();
-    } else if (galleryInterval) {
-      clearInterval(galleryInterval);
-      galleryInterval = null;
+      return startImageInterval();
     }
   });
   
@@ -268,11 +275,67 @@
     document.addEventListener('click', () => {
       userInteracted = true;
     }, {once: true});
+    isMounted = true;
   });
   
   onDestroy(() => {
     if (galleryInterval) {
       clearInterval(galleryInterval);
+    }
+  });
+
+  // Separate fade-out effect
+  $effect(() => {
+    if (!isMounted || transitionState !== 'fade-out') return;
+    
+    const timer = setTimeout(() => {
+      currentMediaIndex = targetMediaIndex;
+      fadeOut = false;
+      
+      if (isCurrentVideo) {
+        resetVideoElement();
+        transitionState = 'loading';
+      } else {
+        transitionState = 'fade-in';
+      }
+    }, 750);
+    
+    return () => clearTimeout(timer);
+  });
+  
+  // Separate fade-in effect
+  $effect(() => {
+    if (!isMounted || transitionState !== 'fade-in') return;
+    
+    const timer = setTimeout(() => {
+      transitionState = 'idle';
+      if (isCurrentImage) {
+        startImageInterval();
+      }
+    }, 750);
+    
+    return () => clearTimeout(timer);
+  });
+  
+  // Simple video loading effect
+  $effect(() => {
+    if (!isMounted || transitionState !== 'loading' || !isCurrentVideo) return;
+    if (mediaLoaded[currentMediaIndex]) {
+      transitionState = 'fade-in';
+    }
+  });
+  
+  // Effect for handling intervals
+  $effect(() => {
+    if (!isMounted) return;
+    if (isCurrentImage && transitionState === 'idle') {
+      startImageInterval();
+      return () => {
+        if (galleryInterval) {
+          clearInterval(galleryInterval);
+          galleryInterval = null;
+        }
+      };
     }
   });
 </script>
@@ -301,9 +364,9 @@
                 playsinline
                 preload="auto"
                 autoplay={!isMobileBrowser}
-                onloadeddata={handleVideoLoaded}
-                onplay={handleVideoPlay}
-                onended={handleVideoEnd}
+                on:loadeddata={handleVideoLoaded}
+                on:play={handleVideoPlay}
+                on:ended={handleVideoEnd}
                 class:visible={mediaLoaded[currentMediaIndex]}
               ></video>
               
@@ -312,7 +375,7 @@
                 <button 
                   class="play-button"
                   aria-label="Play video"
-                  onclick={handlePlayButtonClick}
+                  on:click={handlePlayButtonClick}
                 >
                   <span class="play-icon">▶</span>
                 </button>
@@ -325,7 +388,7 @@
                 src={currentMedia.src} 
                 alt={currentMedia.alt} 
                 class="media-content screenshot"
-                onload={handleImageLoad}
+                on:load={handleImageLoad}
                 class:visible={mediaLoaded[currentMediaIndex]} 
               />
             </div>
@@ -337,7 +400,7 @@
             <button 
               class="gallery-dot {currentMediaIndex === index ? 'active' : ''}" 
               aria-label={`View media ${index + 1}`}
-              onclick={() => selectMedia(index)}
+              on:click={() => selectMedia(index)}
               disabled={transitionState !== 'idle'}
             ></button>
           {/each}
