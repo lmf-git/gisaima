@@ -487,7 +487,7 @@
 
     /* Auth container styling */
     .auth {
-        display: flex;
+        display: none; /* Hidden by default on mobile */
         align-items: center;
         gap: 1.5em; /* Increased from 1em to 1.5em */
         height: 2.5em; /* Add minimum height to prevent layout shifting */
@@ -497,11 +497,11 @@
         opacity: 0;
         transition: opacity 0.3s ease;
     }
-    
+
     .auth:not(.loading) {
         opacity: 1;
     }
-    
+
     .greeting {
         font-size: 0.9em;
         color: var (--color-pale-green);
@@ -632,20 +632,15 @@
             display: none; /* Hide on mobile */
         }
         
-        .auth {
-            flex: 1;
-            justify-content: flex-end;
-            min-height: 2.2em;
-            gap: 1.2em; /* Increase gap in mobile view */
-        }
-        
-        .greeting {
-            max-width: 100px;
-            font-size: 0.8em;
-        }
-
         .mobile-menu-toggle {
             margin-left: 1.5em; /* Increased spacing on mobile */
+        }
+    }
+
+    /* Show auth section only on larger screens */
+    @media (min-width: 769px) {
+        .auth {
+            display: flex; /* Show auth section on desktop */
         }
     }
 
