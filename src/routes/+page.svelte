@@ -342,6 +342,11 @@
   .features, .media {
     padding: 3em 0;
   }
+  
+  /* Add specific bottom margin to the media section */
+  .media {
+    margin-bottom: 3em; /* Add dedicated bottom margin to create space before the footer */
+  }
 
   .heading {
     text-align: center;
