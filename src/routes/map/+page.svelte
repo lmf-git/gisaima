@@ -52,11 +52,9 @@
         try {
             loading = true;
             error = null;
-            console.log('Initializing map for world:', worldId);
             
             // First, wait for auth to be ready
             if (!$isAuthReady) {
-                console.log('Waiting for auth to be ready before loading world...');
                 await new Promise(resolve => {
                     const unsubscribe = isAuthReady.subscribe(ready => {
                         if (ready) {
@@ -68,7 +66,6 @@
             }
             
             // Make sure the game store has the current world set
-            console.log('Auth ready, setting current world and loading data...');
             await setCurrentWorld(worldId);
             
             // Force a fresh world info fetch to ensure we have the seed
@@ -81,9 +78,6 @@
             if (worldInfo.seed === undefined) {
                 throw new Error(`World ${worldId} has no seed defined`);
             }
-            
-            console.log('World info loaded:', worldInfo);
-            console.log('World seed:', worldInfo.seed, typeof worldInfo.seed);
             
             // Initialize map with data from the game store
             if (!setupFromGameStore()) {
@@ -106,32 +100,22 @@
         
         // Check if world data is fully loaded from Firebase with valid seed
         if (!$game.worldLoading && $game.currentWorld && $game.worldInfo[$game.currentWorld]?.seed !== undefined) {
-            console.log('World data loaded from Firebase, initializing map');
             initAttempted = true;
             
             try {
                 if (setupFromGameStore()) {
-                    console.log('Map initialized successfully');
                     loading = false;
                     error = null;
                 } else {
-                    console.error('Failed to initialize map - setupFromGameStore returned false');
-                    console.log('Current game state:', $game);
                     error = 'Failed to initialize map with world data';
                     loading = false;
                 }
             } catch (err) {
                 console.error('Error initializing map:', err);
                 error = err.message || 'Failed to initialize map';
-                loading = false;
             }
         } else if (!$game.worldLoading && $game.currentWorld) {
-            // World loading finished but data is incomplete - this shouldn't happen
-            // with updated flow, but we'll handle it anyway
-            console.warn('World loading finished but seed is missing:', 
-                $game.currentWorld, 
-                $game.worldInfo[$game.currentWorld]
-            );
+            // Simplify and remove detailed warning logs
         }
     });
     
@@ -143,7 +127,6 @@
         
         if (!worldId) {
             // No world ID, redirect to worlds page
-            console.log('No world selected, redirecting to worlds page');
             goto('/worlds');
             return;
         }
@@ -154,8 +137,8 @@
         // Initialize the map with the worldId - this will properly coordinate with auth
         initializeMap(worldId)
             .catch(err => {
-                console.error(`Failed to initialize map for world ${worldId}:`, err);
-                error = err.message || `Failed to load world ${worldId}`;
+                console.error(`Failed to initialize map:`, err); // Simplify error
+                error = err.message || `Failed to load world`;
                 loading = false;
             });
     });

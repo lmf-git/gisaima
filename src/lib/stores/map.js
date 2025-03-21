@@ -105,27 +105,18 @@ export const coordinates = derived(
   ([$map, $entities], set) => {
     // Check if map is ready before computing
     if (!$map.ready || !terrain) {
-      console.log('Map not ready or terrain not initialized:', { mapReady: $map.ready, terrainExists: !!terrain });
       return set([]);
     }
     
     // Additional validation to catch edge cases
     if ($map.cols <= 0 || $map.rows <= 0) {
-      console.error('Invalid grid dimensions:', { cols: $map.cols, rows: $map.rows });
+      console.error('Invalid grid dimensions');
       return set([]);
     }
     
     const useExpanded = $map.minimap;
-    // Fix: Math.min without a second argument doesn't work properly
     const gridCols = useExpanded ? Math.floor($map.cols * EXPANDED_COLS_FACTOR) : $map.cols;
     const gridRows = useExpanded ? Math.floor($map.rows * EXPANDED_ROWS_FACTOR) : $map.rows;
-    
-    console.log('Calculating coordinates grid:', { 
-      cols: gridCols, 
-      rows: gridRows, 
-      target: $map.target,
-      expanded: useExpanded
-    });
     
     const viewportCenterX = Math.floor(gridCols / 2);
     const viewportCenterY = Math.floor(gridRows / 2);
@@ -181,8 +172,6 @@ export const coordinates = derived(
       }
     }
 
-    // Add debug info at end
-    console.log(`Generated ${result.length} coordinates`);
     set(result);
   },
   []
@@ -251,8 +240,6 @@ export function setup({ seed, world = null } = {}) {
   // Get world ID from game store if not provided
   const worldId = world || get(game).currentWorld || 'default';
   
-  console.log('Setting up map with:', { seed, worldId });
-  
   // Validate seed - it's required and must be a valid number
   if (seed === undefined || seed === null) {
     throw new Error('No seed provided for map setup - seed is required');
@@ -266,11 +253,9 @@ export function setup({ seed, world = null } = {}) {
   
   // Initialize the terrain generator with seed
   terrain = new TerrainGenerator(seedNumber);
-  console.log('Terrain generator initialized with seed:', seedNumber);
   
   // Update the map store with ready state, world ID, AND INITIAL DIMENSIONS
   map.update(state => {
-    console.log('Setting map ready state to true with initial dimensions');
     return {
       ...state,
       ready: true,
@@ -281,10 +266,6 @@ export function setup({ seed, world = null } = {}) {
     };
   });
   
-  // Verify the update took effect
-  const mapState = get(map);
-  console.log('Map state after update:', { ready: mapState.ready, world: mapState.world, cols: mapState.cols, rows: mapState.rows });
-  
   return true;
 }
 
@@ -294,42 +275,33 @@ export function setupFromGameStore() {
   
   // More detailed checks with specific error messages
   if (!gameState.currentWorld) {
-    console.warn('World information not completely loaded: No current world selected');
     return false;
   }
   
   if (!gameState.worldInfo || Object.keys(gameState.worldInfo).length === 0) {
-    console.warn('World information not completely loaded: No world info available');
     return false;
   }
   
   const worldInfo = gameState.worldInfo[gameState.currentWorld];
   if (!worldInfo) {
-    console.warn(`World information not completely loaded: No data for world ${gameState.currentWorld}`);
     return false;
   }
   
   if (worldInfo.seed === undefined) {
-    console.warn(`World information not completely loaded: No seed for world ${gameState.currentWorld}`);
     return false;
   }
   
   // Get seed value and ensure it's a proper number
   const seedValue = worldInfo.seed;
   if (isNaN(Number(seedValue))) {
-    console.error(`Invalid seed value in world data: ${seedValue}`);
     return false;
   }
   
   // If the map is already set up for this world, don't reinitialize
   const mapState = get(map);
   if (mapState.ready && mapState.world === gameState.currentWorld) {
-    console.log(`Map is already initialized for world ${gameState.currentWorld}`);
     return true;
   }
-  
-  // Log success and set up map
-  console.log(`World data found in Firebase. Setting up map for ${gameState.currentWorld} with seed:`, seedValue);
   
   // We have all required data, proceed with setup
   try {

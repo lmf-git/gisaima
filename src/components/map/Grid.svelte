@@ -34,8 +34,6 @@
   function resizeMap(mapElement) {
     if (!mapElement) return;
     
-    console.log('Resizing map element:', { width: mapElement.clientWidth, height: mapElement.clientHeight });
-    
     map.update(state => {
       const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
       const tileSizePx = TILE_SIZE * baseFontSize;
@@ -52,13 +50,10 @@
       cols = Math.max(cols, 5);
       rows = Math.max(rows, 5);
 
-      console.log('New grid dimensions:', { cols, rows });
-
       return {
         ...state,
         cols,
         rows,
-        // Remove offsetX and offsetY calculation
       };
     });
   }
@@ -307,21 +302,6 @@
 
   // Get background color from target tile
   const backgroundColor = $derived($targetStore?.color || "var(--color-dark-blue)");
-
-  // Add console logs to debug grid initialization
-  $effect(() => {
-    if ($ready) {
-      console.log('Grid: map ready state is true');
-      console.log('Grid dimensions:', { cols: $map.cols, rows: $map.rows });
-      if ($gridArray.length > 0) {
-        console.log('Grid has', $gridArray.length, 'visible tiles');
-      } else {
-        console.warn('Grid array is empty even though map is ready!');
-      }
-    } else {
-      console.log('Grid: waiting for map ready state...');
-    }
-  });
 </script>
 
 <svelte:window
