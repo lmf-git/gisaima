@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   
   // Update to use $props() runes API
   const { extraClass = '' } = $props();
@@ -27,6 +27,10 @@
   let isMobileBrowser = $state(false);
   let videoPlaybackFailed = $state(false);
   let userInteracted = $state(false);
+  
+  // New transition state management
+  let transitionState = $state('idle');
+  let targetMediaIndex = $state(null);
   
   // Derived state
   const currentMedia = $derived(mediaItems[currentMediaIndex]);
@@ -65,6 +69,35 @@
   function handleVideoLoaded() {
     if (isCurrentVideo) {
       mediaLoaded[currentMediaIndex] = true;
+      
+      // Try autoplay if not on mobile or user has interacted
+      if (!isMobileBrowser || userInteracted) {
+        attemptVideoPlay();
+      }
+    }
+  }
+  
+  // Function to centralize video playback attempts
+  function attemptVideoPlay() {
+    if (!videoElement || !isCurrentVideo) return;
+    
+    // Reset video if it reached the end previously
+    if (videoElement.ended) {
+      videoElement.currentTime = 0;
+    }
+    
+    const playPromise = videoElement.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          console.log("Video playing successfully");
+          videoPlaying = true;
+          videoPlaybackFailed = false;
+          videoStartTime = Date.now();
+        })
+        .catch(err => {
+          handleVideoPlayError(err);
+        });
     }
   }
   
@@ -90,92 +123,25 @@
   function handlePlayButtonClick() {
     if (videoElement && isCurrentVideo) {
       userInteracted = true;
-      
-      // iOS requires user interaction
-      const playPromise = videoElement.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            videoPlaybackFailed = false;
-            console.log("Video playing after user interaction");
-          })
-          .catch(err => {
-            handleVideoPlayError(err);
-          });
-      }
+      attemptVideoPlay();
     }
   }
   
-  // Function to advance to the next media item
+  // Function to advance to the next media item using reactive states
   function nextMedia() {
-    // If video is currently playing and hasn't played for minimum time, don't advance
-    if (!canAdvance) {
-      console.log("Video playing for less than minimum time, not advancing");
+    if (!canAdvance || transitionState !== 'idle') {
       return;
     }
     
-    mediaLoading = true;
+    // Start transition sequence
+    transitionState = 'fade-out';
     fadeOut = true;
-    videoPlaying = false;
-    videoPlaybackFailed = false;
-    
-    setTimeout(() => {
-      currentMediaIndex = (currentMediaIndex + 1) % mediaItems.length;
-      
-      // If we switched to a video, we need to prepare it
-      if (isCurrentVideo && videoElement) {
-        // Reset the video element
-        videoElement.currentTime = 0;
-        videoElement.load();
-        
-        // Don't start the fade-in transition until video can start playing
-        videoElement.oncanplay = () => {
-          console.log("Video can play now");
-          fadeOut = false;
-          
-          // Only try to autoplay if not on mobile or user has interacted
-          if (!isMobileBrowser || userInteracted) {
-            // Start playing the video
-            const playPromise = videoElement.play();
-            if (playPromise !== undefined) {
-              playPromise
-                .then(() => {
-                  console.log("Video playback started");
-                })
-                .catch(err => {
-                  handleVideoPlayError(err);
-                  setTimeout(() => {
-                    mediaLoading = false;
-                  }, 700);
-                });
-            }
-          } else {
-            // On mobile without interaction, just show the play button
-            mediaLoaded[currentMediaIndex] = true;
-            setTimeout(() => {
-              mediaLoading = false;
-            }, 700);
-          }
-        };
-      } else {
-        // For images, just fade in
-        fadeOut = false;
-        // Restart interval for images
-        if (isCurrentImage) {
-          startImageInterval();
-        }
-      }
-      
-      // Wait for fade-in to complete before allowing next transition
-      setTimeout(() => {
-        mediaLoading = false;
-      }, 1000);
-    }, 750);
+    targetMediaIndex = (currentMediaIndex + 1) % mediaItems.length;
   }
   
   // Function to handle video end event
   function handleVideoEnd() {
-    if (isCurrentVideo && !mediaLoading) {
+    if (isCurrentVideo && transitionState === 'idle') {
       videoPlaying = false;
       console.log("Video ended, advancing");
       nextMedia();
@@ -184,67 +150,16 @@
   
   // Function to manually select a media item
   function selectMedia(index) {
-    if (currentMediaIndex !== index && !mediaLoading) {
+    if (currentMediaIndex !== index && transitionState === 'idle') {
       // Clear any scheduled transitions
       if (galleryInterval) {
         clearInterval(galleryInterval);
         galleryInterval = null;
       }
       
-      mediaLoading = true;
+      transitionState = 'fade-out';
       fadeOut = true;
-      videoPlaying = false;
-      videoPlaybackFailed = false;
-      
-      setTimeout(() => {
-        currentMediaIndex = index;
-        
-        // If we switched to a video, prepare it
-        if (isCurrentVideo && videoElement) {
-          // Reset video
-          videoElement.currentTime = 0;
-          videoElement.load();
-          
-          videoElement.oncanplay = () => {
-            fadeOut = false;
-            
-            // Only try to autoplay if not on mobile or user has interacted
-            if (!isMobileBrowser || userInteracted) {
-              // Start playing the video
-              const playPromise = videoElement.play();
-              if (playPromise !== undefined) {
-                playPromise
-                  .then(() => {
-                    console.log("Video playing after manual selection");
-                  })
-                  .catch(err => {
-                    handleVideoPlayError(err);
-                    setTimeout(() => {
-                      mediaLoading = false;
-                    }, 700);
-                  });
-              }
-            } else {
-              // On mobile without interaction, just show the play button
-              mediaLoaded[currentMediaIndex] = true;
-              setTimeout(() => {
-                mediaLoading = false;
-              }, 700);
-            }
-          };
-        } else {
-          // For images, just fade in and restart interval
-          fadeOut = false;
-          if (isCurrentImage) {
-            startImageInterval();
-          }
-        }
-        
-        // Wait for the fade-in to complete before allowing next transition
-        setTimeout(() => {
-          mediaLoading = false;
-        }, 1000);
-      }, 750);
+      targetMediaIndex = index;
     }
   }
   
@@ -261,10 +176,74 @@
     }
   }
   
+  // Reset video element to prepare for playback
+  function resetVideoElement() {
+    if (videoElement) {
+      videoPlaying = false;
+      videoElement.pause();
+      videoElement.currentTime = 0;
+      videoElement.load();
+    }
+  }
+  
+  // Transition state management effect
+  $effect(() => {
+    if (transitionState === 'fade-out') {
+      // When fade out completes, update the media index
+      const timer = setTimeout(() => {
+        currentMediaIndex = targetMediaIndex;
+        fadeOut = false;
+        
+        // If we switched to a video, we need to reset it
+        if (isCurrentVideo) {
+          resetVideoElement();
+          // Next state will be handled by the video loaded event
+          transitionState = 'loading';
+        } else {
+          transitionState = 'fade-in';
+        }
+      }, 750);
+      
+      return () => clearTimeout(timer);
+    }
+    else if (transitionState === 'fade-in') {
+      // When fade-in completes, return to idle state and restart interval if needed
+      const timer = setTimeout(() => {
+        transitionState = 'idle';
+        if (isCurrentImage) {
+          startImageInterval();
+        }
+      }, 750);
+      
+      return () => clearTimeout(timer);
+    }
+  });
+  
+  // Video state management effect
+  $effect(() => {
+    if (transitionState === 'loading' && isCurrentVideo && mediaLoaded[currentMediaIndex]) {
+      // Video is loaded, begin fade-in
+      transitionState = 'fade-in';
+    }
+  });
+  
+  // Effect to mark videos as loaded after a reasonable time if they don't trigger events
+  $effect(() => {
+    if (transitionState === 'loading' && isCurrentVideo) {
+      const timer = setTimeout(() => {
+        if (!mediaLoaded[currentMediaIndex]) {
+          mediaLoaded[currentMediaIndex] = true;
+        }
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  });
+  
   // Effect to manage the interval based on the current media type
   $effect(() => {
     // When the media changes, reset the interval appropriately
-    if (isCurrentImage) {
+    if (isCurrentImage && transitionState === 'idle') {
       startImageInterval();
     } else if (galleryInterval) {
       clearInterval(galleryInterval);
@@ -281,35 +260,9 @@
     preloadGalleryMedia();
     
     // Video should start playing automatically (first item is video)
-    setTimeout(() => {
-      if (mediaItems[0].type === 'video' && videoElement) {
-        // Set up oncanplay handler for initial video
-        videoElement.oncanplay = () => {
-          // Only try auto-playing if not on mobile or if user has interacted
-          if (!isMobileBrowser || userInteracted) {
-            const playPromise = videoElement.play();
-            if (playPromise !== undefined) {
-              playPromise
-                .then(() => {
-                  console.log("Initial video playing");
-                  videoPlaying = true;
-                  videoStartTime = Date.now();
-                })
-                .catch(err => {
-                  handleVideoPlayError(err);
-                  startImageInterval();
-                });
-            }
-          } else {
-            // On mobile, mark as loaded but don't auto-play
-            mediaLoaded[currentMediaIndex] = true;
-          }
-        };
-        
-        // Load the video
-        videoElement.load();
-      }
-    }, 100);
+    if (mediaItems[0].type === 'video' && videoElement) {
+      resetVideoElement();
+    }
     
     // Add document-level click handler to detect user interaction
     document.addEventListener('click', () => {
@@ -348,9 +301,9 @@
                 playsinline
                 preload="auto"
                 autoplay={!isMobileBrowser}
-                onloadeddata={handleVideoLoaded}
-                onplay={handleVideoPlay}
-                onended={handleVideoEnd}
+                on:loadeddata={handleVideoLoaded}
+                on:play={handleVideoPlay}
+                on:ended={handleVideoEnd}
                 class:visible={mediaLoaded[currentMediaIndex]}
               ></video>
               
@@ -359,7 +312,7 @@
                 <button 
                   class="play-button"
                   aria-label="Play video"
-                  onclick={handlePlayButtonClick}
+                  on:click={handlePlayButtonClick}
                 >
                   <span class="play-icon">▶</span>
                 </button>
@@ -372,7 +325,7 @@
                 src={currentMedia.src} 
                 alt={currentMedia.alt} 
                 class="media-content screenshot"
-                onload={handleImageLoad}
+                on:load={handleImageLoad}
                 class:visible={mediaLoaded[currentMediaIndex]} 
               />
             </div>
@@ -384,8 +337,8 @@
             <button 
               class="gallery-dot {currentMediaIndex === index ? 'active' : ''}" 
               aria-label={`View media ${index + 1}`}
-              onclick={() => selectMedia(index)}
-              disabled={mediaLoading}
+              on:click={() => selectMedia(index)}
+              disabled={transitionState !== 'idle'}
             ></button>
           {/each}
         </div>
@@ -471,7 +424,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: opacity 1.5s ease;
+    transition: opacity 0.75s ease;
   }
   
   /* Enhanced fade transitions */
@@ -586,7 +539,7 @@
     height: 5em;
     border-radius: 50%;
     background-color: rgba(0, 0, 0, 0.6);
-    border: 2px solid var(--color-pale-green);
+    border: 0.125em solid var(--color-pale-green);
     display: flex;
     justify-content: center;
     align-items: center;
