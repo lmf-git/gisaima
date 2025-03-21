@@ -14,9 +14,9 @@
   // Array of media items (both videos and images) to display in the gallery
   const mediaItems = [
     { type: 'video', src: '/media/1.mp4', alt: 'Gameplay Video' },
-    { type: 'image', src: '/media/screenshot.png', alt: 'Game Board Screenshot' },
-    { type: 'image', src: '/media/screenshot2.png', alt: 'Game Gameplay' },
-    { type: 'image', src: '/media/screenshot3.png', alt: 'World Map View' }
+    { type: 'image', src: '/media/2.png', alt: 'Game Board Screenshot' },
+    { type: 'image', src: '/media32.png', alt: 'Game Gameplay' },
+    { type: 'image', src: '/media/3.png', alt: 'World Map View' }
   ];
   
   // Function to advance to the next media item with crossfade
@@ -145,7 +145,7 @@
         <a href="/worlds" class="button secondary">See Worlds</a>
       {:else}
         <a href="/login" class="button primary">Play Now</a>
-        <a href="/signup" class="button secondary">Learn How to Play</a>
+        <a href="/signup" class="button secondary">Register Here</a>
       {/if}
     </div>
   </section>
