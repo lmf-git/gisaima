@@ -3,6 +3,8 @@
     import { user, signOut, loading as userLoading } from '$lib/stores/user';
     import Logo from '../components/Logo.svelte';
     import SignOut from '../components/icons/SignOut.svelte';
+    import XIcon from '../components/icons/XIcon.svelte';
+    import DiscordIcon from '../components/icons/DiscordIcon.svelte';
     import MobileMenu from '../components/MobileMenu.svelte';
     import { onMount, onDestroy } from 'svelte';
     import { initGameStore, game, isAuthReady } from '../lib/stores/game.js';
@@ -189,7 +191,7 @@
     {#if !isMapPage}
         <footer class="footer">
             <div class="footer-content">
-                <div class="footer-section">
+                <div class="footer-section branding">
                     <div class="brand">
                         <a href="/" class="footer-logo">
                             <Logo extraClass="footer-logo-icon" />
@@ -199,28 +201,44 @@
                     <p class="footer-tagline">Explore and create worlds together</p>
                 </div>
                 
-                <div class="footer-section">
-                    <h3>Navigation</h3>
-                    <div class="footer-links">
-                        <a href="/">Home</a>
-                        {#if $user}
-                            <a href="/worlds">Worlds</a>
-                            {#if $game.currentWorld}
-                                <a href={`/map?world=${$game.currentWorld}`}>Return to Game</a>
+                <div class="footer-nav">
+                    <div class="footer-section">
+                        <h3>Navigation</h3>
+                        <div class="footer-links">
+                            <a href="/">Home</a>
+                            {#if $user}
+                                <a href="/worlds">Worlds</a>
+                                {#if $game.currentWorld}
+                                    <a href={`/map?world=${$game.currentWorld}`}>Return to Game</a>
+                                {/if}
                             {/if}
-                        {/if}
+                        </div>
                     </div>
-                </div>
-                
-                <div class="footer-section">
-                    <h3>Account</h3>
-                    <div class="footer-links">
-                        {#if $user}
-                            <button class="footer-signout" onclick={signOut}>Sign Out</button>
-                        {:else}
-                            <a href="/login">Log In</a>
-                            <a href="/signup">Sign Up</a>
-                        {/if}
+                    
+                    <div class="footer-section">
+                        <h3>Account</h3>
+                        <div class="footer-links">
+                            {#if $user}
+                                <button class="footer-signout" onclick={signOut}>Sign Out</button>
+                            {:else}
+                                <a href="/login">Log In</a>
+                                <a href="/signup">Sign Up</a>
+                            {/if}
+                        </div>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h3>Socials</h3>
+                        <div class="footer-links">
+                            <a href="https://x.com/GisaimaGame" target="_blank" rel="noopener noreferrer" class="social-link">
+                                <XIcon size="16px" extraClass="social-icon" />
+                                <span>X (Twitter)</span>
+                            </a>
+                            <a href="https://discord.gg/gisaima" target="_blank" rel="noopener noreferrer" class="social-link">
+                                <DiscordIcon size="18px" extraClass="social-icon" />
+                                <span>Discord</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -720,10 +738,26 @@
         width: 90%;
         max-width: 1200px;
         margin: 0 auto;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 2em;
+        display: flex;
+        justify-content: space-between;
         padding-bottom: 2em;
+    }
+    
+    .footer-section {
+        margin-bottom: 2em;
+    }
+    
+    .footer-nav {
+        display: flex;
+        justify-content: flex-end;
+        gap: 2.5em; /* Increased from 1.5em to 2.5em for more spacing between categories */
+        flex-wrap: wrap;
+    }
+    
+    .footer-section.branding {
+        flex: 0 0 40%;
+        max-width: 400px;
+        padding-right: 2em;
     }
     
     .footer-section h3 {
@@ -733,6 +767,7 @@
         margin-bottom: 1em;
         font-size: 1.2em;
         letter-spacing: 0.05em;
+        text-align: left;
     }
     
     /* Update the footer title and logo to be properly aligned with brand container */
@@ -774,26 +809,30 @@
         display: flex;
         flex-direction: column;
         gap: 0.8em;
+        text-align: left;
     }
     
-    .footer-links a, .footer-signout {
-        color: rgba(255, 255, 255, 0.7); /* Reduced from full white to 70% opacity */
-        text-decoration: none;
+    .social-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+    }
+    
+    .social-icon {
+        color: rgba(255, 255, 255, 0.7);
         transition: color 0.2s ease;
-        font-size: 1em; /* Increased from 0.9em */
-        display: inline-block;
     }
     
-    .footer-links a:hover, .footer-signout:hover {
+    .social-link:hover .social-icon {
         color: var(--color-pale-green);
     }
     
-    .footer-bottom {
-        padding-top: 1em;
-        text-align: center;
-        font-size: 0.8em;
-        color: rgba(255, 255, 255, 0.6); /* Reduced from full white to 60% opacity */
-        border-top: 1px solid rgba(100, 255, 218, 0.1);
+    .footer-links a, .footer-signout {
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        transition: color 0.2s ease;
+        font-size: 1em;
+        display: inline-block;
     }
     
     .footer-links a:hover, .footer-signout:hover {
@@ -813,31 +852,30 @@
         padding-top: 1em;
         text-align: center;
         font-size: 0.8em;
-        color: var (--color-text-secondary);
+        color: var(--color-text-secondary);
         border-top: 1px solid rgba(100, 255, 218, 0.1);
-    }
-    
-    /* Responsive image styling for the entire application */
-    :global(img.responsive) {
-        width: 100%;
-        height: auto;
-        object-fit: cover;
-    }
-    
-    :global(.screenshot-container) {
-        width: 100%;
-        max-height: 80vh;
-        overflow: hidden;
-        border-radius: 0.5em;
-        margin: 1em 0;
-        box-shadow: 0 0.3em 1em var(--color-shadow);
     }
     
     @media (max-width: 768px) {
         .footer-content {
-            grid-template-columns: 1fr;
+            flex-direction: column;
             text-align: center;
+        }
+        
+        .footer-nav {
+            justify-content: center;
             gap: 1.5em;
+        }
+        
+        .footer-section.branding {
+            flex: 1 1 100%;
+            max-width: none;
+            padding-right: 0;
+            margin-bottom: 2em;
+        }
+        
+        .footer-section h3 {
+            text-align: center;
         }
         
         .footer-links {
@@ -855,6 +893,10 @@
         :global(.screenshot-container) {
             border-radius: 0.25em;
             max-height: 50vh;
+        }
+        
+        .social-link {
+            justify-content: center;
         }
     }
 </style>

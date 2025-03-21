@@ -8,8 +8,11 @@
   let currentMediaIndex = $state(0);
   let fadeOut = $state(false);
   let galleryInterval;
-  // Fix the reactivity issue by declaring videoElement with $state
   let videoElement = $state(null);
+  
+  // Add states for graceful loading
+  let mediaLoaded = $state(Array(mediaItems.length).fill(false)); // Track loading state for each media item
+  let mediaLoading = $state(false); // Track if a media change is in progress
   
   // Array of media items (both videos and images) to display in the gallery
   const mediaItems = [
@@ -17,19 +20,61 @@
     { type: 'image', src: '/media/2.png', alt: 'Game Board Screenshot' }
   ];
   
-  // Function to advance to the next media item with crossfade
+  // Function to preload gallery media
+  function preloadGalleryMedia() {
+    // Preload images
+    mediaItems.forEach((item, index) => {
+      if (item.type === 'image') {
+        const img = new Image();
+        img.onload = () => {
+          mediaLoaded[index] = true;
+        };
+        img.src = item.src;
+      }
+    });
+  }
+  
+  // Function to handle image load events
+  function handleImageLoad() {
+    if (mediaItems[currentMediaIndex].type === 'image') {
+      mediaLoaded[currentMediaIndex] = true;
+    }
+  }
+  
+  // Function to handle video loadeddata events
+  function handleVideoLoaded() {
+    if (mediaItems[currentMediaIndex].type === 'video') {
+      mediaLoaded[currentMediaIndex] = true;
+    }
+  }
+  
+  // Updated function to advance to the next media item with crossfade
   function nextMedia() {
+    mediaLoading = true;
     fadeOut = true;
     
     setTimeout(() => {
       currentMediaIndex = (currentMediaIndex + 1) % mediaItems.length;
-      fadeOut = false;
       
-      // If we switched to a video, we need to let it render first
-      setTimeout(() => {
-        if (mediaItems[currentMediaIndex].type === 'video' && videoElement) {
-          videoElement.play().catch(err => console.error("Video playback error:", err));
+      // If we switched to a video, we need to let it render and start loading
+      if (mediaItems[currentMediaIndex].type === 'video' && videoElement) {
+        // Reset video to ensure it loads from the beginning
+        videoElement.currentTime = 0;
+        videoElement.load();
+        
+        const playPromise = videoElement.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(err => console.error("Video playback error:", err));
         }
+      }
+      
+      // Wait a little longer before starting to fade in
+      setTimeout(() => {
+        fadeOut = false;
+        // Wait for the fade-in to complete before considering loading done
+        setTimeout(() => {
+          mediaLoading = false;
+        }, 700);
       }, 50);
     }, 750); // Half of the total transition time
   }
@@ -42,28 +87,46 @@
     }
   }
   
-  // Function to manually select a media item
+  // Updated function to manually select a media item
   function selectMedia(index) {
-    if (currentMediaIndex !== index) {
+    if (currentMediaIndex !== index && !mediaLoading) {
       // Clear any scheduled transitions
       if (galleryInterval) {
         clearInterval(galleryInterval);
         galleryInterval = null;
       }
       
+      mediaLoading = true;
       fadeOut = true;
+      
       setTimeout(() => {
         currentMediaIndex = index;
-        fadeOut = false;
         
-        // If we switched to a video, play it
-        setTimeout(() => {
-          if (mediaItems[currentMediaIndex].type === 'video' && videoElement) {
-            videoElement.play().catch(err => console.error("Video playback error:", err));
-          } else {
-            // For images, restart the interval
-            startImageInterval();
+        // If we switched to a video, prepare it
+        if (mediaItems[currentMediaIndex].type === 'video' && videoElement) {
+          // Reset and reload video
+          videoElement.currentTime = 0;
+          videoElement.load();
+          
+          const playPromise = videoElement.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(err => {
+              console.error("Video playback error:", err);
+              // If video can't play, still mark as not loading
+              mediaLoading = false;
+            });
           }
+        } else {
+          // For images, restart the interval
+          startImageInterval();
+        }
+        
+        setTimeout(() => {
+          fadeOut = false;
+          // Wait for the fade-in to complete
+          setTimeout(() => {
+            mediaLoading = false;
+          }, 700);
         }, 50);
       }, 750);
     }
@@ -123,6 +186,7 @@
   // Background image state
   let currentBgIndex = $state(0);
   let bgFadeOut = $state(false);
+  let bgLoaded = $state(false); // New state to track initial background load
   // Update paths to the correct banner locations
   const backgroundImages = [
     '/banners/1.jpeg',
@@ -133,6 +197,15 @@
     '/banners/6.jpeg',
     '/banners/7.jpeg'
   ];
+  
+  // Function to preload the first background image
+  function preloadFirstBackground() {
+    const img = new Image();
+    img.onload = () => {
+      bgLoaded = true; // Mark as loaded once the image is ready
+    };
+    img.src = backgroundImages[0];
+  }
   
   // Effect to handle background crossfade
   $effect(() => {
@@ -146,6 +219,32 @@
     
     return () => clearInterval(interval);
   });
+  
+  onMount(() => {
+    // Preload the first background image
+    preloadFirstBackground();
+    
+    // Preload gallery media
+    preloadGalleryMedia();
+    
+    // Video should start playing automatically (first item is video)
+    setTimeout(() => {
+      if (mediaItems[0].type === 'video' && videoElement) {
+        videoElement.play().catch(err => {
+          console.error("Initial video playback error:", err);
+          // If autoplay fails (common on mobile), set up the gallery interval
+          startImageInterval();
+        });
+      }
+    }, 100);
+    
+    return () => {
+      // Clean up interval on component destruction
+      if (galleryInterval) {
+        clearInterval(galleryInterval);
+      }
+    };
+  });
 </script>
 
 <svelte:head>
@@ -155,7 +254,7 @@
 
 <main class="container">
   <section class="showcase" style="--current-bg: url('{backgroundImages[currentBgIndex]}')">
-    <div class="bg-overlay" class:fade-out={bgFadeOut}></div>
+    <div class="bg-overlay" class:fade-out={bgFadeOut} class:fade-in={bgLoaded}></div>
     <Logo extraClass="logo" />
     <h1 class="title">Gisaima Realm</h1>
     <p class="subtitle">Open source territory control game with infinite worlds</p>
@@ -189,20 +288,31 @@
         <div class="gallery-container">
           <div class={`gallery-media ${fadeOut ? 'fade-out' : 'fade-in'}`}>
             {#if mediaItems[currentMediaIndex].type === 'video'}
-              <video 
-                bind:this={videoElement}
-                class="media-content video"
-                src={mediaItems[currentMediaIndex].src}
-                muted
-                playsInline
-                onended={handleVideoEnd}
-              ></video>
+              <div class="media-wrapper video-wrapper">
+                <div class="loader" class:hidden={mediaLoaded[currentMediaIndex]}></div>
+                <video 
+                  bind:this={videoElement}
+                  class="media-content video"
+                  src={mediaItems[currentMediaIndex].src}
+                  muted
+                  playsInline
+                  preload="auto"
+                  onloadeddata={handleVideoLoaded}
+                  onended={handleVideoEnd}
+                  class:visible={mediaLoaded[currentMediaIndex]}
+                ></video>
+              </div>
             {:else}
-              <img 
-                src={mediaItems[currentMediaIndex].src} 
-                alt={mediaItems[currentMediaIndex].alt} 
-                class="media-content screenshot" 
-              />
+              <div class="media-wrapper image-wrapper">
+                <div class="loader" class:hidden={mediaLoaded[currentMediaIndex]}></div>
+                <img 
+                  src={mediaItems[currentMediaIndex].src} 
+                  alt={mediaItems[currentMediaIndex].alt} 
+                  class="media-content screenshot"
+                  onload={handleImageLoad}
+                  class:visible={mediaLoaded[currentMediaIndex]} 
+                />
+              </div>
             {/if}
           </div>
           
@@ -212,6 +322,7 @@
                 class="gallery-dot {currentMediaIndex === index ? 'active' : ''}" 
                 aria-label={`View media ${index + 1}`}
                 onclick={() => selectMedia(index)}
+                disabled={mediaLoading}
               ></button>
             {/each}
           </div>
@@ -561,9 +672,10 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: opacity 1.5s ease;
+    transition: opacity 1.5s ease; /* Extended transition time for smoother fades */
   }
   
+  /* Enhanced fade transitions */
   .fade-in {
     opacity: 1;
   }
@@ -572,11 +684,28 @@
     opacity: 0;
   }
   
+  /* Media wrapper for positioning content and loaders */
+  .media-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* Updated media content styles with visibility transitions */
   .media-content {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
     border-radius: 0.3em;
+    opacity: 0;
+    transition: opacity 0.7s ease; /* Smooth fade-in transition */
+  }
+  
+  .media-content.visible {
+    opacity: 1;
   }
   
   .media-content.video {
@@ -585,6 +714,29 @@
     object-fit: cover; /* Video fills the container */
   }
   
+  /* Loading spinner styles */
+  .loader {
+    position: absolute;
+    width: 3em;
+    height: 3em;
+    border: 0.3em solid var(--color-panel-border);
+    border-top: 0.3em solid var(--color-pale-green);
+    border-radius: 50%;
+    animation: spin 1.5s linear infinite;
+    z-index: 2;
+  }
+  
+  .loader.hidden {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Gallery dots enhanced styling */
   .gallery-dots {
     position: absolute;
     bottom: 1em;
@@ -612,8 +764,13 @@
     transform: scale(1.2);
   }
   
-  .gallery-dot:hover {
+  .gallery-dot:hover:not(:disabled) {
     background-color: rgba(255, 255, 255, 0.5);
+  }
+  
+  .gallery-dot:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
   }
   
   .gallery-dot.active:hover {
@@ -626,13 +783,17 @@
     background-image: var(--current-bg);
     background-size: cover;
     background-position: center;
-    opacity: 0.15;
-    transition: opacity 1s ease;
+    opacity: 0; /* Start with opacity 0 by default */
+    transition: opacity 1.5s ease; /* Increased transition time from 1s to 1.5s */
     z-index: -1;
   }
   
   .bg-overlay.fade-out {
     opacity: 0;
+  }
+  
+  .bg-overlay.fade-in {
+    opacity: 0.15; /* Fade in to the desired opacity */
   }
 
   /* Tablet (medium devices) */
