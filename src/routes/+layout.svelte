@@ -190,9 +190,12 @@
         <footer class="footer">
             <div class="footer-content">
                 <div class="footer-section">
-                    <a href="/" class="footer-logo">
-                        <Logo extraClass="footer-logo-icon" />
-                    </a>
+                    <div class="brand">
+                        <a href="/" class="footer-logo">
+                            <Logo extraClass="footer-logo-icon" />
+                        </a>
+                        <h2 class="footer-title">isaima Realm</h2>
+                    </div>
                     <p class="footer-tagline">Explore and create worlds together</p>
                 </div>
                 
@@ -223,7 +226,7 @@
             </div>
             
             <div class="footer-bottom">
-                <p>&copy; {new Date().getFullYear()} Gisaima. All Knights Declared</p>
+                <p>&copy; {new Date().getFullYear()} Gisaima. All Knights Declared.</p>
             </div>
         </footer>
     {/if}
@@ -324,7 +327,7 @@
         --color-text: var(--color-text-primary);
         --color-text-secondary: var(--color-text-secondary);
         --color-heading: var(--color-bright-accent);
-        --color-subheading: var(--color-muted-accent);
+        --color-subheading: var (--color-muted-accent);
         
         --color-button: var(--color-dark-blue);
         --color-button-hover: #233554;
@@ -371,7 +374,6 @@
     /* Main content area with padding for absolute header */
     .main-content {
         flex: 1;
-        padding-top: 6em; /* Match header height */
         display: flex;
         flex-direction: column;
     }
@@ -733,9 +735,18 @@
         letter-spacing: 0.05em;
     }
     
-    .footer-logo {
-        display: inline-block;
+    /* Update the footer title and logo to be properly aligned with brand container */
+    .brand {
+        display: flex;
+        align-items: center;
         margin-bottom: 1em;
+    }
+    
+    .footer-logo {
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        margin: 0; /* Remove margins */
     }
     
     .footer-logo :global(.footer-logo-icon) {
@@ -743,8 +754,18 @@
         height: 40px;
     }
     
+    .footer-title {
+        font-size: 2em; /* Updated from 1.5em to 2em */
+        letter-spacing: 0.2em;
+        color: #e24144;
+        text-shadow: 0 0 0.625em rgba(193, 19, 22, 0.5);
+        font-weight: 400;
+        font-family: var(--font-heading);
+        margin: 0; /* Removed all margins */
+    }
+    
     .footer-tagline {
-        color: var(--color-text-secondary);
+        color: rgba(255, 255, 255, 0.6); /* Reduced from full white to 60% opacity */
         font-style: italic;
         margin-bottom: 1em;
     }
@@ -756,11 +777,23 @@
     }
     
     .footer-links a, .footer-signout {
-        color: var(--color-text-secondary);
+        color: rgba(255, 255, 255, 0.7); /* Reduced from full white to 70% opacity */
         text-decoration: none;
         transition: color 0.2s ease;
-        font-size: 0.9em;
+        font-size: 1em; /* Increased from 0.9em */
         display: inline-block;
+    }
+    
+    .footer-links a:hover, .footer-signout:hover {
+        color: var(--color-pale-green);
+    }
+    
+    .footer-bottom {
+        padding-top: 1em;
+        text-align: center;
+        font-size: 0.8em;
+        color: rgba(255, 255, 255, 0.6); /* Reduced from full white to 60% opacity */
+        border-top: 1px solid rgba(100, 255, 218, 0.1);
     }
     
     .footer-links a:hover, .footer-signout:hover {
@@ -780,7 +813,7 @@
         padding-top: 1em;
         text-align: center;
         font-size: 0.8em;
-        color: var(--color-text-secondary);
+        color: var (--color-text-secondary);
         border-top: 1px solid rgba(100, 255, 218, 0.1);
     }
     
@@ -813,6 +846,10 @@
         
         .footer-signout {
             text-align: center;
+        }
+        
+        .brand {
+            justify-content: center; /* Center the brand on mobile */
         }
         
         :global(.screenshot-container) {

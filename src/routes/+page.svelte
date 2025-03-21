@@ -119,6 +119,33 @@
 
   // New state to track feature content loading
   let featuresLoaded = $state(true); // Assume loaded initially
+
+  // Background image state
+  let currentBgIndex = $state(0);
+  let bgFadeOut = $state(false);
+  // Update paths to the correct banner locations
+  const backgroundImages = [
+    '/banners/1.jpeg',
+    '/banners/2.jpeg',
+    '/banners/3.jpeg',
+    '/banners/4.jpeg',
+    '/banners/5.jpeg',
+    '/banners/6.jpeg',
+    '/banners/7.jpeg'
+  ];
+  
+  // Effect to handle background crossfade
+  $effect(() => {
+    const interval = setInterval(() => {
+      bgFadeOut = true;
+      setTimeout(() => {
+        currentBgIndex = (currentBgIndex + 1) % backgroundImages.length;
+        bgFadeOut = false;
+      }, 1000);
+    }, 8000); // Change background every 8 seconds
+    
+    return () => clearInterval(interval);
+  });
 </script>
 
 <svelte:head>
@@ -127,7 +154,8 @@
 </svelte:head>
 
 <main class="container">
-  <section class="showcase">
+  <section class="showcase" style="--current-bg: url('{backgroundImages[currentBgIndex]}')">
+    <div class="bg-overlay" class:fade-out={bgFadeOut}></div>
     <Logo extraClass="logo" />
     <h1 class="title">Gisaima Realm</h1>
     <p class="subtitle">A territory control strategy game inspired by ancient board games</p>
@@ -171,62 +199,47 @@
   <section class="media">
     <h2 class="heading">Media</h2>
     
-    <div class="media-intro">
-      <p class="media-desc">
-        Journey into the realm of Gisaima through our immersive media gallery. Watch as territories fall and empires rise in real-time strategic gameplay. These visuals showcase the dynamic world where resource management, tactical combat, and territorial conquest blend together in a unique gaming experience inspired by ancient board game principles.
-      </p>
-      
-      <div class="media-highlights">
-        <div class="highlight-item">
-          <span class="highlight-icon">▶️</span>
-          <span class="highlight-text">Real gameplay footage</span>
-        </div>
-        <div class="highlight-item">
-          <span class="highlight-icon">🌍</span>
-          <span class="highlight-text">World map views</span>
-        </div>
-        <div class="highlight-item">
-          <span class="highlight-icon">⚔️</span>
-          <span class="highlight-text">Strategic battles</span>
-        </div>
+    <div class="media-container">
+      <div class="media-intro">
+        <p class="media-desc">
+          Journey into the realm of Gisaima through our immersive media gallery. Watch as territories fall and empires rise in real-time strategic gameplay. These visuals showcase the dynamic world where resource management, tactical combat, and territorial conquest blend together in a unique gaming experience inspired by ancient board game principles.
+        </p>
       </div>
-    </div>
-    
-    <div class="gallery">
-      <div class="gallery-container">
-        <div class={`gallery-media ${fadeOut ? 'fade-out' : 'fade-in'}`}>
-          {#if mediaItems[currentMediaIndex].type === 'video'}
-            <video 
-              bind:this={videoElement}
-              class="media-content video"
-              src={mediaItems[currentMediaIndex].src}
-              muted
-              playsInline
-              onended={handleVideoEnd}
-            ></video>
-          {:else}
-            <img 
-              src={mediaItems[currentMediaIndex].src} 
-              alt={mediaItems[currentMediaIndex].alt} 
-              class="media-content screenshot" 
-            />
-          {/if}
-        </div>
-        
-        <div class="gallery-dots">
-          {#each mediaItems as _, index}
-            <button 
-              class="gallery-dot {currentMediaIndex === index ? 'active' : ''}" 
-              aria-label={`View media ${index + 1}`}
-              onclick={() => selectMedia(index)}
-            ></button>
-          {/each}
+      
+      <div class="gallery">
+        <div class="gallery-container">
+          <div class={`gallery-media ${fadeOut ? 'fade-out' : 'fade-in'}`}>
+            {#if mediaItems[currentMediaIndex].type === 'video'}
+              <video 
+                bind:this={videoElement}
+                class="media-content video"
+                src={mediaItems[currentMediaIndex].src}
+                muted
+                playsInline
+                onended={handleVideoEnd}
+              ></video>
+            {:else}
+              <img 
+                src={mediaItems[currentMediaIndex].src} 
+                alt={mediaItems[currentMediaIndex].alt} 
+                class="media-content screenshot" 
+              />
+            {/if}
+          </div>
+          
+          <div class="gallery-dots">
+            {#each mediaItems as _, index}
+              <button 
+                class="gallery-dot {currentMediaIndex === index ? 'active' : ''}" 
+                aria-label={`View media ${index + 1}`}
+                onclick={() => selectMedia(index)}
+              ></button>
+            {/each}
+          </div>
         </div>
       </div>
     </div>
   </section>
-  
-  <!-- Footer removed -->
 </main>
 
 <style>
@@ -238,9 +251,12 @@
 
   .showcase {
     text-align: center;
-    padding: 0 0.5em 2.5em; /* Increased padding at bottom from 2em to 2.5em */
+    padding: 4em 0.5em 4em; /* Increased bottom padding from 2.5em to 4em */
     border-bottom: 1px solid var(--color-panel-border);
-    margin-bottom: 2em; /* Increased margin from 1em to 2em */
+    margin-bottom: 3em; /* Increased margin from 2em to 3em */
+    position: relative; /* Add this */
+    overflow: hidden; /* Add this */
+    isolation: isolate; /* Add this to create stacking context */
   }
 
   .title {
@@ -254,11 +270,11 @@
   }
 
   .subtitle {
-    font-size: 1em;
+    font-size: 1.2em;
     color: var(--color-text-secondary);
     margin-bottom: 2em;
-    font-weight: 300; /* Added leaner font weight */
-    font-family: var(--font-body); /* Add body font */
+    font-weight: 200; /* Reduced from 300 */
+    font-family: var(--font-body);
   }
 
   .actions {
@@ -325,9 +341,9 @@
   }
 
   .features, .media {
-    padding: 3em 0 3em; /* Increased padding at the bottom */
+    padding: 4em 0 4em; /* Increased padding from 3em to 4em */
     border-bottom: 1px solid var(--color-panel-border);
-    margin-bottom: 2em; /* Increased margin at the bottom */
+    margin-bottom: 3em; /* Increased margin from 2em to 3em */
   }
   
   /* Add specific bottom margin to the media section and remove border */
@@ -353,6 +369,10 @@
     gap: 1em;
     /* Add these properties to maintain consistent card sizing */
     grid-auto-rows: minmax(10em, auto);
+    /* Limit width and center */
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 90%; /* Use percentage width for small screens */
   }
 
   .card {
@@ -442,108 +462,61 @@
   .showcase > :global(.logo) {
     width: 7.5em;
     height: auto;
-    margin: 0 auto;
+    margin: 0 auto 2em; /* Added margin-bottom */
     filter: drop-shadow(0 0 0.5em rgba(193, 19, 22, 0.6));
   }
   
-  /* Tablet (medium devices) */
-  @media (min-width: 481px) {
-    .container {
-      width: calc(100% - 2.5em);
-    }
-    
-    .showcase {
-      padding: 0 1em 2em;
-    }
-    
-    .title {
-      font-size: 2.5em;
-    }
-    
-    .subtitle {
-      font-size: 1.1em;
-    }
-    
-    .heading {
-      font-size: 2.2em;
-    }
-    
-    .gallery-dot {
-      width: 0.7em;
-      height: 0.7em;
-    }
+  /* Media container needs display flex and proper responsive behavior */
+  .media-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2em;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1em;
+    box-sizing: border-box;
   }
-
-  /* Desktop (large devices) */
-  @media (min-width: 769px) {
-    .container {
-      width: calc(100% - 5em);
-      padding: 0;
-    }
-    
-    .showcase {
-      padding: 0 3em 3em; /* Increased padding at bottom from 2em to 3em for desktop */
-    }
-    
-    .title {
-      font-size: 3.5em;
-    }
-    
-    .subtitle {
-      font-size: 1.2em;
-    }
-    
-    .actions > :global(.button) {
-      font-size: 1.5em;
-      padding: 0.6em 1.8em;
-      width: auto;
-    }
-    
-    .heading {
-      font-size: 2.6em;
-    }
-    
-    .grid {
-      grid-template-columns: repeat(auto-fit, minmax(15em, 1fr));
-      gap: 2em;
-      grid-auto-rows: minmax(12em, auto);
-    }
-    
-    .card {
-      min-height: 12em;
-    }
-    
-    .features {
-      padding: 4em 0 5em; /* Increased padding at bottom from 4em to 5em for desktop */
-    }
-    
-    .media {
-      padding: 4em 0 5em; /* Increased padding at bottom to 5em for desktop */
-    }
-    
-    .gallery-dot {
-      width: 0.8em;
-      height: 0.8em;
-    }
+  
+  /* Media section introduction styling */
+  .media-intro {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .media-desc {
+    color: var(--color-text);
+    font-size: 1.3em; /* Increased from 1.1em */
+    line-height: 1.6;
+    margin: 0;
+    font-family: var(--font-body);
+    text-align: left;
+    font-weight: 300; /* Added lighter font weight */
   }
 
   /* Gallery styles */
   .gallery {
+    width: 100%;
     display: flex;
     justify-content: center;
-    align-items: center;
-    padding: 0 1em;
+    align-items: flex-start;
+    box-sizing: border-box;
+    padding: 0;
   }
   
   .gallery-container {
     width: 100%;
-    max-width: 960px;
     position: relative;
     border-radius: 0.5em;
     overflow: hidden;
     box-shadow: 0 0.3em 1em var(--color-shadow);
     background: linear-gradient(135deg, var(--color-dark-blue), var(--color-dark-navy));
     aspect-ratio: 16 / 9;
+    box-sizing: border-box;
   }
   
   .gallery-media {
@@ -612,68 +585,140 @@
     background-color: var(--color-pale-green);
   }
 
-  /* Media section introduction styling */
-  .media-intro {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5em;
-    margin-bottom: 2em;
-    padding: 0 1em;
+  .bg-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: var(--current-bg);
+    background-size: cover;
+    background-position: center;
+    opacity: 0.15;
+    transition: opacity 1s ease;
+    z-index: -1;
   }
   
-  .media-desc {
-    text-align: center;
-    color: var(--color-text);
-    font-size: 1.1em;
-    line-height: 1.6;
-    margin: 0 0 1.5em 0;
-    font-family: var(--font-body);
-    max-width: 90%;
-    margin-left: auto;
-    margin-right: auto;
+  .bg-overlay.fade-out {
+    opacity: 0;
   }
-  
-  .media-highlights {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 1em;
+
+  /* Tablet (medium devices) */
+  @media (min-width: 481px) {
+    .container {
+      width: calc(100% - 2.5em);
+    }
+    
+    .showcase {
+      padding: 4em 1em 2em; /* Maintaining 4em top padding */
+    }
+    
+    .title {
+      font-size: 2.5em;
+    }
+    
+    .subtitle {
+      font-size: 1.4em;
+    }
+    
+    .heading {
+      font-size: 2.2em;
+    }
+    
+    .gallery-dot {
+      width: 0.7em;
+      height: 0.7em;
+    }
   }
-  
-  .highlight-item {
-    display: flex;
-    align-items: center;
-    gap: 0.8em;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 0.5em;
-    border: 1px solid var(--color-panel-border);
-    padding: 0.7em 1em;
-    min-width: 12em;
-  }
-  
-  .highlight-icon {
-    font-size: 1.2em;
-  }
-  
-  .highlight-text {
-    color: var(--color-pale-green);
-    font-size: 1em;
-    font-weight: 400;
-    font-family: var(--font-body);
-  }
-  
-  /* Media section specific heading adjustment */
-  .media .heading {
-    margin-bottom: 1em; /* Even smaller margin specifically for media section heading */
-  }
-  
+
   /* Desktop (large devices) */
   @media (min-width: 769px) {
+    .container {
+      width: calc(100% - 5em);
+      padding: 0;
+    }
+    
+    .showcase {
+      padding: 4em 3em 5em; /* Increased bottom padding from 3em to 5em */
+    }
+    
+    .title {
+      font-size: 3.5em;
+    }
+    
+    .subtitle {
+      font-size: 1.6em;
+    }
+    
+    .actions > :global(.button) {
+      font-size: 1.5em;
+      padding: 0.6em 1.8em;
+      width: auto;
+    }
+    
+    .heading {
+      font-size: 2.6em;
+    }
+    
+    .grid {
+      grid-template-columns: repeat(auto-fit, minmax(15em, 1fr));
+      gap: 2em;
+      grid-auto-rows: minmax(12em, auto);
+      width: 100%; /* Full width within the max-width constraint */
+    }
+    
+    .card {
+      min-height: 12em;
+    }
+    
+    .features {
+      padding: 4em 0 6em; /* Increased bottom padding from 5em to 6em */
+    }
+    
+    .media {
+      padding: 4em 0 5em; /* Increased padding at bottom to 5em for desktop */
+    }
+    
+    .gallery-dot {
+      width: 0.8em;
+      height: 0.8em;
+    }
+
+    /* Media section becomes a row on desktop */
+    .media-container {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 3em;
+      padding: 0;
+    }
+    
+    .media-intro {
+      flex: 0 0 40%;
+      max-width: 40%;
+    }
+    
+    .gallery {
+      flex: 0 0 60%;
+      max-width: 60%;
+    }
+    
     .media-desc {
-      font-size: 1.2em;
-      max-width: 80%;
-      margin: 0 auto 1.5em auto;
+      font-size: 1.4em; /* Increased from 1.2em for desktop */
+    }
+  }
+  
+  /* Extra large devices */
+  @media (min-width: 1200px) {
+    .media-container {
+      gap: 5em;
+      padding: 0; /* Remove padding at large screens */
+    }
+    
+    .media-intro {
+      flex: 0 0 35%; /* Reduce intro width on very large screens */
+      max-width: 35%;
+    }
+    
+    .gallery {
+      flex: 0 0 65%; /* Increase gallery width on very large screens */
+      max-width: 65%;
     }
   }
 </style>
