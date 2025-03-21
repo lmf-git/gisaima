@@ -27,6 +27,7 @@
     const isMapPage = $derived($page.url.pathname === '/map');
     const isLoginPage = $derived($page.url.pathname === '/login');
     const isSignupPage = $derived($page.url.pathname === '/signup');
+    const isGuidePage = $derived($page.url.pathname === '/guide');
     
     function toggleMobileMenu() {
         if (mobileMenuOpen) {
@@ -142,6 +143,9 @@
         {#if !isMapPage}
             <nav class="nav">
                 <div class="links">
+                    {#if !isGuidePage}
+                        <a href="/guide" class:active={$page.url.pathname === '/guide'}>Guide</a>
+                    {/if}
                     {#if $user && $page.url.pathname !== '/worlds' && !headerLoading}
                         <a href="/worlds" class:active={$page.url.pathname === '/worlds'}>Worlds</a>
                     {/if}
@@ -171,15 +175,14 @@
         {/if}
 
         {#if (mobileMenuOpen || menuAnimatingOut) && !isMapPage}
-            <div class={`mobile-menu-container ${menuAnimatingOut ? 'animate-out' : 'animate-in'}`}>
-                <MobileMenu 
-                    onClose={closeMobileMenu} 
-                    currentPath={$page.url.pathname} 
-                    user={$user}
-                    signOut={signOut}
-                    animatingOut={menuAnimatingOut}
-                />
-            </div>
+            <MobileMenu 
+                onClose={closeMobileMenu} 
+                currentPath={$page.url.pathname} 
+                user={$user}
+                signOut={signOut}
+                animatingOut={menuAnimatingOut}
+                class={menuAnimatingOut ? 'animate-out' : 'animate-in'}
+            />
         {/if}
     </header>
 
@@ -206,6 +209,7 @@
                         <h3>Navigation</h3>
                         <div class="footer-links">
                             <a href="/">Home</a>
+                            <a href="/guide">Guide</a>
                             {#if $user}
                                 <a href="/worlds">Worlds</a>
                                 {#if $game.currentWorld}
@@ -234,7 +238,7 @@
                                 <XIcon size="16px" extraClass="social-icon" />
                                 <span>X (Twitter)</span>
                             </a>
-                            <a href="https://discord.gg/gisaima" target="_blank" rel="noopener noreferrer" class="social-link">
+                            <a href="https://discord.gg/ugmRXWNXbA" target="_blank" rel="noopener noreferrer" class="social-link">
                                 <DiscordIcon size="18px" extraClass="social-icon" />
                                 <span>Discord</span>
                             </a>
@@ -681,27 +685,17 @@
         background-color: var(--color-pale-green);
     }
 
-    /* Add positioning for mobile menu container */
-    .mobile-menu-container {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        width: calc(100% - 1em); /* Changed from 90% to calc(100% - 1em) for nearly full width */
-        margin: 0 auto; /* Center the container */
-        z-index: 100;
-        transform-origin: top center;
+    /* Animation for mobile menu - moved from container to component */
+    :global(.mobile-menu.animate-in) {
+        animation-name: slideDown;
         animation-duration: 0.3s;
         animation-fill-mode: forwards;
     }
-
-    /* Animation for mobile menu container */
-    .animate-in {
-        animation-name: slideDown;
-    }
     
-    .animate-out {
+    :global(.mobile-menu.animate-out) {
         animation-name: slideUp;
+        animation-duration: 0.3s;
+        animation-fill-mode: forwards;
     }
 
     @keyframes slideDown {
@@ -752,6 +746,8 @@
         justify-content: flex-end;
         gap: 2.5em; /* Increased from 1.5em to 2.5em for more spacing between categories */
         flex-wrap: wrap;
+        /* Default layout is columns for mobile first approach */
+        flex-direction: column;
     }
     
     .footer-section.branding {
@@ -823,10 +819,6 @@
         transition: color 0.2s ease;
     }
     
-    .social-link:hover .social-icon {
-        color: var(--color-pale-green);
-    }
-    
     .footer-links a, .footer-signout {
         color: rgba(255, 255, 255, 0.7);
         text-decoration: none;
@@ -865,6 +857,8 @@
         .footer-nav {
             justify-content: center;
             gap: 1.5em;
+            /* Explicitly set column direction on mobile */
+            flex-direction: column;
         }
         
         .footer-section.branding {
@@ -897,6 +891,14 @@
         
         .social-link {
             justify-content: center;
+        }
+    }
+    
+    /* Desktop layout for footer nav */
+    @media (min-width: 769px) {
+        .footer-nav {
+            flex-direction: row; /* Change to horizontal layout on desktop */
+            align-items: flex-start; /* Align items to the top in the row */
         }
     }
 </style>

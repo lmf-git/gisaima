@@ -4,6 +4,12 @@
   import { game, isAuthReady } from '$lib/stores/game';
   import { onMount, onDestroy } from 'svelte';
   
+  // Array of media items (both videos and images) to display in the gallery
+  const mediaItems = [
+    { type: 'video', src: '/media/1.mp4', alt: 'Gameplay Video' },
+    { type: 'image', src: '/media/2.png', alt: 'Game Board Screenshot' }
+  ];
+  
   // Media gallery state
   let currentMediaIndex = $state(0);
   let fadeOut = $state(false);
@@ -11,14 +17,11 @@
   let videoElement = $state(null);
   
   // Add states for graceful loading
-  let mediaLoaded = $state(Array(mediaItems.length).fill(false)); // Track loading state for each media item
-  let mediaLoading = $state(false); // Track if a media change is in progress
-  
-  // Array of media items (both videos and images) to display in the gallery
-  const mediaItems = [
-    { type: 'video', src: '/media/1.mp4', alt: 'Gameplay Video' },
-    { type: 'image', src: '/media/2.png', alt: 'Game Board Screenshot' }
-  ];
+  let mediaLoaded = $state(Array(mediaItems.length).fill(false));
+  let mediaLoading = $state(false);
+  let videoPlaying = $state(false); // Track if video is currently playing
+  let minVideoPlayTime = 5000; // Minimum time to show video in ms
+  let videoStartTime = 0; // Track when video started playing
   
   // Function to preload gallery media
   function preloadGalleryMedia() {
@@ -48,41 +51,83 @@
     }
   }
   
+  // Function to handle video play events
+  function handleVideoPlay() {
+    if (mediaItems[currentMediaIndex].type === 'video') {
+      videoPlaying = true;
+      videoStartTime = Date.now();
+      console.log("Video started playing");
+    }
+  }
+  
   // Updated function to advance to the next media item with crossfade
   function nextMedia() {
+    // If video is currently playing and hasn't played for minimum time, don't advance
+    if (videoPlaying && Date.now() - videoStartTime < minVideoPlayTime) {
+      console.log("Video playing for less than minimum time, not advancing");
+      return;
+    }
+    
     mediaLoading = true;
     fadeOut = true;
+    videoPlaying = false;
     
     setTimeout(() => {
       currentMediaIndex = (currentMediaIndex + 1) % mediaItems.length;
       
-      // If we switched to a video, we need to let it render and start loading
+      // If we switched to a video, we need to prepare it
       if (mediaItems[currentMediaIndex].type === 'video' && videoElement) {
-        // Reset video to ensure it loads from the beginning
+        // Reset the video element
         videoElement.currentTime = 0;
         videoElement.load();
         
-        const playPromise = videoElement.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(err => console.error("Video playback error:", err));
+        // Don't start the fade-in transition until video can start playing
+        videoElement.oncanplay = () => {
+          console.log("Video can play now");
+          fadeOut = false;
+          
+          // Start playing the video
+          const playPromise = videoElement.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                // Video successfully started playing
+                console.log("Video playback started");
+              })
+              .catch(err => {
+                console.error("Video playback error:", err);
+                // Still fade in even if video can't play
+                fadeOut = false;
+                // If video can't play, consider it loaded and not loading
+                mediaLoaded[currentMediaIndex] = true;
+                setTimeout(() => {
+                  mediaLoading = false;
+                }, 700);
+              });
+          }
+        };
+      } else {
+        // For images, just fade in
+        fadeOut = false;
+        // Restart interval for images
+        if (mediaItems[currentMediaIndex].type === 'image') {
+          startImageInterval();
         }
       }
       
-      // Wait a little longer before starting to fade in
+      // Wait for fade-in to complete before allowing next transition
       setTimeout(() => {
-        fadeOut = false;
-        // Wait for the fade-in to complete before considering loading done
-        setTimeout(() => {
-          mediaLoading = false;
-        }, 700);
-      }, 50);
-    }, 750); // Half of the total transition time
+        mediaLoading = false;
+      }, 1000);
+    }, 750);
   }
   
   // Function to handle video end event
   function handleVideoEnd() {
-    // Only auto-advance if this is still the current media item
-    if (mediaItems[currentMediaIndex].type === 'video') {
+    // Only auto-advance if this is still the current media item and we're not already transitioning
+    if (mediaItems[currentMediaIndex].type === 'video' && !mediaLoading) {
+      videoPlaying = false;
+      console.log("Video ended, advancing");
       nextMedia();
     }
   }
@@ -98,36 +143,48 @@
       
       mediaLoading = true;
       fadeOut = true;
+      videoPlaying = false;
       
       setTimeout(() => {
         currentMediaIndex = index;
         
         // If we switched to a video, prepare it
         if (mediaItems[currentMediaIndex].type === 'video' && videoElement) {
-          // Reset and reload video
+          // Reset video
           videoElement.currentTime = 0;
           videoElement.load();
           
-          const playPromise = videoElement.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(err => {
-              console.error("Video playback error:", err);
-              // If video can't play, still mark as not loading
-              mediaLoading = false;
-            });
-          }
+          videoElement.oncanplay = () => {
+            fadeOut = false;
+            
+            // Start playing the video
+            const playPromise = videoElement.play();
+            if (playPromise !== undefined) {
+              playPromise
+                .then(() => {
+                  console.log("Video playing after manual selection");
+                })
+                .catch(err => {
+                  console.error("Video playback error:", err);
+                  mediaLoaded[currentMediaIndex] = true;
+                  setTimeout(() => {
+                    mediaLoading = false;
+                  }, 700);
+                });
+            }
+          };
         } else {
-          // For images, restart the interval
-          startImageInterval();
+          // For images, just fade in and restart interval
+          fadeOut = false;
+          if (mediaItems[currentMediaIndex].type === 'image') {
+            startImageInterval();
+          }
         }
         
+        // Wait for the fade-in to complete before allowing next transition
         setTimeout(() => {
-          fadeOut = false;
-          // Wait for the fade-in to complete
-          setTimeout(() => {
-            mediaLoading = false;
-          }, 700);
-        }, 50);
+          mediaLoading = false;
+        }, 1000);
       }, 750);
     }
   }
@@ -147,14 +204,35 @@
   
   // Set up media handling on mount
   onMount(() => {
+    // Preload the first background image
+    preloadFirstBackground();
+    
+    // Preload gallery media
+    preloadGalleryMedia();
+    
     // Video should start playing automatically (first item is video)
     setTimeout(() => {
       if (mediaItems[0].type === 'video' && videoElement) {
-        videoElement.play().catch(err => {
-          console.error("Initial video playback error:", err);
-          // If autoplay fails (common on mobile), set up the gallery interval
-          startImageInterval();
-        });
+        // Set up oncanplay handler for initial video
+        videoElement.oncanplay = () => {
+          const playPromise = videoElement.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                console.log("Initial video playing");
+                videoPlaying = true;
+                videoStartTime = Date.now();
+              })
+              .catch(err => {
+                console.error("Initial video playback error:", err);
+                // If autoplay fails (common on mobile), set up the gallery interval
+                startImageInterval();
+              });
+          }
+        };
+        
+        // Load the video
+        videoElement.load();
       }
     }, 100);
     
@@ -180,13 +258,12 @@
   // Derived state for UI loading conditions
   const actionsLoading = $derived($userLoading || !$isAuthReady || $game.loading);
 
-  // New state to track feature content loading
-  let featuresLoaded = $state(true); // Assume loaded initially
-
   // Background image state
   let currentBgIndex = $state(0);
+  let nextBgIndex = $state(1);
   let bgFadeOut = $state(false);
-  let bgLoaded = $state(false); // New state to track initial background load
+  let bgLoaded = $state(false); // Track initial background load
+  let bgImages = $state(Array(7).fill(false)); // Track loaded state for each image
   // Update paths to the correct banner locations
   const backgroundImages = [
     '/banners/1.jpeg',
@@ -203,18 +280,36 @@
     const img = new Image();
     img.onload = () => {
       bgLoaded = true; // Mark as loaded once the image is ready
+      bgImages[0] = true; // Mark the first image as loaded
     };
     img.src = backgroundImages[0];
+
+    // Preload the rest of the images
+    backgroundImages.slice(1).forEach((src, idx) => {
+      const bgImg = new Image();
+      bgImg.onload = () => {
+        bgImages[idx + 1] = true; // Mark this image as loaded
+      };
+      bgImg.src = src;
+    });
   }
   
   // Effect to handle background crossfade
   $effect(() => {
     const interval = setInterval(() => {
-      bgFadeOut = true;
-      setTimeout(() => {
-        currentBgIndex = (currentBgIndex + 1) % backgroundImages.length;
-        bgFadeOut = false;
-      }, 1000);
+      // Only proceed with transition if next image is loaded
+      if (bgImages[nextBgIndex]) {
+        bgFadeOut = true;
+        
+        setTimeout(() => {
+          currentBgIndex = nextBgIndex;
+          nextBgIndex = (nextBgIndex + 1) % backgroundImages.length;
+          bgFadeOut = false;
+        }, 1000); // Wait for fade-out to complete
+      } else {
+        // If next image isn't loaded yet, try the one after
+        nextBgIndex = (nextBgIndex + 1) % backgroundImages.length;
+      }
     }, 8000); // Change background every 8 seconds
     
     return () => clearInterval(interval);
@@ -253,8 +348,25 @@
 </svelte:head>
 
 <main class="container">
-  <section class="showcase" style="--current-bg: url('{backgroundImages[currentBgIndex]}')">
-    <div class="bg-overlay" class:fade-out={bgFadeOut} class:fade-in={bgLoaded}></div>
+  <section class="showcase">
+    <!-- Updated background handling with three elements for smoother transitions -->
+    <div class="bg-wrapper">
+      {#if bgLoaded}
+        <div 
+          class="bg-overlay" 
+          style={`background-image: url('${backgroundImages[currentBgIndex]}'); 
+                opacity: ${bgFadeOut ? 0 : 0.15};
+                z-index: ${bgFadeOut ? -3 : -1};`}>
+        </div>
+        <div 
+          class="bg-overlay" 
+          style={`background-image: url('${backgroundImages[nextBgIndex]}'); 
+                opacity: ${bgFadeOut ? 0.15 : 0};
+                z-index: ${bgFadeOut ? -1 : -2};`}>
+        </div>
+      {/if}
+    </div>
+    
     <Logo extraClass="logo" />
     <h1 class="title">Gisaima Realm</h1>
     <p class="subtitle">Open source territory control game with infinite worlds</p>
@@ -298,6 +410,7 @@
                   playsInline
                   preload="auto"
                   onloadeddata={handleVideoLoaded}
+                  onplay={handleVideoPlay}
                   onended={handleVideoEnd}
                   class:visible={mediaLoaded[currentMediaIndex]}
                 ></video>
@@ -777,23 +890,20 @@
     background-color: var(--color-pale-green);
   }
 
-  .bg-overlay {
+  .bg-wrapper {
     position: absolute;
     inset: 0;
-    background-image: var(--current-bg);
-    background-size: cover;
-    background-position: center;
-    opacity: 0; /* Start with opacity 0 by default */
-    transition: opacity 1.5s ease; /* Increased transition time from 1s to 1.5s */
+    overflow: hidden;
     z-index: -1;
   }
   
-  .bg-overlay.fade-out {
-    opacity: 0;
-  }
-  
-  .bg-overlay.fade-in {
-    opacity: 0.15; /* Fade in to the desired opacity */
+  .bg-overlay {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    transition: opacity 1.5s ease, z-index 0s 1.5s; /* Add transition delay for z-index */
+    will-change: opacity; /* Performance optimization for smoother transitions */
   }
 
   /* Tablet (medium devices) */

@@ -1,11 +1,11 @@
 <script>
     import SignOut from './icons/SignOut.svelte';
     
-    // Props
-    const { onClose, currentPath, user, signOut, animatingOut = false } = $props();
+    // Props - add class property
+    const { onClose, currentPath, user, signOut, animatingOut = false, class: className = '' } = $props();
 </script>
 
-<div class="mobile-menu">
+<div class={`mobile-menu ${className}`}>
     <div class={`mobile-menu-header ${animatingOut ? 'animate-out' : 'animate-item'}`}
          style={animatingOut ? 'animation-delay: 0.2s;' : ''}>
         <h2>Menu</h2>
@@ -18,6 +18,14 @@
                class:active={currentPath === '/'}
                style={animatingOut ? 'animation-delay: 0.15s;' : ''}
             >Home</a>
+        {/if}
+        
+        {#if currentPath !== '/guide'}
+            <a href="/guide" 
+               class={animatingOut ? 'animate-out' : 'animate-item'} 
+               class:active={currentPath === '/guide'}
+               style={animatingOut ? 'animation-delay: 0.125s;' : ''}
+            >Guide</a>
         {/if}
         
         <!-- Only show worlds link if user is logged in -->
@@ -52,7 +60,14 @@
 
 <style>
     .mobile-menu {
-        width: 100%; /* Changed from calc(100% - 2em) to 100% to match container */
+        position: absolute; /* Position absolutely */
+        top: 100%; /* Position below header */
+        left: 0;
+        right: 0;
+        width: 90%; /* Use percentage width */
+        margin: 0 auto; /* Center the menu */
+        max-width: 500px; /* Limit the maximum width */
+        box-sizing: border-box; /* Include padding in width */
         background-color: var(--color-dark-blue);
         border-top: 0.0625em solid var(--color-panel-border);
         border-bottom-left-radius: 0.5em; 
@@ -63,6 +78,7 @@
         flex-direction: column;
         max-height: calc(100vh - 60px);
         overflow-y: auto;
+        z-index: 100; /* Ensure proper z-index */
     }
     
     .mobile-menu-header {
