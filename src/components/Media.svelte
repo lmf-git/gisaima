@@ -364,9 +364,9 @@
                 playsinline
                 preload="auto"
                 autoplay={!isMobileBrowser}
-                on:loadeddata={handleVideoLoaded}
-                on:play={handleVideoPlay}
-                on:ended={handleVideoEnd}
+                onloadeddata={handleVideoLoaded}
+                onplay={handleVideoPlay}
+                onended={handleVideoEnd}
                 class:visible={mediaLoaded[currentMediaIndex]}
               ></video>
               
@@ -375,8 +375,7 @@
                 <button 
                   class="play-button"
                   aria-label="Play video"
-                  on:click={handlePlayButtonClick}
-                >
+                  onclick={handlePlayButtonClick}>
                   <span class="play-icon">▶</span>
                 </button>
               {/if}
@@ -388,7 +387,7 @@
                 src={currentMedia.src} 
                 alt={currentMedia.alt} 
                 class="media-content screenshot"
-                on:load={handleImageLoad}
+                onload={handleImageLoad}
                 class:visible={mediaLoaded[currentMediaIndex]} 
               />
             </div>
@@ -400,7 +399,7 @@
             <button 
               class="gallery-dot {currentMediaIndex === index ? 'active' : ''}" 
               aria-label={`View media ${index + 1}`}
-              on:click={() => selectMedia(index)}
+              onclick={() => selectMedia(index)}
               disabled={transitionState !== 'idle'}
             ></button>
           {/each}
