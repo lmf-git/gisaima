@@ -330,8 +330,10 @@
     
     <Logo extraClass="logo" />
     <h1 class="title">Gisaima Realm</h1>
-    <p class="subtitle">Open source territory control game with infinite worlds</p>
-    <p class="tagline">Play for free across all devices • No pay-to-win • Real-time multiplayer</p>
+    <p class="subtitle">
+      Open source territory control game with infinite worlds<br>
+      Play for free across all devices • No pay-to-win • Real-time multiplayer
+    </p>
     <div class="actions" class:loaded={!actionsLoading}>
       {#if !actionsLoading}
         {#if $user}
@@ -457,12 +459,18 @@
 
   .showcase {
     text-align: center;
-    padding: 4em 0.5em 4em; /* Increased bottom padding from 2.5em to 4em */
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     border-bottom: 1px solid var(--color-panel-border);
-    margin-bottom: 3em; /* Increased margin from 2em to 3em */
-    position: relative; /* Add this */
-    overflow: hidden; /* Add this */
-    isolation: isolate; /* Add this to create stacking context */
+    margin-bottom: 3em;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    box-sizing: border-box;
+    padding: 2em;
   }
 
   .title {
@@ -478,26 +486,18 @@
   .subtitle {
     font-size: 1.2em;
     color: var(--color-text-secondary);
-    margin-bottom: 2em;
-    font-weight: 200; /* Reduced from 300 */
+    margin: 1em 0 2em;
+    font-weight: 300;
     font-family: var(--font-body);
-  }
-
-  .tagline {
-    font-size: 1em;
-    color: var(--color-muted-teal);
-    margin-top: 0.5em;
-    margin-bottom: 1.5em;
-    font-weight: 400;
-    font-family: var(--font-body);
-    letter-spacing: 0.05em;
+    line-height: 1.6;
   }
 
   .actions {
     display: flex;
     justify-content: center;
     gap: 1.5em;
-    margin-top: 2.5em;
+    margin-top: auto;
+    padding-bottom: 2em;
     flex-wrap: wrap;
     min-height: 5em; /* Ensure consistent height during loading */
     opacity: 0;
@@ -682,7 +682,7 @@
   .showcase > :global(.logo) {
     width: 7.5em;
     height: auto;
-    margin: 0 auto 2em; /* Added margin-bottom */
+    margin: 0 auto;
     filter: drop-shadow(0 0 0.5em rgba(193, 19, 22, 0.6));
   }
   
@@ -886,7 +886,7 @@
     }
     
     .subtitle {
-      font-size: 1.4em;
+      font-size: 1.3em;
     }
     
     .tagline {
@@ -911,7 +911,7 @@
     }
     
     .showcase {
-      padding: 4em 3em 5em; /* Increased bottom padding from 3em to 5em */
+      padding: 3em;
     }
     
     .title {
@@ -919,7 +919,8 @@
     }
     
     .subtitle {
-      font-size: 1.6em;
+      font-size: 1.4em;
+      margin: 1.5em 0 3em;
     }
     
     .tagline {
