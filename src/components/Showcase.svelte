@@ -11,7 +11,6 @@
   let bgIndex = $state(0);
   let nextBgIndex = $state(1);
   let bgTransitioning = $state(false);
-  let bgImagesLoaded = $state([]);
   let initialBgLoaded = $state(false);
   let rotationInterval = $state(null);
   
@@ -29,115 +28,46 @@
     '/banners/7.jpeg'
   ];
   
-  // Function to preload the background images
-  function preloadBackgroundImages() {
-    // Initialize the loaded status array
-    bgImagesLoaded = Array(backgroundImages.length).fill(false);
-
-    // Load the first image with priority
+  // Function to preload the first background image
+  function preloadFirstImage() {
     const firstImg = new Image();
     firstImg.onload = () => {
-      bgImagesLoaded[0] = true;
       initialBgLoaded = true;
+      startBackgroundRotation();
     };
     firstImg.src = backgroundImages[0];
-
-    // Preload the rest of the images in the background
-    backgroundImages.forEach((src, idx) => {
-      if (idx > 0) {
-        const bgImg = new Image();
-        bgImg.onload = () => {
-          bgImagesLoaded[idx] = true;
-        };
-        bgImg.src = src;
-      }
-    });
   }
   
-  // Track if component is mounted
-  let isMounted = $state(false);
-  
-  // Track background transition
-  let lastTransitionTime = $state(0);
-  let transitionTimer = $state(null);
-  
-  // Function to find the next available loaded image
-  function findNextLoadedImage() {
-    if (!bgImagesLoaded.length) return null;
-    
-    const totalImages = backgroundImages.length;
-    let nextIdx = (bgIndex + 1) % totalImages;
-    let attempts = 0;
-    
-    // Try to find the next loaded image
-    while (!bgImagesLoaded[nextIdx] && attempts < totalImages) {
-      nextIdx = (nextIdx + 1) % totalImages;
-      attempts++;
-    }
-    
-    if (bgImagesLoaded[nextIdx]) {
-      return nextIdx;
-    }
-    
-    return null; // No loaded images found
-  }
-  
-  // Function to start a transition
-  function startBackgroundTransition() {
+  // Function to transition to the next background
+  function transitionToNextBackground() {
     if (bgTransitioning) return;
     
-    const nextIdx = findNextLoadedImage();
-    if (nextIdx === null) return;
-    
-    // Start transition
     bgTransitioning = true;
-    nextBgIndex = nextIdx;
-    lastTransitionTime = Date.now();
+    nextBgIndex = (bgIndex + 1) % backgroundImages.length;
     
     // Complete transition after animation finishes (match CSS transition time)
-    if (transitionTimer) clearTimeout(transitionTimer);
-    transitionTimer = setTimeout(() => {
+    setTimeout(() => {
       bgIndex = nextBgIndex;
       bgTransitioning = false;
     }, 1000);
   }
   
-  // Function to start the background rotation with proper interval
+  // Function to start the background rotation
   function startBackgroundRotation() {
+    // Clear any existing interval
     if (rotationInterval) clearInterval(rotationInterval);
     
+    // Start the rotation interval - change image every 10 seconds
     rotationInterval = setInterval(() => {
-      // Only start a new transition if we're not already transitioning
-      // and enough time has passed (10 seconds)
-      if (!bgTransitioning && Date.now() - lastTransitionTime >= 10000) {
-        startBackgroundTransition();
-      }
-    }, 1000); // Check every second
+      transitionToNextBackground();
+    }, 10000);
   }
   
-  // Simple effect for initial background loading
-  $effect(() => {
-    if (!isMounted || !initialBgLoaded) return;
-    
-    // Set initial timestamp
-    lastTransitionTime = Date.now();
-    
-    // Start rotation when component mounts and initial image is loaded
-    startBackgroundRotation();
-    
-    return () => {
-      if (rotationInterval) clearInterval(rotationInterval);
-      if (transitionTimer) clearTimeout(transitionTimer);
-    };
-  });
-  
   onMount(() => {
-    preloadBackgroundImages();
-    isMounted = true;
+    preloadFirstImage();
     
     return () => {
       if (rotationInterval) clearInterval(rotationInterval);
-      if (transitionTimer) clearTimeout(transitionTimer);
     };
   });
 </script>

@@ -125,7 +125,7 @@
 <style>
   .worlds-page {
     max-width: 1200px;
-    margin: 0 auto;
+    margin: 4rem auto; /* Added top and bottom margin */
     padding: 2rem;
   }
   
@@ -141,9 +141,30 @@
   }
   
   .worlds-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    display: flex;
+    flex-direction: column; /* Mobile first: stacked vertically */
     gap: 2rem;
+    padding: 0 3em; /* Added 3em padding on sides */
+  }
+  
+  @media (min-width: 768px) {
+    .worlds-grid {
+      flex-direction: row; /* Switch to horizontal on larger screens */
+      flex-wrap: wrap; /* Allow wrapping to next row */
+      justify-content: center; /* Center the cards */
+    }
+    
+    .world-card {
+      flex: 0 0 calc(50% - 2rem); /* Two cards per row with gap */
+      max-width: calc(50% - 2rem);
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .world-card {
+      flex: 0 0 calc(33.333% - 2rem); /* Three cards per row with gap */
+      max-width: calc(33.333% - 2rem);
+    }
   }
   
   .world-card {

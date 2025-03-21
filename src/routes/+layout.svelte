@@ -412,10 +412,7 @@
         right: 0;
         z-index: 100;
         height: 6em;
-        background: linear-gradient(to bottom,
-            rgba(10, 25, 47, 0.9) 0%,
-            rgba(10, 25, 47, 0.8) 50%,
-            rgba(10, 25, 47, 0) 100%);
+        gap: 1em; /* Add gap between header elements */
     }
 
     /* Simplified header styling - no background or shadow */
@@ -426,6 +423,7 @@
         padding: 1em 2em;
         z-index: 100;
         height: 6em;
+        gap: 1em; /* Add gap between header elements */
     }
 
     /* Logo styling */
@@ -450,7 +448,7 @@
     /* Navigation styling */
     .nav {
         display: flex;
-        margin-right: 2em; /* Add right margin to create space between nav and auth */
+        margin-right: auto; /* Changed from 2em to auto to push other elements to the right */
     }
 
     .links {
@@ -519,15 +517,15 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 0.4em;
+        padding: 0;
         background-color: transparent;
         color: var(--color-pale-green);
-        border: 1px solid var(--color-muted-teal);
+        border: none;
         border-radius: 50%;
         cursor: pointer;
         transition: all 0.2s ease;
-        width: 2.2em;
-        height: 2.2em;
+        width: 2.6em;
+        height: 2.6em;
     }
     
     .signout:hover {
