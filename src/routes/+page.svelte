@@ -16,7 +16,9 @@
     <p class="subtitle">A territory control strategy game inspired by ancient board games</p>
     <div class="actions">
       {#if $user}
-        <a href={$game.currentWorld ? `/map?world=${$game.currentWorld}` : '/map'} class="button primary">Return to Game</a>
+        {#if $game.currentWorld}
+          <a href={`/map?world=${$game.currentWorld}`} class="button primary">Return to Game</a>
+        {/if}
         <a href="/worlds" class="button secondary">See Worlds</a>
       {:else}
         <a href="/login" class="button primary">Play Now</a>
@@ -66,7 +68,9 @@
     <div class="links">
       {#if $user}
         <a href="/worlds">Worlds</a>
-        <a href={$game.currentWorld ? `/map?world=${$game.currentWorld}` : '/map'}>Return to Game</a>
+        {#if $game.currentWorld}
+          <a href={`/map?world=${$game.currentWorld}`}>Return to Game</a>
+        {/if}
         <a href="/profile">Profile</a>
       {:else}
         <a href="/login">Login</a>
