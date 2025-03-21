@@ -59,9 +59,7 @@
 </script>
 
 <section class="showcase {extraClass}">
-  <!-- Fixed background handling with always-present layers -->
   <div class="bg-wrapper">
-    <!-- Both layers always present, opacity controls visibility -->
     <div 
       class="bg-layer current"
       class:fading={bgTransitioning}
@@ -75,28 +73,31 @@
     </div>
   </div>
   
-  <Logo extraClass="logo" />
-  <h1 class="title">Gisaima Realm</h1>
-  <p class="subtitle">
-    Open source territory control game with infinite worlds<br>
-    Play for free across all devices • No pay-to-win • Real-time multiplayer
-  </p>
-  <div class="actions" class:loaded={!actionsLoading}>
-    <!-- Use placeholder divs that take up the same space as real buttons -->
-    {#if actionsLoading}
-      <div class="button-placeholder"></div>
-      <div class="button-placeholder"></div>
-    {:else}
-      {#if $user}
-        {#if $game.currentWorld}
-          <a href={`/map?world=${$game.currentWorld}`} class="button primary">Return to Game</a>
+  <div class="content-container">
+    <Logo extraClass="logo" />
+    <h1 class="title">Gisaima Realm</h1>
+    <p class="subtitle">
+      Open source territory control game with infinite worlds<br>
+      Play for free across all devices • No pay-to-win • Real-time multiplayer
+    </p>
+    <div class="actions-wrapper">
+      <div class="actions" class:loaded={!actionsLoading}>
+        {#if actionsLoading}
+          <div class="button-placeholder"></div>
+          <div class="button-placeholder"></div>
+        {:else}
+          {#if $user}
+            {#if $game.currentWorld}
+              <a href={`/map?world=${$game.currentWorld}`} class="button primary">Return to Game</a>
+            {/if}
+            <a href="/worlds" class="button secondary">See Worlds</a>
+          {:else}
+            <a href="/login" class="button primary">Play Now</a>
+            <a href="/signup" class="button secondary">Register Here</a>
+          {/if}
         {/if}
-        <a href="/worlds" class="button secondary">See Worlds</a>
-      {:else}
-        <a href="/login" class="button primary">Play Now</a>
-        <a href="/signup" class="button secondary">Register Here</a>
-      {/if}
-    {/if}
+      </div>
+    </div>
   </div>
 </section>
 
@@ -106,8 +107,8 @@
     height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     border-bottom: 1px solid var(--color-panel-border);
     margin-bottom: 3em;
     position: relative;
@@ -117,9 +118,21 @@
     padding: 2em;
   }
 
+  /* New content container with consistent spacing using gap instead of margins */
+  .content-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    max-height: 36em;
+    gap: 1.5em; /* Use gap for consistent spacing */
+  }
+
   .title {
     font-size: 2em;
-    margin: 0.5em 0;
+    margin: 0; /* Remove margins */
     letter-spacing: 0.2em;
     color: #e24144;
     text-shadow: 0 0 0.625em rgba(193, 19, 22, 0.5);
@@ -130,21 +143,35 @@
   .subtitle {
     font-size: 1.2em;
     color: var(--color-text-secondary);
-    margin: 1em 0 2em;
+    margin: 0; /* Remove margins */
     font-weight: 300;
     font-family: var(--font-body);
     line-height: 1.6;
+  }
+
+  /* Wrapper with fixed height to prevent layout shifts */
+  .actions-wrapper {
+    margin: 0; /* Remove margin */
+    width: 100%;
+    height: 8em;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .actions {
     display: flex;
     justify-content: center;
     gap: 1.5em;
-    padding-bottom: 2em;
     flex-wrap: wrap;
-    min-height: 5em; /* Ensure consistent height during loading */
+    width: 100%;
     opacity: 0;
     transition: opacity 0.5s ease;
+    position: absolute; /* Take out of document flow */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center precisely */
   }
 
   .actions.loaded {
@@ -154,7 +181,7 @@
   /* Button placeholders to maintain layout during loading */
   .button-placeholder {
     display: inline-block;
-    height: 3em; /* Roughly the height of a button */
+    height: 3.4em; /* Slightly taller to ensure enough space */
     width: 10em; /* Approximate button width */
     background: rgba(0, 0, 0, 0.1);
     border-radius: 0.25em;
@@ -164,13 +191,15 @@
   @media (max-width: 768px) {
     .button-placeholder {
       width: 100%;
+      height: 3.8em; /* Taller for mobile */
     }
   }
 
-  :global(.showcase > .logo) {
+  /* Correct global selector for logo */
+  :global(.showcase .logo) {
     width: 7.5em;
     height: auto;
-    margin: 0 auto;
+    margin: 0; /* Remove margin */
     filter: drop-shadow(0 0 0.5em rgba(193, 19, 22, 0.6));
   }
 
@@ -268,6 +297,11 @@
       padding: 4em 1em 2em;
     }
     
+    .content-container {
+      max-height: 40em;
+      gap: 2em; /* Increase spacing for tablet */
+    }
+    
     .title {
       font-size: 2.5em;
     }
@@ -276,6 +310,10 @@
       font-size: 1.3em;
     }
 
+    .actions-wrapper {
+      height: 9em; /* More space for tablet */
+    }
+    
     .button-placeholder {
       width: 12em; /* Slightly wider placeholders for tablet */
     }
@@ -286,15 +324,24 @@
       padding: 3em;
     }
     
+    .content-container {
+      max-height: 44em;
+      gap: 2.5em; /* Increase spacing for desktop */
+    }
+    
     .title {
       font-size: 3.5em;
     }
     
     .subtitle {
       font-size: 1.4em;
-      margin: 1.5em 0 3em;
+      /* Remove margin: 1.5em 0 3em; and use container gap instead */
     }
 
+    .actions-wrapper {
+      height: 10em; /* More space for desktop */
+    }
+    
     :global(.showcase .button) {
       font-size: 1.5em;
       padding: 0.6em 1.8em;

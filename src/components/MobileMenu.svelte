@@ -5,6 +5,10 @@
     const { onClose, currentPath, user, signOut, animatingOut = false, class: className = '' } = $props();
 </script>
 
+<!-- Add backdrop that covers the full screen -->
+<div class={`menu-backdrop ${animatingOut ? 'animate-out' : 'animate-in'}`} >
+</div>
+
 <div class={`mobile-menu ${className}`}>
     <div class={`mobile-menu-header ${animatingOut ? 'animate-out' : 'animate-item'}`}
          style={animatingOut ? 'animation-delay: 0.2s;' : ''}>
@@ -65,11 +69,10 @@
     .mobile-menu {
         position: absolute; /* Position absolutely */
         top: 100%; /* Position below header */
-        left: 0;
-        right: 0;
-        width: 90%; /* Use percentage width */
-        margin: 0 auto; /* Center the menu */
+        left: 1rem; /* Spacing from left edge */
+        right: 1rem; /* Spacing from right edge */
         max-width: 500px; /* Limit the maximum width */
+        margin: 0 auto; /* Center the menu */
         box-sizing: border-box; /* Include padding in width */
         background-color: var(--color-dark-blue);
         border-top: 0.0625em solid var(--color-panel-border);
@@ -264,6 +267,47 @@
         to {
             opacity: 0;
             transform: translateY(10px);
+        }
+    }
+
+    /* Add backdrop styling */
+    .menu-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(10, 25, 47, 0.85); /* Dark navy with transparency */
+        z-index: 99; /* Below menu but above other content */
+        cursor: pointer;
+    }
+    
+    /* Animation for backdrop */
+    .menu-backdrop.animate-in {
+        opacity: 0;
+        animation: backdropFadeIn 0.3s ease forwards;
+    }
+    
+    .menu-backdrop.animate-out {
+        opacity: 1;
+        animation: backdropFadeOut 0.3s ease forwards;
+    }
+    
+    @keyframes backdropFadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    
+    @keyframes backdropFadeOut {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
         }
     }
 </style>
