@@ -62,7 +62,6 @@
         align-items: center;
         justify-content: center;
         min-height: 100vh;
-        /* Removed unnecessary padding: 0; */
     }
 
     .login-container {
@@ -168,8 +167,6 @@
             padding: 1.5em;
             margin: 0 0.5em; /* Reduced margin on smaller screens */
         }
-        
-        /* Removed unnecessary .login-page padding reset */
         
         h1 {
             font-size: 1.5em;
