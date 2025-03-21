@@ -204,8 +204,8 @@
   
   // Set up media handling on mount
   onMount(() => {
-    // Preload the first background image
-    preloadFirstBackground();
+    // Preload background images
+    preloadBackgroundImages();
     
     // Preload gallery media
     preloadGalleryMedia();
@@ -258,10 +258,13 @@
   // Derived state for UI loading conditions
   const actionsLoading = $derived($userLoading || !$isAuthReady || $game.loading);
 
-  // Background image state - simplified approach
+  // Background image state - redesigned for smoother transitions
   let currentBgIndex = $state(0);
-  let bgFadeOut = $state(false);
-  let bgLoaded = $state(false); // Track initial background load
+  let activeBgLayer = $state(1); // 1 or 2, indicates which layer is currently active/visible
+  let bgTransitioning = $state(false); // Flag to prevent multiple transitions at once
+  let bgImagesLoaded = $state(Array(7).fill(false)); // Track loaded state for each image
+  let initialBgLoaded = $state(false); // Track if first image has loaded
+  
   // Update paths to the correct banner locations
   const backgroundImages = [
     '/banners/1.jpeg',
@@ -273,33 +276,68 @@
     '/banners/7.jpeg'
   ];
   
-  // Function to preload the first background image
-  function preloadFirstBackground() {
-    const img = new Image();
-    img.onload = () => {
-      bgLoaded = true; // Mark as loaded once the image is ready
+  // Function to preload the background images
+  function preloadBackgroundImages() {
+    // Load the first image with priority
+    const firstImg = new Image();
+    firstImg.onload = () => {
+      bgImagesLoaded[0] = true;
+      initialBgLoaded = true;
     };
-    img.src = backgroundImages[0];
+    firstImg.src = backgroundImages[0];
 
     // Preload the rest of the images in the background
-    backgroundImages.slice(1).forEach((src) => {
+    backgroundImages.slice(1).forEach((src, idx) => {
       const bgImg = new Image();
+      bgImg.onload = () => {
+        bgImagesLoaded[idx + 1] = true;
+      };
       bgImg.src = src;
     });
   }
   
-  // Effect to handle background crossfade - simplified
-  $effect(() => {
-    if (!bgLoaded) return; // Wait for first image to load
+  // Improved function to transition to the next background image
+  function transitionToNextBg() {
+    // Don't transition if already in progress
+    if (bgTransitioning) {
+      console.log("Transition already in progress, skipping");
+      return;
+    }
     
+    // Determine the next image index
+    const nextIndex = (currentBgIndex + 1) % backgroundImages.length;
+    
+    // Only proceed if the next image is loaded
+    if (!bgImagesLoaded[nextIndex]) {
+      console.log(`Next image (${nextIndex}) not loaded yet, skipping transition`);
+      return;
+    }
+    
+    // Start the transition
+    console.log(`Starting transition from image ${currentBgIndex} to ${nextIndex}`);
+    bgTransitioning = true;
+    
+    // Toggle which layer is active (this triggers the CSS transition)
+    activeBgLayer = activeBgLayer === 1 ? 2 : 1;
+    
+    // After transition completes, update the current index and clear the transition flag
+    // Use a longer timeout to ensure the transition is fully complete before allowing another
+    setTimeout(() => {
+      currentBgIndex = nextIndex;
+      bgTransitioning = false;
+      console.log(`Transition complete, current image is now ${currentBgIndex}`);
+    }, 2000); // Ensure this is longer than the CSS transition duration (1.5s)
+  }
+  
+  // Effect to handle automatic background rotation with increased interval
+  $effect(() => {
+    // Don't start until the first image has loaded
+    if (!initialBgLoaded) return;
+    
+    console.log("Setting up background rotation interval");
     const interval = setInterval(() => {
-      bgFadeOut = true;
-      
-      setTimeout(() => {
-        currentBgIndex = (currentBgIndex + 1) % backgroundImages.length;
-        bgFadeOut = false;
-      }, 1000); // Wait for fade-out to complete
-    }, 8000); // Change background every 8 seconds
+      transitionToNextBg();
+    }, 10000); // Increased from 8000 to 10000 ms for more time between transitions
     
     return () => clearInterval(interval);
   });
@@ -312,18 +350,21 @@
 
 <main class="container">
   <section class="showcase">
-    <!-- Simplified background handling with just two layers -->
+    <!-- Improved background handling with explicit layers -->
     <div class="bg-wrapper">
-      {#if bgLoaded}
+      {#if initialBgLoaded}
+        <!-- Layer 1: One of our alternating background layers -->
         <div 
-          class="bg-overlay" 
-          style={`background-image: url('${backgroundImages[currentBgIndex]}'); 
-                opacity: ${bgFadeOut ? 0 : 0.15};`}>
+          class="bg-overlay"
+          class:active={activeBgLayer === 1}
+          style={`background-image: url('${backgroundImages[currentBgIndex]}');`}>
         </div>
+        
+        <!-- Layer 2: The other alternating background layer -->
         <div 
-          class="bg-overlay next-bg" 
-          style={`background-image: url('${backgroundImages[(currentBgIndex + 1) % backgroundImages.length]}'); 
-                opacity: ${bgFadeOut ? 0.15 : 0};`}>
+          class="bg-overlay"
+          class:active={activeBgLayer === 2}
+          style={`background-image: url('${backgroundImages[(currentBgIndex + 1) % backgroundImages.length]}');`}>
         </div>
       {/if}
     </div>
@@ -496,7 +537,6 @@
     display: flex;
     justify-content: center;
     gap: 1.5em;
-    margin-top: auto;
     padding-bottom: 2em;
     flex-wrap: wrap;
     min-height: 5em; /* Ensure consistent height during loading */
@@ -856,6 +896,7 @@
     inset: 0;
     overflow: hidden;
     z-index: -1;
+    background-color: var(--color-bg);
   }
   
   .bg-overlay {
@@ -864,11 +905,13 @@
     background-size: cover;
     background-position: center;
     transition: opacity 1.5s ease;
-    will-change: opacity; /* Performance optimization for smoother transitions */
+    opacity: 0;
+    z-index: -10; /* Default to very back */
   }
   
-  .bg-overlay.next-bg {
-    z-index: -2;
+  .bg-overlay.active {
+    opacity: 0.15;
+    z-index: -1; /* Always on top when active */
   }
 
   /* Tablet (medium devices) */
@@ -887,10 +930,6 @@
     
     .subtitle {
       font-size: 1.3em;
-    }
-    
-    .tagline {
-      font-size: 1.1em;
     }
 
     .heading {
@@ -921,11 +960,6 @@
     .subtitle {
       font-size: 1.4em;
       margin: 1.5em 0 3em;
-    }
-    
-    .tagline {
-      font-size: 1.2em;
-      margin-bottom: 2em;
     }
 
     .actions > :global(.button) {
