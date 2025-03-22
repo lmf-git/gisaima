@@ -10,7 +10,7 @@
     targetStore,
     setHighlighted  // Renamed from updateHoveredTile
   } from "../../lib/stores/map.js";
-  import { game } from "../../lib/stores/game.js";
+  import { game, currentPlayer } from "../../lib/stores/game.js";  // Updated import
   
   // Convert to $props syntax
   const { detailed = false } = $props();
@@ -327,9 +327,29 @@
     return null;
   });
   
+  // Debug log player position when it changes
+  $effect(() => {
+    if (playerPosition) {
+      console.log("Player position:", playerPosition);
+    }
+  });
+  
   // Function to check if a tile is the player's position
   function isPlayerPosition(x, y) {
     return playerPosition && playerPosition.x === x && playerPosition.y === y;
+  }
+  
+  // Get current player info from the currentPlayer store for grid display
+  const currentPlayerId = $derived($currentPlayer?.uid);
+  
+  // Function to check if a player entity is the current player
+  function isCurrentPlayer(playerEntity) {
+    return playerEntity && playerEntity.uid === currentPlayerId;
+  }
+  
+  // Check if any players on a tile represent the current player
+  function hasCurrentPlayer(players) {
+    return players && players.some(player => isCurrentPlayer(player));
   }
 </script>
 
@@ -368,6 +388,7 @@
             Math.pow(cell.x - $map.target.x, 2) + 
             Math.pow(cell.y - $map.target.y, 2)
           )}
+          {@const isCurrentPlayerTile = hasCurrentPlayer(cell.players)}
           <div
             class="tile {getStructureClass(cell.structure)}"
             class:center={cell.isCenter}
@@ -376,10 +397,11 @@
             class:has-groups={cell.groups?.length > 0}
             class:has-players={cell.players?.length > 0}
             class:player-position={isPlayerPosition(cell.x, cell.y)}
+            class:current-player-tile={isCurrentPlayerTile}
             onmouseenter={() => handleTileHover(cell)}
             role="gridcell"
             tabindex="-1"
-            aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}{isPlayerPosition(cell.x, cell.y) ? ', your position' : ''}"
+            aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}{isPlayerPosition(cell.x, cell.y) ? ', your position' : ''}{isCurrentPlayerTile ? ', your character' : ''}"
             aria-current={cell.isCenter ? "location" : undefined}
             style="
               background-color: {cell.color};
@@ -396,17 +418,19 @@
             {#if cell.structure}
               <div class="entity-indicator structure-indicator {cell.structure.type}-indicator" aria-hidden="true"></div>
             {/if}
+
+            {#if cell.players?.length > 0}
+              <div class="entity-indicator player-indicator" class:current-player-indicator={isCurrentPlayerTile} aria-hidden="true">
+                {#if cell.players.length > 1}
+                  <span class="count">{cell.players.length}</span>
+                {/if}
+              </div>
+            {/if}
+
             {#if cell.groups?.length > 0}
               <div class="entity-indicator group-indicator" aria-hidden="true">
                 {#if cell.groups.length > 1}
                   <span class="count">{cell.groups.length}</span>
-                {/if}
-              </div>
-            {/if}
-            {#if cell.players?.length > 0}
-              <div class="entity-indicator player-indicator" aria-hidden="true">
-                {#if cell.players.length > 1}
-                  <span class="count">{cell.players.length}</span>
                 {/if}
               </div>
             {/if}
@@ -803,6 +827,24 @@
     box-shadow: 0 0 0.3em gold;
     z-index: 10;
     pointer-events: none;
+  }
+  
+  /* Style for when the player character is on a tile */
+  .current-player-tile .player-indicator {
+    background: rgba(64, 224, 208, 0.9); /* Turquoise to distinguish current player */
+    border-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 0.2em turquoise;
+  }
+  
+  .current-player-indicator {
+    transform: scale(1.1);
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(64, 224, 208, 0.7); }
+    70% { box-shadow: 0 0 0 0.4em rgba(64, 224, 208, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(64, 224, 208, 0); }
   }
   
   /* Make sure player position indicator works with other indicators */
