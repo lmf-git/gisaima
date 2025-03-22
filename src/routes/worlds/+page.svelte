@@ -108,12 +108,10 @@
           <p>{world.description || 'No description available'}</p>
           <div class="world-stats">
             <div class="stat-item">
-              <span class="stat-icon">👥</span>
               <span class="stat-label">Players:</span>
               <span class="stat-value">{world.playerCount || 0}</span>
             </div>
             <div class="stat-item">
-              <span class="stat-icon">📅</span>
               <span class="stat-label">Created:</span>
               <span class="stat-value">{new Date(world.created || Date.now()).toLocaleDateString()}</span>
             </div>
@@ -208,23 +206,18 @@
     align-items: center;
     padding: 0.5rem 0.75rem;
     border-radius: 6px;
-    background-color: rgba(42, 107, 122, 0.08);
-  }
-  
-  .stat-icon {
-    margin-right: 0.5rem;
-    font-size: 0.9rem;
+    background-color: rgba(42, 107, 122, 0.15);
   }
   
   .stat-label {
     font-weight: 600;
-    color: #555;
+    color: rgba(255, 255, 255, 0.9);
     margin-right: 0.5rem;
   }
   
   .stat-value {
     margin-left: auto;
-    color: #333;
+    color: rgba(255, 255, 255, 0.95);
     font-weight: 500;
   }
   

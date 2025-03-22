@@ -62,7 +62,7 @@
   <div class="warning-header">
     <h2>Temporary Account Notice</h2>
     <button class="close-btn" aria-label="Close dialog" onclick={onClose}>
-      <Close size="2.2em" color="var(--color-text)" />
+      <Close size="2.2em" extraClass="close-icon-light" />
     </button>
   </div>
   
@@ -207,6 +207,11 @@
     opacity: 1;
     background: rgba(255, 255, 255, 0.1);
     transform: scale(1.05);
+  }
+  
+  .close-btn > :global(.close-icon-light) {
+    color: var(--color-text);
+    stroke: var(--color-text);
   }
   
   .warning-content {
