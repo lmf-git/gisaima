@@ -47,10 +47,42 @@
   // Selected race
   let selectedRace = $state(null);
   let submitting = $state(false);
+  
+  // Track expanded state for each race on mobile
+  let expandedRaces = $state({});
+  
+  // Detect if we're on mobile
+  let isMobile = $state(false);
+  
+  // Check window size on mount
+  $effect(() => {
+    if (typeof window !== 'undefined') {
+      const checkMobile = () => {
+        isMobile = window.innerWidth <= 768;
+      };
+      
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      
+      return () => {
+        window.removeEventListener('resize', checkMobile);
+      };
+    }
+  });
 
   // Handle race selection
   function selectRace(race) {
     selectedRace = race;
+  }
+  
+  // Toggle race description on mobile
+  function toggleRaceDetails(raceId, event) {
+    if (!isMobile) return;
+    event.stopPropagation();
+    expandedRaces = {
+      ...expandedRaces,
+      [raceId]: !expandedRaces[raceId]
+    };
   }
 
   // Handle confirmation
@@ -94,12 +126,26 @@
           class:selected={selectedRace?.id === race.id}
           onclick={() => selectRace(race)}
         >
-          <h3>{race.name}</h3>
-          <p>{race.description}</p>
-          <div class="traits">
-            {#each race.traits as trait}
-              <span class="trait">{trait}</span>
-            {/each}
+          <div class="race-name-container">
+            <h3>{race.name}</h3>
+            {#if isMobile}
+              <button 
+                class="toggle-icon" 
+                aria-label="Toggle race details" 
+                onclick={(e) => toggleRaceDetails(race.id, e)}
+              >
+                {expandedRaces[race.id] ? '−' : '+'}
+              </button>
+            {/if}
+          </div>
+          
+          <div class="race-details" class:expanded={!isMobile || expandedRaces[race.id]}>
+            <p>{race.description}</p>
+            <div class="traits">
+              {#each race.traits as trait}
+                <span class="trait">{trait}</span>
+              {/each}
+            </div>
           </div>
         </button>
       {/each}
@@ -239,15 +285,29 @@
     background-color: rgba(100, 255, 218, 0.05);
   }
   
+  .race-name-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.7em;
+  }
+  
   .race-option h3 {
     font-family: var(--font-heading);
     font-weight: 600;
-    margin: 0 0 0.5em 0;
+    margin: 0;
     color: var(--color-muted-teal);
+    font-size: 1.3em;
   }
   
   .race-option.selected h3 {
     color: var(--color-pale-green);
+  }
+  
+  .race-details {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
   
   .race-option p {
@@ -273,6 +333,21 @@
   
   .race-option.selected .trait {
     background: rgba(100, 255, 218, 0.1);
+  }
+  
+  .toggle-icon {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--color-pale-green);
+    width: 1.5em;
+    height: 1.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.2);
+    border: none;
+    cursor: pointer;
   }
   
   .confirmation-actions {
@@ -391,6 +466,24 @@
     .cancel-button,
     .confirm-button {
       width: 100%;
+    }
+    
+    .race-option h3 {
+      font-size: 1.5em;  /* Even bigger on mobile */
+    }
+    
+    .race-details {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+    
+    .race-details.expanded {
+      max-height: 20em; /* Adjust based on content needs */
+    }
+    
+    .race-option {
+      padding: 0.8em;
     }
   }
 </style>
