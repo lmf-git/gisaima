@@ -13,6 +13,11 @@
   let bgTransitioning = $state(false);
   let rotationInterval = $state(null);
   
+  // Track image loading states
+  let loadedImages = $state(new Set());
+  let currentImageLoading = $state(false);
+  let nextImageLoading = $state(true);
+  
   // Derived state for UI loading conditions 
   const actionsLoading = $derived($userLoading || !$isAuthReady || $game.loading);
   
@@ -27,28 +32,91 @@
     '/banners/7.jpeg'
   ];
 
+  // Preload an image and track its loading state
+  function preloadImage(src) {
+    return new Promise((resolve, reject) => {
+      // Skip if already loaded
+      if (loadedImages.has(src)) {
+        resolve(src);
+        return;
+      }
+      
+      const img = new Image();
+      img.src = src;
+      
+      img.onload = () => {
+        loadedImages.add(src);
+        resolve(src);
+      };
+      
+      img.onerror = () => {
+        reject(`Failed to load image: ${src}`);
+      };
+    });
+  }
+
   // Simple function to handle the background transition
-  function rotateBackground() {
+  async function rotateBackground() {
     if (bgTransitioning) return;
     
-    // Start transition to next image
-    bgTransitioning = true;
-    nextBgIndex = (bgIndex + 1) % backgroundImages.length;
+    // Calculate next index
+    const nextIndex = (bgIndex + 1) % backgroundImages.length;
+    nextBgIndex = nextIndex;
     
-    // After transition completes, update the current index and reset state
-    setTimeout(() => {
-      bgIndex = nextBgIndex;
-      bgTransitioning = false;
-    }, 3000); // Match the longer CSS transition duration (3s)
+    // Preload the next image before transitioning
+    nextImageLoading = true;
+    try {
+      // Preload the current next image
+      await preloadImage(backgroundImages[nextIndex]);
+      nextImageLoading = false;
+      
+      // Start transition to next image
+      bgTransitioning = true;
+      
+      // After transition completes, update the current index and reset state
+      setTimeout(() => {
+        bgIndex = nextBgIndex;
+        bgTransitioning = false;
+        
+        // Preload the next image after transition
+        const futureIndex = (nextIndex + 1) % backgroundImages.length;
+        preloadImage(backgroundImages[futureIndex]).catch(console.error);
+      }, 3000); // Match the longer CSS transition duration (3s)
+    } catch (error) {
+      console.error(error);
+      nextImageLoading = false;
+      // Continue rotation even if image failed to load
+      setTimeout(rotateBackground, 5000);
+    }
   }
   
-  onMount(() => {
+  onMount(async () => {
+    // Preload first two images immediately
+    currentImageLoading = true;
+    try {
+      await preloadImage(backgroundImages[bgIndex]);
+      currentImageLoading = false;
+    } catch (error) {
+      console.error(error);
+      currentImageLoading = false;
+    }
+
+    // Preload next image
+    preloadImage(backgroundImages[nextBgIndex]).then(() => {
+      nextImageLoading = false;
+    }).catch(console.error);
+    
     // Start rotation after component is mounted, with initial delay
     // This prevents any issues with reactivity before the component is ready
     const initialDelay = setTimeout(() => {
       // Setup interval to rotate backgrounds every 15 seconds (longer to enjoy each image)
       rotationInterval = setInterval(rotateBackground, 15000);
     }, 3000); // Longer initial delay for first viewing
+    
+    // Preload other images in the background
+    for (let i = 2; i < backgroundImages.length; i++) {
+      preloadImage(backgroundImages[i]).catch(console.error);
+    }
     
     // Cleanup function
     return () => {
@@ -63,13 +131,15 @@
     <div 
       class="bg-layer current"
       class:fading={bgTransitioning}
-      style={`background-image: url('${backgroundImages[bgIndex]}');`}>
+      class:loading={currentImageLoading}
+      style={currentImageLoading ? 'background-image: none;' : `background-image: url('${backgroundImages[bgIndex]}');`}>
     </div>
     
     <div 
       class="bg-layer next"
       class:active={bgTransitioning}
-      style={`background-image: url('${backgroundImages[nextBgIndex]}');`}>
+      class:loading={nextImageLoading}
+      style={nextImageLoading ? 'background-image: none;' : `background-image: url('${backgroundImages[nextBgIndex]}');`}>
     </div>
   </div>
   
@@ -288,6 +358,12 @@
   
   /* Next layer fades in during transition */
   .bg-layer.next.active {
+    opacity: 0.15;
+  }
+
+  /* Loading state styling */
+  .bg-layer.loading {
+    background: var(--color-bg);
     opacity: 0.15;
   }
 
