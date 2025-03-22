@@ -15,8 +15,9 @@
   
   // Track image loading states
   let loadedImages = $state(new Set());
-  let currentImageLoading = $state(false);
+  let currentImageLoading = $state(true);
   let nextImageLoading = $state(true);
+  let initialLoadStarted = $state(false);
   
   // Derived state for UI loading conditions 
   const actionsLoading = $derived($userLoading || !$isAuthReady || $game.loading);
@@ -91,27 +92,50 @@
   }
   
   onMount(async () => {
-    // Preload first two images immediately
-    currentImageLoading = true;
-    try {
-      await preloadImage(backgroundImages[bgIndex]);
-      currentImageLoading = false;
-    } catch (error) {
-      console.error(error);
-      currentImageLoading = false;
-    }
-
-    // Preload next image
-    preloadImage(backgroundImages[nextBgIndex]).then(() => {
-      nextImageLoading = false;
-    }).catch(console.error);
+    // Start loading first image immediately
+    initialLoadStarted = true;
+    
+    // Start preloading in parallel - don't block showing the first image
+    Promise.all([
+      // Preload first image
+      preloadImage(backgroundImages[bgIndex]).then(() => {
+        currentImageLoading = false;
+      }).catch(error => {
+        console.error(error);
+        currentImageLoading = false;
+      }),
+      
+      // Preload second image
+      preloadImage(backgroundImages[nextBgIndex]).then(() => {
+        nextImageLoading = false;
+      }).catch(console.error)
+    ]);
     
     // Start rotation after component is mounted, with initial delay
-    // This prevents any issues with reactivity before the component is ready
     const initialDelay = setTimeout(() => {
-      // Setup interval to rotate backgrounds every 15 seconds (longer to enjoy each image)
-      rotationInterval = setInterval(rotateBackground, 15000);
-    }, 3000); // Longer initial delay for first viewing
+      // Only start rotation when both initial images are loaded
+      const startRotation = () => {
+        rotationInterval = setInterval(rotateBackground, 15000);
+      };
+      
+      if (!currentImageLoading && !nextImageLoading) {
+        startRotation();
+      } else {
+        // Check again in a second if images aren't loaded yet
+        const checkInterval = setInterval(() => {
+          if (!currentImageLoading && !nextImageLoading) {
+            clearInterval(checkInterval);
+            startRotation();
+          }
+        }, 1000);
+        
+        // Fallback - start rotation after max wait time even if images aren't loaded
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          startRotation();
+        }, 5000);
+      }
+    }, 3000);
     
     // Preload other images in the background
     for (let i = 2; i < backgroundImages.length; i++) {
@@ -132,7 +156,14 @@
       class="bg-layer current"
       class:fading={bgTransitioning}
       class:loading={currentImageLoading}
-      style={currentImageLoading ? 'background-image: none;' : `background-image: url('${backgroundImages[bgIndex]}');`}>
+      class:initial-load={!initialLoadStarted || currentImageLoading}>
+      <!-- Always set the background image to allow progressive loading -->
+      <div class="bg-image" style={`background-image: url('${backgroundImages[bgIndex]}');`}></div>
+      
+      <!-- Loading indicator only for first image -->
+      {#if !initialLoadStarted || currentImageLoading}
+        <div class="loading-indicator"></div>
+      {/if}
     </div>
     
     <div 
@@ -333,27 +364,37 @@
   .bg-layer {
     position: absolute;
     inset: 0;
+    will-change: opacity;
+  }
+  
+  /* Inner background image container for progressive loading */
+  .bg-image {
+    position: absolute;
+    inset: 0;
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
-    will-change: opacity;
+    opacity: 0.15;
   }
   
   /* Current background layer */
   .bg-layer.current {
-    opacity: 0.15;
-    transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother easing function with longer duration */
+    opacity: 1;
+    transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   /* Current layer fades out during transition */
-  .bg-layer.current.fading {
+  .bg-layer.current.fading .bg-image {
     opacity: 0;
   }
   
   /* Next background layer */
   .bg-layer.next {
     opacity: 0;
-    transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1); /* Matching transition for next layer */
+    transition: opacity 3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
   }
   
   /* Next layer fades in during transition */
@@ -364,7 +405,30 @@
   /* Loading state styling */
   .bg-layer.loading {
     background: var(--color-bg);
-    opacity: 0.15;
+  }
+  
+  /* Initial loading state - subtle pulse animation */
+  .bg-layer.initial-load .bg-image {
+    opacity: 0.05;
+  }
+  
+  /* Loading indicator for first image */
+  .loading-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid rgba(226, 65, 68, 0.2);
+    border-top-color: rgba(226, 65, 68, 0.8);
+    animation: spin 1.5s linear infinite;
+    opacity: 0.5;
+  }
+  
+  @keyframes spin {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
   }
 
   /* Responsive styles */
