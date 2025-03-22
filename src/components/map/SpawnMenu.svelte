@@ -18,7 +18,10 @@
   let spawning = $state(false);
   let error = $state(null);
   
-  // Load spawn points from the database instead of generating random ones
+  // Get player's race from game store
+  const playerRace = $derived($game.playerWorldData?.race || 'human');
+  
+  // Load spawn points from the database and filter by race
   async function loadSpawnPoints() {
     if (!$game.currentWorld) {
       error = "No world selected";
@@ -51,13 +54,17 @@
             if (spawnSnapshot.exists() && spawnSnapshot.val().type === 'spawn') {
               const spawnData = spawnSnapshot.val();
               
-              spawnPoints.push({
-                id: spawnId,
-                x: parseInt(x),
-                y: parseInt(y),
-                name: spawnData.name || `Spawn Point ${spawnPoints.length + 1}`,
-                description: spawnData.description
-              });
+              // Only add spawn points that match the player's race
+              if (spawnData.faction === playerRace) {
+                spawnPoints.push({
+                  id: spawnId,
+                  x: parseInt(x),
+                  y: parseInt(y),
+                  name: spawnData.name || `Spawn Point ${spawnPoints.length + 1}`,
+                  description: spawnData.description,
+                  faction: spawnData.faction
+                });
+              }
             }
           } catch (err) {
             console.error(`Error loading spawn ${spawnId}:`, err);
@@ -69,7 +76,7 @@
       }
       
       if (spawnPoints.length === 0) {
-        error = "No valid spawn points available";
+        error = `No spawn points available for ${playerRace}s in this world`;
       }
       
       return spawnPoints;
@@ -124,11 +131,12 @@
       // Get existing player profile data
       const displayName = $user.displayName || $user.email?.split('@')[0] || 'Player';
       
-      // Set player data in the world
+      // Set player data in the world, including race
       await set(playerEntityRef, {
         displayName,
         lastActive: Date.now(),
-        uid: $user.uid
+        uid: $user.uid,
+        race: playerRace
       });
       
       // Notify parent that spawn has completed
@@ -142,7 +150,7 @@
   }
   
   onMount(async () => {
-    // Load real spawn options when component mounts
+    // Load race-filtered spawn options when component mounts
     spawnOptions = await loadSpawnPoints();
     loading = false;
     
@@ -155,8 +163,8 @@
 
 <div class="spawn-menu">
   <div class="spawn-container">
-    <h2>Welcome to {$game.worldInfo[$game.currentWorld]?.name || 'New World'}</h2>
-    <p class="description">Select a location to begin your journey</p>
+    <h2>Welcome {playerRace.charAt(0).toUpperCase() + playerRace.slice(1)} to {$game.worldInfo[$game.currentWorld]?.name || 'New World'}</h2>
+    <p class="description">Select a settlement to begin your journey</p>
     
     {#if loading}
       <div class="loading">Loading spawn locations...</div>
@@ -167,7 +175,7 @@
       </div>
     {:else if spawnOptions.length === 0}
       <div class="error">
-        <p>No spawn points available in this world.</p>
+        <p>No spawn points available for {playerRace}s in this world.</p>
         <button class="secondary-button" onclick={() => goto('/worlds')}>Return to World Selection</button>
       </div>
     {:else}
@@ -181,6 +189,7 @@
           >
             <span class="option-name">{spot.name}</span>
             <span class="option-coords">Coordinates: {spot.x},{spot.y}</span>
+            <span class="faction-tag">{playerRace.charAt(0).toUpperCase() + playerRace.slice(1)} Settlement</span>
             {#if spot.description}
               <span class="option-desc">{spot.description}</span>
             {/if}
@@ -380,5 +389,16 @@
   
   .secondary-button:hover {
     background: rgba(255, 255, 255, 0.3);
+  }
+
+  .faction-tag {
+    font-size: 0.8rem;
+    background: rgba(0, 150, 150, 0.2);
+    color: var(--color-teal);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 0.25rem;
+    font-weight: 500;
   }
 </style>
