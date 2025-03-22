@@ -2,6 +2,7 @@
   // Update import to use targetStore instead of centerTileStore
   import { targetStore, ready } from "../../lib/stores/map";
   import Close from '../../components/icons/Close.svelte';
+  import { user } from "../../lib/stores/user";
   
   const { x = 0, y = 0, terrain, onClose } = $props()
   
@@ -50,12 +51,22 @@
   
   const escape = event => event.key === 'Escape' && onClose?.();
 
-  // Helper function to get player display name
+  // Simplified helper function to get player display name - matches game.js convention
   function getPlayerDisplayName(player) {
+    // For anonymous or guest users
     if (player.isAnonymous || player.guest) {
-      return `Guest ${player.id?.substring(0, 4) || ''}`;
+      return `Guest ${player.id?.substring(0, 4) || 'User'}`;
     }
-    return player.name || player.displayName || `Player ${player.id?.substring(0, 4) || ''}`;
+    
+    // For registered users - match the pattern used in game.js
+    return player.displayName || 
+           player.email?.split('@')[0] || 
+           `User ${player.id?.substring(0, 4)}`;
+  }
+  
+  // Check if a player is the current user
+  function isCurrentUser(player) {
+    return player.id === $user?.uid;
   }
 </script>
 
@@ -92,7 +103,9 @@
           <ul class="player-list">
             {#each players as player}
               <li>
-                <span class="player-name">{getPlayerDisplayName(player)}</span>
+                <span class="player-name" class:current-user={isCurrentUser(player)}>
+                  {getPlayerDisplayName(player)}
+                </span>
                 {#if player.race}
                   <span class="player-race">[{_fmt(player.race)}]</span>
                 {/if}
@@ -294,6 +307,20 @@
   .player-name {
     font-weight: 500;
     color: rgba(0, 0, 0, 0.85);
+  }
+  
+  .player-name.current-user {
+    font-weight: 700;
+    color: rgba(0, 0, 0, 0.95);
+    position: relative;
+  }
+  
+  .player-name.current-user::after {
+    content: " (You)";
+    font-weight: 400;
+    font-style: italic;
+    font-size: 0.9em;
+    color: rgba(0, 0, 0, 0.6);
   }
   
   .player-race {
