@@ -562,16 +562,12 @@
         background-color: transparent;
         color: var(--color-pale-green);
         border: none;
-        border-radius: 50%;
         cursor: pointer;
-        transition: all 0.2s ease;
-        width: 2.6em;
-        height: 2.6em;
+        transition: opacity 0.2s ease;
     }
     
     .signout:hover {
-        transform: translateY(-0.125em);
-        box-shadow: 0 0.125em 0.3125em var(--color-shadow);
+        opacity: 0.8;
     }
     
     .login, .signup {

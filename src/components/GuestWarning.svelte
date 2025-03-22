@@ -193,20 +193,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 50%;
+    background: transparent;
+    border: none;
     color: var(--color-text);
     cursor: pointer;
     opacity: 0.7;
-    transition: all 0.2s ease;
+    transition: opacity 0.2s ease;
     padding: 0;
   }
   
   .close-btn:hover {
     opacity: 1;
-    background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.05);
   }
   
   .close-btn > :global(.close-icon-light) {
