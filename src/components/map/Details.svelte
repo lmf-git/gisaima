@@ -17,6 +17,37 @@
   const players = $derived($targetStore.players || []);
   const groups = $derived($targetStore.groups || []);
   
+  // Format structure properties for display
+  const structureProps = $derived(() => {
+    if (!structure) return [];
+    
+    const props = [];
+    
+    // Basic properties
+    if (structure.type) props.push({ label: "Type", value: _fmt(structure.type) });
+    if (structure.faction) props.push({ label: "Faction", value: _fmt(structure.faction) });
+    if (structure.level) props.push({ label: "Level", value: structure.level });
+    if (structure.health !== undefined) {
+      props.push({ 
+        label: "Health", 
+        value: structure.health, 
+        extra: structure.maxHealth ? `/${structure.maxHealth}` : '' 
+      });
+    }
+    
+    // Owner information
+    if (structure.owner) props.push({ label: "Owner", value: structure.owner });
+    
+    // Resources if available
+    if (structure.resources) {
+      Object.entries(structure.resources).forEach(([key, value]) => {
+        props.push({ label: _fmt(key), value });
+      });
+    }
+    
+    return props;
+  });
+  
   const escape = event => event.key === 'Escape' && onClose?.();
 </script>
 
@@ -30,8 +61,20 @@
       
       {#if structure}
         <div class="section">
-          <h3>Structure</h3>
-          <p>{structure.name || "Unknown structure"}</p>
+          <h3>{structure.name || _fmt(structure.type) || "Unknown structure"}</h3>
+          
+          {#if structure.description}
+            <p class="description">{structure.description}</p>
+          {/if}
+          
+          {#if structureProps.length > 0}
+            <div class="props-grid">
+              {#each structureProps as prop}
+                <div class="prop-label">{prop.label}:</div>
+                <div class="prop-value">{prop.value}{prop.extra || ''}</div>
+              {/each}
+            </div>
+          {/if}
         </div>
       {/if}
       
@@ -40,7 +83,7 @@
           <h3>Players ({players.length})</h3>
           <ul>
             {#each players as player}
-              <li>{player.name || player.id}</li>
+              <li>{player.name || player.displayName || player.id}</li>
             {/each}
           </ul>
         </div>
@@ -130,6 +173,13 @@
     font-weight: 400; /* Regular for details text */
   }
   
+  .description {
+    font-size: 0.9em;
+    font-style: italic;
+    margin: 0.5em 0 0.8em;
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
   .close-btn {
     background: none;
     border: none;
@@ -200,5 +250,24 @@
   .close-btn > :global(.close-icon-dark) {
     color: rgba(0, 0, 0, 0.8);
     stroke: rgba(0, 0, 0, 0.8);
+  }
+  
+  /* New styles for structure properties */
+  .props-grid {
+    display: grid;
+    grid-template-columns: minmax(5em, auto) 1fr;
+    gap: 0.3em 0.8em;
+    margin: 0.8em 0 0.3em;
+    font-size: 0.9em;
+  }
+  
+  .prop-label {
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.7);
+    text-align: right;
+  }
+  
+  .prop-value {
+    color: rgba(0, 0, 0, 0.85);
   }
 </style>

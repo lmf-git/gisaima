@@ -12,9 +12,10 @@ export const game = writable({
   currentWorld: null,
   joinedWorlds: [],
   worldInfo: {},
+  playerWorldData: null, // Add player-specific data for the current world
   loading: true,
-  worldLoading: false, // New specific loading state for current world data
-  error: null          // Store errors related to world loading
+  worldLoading: false,
+  error: null
 });
 
 // Create a derived store for the current world's info
@@ -32,6 +33,16 @@ export const currentWorldSeed = derived(
   $worldInfo => $worldInfo?.seed || null
 );
 
+// Create a derived store for player's spawn status in the current world
+export const needsSpawn = derived(
+  game,
+  $game => {
+    // Player needs to spawn if playerWorldData exists but spawned is false,
+    // or if playerWorldData is missing entirely
+    return !$game.playerWorldData || $game.playerWorldData.spawned === false;
+  }
+);
+
 // Load player's joined worlds
 export function loadJoinedWorlds(userId) {
   if (!userId) return;
@@ -47,8 +58,33 @@ export function loadJoinedWorlds(userId) {
       if (currentState.currentWorld && !currentState.worldInfo[currentState.currentWorld]) {
         loadCurrentWorldInfo(currentState.currentWorld);
       }
+      
+      // Also load the player data for the current world if it exists
+      if (currentState.currentWorld) {
+        loadPlayerWorldData(userId, currentState.currentWorld);
+      }
     } else {
       game.update(state => ({ ...state, joinedWorlds: [], loading: false }));
+    }
+  });
+}
+
+// Load player-specific data for the current world
+export function loadPlayerWorldData(userId, worldId) {
+  if (!userId || !worldId) return;
+  
+  const playerWorldRef = ref(db, `players/${userId}/worlds/${worldId}`);
+  return onValue(playerWorldRef, (snapshot) => {
+    if (snapshot.exists()) {
+      const playerWorldData = snapshot.val();
+      game.update(state => ({ 
+        ...state, 
+        playerWorldData,
+        // If player has last location data, update it in the store
+        lastLocation: playerWorldData.lastLocation || null
+      }));
+    } else {
+      game.update(state => ({ ...state, playerWorldData: null }));
     }
   });
 }
@@ -93,7 +129,8 @@ export function setCurrentWorld(worldId, worldInfo = null) {
         currentWorld: worldId,
         worldInfo: updatedWorldInfo,
         worldLoading: false,
-        error: null
+        error: null,
+        playerWorldData: null // Reset player data when changing worlds
       };
     }
     
@@ -101,14 +138,27 @@ export function setCurrentWorld(worldId, worldInfo = null) {
     return {
       ...state,
       currentWorld: worldId,
-      worldLoading: !updatedWorldInfo[worldId] // Only set loading if we don't have the data
+      worldLoading: !updatedWorldInfo[worldId], // Only set loading if we don't have the data
+      playerWorldData: null // Reset player data when changing worlds
     };
   });
   
   // If we don't have the world info, load it
   const currentState = getStore(game);
+  const promises = [];
+  
   if (!worldInfo && !currentState.worldInfo[worldId]) {
-    return loadCurrentWorldInfo(worldId);
+    promises.push(loadCurrentWorldInfo(worldId));
+  }
+  
+  // Also load player data if user is authenticated
+  const currentUser = getStore(user);
+  if (currentUser?.uid) {
+    loadPlayerWorldData(currentUser.uid, worldId);
+  }
+  
+  if (promises.length > 0) {
+    return Promise.all(promises).then(() => getStore(game).worldInfo[worldId] || null);
   }
   
   return Promise.resolve(worldInfo || currentState.worldInfo[worldId]);
@@ -230,12 +280,19 @@ export function initGameStore() {
         // Set auth as ready once we have a user
         isAuthReady.set(true);
         loadJoinedWorlds($user.uid);
+        
+        // If there's already a current world, load the player data for it
+        const currentState = getStore(game);
+        if (currentState.currentWorld) {
+          loadPlayerWorldData($user.uid, currentState.currentWorld);
+        }
       } else if ($user === null) {
         // User is definitely not logged in (not just undefined/loading)
         isAuthReady.set(true);
         game.update(state => ({ 
           ...state, 
           joinedWorlds: [], 
+          playerWorldData: null,
           loading: false,
           worldLoading: false
         }));

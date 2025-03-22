@@ -302,6 +302,18 @@
 
   // Get background color from target tile
   const backgroundColor = $derived($targetStore?.color || "var(--color-dark-blue)");
+
+  // Add a function to determine structure type class
+  function getStructureClass(structure) {
+    if (!structure) return '';
+    
+    switch(structure.type) {
+      case 'spawn': return 'spawn-structure';
+      case 'watchtower': return 'watchtower-structure';
+      case 'fortress': return 'fortress-structure';
+      default: return '';
+    }
+  }
 </script>
 
 <svelte:window
@@ -340,7 +352,7 @@
             Math.pow(cell.y - $map.target.y, 2)
           )}
           <div
-            class="tile"
+            class="tile {getStructureClass(cell.structure)}"
             class:center={cell.isCenter}
             class:highlighted={cell.highlighted}
             class:has-structure={cell.structure}
@@ -359,7 +371,7 @@
             <span class="coords">{cell.x},{cell.y}</span>
 
             {#if cell.structure}
-              <div class="entity-indicator structure-indicator" aria-hidden="true"></div>
+              <div class="entity-indicator structure-indicator {cell.structure.type}-indicator" aria-hidden="true"></div>
             {/if}
             {#if cell.groups?.length > 0}
               <div class="entity-indicator group-indicator" aria-hidden="true">
@@ -696,5 +708,43 @@
         inset 0 0 0.5em rgba(255, 255, 255, 0.3),
         0 0 1em rgba(255, 255, 255, 0.2);
     }
+  }
+
+  /* Special styles for structure types */
+  .spawn-structure {
+    box-shadow: inset 0 0 0.5em rgba(0, 255, 255, 0.6);
+  }
+  
+  .spawn-indicator {
+    background: rgba(0, 255, 255, 0.9) !important;
+    box-shadow: 0 0 .25em rgba(0, 255, 255, 0.8) !important;
+    border-radius: 50% !important;
+  }
+  
+  .watchtower-structure {
+    box-shadow: inset 0 0 0.4em rgba(255, 255, 150, 0.4);
+  }
+  
+  .fortress-structure {
+    box-shadow: inset 0 0 0.4em rgba(255, 200, 100, 0.5);
+  }
+  
+  /* Make spawn structures more prominent */
+  .tile.spawn-structure:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 0.15em double rgba(0, 255, 255, 0.6);
+    pointer-events: none;
+    z-index: 3;
+  }
+  
+  /* Override box-shadow styles when multiple features exist */
+  .tile.has-structure.has-groups.spawn-structure,
+  .tile.has-structure.has-players.spawn-structure {
+    box-shadow: inset 0 0 0.5em rgba(0, 255, 255, 0.6);
   }
 </style>

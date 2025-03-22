@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { ref, update } from "firebase/database";
+  import { ref, get as dbGet, update } from "firebase/database";
   import { db } from '../../lib/firebase/database.js';
   import { user } from '../../lib/stores/user.js';
   import { game } from '../../lib/stores/game.js';
@@ -16,30 +16,66 @@
   let spawning = $state(false);
   let error = $state(null);
   
-  // Generate spawn options - typically a few points near center of map
-  function generateSpawnOptions() {
-    // Start with the current position
-    const centerX = $map.target.x;
-    const centerY = $map.target.y;
-    
-    // Generate 3-5 spawn points in vicinity of current location
-    const points = [];
-    const count = 3 + Math.floor(Math.random() * 3); // 3-5 options
-    
-    for (let i = 0; i < count; i++) {
-      // Generate point within 10 tiles of center
-      const offsetX = Math.floor(Math.random() * 21) - 10;
-      const offsetY = Math.floor(Math.random() * 21) - 10;
-      
-      points.push({
-        id: `spawn-${i}`,
-        x: centerX + offsetX,
-        y: centerY + offsetY,
-        name: `Spawn Point ${i + 1}`
-      });
+  // Load spawn points from the database instead of generating random ones
+  async function loadSpawnPoints() {
+    if (!$game.currentWorld) {
+      error = "No world selected";
+      return [];
     }
     
-    return points;
+    try {
+      // Get the list of spawn IDs from the world info
+      const worldSpawnListRef = ref(db, `worlds/${$game.currentWorld}/spawns`);
+      const spawnListSnapshot = await dbGet(worldSpawnListRef);
+      
+      let spawnPoints = [];
+      
+      if (spawnListSnapshot.exists()) {
+        // If we have a list of spawn IDs, fetch each one
+        const spawnIds = Object.keys(spawnListSnapshot.val());
+        
+        // For each spawn ID, get the location data
+        for (const spawnId of spawnIds) {
+          try {
+            // Parse the location from the spawn ID (format: "chunkX:chunkY:x:y")
+            const [chunkX, chunkY, x, y] = spawnId.split(':');
+            const chunkKey = `${chunkX},${chunkY}`;
+            const locationKey = `${x},${y}`;
+            
+            // Get the spawn structure data
+            const spawnRef = ref(db, `worlds/${$game.currentWorld}/chunks/${chunkKey}/${locationKey}/structure`);
+            const spawnSnapshot = await dbGet(spawnRef);
+            
+            if (spawnSnapshot.exists() && spawnSnapshot.val().type === 'spawn') {
+              const spawnData = spawnSnapshot.val();
+              
+              spawnPoints.push({
+                id: spawnId,
+                x: parseInt(x),
+                y: parseInt(y),
+                name: spawnData.name || `Spawn Point ${spawnPoints.length + 1}`,
+                description: spawnData.description
+              });
+            }
+          } catch (err) {
+            console.error(`Error loading spawn ${spawnId}:`, err);
+          }
+        }
+      } else {
+        // No spawns found in world data
+        error = "No spawn points found in this world";
+      }
+      
+      if (spawnPoints.length === 0) {
+        error = "No valid spawn points available";
+      }
+      
+      return spawnPoints;
+    } catch (err) {
+      console.error('Error loading spawn points:', err);
+      error = "Failed to load spawn points. Please try again later.";
+      return [];
+    }
   }
   
   // Select a spawn point
@@ -64,6 +100,7 @@
       const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.currentWorld}`);
       await update(playerWorldRef, { 
         spawned: true,
+        lastSpawn: selectedSpot.id,
         lastLocation: {
           x: selectedSpot.x,
           y: selectedSpot.y,
@@ -81,12 +118,12 @@
     }
   }
   
-  onMount(() => {
-    // Generate spawn options when component mounts
-    spawnOptions = generateSpawnOptions();
+  onMount(async () => {
+    // Load real spawn options when component mounts
+    spawnOptions = await loadSpawnPoints();
     loading = false;
     
-    // Select the first spawn point by default
+    // Select the first spawn point by default if available
     if (spawnOptions.length > 0) {
       selectSpawn(spawnOptions[0]);
     }
@@ -99,9 +136,17 @@
     <p class="description">Select a location to begin your journey</p>
     
     {#if loading}
-      <div class="loading">Preparing spawn options...</div>
+      <div class="loading">Loading spawn locations...</div>
     {:else if error}
-      <div class="error">{error}</div>
+      <div class="error">
+        <p>{error}</p>
+        <button class="secondary-button" onclick={() => goto('/worlds')}>Return to World Selection</button>
+      </div>
+    {:else if spawnOptions.length === 0}
+      <div class="error">
+        <p>No spawn points available in this world.</p>
+        <button class="secondary-button" onclick={() => goto('/worlds')}>Return to World Selection</button>
+      </div>
     {:else}
       <div class="spawn-options">
         {#each spawnOptions as spot}
@@ -113,6 +158,9 @@
           >
             <span class="option-name">{spot.name}</span>
             <span class="option-coords">Coordinates: {spot.x},{spot.y}</span>
+            {#if spot.description}
+              <span class="option-desc">{spot.description}</span>
+            {/if}
           </button>
         {/each}
       </div>
@@ -125,11 +173,11 @@
         {#if spawning}
           <div class="spinner"></div> Spawning...
         {:else}
-          Confirm Spawn
+          Enter World
         {/if}
       </button>
       
-      <p class="hint">You can explore the world after spawning</p>
+      <p class="hint">You can explore other areas after spawning</p>
     {/if}
   </div>
 </div>
@@ -286,5 +334,28 @@
     h2 {
       font-size: 1.5rem;
     }
+  }
+  
+  .option-desc {
+    font-size: 0.8rem;
+    font-style: italic;
+    opacity: 0.8;
+    margin-top: 0.25rem;
+  }
+
+  .secondary-button {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0.6rem 1rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: all 0.2s;
+  }
+  
+  .secondary-button:hover {
+    background: rgba(255, 255, 255, 0.3);
   }
 </style>

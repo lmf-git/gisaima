@@ -8,7 +8,8 @@
       game, 
       getWorldInfo, 
       setCurrentWorld,
-      isAuthReady 
+      isAuthReady,
+      needsSpawn 
     } from "../../lib/stores/game.js";
     
     import { 
@@ -16,15 +17,17 @@
         ready,
         targetStore,
         setup,
+        moveTarget,
         setupFromGameStore
     } from "../../lib/stores/map.js";
-
+    
     import Tutorial from '../../components/map/Tutorial.svelte';
     import Grid from '../../components/map/Grid.svelte';
     import Minimap from '../../components/map/Minimap.svelte';
     import Axes from '../../components/map/Axes.svelte';
     import Legend from '../../components/map/Legend.svelte';
     import Details from '../../components/map/Details.svelte';
+    import SpawnMenu from '../../components/map/SpawnMenu.svelte';
 
     
     // Use $state for local component state
@@ -46,6 +49,23 @@
         detailed = show;
     }
     
+    // Handle spawn completion
+    function handleSpawnComplete(spawnLocation) {
+        // Move to the spawn location
+        if (spawnLocation) {
+            moveTarget(spawnLocation.x, spawnLocation.y);
+        }
+    }
+    
+    // Effect to handle player location data from game store
+    $effect(() => {
+        // If we have player location data in the game store, use it to position the map
+        if ($game.playerWorldData?.lastLocation && !$needsSpawn) {
+            const location = $game.playerWorldData.lastLocation;
+            moveTarget(location.x, location.y);
+        }
+    });
+    
     // Simplified initialize map function that uses game store
     async function initializeMap(worldId) {
         try {
@@ -64,8 +84,6 @@
                 });
             }
             
-            // TODO: This indicates ordering problem and could be ensure it's the right value,
-            // rather than refetching it here.
             // Make sure the game store has the current world set
             await setCurrentWorld(worldId);
             
@@ -107,6 +125,9 @@
                 if (setupFromGameStore()) {
                     loading = false;
                     error = null;
+                    
+                    // Check spawn status after map initialization
+                    checkPlayerSpawnStatus();
                 } else {
                     error = 'Failed to initialize map with world data';
                     loading = false;
@@ -115,8 +136,6 @@
                 console.error('Error initializing map:', err);
                 error = err.message || 'Failed to initialize map';
             }
-        } else if (!$game.worldLoading && $game.currentWorld) {
-            // Simplify and remove detailed warning logs
         }
     });
     
@@ -144,23 +163,13 @@
             return;
         }
 
-        // Don't immediately check if the worldId is in joinedWorlds - this can be empty until auth is complete
-        // Instead, handle this check inside initializeMap after auth is ready
-        
         // Initialize the map with the worldId - this will properly coordinate with auth
         initializeMap(worldId)
             .catch(err => {
-                console.error(`Failed to initialize map:`, err); // Simplify error
+                console.error(`Failed to initialize map:`, err); 
                 error = err.message || `Failed to load world`;
                 loading = false;
             });
-    });
-    
-    // Add another effect to update loading state when map is ready
-    $effect(() => {
-        if ($ready) {
-            loading = false;
-        }
     });
     
     onDestroy(() => {
@@ -216,6 +225,11 @@
 
         <!-- Use prop binding with runes syntax -->
         <Tutorial {detailed} />
+        
+        <!-- Show spawn menu when needed based on the derived store -->
+        {#if $needsSpawn}
+            <SpawnMenu onSpawn={handleSpawnComplete} />
+        {/if}
     {/if}
 </div>
 
