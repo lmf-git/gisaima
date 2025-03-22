@@ -11,6 +11,7 @@
     import { ref, onValue } from "firebase/database";
     import { db } from '../lib/firebase/database.js';
     import HamburgerIcon from '../components/icons/HamburgerIcon.svelte';
+    import GuestWarning from '../components/GuestWarning.svelte';
 
     const { children } = $props();
 
@@ -21,6 +22,9 @@
     let playerData = $state(null);
     let playerLoading = $state(false);
     let playerUnsubscribe = null;
+    let showGuestWarning = $state(false);
+    let guestWarningAnimatingOut = $state(false);
+    let hasShownGuestWarning = $state(false);
     
     // Computed values for conditional rendering
     const isHomePage = $derived($page.url.pathname === '/');
@@ -102,6 +106,10 @@
         } catch (e) {
             console.error('Error initializing game store:', e);
         }
+
+        if (browser) {
+            hasShownGuestWarning = localStorage.getItem('guest-warning-shown') === 'true';
+        }
     });
     
     onDestroy(() => {
@@ -115,6 +123,32 @@
 
     // Derived state for UI loading conditions
     const headerLoading = $derived($userLoading || !$isAuthReady);
+
+    // Show guest warning for anonymous users who haven't seen it yet
+    $effect(() => {
+        if (browser && !$userLoading && $user?.isAnonymous && !hasShownGuestWarning && 
+            !isMapPage && !isLoginPage && !isSignupPage) {
+            // Wait a bit before showing the warning to avoid overwhelming new users
+            setTimeout(() => {
+                showGuestWarning = true;
+            }, 3000);
+        }
+    });
+    
+    function closeGuestWarning() {
+        guestWarningAnimatingOut = true;
+        
+        // Mark as shown in localStorage
+        if (browser) {
+            localStorage.setItem('guest-warning-shown', 'true');
+            hasShownGuestWarning = true;
+        }
+        
+        setTimeout(() => {
+            showGuestWarning = false;
+            guestWarningAnimatingOut = false;
+        }, 300);
+    }
 </script>
 
 <div class={`app ${isMapPage ? 'map' : ''}`}>
@@ -251,6 +285,14 @@
                 <p>&copy; {new Date().getFullYear()} Gisaima. All Knights Declared.</p>
             </div>
         </footer>
+    {/if}
+
+    <!-- Add the Guest Warning component -->
+    {#if (showGuestWarning || guestWarningAnimatingOut) && $user?.isAnonymous}
+        <GuestWarning 
+            onClose={closeGuestWarning}
+            animatingOut={guestWarningAnimatingOut}
+        />
     {/if}
 </div>
 

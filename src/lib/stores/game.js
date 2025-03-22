@@ -41,11 +41,21 @@ export const currentPlayer = derived(
       return null;
     }
     
+    // Get appropriate display name based on auth status
+    let displayName;
+    if ($user.isAnonymous) {
+      displayName = `Guest ${$user.uid.substring(0, 4)}`;
+    } else {
+      displayName = $user.displayName || $user.email?.split('@')[0] || `Player ${$user.uid.substring(0, 4)}`;
+    }
+    
     // Base player info from user auth data
     const playerInfo = {
       uid: $user.uid,
-      displayName: $user.displayName || $user.email?.split('@')[0] || 'Player',
+      displayName: displayName,
       email: $user.email,
+      isAnonymous: $user.isAnonymous,
+      guest: $user.isAnonymous, // Add an explicit guest flag for easier checking
       // Current world context
       world: $game.currentWorld,
       worldName: $game.worldInfo[$game.currentWorld]?.name,
@@ -53,6 +63,8 @@ export const currentPlayer = derived(
       spawned: $game.playerWorldData.spawned || false,
       lastLocation: $game.playerWorldData.lastLocation || null,
       lastSpawn: $game.playerWorldData.lastSpawn || null,
+      // Race information
+      race: $game.playerWorldData.race,
       // Joined timestamp
       joinedAt: $game.playerWorldData.joined || null,
       // For convenience, include all world-specific player data
@@ -191,14 +203,19 @@ export function setCurrentWorld(worldId, worldInfo = null) {
 }
 
 // Join a world
-export function joinWorld(worldId, userId) {
+export function joinWorld(worldId, userId, race) {
   if (!worldId || !userId) return Promise.reject('Missing worldId or userId');
+  
+  // Ensure race is stored as lowercase string
+  const raceCode = typeof race === 'string' ? race.toLowerCase() : 
+                   race?.id ? race.id.toLowerCase() : 'human';
   
   // Update database to mark player as joined to this world
   const userWorldRef = ref(db, `players/${userId}/worlds/${worldId}`);
   return set(userWorldRef, { 
     joined: Date.now(),
-    spawned: false  // Add spawned flag, defaulting to false
+    spawned: false,  // Add spawned flag, defaulting to false
+    race: raceCode   // Store race as lowercase code
   })
     .then(() => {
       // Update local store

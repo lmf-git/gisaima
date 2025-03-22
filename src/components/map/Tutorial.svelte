@@ -10,6 +10,11 @@
   let closed = $state(false)
   let ready = $state(false)
   
+  // Track expanded state for each section
+  let worldExpanded = $state(false)
+  let unitsExpanded = $state(false)
+  let controlsExpanded = $state(false)
+  
   function initializeTutorialState() {
     if (browser) {
       closed = localStorage.getItem('tutorial-state') === 'closed'
@@ -28,7 +33,11 @@
     closed = false
     localStorage.setItem('tutorial-state', 'open')
   }
-
+  
+  // Toggle functions for each section
+  const toggleWorld = () => worldExpanded = !worldExpanded
+  const toggleUnits = () => unitsExpanded = !unitsExpanded
+  const toggleControls = () => controlsExpanded = !controlsExpanded
 </script>
 
 {#if ready && !closed && !detailed}
@@ -46,31 +55,48 @@
         </p>
         
         <div class="features">
-          <div class="feature">
-            <h3>World & Gameplay</h3>
-            <ul>
-              <li>Real-time strategy where time progresses in "ticks"</li>
-              <li>Explore diverse biomes with unique properties</li>
-              <li>Trade, build structures, and manage finances</li>
-            </ul>
+          <div class="feature collapsible">
+            <button class="section-header" onclick={toggleWorld} aria-expanded={worldExpanded}>
+              <h3>World & Gameplay</h3>
+              <span class="toggle-icon">{worldExpanded ? '−' : '+'}</span>
+            </button>
+            <div class="section-content" class:expanded={worldExpanded}>
+              <ul>
+                <li>Real-time strategy where time progresses in "ticks"</li>
+                <li>Explore diverse biomes with unique properties</li>
+                <li>Trade, build structures, and manage finances</li>
+              </ul>
+            </div>
           </div>
           
-          <div class="feature">
-            <h3>Units & Battles</h3>
-            <ul>
-              <li>Control unit groups for movement, battles, and resource gathering</li>
-              <li>Engage in sieges, conquests, and tactical combat</li>
-              <li>Manage morale and leadership for combat effectiveness</li>
-            </ul>
+          <div class="feature collapsible">
+            <button class="section-header" onclick={toggleUnits} aria-expanded={unitsExpanded}>
+              <h3>Units & Battles</h3>
+              <span class="toggle-icon">{unitsExpanded ? '−' : '+'}</span>
+            </button>
+            <div class="section-content" class:expanded={unitsExpanded}>
+              <ul>
+                <li>Control unit groups for movement, battles, and resource gathering</li>
+                <li>Engage in sieges, conquests, and tactical combat</li>
+                <li>Manage morale and leadership for combat effectiveness</li>
+              </ul>
+            </div>
           </div>
         </div>
         
-        <div class="controls">
-          <h3>Controls</h3>
-          <div class="item">
-            <span class="key">WASD</span> or <span class="key">↑←↓→</span> to move around the map
+        <div class="controls collapsible">
+          <button class="section-header" onclick={toggleControls} aria-expanded={controlsExpanded}>
+            <h3>Controls</h3>
+            <span class="toggle-icon">{controlsExpanded ? '−' : '+'}</span>
+          </button>
+          <div class="section-content" class:expanded={controlsExpanded}>
+            <div class="item">
+              <span class="key">WASD</span> or <span class="key">↑←↓→</span> to move around the map
+            </div>
           </div>
         </div>
+        
+        <p class="hint">Tap section titles to expand content</p>
         
         <button class="start-button" onclick={close}>Start Exploring</button>
       </div>
@@ -310,5 +336,98 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  .collapsible {
+    margin-bottom: 0.8em;
+    border: 1px solid rgba(var(--color-muted-teal-rgb), 0.3);
+    border-radius: 0.4em;
+    overflow: hidden;
+  }
+  
+  .section-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    border: none;
+    color: inherit;
+    padding: 0.8em 1em;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .section-header:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
+  
+  .section-header h3 {
+    margin: 0;
+    font-size: 1.1em;
+  }
+  
+  .toggle-icon {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--color-pale-green);
+    width: 1.5em;
+    height: 1.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.2);
+  }
+  
+  .section-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
+  
+  .section-content.expanded {
+    max-height: 20em; /* Adjust based on content needs */
+  }
+  
+  .controls {
+    text-align: left;
+    margin: 1em 0;
+    padding: 0;
+    background: transparent;
+    border-radius: 0.3em;
+  }
+  
+  .controls .section-content.expanded .item {
+    padding: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    margin-top: 0.5em;
+    background: rgba(0, 0, 0, 0.2);
+  }
+  
+  .hint {
+    text-align: center;
+    font-size: 0.9em;
+    color: var(--color-muted-teal);
+    font-style: italic;
+    margin: 0.5em 0;
+    opacity: 0.8;
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+  
+  .feature ul {
+    margin: 0;
+    padding: 1em 1em 1em 2.5em;
+    line-height: 1.4;
+    font-weight: 400;
   }
 </style>

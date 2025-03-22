@@ -2,27 +2,36 @@
     import { signUp, signInAnonymously } from '$lib/stores/user';
     import { goto } from '$app/navigation';
     
-    let email = '';
-    let password = '';
-    let confirmPassword = '';
-    let error = null;
-    let loading = false;
+    // Convert all variables to use $state
+    let email = $state('');
+    let password = $state('');
+    let confirmPassword = $state('');
+    let passwordMode = $state(false);  // Default to passwordless sign-in
+    let error = $state(null);
+    let loading = $state(false);
+    let success = $state(false);
+    let successMessage = $state('');
     
     const handleSubmit = async (e) => {
         e.preventDefault();
         error = null;
         
-        if (password !== confirmPassword) {
+        if (passwordMode && password !== confirmPassword) {
             error = "Passwords don't match";
             return;
         }
         
         loading = true;
-        const result = await signUp(email, password);
+        const result = await signUp(email, passwordMode ? password : null);
         loading = false;
         
         if (result.success) {
-            goto('/');
+            if (result.emailLink) {
+                success = true;
+                successMessage = `A sign-in link has been sent to ${email}. Please check your email to complete your registration.`;
+            } else {
+                goto('/');
+            }
         } else {
             error = result.error;
         }
@@ -41,6 +50,14 @@
             error = result.error;
         }
     };
+    
+    const togglePasswordMode = () => {
+        passwordMode = !passwordMode;
+        if (!passwordMode) {
+            password = '';
+            confirmPassword = '';
+        }
+    };
 </script>
 
 <div class="signup-page">
@@ -51,51 +68,90 @@
             <div class="error">{ error }</div>
         {/if}
         
-        <form onsubmit={handleSubmit}>
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input 
-                    type="email" 
-                    id="email" 
-                    bind:value={email} 
-                    required
-                />
+        {#if success}
+            <div class="success">
+                <p>{ successMessage }</p>
+                <p class="sub-message">Check your inbox and spam folder for the sign-in link.</p>
+            </div>
+        {:else}
+            <form onsubmit={handleSubmit}>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        bind:value={email} 
+                        required
+                        placeholder="your.email@example.com"
+                    />
+                </div>
+                
+                <div class="auth-toggle">
+                    <div class="toggle-buttons">
+                        <button 
+                            type="button"
+                            class="toggle-button" 
+                            class:active={!passwordMode}
+                            onclick={() => togglePasswordMode()}
+                            disabled={loading}
+                        >
+                            Passwordless
+                        </button>
+                        <button 
+                            type="button"
+                            class="toggle-button" 
+                            class:active={passwordMode}
+                            onclick={() => togglePasswordMode()}
+                            disabled={loading}
+                        >
+                            With Password
+                        </button>
+                    </div>
+                    <small class="help-text">
+                        {passwordMode
+                            ? 'You will sign in with email and password.'
+                            : 'You will receive a secure login link via email when signing in.'}
+                    </small>
+                </div>
+                
+                {#if passwordMode}
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            bind:value={password} 
+                            required={passwordMode}
+                            minlength="6"
+                            placeholder="Minimum 6 characters"
+                        />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input 
+                            type="password" 
+                            id="confirmPassword" 
+                            bind:value={confirmPassword} 
+                            required={passwordMode}
+                            placeholder="Re-enter your password"
+                        />
+                    </div>
+                {/if}
+                
+                <button type="submit" class="primary" disabled={loading || !email || (passwordMode && (!password || password.length < 6 || password !== confirmPassword))}>
+                    {loading ? 'Creating Account...' : 'Create Account'}
+                </button>
+            </form>
+            
+            <div class="separator">
+                <span>or</span>
             </div>
             
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    bind:value={password} 
-                    required
-                    minlength="6"
-                />
-                <small class="help-text">Password must be at least 6 characters</small>
-            </div>
-            
-            <div class="form-group">
-                <label for="confirmPassword">Confirm Password</label>
-                <input 
-                    type="password" 
-                    id="confirmPassword" 
-                    bind:value={confirmPassword} 
-                    required
-                />
-            </div>
-            
-            <button type="submit" class="primary" disabled={loading}>
-                {loading ? 'Creating Account...' : 'Create Account'}
+            <button class="secondary" onclick={handleAnonymousLogin} disabled={loading}>
+                {loading ? 'Logging in...' : 'Continue as Guest'}
             </button>
-        </form>
-        
-        <div class="separator">
-            <span>or</span>
-        </div>
-        
-        <button class="secondary" onclick={handleAnonymousLogin} disabled={loading}>
-            {loading ? 'Logging in...' : 'Continue as Guest'}
-        </button>
+        {/if}
         
         <p class="login-link">Already have an account? <a href="/login">Login</a></p>
     </div>
@@ -287,4 +343,64 @@
         transform: none;
         box-shadow: none;
     }
+
+    .auth-toggle {
+        margin-bottom: 1.5em;
+    }
+    
+    .toggle-buttons {
+        display: flex;
+        border: 1px solid var(--color-panel-border);
+        border-radius: 0.25em;
+        overflow: hidden;
+        margin-bottom: 0.5em;
+    }
+    
+    .toggle-button {
+        flex: 1;
+        padding: 0.5em;
+        background: none;
+        border: none;
+        border-right: 1px solid var(--color-panel-border);
+        color: var(--color-text-secondary);
+        font-size: 0.9em;
+        margin: 0;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .toggle-button:last-child {
+        border-right: none;
+    }
+    
+    .toggle-button.active {
+        background-color: rgba(100, 255, 218, 0.1);
+        color: var(--color-pale-green);
+        font-weight: 500;
+    }
+    
+    .toggle-button:hover:not(.active):not(:disabled) {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .success {
+        background-color: rgba(42, 199, 105, 0.1);
+        color: var(--color-pale-green);
+        padding: 1em;
+        border-radius: 0.25em;
+        margin-bottom: 1.5em;
+        border: 1px solid rgba(42, 199, 105, 0.4);
+        text-align: center;
+    }
+    
+    .success p {
+        margin: 0;
+    }
+    
+    .success .sub-message {
+        font-size: 0.9em;
+        margin-top: 0.5em;
+        opacity: 0.8;
+    }
+    
 </style>

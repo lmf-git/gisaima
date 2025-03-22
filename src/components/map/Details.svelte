@@ -49,6 +49,14 @@
   });
   
   const escape = event => event.key === 'Escape' && onClose?.();
+
+  // Helper function to get player display name
+  function getPlayerDisplayName(player) {
+    if (player.isAnonymous || player.guest) {
+      return `Guest ${player.id?.substring(0, 4) || ''}`;
+    }
+    return player.name || player.displayName || `Player ${player.id?.substring(0, 4) || ''}`;
+  }
 </script>
 
 <svelte:window onkeydown={escape} />
@@ -83,7 +91,12 @@
           <h3>Players ({players.length})</h3>
           <ul>
             {#each players as player}
-              <li>{player.name || player.displayName || player.id}</li>
+              <li>
+                {getPlayerDisplayName(player)}
+                {#if player.race}
+                  <span class="player-race">[{_fmt(player.race)}]</span>
+                {/if}
+              </li>
             {/each}
           </ul>
         </div>
@@ -269,5 +282,12 @@
   
   .prop-value {
     color: rgba(0, 0, 0, 0.85);
+  }
+
+  .player-race {
+    font-style: italic;
+    margin-left: 0.3em;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.95em;
   }
 </style>

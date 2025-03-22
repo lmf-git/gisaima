@@ -6,9 +6,12 @@
   import { ref, onValue } from "firebase/database";
   import { db } from '../../lib/firebase/database.js';
   import { browser } from '$app/environment';
+  import JoinConfirmation from '../../components/JoinConfirmation.svelte';
   
   // Add state variables
-  let joiningWorldId = $state(null);
+  let selectedWorld = $state(null);
+  let showConfirmation = $state(false);
+  let animatingOut = $state(false);
   let worlds = $state([]);
   let loading = $state(true);
   
@@ -53,24 +56,40 @@
     };
   });
   
-  function handleJoinWorld(worldId) {
-    if (!$user) {
-      // Redirect to login if not authenticated
-      goto('/login?redirect=/worlds');
+  function selectWorld(world) {
+    // If already joined, just go to the world
+    if ($game.joinedWorlds.includes(world.id)) {
+      goto(`/map?world=${world.id}`);
       return;
     }
     
-    joiningWorldId = worldId; // Set the joining state
+    // Otherwise, show the confirmation dialog
+    selectedWorld = world;
+    showConfirmation = true;
+  }
+  
+  function closeConfirmation() {
+    animatingOut = true;
+    setTimeout(() => {
+      showConfirmation = false;
+      selectedWorld = null;
+      animatingOut = false;
+    }, 300); // Match animation duration
+  }
+  
+  async function handleJoinWorld(race) {
+    if (!$user || !selectedWorld) {
+      return;
+    }
     
-    joinWorld(worldId, $user.uid)
-      .then(() => {
-        joiningWorldId = null; // Clear joining state
-        goto(`/map?world=${worldId}`);
-      })
-      .catch(error => {
-        console.error('Failed to join world:', error);
-        joiningWorldId = null; // Clear joining state on error
-      });
+    try {
+      // Join the world with race information (lowercase ID)
+      await joinWorld(selectedWorld.id, $user.uid, race.id.toLowerCase());
+      goto(`/map?world=${selectedWorld.id}`);
+    } catch (error) {
+      console.error('Failed to join world:', error);
+      closeConfirmation();
+    }
   }
 </script>
 
@@ -95,23 +114,24 @@
           <button 
             class="world-action-button" 
             class:joined={$game.joinedWorlds.includes(world.id)}
-            onclick={() => $game.joinedWorlds.includes(world.id) 
-              ? goto(`/map?world=${world.id}`) 
-              : handleJoinWorld(world.id)}
-            disabled={joiningWorldId === world.id}
+            onclick={() => selectWorld(world)}
           >
-            {#if joiningWorldId === world.id}
-              <div class="spinner"></div>
-              Joining...
-            {:else}
-              {$game.joinedWorlds.includes(world.id) ? "Enter World" : "Join World"}
-            {/if}
+            {$game.joinedWorlds.includes(world.id) ? "Enter World" : "Join World"}
           </button>
         </div>
       {/each}
     </div>
   {/if}
 </div>
+
+{#if showConfirmation && selectedWorld}
+  <JoinConfirmation
+    world={selectedWorld}
+    onClose={closeConfirmation}
+    onConfirm={handleJoinWorld}
+    animatingOut={animatingOut}
+  />
+{/if}
 
 <style>
   .worlds-page {
@@ -234,17 +254,6 @@
     box-shadow: 0 0.1em 0.3em var(--color-shadow);
   }
   
-  .spinner {
-    display: inline-block;
-    width: 1em;
-    height: 1em;
-    border: 0.2em solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: white;
-    animation: spin 1s ease-in-out infinite;
-    margin-right: 0.5em;
-    vertical-align: middle;
-  }
   
   @keyframes spin {
     to { transform: rotate(360deg); }

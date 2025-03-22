@@ -6,7 +6,13 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
-  signInAnonymously as firebaseSignInAnonymously
+  signInAnonymously as firebaseSignInAnonymously,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink as firebaseSignInWithEmailLink,
+  linkWithCredential,
+  EmailAuthProvider,
+  updateProfile
 } from 'firebase/auth';
 
 export const user = writable(undefined);  // Start as undefined (not determined)
@@ -32,6 +38,20 @@ export const initAuthListener = () => {
 onAuthStateChanged(auth, (firebaseUser) => {
   if (firebaseUser) {
     // User is signed in
+    // If anonymous user, make sure they have a consistent label
+    if (firebaseUser.isAnonymous) {
+      // Add a displayName property if it doesn't exist
+      if (!firebaseUser.displayName) {
+        const shortId = firebaseUser.uid.substring(0, 4);
+        // We can't modify the firebaseUser object directly, so create a new one with the properties we want
+        const enhancedUser = {
+          ...firebaseUser,
+          displayName: `Guest ${shortId}`
+        };
+        user.set(enhancedUser);
+        return;
+      }
+    }
     user.set(firebaseUser);
   } else {
     // User is signed out
@@ -57,19 +77,185 @@ export const signIn = async (email, password) => {
   }
 };
 
-export const signUp = async (email, password) => {
+// Enhanced signUp function to handle email-only registration and guest upgrades
+export const signUp = async (email, password, isGuestUpgrade = false) => {
   if (!browser) return { success: false, error: 'Cannot sign up on server' };
   
   try {
-    console.log('Attempting sign up for:', email);
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    console.log('Sign up successful:', userCredential.user.uid);
-    return { success: true };
+    console.log(`Attempting ${isGuestUpgrade ? 'guest upgrade' : 'sign up'} for:`, email);
+    
+    // Handle anonymous account upgrade if user is already logged in anonymously
+    if (isGuestUpgrade && auth.currentUser?.isAnonymous) {
+      if (password) {
+        // Link anonymous account with email and password
+        const credential = EmailAuthProvider.credential(email, password);
+        await linkWithCredential(auth.currentUser, credential);
+        
+        // Update profile
+        await updateProfile(auth.currentUser, {
+          displayName: email.split('@')[0]
+        });
+        
+        console.log('Anonymous account upgraded with email/password');
+      } else {
+        // Email-only login - send sign-in link
+        const actionCodeSettings = {
+          url: window.location.origin + '/email-action',  // Dedicated page for handling email actions
+          handleCodeInApp: true
+        };
+        
+        await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+        
+        // Save email to localStorage for later use
+        localStorage.setItem('emailForSignIn', email);
+        
+        console.log('Sign-in link sent for anonymous account upgrade');
+      }
+      
+      return { success: true, emailLink: !password };
+    }
+    
+    // Regular sign-up with email and password
+    if (password) {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('Sign up successful:', userCredential.user.uid);
+      return { success: true };
+    } 
+    // Passwordless email sign-up
+    else {
+      const actionCodeSettings = {
+        url: window.location.origin + '/email-action',  // Dedicated page for handling email actions
+        handleCodeInApp: true
+      };
+      
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      
+      // Save email to localStorage for later use
+      localStorage.setItem('emailForSignIn', email);
+      
+      console.log('Sign-in link sent');
+      return { success: true, emailLink: true };
+    }
   } catch (error) {
     console.error('Sign up error:', error.code, error.message);
     return { 
       success: false, 
       error: error.message || 'Failed to create account. Please try again.'
+    };
+  }
+};
+
+// Add function to handle email sign-in links
+export const handleEmailLink = async () => {
+  if (!browser) return { success: false, error: 'Cannot handle email links on server' };
+  
+  try {
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      let email = localStorage.getItem('emailForSignIn');
+      
+      if (!email) {
+        // If email is not found in storage, prompt user
+        email = window.prompt('Please provide your email for confirmation');
+      }
+      
+      if (!email) {
+        return { success: false, error: 'Email confirmation required' };
+      }
+      
+      // If user is already signed in anonymously, link accounts
+      if (auth.currentUser?.isAnonymous) {
+        // Handle linking process (implementation depends on Firebase version)
+        // This might require custom handling based on your Firebase setup
+        console.log('Attempting to link anonymous account with email');
+      } else {
+        // Otherwise sign in normally with email link
+        await firebaseSignInWithEmailLink(auth, email, window.location.href);
+        localStorage.removeItem('emailForSignIn');
+      }
+      
+      return { success: true };
+    }
+    
+    return { success: false, notEmailLink: true };
+  } catch (error) {
+    console.error('Email link error:', error.code, error.message);
+    return {
+      success: false,
+      error: error.message || 'Failed to sign in with email link. Please try again.'
+    };
+  }
+};
+
+// Function for passwordless sign in (email link)
+export const signInWithEmailLink = async (email = null) => {
+  if (!browser) return { success: false, error: 'Cannot handle email links on server' };
+  
+  try {
+    // Check if current URL is a sign-in link
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      // Get email from storage or parameter
+      let emailForSignIn = email || localStorage.getItem('emailForSignIn');
+      
+      if (!emailForSignIn) {
+        // If email is not found in storage, return error (will be handled by UI)
+        return { 
+          success: false, 
+          error: 'Email not found. Please enter the email you used for sign-in.', 
+          needsEmail: true 
+        };
+      }
+      
+      // If user is already signed in anonymously, link accounts
+      if (auth.currentUser?.isAnonymous) {
+        // We need to implement special case for linking anonymous account
+        console.log('Attempting to link anonymous account with email link');
+        
+        // Advanced linking implementation would go here
+        // For now, we'll just sign in with the email link
+        await firebaseSignInWithEmailLink(auth, emailForSignIn, window.location.href);
+        
+        // Remove email from storage
+        localStorage.removeItem('emailForSignIn');
+        
+        return { success: true };
+      }
+      
+      // Otherwise sign in normally with email link
+      await firebaseSignInWithEmailLink(auth, emailForSignIn, window.location.href);
+      localStorage.removeItem('emailForSignIn');
+      
+      return { success: true };
+    }
+    
+    return { success: false, notEmailLink: true };
+  } catch (error) {
+    console.error('Email link error:', error.code, error.message);
+    return {
+      success: false,
+      error: error.message || 'Failed to sign in with email link. Please try again.'
+    };
+  }
+};
+
+// Start passwordless sign-in flow (send email)
+export const sendSignInLink = async (email) => {
+  if (!browser) return { success: false, error: 'Cannot send email from server' };
+  
+  try {
+    const actionCodeSettings = {
+      url: window.location.origin + '/email-action',
+      handleCodeInApp: true
+    };
+    
+    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    localStorage.setItem('emailForSignIn', email);
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Send sign-in link error:', error.code, error.message);
+    return {
+      success: false,
+      error: error.message || 'Failed to send sign-in link. Please try again.'
     };
   }
 };
@@ -93,6 +279,17 @@ export const signInAnonymously = async () => {
   try {
     console.log('Attempting anonymous sign in');
     const userCredential = await firebaseSignInAnonymously(auth);
+    
+    // Enhance the user object with a guest name
+    const shortId = userCredential.user.uid.substring(0, 4);
+    const enhancedUser = {
+      ...userCredential.user,
+      displayName: `Guest ${shortId}`
+    };
+    
+    // Update the user in our store (the auth state change will also trigger)
+    user.set(enhancedUser);
+    
     console.log('Anonymous sign in successful:', userCredential.user.uid);
     return { success: true };
   } catch (error) {
