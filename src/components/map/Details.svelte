@@ -89,10 +89,10 @@
       {#if players.length > 0}
         <div class="section">
           <h3>Players ({players.length})</h3>
-          <ul>
+          <ul class="player-list">
             {#each players as player}
               <li>
-                {getPlayerDisplayName(player)}
+                <span class="player-name">{getPlayerDisplayName(player)}</span>
                 {#if player.race}
                   <span class="player-race">[{_fmt(player.race)}]</span>
                 {/if}
@@ -284,6 +284,18 @@
     color: rgba(0, 0, 0, 0.85);
   }
 
+  .player-list {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+    font-size: 0.9em;
+    font-family: var(--font-body);
+  }
+  
+  .player-name {
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.85);
+  }
+  
   .player-race {
     font-style: italic;
     margin-left: 0.3em;
