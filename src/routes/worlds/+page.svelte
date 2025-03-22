@@ -142,8 +142,8 @@
 <style>
   .worlds-page {
     max-width: 1200px;
-    margin: 4rem auto; /* Added top and bottom margin */
-    padding: 2rem;
+    margin: 2rem auto; /* Reduced top margin on mobile */
+    padding: 1rem; /* Less padding on mobile */
   }
   
   h1 {
@@ -160,8 +160,35 @@
   .worlds-grid {
     display: flex;
     flex-direction: column; /* Mobile first: stacked vertically */
-    gap: 2rem;
-    padding: 0 3em; /* Added 3em padding on sides */
+    gap: 1.5rem; /* Slightly reduced gap on mobile */
+    padding: 0 0.5rem; /* Reduced side padding to make cards wider */
+    width: 100%; /* Ensure grid takes full width */
+  }
+  
+  .world-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1.25rem; /* Slightly less padding on mobile */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    width: 100%; /* Full width on mobile */
+  }
+  
+  @media (min-width: 640px) {
+    .worlds-page {
+      margin: 3rem auto;
+      padding: 1.5rem;
+    }
+    
+    .worlds-grid {
+      padding: 0 1.5rem;
+      gap: 2rem;
+    }
+    
+    .world-card {
+      padding: 1.5rem;
+    }
   }
   
   @media (min-width: 768px) {
@@ -169,28 +196,29 @@
       flex-direction: row; /* Switch to horizontal on larger screens */
       flex-wrap: wrap; /* Allow wrapping to next row */
       justify-content: center; /* Center the cards */
+      padding: 0 2rem;
     }
     
     .world-card {
-      flex: 0 0 calc(50% - 2rem); /* Two cards per row with gap */
-      max-width: calc(50% - 2rem);
+      flex: 0 0 calc(50% - 1.5rem); /* Two cards per row with gap */
+      max-width: calc(50% - 1.5rem);
     }
   }
   
   @media (min-width: 1024px) {
+    .worlds-page {
+      margin: 4rem auto;
+      padding: 2rem;
+    }
+    
+    .worlds-grid {
+      padding: 0 3rem;
+    }
+    
     .world-card {
       flex: 0 0 calc(33.333% - 2rem); /* Three cards per row with gap */
       max-width: calc(33.333% - 2rem);
     }
-  }
-  
-  .world-card {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
   }
   
   .world-stats {
@@ -279,7 +307,6 @@
     transform: translateY(0.05em);
     box-shadow: 0 0.1em 0.3em var(--color-shadow);
   }
-  
   
   @keyframes spin {
     to { transform: rotate(360deg); }
