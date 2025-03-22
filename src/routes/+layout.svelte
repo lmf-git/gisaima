@@ -1,6 +1,7 @@
 <script>
     import { page } from '$app/stores';
     import { user, signOut, loading as userLoading } from '$lib/stores/user';
+    import { browser } from '$app/environment'; // Add this missing import
     import Logo from '../components/Logo.svelte';
     import SignOut from '../components/icons/SignOut.svelte';
     import XIcon from '../components/icons/XIcon.svelte';

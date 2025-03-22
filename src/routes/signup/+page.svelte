@@ -1,6 +1,8 @@
 <script>
     import { signUp, signInAnonymously } from '$lib/stores/user';
     import { goto } from '$app/navigation';
+    import { user, loading as userLoading } from '$lib/stores/user';
+    import { browser } from '$app/environment';
     
     // Convert all variables to use $state
     let email = $state('');
@@ -11,6 +13,14 @@
     let loading = $state(false);
     let success = $state(false);
     let successMessage = $state('');
+    
+    // Add effect to redirect authenticated users
+    $effect(() => {
+        if (browser && !$userLoading && $user) {
+            // User is already authenticated, redirect to worlds page
+            goto('/worlds');
+        }
+    });
     
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -61,100 +71,107 @@
 </script>
 
 <div class="signup-page">
-    <div class="signup-container">
-        <h1>Join Gisaima</h1>
-        
-        {#if error}
-            <div class="error">{ error }</div>
-        {/if}
-        
-        {#if success}
-            <div class="success">
-                <p>{ successMessage }</p>
-                <p class="sub-message">Check your inbox and spam folder for the sign-in link.</p>
-            </div>
-        {:else}
-            <form onsubmit={handleSubmit}>
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        bind:value={email} 
-                        required
-                        placeholder="your.email@example.com"
-                    />
+    <!-- Only show signup UI if user is not authenticated or authentication is still loading -->
+    {#if $userLoading || $user === null}
+        <div class="signup-container">
+            <h1>Join Gisaima</h1>
+            
+            {#if error}
+                <div class="error">{ error }</div>
+            {/if}
+            
+            {#if success}
+                <div class="success">
+                    <p>{ successMessage }</p>
+                    <p class="sub-message">Check your inbox and spam folder for the sign-in link.</p>
                 </div>
-                
-                <div class="auth-toggle">
-                    <div class="toggle-buttons">
-                        <button 
-                            type="button"
-                            class="toggle-button" 
-                            class:active={!passwordMode}
-                            onclick={() => togglePasswordMode()}
-                            disabled={loading}
-                        >
-                            Passwordless
-                        </button>
-                        <button 
-                            type="button"
-                            class="toggle-button" 
-                            class:active={passwordMode}
-                            onclick={() => togglePasswordMode()}
-                            disabled={loading}
-                        >
-                            With Password
-                        </button>
-                    </div>
-                    <small class="help-text">
-                        {passwordMode
-                            ? 'You will sign in with email and password.'
-                            : 'You will receive a secure login link via email when signing in.'}
-                    </small>
-                </div>
-                
-                {#if passwordMode}
+            {:else}
+                <form onsubmit={handleSubmit}>
                     <div class="form-group">
-                        <label for="password">Password</label>
+                        <label for="email">Email</label>
                         <input 
-                            type="password" 
-                            id="password" 
-                            bind:value={password} 
-                            required={passwordMode}
-                            minlength="6"
-                            placeholder="Minimum 6 characters"
+                            type="email" 
+                            id="email" 
+                            bind:value={email} 
+                            required
+                            placeholder="your.email@example.com"
                         />
                     </div>
                     
-                    <div class="form-group">
-                        <label for="confirmPassword">Confirm Password</label>
-                        <input 
-                            type="password" 
-                            id="confirmPassword" 
-                            bind:value={confirmPassword} 
-                            required={passwordMode}
-                            placeholder="Re-enter your password"
-                        />
+                    <div class="auth-toggle">
+                        <div class="toggle-buttons">
+                            <button 
+                                type="button"
+                                class="toggle-button" 
+                                class:active={!passwordMode}
+                                onclick={() => togglePasswordMode()}
+                                disabled={loading}
+                            >
+                                Passwordless
+                            </button>
+                            <button 
+                                type="button"
+                                class="toggle-button" 
+                                class:active={passwordMode}
+                                onclick={() => togglePasswordMode()}
+                                disabled={loading}
+                            >
+                                With Password
+                            </button>
+                        </div>
+                        <small class="help-text">
+                            {passwordMode
+                                ? 'You will sign in with email and password.'
+                                : 'You will receive a secure login link via email when signing in.'}
+                        </small>
                     </div>
-                {/if}
+                    
+                    {#if passwordMode}
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input 
+                                type="password" 
+                                id="password" 
+                                bind:value={password} 
+                                required={passwordMode}
+                                minlength="6"
+                                placeholder="Minimum 6 characters"
+                            />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <input 
+                                type="password" 
+                                id="confirmPassword" 
+                                bind:value={confirmPassword} 
+                                required={passwordMode}
+                                placeholder="Re-enter your password"
+                            />
+                        </div>
+                    {/if}
+                    
+                    <button type="submit" class="primary" disabled={loading || !email || (passwordMode && (!password || password.length < 6 || password !== confirmPassword))}>
+                        {loading ? 'Creating Account...' : 'Create Account'}
+                    </button>
+                </form>
                 
-                <button type="submit" class="primary" disabled={loading || !email || (passwordMode && (!password || password.length < 6 || password !== confirmPassword))}>
-                    {loading ? 'Creating Account...' : 'Create Account'}
+                <div class="separator">
+                    <span>or</span>
+                </div>
+                
+                <button type="button" class="secondary" onclick={handleAnonymousLogin} disabled={loading}>
+                    {loading ? 'Logging in...' : 'Continue as Guest'}
                 </button>
-            </form>
+            {/if}
             
-            <div class="separator">
-                <span>or</span>
-            </div>
-            
-            <button type="button" class="secondary" onclick={handleAnonymousLogin} disabled={loading}>
-                {loading ? 'Logging in...' : 'Continue as Guest'}
-            </button>
-        {/if}
-        
-        <p class="login-link">Already have an account? <a href="/login">Login</a></p>
-    </div>
+            <p class="login-link">Already have an account? <a href="/login">Login</a></p>
+        </div>
+    {:else}
+        <div class="loading-container">
+            <p>You are already logged in. Redirecting...</p>
+        </div>
+    {/if}
 </div>
 
 <style>
@@ -403,4 +420,12 @@
         opacity: 0.8;
     }
     
+    .loading-container {
+        max-width: 26em;
+        width: 100%;
+        padding: 2.5em;
+        text-align: center;
+        color: var(--color-text);
+        margin: 0 1em;
+    }
 </style>

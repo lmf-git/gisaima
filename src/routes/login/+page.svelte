@@ -1,11 +1,21 @@
 <script>
     import { signIn, signInAnonymously } from '$lib/stores/user';
     import { goto } from '$app/navigation';
+    import { user, loading as userLoading } from '$lib/stores/user';
+    import { browser } from '$app/environment';
     
     let email = '';
     let password = '';
     let error = null;
     let loading = false;
+    
+    // Add effect to redirect authenticated users
+    $effect(() => {
+        if (browser && !$userLoading && $user) {
+            // User is already authenticated, redirect to worlds page
+            goto('/worlds');
+        }
+    });
     
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -38,49 +48,56 @@
 </script>
 
 <div class="login-page">
-    <div class="login-container">
-        <h1>Login to Gisaima</h1>
-        
-        {#if error}
-            <div class="error">{error}</div>
-        {/if}
-        
-        <form onsubmit={handleSubmit}>
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input 
-                    type="email" 
-                    id="email" 
-                    bind:value={email} 
-                    required
-                />
+    <!-- Only show login UI if user is not authenticated or authentication is still loading -->
+    {#if $userLoading || $user === null}
+        <div class="login-container">
+            <h1>Login to Gisaima</h1>
+            
+            {#if error}
+                <div class="error">{error}</div>
+            {/if}
+            
+            <form onsubmit={handleSubmit}>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        bind:value={email} 
+                        required
+                    />
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        bind:value={password} 
+                        required
+                    />
+                </div>
+                
+                <button type="submit" class="primary" disabled={loading}>
+                    {loading ? 'Logging in...' : 'Login'}
+                </button>
+            </form>
+            
+            <div class="separator">
+                <span>or</span>
             </div>
             
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    bind:value={password} 
-                    required
-                />
-            </div>
-            
-            <button type="submit" class="primary" disabled={loading}>
-                {loading ? 'Logging in...' : 'Login'}
+            <button type="button" class="secondary" onclick={handleAnonymousLogin} disabled={loading}>
+                {loading ? 'Logging in...' : 'Continue as Guest'}
             </button>
-        </form>
-        
-        <div class="separator">
-            <span>or</span>
+            
+            <p class="signup-link">Don't have an account? <a href="/signup">Sign Up</a></p>
         </div>
-        
-        <button type="button" class="secondary" onclick={handleAnonymousLogin} disabled={loading}>
-            {loading ? 'Logging in...' : 'Continue as Guest'}
-        </button>
-        
-        <p class="signup-link">Don't have an account? <a href="/signup">Sign Up</a></p>
-    </div>
+    {:else}
+        <div class="loading-container">
+            <p>You are already logged in. Redirecting...</p>
+        </div>
+    {/if}
 </div>
 
 <style>
@@ -256,5 +273,14 @@
         cursor: not-allowed;
         transform: none;
         box-shadow: none;
+    }
+
+    .loading-container {
+        max-width: 26em;
+        width: 100%;
+        padding: 2.5em;
+        text-align: center;
+        color: var(--color-text);
+        margin: 0 1em;
     }
 </style>
