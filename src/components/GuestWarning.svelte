@@ -73,8 +73,7 @@
       </div>
     {:else}
       <div class="warning-message">
-        <p>You're currently using a temporary guest account that will be deleted after 30 days of inactivity.</p>
-        <p>To save your progress and create a permanent account, please provide your email address.</p>
+        <p>You're currently using a temporary guest account that will be deleted after 30 days of inactivity. To save your progress, please provide your email address.</p>
       </div>
       
       {#if error}
@@ -97,14 +96,12 @@
         </div>
         
         <div class="password-option">
-          <label class="checkbox-label">
-            <input 
-              type="checkbox" 
-              bind:checked={usePassword}
-              disabled={isSubmitting}
-            />
-            <span>Set a password (optional)</span>
-          </label>
+          <button 
+            type="button" 
+            class="password-toggle-btn" 
+            onclick={togglePassword}>
+            Set a password (optional) {usePassword ? '▼' : '►'}
+          </button>
         </div>
         
         {#if usePassword}
@@ -128,9 +125,9 @@
           <button type="submit" class="upgrade-btn" disabled={isSubmitting || (usePassword && (!password || password.length < 6)) || !email}>
             {#if isSubmitting}
               <div class="spinner"></div>
-              Upgrading...
+              Saving...
             {:else}
-              Upgrade Account
+              Save
             {/if}
           </button>
         </div>
@@ -284,15 +281,24 @@
     margin: 0.5em 0;
   }
   
-  .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
+  .password-toggle-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--color-muted-teal);
+    font-family: inherit;
+    font-size: inherit;
     cursor: pointer;
+    text-align: left;
   }
   
-  .checkbox-label input {
-    margin: 0;
+  .password-toggle-btn:hover {
+    text-decoration: underline;
+  }
+  
+  .password-toggle-btn:focus {
+    outline: 1px dotted var(--color-muted-teal);
+    outline-offset: 2px;
   }
   
   .form-actions {

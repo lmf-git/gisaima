@@ -280,16 +280,8 @@ export const signInAnonymously = async () => {
     console.log('Attempting anonymous sign in');
     const userCredential = await firebaseSignInAnonymously(auth);
     
-    // Enhance the user object with a guest name
-    const shortId = userCredential.user.uid.substring(0, 4);
-    const enhancedUser = {
-      ...userCredential.user,
-      displayName: `Guest ${shortId}`
-    };
-    
-    // Update the user in our store (the auth state change will also trigger)
-    user.set(enhancedUser);
-    
+    // Return success but let the auth state listener update the store naturally
+    // This prevents potential race conditions with duplicate store updates
     console.log('Anonymous sign in successful:', userCredential.user.uid);
     return { success: true };
   } catch (error) {
