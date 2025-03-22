@@ -6,6 +6,7 @@
   import { game } from '../../lib/stores/game.js';
   import { map, moveTarget } from '../../lib/stores/map.js';
   import { getChunkKey } from '../../lib/stores/map.js';
+  import { goto } from '$app/navigation';
 
   // Export a close function prop to allow parent to close the component
   const { onSpawn = () => {} } = $props();
