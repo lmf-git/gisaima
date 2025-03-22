@@ -18,7 +18,8 @@
         targetStore,
         setup,
         moveTarget,
-        setupFromGameStore
+        setupFromGameStore,
+        cleanup // Add the cleanup function import
     } from "../../lib/stores/map.js";
     
     import Tutorial from '../../components/map/Tutorial.svelte';
@@ -175,6 +176,9 @@
     onDestroy(() => {
         if (browser) {
             document.body.classList.remove('map-page-active');
+            
+            // Clean up map resources to prevent memory leaks
+            cleanup();
         }
     });
 </script>

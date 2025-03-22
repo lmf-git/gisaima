@@ -364,3 +364,37 @@ export function setHighlighted(x, y) {
 export function getChunkKey(x, y) {
   return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
 };
+
+// Add a cleanup function that resets the map store and clears caches
+export function cleanup() {
+  // Clear terrain cache if terrain generator exists
+  if (terrain) {
+    terrain.clearCache?.();
+  }
+  
+  // Clear all chunk subscriptions
+  for (const [_, unsubscribe] of chunkSubscriptions.entries()) {
+    if (typeof unsubscribe === 'function') {
+      unsubscribe();
+    }
+  }
+  chunkSubscriptions.clear();
+  
+  // Reset the map store to initial state
+  map.set({
+    ready: false,
+    cols: 0,
+    rows: 0,
+    target: { x: 0, y: 0 },
+    highlighted: null,
+    minimap: true,
+    world: null,
+  });
+  
+  // Reset entities store
+  entities.set({
+    structure: {},
+    groups: {},
+    players: {}
+  });
+}
