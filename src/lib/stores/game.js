@@ -1,6 +1,6 @@
 import { writable, derived, get as getStore } from 'svelte/store';
 import { browser } from '$app/environment';
-import { ref, onValue, get as dbGet, set } from "firebase/database";
+import { ref, onValue, get as dbGet, set, runTransaction } from "firebase/database";
 import { db } from '../firebase/database.js';
 import { user } from './user.js';
 
@@ -210,34 +210,65 @@ export function joinWorld(worldId, userId, race) {
   const raceCode = typeof race === 'string' ? race.toLowerCase() : 
                    race?.id ? race.id.toLowerCase() : 'human';
   
-  // Update database to mark player as joined to this world
+  // First check if player has already joined this world to avoid double counting
   const userWorldRef = ref(db, `players/${userId}/worlds/${worldId}`);
-  return set(userWorldRef, { 
-    joined: Date.now(),
-    spawned: false,  // Add spawned flag, defaulting to false
-    race: raceCode   // Store race as lowercase code
-  })
-    .then(() => {
-      // Update local store
-      game.update(state => ({
-        ...state,
-        currentWorld: worldId,
-        joinedWorlds: state.joinedWorlds.includes(worldId) ? 
-          state.joinedWorlds : 
-          [...state.joinedWorlds, worldId]
-      }));
-      
-      // Also load the player's world data into the store
-      loadPlayerWorldData(userId, worldId);
-      
-      // Load world info if needed
-      const currentState = getStore(game);
-      if (!currentState.worldInfo[worldId]) {
-        return loadCurrentWorldInfo(worldId);
+  
+  return dbGet(userWorldRef).then(snapshot => {
+    const alreadyJoined = snapshot.exists();
+    
+    // Update database to mark player as joined to this world
+    return set(userWorldRef, { 
+      joined: Date.now(),
+      spawned: false,  // Add spawned flag, defaulting to false
+      race: raceCode   // Store race as lowercase code
+    }).then(() => {
+      // Only update the player counter if this is a new join
+      if (!alreadyJoined) {
+        const worldPlayerCountRef = ref(db, `worlds/${worldId}/info/playerCount`);
+        // Use a transaction to safely increment the counter
+        return runTransaction(worldPlayerCountRef, (currentCount) => {
+          return (currentCount || 0) + 1;
+        }).then(() => {
+          console.log(`Incremented player count for world ${worldId}`);
+          
+          // Update local store
+          game.update(state => ({
+            ...state,
+            currentWorld: worldId,
+            joinedWorlds: state.joinedWorlds.includes(worldId) ? 
+              state.joinedWorlds : 
+              [...state.joinedWorlds, worldId]
+          }));
+          
+          // Also load the player's world data into the store
+          loadPlayerWorldData(userId, worldId);
+          
+          // Load world info if needed, with a refresh to get the updated player count
+          return getWorldInfo(worldId, true);
+        });
+      } else {
+        // Player already joined, just update the local store
+        game.update(state => ({
+          ...state,
+          currentWorld: worldId,
+          joinedWorlds: state.joinedWorlds.includes(worldId) ? 
+            state.joinedWorlds : 
+            [...state.joinedWorlds, worldId]
+        }));
+        
+        // Also load the player's world data into the store
+        loadPlayerWorldData(userId, worldId);
+        
+        // Load world info if needed
+        const currentState = getStore(game);
+        if (!currentState.worldInfo[worldId]) {
+          return loadCurrentWorldInfo(worldId);
+        }
+        
+        return worldId;
       }
-      
-      return worldId;
     });
+  });
 }
 
 // Get world information including seed with caching
