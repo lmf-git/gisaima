@@ -4,10 +4,11 @@
     import { user, loading as userLoading } from '$lib/stores/user';
     import { browser } from '$app/environment';
     
-    let email = '';
-    let password = '';
-    let error = null;
-    let loading = false;
+    // Convert variables to use $state
+    let email = $state('');
+    let password = $state('');
+    let error = $state(null);
+    let loading = $state(false);
     
     // Add effect to redirect authenticated users
     $effect(() => {
