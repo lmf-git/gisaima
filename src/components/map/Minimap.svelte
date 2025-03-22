@@ -294,8 +294,12 @@
               class:center={isTarget} 
               class:visible={cell.isInMainView}
               class:highlighted={cell.highlighted}
+              class:has-structure={cell.structure}
+              class:has-spawn={cell.structure?.type === 'spawn'}
+              class:has-players={cell.players?.length > 0}
+              class:has-groups={cell.groups?.length > 0}
               style="
-                background-color: {cell.color};
+                --tile-color: {cell.color};
                 grid-column-start: {relativeX + 1};
                 grid-row-start: {relativeY + 1};
               "
@@ -437,43 +441,93 @@
     width: var(--mini-tile-size);
     height: var(--mini-tile-size);
     box-sizing: border-box;
-    transition: background-color 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
-    position: relative; /* Add this for proper stacking context */
+    position: relative;
+    z-index: 1;
+    background-color: var(--tile-color); /* Set background from CSS var instead of inline */
   }
   
-  /* Make center tile more stable */
-  .tile.center {
-    z-index: 5; /* Always on top */
-    opacity: 1;
-    border: none; /* Remove border */
-    position: relative;
+  /* Base tile content indicator using borders */
+  .tile.has-structure {
+    border-bottom: 0.15em solid rgba(255, 255, 255, 0.6);
+    border-left: 0.15em solid rgba(255, 255, 255, 0.6);
   }
-
+  
+  .tile.has-players {
+    border-top: 0.15em solid rgba(100, 100, 255, 0.7);
+    border-left: 0.15em solid rgba(100, 100, 255, 0.7);
+  }
+  
+  .tile.has-groups {
+    border-top: 0.15em solid rgba(255, 100, 100, 0.7);
+    border-right: 0.15em solid rgba(255, 100, 100, 0.7);
+  }
+  
+  /* Special indicator for spawn points */
+  .tile.has-spawn {
+    border: 0.15em solid rgba(0, 255, 255, 0.8);
+    border-radius: 50%;
+  }
+  
+  /* Use ::before for the visible highlight effect */
+  .tile.visible::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    z-index: 2;
+    pointer-events: none;
+  }
+  
+  /* Use ::after for the hover highlight effect */
+  .tile.highlighted::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 0.1em white, 0 0 0.2em white;
+    z-index: 3;
+    pointer-events: none;
+  }
+  
+  /* Make center tile more stable - using both border and ::after */
+  .tile.center {
+    z-index: 5;
+    border: 0.125em solid white;
+  }
+  
   .tile.center::after {
     content: '';
     position: absolute;
-    top: 0; 
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border: 0.125em solid white; /* Add border with ::after */
-    box-shadow: 0 0 0.2em rgba(255, 255, 255, 0.8);
-    box-sizing: border-box;
+    inset: 0;
+    box-shadow: 0 0 0.25em rgba(255, 255, 255, 0.8);
     pointer-events: none;
     z-index: 5;
   }
   
+  /* Remove filter effects since we're using overlays now */
   .tile.visible {
     z-index: 2;
-    filter: brightness(1.2);
   }
   
-  /* Change highlight approach to avoid background-color conflict */
   .tile.highlighted {
     z-index: 4;
-    filter: brightness(1.5); /* Use brightness filter instead of setting background-color */
-    box-shadow: inset 0 0 0 0.1em rgba(255, 255, 255, 0.9), 0 0 0.25em rgba(255, 255, 255, 0.7); /* Add white inner and outer glow */
-    opacity: 1;
+  }
+  
+  /* Handle special cases where multiple features overlap */
+  .tile.has-structure.has-players {
+    border-left: 0.15em solid rgba(177, 177, 255, 0.7);
+  }
+  
+  .tile.has-structure.has-spawn {
+    border: 0.15em solid rgba(0, 255, 255, 0.8);
+    border-radius: 50%;
+  }
+  
+  /* Spawn always takes precedence in border styling */
+  .tile.has-spawn.has-players,
+  .tile.has-spawn.has-groups,
+  .tile.has-spawn.has-players.has-groups {
+    border: 0.15em solid rgba(0, 255, 255, 0.8);
+    border-radius: 50%;
   }
   
   .minimap.drag,
