@@ -16,7 +16,7 @@
         
         loading = false;
         if (result.success) {
-            goto('/');
+            goto('/worlds');
         } else {
             error = result.error;
         }
@@ -30,7 +30,7 @@
         
         loading = false;
         if (result.success) {
-            goto('/');
+            goto('/worlds');
         } else {
             error = result.error;
         }
@@ -75,7 +75,7 @@
             <span>or</span>
         </div>
         
-        <button class="secondary" onclick={handleAnonymousLogin} disabled={loading}>
+        <button type="button" class="secondary" onclick={handleAnonymousLogin} disabled={loading}>
             {loading ? 'Logging in...' : 'Continue as Guest'}
         </button>
         

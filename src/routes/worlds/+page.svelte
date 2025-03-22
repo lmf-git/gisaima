@@ -107,8 +107,16 @@
           <h2>{world.name || world.id}</h2>
           <p>{world.description || 'No description available'}</p>
           <div class="world-stats">
-            <span>Players: {world.playerCount || 0}</span>
-            <span>Created: {new Date(world.created || Date.now()).toLocaleDateString()}</span>
+            <div class="stat-item">
+              <span class="stat-icon">👥</span>
+              <span class="stat-label">Players:</span>
+              <span class="stat-value">{world.playerCount || 0}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-icon">📅</span>
+              <span class="stat-label">Created:</span>
+              <span class="stat-value">{new Date(world.created || Date.now()).toLocaleDateString()}</span>
+            </div>
           </div>
           
           <button 
@@ -188,11 +196,36 @@
   }
   
   .world-stats {
-    margin: 1rem 0;
+    margin: 1.25rem 0;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 0.75rem;
     font-size: 0.9rem;
-    color: #666;
+  }
+  
+  .stat-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    background-color: rgba(42, 107, 122, 0.08);
+  }
+  
+  .stat-icon {
+    margin-right: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .stat-label {
+    font-weight: 600;
+    color: #555;
+    margin-right: 0.5rem;
+  }
+  
+  .stat-value {
+    margin-left: auto;
+    color: #333;
+    font-weight: 500;
   }
   
   button {
