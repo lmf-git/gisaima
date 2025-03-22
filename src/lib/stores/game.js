@@ -33,14 +33,40 @@ export const currentWorldSeed = derived(
   $worldInfo => $worldInfo?.seed || null
 );
 
+// Create a derived store that combines user data with player world-specific data
+export const currentPlayer = derived(
+  [user, game],
+  ([$user, $game]) => {
+    if (!$user || !$game.currentWorld || !$game.playerWorldData) {
+      return null;
+    }
+    
+    // Base player info from user auth data
+    const playerInfo = {
+      uid: $user.uid,
+      displayName: $user.displayName || $user.email?.split('@')[0] || 'Player',
+      email: $user.email,
+      // Current world context
+      world: $game.currentWorld,
+      worldName: $game.worldInfo[$game.currentWorld]?.name,
+      // Player status in this world
+      spawned: $game.playerWorldData.spawned || false,
+      lastLocation: $game.playerWorldData.lastLocation || null,
+      lastSpawn: $game.playerWorldData.lastSpawn || null,
+      // Joined timestamp
+      joinedAt: $game.playerWorldData.joined || null,
+      // For convenience, include all world-specific player data
+      worldData: $game.playerWorldData
+    };
+    
+    return playerInfo;
+  }
+);
+
 // Create a derived store for player's spawn status in the current world
 export const needsSpawn = derived(
-  game,
-  $game => {
-    // Player needs to spawn if playerWorldData exists but spawned is false,
-    // or if playerWorldData is missing entirely
-    return !$game.playerWorldData || $game.playerWorldData.spawned === false;
-  }
+  currentPlayer,
+  $player => !$player || $player.spawned === false
 );
 
 // Load player's joined worlds
@@ -183,6 +209,9 @@ export function joinWorld(worldId, userId) {
           state.joinedWorlds : 
           [...state.joinedWorlds, worldId]
       }));
+      
+      // Also load the player's world data into the store
+      loadPlayerWorldData(userId, worldId);
       
       // Load world info if needed
       const currentState = getStore(game);

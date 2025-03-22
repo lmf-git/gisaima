@@ -126,8 +126,8 @@
                     loading = false;
                     error = null;
                     
-                    // Check spawn status after map initialization
-                    checkPlayerSpawnStatus();
+                    // No need to check player spawn status manually anymore
+                    // It's now handled through the game store and needsSpawn derived store
                 } else {
                     error = 'Failed to initialize map with world data';
                     loading = false;

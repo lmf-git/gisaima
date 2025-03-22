@@ -1,10 +1,11 @@
 <script>
   import { onMount } from 'svelte';
-  import { ref, get as dbGet, update } from "firebase/database";
+  import { ref, get as dbGet, update, set } from "firebase/database";
   import { db } from '../../lib/firebase/database.js';
   import { user } from '../../lib/stores/user.js';
   import { game } from '../../lib/stores/game.js';
   import { map, moveTarget } from '../../lib/stores/map.js';
+  import { getChunkKey } from '../../lib/stores/map.js';
 
   // Export a close function prop to allow parent to close the component
   const { onSpawn = () => {} } = $props();
@@ -96,7 +97,7 @@
     error = null;
     
     try {
-      // Update the player's spawn status in Firebase
+      // Update the player's spawn status in user record
       const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.currentWorld}`);
       await update(playerWorldRef, { 
         spawned: true,
@@ -106,6 +107,27 @@
           y: selectedSpot.y,
           timestamp: Date.now()
         }
+      });
+      
+      // Also add player to the world chunk data so they appear on the map
+      // Calculate chunk key and location key
+      const chunkKey = getChunkKey(selectedSpot.x, selectedSpot.y);
+      const locationKey = `${selectedSpot.x},${selectedSpot.y}`;
+      
+      // Create a player entity in the world
+      const playerEntityRef = ref(
+        db, 
+        `worlds/${$game.currentWorld}/chunks/${chunkKey}/${locationKey}/players/${$user.uid}`
+      );
+      
+      // Get existing player profile data
+      const displayName = $user.displayName || $user.email?.split('@')[0] || 'Player';
+      
+      // Set player data in the world
+      await set(playerEntityRef, {
+        displayName,
+        lastActive: Date.now(),
+        uid: $user.uid
       });
       
       // Notify parent that spawn has completed

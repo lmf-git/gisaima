@@ -10,6 +10,7 @@
     targetStore,
     setHighlighted  // Renamed from updateHoveredTile
   } from "../../lib/stores/map.js";
+  import { game } from "../../lib/stores/game.js";
   
   // Convert to $props syntax
   const { detailed = false } = $props();
@@ -314,6 +315,22 @@
       default: return '';
     }
   }
+
+  // Get player position from game store
+  const playerPosition = $derived(() => {
+    if ($game.playerWorldData?.lastLocation) {
+      return {
+        x: $game.playerWorldData.lastLocation.x,
+        y: $game.playerWorldData.lastLocation.y
+      };
+    }
+    return null;
+  });
+  
+  // Function to check if a tile is the player's position
+  function isPlayerPosition(x, y) {
+    return playerPosition && playerPosition.x === x && playerPosition.y === y;
+  }
 </script>
 
 <svelte:window
@@ -358,10 +375,11 @@
             class:has-structure={cell.structure}
             class:has-groups={cell.groups?.length > 0}
             class:has-players={cell.players?.length > 0}
+            class:player-position={isPlayerPosition(cell.x, cell.y)}
             onmouseenter={() => handleTileHover(cell)}
             role="gridcell"
             tabindex="-1"
-            aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}"
+            aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}{isPlayerPosition(cell.x, cell.y) ? ', your position' : ''}"
             aria-current={cell.isCenter ? "location" : undefined}
             style="
               background-color: {cell.color};
@@ -369,6 +387,11 @@
             "
           >
             <span class="coords">{cell.x},{cell.y}</span>
+
+            <!-- Add player position indicator -->
+            {#if isPlayerPosition(cell.x, cell.y)}
+              <div class="entity-indicator player-position-indicator" aria-hidden="true"></div>
+            {/if}
 
             {#if cell.structure}
               <div class="entity-indicator structure-indicator {cell.structure.type}-indicator" aria-hidden="true"></div>
@@ -746,5 +769,47 @@
   .tile.has-structure.has-groups.spawn-structure,
   .tile.has-structure.has-players.spawn-structure {
     box-shadow: inset 0 0 0.5em rgba(0, 255, 255, 0.6);
+  }
+
+  /* Player position indicator */
+  .player-position {
+    position: relative;
+    box-shadow: inset 0 0 0.6em rgba(255, 215, 0, 0.7);
+    z-index: 2;
+  }
+  
+  .player-position:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 0.15em solid gold;
+    pointer-events: none;
+    z-index: 2;
+  }
+  
+  .player-position-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0.7em;
+    height: 0.7em;
+    background: gold;
+    border: 0.1em solid rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    box-shadow: 0 0 0.3em gold;
+    z-index: 10;
+    pointer-events: none;
+  }
+  
+  /* Make sure player position indicator works with other indicators */
+  .tile.player-position.has-structure,
+  .tile.player-position.has-groups,
+  .tile.player-position.has-players,
+  .tile.player-position.spawn-structure {
+    box-shadow: inset 0 0 0.6em rgba(255, 215, 0, 0.7);
   }
 </style>
