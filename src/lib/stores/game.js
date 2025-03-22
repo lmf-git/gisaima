@@ -120,7 +120,10 @@ export function joinWorld(worldId, userId) {
   
   // Update database to mark player as joined to this world
   const userWorldRef = ref(db, `players/${userId}/worlds/${worldId}`);
-  return set(userWorldRef, { joined: Date.now() })
+  return set(userWorldRef, { 
+    joined: Date.now(),
+    spawned: false  // Add spawned flag, defaulting to false
+  })
     .then(() => {
       // Update local store
       game.update(state => ({
