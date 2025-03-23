@@ -351,6 +351,30 @@
   function hasCurrentPlayer(players) {
     return players && players.some(player => isCurrentPlayer(player));
   }
+
+  // Helper function to get rarity glow size
+  function getRarityGlowSize(rarity) {
+    switch(rarity) {
+      case 'mythic': return '1.2em';
+      case 'legendary': return '0.9em';
+      case 'epic': return '0.7em';
+      case 'rare': return '0.5em';
+      case 'uncommon': return '0.3em';
+      default: return '0';
+    }
+  }
+  
+  // Helper function to get rarity color
+  function getRarityColor(rarity) {
+    switch(rarity) {
+      case 'mythic': return 'rgba(255, 128, 255, 0.5)'; // Pink/Purple
+      case 'legendary': return 'rgba(255, 165, 0, 0.5)'; // Orange
+      case 'epic': return 'rgba(148, 0, 211, 0.4)'; // Purple
+      case 'rare': return 'rgba(0, 112, 221, 0.4)'; // Blue
+      case 'uncommon': return 'rgba(30, 255, 0, 0.3)'; // Green
+      default: return 'transparent';
+    }
+  }
 </script>
 
 <svelte:window
@@ -390,7 +414,7 @@
           )}
           {@const isCurrentPlayerTile = hasCurrentPlayer(cell.players)}
           <div
-            class="tile {getStructureClass(cell.structure)}"
+            class="tile {getStructureClass(cell.structure)} {cell.terrain?.rarity || 'common'}"
             class:center={cell.isCenter}
             class:highlighted={cell.highlighted}
             class:has-structure={cell.structure}
@@ -401,11 +425,12 @@
             onmouseenter={() => handleTileHover(cell)}
             role="gridcell"
             tabindex="-1"
-            aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}{isPlayerPosition(cell.x, cell.y) ? ', your position' : ''}{isCurrentPlayerTile ? ', your character' : ''}"
+            aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}{cell.terrain?.rarity ? ', '+cell.terrain.rarity : ''}{isPlayerPosition(cell.x, cell.y) ? ', your position' : ''}{isCurrentPlayerTile ? ', your character' : ''}"
             aria-current={cell.isCenter ? "location" : undefined}
             style="
               background-color: {cell.color};
               animation-delay: {!introduced && cell.isCenter ? 0 : (!introduced ? 0.05 * distance : 0)}s;
+              {cell.terrain?.rarity && cell.terrain.rarity !== 'common' ? `box-shadow: inset 0 0 ${getRarityGlowSize(cell.terrain.rarity)} ${getRarityColor(cell.terrain.rarity)};` : ''}
             "
           >
             <span class="coords">{cell.x},{cell.y}</span>
@@ -853,5 +878,18 @@
   .tile.player-position.has-players,
   .tile.player-position.spawn-structure {
     box-shadow: inset 0 0 0.6em rgba(255, 215, 0, 0.7);
+  }
+
+  /* Rarity styles */
+  .tile.mythic {
+    z-index: 5; /* Make mythic tiles appear on top */
+  }
+  
+  .tile.legendary {
+    z-index: 4;
+  }
+  
+  .tile.epic {
+    z-index: 3;
   }
 </style>

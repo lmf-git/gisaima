@@ -176,13 +176,13 @@ export class SimplexNoise {
     return value / maxValue;
   }
   
-  // Update getNoise to use the new fBM implementation
+  // Update getNoise to use the new fBM implementation should use this
   getNoise(x, y, options = {}) {
     // Use the new fBM function for all noise generation
     return this.getFBM(x, y, options);
   }
-
-  // Completely redesigned river system using ridge noise for better channels
+  
+  // Enhanced river generation with better natural flowS AND IS NOT DUPLICATED
   getRiverValue(x, y, options = {}, heightMap = null) {
     if (!heightMap) return 0;
 
@@ -191,49 +191,162 @@ export class SimplexNoise {
       riverDensity = 1.3,
       riverThreshold = 0.5,
       minContinentValue = 0.2,
-      riverWidth = 1.1,
-      flowDirectionality = 0.8,
+      riverWidth = 0.85,
+      flowDirectionality = 0.95,
       arterialRiverFactor = 0.6,
       waterLevel = 0.32,
-      ridgeSharpness = 2.0  // Controls how sharp river valleys are
+      ridgeSharpness = 2.5,
+      lakeInfluence = 0.75,
+      branchingFactor = 0.6,
+      streamFrequency = 0.6,
+      flowConstraint = 0.75,
+      mountainSourceFactor = 0.7  // New parameter for mountain river sources
     } = options;
     
     // Get height at this position
     const heightValue = heightMap(x, y);
     
-    // Early exit for high terrain to save computation
-    if (heightValue > 0.85) return 0;
-    
-    // Generate ridge noise specifically for river channels
-    // Ridge noise creates sharp valleys where rivers can form
+    // Early exit for extremely high terrain (above snowline)
+    if (heightValue > 0.95) return 0;
+
+    // Generate ridge noise for river channels
     const riverRidgeNoise = this.getFBM(x + 5000, y + 5000, {
       scale,
       octaves: 3,
       persistence: 0.5,
       lacunarity: 2.2,
-      ridged: true  // Enable ridge noise
+      ridged: true
     });
     
-    // Generate flow direction field using gradient of height map
+    // Calculate neighborhood heights with wider sampling for better gradient detection
     const heightN = heightMap(x, y - 1);
     const heightS = heightMap(x, y + 1);
     const heightE = heightMap(x + 1, y);
     const heightW = heightMap(x - 1, y);
+    const heightNE = heightMap(x + 1, y - 1);
+    const heightNW = heightMap(x - 1, y - 1);
+    const heightSE = heightMap(x + 1, y + 1);
+    const heightSW = heightMap(x - 1, y + 1);
     
-    // Calculate gradient vector (points from high to low)
-    const gradX = (heightW - heightE) * 0.5;
-    const gradY = (heightN - heightS) * 0.5;
+    // Calculate more accurate gradient for flow direction
+    const dx = (heightW - heightE) * 0.6 + (heightNW - heightNE + heightSW - heightSE) * 0.2;
+    const dy = (heightN - heightS) * 0.6 + (heightNW - heightSW + heightNE - heightSE) * 0.2;
+    const gradMag = Math.sqrt(dx * dx + dy * dy);
     
-    // Magnitude of gradient (steepness)
-    const gradMag = Math.sqrt(gradX * gradX + gradY * gradY);
+    // Find the lowest point in neighborhood (rivers flow to lowest point)
+    const neighborHeights = [heightN, heightS, heightE, heightW, heightNE, heightNW, heightSE, heightSW];
+    const lowestHeight = Math.min(...neighborHeights);
+    const heightDrop = heightValue - lowestHeight;
     
-    // Flow factor - higher when on steep slopes
+    // ENHANCEMENT: Special handling for mountain river sources
+    // High elevation + sufficient gradient = potential river source (mountain streams)
+    const isMountainSource = heightValue > 0.82 && gradMag > 0.025;
+    const mountainSourceBonus = isMountainSource ? 
+      (heightValue - 0.82) * 5 * mountainSourceFactor * Math.min(1.0, gradMag * 10) : 0;
+    
+    // Only allow river formation if there's sufficient slope or we're in a defined channel
+    // Modified to allow mountain sources even with less defined channels
+    if (gradMag < 0.02 && riverRidgeNoise > 0.5 && heightDrop < 0.01 && !isMountainSource) {
+      return 0;  // Not enough gradient for water flow
+    }
+    
+    // Calculate flow factor - higher on steep slopes
     const flowFactor = Math.min(1.0, gradMag * 10);
     
-    // Only continue if we have sufficient ridge or flow
-    if (riverRidgeNoise < 0.3 && flowFactor < 0.2) return 0;
+    // IMPORTANT: Water cannot flow uphill - ensure we have a downward gradient
+    // Exception: mountain sources can create rivers
+    if (heightDrop <= 0 && heightValue > waterLevel + 0.05 && !isMountainSource) {
+      return 0;  // Water doesn't flow uphill unless near existing water or is a mountain source
+    }
     
-    // Generate arterial rivers - major channels that traverse the map
+    // Sample nearby water bodies with wider radius to detect ocean influence
+    const sampleRadius = 4;  // Increased from 3 to detect oceans better
+    let nearWater = false;
+    let waterDirection = { x: 0, y: 0 };
+    let waterNetwork = 0;
+    let nearOcean = false; // New flag to detect proximity to oceans
+    
+    // Check surrounding points for water bodies
+    for (let dy = -sampleRadius; dy <= sampleRadius; dy++) {
+      for (let dx = -sampleRadius; dx <= sampleRadius; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > sampleRadius) continue;
+        
+        const nx = x + dx;
+        const ny = y + dy;
+        const neighborHeight = heightMap(nx, ny);
+        
+        // Check if this is a water body
+        if (neighborHeight < waterLevel) {
+          nearWater = true;
+          
+          // Stronger influence for very low heights (oceans)
+          const isOcean = neighborHeight < waterLevel - 0.1;
+          if (isOcean) nearOcean = true;
+          
+          // Calculate direction from water to current point with exponential falloff
+          const oceanFactor = isOcean ? 1.5 : 1.0; // Ocean has stronger pull
+          const weight = Math.pow(1 / Math.max(0.7, dist), 1.5) * oceanFactor;
+          waterDirection.x += -dx * weight;
+          waterDirection.y += -dy * weight;
+          
+          // Increase water network value
+          waterNetwork += (1 / (dist * 1.2)) * 0.2 * oceanFactor;
+        }
+      }
+    }
+    
+    // Normalize water direction
+    if (nearWater) {
+      const dirLength = Math.sqrt(waterDirection.x * waterDirection.x + waterDirection.y * waterDirection.y);
+      if (dirLength > 0) {
+        waterDirection.x /= dirLength;
+        waterDirection.y /= dirLength;
+      }
+    }
+    
+    // Combine gradient with water influence, but constrain flow to more natural channels
+    let finalGradX = dx;
+    let finalGradY = dy;
+    
+    if (nearWater) {
+      // Blend with water direction but constrain influence
+      const waterFactor = nearOcean ? lakeInfluence * 1.2 : lakeInfluence * 0.7;
+      finalGradX = dx * (1 - waterFactor) + waterDirection.x * waterFactor;
+      finalGradY = dy * (1 - waterFactor) + waterDirection.y * waterFactor;
+    }
+    
+    // Calculate base river value from ridge noise - higher values for well-defined channels
+    let riverValue = (1.0 - riverRidgeNoise) * ridgeSharpness;
+    
+    // Add water proximity bonus with constraint
+    if (nearWater) {
+      // Ocean gives extra bonus
+      const oceanBonus = nearOcean ? 1.3 : 1.0;
+      riverValue += lakeInfluence * Math.min(0.3, waterNetwork) * oceanBonus;
+    }
+    
+    // Add downhill flow contribution - critical for realistic rivers
+    riverValue += heightDrop * flowDirectionality * 2.5;
+    
+    // Add mountain source bonus - creates rivers starting from mountains
+    riverValue += mountainSourceBonus;
+    
+    // Generate branching streams with more constraint
+    const branchingNoise = this.getFBM(x * 1.7 + 9000, y * 1.7 + 9000, {
+      scale: scale * 1.2,
+      octaves: 2,
+      persistence: 0.6
+    });
+    
+    // Add branching streams only where terrain supports it
+    if (branchingNoise > (1 - branchingFactor) && (heightDrop > 0.015 || isMountainSource)) {
+      riverValue += branchingNoise * branchingFactor * 0.6;
+    }
+    
+    // Generate arterial rivers - major channels
     const arterialNoise = this.getFBM(x * 0.4 + 8000, y * 0.4 + 8000, {
       scale: scale * 0.4,
       octaves: 2,
@@ -241,67 +354,224 @@ export class SimplexNoise {
       lacunarity: 1.6
     });
     
-    // Use height difference to detect natural channels
-    const lowestNeighbor = Math.min(heightN, heightS, heightE, heightW);
-    const heightDrop = heightValue - lowestNeighbor;
-    
-    // Combine ridge noise with height drop for better flow
-    let riverValue = (1.0 - riverRidgeNoise) * ridgeSharpness; // Higher in valleys
-    
-    // Add flow contribution - rivers flow downhill
-    riverValue += heightDrop * flowDirectionality * 2;
-    
     // Add arterial river bonus
     const isArterial = arterialNoise > (1 - arterialRiverFactor);
     if (isArterial) {
-      riverValue += arterialRiverFactor;
+      riverValue += arterialRiverFactor * 0.8;
     }
     
-    // Apply density scaling - higher density means more rivers
+    // Apply constraint to prevent rivers from spreading too widely
+    riverValue *= Math.min(1.0, flowFactor * flowConstraint + (1 - flowConstraint));
+    
+    // Apply density scaling
     riverValue *= riverDensity;
     
-    // Apply threshold to determine if this is a river cell
-    if (riverValue > riverThreshold) {
-      // Scale width by steepness and position - rivers widen downstream
-      const widthModifier = (1.0 - heightValue) * 0.5 + 0.5;
-      const effectiveWidth = riverWidth * widthModifier * (isArterial ? 1.5 : 1.0);
+    // Threshold with variable ratio
+    const effectiveThreshold = nearWater ? riverThreshold * 0.8 : 
+                               isMountainSource ? riverThreshold * 0.9 : 
+                               riverThreshold;
+    
+    // Final output - reduce width for streams
+    if (riverValue > effectiveThreshold) {
+      // Scale width by terrain - narrower for mountain rivers
+      let widthModifier = isMountainSource ? 
+                          (1.0 - heightValue) * 0.25 + 0.2 : // Narrower mountain rivers 
+                          (1.0 - heightValue) * 0.3 + 0.3;   // Standard width scaling
       
-      return Math.min(1.0, (riverValue - riverThreshold) * effectiveWidth);
+      // Add an extra modifier for small streams to make them narrower
+      if (riverValue <= effectiveThreshold + 0.15) {
+        widthModifier *= 0.7; // Make streams 30% narrower while leaving larger rivers unchanged
+      }
+      
+      const waterProximityBonus = nearWater ? 1.2 : 1.0;
+      const arterialBonus = isArterial ? 1.4 : 1.0;
+      const effectiveWidth = riverWidth * widthModifier * waterProximityBonus * arterialBonus;
+      
+      return Math.min(0.95, (riverValue - effectiveThreshold) * effectiveWidth);
+    }
+    
+    return 0;
+  }
+
+  // Enhanced lake detection with smaller lakes and ponds at higher elevations
+  getLakeValue(x, y, options = {}, heightMap = null, riverMap = null) {
+    const {
+      scale = 0.003,
+      lakeThreshold = 0.82,
+      minHeight = 0.3,
+      maxHeight = 0.65,
+      minRiverInfluence = 0.25,
+      lakeSmoothness = 0.7,
+      smallPondFrequency = 0.9, // Increased from original value for more ponds
+      pondSize = 0.25,           // Reduced from original value for smaller ponds
+      // New parameters for pond placement
+      pondMinHeight = 0.42,    // Higher min height for ponds
+      pondMaxHeight = 0.7,     // Max height for ponds
+      avoidWaterDistance = 4   // Distance to avoid other water for ponds
+    } = options;
+    
+    if (!heightMap) return 0;
+    
+    const localHeight = heightMap(x, y);
+    
+    // No lakes in oceans or mountains
+    if (localHeight < minHeight || localHeight > maxHeight) return 0;
+    
+    // Generate lake noise
+    const lakeNoise = this.getNoise(x + 3000, y + 3000, {
+      scale,
+      octaves: 2,
+      persistence: 0.5
+    });
+    
+    // Additional noise layer for small ponds with higher frequency
+    const pondNoise = this.getNoise(x * 2.2 + 7500, y * 2.2 + 7500, {
+      scale: scale * 2.2,
+      octaves: 1,
+      persistence: 0.4
+    });
+    
+    // Generate lake shapes
+    const lakeShape = this.getNoise(x + 4000, y + 4000, {
+      scale: scale * 2,
+      octaves: 1,
+      persistence: 0.3
+    });
+    
+    // Calculate flatness
+    const heightNorth = heightMap(x, y - 1);
+    const heightSouth = heightMap(x, y + 1);
+    const heightEast = heightMap(x + 1, y);
+    const heightWest = heightMap(x - 1, y);
+    
+    const slopes = [
+      Math.abs(heightNorth - localHeight),
+      Math.abs(heightSouth - localHeight),
+      Math.abs(heightEast - localHeight),
+      Math.abs(heightWest - localHeight)
+    ];
+    
+    const averageSlope = slopes.reduce((sum, s) => sum + s, 0) / slopes.length;
+    const flatnessFactor = 1 - (averageSlope * 10);
+    
+    // Check for depression
+    const isDepression = localHeight < Math.min(heightNorth, heightSouth, heightEast, heightWest);
+    
+    // Check for nearby rivers or water
+    const riverInfluence = riverMap ? riverMap(x, y) : 0;
+    
+    // Check for nearby water bodies (for ponds) - we don't want ponds near rivers/lakes
+    let hasNearbyWater = false;
+    if (localHeight >= pondMinHeight && localHeight <= pondMaxHeight) {
+      // Check surrounding area for water bodies
+      for (let dy = -avoidWaterDistance; dy <= avoidWaterDistance && !hasNearbyWater; dy++) {
+        for (let dx = -avoidWaterDistance; dx <= avoidWaterDistance && !hasNearbyWater; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > avoidWaterDistance) continue;
+          
+          const nx = x + dx;
+          const ny = y + dy;
+          
+          // Check if river or other water body exists here
+          if (riverMap && riverMap(nx, ny) > 0.05) {
+            hasNearbyWater = true;
+            break;
+          }
+        }
+      }
+    }
+    
+    // Small pond formation - now restricted to higher elevations and away from rivers
+    let pondValue = 0;
+    if (pondNoise > 0.8 && localHeight >= pondMinHeight && localHeight <= pondMaxHeight && !hasNearbyWater) {
+      // Increased threshold from 0.75 to 0.8 and reduced multiplier from 2.5 to 1.5
+      pondValue = (pondNoise - 0.8) * 1.5 * smallPondFrequency * pondSize;
+    }
+    
+    // Main lake formation
+    const lakeValue = 
+      (lakeShape * lakeSmoothness + (1 - lakeSmoothness)) * 
+      (isDepression ? 1.5 : 0.5) * 
+      (flatnessFactor > 0 ? flatnessFactor : 0) * 
+      (riverInfluence > minRiverInfluence ? 1.2 : 0.8) * 
+      lakeNoise;
+    
+    // Combine pond and lake values but keep small ponds small
+    const combinedValue = Math.max(
+      lakeValue > lakeThreshold ? (lakeValue - lakeThreshold) * 6 : 0,
+      pondValue
+    );
+    
+    return Math.min(1, combinedValue);
+  }
+
+  // Optimized lava detection - reduced frequency
+  getLavaValue(x, y, options = {}, heightMap = null) {
+    const {
+      scale = 0.002,
+      lavaThreshold = 0.89,    // Increased from 0.85 to create less lava
+      minHeight = 0.67,        // Increased from 0.65 to restrict to higher elevations
+      lavaConcentration = 0.95, // Increased from 0.9 for more vibrant colors
+      flowIntensity = 1.8,      // Slightly increased from 1.7
+      volcanicTransitionWidth = 0.15  // New parameter controlling transition sharpness
+    } = options;
+    
+    if (!heightMap) return 0;
+    
+    const heightValue = heightMap(x, y);
+    
+    // No lava below minimum height
+    if (heightValue < minHeight) return 0;
+    
+    // Generate lava noise
+    const lavaNoise = this.getNoise(x + 2000, y + 2000, {
+      scale,
+      octaves: 3,
+      persistence: 0.5
+    });
+    
+    // Apply threshold and concentration
+    if (lavaNoise > lavaThreshold) {
+      return (lavaNoise - lavaThreshold) * lavaConcentration * flowIntensity;
     }
     
     return 0;
   }
   
-  // Get noise value at coordinate (normalized between 0-1)
-  getNoise(x, y, options = {}) {
-    const {
-      scale = 0.005,
-      octaves = 6,
-      persistence = 0.5,
-      lacunarity = 2,
-      amplitude = 1,
-      frequency = 1
-    } = options;
-    
-    let value = 0;
-    let maxValue = 0;
-    let amp = amplitude;
-    let freq = frequency;
-    
-    // Sum multiple octaves of noise
-    for(let i = 0; i < octaves; i++) {
-      // Simplex noise returns results in [-1, 1], so we normalize to [0, 1]
-      value += amp * ((this.noise2D(x * freq * scale, y * freq * scale) * 0.5) + 0.5);
-      maxValue += amp;
-      amp *= persistence;
-      freq *= lacunarity;
+  // Enhanced scorched land detection that avoids rivers and water
+  calculateScorchedValue(x, y, heightMap, lavaValue, riverValue) {
+    // Skip scorched calculation for water tiles
+    if (riverValue > 0.1) {
+      return 0;
     }
     
-    // Normalize
-    return value / maxValue;
+    const heightValue = heightMap(x, y);
+    
+    // Reduce frequency of scorched land
+    const scorchedFrequency = TERRAIN_OPTIONS.constants.scorchedFrequency || 0.7;
+    
+    // Only calculate scorched land if we're not in water or near lava
+    if (lavaValue > 0.05 || (heightValue > 0.65 && this.getNoise(x * 2.5, y * 2.5, {
+      scale: 0.008,
+      octaves: 2,
+      persistence: 0.5
+    }) > 0.75)) { // Increased threshold from 0.7 to reduce frequency
+      const scorchedNoise = this.getNoise(x * 3 + 15000, y * 3 + 15000, {
+        scale: 0.006,
+        octaves: 2,
+        persistence: 0.6
+      });
+      
+      // Apply frequency reduction factor
+      return Math.max(0, scorchedNoise - 0.45) * 1.65 * scorchedFrequency; // Increased threshold from 0.4
+    }
+    
+    return 0;
   }
   
-  // Generate continent mask
+  // Fixed and properly defined getContinentValue method
   getContinentValue(x, y, options = {}) {
     const {
       scale = 0.001,
@@ -334,223 +604,179 @@ export class SimplexNoise {
     return 1 / (1 + Math.exp(-sharpness * (combinedValue - threshold)));
   }
 
-  // Performance optimized river generation
-  getRiverValue(x, y, options = {}, heightMap = null) {
+  // Add new capillary stream system - drastically reduced size
+  getCapillaryStreamValue(x, y, options = {}, heightMap = null) {
     if (!heightMap) return 0;
-
+    
     const {
-      scale = 0.003,
-      riverDensity = 1.3,
-      riverThreshold = 0.5,
-      minContinentValue = 0.2,
-      riverWidth = 1.1,
-      flowDirectionality = 0.8,
-      arterialRiverFactor = 0.6,
-      waterLevel = 0.32
+      scale = 0.006,           
+      density = 1.45,           // Increased from 1.3 
+      threshold = 0.78,        // Reduced from 0.82 for many more streams
+      minHeight = 0.33,        
+      maxHeight = 0.85,        
+      waterLevel = 0.31,       
+      connectivityFactor = 0.85, // Increased for better networks
+      thinnessFactor = 0.2
     } = options;
     
     // Get height at this position
     const heightValue = heightMap(x, y);
     
-    // Early exit for high terrain
-    if (heightValue > 0.85) return 0;
+    // Skip if outside valid height range
+    if (heightValue < minHeight || heightValue > maxHeight) return 0;
     
-    // Generate base river network with fewer octaves for performance
-    const baseRiverNoise = this.getNoise(x + 5000, y + 5000, {
-      scale,
-      octaves: 2,
-      persistence: 0.5,
-      lacunarity: 2.2
-    });
-    
-    // Check against threshold early
-    if (baseRiverNoise < riverThreshold) return 0;
-    
-    // Only calculate arterial noise for potential rivers
-    const arterialNoise = this.getNoise(x * 0.4 + 8000, y * 0.4 + 8000, {
-      scale: scale * 0.4,
-      octaves: 1, // Reduced octaves
-      persistence: 0.6,
-      lacunarity: 1.6
-    });
-    
-    // Simple flow calculation (only sample 4 neighbors instead of 8)
-    const heightN = heightMap(x, y - 1);
-    const heightS = heightMap(x, y + 1);
-    const heightE = heightMap(x + 1, y);
-    const heightW = heightMap(x - 1, y);
-    
-    // Find lowest neighboring point
-    const lowestHeight = Math.min(heightN, heightS, heightE, heightW);
-    const heightDrop = heightValue - lowestHeight;
-    
-    // Check if this is a flow point
-    const isFlowPoint = heightDrop > 0.01;
-    const flowAttraction = isFlowPoint ? Math.min(1.0, heightDrop * 10) : 0;
-    
-    // Check for arterial rivers (major waterways)
-    const isArterial = arterialNoise > (1 - arterialRiverFactor);
-    const arterialBonus = isArterial ? arterialRiverFactor : 0;
-    
-    // Fast delta detection
-    const isNearWaterLevel = heightValue < waterLevel + 0.1 && heightValue > waterLevel - 0.05;
-    const deltaBonus = isNearWaterLevel ? 0.3 : 0;
-    
-    // Simplified river value calculation
-    const riverValue = baseRiverNoise * 
-      (1 + flowAttraction * flowDirectionality * 0.5) *
-      (1 + arterialBonus * 0.8) *
-      (1 + deltaBonus);
-    
-    // Threshold and scale for final river value
-    if (riverValue > riverThreshold) {
-      const width = (isArterial ? riverWidth * 1.3 : riverWidth) * 
-                     (1 + (1 - heightValue) * 0.7);
-      
-      return Math.min(1, (riverValue - riverThreshold) * width * 1.2);
-    }
-    
-    return 0;
-  }
-  
-  // Optimized lake detection
-  getLakeValue(x, y, options = {}, heightMap = null, riverMap = null) {
-    const {
-      scale = 0.003,
-      lakeThreshold = 0.82,  // Threshold for lake formation
-      minHeight = 0.3,       // Minimum height for lakes (avoid ocean)
-      maxHeight = 0.6,       // Maximum height for lakes (avoid mountains)
-      minRiverInfluence = 0.3, // Minimum river value for lake formation
-      lakeSmoothness = 0.7   // Higher values make lakes more circular
-    } = options;
-    
-    // If no height map function provided, return 0 (no lake)
-    if (!heightMap) return 0;
-    
-    // Lakes form in depressions
-    const localHeight = heightMap(x, y);
-    
-    // No lakes in water or mountains
-    if (localHeight < minHeight || localHeight > maxHeight) return 0;
-    
-    // Generate specific noise for lake distribution
-    const lakeNoise = this.getNoise(x + 3000, y + 3000, {
-      scale,
-      octaves: 2,
-      persistence: 0.5
-    });
-    
-    // Generate smoother noise for lake shapes
-    const lakeShape = this.getNoise(x + 4000, y + 4000, {
-      scale: scale * 2,
-      octaves: 1,
-      persistence: 0.3
-    });
-    
-    // Lakes are more common in flat areas
-    const heightNorth = heightMap(x, y - 1);
-    const heightSouth = heightMap(x, y + 1);
-    const heightEast = heightMap(x + 1, y);
-    const heightWest = heightMap(x - 1, y);
-    
-    // Calculate average slope around the point
-    const slopes = [
-      Math.abs(heightNorth - localHeight),
-      Math.abs(heightSouth - localHeight),
-      Math.abs(heightEast - localHeight),
-      Math.abs(heightWest - localHeight)
-    ];
-    
-    const averageSlope = slopes.reduce((sum, s) => sum + s, 0) / slopes.length;
-    const flatnessFactor = 1 - (averageSlope * 10); // Higher for flat areas
-    
-    // Check for depression (lower than surroundings)
-    const isDepression = localHeight < Math.min(heightNorth, heightSouth, heightEast, heightWest);
-    
-    // Lakes are more likely near rivers
-    const riverInfluence = riverMap ? riverMap(x, y) : 0;
-    
-    // Combine factors to determine lake likelihood
-    const lakeValue = 
-      (lakeShape * lakeSmoothness + (1 - lakeSmoothness)) * // Shape factor
-      (isDepression ? 1.5 : 0.5) * // Depression bonus
-      (flatnessFactor > 0 ? flatnessFactor : 0) * // Flatness bonus
-      (riverInfluence > minRiverInfluence ? 1.2 : 0.8) * // River proximity bonus
-      lakeNoise; // Base distribution
-    
-    // Return lake intensity if above threshold
-    return lakeValue > lakeThreshold ? Math.min(1, (lakeValue - lakeThreshold) * 5) : 0;
-  }
-  
-  // Optimized lava detection
-  getLavaValue(x, y, options = {}, heightMap = null) {
-    const {
-      scale = 0.004,
-      lavaThreshold = 0.92,  // High threshold ensures rarity
-      minHeight = 0.7,      // Only appear in high elevations
-      lavaConcentration = 0.6 // How concentrated lava pools are
-    } = options;
-    
-    // If no height map function provided, return 0 (no lava)
-    if (!heightMap) return 0;
-    
-    // Only generate lava in high terrain
-    const localHeight = heightMap(x, y);
-    if (localHeight < minHeight) return 0;
-    
-    // Generate specific noise for volcanic distribution
-    const baseVolcanicNoise = this.getNoise(x * 2 + 7000, y * 2 + 7000, {
+    // High-frequency noise for detailed stream patterns
+    const capillaryNoise = this.getFBM(x * 1.8 + 25000, y * 1.8 + 25000, {
       scale,
       octaves: 3,
-      persistence: 0.7,
-      lacunarity: 2.2
+      persistence: 0.5,
+      lacunarity: 2.4,
+      ridged: true  // Use ridge noise for channel-like features
     });
     
-    // More detailed noise for lava flow patterns
-    const lavaPatternNoise = this.getNoise(x * 4 + 8000, y * 4 + 8000, {
-      scale: scale * 3,
+    // Network noise with lower frequency for connectivity patterns
+    const networkNoise = this.getFBM(x * 0.7 + 32000, y * 0.7 + 32000, {
+      scale: scale * 0.7,
       octaves: 2,
-      persistence: 0.5
+      persistence: 0.6,
+      lacunarity: 1.8
     });
     
-    // Calculate if this should be volcanic
-    if (baseVolcanicNoise > lavaThreshold) {
-      // Determine intensity based on pattern noise
-      const lavaIntensity = Math.pow(lavaPatternNoise, lavaConcentration);
-      return Math.min(1, lavaIntensity * 2);
+    // Sample nearby for water bodies (rivers, lakes, ponds, ocean)
+    const sampleRadius = 5; // Larger radius to detect nearby water
+    let waterProximity = 0;
+    let nearestWaterDist = sampleRadius + 1;
+    let waterGradientX = 0;
+    let waterGradientY = 0;
+    
+    for (let dy = -sampleRadius; dy <= sampleRadius; dy++) {
+      for (let dx = -sampleRadius; dx <= sampleRadius; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > sampleRadius) continue;
+        
+        const nx = x + dx;
+        const ny = y + dy;
+        const neighborHeight = heightMap(nx, ny);
+        
+        // Check if this is water
+        if (neighborHeight < waterLevel) {
+          // Calculate water influence with exponential falloff
+          const influence = Math.pow(1 - dist / sampleRadius, 2.5) * 1.2;
+          waterProximity += influence;
+          
+          // Track nearest water and direction
+          if (dist < nearestWaterDist) {
+            nearestWaterDist = dist;
+            waterGradientX = -dx / dist; // Direction to water
+            waterGradientY = -dy / dist;
+          }
+        }
+      }
+    }
+    
+    // Calculate local height gradient for water flow direction
+    const heightE = heightMap(x + 1, y);
+    const heightW = heightMap(x - 1, y);
+    const heightN = heightMap(x, y - 1);
+    const heightS = heightMap(x, y + 1);
+    
+    const gradX = heightW - heightE;
+    const gradY = heightN - heightS;
+    const gradMag = Math.sqrt(gradX * gradX + gradY * gradY);
+    
+    // Get normalized flow direction
+    let flowDirX = 0;
+    let flowDirY = 0;
+    
+    if (gradMag > 0.001) {
+      flowDirX = gradX / gradMag;
+      flowDirY = gradY / gradMag;
+    }
+    
+    // Combine water gradient with height gradient
+    let combinedDirX = flowDirX;
+    let combinedDirY = flowDirY;
+    
+    if (nearestWaterDist < sampleRadius) {
+      // Blend height-based flow with attraction to nearest water body
+      combinedDirX = flowDirX * 0.7 + waterGradientX * 0.3;
+      combinedDirY = flowDirY * 0.7 + waterGradientY * 0.3;
+    }
+    
+    // Use the combined direction to adjust base noise
+    // This creates a "flow" effect toward water and downhill
+    const flowAlignment = 0.5 + (
+      (combinedDirX * (x % 1)) + 
+      (combinedDirY * (y % 1))
+    ) * 0.3;
+    
+    // Calculate stream value using multiple factors
+    let streamValue = (1.0 - capillaryNoise) * // Ridge noise creates channel paths
+                     (0.7 + networkNoise * 0.6) * // Network noise adds variation
+                     (1.0 + flowAlignment) * // Flow effect adds directional bias
+                     (1.0 + waterProximity * connectivityFactor); // Water proximity increases likelihood
+    
+    // Apply height-based modifiers
+    const heightMod = 1.0 - Math.abs(2.0 * ((heightValue - minHeight) / (maxHeight - minHeight)) - 1.0);
+    streamValue *= (0.5 + heightMod * 0.8); // More likely in middle elevations
+    
+    // Enhanced stream density depending on height
+    const densityMod = 0.8 + heightMod * 0.7;
+    streamValue *= density * densityMod;
+    
+    // Apply threshold with stronger cutoff for ultrathin streams
+    const effectiveThreshold = threshold - (waterProximity * 0.1); // Increased from 0.08 for more water proximity influence
+    
+    if (streamValue > effectiveThreshold) {
+      // Keep the streams even thinner
+      const widthFactor = (0.06 - (heightValue - minHeight) * 0.04) * thinnessFactor;  // Reduced from 0.08 to 0.06
+      
+      // Return a smaller value for extremely thin rivers
+      return Math.min(0.04, (streamValue - effectiveThreshold) * widthFactor);  // Reduced from 0.05 to 0.04
     }
     
     return 0;
   }
 }
 
-// Export terrain generation options optimized for Simplex noise
+// Export terrain generation options with enhanced biome diversity
 export const TERRAIN_OPTIONS = {
-  // Continent generation options
+  // Continent generation options - adjusted for larger landmasses with proper water routes
   continent: {
-    scale: 0.0006, // Adjusted for Simplex noise
-    threshold: 0.45,
+    scale: 0.0006,  // Keep this small scale for large continental forms
+    threshold: 0.38,
     edgeScale: 0.002,
-    edgeAmount: 0.3,
-    sharpness: 1.7
+    edgeAmount: 0.35,    
+    sharpness: 1.8
   },
   
-  // Height map options
+  // NEW: Add regional variation layer for large-scale patterns
+  region: {
+    scale: 0.0003,       // Very large scale for regional differences
+    octaves: 2,          // Fewer octaves for smoother regional transitions
+    influence: 0.25,      // How much regional noise affects other parameters
+    moistureInfluence: 0.4 // Stronger influence on moisture for distinct biome regions
+  },
+  
+  // Height map options with adjusted parameters for more mountains
   height: {
-    scale: 0.004,
+    scale: 0.0042,
     octaves: 4,
-    persistence: 0.55,
+    persistence: 0.62,   // Increased from 0.58 for more height variation
     lacunarity: 2.0
   },
   
-  // Moisture map options
+  // Enhanced moisture map options for more dramatic moisture gradients
   moisture: {
-    scale: 0.006,
-    octaves: 3,
-    persistence: 0.5,
-    lacunarity: 2.0
+    scale: 0.0048,       // Changed from 0.0055 to create larger moisture regions
+    octaves: 4,
+    persistence: 0.7,    // Increased from 0.6 for more defined moisture regions
+    lacunarity: 2.4,     // Increased from 2.2 for more variation
+    varianceFactor: 0.3  // New parameter to add moisture variance
   },
-  
+
   // Detail noise - fewer octaves for performance
   detail: {
     scale: 0.04,
@@ -559,42 +785,89 @@ export const TERRAIN_OPTIONS = {
     lacunarity: 2.0
   },
   
-  // River generation options - updated for ridge noise
+  // River generation options - enhanced for more prominent rivers
   river: {
-    scale: 0.0025,          // Slightly smaller scale for more defined rivers
-    riverDensity: 1.4,      // Higher density for more rivers
-    riverThreshold: 0.45,   // Lower threshold to create more rivers
+    scale: 0.0022,
+    riverDensity: 1.4,         // Increased from 1.3 for more rivers overall
+    riverThreshold: 0.53,      // Reduced from 0.54 to create more rivers
     minContinentValue: 0.2,
-    riverWidth: 1.2,        // Wider rivers for better visibility
-    flowDirectionality: 0.85,
-    arterialRiverFactor: 0.7,
-    waterLevel: 0.32,
-    ridgeSharpness: 2.2     // New parameter for ridge noise sharpness
+    riverWidth: 0.95,          // Increased from 0.85 to make rivers wider
+    flowDirectionality: 0.95,
+    arterialRiverFactor: 0.75, // Increased from 0.7 for more pronounced main rivers
+    waterLevel: 0.31,
+    ridgeSharpness: 2.5,
+    lakeInfluence: 0.65,
+    branchingFactor: 0.6,
+    streamFrequency: 0.4,      // Reduced from 0.5 to make streams less frequent
+    flowConstraint: 0.8,
+    mountainSourceFactor: 0.7
   },
   
-  // Lake and lava options with performance adjustments
+  // Capillary streams (smallest water features)
+  capillary: {
+    scale: 0.006,
+    density: 1.25,             // Reduced from 1.45 to create fewer capillaries
+    threshold: 0.80,           // Increased from 0.78 to create fewer streams
+    minHeight: 0.33,        
+    maxHeight: 0.85,        
+    waterLevel: 0.31,       
+    connectivityFactor: 0.85,
+    thinnessFactor: 0.15      // Reduced from 0.17 to make streams thinner
+  },
+  
+  // Lake options - adjusted with much smaller ponds
   lake: {
     scale: 0.0015,
     lakeThreshold: 0.85,
     minHeight: 0.35,
-    maxHeight: 0.65,
+    maxHeight: 0.65, 
     minRiverInfluence: 0.25,
-    lakeSmoothness: 0.7
+    lakeSmoothness: 0.7,
+    smallPondFrequency: 0.95,
+    pondSize: 0.1,             // Reduced from 0.2 to make ponds much smaller
+    pondMinHeight: 0.42,
+    pondMaxHeight: 0.7,
+    avoidWaterDistance: 4
   },
   
+  // Lava options - reduced frequency
   lava: {
     scale: 0.002,
-    lavaThreshold: 0.92,
-    minHeight: 0.75,
-    lavaConcentration: 0.7
+    lavaThreshold: 0.89,     // Increased from 0.85 to make lava rarer
+    minHeight: 0.67,         // Increased from 0.65 to restrict to higher elevations
+    lavaConcentration: 0.95,
+    flowIntensity: 1.8,
+    volcanicTransitionWidth: 0.15
   },
   
-  // Constants adjusted for Simplex noise
+  // Enhanced snow/ice formation - significantly increased visibility
+  snow: {
+    elevationThreshold: 0.78,  // Lowered from 0.82 to create much more snow
+    highMoistureThreshold: 0.5, // Lowered from 0.55 for more snow at high elevations
+    midMoistureThreshold: 0.6,  // Lowered from 0.65 for more snow at mid elevations
+    lowMoistureThreshold: 0.75, // Lowered from 0.8 for more snow across all elevations
+    snowIntensity: 2.0          // Increased from 1.5 for even more prominent snow features
+  },
+  
+  // New terrain features
+  cliffs: {
+    threshold: 0.18,      // Slope threshold for cliff detection
+    highElevation: 0.7,    // Minimum elevation for high cliffs
+    varianceFactor: 0.2  // New parameter to add cliff formation variance
+  },
+  
+  // Constants adjusted with increased mountain visibility
   constants: {
-    continentInfluence: 0.85,
-    waterLevel: 0.32,
-    heightBias: 0.08,
-    riverErosionFactor: 0.35
+    continentInfluence: 0.84,  // Slightly reduced to allow more water features to cut through land
+    waterLevel: 0.31,        // Slightly reduced water level to expand landmass
+    heightBias: 0.095,          // Slightly reduced to allow more depressions for water
+    riverErosionFactor: 0.38,  // Increased to create deeper river valleys
+    mountainBoost: 0.18,       // Increased from 0.15 to generate more mountains
+    volcanicMountainBlend: 0.3,  // New parameter to control volcano-mountain blending
+    // New constant for scorched frequency
+    scorchedFrequency: 0.7,     // Reduced frequency from implied 1.0
+    regionalVariance: 0.3,    // New parameter to control overall regional variability
+    moistureContrast: 1.2     // New parameter to increase moisture contrast
   }
 };
 
@@ -629,6 +902,17 @@ export class TerrainGenerator {
     // Get continent value first
     const continent = this.continentNoise.getContinentValue(x, y, TERRAIN_OPTIONS.continent);
     
+    // NEW: Generate regional variation noise
+    const regionNoise = this.heightNoise.getNoise(
+      x * TERRAIN_OPTIONS.region.scale,
+      y * TERRAIN_OPTIONS.region.scale, 
+      { 
+        octaves: TERRAIN_OPTIONS.region.octaves,
+        persistence: 0.5,
+        lacunarity: 2.5
+      }
+    );
+    
     // Create separate heightMap function to avoid circular dependencies in caching
     const heightMap = (tx, ty) => {
       const tContinent = this.continentNoise.getContinentValue(tx, ty, TERRAIN_OPTIONS.continent);
@@ -646,48 +930,93 @@ export class TerrainGenerator {
     // Apply continental influence to height with bias toward higher elevations
     let height = baseHeight * (1 - TERRAIN_OPTIONS.constants.continentInfluence) + 
                  continent * TERRAIN_OPTIONS.constants.continentInfluence;
+                 
+    // NEW: Apply regional influence to height
+    const regionInfluence = TERRAIN_OPTIONS.region.influence;
+    height = height * (1 - regionInfluence) + 
+             ((regionNoise * regionNoise) * regionInfluence) + 
+             (regionNoise * regionInfluence * 0.2); // Add some asymmetry
     
-    // Apply height bias
+    // Apply height bias and mountain boost with strengthened effect
+    const mountainNoise = this.heightNoise.getFBM(x + 12000, y + 12000, {
+      scale: 0.003,
+      octaves: 3,
+      persistence: 0.65,  // Slightly increased from 0.6 for more dramatic mountains
+      lacunarity: 2.1
+    });
+    
+    // Apply mountain boost with more progressive effect for smoother transitions
+    if (mountainNoise > 0.62) {  // Slightly reduced threshold from 0.65
+      const mountainEffect = (mountainNoise - 0.62) * 2.8;  // Increased multiplier from 2.5
+      height = Math.min(1, height + TERRAIN_OPTIONS.constants.mountainBoost * mountainEffect);
+    }
+    
+    // Apply general height bias
     height = Math.min(1, height + TERRAIN_OPTIONS.constants.heightBias);
     
-    // Simplified height curve
-    height = Math.pow(height, 1.2);
+    // Sharpen height curve for more dramatic mountains
+    height = Math.pow(height, 1.15);
     
     // Add detail with less processing
     const detail = this.detailNoise.getNoise(x, y, TERRAIN_OPTIONS.detail) * 0.08;
     height = Math.min(1, Math.max(0, height + detail - 0.04));
     
-    // Generate moisture with fewer octaves
+    // Generate moisture with regional variance
     let moisture = this.moistureNoise.getNoise(x, y, TERRAIN_OPTIONS.moisture);
-    moisture = Math.pow(moisture, 1.5);
     
-    // Generate river value
+    // NEW: Apply moisture variance based on region
+    const moistureRegionalEffect = (regionNoise - 0.5) * TERRAIN_OPTIONS.region.moistureInfluence;
+    moisture = Math.max(0, Math.min(1, moisture + moistureRegionalEffect));
+    
+    // NEW: Apply contrast curve to moisture for more dramatic regions
+    moisture = Math.pow(moisture, TERRAIN_OPTIONS.constants.moistureContrast);
+    
+    // Generate river value first (important for proper priority)
     const riverValue = this.riverNoise.getRiverValue(x, y, TERRAIN_OPTIONS.river, heightMap);
     
     // Create river map function
     const riverMap = (tx, ty) => this.riverNoise.getRiverValue(tx, ty, TERRAIN_OPTIONS.river, heightMap);
     
-    // Generate lake and lava values
+    // Generate lake value
     const lakeValue = this.lakeNoise.getLakeValue(x, y, TERRAIN_OPTIONS.lake, heightMap, riverMap);
+    
+    // Generate capillary stream value - only if no river or lake already exists
+    const capillaryValue = (riverValue < 0.05 && lakeValue < 0.05) ? 
+      this.riverNoise.getCapillaryStreamValue(x, y, TERRAIN_OPTIONS.capillary, heightMap) : 0;
+    
+    // Generate lava value
     const lavaValue = this.lavaNoise.getLavaValue(x, y, TERRAIN_OPTIONS.lava, heightMap);
     
-    // Calculate slope with fewer samples
+    // Generate scorched value AFTER river value to prevent overlap
+    const scorchedValue = this.riverNoise.calculateScorchedValue(x, y, heightMap, lavaValue, riverValue || capillaryValue);
+    
+    // Enhanced slope calculation with additional samples for cliff detection
     const heightE = heightMap(x + 1, y);
     const heightW = heightMap(x - 1, y);
     const heightN = heightMap(x, y - 1);
     const heightS = heightMap(x, y + 1);
+    const heightNE = heightMap(x + 1, y - 1);
+    const heightNW = heightMap(x - 1, y - 1);
+    const heightSE = heightMap(x + 1, y + 1);
+    const heightSW = heightMap(x - 1, y + 1);
     
-    const dx = heightE - heightW;
-    const dy = heightN - heightS;
-    const slope = Math.sqrt(dx * dx + dy * dy) * 0.5;
+    // Calculate gradient with more precision
+    const dx = (heightE - heightW) * 0.6 + (heightNE - heightNW + heightSE - heightSW) * 0.2;
+    const dy = (heightN - heightS) * 0.6 + (heightNW - heightSW + heightNE - heightSE) * 0.2;
+    const slope = Math.sqrt(dx * dx + dy * dy);
     
-    // Get biome
-    const biome = this.getBiome(height, moisture, continent, riverValue, lakeValue, lavaValue);
+    // Check for cliff features
+    const isCliff = slope > TERRAIN_OPTIONS.cliffs.threshold;
+    const isHighCliff = isCliff && height > TERRAIN_OPTIONS.cliffs.highElevation;
     
-    // Create result
+    // Get biome with enhanced parameters including rarity
+    const biome = this.getBiome(height, moisture, continent, riverValue, lakeValue, lavaValue, slope, scorchedValue, isCliff, isHighCliff, capillaryValue);
+    
+    // Create result with added rarity information
     const result = { 
-      height, moisture, continent, slope, biome, 
-      color: biome.color, riverValue, lakeValue, lavaValue 
+      height, moisture, continent, slope, biome, isCliff, isHighCliff,
+      color: biome.color, riverValue, lakeValue, lavaValue, scorchedValue,
+      rarity: biome.rarity // Include rarity in the terrain data result
     };
     
     // Store in cache with improved management
@@ -701,99 +1030,260 @@ export class TerrainGenerator {
     
     return result;
   }
-  
-  // Simplified getBiome method remains the same
-  getBiome(height, moisture, continentValue = 1.0, riverValue = 0, lakeValue = 0, lavaValue = 0) {
-    // Volcanic biomes take highest precedence
-    if (lavaValue > 0) {
-      if (lavaValue > 0.8) return { name: "active_volcano", color: "var(--color-biome-active-volcano)" };
-      if (lavaValue > 0.6) return { name: "lava_flow", color: "var(--color-biome-lava-flow)" };
-      if (lavaValue > 0.4) return { name: "volcanic_rock", color: "var(--color-biome-volcanic-rock)" };
-      return { name: "volcanic_soil", color: "var(--color-biome-volcanic-soil)" };
-    }
 
-    // SIMPLIFIED RIVER SYSTEM: just main rivers and small streams
-    if (riverValue > 0.4 && continentValue > 0.2) {
-      // Main rivers - wider, navigable waterways
-      if (height > 0.7) return { name: "mountain_river", color: "var(--color-biome-mountain-stream)" };
-      return { name: "river", color: "var(--color-biome-river)" };
+  // Calculate biome rarity based on how extreme the parameters are
+  calculateRarity(height, moisture, slope, lavaValue, scorchedValue, isCliff) {
+    // Start with a score of 0 (common)
+    let rarityScore = 0;
+    
+    // Add points for extreme height values (very high or very low)
+    rarityScore += Math.pow(Math.abs(height - 0.5) * 2, 1.5) * 10;
+    
+    // Add points for extreme moisture values
+    rarityScore += Math.pow(Math.abs(moisture - 0.5) * 2, 1.5) * 8;
+    
+    // Add points for steep slopes
+    if (slope > 0.08) {
+      rarityScore += (slope - 0.08) * 40;
     }
     
-    if (riverValue > 0.15 && continentValue > 0.2) {
-      // Smaller streams - still part of the network
-      return { name: "stream", color: "var(--color-biome-stream)" };
+    // Add significant points for lava and scorched areas
+    if (lavaValue > 0) {
+      rarityScore += lavaValue * 20;
     }
     
-    // OCEAN DEPTH TRANSITIONS - adjusted for less ocean coverage
-    if (continentValue < 0.12) { // Reduced from 0.15
-      return { name: "deep_ocean", color: "var(--color-biome-deep-ocean)" };
+    if (scorchedValue > 0) {
+      rarityScore += scorchedValue * 15;
     }
     
-    if (continentValue < 0.30) { // Reduced from 0.38
-      return { name: "ocean", color: "var(--color-biome-ocean)" };
+    // Add points for cliff features
+    if (isCliff) {
+      rarityScore += 8;
     }
     
-    // Water biomes based on height
+    // Determine rarity level based on score
+    if (rarityScore > 25) return 'mythic';      // Extremely rare, score > 25
+    if (rarityScore > 18) return 'legendary';   // Very rare, score 18-25
+    if (rarityScore > 13) return 'epic';        // Quite rare, score 13-18
+    if (rarityScore > 8) return 'rare';         // Somewhat uncommon, score 8-13
+    if (rarityScore > 4) return 'uncommon';     // Slightly uncommon, score 4-8
+    return 'common';                           // Common, score 0-4
+  }
+
+  // Updated getBiome method that includes rarity calculation
+  getBiome(height, moisture, continentValue = 1.0, riverValue = 0, lakeValue = 0, lavaValue = 0, slope = 0, scorchedValue = 0, isCliff = false, isHighCliff = false, capillaryValue = 0) {
+    
+    // Get base biome information
+    let baseBiome = this.getBaseBiomeInfo(height, moisture, continentValue, riverValue, lakeValue, lavaValue, slope, scorchedValue, isCliff, isHighCliff, capillaryValue);
+    
+    // Calculate rarity
+    const rarity = this.calculateRarity(height, moisture, slope, lavaValue, scorchedValue, isCliff || isHighCliff);
+    
+    // Add rarity to biome object
+    return {
+      ...baseBiome,
+      rarity
+    };
+  }
+
+  // Base biome classification logic moved to a separate method
+  getBaseBiomeInfo(height, moisture, continentValue = 1.0, riverValue = 0, lakeValue = 0, lavaValue = 0, slope = 0, scorchedValue = 0, isCliff = false, isHighCliff = false, capillaryValue = 0) {
+    // STRICT PRIORITY SYSTEM - The order here determines which feature "wins"
+    
+    // 1. LAVA/MAGMA - Highest priority with enhanced bright colors
+    if (lavaValue > 0.1) {
+      if (lavaValue > 0.85) return { name: "magma_flow", color: "#FF2200" };  // Even brighter red-orange
+      if (lavaValue > 0.65) return { name: "lava_flow", color: "#FF5000" };   // More vibrant orange
+      if (lavaValue > 0.4) return { name: "volcanic_rock", color: "#6A3A28" };
+      return { name: "volcanic_soil", color: "#7D4B3A" };
+    }
+    
+    // 2. WATER FEATURES - Second highest priority with unified colors
+    // OCEAN FEATURES - These are fine and should be kept distinct
+    if (continentValue < 0.10) return { name: "deep_ocean", color: "#0E3B59" };
+    if (continentValue < 0.25) return { name: "ocean", color: "#1A4F76" };
+    
+    // COASTAL WATERS
     const waterLevel = TERRAIN_OPTIONS.constants.waterLevel;
-    
-    // Coastal waters - simplified to just one type
-    if (height < waterLevel) {
-      return { name: "shallows", color: "#5d99b8" };
+    if (height < waterLevel) return { name: "shallows", color: "#5d99b8" };
+
+    // RIVER SYSTEM - Adjusted thresholds for size hierarchy
+    // Lakes (largest water bodies) - keep threshold the same but increase detection
+    if (lakeValue > 0.25) {  // Keep lakes at current size
+      if (height > 0.7) return { name: "mountain_lake", color: "#3A7FA0" };
+      return { name: "lake", color: "#4A91AA" };
     }
     
-    // Coastal and beach areas
-    if (height < waterLevel + 0.05) {
-      if (moisture < 0.5) return { name: "sandy_beach", color: "#f5e6c9" };
-      return { name: "rocky_shore", color: "#9e9e83" };
+    // Rivers (medium water bodies) - keep threshold high for prominent rivers
+    if (riverValue > 0.28 && continentValue > 0.2) {  // Keep rivers at current size
+      if (height > 0.75) return { name: "mountain_river", color: "#4A8FA0" }; 
+      return { name: "river", color: "#55AAC5" };
     }
     
-    // Mountains and high elevation
+    // Streams (small water bodies) - increased threshold to make them smaller
+    if (riverValue > 0.18 && continentValue > 0.2) {  // Increased from 0.12 to 0.18 to make streams smaller
+      return { name: "stream", color: "#65B2C0" };
+    }
+    
+    // Ponds (smallest standing water bodies)
+    if (lakeValue > 0 && lakeValue <= 0.15 && height >= TERRAIN_OPTIONS.lake.pondMinHeight) {  // Reduced from 0.25 to 0.15
+      return { name: "pond", color: "#5099B0" };
+    }
+    
+    // Make capillary streams even smaller
+    if (capillaryValue > 0.035) {  // Increased from 0.025 to 0.035 to make rivulets smaller
+      return { name: "rivulet", color: "#6AADB6" };
+    }
+    
+    // 3. SCORCHED LANDS - Replaced with more volcanic-themed biomes
+    if (scorchedValue > 0.2) {
+      // Sharp transition to volcanic terrain
+      if (scorchedValue > 0.7) return { name: "active_volcano", color: "#9A2A20" }; // Darker red for better contrast
+      if (scorchedValue > 0.55) return { name: "volcanic_caldera", color: "#B54A30" }; // Slightly adjusted threshold
+      if (scorchedValue > 0.4) return { name: "volcanic_ash", color: "#706055" }; // Slightly adjusted threshold
+      return { name: "lava_fields", color: "#9D5A40" };
+    }
+    
+    // 4. CLIFF FEATURES
+    if (isHighCliff) {
+      if (height > 0.9) return { name: "sheer_cliff", color: "#706860" }; // Dramatic sheer cliff
+      if (moisture > 0.6) return { name: "moss_cliff", color: "#5A6855" }; // Mossy cliff
+      return { name: "rocky_cliff", color: "#7A736B" }; // Standard cliff face
+    }
+    
+    if (isCliff && height > 0.5) {
+      if (height > 0.75) return { name: "steep_slope", color: "#7D7468" };
+      return { name: "rugged_slope", color: "#82796D" };
+    }
+    
+    // MOUNTAIN AND HIGH ELEVATION - enhanced snow features with more vibrant colors
     if (height > 0.92) {
-      if (moisture > 0.8) return { name: "snow_cap", color: "var(--color-biome-snow-cap)" };
-      if (moisture > 0.65) return { name: "alpine", color: "var(--color-biome-alpine)" };
-      if (moisture > 0.5) return { name: "mountain", color: "var(--color-biome-mountain)" };
-      if (moisture > 0.35) return { name: "dry_mountain", color: "var(--color-biome-dry-mountain)" };
-      return { name: "desert_mountains", color: "var(--color-biome-desert-mountains)" };
+      // High elevation, lower moisture threshold for snow
+      if (moisture > TERRAIN_OPTIONS.snow.highMoistureThreshold) {
+        if (moisture > 0.8) return { name: "snow_cap", color: "#FFFFFF" };  // Pure white for snow caps
+        if (moisture > 0.7) return { name: "glacial_peak", color: "#F0FFFF" }; // New glacial peak biome
+        return { name: "alpine_snow", color: "#E8F0FF" }; // Bluer alpine snow
+      }
+      
+      // NEW: Add more mountain variation for high peaks
+      if (moisture > 0.5) return { name: "snowy_peaks", color: "#D8E0EA" };
+      if (moisture > 0.4) return { name: "rocky_peaks", color: "#C0C0C8" }; // New variation
+      
+      // High elevation, low moisture = volcanic or barren
+      if (moisture < 0.15) return { name: "volcanic_peak", color: "#A03A25" }; // More restrictive for volcanoes
+      if (moisture < 0.25) return { name: "obsidian_ridge", color: "#55352F" }; // More restrictive
+      if (moisture < 0.35) return { name: "craggy_peaks", color: "#83756A" }; // New variation
+      
+      return { name: "rugged_peaks", color: "#AAA0B5" };
     }
     
+    // High elevation (85%+) - more snow and ice with brighter colors
+    if (height > 0.85) {
+      // High elevation snow at lower moisture thresholds
+      if (moisture > TERRAIN_OPTIONS.snow.midMoistureThreshold) {
+        if (moisture > 0.85) return { name: "glacier", color: "#CCEEFF" }; // Brighter glacier
+        if (moisture > 0.75) return { name: "snow_field", color: "#E0F0FF" }; // Brighter snow field
+        return { name: "snowy_forest", color: "#A5B5C5" }; // Lighter snowy forest
+      }
+      
+      // Medium moisture = mountain forest
+      if (moisture > 0.5) return { name: "mountain_forest", color: "#607D55" };
+      if (moisture > 0.45) return { name: "rocky_forest", color: "#6D7A60" }; // New variation
+      if (moisture > 0.4) return { name: "alpine_shrubs", color: "#747C63" }; // New variation
+      
+      // Low moisture = volcanic or barren
+      if (moisture < 0.2) return { name: "volcanic_slopes", color: "#8A4B3C" }; // More restrictive
+      if (moisture < 0.3) return { name: "barren_slopes", color: "#8E7F6E" }; // New variation
+      if (moisture < 0.4) return { name: "mountain_scrub", color: "#7D8766" };
+      
+      return { name: "bare_mountain", color: "#A09085" };
+    }
+    
+    // Upper mid-elevation (78%+) - added more snow at this level too
     if (height > 0.78) {
-      if (moisture > 0.8) return { name: "glacier", color: "var(--color-biome-glacier)" };
-      if (moisture > 0.65) return { name: "highland_forest", color: "var(--color-biome-highland-forest)" };
-      if (moisture > 0.5) return { name: "highland", color: "var(--color-biome-highland)" };
-      if (moisture > 0.35) return { name: "rocky_highland", color: "var(--color-biome-rocky-highland)" };
-      return { name: "mesa", color: "var(--color-biome-mesa)" };
+      // Upper mid-elevation snow and ice - increased visibility
+      if (moisture > TERRAIN_OPTIONS.snow.lowMoistureThreshold) {
+        return { name: "snow_patched_hills", color: "#D5E5F5" }; // Brighter snow patches
+      }
+      
+      // Add new category for high moisture but not quite snow
+      if (moisture > 0.7) return { name: "foggy_peaks", color: "#B0C0D0" }; // New foggy mountains biome
+      
+      // ...existing code for mid-elevation biomes...
+      if (moisture < 0.25) return { name: "rocky_slopes", color: "#A58775" }; // Made lighter
+      if (moisture > 0.8) return { name: "alpine_meadow", color: "#8DAD70" }; // Made brighter
+      if (moisture > 0.65) return { name: "highland_forest", color: "#5D7B4A" }; // Made brighter
+      if (moisture > 0.5) return { name: "highland", color: "#7B8F5D" }; // Made brighter
+      if (moisture > 0.35) return { name: "rocky_highland", color: "#8D9075" }; // Made lighter
+      
+      return { name: "mesa", color: "#B09579" }; // Made lighter for better visibility
     }
     
-    // Mid-elevation terrain
+    // MID-ELEVATION TERRAIN (58-78%) - More visible distinctions
+    if (height > 0.58) {
+      // Also add snow for extremely wet mid-elevation areas
+      if (moisture > 0.92) return { name: "mountain_frost", color: "#C5D5E5" }; // New frost biome
+      
+      // ...existing code for mid-elevation biomes...
+    }
+    
+    // ...rest of the biome selection code...
+    // MID-ELEVATION TERRAIN - expanded with fantasy biomes
+    if (height > 0.58) {
+      if (moisture > 0.85) return { name: "ancient_forest", color: "#29543A" }; // Ancient primal forest
+      if (moisture > 0.75) return { name: "tropical_rainforest", color: "#306B44" }; // Dense rainforest
+      if (moisture > 0.62) return { name: "temperate_forest", color: "#3D7A4D" }; // Temperate forest
+      if (moisture > 0.5) return { name: "enchanted_grove", color: "#4E8956" }; // Magical/enchanted grove
+      if (moisture > 0.4) return { name: "woodland", color: "#5D9555" }; // Woodland
+      if (moisture > 0.3) return { name: "shrubland", color: "#8BA662" }; // Shrubland
+      if (moisture > 0.2) return { name: "dry_shrubland", color: "#A8A76C" }; // Dry shrubland
+      if (moisture > 0.12) return { name: "scrubland", color: "#B9A77C" }; // Scrubland
+      return { name: "badlands", color: "#BC9668" }; // Badlands
+    }
+    
     if (height > 0.5) {
-      if (moisture > 0.75) return { name: "tropical_rainforest", color: "var(--color-biome-tropical-rainforest)" };
-      if (moisture > 0.62) return { name: "temperate_forest", color: "var(--color-biome-temperate-forest)" };
-      if (moisture > 0.48) return { name: "woodland", color: "var(--color-biome-woodland)" };
-      if (moisture > 0.35) return { name: "shrubland", color: "var(--color-biome-shrubland)" };
-      if (moisture > 0.22) return { name: "dry_shrubland", color: "#a8a76c" };
-      if (moisture > 0.12) return { name: "scrubland", color: "#b9a77c" };
-      return { name: "badlands", color: "var(--color-biome-badlands)" };
+      if (moisture > 0.85) return { name: "fey_forest", color: "#2E5D40" }; // Magical/fey forest
+      if (moisture > 0.75) return { name: "deep_forest", color: "#356848" }; // Deep mysterious forest
+      if (moisture > 0.65) return { name: "dense_forest", color: "#3A7446" }; // Dense forest
+      if (moisture > 0.55) return { name: "forest", color: "#407B4C" }; // Regular forest
+      if (moisture > 0.45) return { name: "light_forest", color: "#558759" }; // Light forest
+      if (moisture > 0.35) return { name: "scattered_trees", color: "#6A9861" }; // Scattered trees
+      if (moisture > 0.25) return { name: "prairie", color: "#91A86E" }; // Prairie
+      if (moisture > 0.15) return { name: "savanna", color: "#B4A878" }; // Savanna
+      return { name: "dry_savanna", color: "#C2AA71" }; // Dry savanna
     }
     
-    // Lower elevation terrain
-    if (height > 0.34) {
-      if (moisture > 0.75) return { name: "swamp", color: "var(--color-biome-swamp)" };
-      if (moisture > 0.60) return { name: "marsh", color: "var(--color-biome-marsh)" };
-      if (moisture > 0.45) return { name: "grassland", color: "var(--color-biome-grassland)" };
-      if (moisture > 0.32) return { name: "savanna", color: "var(--color-biome-savanna)" };
-      if (moisture > 0.20) return { name: "desert_scrub", color: "var(--color-biome-desert-scrub)" };
-      if (moisture > 0.12) return { name: "rocky_desert", color: "#bfa678" };
-      return { name: "stony_desert", color: "#c79b68" };
+    // LOWER ELEVATION TERRAIN - expanded variety
+    if (height > 0.4) {
+      if (moisture > 0.8) return { name: "swamp", color: "#4E6855" }; // Swamp
+      if (moisture > 0.7) return { name: "marsh", color: "#5E7959" }; // Marsh
+      if (moisture > 0.6) return { name: "wet_grassland", color: "#5F864A" }; // Wet grassland
+      if (moisture > 0.5) return { name: "grassland", color: "#6B9850" }; // Grassland
+      if (moisture > 0.4) return { name: "meadow", color: "#7BA758" }; // Meadow
+      if (moisture > 0.3) return { name: "plains", color: "#9CB568" }; // Plains
+      if (moisture > 0.2) return { name: "dry_grassland", color: "#B1B173" }; // Dry grassland
+      if (moisture > 0.12) return { name: "arid_plains", color: "#C0A97A" }; // Arid plains
+      return { name: "desert_scrub", color: "#CCAD6E" }; // Desert scrub
     }
     
-    // Lowest lands
-    if (moisture > 0.75) return { name: "bog", color: "var(--color-biome-bog)" };
-    if (moisture > 0.60) return { name: "wetland", color: "var(--color-biome-wetland)" };
-    if (moisture > 0.45) return { name: "plains", color: "var(--color-biome-plains)" };
-    if (moisture > 0.30) return { name: "dry_plains", color: "var(--color-biome-dry-plains)" };
-    if (moisture > 0.18) return { name: "sandy_desert", color: "#e8dec6" };
-    if (moisture > 0.08) return { name: "desert", color: "var(--color-biome-desert)" };
-    return { name: "barren_desert", color: "#eeddbb" };
+    // LOWEST LANDS - expanded desert types
+    if (height > 0.32) {
+      if (moisture > 0.8) return { name: "bog", color: "#4D5E50" }; // Bog
+      if (moisture > 0.7) return { name: "wetland", color: "#5A6A55" }; // Wetland
+      if (moisture > 0.6) return { name: "moor", color: "#657355" }; // Moor
+      if (moisture > 0.5) return { name: "lowland", color: "#768355" }; // Lowland
+      if (moisture > 0.4) return { name: "dry_plains", color: "#8D9565" }; // Dry plains
+      if (moisture > 0.3) return { name: "steppe", color: "#A6A072" }; // Steppe
+      if (moisture > 0.2) return { name: "chalky_plains", color: "#C8BC90" }; // Chalky/dusty plains
+      if (moisture > 0.1) return { name: "desert", color: "#E8D7A7" }; // Desert
+      return { name: "barren_desert", color: "#F0E3B2" }; // Barren desert
+    }
+    
+    // SPECIAL BOTTOM LANDS
+    if (moisture > 0.7) return { name: "mudflats", color: "#5F6855" }; // Mudflats
+    if (moisture > 0.5) return { name: "delta", color: "#6A7355" }; // Delta
+    if (moisture > 0.3) return { name: "salt_flat", color: "#D0C9AA" }; // Salt flat
+    return { name: "dry_basin", color: "#E5D6A9" }; // Dry basin
   }
 
   // Add a method to clear the cache
