@@ -141,9 +141,12 @@
 
 <style>
   .worlds-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     max-width: 1200px;
-    margin: 2rem auto; /* Reduced top margin on mobile */
-    padding: 1rem; /* Less padding on mobile */
+    margin: 0 auto;
+    padding: 2rem 1rem;
   }
   
   h1 {
