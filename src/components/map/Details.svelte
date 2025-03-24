@@ -1,6 +1,5 @@
 <script>
-  // Update import to use targetStore instead of centerTileStore
-  import { targetStore, ready } from "../../lib/stores/map";
+  import { map, coordinates, targetStore } from "../../lib/stores/map";
   import Close from '../../components/icons/Close.svelte';
   import { user } from "../../lib/stores/user";
   
@@ -8,15 +7,40 @@
   
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
-  // Use either passed terrain or check targetStore directly
+  // Get display tile - either highlighted or target
+  const displayTile = $derived(() => {
+    // First check if there's a highlighted tile
+    if ($map.highlighted) {
+      const highlighted = $coordinates.find(
+        c => c.x === $map.highlighted.x && c.y === $map.highlighted.y
+      );
+      if (highlighted) return highlighted;
+    }
+    
+    // Otherwise fall back to target tile
+    return $targetStore;
+  });
+  
+  // Use either passed terrain or get from the display tile
   const formattedName = $derived(
-    _fmt(terrain || $targetStore.biome?.name) || "Unknown"
+    _fmt(terrain || displayTile.biome?.name) || "Unknown"
   );
   
-  // Access entity data from targetStore
-  const structure = $derived($targetStore.structure);
-  const players = $derived($targetStore.players || []);
-  const groups = $derived($targetStore.groups || []);
+  // Access entity data from the display tile
+  const structure = $derived(displayTile.structure);
+  const players = $derived(displayTile.players || []);
+  const groups = $derived(displayTile.groups || []);
+  
+  // Get current x,y coordinates from the display tile
+  const currentX = $derived(displayTile.x);
+  const currentY = $derived(displayTile.y);
+  
+  // Track if we're showing a highlighted tile (vs target)
+  const isHighlighted = $derived(
+    $map.highlighted && 
+    displayTile.x === $map.highlighted.x && 
+    displayTile.y === $map.highlighted.y
+  );
   
   // Format structure properties for display
   const structureProps = $derived(() => {
@@ -73,9 +97,9 @@
 <svelte:window onkeydown={escape} />
 
 <div class="details">
-  <div class="info">
+  <div class="info" class:highlighted={isHighlighted}>
     <div class="content">
-      <h2>Details {x}, {y}</h2>
+      <h2>Details {currentX}, {currentY} {#if isHighlighted}<span class="highlighted-label">(Highlighted)</span>{/if}</h2>
       <p>Terrain: {formattedName}</p>
       
       {#if structure}
@@ -328,5 +352,24 @@
     margin-left: 0.3em;
     color: rgba(0, 0, 0, 0.6);
     font-size: 0.95em;
+  }
+
+  /* Add styling for highlighted state */
+  .info.highlighted {
+    border-left: 0.3em solid rgba(255, 215, 0, 0.8);
+    padding-left: 0.8em;
+    background-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0.8em rgba(255, 215, 0, 0.4);
+  }
+  
+  .highlighted-label {
+    font-size: 0.7em;
+    font-weight: normal;
+    color: rgba(255, 165, 0, 0.9);
+    background: rgba(255, 215, 0, 0.15);
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+    vertical-align: middle;
+    margin-left: 0.4em;
   }
 </style>
