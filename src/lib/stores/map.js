@@ -264,9 +264,11 @@ export function setup({ seed, world = null } = {}) {
   const currentState = get(map);
   const initialCols = currentState.cols || 20;
   const initialRows = currentState.rows || 15;
+  
+  // Calculate an appropriate initial cache size explicitly
   const initialCacheSize = Math.ceil(initialCols * initialRows * 1.5);
   
-  // Initialize the terrain generator with seed and appropriate cache size
+  // Initialize the terrain generator with explicit seed and cache size
   terrain = new TerrainGenerator(seedNumber, initialCacheSize);
   
   // Update the map store with ready state AFTER terrain is initialized
@@ -274,7 +276,7 @@ export function setup({ seed, world = null } = {}) {
   map.update(state => {
     return {
       ...state,
-      ready: true, // Only set ready to true after terrain is initialized
+      ready: true,
       world: worldId,
       cols: initialCols,
       rows: initialRows

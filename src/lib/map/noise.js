@@ -873,7 +873,12 @@ export const TERRAIN_OPTIONS = {
 
 // TerrainGenerator class - updated to use SimplexNoise
 export class TerrainGenerator {
-  constructor(worldSeed = 12345, initialCacheSize = 1500) {
+  constructor(worldSeed, initialCacheSize) {
+    // Require explicit seed - no default
+    if (worldSeed === undefined || worldSeed === null) {
+      throw new Error('TerrainGenerator requires a valid seed');
+    }
+    
     this.WORLD_SEED = worldSeed;
     
     // Create separate noise instances for each terrain aspect
@@ -885,9 +890,9 @@ export class TerrainGenerator {
     this.lakeNoise = new SimplexNoise(this.WORLD_SEED + 50000);
     this.lavaNoise = new SimplexNoise(this.WORLD_SEED + 60000);
     
-    // Cache with dynamic sizing
+    // Cache with explicit size - no default
     this.heightCache = new Map();
-    this.maxCacheSize = initialCacheSize;
+    this.maxCacheSize = initialCacheSize || 0; // Initially small until properly sized
   }
   
   // Set cache size based on visible grid dimensions
