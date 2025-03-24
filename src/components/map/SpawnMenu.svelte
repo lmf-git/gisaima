@@ -379,16 +379,20 @@
     background: rgba(255, 255, 255, 0.2);
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 0.6rem 1rem;
+    padding: 0.8em 1.5em;
     border-radius: 4px;
-    font-size: 0.9rem;
+    font-size: 0.95em;
     cursor: pointer;
     margin-top: 1rem;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+    font-family: var(--font-heading);
+    font-weight: 500;
   }
   
   .secondary-button:hover {
     background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-0.1em);
+    box-shadow: 0 0.2em 0.5em rgba(0, 0, 0, 0.3);
   }
 
   .faction-tag {
