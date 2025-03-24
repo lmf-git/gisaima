@@ -8,9 +8,9 @@
     TILE_SIZE,
     moveTarget,
     targetStore,
-    setHighlighted  // Renamed from updateHoveredTile
+    setHighlighted
   } from "../../lib/stores/map.js";
-  import { game, currentPlayer } from "../../lib/stores/game.js";  // Updated import
+  import { game, currentPlayer } from "../../lib/stores/game.js";
   
   // Convert to $props syntax
   const { detailed = false } = $props();
@@ -21,6 +21,11 @@
   let introduced = $state(false);
   let keysPressed = $state(new Set());
   let keyboardNavigationInterval = $state(null);
+  let wasDrag = $state(false);
+  let dist = $state(0);
+  
+  // Constants
+  const DRAG_THRESHOLD = 5;
   
   // Simplified derived state
   const isMoving = $derived($map.isDragging || keyboardNavigationInterval !== null);
@@ -68,6 +73,10 @@
       const clientX = event.clientX || event.touches?.[0]?.clientX || 0;
       const clientY = event.clientY || event.touches?.[0]?.clientY || 0;
       
+      // Reset drag tracking on start
+      dist = 0;
+      wasDrag = false;
+      
       map.update(state => ({
         ...state,
         isDragging: true,
@@ -90,6 +99,13 @@
       
       const deltaX = clientX - state.dragStartX;
       const deltaY = clientY - state.dragStartY;
+
+      // Calculate distance moved to determine if this is a drag
+      dist += Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      
+      if (dist > DRAG_THRESHOLD) {
+        wasDrag = true;
+      }
 
       const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
       const tileSizePx = TILE_SIZE * baseFontSize;
@@ -263,8 +279,22 @@
   }
   
   // Tile hover handling
+  let hoverTimeout = null;
   function handleTileHover(cell) {
-    if (!isMoving) setHighlighted(cell.x, cell.y);  // Renamed from updateHoveredTile
+    if (isMoving) return;
+    
+    // Clear any pending hover updates
+    if (hoverTimeout) clearTimeout(hoverTimeout);
+    
+    // Set a short timeout before updating the highlighted tile
+    hoverTimeout = setTimeout(() => {
+      const prevHighlight = $map.highlighted;
+      if (!prevHighlight || prevHighlight.x !== cell.x || prevHighlight.y !== cell.y) {
+        console.log('Highlighting tile:', { x: cell.x, y: cell.y });
+        setHighlighted(cell.x, cell.y);
+      }
+      hoverTimeout = null;
+    }, 50); // 50ms debounce
   }
   
   // Clear highlight state when moving
@@ -274,6 +304,98 @@
     }
   });
   
+  // Modify handleGridClick function to handle clicks on the grid or its children
+  function handleGridClick(event) {
+    // Increment click counter for debugging
+    clickCount++;
+    lastClickTime = Date.now();
+    
+    console.log('Grid click detected:', { 
+      clickCount, 
+      wasDrag, 
+      ready: $ready,
+      event: {
+        target: event.target.className,
+      }
+    });
+    
+    if (wasDrag) {
+      console.log('Click ignored: wasDrag is true');
+      return;
+    }
+    
+    if (!$ready) {
+      console.log('Click ignored: map not ready');
+      return;
+    }
+    
+    // First try to find if we clicked directly on a tile
+    let tileElement = event.target.closest('.tile');
+    
+    // If we didn't click directly on a tile, find the tile at the click position
+    if (!tileElement) {
+      // Get click position relative to the grid
+      const gridElement = event.currentTarget.querySelector('.main-grid');
+      if (!gridElement) {
+        console.log('Click ignored: grid not found');
+        return;
+      }
+      
+      const rect = gridElement.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      
+      // Calculate which tile was clicked based on position
+      const tileWidth = rect.width / $map.cols;
+      const tileHeight = rect.height / $map.rows;
+      
+      const col = Math.floor(x / tileWidth);
+      const row = Math.floor(y / tileHeight);
+      
+      // Bounds check
+      if (col < 0 || col >= $map.cols || row < 0 || row >= $map.rows) {
+        console.log('Click ignored: outside grid bounds');
+        return;
+      }
+      
+      // Calculate the global coordinates of the clicked tile
+      // The center of the grid is the target position
+      const centerCol = Math.floor($map.cols / 2);
+      const centerRow = Math.floor($map.rows / 2);
+      
+      const clickedX = $map.target.x - centerCol + col;
+      const clickedY = $map.target.y - centerRow + row;
+      
+      console.log('Moving to calculated tile:', { x: clickedX, y: clickedY });
+      moveTarget(clickedX, clickedY);
+    } 
+    else {
+      // Handle direct tile click using aria-label
+      const ariaLabel = tileElement.getAttribute('aria-label');
+      const coordsMatch = ariaLabel ? ariaLabel.match(/Coordinates (-?\d+),(-?\d+)/) : null;
+      
+      if (!coordsMatch) {
+        console.log('Click ignored: no coordinates found in tile');
+        return;
+      }
+      
+      const tileX = parseInt(coordsMatch[1], 10);
+      const tileY = parseInt(coordsMatch[2], 10);
+      
+      console.log('Moving to clicked tile:', { x: tileX, y: tileY });
+      moveTarget(tileX, tileY);
+    }
+    
+    // Clear highlighted tile after moving
+    setHighlighted(null, null);
+    
+    event.preventDefault();
+  }
+
+  // Add debug state for click tracking
+  let lastClickTime = $state(0);
+  let clickCount = $state(0);
+
   // Component initialization
   onMount(() => {
     // Setup resize observer
@@ -301,6 +423,11 @@
     };
   });
 
+  // Clean up hover timeout on component destroy
+  onDestroy(() => {
+    if (hoverTimeout) clearTimeout(hoverTimeout);
+  });
+
   // Get background color from target tile
   const backgroundColor = $derived($targetStore?.color || "var(--color-dark-blue)");
 
@@ -325,13 +452,6 @@
       };
     }
     return null;
-  });
-  
-  // Debug log player position when it changes
-  $effect(() => {
-    if (playerPosition) {
-      console.log("Player position:", playerPosition);
-    }
   });
   
   // Function to check if a tile is the player's position
@@ -375,6 +495,11 @@
       default: return 'transparent';
     }
   }
+  
+  // Add debug effect to track highlighted tile changes
+  $effect(() => {
+    console.log('Highlighted tile changed to:', $map.highlighted);
+  });
 </script>
 
 <svelte:window
@@ -385,8 +510,9 @@
   onvisibilitychange={() => document.visibilityState === 'hidden' && handleMouseUp()}
 />
 
-<!-- Update class binding to use prop instead of store value -->
+<!-- Add onclick handler to the map div -->
 <div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={detailed} class:touch-active={$map.isDragging && $map.dragSource === 'map'}>
+  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
   <div
     class="map"
     bind:this={mapElement}
@@ -395,12 +521,20 @@
     ontouchmove={handleTouchMove}
     ontouchend={handleTouchEnd}
     ontouchcancel={handleTouchEnd}
+    onclick={handleGridClick}
     class:moving={isMoving}
     style="--terrain-color: {backgroundColor};"
     role="grid"
     tabindex="0"
     aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
   >
+    <!-- Add debug display in the corner -->
+    <div class="debug-info" role="status" aria-live="polite">
+      Clicks: {clickCount} | Last: {lastClickTime > 0 ? new Date(lastClickTime).toLocaleTimeString() : 'none'}
+      <br>
+      wasDrag: {wasDrag} | dist: {dist.toFixed(1)}
+    </div>
+    
     {#if $ready}
       <div class="grid main-grid" 
         style="--cols: {$map.cols}; --rows: {$map.rows};" 
@@ -891,5 +1025,20 @@
   
   .tile.epic {
     z-index: 3;
+  }
+
+  /* Add debug info display */
+  .debug-info {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px;
+    font-size: 12px;
+    border-radius: 4px;
+    z-index: 100;
+    pointer-events: none;
+    user-select: none;
   }
 </style>
