@@ -873,7 +873,7 @@ export const TERRAIN_OPTIONS = {
 
 // TerrainGenerator class - updated to use SimplexNoise
 export class TerrainGenerator {
-  constructor(worldSeed = 12345) {
+  constructor(worldSeed = 12345, initialCacheSize = 1500) {
     this.WORLD_SEED = worldSeed;
     
     // Create separate noise instances for each terrain aspect
@@ -885,9 +885,51 @@ export class TerrainGenerator {
     this.lakeNoise = new SimplexNoise(this.WORLD_SEED + 50000);
     this.lavaNoise = new SimplexNoise(this.WORLD_SEED + 60000);
     
-    // Cache with reduced size as requested
+    // Cache with dynamic sizing
     this.heightCache = new Map();
-    this.maxCacheSize = 1500; // Reduced from 5000 to 1500 as requested
+    this.maxCacheSize = initialCacheSize;
+  }
+  
+  // Set cache size based on visible grid dimensions
+  updateCacheSize(visibleCols, visibleRows, chunkSize = 20) {
+    // Calculate a reasonable cache size based on visible area plus buffer
+    // We multiply by a factor to account for panning and zooming
+    const visibleTiles = visibleCols * visibleRows;
+    const bufferFactor = 1.5; // Extra buffer for smooth scrolling
+    this.maxCacheSize = Math.ceil(visibleTiles * bufferFactor);
+    
+    // Ensure a minimum reasonable cache size based on at least one chunk
+    const minCacheSize = chunkSize * chunkSize * 4;
+    this.maxCacheSize = Math.max(this.maxCacheSize, minCacheSize);
+    
+    // If current cache exceeds the new max size, trim it
+    this.trimCache();
+  }
+  
+  // Trim cache to stay within size limits
+  trimCache() {
+    if (this.heightCache.size > this.maxCacheSize) {
+      const keysToDelete = Array.from(this.heightCache.keys())
+        .slice(0, this.heightCache.size - this.maxCacheSize / 2);
+      keysToDelete.forEach(k => this.heightCache.delete(k));
+    }
+  }
+  
+  // Clear cache entries for coordinates within a specific chunk
+  clearChunkFromCache(chunkX, chunkY, chunkSize = 20) {
+    // Calculate chunk boundaries
+    const startX = chunkX * chunkSize;
+    const startY = chunkY * chunkSize;
+    const endX = startX + chunkSize - 1;
+    const endY = startY + chunkSize - 1;
+    
+    // Find and remove all cached entries within this chunk
+    this.heightCache.forEach((_, key) => {
+      const [x, y] = key.split(',').map(Number);
+      if (x >= startX && x <= endX && y >= startY && y <= endY) {
+        this.heightCache.delete(key);
+      }
+    });
   }
   
   // Get terrain data with fixed caching mechanism

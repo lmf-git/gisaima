@@ -39,7 +39,8 @@ export const chunks = derived(
     // Use the world from game store if available
     const worldId = $map.world || $game.currentWorld || 'default';
     
-    if (!$map.ready || !terrain) return set(new Set());
+    // Simplified check - if map is ready, terrain must exist
+    if (!$map.ready) return set(new Set());
     
     // Calculate visible area chunk bounds
     const expandedFactor = $map.minimap ? 1 : 0;
@@ -55,6 +56,11 @@ export const chunks = derived(
     const maxChunkX = Math.floor(maxX / CHUNK_SIZE);
     const minChunkY = Math.floor(minY / CHUNK_SIZE);
     const maxChunkY = Math.floor(maxY / CHUNK_SIZE);
+    
+    // Update cache size based on visible area
+    const visibleCols = $map.cols * (1 + expandedFactor * (EXPANDED_COLS_FACTOR - 1));
+    const visibleRows = $map.rows * (1 + expandedFactor * (EXPANDED_ROWS_FACTOR - 1));
+    terrain.updateCacheSize(visibleCols, visibleRows, CHUNK_SIZE);
     
     // Track chunks to remove
     const chunksToRemove = new Set(chunkSubscriptions.keys());
@@ -85,12 +91,15 @@ export const chunks = derived(
     }
     
     // Unsubscribe from any chunks that are no longer visible
-    // FIX: chunksToRemove is a Set of keys, not a Map of entries
     for (const chunkKey of chunksToRemove) {
       const unsubscribe = chunkSubscriptions.get(chunkKey);
       if (typeof unsubscribe === 'function') {
         unsubscribe();
         chunkSubscriptions.delete(chunkKey);
+        
+        // Clear cache entries for this chunk
+        const [chunkX, chunkY] = chunkKey.split(',').map(Number);
+        terrain.clearChunkFromCache(chunkX, chunkY, CHUNK_SIZE);
       }
     }
     
@@ -103,8 +112,8 @@ export const chunks = derived(
 export const coordinates = derived(
   [map, entities, chunks],
   ([$map, $entities], set) => {
-    // Check if map is ready before computing
-    if (!$map.ready || !terrain) {
+    // Simplified check - if map is ready, terrain must exist
+    if (!$map.ready) {
       return set([]);
     }
     
@@ -251,18 +260,24 @@ export function setup({ seed, world = null } = {}) {
     throw new Error(`Invalid seed value provided: ${seed}`);
   }
   
-  // Initialize the terrain generator with seed
-  terrain = new TerrainGenerator(seedNumber);
+  // Get current map state to calculate initial cache size
+  const currentState = get(map);
+  const initialCols = currentState.cols || 20;
+  const initialRows = currentState.rows || 15;
+  const initialCacheSize = Math.ceil(initialCols * initialRows * 1.5);
   
-  // Update the map store with ready state, world ID, AND INITIAL DIMENSIONS
+  // Initialize the terrain generator with seed and appropriate cache size
+  terrain = new TerrainGenerator(seedNumber, initialCacheSize);
+  
+  // Update the map store with ready state AFTER terrain is initialized
+  // This ensures map.ready is only true when terrain exists
   map.update(state => {
     return {
       ...state,
-      ready: true,
+      ready: true, // Only set ready to true after terrain is initialized
       world: worldId,
-      // Add initial dimensions to avoid circular dependency
-      cols: state.cols || 20,  // Default to 20 if not set
-      rows: state.rows || 15   // Default to 15 if not set
+      cols: initialCols,
+      rows: initialRows
     };
   });
   
@@ -369,7 +384,8 @@ export function getChunkKey(x, y) {
 export function cleanup() {
   // Clear terrain cache if terrain generator exists
   if (terrain) {
-    terrain.clearCache?.();
+    terrain.clearCache();
+    terrain = null; // Explicitly set terrain to null when cleaning up
   }
   
   // Clear all chunk subscriptions
@@ -380,9 +396,9 @@ export function cleanup() {
   }
   chunkSubscriptions.clear();
   
-  // Reset the map store to initial state
+  // Reset the map store to initial state - this must happen AFTER nulling terrain
   map.set({
-    ready: false,
+    ready: false, // Reset ready state to false when terrain is cleaned up
     cols: 0,
     rows: 0,
     target: { x: 0, y: 0 },
