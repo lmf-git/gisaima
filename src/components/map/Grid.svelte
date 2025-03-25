@@ -289,8 +289,8 @@
     
     // Set a short timeout before updating the highlighted tile
     hoverTimeout = setTimeout(() => {
-      const prevHighlight = $map.highlighted;
-      if (!prevHighlight || prevHighlight.x !== cell.x || prevHighlight.y !== cell.y) {
+      // Compare with highlightedStore instead of map.highlighted
+      if (!$highlightedStore || $highlightedStore.x !== cell.x || $highlightedStore.y !== cell.y) {
         console.log('Highlighting tile:', { x: cell.x, y: cell.y });
         setHighlighted(cell.x, cell.y);
       }

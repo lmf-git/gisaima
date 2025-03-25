@@ -176,6 +176,25 @@
     if (wasDrag || !$ready || !$highlightedStore) return;
     moveTarget($highlightedStore.x, $highlightedStore.y);
   }
+
+  // Add hover timeout variable
+  let minimapHoverTimeout = $state(null);
+  
+  // Add a consistent hover handler
+  function handleTileHover(cell) {
+    if (isDrag || isTouching) return;
+    
+    // Clear any pending hover updates
+    if (minimapHoverTimeout) clearTimeout(minimapHoverTimeout);
+    
+    // Use a small timeout to match Grid behavior
+    minimapHoverTimeout = setTimeout(() => {
+      if (!$highlightedStore || $highlightedStore.x !== cell.x || $highlightedStore.y !== cell.y) {
+        setHighlighted(cell.x, cell.y);
+      }
+      minimapHoverTimeout = null;
+    }, 50);
+  }
 </script>
 
 <svelte:window
@@ -221,7 +240,7 @@
               grid-column-start: {relativeX + 1};
               grid-row-start: {relativeY + 1};
             "
-            onmouseenter={() => setHighlighted(cell.x, cell.y)}
+            onmouseenter={() => handleTileHover(cell)}
             role="presentation"
             aria-hidden="true">
           </div>

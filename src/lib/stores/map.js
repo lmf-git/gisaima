@@ -118,8 +118,8 @@ export const chunks = derived(
 );
 
 export const coordinates = derived(
-  [map, entities, chunks],
-  ([$map, $entities], set) => {
+  [map, entities, chunks, highlightedCoords], // Add highlightedCoords to dependencies
+  ([$map, $entities, $chunks, $highlightedCoords], set) => { // Add $highlightedCoords parameter
     // Simplified check - if map is ready, terrain must exist
     if (!$map.ready) {
       return set([]);
@@ -141,8 +141,9 @@ export const coordinates = derived(
     const targetY = $map.target.y;
 
     const result = [];
-    const highlightedX = $map.highlighted?.x;
-    const highlightedY = $map.highlighted?.y;
+    // Use highlightedCoords instead of map.highlighted
+    const highlightedX = $highlightedCoords?.x;
+    const highlightedY = $highlightedCoords?.y;
 
     // Precompute main view boundaries for faster checks
     const mainViewMinX = viewportCenterX - Math.floor($map.cols / 2);
