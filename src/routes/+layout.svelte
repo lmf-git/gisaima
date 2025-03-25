@@ -165,31 +165,37 @@
             servicesInitialized = true;
             
             // Initialize Firebase services in proper order
-            initAuthListener();
-            const unsubGame = initGameStore();
-            const unsubDbCheck = initDatabaseConnectionCheck();
+            const authUnsubscribe = initAuthListener();
+            const gameUnsubscribe = initGameStore();
+            const dbCheckUnsubscribe = initDatabaseConnectionCheck();
             
-            // Connect the stores directly - no need for a separate function
-            try {
-                console.log('Connecting map and game stores...');
-                
-                // Set the map initializer in game store
-                setMapInitializer(initializeMapForWorld);
-                
-                // Initialize map only if not already initialized
-                initialize({ gameStore: game }).catch(err => {
-                    console.warn('Initial map setup deferred:', err.message);
-                });
-                
-                console.log('Map and game stores connected successfully');
-            } catch (error) {
-                console.error('Error connecting map and game stores:', error);
-            }
+            // Connect the stores directly after a small delay to ensure auth is ready
+            setTimeout(() => {
+                try {
+                    console.log('Connecting map and game stores...');
+                    
+                    // Set the map initializer in game store
+                    setMapInitializer(initializeMapForWorld);
+                    
+                    // Initialize map only if not already initialized
+                    // Fixed: Check return value directly instead of using Promise-style catch
+                    if (!initialize({ gameStore: game })) {
+                        console.warn('Initial map setup deferred: initialize returned false');
+                    } else {
+                        console.log('Map initialized successfully');
+                    }
+                    
+                    console.log('Map and game stores connected successfully');
+                } catch (error) {
+                    console.error('Error connecting map and game stores:', error);
+                }
+            }, 300); // Add small delay to avoid initialization race conditions
             
             // Return cleanup
             return () => {
-                unsubGame && unsubGame();
-                unsubDbCheck && unsubDbCheck();
+                authUnsubscribe && authUnsubscribe();
+                gameUnsubscribe && gameUnsubscribe();
+                dbCheckUnsubscribe && dbCheckUnsubscribe();
             };
         }
     });

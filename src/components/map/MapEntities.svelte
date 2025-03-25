@@ -1,5 +1,4 @@
 <script>
-  import { derived } from 'svelte/store';
   import { 
     map,
     targetStore,
@@ -10,7 +9,7 @@
   // Accept closing prop from parent
   const { closing = false } = $props();
   
-  // Keep state for active tab but not visibility
+  // Keep state for active tab
   let activeTab = $state('all'); // 'all', 'structures', 'players', 'groups'
   
   // Constants
@@ -39,14 +38,14 @@
     }
   }
 
-  // Helper function to get player display name - matches Details.svelte
+  // Helper function to get player display name
   function getPlayerDisplayName(player) {
     // For anonymous or guest users
     if (player.isAnonymous || player.guest) {
       return `Guest ${player.id?.substring(0, 4) || 'User'}`;
     }
     
-    // For registered users - match the pattern used in game.js
+    // For registered users
     return player.displayName || 
            player.email?.split('@')[0] || 
            `User ${player.id?.substring(0, 4)}`;
@@ -68,101 +67,96 @@
     }
   }
 
-  // Define a derived store for sorted entities
-  const sortedEntities = derived(
-    [entities, targetStore, map],
-    ([$entities, $targetStore, $map]) => {
-      if (!$targetStore || !$map.ready) return [];
+  // Create derived values directly without intermediate state
+  const allEntities = $derived(() => {
+    const target = $targetStore;
+    const entitiesStruct = $entities.structure;
+    const entitiesPlayers = $entities.players;
+    const entitiesGroups = $entities.groups;
+    
+    if (!target || !$map.ready) return [];
+    
+    const tempEntities = [];
+    
+    // Process structures
+    Object.values(entitiesStruct || {}).forEach(structure => {
+      if (!structure) return;
+      const distance = calculateDistance(
+        target.x, target.y, structure.x, structure.y
+      );
       
-      const allEntities = [];
-      const target = { x: $targetStore.x, y: $targetStore.y };
+      tempEntities.push({
+        entityType: 'structure',
+        entityId: `structure-${structure.x}-${structure.y}`,
+        ...structure,
+        distance
+      });
+    });
+    
+    // Process player entities
+    Object.entries(entitiesPlayers || {}).forEach(([locationKey, playersList]) => {
+      if (!playersList?.length) return;
       
-      // Process structures
-      Object.values($entities.structure).forEach(structure => {
-        if (!structure) return;
-        const distance = calculateDistance(
-          target.x, target.y, 
-          structure.x, structure.y
-        );
-        
-        allEntities.push({
-          entityType: 'structure',
-          entityId: `structure-${structure.x}-${structure.y}`,
-          ...structure,
-          distance
+      const [x, y] = locationKey.split(',').map(Number);
+      const distance = calculateDistance(target.x, target.y, x, y);
+      
+      playersList.forEach(player => {
+        tempEntities.push({
+          entityType: 'player',
+          entityId: player.id || `player-${x}-${y}-${playersList.indexOf(player)}`,
+          x, y,
+          name: player.name || 'Unknown Player',
+          distance,
+          ...player
         });
       });
+    });
+    
+    // Process groups (enemy units)
+    Object.entries(entitiesGroups || {}).forEach(([locationKey, groupsList]) => {
+      if (!groupsList?.length) return;
       
-      // Process player entities
-      Object.entries($entities.players).forEach(([locationKey, playersList]) => {
-        if (!playersList || !playersList.length) return;
-        
-        const [x, y] = locationKey.split(',').map(Number);
-        const distance = calculateDistance(target.x, target.y, x, y);
-        
-        playersList.forEach(player => {
-          allEntities.push({
-            entityType: 'player',
-            entityId: player.id || `player-${x}-${y}-${playersList.indexOf(player)}`,
-            x, y,
-            name: player.name || 'Unknown Player',
-            distance,
-            ...player
-          });
+      const [x, y] = locationKey.split(',').map(Number);
+      const distance = calculateDistance(target.x, target.y, x, y);
+      
+      groupsList.forEach(group => {
+        tempEntities.push({
+          entityType: 'group',
+          entityId: group.id || `group-${x}-${y}-${groupsList.indexOf(group)}`,
+          x, y,
+          name: group.name || 'Enemy Group',
+          size: group.size || '?',
+          distance,
+          ...group
         });
       });
-      
-      // Process groups (enemy units)
-      Object.entries($entities.groups).forEach(([locationKey, groupsList]) => {
-        if (!groupsList || !groupsList.length) return;
-        
-        const [x, y] = locationKey.split(',').map(Number);
-        const distance = calculateDistance(target.x, target.y, x, y);
-        
-        groupsList.forEach(group => {
-          allEntities.push({
-            entityType: 'group',
-            entityId: group.id || `group-${x}-${y}-${groupsList.indexOf(group)}`,
-            x, y,
-            name: group.name || 'Enemy Group',
-            size: group.size || '?',
-            distance,
-            ...group
-          });
-        });
-      });
-      
-      // Sort all entities by distance
-      return allEntities.sort((a, b) => a.distance - b.distance);
-    },
-    []
-  );
+    });
+    
+    // Sort all entities by distance and return
+    return tempEntities.sort((a, b) => a.distance - b.distance);
+  });
   
-  // Filter entities based on active tab
-  const filteredEntities = derived(
-    [sortedEntities],
-    ([$sortedEntities]) => {
-      if (activeTab === 'all') {
-        return $sortedEntities;
-      } else {
-        return $sortedEntities.filter(entity => {
-          if (activeTab === 'structures') return entity.entityType === 'structure';
-          if (activeTab === 'players') return entity.entityType === 'player';
-          if (activeTab === 'groups') return entity.entityType === 'group';
-          return true;
-        });
-      }
-    },
-    []
-  );
+  // Derived value to check if we have entities
+  const hasProcessedEntities = $derived(allEntities.length > 0);
+  
+  // Filtered entities based on current tab selection
+  const filteredEntities = $derived(() => {
+    if (activeTab === 'all') return allEntities;
+    return allEntities.filter(entity => entity.entityType === activeTab.slice(0, -1)); // Remove 's' from tab name
+  });
 
-  // Navigate to entity location with keyboard support
+  // Entity count helpers
+  const structuresCount = $derived(allEntities.filter(e => e.entityType === 'structure').length);
+  const playersCount = $derived(allEntities.filter(e => e.entityType === 'player').length);
+  const groupsCount = $derived(allEntities.filter(e => e.entityType === 'group').length);
+
+  // Navigate to entity location
   function goToEntity(entity) {
     if (entity && typeof entity.x === 'number' && typeof entity.y === 'number') {
       moveTarget(entity.x, entity.y);
     }
   }
-
+  
   // Handle keyboard navigation for entity items
   function handleKeyDown(event, entity) {
     // Execute on Enter or Space key
@@ -171,13 +165,13 @@
       goToEntity(entity);
     }
   }
-
+  
   // Update the tab selection function
   function setActiveTab(tabName) {
     activeTab = tabName;
   }
-
-  // Add a helper function to format structure name like in Details.svelte
+  
+  // Helper function to format structure name like in Details.svelte
   function formatStructureName(entity) {
     // If there's a name available, show "name (type)"
     if (entity.name) {
@@ -195,7 +189,7 @@
     role="region" 
     aria-label="Map entities list">
     <div class="entities-header">
-      <h3>Map Entities</h3>
+      <h3>Map Entities {hasProcessedEntities ? `(${allEntities.length})` : ''}</h3>
       <div class="tabs" role="tablist">
         <button 
           role="tab"
@@ -203,6 +197,9 @@
           class:active={activeTab === 'all'} 
           onclick={() => setActiveTab('all')}>
           All
+          {#if hasProcessedEntities}
+            <span class="count">({allEntities.length})</span>
+          {/if}
         </button>
         <button 
           role="tab"
@@ -210,6 +207,9 @@
           class:active={activeTab === 'structures'} 
           onclick={() => setActiveTab('structures')}>
           Structures
+          {#if hasProcessedEntities}
+            <span class="count">({structuresCount})</span>
+          {/if}
         </button>
         <button 
           role="tab"
@@ -217,6 +217,9 @@
           class:active={activeTab === 'players'} 
           onclick={() => setActiveTab('players')}>
           Players
+          {#if hasProcessedEntities}
+            <span class="count">({playersCount})</span>
+          {/if}
         </button>
         <button 
           role="tab"
@@ -224,13 +227,16 @@
           class:active={activeTab === 'groups'} 
           onclick={() => setActiveTab('groups')}>
           Groups
+          {#if hasProcessedEntities}
+            <span class="count">({groupsCount})</span>
+          {/if}
         </button>
       </div>
     </div>
 
     <div class="entities-list" role="tabpanel" aria-label={`${activeTab} entities`}>
-      {#if $filteredEntities.length > 0}
-        {#each $filteredEntities as entity (entity.entityId)}
+      {#if filteredEntities.length > 0}
+        {#each filteredEntities as entity (entity.entityId)}
           <button 
             class="entity-item {getEntityColorClass(entity)}" 
             onclick={() => goToEntity(entity)}
@@ -267,7 +273,11 @@
         {/each}
       {:else}
         <div class="entity-empty">
-          No {activeTab === 'all' ? 'entities' : activeTab} found
+          {#if !hasProcessedEntities}
+            Loading entities...
+          {:else}
+            No {activeTab === 'all' ? 'entities' : activeTab} found
+          {/if}
         </div>
       {/if}
     </div>
@@ -503,5 +513,11 @@
   .entities-list::-webkit-scrollbar-thumb {
     background-color: rgba(0, 0, 0, 0.2);
     border-radius: 10px;
+  }
+
+  .count {
+    font-size: 0.8em;
+    opacity: 0.7;
+    margin-left: 0.2em;
   }
 </style>

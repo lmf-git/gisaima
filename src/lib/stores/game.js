@@ -104,6 +104,15 @@ export const needsSpawn = derived(
   }
 );
 
+// Track active subscriptions for proper cleanup
+let activeJoinedWorldsSubscription = null;
+let activePlayerWorldDataSubscription = null;
+
+// Add a throttle mechanism for world info loading
+const pendingWorldInfoRequests = new Map();
+const worldInfoCache = new Map();
+const WORLD_INFO_THROTTLE_MS = 500;
+
 // Load player's joined worlds
 export function loadJoinedWorlds(userId) {
   if (!userId) {
@@ -111,12 +120,18 @@ export function loadJoinedWorlds(userId) {
     return;
   }
   
+  // Clean up existing subscription to prevent multiple listeners
+  if (activeJoinedWorldsSubscription) {
+    activeJoinedWorldsSubscription();
+    activeJoinedWorldsSubscription = null;
+  }
+  
   console.log(`Loading joined worlds for user: ${userId}`);
   
   const userWorldsRef = ref(db, `players/${userId}/worlds`);
   console.log('User worlds path:', `players/${userId}/worlds`);
   
-  return onValue(userWorldsRef, (snapshot) => {
+  activeJoinedWorldsSubscription = onValue(userWorldsRef, (snapshot) => {
     console.log('User worlds snapshot received:', snapshot.exists() ? 'Data exists' : 'No data');
     
     if (snapshot.exists()) {
@@ -129,7 +144,9 @@ export function loadJoinedWorlds(userId) {
       const currentState = getStore(game);
       if (currentState.currentWorld && !currentState.worldInfo[currentState.currentWorld]) {
         console.log('Loading info for current world:', currentState.currentWorld);
-        loadCurrentWorldInfo(currentState.currentWorld);
+        getWorldInfo(currentState.currentWorld).catch(err => 
+          console.error('Error loading current world info:', err)
+        );
       }
       
       // Also load the player data for the current world if it exists
@@ -144,14 +161,22 @@ export function loadJoinedWorlds(userId) {
     console.error('Error loading joined worlds:', error);
     game.update(state => ({ ...state, loading: false, error: error.message }));
   });
+  
+  return activeJoinedWorldsSubscription;
 }
 
 // Load player-specific data for the current world
 export function loadPlayerWorldData(userId, worldId) {
   if (!userId || !worldId) return;
   
+  // Clean up existing subscription to prevent multiple listeners
+  if (activePlayerWorldDataSubscription) {
+    activePlayerWorldDataSubscription();
+    activePlayerWorldDataSubscription = null;
+  }
+  
   const playerWorldRef = ref(db, `players/${userId}/worlds/${worldId}`);
-  return onValue(playerWorldRef, (snapshot) => {
+  activePlayerWorldDataSubscription = onValue(playerWorldRef, (snapshot) => {
     if (snapshot.exists()) {
       const playerWorldData = snapshot.val();
       game.update(state => ({ 
@@ -164,6 +189,8 @@ export function loadPlayerWorldData(userId, worldId) {
       game.update(state => ({ ...state, playerWorldData: null }));
     }
   });
+  
+  return activePlayerWorldDataSubscription;
 }
 
 // Function to load the current world's info automatically
@@ -272,92 +299,16 @@ export function setCurrentWorld(worldId, worldInfo = null) {
   return Promise.resolve(worldInfo || currentState.worldInfo[worldId]);
 }
 
-// Join a world
-export function joinWorld(worldId, userId, race) {
-  if (!worldId || !userId) return Promise.reject('Missing worldId or userId');
-  
-  // Ensure race is stored as lowercase string
-  const raceCode = typeof race === 'string' ? race.toLowerCase() : 
-                   race?.id ? race.id.toLowerCase() : 'human';
-  
-  // First check if player has already joined this world to avoid double counting
-  const userWorldRef = ref(db, `players/${userId}/worlds/${worldId}`);
-  
-  return dbGet(userWorldRef).then(snapshot => {
-    const alreadyJoined = snapshot.exists();
-    
-    // Update database to mark player as joined to this world
-    return set(userWorldRef, { 
-      joined: Date.now(),
-      spawned: false,  // Add spawned flag, defaulting to false
-      race: raceCode   // Store race as lowercase code
-    }).then(() => {
-      // Only update the player counter if this is a new join
-      if (!alreadyJoined) {
-        const worldPlayerCountRef = ref(db, `worlds/${worldId}/info/playerCount`);
-        // Use a transaction to safely increment the counter
-        return runTransaction(worldPlayerCountRef, (currentCount) => {
-          return (currentCount || 0) + 1;
-        }).then(() => {
-          console.log(`Incremented player count for world ${worldId}`);
-          
-          // Update local store
-          game.update(state => ({
-            ...state,
-            currentWorld: worldId,
-            joinedWorlds: state.joinedWorlds.includes(worldId) ? 
-              state.joinedWorlds : 
-              [...state.joinedWorlds, worldId]
-          }));
-          
-          // Save to localStorage
-          if (browser) {
-            localStorage.setItem(CURRENT_WORLD_KEY, worldId);
-            console.log(`Saved joined world ${worldId} to localStorage`);
-          }
-          
-          // Also load the player's world data into the store
-          loadPlayerWorldData(userId, worldId);
-          
-          // Load world info if needed, with a refresh to get the updated player count
-          return getWorldInfo(worldId, true);
-        });
-      } else {
-        // Player already joined, just update the local store
-        game.update(state => ({
-          ...state,
-          currentWorld: worldId,
-          joinedWorlds: state.joinedWorlds.includes(worldId) ? 
-            state.joinedWorlds : 
-            [...state.joinedWorlds, worldId]
-        }));
-        
-        // Save to localStorage
-        if (browser) {
-          localStorage.setItem(CURRENT_WORLD_KEY, worldId);
-          console.log(`Saved existing world ${worldId} to localStorage`);
-        }
-        
-        // Also load the player's world data into the store
-        loadPlayerWorldData(userId, worldId);
-        
-        // Load world info if needed
-        const currentState = getStore(game);
-        if (!currentState.worldInfo[worldId]) {
-          return loadCurrentWorldInfo(worldId);
-        }
-        
-        return worldId;
-      }
-    });
-  });
-}
-
-// Get world information including seed with caching
+// Get world information including seed with caching and throttling
 export function getWorldInfo(worldId, forceRefresh = false) {
   if (!worldId) return Promise.reject(new Error('Missing worldId'));
   
   console.log(`Getting world info for: ${worldId}, force refresh: ${forceRefresh}`);
+  
+  // Check for pending request for this world
+  if (pendingWorldInfoRequests.has(worldId)) {
+    return pendingWorldInfoRequests.get(worldId);
+  }
   
   // Set loading state first to ensure UI responds correctly
   game.update(state => ({ 
@@ -378,11 +329,29 @@ export function getWorldInfo(worldId, forceRefresh = false) {
     return Promise.resolve(currentGameState.worldInfo[worldId]);
   }
   
+  // Also check in-memory cache
+  if (!forceRefresh && worldInfoCache.has(worldId)) {
+    console.log(`Using memory-cached world info for ${worldId}`);
+    const cachedInfo = worldInfoCache.get(worldId);
+    
+    game.update(state => ({
+      ...state,
+      worldLoading: false,
+      worldInfo: {
+        ...state.worldInfo,
+        [worldId]: cachedInfo
+      }
+    }));
+    
+    return Promise.resolve(cachedInfo);
+  }
+  
   // No valid cache, fetch from database with direct path to ensure we get the seed
   console.log(`Fetching world info from database for ${worldId}`);
   const worldRef = ref(db, `worlds/${worldId}/info`);
   
-  return dbGet(worldRef)
+  // Create a promise for this request and store it
+  const fetchPromise = dbGet(worldRef)
     .then(snapshot => {
       console.log(`World info snapshot for ${worldId}:`, snapshot.exists() ? 'Data exists' : 'No data');
       
@@ -402,6 +371,9 @@ export function getWorldInfo(worldId, forceRefresh = false) {
           
           throw new Error(error);
         }
+        
+        // Cache the world info in memory
+        worldInfoCache.set(worldId, worldInfo);
         
         // Update store with the world info
         game.update(state => ({
@@ -438,7 +410,18 @@ export function getWorldInfo(worldId, forceRefresh = false) {
       }));
       
       throw error;
+    })
+    .finally(() => {
+      // Remove this request from pending after a throttle delay
+      setTimeout(() => {
+        pendingWorldInfoRequests.delete(worldId);
+      }, WORLD_INFO_THROTTLE_MS);
     });
+  
+  // Store the promise for deduplication
+  pendingWorldInfoRequests.set(worldId, fetchPromise);
+  
+  return fetchPromise;
 }
 
 // Function to clear the current world from localStorage
@@ -461,11 +444,21 @@ export function clearCurrentWorld() {
   }));
 }
 
+// Track if we've already initialized services
+let gameStoreInitialized = false;
+
 // Initialize the store on app start - with improved startup handling
 export function initGameStore() {
   if (!browser) return () => {};
   
+  // Prevent duplicate initialization
+  if (gameStoreInitialized) {
+    console.log('Game store already initialized, skipping duplicate initialization');
+    return () => {};
+  }
+  
   console.log('Initializing game store');
+  gameStoreInitialized = true;
   
   try {
     // Set initial loading state
@@ -483,9 +476,7 @@ export function initGameStore() {
           currentWorld: savedWorldId 
         }));
         
-        // Load world info asynchronously
-        loadCurrentWorldInfo(savedWorldId)
-          .catch(err => console.error('Error loading saved world info:', err));
+        // We'll load the world info when auth is ready instead of here
       } else {
         console.log('No saved world found in localStorage');
       }
@@ -493,10 +484,20 @@ export function initGameStore() {
       console.error('Error loading world from localStorage:', e);
     }
     
+    let lastUserId = null;
+    
     // Subscribe to auth changes to load joined worlds
     const unsubscribe = user.subscribe($user => {
       console.log('Auth state changed in game store:', $user ? 'User present' : 'No user');
       try {
+        // Skip duplicate updates for the same user
+        if ($user?.uid === lastUserId) {
+          console.log('Skipping duplicate auth change with same user ID');
+          return;
+        }
+        
+        lastUserId = $user?.uid;
+        
         if ($user?.uid) {
           console.log('User authenticated, loading joined worlds for:', $user.uid);
           // Set auth as ready once we have a user
@@ -507,9 +508,6 @@ export function initGameStore() {
           const currentState = getStore(game);
           if (currentState.currentWorld) {
             loadPlayerWorldData($user.uid, currentState.currentWorld);
-            loadCurrentWorldInfo(currentState.currentWorld).catch(err => 
-              console.error('Error loading current world info:', err)
-            );
           }
         } else if ($user === null) {
           // User is definitely not logged in (not just undefined/loading)
@@ -532,11 +530,27 @@ export function initGameStore() {
       }
     });
     
-    return unsubscribe;
+    return () => {
+      // Clean up subscriptions
+      unsubscribe();
+      
+      if (activeJoinedWorldsSubscription) {
+        activeJoinedWorldsSubscription();
+        activeJoinedWorldsSubscription = null;
+      }
+      
+      if (activePlayerWorldDataSubscription) {
+        activePlayerWorldDataSubscription();
+        activePlayerWorldDataSubscription = null;
+      }
+      
+      gameStoreInitialized = false;
+    };
   } catch (e) {
     console.error('Error initializing game store:', e);
     // Set auth ready flag even if initialization fails
     isAuthReady.set(true);
+    gameStoreInitialized = false;
     // Return empty function to prevent errors when calling the unsubscribe
     return () => {};
   }
