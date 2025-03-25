@@ -1,5 +1,5 @@
 <script>
-  import { map, targetStore, entities } from "../../lib/stores/map";
+  import { map, targetStore, entities, highlightedStore } from "../../lib/stores/map";
   import Close from '../../components/icons/Close.svelte';
   import { user } from "../../lib/stores/user";
   import { onMount } from "svelte";
@@ -10,11 +10,11 @@
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
   // Determine if we're showing a highlighted tile that's different from the target
-  const isHighlighted = $derived($map.highlighted != null && 
-    ($map.highlighted.x !== $targetStore?.x || $map.highlighted.y !== $targetStore?.y));
+  const isHighlighted = $derived($highlightedStore != null && 
+    ($highlightedStore.x !== $targetStore?.x || $highlightedStore.y !== $targetStore?.y));
   
   // Use either the highlighted tile if present, or targetStore
-  const currentTile = $derived(isHighlighted ? $map.highlighted : $targetStore);
+  const currentTile = $derived(isHighlighted ? $highlightedStore : $targetStore);
   
   // Remove redundant state variables for coordinates
   

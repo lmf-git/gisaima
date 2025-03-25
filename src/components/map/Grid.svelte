@@ -8,6 +8,7 @@
     TILE_SIZE,
     moveTarget,
     targetStore,
+    highlightedStore,  // Add highlightedStore import
     setHighlighted
   } from "../../lib/stores/map.js";
   import { game, currentPlayer } from "../../lib/stores/game.js";
@@ -299,8 +300,8 @@
   
   // Clear highlight state when moving
   $effect(() => {
-    if (isMoving && $map.highlighted) {  // Renamed from hoveredTile
-      setHighlighted(null, null);  // Renamed from updateHoveredTile
+    if (isMoving && $highlightedStore) {  // Use highlightedStore instead of map.highlighted
+      setHighlighted(null, null);
     }
   });
   
@@ -500,12 +501,12 @@
   $effect(() => {
     // Only log when there's actually a highlighted tile (not null)
     // This prevents the console spam during initialization
-    if ($map.highlighted) {
+    if ($highlightedStore) {  // Use highlightedStore instead of map.highlighted
       console.log('Highlighted tile changed to:', { 
-        x: $map.highlighted.x, 
-        y: $map.highlighted.y,
-        biome: $map.highlighted.biome?.name,
-        structure: $map.highlighted.structure?.type
+        x: $highlightedStore.x, 
+        y: $highlightedStore.y,
+        biome: $highlightedStore.biome?.name,
+        structure: $highlightedStore.structure?.type
       });
     }
   });

@@ -4,6 +4,7 @@
     map, 
     ready,
     coordinates,
+    highlightedStore,  // Add highlightedStore import
     EXPANDED_COLS_FACTOR,
     EXPANDED_ROWS_FACTOR,
     setHighlighted,  // Renamed from updateHoveredTile
@@ -239,10 +240,10 @@
     isTouching = false;
   }
 
-  // Click handler now directly uses the highlighted tile
+  // Click handler now uses highlightedStore instead of map.highlighted
   function handleMinimapClick() {
-    if (wasDrag || !$ready || !$map.highlighted) return;  // Renamed from hoveredTile
-    moveTarget($map.highlighted.x, $map.highlighted.y);  // Renamed from hoveredTile
+    if (wasDrag || !$ready || !$highlightedStore) return;  // Use highlightedStore instead
+    moveTarget($highlightedStore.x, $highlightedStore.y);  // Use highlightedStore instead
   }
 </script>
 

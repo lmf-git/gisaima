@@ -21,10 +21,13 @@ export const map = writable({
   cols: 0,
   rows: 0,
   target: { x: 0, y: 0 },
-  highlighted: null,
+  // Remove highlighted from map store as we'll manage it separately
   minimap: true,
   world: 'default', // Use default as initial value, don't rely on game store
 });
+
+// New separate store for highlighted coordinates
+export const highlightedCoords = writable(null);
 
 export const entities = writable({
   structure: {},
@@ -200,6 +203,23 @@ export const targetStore = derived(
     
     // If found, return complete data; if not, return minimal location data
     return targetTile || { x: $map.target.x, y: $map.target.y };
+  }
+);
+
+// UPDATED: Use highlightedCoords instead of map.highlighted
+export const highlightedStore = derived(
+  [highlightedCoords, coordinates],
+  ([$highlightedCoords, $coordinates]) => {
+    // If no tile is highlighted, return null
+    if (!$highlightedCoords) return null;
+    
+    // Find the highlighted tile with full data from coordinates
+    const highlightedTile = $coordinates.find(
+      c => c.x === $highlightedCoords.x && c.y === $highlightedCoords.y
+    );
+    
+    // Return the found tile with complete data, or fall back to basic coords
+    return highlightedTile || $highlightedCoords;
   }
 );
 
@@ -414,17 +434,20 @@ export function moveTarget(newX, newY) {
     return {
       ...prev,
       target: { x, y },
-      highlighted: null  // Renamed from hoveredTile
     };
   });
+  
+  // Clear highlighted tile when moving
+  highlightedCoords.set(null);
 };
 
-// Renamed from updateHoveredTile
+// UPDATED: Use highlightedCoords store directly
 export function setHighlighted(x, y) {
-  map.update(state => ({
-    ...state,
-    highlighted: x !== null && y !== null ? { x, y } : null
-  }));
+  if (x !== null && y !== null) {
+    highlightedCoords.set({ x, y });
+  } else {
+    highlightedCoords.set(null);
+  }
 };
 
 // Simplified chunk key utility
@@ -454,10 +477,12 @@ export function cleanup() {
     cols: 0,
     rows: 0,
     target: { x: 0, y: 0 },
-    highlighted: null,
     minimap: true,
     world: null,
   });
+  
+  // Reset highlighted coordinates store
+  highlightedCoords.set(null);
   
   // Reset entities store
   entities.set({
