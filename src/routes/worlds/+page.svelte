@@ -7,6 +7,7 @@
   import { db } from '../../lib/firebase/database.js';
   import { browser } from '$app/environment';
   import JoinConfirmation from '../../components/JoinConfirmation.svelte';
+  import WorldCard from '../../components/WorldCard.svelte';
   
   // Add state variables
   let selectedWorld = $state(null);
@@ -89,7 +90,8 @@
             description: worldInfo.description || '',
             playerCount: worldInfo.playerCount || 0,
             created: worldInfo.created || Date.now(),
-            joined: $game.joinedWorlds.includes(key)
+            joined: $game.joinedWorlds.includes(key),
+            seed: worldInfo.seed || 0  // Add seed for the WorldCard component
           };
         });
       
@@ -206,26 +208,36 @@
     <div class="worlds-grid">
       {#each worlds as world}
         <div class="world-card">
-          <h2>{world.name || world.id}</h2>
-          <p>{world.description || 'No description available'}</p>
-          <div class="world-stats">
-            <div class="stat-item">
-              <span class="stat-label">Players:</span>
-              <span class="stat-value">{world.playerCount || 0}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Created:</span>
-              <span class="stat-value">{new Date(world.created || Date.now()).toLocaleDateString()}</span>
-            </div>
+          <div class="world-preview">
+            <WorldCard 
+              worldId={world.id}
+              seed={world.seed}
+              tileSize={0.5}
+            />
           </div>
           
-          <button 
-            class="world-action-button" 
-            class:joined={$game.joinedWorlds.includes(world.id)}
-            onclick={() => selectWorld(world)}
-          >
-            {$game.joinedWorlds.includes(world.id) ? "Enter World" : "Join World"}
-          </button>
+          <div class="world-info">
+            <h2>{world.name || world.id}</h2>
+            <p class="world-description">{world.description || 'No description available'}</p>
+            <div class="world-stats">
+              <div class="stat-item">
+                <span class="stat-label">Players:</span>
+                <span class="stat-value">{world.playerCount || 0}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Created:</span>
+                <span class="stat-value">{new Date(world.created || Date.now()).toLocaleDateString()}</span>
+              </div>
+            </div>
+            
+            <button 
+              class="world-action-button" 
+              class:joined={$game.joinedWorlds.includes(world.id)}
+              onclick={() => selectWorld(world)}
+            >
+              {$game.joinedWorlds.includes(world.id) ? "Enter World" : "Join World"}
+            </button>
+          </div>
         </div>
       {/each}
     </div>
@@ -264,22 +276,110 @@
   
   .worlds-grid {
     display: flex;
-    flex-direction: column; /* Mobile first: stacked vertically */
-    gap: 1.5rem; /* Slightly reduced gap on mobile */
-    padding: 0 0.5rem; /* Reduced side padding to make cards wider */
-    width: 100%; /* Ensure grid takes full width */
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 0 0.5rem;
+    width: 100%;
   }
   
   .world-card {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 1.25rem; /* Slightly less padding on mobile */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
-    width: 100%; /* Full width on mobile */
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    background-color: var(--color-dark-blue);
+    width: 100%;
   }
   
+  .world-preview {
+    width: 100%;
+    aspect-ratio: 2 / 1;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .world-info {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .world-info h2 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-pale-green);
+  }
+  
+  .world-description {
+    margin-bottom: 1rem;
+    opacity: 0.9;
+    font-size: 0.95rem;
+  }
+  
+  .world-stats {
+    margin: 0.75rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .stat-item {
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+  
+  .stat-label {
+    font-weight: 600;
+    color: var(--color-pale-green);
+    margin-right: 0.5rem;
+  }
+  
+  .stat-value {
+    margin-left: auto;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 500;
+  }
+  
+  .world-action-button {
+    align-self: center;
+    margin-top: 1rem;
+    min-width: 180px;
+    background-color: rgba(42, 107, 122, 0.9);
+    border: 0.05em solid var(--color-muted-teal);
+    box-shadow: 0 0.3em 0.8em rgba(0, 0, 0, 0.4);
+    padding: 0.8em 1.2em;
+    color: white;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: var(--font-heading);
+  }
+  
+  .world-action-button:hover {
+    transform: translateY(-0.1em);
+    background-color: rgba(58, 125, 140, 0.9);
+    box-shadow: 0 0.4em 1em rgba(0, 0, 0, 0.5);
+  }
+  
+  .world-action-button.joined {
+    background-color: rgba(46, 139, 87, 0.9);
+    border-color: rgba(60, 159, 104, 0.8);
+  }
+  
+  .world-action-button.joined:hover {
+    background-color: rgba(57, 163, 103, 0.9);
+  }
+
   @media (min-width: 640px) {
     .worlds-page {
       margin: 3rem auto;
@@ -292,21 +392,44 @@
     }
     
     .world-card {
-      padding: 1.5rem;
+      flex-direction: row;
+      align-items: stretch;
+    }
+    
+    .world-preview {
+      width: 40%;
+      min-width: 200px;
+      aspect-ratio: 1 / 1;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: none;
+    }
+    
+    .world-info {
+      flex: 1;
+      padding: 1.25rem;
     }
   }
   
   @media (min-width: 768px) {
     .worlds-grid {
-      flex-direction: row; /* Switch to horizontal on larger screens */
-      flex-wrap: wrap; /* Allow wrapping to next row */
-      justify-content: center; /* Center the cards */
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
       padding: 0 2rem;
+      gap: 2rem;
     }
     
     .world-card {
-      flex: 0 0 calc(50% - 1.5rem); /* Two cards per row with gap */
-      max-width: calc(50% - 1.5rem);
+      flex: 0 0 calc(50% - 1rem);
+      max-width: calc(50% - 1rem);
+      flex-direction: column;
+    }
+    
+    .world-preview {
+      width: 100%;
+      aspect-ratio: 2 / 1;
+      border-right: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
   }
   
@@ -321,102 +444,11 @@
     }
     
     .world-card {
-      flex: 0 0 calc(33.333% - 2rem); /* Three cards per row with gap */
-      max-width: calc(33.333% - 2rem);
+      flex: 0 0 calc(33.333% - 1.333rem);
+      max-width: calc(33.333% - 1.333rem);
     }
   }
-  
-  .world-stats {
-    margin: 1.25rem 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    font-size: 0.9rem;
-  }
-  
-  .stat-item {
-    display: flex;
-    align-items: center;
-    padding: 0.5rem 0.75rem;
-    border-radius: 6px;
-    background-color: rgba(42, 107, 122, 0.15);
-  }
-  
-  .stat-label {
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
-    margin-right: 0.5rem;
-  }
-  
-  .stat-value {
-    margin-left: auto;
-    color: rgba(255, 255, 255, 0.95);
-    font-weight: 500;
-  }
-  
-  button {
-    margin-top: auto;
-    padding: 0.75rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all 0.3s ease;
-    font-family: var(--font-heading);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  
-  .world-action-button {
-    background-color: #2a6b7a;  /* Solid color instead of using var */
-    color: white;
-    border: 0.05em solid var(--color-muted-teal);
-    text-shadow: 0 0 0.5em rgba(0, 0, 0, 0.5);
-    box-shadow: 0 0.3em 0.8em var(--color-shadow);
-    padding: 0.8em 1.2em;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-  }
-  
-  .world-action-button:hover {
-    transform: translateY(-0.1em);
-    background-color: #3a7d8c;
-    box-shadow: 0 0.4em 1em var(--color-shadow);
-    color: #ffffff;
-    text-shadow: 0 0 0.8em rgba(0, 0, 0, 0.7);
-  }
-  
-  .world-action-button.joined {
-    background-color: #2e8b57;  /* Solid sea green for "Enter World" */
-    border-color: #3c9f68;
-    color: white;
-  }
-  
-  .world-action-button.joined:hover {
-    background-color: #39a367;
-  }
-  
-  .world-action-button:disabled {
-    background-color: #6c757d;
-    border-color: #5a6268;
-    cursor: not-allowed;
-    opacity: 0.8;
-    transform: none;
-    box-shadow: 0 0.2em 0.4em rgba(0, 0, 0, 0.2);
-  }
-  
-  .world-action-button:active {
-    transform: translateY(0.05em);
-    box-shadow: 0 0.1em 0.3em var(--color-shadow);
-  }
-  
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-  
+
   .error-message {
     text-align: center;
     margin: 3rem 0;
