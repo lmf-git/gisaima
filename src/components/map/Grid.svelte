@@ -703,13 +703,27 @@
     border: 0.12em solid rgba(255, 255, 255, 0.5);
   }
   
-  /* Hover effects - renamed to highlight */
-  .map:not(.moving) .tile:hover,
-  .tile.highlighted {
-    z-index: 2;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
+  /* Hover effects - renamed to highlight - UPDATED to use ::after pseudo-element */
+  .map:not(.moving) .tile:hover::after,
+  .tile.highlighted::after {
+    content: "";
+    position: absolute;
+    inset: 0;  /* covers the entire tile */
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9);
+    pointer-events: none;
+    z-index: 10; /* Make sure this appears above everything else */
   }
   
+  /* Moving state - UPDATED to target pseudo-element */
+  .map.moving .tile::after {
+    content: none; /* Remove the highlight effect when moving */
+  }
+
+  /* Remove the old highlighted style that used box-shadow directly */
+  .map.moving .tile.highlighted {
+    /* No box-shadow here anymore */
+  }
+
   /* Moving state */
   .map.moving .tile {
     pointer-events: none;
@@ -1028,5 +1042,21 @@
   
   .tile.epic {
     z-index: 3;
+  }
+
+  /* Make sure rare tiles don't override highlighting */
+  .tile.mythic.highlighted::after,
+  .tile.legendary.highlighted::after,
+  .tile.epic.highlighted::after,
+  .tile.rare.highlighted::after,
+  .tile.uncommon.highlighted::after {
+    /* Ensure highlight shows over rarity styles */
+    box-shadow: inset 0 0 0 2px white, inset 0 0 4px 1px rgba(255, 255, 255, 0.8);
+    z-index: 15;
+  }
+  
+  /* Improve the player and structure indicators visibility when highlighted */
+  .tile.highlighted .entity-indicator {
+    z-index: 16; /* Ensure indicators are above highlight effect */
   }
 </style>
