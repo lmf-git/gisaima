@@ -6,50 +6,177 @@
     chunks,
     coordinates
   } from '../../lib/stores/map.js';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   
   // Accept closing prop from parent
   const { closing = false } = $props();
   
-  // Keep state for active tab
+  // State variables using Svelte 5 runes
   let activeTab = $state('all'); // 'all', 'structures', 'players', 'groups'
-  
-  // Track visible chunks - avoid nested effect loops
   let visibleChunkCount = $state(0);
-
-  // Use direct state variables for entities
-  let allEntities = $state([]);
+  
+  // Direct state for entities - more efficient than derived values
+  let entityList = $state([]);
   let structuresCount = $state(0);
   let playersCount = $state(0);
   let groupsCount = $state(0);
   let totalEntityCount = $state(0);
+  let filteredEntities = $state([]);
 
-  // Watch chunks without creating an infinite update loop
+  // Track chunks count with effect
   $effect(() => {
-    const chunksSet = $chunks;
-    if (chunksSet && chunksSet.size > 0) {
-      visibleChunkCount = chunksSet.size;
+    if ($chunks && $chunks.size > 0) {
+      visibleChunkCount = $chunks.size;
     }
   });
 
-  // Format distance for display
+  // Process coordinates to extract entities when coordinates change
+  $effect(() => {
+    if (!$map.ready || !$coordinates || $coordinates.length === 0) return;
+    
+    // Start with a fresh array
+    const entities = [];
+    
+    // Extract entities from coordinates
+    $coordinates.forEach(coord => {
+      // Add structure if present
+      if (coord.structure) {
+        entities.push({
+          entityType: 'structure',
+          entityId: `structure-${coord.x}-${coord.y}`,
+          x: coord.x, 
+          y: coord.y,
+          distance: coord.distance || 0,
+          ...coord.structure
+        });
+      }
+      
+      // Add players if present - handle both array and object formats
+      if (coord.players) {
+        if (Array.isArray(coord.players)) {
+          coord.players.forEach((player, idx) => {
+            if (!player) return;
+            entities.push({
+              entityType: 'player',
+              entityId: player.uid || `player-${coord.x}-${coord.y}-${idx}`,
+              x: coord.x,
+              y: coord.y,
+              distance: coord.distance || 0,
+              ...player
+            });
+          });
+        } else if (typeof coord.players === 'object') {
+          Object.entries(coord.players).forEach(([id, player]) => {
+            if (!player) return;
+            entities.push({
+              entityType: 'player',
+              entityId: id,
+              x: coord.x,
+              y: coord.y,
+              distance: coord.distance || 0,
+              ...player
+            });
+          });
+        }
+      }
+      
+      // Add groups if present - handle both array and object formats
+      if (coord.groups) {
+        if (Array.isArray(coord.groups)) {
+          coord.groups.forEach((group, idx) => {
+            if (!group) return;
+            entities.push({
+              entityType: 'group',
+              entityId: group.id || `group-${coord.x}-${coord.y}-${idx}`,
+              x: coord.x,
+              y: coord.y,
+              distance: coord.distance || 0,
+              ...group
+            });
+          });
+        } else if (typeof coord.groups === 'object') {
+          Object.entries(coord.groups).forEach(([id, group]) => {
+            if (!group) return;
+            entities.push({
+              entityType: 'group',
+              entityId: id,
+              x: coord.x,
+              y: coord.y,
+              distance: coord.distance || 0,
+              ...group
+            });
+          });
+        }
+      }
+    });
+    
+    // Sort entities by distance from target
+    entities.sort((a, b) => {
+      const distanceA = a.distance !== undefined ? a.distance : 
+        calculateDistance($targetStore.x, $targetStore.y, a.x, a.y);
+      const distanceB = b.distance !== undefined ? b.distance : 
+        calculateDistance($targetStore.x, $targetStore.y, b.x, b.y);
+      return distanceA - distanceB;
+    });
+    
+    // Update entity counts
+    structuresCount = entities.filter(e => e.entityType === 'structure').length;
+    playersCount = entities.filter(e => e.entityType === 'player').length;
+    groupsCount = entities.filter(e => e.entityType === 'group').length;
+    totalEntityCount = entities.length;
+    
+    // Update the master entity list
+    entityList = entities;
+    
+    // Update filtered entities based on current tab
+    updateFilteredEntities();
+  });
+  
+  // Helper function to calculate distance
+  function calculateDistance(x1, y1, x2, y2) {
+    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+  }
+
+  // Function to format distance for display
   function formatDistance(distance) {
     return distance === 0 ? 'here' : Math.round(distance * 10) / 10;
   }
   
-  // Get entity type icon/symbol
-  function getEntitySymbol(type) {
-    switch(type) {
-      case 'structure': return '🏛️';
-      case 'structure-spawn': return '🔵';
-      case 'structure-watchtower': return '🗼';
-      case 'structure-fortress': return '🏰';
-      case 'player': return '👤';
-      case 'group': return '👥';
-      default: return '•';
+  // Update filtered entities whenever tab or entity list changes
+  function updateFilteredEntities() {
+    if (activeTab === 'all') {
+      filteredEntities = entityList;
+    } else {
+      const entityType = activeTab.slice(0, -1); // 'structures' -> 'structure'
+      filteredEntities = entityList.filter(entity => entity.entityType === entityType);
     }
   }
+  
+  // Effect to update filtered entities when tab changes
+  $effect(() => {
+    updateFilteredEntities();
+  });
+  
+  // Update the tab selection function
+  function setActiveTab(tabName) {
+    activeTab = tabName;
+  }
 
+  // Navigate to entity location
+  function goToEntity(entity) {
+    if (entity && typeof entity.x === 'number' && typeof entity.y === 'number') {
+      moveTarget(entity.x, entity.y);
+    }
+  }
+  
+  // Handle keyboard navigation for entity items
+  function handleKeyDown(event, entity) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      goToEntity(entity);
+    }
+  }
+  
   // Helper function to get player display name
   function getPlayerDisplayName(player) {
     // For anonymous or guest users
@@ -61,6 +188,19 @@
     return player.displayName || 
            player.email?.split('@')[0] || 
            `User ${player.id?.substring(0, 4)}`;
+  }
+
+  // Get entity type icon/symbol
+  function getEntitySymbol(type) {
+    switch(type) {
+      case 'structure': return '🏛️';
+      case 'structure-spawn': return '🔵';
+      case 'structure-watchtower': return '🗼';
+      case 'structure-fortress': return '🏰';
+      case 'player': return '👤';
+      case 'group': return '👥';
+      default: return '•';
+    }
   }
 
   // Get entity color class
@@ -79,159 +219,6 @@
     }
   }
 
-  // Simplified function to extract entities from coordinates
-  function extractEntities(coords) {
-    if (!coords || !Array.isArray(coords)) return [];
-    
-    const entities = [];
-    
-    coords.forEach(coord => {
-      // Add structure if present
-      if (coord.structure) {
-        entities.push({
-          entityType: 'structure',
-          entityId: `structure-${coord.x}-${coord.y}`,
-          x: coord.x, 
-          y: coord.y,
-          distance: coord.distance || 0,
-          ...coord.structure
-        });
-      }
-      
-      // Only handle players as an object (Firebase format)
-      if (coord.players && typeof coord.players === 'object') {
-        // Handle both array and object formats
-        if (Array.isArray(coord.players)) {
-          coord.players.forEach((player, idx) => {
-            if (!player) return;
-            entities.push({
-              entityType: 'player',
-              entityId: player.uid || `player-${coord.x}-${coord.y}-${idx}`,
-              x: coord.x,
-              y: coord.y,
-              distance: coord.distance || 0,
-              ...player
-            });
-          });
-        } else {
-          // Handle as object with keys
-          Object.entries(coord.players).forEach(([id, player]) => {
-            if (!player) return;
-            entities.push({
-              entityType: 'player',
-              entityId: id,
-              x: coord.x,
-              y: coord.y,
-              distance: coord.distance || 0,
-              ...player
-            });
-          });
-        }
-      }
-      
-      // Similar approach for groups
-      if (coord.groups && typeof coord.groups === 'object') {
-        if (Array.isArray(coord.groups)) {
-          coord.groups.forEach((group, idx) => {
-            if (!group) return;
-            entities.push({
-              entityType: 'group',
-              entityId: group.id || `group-${coord.x}-${coord.y}-${idx}`,
-              x: coord.x,
-              y: coord.y,
-              distance: coord.distance || 0,
-              ...group
-            });
-          });
-        } else {
-          Object.entries(coord.groups).forEach(([id, group]) => {
-            if (!group) return;
-            entities.push({
-              entityType: 'group',
-              entityId: id,
-              x: coord.x,
-              y: coord.y,
-              distance: coord.distance || 0,
-              ...group
-            });
-          });
-        }
-      }
-    });
-    
-    return entities;
-  }
-
-  // Calculate distance from a to b (helper function)
-  function calculateDistance(x1, y1, x2, y2) {
-    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-  }
-
-  // Function to load entities
-  function loadEntities() {
-    if (!$map.ready || !$coordinates) return;
-    
-    // Extract entities from coordinates
-    const entities = extractEntities($coordinates);
-    
-    // Sort entities by distance
-    entities.sort((a, b) => {
-      const distanceA = a.distance !== undefined ? a.distance : 
-        calculateDistance($targetStore.x, $targetStore.y, a.x, a.y);
-      const distanceB = b.distance !== undefined ? b.distance : 
-        calculateDistance($targetStore.x, $targetStore.y, b.x, b.y);
-      return distanceA - distanceB;
-    });
-    
-    // Update entity counts
-    structuresCount = entities.filter(e => e.entityType === 'structure').length;
-    playersCount = entities.filter(e => e.entityType === 'player').length;
-    groupsCount = entities.filter(e => e.entityType === 'group').length;
-    totalEntityCount = entities.length;
-    
-    // Update the allEntities array
-    allEntities = entities;
-    
-    console.log(`Loaded ${entities.length} entities: ${structuresCount} structures, ${playersCount} players, ${groupsCount} groups`);
-  }
-
-  // Watch coordinates changes and reload entities
-  $effect(() => {
-    if ($coordinates && $coordinates.length > 0) {
-      loadEntities();
-    }
-  });
-
-  // Function to get filtered entities based on active tab
-  function getFilteredEntities() {
-    if (!allEntities || allEntities.length === 0) return [];
-    
-    if (activeTab === 'all') return allEntities;
-    const entityType = activeTab.slice(0, -1); // 'structures' -> 'structure'
-    return allEntities.filter(entity => entity.entityType === entityType);
-  }
-
-  // Navigate to entity location
-  function goToEntity(entity) {
-    if (entity && typeof entity.x === 'number' && typeof entity.y === 'number') {
-      moveTarget(entity.x, entity.y);
-    }
-  }
-  
-  // Handle keyboard navigation for entity items
-  function handleKeyDown(event, entity) {
-    // Execute on Enter or Space key
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      goToEntity(entity);
-    }
-  }
-  
-  // Update the tab selection function to reload entities
-  function setActiveTab(tabName) {
-    activeTab = tabName;
-  }
-  
   // Helper function to format structure name like in Details.svelte
   function formatStructureName(entity) {
     // If there's a name available, show "name (type)"
@@ -244,38 +231,21 @@
 
   // Debug function
   function debugEntities() {
-    // Log the coordinates with entities
-    const coordsWithEntities = $coordinates.filter(c => 
-      c.structure || 
-      (c.players && Object.keys(c.players).length > 0) || 
-      (c.groups && Object.keys(c.groups).length > 0)
-    );
-    
-    console.log('Coordinates with entities:', coordsWithEntities);
-    
-    // Force reload entities
-    loadEntities();
-    
-    // Log detailed summary
-    console.log('Entity summary after reload:', {
+    console.log('Entity counts:', {
       total: totalEntityCount,
       structures: structuresCount,
       players: playersCount,
-      groups: groupsCount,
-      filteredCount: getFilteredEntities().length
+      groups: groupsCount
     });
     
-    // Force UI refresh
+    console.log('Sample entities:', entityList.slice(0, 3));
+    
+    // Force refresh - mark the tab selection as dirty
     activeTab = activeTab;
   }
   
   onMount(() => {
     console.log(`MapEntities mounted, ready: ${$map.ready}, coordinates: ${$coordinates ? $coordinates.length : 0}`);
-    
-    // Load entities after a small delay to ensure coordinates are loaded
-    setTimeout(() => {
-      loadEntities();
-    }, 1000);
   });
 </script>
 
@@ -332,8 +302,8 @@
     </div>
 
     <div class="entities-list" role="tabpanel" aria-label={`${activeTab} entities`}>
-      {#if allEntities && allEntities.length > 0}
-        {#each getFilteredEntities() as entity (entity.entityId)}
+      {#if filteredEntities.length > 0}
+        {#each filteredEntities as entity (entity.entityId)}
           <button 
             class="entity-item {getEntityColorClass(entity)}" 
             onclick={() => goToEntity(entity)}
@@ -662,12 +632,6 @@
     background: rgba(0, 0, 0, 0.05);
     padding: 0.5em;
     border-radius: 0.3em;
-  }
-  
-  .raw-entities h4 {
-    font-size: 0.9em;
-    margin: 0 0 0.3em 0;
-    color: rgba(0, 0, 0, 0.7);
   }
   
   .raw-section {
