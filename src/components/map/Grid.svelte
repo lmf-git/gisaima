@@ -536,14 +536,7 @@
     role="grid"
     tabindex="0"
     aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
-  >
-    <!-- Add debug display in the corner -->
-    <div class="debug-info" role="status" aria-live="polite">
-      Clicks: {clickCount} | Last: {lastClickTime > 0 ? new Date(lastClickTime).toLocaleTimeString() : 'none'}
-      <br>
-      wasDrag: {wasDrag} | dist: {dist.toFixed(1)}
-    </div>
-    
+  >    
     {#if $ready}
       <div class="grid main-grid" 
         style="--cols: {$map.cols}; --rows: {$map.rows};" 
@@ -1034,20 +1027,5 @@
   
   .tile.epic {
     z-index: 3;
-  }
-
-  /* Add debug info display */
-  .debug-info {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 5px;
-    font-size: 12px;
-    border-radius: 4px;
-    z-index: 100;
-    pointer-events: none;
-    user-select: none;
   }
 </style>

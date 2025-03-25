@@ -9,8 +9,9 @@
   
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
-  // Determine if we're showing a highlighted tile
-  const isHighlighted = $derived($map.highlighted != null);
+  // Determine if we're showing a highlighted tile that's different from the target
+  const isHighlighted = $derived($map.highlighted != null && 
+    ($map.highlighted.x !== $targetStore?.x || $map.highlighted.y !== $targetStore?.y));
   
   // Use either the highlighted tile if present, or targetStore
   const currentTile = $derived(isHighlighted ? $map.highlighted : $targetStore);
@@ -132,7 +133,11 @@
 <div class="details">
   <div class="info" class:highlighted={isHighlighted}>
     <div class="content">
-      <h2>Details {currentTile?.x != null ? `${currentTile.x}, ${currentTile.y}` : ''} {#if isHighlighted}<span class="highlighted-label">(Highlighted)</span>{/if}</h2>
+      <h2>Details {currentTile?.x != null ? `${currentTile.x}, ${currentTile.y}` : ''} 
+        {#if isHighlighted}
+          <span class="highlighted-label">(Highlighted)</span>
+        {/if}
+      </h2>
       <p>Terrain: {formattedName}</p>
       
       {#if structure}
