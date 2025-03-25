@@ -1,14 +1,17 @@
 <script>
   import { onMount } from 'svelte';
   import { TerrainGenerator } from '../lib/map/noise.js';
+  import { goto } from '$app/navigation';
+  import { browser } from '$app/environment';
   
-  // Props with defaults
+  // Props with defaults - add joined prop
   const { 
     worldId = '', 
     seed = 0, 
     tileSize = 1.25, 
     summaryFactor = 50,
-    delayed = false
+    delayed = false,
+    joined = false // New prop to track if world is joined
   } = $props();
   
   // Local state
@@ -19,6 +22,27 @@
   let cols = $state(0);
   let rows = $state(0);
   let isActive = $state(!delayed);
+  
+  // Add state to track hovered tile
+  let hoveredTileX = $state(null);
+  let hoveredTileY = $state(null);
+  
+  // Check if a specific tile is being hovered
+  function isHovered(x, y) {
+    return hoveredTileX === x && hoveredTileY === y;
+  }
+  
+  // Set the currently hovered tile
+  function handleTileHover(x, y) {
+    hoveredTileX = x;
+    hoveredTileY = y;
+  }
+  
+  // Clear the hover state
+  function clearHover() {
+    hoveredTileX = null;
+    hoveredTileY = null;
+  }
   
   // Ensure odd number of columns/rows for proper centering
   const ensureOdd = (num) => num % 2 === 0 ? num + 1 : num;
@@ -140,6 +164,41 @@
     }
   }
   
+  // Function to navigate to map at specific coordinates
+  function navigateToTile(x, y) {
+    if (!browser || !joined || !worldId) return;
+    
+    // Convert the summarized coordinates to actual world coordinates
+    // For example, if summaryFactor is 50, and we click on tile (1, 2),
+    // we want to go to the center of that summarized area
+    const centerOffset = Math.floor(summaryFactor / 2);
+    const worldX = x * summaryFactor + centerOffset;
+    const worldY = y * summaryFactor + centerOffset;
+    
+    // Navigate to the map with the calculated coordinates
+    goto(`/map?world=${worldId}&x=${worldX}&y=${worldY}`);
+  }
+  
+  // Handle click on any tile
+  function handleTileClick(tile, event) {
+    if (!joined) return;
+    
+    // Navigate to this tile's world coordinates
+    navigateToTile(tile.worldX / summaryFactor, tile.worldY / summaryFactor);
+    
+    event.stopPropagation();
+  }
+  
+  // Handle keyboard interaction for all tiles
+  function handleTileKeydown(tile, event) {
+    if (!joined) return;
+    
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      navigateToTile(tile.worldX / summaryFactor, tile.worldY / summaryFactor);
+    }
+  }
+  
   onMount(() => {
     if (cardElement) {
       // Calculate grid dimensions
@@ -199,13 +258,31 @@
       style="--grid-cols: {cols}; --grid-rows: {rows};"
     >
       {#each terrainGrid as tile (tile.x + ',' + tile.y)}
-        <div 
+        <!-- Add role attribute to fix the a11y warning -->
+        <svelte:element
+          this={joined ? "button" : "div"}
           class="terrain-tile" 
           class:center={tile.isCenter}
+          class:joined={joined}
+          class:interactive={joined}
+          class:hovered={isHovered(tile.x, tile.y)}
           style="background-color: {tile.color};"
-          aria-label={tile.biomeName}
-          title={tile.biomeName}
-        ></div>
+          aria-label={joined 
+            ? `View ${tile.biomeName} at coordinates ${tile.worldX},${tile.worldY}` 
+            : tile.biomeName
+          }
+          title={joined 
+            ? `View ${tile.biomeName} at coordinates ${tile.worldX},${tile.worldY}` 
+            : tile.biomeName
+          }
+          onclick={joined ? (e) => handleTileClick(tile, e) : null}
+          onmouseenter={() => handleTileHover(tile.x, tile.y)}
+          onmouseleave={clearHover}
+          onkeydown={joined ? (e) => handleTileKeydown(tile, e) : null}
+          disabled={!joined}
+          type={joined ? "button" : null}
+          role={joined ? "button" : "presentation"}
+        ></svelte:element>
       {/each}
     </div>
   {/if}
@@ -237,22 +314,91 @@
   .terrain-tile {
     width: 100%;
     height: 100%;
+    position: relative;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    appearance: none;
+  }
+
+  /* Disable button styles for interactive tiles */
+  button.terrain-tile {
+    cursor: pointer;
+  }
+
+  /* Only show outline on focus for joined worlds */
+  button.terrain-tile:focus-visible {
+    outline: none;
   }
   
-  /* Remove hover animation effects to improve performance */
+  /* Remove the default center styling */
   .terrain-tile.center {
     position: relative;
     z-index: 2;
   }
   
-  .terrain-tile.center::after {
+  /* Add hover effect with pseudo-element to override the background color */
+  .terrain-tile.hovered::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.6);
+    z-index: 2;
+    pointer-events: none;
+  }
+  
+  /* Only add visual highlight for joined worlds */
+  .terrain-tile.center.joined::after {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    border: 2px solid rgba(255, 255, 255, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.5);
     z-index: 3;
+    opacity: 0.5;
+    transition: opacity 0.2s ease, border-color 0.2s ease;
+  }
+  
+  /* Interactive behaviors for joined worlds */
+  .terrain-tile.interactive {
+    cursor: pointer;
+  }
+  
+  /* Enhance hover effect on interactive tiles */
+  .terrain-tile.interactive.hovered::before {
+    background-color: rgba(255, 255, 255, 0.7);
+    z-index: 2;
+    pointer-events: none;
+  }
+  
+  .terrain-tile.interactive:hover::after {
+    opacity: 1;
+    border-color: rgba(255, 255, 255, 0.9);
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.3);
+    z-index: 4; /* Ensure the border appears above the hover highlight */
+  }
+  
+  button.terrain-tile:focus-visible::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 1;
+    border: 2px solid white;
+    box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.4);
+    z-index: 4;
+  }
+
+  button.terrain-tile[disabled] {
+    cursor: default;
+    pointer-events: none;
   }
 </style>

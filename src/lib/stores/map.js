@@ -2,7 +2,6 @@ import { writable, derived, get } from 'svelte/store';
 import { TerrainGenerator } from '../map/noise.js';
 import { ref, onValue } from "firebase/database";
 import { db } from '../firebase/database.js';
-// Remove imports for game - we'll handle this differently
 
 // Keep a reference to the terrain generator for grid creation
 let terrain;
@@ -21,9 +20,14 @@ export const map = writable({
   cols: 0,
   rows: 0,
   target: { x: 0, y: 0 },
-  // Remove highlighted from map store as we'll manage it separately
   minimap: true,
-  world: 'default', // Use default as initial value, don't rely on game store
+  world: 'default',
+  isDragging: false,
+  dragStartX: 0,
+  dragStartY: 0,
+  dragAccumX: 0,
+  dragAccumY: 0,
+  dragSource: null
 });
 
 // New separate store for highlighted coordinates
@@ -37,13 +41,48 @@ export const entities = writable({
 
 export const ready = derived(map, $map => $map.ready);
 
+// Create a derived store that efficiently tracks target position changes
+export const targetPosition = derived(map, ($map) => {
+  return { 
+    x: $map.target.x, 
+    y: $map.target.y 
+  };
+}, { x: 0, y: 0 });
+
+// Debounce URL updates to prevent performance issues
+let urlUpdateTimeout = null;
+const URL_UPDATE_DEBOUNCE = 300; // ms
+
+// Function to update URL with current coordinates
+function updateUrlWithCoordinates(x, y) {
+  if (typeof window === 'undefined') return;
+  
+  // Cancel any pending updates
+  if (urlUpdateTimeout) {
+    clearTimeout(urlUpdateTimeout);
+  }
+  
+  // Debounce URL updates to prevent performance issues
+  urlUpdateTimeout = setTimeout(() => {
+    try {
+      const url = new URL(window.location);
+      url.searchParams.set('x', Math.round(x).toString());
+      url.searchParams.set('y', Math.round(y).toString());
+      history.replaceState({}, '', url);
+    } catch (err) {
+      console.error('Error updating URL:', err);
+    }
+    urlUpdateTimeout = null;
+  }, URL_UPDATE_DEBOUNCE);
+}
+
 // Update chunks to avoid game store dependency
 export const chunks = derived(
   [map],
   ([$map], set) => {
     const worldId = $map.world || 'default';
     
-    // Simplified check - if map is ready, terrain must exist
+    // Skip if map is not ready
     if (!$map.ready) return set(new Set());
     
     // Calculate visible area chunk bounds
@@ -62,7 +101,7 @@ export const chunks = derived(
     const maxChunkY = Math.floor(maxY / CHUNK_SIZE);
     
     // Update cache size based on visible area
-    if (terrain) { // Add safety check for terrain
+    if (terrain) {
       const visibleCols = $map.cols * (1 + expandedFactor * (EXPANDED_COLS_FACTOR - 1));
       const visibleRows = $map.rows * (1 + expandedFactor * (EXPANDED_ROWS_FACTOR - 1));
       terrain.updateCacheSize(visibleCols, visibleRows, CHUNK_SIZE);
@@ -104,7 +143,7 @@ export const chunks = derived(
         chunkSubscriptions.delete(chunkKey);
         
         // Clear cache entries for this chunk
-        if (terrain) { // Add safety check for terrain
+        if (terrain) {
           const [chunkX, chunkY] = chunkKey.split(',').map(Number);
           terrain.clearChunkFromCache(chunkX, chunkY, CHUNK_SIZE);
         }
@@ -115,113 +154,6 @@ export const chunks = derived(
     return visibleChunks;
   },
   new Set()
-);
-
-export const coordinates = derived(
-  [map, entities, chunks, highlightedCoords], // Add highlightedCoords to dependencies
-  ([$map, $entities, $chunks, $highlightedCoords], set) => { // Add $highlightedCoords parameter
-    // Simplified check - if map is ready, terrain must exist
-    if (!$map.ready) {
-      return set([]);
-    }
-    
-    // Additional validation to catch edge cases
-    if ($map.cols <= 0 || $map.rows <= 0) {
-      console.error('Invalid grid dimensions');
-      return set([]);
-    }
-    
-    const useExpanded = $map.minimap;
-    const gridCols = useExpanded ? Math.floor($map.cols * EXPANDED_COLS_FACTOR) : $map.cols;
-    const gridRows = useExpanded ? Math.floor($map.rows * EXPANDED_ROWS_FACTOR) : $map.rows;
-    
-    const viewportCenterX = Math.floor(gridCols / 2);
-    const viewportCenterY = Math.floor(gridRows / 2);
-    const targetX = $map.target.x;
-    const targetY = $map.target.y;
-
-    const result = [];
-    // Use highlightedCoords instead of map.highlighted
-    const highlightedX = $highlightedCoords?.x;
-    const highlightedY = $highlightedCoords?.y;
-
-    // Precompute main view boundaries for faster checks
-    const mainViewMinX = viewportCenterX - Math.floor($map.cols / 2);
-    const mainViewMaxX = viewportCenterX + Math.floor($map.cols / 2);
-    const mainViewMinY = viewportCenterY - Math.floor($map.rows / 2);
-    const mainViewMaxY = viewportCenterY + Math.floor($map.rows / 2);
-
-    // Build entire grid in one pass
-    for (let y = 0; y < gridRows; y++) {
-      for (let x = 0; x < gridCols; x++) {
-        const globalX = x - viewportCenterX + targetX;
-        const globalY = y - viewportCenterY + targetY;
-        const locationKey = `${globalX},${globalY}`;
-        
-        // Only check isInMainView when using expanded view
-        const isInMainView = !useExpanded || (
-          x >= mainViewMinX && x <= mainViewMaxX && 
-          y >= mainViewMinY && y <= mainViewMaxY
-        );
-        
-        // Get tile properties
-        const chunkKey = getChunkKey(globalX, globalY);
-        const terrainData = terrain.getTerrainData(globalX, globalY);
-        
-        // Add entity information - make sure to access from entities store
-        const structure = $entities.structure[locationKey];
-        const groups = $entities.groups[locationKey] || [];
-        const players = $entities.players[locationKey] || [];
-        
-        result.push({
-          x: globalX,
-          y: globalY,
-          isCenter: x === viewportCenterX && y === viewportCenterY,
-          isInMainView,
-          chunkKey,
-          biome: terrainData.biome,
-          color: terrainData.color,
-          highlighted: highlightedX === globalX && highlightedY === globalY,
-          structure,
-          groups,
-          players,
-          terrain: terrainData
-        });
-      }
-    }
-
-    set(result);
-  },
-  []
-);
-
-// 5. TARGET STORE DEPENDS ON COORDINATES
-export const targetStore = derived(
-  [map, coordinates],
-  ([$map, $coordinates]) => {
-    // Find the center tile in coordinates
-    const targetTile = $coordinates.find(c => c.x === $map.target.x && c.y === $map.target.y);
-    
-    // If found, return complete data; if not, return minimal location data
-    return targetTile || { x: $map.target.x, y: $map.target.y };
-  }
-);
-
-// UPDATED: Use highlightedCoords instead of map.highlighted
-export const highlightedStore = derived(
-  [highlightedCoords, coordinates],
-  ([$highlightedCoords, $coordinates]) => {
-    // If no tile is highlighted, return null
-    if (!$highlightedCoords) return null;
-    
-    // Find the highlighted tile with full data from coordinates
-    const highlightedTile = $coordinates.find(
-      c => c.x === $highlightedCoords.x && c.y === $highlightedCoords.y
-    );
-    
-    // Return the found tile with complete data, or fall back to basic coords
-    return highlightedTile || $highlightedCoords;
-  }
 );
 
 // Helper function to process chunk data
@@ -237,6 +169,8 @@ function processChunkData(data = {}) {
   
   // Skip lastUpdated metadata field
   Object.entries(data).forEach(([tileKey, tileData]) => {
+    if (tileKey === 'lastUpdated') return;
+    
     const [x, y] = tileKey.split(',').map(Number);
     
     // Process structure
@@ -270,7 +204,166 @@ function processChunkData(data = {}) {
   }
 }
 
-// Unified initialization function that handles all setup scenarios
+export const coordinates = derived(
+  [map, entities, chunks, highlightedCoords],
+  ([$map, $entities, $chunks, $highlightedCoords], set) => {
+    // Skip if map not ready
+    if (!$map.ready) {
+      return set([]);
+    }
+    
+    // Additional validation
+    if ($map.cols <= 0 || $map.rows <= 0) {
+      console.error('Invalid grid dimensions');
+      return set([]);
+    }
+    
+    const useExpanded = $map.minimap;
+    const gridCols = useExpanded ? Math.floor($map.cols * EXPANDED_COLS_FACTOR) : $map.cols;
+    const gridRows = useExpanded ? Math.floor($map.rows * EXPANDED_ROWS_FACTOR) : $map.rows;
+    
+    const viewportCenterX = Math.floor(gridCols / 2);
+    const viewportCenterY = Math.floor(gridRows / 2);
+    const targetX = $map.target.x;
+    const targetY = $map.target.y;
+
+    const result = [];
+    const highlightedX = $highlightedCoords?.x;
+    const highlightedY = $highlightedCoords?.y;
+
+    // Precompute main view boundaries
+    const mainViewMinX = viewportCenterX - Math.floor($map.cols / 2);
+    const mainViewMaxX = viewportCenterX + Math.floor($map.cols / 2);
+    const mainViewMinY = viewportCenterY - Math.floor($map.rows / 2);
+    const mainViewMaxY = viewportCenterY + Math.floor($map.rows / 2);
+
+    // Build grid in one pass
+    for (let y = 0; y < gridRows; y++) {
+      for (let x = 0; x < gridCols; x++) {
+        const globalX = x - viewportCenterX + targetX;
+        const globalY = y - viewportCenterY + targetY;
+        const locationKey = `${globalX},${globalY}`;
+        
+        const isInMainView = !useExpanded || (
+          x >= mainViewMinX && x <= mainViewMaxX && 
+          y >= mainViewMinY && y <= mainViewMaxY
+        );
+        
+        const chunkKey = getChunkKey(globalX, globalY);
+        const terrainData = terrain.getTerrainData(globalX, globalY);
+        
+        const structure = $entities.structure[locationKey];
+        const groups = $entities.groups[locationKey] || [];
+        const players = $entities.players[locationKey] || [];
+        
+        result.push({
+          x: globalX,
+          y: globalY,
+          isCenter: x === viewportCenterX && y === viewportCenterY,
+          isInMainView,
+          chunkKey,
+          biome: terrainData.biome,
+          color: terrainData.color,
+          highlighted: highlightedX === globalX && highlightedY === globalY,
+          structure,
+          groups,
+          players,
+          terrain: terrainData
+        });
+      }
+    }
+
+    set(result);
+  },
+  []
+);
+
+// Target store depends on coordinates
+export const targetStore = derived(
+  [map, coordinates],
+  ([$map, $coordinates]) => {
+    // Find the center tile in coordinates
+    const targetTile = $coordinates.find(c => c.x === $map.target.x && c.y === $map.target.y);
+    
+    // If found, return complete data; if not, return minimal location data
+    return targetTile || { x: $map.target.x, y: $map.target.y };
+  }
+);
+
+// Highlighted store depends on coordinates
+export const highlightedStore = derived(
+  [highlightedCoords, coordinates],
+  ([$highlightedCoords, $coordinates]) => {
+    // If no tile is highlighted, return null
+    if (!$highlightedCoords) return null;
+    
+    // Find the highlighted tile with full data from coordinates
+    const highlightedTile = $coordinates.find(
+      c => c.x === $highlightedCoords.x && c.y === $highlightedCoords.y
+    );
+    
+    // Return the found tile with complete data, or fall back to basic coords
+    return highlightedTile || $highlightedCoords;
+  }
+);
+
+// Enhance the moveTarget function with debouncing
+let moveTargetTimeout = null;
+const MOVE_TARGET_DEBOUNCE = 20; // ms - balance between responsiveness and performance
+
+// Unified map movement function with debouncing and validation
+export function moveTarget(newX, newY) {
+  if (newX === undefined || newY === undefined) {
+    console.warn('Invalid coordinates passed to moveTarget:', { newX, newY });
+    return;
+  }
+
+  const x = Math.round(newX);
+  const y = Math.round(newY);
+  
+  // Quick check to avoid unnecessary updates
+  const currentState = get(map);
+  if (currentState.target.x === x && currentState.target.y === y) {
+    return; // No change needed
+  }
+  
+  // Clear any pending timeout
+  if (moveTargetTimeout) {
+    clearTimeout(moveTargetTimeout);
+  }
+  
+  // Debounce rapid updates
+  moveTargetTimeout = setTimeout(() => {
+    map.update(prev => ({
+      ...prev,
+      target: { x, y },
+    }));
+    
+    // Clear highlighted tile when moving
+    highlightedCoords.set(null);
+    
+    // Update URL to reflect the new position
+    updateUrlWithCoordinates(x, y);
+    
+    moveTargetTimeout = null;
+  }, MOVE_TARGET_DEBOUNCE);
+}
+
+// Set highlighted coordinates
+export function setHighlighted(x, y) {
+  if (x !== null && y !== null) {
+    highlightedCoords.set({ x, y });
+  } else {
+    highlightedCoords.set(null);
+  }
+}
+
+// Get chunk key for coordinates
+export function getChunkKey(x, y) {
+  return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
+}
+
+// Unified initialization function
 export function initialize(options = {}) {
   // SSR guard - don't initialize terrain on server
   if (typeof window === 'undefined') {
@@ -279,6 +372,7 @@ export function initialize(options = {}) {
   }
 
   let seed, worldId;
+  let initialX, initialY;
 
   // Handle different input formats
   if (options.gameStore) {
@@ -298,6 +392,8 @@ export function initialize(options = {}) {
       }
       
       seed = gameState.worldInfo[worldId].seed;
+      initialX = options.initialX;
+      initialY = options.initialY;
     } catch (err) {
       console.error('Error extracting data from game store:', err);
       return false;
@@ -306,10 +402,14 @@ export function initialize(options = {}) {
     // Case 2: Direct worldInfo object provided
     worldId = options.worldId || 'default';
     seed = options.worldInfo.seed;
+    initialX = options.initialX;
+    initialY = options.initialY;
   } else {
     // Case 3: Direct seed and world values
     seed = options.seed;
     worldId = options.world || options.worldId || 'default';
+    initialX = options.initialX;
+    initialY = options.initialY;
   }
 
   // Validate we have the required seed
@@ -326,27 +426,50 @@ export function initialize(options = {}) {
   }
 
   try {
-    // Get current map state to calculate initial cache size
+    // Get current map state
     const currentState = get(map);
     const initialCols = currentState.cols || 20;
     const initialRows = currentState.rows || 15;
+
+    // Set initial target position
+    let targetPosition = { x: 0, y: 0 };
+    const hasInitialCoords = initialX !== undefined && initialY !== undefined;
     
-    // Calculate an appropriate initial cache size explicitly
-    const initialCacheSize = Math.ceil(initialCols * initialRows * 1.5);
+    if (hasInitialCoords) {
+      targetPosition.x = Math.round(initialX);
+      targetPosition.y = Math.round(initialY);
+      console.log(`Initializing map with target position: ${targetPosition.x},${targetPosition.y}`);
+    } else {
+      // Use existing target or default to 0,0
+      targetPosition = currentState.target.x !== 0 || currentState.target.y !== 0 
+        ? currentState.target 
+        : { x: 0, y: 0 };
+    }
     
-    // Initialize the terrain generator with explicit seed and cache size
+    // Calculate optimal cache size
+    const visibleTiles = initialCols * initialRows;
+    const cacheMultiplier = Math.max(1.2, Math.min(1.5, window.innerWidth / 1000));
+    const initialCacheSize = Math.ceil(visibleTiles * cacheMultiplier);
+    
+    // Initialize the terrain generator
     terrain = new TerrainGenerator(seedNumber, initialCacheSize);
     
-    // Update the map store with ready state AFTER terrain is initialized
+    // Update the map store
     map.update(state => {
       return {
         ...state,
         ready: true,
         world: worldId,
         cols: initialCols,
-        rows: initialRows
+        rows: initialRows,
+        target: targetPosition
       };
     });
+    
+    // Update URL if initial coordinates were provided
+    if (hasInitialCoords) {
+      updateUrlWithCoordinates(targetPosition.x, targetPosition.y);
+    }
     
     return true;
   } catch (err) {
@@ -355,7 +478,7 @@ export function initialize(options = {}) {
   }
 }
 
-// Keep original functions for backward compatibility
+// Backward compatibility functions
 export function setup(options = {}) {
   return initialize(options);
 }
@@ -368,13 +491,12 @@ export function setupFromGameStore(gameStore) {
   return initialize({ gameStore });
 }
 
-// Get the current world ID - fixed to avoid circular references
+// Get current world ID
 export function getCurrentWorld() {
-  // Don't access game store here to avoid circular dependency
   return get(map).world || 'default';
 }
 
-// Switch to a different world
+// Switch to different world
 export function switchWorld(worldId) {
   const currentWorldId = get(map).world;
   
@@ -392,45 +514,26 @@ export function switchWorld(worldId) {
   }
 }
 
-// Unified map movement function
-export function moveTarget(newX, newY) {
-  map.update(prev => {
-    const x = newX !== undefined ? Math.round(newX) : prev.target.x;
-    const y = newY !== undefined ? Math.round(newY) : prev.target.y;
-
-    return {
-      ...prev,
-      target: { x, y },
-    };
-  });
-  
-  // Clear highlighted tile when moving
-  highlightedCoords.set(null);
-};
-
-// UPDATED: Use highlightedCoords store directly
-export function setHighlighted(x, y) {
-  if (x !== null && y !== null) {
-    highlightedCoords.set({ x, y });
-  } else {
-    highlightedCoords.set(null);
-  }
-};
-
-// Simplified chunk key utility
-export function getChunkKey(x, y) {
-  return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
-};
-
-// Add a cleanup function that resets the map store and clears caches
+// Cleanup resources
 export function cleanup() {
-  // Clear terrain cache if terrain generator exists
+  // Clear any pending timeouts
+  if (moveTargetTimeout) {
+    clearTimeout(moveTargetTimeout);
+    moveTargetTimeout = null;
+  }
+  
+  if (urlUpdateTimeout) {
+    clearTimeout(urlUpdateTimeout);
+    urlUpdateTimeout = null;
+  }
+
+  // Clear terrain cache
   if (terrain) {
     terrain.clearCache();
-    terrain = null; // Explicitly set terrain to null when cleaning up
+    terrain = null;
   }
   
-  // Clear all chunk subscriptions
+  // Clear all subscriptions
   for (const [_, unsubscribe] of chunkSubscriptions.entries()) {
     if (typeof unsubscribe === 'function') {
       unsubscribe();
@@ -438,20 +541,24 @@ export function cleanup() {
   }
   chunkSubscriptions.clear();
   
-  // Reset the map store to initial state - this must happen AFTER nulling terrain
+  // Reset stores
   map.set({
-    ready: false, // Reset ready state to false when terrain is cleaned up
+    ready: false,
     cols: 0,
     rows: 0,
     target: { x: 0, y: 0 },
     minimap: true,
     world: null,
+    isDragging: false,
+    dragStartX: 0,
+    dragStartY: 0,
+    dragAccumX: 0,
+    dragAccumY: 0,
+    dragSource: null
   });
   
-  // Reset highlighted coordinates store
   highlightedCoords.set(null);
   
-  // Reset entities store
   entities.set({
     structure: {},
     groups: {},
@@ -459,9 +566,7 @@ export function cleanup() {
   });
 }
 
-// Add this function or modify the existing initialization function
-
-// Make sure the map correctly initializes when a world is loaded without dynamic imports
+// Initialize map for world
 export function initializeMapForWorld(worldId, worldData = null) {
   if (!worldId) return;
   
@@ -470,7 +575,7 @@ export function initializeMapForWorld(worldId, worldData = null) {
   // Get current map state
   const currentMapState = get(map);
   
-  // If the map is already set up for this world, don't reinitialize
+  // Don't reinitialize if already set up
   if (currentMapState.ready && currentMapState.world === worldId) {
     console.log(`Map already initialized for world ${worldId}`);
     return;
@@ -481,7 +586,7 @@ export function initializeMapForWorld(worldId, worldData = null) {
     cleanup();
   }
   
-  // If we have worldData with a seed, use it to initialize
+  // Initialize with world data if available
   if (worldData && worldData.seed !== undefined) {
     console.log(`Initializing map with provided worldData, seed: ${worldData.seed}`);
     setup({
@@ -491,8 +596,5 @@ export function initializeMapForWorld(worldId, worldData = null) {
     return;
   }
   
-  // We'll rely on the external initialization via setupFromGameStore or setupFromWorldInfo
-  // rather than importing game directly
   console.log(`Cannot initialize map for world ${worldId} - no seed data available`);
-  // We'll keep the map not ready until proper data is loaded
 }

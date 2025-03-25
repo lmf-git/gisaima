@@ -1,6 +1,7 @@
 <script>
   import { onMount, onDestroy } from "svelte";
   import { derived } from "svelte/store";
+  import { browser } from '$app/environment';
   import { 
     map, 
     ready,
@@ -291,7 +292,6 @@
     hoverTimeout = setTimeout(() => {
       // Compare with highlightedStore instead of map.highlighted
       if (!$highlightedStore || $highlightedStore.x !== cell.x || $highlightedStore.y !== cell.y) {
-        console.log('Highlighting tile:', { x: cell.x, y: cell.y });
         setHighlighted(cell.x, cell.y);
       }
       hoverTimeout = null;
@@ -305,30 +305,18 @@
     }
   });
   
-  // Modify handleGridClick function to handle clicks on the grid or its children
+  // Simplify handleGridClick function to avoid redundant URL updates
   function handleGridClick(event) {
     // Increment click counter for debugging
     clickCount++;
     lastClickTime = Date.now();
     
-    console.log('Grid click detected:', { 
-      clickCount, 
-      wasDrag, 
-      ready: $ready,
-      event: {
-        target: event.target.className,
-      }
-    });
-    
-    if (wasDrag) {
-      console.log('Click ignored: wasDrag is true');
+    if (wasDrag || !$ready) {
+      console.log('Click ignored: wasDrag or map not ready');
       return;
     }
     
-    if (!$ready) {
-      console.log('Click ignored: map not ready');
-      return;
-    }
+    let tileX, tileY;
     
     // First try to find if we clicked directly on a tile
     let tileElement = event.target.closest('.tile');
@@ -364,11 +352,9 @@
       const centerCol = Math.floor($map.cols / 2);
       const centerRow = Math.floor($map.rows / 2);
       
-      const clickedX = $map.target.x - centerCol + col;
-      const clickedY = $map.target.y - centerRow + row;
+      tileX = $map.target.x - centerCol + col;
+      tileY = $map.target.y - centerRow + row;
       
-      console.log('Moving to calculated tile:', { x: clickedX, y: clickedY });
-      moveTarget(clickedX, clickedY);
     } 
     else {
       // Handle direct tile click using aria-label
@@ -380,15 +366,20 @@
         return;
       }
       
-      const tileX = parseInt(coordsMatch[1], 10);
-      const tileY = parseInt(coordsMatch[2], 10);
-      
-      console.log('Moving to clicked tile:', { x: tileX, y: tileY });
-      moveTarget(tileX, tileY);
+      tileX = parseInt(coordsMatch[1], 10);
+      tileY = parseInt(coordsMatch[2], 10);
     }
     
-    // Clear highlighted tile after moving
-    setHighlighted(null, null);
+    // Only move if we found valid coordinates
+    if (tileX !== undefined && tileY !== undefined) {
+      console.log('Moving to clicked tile:', { x: tileX, y: tileY });
+      
+      // moveTarget will now handle URL updates internally
+      moveTarget(tileX, tileY);
+      
+      // Clear highlighted tile after moving
+      setHighlighted(null, null);
+    }
     
     event.preventDefault();
   }
@@ -717,11 +708,6 @@
   /* Moving state - UPDATED to target pseudo-element */
   .map.moving .tile::after {
     content: none; /* Remove the highlight effect when moving */
-  }
-
-  /* Remove the old highlighted style that used box-shadow directly */
-  .map.moving .tile.highlighted {
-    /* No box-shadow here anymore */
   }
 
   /* Moving state */

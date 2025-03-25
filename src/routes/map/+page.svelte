@@ -16,7 +16,8 @@
         map, 
         ready,
         targetStore,
-        initialize,   // Add the new unified function
+        targetPosition,
+        initialize,
         setup,
         moveTarget,
         setupFromWorldInfo,
@@ -34,11 +35,14 @@
     import MapEntities from '../../components/map/MapEntities.svelte';
     import Close from '../../components/icons/Close.svelte';
 
-    
     // Use $state for local component state
     let detailed = $state(false);
     let loading = $state(true);
     let error = $state(null);
+    
+    // URL coordinates handling
+    let urlCoordinates = $state(null);
+    let urlProcessingComplete = $state(false);
     
     // Flag to track initialization attempts
     let initAttempted = $state(false);
@@ -54,30 +58,85 @@
         detailed = show;
     }
     
+    // Function to extract coordinates from URL parameters
+    function parseUrlCoordinates() {
+        if (!browser || !$page.url) return null;
+        
+        const x = $page.url.searchParams.get('x');
+        const y = $page.url.searchParams.get('y');
+        
+        if (x !== null && y !== null) {
+            const parsedX = parseInt(x, 10);
+            const parsedY = parseInt(y, 10);
+            
+            if (!isNaN(parsedX) && !isNaN(parsedY)) {
+                return { x: parsedX, y: parsedY };
+            }
+        }
+        
+        return null;
+    }
+    
+    // Monitor URL for coordinate changes
+    $effect(() => {
+        if (browser && $page.url) {
+            const newCoords = parseUrlCoordinates();
+            
+            if (newCoords) {
+                console.log(`Found URL coordinates: ${newCoords.x},${newCoords.y}`);
+                urlCoordinates = newCoords;
+                urlProcessingComplete = false;
+            } else if (urlCoordinates) {
+                // Clear coordinates if URL no longer has them
+                urlCoordinates = null;
+            }
+        }
+    });
+    
+    // Apply URL coordinates when map is ready
+    $effect(() => {
+        if (!$ready || urlProcessingComplete) return;
+        
+        if (urlCoordinates) {
+            console.log(`Applying URL coordinates: ${urlCoordinates.x},${urlCoordinates.y}`);
+            moveTarget(urlCoordinates.x, urlCoordinates.y);
+            urlProcessingComplete = true;
+        } else if ($game.playerWorldData?.lastLocation && !$needsSpawn) {
+            // Fall back to player location
+            const location = $game.playerWorldData.lastLocation;
+            moveTarget(location.x, location.y);
+            urlProcessingComplete = true;
+        }
+    });
+    
+    // Reset processing flag when URL coordinates change
+    $effect(() => {
+        if (browser && $page.url) {
+            const newCoords = parseUrlCoordinates();
+            if (newCoords && urlProcessingComplete) {
+                const mapTarget = $targetPosition;
+                if (newCoords.x !== mapTarget.x || newCoords.y !== mapTarget.y) {
+                    console.log(`URL coordinates changed manually: ${newCoords.x},${newCoords.y}`);
+                    urlProcessingComplete = false;
+                }
+            }
+        }
+    });
+
     // Handle spawn completion
     function handleSpawnComplete(spawnLocation) {
-        // Move to the spawn location
         if (spawnLocation) {
             moveTarget(spawnLocation.x, spawnLocation.y);
         }
     }
     
-    // Effect to handle player location data from game store
-    $effect(() => {
-        // If we have player location data in the game store, use it to position the map
-        if ($game.playerWorldData?.lastLocation && !$needsSpawn) {
-            const location = $game.playerWorldData.lastLocation;
-            moveTarget(location.x, location.y);
-        }
-    });
-    
-    // Simplified initialize map function that uses game store
+    // Initialize map function with improved URL coordinate handling
     async function initializeMap(worldId) {
         try {
             loading = true;
             error = null;
             
-            // First, wait for auth to be ready
+            // Wait for auth to be ready
             if (!$isAuthReady) {
                 await new Promise(resolve => {
                     const unsubscribe = isAuthReady.subscribe(ready => {
@@ -89,13 +148,10 @@
                 });
             }
             
-            // Make sure the game store has the current world set
+            // Set current world and get world info
             await setCurrentWorld(worldId);
-            
-            // Force a fresh world info fetch to ensure we have the seed
             const worldInfo = await getWorldInfo(worldId, true);
             
-            // Check that we have the world data with a seed
             if (!worldInfo) {
                 throw new Error(`World info not found for ${worldId}`);
             }
@@ -103,12 +159,27 @@
                 throw new Error(`World ${worldId} has no seed defined`);
             }
             
-            // Use new unified initialize function
-            if (!initialize({ worldId, worldInfo })) {
+            // Get URL coordinates for initialization
+            const startingCoords = urlCoordinates;
+            const shouldApplyCoords = !!startingCoords && !urlProcessingComplete;
+            
+            // Initialize with coordinates if available
+            if (!initialize({ 
+                worldId, 
+                worldInfo,
+                initialX: shouldApplyCoords ? startingCoords.x : undefined,
+                initialY: shouldApplyCoords ? startingCoords.y : undefined
+            })) {
                 throw new Error('Failed to initialize map with world data');
             }
             
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             loading = false;
+            
+            if (shouldApplyCoords) {
+                urlProcessingComplete = true;
+            }
             
         } catch (err) {
             error = err.message || 'Failed to load world';
@@ -117,20 +188,27 @@
         }
     }
     
-    // Use the reactive statement to initialize map when world data is ready
+    // Auto-initialize when world data is ready
     $effect(() => {
-        // Skip if we've already tried to initialize or if there's an error
         if (initAttempted || error || !$isAuthReady) return;
         
-        // Check if world data is fully loaded from Firebase with valid seed
         if (!$game.worldLoading && $game.currentWorld && $game.worldInfo[$game.currentWorld]?.seed !== undefined) {
             initAttempted = true;
             
             try {
-                // Use the new unified initialize function
-                if (initialize({ gameStore: game })) {
+                const startingCoords = urlCoordinates;
+                
+                if (initialize({ 
+                    gameStore: game,
+                    initialX: startingCoords?.x,
+                    initialY: startingCoords?.y
+                })) {
                     loading = false;
                     error = null;
+                    
+                    if (startingCoords) {
+                        urlProcessingComplete = true;
+                    }
                 } else {
                     error = 'Failed to initialize map with world data';
                     loading = false;
@@ -142,9 +220,8 @@
         }
     });
     
-    // Use $effect to handle auth state changes
+    // Handle auth state changes
     $effect(() => {
-      // Only redirect if user state is determined and user is not authenticated
       if (browser && !$userLoading && $user === null) {
         const worldId = $page.url.searchParams.get('world') || $game.currentWorld;
         const redirectPath = worldId ? `/map?world=${worldId}` : '/map';
@@ -152,97 +229,81 @@
       }
     });
     
-    // Add a safe way to get world ID with SSR guard
+    // Get world ID from URL or store
     let currentWorldId = $state(null);
     
-    // Use effect to detect world ID from URL or game store safely
     $effect(() => {
-        if (!browser) return; // Don't run during SSR
+        if (!browser) return;
         
-        // Try to get world ID from URL first
         const worldFromUrl = $page.url.searchParams.get('world');
-        
-        // Fall back to game store if available
         const worldFromStore = $game?.currentWorld;
         
-        // Set the world ID safely with null checks
         currentWorldId = worldFromUrl || worldFromStore || null;
-        
-        console.log('Map page world ID:', currentWorldId);
-        
-        // Other initialization logic that depends on world ID
-        // ...
     });
     
+    // Component lifecycle
     onMount(() => {
-        if (!browser) return; // Safety check
+        if (!browser) return;
         
-        if (browser) document.body.classList.add('map-page-active');
+        document.body.classList.add('map-page-active');
         
-        // Initialize map with current world data if available
+        // Try to initialize from existing world info
         if (!$ready && currentWorldId && $game.worldInfo[currentWorldId]) {
-            console.log('Initializing map from onMount with world info from game store');
             initialize({ 
                 worldId: currentWorldId, 
-                worldInfo: $game.worldInfo[currentWorldId] 
+                worldInfo: $game.worldInfo[currentWorldId],
+                initialX: urlCoordinates?.x,
+                initialY: urlCoordinates?.y
             });
+            
+            if (urlCoordinates) {
+                urlProcessingComplete = true;
+            }
         }
         
-        // Get world ID from URL or current world
+        // Get world ID and initialize map
         const worldId = $page.url.searchParams.get('world') || $game.currentWorld;
         
-        // Auth check is now handled in the effect above
-        
         if (!worldId) {
-            // No world ID, redirect to worlds page
             goto('/worlds');
             return;
         }
 
-        // Initialize the map with the worldId - this will properly coordinate with auth
-        initializeMap(worldId)
-            .catch(err => {
-                console.error(`Failed to initialize map:`, err); 
-                error = err.message || `Failed to load world`;
-                loading = false;
-            });
+        initializeMap(worldId).catch(err => {
+            console.error(`Failed to initialize map:`, err); 
+            error = err.message || `Failed to load world`;
+            loading = false;
+        });
     });
     
     onDestroy(() => {
         if (browser) {
             document.body.classList.remove('map-page-active');
-            
-            // Clean up map resources to prevent memory leaks
             cleanup();
         }
     });
 
-    // Add state for component visibility
+    // UI component visibility state
     let showMinimap = $state(true);
     let showEntities = $state(true);
     let minimapClosing = $state(false);
     let entitiesClosing = $state(false);
     
-    // Constants
     const ANIMATION_DURATION = 800;
     
-    // Initialize visibility from localStorage
+    // Initialize UI visibility from localStorage
     $effect(() => {
         if (browser) {
-            // Initialize minimap visibility
             const storedMinimapVisibility = localStorage.getItem('minimap');
-            // Default to true for large screens, false for small
             const defaultMinimapVisibility = window.innerWidth >= 768;
+            
             showMinimap = storedMinimapVisibility === 'false' ? false : 
-                           storedMinimapVisibility === 'true' ? true : 
-                           defaultMinimapVisibility;
-                
-            // Initialize entities visibility
+                          storedMinimapVisibility === 'true' ? true : 
+                          defaultMinimapVisibility;
+            
             const storedEntitiesVisibility = localStorage.getItem('mapEntities');
-            // Default to showing entities
             showEntities = storedEntitiesVisibility !== 'false';
             
-            // Also set minimap visibility in the map store
             map.update(state => ({
                 ...state,
                 minimap: showMinimap
@@ -250,22 +311,19 @@
         }
     });
     
-    // Function to toggle minimap with animation
+    // Toggle visibility functions
     function toggleMinimap() {
         if (showMinimap) {
-            // Handle closing with animation
             minimapClosing = true;
             setTimeout(() => {
                 showMinimap = false;
                 minimapClosing = false;
-                // Update map store
                 map.update(state => ({ ...state, minimap: false }));
                 if (browser) {
                     localStorage.setItem('minimap', 'false');
                 }
             }, ANIMATION_DURATION);
         } else {
-            // Show immediately, but first close entities if open
             if (showEntities) {
                 entitiesClosing = true;
                 setTimeout(() => {
@@ -278,7 +336,6 @@
             }
             
             showMinimap = true;
-            // Update map store
             map.update(state => ({ ...state, minimap: true }));
             if (browser) {
                 localStorage.setItem('minimap', 'true');
@@ -286,10 +343,8 @@
         }
     }
     
-    // Function to toggle entities with animation
     function toggleEntities() {
         if (showEntities) {
-            // Handle closing with animation
             entitiesClosing = true;
             setTimeout(() => {
                 showEntities = false;
@@ -299,13 +354,11 @@
                 }
             }, ANIMATION_DURATION);
         } else {
-            // Show immediately, but first close minimap if open
             if (showMinimap) {
                 minimapClosing = true;
                 setTimeout(() => {
                     showMinimap = false;
                     minimapClosing = false;
-                    // Update map store
                     map.update(state => ({ ...state, minimap: false }));
                     if (browser) {
                         localStorage.setItem('minimap', 'false');
@@ -342,10 +395,8 @@
             <button onclick={() => goto('/worlds')}>Go to Worlds</button>
         </div>
     {:else}
-        <!-- Use prop binding with runes syntax -->
         <Grid {detailed} />
         
-        <!-- Add toggle controls at the top -->
         <div class="map-controls">
             <button 
                 class="control-button entity-button" 
@@ -370,7 +421,6 @@
             </button>
         </div>
         
-        <!-- Conditionally render components based on state -->
         {#if showMinimap || minimapClosing}
             <Minimap closing={minimapClosing} />
         {/if}
@@ -398,10 +448,8 @@
             <Axes />
         {/if}
 
-        <!-- Remove detailed prop from Tutorial -->
         <Tutorial />
         
-        <!-- Show spawn menu when needed based on the derived store -->
         {#if $needsSpawn}
             <SpawnMenu onSpawn={handleSpawnComplete} />
         {/if}

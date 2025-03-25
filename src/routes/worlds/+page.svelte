@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import { user, loading as userLoading } from '../../lib/stores/user.js';
   import { game, joinWorld, setCurrentWorld, initGameStore } from '../../lib/stores/game.js';
   import { ref, onValue } from "firebase/database";
@@ -196,12 +197,30 @@
     }
   });
 
+  // Add these functions to handle URL parameters for coordinates
+  function getCoordinateParams() {
+    if (!browser) return '';
+    const url = $page?.url;
+    if (!url) return '';
+    
+    const x = url.searchParams.get('x');
+    const y = url.searchParams.get('y');
+    
+    if (x !== null && y !== null) {
+      return `&x=${x}&y=${y}`;
+    }
+    return '';
+  }
+
   function selectWorld(world) {
+    // Get any coordinate parameters that should be passed through
+    const coordParams = getCoordinateParams();
+    
     // If already joined, just go to the world
     if ($game.joinedWorlds.includes(world.id)) {
       // Use setCurrentWorld to ensure it's saved to localStorage
       setCurrentWorld(world.id, world);
-      goto(`/map?world=${world.id}`);
+      goto(`/map?world=${world.id}${coordParams}`);
       return;
     }
     
@@ -224,11 +243,14 @@
       return;
     }
     
+    // Get coordinate parameters
+    const coordParams = getCoordinateParams();
+    
     try {
       // Join the world with race information (lowercase ID)
       await joinWorld(selectedWorld.id, $user.uid, race.id.toLowerCase());
       // joinWorld already saves to localStorage, so we don't need to call setCurrentWorld
-      goto(`/map?world=${selectedWorld.id}`);
+      goto(`/map?world=${selectedWorld.id}${coordParams}`);
     } catch (error) {
       console.error('Failed to join world:', error);
       closeConfirmation();
@@ -261,6 +283,7 @@
               seed={world.seed}
               tileSize={2}
               delayed={!loadedWorldCards.includes(world.id)}
+              joined={$game.joinedWorlds.includes(world.id)}
             />
             {#if !loadedWorldCards.includes(world.id)}
               <div class="card-loading-overlay">
