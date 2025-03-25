@@ -498,7 +498,16 @@
   
   // Add debug effect to track highlighted tile changes
   $effect(() => {
-    console.log('Highlighted tile changed to:', $map.highlighted);
+    // Only log when there's actually a highlighted tile (not null)
+    // This prevents the console spam during initialization
+    if ($map.highlighted) {
+      console.log('Highlighted tile changed to:', { 
+        x: $map.highlighted.x, 
+        y: $map.highlighted.y,
+        biome: $map.highlighted.biome?.name,
+        structure: $map.highlighted.structure?.type
+      });
+    }
   });
 </script>
 

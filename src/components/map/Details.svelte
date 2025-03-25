@@ -1,45 +1,62 @@
 <script>
-  import { map, coordinates, targetStore } from "../../lib/stores/map";
+  import { map, targetStore, entities } from "../../lib/stores/map";
   import Close from '../../components/icons/Close.svelte';
   import { user } from "../../lib/stores/user";
+  import { onMount } from "svelte";
   
   const { x = 0, y = 0, terrain, onClose } = $props()
   
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
-  // Get display tile - either highlighted or target
-  const displayTile = $derived(() => {
-    // First check if there's a highlighted tile
-    if ($map.highlighted) {
-      const highlighted = $coordinates.find(
-        c => c.x === $map.highlighted.x && c.y === $map.highlighted.y
-      );
-      if (highlighted) return highlighted;
+  // Determine if we're showing a highlighted tile
+  const isHighlighted = $derived($map.highlighted != null);
+  
+  // Use either the highlighted tile if present, or targetStore
+  const currentTile = $derived(isHighlighted ? $map.highlighted : $targetStore);
+  
+  // Track coords for entity lookup
+  let currentX = $state(currentTile?.x || x);
+  let currentY = $state(currentTile?.y || y);
+  
+  // Entity data with fallbacks from entities store
+  let structure = $state(null);
+  let players = $state([]);
+  let groups = $state([]);
+  
+  // Update entity data when current tile changes
+  $effect(() => {
+    // Update coordinates
+    currentX = currentTile?.x || x;
+    currentY = currentTile?.y || y;
+    
+    // First try to get entities directly from the current tile
+    structure = currentTile?.structure || null;
+    players = currentTile?.players || [];
+    groups = currentTile?.groups || [];
+    
+    // If no direct entities on the tile, try to get from the entities store
+    if (!structure && !players.length && !groups.length) {
+      const locationKey = `${currentX},${currentY}`;
+      structure = $entities.structure[locationKey] || null;
+      players = $entities.players[locationKey] || [];
+      groups = $entities.groups[locationKey] || [];
     }
     
-    // Otherwise fall back to target tile
-    return $targetStore;
+    console.log('Entity data refreshed:', {
+      coords: `${currentX},${currentY}`,
+      source: isHighlighted ? 'highlighted' : 'target',
+      hasDirectStructure: !!currentTile?.structure,
+      hasDirectPlayers: currentTile?.players?.length > 0,
+      hasDirectGroups: currentTile?.groups?.length > 0,
+      finalStructure: !!structure,
+      finalPlayers: players.length,
+      finalGroups: groups.length
+    });
   });
   
-  // Use either passed terrain or get from the display tile
+  // Use either passed terrain or get from the current tile
   const formattedName = $derived(
-    _fmt(terrain || displayTile.biome?.name) || "Unknown"
-  );
-  
-  // Access entity data from the display tile
-  const structure = $derived(displayTile.structure);
-  const players = $derived(displayTile.players || []);
-  const groups = $derived(displayTile.groups || []);
-  
-  // Get current x,y coordinates from the display tile
-  const currentX = $derived(displayTile.x);
-  const currentY = $derived(displayTile.y);
-  
-  // Track if we're showing a highlighted tile (vs target)
-  const isHighlighted = $derived(
-    $map.highlighted && 
-    displayTile.x === $map.highlighted.x && 
-    displayTile.y === $map.highlighted.y
+    _fmt(terrain || currentTile?.biome?.name) || "Unknown"
   );
   
   // Format structure properties for display
@@ -92,6 +109,24 @@
   function isCurrentUser(player) {
     return player.id === $user?.uid;
   }
+
+  // Force a refresh when component mounts
+  onMount(() => {
+    // Small delay to ensure stores are initialized
+    setTimeout(() => {
+      const locationKey = `${currentX},${currentY}`;
+      // Double-check entities store for current location
+      if (!structure) {
+        structure = $entities.structure[locationKey] || null;
+      }
+      if (!players.length) {
+        players = $entities.players[locationKey] || [];
+      }
+      if (!groups.length) {
+        groups = $entities.groups[locationKey] || [];
+      }
+    }, 100);
+  });
 </script>
 
 <svelte:window onkeydown={escape} />
@@ -121,7 +156,7 @@
         </div>
       {/if}
       
-      {#if players.length > 0}
+      {#if players?.length > 0}
         <div class="section">
           <h3>Players ({players.length})</h3>
           <ul class="player-list">
@@ -139,7 +174,7 @@
         </div>
       {/if}
       
-      {#if groups.length > 0}
+      {#if groups?.length > 0}
         <div class="section">
           <h3>Unit Groups ({groups.length})</h3>
           <ul>
@@ -371,5 +406,21 @@
     border-radius: 0.3em;
     vertical-align: middle;
     margin-left: 0.4em;
+  }
+
+  /* Add styles for debug section */
+  .debug-section {
+    font-size: 0.8em;
+    border-top: 1px dashed rgba(0, 0, 0, 0.2);
+  }
+  
+  pre {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    padding: 0.5em;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: monospace;
   }
 </style>
