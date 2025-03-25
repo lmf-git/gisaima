@@ -1,6 +1,6 @@
 import { writable, derived, get as getStore } from 'svelte/store';
 import { browser } from '$app/environment';
-import { ref, onValue, get as dbGet, set, runTransaction } from "firebase/database";
+import { ref, onValue, get as dbGet, set } from "firebase/database";
 import { db } from '../firebase/database.js';
 import { userStore } from './user.js'; 
 
