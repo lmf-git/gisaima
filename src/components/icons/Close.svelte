@@ -8,6 +8,7 @@
   width={size} 
   height={size} 
   fill="none" 
+  stroke="currentColor"
   stroke-width="2"
   stroke-linecap="round"
   stroke-linejoin="round"
@@ -26,5 +27,10 @@
   
   .close-icon:hover {
     transform: scale(1.1);
+  }
+  
+  /* Add specific styling for the dark variant */
+  :global(.close-icon-dark) {
+    stroke: rgba(0, 0, 0, 0.8);
   }
 </style>

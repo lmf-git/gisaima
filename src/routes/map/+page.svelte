@@ -31,6 +31,8 @@
     import Legend from '../../components/map/Legend.svelte';
     import Details from '../../components/map/Details.svelte';
     import SpawnMenu from '../../components/map/SpawnMenu.svelte';
+    import MapEntities from '../../components/map/MapEntities.svelte';
+    import Close from '../../components/icons/Close.svelte';
 
     
     // Use $state for local component state
@@ -214,6 +216,85 @@
             cleanup();
         }
     });
+
+    // Add state for component visibility
+    let showMinimap = $state(true);
+    let showEntities = $state(true);
+    let minimapClosing = $state(false);
+    let entitiesClosing = $state(false);
+    
+    // Constants
+    const ANIMATION_DURATION = 800;
+    
+    // Initialize visibility from localStorage
+    $effect(() => {
+        if (browser) {
+            // Initialize minimap visibility
+            const storedMinimapVisibility = localStorage.getItem('minimap');
+            // Default to true for large screens, false for small
+            const defaultMinimapVisibility = window.innerWidth >= 768;
+            showMinimap = storedMinimapVisibility === 'false' ? false : 
+                           storedMinimapVisibility === 'true' ? true : 
+                           defaultMinimapVisibility;
+                
+            // Initialize entities visibility
+            const storedEntitiesVisibility = localStorage.getItem('mapEntities');
+            // Default to showing entities
+            showEntities = storedEntitiesVisibility !== 'false';
+            
+            // Also set minimap visibility in the map store
+            map.update(state => ({
+                ...state,
+                minimap: showMinimap
+            }));
+        }
+    });
+    
+    // Function to toggle minimap with animation
+    function toggleMinimap() {
+        if (showMinimap) {
+            // Handle closing with animation
+            minimapClosing = true;
+            setTimeout(() => {
+                showMinimap = false;
+                minimapClosing = false;
+                // Update map store
+                map.update(state => ({ ...state, minimap: false }));
+                if (browser) {
+                    localStorage.setItem('minimap', 'false');
+                }
+            }, ANIMATION_DURATION);
+        } else {
+            // Show immediately
+            showMinimap = true;
+            // Update map store
+            map.update(state => ({ ...state, minimap: true }));
+            if (browser) {
+                localStorage.setItem('minimap', 'true');
+            }
+        }
+    }
+    
+    // Function to toggle entities with animation
+    function toggleEntities() {
+        if (showEntities) {
+            // Handle closing with animation
+            entitiesClosing = true;
+            setTimeout(() => {
+                showEntities = false;
+                entitiesClosing = false;
+                if (browser) {
+                    localStorage.setItem('mapEntities', 'false');
+                }
+            }, ANIMATION_DURATION);
+        } else {
+            // Show immediately
+            showEntities = true;
+            if (browser) {
+                localStorage.setItem('mapEntities', 'true');
+            }
+        }
+    }
 </script>
 
 <div class="map" class:dragging={isDragging}>
@@ -239,7 +320,40 @@
     {:else}
         <!-- Use prop binding with runes syntax -->
         <Grid {detailed} />
-        <Minimap />
+        
+        <!-- Add toggle controls at the top -->
+        <div class="map-controls">
+            <button 
+                class="control-button entity-button" 
+                onclick={toggleEntities}
+                aria-label={showEntities ? "Hide entities" : "Show entities"}>
+                {#if showEntities || entitiesClosing}
+                    <Close size="1.2em" extraClass="close-icon-dark" />
+                {:else}
+                    <span class="button-text">E</span>
+                {/if}
+            </button>
+            
+            <button 
+                class="control-button minimap-button" 
+                onclick={toggleMinimap}
+                aria-label={showMinimap ? "Hide minimap" : "Show minimap"}>
+                {#if showMinimap || minimapClosing}
+                    <Close size="1.2em" extraClass="close-icon-dark" />
+                {:else}
+                    <span class="button-text">M</span>
+                {/if}
+            </button>
+        </div>
+        
+        <!-- Conditionally render components based on state -->
+        {#if showMinimap || minimapClosing}
+            <Minimap closing={minimapClosing} />
+        {/if}
+        
+        {#if showEntities || entitiesClosing}
+            <MapEntities closing={entitiesClosing} />
+        {/if}
 
         {#if detailed}
             <Details 
@@ -331,5 +445,63 @@
         border: none;
         border-radius: 0.25em;
         cursor: pointer;
+    }
+
+    .map-controls {
+        position: absolute;
+        top: 0.5em;
+        right: 0.5em;
+        display: flex;
+        gap: 0.5em;
+        z-index: 999;
+    }
+    
+    .control-button {
+        width: 2em;
+        height: 2em;
+        background-color: rgba(255, 255, 255, 0.85);
+        border: 0.05em solid rgba(255, 255, 255, 0.2);
+        border-radius: 0.3em;
+        color: rgba(0, 0, 0, 0.8);
+        padding: 0.3em;
+        font-size: 1em;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+        transition: all 0.2s ease;
+        backdrop-filter: blur(0.5em);
+        -webkit-backdrop-filter: blur(0.5em);
+        opacity: 0;
+        transform: translateY(-1em);
+        animation: fadeInButton 0.7s ease-out 0.5s forwards;
+    }
+    
+    .control-button:hover {
+        background-color: rgba(255, 255, 255, 0.95);
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .button-text {
+        font-weight: bold;
+        color: rgba(0, 0, 0, 0.8);
+    }
+    
+    @keyframes fadeInButton {
+        0% {
+            opacity: 0;
+            transform: translateY(-1em);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .control-button:focus-visible {
+        outline: 0.15em solid rgba(0, 0, 0, 0.6);
+        outline-offset: 0.1em;
     }
 </style>
