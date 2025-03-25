@@ -874,10 +874,6 @@
         transition: color 0.2s ease;
     }
     
-    .social-link:hover .social-icon {
-        color: var(--color-pale-green);
-    }
-    
     .footer-links a, .footer-signout {
         color: rgba(255, 255, 255, 0.7);
         text-decoration: none;
@@ -898,6 +894,16 @@
         text-align: left;
         font-family: var(--font-body);
         width: 100%;
+    }
+    
+    /* Make sure SignOut icon styling is consistent */
+    :global(.footer-signout .social-icon) {
+        color: rgba(255, 255, 255, 0.7);
+        transition: color 0.2s ease;
+    }
+    
+    .footer-signout:hover :global(.social-icon) {
+        color: var(--color-pale-green);
     }
     
     .footer-bottom {

@@ -184,7 +184,7 @@
     <Logo extraClass="logo" />
     <h1 class="title">Gisaima Realm</h1>
     <p class="subtitle">
-      Open source territory control game with infinite worlds • Play for free across all devices • No pay-to-win • Real-time multiplayer
+      Real-time multiplayer territory game where you create and explore infinite worlds, free to play across all devices with no pay-to-win mechanics and fully <a href="https://github.com/lmf-git/gisaima" target="_blank" rel="noopener noreferrer" class="github-link">open source</a>.
     </p>
     <div class="actions-wrapper">
       <div class="actions" class:loaded={!actionsLoading}>
@@ -251,6 +251,35 @@
     font-family: var(--font-body);
     line-height: 1.6;
     max-width: 90%;
+  }
+
+  .github-link {
+    color: var(--color-pale-green);
+    text-decoration: none;
+    position: relative;
+    transition: color 0.2s ease;
+  }
+
+  .github-link::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    bottom: 0;
+    left: 0;
+    background-color: var(--color-pale-green);
+    transform: scaleX(0);
+    transform-origin: bottom right;
+    transition: transform 0.3s ease;
+  }
+
+  .github-link:hover {
+    color: #9FFFEA;
+  }
+
+  .github-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
   }
 
   /* Wrapper with fixed height to prevent layout shifts */
