@@ -265,7 +265,18 @@
                 }
             }, ANIMATION_DURATION);
         } else {
-            // Show immediately
+            // Show immediately, but first close entities if open
+            if (showEntities) {
+                entitiesClosing = true;
+                setTimeout(() => {
+                    showEntities = false;
+                    entitiesClosing = false;
+                    if (browser) {
+                        localStorage.setItem('mapEntities', 'false');
+                    }
+                }, ANIMATION_DURATION);
+            }
+            
             showMinimap = true;
             // Update map store
             map.update(state => ({ ...state, minimap: true }));
@@ -288,7 +299,20 @@
                 }
             }, ANIMATION_DURATION);
         } else {
-            // Show immediately
+            // Show immediately, but first close minimap if open
+            if (showMinimap) {
+                minimapClosing = true;
+                setTimeout(() => {
+                    showMinimap = false;
+                    minimapClosing = false;
+                    // Update map store
+                    map.update(state => ({ ...state, minimap: false }));
+                    if (browser) {
+                        localStorage.setItem('minimap', 'false');
+                    }
+                }, ANIMATION_DURATION);
+            }
+            
             showEntities = true;
             if (browser) {
                 localStorage.setItem('mapEntities', 'true');
