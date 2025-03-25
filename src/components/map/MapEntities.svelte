@@ -287,7 +287,8 @@
     width: 20em;
     max-width: calc(100vw - 2em);
     max-height: calc(100vh - 3em);
-    margin-top: 0;  /* Removed gap to position at the very top */
+    margin-top: 0;  /* No margin gap at top */
+    padding-top: 2.5em; /* Added padding at the top to avoid overlap with toggle buttons */
     background-color: rgba(255, 255, 255, 0.85); /* Match Details panel background */
     color: rgba(0, 0, 0, 0.8); /* Match Details panel text color */
     border: 0.05em solid rgba(255, 255, 255, 0.2); /* Match Details panel border */
@@ -333,13 +334,12 @@
   }
 
   .entities-header {
-    padding: 0.5em 1em;
-    background-color: rgba(0, 0, 0, 0.05); /* Subtle header background */
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   }
 
   .entities-header h3 {
-    margin: 0 0 0.5em 0;
+    margin: 0;
+    padding: 0.3em;
     font-size: 1.1em;
     font-weight: 600;
     text-align: center;
@@ -351,6 +351,7 @@
     display: flex;
     gap: 0.2em;
     justify-content: center;
+    padding: 0 0.3em 0.3em 0.3em;
   }
 
   .tabs button {
@@ -477,6 +478,7 @@
       max-width: 100%;
       right: 0;
       margin-top: 2.5em;
+      padding-top: 0; /* Reset padding for mobile view */
       border-radius: 0.3em;
       border-top-left-radius: 0;
       border-top-right-radius: 0;
