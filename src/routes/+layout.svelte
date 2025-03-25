@@ -283,8 +283,6 @@
                             <a href="/guide">Guide</a>
                             {#if $user}
                                 <a href="/worlds">Worlds</a>
-                                <!-- Remove redundant Return to Game link from footer -->
-                                <!-- This will now only appear in the hero CTA section -->
                             {/if}
                         </div>
                     </div>
