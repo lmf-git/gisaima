@@ -116,7 +116,7 @@
         });
     }
     
-    // Simplified effect for URL coordinate monitoring
+    // Simplified effect for URL coordinate monitoring with localStorage consideration
     $effect(() => {
         // Skip if we're currently processing coordinates or if we're not in the browser
         if (coordinateProcessingState.processing || !browser || !$page.url) return;

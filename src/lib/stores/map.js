@@ -13,6 +13,45 @@ export const TILE_SIZE = 5;
 export const EXPANDED_COLS_FACTOR = 2.6;
 export const EXPANDED_ROWS_FACTOR = 2;
 
+// LocalStorage key prefixes for target coordinates
+const TARGET_X_PREFIX = '-targetX';
+const TARGET_Y_PREFIX = '-targetY';
+
+// Add utility functions for localStorage persistence
+function saveTargetToLocalStorage(worldId, x, y) {
+  if (typeof window === 'undefined' || !worldId) return;
+  
+  try {
+    localStorage.setItem(`${worldId}${TARGET_X_PREFIX}`, x.toString());
+    localStorage.setItem(`${worldId}${TARGET_Y_PREFIX}`, y.toString());
+  } catch (err) {
+    console.warn('Failed to save target coordinates to localStorage:', err);
+  }
+}
+
+function loadTargetFromLocalStorage(worldId) {
+  if (typeof window === 'undefined' || !worldId) return null;
+  
+  try {
+    const x = localStorage.getItem(`${worldId}${TARGET_X_PREFIX}`);
+    const y = localStorage.getItem(`${worldId}${TARGET_Y_PREFIX}`);
+    
+    if (x !== null && y !== null) {
+      const parsedX = parseInt(x, 10);
+      const parsedY = parseInt(y, 10);
+      
+      if (!isNaN(parsedX) && !isNaN(parsedY)) {
+        console.log(`Loaded saved position for world ${worldId}: ${parsedX},${parsedY}`);
+        return { x: parsedX, y: parsedY };
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to load target coordinates from localStorage:', err);
+  }
+  
+  return null;
+}
+
 const chunkSubscriptions = new Map();
 
 // Initialize map without accessing game store initially
@@ -339,7 +378,7 @@ export const highlightedStore = derived(
   }
 );
 
-// Enhance the moveTarget function with better debouncing
+// Enhance the moveTarget function with better debouncing and localStorage persistence
 let moveTargetTimeout = null;
 const MOVE_TARGET_DEBOUNCE = 30; // Increase from 20ms to 30ms
 
@@ -380,6 +419,12 @@ export function moveTarget(newX, newY) {
       updateUrlWithCoordinates(x, y);
     }
     
+    // Save target position to localStorage
+    const worldId = currentState.world;
+    if (worldId) {
+      saveTargetToLocalStorage(worldId, x, y);
+    }
+    
     moveTargetTimeout = null;
   }, MOVE_TARGET_DEBOUNCE);
 }
@@ -398,7 +443,7 @@ export function getChunkKey(x, y) {
   return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
 }
 
-// Unified initialization function
+// Unified initialization function with localStorage support
 export function initialize(options = {}) {
   // SSR guard - don't initialize terrain on server
   if (typeof window === 'undefined') {
@@ -440,7 +485,7 @@ export function initialize(options = {}) {
   let initialX = options.initialX;
   let initialY = options.initialY;
 
-  // Handle different input formats
+  // Handle different input formats for seed extraction
   if (options.gameStore) {
     // Case 1: GameStore provided - extract data from it
     try {
@@ -490,19 +535,32 @@ export function initialize(options = {}) {
     const initialCols = currentState.cols || 20;
     const initialRows = currentState.rows || 15;
 
-    // Set initial target position
+    // Set initial target position - priority order:
+    // 1. URL parameters (initialX/Y)
+    // 2. localStorage saved position
+    // 3. Current target position in store
+    // 4. Default (0,0)
     let targetPosition = { x: 0, y: 0 };
     const hasInitialCoords = initialX !== undefined && initialY !== undefined;
     
     if (hasInitialCoords) {
-      targetPosition.x = Math.round(initialX);
-      targetPosition.y = Math.round(initialY);
-      console.log(`Initializing map with target position: ${targetPosition.x},${targetPosition.y}`);
+      // 1. URL parameters take highest priority
+      targetPosition = { x: Math.round(initialX), y: Math.round(initialY) };
+      console.log(`Initializing map with URL position: ${targetPosition.x},${targetPosition.y}`);
     } else {
-      // Use existing target or default to 0,0
-      targetPosition = currentState.target.x !== 0 || currentState.target.y !== 0 
-        ? currentState.target 
-        : { x: 0, y: 0 };
+      // 2. Try to load from localStorage
+      const savedPosition = loadTargetFromLocalStorage(worldId);
+      if (savedPosition) {
+        targetPosition = savedPosition;
+        console.log(`Initializing map with saved position: ${targetPosition.x},${targetPosition.y}`);
+      } else if (currentState.target.x !== 0 || currentState.target.y !== 0) {
+        // 3. Use existing target
+        targetPosition = currentState.target;
+        console.log(`Initializing map with existing position: ${targetPosition.x},${targetPosition.y}`);
+      } else {
+        // 4. Default to 0,0
+        console.log('Initializing map with default position (0,0)');
+      }
     }
     
     // Calculate optimal cache size
@@ -529,6 +587,9 @@ export function initialize(options = {}) {
     if (hasInitialCoords) {
       updateUrlWithCoordinates(targetPosition.x, targetPosition.y);
     }
+    
+    // Always save the initial position to localStorage
+    saveTargetToLocalStorage(worldId, targetPosition.x, targetPosition.y);
     
     return true;
   } catch (err) {
@@ -628,7 +689,7 @@ export function cleanup() {
   });
 }
 
-// Initialize map for world
+// Initialize map for world with localStorage support
 export function initializeMapForWorld(worldId, worldData = null) {
   if (!worldId) return;
   
@@ -648,13 +709,27 @@ export function initializeMapForWorld(worldId, worldData = null) {
     cleanup();
   }
   
+  // Try to load saved position for this world
+  const savedPosition = loadTargetFromLocalStorage(worldId);
+  
   // Initialize with world data if available
   if (worldData && worldData.seed !== undefined) {
     console.log(`Initializing map with provided worldData, seed: ${worldData.seed}`);
-    setup({
-      seed: worldData.seed,
-      world: worldId
-    });
+    
+    // If we have saved coordinates, include them in setup
+    if (savedPosition) {
+      setup({
+        seed: worldData.seed,
+        world: worldId,
+        initialX: savedPosition.x,
+        initialY: savedPosition.y
+      });
+    } else {
+      setup({
+        seed: worldData.seed,
+        world: worldId
+      });
+    }
     return;
   }
   
