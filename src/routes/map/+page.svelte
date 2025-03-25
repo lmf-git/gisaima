@@ -16,9 +16,10 @@
         map, 
         ready,
         targetStore,
+        initialize,   // Add the new unified function
         setup,
         moveTarget,
-        setupFromWorldInfo, // Change to the new function
+        setupFromWorldInfo,
         setupFromGameStore,
         cleanup
     } from "../../lib/stores/map.js";
@@ -100,8 +101,8 @@
                 throw new Error(`World ${worldId} has no seed defined`);
             }
             
-            // Initialize map using the new setupFromWorldInfo function
-            if (!setupFromWorldInfo(worldId, worldInfo)) {
+            // Use new unified initialize function
+            if (!initialize({ worldId, worldInfo })) {
                 throw new Error('Failed to initialize map with world data');
             }
             
@@ -124,8 +125,8 @@
             initAttempted = true;
             
             try {
-                // Pass the game store to setupFromGameStore
-                if (setupFromGameStore(game)) {
+                // Use the new unified initialize function
+                if (initialize({ gameStore: game })) {
                     loading = false;
                     error = null;
                 } else {
@@ -179,7 +180,10 @@
         // Initialize map with current world data if available
         if (!$ready && currentWorldId && $game.worldInfo[currentWorldId]) {
             console.log('Initializing map from onMount with world info from game store');
-            setupFromWorldInfo(currentWorldId, $game.worldInfo[currentWorldId]);
+            initialize({ 
+                worldId: currentWorldId, 
+                worldInfo: $game.worldInfo[currentWorldId] 
+            });
         }
         
         // Get world ID from URL or current world

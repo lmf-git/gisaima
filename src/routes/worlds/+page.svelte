@@ -195,12 +195,12 @@
   {:else if loadError}
     <div class="error-message">
       Error loading worlds: {loadError}
-      <button class="retry-button" on:click={loadWorlds}>Retry</button>
+      <button class="retry-button" onclick={loadWorlds}>Retry</button>
     </div>
   {:else if worlds.length === 0}
     <div class="no-worlds">
       <p>No worlds available</p>
-      <button class="retry-button" on:click={loadWorlds}>Refresh</button>
+      <button class="retry-button" onclick={loadWorlds}>Refresh</button>
     </div>
   {:else}
     <div class="worlds-grid">
@@ -222,7 +222,7 @@
           <button 
             class="world-action-button" 
             class:joined={$game.joinedWorlds.includes(world.id)}
-            on:click={() => selectWorld(world)}
+            onclick={() => selectWorld(world)}
           >
             {$game.joinedWorlds.includes(world.id) ? "Enter World" : "Join World"}
           </button>

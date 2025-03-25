@@ -269,30 +269,61 @@ function processChunkData(data = {}) {
   }
 }
 
-// Enhanced setup function that uses game store data with better SSR handling
-export function setup({ seed, world = null } = {}) {
+// Unified initialization function that handles all setup scenarios
+export function initialize(options = {}) {
   // SSR guard - don't initialize terrain on server
   if (typeof window === 'undefined') {
     console.log('Skipping map setup in SSR environment');
     return false;
   }
-  
-  // Use the provided world ID or default, but don't try to get from game store
-  const worldId = world || 'default';
-  
-  // Validate seed - it's required and must be a valid number
+
+  let seed, worldId;
+
+  // Handle different input formats
+  if (options.gameStore) {
+    // Case 1: GameStore provided - extract data from it
+    try {
+      const gameState = get(options.gameStore);
+      if (!gameState || !gameState.currentWorld) {
+        console.log('No current world in game state');
+        return false;
+      }
+      
+      worldId = gameState.currentWorld;
+      
+      if (!gameState.worldInfo || !gameState.worldInfo[worldId]) {
+        console.log(`No world info for world: ${worldId}`);
+        return false;
+      }
+      
+      seed = gameState.worldInfo[worldId].seed;
+    } catch (err) {
+      console.error('Error extracting data from game store:', err);
+      return false;
+    }
+  } else if (options.worldInfo) {
+    // Case 2: Direct worldInfo object provided
+    worldId = options.worldId || 'default';
+    seed = options.worldInfo.seed;
+  } else {
+    // Case 3: Direct seed and world values
+    seed = options.seed;
+    worldId = options.world || options.worldId || 'default';
+  }
+
+  // Validate we have the required seed
   if (seed === undefined || seed === null) {
-    console.error('No seed provided for map setup - seed is required');
+    console.error('No seed provided for map initialization');
     return false;
   }
-  
+
   // Ensure seed is a valid number
   const seedNumber = typeof seed === 'string' ? Number(seed) : seed;
   if (isNaN(seedNumber)) {
     console.error(`Invalid seed value provided: ${seed}`);
     return false;
   }
-  
+
   try {
     // Get current map state to calculate initial cache size
     const currentState = get(map);
@@ -306,7 +337,6 @@ export function setup({ seed, world = null } = {}) {
     terrain = new TerrainGenerator(seedNumber, initialCacheSize);
     
     // Update the map store with ready state AFTER terrain is initialized
-    // This ensures map.ready is only true when terrain exists
     map.update(state => {
       return {
         ...state,
@@ -324,44 +354,17 @@ export function setup({ seed, world = null } = {}) {
   }
 }
 
-// New function to initialize map directly from world info without direct game dependency
+// Keep original functions for backward compatibility
+export function setup(options = {}) {
+  return initialize(options);
+}
+
 export function setupFromWorldInfo(worldId, worldInfo) {
-  // SSR guard
-  if (typeof window === 'undefined') return false;
-  
-  try {
-    if (!worldId || !worldInfo) {
-      console.log('Missing worldId or worldInfo for map setup');
-      return false;
-    }
-    
-    if (worldInfo.seed === undefined) {
-      console.log('No seed in world info');
-      return false;
-    }
-    
-    // Get seed value and ensure it's a proper number
-    const seedValue = worldInfo.seed;
-    if (isNaN(Number(seedValue))) {
-      console.log('Invalid seed value');
-      return false;
-    }
-    
-    // If the map is already set up for this world, don't reinitialize
-    const mapState = get(map);
-    if (mapState.ready && mapState.world === worldId) {
-      return true;
-    }
-    
-    // We have all required data, proceed with setup
-    return setup({
-      seed: seedValue,
-      world: worldId
-    });
-  } catch (err) {
-    console.error('Error in setupFromWorldInfo:', err);
-    return false;
-  }
+  return initialize({ worldId, worldInfo });
+}
+
+export function setupFromGameStore(gameStore) {
+  return initialize({ gameStore });
 }
 
 // Don't access game directly - setupFromGameStore has to be configured from outside
