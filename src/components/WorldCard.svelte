@@ -6,8 +6,9 @@
   const { 
     worldId = '', 
     seed = 0, 
-    tileSize = 0.5, // Keep tile size moderate for clarity
-    summaryFactor = 4  // Increased from 2 to 4 - each tile now represents a 4x4 area (16 tiles)
+    tileSize = 1.25, 
+    summaryFactor = 50,
+    delayed = false
   } = $props();
   
   // Local state
@@ -17,6 +18,7 @@
   let resizeObserver;
   let cols = $state(0);
   let rows = $state(0);
+  let isActive = $state(!delayed);
   
   // Ensure odd number of columns/rows for proper centering
   const ensureOdd = (num) => num % 2 === 0 ? num + 1 : num;
@@ -33,33 +35,33 @@
     const width = cardElement.clientWidth;
     const height = cardElement.clientHeight;
     
-    // Calculate tile counts based on available space
-    let newCols = Math.floor(width / tileSizePx);
-    let newRows = Math.floor(height / tileSizePx);
+    // Calculate tile counts based purely on available space and tile size
+    let newCols = Math.max(3, Math.floor(width / tileSizePx));
+    let newRows = Math.max(3, Math.floor(height / tileSizePx));
     
-    // Ensure odd number of columns and rows for proper centering
-    // Reduce minimum size since each tile now covers more area
-    newCols = ensureOdd(Math.max(newCols, 13)); // Reduced from 17 since each tile covers more area
-    newRows = ensureOdd(Math.max(newRows, 13)); // Reduced from 17 since each tile covers more area
+    // Force odd number for proper centering
+    newCols = ensureOdd(newCols);
+    newRows = ensureOdd(newRows);
     
-    // Update state if dimensions have changed
+    // Only update if dimensions have changed
     if (newCols !== cols || newRows !== rows) {
       cols = newCols;
       rows = newRows;
       
-      // Regenerate the grid with new dimensions
-      if (mounted && seed) {
+      // Directly generate grid if active - no need for requestAnimationFrame
+      if (mounted && seed && isActive) {
         terrainGrid = generateTerrainGrid(seed);
       }
     }
   }
 
-  // Generate terrain data for the grid with enhanced summarization
+  // Generate terrain data for the grid with simplified sampling
   function generateTerrainGrid(seed) {
     if (!seed || typeof seed !== 'number' || cols <= 0 || rows <= 0) return [];
     
     try {
-      const generator = new TerrainGenerator(seed, cols * rows * summaryFactor * summaryFactor);
+      // Create a small cache based on grid size for better performance
+      const generator = new TerrainGenerator(seed, cols * rows * 2);
       const grid = [];
       
       const centerX = Math.floor(cols / 2);
@@ -71,46 +73,19 @@
           const baseWorldX = (x - centerX) * summaryFactor;
           const baseWorldY = (y - centerY) * summaryFactor;
           
-          // Sample multiple terrain points across the area
-          const samples = [];
-          const colors = {};
-          let dominantColor = null;
-          let maxCount = 0;
-          
-          // Gather samples across the entire area
-          for (let sy = 0; sy < summaryFactor; sy++) {
-            for (let sx = 0; sx < summaryFactor; sx++) {
-              const worldX = baseWorldX + sx;
-              const worldY = baseWorldY + sy;
-              const terrainData = generator.getTerrainData(worldX, worldY);
-              samples.push(terrainData);
-              
-              // Track color frequencies to determine the dominant terrain type
-              const color = terrainData.color;
-              colors[color] = (colors[color] || 0) + 1;
-              
-              // Keep track of the most common color
-              if (colors[color] > maxCount) {
-                maxCount = colors[color];
-                dominantColor = color;
-              }
-            }
-          }
-          
-          // Get biome information from the center of the area for name reference
+          // Simply sample from the center of the area - much more efficient
           const centerSampleX = baseWorldX + Math.floor(summaryFactor / 2);
           const centerSampleY = baseWorldY + Math.floor(summaryFactor / 2);
-          const centerSample = generator.getTerrainData(centerSampleX, centerSampleY);
+          const terrainData = generator.getTerrainData(centerSampleX, centerSampleY);
           
           grid.push({
             x,
             y,
             worldX: baseWorldX,
             worldY: baseWorldY,
-            // Use dominant color for better visual representation
-            color: dominantColor || centerSample.color,
+            color: terrainData.color,
             isCenter: x === centerX && y === centerY,
-            biomeName: centerSample.biome?.name || 'unknown'
+            biomeName: terrainData.biome?.name || 'unknown'
           });
         }
       }
@@ -122,16 +97,70 @@
     }
   }
   
+  // Initialize with a simple placeholder grid for immediate display
+  function createPlaceholderGrid() {
+    if (cols <= 0 || rows <= 0) return [];
+    
+    const placeholderColors = [
+      "#1A4F76", "#4A91AA", "#5A6855", "#607D55", "#7B8F5D", 
+      "#8DAD70", "#91A86E", "#A8A76C"
+    ];
+    
+    const centerX = Math.floor(cols / 2);
+    const centerY = Math.floor(rows / 2);
+    
+    // Create a very simple placeholder grid
+    const grid = [];
+    const placeholderSeed = seed || worldId.length;
+    
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const colorIndex = Math.abs((x * 3 + y * 7 + placeholderSeed) % placeholderColors.length);
+        
+        grid.push({
+          x, 
+          y,
+          color: placeholderColors[colorIndex],
+          isCenter: x === centerX && y === centerY,
+          biomeName: 'loading'
+        });
+      }
+    }
+    
+    return grid;
+  }
+  
+  // Activate the card when delayed loading is ready
+  function activateCard() {
+    if (!isActive) {
+      isActive = true;
+      if (mounted && seed && cols > 0 && rows > 0) {
+        terrainGrid = generateTerrainGrid(seed);
+      }
+    }
+  }
+  
   onMount(() => {
     if (cardElement) {
       // Calculate grid dimensions
       resizeWorldGrid();
       
-      // Generate initial terrain grid
-      terrainGrid = generateTerrainGrid(seed);
+      // Generate initial terrain grid only if not delayed
+      if (!delayed) {
+        // Show placeholder immediately, then generate actual grid
+        terrainGrid = createPlaceholderGrid();
+        
+        // Generate the actual terrain (once, no animation frame needed)
+        setTimeout(() => {
+          if (isActive && mounted) {
+            terrainGrid = generateTerrainGrid(seed);
+          }
+        }, 10);
+      }
+      
       mounted = true;
       
-      // Setup resize observer
+      // Setup resize observer - this only triggers when actual resizing happens
       resizeObserver = new ResizeObserver(resizeWorldGrid);
       resizeObserver.observe(cardElement);
     }
@@ -141,9 +170,18 @@
     };
   });
   
-  // Update terrain when seed changes
+  // When delayed prop changes to false, activate the card
   $effect(() => {
-    if (mounted && seed && cols > 0 && rows > 0) {
+    if (!delayed && !isActive && mounted) {
+      // Show placeholder immediately
+      terrainGrid = createPlaceholderGrid();
+      activateCard();
+    }
+  });
+  
+  // Update terrain when seed changes and card is active
+  $effect(() => {
+    if (mounted && seed && isActive && cols > 0 && rows > 0) {
       terrainGrid = generateTerrainGrid(seed);
     }
   });
@@ -155,7 +193,7 @@
   data-world-id={worldId}
   aria-label="World terrain preview"
 >
-  {#if mounted && terrainGrid.length > 0}
+  {#if mounted && (isActive || !delayed) && terrainGrid.length > 0}
     <div 
       class="terrain-grid"
       style="--grid-cols: {cols}; --grid-rows: {rows};"
@@ -169,10 +207,6 @@
           title={tile.biomeName}
         ></div>
       {/each}
-    </div>
-  {:else}
-    <div class="loading-placeholder">
-      <span>Loading world...</span>
     </div>
   {/if}
 </div>
@@ -188,6 +222,7 @@
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    will-change: transform;
   }
   
   .terrain-grid {
@@ -196,20 +231,15 @@
     grid-template-rows: repeat(var(--grid-rows), 1fr);
     width: 100%;
     height: 100%;
+    transform: translate3d(0, 0, 0);
   }
   
   .terrain-tile {
     width: 100%;
     height: 100%;
-    transition: transform 0.2s ease;
   }
   
-  .terrain-tile:hover {
-    transform: scale(1.1);
-    z-index: 10;
-    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
-  }
-  
+  /* Remove hover animation effects to improve performance */
   .terrain-tile.center {
     position: relative;
     z-index: 2;
@@ -224,16 +254,5 @@
     bottom: 0;
     border: 2px solid rgba(255, 255, 255, 0.8);
     z-index: 3;
-  }
-  
-  .loading-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 0.8rem;
-    background-color: var(--color-dark-blue);
   }
 </style>

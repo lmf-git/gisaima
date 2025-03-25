@@ -17,6 +17,12 @@
   let loading = $state(true);
   let loadError = $state(null);
   
+  // Track which world cards have been loaded
+  let loadedWorldCards = $state([]);
+  let loadingQueue = [];
+  let currentlyLoading = false;
+  const CARD_LOAD_DELAY = 300; // ms between loading each world card
+  
   // Function to load worlds data - improved with better error handling
   function loadWorlds() {
     if (!browser || !$user) {
@@ -91,18 +97,59 @@
             playerCount: worldInfo.playerCount || 0,
             created: worldInfo.created || Date.now(),
             joined: $game.joinedWorlds.includes(key),
-            seed: worldInfo.seed || 0  // Add seed for the WorldCard component
+            seed: worldInfo.seed || 0,
+            cardLoaded: false
           };
         });
       
       console.log(`Processed ${validWorlds.length} valid worlds`);
       worlds = validWorlds;
+      
+      // Reset loaded cards - don't load any immediately
+      loadedWorldCards = [];
+      
+      // Setup the loading queue with all worlds
+      loadingQueue = [...validWorlds.map(world => world.id)];
+      
+      // Configure timing parameters
+      const INITIAL_DELAY = 1200; // Show all loading spinners for at least 1.2 seconds
+      const CARD_LOAD_DELAY = 800; // Increased delay between card loads for more visible stagger
+      
+      // Only start loading the first world after the initial delay
+      setTimeout(() => {
+        if (loadingQueue.length > 0) {
+          loadNextWorldCard();
+        }
+      }, INITIAL_DELAY);
     } catch (err) {
       console.error('Error processing worlds data:', err);
       loadError = `Data processing error: ${err.message}`;
     } finally {
       loading = false;
     }
+  }
+  
+  // Function to load world cards in a staggered sequence
+  function loadNextWorldCard() {
+    if (loadingQueue.length === 0 || currentlyLoading) {
+      return;
+    }
+    
+    currentlyLoading = true;
+    const nextWorldId = loadingQueue.shift();
+    
+    // Add to loaded cards array after a delay
+    setTimeout(() => {
+      loadedWorldCards = [...loadedWorldCards, nextWorldId];
+      currentlyLoading = false;
+      
+      // Continue loading the next card with dynamic delay
+      if (loadingQueue.length > 0) {
+        // Add a slight random variation to the delay for a more natural feel
+        const delay = CARD_LOAD_DELAY + Math.random() * 200;
+        setTimeout(() => loadNextWorldCard(), delay);
+      }
+    }, CARD_LOAD_DELAY);
   }
   
   // Initialize game store on component mount to ensure proper setup
@@ -212,8 +259,14 @@
             <WorldCard 
               worldId={world.id}
               seed={world.seed}
-              tileSize={0.5}
+              tileSize={2}
+              delayed={!loadedWorldCards.includes(world.id)}
             />
+            {#if !loadedWorldCards.includes(world.id)}
+              <div class="card-loading-overlay">
+                <div class="loading-spinner"></div>
+              </div>
+            {/if}
           </div>
           
           <div class="world-info">
@@ -290,9 +343,11 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     background-color: var(--color-dark-blue);
     width: 100%;
+    will-change: transform; /* Hint for hardware acceleration */
   }
   
   .world-preview {
+    position: relative;
     width: 100%;
     aspect-ratio: 2 / 1;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -314,6 +369,11 @@
     margin-bottom: 1rem;
     opacity: 0.9;
     font-size: 0.95rem;
+    height: 3.5em;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
   }
   
   .world-stats {
@@ -357,12 +417,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, transform 0.2s ease;
     border-radius: 4px;
     cursor: pointer;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-family: var(--font-heading);
+    will-change: transform, background-color; /* Hardware acceleration hint */
+    position: relative; /* Ensure z-index works */
+    z-index: 10; /* Keep button above overlay */
   }
   
   .world-action-button:hover {
@@ -474,5 +537,37 @@
   
   .retry-button:hover {
     background-color: #3a7d8c;
+  }
+
+  .card-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5); /* Reduced from 0.7 to 0.5 */
+    color: white;
+    font-size: 0.9rem;
+    z-index: 5;
+    pointer-events: none; /* Allow clicks to pass through to buttons */
+  }
+  
+  .loading-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--color-pale-green);
+    animation: spin 1s linear infinite;
+    /* Removed bottom margin since there's no text */
+    will-change: transform; /* Hint for hardware acceleration */
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 </style>
