@@ -504,20 +504,6 @@
       default: return 'transparent';
     }
   }
-  
-  // Add debug effect to track highlighted tile changes
-  $effect(() => {
-    // Only log when there's actually a highlighted tile (not null)
-    // This prevents the console spam during initialization
-    if ($highlightedStore) {  // Use highlightedStore instead of map.highlighted
-      console.log('Highlighted tile changed to:', { 
-        x: $highlightedStore.x, 
-        y: $highlightedStore.y,
-        biome: $highlightedStore.biome?.name,
-        structure: $highlightedStore.structure?.type
-      });
-    }
-  });
 </script>
 
 <svelte:window
@@ -528,7 +514,6 @@
   onvisibilitychange={() => document.visibilityState === 'hidden' && handleMouseUp()}
 />
 
-<!-- Add onclick handler to the map div -->
 <div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={detailed} class:touch-active={$map.isDragging && $map.dragSource === 'map'}>
   <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
   <div
