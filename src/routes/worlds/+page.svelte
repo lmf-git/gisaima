@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { user, loading as userLoading } from '../../lib/stores/user.js';
-  import { game, joinWorld, setCurrentWorld } from '../../lib/stores/game.js';
+  import { game, joinWorld, setCurrentWorld, initGameStore } from '../../lib/stores/game.js';
   import { ref, onValue } from "firebase/database";
   import { db } from '../../lib/firebase/database.js';
   import { browser } from '$app/environment';
@@ -14,51 +14,144 @@
   let animatingOut = $state(false);
   let worlds = $state([]);
   let loading = $state(true);
+  let loadError = $state(null);
+  
+  // Function to load worlds data - improved with better error handling
+  function loadWorlds() {
+    if (!browser || !$user) {
+      console.log('Cannot load worlds: browser or user not available');
+      return;
+    }
+    
+    console.log('Attempting to load worlds for user:', $user.uid);
+    loading = true;
+    loadError = null;
+    
+    try {
+      const worldsRef = ref(db, 'worlds');
+      console.log('Database reference created for:', worldsRef.toString());
+      
+      // Check if database is initialized
+      if (!db) {
+        console.error('Firebase database not initialized');
+        loadError = 'Firebase database not initialized';
+        loading = false;
+        return;
+      }
+      
+      // Add a one-time listener first to check connection
+      const checkListener = onValue(worldsRef, 
+        (snapshot) => {
+          console.log('Initial worlds check completed:', 
+            snapshot.exists() ? `Found ${Object.keys(snapshot.val()).length} worlds` : 'No worlds data');
+          
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            console.log('World IDs found:', Object.keys(data));
+            
+            // Process the data
+            processWorldsData(data);
+          } else {
+            console.log('No worlds data found in database');
+            worlds = [];
+            loading = false;
+          }
+        }, 
+        (error) => {
+          console.error('Firebase error loading worlds:', error);
+          loadError = `Database error: ${error.message}`;
+          loading = false;
+        }
+      );
+      
+      return () => {
+        // Cleanup function
+        checkListener && checkListener();
+      };
+    } catch (error) {
+      console.error('Exception during worlds loading:', error);
+      loadError = `Exception: ${error.message}`;
+      loading = false;
+    }
+  }
+  
+  // Separate function to process worlds data
+  function processWorldsData(data) {
+    try {
+      // Filter out worlds without info and map to our format
+      const validWorlds = Object.keys(data)
+        .filter(key => data[key] && data[key].info)  // Ensure world has info object
+        .map(key => {
+          const worldInfo = data[key].info;
+          return {
+            id: key,
+            name: worldInfo.name || key,
+            description: worldInfo.description || '',
+            playerCount: worldInfo.playerCount || 0,
+            created: worldInfo.created || Date.now(),
+            joined: $game.joinedWorlds.includes(key)
+          };
+        });
+      
+      console.log(`Processed ${validWorlds.length} valid worlds`);
+      worlds = validWorlds;
+    } catch (err) {
+      console.error('Error processing worlds data:', err);
+      loadError = `Data processing error: ${err.message}`;
+    } finally {
+      loading = false;
+    }
+  }
+  
+  // Initialize game store on component mount to ensure proper setup
+  let unsubGameStore;
+  
+  onMount(() => {
+    console.log('Worlds page mounted');
+    
+    // Make sure game store is initialized before attempting to load worlds
+    if (!unsubGameStore) {
+      unsubGameStore = initGameStore();
+      console.log('Game store initialized on mount');
+    }
+    
+    // Small delay to ensure auth state is properly processed
+    setTimeout(() => {
+      if (browser && !$userLoading && $user) {
+        console.log('Auth ready on mount, loading worlds after delay');
+        loadWorlds();
+      }
+    }, 500);
+    
+    return () => {
+      // Clean up subscriptions
+      if (unsubGameStore) unsubGameStore();
+    };
+  });
   
   // Effect to handle authentication and redirection
   $effect(() => {
-    if (browser && !$userLoading) {
+    if (!browser) return;
+    
+    console.log('Auth state updated:', $userLoading ? 'loading' : ($user ? 'authenticated' : 'not authenticated'));
+    
+    if (!$userLoading) {
       // Auth has been determined
       if ($user === null) {
+        console.log('No user, redirecting to login');
         goto('/login?redirect=/worlds');
-      } else {
+      } else if ($user) {
+        console.log('User authenticated, loading worlds');
         loadWorlds();
       }
     }
   });
-  
-  // Function to load worlds data
-  function loadWorlds() {
-    if (!browser || !$user) return;
-    
-    const worldsRef = ref(db, 'worlds');
-    const unsubscribe = onValue(worldsRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        worlds = Object.keys(data)
-          .filter(key => data[key].info) // Make sure world has info
-          .map(key => ({
-            id: key,
-            ...data[key].info,
-            joined: $game.joinedWorlds.includes(key)
-          }));
-      }
-      loading = false;
-    });
-    
-    return unsubscribe;
-  }
-  
-  onMount(() => {
-    // We'll use the effect for auth check and loading worlds
-    return () => {
-      // Any cleanup when component unmounts
-    };
-  });
-  
+
   function selectWorld(world) {
     // If already joined, just go to the world
     if ($game.joinedWorlds.includes(world.id)) {
+      // Use setCurrentWorld to ensure it's saved to localStorage
+      setCurrentWorld(world.id, world);
       goto(`/map?world=${world.id}`);
       return;
     }
@@ -85,6 +178,7 @@
     try {
       // Join the world with race information (lowercase ID)
       await joinWorld(selectedWorld.id, $user.uid, race.id.toLowerCase());
+      // joinWorld already saves to localStorage, so we don't need to call setCurrentWorld
       goto(`/map?world=${selectedWorld.id}`);
     } catch (error) {
       console.error('Failed to join world:', error);
@@ -98,8 +192,16 @@
   
   {#if loading}
     <div class="loading">Loading worlds...</div>
+  {:else if loadError}
+    <div class="error-message">
+      Error loading worlds: {loadError}
+      <button class="retry-button" on:click={loadWorlds}>Retry</button>
+    </div>
   {:else if worlds.length === 0}
-    <div class="no-worlds">No worlds available</div>
+    <div class="no-worlds">
+      <p>No worlds available</p>
+      <button class="retry-button" on:click={loadWorlds}>Refresh</button>
+    </div>
   {:else}
     <div class="worlds-grid">
       {#each worlds as world}
@@ -120,7 +222,7 @@
           <button 
             class="world-action-button" 
             class:joined={$game.joinedWorlds.includes(world.id)}
-            onclick={() => selectWorld(world)}
+            on:click={() => selectWorld(world)}
           >
             {$game.joinedWorlds.includes(world.id) ? "Enter World" : "Join World"}
           </button>
@@ -313,5 +415,32 @@
   
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+  
+  .error-message {
+    text-align: center;
+    margin: 3rem 0;
+    padding: 1rem;
+    color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    border-radius: 8px;
+  }
+  
+  .retry-button {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.5rem 1.5rem;
+    background-color: #2a6b7a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.2s ease;
+  }
+  
+  .retry-button:hover {
+    background-color: #3a7d8c;
   }
 </style>

@@ -18,8 +18,9 @@
         targetStore,
         setup,
         moveTarget,
+        setupFromWorldInfo, // Change to the new function
         setupFromGameStore,
-        cleanup // Add the cleanup function import
+        cleanup
     } from "../../lib/stores/map.js";
     
     import Tutorial from '../../components/map/Tutorial.svelte';
@@ -99,8 +100,8 @@
                 throw new Error(`World ${worldId} has no seed defined`);
             }
             
-            // Initialize map with data from the game store
-            if (!setupFromGameStore()) {
+            // Initialize map using the new setupFromWorldInfo function
+            if (!setupFromWorldInfo(worldId, worldInfo)) {
                 throw new Error('Failed to initialize map with world data');
             }
             
@@ -123,12 +124,10 @@
             initAttempted = true;
             
             try {
-                if (setupFromGameStore()) {
+                // Pass the game store to setupFromGameStore
+                if (setupFromGameStore(game)) {
                     loading = false;
                     error = null;
-                    
-                    // No need to check player spawn status manually anymore
-                    // It's now handled through the game store and needsSpawn derived store
                 } else {
                     error = 'Failed to initialize map with world data';
                     loading = false;
@@ -150,8 +149,38 @@
       }
     });
     
+    // Add a safe way to get world ID with SSR guard
+    let currentWorldId = $state(null);
+    
+    // Use effect to detect world ID from URL or game store safely
+    $effect(() => {
+        if (!browser) return; // Don't run during SSR
+        
+        // Try to get world ID from URL first
+        const worldFromUrl = $page.url.searchParams.get('world');
+        
+        // Fall back to game store if available
+        const worldFromStore = $game?.currentWorld;
+        
+        // Set the world ID safely with null checks
+        currentWorldId = worldFromUrl || worldFromStore || null;
+        
+        console.log('Map page world ID:', currentWorldId);
+        
+        // Other initialization logic that depends on world ID
+        // ...
+    });
+    
     onMount(() => {
+        if (!browser) return; // Safety check
+        
         if (browser) document.body.classList.add('map-page-active');
+        
+        // Initialize map with current world data if available
+        if (!$ready && currentWorldId && $game.worldInfo[currentWorldId]) {
+            console.log('Initializing map from onMount with world info from game store');
+            setupFromWorldInfo(currentWorldId, $game.worldInfo[currentWorldId]);
+        }
         
         // Get world ID from URL or current world
         const worldId = $page.url.searchParams.get('world') || $game.currentWorld;

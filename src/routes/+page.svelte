@@ -2,6 +2,12 @@
   import Showcase from '../components/Showcase.svelte';
   import Features from '../components/Features.svelte';
   import Media from '../components/Media.svelte';
+  // Keep these imports for use in other places if needed
+  import { user } from '../lib/stores/user.js'; 
+  import { game } from '../lib/stores/game.js';
+  import { browser } from '$app/environment';
+  
+  // Remove the state variables and effect - Showcase will handle this directly
 </script>
 
 <svelte:head>
@@ -10,7 +16,9 @@
 </svelte:head>
 
 <div class="container">
+  <!-- Simplify the Showcase component - no need to pass props -->
   <Showcase />
+  
   <Media />
   <Features />
 </div>
@@ -18,18 +26,5 @@
 <style>
   .container {
     color: var(--color-text);
-  }
-
-  /* Responsive styles */
-  @media (min-width: 481px) {
-    .container {
-
-    }
-  }
-
-  @media (min-width: 769px) {
-    .container {
-
-    }
   }
 </style>

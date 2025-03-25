@@ -2,9 +2,10 @@
   import Logo from './Logo.svelte';
   import { user, loading as userLoading } from '$lib/stores/user';
   import { game, isAuthReady } from '$lib/stores/game';
+  import { browser } from '$app/environment';
   import { onMount } from 'svelte';
   
-  // Update to use $props() runes API
+  // Update to use $props() runes API - keep only the extraClass prop
   const { extraClass = '' } = $props();
   
   // Simplified background image state with runes
@@ -21,6 +22,11 @@
   
   // Derived state for UI loading conditions 
   const actionsLoading = $derived($userLoading || !$isAuthReady || $game.loading);
+  
+  // Derived state for current world state - directly from game store
+  const hasCurrentWorld = $derived(!!$game.currentWorld);
+  const currentWorldId = $derived($game.currentWorld);
+  const currentWorldName = $derived($game.worldInfo[$game.currentWorld]?.name || $game.currentWorld);
   
   // Background images array
   const backgroundImages = [
@@ -178,15 +184,11 @@
     <Logo extraClass="logo" />
     <h1 class="title">Gisaima Realm</h1>
     <p class="subtitle">
-      Open source territory control game with infinite worlds<br>
-      Play for free across all devices • No pay-to-win • Real-time multiplayer
+      Open source territory control game with infinite worlds • Play for free across all devices • No pay-to-win • Real-time multiplayer
     </p>
     <div class="actions-wrapper">
       <div class="actions" class:loaded={!actionsLoading}>
-        {#if actionsLoading}
-          <div class="button-placeholder"></div>
-          <div class="button-placeholder"></div>
-        {:else}
+        {#if !actionsLoading}
           {#if $user}
             {#if $game.currentWorld}
               <a href={`/map?world=${$game.currentWorld}`} class="button primary">Return to Game</a>
@@ -232,7 +234,7 @@
   }
 
   .title {
-    font-size: 2em;
+    font-size: 2.5em; /* Increased from 2em */
     margin: 0; /* Remove margins */
     letter-spacing: 0.2em;
     color: #e24144;
@@ -242,12 +244,13 @@
   }
 
   .subtitle {
-    font-size: 1.2em;
+    font-size: 1.4em; /* Increased from 1.2em */
     color: var(--color-text-secondary);
     margin: 0; /* Remove margins */
     font-weight: 300;
     font-family: var(--font-body);
     line-height: 1.6;
+    max-width: 90%;
   }
 
   /* Wrapper with fixed height to prevent layout shifts */
@@ -273,32 +276,23 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%); /* Center precisely */
+    max-width: 90%; /* Add max-width to prevent overflow */
   }
 
   .actions.loaded {
     opacity: 1;
   }
 
-  /* Button placeholders to maintain layout during loading */
-  .button-placeholder {
-    display: inline-block;
-    height: 3.4em; /* Slightly taller to ensure enough space */
-    width: 10em; /* Approximate button width */
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 0.25em;
-  }
+  /* Remove button placeholders - rely on opacity transition */
 
-  /* At mobile sizes, make placeholders take full width */
+  /* At mobile sizes */
   @media (max-width: 768px) {
-    .button-placeholder {
-      width: 100%;
-      height: 3.8em; /* Taller for mobile */
-    }
+    /* Remove button placeholder styles */
   }
 
   /* Correct global selector for logo */
   :global(.showcase .logo) {
-    width: 7.5em;
+    width: 9em; /* Increased from 7.5em */
     height: auto;
     margin: 0; /* Remove margin */
     filter: drop-shadow(0 0 0.5em rgba(193, 19, 22, 0.6));
@@ -319,7 +313,9 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
+    min-width: 120px; /* Add minimum width */
+    max-width: 200px; /* Add maximum width */
+    width: auto; /* Change from 100% to auto */
   }
   
   :global(.showcase .button:hover) {
@@ -443,19 +439,27 @@
     }
     
     .title {
-      font-size: 2.5em;
+      font-size: 3em; /* Increased from 2.5em */
     }
     
     .subtitle {
-      font-size: 1.3em;
+      font-size: 1.5em; /* Increased from 1.3em */
     }
 
     .actions-wrapper {
       height: 9em; /* More space for tablet */
     }
     
-    .button-placeholder {
-      width: 12em; /* Slightly wider placeholders for tablet */
+    /* Remove button placeholder styles */
+    
+    :global(.showcase .button) {
+      width: auto; /* Ensure buttons use auto width on tablet */
+      min-width: 150px; /* Larger minimum width for tablet */
+    }
+    
+    .actions {
+      max-width: 90%;
+      gap: 1.2em; /* Reduce gap slightly for better fit */
     }
   }
 
@@ -470,26 +474,31 @@
     }
     
     .title {
-      font-size: 3.5em;
+      font-size: 4.2em; /* Increased from 3.5em */
     }
     
     .subtitle {
-      font-size: 1.4em;
-      /* Remove margin: 1.5em 0 3em; and use container gap instead */
+      font-size: 1.6em; /* Increased from 1.4em */
+      max-width: 80%;
     }
 
-    .actions-wrapper {
-      height: 10em; /* More space for desktop */
+    :global(.showcase .logo) {
+      width: 12em; /* Increased size for desktop */
     }
+
+    /* Remove button placeholder styles */
     
     :global(.showcase .button) {
       font-size: 1.5em;
       padding: 0.6em 1.8em;
-      width: auto;
+      width: auto; /* Ensure buttons are auto width */
+      min-width: 180px; /* Larger minimum width for desktop */
+      max-width: 280px; /* Larger maximum width for desktop */
     }
 
-    .button-placeholder {
-      width: 14em; /* Wider placeholders for desktop */
+    .actions {
+      max-width: 80%;
+      gap: 1.5em; /* Restore gap for desktop */
     }
   }
 </style>

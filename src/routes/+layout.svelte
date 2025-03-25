@@ -13,7 +13,9 @@
     import { db } from '../lib/firebase/database.js';
     import HamburgerIcon from '../components/icons/HamburgerIcon.svelte';
     import GuestWarning from '../components/GuestWarning.svelte';
-
+    import { initAuthListener } from '$lib/stores/user';
+    import { initDatabaseConnectionCheck } from '$lib/firebase/database-status';
+  
     const { children } = $props();
 
     // State
@@ -150,6 +152,24 @@
             guestWarningAnimatingOut = false;
         }, 300);
     }
+
+    // Add separate mount logic to ensure proper initialization order
+    onMount(() => {
+        if (browser) {
+            console.log('Layout mounted, initializing core services');
+            
+            // Initialize Firebase services in proper order
+            initAuthListener();
+            const unsubGame = initGameStore();
+            const unsubDbCheck = initDatabaseConnectionCheck();
+            
+            // Return cleanup
+            return () => {
+                unsubGame && unsubGame();
+                unsubDbCheck && unsubDbCheck();
+            };
+        }
+    });
 </script>
 
 <div class={`app ${isMapPage ? 'map' : ''}`}>
@@ -247,9 +267,8 @@
                             <a href="/guide">Guide</a>
                             {#if $user}
                                 <a href="/worlds">Worlds</a>
-                                {#if $game.currentWorld}
-                                    <a href={`/map?world=${$game.currentWorld}`}>Return to Game</a>
-                                {/if}
+                                <!-- Remove redundant Return to Game link from footer -->
+                                <!-- This will now only appear in the hero CTA section -->
                             {/if}
                         </div>
                     </div>
@@ -445,7 +464,7 @@
 
     /* Position header as absolute for all pages */
     .header {
-        display: inline-flex;
+        display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 1em 2em;
@@ -456,16 +475,17 @@
         z-index: 100;
         height: 6em;
         gap: 3em;
-    }
 
-    /* Simplified header styling - no background or shadow */
-    .header {
-        display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 1em 2em;
         z-index: 100;
         height: 6em;
+        width: 100%;
+    }
+
+    .map .header {
+        width: auto;
     }
 
     /* Logo styling */

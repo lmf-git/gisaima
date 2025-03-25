@@ -15,7 +15,9 @@ import {
   updateProfile
 } from 'firebase/auth';
 
-export const user = writable(undefined);  // Start as undefined (not determined)
+// Create the user store
+export const userStore = writable(null); // Initialize with null instead of undefined
+export const user = userStore; // Export an alias for backward compatibility
 export const loading = writable(true);
 
 // Initialize auth state listener
@@ -25,7 +27,7 @@ export const initAuthListener = () => {
   try {
     onAuthStateChanged(auth, userData => {
       console.log('Auth state changed:', userData ? 'User logged in' : 'No user');
-      user.set(userData);
+      userStore.set(userData);
       loading.set(false);
     });
   } catch (error) {
@@ -35,29 +37,31 @@ export const initAuthListener = () => {
 };
 
 // Make sure the user store properly signals when auth state is determined
-onAuthStateChanged(auth, (firebaseUser) => {
-  if (firebaseUser) {
-    // User is signed in
-    // If anonymous user, make sure they have a consistent label
-    if (firebaseUser.isAnonymous) {
-      // Add a displayName property if it doesn't exist
-      if (!firebaseUser.displayName) {
-        const shortId = firebaseUser.uid.substring(0, 4);
-        // We can't modify the firebaseUser object directly, so create a new one with the properties we want
-        const enhancedUser = {
-          ...firebaseUser,
-          displayName: `Guest ${shortId}`
-        };
-        user.set(enhancedUser);
-        return;
+if (browser) {
+  onAuthStateChanged(auth, (firebaseUser) => {
+    if (firebaseUser) {
+      // User is signed in
+      // If anonymous user, make sure they have a consistent label
+      if (firebaseUser.isAnonymous) {
+        // Add a displayName property if it doesn't exist
+        if (!firebaseUser.displayName) {
+          const shortId = firebaseUser.uid.substring(0, 4);
+          // We can't modify the firebaseUser object directly, so create a new one with the properties we want
+          const enhancedUser = {
+            ...firebaseUser,
+            displayName: `Guest ${shortId}`
+          };
+          userStore.set(enhancedUser);
+          return;
+        }
       }
+      userStore.set(firebaseUser);
+    } else {
+      // User is signed out
+      userStore.set(null);  // Set to null (not undefined) to indicate "determined, but not logged in"
     }
-    user.set(firebaseUser);
-  } else {
-    // User is signed out
-    user.set(null);  // Set to null (not undefined) to indicate "determined, but not logged in"
-  }
-});
+  });
+}
 
 // Auth helper functions
 export const signIn = async (email, password) => {
@@ -264,6 +268,11 @@ export const signOut = async () => {
   if (!browser) return { success: false, error: 'Cannot sign out on server' };
   
   try {
+    // Clear current world directly instead of importing game.js
+    if (browser) {
+      localStorage.removeItem('gisaima-current-world');
+    }
+    
     await firebaseSignOut(auth);
     console.log('Sign out successful');
     return { success: true };

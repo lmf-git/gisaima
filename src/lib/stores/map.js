@@ -2,7 +2,7 @@ import { writable, derived, get } from 'svelte/store';
 import { TerrainGenerator } from '../map/noise.js';
 import { ref, onValue } from "firebase/database";
 import { db } from '../firebase/database.js';
-import { game } from './game.js';
+// Remove imports for game - we'll handle this differently
 
 // Keep a reference to the terrain generator for grid creation
 let terrain;
@@ -15,6 +15,7 @@ export const EXPANDED_ROWS_FACTOR = 2;
 
 const chunkSubscriptions = new Map();
 
+// Initialize map without accessing game store initially
 export const map = writable({
   ready: false,
   cols: 0,
@@ -22,7 +23,7 @@ export const map = writable({
   target: { x: 0, y: 0 },
   highlighted: null,
   minimap: true,
-  world: get(game).currentWorld || 'default', // Initialize from game store
+  world: 'default', // Use default as initial value, don't rely on game store
 });
 
 export const entities = writable({
@@ -33,11 +34,11 @@ export const entities = writable({
 
 export const ready = derived(map, $map => $map.ready);
 
+// Update chunks to avoid game store dependency
 export const chunks = derived(
-  [map, game],
-  ([$map, $game], set) => {
-    // Use the world from game store if available
-    const worldId = $map.world || $game.currentWorld || 'default';
+  [map],
+  ([$map], set) => {
+    const worldId = $map.world || 'default';
     
     // Simplified check - if map is ready, terrain must exist
     if (!$map.ready) return set(new Set());
@@ -58,9 +59,11 @@ export const chunks = derived(
     const maxChunkY = Math.floor(maxY / CHUNK_SIZE);
     
     // Update cache size based on visible area
-    const visibleCols = $map.cols * (1 + expandedFactor * (EXPANDED_COLS_FACTOR - 1));
-    const visibleRows = $map.rows * (1 + expandedFactor * (EXPANDED_ROWS_FACTOR - 1));
-    terrain.updateCacheSize(visibleCols, visibleRows, CHUNK_SIZE);
+    if (terrain) { // Add safety check for terrain
+      const visibleCols = $map.cols * (1 + expandedFactor * (EXPANDED_COLS_FACTOR - 1));
+      const visibleRows = $map.rows * (1 + expandedFactor * (EXPANDED_ROWS_FACTOR - 1));
+      terrain.updateCacheSize(visibleCols, visibleRows, CHUNK_SIZE);
+    }
     
     // Track chunks to remove
     const chunksToRemove = new Set(chunkSubscriptions.keys());
@@ -76,7 +79,7 @@ export const chunks = derived(
         if (chunkSubscriptions.has(chunkKey)) {
           chunksToRemove.delete(chunkKey);
         } else {
-          // Subscribe with updated path using worldId from game store when available
+          // Subscribe with updated path using worldId
           const chunkRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}`);
           const unsubscribe = onValue(chunkRef, snapshot => {
             if (snapshot.exists()) {
@@ -98,8 +101,10 @@ export const chunks = derived(
         chunkSubscriptions.delete(chunkKey);
         
         // Clear cache entries for this chunk
-        const [chunkX, chunkY] = chunkKey.split(',').map(Number);
-        terrain.clearChunkFromCache(chunkX, chunkY, CHUNK_SIZE);
+        if (terrain) { // Add safety check for terrain
+          const [chunkX, chunkY] = chunkKey.split(',').map(Number);
+          terrain.clearChunkFromCache(chunkX, chunkY, CHUNK_SIZE);
+        }
       }
     }
     
@@ -244,97 +249,142 @@ function processChunkData(data = {}) {
   }
 }
 
-// Enhanced setup function that uses game store data
+// Enhanced setup function that uses game store data with better SSR handling
 export function setup({ seed, world = null } = {}) {
-  // Get world ID from game store if not provided
-  const worldId = world || get(game).currentWorld || 'default';
+  // SSR guard - don't initialize terrain on server
+  if (typeof window === 'undefined') {
+    console.log('Skipping map setup in SSR environment');
+    return false;
+  }
+  
+  // Use the provided world ID or default, but don't try to get from game store
+  const worldId = world || 'default';
   
   // Validate seed - it's required and must be a valid number
   if (seed === undefined || seed === null) {
-    throw new Error('No seed provided for map setup - seed is required');
+    console.error('No seed provided for map setup - seed is required');
+    return false;
   }
   
   // Ensure seed is a valid number
   const seedNumber = typeof seed === 'string' ? Number(seed) : seed;
   if (isNaN(seedNumber)) {
-    throw new Error(`Invalid seed value provided: ${seed}`);
+    console.error(`Invalid seed value provided: ${seed}`);
+    return false;
   }
   
-  // Get current map state to calculate initial cache size
-  const currentState = get(map);
-  const initialCols = currentState.cols || 20;
-  const initialRows = currentState.rows || 15;
-  
-  // Calculate an appropriate initial cache size explicitly
-  const initialCacheSize = Math.ceil(initialCols * initialRows * 1.5);
-  
-  // Initialize the terrain generator with explicit seed and cache size
-  terrain = new TerrainGenerator(seedNumber, initialCacheSize);
-  
-  // Update the map store with ready state AFTER terrain is initialized
-  // This ensures map.ready is only true when terrain exists
-  map.update(state => {
-    return {
-      ...state,
-      ready: true,
-      world: worldId,
-      cols: initialCols,
-      rows: initialRows
-    };
-  });
-  
-  return true;
+  try {
+    // Get current map state to calculate initial cache size
+    const currentState = get(map);
+    const initialCols = currentState.cols || 20;
+    const initialRows = currentState.rows || 15;
+    
+    // Calculate an appropriate initial cache size explicitly
+    const initialCacheSize = Math.ceil(initialCols * initialRows * 1.5);
+    
+    // Initialize the terrain generator with explicit seed and cache size
+    terrain = new TerrainGenerator(seedNumber, initialCacheSize);
+    
+    // Update the map store with ready state AFTER terrain is initialized
+    // This ensures map.ready is only true when terrain exists
+    map.update(state => {
+      return {
+        ...state,
+        ready: true,
+        world: worldId,
+        cols: initialCols,
+        rows: initialRows
+      };
+    });
+    
+    return true;
+  } catch (err) {
+    console.error('Error in terrain setup:', err);
+    return false;
+  }
 }
 
-// New function to initialize map directly from game store
-export function setupFromGameStore() {
-  const gameState = get(game);
+// New function to initialize map directly from world info without direct game dependency
+export function setupFromWorldInfo(worldId, worldInfo) {
+  // SSR guard
+  if (typeof window === 'undefined') return false;
   
-  // More detailed checks with specific error messages
-  if (!gameState.currentWorld) {
-    return false;
-  }
-  
-  if (!gameState.worldInfo || Object.keys(gameState.worldInfo).length === 0) {
-    return false;
-  }
-  
-  const worldInfo = gameState.worldInfo[gameState.currentWorld];
-  if (!worldInfo) {
-    return false;
-  }
-  
-  if (worldInfo.seed === undefined) {
-    return false;
-  }
-  
-  // Get seed value and ensure it's a proper number
-  const seedValue = worldInfo.seed;
-  if (isNaN(Number(seedValue))) {
-    return false;
-  }
-  
-  // If the map is already set up for this world, don't reinitialize
-  const mapState = get(map);
-  if (mapState.ready && mapState.world === gameState.currentWorld) {
-    return true;
-  }
-  
-  // We have all required data, proceed with setup
   try {
+    if (!worldId || !worldInfo) {
+      console.log('Missing worldId or worldInfo for map setup');
+      return false;
+    }
+    
+    if (worldInfo.seed === undefined) {
+      console.log('No seed in world info');
+      return false;
+    }
+    
+    // Get seed value and ensure it's a proper number
+    const seedValue = worldInfo.seed;
+    if (isNaN(Number(seedValue))) {
+      console.log('Invalid seed value');
+      return false;
+    }
+    
+    // If the map is already set up for this world, don't reinitialize
+    const mapState = get(map);
+    if (mapState.ready && mapState.world === worldId) {
+      return true;
+    }
+    
+    // We have all required data, proceed with setup
     return setup({
       seed: seedValue,
-      world: gameState.currentWorld
+      world: worldId
     });
   } catch (err) {
-    console.error('Error in map setup:', err);
+    console.error('Error in setupFromWorldInfo:', err);
     return false;
   }
 }
 
-// Get the current world ID
+// Don't access game directly - setupFromGameStore has to be configured from outside
+export function setupFromGameStore(gameStore) {
+  // SSR guard
+  if (typeof window === 'undefined') return false;
+  
+  if (!gameStore) {
+    console.error('Missing game store in setupFromGameStore');
+    return false;
+  }
+  
+  try {
+    const gameState = get(gameStore);
+    
+    // More detailed checks with specific error messages
+    if (!gameState || !gameState.currentWorld) {
+      console.log('No current world in game state');
+      return false;
+    }
+    
+    if (!gameState.worldInfo || Object.keys(gameState.worldInfo).length === 0) {
+      console.log('No world info in game state');
+      return false;
+    }
+    
+    const worldInfo = gameState.worldInfo[gameState.currentWorld];
+    if (!worldInfo) {
+      console.log('No specific world info for current world');
+      return false;
+    }
+    
+    return setupFromWorldInfo(gameState.currentWorld, worldInfo);
+  } catch (err) {
+    console.error('Error in setupFromGameStore:', err);
+    return false;
+  }
+}
+
+// Get the current world ID - fixed to avoid circular references
 export function getCurrentWorld() {
-  return get(map).world || get(game).currentWorld || 'default';
+  // Don't access game store here to avoid circular dependency
+  return get(map).world || 'default';
 }
 
 // Switch to a different world
@@ -415,4 +465,42 @@ export function cleanup() {
     groups: {},
     players: {}
   });
+}
+
+// Add this function or modify the existing initialization function
+
+// Make sure the map correctly initializes when a world is loaded without dynamic imports
+export function initializeMapForWorld(worldId, worldData = null) {
+  if (!worldId) return;
+  
+  console.log(`Initializing map for world: ${worldId}`);
+  
+  // Get current map state
+  const currentMapState = get(map);
+  
+  // If the map is already set up for this world, don't reinitialize
+  if (currentMapState.ready && currentMapState.world === worldId) {
+    console.log(`Map already initialized for world ${worldId}`);
+    return;
+  }
+  
+  // Clean up existing map if needed
+  if (currentMapState.ready) {
+    cleanup();
+  }
+  
+  // If we have worldData with a seed, use it to initialize
+  if (worldData && worldData.seed !== undefined) {
+    console.log(`Initializing map with provided worldData, seed: ${worldData.seed}`);
+    setup({
+      seed: worldData.seed,
+      world: worldId
+    });
+    return;
+  }
+  
+  // We'll rely on the external initialization via setupFromGameStore or setupFromWorldInfo
+  // rather than importing game directly
+  console.log(`Cannot initialize map for world ${worldId} - no seed data available`);
+  // We'll keep the map not ready until proper data is loaded
 }
