@@ -8,6 +8,16 @@
   function formatTerrainName(name) {
     return name ? name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : "Unknown";
   }
+
+  // Add a helper to determine if rarity should be shown
+  function shouldShowRarity(rarity) {
+    return rarity && rarity !== 'common';
+  }
+  
+  // Format rarity text
+  function formatRarity(rarity) {
+    return rarity ? rarity.charAt(0).toUpperCase() + rarity.slice(1) : '';
+  }
 </script>
 
 <div 
@@ -17,8 +27,13 @@
   onkeypress={keypress}
   role="button" 
   tabindex="0">
-  <div class="coordinates">{$targetStore.x} | {$targetStore.y}</div>  <!-- Changed from centerTileStore to targetStore -->
-  <div class="terrain">{formatTerrainName($targetStore.biome?.name)}</div>  <!-- Changed from centerTileStore to targetStore -->
+  <div class="coordinates">{$targetStore.x} | {$targetStore.y}</div>  
+  <div class="terrain">
+    {formatTerrainName($targetStore.biome?.name)}
+    {#if shouldShowRarity($targetStore.terrain?.rarity)}
+      <span class="rarity {$targetStore.terrain?.rarity || ''}">{formatRarity($targetStore.terrain?.rarity)}</span>
+    {/if}
+  </div>
 </div>
 
 <style>
@@ -65,7 +80,39 @@
     font-family: var(--font-body); /* Add body font */
   }
   
-  /* Removed the hover styles */
+  .rarity {
+    margin-left: 0.5em;
+    font-size: 0.9em;
+    font-weight: bold;
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+    display: inline-block;
+  }
+  
+  .uncommon {
+    color: #228B22;
+    background: rgba(30, 255, 0, 0.15);
+  }
+  
+  .rare {
+    color: #0070DD;
+    background: rgba(0, 112, 221, 0.15);
+  }
+  
+  .epic {
+    color: #9400D3;
+    background: rgba(148, 0, 211, 0.15);
+  }
+  
+  .legendary {
+    color: #FF8C00;
+    background: rgba(255, 165, 0, 0.15);
+  }
+  
+  .mythic {
+    color: #FF1493;
+    background: rgba(255, 128, 255, 0.15);
+  }
 
   @keyframes reveal {
     0% {

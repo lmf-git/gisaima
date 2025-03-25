@@ -126,6 +126,16 @@
       }
     }, 100);
   });
+
+  // Add helper function to format rarity
+  function formatRarity(rarity) {
+    return rarity ? rarity.charAt(0).toUpperCase() + rarity.slice(1) : '';
+  }
+
+  // Determine if rarity should be displayed
+  const hasRarity = $derived(
+    currentTile?.terrain?.rarity && currentTile.terrain.rarity !== 'common'
+  );
 </script>
 
 <svelte:window onkeydown={escape} />
@@ -138,7 +148,15 @@
           <span class="highlighted-label">(Highlighted)</span>
         {/if}
       </h2>
-      <p>Terrain: {formattedName}</p>
+      
+      <div class="terrain-info">
+        <p>
+          Terrain: {formattedName}
+          {#if hasRarity}
+            <span class="rarity-tag {currentTile.terrain.rarity}">{formatRarity(currentTile.terrain.rarity)}</span>
+          {/if}
+        </p>
+      </div>
       
       {#if structure}
         <div class="section">
@@ -225,6 +243,14 @@
     animation: reveal 0.4s ease-out forwards;
     transform-origin: bottom right;
     transition: all 0.2s ease; /* Add smooth transition for hover states */
+  }
+
+  /* Add minimum dimensions for desktop screens */
+  @media (min-width: 768px) {
+    .info {
+      min-height: 8em;
+      min-width: 22em;
+    }
   }
   
   @keyframes reveal {
@@ -409,5 +435,51 @@
     border-radius: 0.3em;
     vertical-align: middle;
     margin-left: 0.4em;
+  }
+
+  .terrain-info {
+    display: flex;
+    align-items: center;
+    margin: 0.3em 0 0.8em;
+  }
+
+  .rarity-tag {
+    margin-left: 0.8em;
+    font-size: 0.9em;
+    font-weight: bold;
+    padding: 0.2em 0.5em;
+    border-radius: 0.3em;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  
+  .uncommon {
+    color: #228B22;
+    background: rgba(30, 255, 0, 0.15);
+    border: 1px solid rgba(30, 255, 0, 0.3);
+  }
+  
+  .rare {
+    color: #0070DD;
+    background: rgba(0, 112, 221, 0.15);
+    border: 1px solid rgba(0, 112, 221, 0.3);
+  }
+  
+  .epic {
+    color: #9400D3;
+    background: rgba(148, 0, 211, 0.15);
+    border: 1px solid rgba(148, 0, 211, 0.3);
+  }
+  
+  .legendary {
+    color: #FF8C00;
+    background: rgba(255, 165, 0, 0.15);
+    border: 1px solid rgba(255, 165, 0, 0.3);
+  }
+  
+  .mythic {
+    color: #FF1493;
+    background: rgba(255, 128, 255, 0.15);
+    border: 1px solid rgba(255, 128, 255, 0.3);
   }
 </style>

@@ -176,6 +176,16 @@
   function setActiveTab(tabName) {
     activeTab = tabName;
   }
+
+  // Add a helper function to format structure name like in Details.svelte
+  function formatStructureName(entity) {
+    // If there's a name available, show "name (type)"
+    if (entity.name) {
+      return `${entity.name} (${entity.type || 'structure'})`;
+    }
+    // Otherwise, just show the capitalized type
+    return entity.type ? entity.type.charAt(0).toUpperCase() + entity.type.slice(1) : 'Structure';
+  }
 </script>
 
 <div class="entities-container">
@@ -238,7 +248,7 @@
             <div class="entity-info">
               <div class="entity-name">
                 {#if entity.entityType === 'structure'}
-                  {entity.type || 'Structure'} 
+                  {formatStructureName(entity)}
                 {:else if entity.entityType === 'player'}
                   {getPlayerDisplayName(entity)}
                 {:else}
@@ -278,56 +288,63 @@
     max-width: calc(100vw - 2em);
     max-height: calc(100vh - 3em);
     margin-top: 2.5em;  /* Position below control buttons */
-    background: rgba(35, 35, 45, 0.92);  /* Darker background than Details */
-    border: 0.0625em solid rgba(100, 120, 230, 0.4);  /* Bluish border */
+    background-color: rgba(255, 255, 255, 0.85); /* Match Details panel background */
+    color: rgba(0, 0, 0, 0.8); /* Match Details panel text color */
+    border: 0.05em solid rgba(255, 255, 255, 0.2); /* Match Details panel border */
     border-radius: 0.3em;
-    box-shadow: 0 0.2em 1em rgba(20, 20, 40, 0.5);  /* Deeper shadow */
-    animation: slideInFromTop 0.8s ease-out forwards;
+    box-shadow: 0 0.2em 0.7em rgba(0, 0, 0, 0.2); /* Softer shadow like Details */
+    backdrop-filter: blur(0.5em); /* Add backdrop blur like Details */
+    -webkit-backdrop-filter: blur(0.5em);
+    animation: reveal 0.4s ease-out forwards; /* Match Details animation */
     display: flex;
     flex-direction: column;
     overflow: hidden;
     transform-origin: top right;
-    color: rgba(255, 255, 255, 0.9);  /* Light text color */
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7); /* Match Details text shadow */
+    font-family: var(--font-body);
   }
 
   .entities-panel.closing {
-    animation: slideOutToTop 0.8s ease-in forwards;
+    animation: closeReveal 0.3s ease-in forwards;
   }
 
-  @keyframes slideInFromTop {
-    0% {
-      transform: translateY(-100%);
+  @keyframes reveal {
+    from {
       opacity: 0;
+      transform: scale(0.95);
+      border-color: transparent;
     }
-    100% {
-      transform: translateY(0);
+    to {
       opacity: 1;
+      transform: scale(1);
+      border-color: rgba(255, 255, 255, 0.2);
     }
   }
 
-  @keyframes slideOutToTop {
-    0% {
-      transform: translateY(0);
+  @keyframes closeReveal {
+    from {
       opacity: 1;
+      transform: scale(1);
     }
-    100% {
-      transform: translateY(-100%);
+    to {
       opacity: 0;
+      transform: scale(0.95);
     }
   }
 
   .entities-header {
     padding: 0.5em 1em;
-    background-color: rgba(80, 100, 200, 0.2);  /* Bluish header background */
-    border-bottom: 0.0625em solid rgba(100, 120, 230, 0.3);
+    background-color: rgba(0, 0, 0, 0.05); /* Subtle header background */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   }
 
   .entities-header h3 {
     margin: 0 0 0.5em 0;
-    font-size: 1em;
+    font-size: 1.1em;
+    font-weight: 600;
     text-align: center;
-    color: rgba(255, 255, 255, 0.95);
-    text-shadow: 0 0 0.3em rgba(100, 150, 255, 0.5);  /* Subtle blue glow */
+    color: rgba(0, 0, 0, 0.9);
+    font-family: var(--font-heading);
   }
 
   .tabs {
@@ -338,24 +355,24 @@
 
   .tabs button {
     padding: 0.2em 0.5em;
-    background: rgba(70, 90, 190, 0.2);  /* Bluish tab background */
-    border: 0.0625em solid rgba(100, 120, 230, 0.3);
+    background: rgba(0, 0, 0, 0.05);
+    border: 0.05em solid rgba(0, 0, 0, 0.1);
     border-radius: 0.2em;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(0, 0, 0, 0.7);
     font-size: 0.8em;
     cursor: pointer;
     transition: all 0.2s ease;
+    font-family: var(--font-body);
   }
 
   .tabs button.active {
-    background: rgba(80, 120, 230, 0.4);  /* More vibrant when active */
-    border-color: rgba(100, 150, 255, 0.5);
+    background: rgba(0, 0, 0, 0.1);
     font-weight: bold;
-    color: white;
+    color: rgba(0, 0, 0, 0.9);
   }
 
   .tabs button:hover {
-    background: rgba(80, 120, 230, 0.3);
+    background: rgba(0, 0, 0, 0.08);
   }
 
   .entities-list {
@@ -369,7 +386,7 @@
     align-items: center;
     padding: 0.5em 1em;
     border: none;
-    border-bottom: 0.0625em solid rgba(100, 120, 230, 0.2);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     background: transparent;
     color: inherit;
     font-family: inherit;
@@ -382,12 +399,12 @@
 
   .entity-item:hover,
   .entity-item:focus {
-    background-color: rgba(100, 120, 230, 0.15);
+    background-color: rgba(0, 0, 0, 0.05);
     outline: none;
   }
   
   .entity-item:focus-visible {
-    box-shadow: inset 0 0 0 0.15em rgba(100, 150, 255, 0.5);
+    box-shadow: inset 0 0 0 0.15em rgba(0, 0, 0, 0.1);
   }
 
   .entity-icon {
@@ -404,6 +421,7 @@
   .entity-name {
     font-weight: bold;
     font-size: 0.9em;
+    color: rgba(0, 0, 0, 0.85);
   }
 
   .entity-location {
@@ -411,44 +429,45 @@
     opacity: 0.7;
     display: flex;
     justify-content: space-between;
+    color: rgba(0, 0, 0, 0.7);
   }
 
   .entity-action {
     font-size: 1.2em;
-    color: rgba(150, 180, 255, 0.7);  /* Blueish arrow */
+    color: rgba(0, 0, 0, 0.5);
   }
 
   .entity-empty, .entity-more {
     padding: 1em;
     text-align: center;
     font-style: italic;
-    color: rgba(180, 190, 230, 0.5);
+    color: rgba(0, 0, 0, 0.5);
     font-size: 0.9em;
   }
 
-  /* Entity type styling with more distinct colors */
+  /* Entity type styling with updated colors for light background */
   .entity-structure {
-    border-left: 0.2em solid rgba(200, 200, 255, 0.7);
+    border-left: 0.2em solid rgba(80, 80, 120, 0.6);
   }
 
   .entity-spawn {
-    border-left: 0.2em solid rgba(0, 255, 255, 0.7);
+    border-left: 0.2em solid rgba(0, 180, 180, 0.6);
   }
 
   .entity-watchtower {
-    border-left: 0.2em solid rgba(255, 255, 150, 0.7);
+    border-left: 0.2em solid rgba(180, 180, 0, 0.6);
   }
 
   .entity-fortress {
-    border-left: 0.2em solid rgba(255, 200, 100, 0.7);
+    border-left: 0.2em solid rgba(180, 120, 0, 0.6);
   }
 
   .entity-player {
-    border-left: 0.2em solid rgba(100, 150, 255, 0.8);  /* More vibrant blue */
+    border-left: 0.2em solid rgba(0, 100, 200, 0.6);
   }
 
   .entity-group {
-    border-left: 0.2em solid rgba(255, 100, 120, 0.8);  /* More vibrant red */
+    border-left: 0.2em solid rgba(200, 0, 50, 0.6);
   }
 
   /* Responsive adjustments */
@@ -466,7 +485,7 @@
 
   /* Tab styles update for better focus states */
   .tabs button:focus-visible {
-    outline: 0.15em solid rgba(120, 170, 255, 0.7);
+    outline: 0.15em solid rgba(0, 0, 0, 0.2);
     outline-offset: 0.1em;
   }
 
@@ -476,11 +495,11 @@
   }
   
   .entities-list::-webkit-scrollbar-track {
-    background: rgba(50, 50, 70, 0.3);
+    background: rgba(0, 0, 0, 0.05);
   }
   
   .entities-list::-webkit-scrollbar-thumb {
-    background-color: rgba(100, 120, 230, 0.5);
+    background-color: rgba(0, 0, 0, 0.2);
     border-radius: 10px;
   }
 </style>
