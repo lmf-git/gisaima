@@ -6,6 +6,7 @@
     import SignOut from '../components/icons/SignOut.svelte';
     import XIcon from '../components/icons/XIcon.svelte';
     import DiscordIcon from '../components/icons/DiscordIcon.svelte';
+    import GitHubIcon from '../components/icons/GitHubIcon.svelte'; // Import the new GitHub icon
     import MobileMenu from '../components/MobileMenu.svelte';
     import { onMount, onDestroy } from 'svelte';
     import { initGameStore, game, isAuthReady, setMapInitializer } from '../lib/stores/game.js';
@@ -227,9 +228,7 @@
                 {#if !headerLoading}
                     {#if $user}
                         <div class="greeting">Hello, {$user.isAnonymous ? 'Guest' : ($user.displayName || $user.email.split('@')[0])}</div>
-                        <button class="signout" onclick={signOut} aria-label="Sign Out">
-                            <SignOut size="1.2em" extraClass="icon-pale-green" />
-                        </button>
+                        <!-- Removed sign out button from here -->
                     {:else}
                         <!-- Only show login link if not on login page and not on home page -->
                         {#if !isLoginPage && !isHomePage}
@@ -291,7 +290,10 @@
                         <h3>Account</h3>
                         <div class="footer-links">
                             {#if $user}
-                                <button class="footer-signout" onclick={signOut}>Sign Out</button>
+                                <button class="footer-signout social-link" onclick={signOut}>
+                                    <SignOut size="16px" extraClass="social-icon" />
+                                    <span>Sign Out</span>
+                                </button>
                             {:else}
                                 <a href="/login">Log In</a>
                                 <a href="/signup">Sign Up</a>
@@ -309,6 +311,10 @@
                             <a href="https://discord.gg/ugmRXWNXbA" target="_blank" rel="noopener noreferrer" class="social-link">
                                 <DiscordIcon size="18px" extraClass="social-icon" />
                                 <span>Discord</span>
+                            </a>
+                            <a href="https://github.com/lmf-git/gisaima" target="_blank" rel="noopener noreferrer" class="social-link">
+                                <GitHubIcon size="18px" extraClass="social-icon" />
+                                <span>GitHub</span>
                             </a>
                         </div>
                     </div>
@@ -587,22 +593,6 @@
         text-overflow: ellipsis;
         max-width: 150px;
         order: -1;
-    }
-    
-    .signout {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        background-color: transparent;
-        color: var(--color-pale-green);
-        border: none;
-        cursor: pointer;
-        transition: opacity 0.2s ease;
-    }
-    
-    .signout:hover {
-        opacity: 0.8;
     }
     
     .login, .signup {
@@ -884,6 +874,10 @@
         transition: color 0.2s ease;
     }
     
+    .social-link:hover .social-icon {
+        color: var(--color-pale-green);
+    }
+    
     .footer-links a, .footer-signout {
         color: rgba(255, 255, 255, 0.7);
         text-decoration: none;
@@ -903,6 +897,7 @@
         padding: 0;
         text-align: left;
         font-family: var(--font-body);
+        width: 100%;
     }
     
     .footer-bottom {
@@ -943,6 +938,7 @@
         
         .footer-signout {
             text-align: center;
+            justify-content: center;
         }
         
         .brand {
