@@ -197,17 +197,19 @@
         {/each}
       </div>
       
-      <button 
-        class="spawn-button" 
-        onclick={confirmSpawn} 
-        disabled={!selectedSpot || spawning}
-      >
-        {#if spawning}
-          <div class="spinner"></div> Spawning...
-        {:else}
-          Enter World
-        {/if}
-      </button>
+      <div class="action-container">
+        <button 
+          class="cta-button spawn-button" 
+          onclick={confirmSpawn} 
+          disabled={!selectedSpot || spawning}
+        >
+          {#if spawning}
+            <div class="spinner"></div> Spawning...
+          {:else}
+            <span class="button-text">Enter World</span>
+          {/if}
+        </button>
+      </div>
       
       <p class="hint">You can explore other areas after spawning</p>
     {/if}
@@ -294,26 +296,66 @@
     opacity: 0.7;
   }
   
+  .action-container {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0 1rem;
+  }
+
+  .cta-button {
+    display: inline-block;
+    padding: 0.8em 2em;
+    background-color: var(--color-button-primary);
+    color: var(--color-text);
+    border-radius: 0.3em;
+    font-size: 1.1em;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 0.05em solid transparent;
+    font-family: var(--font-heading);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
   .spawn-button {
-    background: var(--color-teal);
+    min-width: 200px;
+    background: linear-gradient(135deg, var(--color-teal) 0%, var(--color-bright-teal) 100%);
     color: #ffffff;
     border: none;
-    padding: 0.875rem 1.5rem;
-    border-radius: 4px;
-    font-weight: bold;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
+    box-shadow: 0 0.3em 0.6em rgba(0, 150, 150, 0.4);
+    letter-spacing: 0.05em;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    margin: 0 auto;
+  }
+  
+  .spawn-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: all 0.6s;
   }
   
   .spawn-button:hover:not(:disabled) {
-    background: var(--color-bright-teal);
-    transform: translateY(-2px);
+    transform: translateY(-0.2em);
+    box-shadow: 0 0.4em 0.8em rgba(0, 150, 150, 0.6);
+    background: linear-gradient(135deg, var(--color-bright-teal) 0%, var(--color-teal) 100%);
+  }
+  
+  .spawn-button:hover:not(:disabled)::before {
+    left: 100%;
+  }
+  
+  .button-text {
+    position: relative;
+    z-index: 1;
   }
   
   .spawn-button:disabled {
@@ -344,9 +386,9 @@
   
   .spinner {
     display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    width: 1.2rem;
+    height: 1.2rem;
+    border: 0.2em solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
     border-top-color: white;
     animation: spin 1s ease-in-out infinite;
@@ -365,6 +407,11 @@
     
     h2 {
       font-size: 1.5rem;
+    }
+    
+    .cta-button {
+      width: 100%;
+      padding: 0.7em 1em;
     }
   }
   
