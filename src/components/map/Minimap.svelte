@@ -11,6 +11,7 @@
     moveTarget
   } from '../../lib/stores/map.js';
   import { browser } from '$app/environment';
+  import { onDestroy } from "svelte";
   
   // Accept closing prop from parent
   const { closing = false } = $props();
@@ -37,6 +38,11 @@
   const grid = $derived(coordinates);
   
   // Add minimapDragAction for Minimap-specific logic
+  // Add a throttle mechanism for drag updates
+  let lastDragUpdate = 0;
+  const DRAG_THROTTLE = 50; // ms
+  
+  // Process drag with throttling
   function minimapDragAction(event) {
     if (event.button !== undefined && event.button !== 0) return false;
     
@@ -48,11 +54,21 @@
       dist = 0;
       wasDrag = false;
       
+      // Clear highlighted tile when drag starts
+      setHighlighted(null, null);
+      
       return true;
     }
     
-    // Process drag
+    // Process drag with throttling to prevent excessive updates
     else if ((event.type === 'dragmove' || event.type === 'touchmove') && isDrag) {
+      const currentTime = Date.now();
+      
+      // Skip updates that come too quickly
+      if (currentTime - lastDragUpdate < DRAG_THROTTLE) {
+        return false;
+      }
+      
       const currentX = event.clientX || event.touches?.[0]?.clientX;
       const currentY = event.clientY || event.touches?.[0]?.clientY;
       
@@ -73,6 +89,9 @@
       const cellsMovedY = Math.round(deltaY / pixelsPerTileY);
       
       if (cellsMovedX === 0 && cellsMovedY === 0) return false;
+      
+      // Update timestamp for throttling
+      lastDragUpdate = currentTime;
       
       moveTarget($map.target.x - cellsMovedX, $map.target.y - cellsMovedY);
       
@@ -189,12 +208,17 @@
     
     // Use a small timeout to match Grid behavior
     minimapHoverTimeout = setTimeout(() => {
-      if (!$highlightedStore || $highlightedStore.x !== cell.x || $highlightedStore.y !== cell.y) {
+      if (!isDrag && !isTouching && (!$highlightedStore || $highlightedStore.x !== cell.x || $highlightedStore.y !== cell.y)) {
         setHighlighted(cell.x, cell.y);
       }
       minimapHoverTimeout = null;
     }, 50);
   }
+
+  // Cleanup hover timeout on component destroy
+  onDestroy(() => {
+    if (minimapHoverTimeout) clearTimeout(minimapHoverTimeout);
+  });
 </script>
 
 <svelte:window

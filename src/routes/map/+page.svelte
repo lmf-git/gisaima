@@ -22,7 +22,8 @@
         moveTarget,
         setupFromWorldInfo,
         setupFromGameStore,
-        cleanup
+        cleanup,
+        isInternalUrlChange
     } from "../../lib/stores/map.js";
     
     import Tutorial from '../../components/map/Tutorial.svelte';
@@ -58,7 +59,15 @@
         detailed = show;
     }
     
-    // Function to extract coordinates from URL parameters
+    // Track the source of URL coordinate changes
+    let ignoreNextUrlChange = $state(false);
+    let lastProcessedLocation = $state(null);
+    
+    // Enhanced URL coordinates handling
+    let urlCoordinatesProcessing = $state(false);
+    let urlCoordinatesLastProcessed = $state({ x: null, y: null });
+    
+    // Extract coordinates from URL parameters with improved validation
     function parseUrlCoordinates() {
         if (!browser || !$page.url) return null;
         
@@ -70,6 +79,12 @@
             const parsedY = parseInt(y, 10);
             
             if (!isNaN(parsedX) && !isNaN(parsedY)) {
+                // Compare with last processed coordinates to avoid redundant processing
+                if (urlCoordinatesLastProcessed.x === parsedX && 
+                    urlCoordinatesLastProcessed.y === parsedY) {
+                    return null;
+                }
+                
                 return { x: parsedX, y: parsedY };
             }
         }
@@ -77,23 +92,66 @@
         return null;
     }
     
-    // Monitor URL for coordinate changes
-    $effect(() => {
-        if (browser && $page.url) {
-            const newCoords = parseUrlCoordinates();
-            
-            if (newCoords) {
-                console.log(`Found URL coordinates: ${newCoords.x},${newCoords.y}`);
-                urlCoordinates = newCoords;
-                urlProcessingComplete = false;
-            } else if (urlCoordinates) {
-                // Clear coordinates if URL no longer has them
-                urlCoordinates = null;
+    // Listen for URL changes, including those caused by browser back/forward
+    if (browser) {
+        window.addEventListener('popstate', () => {
+            // If this URL change was caused by our own update, ignore it
+            if (isInternalUrlChange()) {
+                ignoreNextUrlChange = true;
+                return;
             }
+            
+            // Reset processing flag to handle external URL changes (like browser navigation)
+            urlProcessingComplete = false;
+        });
+    }
+    
+    // Simplified effect for URL coordinate monitoring
+    $effect(() => {
+        // Skip if we're currently processing URL coordinates or if the change is internal
+        if (urlCoordinatesProcessing || isInternalUrlChange() || !browser || !$page.url) return;
+        
+        const newCoords = parseUrlCoordinates();
+        
+        if (newCoords) {
+            console.log(`Found URL coordinates: ${newCoords.x},${newCoords.y}`);
+            
+            // Mark that we're processing coordinates to prevent redundant updates
+            urlCoordinatesProcessing = true;
+            
+            // Only apply if map is ready, otherwise store for later
+            if ($ready) {
+                console.log(`Applying URL coordinates: ${newCoords.x},${newCoords.y}`);
+                moveTarget(newCoords.x, newCoords.y);
+                urlCoordinatesLastProcessed = { ...newCoords };
+            } else {
+                urlCoordinates = newCoords;
+            }
+            
+            // Reset processing flag
+            setTimeout(() => {
+                urlCoordinatesProcessing = false;
+            }, 100);
         }
     });
     
-    // Apply URL coordinates when map is ready
+    // Simplified effect for applying URL coordinates after map is ready
+    $effect(() => {
+        if (!$ready || !urlCoordinates || urlCoordinatesProcessing) return;
+        
+        urlCoordinatesProcessing = true;
+        
+        console.log(`Applying URL coordinates after map ready: ${urlCoordinates.x},${urlCoordinates.y}`);
+        moveTarget(urlCoordinates.x, urlCoordinates.y);
+        urlCoordinatesLastProcessed = { ...urlCoordinates };
+        urlCoordinates = null;
+        
+        setTimeout(() => {
+            urlCoordinatesProcessing = false;
+        }, 100);
+    });
+    
+    // Improved effect for applying URL coordinates
     $effect(() => {
         if (!$ready || urlProcessingComplete) return;
         
@@ -101,27 +159,17 @@
             console.log(`Applying URL coordinates: ${urlCoordinates.x},${urlCoordinates.y}`);
             moveTarget(urlCoordinates.x, urlCoordinates.y);
             urlProcessingComplete = true;
+            lastProcessedLocation = { ...urlCoordinates };
         } else if ($game.playerWorldData?.lastLocation && !$needsSpawn) {
             // Fall back to player location
             const location = $game.playerWorldData.lastLocation;
             moveTarget(location.x, location.y);
             urlProcessingComplete = true;
+            lastProcessedLocation = { ...location };
         }
     });
     
-    // Reset processing flag when URL coordinates change
-    $effect(() => {
-        if (browser && $page.url) {
-            const newCoords = parseUrlCoordinates();
-            if (newCoords && urlProcessingComplete) {
-                const mapTarget = $targetPosition;
-                if (newCoords.x !== mapTarget.x || newCoords.y !== mapTarget.y) {
-                    console.log(`URL coordinates changed manually: ${newCoords.x},${newCoords.y}`);
-                    urlProcessingComplete = false;
-                }
-            }
-        }
-    });
+    // No need for extra watching effect since the map store handles URL updates now
 
     // Handle spawn completion
     function handleSpawnComplete(spawnLocation) {

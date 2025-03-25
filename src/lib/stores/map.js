@@ -51,11 +51,22 @@ export const targetPosition = derived(map, ($map) => {
 
 // Debounce URL updates to prevent performance issues
 let urlUpdateTimeout = null;
-const URL_UPDATE_DEBOUNCE = 300; // ms
+const URL_UPDATE_DEBOUNCE = 500; // Increase from 300ms to 500ms for better performance
 
-// Function to update URL with current coordinates
+// Flag to track if the URL is being updated by us or externally
+let isInternalUrlUpdate = false;
+let lastUrlUpdate = { x: null, y: null }; // Track last updated coordinates
+
+// Improved function to update URL with current coordinates
 function updateUrlWithCoordinates(x, y) {
   if (typeof window === 'undefined') return;
+  
+  // Skip if coordinates match the last ones we updated (prevent redundancy)
+  const roundedX = Math.round(x);
+  const roundedY = Math.round(y);
+  if (lastUrlUpdate.x === roundedX && lastUrlUpdate.y === roundedY) {
+    return;
+  }
   
   // Cancel any pending updates
   if (urlUpdateTimeout) {
@@ -65,15 +76,35 @@ function updateUrlWithCoordinates(x, y) {
   // Debounce URL updates to prevent performance issues
   urlUpdateTimeout = setTimeout(() => {
     try {
+      // Mark this as an internal update
+      isInternalUrlUpdate = true;
+      
+      // Update URL without triggering unnecessary history events
       const url = new URL(window.location);
-      url.searchParams.set('x', Math.round(x).toString());
-      url.searchParams.set('y', Math.round(y).toString());
+      url.searchParams.set('x', roundedX.toString());
+      url.searchParams.set('y', roundedY.toString());
+      
+      // Store the coordinates we're updating to
+      lastUrlUpdate = { x: roundedX, y: roundedY };
+      
+      // Use replaceState to avoid browser history bloat
       history.replaceState({}, '', url);
+      
+      // Reset flag after a short delay to allow for popstate event to be processed
+      setTimeout(() => {
+        isInternalUrlUpdate = false;
+      }, 50);
     } catch (err) {
       console.error('Error updating URL:', err);
+      isInternalUrlUpdate = false;
     }
     urlUpdateTimeout = null;
   }, URL_UPDATE_DEBOUNCE);
+}
+
+// Export function to check if URL update is internal
+export function isInternalUrlChange() {
+  return isInternalUrlUpdate;
 }
 
 // Update chunks to avoid game store dependency
@@ -307,11 +338,11 @@ export const highlightedStore = derived(
   }
 );
 
-// Enhance the moveTarget function with debouncing
+// Enhance the moveTarget function with better debouncing
 let moveTargetTimeout = null;
-const MOVE_TARGET_DEBOUNCE = 20; // ms - balance between responsiveness and performance
+const MOVE_TARGET_DEBOUNCE = 30; // Increase from 20ms to 30ms
 
-// Unified map movement function with debouncing and validation
+// Unified map movement function with improved URL handling
 export function moveTarget(newX, newY) {
   if (newX === undefined || newY === undefined) {
     console.warn('Invalid coordinates passed to moveTarget:', { newX, newY });
@@ -334,6 +365,7 @@ export function moveTarget(newX, newY) {
   
   // Debounce rapid updates
   moveTargetTimeout = setTimeout(() => {
+    // Update map position immediately for responsive UI
     map.update(prev => ({
       ...prev,
       target: { x, y },
@@ -342,8 +374,10 @@ export function moveTarget(newX, newY) {
     // Clear highlighted tile when moving
     highlightedCoords.set(null);
     
-    // Update URL to reflect the new position
-    updateUrlWithCoordinates(x, y);
+    // Update URL to reflect the new position - with a lower priority
+    if (!isInternalUrlUpdate) {
+      updateUrlWithCoordinates(x, y);
+    }
     
     moveTargetTimeout = null;
   }, MOVE_TARGET_DEBOUNCE);
@@ -516,6 +550,9 @@ export function switchWorld(worldId) {
 
 // Cleanup resources
 export function cleanup() {
+  // Reset the internal URL update flag
+  isInternalUrlUpdate = false;
+  
   // Clear any pending timeouts
   if (moveTargetTimeout) {
     clearTimeout(moveTargetTimeout);

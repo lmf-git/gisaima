@@ -66,7 +66,11 @@
     });
   }
   
-  // Add handleDragAction for Grid
+  // Add throttling for grid drag
+  let lastDragUpdateTime = 0;
+  const DRAG_THROTTLE = 50; // ms
+  
+  // Add handleDragAction for Grid with throttling
   function handleDragAction(event, sensitivity = 1) {
     const state = $map;
     
@@ -78,6 +82,9 @@
       // Reset drag tracking on start
       dist = 0;
       wasDrag = false;
+      
+      // Clear any highlighted tile to improve performance during drag
+      setHighlighted(null, null);
       
       map.update(state => ({
         ...state,
@@ -95,6 +102,13 @@
     // Process drag
     else if (event.type === 'dragmove' || event.type === 'touchmove') {
       if (!state.isDragging || state.dragSource !== 'map') return false;
+      
+      const currentTime = Date.now();
+      
+      // Skip updates that come too quickly
+      if (currentTime - lastDragUpdateTime < DRAG_THROTTLE) {
+        return false;
+      }
       
       const clientX = event.clientX || event.touches?.[0]?.clientX || 0;
       const clientY = event.clientY || event.touches?.[0]?.clientY || 0;
@@ -129,6 +143,9 @@
         }));
         return false;
       }
+
+      // Update timestamp for throttling
+      lastDragUpdateTime = currentTime;
 
       const newX = state.target.x - cellsMovedX;
       const newY = state.target.y - cellsMovedY;
@@ -283,7 +300,7 @@
   // Tile hover handling
   let hoverTimeout = null;
   function handleTileHover(cell) {
-    if (isMoving) return;
+    if (isMoving || $map.isDragging) return;
     
     // Clear any pending hover updates
     if (hoverTimeout) clearTimeout(hoverTimeout);
@@ -291,16 +308,16 @@
     // Set a short timeout before updating the highlighted tile
     hoverTimeout = setTimeout(() => {
       // Compare with highlightedStore instead of map.highlighted
-      if (!$highlightedStore || $highlightedStore.x !== cell.x || $highlightedStore.y !== cell.y) {
+      if (!$map.isDragging && (!$highlightedStore || $highlightedStore.x !== cell.x || $highlightedStore.y !== cell.y)) {
         setHighlighted(cell.x, cell.y);
       }
       hoverTimeout = null;
     }, 50); // 50ms debounce
   }
   
-  // Clear highlight state when moving
+  // Clear highlight state when moving or starting a drag
   $effect(() => {
-    if (isMoving && $highlightedStore) {  // Use highlightedStore instead of map.highlighted
+    if ((isMoving || $map.isDragging) && $highlightedStore) {
       setHighlighted(null, null);
     }
   });

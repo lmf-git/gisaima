@@ -169,14 +169,18 @@
     if (!browser || !joined || !worldId) return;
     
     // Convert the summarized coordinates to actual world coordinates
-    // For example, if summaryFactor is 50, and we click on tile (1, 2),
-    // we want to go to the center of that summarized area
     const centerOffset = Math.floor(summaryFactor / 2);
     const worldX = x * summaryFactor + centerOffset;
     const worldY = y * summaryFactor + centerOffset;
     
+    // Create a cleaner URL (avoiding any possible duplicated params)
+    const url = new URL('/map', window.location.origin);
+    url.searchParams.set('world', worldId);
+    url.searchParams.set('x', worldX.toString());
+    url.searchParams.set('y', worldY.toString());
+    
     // Navigate to the map with the calculated coordinates
-    goto(`/map?world=${worldId}&x=${worldX}&y=${worldY}`);
+    goto(url.pathname + url.search);
   }
   
   // Handle click on any tile
