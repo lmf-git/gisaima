@@ -12,6 +12,8 @@
   
   // Track expanded state for each section
   let worldExpanded = $state(false)
+  let terrainExpanded = $state(false)
+  let structuresExpanded = $state(false)
   let unitsExpanded = $state(false)
   let controlsExpanded = $state(false)
   
@@ -36,6 +38,8 @@
   
   // Toggle functions for each section
   const toggleWorld = () => worldExpanded = !worldExpanded
+  const toggleTerrain = () => terrainExpanded = !terrainExpanded
+  const toggleStructures = () => structuresExpanded = !structuresExpanded
   const toggleUnits = () => unitsExpanded = !unitsExpanded
   const toggleControls = () => controlsExpanded = !controlsExpanded
 </script>
@@ -50,35 +54,67 @@
       
       <div class="content">
         <p class="summary">
-          Gisaima is a strategic, open-world MMO with elements of war, economy, and community-building. 
-          Players control units, manage settlements, engage in battles, and trade resources within a dynamic world.
+          Gisaima is a strategic, open-world MMO with procedurally generated maps, territory control, 
+          and real-time interaction. Explore infinite worlds, establish structures, and compete with other players.
         </p>
         
         <div class="features">
           <div class="feature collapsible">
             <button class="section-header" onclick={toggleWorld} aria-expanded={worldExpanded}>
-              <h3>World & Gameplay</h3>
+              <h3>Map Exploration</h3>
               <span class="toggle-icon">{worldExpanded ? '−' : '+'}</span>
             </button>
             <div class="section-content" class:expanded={worldExpanded}>
               <ul>
-                <li>Real-time strategy where time progresses in "ticks"</li>
-                <li>Explore diverse biomes with unique properties</li>
-                <li>Trade, build structures, and manage finances</li>
+                <li>Explore an infinite procedurally generated world</li>
+                <li>Grid-based coordinate system for precise navigation</li>
+                <li>URL updates with coordinates for location sharing</li>
+                <li>Hover over tiles to view detailed information</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="feature collapsible">
+            <button class="section-header" onclick={toggleTerrain} aria-expanded={terrainExpanded}>
+              <h3>Terrain & Biomes</h3>
+              <span class="toggle-icon">{terrainExpanded ? '−' : '+'}</span>
+            </button>
+            <div class="section-content" class:expanded={terrainExpanded}>
+              <ul>
+                <li>Multiple biomes with unique resource characteristics</li>
+                <li>Terrain rarity system: common to mythic quality</li>
+                <li>Rare terrain provides strategic advantages</li>
+                <li>Special visual effects indicate valuable terrain</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="feature collapsible">
+            <button class="section-header" onclick={toggleStructures} aria-expanded={structuresExpanded}>
+              <h3>Structures</h3>
+              <span class="toggle-icon">{structuresExpanded ? '−' : '+'}</span>
+            </button>
+            <div class="section-content" class:expanded={structuresExpanded}>
+              <ul>
+                <li>Build spawn points (🔵), watchtowers (🗼), and fortresses (🏰)</li>
+                <li>Structures provide territorial control and strategic advantages</li>
+                <li>Different structures have unique functions and requirements</li>
+                <li>Strategic placement is key to efficient expansion</li>
               </ul>
             </div>
           </div>
           
           <div class="feature collapsible">
             <button class="section-header" onclick={toggleUnits} aria-expanded={unitsExpanded}>
-              <h3>Units & Battles</h3>
+              <h3>Units & Combat</h3>
               <span class="toggle-icon">{unitsExpanded ? '−' : '+'}</span>
             </button>
             <div class="section-content" class:expanded={unitsExpanded}>
               <ul>
-                <li>Control unit groups for movement, battles, and resource gathering</li>
-                <li>Engage in sieges, conquests, and tactical combat</li>
-                <li>Manage morale and leadership for combat effectiveness</li>
+                <li>Command unit groups for expansion and resource gathering</li>
+                <li>Combat factors: unit strength, terrain, and positioning</li>
+                <li>Form alliances with other players for mutual benefits</li>
+                <li>Balance expansion with defensive capabilities</li>
               </ul>
             </div>
           </div>
@@ -90,13 +126,30 @@
             <span class="toggle-icon">{controlsExpanded ? '−' : '+'}</span>
           </button>
           <div class="section-content" class:expanded={controlsExpanded}>
-            <div class="item">
-              <span class="key">WASD</span> or <span class="key">↑←↓→</span> to move around the map
+            <div class="controls-grid">
+              <div class="control-item">
+                <span class="key">WASD</span> or <span class="key">↑←↓→</span> Navigate map
+              </div>
+              <div class="control-item">
+                <span class="key">Click</span> Move to location
+              </div>
+              <div class="control-item">
+                <span class="key">Drag</span> Pan map view
+              </div>
+              <div class="control-item">
+                <span class="key">Hover</span> View tile details
+              </div>
             </div>
           </div>
         </div>
         
-        <p class="hint">Tap section titles to expand content</p>
+        <div class="guide-link-container">
+          <p>Want to learn more about the game?</p>
+          <a href="/guide" target="_blank" rel="noopener noreferrer" class="guide-link">
+            Read the Complete Guide
+            <span class="external-icon">↗</span>
+          </a>
+        </div>
         
         <button class="start-button" onclick={close}>Start Exploring</button>
       </div>
@@ -193,14 +246,6 @@
     padding: 1em;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 0.3em;
-  }
-  
-  .item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5em;
-    margin-top: 0.5em;
   }
   
   .key {
@@ -399,29 +444,65 @@
     border-radius: 0.3em;
   }
   
-  .controls .section-content.expanded .item {
+  .feature ul {
+    margin: 0;
+    padding: 1em 1em 1em 2.5em;
+    line-height: 1.4;
+    font-weight: 400;
+  }
+
+  .controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10em, 1fr));
+    gap: 0.8em;
     padding: 1em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5em;
-    margin-top: 0.5em;
     background: rgba(0, 0, 0, 0.2);
   }
   
-  .hint {
-    text-align: center;
+  .control-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
     font-size: 0.9em;
-    color: var(--color-muted-teal);
-    font-style: italic;
-    margin: 0.5em 0;
-    opacity: 0.8;
-    animation: pulse 2s infinite;
+  }
+
+  .guide-link-container {
+    text-align: center;
+    margin: 1.5em 0;
+    padding: 1em;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 0.4em;
+    border: 1px solid rgba(var(--color-muted-teal-rgb), 0.2);
   }
   
-  @keyframes pulse {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
+  .guide-link-container p {
+    margin: 0 0 0.8em 0;
+    font-size: 0.95em;
+    color: var(--color-pale-green);
+  }
+  
+  .guide-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    background-color: rgba(100, 255, 218, 0.1);
+    color: var(--color-pale-green);
+    text-decoration: none;
+    padding: 0.6em 1.2em;
+    border-radius: 0.3em;
+    border: 1px solid rgba(var(--color-muted-teal-rgb), 0.3);
+    transition: all 0.2s ease;
+    font-weight: 500;
+  }
+  
+  .guide-link:hover {
+    background-color: rgba(100, 255, 218, 0.2);
+    transform: translateY(-0.1em);
+  }
+  
+  .external-icon {
+    font-size: 1.1em;
+    line-height: 1;
   }
   
   .feature ul {

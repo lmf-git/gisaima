@@ -5,40 +5,40 @@
   // Features data using state for potential future reactivity
   const features = $state([
     {
-      title: 'Infinite Worlds',
-      description: 'Explore endless procedurally generated realms, each with unique challenges and opportunities'
+      title: 'Procedural World Generation',
+      description: 'Explore an infinite universe with procedurally generated terrain, diverse biomes, and unique resource distribution patterns'
     },
     {
-      title: 'Territory Control',
-      description: 'Capture territory and expand your influence across the board'
+      title: 'Rare Terrain Discovery',
+      description: 'Search for valuable uncommon, rare, epic, legendary, and mythic terrain tiles that provide strategic advantages and premium resources'
     },
     {
-      title: 'Strategic Depth',
-      description: 'Plan several moves ahead and outmaneuver your opponents'
+      title: 'Strategic Structure Building',
+      description: 'Construct spawn points, watchtowers, fortresses, and specialized structures to expand and defend your territory'
     },
     {
-      title: 'Open Source',
-      description: 'Community-driven development with full transparency and collaboration'
+      title: 'Dynamic Unit Management',
+      description: 'Command unit groups for territorial expansion, resource gathering, and tactical combat against rival factions'
     },
     {
-      title: 'No Pay-to-Win',
-      description: 'Equal playing field for all - success depends solely on skill and strategy'
+      title: 'Real-time Multiplayer',
+      description: 'Interact with other players across the world - form alliances, engage in diplomacy, or compete for territory control'
     },
     {
-      title: 'Cross-Device Sync',
-      description: 'Real-time gameplay synchronization across all your devices'
+      title: 'Persistent World Mechanics',
+      description: 'Your structures, territory, and progress persist while you\'re offline, enabling long-term strategy development'
     },
     {
-      title: 'Procedural Maps',
-      description: 'Every game board is uniquely generated, ensuring fresh experiences every time'
+      title: 'Location Sharing',
+      description: 'Share coordinates via URL for collaborative exploration or to alert allies about strategic opportunities'
     },
     {
-      title: 'Ancient Inspiration',
-      description: 'Based on traditional board game concepts with modern twists'
+      title: 'Tactical Combat System',
+      description: 'Engage in combat influenced by unit strength, terrain advantages, strategic positioning and support structures'
     },
     {
-      title: 'Multiplayer',
-      description: 'Challenge friends or match with opponents online'
+      title: 'Open Source & Community-Driven',
+      description: 'Built with transparency and community collaboration, Gisaima evolves based on player feedback and contributions'
     }
   ]);
   
