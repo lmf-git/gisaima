@@ -6,8 +6,8 @@
   const { 
     worldId = '', 
     seed = 0, 
-    tileSize = 0.5, // Larger tile size since we're summarizing
-    summaryFactor = 2  // Each rendered tile summarizes a 2x2 area (4 tiles)
+    tileSize = 0.5, // Keep tile size moderate for clarity
+    summaryFactor = 4  // Increased from 2 to 4 - each tile now represents a 4x4 area (16 tiles)
   } = $props();
   
   // Local state
@@ -38,8 +38,9 @@
     let newRows = Math.floor(height / tileSizePx);
     
     // Ensure odd number of columns and rows for proper centering
-    newCols = ensureOdd(Math.max(newCols, 17)); // Fewer columns due to summarization
-    newRows = ensureOdd(Math.max(newRows, 17)); // Fewer rows due to summarization
+    // Reduce minimum size since each tile now covers more area
+    newCols = ensureOdd(Math.max(newCols, 13)); // Reduced from 17 since each tile covers more area
+    newRows = ensureOdd(Math.max(newRows, 13)); // Reduced from 17 since each tile covers more area
     
     // Update state if dimensions have changed
     if (newCols !== cols || newRows !== rows) {
@@ -53,7 +54,7 @@
     }
   }
 
-  // Generate terrain data for the grid with summarization
+  // Generate terrain data for the grid with enhanced summarization
   function generateTerrainGrid(seed) {
     if (!seed || typeof seed !== 'number' || cols <= 0 || rows <= 0) return [];
     
@@ -70,30 +71,46 @@
           const baseWorldX = (x - centerX) * summaryFactor;
           const baseWorldY = (y - centerY) * summaryFactor;
           
-          // Sample multiple terrain points and average the colors
+          // Sample multiple terrain points across the area
           const samples = [];
+          const colors = {};
+          let dominantColor = null;
+          let maxCount = 0;
           
+          // Gather samples across the entire area
           for (let sy = 0; sy < summaryFactor; sy++) {
             for (let sx = 0; sx < summaryFactor; sx++) {
               const worldX = baseWorldX + sx;
               const worldY = baseWorldY + sy;
               const terrainData = generator.getTerrainData(worldX, worldY);
               samples.push(terrainData);
+              
+              // Track color frequencies to determine the dominant terrain type
+              const color = terrainData.color;
+              colors[color] = (colors[color] || 0) + 1;
+              
+              // Keep track of the most common color
+              if (colors[color] > maxCount) {
+                maxCount = colors[color];
+                dominantColor = color;
+              }
             }
           }
           
-          // Get the representative color (predominant biome)
-          // For simplicity, we'll use the first sample's color
-          // A more sophisticated approach would analyze all samples
-          const representativeColor = samples[0].color;
+          // Get biome information from the center of the area for name reference
+          const centerSampleX = baseWorldX + Math.floor(summaryFactor / 2);
+          const centerSampleY = baseWorldY + Math.floor(summaryFactor / 2);
+          const centerSample = generator.getTerrainData(centerSampleX, centerSampleY);
           
           grid.push({
             x,
             y,
             worldX: baseWorldX,
             worldY: baseWorldY,
-            color: representativeColor,
-            isCenter: x === centerX && y === centerY
+            // Use dominant color for better visual representation
+            color: dominantColor || centerSample.color,
+            isCenter: x === centerX && y === centerY,
+            biomeName: centerSample.biome?.name || 'unknown'
           });
         }
       }
@@ -148,6 +165,8 @@
           class="terrain-tile" 
           class:center={tile.isCenter}
           style="background-color: {tile.color};"
+          aria-label={tile.biomeName}
+          title={tile.biomeName}
         ></div>
       {/each}
     </div>
@@ -182,6 +201,13 @@
   .terrain-tile {
     width: 100%;
     height: 100%;
+    transition: transform 0.2s ease;
+  }
+  
+  .terrain-tile:hover {
+    transform: scale(1.1);
+    z-index: 10;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
   }
   
   .terrain-tile.center {
