@@ -85,6 +85,14 @@
     };
   }
 
+  // Handle keyboard interaction for race selection
+  function handleRaceKeydown(race, event) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      selectRace(race);
+    }
+  }
+
   // Handle confirmation
   async function handleConfirm() {
     if (!selectedRace) return;
@@ -121,21 +129,28 @@
     
     <div class="race-selection">
       {#each races as race}
-        <button 
+        <div 
           class="race-option" 
           class:selected={selectedRace?.id === race.id}
           onclick={() => selectRace(race)}
+          onkeydown={(e) => handleRaceKeydown(race, e)}
+          tabindex="0"
+          role="button"
+          aria-pressed={selectedRace?.id === race.id}
         >
           <div class="race-name-container">
             <h3>{race.name}</h3>
             {#if isMobile}
-              <button 
+              <div 
                 class="toggle-icon" 
-                aria-label="Toggle race details" 
+                aria-label="Toggle race details"
+                role="button"
+                tabindex="0" 
                 onclick={(e) => toggleRaceDetails(race.id, e)}
+                onkeydown={(e) => e.key === 'Enter' && toggleRaceDetails(race.id, e)}
               >
                 {expandedRaces[race.id] ? '−' : '+'}
-              </button>
+              </div>
             {/if}
           </div>
           
@@ -147,7 +162,7 @@
               {/each}
             </div>
           </div>
-        </button>
+        </div>
       {/each}
     </div>
     
@@ -346,8 +361,14 @@
     justify-content: center;
     border-radius: 50%;
     background: rgba(0, 0, 0, 0.2);
-    border: none;
     cursor: pointer;
+  }
+  
+  /* Add focus styles for accessibility */
+  .race-option:focus,
+  .toggle-icon:focus {
+    outline: 2px solid var(--color-bright-accent);
+    outline-offset: 2px;
   }
   
   .confirmation-actions {

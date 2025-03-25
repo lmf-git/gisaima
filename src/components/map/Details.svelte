@@ -4,7 +4,8 @@
   import { user } from "../../lib/stores/user";
   import { onMount } from "svelte";
   
-  const { x = 0, y = 0, terrain, onClose } = $props()
+  // Only keep onClose as a prop, removing x, y, and terrain
+  const { onClose } = $props()
   
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
@@ -14,9 +15,7 @@
   // Use either the highlighted tile if present, or targetStore
   const currentTile = $derived(isHighlighted ? $map.highlighted : $targetStore);
   
-  // Track coords for entity lookup
-  let currentX = $state(currentTile?.x || x);
-  let currentY = $state(currentTile?.y || y);
+  // Remove redundant state variables for coordinates
   
   // Entity data with fallbacks from entities store
   let structure = $state(null);
@@ -25,25 +24,21 @@
   
   // Update entity data when current tile changes
   $effect(() => {
-    // Update coordinates
-    currentX = currentTile?.x || x;
-    currentY = currentTile?.y || y;
-    
     // First try to get entities directly from the current tile
     structure = currentTile?.structure || null;
     players = currentTile?.players || [];
     groups = currentTile?.groups || [];
     
     // If no direct entities on the tile, try to get from the entities store
-    if (!structure && !players.length && !groups.length) {
-      const locationKey = `${currentX},${currentY}`;
+    if (!structure && !players.length && !groups.length && currentTile?.x != null && currentTile?.y != null) {
+      const locationKey = `${currentTile.x},${currentTile.y}`;
       structure = $entities.structure[locationKey] || null;
       players = $entities.players[locationKey] || [];
       groups = $entities.groups[locationKey] || [];
     }
     
     console.log('Entity data refreshed:', {
-      coords: `${currentX},${currentY}`,
+      coords: currentTile?.x != null ? `${currentTile.x},${currentTile.y}` : 'unknown',
       source: isHighlighted ? 'highlighted' : 'target',
       hasDirectStructure: !!currentTile?.structure,
       hasDirectPlayers: currentTile?.players?.length > 0,
@@ -54,9 +49,9 @@
     });
   });
   
-  // Use either passed terrain or get from the current tile
+  // Use terrain from the current tile
   const formattedName = $derived(
-    _fmt(terrain || currentTile?.biome?.name) || "Unknown"
+    _fmt(currentTile?.biome?.name) || "Unknown"
   );
   
   // Format structure properties for display
@@ -114,16 +109,19 @@
   onMount(() => {
     // Small delay to ensure stores are initialized
     setTimeout(() => {
-      const locationKey = `${currentX},${currentY}`;
-      // Double-check entities store for current location
-      if (!structure) {
-        structure = $entities.structure[locationKey] || null;
-      }
-      if (!players.length) {
-        players = $entities.players[locationKey] || [];
-      }
-      if (!groups.length) {
-        groups = $entities.groups[locationKey] || [];
+      // Only proceed if we have valid coordinates
+      if (currentTile?.x != null && currentTile?.y != null) {
+        const locationKey = `${currentTile.x},${currentTile.y}`;
+        // Double-check entities store for current location
+        if (!structure) {
+          structure = $entities.structure[locationKey] || null;
+        }
+        if (!players.length) {
+          players = $entities.players[locationKey] || [];
+        }
+        if (!groups.length) {
+          groups = $entities.groups[locationKey] || [];
+        }
       }
     }, 100);
   });
@@ -134,7 +132,7 @@
 <div class="details">
   <div class="info" class:highlighted={isHighlighted}>
     <div class="content">
-      <h2>Details {currentX}, {currentY} {#if isHighlighted}<span class="highlighted-label">(Highlighted)</span>{/if}</h2>
+      <h2>Details {currentTile?.x != null ? `${currentTile.x}, ${currentTile.y}` : ''} {#if isHighlighted}<span class="highlighted-label">(Highlighted)</span>{/if}</h2>
       <p>Terrain: {formattedName}</p>
       
       {#if structure}
@@ -406,21 +404,5 @@
     border-radius: 0.3em;
     vertical-align: middle;
     margin-left: 0.4em;
-  }
-
-  /* Add styles for debug section */
-  .debug-section {
-    font-size: 0.8em;
-    border-top: 1px dashed rgba(0, 0, 0, 0.2);
-  }
-  
-  pre {
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: 4px;
-    padding: 0.5em;
-    overflow-x: auto;
-    white-space: pre-wrap;
-    word-break: break-word;
-    font-family: monospace;
   }
 </style>
