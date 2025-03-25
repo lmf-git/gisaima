@@ -288,7 +288,7 @@
     max-width: calc(100vw - 2em);
     max-height: calc(100vh - 3em);
     margin-top: 0;  /* No margin gap at top */
-    padding-top: 2.5em; /* Added padding at the top to avoid overlap with toggle buttons */
+    padding-top: 1.25em;
     background-color: rgba(255, 255, 255, 0.85); /* Match Details panel background */
     color: rgba(0, 0, 0, 0.8); /* Match Details panel text color */
     border: 0.05em solid rgba(255, 255, 255, 0.2); /* Match Details panel border */

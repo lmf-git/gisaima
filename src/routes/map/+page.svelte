@@ -398,8 +398,8 @@
             <Axes />
         {/if}
 
-        <!-- Use prop binding with runes syntax -->
-        <Tutorial {detailed} />
+        <!-- Remove detailed prop from Tutorial -->
+        <Tutorial />
         
         <!-- Show spawn menu when needed based on the derived store -->
         {#if $needsSpawn}

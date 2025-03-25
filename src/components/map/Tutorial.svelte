@@ -4,8 +4,8 @@
   import Close from '../../components/icons/Close.svelte';
   import { map } from "../../lib/stores/map.js";
 
-  // Convert to $props syntax
-  const { detailed = false } = $props();
+  // Remove detailed prop
+  const { } = $props();
   
   let closed = $state(false)
   let ready = $state(false)
@@ -40,7 +40,7 @@
   const toggleControls = () => controlsExpanded = !controlsExpanded
 </script>
 
-{#if ready && !closed && !detailed}
+{#if ready && !closed}
   <div class="tut tutorial-container">
     <div class="box">
       <button class="close-btn" aria-label="Close tutorial" onclick={close}>
@@ -102,7 +102,7 @@
       </div>
     </div>
   </div>
-{:else if ready && closed && !detailed}
+{:else if ready && closed}
   <button class="help" onclick={open} aria-label="Show tutorial">?</button>
 {/if}
 
