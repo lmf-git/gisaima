@@ -157,39 +157,62 @@
 
     // Use this flag to prevent duplicate initialization
     let servicesInitialized = $state(false);
+    let servicesInitializing = $state(false);
 
-    // Add separate mount logic to ensure proper initialization order
-    onMount(() => {
-        if (browser && !servicesInitialized) {
+    // Properly initialize core services in sequence
+    async function initializeCoreServices() {
+        if (servicesInitialized || servicesInitializing) return;
+        
+        try {
+            servicesInitializing = true;
             console.log('Layout mounted, initializing core services');
-            servicesInitialized = true;
             
             // Initialize Firebase services in proper order
             const authUnsubscribe = initAuthListener();
-            const gameUnsubscribe = initGameStore();
-            const dbCheckUnsubscribe = initDatabaseConnectionCheck();
+            console.log('Auth listener initialized');
             
-            // Connect the stores directly after a small delay to ensure auth is ready
-            setTimeout(() => {
-                try {
-                    console.log('Connecting map and game stores...');
+            // Wait for auth to be ready before proceeding
+            if (!$isAuthReady) {
+                console.log('Waiting for auth to be ready...');
+                await new Promise(resolve => {
+                    const unsub = isAuthReady.subscribe(ready => {
+                        if (ready) {
+                            unsub();
+                            resolve();
+                        }
+                    });
                     
-                    // Set the map initializer in game store
-                    setMapInitializer(initializeMapForWorld);
-                    
-                    // Initialize map only if not already initialized
-                    // Fixed: Check return value directly instead of using Promise-style catch
-                    if (!initialize({ gameStore: game })) {
-                        console.warn('Initial map setup deferred: initialize returned false');
-                    } else {
-                        console.log('Map initialized successfully');
-                    }
-                    
-                    console.log('Map and game stores connected successfully');
-                } catch (error) {
-                    console.error('Error connecting map and game stores:', error);
-                }
-            }, 300); // Add small delay to avoid initialization race conditions
+                    // Set a reasonable timeout to avoid hanging indefinitely
+                    setTimeout(() => {
+                        unsub();
+                        console.warn('Auth readiness timeout - proceeding anyway');
+                        resolve();
+                    }, 3000);
+                });
+            }
+            console.log('Auth is ready, continuing initialization');
+            
+            // Initialize game store after auth
+            const gameUnsubscribe = initGameStore();
+            console.log('Game store initialized');
+            
+            // Initialize database connection check
+            const dbCheckUnsubscribe = initDatabaseConnectionCheck();
+            console.log('Database connection check initialized');
+            
+            // Connect map and game stores after game store is initialized
+            console.log('Connecting map and game stores...');
+            
+            // Set the map initializer in game store
+            setMapInitializer(initializeMapForWorld);
+            
+            // We'll let the map component handle its own initialization
+            // instead of trying to initialize it here
+            
+            servicesInitialized = true;
+            servicesInitializing = false;
+            
+            console.log('Core services successfully initialized');
             
             // Return cleanup
             return () => {
@@ -197,6 +220,17 @@
                 gameUnsubscribe && gameUnsubscribe();
                 dbCheckUnsubscribe && dbCheckUnsubscribe();
             };
+        } catch (error) {
+            console.error('Error initializing core services:', error);
+            servicesInitializing = false;
+            // Don't set servicesInitialized to true if there was an error
+        }
+    }
+
+    // Add separate mount logic to ensure proper initialization order
+    onMount(() => {
+        if (browser && !servicesInitialized && !servicesInitializing) {
+            initializeCoreServices();
         }
     });
 </script>

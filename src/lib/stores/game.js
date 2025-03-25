@@ -22,7 +22,8 @@ export const game = writable({
   playerWorldData: null, // Add player-specific data for the current world
   loading: true,
   worldLoading: false,
-  error: null
+  error: null,
+  initialized: false // Add new flag to track initialization status
 });
 
 // Create default empty stores for SSR context
@@ -117,7 +118,7 @@ const WORLD_INFO_THROTTLE_MS = 500;
 export function loadJoinedWorlds(userId) {
   if (!userId) {
     console.log('Cannot load joined worlds: no userId provided');
-    return;
+    return Promise.resolve(false);
   }
   
   // Clean up existing subscription to prevent multiple listeners
@@ -128,41 +129,48 @@ export function loadJoinedWorlds(userId) {
   
   console.log(`Loading joined worlds for user: ${userId}`);
   
-  const userWorldsRef = ref(db, `players/${userId}/worlds`);
-  console.log('User worlds path:', `players/${userId}/worlds`);
-  
-  activeJoinedWorldsSubscription = onValue(userWorldsRef, (snapshot) => {
-    console.log('User worlds snapshot received:', snapshot.exists() ? 'Data exists' : 'No data');
+  return new Promise((resolve) => {
+    const userWorldsRef = ref(db, `players/${userId}/worlds`);
+    console.log('User worlds path:', `players/${userId}/worlds`);
     
-    if (snapshot.exists()) {
-      const joinedWorlds = Object.keys(snapshot.val());
-      console.log('User joined worlds:', joinedWorlds);
+    activeJoinedWorldsSubscription = onValue(userWorldsRef, (snapshot) => {
+      console.log('User worlds snapshot received:', snapshot.exists() ? 'Data exists' : 'No data');
       
-      game.update(state => ({ ...state, joinedWorlds, loading: false }));
-      
-      // If we have a currentWorld but no info for it, load it
-      const currentState = getStore(game);
-      if (currentState.currentWorld && !currentState.worldInfo[currentState.currentWorld]) {
-        console.log('Loading info for current world:', currentState.currentWorld);
-        getWorldInfo(currentState.currentWorld).catch(err => 
-          console.error('Error loading current world info:', err)
-        );
+      if (snapshot.exists()) {
+        const joinedWorlds = Object.keys(snapshot.val());
+        console.log('User joined worlds:', joinedWorlds);
+        
+        game.update(state => ({ ...state, joinedWorlds, loading: false }));
+        
+        // If we have a currentWorld but no info for it, load it
+        const currentState = getStore(game);
+        if (currentState.currentWorld && !currentState.worldInfo[currentState.currentWorld]) {
+          console.log('Loading info for current world:', currentState.currentWorld);
+          getWorldInfo(currentState.currentWorld)
+            .then(() => resolve(true))
+            .catch(err => {
+              console.error('Error loading current world info:', err);
+              resolve(false);
+            });
+        } else {
+          resolve(true);
+        }
+        
+        // Also load the player data for the current world if it exists
+        if (currentState.currentWorld) {
+          loadPlayerWorldData(userId, currentState.currentWorld);
+        }
+      } else {
+        console.log('No joined worlds found for user');
+        game.update(state => ({ ...state, joinedWorlds: [], loading: false }));
+        resolve(true);
       }
-      
-      // Also load the player data for the current world if it exists
-      if (currentState.currentWorld) {
-        loadPlayerWorldData(userId, currentState.currentWorld);
-      }
-    } else {
-      console.log('No joined worlds found for user');
-      game.update(state => ({ ...state, joinedWorlds: [], loading: false }));
-    }
-  }, error => {
-    console.error('Error loading joined worlds:', error);
-    game.update(state => ({ ...state, loading: false, error: error.message }));
+    }, error => {
+      console.error('Error loading joined worlds:', error);
+      game.update(state => ({ ...state, loading: false, error: error.message }));
+      resolve(false);
+    });
   });
-  
-  return activeJoinedWorldsSubscription;
 }
 
 // Load player-specific data for the current world
@@ -462,7 +470,7 @@ export function initGameStore() {
   
   try {
     // Set initial loading state
-    game.update(state => ({ ...state, loading: true }));
+    game.update(state => ({ ...state, loading: true, initialized: false }));
     isAuthReady.set(false);
     
     // Load the current world from localStorage if available
@@ -502,7 +510,12 @@ export function initGameStore() {
           console.log('User authenticated, loading joined worlds for:', $user.uid);
           // Set auth as ready once we have a user
           isAuthReady.set(true);
-          loadJoinedWorlds($user.uid);
+          
+          // Load joined worlds and then mark the store as initialized
+          loadJoinedWorlds($user.uid).then(() => {
+            game.update(state => ({...state, initialized: true}));
+            console.log('Game store initialization complete');
+          });
           
           // If there's already a current world, load the player data for it
           const currentState = getStore(game);
@@ -520,13 +533,16 @@ export function initGameStore() {
             joinedWorlds: [], 
             playerWorldData: null,
             loading: false,
-            worldLoading: false
+            worldLoading: false,
+            initialized: true // Mark as initialized even without a user
           }));
         }
       } catch (e) {
         console.error('Error in user subscription handler:', e);
         // Make sure auth ready flag is set even if there's an error
         isAuthReady.set(true);
+        // Mark as initialized with error
+        game.update(state => ({...state, initialized: true, error: e.message}));
       }
     });
     
@@ -550,6 +566,8 @@ export function initGameStore() {
     console.error('Error initializing game store:', e);
     // Set auth ready flag even if initialization fails
     isAuthReady.set(true);
+    // Mark as initialized with error
+    game.update(state => ({...state, initialized: true, loading: false, error: e.message}));
     gameStoreInitialized = false;
     // Return empty function to prevent errors when calling the unsubscribe
     return () => {};

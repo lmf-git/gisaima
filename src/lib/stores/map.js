@@ -57,6 +57,8 @@ const chunkSubscriptions = new Map();
 // Initialize map without accessing game store initially
 export const map = writable({
   ready: false,
+  initializing: false,
+  initializationAttempted: false,
   cols: 0,
   rows: 0,
   target: { x: 0, y: 0 },
@@ -443,7 +445,7 @@ export function getChunkKey(x, y) {
   return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
 }
 
-// Unified initialization function with localStorage support
+// Unified initialization function with localStorage support and better error handling
 export function initialize(options = {}) {
   // SSR guard - don't initialize terrain on server
   if (typeof window === 'undefined') {
@@ -453,45 +455,55 @@ export function initialize(options = {}) {
 
   // Don't reinitialize if already ready with the same world
   const currentMapState = get(map);
+  
+  // Return early if already initializing to prevent redundant attempts
+  if (currentMapState.initializing) {
+    console.log('Map initialization already in progress, skipping redundant attempt');
+    return false;
+  }
+  
+  // Mark that we're starting initialization
+  map.update(state => ({...state, initializing: true, initializationAttempted: true}));
+  
   let worldId = options.world || options.worldId || 'default';
   
-  // Handle different input formats for extracting worldId
-  if (options.gameStore) {
-    try {
+  try {
+    // Handle different input formats for extracting worldId
+    if (options.gameStore) {
       const gameState = get(options.gameStore);
       if (gameState && gameState.currentWorld) {
         worldId = gameState.currentWorld;
       }
-    } catch (err) {
-      console.warn('Error extracting world ID from game store:', err);
-    }
-  }
-  
-  // Early return if already initialized with same world
-  if (currentMapState.ready && currentMapState.world === worldId) {
-    console.log(`Map already initialized for world ${worldId}, skipping redundant setup`);
-    
-    // Still process URL coordinates if needed
-    const urlX = options.initialX;
-    const urlY = options.initialY;
-    if (urlX !== undefined && urlY !== undefined) {
-      moveTarget(urlX, urlY);
     }
     
-    return true;
-  }
+    // Early return if already initialized with same world
+    if (currentMapState.ready && currentMapState.world === worldId) {
+      console.log(`Map already initialized for world ${worldId}, skipping redundant setup`);
+      
+      // Update initializing flag
+      map.update(state => ({...state, initializing: false}));
+      
+      // Still process URL coordinates if needed
+      const urlX = options.initialX;
+      const urlY = options.initialY;
+      if (urlX !== undefined && urlY !== undefined) {
+        moveTarget(urlX, urlY);
+      }
+      
+      return true;
+    }
 
-  let seed;
-  let initialX = options.initialX;
-  let initialY = options.initialY;
+    let seed;
+    let initialX = options.initialX;
+    let initialY = options.initialY;
 
-  // Handle different input formats for seed extraction
-  if (options.gameStore) {
-    // Case 1: GameStore provided - extract data from it
-    try {
+    // Handle different input formats for seed extraction
+    if (options.gameStore) {
+      // Case 1: GameStore provided - extract data from it
       const gameState = get(options.gameStore);
       if (!gameState || !gameState.currentWorld) {
         console.log('No current world in game state');
+        map.update(state => ({...state, initializing: false}));
         return false;
       }
       
@@ -499,37 +511,35 @@ export function initialize(options = {}) {
       
       if (!gameState.worldInfo || !gameState.worldInfo[worldId]) {
         console.log(`No world info for world: ${worldId}`);
+        map.update(state => ({...state, initializing: false}));
         return false;
       }
       
       seed = gameState.worldInfo[worldId].seed;
-    } catch (err) {
-      console.error('Error extracting data from game store:', err);
+    } else if (options.worldInfo) {
+      // Case 2: Direct worldInfo object provided
+      worldId = options.worldId || 'default';
+      seed = options.worldInfo.seed;
+    } else {
+      // Case 3: Direct seed and world values
+      seed = options.seed;
+    }
+
+    // Validate we have the required seed
+    if (seed === undefined || seed === null) {
+      console.error('No seed provided for map initialization');
+      map.update(state => ({...state, initializing: false}));
       return false;
     }
-  } else if (options.worldInfo) {
-    // Case 2: Direct worldInfo object provided
-    worldId = options.worldId || 'default';
-    seed = options.worldInfo.seed;
-  } else {
-    // Case 3: Direct seed and world values
-    seed = options.seed;
-  }
 
-  // Validate we have the required seed
-  if (seed === undefined || seed === null) {
-    console.error('No seed provided for map initialization');
-    return false;
-  }
+    // Ensure seed is a valid number
+    const seedNumber = typeof seed === 'string' ? Number(seed) : seed;
+    if (isNaN(seedNumber)) {
+      console.error(`Invalid seed value provided: ${seed}`);
+      map.update(state => ({...state, initializing: false}));
+      return false;
+    }
 
-  // Ensure seed is a valid number
-  const seedNumber = typeof seed === 'string' ? Number(seed) : seed;
-  if (isNaN(seedNumber)) {
-    console.error(`Invalid seed value provided: ${seed}`);
-    return false;
-  }
-
-  try {
     // Get current map state
     const currentState = get(map);
     const initialCols = currentState.cols || 20;
@@ -576,6 +586,7 @@ export function initialize(options = {}) {
       return {
         ...state,
         ready: true,
+        initializing: false,
         world: worldId,
         cols: initialCols,
         rows: initialRows,
@@ -591,9 +602,11 @@ export function initialize(options = {}) {
     // Always save the initial position to localStorage
     saveTargetToLocalStorage(worldId, targetPosition.x, targetPosition.y);
     
+    console.log(`Map successfully initialized for world ${worldId}`);
     return true;
   } catch (err) {
-    console.error('Error in terrain setup:', err);
+    console.error('Error in map initialization:', err);
+    map.update(state => ({...state, initializing: false}));
     return false;
   }
 }
@@ -667,6 +680,8 @@ export function cleanup() {
   // Reset stores
   map.set({
     ready: false,
+    initializing: false,
+    initializationAttempted: false,
     cols: 0,
     rows: 0,
     target: { x: 0, y: 0 },

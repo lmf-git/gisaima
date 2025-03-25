@@ -206,7 +206,7 @@
           {#if spawning}
             <div class="spinner"></div> Spawning...
           {:else}
-            <span class="button-text">Enter World</span>
+            <span class="button-text">Confirm Spawn</span>
           {/if}
         </button>
       </div>
@@ -323,7 +323,7 @@
     min-width: 200px;
     background: linear-gradient(135deg, var(--color-teal) 0%, var(--color-bright-teal) 100%);
     color: #ffffff;
-    border: none;
+    border: 1px solid var(--color-muted-teal);
     box-shadow: 0 0.3em 0.6em rgba(0, 150, 150, 0.4);
     letter-spacing: 0.05em;
     display: flex;
