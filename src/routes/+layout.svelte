@@ -445,14 +445,14 @@
 
     /* Position header as absolute for all pages */
     .header {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: space-between;
         padding: 1em 2em;
         position: absolute;
         top: 0;
         left: 0;
-        right: 0;
+        /* right: 0; */
         z-index: 100;
         height: 6em;
         gap: 3em;
