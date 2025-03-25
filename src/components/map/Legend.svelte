@@ -29,9 +29,9 @@
   tabindex="0">
   <div class="coordinates">{$targetStore.x} | {$targetStore.y}</div>  
   <div class="terrain">
-    {formatTerrainName($targetStore.biome?.name)}
+    <div class="terrain-name">{formatTerrainName($targetStore.biome?.name)}</div>
     {#if shouldShowRarity($targetStore.terrain?.rarity)}
-      <span class="rarity {$targetStore.terrain?.rarity || ''}">{formatRarity($targetStore.terrain?.rarity)}</span>
+      <div class="rarity {$targetStore.terrain?.rarity || ''}">{formatRarity($targetStore.terrain?.rarity)}</div>
     {/if}
   </div>
 </div>
@@ -78,15 +78,23 @@
     margin-top: 0.2em;
     color: rgba(0, 0, 0, 0.8);
     font-family: var(--font-body); /* Add body font */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .terrain-name {
+    margin-bottom: 0.1em;
   }
   
   .rarity {
     margin-left: 0.5em;
-    font-size: 0.9em;
+    font-size: 0.85em;
     font-weight: bold;
     padding: 0.1em 0.4em;
     border-radius: 0.3em;
     display: inline-block;
+    line-height: 1.1;
   }
   
   .uncommon {
