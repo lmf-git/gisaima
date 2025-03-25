@@ -34,6 +34,8 @@
   
   // Set the currently hovered tile
   function handleTileHover(x, y) {
+    // Only track hover state for joined worlds
+    if (!joined) return;
     hoveredTileX = x;
     hoveredTileY = y;
   }
@@ -269,7 +271,7 @@
           class:center={tile.isCenter}
           class:joined={joined}
           class:interactive={joined}
-          class:hovered={isHovered(tile.x, tile.y)}
+          class:hovered={joined && isHovered(tile.x, tile.y)}
           style="background-color: {tile.color};"
           aria-label={joined 
             ? `View ${tile.biomeName} at coordinates ${tile.worldX},${tile.worldY}` 
@@ -327,10 +329,11 @@
     font-size: inherit;
     color: inherit;
     appearance: none;
+    cursor: default; /* Default cursor for non-joined worlds */
   }
 
-  /* Disable button styles for interactive tiles */
-  button.terrain-tile {
+  /* Only apply cursor pointer to joined worlds */
+  button.terrain-tile.joined {
     cursor: pointer;
   }
 
@@ -346,7 +349,7 @@
   }
   
   /* Add hover effect with pseudo-element to override the background color */
-  .terrain-tile.hovered::before {
+  .terrain-tile.joined.hovered::before {
     content: '';
     position: absolute;
     inset: 0;

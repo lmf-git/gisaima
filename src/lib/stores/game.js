@@ -555,3 +555,72 @@ export function initGameStore() {
     return () => {};
   }
 }
+
+// Function to join a world with race selection
+export async function joinWorld(worldId, userId, race) {
+  if (!worldId || !userId) {
+    throw new Error('Missing required parameters for joining world');
+  }
+  
+  console.log(`User ${userId} joining world ${worldId} as ${race}`);
+  
+  try {
+    // Set loading state
+    game.update(state => ({ ...state, loading: true, error: null }));
+    
+    // Create a reference to the player's world data
+    const playerWorldRef = ref(db, `players/${userId}/worlds/${worldId}`);
+    
+    // Record the join with timestamp and race
+    await set(playerWorldRef, {
+      joined: Date.now(),
+      race: race || 'human', // Default to human if race not specified
+      spawned: false
+    });
+    
+    // Update local state to include this world
+    game.update(state => {
+      const joinedWorlds = [...(state.joinedWorlds || [])];
+      
+      // Only add if not already in the list
+      if (!joinedWorlds.includes(worldId)) {
+        joinedWorlds.push(worldId);
+      }
+      
+      return {
+        ...state,
+        joinedWorlds,
+        currentWorld: worldId,
+        loading: false,
+      };
+    });
+    
+    // Also load the world info if needed
+    const currentState = getStore(game);
+    if (!currentState.worldInfo[worldId]) {
+      await getWorldInfo(worldId);
+    }
+    
+    // Save to localStorage
+    if (browser) {
+      try {
+        localStorage.setItem(CURRENT_WORLD_KEY, worldId);
+      } catch (e) {
+        console.error('Failed to save world to localStorage:', e);
+      }
+    }
+    
+    // Load player data for this world
+    loadPlayerWorldData(userId, worldId);
+    
+    return worldId;
+  } catch (error) {
+    console.error('Error joining world:', error);
+    game.update(state => ({ 
+      ...state, 
+      loading: false, 
+      error: `Failed to join world: ${error.message}` 
+    }));
+    throw error;
+  }
+}
