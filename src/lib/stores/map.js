@@ -2,6 +2,7 @@ import { writable, derived, get } from 'svelte/store';
 import { TerrainGenerator } from '../map/noise.js';
 import { ref, onValue } from "firebase/database";
 import { db } from '../firebase/database.js';
+import { replaceState } from '$app/navigation'; // Import from SvelteKit instead of using history directly
 
 // Keep a reference to the terrain generator for grid creation
 let terrain;
@@ -79,7 +80,7 @@ function updateUrlWithCoordinates(x, y) {
       // Mark this as an internal update
       isInternalUrlUpdate = true;
       
-      // Update URL without triggering unnecessary history events
+      // Create updated URL
       const url = new URL(window.location);
       url.searchParams.set('x', roundedX.toString());
       url.searchParams.set('y', roundedY.toString());
@@ -87,8 +88,8 @@ function updateUrlWithCoordinates(x, y) {
       // Store the coordinates we're updating to
       lastUrlUpdate = { x: roundedX, y: roundedY };
       
-      // Use replaceState to avoid browser history bloat
-      history.replaceState({}, '', url);
+      // Use SvelteKit's replaceState instead of history.replaceState
+      replaceState(url, {});
       
       // Reset flag after a short delay to allow for popstate event to be processed
       setTimeout(() => {
@@ -405,8 +406,39 @@ export function initialize(options = {}) {
     return false;
   }
 
-  let seed, worldId;
-  let initialX, initialY;
+  // Don't reinitialize if already ready with the same world
+  const currentMapState = get(map);
+  let worldId = options.world || options.worldId || 'default';
+  
+  // Handle different input formats for extracting worldId
+  if (options.gameStore) {
+    try {
+      const gameState = get(options.gameStore);
+      if (gameState && gameState.currentWorld) {
+        worldId = gameState.currentWorld;
+      }
+    } catch (err) {
+      console.warn('Error extracting world ID from game store:', err);
+    }
+  }
+  
+  // Early return if already initialized with same world
+  if (currentMapState.ready && currentMapState.world === worldId) {
+    console.log(`Map already initialized for world ${worldId}, skipping redundant setup`);
+    
+    // Still process URL coordinates if needed
+    const urlX = options.initialX;
+    const urlY = options.initialY;
+    if (urlX !== undefined && urlY !== undefined) {
+      moveTarget(urlX, urlY);
+    }
+    
+    return true;
+  }
+
+  let seed;
+  let initialX = options.initialX;
+  let initialY = options.initialY;
 
   // Handle different input formats
   if (options.gameStore) {
@@ -426,8 +458,6 @@ export function initialize(options = {}) {
       }
       
       seed = gameState.worldInfo[worldId].seed;
-      initialX = options.initialX;
-      initialY = options.initialY;
     } catch (err) {
       console.error('Error extracting data from game store:', err);
       return false;
@@ -436,14 +466,9 @@ export function initialize(options = {}) {
     // Case 2: Direct worldInfo object provided
     worldId = options.worldId || 'default';
     seed = options.worldInfo.seed;
-    initialX = options.initialX;
-    initialY = options.initialY;
   } else {
     // Case 3: Direct seed and world values
     seed = options.seed;
-    worldId = options.world || options.worldId || 'default';
-    initialX = options.initialX;
-    initialY = options.initialY;
   }
 
   // Validate we have the required seed

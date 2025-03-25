@@ -155,10 +155,14 @@
         }, 300);
     }
 
+    // Use this flag to prevent duplicate initialization
+    let servicesInitialized = $state(false);
+
     // Add separate mount logic to ensure proper initialization order
     onMount(() => {
-        if (browser) {
+        if (browser && !servicesInitialized) {
             console.log('Layout mounted, initializing core services');
+            servicesInitialized = true;
             
             // Initialize Firebase services in proper order
             initAuthListener();
@@ -172,8 +176,10 @@
                 // Set the map initializer in game store
                 setMapInitializer(initializeMapForWorld);
                 
-                // Try to initialize map from game store data if available
-                initialize({ gameStore: game });
+                // Initialize map only if not already initialized
+                initialize({ gameStore: game }).catch(err => {
+                    console.warn('Initial map setup deferred:', err.message);
+                });
                 
                 console.log('Map and game stores connected successfully');
             } catch (error) {

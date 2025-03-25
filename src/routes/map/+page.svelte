@@ -67,7 +67,14 @@
     let urlCoordinatesProcessing = $state(false);
     let urlCoordinatesLastProcessed = $state({ x: null, y: null });
     
-    // Extract coordinates from URL parameters with improved validation
+    // Track processing state more effectively
+    let coordinateProcessingState = $state({
+        processing: false,
+        processed: new Set(), // Track which coordinates have been processed
+        lastProcessedTime: 0
+    });
+    
+    // Simplified URL coordinates parsing with caching
     function parseUrlCoordinates() {
         if (!browser || !$page.url) return null;
         
@@ -79,13 +86,16 @@
             const parsedY = parseInt(y, 10);
             
             if (!isNaN(parsedX) && !isNaN(parsedY)) {
-                // Compare with last processed coordinates to avoid redundant processing
-                if (urlCoordinatesLastProcessed.x === parsedX && 
-                    urlCoordinatesLastProcessed.y === parsedY) {
+                const coordKey = `${parsedX},${parsedY}`;
+                
+                // Skip if we've already processed these coordinates recently
+                const now = Date.now();
+                if (coordinateProcessingState.processed.has(coordKey) && 
+                    now - coordinateProcessingState.lastProcessedTime < 2000) {
                     return null;
                 }
                 
-                return { x: parsedX, y: parsedY };
+                return { x: parsedX, y: parsedY, key: coordKey };
             }
         }
         
@@ -108,46 +118,60 @@
     
     // Simplified effect for URL coordinate monitoring
     $effect(() => {
-        // Skip if we're currently processing URL coordinates or if the change is internal
-        if (urlCoordinatesProcessing || isInternalUrlChange() || !browser || !$page.url) return;
+        // Skip if we're currently processing coordinates or if we're not in the browser
+        if (coordinateProcessingState.processing || !browser || !$page.url) return;
         
         const newCoords = parseUrlCoordinates();
         
-        if (newCoords) {
+        if (newCoords && !isInternalUrlChange()) {
             console.log(`Found URL coordinates: ${newCoords.x},${newCoords.y}`);
             
-            // Mark that we're processing coordinates to prevent redundant updates
-            urlCoordinatesProcessing = true;
+            // Mark that we're processing coordinates
+            coordinateProcessingState.processing = true;
             
-            // Only apply if map is ready, otherwise store for later
+            // Only apply coordinates if map is ready, otherwise store for later
             if ($ready) {
                 console.log(`Applying URL coordinates: ${newCoords.x},${newCoords.y}`);
                 moveTarget(newCoords.x, newCoords.y);
-                urlCoordinatesLastProcessed = { ...newCoords };
+                
+                // Record that we processed these coordinates
+                coordinateProcessingState.processed.add(newCoords.key);
+                coordinateProcessingState.lastProcessedTime = Date.now();
             } else {
-                urlCoordinates = newCoords;
+                urlCoordinates = { x: newCoords.x, y: newCoords.y };
             }
             
-            // Reset processing flag
+            // Reset processing flag after a delay
             setTimeout(() => {
-                urlCoordinatesProcessing = false;
+                coordinateProcessingState.processing = false;
             }, 100);
         }
     });
     
     // Simplified effect for applying URL coordinates after map is ready
     $effect(() => {
-        if (!$ready || !urlCoordinates || urlCoordinatesProcessing) return;
+        if (!$ready || !urlCoordinates || coordinateProcessingState.processing) return;
         
-        urlCoordinatesProcessing = true;
+        const coordKey = `${urlCoordinates.x},${urlCoordinates.y}`;
+        
+        // Skip if we've already processed these coordinates
+        if (coordinateProcessingState.processed.has(coordKey)) {
+            urlCoordinates = null;
+            return;
+        }
+        
+        coordinateProcessingState.processing = true;
         
         console.log(`Applying URL coordinates after map ready: ${urlCoordinates.x},${urlCoordinates.y}`);
         moveTarget(urlCoordinates.x, urlCoordinates.y);
-        urlCoordinatesLastProcessed = { ...urlCoordinates };
+        
+        // Record that we processed these coordinates
+        coordinateProcessingState.processed.add(coordKey);
+        coordinateProcessingState.lastProcessedTime = Date.now();
         urlCoordinates = null;
         
         setTimeout(() => {
-            urlCoordinatesProcessing = false;
+            coordinateProcessingState.processing = false;
         }, 100);
     });
     
@@ -178,8 +202,22 @@
         }
     }
     
-    // Initialize map function with improved URL coordinate handling
+    // Initialize map function with improved URL coordinate handling and deduplication
     async function initializeMap(worldId) {
+        // Skip if world ID matches current world and map is already ready
+        if ($ready && $map.world === worldId) {
+            console.log(`Map already initialized for world ${worldId}, skipping redundant initialization`);
+            
+            // Still process URL coordinates if needed
+            const startingCoords = urlCoordinates;
+            if (startingCoords && !urlProcessingComplete) {
+                moveTarget(startingCoords.x, startingCoords.y);
+                urlProcessingComplete = true;
+            }
+            
+            return;
+        }
+        
         try {
             loading = true;
             error = null;
@@ -221,12 +259,15 @@
                 throw new Error('Failed to initialize map with world data');
             }
             
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
             loading = false;
             
             if (shouldApplyCoords) {
                 urlProcessingComplete = true;
+                
+                // Record that we processed these coordinates
+                const coordKey = `${startingCoords.x},${startingCoords.y}`;
+                coordinateProcessingState.processed.add(coordKey);
+                coordinateProcessingState.lastProcessedTime = Date.now();
             }
             
         } catch (err) {
@@ -289,14 +330,29 @@
         currentWorldId = worldFromUrl || worldFromStore || null;
     });
     
-    // Component lifecycle
+    // Component lifecycle - optimize to prevent redundant initialization
     onMount(() => {
         if (!browser) return;
         
         document.body.classList.add('map-page-active');
         
-        // Try to initialize from existing world info
-        if (!$ready && currentWorldId && $game.worldInfo[currentWorldId]) {
+        // Get world ID and coordinates once and store them
+        const worldId = $page.url.searchParams.get('world') || $game.currentWorld;
+        const coords = parseUrlCoordinates();
+        
+        if (coords) {
+            urlCoordinates = { x: coords.x, y: coords.y };
+        }
+        
+        if (!worldId) {
+            goto('/worlds');
+            return;
+        }
+        
+        // First try to initialize from existing world info to avoid extra fetches
+        if (!$ready && currentWorldId && $game.worldInfo[currentWorldId]?.seed !== undefined) {
+            console.log(`Initializing map from existing world info for ${currentWorldId}`);
+            
             initialize({ 
                 worldId: currentWorldId, 
                 worldInfo: $game.worldInfo[currentWorldId],
@@ -306,22 +362,20 @@
             
             if (urlCoordinates) {
                 urlProcessingComplete = true;
+                
+                // Record processed coordinates
+                const coordKey = `${urlCoordinates.x},${urlCoordinates.y}`;
+                coordinateProcessingState.processed.add(coordKey);
+                coordinateProcessingState.lastProcessedTime = Date.now();
             }
+        } else {
+            // Otherwise do a full initialization
+            initializeMap(worldId).catch(err => {
+                console.error(`Failed to initialize map:`, err); 
+                error = err.message || `Failed to load world`;
+                loading = false;
+            });
         }
-        
-        // Get world ID and initialize map
-        const worldId = $page.url.searchParams.get('world') || $game.currentWorld;
-        
-        if (!worldId) {
-            goto('/worlds');
-            return;
-        }
-
-        initializeMap(worldId).catch(err => {
-            console.error(`Failed to initialize map:`, err); 
-            error = err.message || `Failed to load world`;
-            loading = false;
-        });
     });
     
     onDestroy(() => {
