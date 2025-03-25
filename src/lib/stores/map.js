@@ -367,43 +367,6 @@ export function setupFromGameStore(gameStore) {
   return initialize({ gameStore });
 }
 
-// Don't access game directly - setupFromGameStore has to be configured from outside
-export function setupFromGameStore(gameStore) {
-  // SSR guard
-  if (typeof window === 'undefined') return false;
-  
-  if (!gameStore) {
-    console.error('Missing game store in setupFromGameStore');
-    return false;
-  }
-  
-  try {
-    const gameState = get(gameStore);
-    
-    // More detailed checks with specific error messages
-    if (!gameState || !gameState.currentWorld) {
-      console.log('No current world in game state');
-      return false;
-    }
-    
-    if (!gameState.worldInfo || Object.keys(gameState.worldInfo).length === 0) {
-      console.log('No world info in game state');
-      return false;
-    }
-    
-    const worldInfo = gameState.worldInfo[gameState.currentWorld];
-    if (!worldInfo) {
-      console.log('No specific world info for current world');
-      return false;
-    }
-    
-    return setupFromWorldInfo(gameState.currentWorld, worldInfo);
-  } catch (err) {
-    console.error('Error in setupFromGameStore:', err);
-    return false;
-  }
-}
-
 // Get the current world ID - fixed to avoid circular references
 export function getCurrentWorld() {
   // Don't access game store here to avoid circular dependency

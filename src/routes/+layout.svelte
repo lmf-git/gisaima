@@ -8,13 +8,14 @@
     import DiscordIcon from '../components/icons/DiscordIcon.svelte';
     import MobileMenu from '../components/MobileMenu.svelte';
     import { onMount, onDestroy } from 'svelte';
-    import { initGameStore, game, isAuthReady } from '../lib/stores/game.js';
+    import { initGameStore, game, isAuthReady, setMapInitializer } from '../lib/stores/game.js';
     import { ref, onValue } from "firebase/database";
     import { db } from '../lib/firebase/database.js';
     import HamburgerIcon from '../components/icons/HamburgerIcon.svelte';
     import GuestWarning from '../components/GuestWarning.svelte';
     import { initAuthListener } from '$lib/stores/user';
     import { initDatabaseConnectionCheck } from '$lib/firebase/database-status';
+    import { initialize, initializeMapForWorld } from '$lib/stores/map.js';
   
     const { children } = $props();
 
@@ -162,6 +163,21 @@
             initAuthListener();
             const unsubGame = initGameStore();
             const unsubDbCheck = initDatabaseConnectionCheck();
+            
+            // Connect the stores directly - no need for a separate function
+            try {
+                console.log('Connecting map and game stores...');
+                
+                // Set the map initializer in game store
+                setMapInitializer(initializeMapForWorld);
+                
+                // Try to initialize map from game store data if available
+                initialize({ gameStore: game });
+                
+                console.log('Map and game stores connected successfully');
+            } catch (error) {
+                console.error('Error connecting map and game stores:', error);
+            }
             
             // Return cleanup
             return () => {
