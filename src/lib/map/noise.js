@@ -1171,6 +1171,16 @@ export const TERRAIN_OPTIONS = {
     connectionWidth: 0.8,      // Width of water connections
     connectionFactor: 0.85,    // How likely networks will connect
     avoidMountainsStrength: 0.8 // Avoid high terrain
+  },
+
+  // NEW: Anomalous feature settings
+  anomaly: {
+    threshold: 0.88, // Higher = fewer anomalies (0.88 = ~12% of terrain could have an anomaly)
+    mountainHeightBoost: 0.25, // How much isolated mountains rise above surrounding terrain
+    rockHeightBoost: 0.08,    // How much rock formations affect height
+    mesaHeightBoost: 0.15,    // How much mesa formations affect height
+    frequency: 0.012,         // Higher = more localized anomalies
+    moistureInfluence: 0.5    // How much moisture affects anomalies
   }
 };
 
@@ -1309,6 +1319,44 @@ export class TerrainGenerator {
       }
     );
     
+    // NEW: Generate anomaly detection noise for special features
+    const anomalyNoise = this.heightNoise.getFBM(x + 45000, y + 45000, {
+      scale: 0.012, // Higher scale = more localized anomalies
+      octaves: 2,
+      persistence: 0.6,
+      lacunarity: 2.0
+    });
+    
+    // Determine if this location has an anomalous feature
+    const anomalyThreshold = TERRAIN_OPTIONS.anomaly.threshold;
+    const hasAnomaly = anomalyNoise > anomalyThreshold;
+    
+    // Determine specific anomaly type if threshold is exceeded
+    let anomalyType = null;
+    let anomalyStrength = 0;
+    
+    if (hasAnomaly) {
+      // Calculate strength - how far above threshold
+      anomalyStrength = (anomalyNoise - anomalyThreshold) / (1 - anomalyThreshold);
+      
+      // Use a different noise to determine anomaly type
+      const anomalyTypeNoise = this.heightNoise.getFBM(x * 0.7 + 55000, y * 0.7 + 55000, {
+        scale: 0.005,
+        octaves: 1
+      });
+      
+      // Assign anomaly type based on noise value
+      if (anomalyTypeNoise < 0.3) {
+        anomalyType = "rocky_outcrop";
+      } else if (anomalyTypeNoise < 0.5) {
+        anomalyType = "lone_mountain";
+      } else if (anomalyTypeNoise < 0.7) {
+        anomalyType = "rock_formation";
+      } else {
+        anomalyType = "mesa_formation";
+      }
+    }
+    
     // Create optimized heightMap function with its own small cache
     const heightMapCache = new Map();
     const heightMap = (tx, ty) => {
@@ -1345,6 +1393,30 @@ export class TerrainGenerator {
     height = height * (1 - regionInfluence) + 
              ((regionNoise * regionNoise) * regionInfluence) + 
              (regionNoise * regionInfluence * 0.2); // Add some asymmetry
+
+    // NEW: Add height anomaly if an isolated mountain/rock formation was detected
+    if (hasAnomaly) {
+      if (anomalyType === "lone_mountain" && height > 0.35 && height < 0.7) {
+        // Isolated mountain peak - significant height boost, more common in higher elevations
+        const baseBoost = TERRAIN_OPTIONS.anomaly.mountainHeightBoost;
+        const elevationFactor = Math.min(1.0, height / 0.6); // More effective at higher elevations
+        
+        // Calculate peak profile with exponential falloff from anomaly center
+        const peakBoost = baseBoost * anomalyStrength * elevationFactor;
+        height = Math.min(0.95, height + peakBoost);
+        
+      } else if (anomalyType === "rock_formation") {
+        // Rocky terrain - small height boost, affects appearance more than elevation
+        const rockBoost = TERRAIN_OPTIONS.anomaly.rockHeightBoost;
+        const randomFactor = 0.7 + 0.6 * anomalyStrength; // Add some variability
+        height = Math.min(height + rockBoost * randomFactor, 0.9);
+        
+      } else if (anomalyType === "mesa_formation" && height > 0.4 && height < 0.7) {
+        // Mesa formation - flat-topped elevated area
+        const mesaBoost = TERRAIN_OPTIONS.anomaly.mesaHeightBoost;
+        height = Math.min(0.85, height + mesaBoost * anomalyStrength);
+      }
+    }
     
     // Apply height bias and mountain boost with strengthened effect
     const mountainNoise = this.heightNoise.getFBM(x + 12000, y + 12000, {
@@ -1515,15 +1587,20 @@ export class TerrainGenerator {
     }
     
     // Get biome with enhanced parameters including rarity
-    const biome = this.getBiome(height, moisture, continent, riverValue, lakeValue, lavaValue, 
-                               slope, scorchedValue, isCliff, isHighCliff, capillaryValue, waterNetworkValue);
+    const biome = this.getBiome(
+      height, moisture, continent, riverValue, lakeValue, lavaValue, 
+      slope, scorchedValue, isCliff, isHighCliff, capillaryValue, waterNetworkValue,
+      anomalyType, anomalyStrength // Pass anomaly data to getBiome
+    );
     
-    // Create result with added rarity information
+    // Create result with added anomaly information
     const result = { 
       height, moisture, continent, slope, biome, isCliff, isHighCliff,
       color: biome.color, riverValue, lakeValue, lavaValue, scorchedValue,
-      waterNetworkValue, // NEW: Include in result
-      rarity: biome.rarity // Include rarity in the terrain data result
+      waterNetworkValue,
+      anomalyType: hasAnomaly ? anomalyType : null, // Include anomaly information
+      anomalyStrength: hasAnomaly ? anomalyStrength : 0,
+      rarity: biome.rarity
     };
     
     // Store in cache with improved management
@@ -1641,7 +1718,7 @@ export class TerrainGenerator {
   }
 
   // Calculate biome rarity based on how extreme the parameters are
-  calculateRarity(height, moisture, slope, lavaValue, scorchedValue, isCliff) {
+  calculateRarity(height, moisture, slope, lavaValue, scorchedValue, isCliff, anomalyBonus = 0) {
     // Start with a score of 0 (common)
     let rarityScore = 0;
     
@@ -1670,6 +1747,9 @@ export class TerrainGenerator {
       rarityScore += 8;
     }
     
+    // Add bonus for anomalous features
+    rarityScore += anomalyBonus;
+    
     // Determine rarity level based on score
     if (rarityScore > 25) return 'mythic';      // Extremely rare, score > 25
     if (rarityScore > 18) return 'legendary';   // Very rare, score 18-25
@@ -1679,14 +1759,25 @@ export class TerrainGenerator {
     return 'common';                           // Common, score 0-4
   }
 
-  // Updated getBiome method that includes rarity calculation
-  getBiome(height, moisture, continentValue = 1.0, riverValue = 0, lakeValue = 0, lavaValue = 0, slope = 0, scorchedValue = 0, isCliff = false, isHighCliff = false, capillaryValue = 0, waterNetworkValue = 0) {
+  // Updated getBiome method that includes anomaly data
+  getBiome(height, moisture, continentValue = 1.0, riverValue = 0, lakeValue = 0, 
+           lavaValue = 0, slope = 0, scorchedValue = 0, isCliff = false, isHighCliff = false, 
+           capillaryValue = 0, waterNetworkValue = 0, anomalyType = null, anomalyStrength = 0) {
     
-    // Get base biome information - PASS COORDINATES from current position
-    let baseBiome = this.getBaseBiomeInfo(this.currentX, this.currentY, height, moisture, continentValue, riverValue, lakeValue, lavaValue, slope, scorchedValue, isCliff, isHighCliff, capillaryValue, waterNetworkValue);
+    // Get base biome information - PASS ANOMALY DATA to getBaseBiomeInfo
+    let baseBiome = this.getBaseBiomeInfo(
+      this.currentX, this.currentY, height, moisture, continentValue, 
+      riverValue, lakeValue, lavaValue, slope, scorchedValue, 
+      isCliff, isHighCliff, capillaryValue, waterNetworkValue, 
+      anomalyType, anomalyStrength
+    );
     
-    // Calculate rarity
-    const rarity = this.calculateRarity(height, moisture, slope, lavaValue, scorchedValue, isCliff || isHighCliff);
+    // Calculate rarity - boost rarity if this is an anomalous feature
+    const anomalyRarityBonus = anomalyType ? 8 : 0; // Significant boost for anomalies
+    const rarity = this.calculateRarity(
+      height, moisture, slope, lavaValue, scorchedValue, 
+      isCliff || isHighCliff, anomalyRarityBonus
+    );
     
     // Add rarity to biome object
     return {
@@ -1695,10 +1786,11 @@ export class TerrainGenerator {
     };
   }
 
-  // Base biome classification logic - Add x, y as first parameters
+  // Base biome classification logic - Updated to use anomaly data
   getBaseBiomeInfo(x, y, height, moisture, continentValue = 1.0, riverValue = 0, lakeValue = 0, 
                   lavaValue = 0, slope = 0, scorchedValue = 0, isCliff = false, 
-                  isHighCliff = false, capillaryValue = 0, waterNetworkValue = 0) {
+                  isHighCliff = false, capillaryValue = 0, waterNetworkValue = 0,
+                  anomalyType = null, anomalyStrength = 0) {
     // STRICT PRIORITY SYSTEM - The order here determines which feature "wins"
     
     // 1. LAVA/MAGMA - Highest priority with enhanced bright colors
@@ -1730,7 +1822,7 @@ export class TerrainGenerator {
     if (height < waterLevel + coastalZoneWidth + coastVariation) {
       // Check slope to determine if this is a cliff coast
       if (slope > TERRAIN_OPTIONS.coastal.cliffThreshold) {
-        return { name: "coastal_cliff", color: "#7A736B" };
+        return { name: "sea_cliff", color: "#7A736B" };
       }
       
       // Different shore types based on moisture
@@ -1747,11 +1839,11 @@ export class TerrainGenerator {
     const secondaryWidth = TERRAIN_OPTIONS.coastal.secondaryZoneWidth;
     if (height < waterLevel + coastalZoneWidth + secondaryWidth + coastVariation) {
       if (moisture < 0.35) {
-        return { name: "coastal_dunes", color: "#D8CBA0" };
+        return { name: "dunes", color: "#D8CBA0" };
       } else if (moisture < 0.65) {
-        return { name: "coastal_scrub", color: "#A8AA80" };
+        return { name: "littoral_scrub", color: "#A8AA80" }; // Renamed from shore_scrub
       } else {
-        return { name: "coastal_meadow", color: "#75A080" };
+        return { name: "salt_meadow", color: "#75A080" }; // Renamed from shore_meadow
       }
     }
     
@@ -1759,11 +1851,11 @@ export class TerrainGenerator {
     const tertiaryWidth = TERRAIN_OPTIONS.coastal.tertiaryZoneWidth;
     if (height < waterLevel + coastalZoneWidth + secondaryWidth + tertiaryWidth + coastVariation) {
       if (moisture < 0.3) {
-        return { name: "coastal_plains", color: "#C0B990" }; // New transition biome
+        return { name: "strand_plains", color: "#C0B990" }; // Renamed from beach_plains
       } else if (moisture < 0.6) {
-        return { name: "coastal_shrubland", color: "#94A078" }; // New transition biome
+        return { name: "strand_scrub", color: "#94A078" }; // Renamed from beach_shrubland
       } else {
-        return { name: "coastal_woodland", color: "#5B8A65" }; // New transition biome
+        return { name: "strand_woodland", color: "#5B8A65" }; // Renamed from beach_woodland
       }
     }
 
