@@ -15,7 +15,6 @@
     import HamburgerIcon from '../components/icons/HamburgerIcon.svelte';
     import GuestWarning from '../components/GuestWarning.svelte';
     import { initAuthListener } from '$lib/stores/user';
-    import { initDatabaseConnectionCheck } from '$lib/firebase/database-status';
     import { initialize, initializeMapForWorld } from '$lib/stores/map.js';
   
     const { children } = $props();
@@ -196,10 +195,6 @@
             const gameUnsubscribe = initGameStore();
             console.log('Game store initialized');
             
-            // Initialize database connection check
-            const dbCheckUnsubscribe = initDatabaseConnectionCheck();
-            console.log('Database connection check initialized');
-            
             // Connect map and game stores after game store is initialized
             console.log('Connecting map and game stores...');
             
@@ -218,7 +213,6 @@
             return () => {
                 authUnsubscribe && authUnsubscribe();
                 gameUnsubscribe && gameUnsubscribe();
-                dbCheckUnsubscribe && dbCheckUnsubscribe();
             };
         } catch (error) {
             console.error('Error initializing core services:', error);
