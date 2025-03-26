@@ -15,7 +15,6 @@
     joined = false, // New prop to track if world is joined
     worldInfo = null, // Add world info prop to access center coordinates
     worldCenter = null, // Allow passing precomputed world center directly
-    debug = false // Add debug prop to show more information
   } = $props();
   
   // Local state
@@ -354,13 +353,6 @@
   data-world-id={worldId}
   aria-label="World terrain preview"
 >
-  {#if debug}
-    <div class="debug-info">
-      Center: {centerState.x},{centerState.y} 
-      <span class="source">({centerState.source})</span>
-    </div>
-  {/if}
-  
   {#if mounted && (isActive || !delayed) && terrainGrid.length > 0}
     <div 
       class="terrain-grid"
@@ -510,23 +502,5 @@
   button.terrain-tile[disabled] {
     cursor: default;
     pointer-events: none;
-  }
-
-  .debug-info {
-    position: absolute;
-    top: 0;
-    left: 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    color: #00ff00;
-    padding: 4px 8px;
-    font-size: 12px;
-    z-index: 100;
-    white-space: nowrap;
-  }
-  
-  .source {
-    font-size: 10px;
-    opacity: 0.8;
-    margin-left: 4px;
   }
 </style>

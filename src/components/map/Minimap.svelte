@@ -190,10 +190,45 @@
     isTouching = false;
   }
 
-  // Click handler for highlighted tile
-  function handleMinimapClick() {
-    if (wasDrag || !$ready || !$highlightedStore) return;
-    moveTarget($highlightedStore.x, $highlightedStore.y);
+  // Updated click handler for the minimap
+  function handleMinimapClick(event) {
+    if (wasDrag || !$ready) return;
+    
+    // First check if there's a highlighted tile and use it
+    if ($highlightedStore) {
+      console.log('Moving to highlighted minimap tile:', { x: $highlightedStore.x, y: $highlightedStore.y });
+      moveTarget($highlightedStore.x, $highlightedStore.y);
+      setHighlighted(null, null);
+      return;
+    }
+    
+    // If no highlighted tile, find the tile directly clicked
+    // Get the minimap grid element and its dimensions
+    const gridElement = minimap.querySelector('.minimap-grid');
+    if (!gridElement) return;
+    
+    const rect = gridElement.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    // Calculate which tile was clicked based on position
+    const tileWidth = rect.width / tileCountX;
+    const tileHeight = rect.height / tileCountY;
+    
+    const relativeCol = Math.floor(x / tileWidth);
+    const relativeRow = Math.floor(y / tileHeight);
+    
+    // Bounds check
+    if (relativeCol < 0 || relativeCol >= tileCountX || relativeRow < 0 || relativeRow >= tileCountY) {
+      return;
+    }
+    
+    // Calculate global coordinates
+    const globalX = relativeCol - viewRangeX + $map.target.x;
+    const globalY = relativeRow - viewRangeY + $map.target.y;
+    
+    console.log('Moving to clicked minimap tile:', { x: globalX, y: globalY });
+    moveTarget(globalX, globalY);
   }
 
   // Add hover timeout variable
