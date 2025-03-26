@@ -13,6 +13,7 @@
     setHighlighted
   } from "../../lib/stores/map.js";
   import { game, currentPlayer } from "../../lib/stores/game.js";
+  import Torch from '../icons/Torch.svelte'; // Add Torch import
   
   // Convert to $props syntax
   const { detailed = false } = $props();
@@ -563,6 +564,13 @@
               {cell.terrain?.rarity && cell.terrain.rarity !== 'common' ? `box-shadow: inset 0 0 ${getRarityGlowSize(cell.terrain.rarity)} ${getRarityColor(cell.terrain.rarity)};` : ''}
             "
           >
+            <!-- Add Torch icon for spawn structures -->
+            {#if cell.structure && cell.structure.type === 'spawn'}
+              <div class="spawn-icon-container">
+                <Torch size="85%" extraClass="spawn-icon" />
+              </div>
+            {/if}
+            
             <span class="coords">{cell.x},{cell.y}</span>
 
             <!-- Add player position indicator -->
@@ -923,23 +931,55 @@
 
   /* Special styles for structure types */
   .spawn-structure {
-    box-shadow: inset 0 0 0.5em rgba(0, 255, 255, 0.6);
+    box-shadow: inset 0 0 0.5em rgba(0, 255, 255, 0.4); /* Reduced intensity */
   }
   
   .spawn-indicator {
-    background: rgba(0, 255, 255, 0.9) !important;
-    box-shadow: 0 0 .25em rgba(0, 255, 255, 0.8) !important;
-    border-radius: 50% !important;
+    background: rgba(0, 255, 255, 0.9);
+    box-shadow: 0 0 .25em rgba(0, 255, 255, 0.8);
+    border-radius: 50%;
+  }
+
+  /* Keep the indicator for more visibility */
+  .spawn-indicator {
+    background: rgba(0, 255, 255, 0.9);
+    box-shadow: 0 0 .25em rgba(0, 255, 255, 0.8);
+    border-radius: 50%;
+  }
+
+  /* Small glow effect on hover */
+  .tile.spawn-structure:hover .spawn-icon-container :global(svg) {
+    filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.8));
+    opacity: 0.9;
   }
   
-  .watchtower-structure {
-    box-shadow: inset 0 0 0.4em rgba(255, 255, 150, 0.4);
+  /* Make sure the entity indicators still show above the torch icon */
+  .entity-indicator {
+    z-index: 4; /* Increased to ensure visibility */
+    /* ...existing styles... */
   }
   
-  .fortress-structure {
-    box-shadow: inset 0 0 0.4em rgba(255, 200, 100, 0.5);
+  /* Style for the spawn icon container */
+  .spawn-icon-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2; /* Above the tile background but below indicators */
+    pointer-events: none; /* Allow clicks to pass through */
+    opacity: 0.6; /* Make it semi-transparent */
   }
   
+  /* Style the icon itself */
+  :global(.spawn-icon) {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 4px rgba(0, 255, 255, 0.6));
+  }
+
   /* Make spawn structures more prominent */
   .tile.spawn-structure:before {
     content: '';

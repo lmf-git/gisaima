@@ -7,6 +7,7 @@
   import { map, moveTarget } from '../../lib/stores/map.js';
   import { getChunkKey } from '../../lib/stores/map.js';
   import { goto } from '$app/navigation';
+  import Torch from '../icons/Torch.svelte'; // Import the Torch component
 
   // Export a close function prop to allow parent to close the component
   const { onSpawn = () => {} } = $props();
@@ -187,12 +188,17 @@
             onclick={() => selectSpawn(spot)}
             disabled={spawning}
           >
-            <span class="option-name">{spot.name}</span>
-            <span class="option-coords">Coordinates: {spot.x},{spot.y}</span>
-            <span class="faction-tag">{playerRace.charAt(0).toUpperCase() + playerRace.slice(1)} Settlement</span>
-            {#if spot.description}
-              <span class="option-desc">{spot.description}</span>
-            {/if}
+            <div class="option-icon">
+              <Torch size="1.2em" />
+            </div>
+            <div class="option-content">
+              <span class="option-name">{spot.name}</span>
+              <span class="option-coords">Coordinates: {spot.x},{spot.y}</span>
+              <span class="faction-tag">{playerRace.charAt(0).toUpperCase() + playerRace.slice(1)} Settlement</span>
+              {#if spot.description}
+                <span class="option-desc">{spot.description}</span>
+              {/if}
+            </div>
           </button>
         {/each}
       </div>
@@ -270,7 +276,7 @@
     cursor: pointer;
     text-align: left;
     display: flex;
-    flex-direction: column;
+    align-items: center;
     transition: all 0.2s;
     color: white;
   }
@@ -284,6 +290,20 @@
     background: rgba(0, 150, 150, 0.2);
     border-color: var(--color-teal);
     box-shadow: 0 0 8px rgba(0, 150, 150, 0.4);
+  }
+  
+  .option-icon {
+    margin-right: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+  }
+  
+  .option-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
   
   .option-name {
