@@ -188,19 +188,19 @@ export class SimplexNoise {
 
     const {
       scale = 0.003,
-      riverDensity = 1.3,
-      riverThreshold = 0.5,
+      riverDensity = 1.6,     // Updated to match the TERRAIN_OPTIONS value
+      riverThreshold = 0.5,   // Updated to match the TERRAIN_OPTIONS value
       minContinentValue = 0.2,
-      riverWidth = 0.85,
+      riverWidth = 1.0,      // Updated to match the TERRAIN_OPTIONS value
       flowDirectionality = 0.95,
-      arterialRiverFactor = 0.6,
+      arterialRiverFactor = 0.75,
       waterLevel = 0.32,
       ridgeSharpness = 2.5,
       lakeInfluence = 0.75,
-      branchingFactor = 0.6,
-      streamFrequency = 0.6,
+      branchingFactor = 0.7,  // Updated to match the TERRAIN_OPTIONS value
+      streamFrequency = 0.6,  // Updated to match the TERRAIN_OPTIONS value
       flowConstraint = 0.75,
-      mountainSourceFactor = 0.7  // New parameter for mountain river sources
+      mountainSourceFactor = 0.7
     } = options;
     
     // Get height at this position
@@ -371,17 +371,21 @@ export class SimplexNoise {
                                isMountainSource ? riverThreshold * 0.9 : 
                                riverThreshold;
     
-    // Final output - reduce width for streams
+    // Final output - proper width scaling based on river type
     if (riverValue > effectiveThreshold) {
       // Scale width by terrain - narrower for mountain rivers
       let widthModifier = isMountainSource ? 
                           (1.0 - heightValue) * 0.25 + 0.2 : // Narrower mountain rivers 
                           (1.0 - heightValue) * 0.3 + 0.3;   // Standard width scaling
       
-      // Add an extra modifier for small streams to make them narrower
-      if (riverValue <= effectiveThreshold + 0.15) {
-        widthModifier *= 0.7; // Make streams 30% narrower while leaving larger rivers unchanged
+      // Add an extra modifier for small streams to make them significantly narrower
+      if (riverValue <= effectiveThreshold + 0.10) {
+        widthModifier *= 0.4; // Make streams significantly narrower (60% reduction) for proper hierarchy
       }
+      else if (riverValue <= effectiveThreshold + 0.18) {
+        widthModifier *= 0.6; // Make medium streams somewhat narrower (40% reduction)
+      }
+      // Larger rivers use the full width
       
       const waterProximityBonus = nearWater ? 1.2 : 1.0;
       const arterialBonus = isArterial ? 1.4 : 1.0;
@@ -610,13 +614,13 @@ export class SimplexNoise {
     
     const {
       scale = 0.006,           
-      density = 1.45,           // Increased from 1.3 
-      threshold = 0.78,        // Reduced from 0.82 for many more streams
+      density = 1.6,           // Updated to match the TERRAIN_OPTIONS value
+      threshold = 0.75,        // Updated to match the TERRAIN_OPTIONS value
       minHeight = 0.33,        
       maxHeight = 0.85,        
       waterLevel = 0.31,       
-      connectivityFactor = 0.85, // Increased for better networks
-      thinnessFactor = 0.2
+      connectivityFactor = 0.85,
+      thinnessFactor = 0.12    // Updated to match the TERRAIN_OPTIONS value
     } = options;
     
     // Get height at this position
@@ -729,12 +733,13 @@ export class SimplexNoise {
     // Apply threshold with stronger cutoff for ultrathin streams
     const effectiveThreshold = threshold - (waterProximity * 0.1); // Increased from 0.08 for more water proximity influence
     
+    // Return a smaller value for extremely thin streams
     if (streamValue > effectiveThreshold) {
-      // Keep the streams even thinner
-      const widthFactor = (0.06 - (heightValue - minHeight) * 0.04) * thinnessFactor;  // Reduced from 0.08 to 0.06
+      // Width factor reduced significantly to create much thinner streams
+      const widthFactor = (0.03 - (heightValue - minHeight) * 0.02) * thinnessFactor;  // Reduced from 0.045 to 0.03
       
-      // Return a smaller value for extremely thin rivers
-      return Math.min(0.04, (streamValue - effectiveThreshold) * widthFactor);  // Reduced from 0.05 to 0.04
+      // Also reduced the max cap from 0.03 to 0.02 for much thinner streams
+      return Math.min(0.02, (streamValue - effectiveThreshold) * widthFactor);
     }
     
     return 0;
@@ -743,13 +748,13 @@ export class SimplexNoise {
 
 // Export terrain generation options with enhanced biome diversity
 export const TERRAIN_OPTIONS = {
-  // Continent generation options - adjusted for larger landmasses with proper water routes
+  // Continent generation options - dramatically adjusted for ocean generation
   continent: {
-    scale: 0.0006,  // Keep this small scale for large continental forms
-    threshold: 0.38,
+    scale: 0.0003,  // Reduced from 0.0006 to create larger continuous ocean areas
+    threshold: 0.58,  // Dramatically increased from 0.42 to ensure ocean generation
     edgeScale: 0.002,
     edgeAmount: 0.35,    
-    sharpness: 1.8
+    sharpness: 2.0       // Increased from 1.8 for sharper coastlines
   },
   
   // NEW: Add regional variation layer for large-scale patterns
@@ -785,34 +790,34 @@ export const TERRAIN_OPTIONS = {
     lacunarity: 2.0
   },
   
-  // River generation options - enhanced for more prominent rivers
+  // River generation options - fixed width hierarchy for proper appearance
   river: {
     scale: 0.0022,
-    riverDensity: 1.4,         // Increased from 1.3 for more rivers overall
-    riverThreshold: 0.53,      // Reduced from 0.54 to create more rivers
+    riverDensity: 1.6,
+    riverThreshold: 0.50,
     minContinentValue: 0.2,
-    riverWidth: 0.95,          // Increased from 0.85 to make rivers wider
+    riverWidth: 1.0,          // Increased from 0.75 to ensure rivers are wider than streams
     flowDirectionality: 0.95,
-    arterialRiverFactor: 0.75, // Increased from 0.7 for more pronounced main rivers
+    arterialRiverFactor: 0.75,
     waterLevel: 0.31,
     ridgeSharpness: 2.5,
     lakeInfluence: 0.65,
-    branchingFactor: 0.6,
-    streamFrequency: 0.4,      // Reduced from 0.5 to make streams less frequent
+    branchingFactor: 0.7,
+    streamFrequency: 0.6,
     flowConstraint: 0.8,
     mountainSourceFactor: 0.7
   },
   
-  // Capillary streams (smallest water features)
+  // Capillary streams (smallest water features) - more numerous, thinner
   capillary: {
     scale: 0.006,
-    density: 1.25,             // Reduced from 1.45 to create fewer capillaries
-    threshold: 0.80,           // Increased from 0.78 to create fewer streams
+    density: 1.6,              // Increased from 1.25 to create more capillaries
+    threshold: 0.75,           // Decreased from 0.80 to create more streams
     minHeight: 0.33,        
     maxHeight: 0.85,        
     waterLevel: 0.31,       
     connectivityFactor: 0.85,
-    thinnessFactor: 0.15      // Reduced from 0.17 to make streams thinner
+    thinnessFactor: 0.12       // Reduced from 0.15 to make streams thinner
   },
   
   // Lake options - adjusted with much smaller ponds
@@ -856,9 +861,9 @@ export const TERRAIN_OPTIONS = {
     varianceFactor: 0.2  // New parameter to add cliff formation variance
   },
   
-  // Constants adjusted with increased mountain visibility
+  // Constants adjusted for better ocean representation
   constants: {
-    continentInfluence: 0.84,  // Slightly reduced to allow more water features to cut through land
+    continentInfluence: 0.75,  // Reduced from 0.82 to allow more water features 
     waterLevel: 0.31,        // Slightly reduced water level to expand landmass
     heightBias: 0.095,          // Slightly reduced to allow more depressions for water
     riverErosionFactor: 0.38,  // Increased to create deeper river valleys
@@ -946,8 +951,15 @@ export class TerrainGenerator {
     const cached = this.heightCache.get(key);
     if (cached) return cached;
     
+    // Debug ocean generation on a sparse grid
+    const isDebugPoint = (x % 100 === 0) && (y % 100 === 0);
+    
     // Get continent value first
     const continent = this.continentNoise.getContinentValue(x, y, TERRAIN_OPTIONS.continent);
+    
+    if (isDebugPoint) {
+      console.log(`Debug at ${x},${y}: continent=${continent.toFixed(3)}`);
+    }
     
     // NEW: Generate regional variation noise
     const regionNoise = this.heightNoise.getNoise(
@@ -978,7 +990,7 @@ export class TerrainGenerator {
     let height = baseHeight * (1 - TERRAIN_OPTIONS.constants.continentInfluence) + 
                  continent * TERRAIN_OPTIONS.constants.continentInfluence;
                  
-    // NEW: Apply regional influence to height
+    // Apply regional influence to height
     const regionInfluence = TERRAIN_OPTIONS.region.influence;
     height = height * (1 - regionInfluence) + 
              ((regionNoise * regionNoise) * regionInfluence) + 
@@ -988,13 +1000,13 @@ export class TerrainGenerator {
     const mountainNoise = this.heightNoise.getFBM(x + 12000, y + 12000, {
       scale: 0.003,
       octaves: 3,
-      persistence: 0.65,  // Slightly increased from 0.6 for more dramatic mountains
+      persistence: 0.65,
       lacunarity: 2.1
     });
     
     // Apply mountain boost with more progressive effect for smoother transitions
-    if (mountainNoise > 0.62) {  // Slightly reduced threshold from 0.65
-      const mountainEffect = (mountainNoise - 0.62) * 2.8;  // Increased multiplier from 2.5
+    if (mountainNoise > 0.62) {
+      const mountainEffect = (mountainNoise - 0.62) * 2.8;
       height = Math.min(1, height + TERRAIN_OPTIONS.constants.mountainBoost * mountainEffect);
     }
     
@@ -1008,14 +1020,31 @@ export class TerrainGenerator {
     const detail = this.detailNoise.getNoise(x, y, TERRAIN_OPTIONS.detail) * 0.08;
     height = Math.min(1, Math.max(0, height + detail - 0.04));
     
-    // Generate moisture with regional variance
+    // Generate initial moisture value
     let moisture = this.moistureNoise.getNoise(x, y, TERRAIN_OPTIONS.moisture);
     
     // NEW: Apply moisture variance based on region
     const moistureRegionalEffect = (regionNoise - 0.5) * TERRAIN_OPTIONS.region.moistureInfluence;
     moisture = Math.max(0, Math.min(1, moisture + moistureRegionalEffect));
     
-    // NEW: Apply contrast curve to moisture for more dramatic regions
+    // NEW: TERRAIN-MOISTURE INTERACTION
+    // 1. Check for nearby water bodies to increase moisture
+    const waterProximityMoisture = this.calculateWaterProximityMoisture(x, y, heightMap, TERRAIN_OPTIONS);
+    
+    // 2. Check for rain shadow effect from mountains
+    const rainShadowFactor = this.calculateRainShadowEffect(x, y, heightMap, TERRAIN_OPTIONS);
+    
+    // 3. Apply elevation-based moisture adjustment
+    const elevationMoistureFactor = this.calculateElevationMoistureFactor(height, TERRAIN_OPTIONS);
+    
+    // Combine all moisture effects (proximity, rain shadow, elevation)
+    moisture = Math.min(1.0, Math.max(0.0, 
+      moisture * (1.0 + waterProximityMoisture * 0.5) * // Increase from proximity to water
+      rainShadowFactor * // Decrease from rain shadow
+      elevationMoistureFactor // Adjust based on elevation
+    ));
+    
+    // Apply contrast curve to moisture for more dramatic regions
     moisture = Math.pow(moisture, TERRAIN_OPTIONS.constants.moistureContrast);
     
     // Generate river value first (important for proper priority)
@@ -1076,6 +1105,108 @@ export class TerrainGenerator {
     }
     
     return result;
+  }
+
+  // NEW: Calculate moisture increase based on proximity to water bodies
+  calculateWaterProximityMoisture(x, y, heightMap, options) {
+    const waterLevel = options.constants.waterLevel;
+    let moistureBoost = 0;
+    
+    // Check a larger area for water bodies
+    const checkRadius = 7;
+    
+    for (let dy = -checkRadius; dy <= checkRadius; dy++) {
+      for (let dx = -checkRadius; dx <= checkRadius; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > checkRadius) continue;
+        
+        const nx = x + dx;
+        const ny = y + dy;
+        const neighborHeight = heightMap(nx, ny);
+        
+        // If this is water, add moisture based on proximity
+        if (neighborHeight < waterLevel) {
+          // Stronger influence for closer water bodies
+          const proximityFactor = (checkRadius - dist) / checkRadius;
+          
+          // Large bodies of water (oceans) have stronger influence
+          const isLargeWater = (neighborHeight < waterLevel - 0.05);
+          const waterSizeFactor = isLargeWater ? 1.5 : 1.0;
+          
+          moistureBoost += proximityFactor * proximityFactor * waterSizeFactor * 0.2;
+        }
+      }
+    }
+    
+    // Cap the moisture boost
+    return Math.min(1.0, moistureBoost);
+  }
+  
+  // NEW: Calculate rain shadow effect from mountains
+  calculateRainShadowEffect(x, y, heightMap, options) {
+    // We'll use a directional check to simulate prevailing winds
+    // The rain shadow effect reduces moisture on the leeward side of mountains
+    
+    // Determine prevailing wind direction - for simplicity using fixed direction
+    // In a more complex model, this could vary by region
+    const windDirX = 1.0; // East to West wind
+    const windDirY = 0.2; // Slight North to South component
+    
+    // Normalize wind vector
+    const windDirMag = Math.sqrt(windDirX * windDirX + windDirY * windDirY);
+    const normWindX = windDirX / windDirMag;
+    const normWindY = windDirY / windDirMag;
+    
+    let maxHeightDiff = 0;
+    const checkDistance = 5; // How far to check for mountains
+    
+    // Check upwind for mountains
+    for (let d = 1; d <= checkDistance; d++) {
+      const upwindX = x - Math.round(normWindX * d);
+      const upwindY = y - Math.round(normWindY * d);
+      
+      // Get height at current position and upwind position
+      const currentHeight = heightMap(x, y);
+      const upwindHeight = heightMap(upwindX, upwindY);
+      
+      // If upwind terrain is higher, we're in a rain shadow
+      const heightDiff = upwindHeight - currentHeight;
+      if (heightDiff > maxHeightDiff) {
+        maxHeightDiff = heightDiff;
+      }
+    }
+    
+    // Calculate rain shadow factor (lower means more shadow)
+    // Use exponential falloff for more realistic effect
+    const rainShadowFactor = Math.min(1.0, Math.max(0.4, 1.0 - maxHeightDiff * 1.5));
+    
+    return rainShadowFactor;
+  }
+  
+  // NEW: Calculate moisture adjustment based on elevation
+  calculateElevationMoistureFactor(height, options) {
+    // Higher elevations generally have less moisture (with some exceptions)
+    const waterLevel = options.constants.waterLevel;
+    
+    // Start with neutral factor
+    let factor = 1.0;
+    
+    // Very high elevations have less moisture
+    if (height > 0.8) {
+      factor *= 0.8;
+    }
+    // But mid elevations often collect moisture
+    else if (height > 0.5 && height < 0.7) {
+      factor *= 1.1;
+    }
+    // Areas just above water level are often humid
+    else if (height > waterLevel && height < waterLevel + 0.15) {
+      factor *= 1.2;
+    }
+    
+    return factor;
   }
 
   // Calculate biome rarity based on how extreme the parameters are
@@ -1146,39 +1277,35 @@ export class TerrainGenerator {
     }
     
     // 2. WATER FEATURES - Second highest priority with unified colors
-    // OCEAN FEATURES - These are fine and should be kept distinct
-    if (continentValue < 0.10) return { name: "deep_ocean", color: "#0E3B59" };
-    if (continentValue < 0.25) return { name: "ocean", color: "#1A4F76" };
+    // OCEAN FEATURES - Enhanced with more distinction between water types
+    if (continentValue < 0.12) return { name: "deep_ocean", color: "#0E3B59" }; // Increased from 0.08
+    if (continentValue < 0.26) return { name: "ocean", color: "#1A4F76" };      // Increased from 0.18
+    if (continentValue < 0.40) return { name: "sea", color: "#2D6693" };        // Increased from 0.33
     
     // COASTAL WATERS
     const waterLevel = TERRAIN_OPTIONS.constants.waterLevel;
     if (height < waterLevel) return { name: "shallows", color: "#5d99b8" };
 
-    // RIVER SYSTEM - Adjusted thresholds for size hierarchy
+    // RIVER SYSTEM - Fixed size hierarchy
     // Lakes (largest water bodies) - keep threshold the same but increase detection
-    if (lakeValue > 0.25) {  // Keep lakes at current size
+    if (lakeValue > 0.25) {
       if (height > 0.7) return { name: "mountain_lake", color: "#3A7FA0" };
       return { name: "lake", color: "#4A91AA" };
     }
     
-    // Rivers (medium water bodies) - keep threshold high for prominent rivers
-    if (riverValue > 0.28 && continentValue > 0.2) {  // Keep rivers at current size
+    // Rivers (medium water bodies) - ensure they are visibly wider than streams
+    if (riverValue > 0.25 && continentValue > 0.2) {
       if (height > 0.75) return { name: "mountain_river", color: "#4A8FA0" }; 
       return { name: "river", color: "#55AAC5" };
     }
     
-    // Streams (small water bodies) - increased threshold to make them smaller
-    if (riverValue > 0.18 && continentValue > 0.2) {  // Increased from 0.12 to 0.18 to make streams smaller
+    // Streams (small water bodies) - ensure they are visibly thinner than rivers
+    if (riverValue > 0.17 && continentValue > 0.2) {  // Increased from 0.15 to make fewer streams
       return { name: "stream", color: "#65B2C0" };
     }
     
-    // Ponds (smallest standing water bodies)
-    if (lakeValue > 0 && lakeValue <= 0.15 && height >= TERRAIN_OPTIONS.lake.pondMinHeight) {  // Reduced from 0.25 to 0.15
-      return { name: "pond", color: "#5099B0" };
-    }
-    
-    // Make capillary streams even smaller
-    if (capillaryValue > 0.035) {  // Increased from 0.025 to 0.035 to make rivulets smaller
+    // Make capillary streams even smaller but more numerous
+    if (capillaryValue > 0.03) {  // Reduced from 0.035 to create more capillary streams
       return { name: "rivulet", color: "#6AADB6" };
     }
     
