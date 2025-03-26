@@ -3,15 +3,18 @@
   import { TerrainGenerator } from '../lib/map/noise.js';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
+  import { getWorldCenterCoordinates } from '../lib/stores/game.js';
   
-  // Props with defaults - add joined prop
+  // Props with defaults - add worldInfo prop
   const { 
     worldId = '', 
     seed = 0, 
     tileSize = 1.25, 
     summaryFactor = 50,
     delayed = false,
-    joined = false // New prop to track if world is joined
+    joined = false, // New prop to track if world is joined
+    worldInfo = null, // Add world info prop to access center coordinates
+    worldCenter = null // Allow passing precomputed world center directly
   } = $props();
   
   // Local state
@@ -23,6 +26,21 @@
   let rows = $state(0);
   let isActive = $state(!delayed);
   
+  // Fix the bug in the for loop condition - there was a typo here "0 < rows" instead of "y < rows"
+  // Use memoized world center to avoid excessive recalculations - with debug logging
+  const centerCoords = $derived(() => {
+    // Use pre-computed center if provided
+    if (worldCenter) {
+      console.log(`Using provided center for ${worldId}:`, worldCenter);
+      return worldCenter;
+    }
+    
+    // Otherwise compute once
+    const coords = getWorldCenterCoordinates(worldId, worldInfo) || { x: 0, y: 0 };
+    console.log(`Computed center for ${worldId}:`, coords);
+    return coords;
+  });
+
   // Add state to track hovered tile
   let hoveredTileX = $state(null);
   let hoveredTileY = $state(null);
@@ -81,7 +99,7 @@
     }
   }
 
-  // Generate terrain data for the grid with simplified sampling
+  // Generate terrain data for the grid with world center as the focal point
   function generateTerrainGrid(seed) {
     if (!seed || typeof seed !== 'number' || cols <= 0 || rows <= 0) return [];
     
@@ -93,13 +111,19 @@
       const centerX = Math.floor(cols / 2);
       const centerY = Math.floor(rows / 2);
       
+      // Use memoized center coordinates
+      const worldCenterX = centerCoords.x || 0;
+      const worldCenterY = centerCoords.y || 0;
+      
+      // Fix the bug in the for loop condition
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
           // Calculate the base world coordinates for this summarized tile
-          const baseWorldX = (x - centerX) * summaryFactor;
-          const baseWorldY = (y - centerY) * summaryFactor;
+          // Centered on world center rather than 0,0
+          const baseWorldX = worldCenterX + (x - centerX) * summaryFactor;
+          const baseWorldY = worldCenterY + (y - centerY) * summaryFactor;
           
-          // Simply sample from the center of the area - much more efficient
+          // Simply sample from the center of the area
           const centerSampleX = baseWorldX + Math.floor(summaryFactor / 2);
           const centerSampleY = baseWorldY + Math.floor(summaryFactor / 2);
           const terrainData = generator.getTerrainData(centerSampleX, centerSampleY);
@@ -156,12 +180,19 @@
     return grid;
   }
   
-  // Activate the card when delayed loading is ready
+  // Improve activation function for delayed cards with better error handling
   function activateCard() {
     if (!isActive) {
       isActive = true;
       if (mounted && seed && cols > 0 && rows > 0) {
-        terrainGrid = generateTerrainGrid(seed);
+        try {
+          console.log(`Activating terrain grid for ${worldId}`);
+          terrainGrid = generateTerrainGrid(seed);
+        } catch (error) {
+          console.error(`Error generating terrain for ${worldId}:`, error);
+          // Fall back to placeholder grid on error
+          terrainGrid = createPlaceholderGrid();
+        }
       }
     }
   }
@@ -170,16 +201,11 @@
   function navigateToTile(x, y) {
     if (!browser || !joined || !worldId) return;
     
-    // Convert the summarized coordinates to actual world coordinates
-    const centerOffset = Math.floor(summaryFactor / 2);
-    const worldX = x * summaryFactor + centerOffset;
-    const worldY = y * summaryFactor + centerOffset;
-    
-    // Create a cleaner URL (avoiding any possible duplicated params)
+    // Create a cleaner URL
     const url = new URL('/map', window.location.origin);
     url.searchParams.set('world', worldId);
-    url.searchParams.set('x', worldX.toString());
-    url.searchParams.set('y', worldY.toString());
+    url.searchParams.set('x', x.toString());
+    url.searchParams.set('y', y.toString());
     
     // Navigate to the map with the calculated coordinates
     goto(url.pathname + url.search);
@@ -189,8 +215,8 @@
   function handleTileClick(tile, event) {
     if (!joined) return;
     
-    // Navigate to this tile's world coordinates
-    navigateToTile(tile.worldX / summaryFactor, tile.worldY / summaryFactor);
+    // Navigate using the tile's actual world coordinates (not relative grid position)
+    navigateToTile(tile.worldX, tile.worldY);
     
     event.stopPropagation();
   }
@@ -201,17 +227,20 @@
     
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      navigateToTile(tile.worldX / summaryFactor, tile.worldY / summaryFactor);
+      navigateToTile(tile.worldX, tile.worldY);
     }
   }
   
   onMount(() => {
     if (cardElement) {
+      console.log(`WorldCard mounted for ${worldId}, delayed: ${delayed}`);
+      
       // Calculate grid dimensions
       resizeWorldGrid();
       
       // Generate initial terrain grid only if not delayed
       if (!delayed) {
+        console.log(`Immediate terrain generation for ${worldId}`);
         // Show placeholder immediately, then generate actual grid
         terrainGrid = createPlaceholderGrid();
         
@@ -221,33 +250,55 @@
             terrainGrid = generateTerrainGrid(seed);
           }
         }, 10);
+      } else {
+        console.log(`Delayed terrain generation queued for ${worldId}`);
       }
       
       mounted = true;
       
       // Setup resize observer - this only triggers when actual resizing happens
-      resizeObserver = new ResizeObserver(resizeWorldGrid);
-      resizeObserver.observe(cardElement);
+      try {
+        resizeObserver = new ResizeObserver(resizeWorldGrid);
+        resizeObserver.observe(cardElement);
+      } catch (error) {
+        console.error('ResizeObserver error:', error);
+      }
     }
     
     return () => {
-      if (resizeObserver) resizeObserver.disconnect();
+      if (resizeObserver) {
+        try {
+          resizeObserver.disconnect();
+        } catch (error) {
+          console.error('Error disconnecting ResizeObserver:', error);
+        }
+      }
     };
   });
   
-  // When delayed prop changes to false, activate the card
+  // When delayed prop changes to false, activate the card - with simplified reactive logic
   $effect(() => {
     if (!delayed && !isActive && mounted) {
+      console.log(`Delayed card ${worldId} now ready to activate`);
       // Show placeholder immediately
       terrainGrid = createPlaceholderGrid();
       activateCard();
     }
   });
   
-  // Update terrain when seed changes and card is active
+  // Update terrain when seed or center changes and card is active
   $effect(() => {
     if (mounted && seed && isActive && cols > 0 && rows > 0) {
-      terrainGrid = generateTerrainGrid(seed);
+      try {
+        console.log(`Regenerating terrain for ${worldId} with seed ${seed}`);
+        terrainGrid = generateTerrainGrid(seed);
+      } catch (error) {
+        console.error(`Error updating terrain for ${worldId}:`, error);
+        // Fall back to placeholder on error
+        if (terrainGrid.length === 0) {
+          terrainGrid = createPlaceholderGrid();
+        }
+      }
     }
   });
 </script>

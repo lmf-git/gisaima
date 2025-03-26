@@ -48,6 +48,26 @@ export const currentWorldSeed = derived(
   }
 );
 
+// Create a derived store for the current world's center coordinates
+export const currentWorldCenter = derived(
+  [game, currentWorldInfo],
+  ([$game, $worldInfo]) => {
+    if (!$worldInfo) return { x: 0, y: 0 };
+    
+    // Use center coordinates if explicitly defined
+    if ($worldInfo.center && typeof $worldInfo.center.x === 'number' && typeof $worldInfo.center.y === 'number') {
+      return { x: $worldInfo.center.x, y: $worldInfo.center.y };
+    }
+    
+    // Otherwise check if we have spawn information in the world data
+    const worldId = $game.currentWorld;
+    if (!worldId) return { x: 0, y: 0 };
+    
+    // Default center
+    return { x: 0, y: 0 };
+  }
+);
+
 // Create a derived store that combines user data with player world-specific data
 // Fixed: Use a safer approach for derived stores with proper null checks
 export const currentPlayer = derived(
@@ -589,11 +609,20 @@ export async function joinWorld(worldId, userId, race) {
     // Create a reference to the player's world data
     const playerWorldRef = ref(db, `players/${userId}/worlds/${worldId}`);
     
-    // Record the join with timestamp and race
+    // Get world center coordinates
+    const centerCoords = getWorldCenterCoordinates(worldId);
+    
+    // Record the join with timestamp, race, and target position
     await set(playerWorldRef, {
       joined: Date.now(),
       race: race || 'human', // Default to human if race not specified
-      spawned: false
+      spawned: false,
+      // Set initial target to world center
+      lastLocation: {
+        x: centerCoords.x,
+        y: centerCoords.y,
+        timestamp: Date.now()
+      }
     });
     
     // Update local state to include this world
@@ -641,4 +670,21 @@ export async function joinWorld(worldId, userId, race) {
     }));
     throw error;
   }
+}
+
+// Function to get world center coordinates
+export function getWorldCenterCoordinates(worldId, worldInfo = null) {
+  if (!worldId) return { x: 0, y: 0 };
+  
+  // Use provided worldInfo or try to get from store
+  const info = worldInfo || (getStore(game).worldInfo?.[worldId]);
+  if (!info) return { x: 0, y: 0 };
+  
+  // If world has explicit center coordinates, use those
+  if (info.center && typeof info.center.x === 'number' && typeof info.center.y === 'number') {
+    return { x: info.center.x, y: info.center.y };
+  }
+  
+  // For worlds without explicit center, return 0,0
+  return { x: 0, y: 0 };
 }

@@ -3,34 +3,51 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { user, loading as userLoading } from '../../lib/stores/user.js';
-  import { game, joinWorld, setCurrentWorld, initGameStore } from '../../lib/stores/game.js';
+  import { 
+    game, 
+    joinWorld, 
+    setCurrentWorld, 
+    initGameStore,
+    getWorldInfo,
+    getWorldCenterCoordinates 
+  } from '../../lib/stores/game.js';
   import { ref, onValue } from "firebase/database";
   import { db } from '../../lib/firebase/database.js';
   import { browser } from '$app/environment';
   import JoinConfirmation from '../../components/JoinConfirmation.svelte';
   import WorldCard from '../../components/WorldCard.svelte';
   
-  // Add state variables
+  // Add state variables - more accurate naming
   let selectedWorld = $state(null);
   let showConfirmation = $state(false);
   let animatingOut = $state(false);
   let worlds = $state([]);
   let loading = $state(true);
   let loadError = $state(null);
+  let loadingInitiated = $state(false); // Track if loading was initiated
   
-  // Track which world cards have been loaded
-  let loadedWorldCards = $state([]);
-  let loadingQueue = [];
-  let currentlyLoading = false;
-  const CARD_LOAD_DELAY = 300; // ms between loading each world card
+  // Track which world cards have been loaded - simplified approach
+  let loadedWorldCards = $state(new Set());
+  let loadingQueue = $state([]); // Make loading queue reactive
+  let currentlyLoading = $state(false);
+  
+  // Cache for world centers to avoid redundant calculations
+  const worldCenters = $state({});
   
   // Function to load worlds data - improved with better error handling
-  function loadWorlds() {
+  async function loadWorlds() {
     if (!browser || !$user) {
       console.log('Cannot load worlds: browser or user not available');
       return;
     }
     
+    // Avoid duplicate loading
+    if (loadingInitiated) {
+      console.log('Worlds loading already initiated, skipping duplicate call');
+      return;
+    }
+    
+    loadingInitiated = true;
     console.log('Attempting to load worlds for user:', $user.uid);
     loading = true;
     loadError = null;
@@ -47,35 +64,35 @@
         return;
       }
       
-      // Add a one-time listener first to check connection
-      const checkListener = onValue(worldsRef, 
-        (snapshot) => {
-          console.log('Initial worlds check completed:', 
-            snapshot.exists() ? `Found ${Object.keys(snapshot.val()).length} worlds` : 'No worlds data');
-          
-          if (snapshot.exists()) {
-            const data = snapshot.val();
-            console.log('World IDs found:', Object.keys(data));
-            
-            // Process the data
-            processWorldsData(data);
-          } else {
-            console.log('No worlds data found in database');
-            worlds = [];
-            loading = false;
-          }
-        }, 
-        (error) => {
-          console.error('Firebase error loading worlds:', error);
-          loadError = `Database error: ${error.message}`;
-          loading = false;
-        }
-      );
+      // Use a Promise-based approach instead of callbacks for better control
+      const snapshot = await new Promise((resolve, reject) => {
+        const unsubscribe = onValue(
+          worldsRef, 
+          (snapshot) => {
+            unsubscribe(); // Immediately unsubscribe to prevent memory leaks
+            resolve(snapshot);
+          },
+          (error) => {
+            reject(error);
+          },
+          { onlyOnce: true } // Only get the data once
+        );
+      });
       
-      return () => {
-        // Cleanup function
-        checkListener && checkListener();
-      };
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        console.log('World IDs found:', Object.keys(data));
+        
+        // Process the data
+        await processWorldsData(data);
+        
+        // Preload world info for all worlds
+        await preloadWorldInfo(data);
+      } else {
+        console.log('No worlds data found in database');
+        worlds = [];
+        loading = false;
+      }
     } catch (error) {
       console.error('Exception during worlds loading:', error);
       loadError = `Exception: ${error.message}`;
@@ -83,12 +100,54 @@
     }
   }
   
-  // Separate function to process worlds data
-  function processWorldsData(data) {
+  // Asynchronous function to preload world info for all worlds
+  async function preloadWorldInfo(worldsData) {
+    if (!worldsData || typeof worldsData !== 'object') return;
+    
+    // Preload info for all worlds in parallel with a limit
+    const promises = [];
+    const worldIds = Object.keys(worldsData);
+    
+    for (const worldId of worldIds) {
+      // Only preload if not already in the store
+      if (!$game.worldInfo[worldId]) {
+        const promise = getWorldInfo(worldId)
+          .then(info => {
+            // Precompute and cache world centers
+            if (info) {
+              worldCenters[worldId] = getWorldCenterCoordinates(worldId, info);
+              console.log(`Cached center for ${worldId}:`, worldCenters[worldId]);
+            }
+            return info;
+          })
+          .catch(err => {
+            console.warn(`Could not preload info for world ${worldId}:`, err);
+            return null;
+          });
+        
+        promises.push(promise);
+      } else if (!worldCenters[worldId]) {
+        // If we already have world info but not the center, compute and cache it
+        worldCenters[worldId] = getWorldCenterCoordinates(
+          worldId, 
+          $game.worldInfo[worldId]
+        );
+        console.log(`Using existing data for ${worldId} center:`, worldCenters[worldId]);
+      }
+    }
+    
+    // Wait for all preloads to complete
+    if (promises.length > 0) {
+      await Promise.all(promises);
+    }
+  }
+  
+  // Improved function to process worlds data with optimized reactivity
+  async function processWorldsData(data) {
     try {
       // Filter out worlds without info and map to our format
       const validWorlds = Object.keys(data)
-        .filter(key => data[key] && data[key].info)  // Ensure world has info object
+        .filter(key => data[key] && data[key].info)
         .map(key => {
           const worldInfo = data[key].info;
           return {
@@ -98,30 +157,23 @@
             playerCount: worldInfo.playerCount || 0,
             created: worldInfo.created || Date.now(),
             joined: $game.joinedWorlds.includes(key),
-            seed: worldInfo.seed || 0,
-            cardLoaded: false
+            seed: worldInfo.seed || 0
           };
         });
       
       console.log(`Processed ${validWorlds.length} valid worlds`);
       worlds = validWorlds;
       
-      // Reset loaded cards - don't load any immediately
-      loadedWorldCards = [];
+      // Reset loaded cards
+      loadedWorldCards = new Set();
       
       // Setup the loading queue with all worlds
       loadingQueue = [...validWorlds.map(world => world.id)];
       
-      // Configure timing parameters
-      const INITIAL_DELAY = 1200; // Show all loading spinners for at least 1.2 seconds
-      const CARD_LOAD_DELAY = 800; // Increased delay between card loads for more visible stagger
-      
-      // Only start loading the first world after the initial delay
+      // Start loading the first card after a short delay
       setTimeout(() => {
-        if (loadingQueue.length > 0) {
-          loadNextWorldCard();
-        }
-      }, INITIAL_DELAY);
+        startLoadingQueue();
+      }, 800); // Show loading state for a bit to avoid flicker
     } catch (err) {
       console.error('Error processing worlds data:', err);
       loadError = `Data processing error: ${err.message}`;
@@ -130,30 +182,79 @@
     }
   }
   
-  // Function to load world cards in a staggered sequence
+  // Simplified function to start the card loading queue
+  function startLoadingQueue() {
+    if (loadingQueue.length > 0 && !currentlyLoading) {
+      console.log(`Starting world card loading queue with ${loadingQueue.length} cards`);
+      loadNextWorldCard();
+    }
+  }
+  
+  // Simplified function to load world cards one by one
   function loadNextWorldCard() {
     if (loadingQueue.length === 0 || currentlyLoading) {
       return;
     }
     
     currentlyLoading = true;
-    const nextWorldId = loadingQueue.shift();
+    const nextWorldId = loadingQueue[0]; // Don't remove it yet
+    console.log(`Loading world card for: ${nextWorldId}`);
     
-    // Add to loaded cards array after a delay
-    setTimeout(() => {
-      loadedWorldCards = [...loadedWorldCards, nextWorldId];
-      currentlyLoading = false;
-      
-      // Continue loading the next card with dynamic delay
-      if (loadingQueue.length > 0) {
-        // Add a slight random variation to the delay for a more natural feel
-        const delay = CARD_LOAD_DELAY + Math.random() * 200;
-        setTimeout(() => loadNextWorldCard(), delay);
-      }
-    }, CARD_LOAD_DELAY);
+    // Ensure world info is loaded
+    const worldInfo = $game.worldInfo[nextWorldId];
+    
+    if (worldInfo) {
+      // World info is already loaded, proceed after a delay
+      setTimeout(() => {
+        // Only modify state once the card is ready to display
+        loadedWorldCards = new Set([...loadedWorldCards, nextWorldId]);
+        loadingQueue = loadingQueue.filter(id => id !== nextWorldId);
+        currentlyLoading = false;
+        
+        // Continue with next card after a delay
+        if (loadingQueue.length > 0) {
+          const delay = 300 + Math.random() * 200;
+          setTimeout(() => loadNextWorldCard(), delay);
+        } else {
+          console.log('All world cards loaded successfully');
+        }
+      }, 400); // Consistent delay for better UX
+    } else {
+      // Need to load world info first
+      getWorldInfo(nextWorldId)
+        .then(info => {
+          if (info) {
+            worldCenters[nextWorldId] = getWorldCenterCoordinates(nextWorldId, info);
+          }
+          
+          // Add a delay to show the loading animation
+          setTimeout(() => {
+            loadedWorldCards = new Set([...loadedWorldCards, nextWorldId]);
+            loadingQueue = loadingQueue.filter(id => id !== nextWorldId);
+            currentlyLoading = false;
+            
+            if (loadingQueue.length > 0) {
+              const delay = 300 + Math.random() * 200;
+              setTimeout(() => loadNextWorldCard(), delay);
+            } else {
+              console.log('All world cards loaded successfully');
+            }
+          }, 400);
+        })
+        .catch(err => {
+          console.error(`Error loading info for ${nextWorldId}:`, err);
+          // Skip this card and continue
+          loadingQueue = loadingQueue.filter(id => id !== nextWorldId);
+          currentlyLoading = false;
+          
+          if (loadingQueue.length > 0) {
+            loadNextWorldCard();
+          }
+        });
+    }
   }
   
-  // Initialize game store on component mount to ensure proper setup
+  // Initialize game store on component mount - cleaned up logic
   let unsubGameStore;
   
   onMount(() => {
@@ -165,13 +266,11 @@
       console.log('Game store initialized on mount');
     }
     
-    // Small delay to ensure auth state is properly processed
-    setTimeout(() => {
-      if (browser && !$userLoading && $user) {
-        console.log('Auth ready on mount, loading worlds after delay');
-        loadWorlds();
-      }
-    }, 500);
+    // Immediately check if we're ready to load worlds
+    if (browser && !$userLoading && $user) {
+      console.log('Auth ready on mount, loading worlds');
+      loadWorlds();
+    }
     
     return () => {
       // Clean up subscriptions
@@ -179,18 +278,15 @@
     };
   });
   
-  // Effect to handle authentication and redirection
+  // Effect for auth state changes - simplified
   $effect(() => {
     if (!browser) return;
     
-    console.log('Auth state updated:', $userLoading ? 'loading' : ($user ? 'authenticated' : 'not authenticated'));
-    
     if (!$userLoading) {
-      // Auth has been determined
       if ($user === null) {
         console.log('No user, redirecting to login');
         goto('/login?redirect=/worlds');
-      } else if ($user) {
+      } else if ($user && !loadingInitiated) {
         console.log('User authenticated, loading worlds');
         loadWorlds();
       }
@@ -266,12 +362,12 @@
   {:else if loadError}
     <div class="error-message">
       Error loading worlds: {loadError}
-      <button class="retry-button" onclick={loadWorlds}>Retry</button>
+      <button class="retry-button" onclick={() => {loadingInitiated = false; loadWorlds();}}>Retry</button>
     </div>
   {:else if worlds.length === 0}
     <div class="no-worlds">
       <p>No worlds available</p>
-      <button class="retry-button" onclick={loadWorlds}>Refresh</button>
+      <button class="retry-button" onclick={() => {loadingInitiated = false; loadWorlds();}}>Refresh</button>
     </div>
   {:else}
     <div class="worlds-grid">
@@ -282,10 +378,12 @@
               worldId={world.id}
               seed={world.seed}
               tileSize={2}
-              delayed={!loadedWorldCards.includes(world.id)}
+              delayed={!loadedWorldCards.has(world.id)}
               joined={$game.joinedWorlds.includes(world.id)}
+              worldInfo={$game.worldInfo[world.id]}
+              worldCenter={worldCenters[world.id]}
             />
-            {#if !loadedWorldCards.includes(world.id)}
+            {#if !loadedWorldCards.has(world.id)}
               <div class="card-loading-overlay">
                 <div class="loading-spinner"></div>
               </div>

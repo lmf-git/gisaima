@@ -1,5 +1,6 @@
 <script>
   import Close from './icons/Close.svelte';
+  import { getWorldCenterCoordinates } from '../lib/stores/game.js';
 
   // Props for the component
   const { 
@@ -101,9 +102,15 @@
     try {
       // Convert race ID to lowercase before passing it to onConfirm
       const raceCode = selectedRace.id.toLowerCase();
+      
+      // Get world center coordinates to pass along with the confirmation
+      const worldCenter = getWorldCenterCoordinates(world?.id);
+      
       await onConfirm({ 
         ...selectedRace, 
-        id: raceCode 
+        id: raceCode,
+        // Include world center coordinates
+        worldCenter
       });
     } catch (error) {
       console.error('Error joining world:', error);

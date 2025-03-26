@@ -3,6 +3,8 @@ import { TerrainGenerator } from '../map/noise.js';
 import { ref, onValue } from "firebase/database";
 import { db } from '../firebase/database.js';
 import { replaceState } from '$app/navigation'; // Import from SvelteKit instead of using history directly
+// Import getWorldCenterCoordinates function from game store
+import { getWorldCenterCoordinates } from './game.js';
 
 // Keep a reference to the terrain generator for grid creation
 let terrain;
@@ -548,8 +550,9 @@ export function initialize(options = {}) {
     // Set initial target position - priority order:
     // 1. URL parameters (initialX/Y)
     // 2. localStorage saved position
-    // 3. Current target position in store
-    // 4. Default (0,0)
+    // 3. World center coordinates
+    // 4. Current target position in store
+    // 5. Default (0,0)
     let targetPosition = { x: 0, y: 0 };
     const hasInitialCoords = initialX !== undefined && initialY !== undefined;
     
@@ -563,13 +566,20 @@ export function initialize(options = {}) {
       if (savedPosition) {
         targetPosition = savedPosition;
         console.log(`Initializing map with saved position: ${targetPosition.x},${targetPosition.y}`);
-      } else if (currentState.target.x !== 0 || currentState.target.y !== 0) {
-        // 3. Use existing target
-        targetPosition = currentState.target;
-        console.log(`Initializing map with existing position: ${targetPosition.x},${targetPosition.y}`);
       } else {
-        // 4. Default to 0,0
-        console.log('Initializing map with default position (0,0)');
+        // 3. Try to use world center coordinates
+        const worldCenter = getWorldCenterCoordinates(worldId, options.worldInfo);
+        if (worldCenter.x !== 0 || worldCenter.y !== 0) {
+          targetPosition = worldCenter;
+          console.log(`Initializing map with world center: ${targetPosition.x},${targetPosition.y}`);
+        } else if (currentState.target.x !== 0 || currentState.target.y !== 0) {
+          // 4. Use existing target
+          targetPosition = currentState.target;
+          console.log(`Initializing map with existing position: ${targetPosition.x},${targetPosition.y}`);
+        } else {
+          // 5. Default to 0,0
+          console.log('Initializing map with default position (0,0)');
+        }
       }
     }
     
@@ -727,6 +737,9 @@ export function initializeMapForWorld(worldId, worldData = null) {
   // Try to load saved position for this world
   const savedPosition = loadTargetFromLocalStorage(worldId);
   
+  // Get world center coordinates
+  const worldCenter = getWorldCenterCoordinates(worldId, worldData);
+  
   // Initialize with world data if available
   if (worldData && worldData.seed !== undefined) {
     console.log(`Initializing map with provided worldData, seed: ${worldData.seed}`);
@@ -740,9 +753,12 @@ export function initializeMapForWorld(worldId, worldData = null) {
         initialY: savedPosition.y
       });
     } else {
+      // Use world center if no saved position
       setup({
         seed: worldData.seed,
-        world: worldId
+        world: worldId,
+        initialX: worldCenter.x,
+        initialY: worldCenter.y
       });
     }
     return;

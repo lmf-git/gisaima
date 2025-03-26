@@ -6,7 +6,8 @@
     import { user, loading as userLoading } from '../../lib/stores/user.js'; 
     import { 
       game, 
-      getWorldInfo, 
+      getWorldInfo,
+      getWorldCenterCoordinates,
       setCurrentWorld,
       isAuthReady,
       needsSpawn 
@@ -190,6 +191,12 @@
             moveTarget(location.x, location.y);
             urlProcessingComplete = true;
             lastProcessedLocation = { ...location };
+        } else if ($game.currentWorld) {
+            // If no player location, try to get world center
+            const worldCenter = getWorldCenterCoordinates($game.currentWorld);
+            moveTarget(worldCenter.x, worldCenter.y);
+            urlProcessingComplete = true;
+            lastProcessedLocation = { ...worldCenter };
         }
     });
     
@@ -249,12 +256,15 @@
             const startingCoords = urlCoordinates;
             const shouldApplyCoords = !!startingCoords && !urlProcessingComplete;
             
-            // Initialize with coordinates if available
+            // Get world center coordinates as fallback
+            const worldCenter = getWorldCenterCoordinates(worldId, worldInfo);
+            
+            // Initialize with coordinates if available, otherwise use world center
             if (!initialize({ 
                 worldId, 
                 worldInfo,
-                initialX: shouldApplyCoords ? startingCoords.x : undefined,
-                initialY: shouldApplyCoords ? startingCoords.y : undefined
+                initialX: shouldApplyCoords ? startingCoords.x : (worldCenter?.x || 0),
+                initialY: shouldApplyCoords ? startingCoords.y : (worldCenter?.y || 0)
             })) {
                 throw new Error('Failed to initialize map with world data');
             }
