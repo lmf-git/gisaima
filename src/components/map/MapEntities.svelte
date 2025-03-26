@@ -7,6 +7,7 @@
     coordinates
   } from '../../lib/stores/map.js';
   import { onMount } from 'svelte';
+  import Torch from '../icons/Torch.svelte'; // Import the Torch component
   
   // Accept closing prop from parent
   const { closing = false } = $props();
@@ -312,7 +313,9 @@
             aria-label={`Go to ${entity.entityType} ${entity.name || entity.type || ''} at coordinates ${entity.x},${entity.y}, ${formatDistance(entity.distance)} tiles away`}
           >
             <div class="entity-icon">
-              {#if entity.entityType === 'structure'}
+              {#if entity.entityType === 'structure' && entity.type === 'spawn'}
+                <Torch size="1.2em" />
+              {:else if entity.entityType === 'structure'}
                 {getEntitySymbol(`structure-${entity.type}`)}
               {:else}
                 {getEntitySymbol(entity.entityType)}
@@ -662,5 +665,10 @@
   
   .raw-item:hover {
     background: rgba(0, 0, 0, 0.2);
+  }
+
+  /* Additional styling to align Torch icon properly */
+  .entity-icon :global(svg) {
+    vertical-align: middle;
   }
 </style>
