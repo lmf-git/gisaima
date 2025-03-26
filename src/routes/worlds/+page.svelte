@@ -9,7 +9,9 @@
     setCurrentWorld, 
     initGameStore,
     getWorldInfo,
-    getWorldCenterCoordinates 
+    getWorldCenterCoordinates,
+    clearWorldInfoCache,
+    refreshWorldInfo
   } from '../../lib/stores/game.js';
   import { ref, onValue } from "firebase/database";
   import { db } from '../../lib/firebase/database.js';
@@ -34,8 +36,8 @@
   // Cache for world centers to avoid redundant calculations
   const worldCenters = $state({});
   
-  // Function to load worlds data - improved with better error handling
-  async function loadWorlds() {
+  // Function to load worlds data - improved with better real-time reactivity
+  function loadWorlds() {
     if (!browser || !$user) {
       console.log('Cannot load worlds: browser or user not available');
       return;
@@ -64,92 +66,56 @@
         return;
       }
       
-      // Use a Promise-based approach instead of callbacks for better control
-      const snapshot = await new Promise((resolve, reject) => {
-        const unsubscribe = onValue(
-          worldsRef, 
-          (snapshot) => {
-            unsubscribe(); // Immediately unsubscribe to prevent memory leaks
-            resolve(snapshot);
-          },
-          (error) => {
-            reject(error);
-          },
-          { onlyOnce: true } // Only get the data once
-        );
-      });
+      // Use a real-time listener for worlds data
+      const worldsListener = onValue(worldsRef, 
+        (snapshot) => {
+          console.log('Worlds data updated:', 
+            snapshot.exists() ? `Found ${Object.keys(snapshot.val()).length} worlds` : 'No worlds data');
+          
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            // Process the data - remove the call to preloadWorldInfo as it's now handled inside processWorldsData
+            processWorldsData(data);
+          } else {
+            console.log('No worlds data found in database');
+            worlds = [];
+            loading = false;
+          }
+        }, 
+        (error) => {
+          console.error('Firebase error loading worlds:', error);
+          loadError = `Database error: ${error.message}`;
+          loading = false;
+        }
+      );
       
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        console.log('World IDs found:', Object.keys(data));
-        
-        // Process the data
-        await processWorldsData(data);
-        
-        // Preload world info for all worlds
-        await preloadWorldInfo(data);
-      } else {
-        console.log('No worlds data found in database');
-        worlds = [];
-        loading = false;
-      }
+      return worldsListener; // Return unsubscribe function
     } catch (error) {
       console.error('Exception during worlds loading:', error);
       loadError = `Exception: ${error.message}`;
       loading = false;
+      return null;
     }
   }
   
-  // Asynchronous function to preload world info for all worlds
-  async function preloadWorldInfo(worldsData) {
-    if (!worldsData || typeof worldsData !== 'object') return;
-    
-    // Preload info for all worlds in parallel with a limit
-    const promises = [];
-    const worldIds = Object.keys(worldsData);
-    
-    for (const worldId of worldIds) {
-      // Only preload if not already in the store
-      if (!$game.worldInfo[worldId]) {
-        const promise = getWorldInfo(worldId)
-          .then(info => {
-            // Precompute and cache world centers
-            if (info) {
-              worldCenters[worldId] = getWorldCenterCoordinates(worldId, info);
-              console.log(`Cached center for ${worldId}:`, worldCenters[worldId]);
-            }
-            return info;
-          })
-          .catch(err => {
-            console.warn(`Could not preload info for world ${worldId}:`, err);
-            return null;
-          });
-        
-        promises.push(promise);
-      } else if (!worldCenters[worldId]) {
-        // If we already have world info but not the center, compute and cache it
-        worldCenters[worldId] = getWorldCenterCoordinates(
-          worldId, 
-          $game.worldInfo[worldId]
-        );
-        console.log(`Using existing data for ${worldId} center:`, worldCenters[worldId]);
-      }
-    }
-    
-    // Wait for all preloads to complete
-    if (promises.length > 0) {
-      await Promise.all(promises);
-    }
-  }
-  
-  // Improved function to process worlds data with optimized reactivity
-  async function processWorldsData(data) {
+  // Simplified function to process worlds data - now includes preloading world info
+  function processWorldsData(data) {
     try {
       // Filter out worlds without info and map to our format
       const validWorlds = Object.keys(data)
         .filter(key => data[key] && data[key].info)
         .map(key => {
           const worldInfo = data[key].info;
+          
+          // Extract center coordinates directly from world info
+          const center = worldInfo.center || { x: 0, y: 0 };
+          
+          // Log the world center to help debugging
+          console.log(`World ${key} center from database:`, center);
+          
+          // Cache the center coordinates for this world
+          worldCenters[key] = center;
+          
           return {
             id: key,
             name: worldInfo.name || key,
@@ -157,7 +123,9 @@
             playerCount: worldInfo.playerCount || 0,
             created: worldInfo.created || Date.now(),
             joined: $game.joinedWorlds.includes(key),
-            seed: worldInfo.seed || 0
+            seed: worldInfo.seed || 0,
+            // Include center coordinates directly in the world object
+            center: center
           };
         });
       
@@ -170,15 +138,54 @@
       // Setup the loading queue with all worlds
       loadingQueue = [...validWorlds.map(world => world.id)];
       
-      // Start loading the first card after a short delay
-      setTimeout(() => {
-        startLoadingQueue();
-      }, 800); // Show loading state for a bit to avoid flicker
+      // Start loading world info for all worlds to ensure it's in the store
+      preloadWorldInfoForWorlds(data);
+      
+      // Start loading after a short delay
+      setTimeout(startLoadingQueue, 500);
+      
     } catch (err) {
       console.error('Error processing worlds data:', err);
       loadError = `Data processing error: ${err.message}`;
     } finally {
       loading = false;
+    }
+  }
+
+  // Add the missing preloadWorldInfoForWorlds function
+  async function preloadWorldInfoForWorlds(worldsData) {
+    if (!worldsData || typeof worldsData !== 'object') return;
+    
+    console.log('Preloading world info for all worlds');
+    const worldIds = Object.keys(worldsData);
+    const promises = [];
+    
+    for (const worldId of worldIds) {
+      if (!$game.worldInfo[worldId]) {
+        console.log(`Preloading info for world ${worldId}`);
+        promises.push(getWorldInfo(worldId)
+          .then(info => {
+            if (info && info.center) {
+              // Update our local cache after fetching
+              worldCenters[worldId] = info.center;
+              console.log(`Updated center for ${worldId}:`, info.center);
+            }
+            return info;
+          })
+          .catch(err => {
+            console.warn(`Error preloading world ${worldId}:`, err);
+          })
+        );
+      }
+    }
+    
+    if (promises.length > 0) {
+      try {
+        await Promise.all(promises);
+        console.log('All world info preloading complete');
+      } catch (error) {
+        console.error('Error during world info preloading:', error);
+      }
     }
   }
   
@@ -256,6 +263,7 @@
   
   // Initialize game store on component mount - cleaned up logic
   let unsubGameStore;
+  let worldsUnsubscribe;
   
   onMount(() => {
     console.log('Worlds page mounted');
@@ -269,12 +277,13 @@
     // Immediately check if we're ready to load worlds
     if (browser && !$userLoading && $user) {
       console.log('Auth ready on mount, loading worlds');
-      loadWorlds();
+      worldsUnsubscribe = loadWorlds();
     }
     
     return () => {
       // Clean up subscriptions
       if (unsubGameStore) unsubGameStore();
+      if (worldsUnsubscribe) worldsUnsubscribe();
     };
   });
   
@@ -352,6 +361,31 @@
       closeConfirmation();
     }
   }
+
+  // Add function to refresh specific world data
+  async function refreshWorld(worldId, event) {
+    // Stop event propagation to prevent card click
+    if (event) event.stopPropagation();
+    
+    try {
+      // Show loading state for this card
+      loadedWorldCards = new Set([...loadedWorldCards].filter(id => id !== worldId));
+      
+      // Force refresh of world info
+      const updatedInfo = await refreshWorldInfo(worldId);
+      
+      if (updatedInfo) {
+        // Update the center coordinates in our cache
+        worldCenters[worldId] = getWorldCenterCoordinates(worldId, updatedInfo);
+        console.log(`Updated center for ${worldId}:`, worldCenters[worldId]);
+        
+        // Mark card as loaded again
+        loadedWorldCards = new Set([...loadedWorldCards, worldId]);
+      }
+    } catch (err) {
+      console.error(`Error refreshing world ${worldId}:`, err);
+    }
+  }
 </script>
 
 <div class="worlds-page">
@@ -381,8 +415,10 @@
               delayed={!loadedWorldCards.has(world.id)}
               joined={$game.joinedWorlds.includes(world.id)}
               worldInfo={$game.worldInfo[world.id]}
-              worldCenter={worldCenters[world.id]}
+              worldCenter={world.center || worldCenters[world.id]}
+              debug={true}
             />
+            
             {#if !loadedWorldCards.has(world.id)}
               <div class="card-loading-overlay">
                 <div class="loading-spinner"></div>

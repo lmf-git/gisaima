@@ -134,6 +134,9 @@ const pendingWorldInfoRequests = new Map();
 const worldInfoCache = new Map();
 const WORLD_INFO_THROTTLE_MS = 500;
 
+// Add a timestamp to track when world info was last fetched
+const worldInfoLastFetchTime = new Map();
+
 // Load player's joined worlds
 export function loadJoinedWorlds(userId) {
   if (!userId) {
@@ -327,7 +330,7 @@ export function setCurrentWorld(worldId, worldInfo = null) {
   return Promise.resolve(worldInfo || currentState.worldInfo[worldId]);
 }
 
-// Get world information including seed with caching and throttling
+// Get world information including seed with caching and throttling - improved with force refresh
 export function getWorldInfo(worldId, forceRefresh = false) {
   if (!worldId) return Promise.reject(new Error('Missing worldId'));
   
@@ -352,29 +355,43 @@ export function getWorldInfo(worldId, forceRefresh = false) {
       currentGameState.worldInfo[worldId] && 
       currentGameState.worldInfo[worldId].seed !== undefined) {
     
-    console.log(`Using cached world info for ${worldId}`);
-    game.update(state => ({ ...state, worldLoading: false }));
-    return Promise.resolve(currentGameState.worldInfo[worldId]);
+    // Only use cache if it's not too old (less than 30 seconds)
+    const lastFetchTime = worldInfoLastFetchTime.get(worldId) || 0;
+    const now = Date.now();
+    
+    if (now - lastFetchTime < 30000) {
+      console.log(`Using cached world info for ${worldId} (age: ${now - lastFetchTime}ms)`);
+      game.update(state => ({ ...state, worldLoading: false }));
+      return Promise.resolve(currentGameState.worldInfo[worldId]);
+    } else {
+      console.log(`Cached world info for ${worldId} is too old (${now - lastFetchTime}ms), refreshing`);
+      // Continue with refresh below
+    }
   }
   
-  // Also check in-memory cache
+  // Also check in-memory cache with the same time expiration policy
   if (!forceRefresh && worldInfoCache.has(worldId)) {
-    console.log(`Using memory-cached world info for ${worldId}`);
-    const cachedInfo = worldInfoCache.get(worldId);
+    const lastFetchTime = worldInfoLastFetchTime.get(worldId) || 0;
+    const now = Date.now();
     
-    game.update(state => ({
-      ...state,
-      worldLoading: false,
-      worldInfo: {
-        ...state.worldInfo,
-        [worldId]: cachedInfo
-      }
-    }));
-    
-    return Promise.resolve(cachedInfo);
+    if (now - lastFetchTime < 30000) {
+      console.log(`Using memory-cached world info for ${worldId}`);
+      const cachedInfo = worldInfoCache.get(worldId);
+      
+      game.update(state => ({
+        ...state,
+        worldLoading: false,
+        worldInfo: {
+          ...state.worldInfo,
+          [worldId]: cachedInfo
+        }
+      }));
+      
+      return Promise.resolve(cachedInfo);
+    }
   }
   
-  // No valid cache, fetch from database with direct path to ensure we get the seed
+  // No valid cache or cache expired, fetch from database with direct path
   console.log(`Fetching world info from database for ${worldId}`);
   const worldRef = ref(db, `worlds/${worldId}/info`);
   
@@ -400,6 +417,9 @@ export function getWorldInfo(worldId, forceRefresh = false) {
           throw new Error(error);
         }
         
+        // Update the last fetch time
+        worldInfoLastFetchTime.set(worldId, Date.now());
+        
         // Cache the world info in memory
         worldInfoCache.set(worldId, worldInfo);
         
@@ -412,6 +432,13 @@ export function getWorldInfo(worldId, forceRefresh = false) {
             [worldId]: worldInfo
           }
         }));
+        
+        // Log the center coordinates for debugging with more specific output
+        if (worldInfo.center) {
+          console.log(`Loaded world center for ${worldId}: ${JSON.stringify(worldInfo.center)}`);
+        } else {
+          console.log(`No explicit center coordinates for ${worldId}, will use default (0,0)`);
+        }
         
         console.log(`Successfully loaded world info for ${worldId}`);
         return worldInfo;
@@ -450,6 +477,35 @@ export function getWorldInfo(worldId, forceRefresh = false) {
   pendingWorldInfoRequests.set(worldId, fetchPromise);
   
   return fetchPromise;
+}
+
+// Function to clear world info cache for a specific world or all worlds
+export function clearWorldInfoCache(worldId = null) {
+  if (worldId) {
+    console.log(`Clearing cache for world ${worldId}`);
+    worldInfoCache.delete(worldId);
+    worldInfoLastFetchTime.delete(worldId);
+    
+    // Also clear from the game store
+    game.update(state => {
+      if (state.worldInfo[worldId]) {
+        const newWorldInfo = { ...state.worldInfo };
+        delete newWorldInfo[worldId];
+        return { ...state, worldInfo: newWorldInfo };
+      }
+      return state;
+    });
+  } else {
+    console.log('Clearing all world info cache');
+    worldInfoCache.clear();
+    worldInfoLastFetchTime.clear();
+    
+    // Also clear from the game store
+    game.update(state => ({ 
+      ...state, 
+      worldInfo: {} 
+    }));
+  }
 }
 
 // Function to clear the current world from localStorage
@@ -672,19 +728,46 @@ export async function joinWorld(worldId, userId, race) {
   }
 }
 
-// Function to get world center coordinates
+// Add a function to specifically refresh world data
+export async function refreshWorldInfo(worldId) {
+  if (!worldId) return null;
+  
+  console.log(`Forcing refresh of world info for ${worldId}`);
+  
+  // Clear cache for this world
+  clearWorldInfoCache(worldId);
+  
+  // Now fetch fresh data
+  try {
+    return await getWorldInfo(worldId, true);
+  } catch (err) {
+    console.error(`Failed to refresh world ${worldId}:`, err);
+    return null;
+  }
+}
+
+// Function to get world center coordinates - improved with better debugging
 export function getWorldCenterCoordinates(worldId, worldInfo = null) {
   if (!worldId) return { x: 0, y: 0 };
   
   // Use provided worldInfo or try to get from store
   const info = worldInfo || (getStore(game).worldInfo?.[worldId]);
-  if (!info) return { x: 0, y: 0 };
+  if (!info) {
+    console.log(`No world info available for ${worldId}, using default center (0,0)`);
+    return { x: 0, y: 0 };
+  }
   
   // If world has explicit center coordinates, use those
   if (info.center && typeof info.center.x === 'number' && typeof info.center.y === 'number') {
-    return { x: info.center.x, y: info.center.y };
+    // Log with world ID and exact values to help debugging
+    console.log(`Using explicit center for world ${worldId}: (${info.center.x}, ${info.center.y})`);
+    return { 
+      x: info.center.x, 
+      y: info.center.y 
+    };
   }
   
   // For worlds without explicit center, return 0,0
+  console.log(`No explicit center for world ${worldId}, using default (0,0)`);
   return { x: 0, y: 0 };
 }

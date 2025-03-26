@@ -14,7 +14,8 @@
     delayed = false,
     joined = false, // New prop to track if world is joined
     worldInfo = null, // Add world info prop to access center coordinates
-    worldCenter = null // Allow passing precomputed world center directly
+    worldCenter = null, // Allow passing precomputed world center directly
+    debug = false // Add debug prop to show more information
   } = $props();
   
   // Local state
@@ -26,19 +27,20 @@
   let rows = $state(0);
   let isActive = $state(!delayed);
   
-  // Fix the bug in the for loop condition - there was a typo here "0 < rows" instead of "y < rows"
-  // Use memoized world center to avoid excessive recalculations - with debug logging
+  // Simplify the center coordinates tracking to ensure reactivity
   const centerCoords = $derived(() => {
-    // Use pre-computed center if provided
+    // Use pre-computed center if provided (highest priority)
     if (worldCenter) {
-      console.log(`Using provided center for ${worldId}:`, worldCenter);
       return worldCenter;
     }
     
-    // Otherwise compute once
-    const coords = getWorldCenterCoordinates(worldId, worldInfo) || { x: 0, y: 0 };
-    console.log(`Computed center for ${worldId}:`, coords);
-    return coords;
+    // Otherwise compute from world info if available
+    if (worldInfo?.center) {
+      return worldInfo.center;
+    }
+    
+    // Final fallback: get coordinates from game store
+    return getWorldCenterCoordinates(worldId, worldInfo) || { x: 0, y: 0 };
   });
 
   // Add state to track hovered tile
@@ -114,6 +116,8 @@
       // Use memoized center coordinates
       const worldCenterX = centerCoords.x || 0;
       const worldCenterY = centerCoords.y || 0;
+      
+      console.log(`Generating terrain for ${worldId} with center at ${worldCenterX},${worldCenterY}`);
       
       // Fix the bug in the for loop condition
       for (let y = 0; y < rows; y++) {
@@ -309,6 +313,12 @@
   data-world-id={worldId}
   aria-label="World terrain preview"
 >
+  {#if debug}
+    <div class="debug-info">
+      Center: {centerCoords.x},{centerCoords.y}
+    </div>
+  {/if}
+  
   {#if mounted && (isActive || !delayed) && terrainGrid.length > 0}
     <div 
       class="terrain-grid"
@@ -458,5 +468,16 @@
   button.terrain-tile[disabled] {
     cursor: default;
     pointer-events: none;
+  }
+
+  .debug-info {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #00ff00;
+    padding: 4px 8px;
+    font-size: 12px;
+    z-index: 100;
   }
 </style>

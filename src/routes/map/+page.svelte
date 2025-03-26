@@ -209,15 +209,16 @@
         }
     }
     
-    // Initialize map function with improved URL coordinate handling and deduplication
+    // Initialize map function with improved URL coordinate handling and clearer priority
     async function initializeMap(worldId) {
         // Skip if world ID matches current world and map is already ready
         if ($ready && $map.world === worldId) {
             console.log(`Map already initialized for world ${worldId}, skipping redundant initialization`);
             
             // Still process URL coordinates if needed
-            const startingCoords = urlCoordinates;
+            const startingCoords = parseUrlCoordinates();
             if (startingCoords && !urlProcessingComplete) {
+                console.log(`Applying URL coordinates to existing map: ${startingCoords.x},${startingCoords.y}`);
                 moveTarget(startingCoords.x, startingCoords.y);
                 urlProcessingComplete = true;
             }
@@ -243,7 +244,7 @@
             
             // Set current world and get world info
             await setCurrentWorld(worldId);
-            const worldInfo = await getWorldInfo(worldId, true);
+            const worldInfo = await getWorldInfo(worldId);
             
             if (!worldInfo) {
                 throw new Error(`World info not found for ${worldId}`);
@@ -252,33 +253,47 @@
                 throw new Error(`World ${worldId} has no seed defined`);
             }
             
-            // Get URL coordinates for initialization
-            const startingCoords = urlCoordinates;
-            const shouldApplyCoords = !!startingCoords && !urlProcessingComplete;
+            // Establish clear priority order for coordinates:
+            // 1. URL parameters (highest)
+            // 2. localStorage saved position
+            // 3. Player's last location in this world
+            // 4. World center coordinates
+            // 5. Default (0,0)
             
-            // Get world center coordinates as fallback
-            const worldCenter = getWorldCenterCoordinates(worldId, worldInfo);
+            let initialCoords = null;
             
-            // Initialize with coordinates if available, otherwise use world center
+            // 1. URL parameters
+            const urlCoords = parseUrlCoordinates();
+            if (urlCoords) {
+                console.log(`Using URL coordinates: ${urlCoords.x},${urlCoords.y}`);
+                initialCoords = urlCoords;
+                urlProcessingComplete = true;
+            } 
+            // 2. localStorage saved position (handled internally in initialize)
+            // 3. Player's last location
+            else if ($game.playerWorldData?.lastLocation) {
+                const location = $game.playerWorldData.lastLocation;
+                console.log(`Using player's last location: ${location.x},${location.y}`);
+                initialCoords = { x: location.x, y: location.y };
+            } 
+            // 4. World center coordinates
+            else {
+                const worldCenter = getWorldCenterCoordinates(worldId, worldInfo);
+                console.log(`Using world center: ${worldCenter.x},${worldCenter.y}`);
+                initialCoords = worldCenter;
+            }
+            
+            // Initialize the map with the chosen coordinates
             if (!initialize({ 
-                worldId, 
+                worldId,
                 worldInfo,
-                initialX: shouldApplyCoords ? startingCoords.x : (worldCenter?.x || 0),
-                initialY: shouldApplyCoords ? startingCoords.y : (worldCenter?.y || 0)
+                initialX: initialCoords.x,
+                initialY: initialCoords.y
             })) {
                 throw new Error('Failed to initialize map with world data');
             }
             
             loading = false;
-            
-            if (shouldApplyCoords) {
-                urlProcessingComplete = true;
-                
-                // Record that we processed these coordinates
-                const coordKey = `${startingCoords.x},${startingCoords.y}`;
-                coordinateProcessingState.processed.add(coordKey);
-                coordinateProcessingState.lastProcessedTime = Date.now();
-            }
             
         } catch (err) {
             error = err.message || 'Failed to load world';
