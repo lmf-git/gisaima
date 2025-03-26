@@ -27,22 +27,44 @@
   let rows = $state(0);
   let isActive = $state(!delayed);
   
-  // Simplify the center coordinates tracking to ensure reactivity
-  const centerCoords = $derived(() => {
-    // Use pre-computed center if provided (highest priority)
-    if (worldCenter) {
-      return worldCenter;
-    }
-    
-    // Otherwise compute from world info if available
-    if (worldInfo?.center) {
-      return worldInfo.center;
-    }
-    
-    // Final fallback: get coordinates from game store
-    return getWorldCenterCoordinates(worldId, worldInfo) || { x: 0, y: 0 };
+  // Add a specific mutable state object to store and track the center coordinates
+  // This helps with debugging and ensuring reactivity
+  let centerState = $state({
+    x: null,
+    y: null,
+    source: null
   });
-
+  
+  // Track the last center used to generate terrain to avoid redundant updates
+  let lastUsedCenter = $state({x: null, y: null});
+  
+  // Simplify the center coordinates tracking to ensure reactivity
+  $effect(() => {
+    let newCenter = { x: 0, y: 0, source: 'default' };
+    
+    // Use pre-computed center if provided (highest priority)
+    if (worldCenter && typeof worldCenter.x === 'number' && typeof worldCenter.y === 'number') {
+      newCenter = { x: worldCenter.x, y: worldCenter.y, source: 'worldCenter prop' };
+    }
+    // Otherwise compute from world info if available
+    else if (worldInfo?.center && typeof worldInfo.center.x === 'number' && typeof worldInfo.center.y === 'number') {
+      newCenter = { x: worldInfo.center.x, y: worldInfo.center.y, source: 'worldInfo prop' };
+    }
+    // Final fallback: get coordinates from game store
+    else {
+      const coords = getWorldCenterCoordinates(worldId, worldInfo);
+      if (coords && typeof coords.x === 'number' && typeof coords.y === 'number') {
+        newCenter = { x: coords.x, y: coords.y, source: 'game store' };
+      }
+    }
+    
+    // Only update if the center has actually changed
+    if (centerState.x !== newCenter.x || centerState.y !== newCenter.y) {
+      console.log(`${worldId}: Center coordinates updated to ${newCenter.x},${newCenter.y} from ${newCenter.source}`);
+      centerState = newCenter;
+    }
+  });
+  
   // Add state to track hovered tile
   let hoveredTileX = $state(null);
   let hoveredTileY = $state(null);
@@ -113,9 +135,12 @@
       const centerX = Math.floor(cols / 2);
       const centerY = Math.floor(rows / 2);
       
-      // Use memoized center coordinates
-      const worldCenterX = centerCoords.x || 0;
-      const worldCenterY = centerCoords.y || 0;
+      // Use explicit center from the centerState
+      const worldCenterX = centerState.x;
+      const worldCenterY = centerState.y;
+      
+      // Track that we've used these coordinates
+      lastUsedCenter = { x: worldCenterX, y: worldCenterY };
       
       console.log(`Generating terrain for ${worldId} with center at ${worldCenterX},${worldCenterY}`);
       
@@ -292,16 +317,32 @@
   
   // Update terrain when seed or center changes and card is active
   $effect(() => {
-    if (mounted && seed && isActive && cols > 0 && rows > 0) {
-      try {
-        console.log(`Regenerating terrain for ${worldId} with seed ${seed}`);
-        terrainGrid = generateTerrainGrid(seed);
-      } catch (error) {
-        console.error(`Error updating terrain for ${worldId}:`, error);
-        // Fall back to placeholder on error
-        if (terrainGrid.length === 0) {
-          terrainGrid = createPlaceholderGrid();
-        }
+    // Skip if not ready
+    if (!mounted || !seed || !isActive || cols <= 0 || rows <= 0) return;
+    
+    // Track centerState as a dependency 
+    const currentCenterX = centerState.x;
+    const currentCenterY = centerState.y;
+    
+    // Skip regeneration if the center hasn't changed from what we last used
+    if (lastUsedCenter.x === currentCenterX && lastUsedCenter.y === currentCenterY) {
+      return;
+    }
+    
+    // Skip generation if we don't have valid coordinates
+    if (currentCenterX === null || currentCenterY === null) {
+      console.log(`Skipping terrain generation for ${worldId}: missing valid center coordinates`);
+      return;
+    }
+    
+    try {
+      console.log(`Regenerating terrain for ${worldId} with seed ${seed} and center ${currentCenterX},${currentCenterY}`);
+      terrainGrid = generateTerrainGrid(seed);
+    } catch (error) {
+      console.error(`Error updating terrain for ${worldId}:`, error);
+      // Fall back to placeholder on error
+      if (terrainGrid.length === 0) {
+        terrainGrid = createPlaceholderGrid();
       }
     }
   });
@@ -315,7 +356,8 @@
 >
   {#if debug}
     <div class="debug-info">
-      Center: {centerCoords.x},{centerCoords.y}
+      Center: {centerState.x},{centerState.y} 
+      <span class="source">({centerState.source})</span>
     </div>
   {/if}
   
@@ -479,5 +521,12 @@
     padding: 4px 8px;
     font-size: 12px;
     z-index: 100;
+    white-space: nowrap;
+  }
+  
+  .source {
+    font-size: 10px;
+    opacity: 0.8;
+    margin-left: 4px;
   }
 </style>
