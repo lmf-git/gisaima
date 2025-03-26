@@ -1851,11 +1851,11 @@ export class TerrainGenerator {
     const tertiaryWidth = TERRAIN_OPTIONS.coastal.tertiaryZoneWidth;
     if (height < waterLevel + coastalZoneWidth + secondaryWidth + tertiaryWidth + coastVariation) {
       if (moisture < 0.3) {
-        return { name: "strand_plains", color: "#C0B990" }; // Renamed from beach_plains
+        return { name: "flats", color: "#C0B990" }; // Renamed from strand_plains
       } else if (moisture < 0.6) {
-        return { name: "strand_scrub", color: "#94A078" }; // Renamed from beach_shrubland
+        return { name: "thicket", color: "#94A078" }; // Renamed from strand_scrub
       } else {
-        return { name: "strand_woodland", color: "#5B8A65" }; // Renamed from beach_woodland
+        return { name: "grove", color: "#5B8A65" }; // Renamed from strand_woodland
       }
     }
 
