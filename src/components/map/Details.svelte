@@ -2,7 +2,13 @@
   import { map, targetStore, entities, highlightedStore } from "../../lib/stores/map";
   import Close from '../../components/icons/Close.svelte';
   import { user } from "../../lib/stores/user";
-  import { onMount } from "svelte";
+  
+  // Import race icon components
+  import Human from '../../components/icons/Human.svelte';
+  import Elf from '../../components/icons/Elf.svelte';
+  import Dwarf from '../../components/icons/Dwarf.svelte';
+  import Goblin from '../../components/icons/Goblin.svelte';
+  import Fairy from '../../components/icons/Fairy.svelte';
   
   // Only keep onClose as a prop, removing x, y, and terrain
   const { onClose } = $props()
@@ -16,39 +22,10 @@
   // Use either the highlighted tile if present, or targetStore
   const currentTile = $derived(isHighlighted ? $highlightedStore : $targetStore);
   
-  // Remove redundant state variables for coordinates
-  
-  // Entity data with fallbacks from entities store
-  let structure = $state(null);
-  let players = $state([]);
-  let groups = $state([]);
-  
-  // Update entity data when current tile changes
-  $effect(() => {
-    // First try to get entities directly from the current tile
-    structure = currentTile?.structure || null;
-    players = currentTile?.players || [];
-    groups = currentTile?.groups || [];
-    
-    // If no direct entities on the tile, try to get from the entities store
-    if (!structure && !players.length && !groups.length && currentTile?.x != null && currentTile?.y != null) {
-      const locationKey = `${currentTile.x},${currentTile.y}`;
-      structure = $entities.structure[locationKey] || null;
-      players = $entities.players[locationKey] || [];
-      groups = $entities.groups[locationKey] || [];
-    }
-    
-    console.log('Entity data refreshed:', {
-      coords: currentTile?.x != null ? `${currentTile.x},${currentTile.y}` : 'unknown',
-      source: isHighlighted ? 'highlighted' : 'target',
-      hasDirectStructure: !!currentTile?.structure,
-      hasDirectPlayers: currentTile?.players?.length > 0,
-      hasDirectGroups: currentTile?.groups?.length > 0,
-      finalStructure: !!structure,
-      finalPlayers: players.length,
-      finalGroups: groups.length
-    });
-  });
+  // Replace manual entity tracking with derived values directly from the current tile
+  const structure = $derived(currentTile?.structure || null);
+  const players = $derived(currentTile?.players || []);
+  const groups = $derived(currentTile?.groups || []);
   
   // Use terrain from the current tile
   const formattedName = $derived(
@@ -106,27 +83,6 @@
     return player.id === $user?.uid;
   }
 
-  // Force a refresh when component mounts
-  onMount(() => {
-    // Small delay to ensure stores are initialized
-    setTimeout(() => {
-      // Only proceed if we have valid coordinates
-      if (currentTile?.x != null && currentTile?.y != null) {
-        const locationKey = `${currentTile.x},${currentTile.y}`;
-        // Double-check entities store for current location
-        if (!structure) {
-          structure = $entities.structure[locationKey] || null;
-        }
-        if (!players.length) {
-          players = $entities.players[locationKey] || [];
-        }
-        if (!groups.length) {
-          groups = $entities.groups[locationKey] || [];
-        }
-      }
-    }, 100);
-  });
-
   // Add helper function to format rarity
   function formatRarity(rarity) {
     return rarity ? rarity.charAt(0).toUpperCase() + rarity.slice(1) : '';
@@ -136,6 +92,21 @@
   const hasRarity = $derived(
     currentTile?.terrain?.rarity && currentTile.terrain.rarity !== 'common'
   );
+
+  // Add helper function to get race icon component
+  function getRaceIconComponent(race) {
+    if (!race) return null;
+    
+    const raceKey = race.toLowerCase();
+    switch (raceKey) {
+      case 'human': return Human;
+      case 'elf': return Elf;
+      case 'dwarf': return Dwarf;
+      case 'goblin': return Goblin;
+      case 'fairy': return Fairy;
+      default: return null;
+    }
+  }
 </script>
 
 <svelte:window onkeydown={escape} />
@@ -183,12 +154,29 @@
           <ul class="player-list">
             {#each players as player}
               <li>
-                <span class="player-name" class:current-user={isCurrentUser(player)}>
-                  {getPlayerDisplayName(player)}
-                </span>
                 {#if player.race}
-                  <span class="player-race">[{_fmt(player.race)}]</span>
+                  <div class="player-race-icon">
+                    {#if player.race.toLowerCase() === 'human'}
+                      <Human extraClass="race-icon-small" />
+                    {:else if player.race.toLowerCase() === 'elf'}
+                      <Elf extraClass="race-icon-small" />
+                    {:else if player.race.toLowerCase() === 'dwarf'}
+                      <Dwarf extraClass="race-icon-small" />
+                    {:else if player.race.toLowerCase() === 'goblin'}
+                      <Goblin extraClass="race-icon-small" />
+                    {:else if player.race.toLowerCase() === 'fairy'}
+                      <Fairy extraClass="race-icon-small" />
+                    {/if}
+                  </div>
                 {/if}
+                <span class="player-info">
+                  <span class="player-name" class:current-user={isCurrentUser(player)}>
+                    {getPlayerDisplayName(player)}
+                  </span>
+                  {#if player.race}
+                    <span class="player-race">[{_fmt(player.race)}]</span>
+                  {/if}
+                </span>
               </li>
             {/each}
           </ul>
@@ -392,9 +380,34 @@
     font-family: var(--font-body);
   }
   
+  .player-list li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5em;
+  }
+  
+  .player-race-icon {
+    margin-right: 0.6em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  :global(.race-icon-small) {
+    width: 1.5em;
+    height: 1.5em;
+    fill: rgba(0, 0, 0, 0.7);
+  }
+  
+  .player-info {
+    display: flex;
+    flex-direction: column;
+  }
+  
   .player-name {
     font-weight: 500;
     color: rgba(0, 0, 0, 0.85);
+    line-height: 1.2;
   }
   
   .player-name.current-user {
@@ -413,9 +426,9 @@
   
   .player-race {
     font-style: italic;
-    margin-left: 0.3em;
     color: rgba(0, 0, 0, 0.6);
-    font-size: 0.95em;
+    font-size: 0.85em;
+    line-height: 1.2;
   }
 
   /* Add styling for highlighted state */

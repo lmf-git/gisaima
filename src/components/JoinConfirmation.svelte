@@ -1,5 +1,10 @@
 <script>
   import Close from './icons/Close.svelte';
+  import Human from './icons/Human.svelte';
+  import Elf from './icons/Elf.svelte';
+  import Dwarf from './icons/Dwarf.svelte';
+  import Goblin from './icons/Goblin.svelte';
+  import Fairy from './icons/Fairy.svelte';
   import { getWorldCenterCoordinates } from '../lib/stores/game.js';
 
   // Props for the component
@@ -11,37 +16,42 @@
     class: className = '' 
   } = $props();
 
-  // Available races
+  // Available races with icon components mapping
   const races = [
     {
       id: 'human',
       name: 'Humans',
       description: 'Versatile and adaptable, humans excel at diplomacy and trade.',
-      traits: ['Diplomatic', 'Fast Learners', 'Resource Efficient']
+      traits: ['Diplomatic', 'Fast Learners', 'Resource Efficient'],
+      icon: Human
     },
     {
       id: 'elf',
       name: 'Elves',
       description: 'Ancient forest dwellers with deep connections to nature and magic.',
-      traits: ['Magical Affinity', 'Forest Advantage', 'Long-range Combat']
+      traits: ['Magical Affinity', 'Forest Advantage', 'Long-range Combat'],
+      icon: Elf
     },
     {
       id: 'dwarf',
       name: 'Dwarves',
       description: 'Sturdy mountain folk, master craftsmen and miners.',
-      traits: ['Mining Bonus', 'Strong Defense', 'Mountain Advantage']
+      traits: ['Mining Bonus', 'Strong Defense', 'Mountain Advantage'],
+      icon: Dwarf
     },
     {
       id: 'goblin',
       name: 'Goblins',
       description: 'Cunning and numerous, goblins thrive in harsh environments.',
-      traits: ['Fast Production', 'Night Advantage', 'Scavenging Bonus']
+      traits: ['Fast Production', 'Night Advantage', 'Scavenging Bonus'],
+      icon: Goblin
     },
     {
       id: 'fairy',
       name: 'Fairies',
       description: 'Magical beings with flight capabilities and illusion powers.',
-      traits: ['Flight', 'Illusion Magic', 'Small Size Advantage']
+      traits: ['Flight', 'Illusion Magic', 'Small Size Advantage'],
+      icon: Fairy
     }
   ];
 
@@ -145,6 +155,20 @@
           role="button"
           aria-pressed={selectedRace?.id === race.id}
         >
+          <div class="race-icon-container">
+            {#if race.id === 'human'}
+              <Human extraClass={`race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+            {:else if race.id === 'elf'}
+              <Elf extraClass={`race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+            {:else if race.id === 'dwarf'}
+              <Dwarf extraClass={`race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+            {:else if race.id === 'goblin'}
+              <Goblin extraClass={`race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+            {:else if race.id === 'fairy'}
+              <Fairy extraClass={`race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+            {/if}
+          </div>
+          
           <div class="race-name-container">
             <h3>{race.name}</h3>
             {#if isMobile}
@@ -288,7 +312,7 @@
     border-radius: 0.5em;
     padding: 1em;
     cursor: pointer;
-    text-align: left;
+    text-align: center;
     transition: all 0.2s ease;
     display: flex;
     flex-direction: column;
@@ -307,9 +331,31 @@
     background-color: rgba(100, 255, 218, 0.05);
   }
   
+  .race-icon-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.8em;
+  }
+  
+  :global(.race-icon) {
+    width: 4em;
+    height: 4em;
+    fill: var(--color-muted-teal);
+    transition: all 0.2s ease;
+  }
+  
+  :global(.race-icon-selected) {
+    fill: var(--color-bright-accent);
+    transform: scale(1.05);
+  }
+  
+  .race-option:hover :global(.race-icon) {
+    fill: var(--color-pale-green);
+  }
+  
   .race-name-container {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-bottom: 0.7em;
   }
@@ -512,6 +558,16 @@
     
     .race-option {
       padding: 0.8em;
+    }
+    
+    :global(.race-icon) {
+      width: 3.5em;
+      height: 3.5em;
+    }
+    
+    .race-name-container {
+      justify-content: space-between; /* Restore space-between on mobile for toggle button */
+      align-items: center;
     }
   }
 </style>

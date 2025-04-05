@@ -9,6 +9,13 @@
   import { onMount } from 'svelte';
   import Torch from '../icons/Torch.svelte';
   
+  // Import race icon components
+  import Human from '../icons/Human.svelte';
+  import Elf from '../icons/Elf.svelte';
+  import Dwarf from '../icons/Dwarf.svelte';
+  import Goblin from '../icons/Goblin.svelte';
+  import Fairy from '../icons/Fairy.svelte';
+  
   // Accept closing prop from parent
   const { closing = false } = $props();
   
@@ -220,6 +227,20 @@
               <div class="entity-icon">
                 {#if entity.entityType === 'structure' && entity.type === 'spawn'}
                   <Torch size="1.2em" />
+                {:else if entity.entityType === 'player' && entity.race}
+                  {#if entity.race.toLowerCase() === 'human'}
+                    <Human extraClass="race-icon-entity" />
+                  {:else if entity.race.toLowerCase() === 'elf'}
+                    <Elf extraClass="race-icon-entity" />
+                  {:else if entity.race.toLowerCase() === 'dwarf'}
+                    <Dwarf extraClass="race-icon-entity" />
+                  {:else if entity.race.toLowerCase() === 'goblin'}
+                    <Goblin extraClass="race-icon-entity" />
+                  {:else if entity.race.toLowerCase() === 'fairy'}
+                    <Fairy extraClass="race-icon-entity" />
+                  {:else}
+                    {getEntitySymbol(entity.entityType)}
+                  {/if}
                 {:else if entity.entityType === 'structure'}
                   {getEntitySymbol(`structure-${entity.type}`)}
                 {:else}
@@ -232,6 +253,9 @@
                     {formatStructureName(entity)}
                   {:else if entity.entityType === 'player'}
                     {getPlayerDisplayName(entity)}
+                    {#if entity.race}
+                      <span class="race-label">[{entity.race}]</span>
+                    {/if}
                   {:else}
                     {entity.name || 'Group'} ({entity.size || '?'})
                   {/if}
@@ -403,6 +427,9 @@
     font-size: 1.2em;
     width: 1.5em;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .entity-info {
@@ -552,5 +579,19 @@
 
   .entity-icon :global(svg) {
     vertical-align: middle;
+  }
+
+  /* Race icon styling */
+  :global(.race-icon-entity) {
+    width: 1.2em;
+    height: 1.2em;
+    fill: rgba(0, 0, 0, 0.7);
+  }
+
+  .race-label {
+    font-size: 0.8em;
+    font-style: italic;
+    opacity: 0.8;
+    margin-left: 0.3em;
   }
 </style>

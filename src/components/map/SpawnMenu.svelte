@@ -7,7 +7,14 @@
   import { map, moveTarget } from '../../lib/stores/map.js';
   import { getChunkKey } from '../../lib/stores/map.js';
   import { goto } from '$app/navigation';
-  import Torch from '../icons/Torch.svelte'; // Import the Torch component
+  import Torch from '../icons/Torch.svelte';
+  
+  // Import race icon components
+  import Human from '../icons/Human.svelte';
+  import Elf from '../icons/Elf.svelte';
+  import Dwarf from '../icons/Dwarf.svelte';
+  import Goblin from '../icons/Goblin.svelte';
+  import Fairy from '../icons/Fairy.svelte';
 
   // Export a close function prop to allow parent to close the component
   const { onSpawn = () => {} } = $props();
@@ -164,7 +171,22 @@
 
 <div class="spawn-menu">
   <div class="spawn-container">
-    <h2>Welcome {playerRace.charAt(0).toUpperCase() + playerRace.slice(1)} to {$game.worldInfo[$game.currentWorld]?.name || 'New World'}</h2>
+    <div class="title-with-icon">
+      <div class="race-icon-container">
+        {#if playerRace === 'human'}
+          <Human extraClass="race-icon-menu" />
+        {:else if playerRace === 'elf'}
+          <Elf extraClass="race-icon-menu" />
+        {:else if playerRace === 'dwarf'}
+          <Dwarf extraClass="race-icon-menu" />
+        {:else if playerRace === 'goblin'}
+          <Goblin extraClass="race-icon-menu" />
+        {:else if playerRace === 'fairy'}
+          <Fairy extraClass="race-icon-menu" />
+        {/if}
+      </div>
+      <h2>Welcome {playerRace.charAt(0).toUpperCase() + playerRace.slice(1)} to {$game.worldInfo[$game.currentWorld]?.name || 'New World'}</h2>
+    </div>
     <p class="description">Select a settlement to begin your journey</p>
     
     {#if loading}
@@ -189,6 +211,19 @@
             disabled={spawning}
           >
             <div class="option-icon">
+              <div class="faction-icon">
+                {#if playerRace === 'human'}
+                  <Human extraClass="race-icon-option" />
+                {:else if playerRace === 'elf'}
+                  <Elf extraClass="race-icon-option" />
+                {:else if playerRace === 'dwarf'}
+                  <Dwarf extraClass="race-icon-option" />
+                {:else if playerRace === 'goblin'}
+                  <Goblin extraClass="race-icon-option" />
+                {:else if playerRace === 'fairy'}
+                  <Fairy extraClass="race-icon-option" />
+                {/if}
+              </div>
               <Torch size="1.2em" />
             </div>
             <div class="option-content">
@@ -261,6 +296,30 @@
     opacity: 0.8;
   }
   
+  .title-with-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .race-icon-container {
+    margin-right: 1rem;
+  }
+  
+  :global(.race-icon-menu) {
+    width: 2.5em;
+    height: 2.5em;
+    fill: var(--color-teal);
+  }
+  
+  :global(.race-icon-option) {
+    width: 1.2em;
+    height: 1.2em;
+    fill: var(--color-teal);
+    margin-right: 0.3em;
+  }
+
   .spawn-options {
     display: flex;
     flex-direction: column;
@@ -297,7 +356,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
+    min-width: 2.5rem;
+  }
+
+  .faction-icon {
+    display: flex;
+    align-items: center;
+    margin-right: 0.4rem;
   }
   
   .option-content {
