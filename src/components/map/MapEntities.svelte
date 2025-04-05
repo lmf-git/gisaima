@@ -12,42 +12,34 @@
   // Accept closing prop from parent
   const { closing = false } = $props();
   
-  // State variables using Svelte 5 runes
-  let activeTab = $state('all'); // 'all', 'structures', 'players', 'groups'
+  // State variables
+  let activeTab = $state('all');
   let visibleChunkCount = $state(0);
-  
-  // Direct state for entities
   let entityList = $state([]);
   let structuresCount = $state(0);
   let playersCount = $state(0);
   let groupsCount = $state(0);
   let totalEntityCount = $state(0);
   
-  // Replace $derived with a direct function to get filtered entities
+  // Simple filtered entities function
   function getFilteredEntities() {
-    if (activeTab === 'all') {
-      return entityList;
-    } else {
-      const entityType = activeTab.slice(0, -1); // 'structures' -> 'structure'
-      return entityList.filter(entity => entity.entityType === entityType);
-    }
+    if (activeTab === 'all') return entityList;
+    const entityType = activeTab.slice(0, -1); // 'structures' -> 'structure'
+    return entityList.filter(entity => entity.entityType === entityType);
   }
   
-  // Track chunks count with effect
+  // Track chunks count
   $effect(() => {
-    if ($chunks && $chunks.size > 0) {
-      visibleChunkCount = $chunks.size;
-    }
+    visibleChunkCount = $chunks?.size || 0;
   });
 
-  // Process coordinates to extract entities when coordinates change
+  // Process coordinates to extract entities
   $effect(() => {
     if (!$map.ready || !$coordinates || $coordinates.length === 0) return;
     
-    // Start with a fresh array
+    // Extract entities from coordinates
     const entities = [];
     
-    // Extract entities from coordinates
     $coordinates.forEach(coord => {
       // Add structure if present
       if (coord.structure) {
@@ -56,142 +48,77 @@
           entityId: `structure-${coord.x}-${coord.y}`,
           x: coord.x, 
           y: coord.y,
-          distance: coord.distance, // Use pre-calculated distance
+          distance: coord.distance,
           ...coord.structure
         });
       }
       
-      // Add players if present - handle both array and object formats
-      if (coord.players) {
-        if (Array.isArray(coord.players)) {
-          coord.players.forEach((player, idx) => {
-            if (!player) return;
-            entities.push({
-              entityType: 'player',
-              entityId: player.uid || `player-${coord.x}-${coord.y}-${idx}`,
-              x: coord.x,
-              y: coord.y,
-              distance: coord.distance,
-              ...player
-            });
+      // Add players if present
+      if (coord.players && Array.isArray(coord.players)) {
+        coord.players.forEach((player, idx) => {
+          if (!player) return;
+          entities.push({
+            entityType: 'player',
+            entityId: player.uid || `player-${coord.x}-${coord.y}-${idx}`,
+            x: coord.x,
+            y: coord.y,
+            distance: coord.distance,
+            ...player
           });
-        } else if (typeof coord.players === 'object') {
-          Object.entries(coord.players).forEach(([id, player]) => {
-            if (!player) return;
-            entities.push({
-              entityType: 'player',
-              entityId: id,
-              x: coord.x,
-              y: coord.y,
-              distance: coord.distance,
-              ...player
-            });
-          });
-        }
+        });
       }
       
-      // Add groups if present - handle both array and object formats
-      if (coord.groups) {
-        if (Array.isArray(coord.groups)) {
-          coord.groups.forEach((group, idx) => {
-            if (!group) return;
-            entities.push({
-              entityType: 'group',
-              entityId: group.id || `group-${coord.x}-${coord.y}-${idx}`,
-              x: coord.x,
-              y: coord.y,
-              distance: coord.distance,
-              ...group
-            });
+      // Add groups if present
+      if (coord.groups && Array.isArray(coord.groups)) {
+        coord.groups.forEach((group, idx) => {
+          if (!group) return;
+          entities.push({
+            entityType: 'group',
+            entityId: group.id || `group-${coord.x}-${coord.y}-${idx}`,
+            x: coord.x,
+            y: coord.y,
+            distance: coord.distance,
+            ...group
           });
-        } else if (typeof coord.groups === 'object') {
-          Object.entries(coord.groups).forEach(([id, group]) => {
-            if (!group) return;
-            entities.push({
-              entityType: 'group',
-              entityId: id,
-              x: coord.x,
-              y: coord.y,
-              distance: coord.distance,
-              ...group
-            });
-          });
-        }
+        });
       }
     });
     
-    // Sort entities by distance from target - now using pre-calculated distances
+    // Sort entities by distance
     entities.sort((a, b) => a.distance - b.distance);
     
-    // Update entity counts
+    // Update counts
     structuresCount = entities.filter(e => e.entityType === 'structure').length;
     playersCount = entities.filter(e => e.entityType === 'player').length;
     groupsCount = entities.filter(e => e.entityType === 'group').length;
     totalEntityCount = entities.length;
     
-    // Update the master entity list
+    // Update the entity list
     entityList = entities;
   });
   
-  // Function to format distance for display
+  // Format distance for display
   function formatDistance(distance) {
     return distance === 0 ? 'here' : Math.round(distance * 10) / 10;
   }
   
-  // Simplified tab selection function
-  function setActiveTab(tabName) {
-    activeTab = tabName;
-  }
-
   // Navigate to entity location
   function goToEntity(entity) {
-    if (entity && typeof entity.x === 'number' && typeof entity.y === 'number') {
+    if (entity?.x !== undefined && entity?.y !== undefined) {
       moveTarget(entity.x, entity.y);
     }
   }
   
-  // Handle keyboard navigation for entity items
-  function handleKeyDown(event, entity) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      goToEntity(entity);
-    }
-  }
-  
-  // Debug function - simplified to avoid triggering effects
-  function debugEntities() {
-    console.log('Entity counts:', {
-      total: totalEntityCount,
-      structures: structuresCount,
-      players: playersCount,
-      groups: groupsCount
-    });
-    
-    console.log('Sample entities:', entityList.slice(0, 3));
-    
-    // Force a tab change to refresh UI if needed
-    const currentTab = activeTab;
-    if (currentTab === 'all') {
-      activeTab = 'structures';
-      setTimeout(() => { activeTab = 'all'; }, 10);
-    } else {
-      activeTab = 'all';
-      setTimeout(() => { activeTab = currentTab; }, 10);
-    }
-  }
-  
-  // Helper function to get player display name
+  // Entity display helpers
   function getPlayerDisplayName(player) {
     if (player.isAnonymous || player.guest) {
       return `Guest ${player.id?.substring(0, 4) || 'User'}`;
     }
-    
     return player.displayName || 
            player.email?.split('@')[0] || 
            `User ${player.id?.substring(0, 4)}`;
   }
 
-  // Get entity type icon/symbol
   function getEntitySymbol(type) {
     switch(type) {
       case 'structure': return '🏛️';
@@ -204,7 +131,6 @@
     }
   }
 
-  // Get entity color class
   function getEntityColorClass(entity) {
     if (entity.entityType === 'structure') {
       switch(entity.type) {
@@ -220,17 +146,12 @@
     }
   }
 
-  // Helper function to format structure name like in Details.svelte
   function formatStructureName(entity) {
     if (entity.name) {
       return `${entity.name} (${entity.type || 'structure'})`;
     }
     return entity.type ? entity.type.charAt(0).toUpperCase() + entity.type.slice(1) : 'Structure';
   }
-
-  onMount(() => {
-    console.log(`MapEntities mounted, ready: ${$map.ready}, coordinates: ${$coordinates ? $coordinates.length : 0}`);
-  });
 </script>
 
 <div class="entities-container">
@@ -246,7 +167,7 @@
           role="tab"
           aria-selected={activeTab === 'all'}
           class:active={activeTab === 'all'} 
-          onclick={() => setActiveTab('all')}>
+          onclick={() => activeTab = 'all'}>
           All
           {#if totalEntityCount > 0}
             <span class="count">({totalEntityCount})</span>
@@ -256,7 +177,7 @@
           role="tab"
           aria-selected={activeTab === 'structures'}
           class:active={activeTab === 'structures'} 
-          onclick={() => setActiveTab('structures')}>
+          onclick={() => activeTab = 'structures'}>
           Structures
           {#if structuresCount > 0}
             <span class="count">({structuresCount})</span>
@@ -266,7 +187,7 @@
           role="tab"
           aria-selected={activeTab === 'players'}
           class:active={activeTab === 'players'} 
-          onclick={() => setActiveTab('players')}>
+          onclick={() => activeTab = 'players'}>
           Players
           {#if playersCount > 0}
             <span class="count">({playersCount})</span>
@@ -276,7 +197,7 @@
           role="tab"
           aria-selected={activeTab === 'groups'}
           class:active={activeTab === 'groups'} 
-          onclick={() => setActiveTab('groups')}>
+          onclick={() => activeTab = 'groups'}>
           Groups
           {#if groupsCount > 0}
             <span class="count">({groupsCount})</span>
@@ -286,14 +207,13 @@
     </div>
 
     <div class="entities-list" role="tabpanel" aria-label={`${activeTab} entities`}>
-      <!-- Add key={activeTab} to force re-render when tab changes -->
       {#key activeTab}
         {#if getFilteredEntities().length > 0}
           {#each getFilteredEntities() as entity (entity.entityId)}
             <button 
               class="entity-item {getEntityColorClass(entity)}" 
               onclick={() => goToEntity(entity)}
-              onkeydown={(e) => handleKeyDown(e, entity)}
+              onkeydown={(e) => e.key === 'Enter' && goToEntity(entity)}
               tabindex="0"
               aria-label={`Go to ${entity.entityType} ${entity.name || entity.type || ''} at coordinates ${entity.x},${entity.y}, ${formatDistance(entity.distance)} tiles away`}
             >
@@ -328,16 +248,7 @@
           {/each}
         {:else if totalEntityCount > 0}
           <div class="entity-empty">
-            Found {totalEntityCount} entities but having trouble displaying them
-            <div class="debug-info">
-              Structures: {structuresCount}, 
-              Players: {playersCount}, 
-              Groups: {groupsCount}
-            </div>
-            
-            <button class="refresh-button" onclick={debugEntities}>
-              Debug & Refresh
-            </button>
+            No {activeTab} found in the current area
           </div>
         {:else if visibleChunkCount > 0}
           <div class="entity-empty">
@@ -345,11 +256,7 @@
           </div>
         {:else}
           <div class="entity-empty">
-            {#if !$map.ready}
-              Waiting for map to initialize...
-            {:else}
-              No {activeTab === 'all' ? 'entities' : activeTab} found
-            {/if}
+            {!$map.ready ? 'Waiting for map to initialize...' : `No ${activeTab === 'all' ? 'entities' : activeTab} found`}
           </div>
         {/if}
       {/key}
@@ -527,12 +434,6 @@
     font-style: italic;
     color: rgba(0, 0, 0, 0.5);
     font-size: 0.9em;
-  }
-
-  .debug-info {
-    font-size: 0.8em;
-    margin-top: 0.5em;
-    color: rgba(0, 0, 0, 0.4);
   }
 
   .entity-structure {
