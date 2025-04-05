@@ -7,7 +7,7 @@
     coordinates
   } from '../../lib/stores/map.js';
   import { onMount } from 'svelte';
-  import Torch from '../icons/Torch.svelte'; // Import the Torch component
+  import Torch from '../icons/Torch.svelte';
   
   // Accept closing prop from parent
   const { closing = false } = $props();
@@ -16,14 +16,23 @@
   let activeTab = $state('all'); // 'all', 'structures', 'players', 'groups'
   let visibleChunkCount = $state(0);
   
-  // Direct state for entities - more efficient than derived values
+  // Direct state for entities
   let entityList = $state([]);
   let structuresCount = $state(0);
   let playersCount = $state(0);
   let groupsCount = $state(0);
   let totalEntityCount = $state(0);
-  let filteredEntities = $state([]);
-
+  
+  // Replace $derived with a direct function to get filtered entities
+  function getFilteredEntities() {
+    if (activeTab === 'all') {
+      return entityList;
+    } else {
+      const entityType = activeTab.slice(0, -1); // 'structures' -> 'structure'
+      return entityList.filter(entity => entity.entityType === entityType);
+    }
+  }
+  
   // Track chunks count with effect
   $effect(() => {
     if ($chunks && $chunks.size > 0) {
@@ -47,7 +56,7 @@
           entityId: `structure-${coord.x}-${coord.y}`,
           x: coord.x, 
           y: coord.y,
-          distance: coord.distance || 0,
+          distance: coord.distance, // Use pre-calculated distance
           ...coord.structure
         });
       }
@@ -62,7 +71,7 @@
               entityId: player.uid || `player-${coord.x}-${coord.y}-${idx}`,
               x: coord.x,
               y: coord.y,
-              distance: coord.distance || 0,
+              distance: coord.distance,
               ...player
             });
           });
@@ -74,7 +83,7 @@
               entityId: id,
               x: coord.x,
               y: coord.y,
-              distance: coord.distance || 0,
+              distance: coord.distance,
               ...player
             });
           });
@@ -91,7 +100,7 @@
               entityId: group.id || `group-${coord.x}-${coord.y}-${idx}`,
               x: coord.x,
               y: coord.y,
-              distance: coord.distance || 0,
+              distance: coord.distance,
               ...group
             });
           });
@@ -103,7 +112,7 @@
               entityId: id,
               x: coord.x,
               y: coord.y,
-              distance: coord.distance || 0,
+              distance: coord.distance,
               ...group
             });
           });
@@ -111,14 +120,8 @@
       }
     });
     
-    // Sort entities by distance from target
-    entities.sort((a, b) => {
-      const distanceA = a.distance !== undefined ? a.distance : 
-        calculateDistance($targetStore.x, $targetStore.y, a.x, a.y);
-      const distanceB = b.distance !== undefined ? b.distance : 
-        calculateDistance($targetStore.x, $targetStore.y, b.x, b.y);
-      return distanceA - distanceB;
-    });
+    // Sort entities by distance from target - now using pre-calculated distances
+    entities.sort((a, b) => a.distance - b.distance);
     
     // Update entity counts
     structuresCount = entities.filter(e => e.entityType === 'structure').length;
@@ -128,37 +131,14 @@
     
     // Update the master entity list
     entityList = entities;
-    
-    // Update filtered entities based on current tab
-    updateFilteredEntities();
   });
   
-  // Helper function to calculate distance
-  function calculateDistance(x1, y1, x2, y2) {
-    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-  }
-
   // Function to format distance for display
   function formatDistance(distance) {
     return distance === 0 ? 'here' : Math.round(distance * 10) / 10;
   }
   
-  // Update filtered entities whenever tab or entity list changes
-  function updateFilteredEntities() {
-    if (activeTab === 'all') {
-      filteredEntities = entityList;
-    } else {
-      const entityType = activeTab.slice(0, -1); // 'structures' -> 'structure'
-      filteredEntities = entityList.filter(entity => entity.entityType === entityType);
-    }
-  }
-  
-  // Effect to update filtered entities when tab changes
-  $effect(() => {
-    updateFilteredEntities();
-  });
-  
-  // Update the tab selection function
+  // Simplified tab selection function
   function setActiveTab(tabName) {
     activeTab = tabName;
   }
@@ -178,14 +158,34 @@
     }
   }
   
+  // Debug function - simplified to avoid triggering effects
+  function debugEntities() {
+    console.log('Entity counts:', {
+      total: totalEntityCount,
+      structures: structuresCount,
+      players: playersCount,
+      groups: groupsCount
+    });
+    
+    console.log('Sample entities:', entityList.slice(0, 3));
+    
+    // Force a tab change to refresh UI if needed
+    const currentTab = activeTab;
+    if (currentTab === 'all') {
+      activeTab = 'structures';
+      setTimeout(() => { activeTab = 'all'; }, 10);
+    } else {
+      activeTab = 'all';
+      setTimeout(() => { activeTab = currentTab; }, 10);
+    }
+  }
+  
   // Helper function to get player display name
   function getPlayerDisplayName(player) {
-    // For anonymous or guest users
     if (player.isAnonymous || player.guest) {
       return `Guest ${player.id?.substring(0, 4) || 'User'}`;
     }
     
-    // For registered users
     return player.displayName || 
            player.email?.split('@')[0] || 
            `User ${player.id?.substring(0, 4)}`;
@@ -222,29 +222,12 @@
 
   // Helper function to format structure name like in Details.svelte
   function formatStructureName(entity) {
-    // If there's a name available, show "name (type)"
     if (entity.name) {
       return `${entity.name} (${entity.type || 'structure'})`;
     }
-    // Otherwise, just show the capitalized type
     return entity.type ? entity.type.charAt(0).toUpperCase() + entity.type.slice(1) : 'Structure';
   }
 
-  // Debug function
-  function debugEntities() {
-    console.log('Entity counts:', {
-      total: totalEntityCount,
-      structures: structuresCount,
-      players: playersCount,
-      groups: groupsCount
-    });
-    
-    console.log('Sample entities:', entityList.slice(0, 3));
-    
-    // Force refresh - mark the tab selection as dirty
-    activeTab = activeTab;
-  }
-  
   onMount(() => {
     console.log(`MapEntities mounted, ready: ${$map.ready}, coordinates: ${$coordinates ? $coordinates.length : 0}`);
   });
@@ -303,70 +286,73 @@
     </div>
 
     <div class="entities-list" role="tabpanel" aria-label={`${activeTab} entities`}>
-      {#if filteredEntities.length > 0}
-        {#each filteredEntities as entity (entity.entityId)}
-          <button 
-            class="entity-item {getEntityColorClass(entity)}" 
-            onclick={() => goToEntity(entity)}
-            onkeydown={(e) => handleKeyDown(e, entity)}
-            tabindex="0"
-            aria-label={`Go to ${entity.entityType} ${entity.name || entity.type || ''} at coordinates ${entity.x},${entity.y}, ${formatDistance(entity.distance)} tiles away`}
-          >
-            <div class="entity-icon">
-              {#if entity.entityType === 'structure' && entity.type === 'spawn'}
-                <Torch size="1.2em" />
-              {:else if entity.entityType === 'structure'}
-                {getEntitySymbol(`structure-${entity.type}`)}
-              {:else}
-                {getEntitySymbol(entity.entityType)}
-              {/if}
-            </div>
-            <div class="entity-info">
-              <div class="entity-name">
-                {#if entity.entityType === 'structure'}
-                  {formatStructureName(entity)}
-                {:else if entity.entityType === 'player'}
-                  {getPlayerDisplayName(entity)}
+      <!-- Add key={activeTab} to force re-render when tab changes -->
+      {#key activeTab}
+        {#if getFilteredEntities().length > 0}
+          {#each getFilteredEntities() as entity (entity.entityId)}
+            <button 
+              class="entity-item {getEntityColorClass(entity)}" 
+              onclick={() => goToEntity(entity)}
+              onkeydown={(e) => handleKeyDown(e, entity)}
+              tabindex="0"
+              aria-label={`Go to ${entity.entityType} ${entity.name || entity.type || ''} at coordinates ${entity.x},${entity.y}, ${formatDistance(entity.distance)} tiles away`}
+            >
+              <div class="entity-icon">
+                {#if entity.entityType === 'structure' && entity.type === 'spawn'}
+                  <Torch size="1.2em" />
+                {:else if entity.entityType === 'structure'}
+                  {getEntitySymbol(`structure-${entity.type}`)}
                 {:else}
-                  {entity.name || 'Group'} ({entity.size || '?'})
+                  {getEntitySymbol(entity.entityType)}
                 {/if}
               </div>
-              <div class="entity-location">
-                <span class="coords">{entity.x},{entity.y}</span>
-                <span class="distance">
-                  {formatDistance(entity.distance)} {entity.distance !== 0 ? 'tiles away' : ''}
-                </span>
+              <div class="entity-info">
+                <div class="entity-name">
+                  {#if entity.entityType === 'structure'}
+                    {formatStructureName(entity)}
+                  {:else if entity.entityType === 'player'}
+                    {getPlayerDisplayName(entity)}
+                  {:else}
+                    {entity.name || 'Group'} ({entity.size || '?'})
+                  {/if}
+                </div>
+                <div class="entity-location">
+                  <span class="coords">{entity.x},{entity.y}</span>
+                  <span class="distance">
+                    {formatDistance(entity.distance)} {entity.distance !== 0 ? 'tiles away' : ''}
+                  </span>
+                </div>
               </div>
+              <div class="entity-action" aria-hidden="true">→</div>
+            </button>
+          {/each}
+        {:else if totalEntityCount > 0}
+          <div class="entity-empty">
+            Found {totalEntityCount} entities but having trouble displaying them
+            <div class="debug-info">
+              Structures: {structuresCount}, 
+              Players: {playersCount}, 
+              Groups: {groupsCount}
             </div>
-            <div class="entity-action" aria-hidden="true">→</div>
-          </button>
-        {/each}
-      {:else if totalEntityCount > 0}
-        <div class="entity-empty">
-          Found {totalEntityCount} entities but having trouble displaying them
-          <div class="debug-info">
-            Structures: {structuresCount}, 
-            Players: {playersCount}, 
-            Groups: {groupsCount}
+            
+            <button class="refresh-button" onclick={debugEntities}>
+              Debug & Refresh
+            </button>
           </div>
-          
-          <button class="refresh-button" onclick={debugEntities}>
-            Debug & Refresh
-          </button>
-        </div>
-      {:else if visibleChunkCount > 0}
-        <div class="entity-empty">
-          Loading entities from {visibleChunkCount} visible chunks...
-        </div>
-      {:else}
-        <div class="entity-empty">
-          {#if !$map.ready}
-            Waiting for map to initialize...
-          {:else}
-            No {activeTab === 'all' ? 'entities' : activeTab} found
-          {/if}
-        </div>
-      {/if}
+        {:else if visibleChunkCount > 0}
+          <div class="entity-empty">
+            Loading entities from {visibleChunkCount} visible chunks...
+          </div>
+        {:else}
+          <div class="entity-empty">
+            {#if !$map.ready}
+              Waiting for map to initialize...
+            {:else}
+              No {activeTab === 'all' ? 'entities' : activeTab} found
+            {/if}
+          </div>
+        {/if}
+      {/key}
     </div>
   </div>
 </div>
@@ -549,7 +535,6 @@
     color: rgba(0, 0, 0, 0.4);
   }
 
-  /* Entity type styling with updated colors for light background */
   .entity-structure {
     border-left: 0.2em solid rgba(80, 80, 120, 0.6);
   }
@@ -574,7 +559,6 @@
     border-left: 0.2em solid rgba(200, 0, 50, 0.6);
   }
 
-  /* Responsive adjustments */
   @media (max-width: 640px) {
     .entities-panel {
       width: 100%;
@@ -588,13 +572,11 @@
     }
   }
 
-  /* Tab styles update for better focus states */
   .tabs button:focus-visible {
     outline: 0.15em solid rgba(0, 0, 0, 0.2);
     outline-offset: 0.1em;
   }
 
-  /* Add scrollbar styling for the entities list */
   .entities-list::-webkit-scrollbar {
     width: 0.4em;
   }
@@ -667,7 +649,6 @@
     background: rgba(0, 0, 0, 0.2);
   }
 
-  /* Additional styling to align Torch icon properly */
   .entity-icon :global(svg) {
     vertical-align: middle;
   }

@@ -319,6 +319,12 @@ export const coordinates = derived(
         const globalY = y - viewportCenterY + targetY;
         const locationKey = `${globalX},${globalY}`;
         
+        // Calculate distance from target position
+        const distance = Math.sqrt(
+          Math.pow(globalX - targetX, 2) + 
+          Math.pow(globalY - targetY, 2)
+        );
+        
         const isInMainView = !useExpanded || (
           x >= mainViewMinX && x <= mainViewMaxX && 
           y >= mainViewMinY && y <= mainViewMaxY
@@ -343,7 +349,8 @@ export const coordinates = derived(
           structure,
           groups,
           players,
-          terrain: terrainData
+          terrain: terrainData,
+          distance // Add pre-calculated distance
         });
       }
     }
