@@ -5,12 +5,12 @@
   import { browser } from '$app/environment';
   import { getWorldCenterCoordinates } from '../lib/stores/game.js';
   
-  // Props with defaults - add worldInfo prop
+  // Props with defaults - fix the default tileSize value
   const { 
     worldId = '', 
     seed = 0, 
-    tileSize = 1.25, 
-    summaryFactor = 50,
+    tileSize = 9, // More reasonable default size that matches Grid component better
+    summaryFactor = 75,
     delayed = false,
     joined = false, // New prop to track if world is joined
     worldInfo = null, // Add world info prop to access center coordinates
@@ -94,21 +94,29 @@
   function resizeWorldGrid() {
     if (!cardElement) return;
     
-    const style = getComputedStyle(document.documentElement);
-    const baseFontSize = parseFloat(style.fontSize);
-    const tileSizePx = tileSize * baseFontSize;
-    
     // Get actual dimensions of container element
     const width = cardElement.clientWidth;
     const height = cardElement.clientHeight;
     
-    // Calculate tile counts based purely on available space and tile size
-    let newCols = Math.max(3, Math.floor(width / tileSizePx));
-    let newRows = Math.max(3, Math.floor(height / tileSizePx));
+    console.log(`WorldCard resize: container ${width}x${height}, tileSize=${tileSize}px`);
+    
+    // Calculate tile counts based on available space and tile size
+    // Add maximum limits to prevent too many tiles
+    const maxCols = 13; // Maximum number of columns
+    const maxRows = 9;  // Maximum number of rows
+    
+    let newCols = Math.max(3, Math.floor(width / tileSize));
+    let newRows = Math.max(3, Math.floor(height / tileSize));
+    
+    // Apply maximum limits
+    newCols = Math.min(newCols, maxCols);
+    newRows = Math.min(newRows, maxRows);
     
     // Force odd number for proper centering
     newCols = ensureOdd(newCols);
     newRows = ensureOdd(newRows);
+    
+    console.log(`WorldCard grid dimensions: ${newCols}x${newRows} tiles`);
     
     // Only update if dimensions have changed
     if (newCols !== cols || newRows !== rows) {
@@ -413,6 +421,7 @@
   }
   
   .terrain-tile {
+    /* Use 100% to fill grid cells */
     width: 100%;
     height: 100%;
     position: relative;
