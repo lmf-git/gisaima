@@ -113,11 +113,12 @@
       return;
     }
     
-    // Dispatch mobilize event with data
+    // Dispatch mobilize event with data, including player race
     dispatch('mobilize', {
       units: selectedUnitIds,
       includePlayer,
       name: groupName,
+      race: $currentPlayer?.race, // Include player's race
       tile
     });
     

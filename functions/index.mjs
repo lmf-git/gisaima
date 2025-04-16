@@ -197,7 +197,7 @@ export const startMobilization = onCall(async (data, context) => {
   }
   
   const uid = context.auth.uid;
-  const { worldId, tileX, tileY, units: unitIds, includePlayer, name } = data;
+  const { worldId, tileX, tileY, units: unitIds, includePlayer, name, race } = data;
   
   if (!worldId || tileX === undefined || tileY === undefined) {
     throw new HttpsError('invalid-argument', 'Missing required parameters');
@@ -302,12 +302,16 @@ export const startMobilization = onCall(async (data, context) => {
     
     // Only proceed if we have units to mobilize
     if (selectedUnits.length > 0) {
+      // Determine the race to use
+      const groupRace = race || (playerData ? playerData.race : null);
+      
       // Create new mobilizing group
       updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${newGroupId}`] = {
         id: newGroupId,
         name: name || "New Force",
         owner: uid,
         unitCount: selectedUnits.length,
+        race: groupRace, // Save race directly on the group
         created: now,
         lastUpdated: now,
         x: tileX,

@@ -22,25 +22,21 @@
   
   // Initialize available groups based on tile content
   $effect(() => {
-    if (!tile) return;
-    
-    const groups = [];
-    
-    // Find player groups on this tile that aren't already moving
-    if (tile.groups && tile.groups.length > 0) {
-      tile.groups.forEach(group => {
-        if (group.owner === $currentPlayer?.uid && group.status !== 'moving') {
-          groups.push(group);
-        }
-      });
+    if (!tile || !tile.groups) {
+      availableGroups = [];
+      return;
     }
     
-    availableGroups = groups;
-    
-    // Auto-select the first group if there's only one
-    if (groups.length === 1) {
-      selectedGroup = groups[0];
-    }
+    // Filter only groups owned by the current player and with idle status
+    availableGroups = tile.groups
+      .filter(group => {
+        // Direct access to group status instead of using getGroupStatusInfo
+        return group.owner === $currentPlayer?.uid && group.status === 'idle';
+      })
+      .map(group => ({
+        ...group,
+        selected: false
+      }));
   });
   
   // Calculate movement directions (3x3 grid with center being current position)

@@ -6,8 +6,11 @@
     chunks,
     coordinates
   } from '../../lib/stores/map.js';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
+  import { fade, fly } from 'svelte/transition';
+  import { cubicOut } from 'svelte/easing';
   import Torch from '../icons/Torch.svelte';
+  import { game, currentPlayer } from '../../lib/stores/game';
   
   // Import race icon components
   import Human from '../icons/Human.svelte';
@@ -159,6 +162,94 @@
     }
     return entity.type ? entity.type.charAt(0).toUpperCase() + entity.type.slice(1) : 'Structure';
   }
+
+  // Format text for display
+  const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  
+  // Function to determine primary race of a group
+  function getGroupRace(group) {
+    if (!group) return null;
+    
+    // If group has a faction, use that
+    if (group.faction) return group.faction;
+    
+    // Otherwise try to determine from units
+    if (group.units && group.units.length > 0) {
+      // Check if player is in the group (use their race)
+      const playerUnit = group.units.find(unit => unit.type === 'player');
+      if (playerUnit && playerUnit.race) return playerUnit.race;
+      
+      // Otherwise use the race of the first unit with a race
+      for (const unit of group.units) {
+        if (unit.race) return unit.race;
+      }
+    }
+    
+    return 'unknown';
+  }
+
+  // Replace function call with direct property access
+  function getStatusClass(group) {
+    // Use status directly from the group
+    return group.status || 'idle';
+  }
+
+  // Timer for updating countdown
+  let updateTimer;
+  // Counter to force updates
+  let updateCounter = $state(0);
+  
+  // Set up timer to update countdown values
+  onMount(() => {
+    // Update every second to keep countdown accurate
+    updateTimer = setInterval(() => {
+      updateCounter++;
+    }, 1000);
+  });
+  
+  // Clean up timer when component is destroyed
+  onDestroy(() => {
+    if (updateTimer) {
+      clearInterval(updateTimer);
+    }
+  });
+  
+  // Calculate estimated arrival time for moving groups
+  function calculateMoveCompletionTime(group) {
+    if (!group || group.status !== 'moving' || !group.moveStarted) return null;
+    
+    // Access the reactive store directly without storing in a constant
+    const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
+    
+    const moveStarted = group.moveStarted;
+    const moveSpeed = group.moveSpeed || 1.0;
+    const adjustedSpeed = moveSpeed * worldSpeed;
+    const moveTime = (1000 * 60) / adjustedSpeed; // Base 1 minute per tile, adjusted by speed
+    
+    return moveStarted + moveTime;
+  }
+
+  // Format time remaining for mobilizing or moving groups
+  function formatTimeRemaining(endTime) {
+    if (!endTime) return '';
+    
+    // Force this function to re-evaluate on updateCounter change
+    updateCounter;
+    
+    const now = Date.now();
+    const remaining = endTime - now;
+    
+    if (remaining <= 0) return 'Ready';
+    
+    const minutes = Math.floor(remaining / 60000);
+    const seconds = Math.floor((remaining % 60000) / 1000);
+    
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  }
 </script>
 
 <div class="entities-container">
@@ -228,19 +319,33 @@
                 {#if entity.entityType === 'structure' && entity.type === 'spawn'}
                   <Torch size="1.2em" />
                 {:else if entity.entityType === 'player' && entity.race}
-                  {#if entity.race.toLowerCase() === 'human'}
-                    <Human extraClass="race-icon-entity" />
-                  {:else if entity.race.toLowerCase() === 'elf'}
-                    <Elf extraClass="race-icon-entity" />
-                  {:else if entity.race.toLowerCase() === 'dwarf'}
-                    <Dwarf extraClass="race-icon-entity" />
-                  {:else if entity.race.toLowerCase() === 'goblin'}
-                    <Goblin extraClass="race-icon-entity" />
-                  {:else if entity.race.toLowerCase() === 'fairy'}
-                    <Fairy extraClass="race-icon-entity" />
-                  {:else}
-                    {getEntitySymbol(entity.entityType)}
+                  {#if entity.race?.toLowerCase() === 'human'}
+                    <Human extraClass="race-icon-small" />
+                  {:else if entity.race?.toLowerCase() === 'elf'}
+                    <Elf extraClass="race-icon-small" />
+                  {:else if entity.race?.toLowerCase() === 'dwarf'}
+                    <Dwarf extraClass="race-icon-small" />
+                  {:else if entity.race?.toLowerCase() === 'goblin'}
+                    <Goblin extraClass="race-icon-small" />
+                  {:else if entity.race?.toLowerCase() === 'fairy'}
+                    <Fairy extraClass="race-icon-small" />
                   {/if}
+                {:else if entity.entityType === 'group'}
+                  <div class="group-icon status-{entity.status}">
+                    {#if entity.race?.toLowerCase() === 'human'}
+                      <Human extraClass="race-icon-small" />
+                    {:else if entity.race?.toLowerCase() === 'elf'}
+                      <Elf extraClass="race-icon-small" />
+                    {:else if entity.race?.toLowerCase() === 'dwarf'}
+                      <Dwarf extraClass="race-icon-small" />
+                    {:else if entity.race?.toLowerCase() === 'goblin'}
+                      <Goblin extraClass="race-icon-small" />
+                    {:else if entity.race?.toLowerCase() === 'fairy'}
+                      <Fairy extraClass="race-icon-small" />
+                    {:else}
+                      <span class="group-default-icon">👥</span>
+                    {/if}
+                  </div>
                 {:else if entity.entityType === 'structure'}
                   {getEntitySymbol(`structure-${entity.type}`)}
                 {:else}
@@ -255,6 +360,21 @@
                     {getPlayerDisplayName(entity)}
                     {#if entity.race}
                       <span class="race-label">[{entity.race}]</span>
+                    {/if}
+                  {:else if entity.entityType === 'group'}
+                    {entity.name || 'Group'} ({entity.size || '?'})
+                    {#if entity.status === 'mobilizing' && entity.readyAt}
+                      <span class="status mobilizing">
+                        Mobilizing: {formatTimeRemaining(entity.readyAt)}
+                      </span>
+                    {:else if entity.status === 'moving' && entity.moveStarted}
+                      <span class="status moving">
+                        Moving: {formatTimeRemaining(calculateMoveCompletionTime(entity))}
+                      </span>
+                    {:else if entity.status && entity.status !== 'idle'}
+                      <span class="status {entity.status}">{_fmt(entity.status)}</span>
+                    {:else}
+                      <span class="status idle">Idle</span>
                     {/if}
                   {:else}
                     {entity.name || 'Group'} ({entity.size || '?'})
@@ -301,84 +421,6 @@
     width: 20em;
     max-width: calc(100vw - 2em);
     max-height: calc(100vh - 3em);
-    margin-top: 0;  /* No margin gap at top */
-    padding-top: 1.25em;
-    background-color: rgba(255, 255, 255, 0.85); /* Match Details panel background */
-    color: rgba(0, 0, 0, 0.8); /* Match Details panel text color */
-    border: 0.05em solid rgba(255, 255, 255, 0.2); /* Match Details panel border */
-    border-radius: 0.3em;
-    box-shadow: 0 0.2em 0.7em rgba(0, 0, 0, 0.2); /* Softer shadow like Details */
-    backdrop-filter: blur(0.5em); /* Add backdrop blur like Details */
-    -webkit-backdrop-filter: blur(0.5em);
-    animation: reveal 0.4s ease-out forwards; /* Match Details animation */
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    transform-origin: top right;
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7); /* Match Details text shadow */
-    font-family: var(--font-body);
-  }
-
-  .entities-panel.closing {
-    animation: closeReveal 0.3s ease-in forwards;
-  }
-
-  @keyframes reveal {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-      border-color: transparent;
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-      border-color: rgba(255, 255, 255, 0.2);
-    }
-  }
-
-  @keyframes closeReveal {
-    from {
-      opacity: 1;
-      transform: scale(1);
-    }
-    to {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-  }
-
-  .entities-header {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  }
-
-  .entities-header h3 {
-    margin: 0;
-    padding: 0.3em;
-    font-size: 1.1em;
-    font-weight: 600;
-    text-align: center;
-    color: rgba(0, 0, 0, 0.9);
-    font-family: var(--font-heading);
-  }
-
-  .tabs {
-    display: flex;
-    gap: 0.2em;
-    justify-content: center;
-    padding: 0 0.3em 0.3em 0.3em;
-  }
-
-  .tabs button {
-    padding: 0.2em 0.5em;
-    background: rgba(0, 0, 0, 0.05);
-    border: 0.05em solid rgba(0, 0, 0, 0.1);
-    border-radius: 0.2em;
-    color: rgba(0, 0, 0, 0.7);
-    font-size: 0.8em;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: var(--font-body);
-  }
 
   .tabs button.active {
     background: rgba(0, 0, 0, 0.1);
@@ -594,4 +636,7 @@
     opacity: 0.8;
     margin-left: 0.3em;
   }
+
+  justify-content: center;
+}
 </style>

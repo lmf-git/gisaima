@@ -10,7 +10,8 @@
       getWorldCenterCoordinates,
       setCurrentWorld,
       isAuthReady,
-      needsSpawn 
+      needsSpawn,
+      currentPlayer
     } from "../../lib/stores/game.js";
     
     import { 
@@ -28,7 +29,6 @@
         setHighlighted
     } from "../../lib/stores/map.js";
     
-    // Import Firebase database
     import { ref, update } from "firebase/database";
     import { db } from "../../lib/firebase/database";
     
@@ -45,45 +45,35 @@
     import Mobilize from '../../components/map/Mobilize.svelte';
     import Move from '../../components/map/Move.svelte';
 
-    // Use $state for local component state
     let detailed = $state(false);
     let loading = $state(true);
     let error = $state(null);
     
-    // URL coordinates handling
     let urlCoordinates = $state(null);
     let urlProcessingComplete = $state(false);
     
-    // Flag to track initialization attempts
     let initAttempted = $state(false);
     
-    // Enhanced loading state that includes auth and game loading
     const combinedLoading = $derived(loading || $game.worldLoading || !$isAuthReady);
     
-    // Simplified derived state
     const isDragging = $derived($map.isDragging);
     
-    // Updated UI state management function
     function toggleDetailsModal(show) {
         detailed = show;
     }
     
-    // Track the source of URL coordinate changes
     let ignoreNextUrlChange = $state(false);
     let lastProcessedLocation = $state(null);
     
-    // Enhanced URL coordinates handling
     let urlCoordinatesProcessing = $state(false);
     let urlCoordinatesLastProcessed = $state({ x: null, y: null });
     
-    // Track processing state more effectively
     let coordinateProcessingState = $state({
         processing: false,
-        processed: new Set(), // Track which coordinates have been processed
+        processed: new Set(),
         lastProcessedTime: 0
     });
     
-    // Simplified URL coordinates parsing with caching
     function parseUrlCoordinates() {
         if (!browser || !$page.url) return null;
         
@@ -97,7 +87,6 @@
             if (!isNaN(parsedX) && !isNaN(parsedY)) {
                 const coordKey = `${parsedX},${parsedY}`;
                 
-                // Skip if we've already processed these coordinates recently
                 const now = Date.now();
                 if (coordinateProcessingState.processed.has(coordKey) && 
                     now - coordinateProcessingState.lastProcessedTime < 2000) {
@@ -111,23 +100,18 @@
         return null;
     }
     
-    // Listen for URL changes, including those caused by browser back/forward
     if (browser) {
         window.addEventListener('popstate', () => {
-            // If this URL change was caused by our own update, ignore it
             if (isInternalUrlChange()) {
                 ignoreNextUrlChange = true;
                 return;
             }
             
-            // Reset processing flag to handle external URL changes (like browser navigation)
             urlProcessingComplete = false;
         });
     }
     
-    // Simplified effect for URL coordinate monitoring with localStorage consideration
     $effect(() => {
-        // Skip if we're currently processing coordinates or if we're not in the browser
         if (coordinateProcessingState.processing || !browser || !$page.url) return;
         
         const newCoords = parseUrlCoordinates();
@@ -135,35 +119,29 @@
         if (newCoords && !isInternalUrlChange()) {
             console.log(`Found URL coordinates: ${newCoords.x},${newCoords.y}`);
             
-            // Mark that we're processing coordinates
             coordinateProcessingState.processing = true;
             
-            // Only apply coordinates if map is ready, otherwise store for later
             if ($ready) {
                 console.log(`Applying URL coordinates: ${newCoords.x},${newCoords.y}`);
                 moveTarget(newCoords.x, newCoords.y);
                 
-                // Record that we processed these coordinates
                 coordinateProcessingState.processed.add(newCoords.key);
                 coordinateProcessingState.lastProcessedTime = Date.now();
             } else {
                 urlCoordinates = { x: newCoords.x, y: newCoords.y };
             }
             
-            // Reset processing flag after a delay
             setTimeout(() => {
                 coordinateProcessingState.processing = false;
             }, 100);
         }
     });
     
-    // Simplified effect for applying URL coordinates after map is ready
     $effect(() => {
         if (!$ready || !urlCoordinates || coordinateProcessingState.processing) return;
         
         const coordKey = `${urlCoordinates.x},${urlCoordinates.y}`;
         
-        // Skip if we've already processed these coordinates
         if (coordinateProcessingState.processed.has(coordKey)) {
             urlCoordinates = null;
             return;
@@ -174,7 +152,6 @@
         console.log(`Applying URL coordinates after map ready: ${urlCoordinates.x},${urlCoordinates.y}`);
         moveTarget(urlCoordinates.x, urlCoordinates.y);
         
-        // Record that we processed these coordinates
         coordinateProcessingState.processed.add(coordKey);
         coordinateProcessingState.lastProcessedTime = Date.now();
         urlCoordinates = null;
@@ -184,7 +161,6 @@
         }, 100);
     });
     
-    // Improved effect for applying URL coordinates
     $effect(() => {
         if (!$ready || urlProcessingComplete) return;
         
@@ -194,36 +170,28 @@
             urlProcessingComplete = true;
             lastProcessedLocation = { ...urlCoordinates };
         } else if ($game.playerWorldData?.lastLocation && !$needsSpawn) {
-            // Fall back to player location
             const location = $game.playerWorldData.lastLocation;
             moveTarget(location.x, location.y);
             urlProcessingComplete = true;
             lastProcessedLocation = { ...location };
         } else if ($game.currentWorld) {
-            // If no player location, try to get world center
             const worldCenter = getWorldCenterCoordinates($game.currentWorld);
             moveTarget(worldCenter.x, worldCenter.y);
             urlProcessingComplete = true;
             lastProcessedLocation = { ...worldCenter };
         }
     });
-    
-    // No need for extra watching effect since the map store handles URL updates now
 
-    // Handle spawn completion
     function handleSpawnComplete(spawnLocation) {
         if (spawnLocation) {
             moveTarget(spawnLocation.x, spawnLocation.y);
         }
     }
     
-    // Initialize map function with improved URL coordinate handling and clearer priority
     async function initializeMap(worldId) {
-        // Skip if world ID matches current world and map is already ready
         if ($ready && $map.world === worldId) {
             console.log(`Map already initialized for world ${worldId}, skipping redundant initialization`);
             
-            // Still process URL coordinates if needed
             const startingCoords = parseUrlCoordinates();
             if (startingCoords && !urlProcessingComplete) {
                 console.log(`Applying URL coordinates to existing map: ${startingCoords.x},${startingCoords.y}`);
@@ -238,7 +206,6 @@
             loading = true;
             error = null;
             
-            // Wait for auth to be ready
             if (!$isAuthReady) {
                 await new Promise(resolve => {
                     const unsubscribe = isAuthReady.subscribe(ready => {
@@ -250,7 +217,6 @@
                 });
             }
             
-            // Set current world and get world info
             await setCurrentWorld(worldId);
             const worldInfo = await getWorldInfo(worldId);
             
@@ -261,37 +227,25 @@
                 throw new Error(`World ${worldId} has no seed defined`);
             }
             
-            // Establish clear priority order for coordinates:
-            // 1. URL parameters (highest)
-            // 2. localStorage saved position
-            // 3. Player's last location in this world
-            // 4. World center coordinates
-            // 5. Default (0,0)
-            
             let initialCoords = null;
             
-            // 1. URL parameters
             const urlCoords = parseUrlCoordinates();
             if (urlCoords) {
                 console.log(`Using URL coordinates: ${urlCoords.x},${urlCoords.y}`);
                 initialCoords = urlCoords;
                 urlProcessingComplete = true;
             } 
-            // 2. localStorage saved position (handled internally in initialize)
-            // 3. Player's last location
             else if ($game.playerWorldData?.lastLocation) {
                 const location = $game.playerWorldData.lastLocation;
                 console.log(`Using player's last location: ${location.x},${location.y}`);
                 initialCoords = { x: location.x, y: location.y };
             } 
-            // 4. World center coordinates
             else {
                 const worldCenter = getWorldCenterCoordinates(worldId, worldInfo);
                 console.log(`Using world center: ${worldCenter.x},${worldCenter.y}`);
                 initialCoords = worldCenter;
             }
             
-            // Initialize the map with the chosen coordinates
             if (!initialize({ 
                 worldId,
                 worldInfo,
@@ -310,7 +264,6 @@
         }
     }
     
-    // Auto-initialize when world data is ready
     $effect(() => {
         if (initAttempted || error || !$isAuthReady) return;
         
@@ -342,7 +295,6 @@
         }
     });
     
-    // Handle auth state changes
     $effect(() => {
       if (browser && !$userLoading && $user === null) {
         const worldId = $page.url.searchParams.get('world') || $game.currentWorld;
@@ -351,7 +303,6 @@
       }
     });
     
-    // Get world ID from URL or store
     let currentWorldId = $state(null);
     
     $effect(() => {
@@ -363,13 +314,11 @@
         currentWorldId = worldFromUrl || worldFromStore || null;
     });
     
-    // Component lifecycle - optimize to prevent redundant initialization
     onMount(() => {
         if (!browser) return;
         
         document.body.classList.add('map-page-active');
         
-        // Get world ID and coordinates once and store them
         const worldId = $page.url.searchParams.get('world') || $game.currentWorld;
         const coords = parseUrlCoordinates();
         
@@ -382,7 +331,6 @@
             return;
         }
         
-        // First try to initialize from existing world info to avoid extra fetches
         if (!$ready && currentWorldId && $game.worldInfo[currentWorldId]?.seed !== undefined) {
             console.log(`Initializing map from existing world info for ${currentWorldId}`);
             
@@ -396,13 +344,11 @@
             if (urlCoordinates) {
                 urlProcessingComplete = true;
                 
-                // Record processed coordinates
                 const coordKey = `${urlCoordinates.x},${urlCoordinates.y}`;
                 coordinateProcessingState.processed.add(coordKey);
                 coordinateProcessingState.lastProcessedTime = Date.now();
             }
         } else {
-            // Otherwise do a full initialization
             initializeMap(worldId).catch(err => {
                 console.error(`Failed to initialize map:`, err); 
                 error = err.message || `Failed to load world`;
@@ -418,7 +364,6 @@
         }
     });
 
-    // UI component visibility state
     let showMinimap = $state(true);
     let showEntities = $state(true);
     let minimapClosing = $state(false);
@@ -426,7 +371,6 @@
     
     const ANIMATION_DURATION = 800;
     
-    // Initialize UI visibility from localStorage
     $effect(() => {
         if (browser) {
             const storedMinimapVisibility = localStorage.getItem('minimap');
@@ -446,7 +390,6 @@
         }
     });
     
-    // Toggle visibility functions
     function toggleMinimap() {
         if (showMinimap) {
             minimapClosing = true;
@@ -508,121 +451,154 @@
         }
     }
 
-    // State for actions popup
     let showActions = $state(false);
     let selectedTile = $state(null);
     
-    // State for mobilize popup
     let showMobilize = $state(false);
     
-    // State for move popup
     let showMove = $state(false);
     
-    // Renamed to be more semantic - opens actions for a tile
     function openActionsForTile(cell) {
         selectedTile = cell;
         showActions = true;
     }
     
-    // Close the actions popup
     function closeActionsPopup() {
         showActions = false;
-        // Clear highlight when popup closes
         setHighlighted(null, null);
     }
     
-    // Open mobilize popup
     function openMobilizePopup() {
         showMobilize = true;
-        showActions = false; // Close actions when opening mobilize
+        showActions = false;
     }
     
-    // Close mobilize popup
     function closeMobilizePopup() {
         showMobilize = false;
-        // Clear highlight when popup closes
         setHighlighted(null, null);
     }
     
-    // Open move popup
     function openMovePopup() {
         showMove = true;
-        showActions = false; // Close actions when opening move
+        showActions = false;
     }
     
-    // Close move popup
     function closeMovePopup() {
         showMove = false;
-        // Clear highlight when popup closes
         setHighlighted(null, null);
     }
     
-    // Handle action execution from the Actions component
     function handleAction(event) {
         const { action, tile } = event.detail;
         console.log('Action selected:', action, 'for tile:', tile);
         
-        // Check if action is mobilize
         if (action === 'mobilize') {
             openMobilizePopup();
             return;
         }
         
-        // Check if action is move
         if (action === 'move') {
             openMovePopup();
             return;
         }
         
-        // Handle other action types
         switch(action) {
             case 'explore':
                 console.log(`Exploring ${tile.x}, ${tile.y}`);
-                // Implement explore logic
                 break;
-            // Handle other action types
         }
     }
     
-    // Handle move event from the Move component
     function handleMove(event) {
         const { groupId, from, to } = event.detail;
         console.log('Moving group:', { groupId, from, to });
         
-        // Direct database write for the move
-        const worldId = $game.currentWorld;
-        const uid = $user.uid;
-        
-        // Calculate chunk coordinates for source tile
         const chunkSize = 20;
         const chunkX = Math.floor(from.x / chunkSize);
         const chunkY = Math.floor(from.y / chunkSize);
         const chunkKey = `${chunkX},${chunkY}`;
         const tileKey = `${from.x},${from.y}`;
         
-        // Get current time and set movement speed based on world speed
         const now = Date.now();
-        const moveSpeed = 1; // Base movement speed in tiles per hour
-        const worldSpeed = $game.worldInfo[worldId]?.speed || 1.0;
+        const moveSpeed = 1;
+        const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
         
-        // Create the updates object to write to the database
         const updates = {};
         
-        // Update the group status to 'moving' and add target coordinates
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'moving';
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/targetX`] = to.x;
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/targetY`] = to.y;
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/moveStarted`] = now;
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/moveSpeed`] = moveSpeed * worldSpeed;
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastUpdated`] = now;
+        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'moving';
+        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/targetX`] = to.x;
+        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/targetY`] = to.y;
+        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/moveStarted`] = now;
+        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/moveSpeed`] = moveSpeed * worldSpeed;
+        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastUpdated`] = now;
         
-        // Apply the update
         update(ref(db), updates)
             .then(() => {
                 console.log('Movement started:', { groupId, to });
             })
             .catch(error => {
                 console.error('Movement error:', error);
+            });
+    }
+
+    function handleMobilize(event) {
+        const { tile, units, includePlayer, name, race } = event.detail;
+        console.log('Mobilizing:', { tile, units, includePlayer, name, race });
+        
+        const chunkSize = 20;
+        const chunkX = Math.floor(tile.x / chunkSize);
+        const chunkY = Math.floor(tile.y / chunkSize);
+        const chunkKey = `${chunkX},${chunkY}`;
+        const tileKey = `${tile.x},${tile.y}`;
+        
+        const now = Date.now();
+        const mobilizationMs = 30 * 60 * 1000;
+        const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
+        const adjustedTime = Math.round(mobilizationMs / worldSpeed);
+        const readyAt = now + adjustedTime;
+        
+        const newGroupId = `group_${uid}_${now}`;
+        
+        const selectedUnits = [];
+        
+        if (includePlayer && $currentPlayer) {
+            selectedUnits.push({
+                id: uid,
+                type: 'player',
+                race: $currentPlayer.race,
+                name: $currentPlayer.displayName || 'Player',
+                strength: 10
+            });
+        }
+        
+        if (units && units.length > 0) {
+            console.log("Selected units:", units);
+        }
+        
+        const updates = {};
+        
+        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${newGroupId}`] = {
+            id: newGroupId,
+            name: name || "New Force",
+            owner: uid,
+            unitCount: selectedUnits.length,
+            race: race || $currentPlayer?.race,
+            created: now,
+            lastUpdated: now,
+            x: tile.x,
+            y: tile.y,
+            status: 'mobilizing',
+            readyAt: readyAt,
+            lastProcessed: now,
+            units: selectedUnits
+        };
+        
+        update(ref(db), updates)
+            .then(() => {
+                console.log('Mobilization started:', { groupId: newGroupId, readyAt });
+            })
+            .catch(error => {
+                console.error('Mobilization error:', error);
             });
     }
 </script>

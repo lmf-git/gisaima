@@ -95,19 +95,33 @@
     currentTile?.terrain?.rarity && currentTile.terrain.rarity !== 'common'
   );
 
-  // Add helper function to get race icon component
-  function getRaceIconComponent(race) {
-    if (!race) return null;
+  // Get a formatted race name for a group
+  function getGroupRaceName(group) {
+    if (!group) return '';
     
-    const raceKey = race.toLowerCase();
-    switch (raceKey) {
-      case 'human': return Human;
-      case 'elf': return Elf;
-      case 'dwarf': return Dwarf;
-      case 'goblin': return Goblin;
-      case 'fairy': return Fairy;
-      default: return null;
+    // Use the race directly from the group object if available
+    if (group.race) return _fmt(group.race);
+    
+    // Fallback to faction if race isn't set
+    if (group.faction) return _fmt(group.faction);
+    
+    // If no race or faction, try to determine from units (legacy support)
+    if (group.units && group.units.length > 0) {
+      // Check if player is in the group
+      const playerUnit = group.units.find(unit => unit.type === 'player');
+      if (playerUnit && playerUnit.race) {
+        return _fmt(playerUnit.race);
+      }
+      
+      // Use the race of the first unit with a race
+      for (const unit of group.units) {
+        if (unit.race) {
+          return _fmt(unit.race);
+        }
+      }
     }
+    
+    return 'Mixed';
   }
 
   // Timer for updating mobilization countdown
@@ -134,8 +148,8 @@
   function calculateMoveCompletionTime(group) {
     if (!group || group.status !== 'moving' || !group.moveStarted) return null;
     
-    const worldId = $game.currentWorld;
-    const worldSpeed = $game.worldInfo[worldId]?.speed || 1.0;
+    // Use reactive value directly instead of storing in a constant
+    const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
     
     const moveStarted = group.moveStarted;
     const moveSpeed = group.moveSpeed || 1.0;
@@ -247,19 +261,52 @@
           <h3>Unit Groups ({groups.length})</h3>
           <ul>
             {#each groups as group}
-              <li>
-                <span class="group-name">{group.name || group.id}</span> - Units: {group.unitCount || "?"}
-                {#if group.status === 'mobilizing' && group.readyAt}
-                  <span class="mobilizing">
-                    Mobilizing: {formatTimeRemaining(group.readyAt)}
-                  </span>
-                {:else if group.status === 'moving' && group.moveStarted}
-                  <span class="moving">
-                    Moving: {formatTimeRemaining(calculateMoveCompletionTime(group))}
-                  </span>
-                {:else if group.status && group.status !== 'idle'}
-                  <span class="status-tag {group.status}">{_fmt(group.status)}</span>
-                {/if}
+              <li class="group-item">
+                <div class="group-race-icon">
+                  {#if group.race?.toLowerCase() === 'human'}
+                    <Human extraClass="race-icon-small" />
+                  {:else if group.race?.toLowerCase() === 'elf'}
+                    <Elf extraClass="race-icon-small" />
+                  {:else if group.race?.toLowerCase() === 'dwarf'}
+                    <Dwarf extraClass="race-icon-small" />
+                  {:else if group.race?.toLowerCase() === 'goblin'}
+                    <Goblin extraClass="race-icon-small" />
+                  {:else if group.race?.toLowerCase() === 'fairy'}
+                    <Fairy extraClass="race-icon-small" />
+                  {:else if group.faction?.toLowerCase() === 'human'}
+                    <Human extraClass="race-icon-small" />
+                  {:else if group.faction?.toLowerCase() === 'elf'}
+                    <Elf extraClass="race-icon-small" />
+                  {:else if group.faction?.toLowerCase() === 'dwarf'}
+                    <Dwarf extraClass="race-icon-small" />
+                  {:else if group.faction?.toLowerCase() === 'goblin'}
+                    <Goblin extraClass="race-icon-small" />
+                  {:else if group.faction?.toLowerCase() === 'fairy'}
+                    <Fairy extraClass="race-icon-small" />
+                  {/if}
+                </div>
+                <div class="group-content">
+                  <div class="group-header">
+                    <span class="group-name">{group.name || group.id}</span>
+                    <span class="group-race">[{getGroupRaceName(group)}]</span>
+                  </div>
+                  <div class="group-info">
+                    <span>Units: {group.unitCount || group.units?.length || "?"}</span>
+                    {#if group.status === 'mobilizing' && group.readyAt}
+                      <span class="mobilizing">
+                        Mobilizing: {formatTimeRemaining(group.readyAt)}
+                      </span>
+                    {:else if group.status === 'moving' && group.moveStarted}
+                      <span class="moving">
+                        Moving: {formatTimeRemaining(calculateMoveCompletionTime(group))}
+                      </span>
+                    {:else if group.status && group.status !== 'idle'}
+                      <span class="status-tag {group.status}">{_fmt(group.status)}</span>
+                    {:else}
+                      <span class="status-tag idle">Idle</span>
+                    {/if}
+                  </div>
+                </div>
               </li>
             {/each}
           </ul>
@@ -568,8 +615,50 @@
     border: 1px solid rgba(255, 128, 255, 0.3);
   }
 
+  .group-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 0.6em;
+    gap: 0.6em;
+  }
+  
+  .group-race-icon {
+    margin-top: 0.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .group-content {
+    flex: 1;
+  }
+  
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    margin-bottom: 0.2em;
+  }
+  
   .group-name {
-    font-weight: 500;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.85);
+    line-height: 1.2;
+  }
+  
+  .group-race {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.6);
+    font-style: italic;
+  }
+  
+  .group-info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6em;
+    font-size: 0.9em;
+    color: rgba(0, 0, 0, 0.7);
   }
   
   .mobilizing {
@@ -615,7 +704,6 @@
     font-size: 0.85em;
     padding: 0.1em 0.4em;
     border-radius: 0.3em;
-    margin-left: 0.5em;
     font-weight: 500;
   }
   
@@ -641,5 +729,42 @@
     background: rgba(128, 128, 128, 0.15);
     border: 1px solid rgba(128, 128, 128, 0.3);
     color: #696969;
+  }
+  
+  .idle {
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .group-owner {
+    font-size: 0.8em;
+    color: rgba(0, 0, 0, 0.6);
+    font-style: italic;
+  }
+  
+  .group-owner.current-user::after {
+    content: " (You)";
+    font-weight: 400;
+    font-style: italic;
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  @media (max-width: 480px) {
+    .group-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.2em;
+    }
+    
+    .group-race {
+      margin-left: 0;
+    }
+    
+    .group-info {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.3em;
+    }
   }
 </style>
