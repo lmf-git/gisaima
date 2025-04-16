@@ -280,9 +280,14 @@
     return activeFilter === 'all' || activeFilter === sectionType;
   }
   
-  // Set active filter
+  // Set active filter and ensure section is expanded when selecting a specific filter
   function setFilter(filter) {
     activeFilter = filter;
+    
+    // If selecting a specific filter (not 'all'), make sure the section is expanded
+    if (filter !== 'all') {
+      collapsedSections[filter] = false;
+    }
   }
   
   // Calculate if any content exists for a given filter
@@ -331,6 +336,27 @@
     // Also highlight the tile
     setHighlighted(x, y);
   }
+
+  // Modified function to get sorted tabs with enabled ones first
+  function getSortedFilterTabs() {
+    // Always keep "all" as the first tab
+    const allTab = filters.find(f => f.id === 'all');
+    
+    // Get other tabs and sort them - enabled first, then disabled
+    const otherTabs = filters
+      .filter(f => f.id !== 'all')
+      .sort((a, b) => {
+        const aHasContent = hasContent(a.id);
+        const bHasContent = hasContent(b.id);
+        
+        if (aHasContent && !bHasContent) return -1;
+        if (!aHasContent && bHasContent) return 1;
+        return 0;
+      });
+    
+    // Return all tab followed by sorted others
+    return [allTab, ...otherTabs];
+  }
 </script>
 
 <div class="entities-wrapper" class:closing>
@@ -343,7 +369,7 @@
     <!-- Force filter tabs to always display when any entities exist -->
     {#if nonEmptyFilters.length > 0}
       <div class="filter-tabs">
-        {#each filters as filter}
+        {#each getSortedFilterTabs() as filter}
           <button 
             class="filter-tab" 
             class:active={activeFilter === filter.id}
@@ -363,46 +389,55 @@
     <div class="entities-content">
       {#if shouldShowSection('structures') && allStructures.length > 0}
         <div class="entities-section">
-          <div class="section-header" onclick={() => toggleSection('structures')}>
+          <div 
+            class="section-header" 
+            onclick={() => toggleSection('structures')}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.structures}
+            onkeydown={(e) => e.key === 'Enter' && toggleSection('structures')}
+          >
             <h4 class:visually-hidden={activeFilter === 'structures'}>
               Structures ({allStructures.length})
             </h4>
             <div class="section-controls">
-              <div class="sort-controls">
-                <button 
-                  class="sort-option" 
-                  class:active={sortOptions.structures.by === 'distance'}
-                  onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'distance'); }}
-                  aria-label={`Sort by distance ${sortOptions.structures.by === 'distance' ? (sortOptions.structures.asc ? 'ascending' : 'descending') : ''}`}
-                >
-                  <span>Distance</span>
-                  {#if sortOptions.structures.by === 'distance'}
-                    <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
-                  {/if}
-                </button>
-                <button 
-                  class="sort-option" 
-                  class:active={sortOptions.structures.by === 'name'}
-                  onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'name'); }}
-                  aria-label={`Sort by name ${sortOptions.structures.by === 'name' ? (sortOptions.structures.asc ? 'ascending' : 'descending') : ''}`}
-                >
-                  <span>Name</span>
-                  {#if sortOptions.structures.by === 'name'}
-                    <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
-                  {/if}
-                </button>
-                <button 
-                  class="sort-option" 
-                  class:active={sortOptions.structures.by === 'type'}
-                  onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'type'); }}
-                  aria-label={`Sort by type ${sortOptions.structures.by === 'type' ? (sortOptions.structures.asc ? 'ascending' : 'descending') : ''}`}
-                >
-                  <span>Type</span>
-                  {#if sortOptions.structures.by === 'type'}
-                    <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
-                  {/if}
-                </button>
-              </div>
+              {#if !collapsedSections.structures}
+                <div class="sort-controls">
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.structures.by === 'distance'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'distance'); }}
+                    aria-label={`Sort by distance ${sortOptions.structures.by === 'distance' ? (sortOptions.structures.asc ? 'ascending' : 'descending') : ''}`}
+                  >
+                    <span>Distance</span>
+                    {#if sortOptions.structures.by === 'distance'}
+                      <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.structures.by === 'name'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'name'); }}
+                    aria-label={`Sort by name ${sortOptions.structures.by === 'name' ? (sortOptions.structures.asc ? 'ascending' : 'descending') : ''}`}
+                  >
+                    <span>Name</span>
+                    {#if sortOptions.structures.by === 'name'}
+                      <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.structures.by === 'type'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'type'); }}
+                    aria-label={`Sort by type ${sortOptions.structures.by === 'type' ? (sortOptions.structures.asc ? 'ascending' : 'descending') : ''}`}
+                  >
+                    <span>Type</span>
+                    {#if sortOptions.structures.by === 'type'}
+                      <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                </div>
+              {/if}
               <button class="collapse-button" aria-label={collapsedSections.structures ? "Expand structures" : "Collapse structures"}>
                 {collapsedSections.structures ? '▼' : '▲'}
               </button>
@@ -439,9 +474,6 @@
                       <span class="entity-coords">{formatCoords(structure.x, structure.y)}</span>
                     </div>
                     <div class="entity-info">
-                      {#if structure.faction}
-                        <div class="entity-faction">{_fmt(structure.faction)}</div>
-                      {/if}
                       {#if structure.type}
                         <div class="entity-type">{_fmt(structure.type)}</div>
                       {/if}
@@ -457,46 +489,55 @@
       
       {#if shouldShowSection('players') && allPlayers.length > 0}
         <div class="entities-section">
-          <div class="section-header" onclick={() => toggleSection('players')}>
+          <div 
+            class="section-header" 
+            onclick={() => toggleSection('players')}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.players}
+            onkeydown={(e) => e.key === 'Enter' && toggleSection('players')}
+          >
             <h4 class:visually-hidden={activeFilter === 'players'}>
               Players ({allPlayers.length})
             </h4>
             <div class="section-controls">
-              <div class="sort-controls">
-                <button 
-                  class="sort-option" 
-                  class:active={sortOptions.players.by === 'distance'}
-                  onclick={(e) => { e.stopPropagation(); setSortOption('players', 'distance'); }}
-                  aria-label={`Sort by distance ${sortOptions.players.by === 'distance' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
-                >
-                  <span>Distance</span>
-                  {#if sortOptions.players.by === 'distance'}
-                    <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
-                  {/if}
-                </button>
-                <button 
-                  class="sort-option" 
-                  class:active={sortOptions.players.by === 'name'}
-                  onclick={(e) => { e.stopPropagation(); setSortOption('players', 'name'); }}
-                  aria-label={`Sort by name ${sortOptions.players.by === 'name' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
-                >
-                  <span>Name</span>
-                  {#if sortOptions.players.by === 'name'}
-                    <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
-                  {/if}
-                </button>
-                <button 
-                  class="sort-option" 
-                  class:active={sortOptions.players.by === 'type'}
-                  onclick={(e) => { e.stopPropagation(); setSortOption('players', 'type'); }}
-                  aria-label={`Sort by race ${sortOptions.players.by === 'type' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
-                >
-                  <span>Race</span>
-                  {#if sortOptions.players.by === 'type'}
-                    <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
-                  {/if}
-                </button>
-              </div>
+              {#if !collapsedSections.players}
+                <div class="sort-controls">
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.players.by === 'distance'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('players', 'distance'); }}
+                    aria-label={`Sort by distance ${sortOptions.players.by === 'distance' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
+                  >
+                    <span>Distance</span>
+                    {#if sortOptions.players.by === 'distance'}
+                      <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.players.by === 'name'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('players', 'name'); }}
+                    aria-label={`Sort by name ${sortOptions.players.by === 'name' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
+                  >
+                    <span>Name</span>
+                    {#if sortOptions.players.by === 'name'}
+                      <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.players.by === 'type'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('players', 'type'); }}
+                    aria-label={`Sort by race ${sortOptions.players.by === 'type' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
+                  >
+                    <span>Race</span>
+                    {#if sortOptions.players.by === 'type'}
+                      <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                </div>
+              {/if}
               <button class="collapse-button" aria-label={collapsedSections.players ? "Expand players" : "Collapse players"}>
                 {collapsedSections.players ? '▼' : '▲'}
               </button>
@@ -549,46 +590,55 @@
       
       {#if shouldShowSection('groups') && allGroups.length > 0}
         <div class="entities-section">
-          <div class="section-header" onclick={() => toggleSection('groups')}>
+          <div 
+            class="section-header" 
+            onclick={() => toggleSection('groups')}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.groups}
+            onkeydown={(e) => e.key === 'Enter' && toggleSection('groups')}
+          >
             <h4 class:visually-hidden={activeFilter === 'groups'}>
               Groups ({allGroups.length})
             </h4>
             <div class="section-controls">
-              <div class="sort-controls">
-                <button 
-                  class="sort-option" 
-                  class:active={sortOptions.groups.by === 'distance'}
-                  onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'distance'); }}
-                  aria-label={`Sort by distance ${sortOptions.groups.by === 'distance' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
-                >
-                  <span>Distance</span>
-                  {#if sortOptions.groups.by === 'distance'}
-                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
-                  {/if}
-                </button>
-                <button 
-                  class="sort-option" 
-                  class:active={sortOptions.groups.by === 'name'}
-                  onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'name'); }}
-                  aria-label={`Sort by name ${sortOptions.groups.by === 'name' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
-                >
-                  <span>Name</span>
-                  {#if sortOptions.groups.by === 'name'}
-                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
-                  {/if}
-                </button>
-                <button 
-                  class="sort-option" 
-                  class:active={sortOptions.groups.by === 'status'}
-                  onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'status'); }}
-                  aria-label={`Sort by status ${sortOptions.groups.by === 'status' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
-                >
-                  <span>Status</span>
-                  {#if sortOptions.groups.by === 'status'}
-                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
-                  {/if}
-                </button>
-              </div>
+              {#if !collapsedSections.groups}
+                <div class="sort-controls">
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.groups.by === 'distance'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'distance'); }}
+                    aria-label={`Sort by distance ${sortOptions.groups.by === 'distance' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
+                  >
+                    <span>Distance</span>
+                    {#if sortOptions.groups.by === 'distance'}
+                      <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.groups.by === 'name'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'name'); }}
+                    aria-label={`Sort by name ${sortOptions.groups.by === 'name' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
+                  >
+                    <span>Name</span>
+                    {#if sortOptions.groups.by === 'name'}
+                      <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.groups.by === 'status'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'status'); }}
+                    aria-label={`Sort by status ${sortOptions.groups.by === 'status' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
+                  >
+                    <span>Status</span>
+                    {#if sortOptions.groups.by === 'status'}
+                      <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                </div>
+              {/if}
               <button class="collapse-button" aria-label={collapsedSections.groups ? "Expand groups" : "Collapse groups"}>
                 {collapsedSections.groups ? '▼' : '▲'}
               </button>
@@ -651,7 +701,14 @@
 
       {#if shouldShowSection('items') && allItems.length > 0}
         <div class="entities-section">
-          <div class="section-header" onclick={() => toggleSection('items')}>
+          <div 
+            class="section-header" 
+            onclick={() => toggleSection('items')}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.items}
+            onkeydown={(e) => e.key === 'Enter' && toggleSection('items')}
+          >
             <h4 class:visually-hidden={activeFilter === 'items'}>
               Items ({allItems.length})
             </h4>
@@ -1008,15 +1065,6 @@
     color: rgba(0, 0, 0, 0.6);
   }
   
-  .entity-faction {
-    font-size: 0.85em;
-    background-color: rgba(0, 0, 0, 0.06);
-    padding: 0.1em 0.4em;
-    border-radius: 0.2em;
-    margin-right: 0.5em;
-    display: inline-block;
-  }
-  
   .entity-type {
     font-size: 0.85em;
     color: rgba(0, 0, 0, 0.6);
@@ -1099,7 +1147,7 @@
       right: 0.5em;
       font-size: 1em;
     }
-    
+     
     .entities-panel {
       max-width: 100%;
     }
@@ -1288,6 +1336,11 @@
   
   .section-header:hover {
     background-color: rgba(0, 0, 0, 0.03);
+  }
+  
+  .section-header:focus {
+    outline: 2px solid rgba(66, 133, 244, 0.6);
+    border-radius: 0.3em;
   }
   
   .collapse-button {
