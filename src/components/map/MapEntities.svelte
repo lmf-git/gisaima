@@ -880,6 +880,24 @@
     animation: reveal 0.4s ease-out forwards;
     transform-origin: top right;
   }
+
+  .map-entities {
+    position: fixed;
+    top: 0;
+    right: 0;
+    padding: .5em;
+    width: 100%;
+    max-width: 25em;
+    display: flex;
+    flex-direction: column;
+    gap: .5em;
+    z-index: 1100; /* Increase z-index to be higher than the grid */
+    transform: translateZ(0); /* Create own stacking context */
+    will-change: transform; /* Optimize for transform changes */
+    pointer-events: none; /* Allow clicks to pass through to map */
+    max-height: 100vh;
+    overflow: hidden;
+  }
   
   /* Filter tabs styling */
   .filter-tabs {

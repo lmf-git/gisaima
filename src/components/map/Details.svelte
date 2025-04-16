@@ -374,11 +374,13 @@
     position: absolute;
     bottom: 2.5em;
     right: .5em;
-    z-index: 1001; /* Standardize z-index to 1001 */
+    z-index: 1200; /* Increased z-index to be higher than MapEntities */
     transition: opacity 0.2s ease;
     font-size: 1.2em;
     font-family: var(--font-body);
     max-width: calc(100% - 1em); /* Ensure it doesn't overflow screen width */
+    transform: translateZ(0); /* Create own stacking context */
+    will-change: transform; /* Optimize for transform changes */
   }
   
   .info {

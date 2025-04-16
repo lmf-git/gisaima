@@ -895,11 +895,13 @@
     overflow: hidden;
     background: var(--color-dark-blue);
     user-select: none;
-    z-index: 1;
+    z-index: 1; /* Keep this z-index low */
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    transform: translateZ(0);
+    will-change: transform;
   }
 
   .map {
@@ -914,12 +916,20 @@
       color-mix(in srgb, var(--terrain-color) 15%, var(--color-dark-blue))
     );
     transition: background 1s ease;
+    /* Ensure map consistency during movement */
+    position: relative;
+    margin: 0;
+    padding: 0;
   }
 
   .grid {
     display: grid;
     box-sizing: border-box;
-    z-index: 1;
+    z-index: 2; /* Keep grid z-index lower than UI components */
+    /* Fix for grid wobbling during drag */
+    transform: translateZ(0);
+    will-change: transform;
+    touch-action: manipulation;
   }
 
   .main-grid {
@@ -927,6 +937,10 @@
     grid-template-rows: repeat(var(--rows), 1fr);
     width: 100%;
     height: 100%;
+    /* Ensure grid is always positioned the same way */
+    position: relative;
+    margin: 0;
+    padding: 0;
   }
 
   .main-grid.animated .tile {
@@ -991,18 +1005,15 @@
     z-index: 10;
   }
   
-  .map.moving .tile::after {
-    content: none;
+  .map.moving {
+    cursor: grabbing;
+    /* Add these properties to ensure no layout changes during movement */
+    will-change: transform;
   }
 
   .map.moving .tile {
     pointer-events: none;
     cursor: grabbing;
-    z-index: auto;
-  }
-
-  .map.moving .tile.highlighted {
-    box-shadow: none;
   }
 
   .coords {
@@ -1394,8 +1405,12 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 5;
+    z-index: 5; /* Keep this lower than UI components */
     overflow: visible;
+    /* Fix wobbling issue by ensuring proper positioning */
+    transform: translateZ(0);
+    will-change: transform;
+    touch-action: none;
   }
   
   .path-group {
