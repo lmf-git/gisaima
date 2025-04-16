@@ -24,7 +24,8 @@
         setupFromWorldInfo,
         setupFromGameStore,
         cleanup,
-        isInternalUrlChange
+        isInternalUrlChange,
+        setHighlighted // Add this import
     } from "../../lib/stores/map.js";
     
     import Tutorial from '../../components/map/Tutorial.svelte';
