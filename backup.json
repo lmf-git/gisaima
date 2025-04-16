@@ -1,0 +1,1579 @@
+{
+  "players": {
+    "3DK5F3CH8TTbB4sC5AG9yhcyKYA3": {
+      "worlds": {
+        "default-world": {
+          "joined": 1742949414611,
+          "lastLocation": {
+            "timestamp": 1742949419182,
+            "x": 5,
+            "y": -5
+          },
+          "lastSpawn": "0:0:5:-5",
+          "race": "dwarf",
+          "spawned": true
+        },
+        "fantasy-realm": {
+          "joined": 1742953585514,
+          "lastLocation": {
+            "timestamp": 1742953601330,
+            "x": 25,
+            "y": 25
+          },
+          "lastSpawn": "1:1:25:25",
+          "race": "dwarf",
+          "spawned": true
+        },
+        "wasteland": {
+          "joined": 1742948884976,
+          "lastLocation": {
+            "timestamp": 1742948988099,
+            "x": 7,
+            "y": 7
+          },
+          "lastSpawn": "0:0:7:7",
+          "race": "goblin",
+          "spawned": true
+        }
+      }
+    },
+    "4phlqu0xieSPNwQAGpw8EKfuuXz2": {
+      "worlds": {
+        "fantasy-realm": {
+          "joined": 1743288630994,
+          "lastLocation": {
+            "timestamp": 1743288637981,
+            "x": 8,
+            "y": 20
+          },
+          "lastSpawn": "0:1:8:20",
+          "race": "goblin",
+          "spawned": true
+        }
+      }
+    },
+    "5ARWZrKpldWdXbNWwkNwds39ZRp2": {
+      "worlds": {
+        "default-world": {
+          "joined": 1742672610796,
+          "lastLocation": {
+            "timestamp": 1742672683893,
+            "x": 0,
+            "y": 0
+          },
+          "lastSpawn": "0:0:0:0",
+          "race": "human",
+          "spawned": true
+        }
+      }
+    },
+    "5YbXBupUvDbeIWjBNaozDpWW78J3": {
+      "worlds": {
+        "wasteland": {
+          "joined": 1744774559430,
+          "lastLocation": {
+            "timestamp": 1744774625679,
+            "x": -18,
+            "y": 10
+          },
+          "lastSpawn": "-1:0:-18:10",
+          "race": "elf",
+          "spawned": true
+        }
+      }
+    },
+    "DY1xkrs9obUg7bDopCzqD7z8zF43": {
+      "worlds": {
+        "fantasy-realm": {
+          "joined": 1742622090885,
+          "lastLocation": {
+            "timestamp": 1742622095440,
+            "x": 12,
+            "y": 8
+          },
+          "lastSpawn": "0:0:12:8",
+          "race": "human",
+          "spawned": true
+        }
+      }
+    },
+    "EphNRZQBlgO4dsuSdlPUOnn4VRF3": {
+      "worlds": {
+        "fantasy-realm": {
+          "joined": 1742622687523,
+          "lastLocation": {
+            "timestamp": 1742622690787,
+            "x": 25,
+            "y": 25
+          },
+          "lastSpawn": "1:1:25:25",
+          "race": "dwarf",
+          "spawned": true
+        },
+        "wasteland": {
+          "joined": 1742622549859,
+          "lastLocation": {
+            "timestamp": 1742622554424,
+            "x": -18,
+            "y": 10
+          },
+          "lastSpawn": "-1:0:-18:10",
+          "race": "elf",
+          "spawned": true
+        }
+      }
+    },
+    "Fsec3klBgbOgCMVDkHYM0CCxijg2": {
+      "worlds": {
+        "default-world": {
+          "joined": 1743015242827,
+          "lastLocation": {
+            "timestamp": 1743015253553,
+            "x": -5,
+            "y": 5
+          },
+          "lastSpawn": "0:0:-5:5",
+          "race": "elf",
+          "spawned": true
+        }
+      }
+    },
+    "IjbhqCxUbOWjoD6F63Nz3LnIJ9y2": {
+      "worlds": {
+        "wasteland": {
+          "joined": 1742622520064,
+          "lastLocation": {
+            "timestamp": 1742622524271,
+            "x": 10,
+            "y": 22
+          },
+          "lastSpawn": "0:1:10:22",
+          "race": "fairy",
+          "spawned": true
+        }
+      }
+    },
+    "KusuFpPfrgc2WOWt4GUWrEzR8S73": {
+      "worlds": {
+        "default-world": {
+          "joined": 1743825579523,
+          "lastLocation": {
+            "timestamp": 1743825702101,
+            "x": 0,
+            "y": 0
+          },
+          "lastSpawn": "0:0:0:0",
+          "race": "human",
+          "spawned": true
+        },
+        "fantasy-realm": {
+          "joined": 1743968030349,
+          "lastLocation": {
+            "timestamp": 1743968041302,
+            "x": 12,
+            "y": 8
+          },
+          "lastSpawn": "0:0:12:8",
+          "race": "human",
+          "spawned": true
+        }
+      }
+    },
+    "MAhdpG6rlrUSx25X5yps2HhFmZi2": {
+      "worlds": {
+        "wasteland": {
+          "joined": 1742625281240,
+          "lastLocation": {
+            "timestamp": 1742625308021,
+            "x": 10,
+            "y": 22
+          },
+          "lastSpawn": "0:1:10:22",
+          "race": "fairy",
+          "spawned": true
+        }
+      }
+    },
+    "NnCx3WwHYmQ8WIRnUEMZ16KLylj1": {
+      "worlds": {
+        "default-world": {
+          "joined": 1742674390221,
+          "lastLocation": {
+            "timestamp": 1742674395103,
+            "x": 5,
+            "y": 5
+          },
+          "lastSpawn": "0:0:5:5",
+          "race": "fairy",
+          "spawned": true
+        },
+        "fantasy-realm": {
+          "joined": 1742674272376,
+          "lastLocation": {
+            "timestamp": 1742674281645,
+            "x": 8,
+            "y": 20
+          },
+          "lastSpawn": "0:1:8:20",
+          "race": "goblin",
+          "spawned": true
+        },
+        "wasteland": {
+          "joined": 1742672962965,
+          "lastLocation": {
+            "timestamp": 1742672967507,
+            "x": 7,
+            "y": 7
+          },
+          "lastSpawn": "0:0:7:7",
+          "race": "goblin",
+          "spawned": true
+        }
+      }
+    },
+    "NnTgA3ODhqNrR6EUuVt6bLh2Psi2": {
+      "worlds": {
+        "default-world": {
+          "joined": 1743358139561,
+          "lastLocation": {
+            "timestamp": 1743358151689,
+            "x": -5,
+            "y": 5
+          },
+          "lastSpawn": "0:0:-5:5",
+          "race": "elf",
+          "spawned": true
+        }
+      }
+    },
+    "O5BJ1vaAnNNBXHhjsuDTmOWUYeA2": {
+      "worlds": {
+        "default-world": {
+          "joined": 1742877889324,
+          "lastLocation": {
+            "timestamp": 1742877900495,
+            "x": -5,
+            "y": -5
+          },
+          "lastSpawn": "0:0:-5:-5",
+          "race": "goblin",
+          "spawned": true
+        }
+      }
+    },
+    "UC5oMeFJgfMD9rcwQFDrDm02yfq2": {
+      "worlds": {
+        "default-world": {
+          "joined": 1744769351748,
+          "lastLocation": {
+            "timestamp": 1744769370152,
+            "x": 5,
+            "y": 5
+          },
+          "lastSpawn": "0:0:5:5",
+          "race": "fairy",
+          "spawned": true
+        }
+      }
+    },
+    "WgQ1uO3shDdLjVHJ36UCSws8dTk1": {
+      "worlds": {
+        "default-world": {
+          "joined": 1742665693258,
+          "lastLocation": {
+            "timestamp": 1742665699393,
+            "x": -5,
+            "y": 5
+          },
+          "lastSpawn": "0:0:-5:5",
+          "race": "elf",
+          "spawned": true
+        }
+      }
+    },
+    "WuFJ8g8xxhXizYWoeU7ngGFx1qk2": {
+      "worlds": {
+        "default-world": {
+          "joined": 1742656491703,
+          "lastLocation": {
+            "timestamp": 1742656496375,
+            "x": 5,
+            "y": 5
+          },
+          "lastSpawn": "0:0:5:5",
+          "race": "fairy",
+          "spawned": true
+        }
+      }
+    },
+    "YWln4rQwMngNR8vpai807kRzYMc2": {
+      "worlds": {
+        "fantasy-realm": {
+          "joined": 1742937611107,
+          "lastLocation": {
+            "timestamp": 1742937778033,
+            "x": 8,
+            "y": 20
+          },
+          "lastSpawn": "0:1:8:20",
+          "race": "goblin",
+          "spawned": true
+        }
+      }
+    },
+    "Znp9qIXV78Oq9tK8K3dtpp434r42": {
+      "worlds": {
+        "wasteland": {
+          "joined": 1742622281808,
+          "lastLocation": {
+            "timestamp": 1742622286133,
+            "x": -18,
+            "y": 10
+          },
+          "lastSpawn": "-1:0:-18:10",
+          "race": "elf",
+          "spawned": true
+        }
+      }
+    },
+    "h4e8YaIeFTVcrMMHujeg1CP6D2I3": {
+      "worlds": {
+        "default-world": {
+          "joined": 1742625092847,
+          "lastLocation": {
+            "timestamp": 1742625127810,
+            "x": 5,
+            "y": -5
+          },
+          "lastSpawn": "0:0:5:-5",
+          "race": "dwarf",
+          "spawned": true
+        }
+      }
+    },
+    "jWDDzKvZI0cmMUVuFESKieFnPGB3": {
+      "worlds": {
+        "default-world": {
+          "joined": 1744772478365,
+          "lastLocation": {
+            "timestamp": 1744772487546,
+            "x": -5,
+            "y": -5
+          },
+          "lastSpawn": "0:0:-5:-5",
+          "race": "goblin",
+          "spawned": true
+        }
+      }
+    },
+    "mVvrV0rJfwfQ2l3CMvKrbRnOFjy2": {
+      "worlds": {
+        "default-world": {
+          "joined": 1742621581782,
+          "lastLocation": {
+            "timestamp": 1742621588551,
+            "x": 5,
+            "y": 5
+          },
+          "lastSpawn": "0:0:5:5",
+          "race": "fairy",
+          "spawned": true
+        }
+      }
+    },
+    "mxRamsFeG5e1BAb2uoJ42s5unX52": {
+      "worlds": {
+        "default-world": {
+          "joined": 1743859615958,
+          "lastLocation": {
+            "timestamp": 1743859659230,
+            "x": -5,
+            "y": 5
+          },
+          "lastSpawn": "0:0:-5:5",
+          "race": "elf",
+          "spawned": true
+        },
+        "fantasy-realm": {
+          "joined": 1743049613007,
+          "lastLocation": {
+            "timestamp": 1743049616541,
+            "x": 25,
+            "y": 25
+          },
+          "lastSpawn": "1:1:25:25",
+          "race": "dwarf",
+          "spawned": true
+        },
+        "wasteland": {
+          "joined": 1743010918600,
+          "lastLocation": {
+            "timestamp": 1743010962699,
+            "x": 7,
+            "y": 7
+          },
+          "lastSpawn": "0:0:7:7",
+          "race": "goblin",
+          "spawned": true
+        }
+      }
+    },
+    "ro0HfxETCyO8HBT0Lkmgc0A2Riq2": {
+      "worlds": {
+        "default-world": {
+          "joined": 1742878894837,
+          "lastLocation": {
+            "timestamp": 1742879003272,
+            "x": 0,
+            "y": 0
+          },
+          "lastSpawn": "0:0:0:0",
+          "race": "human",
+          "spawned": true
+        },
+        "fantasy-realm": {
+          "joined": 1742862117442,
+          "lastLocation": {
+            "timestamp": 1742862121576,
+            "x": 8,
+            "y": 20
+          },
+          "lastSpawn": "0:1:8:20",
+          "race": "goblin",
+          "spawned": true
+        }
+      }
+    },
+    "t9vNUrbbFrS7brYtGI08jDK2H5Y2": {
+      "worlds": {
+        "fantasy-realm": {
+          "joined": 1742876177666,
+          "lastLocation": {
+            "timestamp": 1742876181309,
+            "x": 8,
+            "y": 20
+          },
+          "lastSpawn": "0:1:8:20",
+          "race": "goblin",
+          "spawned": true
+        }
+      }
+    },
+    "u5H2jDLvObghGQPNFkBpjUVis2d2": {
+      "worlds": {
+        "default-world": {
+          "joined": 1742931064215,
+          "lastLocation": {
+            "timestamp": 1742931067495,
+            "x": -5,
+            "y": -5
+          },
+          "lastSpawn": "0:0:-5:-5",
+          "race": "goblin",
+          "spawned": true
+        },
+        "fantasy-realm": {
+          "joined": 1742920888655,
+          "lastLocation": {
+            "timestamp": 1742920960754,
+            "x": -15,
+            "y": 12
+          },
+          "lastSpawn": "-1:0:-15:12",
+          "race": "fairy",
+          "spawned": true
+        },
+        "wasteland": {
+          "joined": 1742881523604,
+          "lastLocation": {
+            "timestamp": 1742881526905,
+            "x": 7,
+            "y": 7
+          },
+          "lastSpawn": "0:0:7:7",
+          "race": "goblin",
+          "spawned": true
+        }
+      }
+    },
+    "uSbkLw9uqCcKPMOSGwhNTH7DBwx2": {
+      "worlds": {
+        "fantasy-realm": {
+          "joined": 1742623710471,
+          "race": "elf",
+          "spawned": false
+        }
+      }
+    },
+    "wFfeehech1O9cjufI8P2hEDeOmt1": {
+      "worlds": {
+        "default-world": {
+          "joined": 1742621161794,
+          "lastLocation": {
+            "timestamp": 1742621174180,
+            "x": 0,
+            "y": 0
+          },
+          "lastSpawn": "0:0:0:0",
+          "race": "human",
+          "spawned": true
+        },
+        "fantasy-realm": {
+          "joined": 1742622033243,
+          "lastLocation": {
+            "timestamp": 1742622036951,
+            "x": 5,
+            "y": 5
+          },
+          "lastSpawn": "0:0:5:5",
+          "race": "elf",
+          "spawned": true
+        }
+      }
+    }
+  },
+  "worlds": {
+    "default-world": {
+      "chunks": {
+        "-1,-1": {
+          "-5,-5": {
+            "players": {
+              "O5BJ1vaAnNNBXHhjsuDTmOWUYeA2": {
+                "displayName": "Player",
+                "lastActive": 1742877900834,
+                "race": "goblin",
+                "uid": "O5BJ1vaAnNNBXHhjsuDTmOWUYeA2"
+              },
+              "jWDDzKvZI0cmMUVuFESKieFnPGB3": {
+                "displayName": "Player",
+                "lastActive": 1744772487804,
+                "race": "goblin",
+                "uid": "jWDDzKvZI0cmMUVuFESKieFnPGB3"
+              },
+              "u5H2jDLvObghGQPNFkBpjUVis2d2": {
+                "displayName": "Player",
+                "lastActive": 1742931067808,
+                "race": "goblin",
+                "uid": "u5H2jDLvObghGQPNFkBpjUVis2d2"
+              }
+            }
+          }
+        },
+        "-1,0": {
+          "-5,5": {
+            "players": {
+              "Fsec3klBgbOgCMVDkHYM0CCxijg2": {
+                "displayName": "anotherzebra344",
+                "lastActive": 1743015253627,
+                "race": "elf",
+                "uid": "Fsec3klBgbOgCMVDkHYM0CCxijg2"
+              },
+              "NnTgA3ODhqNrR6EUuVt6bLh2Psi2": {
+                "displayName": "Player",
+                "lastActive": 1743358152281,
+                "race": "elf",
+                "uid": "NnTgA3ODhqNrR6EUuVt6bLh2Psi2"
+              },
+              "WgQ1uO3shDdLjVHJ36UCSws8dTk1": {
+                "displayName": "Player",
+                "lastActive": 1742665700995,
+                "race": "elf",
+                "uid": "WgQ1uO3shDdLjVHJ36UCSws8dTk1"
+              },
+              "mxRamsFeG5e1BAb2uoJ42s5unX52": {
+                "displayName": "Player",
+                "lastActive": 1743859659577,
+                "race": "elf",
+                "uid": "mxRamsFeG5e1BAb2uoJ42s5unX52"
+              }
+            },
+            "groups": {
+              "group_1681234567_1234": {
+                "id": "group_1681234567_1234",
+                "name": "Elven Pathfinders",
+                "owner": "WgQ1uO3shDdLjVHJ36UCSws8dTk1",
+                "unitCount": 4,
+                "faction": "elf",
+                "created": 1742700000000,
+                "lastUpdated": 1742700001000,
+                "x": -5,
+                "y": 5,
+                "status": "idle",
+                "lastProcessed": 1742700001000,
+                "units": [
+                  {
+                    "id": "WgQ1uO3shDdLjVHJ36UCSws8dTk1",
+                    "type": "player",
+                    "race": "elf",
+                    "name": "Player",
+                    "strength": 10
+                  },
+                  {
+                    "id": "unit_1",
+                    "type": "npc",
+                    "race": "elf",
+                    "name": "Scout",
+                    "strength": 5
+                  },
+                  {
+                    "id": "unit_2",
+                    "type": "npc",
+                    "race": "elf",
+                    "name": "Archer",
+                    "strength": 8
+                  },
+                  {
+                    "id": "unit_3",
+                    "type": "npc",
+                    "race": "elf",
+                    "name": "Ranger",
+                    "strength": 7
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "0,-1": {
+          "5,-5": {
+            "players": {
+              "3DK5F3CH8TTbB4sC5AG9yhcyKYA3": {
+                "displayName": "Player",
+                "lastActive": 1742949419430,
+                "race": "dwarf",
+                "uid": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3"
+              },
+              "h4e8YaIeFTVcrMMHujeg1CP6D2I3": {
+                "displayName": "Player",
+                "lastActive": 1742625128087,
+                "race": "dwarf",
+                "uid": "h4e8YaIeFTVcrMMHujeg1CP6D2I3"
+              }
+            }
+          }
+        },
+        "0,0": {
+          "-5,-5": {
+            "structure": {
+              "description": "A concealed camp for goblin scouts",
+              "faction": "goblin",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Goblin Hideout",
+              "type": "spawn"
+            }
+          },
+          "-5,5": {
+            "structure": {
+              "description": "A small woodland camp for elven travelers",
+              "faction": "elf",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Elven Grove",
+              "type": "spawn"
+            }
+          },
+          "0,0": {
+            "players": {
+              "5ARWZrKpldWdXbNWwkNwds39ZRp2": {
+                "displayName": "chickenroostart",
+                "lastActive": 1742672684017,
+                "race": "human",
+                "uid": "5ARWZrKpldWdXbNWwkNwds39ZRp2"
+              },
+              "KusuFpPfrgc2WOWt4GUWrEzR8S73": {
+                "displayName": "Player",
+                "lastActive": 1743825702367,
+                "race": "human",
+                "uid": "KusuFpPfrgc2WOWt4GUWrEzR8S73"
+              },
+              "ro0HfxETCyO8HBT0Lkmgc0A2Riq2": {
+                "displayName": "iavarice36",
+                "lastActive": 1742879003540,
+                "race": "human",
+                "uid": "ro0HfxETCyO8HBT0Lkmgc0A2Riq2"
+              },
+              "wFfeehech1O9cjufI8P2hEDeOmt1": {
+                "displayName": "Player",
+                "lastActive": 1742621174438,
+                "race": "human",
+                "uid": "wFfeehech1O9cjufI8P2hEDeOmt1"
+              }
+            },
+            "structure": {
+              "description": "The central arrival point in this world",
+              "faction": "human",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Central Spawn",
+              "type": "spawn"
+            },
+            "groups": {
+              "group_1681234567_5678": {
+                "id": "group_1681234567_5678",
+                "name": "Town Guard",
+                "owner": "5ARWZrKpldWdXbNWwkNwds39ZRp2",
+                "unitCount": 8,
+                "faction": "human",
+                "created": 1742700000000,
+                "lastUpdated": 1742700003000,
+                "x": 0,
+                "y": 0,
+                "status": "stationed",
+                "lastProcessed": 1742700003000,
+                "units": [
+                  {
+                    "id": "5ARWZrKpldWdXbNWwkNwds39ZRp2",
+                    "type": "player",
+                    "race": "human",
+                    "name": "chickenroostart",
+                    "strength": 10
+                  },
+                  {
+                    "id": "guard_1",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Guard",
+                    "strength": 6
+                  },
+                  {
+                    "id": "guard_2",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Guard",
+                    "strength": 6
+                  },
+                  {
+                    "id": "guard_3",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Guard Captain",
+                    "strength": 12
+                  },
+                  {
+                    "id": "guard_4",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Swordsman",
+                    "strength": 8
+                  },
+                  {
+                    "id": "guard_5",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Archer",
+                    "strength": 7
+                  },
+                  {
+                    "id": "guard_6",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Healer",
+                    "strength": 5
+                  },
+                  {
+                    "id": "guard_7",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Knight",
+                    "strength": 14
+                  }
+                ]
+              }
+            }
+          },
+          "5,-5": {
+            "structure": {
+              "description": "A mining outpost for dwarven prospectors",
+              "faction": "dwarf",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Dwarven Enclave",
+              "type": "spawn"
+            }
+          },
+          "5,5": {
+            "players": {
+              "NnCx3WwHYmQ8WIRnUEMZ16KLylj1": {
+                "displayName": "geage",
+                "lastActive": 1742674395384,
+                "race": "fairy",
+                "uid": "NnCx3WwHYmQ8WIRnUEMZ16KLylj1"
+              },
+              "UC5oMeFJgfMD9rcwQFDrDm02yfq2": {
+                "displayName": "Player",
+                "lastActive": 1744769370464,
+                "race": "fairy",
+                "uid": "UC5oMeFJgfMD9rcwQFDrDm02yfq2"
+              },
+              "WuFJ8g8xxhXizYWoeU7ngGFx1qk2": {
+                "displayName": "Player",
+                "lastActive": 1742656496721,
+                "race": "fairy",
+                "uid": "WuFJ8g8xxhXizYWoeU7ngGFx1qk2"
+              },
+              "mVvrV0rJfwfQ2l3CMvKrbRnOFjy2": {
+                "displayName": "Guest mVvr",
+                "lastActive": 1742621588863,
+                "race": "fairy",
+                "uid": "mVvrV0rJfwfQ2l3CMvKrbRnOFjy2"
+              }
+            },
+            "structure": {
+              "description": "A ring of mushrooms where fairies gather",
+              "faction": "fairy",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Fairy Circle",
+              "type": "spawn"
+            }
+          }
+        }
+      },
+      "info": {
+        "biomes": [
+          "plains",
+          "forest",
+          "hills"
+        ],
+        "center": {
+          "x": 1200,
+          "y": 50
+        },
+        "created": 1688388000000,
+        "description": "A generic starter world for new players",
+        "name": "Default World",
+        "playerCount": 8,
+        "seed": 10101010,
+        "speed": 1.0
+      },
+      "spawns": {
+        "0:0:-5:-5": true,
+        "0:0:-5:5": true,
+        "0:0:0:0": true,
+        "0:0:5:-5": true,
+        "0:0:5:5": true
+      }
+    },
+    "fantasy-realm": {
+      "chunks": {
+        "-1,0": {
+          "-12,8": {
+            "structure": {
+              "description": "A peaceful settlement along the crystal river",
+              "faction": "human",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Riverside Haven",
+              "type": "spawn"
+            }
+          },
+          "-15,12": {
+            "players": {
+              "u5H2jDLvObghGQPNFkBpjUVis2d2": {
+                "displayName": "Player",
+                "lastActive": 1742920961089,
+                "race": "fairy",
+                "uid": "u5H2jDLvObghGQPNFkBpjUVis2d2"
+              }
+            },
+            "structure": {
+              "description": "A magical clearing where fairy folk gather",
+              "faction": "fairy",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Fairy Glade",
+              "type": "spawn"
+            }
+          }
+        },
+        "0,0": {
+          "12,8": {
+            "players": {
+              "DY1xkrs9obUg7bDopCzqD7z8zF43": {
+                "displayName": "Guest DY1x",
+                "lastActive": 1742622095967,
+                "race": "human",
+                "uid": "DY1xkrs9obUg7bDopCzqD7z8zF43"
+              },
+              "KusuFpPfrgc2WOWt4GUWrEzR8S73": {
+                "displayName": "Player",
+                "lastActive": 1743968041614,
+                "race": "human",
+                "uid": "KusuFpPfrgc2WOWt4GUWrEzR8S73"
+              }
+            },
+            "structure": {
+              "description": "A bustling community of human traders and farmers",
+              "faction": "human",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Human Settlement",
+              "type": "spawn"
+            },
+            "groups": {
+              "group_1681234567_8765": {
+                "id": "group_1681234567_8765",
+                "name": "Human Expeditionary Force",
+                "owner": "DY1xkrs9obUg7bDopCzqD7z8zF43",
+                "unitCount": 12,
+                "faction": "human",
+                "created": 1742700000000,
+                "lastUpdated": 1742700010000,
+                "x": 12,
+                "y": 8,
+                "targetX": 15,
+                "targetY": 12,
+                "status": "moving",
+                "moveStarted": 1742700050000,
+                "moveSpeed": 2,
+                "lastProcessed": 1742700010000,
+                "units": [
+                  {
+                    "id": "DY1xkrs9obUg7bDopCzqD7z8zF43",
+                    "type": "player",
+                    "race": "human",
+                    "name": "Guest DY1x",
+                    "strength": 10
+                  },
+                  {
+                    "id": "soldier_1",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Soldier",
+                    "strength": 8
+                  },
+                  {
+                    "id": "soldier_2",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Soldier",
+                    "strength": 8
+                  },
+                  {
+                    "id": "soldier_3",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Soldier",
+                    "strength": 8
+                  },
+                  {
+                    "id": "soldier_4",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Archer",
+                    "strength": 7
+                  },
+                  {
+                    "id": "soldier_5",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Archer",
+                    "strength": 7
+                  },
+                  {
+                    "id": "soldier_6",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Cleric",
+                    "strength": 9
+                  },
+                  {
+                    "id": "soldier_7",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Mage",
+                    "strength": 12
+                  },
+                  {
+                    "id": "soldier_8",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Knight",
+                    "strength": 14
+                  },
+                  {
+                    "id": "soldier_9",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Knight",
+                    "strength": 14
+                  },
+                  {
+                    "id": "soldier_10",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Captain",
+                    "strength": 18
+                  },
+                  {
+                    "id": "soldier_11",
+                    "type": "npc",
+                    "race": "human",
+                    "name": "Standard Bearer",
+                    "strength": 8
+                  }
+                ]
+              }
+            }
+          },
+          "5,5": {
+            "players": {
+              "wFfeehech1O9cjufI8P2hEDeOmt1": {
+                "displayName": "Player",
+                "lastActive": 1742622037269,
+                "race": "elf",
+                "uid": "wFfeehech1O9cjufI8P2hEDeOmt1"
+              }
+            },
+            "structure": {
+              "description": "A serene clearing at the edge of the ancient elven forest",
+              "faction": "elf",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Elvenwood Entrance",
+              "type": "spawn"
+            }
+          }
+        },
+        "0,1": {
+          "8,20": {
+            "players": {
+              "4phlqu0xieSPNwQAGpw8EKfuuXz2": {
+                "displayName": "Player",
+                "lastActive": 1743288638287,
+                "race": "goblin",
+                "uid": "4phlqu0xieSPNwQAGpw8EKfuuXz2"
+              },
+              "NnCx3WwHYmQ8WIRnUEMZ16KLylj1": {
+                "displayName": "geage",
+                "lastActive": 1742674282001,
+                "race": "goblin",
+                "uid": "NnCx3WwHYmQ8WIRnUEMZ16KLylj1"
+              },
+              "YWln4rQwMngNR8vpai807kRzYMc2": {
+                "displayName": "Player",
+                "lastActive": 1742937778312,
+                "race": "goblin",
+                "uid": "YWln4rQwMngNR8vpai807kRzYMc2"
+              },
+              "ro0HfxETCyO8HBT0Lkmgc0A2Riq2": {
+                "displayName": "iavarice36",
+                "lastActive": 1742862121838,
+                "race": "goblin",
+                "uid": "ro0HfxETCyO8HBT0Lkmgc0A2Riq2"
+              },
+              "t9vNUrbbFrS7brYtGI08jDK2H5Y2": {
+                "displayName": "Player",
+                "lastActive": 1742876181760,
+                "race": "goblin",
+                "uid": "t9vNUrbbFrS7brYtGI08jDK2H5Y2"
+              }
+            },
+            "structure": {
+              "description": "A network of tunnels and caves home to goblin tribes",
+              "faction": "goblin",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Goblin Warren",
+              "type": "spawn"
+            },
+            "groups": {
+              "group_1681234567_4321": {
+                "id": "group_1681234567_4321",
+                "name": "Goblin Raiders",
+                "owner": "YWln4rQwMngNR8vpai807kRzYMc2",
+                "unitCount": 6,
+                "faction": "goblin",
+                "created": 1742937800000,
+                "lastUpdated": 1742937801000,
+                "x": 8,
+                "y": 20,
+                "status": "idle",
+                "lastProcessed": 1742937801000,
+                "units": [
+                  {
+                    "id": "YWln4rQwMngNR8vpai807kRzYMc2",
+                    "type": "player",
+                    "race": "goblin",
+                    "name": "Player",
+                    "strength": 10
+                  },
+                  {
+                    "id": "goblin_1",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Raider",
+                    "strength": 7
+                  },
+                  {
+                    "id": "goblin_2",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Raider",
+                    "strength": 7
+                  },
+                  {
+                    "id": "goblin_3",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Shaman",
+                    "strength": 9
+                  },
+                  {
+                    "id": "goblin_4",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Wolf Rider",
+                    "strength": 12
+                  },
+                  {
+                    "id": "goblin_5",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Berserker",
+                    "strength": 15
+                  }
+                ]
+              },
+              "group_1681234568_9999": {
+                "id": "group_1681234568_9999",
+                "name": "Goblin Scouts",
+                "owner": "t9vNUrbbFrS7brYtGI08jDK2H5Y2",
+                "unitCount": 3,
+                "faction": "goblin",
+                "created": 1742876200000,
+                "lastUpdated": 1742876200000,
+                "x": 8,
+                "y": 20,
+                "status": "mobilizing",
+                "readyAt": 1742876800000,
+                "lastProcessed": 1742876200000,
+                "units": [
+                  {
+                    "id": "t9vNUrbbFrS7brYtGI08jDK2H5Y2",
+                    "type": "player",
+                    "race": "goblin",
+                    "name": "Player",
+                    "strength": 10
+                  },
+                  {
+                    "id": "scout_1",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Scout",
+                    "strength": 5
+                  },
+                  {
+                    "id": "scout_2",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Scout",
+                    "strength": 5
+                  }
+                ]
+              },
+              "group_YWln4rQwMngNR8vpai807kRzYMc2_1744850000000": {
+                "id": "group_YWln4rQwMngNR8vpai807kRzYMc2_1744850000000",
+                "name": "Combined Strike Force",
+                "owner": "YWln4rQwMngNR8vpai807kRzYMc2",
+                "unitCount": 4,
+                "faction": "goblin",
+                "created": 1744850000000,
+                "lastUpdated": 1744850000000,
+                "x": 8,
+                "y": 20,
+                "status": "mobilizing",
+                "readyAt": 1744852800000,
+                "lastProcessed": 1744850000000,
+                "units": [
+                  {
+                    "id": "YWln4rQwMngNR8vpai807kRzYMc2",
+                    "type": "player",
+                    "race": "goblin",
+                    "name": "Player",
+                    "strength": 10
+                  },
+                  {
+                    "id": "goblin_2",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Raider",
+                    "strength": 7
+                  },
+                  {
+                    "id": "scout_1",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Scout",
+                    "strength": 5
+                  },
+                  {
+                    "id": "scout_2",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Scout",
+                    "strength": 5
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "1,1": {
+          "25,25": {
+            "players": {
+              "3DK5F3CH8TTbB4sC5AG9yhcyKYA3": {
+                "displayName": "Player",
+                "lastActive": 1742953601584,
+                "race": "dwarf",
+                "uid": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3"
+              },
+              "EphNRZQBlgO4dsuSdlPUOnn4VRF3": {
+                "displayName": "Player",
+                "lastActive": 1742622691114,
+                "race": "dwarf",
+                "uid": "EphNRZQBlgO4dsuSdlPUOnn4VRF3"
+              },
+              "mxRamsFeG5e1BAb2uoJ42s5unX52": {
+                "displayName": "Player",
+                "lastActive": 1743049616793,
+                "race": "dwarf",
+                "uid": "mxRamsFeG5e1BAb2uoJ42s5unX52"
+              }
+            },
+            "structure": {
+              "description": "A sturdy stone outpost built by dwarven settlers",
+              "faction": "dwarf",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Dwarven Outpost",
+              "type": "spawn"
+            },
+            "groups": {
+              "group_1681234567_2468": {
+                "id": "group_1681234567_2468",
+                "name": "Dwarven Miners",
+                "owner": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3",
+                "unitCount": 5,
+                "faction": "dwarf",
+                "created": 1742953650000,
+                "lastUpdated": 1742953655000,
+                "x": 25,
+                "y": 25,
+                "status": "gathering",
+                "resource": "stone",
+                "gatheringUntil": 1742957255000,
+                "lastProcessed": 1742953655000,
+                "units": [
+                  {
+                    "id": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3",
+                    "type": "player",
+                    "race": "dwarf",
+                    "name": "Player",
+                    "strength": 10
+                  },
+                  {
+                    "id": "miner_1",
+                    "type": "npc",
+                    "race": "dwarf",
+                    "name": "Miner",
+                    "strength": 8
+                  },
+                  {
+                    "id": "miner_2",
+                    "type": "npc",
+                    "race": "dwarf",
+                    "name": "Miner",
+                    "strength": 8
+                  },
+                  {
+                    "id": "miner_3",
+                    "type": "npc",
+                    "race": "dwarf",
+                    "name": "Engineer",
+                    "strength": 9
+                  },
+                  {
+                    "id": "miner_4",
+                    "type": "npc",
+                    "race": "dwarf",
+                    "name": "Foreman",
+                    "strength": 12
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "info": {
+        "biomes": [
+          "forest",
+          "mountains",
+          "plains",
+          "rivers"
+        ],
+        "center": {
+          "x": 5000,
+          "y": 1500
+        },
+        "created": 1688475600000,
+        "description": "A magical world filled with elves, dwarves, and mysterious creatures",
+        "name": "Fantasy Realm",
+        "playerCount": 6,
+        "seed": 14285714,
+        "speed": 1.5
+      },
+      "spawns": {
+        "-1:0:-12:8": true,
+        "-1:0:-15:12": true,
+        "0:0:12:8": true,
+        "0:0:5:5": true,
+        "0:1:8:20": true,
+        "1:1:25:25": true
+      }
+    },
+    "wasteland": {
+      "chunks": {
+        "-1,0": {
+          "-15,7": {
+            "structure": {
+              "description": "A rare water source in the endless wasteland",
+              "faction": "human",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Oasis Encampment",
+              "type": "spawn"
+            }
+          },
+          "-18,10": {
+            "players": {
+              "5YbXBupUvDbeIWjBNaozDpWW78J3": {
+                "displayName": "Player",
+                "lastActive": 1744774626041,
+                "race": "elf",
+                "uid": "5YbXBupUvDbeIWjBNaozDpWW78J3"
+              },
+              "EphNRZQBlgO4dsuSdlPUOnn4VRF3": {
+                "displayName": "Guest EphN",
+                "lastActive": 1742622554717,
+                "race": "elf",
+                "uid": "EphNRZQBlgO4dsuSdlPUOnn4VRF3"
+              },
+              "Znp9qIXV78Oq9tK8K3dtpp434r42": {
+                "displayName": "Guest Znp9",
+                "lastActive": 1742622286426,
+                "race": "elf",
+                "uid": "Znp9qIXV78Oq9tK8K3dtpp434r42"
+              }
+            },
+            "structure": {
+              "description": "A carefully tended garden in the harsh waste",
+              "faction": "elf",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Elven Sanctuary",
+              "type": "spawn"
+            }
+          }
+        },
+        "0,0": {
+          "3,3": {
+            "structure": {
+              "description": "A shelter from the harsh desert winds",
+              "faction": "human",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Sandblasted Refuge",
+              "type": "spawn"
+            }
+          },
+          "7,7": {
+            "players": {
+              "3DK5F3CH8TTbB4sC5AG9yhcyKYA3": {
+                "displayName": "Player",
+                "lastActive": 1742948988408,
+                "race": "goblin",
+                "uid": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3"
+              },
+              "NnCx3WwHYmQ8WIRnUEMZ16KLylj1": {
+                "displayName": "geage",
+                "lastActive": 1742672967855,
+                "race": "goblin",
+                "uid": "NnCx3WwHYmQ8WIRnUEMZ16KLylj1"
+              },
+              "mxRamsFeG5e1BAb2uoJ42s5unX52": {
+                "displayName": "Player",
+                "lastActive": 1743010963042,
+                "race": "goblin",
+                "uid": "mxRamsFeG5e1BAb2uoJ42s5unX52"
+              },
+              "u5H2jDLvObghGQPNFkBpjUVis2d2": {
+                "displayName": "Player",
+                "lastActive": 1742881527222,
+                "race": "goblin",
+                "uid": "u5H2jDLvObghGQPNFkBpjUVis2d2"
+              }
+            },
+            "structure": {
+              "description": "A makeshift settlement of resourceful goblin scavengers",
+              "faction": "goblin",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Goblin Scavenger Camp",
+              "type": "spawn"
+            },
+            "groups": {
+              "group_1681234567_1357": {
+                "id": "group_1681234567_1357",
+                "name": "Goblin Scavengers",
+                "owner": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3",
+                "unitCount": 7,
+                "faction": "goblin",
+                "created": 1742948990000,
+                "lastUpdated": 1742948995000,
+                "x": 7,
+                "y": 7,
+                "status": "scouting",
+                "scoutRadius": 3,
+                "scoutingUntil": 1742952595000,
+                "lastProcessed": 1742948995000,
+                "units": [
+                  {
+                    "id": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3",
+                    "type": "player",
+                    "race": "goblin",
+                    "name": "Player",
+                    "strength": 10
+                  },
+                  {
+                    "id": "scav_1",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Scavenger",
+                    "strength": 6
+                  },
+                  {
+                    "id": "scav_2",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Scavenger",
+                    "strength": 6
+                  },
+                  {
+                    "id": "scav_3",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Scavenger",
+                    "strength": 6
+                  },
+                  {
+                    "id": "scav_4",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Junk Collector",
+                    "strength": 7
+                  },
+                  {
+                    "id": "scav_5",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Tinker",
+                    "strength": 8
+                  },
+                  {
+                    "id": "scav_6",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Boss",
+                    "strength": 12
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "0,1": {
+          "10,22": {
+            "players": {
+              "IjbhqCxUbOWjoD6F63Nz3LnIJ9y2": {
+                "displayName": "Guest Ijbh",
+                "lastActive": 1742622524612,
+                "race": "fairy",
+                "uid": "IjbhqCxUbOWjoD6F63Nz3LnIJ9y2"
+              },
+              "MAhdpG6rlrUSx25X5yps2HhFmZi2": {
+                "displayName": "Player",
+                "lastActive": 1742625308321,
+                "race": "fairy",
+                "uid": "MAhdpG6rlrUSx25X5yps2HhFmZi2"
+              }
+            },
+            "structure": {
+              "description": "A crystal-laden cave system with magical properties",
+              "faction": "fairy",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Fairy Dust Cavern",
+              "type": "spawn"
+            }
+          },
+          "8,18": {
+            "structure": {
+              "description": "The remains of an ancient desert city",
+              "faction": "dwarf",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Ruined Citadel",
+              "type": "spawn"
+            }
+          }
+        }
+      },
+      "info": {
+        "biomes": [
+          "desert",
+          "ruins",
+          "wastes",
+          "oasis"
+        ],
+        "center": {
+          "x": 1222,
+          "y": 829
+        },
+        "created": 1688562000000,
+        "description": "A harsh desert world with scarce resources and ancient ruins",
+        "name": "The Wasteland",
+        "playerCount": 5,
+        "seed": 20221022,
+        "speed": 0.75
+      },
+      "spawns": {
+        "-1:0:-15:7": true,
+        "-1:0:-18:10": true,
+        "0:0:3:3": true,
+        "0:0:7:7": true,
+        "0:1:10:22": true,
+        "0:1:8:18": true
+      }
+    }
+  }
+}

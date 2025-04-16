@@ -2,6 +2,7 @@
   import { map, targetStore, entities, highlightedStore } from "../../lib/stores/map";
   import Close from '../../components/icons/Close.svelte';
   import { user } from "../../lib/stores/user";
+  import { onMount, onDestroy } from 'svelte';
   
   // Import race icon components
   import Human from '../../components/icons/Human.svelte';
@@ -107,6 +108,48 @@
       default: return null;
     }
   }
+
+  // Timer for updating mobilization countdown
+  let updateTimer;
+  // Counter to force updates
+  let updateCounter = $state(0);
+  
+  // Set up timer to update countdown values
+  onMount(() => {
+    // Update every second to keep countdown accurate
+    updateTimer = setInterval(() => {
+      updateCounter++;
+    }, 1000);
+  });
+  
+  // Clean up timer when component is destroyed
+  onDestroy(() => {
+    if (updateTimer) {
+      clearInterval(updateTimer);
+    }
+  });
+
+  // Format time remaining for mobilizing groups
+  function formatTimeRemaining(readyAt) {
+    if (!readyAt) return '';
+    
+    // Force this function to re-evaluate on updateCounter change
+    updateCounter;
+    
+    const now = Date.now();
+    const remaining = readyAt - now;
+    
+    if (remaining <= 0) return 'Ready';
+    
+    const minutes = Math.floor(remaining / 60000);
+    const seconds = Math.floor((remaining % 60000) / 1000);
+    
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  }
 </script>
 
 <svelte:window onkeydown={escape} />
@@ -188,7 +231,16 @@
           <h3>Unit Groups ({groups.length})</h3>
           <ul>
             {#each groups as group}
-              <li>{group.name || group.id} - Units: {group.unitCount || "?"}</li>
+              <li>
+                <span class="group-name">{group.name || group.id}</span> - Units: {group.unitCount || "?"}
+                {#if group.status === 'mobilizing' && group.readyAt}
+                  <span class="mobilizing">
+                    Mobilizing: {formatTimeRemaining(group.readyAt)}
+                  </span>
+                {:else if group.status && group.status !== 'idle'}
+                  <span class="status-tag {group.status}">{_fmt(group.status)}</span>
+                {/if}
+              </li>
             {/each}
           </ul>
         </div>
@@ -494,5 +546,61 @@
     color: #FF1493;
     background: rgba(255, 128, 255, 0.15);
     border: 1px solid rgba(255, 128, 255, 0.3);
+  }
+
+  .group-name {
+    font-weight: 500;
+  }
+  
+  .mobilizing {
+    display: inline-block;
+    background: rgba(255, 165, 0, 0.15);
+    color: #ff8c00;
+    font-size: 0.85em;
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+    margin-left: 0.5em;
+    border: 1px solid rgba(255, 165, 0, 0.3);
+    font-weight: 500;
+    animation: pulseMobilizing 2s infinite;
+  }
+  
+  @keyframes pulseMobilizing {
+    0% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(255, 165, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
+  }
+  
+  .status-tag {
+    display: inline-block;
+    font-size: 0.85em;
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+    margin-left: 0.5em;
+    font-weight: 500;
+  }
+  
+  .gathering {
+    background: rgba(30, 144, 255, 0.15);
+    border: 1px solid rgba(30, 144, 255, 0.3);
+    color: #1e90ff;
+  }
+  
+  .moving {
+    background: rgba(0, 128, 0, 0.15);
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #008000;
+  }
+  
+  .scouting {
+    background: rgba(148, 0, 211, 0.15);
+    border: 1px solid rgba(148, 0, 211, 0.3);
+    color: #9400d3;
+  }
+  
+  .stationed {
+    background: rgba(128, 128, 128, 0.15);
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    color: #696969;
   }
 </style>

@@ -25,8 +25,12 @@
         setupFromGameStore,
         cleanup,
         isInternalUrlChange,
-        setHighlighted // Add this import
+        setHighlighted
     } from "../../lib/stores/map.js";
+    
+    // Import Firebase database
+    import { ref, update } from "firebase/database";
+    import { db } from "../../lib/firebase/database";
     
     import Tutorial from '../../components/map/Tutorial.svelte';
     import Grid from '../../components/map/Grid.svelte';
@@ -38,6 +42,7 @@
     import MapEntities from '../../components/map/MapEntities.svelte';
     import Close from '../../components/icons/Close.svelte';
     import Actions from '../../components/map/Actions.svelte';
+    import Mobilize from '../../components/map/Mobilize.svelte';
 
     // Use $state for local component state
     let detailed = $state(false);
@@ -506,6 +511,9 @@
     let showActions = $state(false);
     let selectedTile = $state(null);
     
+    // State for mobilize popup
+    let showMobilize = $state(false);
+    
     // Renamed to be more semantic - opens actions for a tile
     function openActionsForTile(cell) {
         selectedTile = cell;
@@ -519,13 +527,31 @@
         setHighlighted(null, null);
     }
     
+    // Open mobilize popup
+    function openMobilizePopup() {
+        showMobilize = true;
+        showActions = false; // Close actions when opening mobilize
+    }
+    
+    // Close mobilize popup
+    function closeMobilizePopup() {
+        showMobilize = false;
+        // Clear highlight when popup closes
+        setHighlighted(null, null);
+    }
+    
     // Handle action execution from the Actions component
     function handleAction(event) {
         const { action, tile } = event.detail;
         console.log('Action selected:', action, 'for tile:', tile);
         
-        // Here you would implement the actual action handling
-        // For example:
+        // Check if action is mobilize
+        if (action === 'mobilize') {
+            openMobilizePopup();
+            return;
+        }
+        
+        // Handle other action types
         switch(action) {
             case 'move':
                 console.log(`Moving to ${tile.x}, ${tile.y}`);
@@ -536,6 +562,100 @@
                 // Implement explore logic
                 break;
             // Handle other action types
+        }
+    }
+    
+    // Handle mobilize event from the Mobilize component
+    function handleMobilize(event) {
+        const { units, includePlayer, name, tile } = event.detail;
+        console.log('Mobilizing units:', { units, includePlayer, name, tile });
+        
+        // Direct database write instead of calling a Firebase function
+        const worldId = $game.currentWorld;
+        const uid = $user.uid;
+        
+        // Calculate chunk coordinates
+        const chunkSize = 20;
+        const chunkX = Math.floor(tile.x / chunkSize);
+        const chunkY = Math.floor(tile.y / chunkSize);
+        const chunkKey = `${chunkX},${chunkY}`;
+        const tileKey = `${tile.x},${tile.y}`;
+        
+        // Get current time and set mobilization time
+        const now = Date.now();
+        const mobilizationMs = 30 * 60 * 1000; // 30 minutes in ms
+        const worldSpeed = $game.worldInfo[worldId]?.speed || 1.0;
+        const adjustedTime = Math.round(mobilizationMs / worldSpeed);
+        const readyAt = now + adjustedTime;
+        
+        // Create group ID with timestamp for uniqueness
+        const groupId = `group_${uid}_${now}`;
+        
+        // First collect the selected units
+        const selectedUnits = [];
+        let unitCount = 0;
+        
+        // Process units from the units list
+        if (units && units.length > 0) {
+            // Find the units in the current tile data
+            tile.groups?.forEach(group => {
+                if (group.units) {
+                    group.units.forEach(unit => {
+                        if (units.includes(unit.id)) {
+                            selectedUnits.push(unit);
+                            unitCount++;
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Add player as a unit if requested
+        if (includePlayer && tile.players) {
+            const playerData = tile.players.find(p => p.id === uid);
+            if (playerData) {
+                selectedUnits.push({
+                    id: uid,
+                    type: 'player',
+                    race: playerData.race,
+                    name: playerData.displayName || 'Player',
+                    strength: 10 // Default player strength
+                });
+                unitCount++;
+            }
+        }
+        
+        // Only proceed if we have units to mobilize
+        if (unitCount > 0) {
+            // Create the updates object to write to the database
+            const updates = {};
+            
+            // Create new mobilizing group
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`] = {
+                id: groupId,
+                name: name || "New Force",
+                owner: uid,
+                unitCount: unitCount,
+                created: now,
+                lastUpdated: now,
+                x: tile.x,
+                y: tile.y,
+                status: 'mobilizing',
+                readyAt: readyAt,
+                lastProcessed: now,
+                units: selectedUnits
+            };
+            
+            // Apply the update
+            update(ref(db), updates)
+                .then(() => {
+                    console.log('Mobilization started:', { groupId, readyAt });
+                })
+                .catch(error => {
+                    console.error('Mobilization error:', error);
+                });
+        } else {
+            console.warn('No units selected for mobilization');
         }
     }
 </script>
@@ -625,6 +745,14 @@
                 tile={selectedTile} 
                 onClose={closeActionsPopup}
                 on:action={handleAction} 
+            />
+        {/if}
+
+        {#if showMobilize && selectedTile}
+            <Mobilize
+                tile={selectedTile}
+                onClose={closeMobilizePopup}
+                on:mobilize={handleMobilize}
             />
         {/if}
     {/if}

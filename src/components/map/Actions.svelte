@@ -49,6 +49,19 @@
       disabledReason: 'You are already at this location'
     });
     
+    // Add Mobilize action if player has groups or is on this tile
+    if (($currentPlayer && 
+        ((tile.groups && tile.groups.some(g => g.owner === $currentPlayer.uid)) || 
+         (tile.players && tile.players.some(p => p.id === $currentPlayer.uid))))) {
+      newActions.push({
+        id: 'mobilize',
+        label: 'Mobilize Forces',
+        icon: '⚔️',
+        description: 'Prepare units for action',
+        primary: true
+      });
+    }
+    
     // Resource gathering based on terrain
     if (tile.terrain.height > 0.31) {
       // Forest areas - wood gathering
