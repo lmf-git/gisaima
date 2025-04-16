@@ -17,7 +17,7 @@
   
   const dispatch = createEventDispatcher();
   
-  const { detailed = false, openActions = null, isPathDrawingMode = false } = $props();
+  const { detailed = false, openActions = null, isPathDrawingMode = false, moveComponentRef = null } = $props();
   
   let mapElement = null;
   let resizeObserver = null;
@@ -598,9 +598,9 @@
     const offsetX = x - state.target.x;
     const offsetY = y - state.target.y;
     
-    // Calculate position in percentage, adding 0.5 to center within the tile
-    const posX = ((viewportCenterX + offsetX + 0.5) / state.cols) * 100;
-    const posY = ((viewportCenterY + offsetY + 0.5) / state.rows) * 100;
+    // Calculate position as decimal values from 0 to 1 instead of percentages
+    const posX = (viewportCenterX + offsetX + 0.5) / state.cols;
+    const posY = (viewportCenterY + offsetY + 0.5) / state.rows;
     
     return { posX, posY };
   }
@@ -613,10 +613,14 @@
     for (let i = 0; i < points.length; i++) {
       const { posX, posY } = coordToPosition(points[i].x, points[i].y);
       
+      // Convert to SVG coordinate space (multiply by 100 to use the whole SVG space)
+      const svgX = posX * 100;
+      const svgY = posY * 100;
+      
       if (i === 0) {
-        pathData += `M ${posX}% ${posY}%`;
+        pathData += `M${svgX} ${svgY}`;  // Remove percentage signs, add proper spacing
       } else {
-        pathData += ` L ${posX}% ${posY}%`;
+        pathData += ` L${svgX} ${svgY}`;  // Remove percentage signs, add proper spacing
       }
     }
     
@@ -763,32 +767,36 @@
       : "Interactive coordinate map. Use WASD or arrow keys to navigate."}
   >    
     {#if $ready}
-      <svg class="path-layer" aria-hidden="true">
+      <svg class="path-layer" aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none">
         {#if isPathDrawingMode && hasCurrentPath}
           <g class="path-group custom-path-group">
             <path 
               d={createPathData(customPathPoints)} 
               stroke="rgba(255, 255, 255, 0.9)"
-              stroke-width="3"
-              stroke-dasharray="5,3"
+              stroke-width="1.5"
+              stroke-dasharray="6,4"
+              stroke-linejoin="round" 
+              stroke-linecap="round"
               fill="none"
               opacity="0.9"
             />
             
-            <!-- Connect adjacent points with lines -->
+            <!-- Draw direction dots along the path -->
             {#each customPathPoints as point, i}
               {@const pos = coordToPosition(point.x, point.y)}
-              {#if i < customPathPoints.length - 1}
+              {#if i < customPathPoints.length - 1 && i % 2 === 0}
                 {@const nextPos = coordToPosition(customPathPoints[i+1].x, customPathPoints[i+1].y)}
-                <line 
-                  x1="{pos.posX}%" 
-                  y1="{pos.posY}%" 
-                  x2="{nextPos.posX}%" 
-                  y2="{nextPos.posY}%"
-                  stroke="rgba(255, 255, 255, 0.7)"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                />
+                {@const midX = (pos.posX * 100 + nextPos.posX * 100) / 2}
+                {@const midY = (pos.posY * 100 + nextPos.posY * 100) / 2}
+                {#if Math.abs(nextPos.posX - pos.posX) > 0.02 || Math.abs(nextPos.posY - pos.posY) > 0.02}
+                  <circle 
+                    cx="{midX}" 
+                    cy="{midY}" 
+                    r="0.4" 
+                    fill="rgba(255, 255, 255, 0.9)"
+                    opacity="0.9"
+                  />
+                {/if}
               {/if}
             {/each}
             
@@ -796,9 +804,9 @@
             {#each customPathPoints as point, i}
               {@const pos = coordToPosition(point.x, point.y)}
               <circle 
-                cx="{pos.posX}%" 
-                cy="{pos.posY}%" 
-                r="{i === 0 || i === customPathPoints.length - 1 ? '0.7%' : '0.4%'}" 
+                cx="{pos.posX * 100}" 
+                cy="{pos.posY * 100}" 
+                r="{i === 0 || i === customPathPoints.length - 1 ? '0.7' : '0.4'}" 
                 fill="{i === 0 ? 'rgba(50, 205, 50, 0.9)' : i === customPathPoints.length - 1 ? 'rgba(220, 20, 60, 0.9)' : 'white'}" 
                 stroke="rgba(0, 0, 0, 0.5)"
                 stroke-width="0.5"
@@ -812,19 +820,36 @@
             <path 
               d={createPathData(path.points)} 
               stroke={path.color}
-              stroke-width="2"
-              stroke-dasharray="3,2"
+              stroke-width="1"
+              stroke-dasharray="8,5"
+              stroke-linejoin="round"
+              stroke-linecap="round"
               fill="none"
               opacity="0.8"
             />
             
-            <!-- Render all points including start and end -->
+            <!-- Draw direction dots along the path -->
             {#each path.points as point, i}
               {@const pos = coordToPosition(point.x, point.y)}
+              {#if i < path.points.length - 1 && i % 2 === 0}
+                {@const nextPos = coordToPosition(path.points[i+1].x, path.points[i+1].y)}
+                {@const midX = (pos.posX * 100 + nextPos.posX * 100) / 2}
+                {@const midY = (pos.posY * 100 + nextPos.posY * 100) / 2}
+                {#if Math.abs(nextPos.posX - pos.posX) > 0.02 || Math.abs(nextPos.posY - pos.posY) > 0.02}
+                  <circle 
+                    cx="{midX}" 
+                    cy="{midY}" 
+                    r="0.35" 
+                    fill={path.color}
+                    opacity="0.9"
+                  />
+                {/if}
+              {/if}
+              
               <circle 
-                cx="{pos.posX}%" 
-                cy="{pos.posY}%" 
-                r="{i === 0 || i === path.points.length - 1 ? '0.5%' : '0.25%'}" 
+                cx="{pos.posX * 100}" 
+                cy="{pos.posY * 100}" 
+                r="{i === 0 || i === path.points.length - 1 ? '0.5' : '0.25'}" 
                 fill={path.color} 
                 stroke="rgba(0,0,0,0.3)"
                 stroke-width="0.5"
@@ -1455,12 +1480,29 @@
   
   @keyframes dash {
     to {
-      stroke-dashoffset: -16;
+      stroke-dashoffset: -26; /* Increased for more visible animation */
     }
   }
   
   .path-layer path {
     animation: dash 40s linear infinite;
+    /* Adding default stroke properties for all paths */
+    stroke-linejoin: round;  
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+    stroke-width: 1;
+  }
+  
+  /* Custom path animations for different path types */
+  .custom-path-group path {
+    animation: dash 16s linear infinite; /* Faster animation for custom path */
+    stroke-dasharray: 6,4; /* Ensure consistent dash pattern */
+  }
+  
+  /* Make current player paths animate slightly faster to be more noticeable */
+  .current-player-path path {
+    animation: dash 30s linear infinite;
+    stroke-dasharray: 8,4; /* Slightly different dash pattern */
   }
   
   .map-container {

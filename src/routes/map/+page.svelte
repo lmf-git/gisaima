@@ -790,6 +790,7 @@
             {detailed} 
             openActions={openActionsForTile} 
             {isPathDrawingMode}
+            {moveComponentRef}
             on:addPathPoint={e => handlePathPoint(e.detail)}
         />
         
