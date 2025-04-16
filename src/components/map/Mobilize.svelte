@@ -1,6 +1,6 @@
 <script>
   import { fade, scale } from 'svelte/transition';
-  import { currentPlayer } from '../../lib/stores/game';
+  import { currentPlayer, game } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
   import Human from '../icons/Human.svelte';
   import Elf from '../icons/Elf.svelte';
@@ -8,8 +8,8 @@
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
 
-  // Props
-  const { tile, onClose, onMobilize } = $props();
+  // Props with default empty object to avoid destructuring errors
+  const { tile = {}, onClose = () => {}, onMobilize = () => {} } = $props();
   
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -22,36 +22,22 @@
   let includePlayer = $state(true);
   // Group name
   let groupName = $state("New Force");
-  // Add state to track if player is already in a group
-  let playerAlreadyInGroup = $state(false);
-  
-  // Function to check if the player is already in a group on this tile
-  function isPlayerInGroup(tile, playerId) {
-    if (!tile || !tile.groups || !playerId) return false;
-    
-    // Check all groups on the tile
-    return tile.groups.some(group => {
-      // Check if the player is in any group's units
-      return group.units && group.units.some(unit => 
-        unit.type === 'player' && unit.id === playerId
-      );
-    });
-  }
   
   // Initialize available units based on tile content
   $effect(() => {
     if (!tile) return;
     
     const units = [];
+    const playerId = $currentPlayer?.uid;
     
-    // Check if the player has groups on this tile
+    // Check for groups owned by the player on this tile
     if (tile.groups && tile.groups.length > 0) {
       tile.groups.forEach(group => {
-        if (group.owner === $currentPlayer?.uid && group.status !== 'mobilizing') {
+        if (group.owner === playerId && group.status !== 'mobilizing' && group.status !== 'moving') {
           // Extract individual units from each group
           if (group.units) {
             group.units.forEach(unit => {
-              // Skip the player unit, we'll handle that separately
+              // Skip player units, we'll handle those separately
               if (unit.type !== 'player') {
                 units.push({
                   ...unit,
@@ -66,13 +52,10 @@
     }
     
     // Check if the player themselves is on this tile
-    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer?.uid);
+    const playerOnTile = tile.players?.some(p => p.id === playerId);
     
-    // Determine if the player is already in a group
-    playerAlreadyInGroup = isPlayerInGroup(tile, $currentPlayer?.uid);
-    
-    // Only enable includePlayer if player is on this tile AND not already in a group
-    includePlayer = playerOnTile && !playerAlreadyInGroup;
+    // Only enable includePlayer if player is on this tile
+    includePlayer = playerOnTile;
     
     availableUnits = units;
   });
@@ -105,6 +88,7 @@
       .filter(u => u.selected)
       .map(u => u.id);
     
+    // Check if we're mobilizing anything
     if (selectedUnitIds.length === 0 && !includePlayer) {
       // Nothing to mobilize
       return;
@@ -124,6 +108,12 @@
     onClose();
   }
   
+  // Helper to check if mobilization is possible
+  let canMobilize = $derived(
+    (selectedUnits.length > 0) || 
+    (includePlayer && tile?.players?.some(p => p.id === $currentPlayer?.uid))
+  );
+
   // Close on escape key
   function handleKeyDown(event) {
     if (event.key === 'Escape') {
@@ -145,9 +135,6 @@
       default: return null;
     }
   }
-  
-  // Helper to check if any unit is selected or player is included
-  let canMobilize = $derived(selectedUnits.length > 0 || (includePlayer && tile?.players?.some(p => p.id === $currentPlayer?.uid)));
 </script>
 
 <svelte:window onkeydown={handleKeyDown} />
@@ -201,7 +188,7 @@
         </div>
         
         <div class="options">
-          {#if !playerAlreadyInGroup && tile.players?.some(p => p.id === $currentPlayer?.uid)}
+          {#if tile.players?.some(p => p.id === $currentPlayer?.uid)}
             <div class="option-row">
               <label for="include-player">
                 <input 

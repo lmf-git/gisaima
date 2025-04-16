@@ -759,22 +759,40 @@
         
         const selectedUnits = [];
         
+        // Add selected existing units
+        if (units && units.length > 0) {
+            // Find the units from the original groups
+            if (tile.groups && tile.groups.length > 0) {
+                for (const group of tile.groups) {
+                    if (group.units && Array.isArray(group.units)) {
+                        for (const unit of group.units) {
+                            if (units.includes(unit.id)) {
+                                selectedUnits.push({
+                                    ...unit,
+                                    lastUpdated: now
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Add the player if requested
         if (includePlayer && $currentPlayer) {
             selectedUnits.push({
                 id: playerUid,
                 type: 'player',
                 race: $currentPlayer.race,
                 name: $currentPlayer.displayName || 'Player',
-                strength: 10
+                strength: 10,
+                lastUpdated: now
             });
-        }
-        
-        if (units && units.length > 0) {
-            console.log("Selected units:", units);
         }
         
         const updates = {};
         
+        // Create the new group
         updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${newGroupId}`] = {
             id: newGroupId,
             name: name || "New Force",
@@ -791,9 +809,38 @@
             units: selectedUnits
         };
         
+        // If player is being mobilized, remove them from the tile's players list
+        if (includePlayer) {
+            // Find the player's index in the tile's players array
+            const playerIndex = tile.players?.findIndex(p => p.id === playerUid);
+            
+            if (playerIndex !== undefined && playerIndex >= 0 && tile.players) {
+                // Create a new array without the player
+                const updatedPlayers = [...tile.players];
+                updatedPlayers.splice(playerIndex, 1);
+                
+                // If there are still players, update the list; otherwise remove it
+                if (updatedPlayers.length > 0) {
+                    updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/players`] = updatedPlayers;
+                } else {
+                    updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/players`] = null;
+                }
+                
+                // Also update the player's last location to show they're in a group
+                updates[`players/${playerUid}/worlds/${$game.currentWorld}/inGroup`] = newGroupId;
+                updates[`players/${playerUid}/worlds/${$game.currentWorld}/lastGroupJoin`] = now;
+            }
+        }
+        
+        // Apply all updates
         update(ref(db), updates)
             .then(() => {
-                console.log('Mobilization started:', { groupId: newGroupId, readyAt });
+                console.log('Mobilization started:', { 
+                    groupId: newGroupId, 
+                    readyAt, 
+                    playerIncluded: includePlayer,
+                    unitCount: selectedUnits.length
+                });
             })
             .catch(error => {
                 console.error('Mobilization error:', error);

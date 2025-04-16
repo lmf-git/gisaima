@@ -3,8 +3,14 @@
   import { currentPlayer } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
 
-  // Props
-  const { tile, onClose, onMove, onPathDrawingStart, onPathDrawingCancel } = $props();
+  // Props with default empty object/function to avoid destructuring errors
+  const { 
+    tile = {}, 
+    onClose = () => {}, 
+    onMove = () => {}, 
+    onPathDrawingStart = () => {}, 
+    onPathDrawingCancel = () => {} 
+  } = $props();
   
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());

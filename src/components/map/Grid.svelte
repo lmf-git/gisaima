@@ -15,6 +15,7 @@
   import { game, currentPlayer } from "../../lib/stores/game.js";
   import Torch from '../icons/Torch.svelte';
   
+  // Props with defaults to avoid destructuring errors
   const { 
     detailed = false, 
     openActions = null, 

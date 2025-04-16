@@ -1,25 +1,25 @@
 <script>
   import { fade, scale } from 'svelte/transition';
   import Close from '../icons/Close.svelte';
-  import { currentPlayer } from '../../lib/stores/game.js';
+  import { currentPlayer, game } from '../../lib/stores/game.js';
 
-  // Props
-  const { tile, onClose, onAction } = $props();
+  // Props with default empty object to avoid destructuring errors
+  const { tile = {}, onClose = () => {}, onAction = () => {} } = $props();
   
   // Available actions based on tile content
   let actions = $state([]);
   
-  // Function to check if the player is already in a group on this tile
-  function isPlayerInGroup(tile, playerId) {
-    if (!tile || !tile.groups || !playerId) return false;
+  // Function to check if there are valid units that can be mobilized at this location
+  function hasValidUnitsForMobilization(tile, playerId) {
+    if (!tile || !tile.groups) return false;
     
-    // Check all groups on the tile
-    return tile.groups.some(group => {
-      // Check if the player is in any group's units
-      return group.units && group.units.some(unit => 
-        unit.type === 'player' && unit.id === playerId
-      );
-    });
+    // Check for units that belong to the player and are not already being mobilized
+    return tile.groups.some(group => 
+      group.owner === playerId && 
+      group.status !== 'mobilizing' &&
+      group.units && 
+      group.units.some(unit => unit.type !== 'player')
+    );
   }
   
   // Process the actions available for this tile
@@ -31,10 +31,24 @@
     
     // Define base actions
     const availableActions = [];
+    const playerId = $currentPlayer?.uid;
+    
+    if (!playerId) {
+      // No player ID available, just show explore
+      availableActions.push({
+        id: 'explore',
+        label: 'Explore Area',
+        description: 'Search the area for items or information',
+        icon: '🔍',
+      });
+      
+      actions = availableActions;
+      return;
+    }
     
     // Only show "move" action if the tile has groups owned by the player
     const hasOwnedGroups = tile.groups && tile.groups.some(group => 
-      group.owner === $currentPlayer?.uid && group.status === 'idle'
+      group.owner === playerId && group.status === 'idle'
     );
     
     if (hasOwnedGroups) {
@@ -46,23 +60,13 @@
       });
     }
     
-    // Add "mobilize" action ONLY if:
-    // 1. The player is present at the tile
-    // 2. The player is NOT already part of a group at this tile
-    // 3. The player is not already being mobilized in a group at this tile
-    const playerIsPresent = tile.players && tile.players.some(player => 
-      player.uid === $currentPlayer?.uid
-    );
+    // SIMPLIFIED LOGIC: Show mobilize action if:
+    // 1. The player is present at the tile, OR
+    // 2. There are valid units to mobilize
+    const playerOnTile = tile.players && tile.players.some(p => p.id === playerId);
+    const hasValidUnits = hasValidUnitsForMobilization(tile, playerId);
     
-    const playerInGroup = isPlayerInGroup(tile, $currentPlayer?.uid);
-    
-    const playerBeingMobilized = tile.groups && tile.groups.some(group => 
-      group.status === 'mobilizing' && 
-      group.units && 
-      group.units.some(unit => unit.type === 'player' && unit.id === $currentPlayer?.uid)
-    );
-    
-    if (playerIsPresent && !playerInGroup && !playerBeingMobilized) {
+    if (playerOnTile || hasValidUnits) {
       availableActions.push({
         id: 'mobilize',
         label: 'Mobilize Forces',
