@@ -323,10 +323,15 @@
     return $targetStore && $targetStore.x === x && $targetStore.y === y;
   }
 
-  // Handler for clicking on entities in the list
-  function handleEntityClick(x, y, event) {
+  // Enhanced handler for entity clicks that supports keyboard events
+  function handleEntityAction(x, y, event) {
     // Prevent event propagation
     event.stopPropagation();
+    
+    // For keyboard events, only proceed if Enter or Space was pressed
+    if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') {
+      return;
+    }
     
     console.log('Navigating to entity at:', x, y);
     
@@ -450,7 +455,8 @@
                 <div 
                   class="entity structure" 
                   class:at-target={isAtTarget(structure.x, structure.y)}
-                  onclick={(e) => handleEntityClick(structure.x, structure.y, e)}
+                  onclick={(e) => handleEntityAction(structure.x, structure.y, e)}
+                  onkeydown={(e) => handleEntityAction(structure.x, structure.y, e)}
                   role="button"
                   tabindex="0"
                   aria-label="Navigate to {structure.name || _fmt(structure.type) || 'Structure'} at {structure.x},{structure.y}"
@@ -551,7 +557,8 @@
                   class="entity player" 
                   class:current={entity.id === $currentPlayer?.uid} 
                   class:at-target={isAtTarget(entity.x, entity.y)}
-                  onclick={(e) => handleEntityClick(entity.x, entity.y, e)}
+                  onclick={(e) => handleEntityAction(entity.x, entity.y, e)}
+                  onkeydown={(e) => handleEntityAction(entity.x, entity.y, e)}
                   role="button"
                   tabindex="0"
                   aria-label="Navigate to player {entity.displayName || 'Player'} at {entity.x},{entity.y}"
@@ -651,7 +658,8 @@
                 <div 
                   class="entity group" 
                   class:at-target={isAtTarget(entity.x, entity.y)}
-                  onclick={(e) => handleEntityClick(entity.x, entity.y, e)}
+                  onclick={(e) => handleEntityAction(entity.x, entity.y, e)}
+                  onkeydown={(e) => handleEntityAction(entity.x, entity.y, e)}
                   role="button"
                   tabindex="0"
                   aria-label="Navigate to group {entity.name || entity.id} at {entity.x},{entity.y}"
@@ -713,41 +721,43 @@
               Items ({allItems.length})
             </h4>
             <div class="section-controls">
-              <div class="sort-controls">
-                <button 
-                  class="sort-option" 
-                  class:active={sortOptions.items.by === 'distance'}
-                  onclick={(e) => { e.stopPropagation(); setSortOption('items', 'distance'); }}
-                  aria-label={`Sort by distance ${sortOptions.items.by === 'distance' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
-                >
-                  <span>Distance</span>
-                  {#if sortOptions.items.by === 'distance'}
-                    <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
-                  {/if}
-                </button>
-                <button 
-                  class="sort-option" 
-                  class:active={sortOptions.items.by === 'name'}
-                  onclick={(e) => { e.stopPropagation(); setSortOption('items', 'name'); }}
-                  aria-label={`Sort by name ${sortOptions.items.by === 'name' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
-                >
-                  <span>Name</span>
-                  {#if sortOptions.items.by === 'name'}
-                    <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
-                  {/if}
-                </button>
-                <button 
-                  class="sort-option" 
-                  class:active={sortOptions.items.by === 'rarity'}
-                  onclick={(e) => { e.stopPropagation(); setSortOption('items', 'rarity'); }}
-                  aria-label={`Sort by rarity ${sortOptions.items.by === 'rarity' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
-                >
-                  <span>Rarity</span>
-                  {#if sortOptions.items.by === 'rarity'}
-                    <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
-                  {/if}
-                </button>
-              </div>
+              {#if !collapsedSections.items}
+                <div class="sort-controls">
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.items.by === 'distance'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('items', 'distance'); }}
+                    aria-label={`Sort by distance ${sortOptions.items.by === 'distance' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
+                  >
+                    <span>Distance</span>
+                    {#if sortOptions.items.by === 'distance'}
+                      <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.items.by === 'name'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('items', 'name'); }}
+                    aria-label={`Sort by name ${sortOptions.items.by === 'name' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
+                  >
+                    <span>Name</span>
+                    {#if sortOptions.items.by === 'name'}
+                      <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.items.by === 'rarity'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('items', 'rarity'); }}
+                    aria-label={`Sort by rarity ${sortOptions.items.by === 'rarity' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
+                  >
+                    <span>Rarity</span>
+                    {#if sortOptions.items.by === 'rarity'}
+                      <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                </div>
+              {/if}
               <button class="collapse-button" aria-label={collapsedSections.items ? "Expand items" : "Collapse items"}>
                 {collapsedSections.items ? '▼' : '▲'}
               </button>
@@ -760,7 +770,8 @@
                 <div 
                   class="entity item {getRarityClass(item.rarity)}" 
                   class:at-target={isAtTarget(item.x, item.y)}
-                  onclick={(e) => handleEntityClick(item.x, item.y, e)}
+                  onclick={(e) => handleEntityAction(item.x, item.y, e)}
+                  onkeydown={(e) => handleEntityAction(item.x, item.y, e)}
                   role="button"
                   tabindex="0"
                   aria-label="Navigate to {item.name || _fmt(item.type) || 'Item'} at {item.x},{item.y}"
