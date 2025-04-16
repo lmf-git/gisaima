@@ -87,7 +87,7 @@ export const processGameTicks = onSchedule({
                 }
               }
               
-              // Process moving groups
+              // Process moving groups - physical relocation from one tile to another
               if (groupData.status === 'moving' && 
                   groupData.targetX !== undefined && 
                   groupData.targetY !== undefined &&
@@ -111,46 +111,29 @@ export const processGameTicks = onSchedule({
                 if (now >= (moveStarted + moveTime)) {
                   logger.info(`Movement complete for group ${groupId} from ${tileKey} to ${targetX},${targetY} in world ${worldId}`);
                   
-                  // If target is in the same chunk, just update the group's position
-                  if (chunkKey === targetChunkKey) {
-                    // Move group within the same chunk
-                    // 1. Delete from old tile
-                    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`] = null;
-                    
-                    // 2. Copy to new tile with updated coordinates and status
-                    updates[`worlds/${worldId}/chunks/${chunkKey}/${targetTileKey}/groups/${groupId}`] = {
-                      ...groupData,
-                      status: 'idle',
-                      x: targetX,
-                      y: targetY,
-                      lastUpdated: now,
-                      lastProcessed: now,
-                      // Remove movement properties
-                      targetX: null,
-                      targetY: null,
-                      moveStarted: null,
-                      moveSpeed: null
-                    };
-                  } else {
-                    // Move group to different chunk
-                    // 1. Delete from old chunk/tile
-                    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`] = null;
-                    
-                    // 2. Create in new chunk/tile with updated data
-                    updates[`worlds/${worldId}/chunks/${targetChunkKey}/${targetTileKey}/groups/${groupId}`] = {
-                      ...groupData,
-                      status: 'idle',
-                      x: targetX,
-                      y: targetY,
-                      lastUpdated: now,
-                      lastProcessed: now,
-                      // Remove movement properties
-                      targetX: null,
-                      targetY: null,
-                      moveStarted: null,
-                      moveSpeed: null
-                    };
-                  }
+                  // Physical group relocation: remove from source tile and add to destination tile
+                  
+                  // 1. Completely remove the group from original location
+                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`] = null;
+                  
+                  // 2. Create a new entry at the destination with updated coordinates
+                  const updatedGroup = {
+                    ...groupData,
+                    status: 'idle',
+                    x: targetX,
+                    y: targetY,
+                    lastUpdated: now,
+                    lastProcessed: now
+                  };
+                  
+                  // 3. Remove movement-specific properties
+                  delete updatedGroup.targetX;
+                  delete updatedGroup.targetY;
+                  delete updatedGroup.moveStarted;
+                  delete updatedGroup.moveSpeed;
+                  
+                  // 4. Add to target tile
+                  updates[`worlds/${worldId}/chunks/${targetChunkKey}/${targetTileKey}/groups/${groupId}`] = updatedGroup;
                 }
               }
               
