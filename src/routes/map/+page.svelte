@@ -630,10 +630,20 @@
         
         const now = Date.now();
         
-        // Set mobilization to occur on the next world tick
-        // Use minimal delay (1 sec) since the server will process it on the next tick
+        // Calculate the next world tick time
         const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
-        const readyAt = now + 1000; // Minimal delay - just enough to ensure it's caught by next tick
+        
+        // World ticks are typically aligned to specific time intervals
+        // For example, every 5 minutes, aligned to the hour 
+        const tickIntervalMs = 300000; // 5 minutes in milliseconds
+        const adjustedInterval = Math.round(tickIntervalMs / worldSpeed);
+        
+        // Calculate the next tick aligned to the interval
+        const msIntoCurrentInterval = now % adjustedInterval;
+        const msToNextTick = adjustedInterval - msIntoCurrentInterval;
+        
+        // Set the readyAt time to the next world tick
+        const readyAt = now + msToNextTick;
         
         const playerUid = $currentPlayer?.uid;
         

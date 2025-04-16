@@ -775,12 +775,6 @@
     color: #9400d3;
   }
   
-  .stationed {
-    background: rgba(128, 128, 128, 0.15);
-    border: 1px solid rgba(128, 128, 128, 0.3);
-    color: #696969;
-  }
-  
   .idle {
     background: rgba(0, 0, 0, 0.05);
     border: 1px solid rgba(0, 0, 0, 0.1);

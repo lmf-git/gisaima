@@ -152,7 +152,9 @@
     const now = Date.now();
     const remaining = endTime - now;
     
-    if (remaining <= 0) return 'Ready';
+    // For mobilizing groups that have reached the countdown end
+    // but are still waiting for the next server tick
+    if (remaining <= 0) return 'Mobilizing...';
     
     const minutes = Math.floor(remaining / 60000);
     const seconds = Math.floor((remaining % 60000) / 1000);
@@ -1130,12 +1132,6 @@
     background: rgba(148, 0, 211, 0.15);
     border: 1px solid rgba(148, 0, 211, 0.3);
     color: #9400d3;
-  }
-  
-  .status.stationed {
-    background: rgba(128, 128, 128, 0.15);
-    border: 1px solid rgba(128, 128, 128, 0.3);
-    color: #696969;
   }
   
   .status.idle {

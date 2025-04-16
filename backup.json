@@ -1,5 +1,20 @@
 {
   "players": {
+    "2BRNYfq8DfQ9cR91RQK18qQtfII2": {
+      "worlds": {
+        "wasteland": {
+          "joined": 1744827193153,
+          "lastLocation": {
+            "timestamp": 1744827198569,
+            "x": -18,
+            "y": 10
+          },
+          "lastSpawn": "-1:0:-18:10",
+          "race": "elf",
+          "spawned": true
+        }
+      }
+    },
     "3DK5F3CH8TTbB4sC5AG9yhcyKYA3": {
       "worlds": {
         "default-world": {
@@ -37,6 +52,21 @@
         }
       }
     },
+    "48Hi2LGSCpYmBUU7NETPeq2qG5g1": {
+      "worlds": {
+        "default-world": {
+          "joined": 1744829707927,
+          "lastLocation": {
+            "timestamp": 1744829711951,
+            "x": 5,
+            "y": -5
+          },
+          "lastSpawn": "0:0:5:-5",
+          "race": "dwarf",
+          "spawned": true
+        }
+      }
+    },
     "4phlqu0xieSPNwQAGpw8EKfuuXz2": {
       "worlds": {
         "fantasy-realm": {
@@ -48,6 +78,32 @@
           },
           "lastSpawn": "0:1:8:20",
           "race": "goblin",
+          "spawned": true
+        }
+      }
+    },
+    "4yaUHVR9Y1P46KHOPF2bkv4rnsI3": {
+      "worlds": {
+        "default-world": {
+          "joined": 1744797159111,
+          "lastLocation": {
+            "timestamp": 1744797162861,
+            "x": 0,
+            "y": 0
+          },
+          "lastSpawn": "0:0:0:0",
+          "race": "human",
+          "spawned": true
+        },
+        "wasteland": {
+          "joined": 1744797102718,
+          "lastLocation": {
+            "timestamp": 1744797108046,
+            "x": -15,
+            "y": 7
+          },
+          "lastSpawn": "-1:0:-15:7",
+          "race": "human",
           "spawned": true
         }
       }
@@ -87,11 +143,26 @@
         "fantasy-realm": {
           "joined": 1742622090885,
           "lastLocation": {
-            "timestamp": 1742622095440,
-            "x": 12,
-            "y": 8
+            "timestamp": 1744791905829,
+            "x": 15,
+            "y": 12
           },
           "lastSpawn": "0:0:12:8",
+          "race": "human",
+          "spawned": true
+        }
+      }
+    },
+    "EZwnNF9WlAWPGTSXsdDYXn0Gjm62": {
+      "worlds": {
+        "default-world": {
+          "joined": 1744828203262,
+          "lastLocation": {
+            "timestamp": 1744828206901,
+            "x": 0,
+            "y": 0
+          },
+          "lastSpawn": "0:0:0:0",
           "race": "human",
           "spawned": true
         }
@@ -134,6 +205,21 @@
           },
           "lastSpawn": "0:0:-5:5",
           "race": "elf",
+          "spawned": true
+        }
+      }
+    },
+    "G10IPWL0qGPouXcwU7VhaeI7xdD2": {
+      "worlds": {
+        "default-world": {
+          "joined": 1744829060916,
+          "lastLocation": {
+            "timestamp": 1744829065240,
+            "x": 0,
+            "y": 0
+          },
+          "lastSpawn": "0:0:0:0",
+          "race": "human",
           "spawned": true
         }
       }
@@ -505,6 +591,19 @@
         }
       }
     },
+    "vxFWnOwAKWeezdUVOU1J7ArNWyj2": {
+      "worlds": {
+        "fantasy-realm": {
+          "lastLocation": {
+            "timestamp": 1744792157437,
+            "x": -12,
+            "y": 8
+          },
+          "lastSpawn": "-1:0:-12:8",
+          "spawned": true
+        }
+      }
+    },
     "wFfeehech1O9cjufI8P2hEDeOmt1": {
       "worlds": {
         "default-world": {
@@ -561,6 +660,69 @@
         },
         "-1,0": {
           "-5,5": {
+            "groups": {
+              "group_1681234567_1234": {
+                "created": 1742700000000,
+                "faction": "elf",
+                "id": "group_1681234567_1234",
+                "lastProcessed": 1742700001000,
+                "lastUpdated": 1742700001000,
+                "name": "Elven Pathfinders",
+                "owner": "WgQ1uO3shDdLjVHJ36UCSws8dTk1",
+                "status": "idle",
+                "unitCount": 4,
+                "units": [
+                  {
+                    "id": "WgQ1uO3shDdLjVHJ36UCSws8dTk1",
+                    "name": "Player",
+                    "race": "elf",
+                    "strength": 10,
+                    "type": "player"
+                  },
+                  {
+                    "id": "unit_1",
+                    "name": "Scout",
+                    "race": "elf",
+                    "strength": 5,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "unit_2",
+                    "name": "Archer",
+                    "race": "elf",
+                    "strength": 8,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "unit_3",
+                    "name": "Ranger",
+                    "race": "elf",
+                    "strength": 7,
+                    "type": "npc"
+                  }
+                ],
+                "x": -5,
+                "y": 5
+              }
+            },
+            "items": [
+              {
+                "description": "A weathered scroll with elvish writing",
+                "id": "item_1001",
+                "name": "Ancient Scroll",
+                "quantity": 1,
+                "rarity": "rare",
+                "type": "quest_item"
+              },
+              {
+                "description": "Wild herbs with medicinal properties",
+                "id": "item_1002",
+                "name": "Healing Herbs",
+                "quantity": 5,
+                "rarity": "common",
+                "type": "resource"
+              }
+            ],
             "players": {
               "Fsec3klBgbOgCMVDkHYM0CCxijg2": {
                 "displayName": "anotherzebra344",
@@ -586,80 +748,48 @@
                 "race": "elf",
                 "uid": "mxRamsFeG5e1BAb2uoJ42s5unX52"
               }
-            },
-            "groups": {
-              "group_1681234567_1234": {
-                "id": "group_1681234567_1234",
-                "name": "Elven Pathfinders",
-                "owner": "WgQ1uO3shDdLjVHJ36UCSws8dTk1",
-                "unitCount": 4,
-                "faction": "elf",
-                "created": 1742700000000,
-                "lastUpdated": 1742700001000,
-                "x": -5,
-                "y": 5,
-                "status": "idle",
-                "lastProcessed": 1742700001000,
-                "units": [
-                  {
-                    "id": "WgQ1uO3shDdLjVHJ36UCSws8dTk1",
-                    "type": "player",
-                    "race": "elf",
-                    "name": "Player",
-                    "strength": 10
-                  },
-                  {
-                    "id": "unit_1",
-                    "type": "npc",
-                    "race": "elf",
-                    "name": "Scout",
-                    "strength": 5
-                  },
-                  {
-                    "id": "unit_2",
-                    "type": "npc",
-                    "race": "elf",
-                    "name": "Archer",
-                    "strength": 8
-                  },
-                  {
-                    "id": "unit_3",
-                    "type": "npc",
-                    "race": "elf",
-                    "name": "Ranger",
-                    "strength": 7
-                  }
-                ]
-              }
-            },
-            "items": [
-              {
-                "id": "item_1001",
-                "name": "Ancient Scroll",
-                "type": "quest_item",
-                "rarity": "rare",
-                "description": "A weathered scroll with elvish writing",
-                "quantity": 1
-              },
-              {
-                "id": "item_1002",
-                "name": "Healing Herbs",
-                "type": "resource",
-                "rarity": "common",
-                "description": "Wild herbs with medicinal properties",
-                "quantity": 5
-              }
-            ]
+            }
           }
         },
         "0,-1": {
           "5,-5": {
+            "groups": {
+              "group_48Hi2LGSCpYmBUU7NETPeq2qG5g1_1744829720992": {
+                "created": 1744829720992,
+                "id": "group_48Hi2LGSCpYmBUU7NETPeq2qG5g1_1744829720992",
+                "lastProcessed": 1744829720992,
+                "lastUpdated": 1744829761572,
+                "name": "Test",
+                "owner": "48Hi2LGSCpYmBUU7NETPeq2qG5g1",
+                "race": "dwarf",
+                "readyAt": 1744829721992,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "48Hi2LGSCpYmBUU7NETPeq2qG5g1",
+                    "name": "Guest 48Hi",
+                    "race": "dwarf",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 5,
+                "y": -5
+              }
+            },
             "players": {
               "3DK5F3CH8TTbB4sC5AG9yhcyKYA3": {
                 "displayName": "Player",
                 "lastActive": 1742949419430,
                 "race": "dwarf",
                 "uid": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3"
+              },
+              "48Hi2LGSCpYmBUU7NETPeq2qG5g1": {
+                "displayName": "Player",
+                "lastActive": 1744829712296,
+                "race": "dwarf",
+                "uid": "48Hi2LGSCpYmBUU7NETPeq2qG5g1"
               },
               "h4e8YaIeFTVcrMMHujeg1CP6D2I3": {
                 "displayName": "Player",
@@ -677,27 +807,27 @@
               "faction": "goblin",
               "health": 1000,
               "indestructible": true,
-              "maxHealth": 1000,
-              "name": "Goblin Hideout",
-              "type": "spawn",
               "items": [
                 {
+                  "description": "A strange trinket made by goblins",
                   "id": "struct_item_001",
                   "name": "Goblin Trinket",
-                  "type": "artifact",
+                  "quantity": 1,
                   "rarity": "uncommon",
-                  "description": "A strange trinket made by goblins",
-                  "quantity": 1
+                  "type": "artifact"
                 },
                 {
+                  "description": "A small stash of gold coins",
                   "id": "struct_item_002",
                   "name": "Hidden Gold",
-                  "type": "currency",
+                  "quantity": 50,
                   "rarity": "common",
-                  "description": "A small stash of gold coins",
-                  "quantity": 50
+                  "type": "currency"
                 }
-              ]
+              ],
+              "maxHealth": 1000,
+              "name": "Goblin Hideout",
+              "type": "spawn"
             }
           },
           "-5,5": {
@@ -712,12 +842,159 @@
             }
           },
           "0,0": {
+            "groups": {
+              "group_1681234567_5678": {
+                "created": 1742700000000,
+                "faction": "human",
+                "id": "group_1681234567_5678",
+                "lastProcessed": 1742700003000,
+                "lastUpdated": 1742700003000,
+                "name": "Town Guard",
+                "owner": "5ARWZrKpldWdXbNWwkNwds39ZRp2",
+                "status": "idle",
+                "unitCount": 8,
+                "units": [
+                  {
+                    "id": "5ARWZrKpldWdXbNWwkNwds39ZRp2",
+                    "name": "chickenroostart",
+                    "race": "human",
+                    "strength": 10,
+                    "type": "player"
+                  },
+                  {
+                    "id": "guard_1",
+                    "name": "Guard",
+                    "race": "human",
+                    "strength": 6,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "guard_2",
+                    "name": "Guard",
+                    "race": "human",
+                    "strength": 6,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "guard_3",
+                    "name": "Guard Captain",
+                    "race": "human",
+                    "strength": 12,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "guard_4",
+                    "name": "Swordsman",
+                    "race": "human",
+                    "strength": 8,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "guard_5",
+                    "name": "Archer",
+                    "race": "human",
+                    "strength": 7,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "guard_6",
+                    "name": "Healer",
+                    "race": "human",
+                    "strength": 5,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "guard_7",
+                    "name": "Knight",
+                    "race": "human",
+                    "strength": 14,
+                    "type": "npc"
+                  }
+                ],
+                "x": 0,
+                "y": 0
+              },
+              "group_EZwnNF9WlAWPGTSXsdDYXn0Gjm62_1744828213949": {
+                "created": 1744828213949,
+                "id": "group_EZwnNF9WlAWPGTSXsdDYXn0Gjm62_1744828213949",
+                "lastProcessed": 1744828213949,
+                "lastUpdated": 1744828213949,
+                "name": "New Force",
+                "owner": "EZwnNF9WlAWPGTSXsdDYXn0Gjm62",
+                "race": "human",
+                "readyAt": 1744830013949,
+                "status": "mobilizing",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "EZwnNF9WlAWPGTSXsdDYXn0Gjm62",
+                    "name": "Guest EZwn",
+                    "race": "human",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 0,
+                "y": 0
+              },
+              "group_G10IPWL0qGPouXcwU7VhaeI7xdD2_1744829074020": {
+                "created": 1744829074020,
+                "id": "group_G10IPWL0qGPouXcwU7VhaeI7xdD2_1744829074020",
+                "lastProcessed": 1744829074020,
+                "lastUpdated": 1744829101213,
+                "name": "New Force",
+                "owner": "G10IPWL0qGPouXcwU7VhaeI7xdD2",
+                "race": "human",
+                "readyAt": 1744829075020,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "G10IPWL0qGPouXcwU7VhaeI7xdD2",
+                    "name": "Guest G10I",
+                    "race": "human",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 0,
+                "y": 0
+              }
+            },
+            "items": [
+              {
+                "description": "A torn piece of an important map",
+                "id": "item_2001",
+                "name": "Map Fragment",
+                "quantity": 1,
+                "rarity": "uncommon",
+                "type": "quest_item"
+              }
+            ],
             "players": {
+              "4yaUHVR9Y1P46KHOPF2bkv4rnsI3": {
+                "displayName": "ben.thorp",
+                "lastActive": 1744797163165,
+                "race": "human",
+                "uid": "4yaUHVR9Y1P46KHOPF2bkv4rnsI3"
+              },
               "5ARWZrKpldWdXbNWwkNwds39ZRp2": {
                 "displayName": "chickenroostart",
                 "lastActive": 1742672684017,
                 "race": "human",
                 "uid": "5ARWZrKpldWdXbNWwkNwds39ZRp2"
+              },
+              "EZwnNF9WlAWPGTSXsdDYXn0Gjm62": {
+                "displayName": "Player",
+                "lastActive": 1744828207186,
+                "race": "human",
+                "uid": "EZwnNF9WlAWPGTSXsdDYXn0Gjm62"
+              },
+              "G10IPWL0qGPouXcwU7VhaeI7xdD2": {
+                "displayName": "Player",
+                "lastActive": 1744829065493,
+                "race": "human",
+                "uid": "G10IPWL0qGPouXcwU7VhaeI7xdD2"
               },
               "KusuFpPfrgc2WOWt4GUWrEzR8S73": {
                 "displayName": "Player",
@@ -746,90 +1023,7 @@
               "maxHealth": 1000,
               "name": "Central Spawn",
               "type": "spawn"
-            },
-            "groups": {
-              "group_1681234567_5678": {
-                "id": "group_1681234567_5678",
-                "name": "Town Guard",
-                "owner": "5ARWZrKpldWdXbNWwkNwds39ZRp2",
-                "unitCount": 8,
-                "faction": "human",
-                "created": 1742700000000,
-                "lastUpdated": 1742700003000,
-                "x": 0,
-                "y": 0,
-                "status": "stationed",
-                "lastProcessed": 1742700003000,
-                "units": [
-                  {
-                    "id": "5ARWZrKpldWdXbNWwkNwds39ZRp2",
-                    "type": "player",
-                    "race": "human",
-                    "name": "chickenroostart",
-                    "strength": 10
-                  },
-                  {
-                    "id": "guard_1",
-                    "type": "npc",
-                    "race": "human",
-                    "name": "Guard",
-                    "strength": 6
-                  },
-                  {
-                    "id": "guard_2",
-                    "type": "npc",
-                    "race": "human",
-                    "name": "Guard",
-                    "strength": 6
-                  },
-                  {
-                    "id": "guard_3",
-                    "type": "npc",
-                    "race": "human",
-                    "name": "Guard Captain",
-                    "strength": 12
-                  },
-                  {
-                    "id": "guard_4",
-                    "type": "npc",
-                    "race": "human",
-                    "name": "Swordsman",
-                    "strength": 8
-                  },
-                  {
-                    "id": "guard_5",
-                    "type": "npc",
-                    "race": "human",
-                    "name": "Archer",
-                    "strength": 7
-                  },
-                  {
-                    "id": "guard_6",
-                    "type": "npc",
-                    "race": "human",
-                    "name": "Healer",
-                    "strength": 5
-                  },
-                  {
-                    "id": "guard_7",
-                    "type": "npc",
-                    "race": "human",
-                    "name": "Knight",
-                    "strength": 14
-                  }
-                ]
-              }
-            },
-            "items": [
-              {
-                "id": "item_2001",
-                "name": "Map Fragment",
-                "type": "quest_item",
-                "rarity": "uncommon",
-                "description": "A torn piece of an important map",
-                "quantity": 1
-              }
-            ]
+            }
           },
           "5,-5": {
             "structure": {
@@ -837,19 +1031,19 @@
               "faction": "dwarf",
               "health": 1000,
               "indestructible": true,
-              "maxHealth": 1000,
-              "name": "Dwarven Enclave",
-              "type": "spawn",
               "items": [
                 {
+                  "description": "A masterfully crafted dwarven mining hammer",
                   "id": "struct_item_003",
                   "name": "Dwarven Hammer",
-                  "type": "tool",
+                  "quantity": 1,
                   "rarity": "rare",
-                  "description": "A masterfully crafted dwarven mining hammer",
-                  "quantity": 1
+                  "type": "tool"
                 }
-              ]
+              ],
+              "maxHealth": 1000,
+              "name": "Dwarven Enclave",
+              "type": "spawn"
             }
           },
           "5,5": {
@@ -906,7 +1100,7 @@
         "name": "Default World",
         "playerCount": 8,
         "seed": 10101010,
-        "speed": 1.0
+        "speed": 1
       },
       "spawns": {
         "0:0:-5:-5": true,
@@ -920,6 +1114,14 @@
       "chunks": {
         "-1,0": {
           "-12,8": {
+            "players": {
+              "vxFWnOwAKWeezdUVOU1J7ArNWyj2": {
+                "displayName": "Player",
+                "lastActive": 1744792157723,
+                "race": "human",
+                "uid": "vxFWnOwAKWeezdUVOU1J7ArNWyj2"
+              }
+            },
             "structure": {
               "description": "A peaceful settlement along the crystal river",
               "faction": "human",
@@ -931,6 +1133,24 @@
             }
           },
           "-15,12": {
+            "items": [
+              {
+                "description": "Sparkling magical dust from fairy wings",
+                "id": "item_3001",
+                "name": "Fairy Dust",
+                "quantity": 3,
+                "rarity": "uncommon",
+                "type": "resource"
+              },
+              {
+                "description": "A bioluminescent fungus",
+                "id": "item_3002",
+                "name": "Glowing Mushroom",
+                "quantity": 7,
+                "rarity": "common",
+                "type": "resource"
+              }
+            ],
             "players": {
               "u5H2jDLvObghGQPNFkBpjUVis2d2": {
                 "displayName": "Player",
@@ -947,36 +1167,12 @@
               "maxHealth": 1000,
               "name": "Fairy Glade",
               "type": "spawn"
-            },
-            "items": [
-              {
-                "id": "item_3001",
-                "name": "Fairy Dust",
-                "type": "resource",
-                "rarity": "uncommon",
-                "description": "Sparkling magical dust from fairy wings",
-                "quantity": 3
-              },
-              {
-                "id": "item_3002",
-                "name": "Glowing Mushroom",
-                "type": "resource",
-                "rarity": "common",
-                "description": "A bioluminescent fungus",
-                "quantity": 7
-              }
-            ]
+            }
           }
         },
         "0,0": {
           "12,8": {
             "players": {
-              "DY1xkrs9obUg7bDopCzqD7z8zF43": {
-                "displayName": "Guest DY1x",
-                "lastActive": 1742622095967,
-                "race": "human",
-                "uid": "DY1xkrs9obUg7bDopCzqD7z8zF43"
-              },
               "KusuFpPfrgc2WOWt4GUWrEzR8S73": {
                 "displayName": "Player",
                 "lastActive": 1743968041614,
@@ -992,114 +1188,130 @@
               "maxHealth": 1000,
               "name": "Human Settlement",
               "type": "spawn"
-            },
+            }
+          },
+          "15,12": {
             "groups": {
               "group_1681234567_8765": {
+                "created": 1742700000000,
+                "faction": "human",
                 "id": "group_1681234567_8765",
+                "lastProcessed": 1744791905829,
+                "lastUpdated": 1744791905829,
                 "name": "Human Expeditionary Force",
                 "owner": "DY1xkrs9obUg7bDopCzqD7z8zF43",
+                "status": "idle",
                 "unitCount": 12,
-                "faction": "human",
-                "created": 1742700000000,
-                "lastUpdated": 1742700010000,
-                "x": 12,
-                "y": 8,
-                "targetX": 15,
-                "targetY": 12,
-                "status": "moving",
-                "moveStarted": 1742700050000,
-                "moveSpeed": 2,
-                "lastProcessed": 1742700010000,
                 "units": [
                   {
                     "id": "DY1xkrs9obUg7bDopCzqD7z8zF43",
-                    "type": "player",
-                    "race": "human",
                     "name": "Guest DY1x",
-                    "strength": 10
+                    "race": "human",
+                    "strength": 10,
+                    "type": "player"
                   },
                   {
                     "id": "soldier_1",
-                    "type": "npc",
-                    "race": "human",
                     "name": "Soldier",
-                    "strength": 8
+                    "race": "human",
+                    "strength": 8,
+                    "type": "npc"
                   },
                   {
                     "id": "soldier_2",
-                    "type": "npc",
-                    "race": "human",
                     "name": "Soldier",
-                    "strength": 8
+                    "race": "human",
+                    "strength": 8,
+                    "type": "npc"
                   },
                   {
                     "id": "soldier_3",
-                    "type": "npc",
-                    "race": "human",
                     "name": "Soldier",
-                    "strength": 8
+                    "race": "human",
+                    "strength": 8,
+                    "type": "npc"
                   },
                   {
                     "id": "soldier_4",
-                    "type": "npc",
-                    "race": "human",
                     "name": "Archer",
-                    "strength": 7
+                    "race": "human",
+                    "strength": 7,
+                    "type": "npc"
                   },
                   {
                     "id": "soldier_5",
-                    "type": "npc",
-                    "race": "human",
                     "name": "Archer",
-                    "strength": 7
+                    "race": "human",
+                    "strength": 7,
+                    "type": "npc"
                   },
                   {
                     "id": "soldier_6",
-                    "type": "npc",
-                    "race": "human",
                     "name": "Cleric",
-                    "strength": 9
+                    "race": "human",
+                    "strength": 9,
+                    "type": "npc"
                   },
                   {
                     "id": "soldier_7",
-                    "type": "npc",
-                    "race": "human",
                     "name": "Mage",
-                    "strength": 12
+                    "race": "human",
+                    "strength": 12,
+                    "type": "npc"
                   },
                   {
                     "id": "soldier_8",
-                    "type": "npc",
-                    "race": "human",
                     "name": "Knight",
-                    "strength": 14
+                    "race": "human",
+                    "strength": 14,
+                    "type": "npc"
                   },
                   {
                     "id": "soldier_9",
-                    "type": "npc",
-                    "race": "human",
                     "name": "Knight",
-                    "strength": 14
+                    "race": "human",
+                    "strength": 14,
+                    "type": "npc"
                   },
                   {
                     "id": "soldier_10",
-                    "type": "npc",
-                    "race": "human",
                     "name": "Captain",
-                    "strength": 18
+                    "race": "human",
+                    "strength": 18,
+                    "type": "npc"
                   },
                   {
                     "id": "soldier_11",
-                    "type": "npc",
-                    "race": "human",
                     "name": "Standard Bearer",
-                    "strength": 8
+                    "race": "human",
+                    "strength": 8,
+                    "type": "npc"
                   }
-                ]
+                ],
+                "x": 15,
+                "y": 12
+              }
+            },
+            "players": {
+              "DY1xkrs9obUg7bDopCzqD7z8zF43": {
+                "displayName": "Guest DY1x",
+                "lastActive": 1744791905829,
+                "race": "human",
+                "uid": "DY1xkrs9obUg7bDopCzqD7z8zF43"
               }
             }
           },
           "5,5": {
+            "items": [
+              {
+                "description": "A beautiful silver locket with ancient enchantments",
+                "id": "item_4001",
+                "name": "Elven Locket",
+                "quantity": 1,
+                "rarity": "epic",
+                "type": "artifact"
+              }
+            ],
             "players": {
               "wFfeehech1O9cjufI8P2hEDeOmt1": {
                 "displayName": "Player",
@@ -1116,21 +1328,190 @@
               "maxHealth": 1000,
               "name": "Elvenwood Entrance",
               "type": "spawn"
-            },
-            "items": [
-              {
-                "id": "item_4001",
-                "name": "Elven Locket",
-                "type": "artifact",
-                "rarity": "epic",
-                "description": "A beautiful silver locket with ancient enchantments",
-                "quantity": 1
-              }
-            ]
+            }
           }
         },
         "0,1": {
           "8,20": {
+            "groups": {
+              "group_1681234567_4321": {
+                "created": 1742937800000,
+                "faction": "goblin",
+                "id": "group_1681234567_4321",
+                "lastProcessed": 1742937801000,
+                "lastUpdated": 1742937801000,
+                "name": "Goblin Raiders",
+                "owner": "YWln4rQwMngNR8vpai807kRzYMc2",
+                "status": "idle",
+                "unitCount": 6,
+                "units": [
+                  {
+                    "id": "YWln4rQwMngNR8vpai807kRzYMc2",
+                    "name": "Player",
+                    "race": "goblin",
+                    "strength": 10,
+                    "type": "player"
+                  },
+                  {
+                    "id": "goblin_1",
+                    "name": "Raider",
+                    "race": "goblin",
+                    "strength": 7,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "goblin_2",
+                    "name": "Raider",
+                    "race": "goblin",
+                    "strength": 7,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "goblin_3",
+                    "name": "Shaman",
+                    "race": "goblin",
+                    "strength": 9,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "goblin_4",
+                    "name": "Wolf Rider",
+                    "race": "goblin",
+                    "strength": 12,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "goblin_5",
+                    "name": "Berserker",
+                    "race": "goblin",
+                    "strength": 15,
+                    "type": "npc"
+                  }
+                ],
+                "x": 8,
+                "y": 20
+              },
+              "group_1681234568_9999": {
+                "created": 1742876200000,
+                "faction": "goblin",
+                "id": "group_1681234568_9999",
+                "lastProcessed": 1744791905829,
+                "lastUpdated": 1742876200000,
+                "name": "Goblin Scouts",
+                "owner": "t9vNUrbbFrS7brYtGI08jDK2H5Y2",
+                "status": "idle",
+                "unitCount": 3,
+                "units": [
+                  {
+                    "id": "t9vNUrbbFrS7brYtGI08jDK2H5Y2",
+                    "name": "Player",
+                    "race": "goblin",
+                    "strength": 10,
+                    "type": "player"
+                  },
+                  {
+                    "id": "scout_1",
+                    "name": "Scout",
+                    "race": "goblin",
+                    "strength": 5,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "scout_2",
+                    "name": "Scout",
+                    "race": "goblin",
+                    "strength": 5,
+                    "type": "npc"
+                  }
+                ],
+                "x": 8,
+                "y": 20
+              },
+              "group_YWln4rQwMngNR8vpai807kRzYMc2_1744850000000": {
+                "created": 1744850000000,
+                "faction": "goblin",
+                "id": "group_YWln4rQwMngNR8vpai807kRzYMc2_1744850000000",
+                "lastProcessed": 1744850000000,
+                "lastUpdated": 1744850000000,
+                "name": "Combined Strike Force",
+                "owner": "YWln4rQwMngNR8vpai807kRzYMc2",
+                "readyAt": 1744852800000,
+                "status": "mobilizing",
+                "unitCount": 4,
+                "units": [
+                  {
+                    "id": "YWln4rQwMngNR8vpai807kRzYMc2",
+                    "name": "Player",
+                    "race": "goblin",
+                    "strength": 10,
+                    "type": "player"
+                  },
+                  {
+                    "id": "goblin_2",
+                    "name": "Raider",
+                    "race": "goblin",
+                    "strength": 7,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "scout_1",
+                    "name": "Scout",
+                    "race": "goblin",
+                    "strength": 5,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "scout_2",
+                    "name": "Scout",
+                    "race": "goblin",
+                    "strength": 5,
+                    "type": "npc"
+                  }
+                ],
+                "x": 8,
+                "y": 20
+              },
+              "group_YWln4rQwMngNR8vpai807kRzYMc2_1744860000000": {
+                "created": 1744860000000,
+                "faction": "goblin",
+                "id": "group_YWln4rQwMngNR8vpai807kRzYMc2_1744860000000",
+                "lastProcessed": 1744860000000,
+                "lastUpdated": 1744860000000,
+                "moveSpeed": 1.5,
+                "moveStarted": 1744860000000,
+                "name": "Goblin Scout Party",
+                "owner": "YWln4rQwMngNR8vpai807kRzYMc2",
+                "status": "moving",
+                "targetX": 9,
+                "targetY": 21,
+                "unitCount": 3,
+                "units": [
+                  {
+                    "id": "goblin_scout_1",
+                    "name": "Scout",
+                    "race": "goblin",
+                    "strength": 5,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "goblin_scout_2",
+                    "name": "Scout",
+                    "race": "goblin",
+                    "strength": 5,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "goblin_wolf_rider_1",
+                    "name": "Wolf Rider",
+                    "race": "goblin",
+                    "strength": 12,
+                    "type": "npc"
+                  }
+                ],
+                "x": 8,
+                "y": 20
+              }
+            },
             "players": {
               "4phlqu0xieSPNwQAGpw8EKfuuXz2": {
                 "displayName": "Player",
@@ -1168,212 +1549,104 @@
               "faction": "goblin",
               "health": 1000,
               "indestructible": true,
-              "maxHealth": 1000,
-              "name": "Goblin Warren",
-              "type": "spawn",
               "items": [
                 {
+                  "description": "Crude drawings depicting attack plans",
                   "id": "struct_item_004",
                   "name": "Goblin War Plans",
-                  "type": "quest_item",
+                  "quantity": 1,
                   "rarity": "rare",
-                  "description": "Crude drawings depicting attack plans",
-                  "quantity": 1
+                  "type": "quest_item"
                 },
                 {
+                  "description": "Assorted jewelry from recent raids",
                   "id": "struct_item_005",
                   "name": "Stolen Jewelry",
-                  "type": "treasure",
+                  "quantity": 12,
                   "rarity": "uncommon",
-                  "description": "Assorted jewelry from recent raids",
-                  "quantity": 12
+                  "type": "treasure"
                 }
-              ]
-            },
-            "groups": {
-              "group_1681234567_4321": {
-                "id": "group_1681234567_4321",
-                "name": "Goblin Raiders",
-                "owner": "YWln4rQwMngNR8vpai807kRzYMc2",
-                "unitCount": 6,
-                "faction": "goblin",
-                "created": 1742937800000,
-                "lastUpdated": 1742937801000,
-                "x": 8,
-                "y": 20,
-                "status": "idle",
-                "lastProcessed": 1742937801000,
-                "units": [
-                  {
-                    "id": "YWln4rQwMngNR8vpai807kRzYMc2",
-                    "type": "player",
-                    "race": "goblin",
-                    "name": "Player",
-                    "strength": 10
-                  },
-                  {
-                    "id": "goblin_1",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Raider",
-                    "strength": 7
-                  },
-                  {
-                    "id": "goblin_2",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Raider",
-                    "strength": 7
-                  },
-                  {
-                    "id": "goblin_3",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Shaman",
-                    "strength": 9
-                  },
-                  {
-                    "id": "goblin_4",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Wolf Rider",
-                    "strength": 12
-                  },
-                  {
-                    "id": "goblin_5",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Berserker",
-                    "strength": 15
-                  }
-                ]
-              },
-              "group_1681234568_9999": {
-                "id": "group_1681234568_9999",
-                "name": "Goblin Scouts",
-                "owner": "t9vNUrbbFrS7brYtGI08jDK2H5Y2",
-                "unitCount": 3,
-                "faction": "goblin",
-                "created": 1742876200000,
-                "lastUpdated": 1742876200000,
-                "x": 8,
-                "y": 20,
-                "status": "mobilizing",
-                "readyAt": 1742876800000,
-                "lastProcessed": 1742876200000,
-                "units": [
-                  {
-                    "id": "t9vNUrbbFrS7brYtGI08jDK2H5Y2",
-                    "type": "player",
-                    "race": "goblin",
-                    "name": "Player",
-                    "strength": 10
-                  },
-                  {
-                    "id": "scout_1",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Scout",
-                    "strength": 5
-                  },
-                  {
-                    "id": "scout_2",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Scout",
-                    "strength": 5
-                  }
-                ]
-              },
-              "group_YWln4rQwMngNR8vpai807kRzYMc2_1744850000000": {
-                "id": "group_YWln4rQwMngNR8vpai807kRzYMc2_1744850000000",
-                "name": "Combined Strike Force",
-                "owner": "YWln4rQwMngNR8vpai807kRzYMc2",
-                "unitCount": 4,
-                "faction": "goblin",
-                "created": 1744850000000,
-                "lastUpdated": 1744850000000,
-                "x": 8,
-                "y": 20,
-                "status": "mobilizing",
-                "readyAt": 1744852800000,
-                "lastProcessed": 1744850000000,
-                "units": [
-                  {
-                    "id": "YWln4rQwMngNR8vpai807kRzYMc2",
-                    "type": "player",
-                    "race": "goblin",
-                    "name": "Player",
-                    "strength": 10
-                  },
-                  {
-                    "id": "goblin_2",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Raider",
-                    "strength": 7
-                  },
-                  {
-                    "id": "scout_1",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Scout",
-                    "strength": 5
-                  },
-                  {
-                    "id": "scout_2",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Scout",
-                    "strength": 5
-                  }
-                ]
-              },
-              "group_YWln4rQwMngNR8vpai807kRzYMc2_1744860000000": {
-                "id": "group_YWln4rQwMngNR8vpai807kRzYMc2_1744860000000",
-                "name": "Goblin Scout Party",
-                "owner": "YWln4rQwMngNR8vpai807kRzYMc2",
-                "unitCount": 3,
-                "faction": "goblin",
-                "created": 1744860000000,
-                "lastUpdated": 1744860000000,
-                "x": 8,
-                "y": 20,
-                "targetX": 9,
-                "targetY": 21,
-                "status": "moving",
-                "moveStarted": 1744860000000,
-                "moveSpeed": 1.5,
-                "lastProcessed": 1744860000000,
-                "units": [
-                  {
-                    "id": "goblin_scout_1",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Scout",
-                    "strength": 5
-                  },
-                  {
-                    "id": "goblin_scout_2",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Scout",
-                    "strength": 5
-                  },
-                  {
-                    "id": "goblin_wolf_rider_1",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Wolf Rider",
-                    "strength": 12
-                  }
-                ]
-              }
+              ],
+              "maxHealth": 1000,
+              "name": "Goblin Warren",
+              "type": "spawn"
             }
           }
         },
         "1,1": {
           "25,25": {
+            "groups": {
+              "group_1681234567_2468": {
+                "created": 1742953650000,
+                "faction": "dwarf",
+                "gatheringUntil": 1742957255000,
+                "id": "group_1681234567_2468",
+                "lastProcessed": 1742953655000,
+                "lastUpdated": 1742953655000,
+                "name": "Dwarven Miners",
+                "owner": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3",
+                "resource": "stone",
+                "status": "gathering",
+                "unitCount": 5,
+                "units": [
+                  {
+                    "id": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3",
+                    "name": "Player",
+                    "race": "dwarf",
+                    "strength": 10,
+                    "type": "player"
+                  },
+                  {
+                    "id": "miner_1",
+                    "name": "Miner",
+                    "race": "dwarf",
+                    "strength": 8,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "miner_2",
+                    "name": "Miner",
+                    "race": "dwarf",
+                    "strength": 8,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "miner_3",
+                    "name": "Engineer",
+                    "race": "dwarf",
+                    "strength": 9,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "miner_4",
+                    "name": "Foreman",
+                    "race": "dwarf",
+                    "strength": 12,
+                    "type": "npc"
+                  }
+                ],
+                "x": 25,
+                "y": 25
+              }
+            },
+            "items": [
+              {
+                "description": "A brilliant crystal from the mountain depths",
+                "id": "item_5001",
+                "name": "Mountain Crystal",
+                "quantity": 2,
+                "rarity": "rare",
+                "type": "gem"
+              },
+              {
+                "description": "Rare and valuable mithril ore",
+                "id": "item_5002",
+                "name": "Mithril Ore",
+                "quantity": 1,
+                "rarity": "epic",
+                "type": "resource"
+              }
+            ],
             "players": {
               "3DK5F3CH8TTbB4sC5AG9yhcyKYA3": {
                 "displayName": "Player",
@@ -1402,79 +1675,7 @@
               "maxHealth": 1000,
               "name": "Dwarven Outpost",
               "type": "spawn"
-            },
-            "groups": {
-              "group_1681234567_2468": {
-                "id": "group_1681234567_2468",
-                "name": "Dwarven Miners",
-                "owner": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3",
-                "unitCount": 5,
-                "faction": "dwarf",
-                "created": 1742953650000,
-                "lastUpdated": 1742953655000,
-                "x": 25,
-                "y": 25,
-                "status": "gathering",
-                "resource": "stone",
-                "gatheringUntil": 1742957255000,
-                "lastProcessed": 1742953655000,
-                "units": [
-                  {
-                    "id": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3",
-                    "type": "player",
-                    "race": "dwarf",
-                    "name": "Player",
-                    "strength": 10
-                  },
-                  {
-                    "id": "miner_1",
-                    "type": "npc",
-                    "race": "dwarf",
-                    "name": "Miner",
-                    "strength": 8
-                  },
-                  {
-                    "id": "miner_2",
-                    "type": "npc",
-                    "race": "dwarf",
-                    "name": "Miner",
-                    "strength": 8
-                  },
-                  {
-                    "id": "miner_3",
-                    "type": "npc",
-                    "race": "dwarf",
-                    "name": "Engineer",
-                    "strength": 9
-                  },
-                  {
-                    "id": "miner_4",
-                    "type": "npc",
-                    "race": "dwarf",
-                    "name": "Foreman",
-                    "strength": 12
-                  }
-                ]
-              }
-            },
-            "items": [
-              {
-                "id": "item_5001",
-                "name": "Mountain Crystal",
-                "type": "gem",
-                "rarity": "rare",
-                "description": "A brilliant crystal from the mountain depths",
-                "quantity": 2
-              },
-              {
-                "id": "item_5002",
-                "name": "Mithril Ore",
-                "type": "resource",
-                "rarity": "epic",
-                "description": "Rare and valuable mithril ore",
-                "quantity": 1
-              }
-            ]
+            }
           }
         }
       },
@@ -1509,6 +1710,14 @@
       "chunks": {
         "-1,0": {
           "-15,7": {
+            "players": {
+              "4yaUHVR9Y1P46KHOPF2bkv4rnsI3": {
+                "displayName": "ben.thorp",
+                "lastActive": 1744797108348,
+                "race": "human",
+                "uid": "4yaUHVR9Y1P46KHOPF2bkv4rnsI3"
+              }
+            },
             "structure": {
               "description": "A rare water source in the endless wasteland",
               "faction": "human",
@@ -1520,7 +1729,38 @@
             }
           },
           "-18,10": {
+            "groups": {
+              "group_2BRNYfq8DfQ9cR91RQK18qQtfII2_1744827985202": {
+                "created": 1744827985202,
+                "id": "group_2BRNYfq8DfQ9cR91RQK18qQtfII2_1744827985202",
+                "lastProcessed": 1744827985202,
+                "lastUpdated": 1744827985202,
+                "name": "New Force",
+                "owner": "2BRNYfq8DfQ9cR91RQK18qQtfII2",
+                "race": "elf",
+                "readyAt": 1744830385202,
+                "status": "mobilizing",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "2BRNYfq8DfQ9cR91RQK18qQtfII2",
+                    "name": "Guest 2BRN",
+                    "race": "elf",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": -18,
+                "y": 10
+              }
+            },
             "players": {
+              "2BRNYfq8DfQ9cR91RQK18qQtfII2": {
+                "displayName": "Player",
+                "lastActive": 1744827198818,
+                "race": "elf",
+                "uid": "2BRNYfq8DfQ9cR91RQK18qQtfII2"
+              },
               "5YbXBupUvDbeIWjBNaozDpWW78J3": {
                 "displayName": "Player",
                 "lastActive": 1744774626041,
@@ -1564,6 +1804,92 @@
             }
           },
           "7,7": {
+            "groups": {
+              "group_1681234567_1357": {
+                "created": 1742948990000,
+                "faction": "goblin",
+                "id": "group_1681234567_1357",
+                "lastProcessed": 1742948995000,
+                "lastUpdated": 1742948995000,
+                "name": "Goblin Scavengers",
+                "owner": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3",
+                "scoutRadius": 3,
+                "scoutingUntil": 1742952595000,
+                "status": "scouting",
+                "unitCount": 7,
+                "units": [
+                  {
+                    "id": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3",
+                    "name": "Player",
+                    "race": "goblin",
+                    "strength": 10,
+                    "type": "player"
+                  },
+                  {
+                    "id": "scav_1",
+                    "name": "Scavenger",
+                    "race": "goblin",
+                    "strength": 6,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "scav_2",
+                    "name": "Scavenger",
+                    "race": "goblin",
+                    "strength": 6,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "scav_3",
+                    "name": "Scavenger",
+                    "race": "goblin",
+                    "strength": 6,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "scav_4",
+                    "name": "Junk Collector",
+                    "race": "goblin",
+                    "strength": 7,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "scav_5",
+                    "name": "Tinker",
+                    "race": "goblin",
+                    "strength": 8,
+                    "type": "npc"
+                  },
+                  {
+                    "id": "scav_6",
+                    "name": "Boss",
+                    "race": "goblin",
+                    "strength": 12,
+                    "type": "npc"
+                  }
+                ],
+                "x": 7,
+                "y": 7
+              }
+            },
+            "items": [
+              {
+                "description": "A damaged compass that points in random directions",
+                "id": "item_6001",
+                "name": "Broken Compass",
+                "quantity": 1,
+                "rarity": "common",
+                "type": "junk"
+              },
+              {
+                "description": "A hardy plant with unusual properties",
+                "id": "item_6002",
+                "name": "Wasteland Herb",
+                "quantity": 4,
+                "rarity": "uncommon",
+                "type": "resource"
+              }
+            ],
             "players": {
               "3DK5F3CH8TTbB4sC5AG9yhcyKYA3": {
                 "displayName": "Player",
@@ -1598,93 +1924,7 @@
               "maxHealth": 1000,
               "name": "Goblin Scavenger Camp",
               "type": "spawn"
-            },
-            "groups": {
-              "group_1681234567_1357": {
-                "id": "group_1681234567_1357",
-                "name": "Goblin Scavengers",
-                "owner": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3",
-                "unitCount": 7,
-                "faction": "goblin",
-                "created": 1742948990000,
-                "lastUpdated": 1742948995000,
-                "x": 7,
-                "y": 7,
-                "status": "scouting",
-                "scoutRadius": 3,
-                "scoutingUntil": 1742952595000,
-                "lastProcessed": 1742948995000,
-                "units": [
-                  {
-                    "id": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3",
-                    "type": "player",
-                    "race": "goblin",
-                    "name": "Player",
-                    "strength": 10
-                  },
-                  {
-                    "id": "scav_1",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Scavenger",
-                    "strength": 6
-                  },
-                  {
-                    "id": "scav_2",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Scavenger",
-                    "strength": 6
-                  },
-                  {
-                    "id": "scav_3",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Scavenger",
-                    "strength": 6
-                  },
-                  {
-                    "id": "scav_4",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Junk Collector",
-                    "strength": 7
-                  },
-                  {
-                    "id": "scav_5",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Tinker",
-                    "strength": 8
-                  },
-                  {
-                    "id": "scav_6",
-                    "type": "npc",
-                    "race": "goblin",
-                    "name": "Boss",
-                    "strength": 12
-                  }
-                ]
-              }
-            },
-            "items": [
-              {
-                "id": "item_6001",
-                "name": "Broken Compass",
-                "type": "junk",
-                "rarity": "common",
-                "description": "A damaged compass that points in random directions",
-                "quantity": 1
-              },
-              {
-                "id": "item_6002",
-                "name": "Wasteland Herb",
-                "type": "resource",
-                "rarity": "uncommon",
-                "description": "A hardy plant with unusual properties",
-                "quantity": 4
-              }
-            ]
+            }
           }
         },
         "0,1": {
@@ -1708,19 +1948,19 @@
               "faction": "fairy",
               "health": 1000,
               "indestructible": true,
-              "maxHealth": 1000,
-              "name": "Fairy Dust Cavern",
-              "type": "spawn",
               "items": [
                 {
+                  "description": "A shard from an ancient magical crystal",
                   "id": "struct_item_006",
                   "name": "Crystal Shard",
-                  "type": "gem",
+                  "quantity": 1,
                   "rarity": "mythic",
-                  "description": "A shard from an ancient magical crystal",
-                  "quantity": 1
+                  "type": "gem"
                 }
-              ]
+              ],
+              "maxHealth": 1000,
+              "name": "Fairy Dust Cavern",
+              "type": "spawn"
             }
           },
           "8,18": {
