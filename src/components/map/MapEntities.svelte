@@ -1,198 +1,22 @@
 <script>
-  import { 
-    map,
-    targetStore,
-    moveTarget,
-    chunks,
-    coordinates
-  } from '../../lib/stores/map.js';
   import { onMount, onDestroy } from 'svelte';
   import { fade, fly } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import Torch from '../icons/Torch.svelte';
+  import { entities, targetStore } from '../../lib/stores/map';
   import { game, currentPlayer } from '../../lib/stores/game';
   
   // Import race icon components
-  import Human from '../icons/Human.svelte';
-  import Elf from '../icons/Elf.svelte';
-  import Dwarf from '../icons/Dwarf.svelte';
-  import Goblin from '../icons/Goblin.svelte';
-  import Fairy from '../icons/Fairy.svelte';
+  import Human from '../../components/icons/Human.svelte';
+  import Elf from '../../components/icons/Elf.svelte';
+  import Dwarf from '../../components/icons/Dwarf.svelte';
+  import Goblin from '../../components/icons/Goblin.svelte';
+  import Fairy from '../../components/icons/Fairy.svelte';
   
-  // Accept closing prop from parent
+  // Props
   const { closing = false } = $props();
   
-  // State variables
-  let activeTab = $state('all');
-  let visibleChunkCount = $state(0);
-  let entityList = $state([]);
-  let structuresCount = $state(0);
-  let playersCount = $state(0);
-  let groupsCount = $state(0);
-  let totalEntityCount = $state(0);
-  
-  // Simple filtered entities function
-  function getFilteredEntities() {
-    if (activeTab === 'all') return entityList;
-    const entityType = activeTab.slice(0, -1); // 'structures' -> 'structure'
-    return entityList.filter(entity => entity.entityType === entityType);
-  }
-  
-  // Track chunks count
-  $effect(() => {
-    visibleChunkCount = $chunks?.size || 0;
-  });
-
-  // Process coordinates to extract entities
-  $effect(() => {
-    if (!$map.ready || !$coordinates || $coordinates.length === 0) return;
-    
-    // Extract entities from coordinates
-    const entities = [];
-    
-    $coordinates.forEach(coord => {
-      // Add structure if present
-      if (coord.structure) {
-        entities.push({
-          entityType: 'structure',
-          entityId: `structure-${coord.x}-${coord.y}`,
-          x: coord.x, 
-          y: coord.y,
-          distance: coord.distance,
-          ...coord.structure
-        });
-      }
-      
-      // Add players if present
-      if (coord.players && Array.isArray(coord.players)) {
-        coord.players.forEach((player, idx) => {
-          if (!player) return;
-          entities.push({
-            entityType: 'player',
-            entityId: player.uid || `player-${coord.x}-${coord.y}-${idx}`,
-            x: coord.x,
-            y: coord.y,
-            distance: coord.distance,
-            ...player
-          });
-        });
-      }
-      
-      // Add groups if present
-      if (coord.groups && Array.isArray(coord.groups)) {
-        coord.groups.forEach((group, idx) => {
-          if (!group) return;
-          entities.push({
-            entityType: 'group',
-            entityId: group.id || `group-${coord.x}-${coord.y}-${idx}`,
-            x: coord.x,
-            y: coord.y,
-            distance: coord.distance,
-            ...group
-          });
-        });
-      }
-    });
-    
-    // Sort entities by distance
-    entities.sort((a, b) => a.distance - b.distance);
-    
-    // Update counts
-    structuresCount = entities.filter(e => e.entityType === 'structure').length;
-    playersCount = entities.filter(e => e.entityType === 'player').length;
-    groupsCount = entities.filter(e => e.entityType === 'group').length;
-    totalEntityCount = entities.length;
-    
-    // Update the entity list
-    entityList = entities;
-  });
-  
-  // Format distance for display
-  function formatDistance(distance) {
-    return distance === 0 ? 'here' : Math.round(distance * 10) / 10;
-  }
-  
-  // Navigate to entity location
-  function goToEntity(entity) {
-    if (entity?.x !== undefined && entity?.y !== undefined) {
-      moveTarget(entity.x, entity.y);
-    }
-  }
-  
-  // Entity display helpers
-  function getPlayerDisplayName(player) {
-    if (player.isAnonymous || player.guest) {
-      return `Guest ${player.id?.substring(0, 4) || 'User'}`;
-    }
-    return player.displayName || 
-           player.email?.split('@')[0] || 
-           `User ${player.id?.substring(0, 4)}`;
-  }
-
-  function getEntitySymbol(type) {
-    switch(type) {
-      case 'structure': return '🏛️';
-      case 'structure-spawn': return '🔵';
-      case 'structure-watchtower': return '🗼';
-      case 'structure-fortress': return '🏰';
-      case 'player': return '👤';
-      case 'group': return '👥';
-      default: return '•';
-    }
-  }
-
-  function getEntityColorClass(entity) {
-    if (entity.entityType === 'structure') {
-      switch(entity.type) {
-        case 'spawn': return 'entity-spawn';
-        case 'watchtower': return 'entity-watchtower';
-        case 'fortress': return 'entity-fortress';
-        default: return 'entity-structure';
-      }
-    } else if (entity.entityType === 'player') {
-      return 'entity-player';
-    } else {
-      return 'entity-group';
-    }
-  }
-
-  function formatStructureName(entity) {
-    if (entity.name) {
-      return `${entity.name} (${entity.type || 'structure'})`;
-    }
-    return entity.type ? entity.type.charAt(0).toUpperCase() + entity.type.slice(1) : 'Structure';
-  }
-
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  
-  // Function to determine primary race of a group
-  function getGroupRace(group) {
-    if (!group) return null;
-    
-    // If group has a faction, use that
-    if (group.faction) return group.faction;
-    
-    // Otherwise try to determine from units
-    if (group.units && group.units.length > 0) {
-      // Check if player is in the group (use their race)
-      const playerUnit = group.units.find(unit => unit.type === 'player');
-      if (playerUnit && playerUnit.race) return playerUnit.race;
-      
-      // Otherwise use the race of the first unit with a race
-      for (const unit of group.units) {
-        if (unit.race) return unit.race;
-      }
-    }
-    
-    return 'unknown';
-  }
-
-  // Replace function call with direct property access
-  function getStatusClass(group) {
-    // Use status directly from the group
-    return group.status || 'idle';
-  }
 
   // Timer for updating countdown
   let updateTimer;
@@ -250,393 +74,351 @@
       return `${seconds}s`;
     }
   }
+  
+  // Get status class from status
+  function getStatusClass(status) {
+    return status || 'idle';
+  }
 </script>
 
-<div class="entities-container">
-  <div 
-    class="entities-panel" 
-    class:closing={closing} 
-    role="region" 
-    aria-label="Map entities list">
-    <div class="entities-header">
-      <h3>Map Entities {totalEntityCount > 0 ? `(${totalEntityCount})` : ''}</h3>
-      <div class="tabs" role="tablist">
-        <button 
-          role="tab"
-          aria-selected={activeTab === 'all'}
-          class:active={activeTab === 'all'} 
-          onclick={() => activeTab = 'all'}>
-          All
-          {#if totalEntityCount > 0}
-            <span class="count">({totalEntityCount})</span>
-          {/if}
-        </button>
-        <button 
-          role="tab"
-          aria-selected={activeTab === 'structures'}
-          class:active={activeTab === 'structures'} 
-          onclick={() => activeTab = 'structures'}>
-          Structures
-          {#if structuresCount > 0}
-            <span class="count">({structuresCount})</span>
-          {/if}
-        </button>
-        <button 
-          role="tab"
-          aria-selected={activeTab === 'players'}
-          class:active={activeTab === 'players'} 
-          onclick={() => activeTab = 'players'}>
-          Players
-          {#if playersCount > 0}
-            <span class="count">({playersCount})</span>
-          {/if}
-        </button>
-        <button 
-          role="tab"
-          aria-selected={activeTab === 'groups'}
-          class:active={activeTab === 'groups'} 
-          onclick={() => activeTab = 'groups'}>
-          Groups
-          {#if groupsCount > 0}
-            <span class="count">({groupsCount})</span>
-          {/if}
-        </button>
-      </div>
-    </div>
-
-    <div class="entities-list" role="tabpanel" aria-label={`${activeTab} entities`}>
-      {#key activeTab}
-        {#if getFilteredEntities().length > 0}
-          {#each getFilteredEntities() as entity (entity.entityId)}
-            <button 
-              class="entity-item {getEntityColorClass(entity)}" 
-              onclick={() => goToEntity(entity)}
-              onkeydown={(e) => e.key === 'Enter' && goToEntity(entity)}
-              tabindex="0"
-              aria-label={`Go to ${entity.entityType} ${entity.name || entity.type || ''} at coordinates ${entity.x},${entity.y}, ${formatDistance(entity.distance)} tiles away`}
-            >
-              <div class="entity-icon">
-                {#if entity.entityType === 'structure' && entity.type === 'spawn'}
-                  <Torch size="1.2em" />
-                {:else if entity.entityType === 'player' && entity.race}
-                  {#if entity.race?.toLowerCase() === 'human'}
-                    <Human extraClass="race-icon-small" />
-                  {:else if entity.race?.toLowerCase() === 'elf'}
-                    <Elf extraClass="race-icon-small" />
-                  {:else if entity.race?.toLowerCase() === 'dwarf'}
-                    <Dwarf extraClass="race-icon-small" />
-                  {:else if entity.race?.toLowerCase() === 'goblin'}
-                    <Goblin extraClass="race-icon-small" />
-                  {:else if entity.race?.toLowerCase() === 'fairy'}
-                    <Fairy extraClass="race-icon-small" />
-                  {/if}
-                {:else if entity.entityType === 'group'}
-                  <div class="group-icon status-{entity.status}">
-                    {#if entity.race?.toLowerCase() === 'human'}
-                      <Human extraClass="race-icon-small" />
-                    {:else if entity.race?.toLowerCase() === 'elf'}
-                      <Elf extraClass="race-icon-small" />
-                    {:else if entity.race?.toLowerCase() === 'dwarf'}
-                      <Dwarf extraClass="race-icon-small" />
-                    {:else if entity.race?.toLowerCase() === 'goblin'}
-                      <Goblin extraClass="race-icon-small" />
-                    {:else if entity.race?.toLowerCase() === 'fairy'}
-                      <Fairy extraClass="race-icon-small" />
-                    {:else}
-                      <span class="group-default-icon">👥</span>
-                    {/if}
-                  </div>
-                {:else if entity.entityType === 'structure'}
-                  {getEntitySymbol(`structure-${entity.type}`)}
-                {:else}
-                  {getEntitySymbol(entity.entityType)}
+<div class="entities-wrapper" class:closing>
+  <div class="entities-panel" transition:fly|local={{ y: 200, duration: 500, easing: cubicOut }}>
+    <h3 class="title">Units & Structures</h3>
+    
+    <div class="entities-content">
+      {#if $targetStore?.structure}
+        <div class="entities-section">
+          <h4>Structure</h4>
+          <div class="entity structure">
+            <div class="entity-name">{$targetStore.structure.name || _fmt($targetStore.structure.type) || "Unknown"}</div>
+            <div class="entity-info">
+              {#if $targetStore.structure.faction}
+                <div class="entity-faction">{_fmt($targetStore.structure.faction)}</div>
+              {/if}
+              {#if $targetStore.structure.type}
+                <div class="entity-type">{_fmt($targetStore.structure.type)}</div>
+              {/if}
+            </div>
+          </div>
+        </div>
+      {/if}
+      
+      {#if $targetStore?.players && $targetStore.players.length > 0}
+        <div class="entities-section">
+          <h4>Players ({$targetStore.players.length})</h4>
+          {#each $targetStore.players as entity (entity.id)}
+            <div class="entity player" class:current={entity.id === $currentPlayer?.uid}>
+              <div class="entity-race-icon">
+                {#if entity.race?.toLowerCase() === 'human'}
+                  <Human extraClass="race-icon-entity" />
+                {:else if entity.race?.toLowerCase() === 'elf'}
+                  <Elf extraClass="race-icon-entity" />
+                {:else if entity.race?.toLowerCase() === 'dwarf'}
+                  <Dwarf extraClass="race-icon-entity" />
+                {:else if entity.race?.toLowerCase() === 'goblin'}
+                  <Goblin extraClass="race-icon-entity" />
+                {:else if entity.race?.toLowerCase() === 'fairy'}
+                  <Fairy extraClass="race-icon-entity" />
                 {/if}
               </div>
               <div class="entity-info">
-                <div class="entity-name">
-                  {#if entity.entityType === 'structure'}
-                    {formatStructureName(entity)}
-                  {:else if entity.entityType === 'player'}
-                    {getPlayerDisplayName(entity)}
-                    {#if entity.race}
-                      <span class="race-label">[{entity.race}]</span>
-                    {/if}
-                  {:else if entity.entityType === 'group'}
-                    {entity.name || 'Group'} ({entity.size || '?'})
-                    {#if entity.status === 'mobilizing' && entity.readyAt}
-                      <span class="status mobilizing">
-                        Mobilizing: {formatTimeRemaining(entity.readyAt)}
-                      </span>
-                    {:else if entity.status === 'moving' && entity.moveStarted}
-                      <span class="status moving">
-                        Moving: {formatTimeRemaining(calculateMoveCompletionTime(entity))}
-                      </span>
-                    {:else if entity.status && entity.status !== 'idle'}
-                      <span class="status {entity.status}">{_fmt(entity.status)}</span>
-                    {:else}
-                      <span class="status idle">Idle</span>
-                    {/if}
+                <div class="entity-name">{entity.displayName || 'Player'}</div>
+                {#if entity.race}
+                  <div class="entity-race">{_fmt(entity.race)}</div>
+                {/if}
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
+      
+      {#if $targetStore?.groups && $targetStore.groups.length > 0}
+        <div class="entities-section">
+          <h4>Groups ({$targetStore.groups.length})</h4>
+          {#each $targetStore.groups as entity (entity.id)}
+            <div class="entity group">
+              <div class="entity-race-icon">
+                {#if entity.race?.toLowerCase() === 'human'}
+                  <Human extraClass="race-icon-entity" />
+                {:else if entity.race?.toLowerCase() === 'elf'}
+                  <Elf extraClass="race-icon-entity" />
+                {:else if entity.race?.toLowerCase() === 'dwarf'}
+                  <Dwarf extraClass="race-icon-entity" />
+                {:else if entity.race?.toLowerCase() === 'goblin'}
+                  <Goblin extraClass="race-icon-entity" />
+                {:else if entity.race?.toLowerCase() === 'fairy'}
+                  <Fairy extraClass="race-icon-entity" />
+                {/if}
+              </div>
+              <div class="entity-info">
+                <div class="entity-name">{entity.name || entity.id}</div>
+                <div class="entity-details">
+                  <span class="unit-count">{entity.unitCount || entity.units?.length || "?"} units</span>
+                  {#if entity.status === 'mobilizing' && entity.readyAt}
+                    <span class="status mobilizing">
+                      Mobilizing: {formatTimeRemaining(entity.readyAt)}
+                    </span>
+                  {:else if entity.status === 'moving' && entity.moveStarted}
+                    <span class="status moving">
+                      Moving: {formatTimeRemaining(calculateMoveCompletionTime(entity))}
+                    </span>
+                  {:else if entity.status && entity.status !== 'idle'}
+                    <span class="status {entity.status}">{_fmt(entity.status)}</span>
                   {:else}
-                    {entity.name || 'Group'} ({entity.size || '?'})
+                    <span class="status idle">Idle</span>
                   {/if}
                 </div>
-                <div class="entity-location">
-                  <span class="coords">{entity.x},{entity.y}</span>
-                  <span class="distance">
-                    {formatDistance(entity.distance)} {entity.distance !== 0 ? 'tiles away' : ''}
-                  </span>
-                </div>
               </div>
-              <div class="entity-action" aria-hidden="true">→</div>
-            </button>
+            </div>
           {/each}
-        {:else if totalEntityCount > 0}
-          <div class="entity-empty">
-            No {activeTab} found in the current area
-          </div>
-        {:else if visibleChunkCount > 0}
-          <div class="entity-empty">
-            Loading entities from {visibleChunkCount} visible chunks...
-          </div>
-        {:else}
-          <div class="entity-empty">
-            {!$map.ready ? 'Waiting for map to initialize...' : `No ${activeTab === 'all' ? 'entities' : activeTab} found`}
-          </div>
-        {/if}
-      {/key}
+        </div>
+      {/if}
+      
+      {#if !$targetStore?.structure && (!$targetStore?.players || $targetStore.players.length === 0) && (!$targetStore?.groups || $targetStore.groups.length === 0)}
+        <div class="empty-state">
+          No entities at this location
+        </div>
+      {/if}
     </div>
   </div>
 </div>
 
 <style>
-  .entities-container {
+  .entities-wrapper {
     position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 997;
-  }
-
-  .entities-panel {
-    position: relative;
-    width: 20em;
-    max-width: calc(100vw - 2em);
-    max-height: calc(100vh - 3em);
-
-  .tabs button.active {
-    background: rgba(0, 0, 0, 0.1);
-    font-weight: bold;
-    color: rgba(0, 0, 0, 0.9);
-  }
-
-  .tabs button:hover {
-    background: rgba(0, 0, 0, 0.08);
-  }
-
-  .entities-list {
-    flex: 1;
-    overflow-y: auto;
-    max-height: 15em;
-  }
-
-  .entity-item {
-    display: flex;
-    align-items: center;
-    padding: 0.5em 1em;
-    border: none;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    background: transparent;
-    color: inherit;
-    font-family: inherit;
-    font-size: inherit;
-    text-align: left;
-    width: 100%;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  .entity-item:hover,
-  .entity-item:focus {
-    background-color: rgba(0, 0, 0, 0.05);
-    outline: none;
+    bottom: 2.5em;
+    left: .5em;
+    z-index: 998;
+    transition: opacity 0.2s ease;
+    font-size: 1.2em;
+    font-family: var(--font-body);
+    max-width: 95%;
   }
   
-  .entity-item:focus-visible {
-    box-shadow: inset 0 0 0 0.15em rgba(0, 0, 0, 0.1);
+  .entities-wrapper.closing {
+    pointer-events: none;
   }
-
-  .entity-icon {
-    margin-right: 0.8em;
-    font-size: 1.2em;
-    width: 1.5em;
-    text-align: center;
+  
+  .entities-panel {
+    background-color: rgba(255, 255, 255, 0.85);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.3em;
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(0.5em);
+    -webkit-backdrop-filter: blur(0.5em);
+    width: 100%;
+    max-width: 22.5em;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
+    overflow: hidden;
+    animation: reveal 0.4s ease-out forwards;
+    transform-origin: bottom left;
   }
-
+  
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+      border-color: transparent;
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+  }
+  
+  .title {
+    margin: 0;
+    padding: 0.8em 1em;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    font-family: var(--font-heading);
+  }
+  
+  .entities-content {
+    padding: 0.8em;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  
+  .entities-section {
+    margin-bottom: 1.2em;
+  }
+  
+  .entities-section:last-child {
+    margin-bottom: 0;
+  }
+  
+  h4 {
+    margin: 0 0 0.5em 0;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  .entity {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 0.6em;
+    padding: 0.5em 0.7em;
+    border-radius: 0.3em;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .entity:last-child {
+    margin-bottom: 0;
+  }
+  
+  .entity.player.current {
+    background-color: rgba(66, 133, 244, 0.05);
+    border-color: rgba(66, 133, 244, 0.3);
+  }
+  
+  .entity-race-icon {
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+  }
+  
+  :global(.race-icon-entity) {
+    width: 1.4em;
+    height: 1.4em;
+    fill: rgba(0, 0, 0, 0.7);
+  }
+  
   .entity-info {
     flex: 1;
   }
-
+  
   .entity-name {
-    font-weight: bold;
-    font-size: 0.9em;
+    font-weight: 500;
     color: rgba(0, 0, 0, 0.85);
-  }
-
-  .entity-location {
-    font-size: 0.8em;
-    opacity: 0.7;
-    display: flex;
-    justify-content: space-between;
-    color: rgba(0, 0, 0, 0.7);
-  }
-
-  .entity-action {
-    font-size: 1.2em;
-    color: rgba(0, 0, 0, 0.5);
-  }
-
-  .entity-empty, .entity-more {
-    padding: 1em;
-    text-align: center;
-    font-style: italic;
-    color: rgba(0, 0, 0, 0.5);
-    font-size: 0.9em;
-  }
-
-  .entity-structure {
-    border-left: 0.2em solid rgba(80, 80, 120, 0.6);
-  }
-
-  .entity-spawn {
-    border-left: 0.2em solid rgba(0, 180, 180, 0.6);
-  }
-
-  .entity-watchtower {
-    border-left: 0.2em solid rgba(180, 180, 0, 0.6);
-  }
-
-  .entity-fortress {
-    border-left: 0.2em solid rgba(180, 120, 0, 0.6);
-  }
-
-  .entity-player {
-    border-left: 0.2em solid rgba(0, 100, 200, 0.6);
-  }
-
-  .entity-group {
-    border-left: 0.2em solid rgba(200, 0, 50, 0.6);
-  }
-
-  @media (max-width: 640px) {
-    .entities-panel {
-      width: 100%;
-      max-width: 100%;
-      right: 0;
-      margin-top: 2.5em;
-      padding-top: 0; /* Reset padding for mobile view */
-      border-radius: 0.3em;
-      border-top-left-radius: 0;
-      border-top-right-radius: 0;
-    }
-  }
-
-  .tabs button:focus-visible {
-    outline: 0.15em solid rgba(0, 0, 0, 0.2);
-    outline-offset: 0.1em;
-  }
-
-  .entities-list::-webkit-scrollbar {
-    width: 0.4em;
+    line-height: 1.2;
+    margin-bottom: 0.2em;
   }
   
-  .entities-list::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
-  }
-  
-  .entities-list::-webkit-scrollbar-thumb {
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 10px;
-  }
-
-  .count {
-    font-size: 0.8em;
-    opacity: 0.7;
-    margin-left: 0.2em;
-  }
-
-  .refresh-button {
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    padding: 0.3em 0.8em;
-    margin-top: 0.5em;
-    font-size: 0.9em;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .refresh-button:hover {
-    background: rgba(0, 0, 0, 0.15);
-  }
-
-  .raw-entities {
-    margin-top: 1em;
-    text-align: left;
-    background: rgba(0, 0, 0, 0.05);
-    padding: 0.5em;
-    border-radius: 0.3em;
-  }
-  
-  .raw-section {
-    margin-bottom: 0.5em;
-  }
-  
-  .raw-label {
-    font-weight: bold;
-    font-size: 0.8em;
-  }
-  
-  .raw-list {
+  .entity-details {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.3em;
-    margin-top: 0.2em;
-  }
-  
-  .raw-item {
-    font-size: 0.7em;
-    padding: 0.1em 0.4em;
-    background: rgba(0, 0, 0, 0.1);
-    border: none;
-    border-radius: 0.2em;
+    gap: 0.6em;
+    font-size: 0.85em;
     color: rgba(0, 0, 0, 0.7);
-    cursor: pointer;
   }
   
-  .raw-item:hover {
-    background: rgba(0, 0, 0, 0.2);
-  }
-
-  .entity-icon :global(svg) {
-    vertical-align: middle;
-  }
-
-  /* Race icon styling */
-  :global(.race-icon-entity) {
-    width: 1.2em;
-    height: 1.2em;
-    fill: rgba(0, 0, 0, 0.7);
-  }
-
-  .race-label {
-    font-size: 0.8em;
+  .entity-race {
+    font-size: 0.85em;
     font-style: italic;
-    opacity: 0.8;
-    margin-left: 0.3em;
+    color: rgba(0, 0, 0, 0.6);
   }
-
-  justify-content: center;
-}
+  
+  .entity-faction {
+    font-size: 0.85em;
+    background-color: rgba(0, 0, 0, 0.06);
+    padding: 0.1em 0.4em;
+    border-radius: 0.2em;
+    margin-right: 0.5em;
+    display: inline-block;
+  }
+  
+  .entity-type {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .unit-count {
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .status {
+    display: inline-block;
+    font-size: 0.9em;
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  
+  .status.mobilizing {
+    background: rgba(255, 165, 0, 0.15);
+    border: 1px solid rgba(255, 165, 0, 0.3);
+    color: #ff8c00;
+    animation: pulseMobilizing 2s infinite;
+  }
+  
+  @keyframes pulseMobilizing {
+    0% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.4); }
+    50% { box-shadow: 0 0 0 3px rgba(255, 165, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
+  }
+  
+  .status.moving {
+    background: rgba(0, 128, 0, 0.15);
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #008000;
+    animation: pulseMoving 2s infinite;
+  }
+  
+  @keyframes pulseMoving {
+    0% { box-shadow: 0 0 0 0 rgba(0, 128, 0, 0.4); }
+    50% { box-shadow: 0 0 0 3px rgba(0, 128, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 128, 0, 0); }
+  }
+  
+  .status.gathering {
+    background: rgba(30, 144, 255, 0.15);
+    border: 1px solid rgba(30, 144, 255, 0.3);
+    color: #1e90ff;
+  }
+  
+  .status.scouting {
+    background: rgba(148, 0, 211, 0.15);
+    border: 1px solid rgba(148, 0, 211, 0.3);
+    color: #9400d3;
+  }
+  
+  .status.stationed {
+    background: rgba(128, 128, 128, 0.15);
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    color: #696969;
+  }
+  
+  .status.idle {
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .empty-state {
+    padding: 2em;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.5);
+    font-style: italic;
+  }
+  
+  /* Fix for mobile screens */
+  @media (max-width: 480px) {
+    .entities-wrapper {
+      left: 0.5em;
+      right: 0.5em;
+      bottom: 1em;
+      font-size: 1em;
+    }
+    
+    .entities-panel {
+      max-width: 100%;
+    }
+    
+    .entity-details {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.3em;
+    }
+  }
 </style>
