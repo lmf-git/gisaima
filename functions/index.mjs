@@ -7,10 +7,11 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import {onRequest} from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import logger from "firebase-functions/logger";
+import { initializeApp } from 'firebase-admin/app';
+import { getDatabase } from 'firebase-admin/database';
+import { logger } from "firebase-functions";
 
 /**
  * Firebase Cloud Functions for Gisaima game
@@ -18,8 +19,7 @@ import logger from "firebase-functions/logger";
  */
 
 // Initialize Firebase Admin SDK
-const admin = require('firebase-admin');
-admin.initializeApp();
+initializeApp();
 
 // Process world ticks to handle mobilizations and other time-based events
 export const processGameTicks = onSchedule({
@@ -34,7 +34,7 @@ export const processGameTicks = onSchedule({
     logger.info("Processing game ticks...");
     
     // Get database reference
-    const db = admin.database();
+    const db = getDatabase();
     
     // Get all worlds to determine their speeds
     const worldsSnapshot = await db.ref('worlds').once('value');
@@ -125,7 +125,7 @@ export const startMobilization = onCall(async (data, context) => {
   
   try {
     // Get database reference
-    const db = admin.database();
+    const db = getDatabase();
     
     // Get world speed to adjust mobilization time
     const worldInfoRef = db.ref(`worlds/${worldId}/info`);
