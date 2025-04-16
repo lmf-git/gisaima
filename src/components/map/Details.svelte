@@ -95,6 +95,24 @@
     currentTile?.terrain?.rarity && currentTile.terrain.rarity !== 'common'
   );
 
+  // Add derived property for items
+  const items = $derived(currentTile?.items || []);
+  
+  // Helper function to get item type icon
+  function getItemTypeIcon(type) {
+    switch(type?.toLowerCase()) {
+      case 'resource': return '♦';
+      case 'quest_item': return '!';
+      case 'artifact': return '★';
+      case 'gem': return '◆';
+      case 'tool': return '⚒';
+      case 'currency': return '⚜';
+      case 'junk': return '✽';
+      case 'treasure': return '❖';
+      default: return '•';
+    }
+  }
+
   // Get a formatted race name for a group
   function getGroupRaceName(group) {
     if (!group) return '';
@@ -218,6 +236,38 @@
               {/each}
             </div>
           {/if}
+        </div>
+      {/if}
+      
+      {#if items?.length > 0}
+        <div class="section">
+          <h3>Items ({items.length})</h3>
+          <ul class="item-list">
+            {#each items as item}
+              <li class="item {item.rarity || 'common'}">
+                <span class="item-icon {item.type || 'default'}">{getItemTypeIcon(item.type)}</span>
+                <div class="item-info">
+                  <span class="item-name">
+                    {item.name || _fmt(item.type) || "Unknown item"}
+                    {#if item.quantity > 1}
+                      <span class="item-quantity">×{item.quantity}</span>
+                    {/if}
+                  </span>
+                  <div class="item-details">
+                    {#if item.type}
+                      <span class="item-type">{_fmt(item.type)}</span>
+                    {/if}
+                    {#if item.rarity && item.rarity !== 'common'}
+                      <span class="item-rarity {item.rarity}">{formatRarity(item.rarity)}</span>
+                    {/if}
+                  </div>
+                  {#if item.description}
+                    <div class="item-description">{item.description}</div>
+                  {/if}
+                </div>
+              </li>
+            {/each}
+          </ul>
         </div>
       {/if}
       
@@ -766,5 +816,166 @@
       align-items: flex-start;
       gap: 0.3em;
     }
+  }
+
+  /* Item styles */
+  .item-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0.5em 0;
+  }
+
+  .item {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.5em;
+    margin-bottom: 0.5em;
+    border-radius: 0.3em;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2em;
+    height: 2em;
+    border-radius: 0.3em;
+    background: rgba(0, 0, 0, 0.1);
+    margin-right: 0.8em;
+    font-size: 0.9em;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .item-info {
+    flex: 1;
+  }
+
+  .item-name {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.2em;
+    color: rgba(0, 0, 0, 0.85);
+  }
+
+  .item-quantity {
+    font-weight: 600;
+    margin-left: 0.4em;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .item-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6em;
+    font-size: 0.85em;
+    margin-bottom: 0.2em;
+  }
+
+  .item-type {
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .item-description {
+    font-size: 0.85em;
+    font-style: italic;
+    color: rgba(0, 0, 0, 0.6);
+    line-height: 1.3;
+  }
+
+  .item-rarity {
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+    font-size: 0.85em;
+    font-weight: 500;
+  }
+
+  .item.uncommon {
+    border-color: rgba(30, 255, 0, 0.3);
+    box-shadow: inset 0 0 0.2em rgba(30, 255, 0, 0.15);
+  }
+
+  .item.rare {
+    border-color: rgba(0, 112, 221, 0.3);
+    box-shadow: inset 0 0 0.2em rgba(0, 112, 221, 0.15);
+  }
+
+  .item.epic {
+    border-color: rgba(148, 0, 211, 0.3);
+    box-shadow: inset 0 0 0.3em rgba(148, 0, 211, 0.2);
+  }
+
+  .item.legendary {
+    border-color: rgba(255, 165, 0, 0.3);
+    box-shadow: inset 0 0 0.3em rgba(255, 165, 0, 0.2);
+  }
+
+  .item.mythic {
+    border-color: rgba(255, 128, 255, 0.3);
+    box-shadow: inset 0 0 0.4em rgba(255, 128, 255, 0.25);
+  }
+
+  .item-icon.resource {
+    color: #228B22;
+  }
+
+  .item-icon.quest_item {
+    color: #FF8C00;
+  }
+
+  .item-icon.artifact {
+    color: #9932CC;
+  }
+
+  .item-icon.gem {
+    color: #4169E1;
+  }
+  
+  .item-icon.tool {
+    color: #696969;
+  }
+  
+  .item-icon.currency {
+    color: #DAA520;
+  }
+  
+  .item-icon.junk {
+    color: #A9A9A9;
+  }
+  
+  .item-icon.treasure {
+    color: #FFD700;
+  }
+
+  /* Rarity styles for tags */
+  .uncommon {
+    background: rgba(30, 255, 0, 0.15);
+    border: 1px solid rgba(30, 255, 0, 0.3);
+    color: #228B22;
+  }
+  
+  .rare {
+    background: rgba(0, 112, 221, 0.15);
+    border: 1px solid rgba(0, 112, 221, 0.3);
+    color: #0070DD;
+  }
+  
+  .epic {
+    background: rgba(148, 0, 211, 0.15);
+    border: 1px solid rgba(148, 0, 211, 0.3);
+    color: #9400D3;
+  }
+  
+  .legendary {
+    background: rgba(255, 165, 0, 0.15);
+    border: 1px solid rgba(255, 165, 0, 0.3);
+    color: #FF8C00;
+  }
+  
+  .mythic {
+    background: rgba(255, 128, 255, 0.15);
+    border: 1px solid rgba(255, 128, 255, 0.3);
+    color: #FF1493;
   }
 </style>

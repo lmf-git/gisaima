@@ -80,7 +80,8 @@ export const highlightedCoords = writable(null);
 export const entities = writable({
   structure: {},
   groups: {},
-  players: {}
+  players: {},
+  items: {}  // Add items to initial state
 });
 
 export const ready = derived(map, $map => $map.ready);
@@ -237,7 +238,8 @@ function processChunkData(data = {}) {
   const updates = {
     structure: {},
     groups: {},
-    players: {}
+    players: {},
+    items: {}  // Add items to updates structure
   };
   
   let entitiesChanged = false;
@@ -267,6 +269,12 @@ function processChunkData(data = {}) {
         .map(([id, data]) => ({ ...data, id, x, y }));
       entitiesChanged = true;
     }
+    
+    // Process items (multiple per tile)
+    if (tileData.items) {
+      updates.items[tileKey] = tileData.items.map(item => ({ ...item, x, y }));
+      entitiesChanged = true;
+    }
   });
   
   // Only update if entities changed
@@ -274,7 +282,8 @@ function processChunkData(data = {}) {
     entities.update(current => ({
       structure: { ...current.structure, ...updates.structure },
       groups: { ...current.groups, ...updates.groups },
-      players: { ...current.players, ...updates.players }
+      players: { ...current.players, ...updates.players },
+      items: { ...current.items, ...updates.items }  // Add items to update
     }));
   }
 }
@@ -336,6 +345,7 @@ export const coordinates = derived(
         const structure = $entities.structure[locationKey];
         const groups = $entities.groups[locationKey] || [];
         const players = $entities.players[locationKey] || [];
+        const items = $entities.items[locationKey] || []; // Add items from entities store
         
         result.push({
           x: globalX,
@@ -349,6 +359,7 @@ export const coordinates = derived(
           structure,
           groups,
           players,
+          items,  // Add items to the result
           terrain: terrainData,
           distance // Add pre-calculated distance
         });
@@ -717,7 +728,8 @@ export function cleanup() {
   entities.set({
     structure: {},
     groups: {},
-    players: {}
+    players: {},
+    items: {}  // Include items in the reset
   });
 }
 

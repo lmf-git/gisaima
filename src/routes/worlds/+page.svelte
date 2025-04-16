@@ -435,6 +435,10 @@
                 <span class="stat-value">{world.playerCount || 0}</span>
               </div>
               <div class="stat-item">
+                <span class="stat-label">Speed:</span>
+                <span class="stat-value">{(world.speed || $game.worldInfo[world.id]?.speed || 1.0).toFixed(1)}x</span>
+              </div>
+              <div class="stat-item">
                 <span class="stat-label">Created:</span>
                 <span class="stat-value">{new Date(world.created || Date.now()).toLocaleDateString()}</span>
               </div>

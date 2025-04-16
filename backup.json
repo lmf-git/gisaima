@@ -631,7 +631,25 @@
                   }
                 ]
               }
-            }
+            },
+            "items": [
+              {
+                "id": "item_1001",
+                "name": "Ancient Scroll",
+                "type": "quest_item",
+                "rarity": "rare",
+                "description": "A weathered scroll with elvish writing",
+                "quantity": 1
+              },
+              {
+                "id": "item_1002",
+                "name": "Healing Herbs",
+                "type": "resource",
+                "rarity": "common",
+                "description": "Wild herbs with medicinal properties",
+                "quantity": 5
+              }
+            ]
           }
         },
         "0,-1": {
@@ -661,7 +679,25 @@
               "indestructible": true,
               "maxHealth": 1000,
               "name": "Goblin Hideout",
-              "type": "spawn"
+              "type": "spawn",
+              "items": [
+                {
+                  "id": "struct_item_001",
+                  "name": "Goblin Trinket",
+                  "type": "artifact",
+                  "rarity": "uncommon",
+                  "description": "A strange trinket made by goblins",
+                  "quantity": 1
+                },
+                {
+                  "id": "struct_item_002",
+                  "name": "Hidden Gold",
+                  "type": "currency",
+                  "rarity": "common",
+                  "description": "A small stash of gold coins",
+                  "quantity": 50
+                }
+              ]
             }
           },
           "-5,5": {
@@ -783,7 +819,17 @@
                   }
                 ]
               }
-            }
+            },
+            "items": [
+              {
+                "id": "item_2001",
+                "name": "Map Fragment",
+                "type": "quest_item",
+                "rarity": "uncommon",
+                "description": "A torn piece of an important map",
+                "quantity": 1
+              }
+            ]
           },
           "5,-5": {
             "structure": {
@@ -793,7 +839,17 @@
               "indestructible": true,
               "maxHealth": 1000,
               "name": "Dwarven Enclave",
-              "type": "spawn"
+              "type": "spawn",
+              "items": [
+                {
+                  "id": "struct_item_003",
+                  "name": "Dwarven Hammer",
+                  "type": "tool",
+                  "rarity": "rare",
+                  "description": "A masterfully crafted dwarven mining hammer",
+                  "quantity": 1
+                }
+              ]
             }
           },
           "5,5": {
@@ -891,7 +947,25 @@
               "maxHealth": 1000,
               "name": "Fairy Glade",
               "type": "spawn"
-            }
+            },
+            "items": [
+              {
+                "id": "item_3001",
+                "name": "Fairy Dust",
+                "type": "resource",
+                "rarity": "uncommon",
+                "description": "Sparkling magical dust from fairy wings",
+                "quantity": 3
+              },
+              {
+                "id": "item_3002",
+                "name": "Glowing Mushroom",
+                "type": "resource",
+                "rarity": "common",
+                "description": "A bioluminescent fungus",
+                "quantity": 7
+              }
+            ]
           }
         },
         "0,0": {
@@ -1042,7 +1116,17 @@
               "maxHealth": 1000,
               "name": "Elvenwood Entrance",
               "type": "spawn"
-            }
+            },
+            "items": [
+              {
+                "id": "item_4001",
+                "name": "Elven Locket",
+                "type": "artifact",
+                "rarity": "epic",
+                "description": "A beautiful silver locket with ancient enchantments",
+                "quantity": 1
+              }
+            ]
           }
         },
         "0,1": {
@@ -1086,7 +1170,25 @@
               "indestructible": true,
               "maxHealth": 1000,
               "name": "Goblin Warren",
-              "type": "spawn"
+              "type": "spawn",
+              "items": [
+                {
+                  "id": "struct_item_004",
+                  "name": "Goblin War Plans",
+                  "type": "quest_item",
+                  "rarity": "rare",
+                  "description": "Crude drawings depicting attack plans",
+                  "quantity": 1
+                },
+                {
+                  "id": "struct_item_005",
+                  "name": "Stolen Jewelry",
+                  "type": "treasure",
+                  "rarity": "uncommon",
+                  "description": "Assorted jewelry from recent raids",
+                  "quantity": 12
+                }
+              ]
             },
             "groups": {
               "group_1681234567_4321": {
@@ -1354,7 +1456,25 @@
                   }
                 ]
               }
-            }
+            },
+            "items": [
+              {
+                "id": "item_5001",
+                "name": "Mountain Crystal",
+                "type": "gem",
+                "rarity": "rare",
+                "description": "A brilliant crystal from the mountain depths",
+                "quantity": 2
+              },
+              {
+                "id": "item_5002",
+                "name": "Mithril Ore",
+                "type": "resource",
+                "rarity": "epic",
+                "description": "Rare and valuable mithril ore",
+                "quantity": 1
+              }
+            ]
           }
         }
       },
@@ -1546,7 +1666,25 @@
                   }
                 ]
               }
-            }
+            },
+            "items": [
+              {
+                "id": "item_6001",
+                "name": "Broken Compass",
+                "type": "junk",
+                "rarity": "common",
+                "description": "A damaged compass that points in random directions",
+                "quantity": 1
+              },
+              {
+                "id": "item_6002",
+                "name": "Wasteland Herb",
+                "type": "resource",
+                "rarity": "uncommon",
+                "description": "A hardy plant with unusual properties",
+                "quantity": 4
+              }
+            ]
           }
         },
         "0,1": {
@@ -1572,7 +1710,17 @@
               "indestructible": true,
               "maxHealth": 1000,
               "name": "Fairy Dust Cavern",
-              "type": "spawn"
+              "type": "spawn",
+              "items": [
+                {
+                  "id": "struct_item_006",
+                  "name": "Crystal Shard",
+                  "type": "gem",
+                  "rarity": "mythic",
+                  "description": "A shard from an ancient magical crystal",
+                  "quantity": 1
+                }
+              ]
             }
           },
           "8,18": {

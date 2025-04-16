@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { fade, fly } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { entities, targetStore } from '../../lib/stores/map';
+  import { entities, targetStore, coordinates } from '../../lib/stores/map';
   import { game, currentPlayer } from '../../lib/stores/game';
   
   // Import race icon components
@@ -23,9 +23,20 @@
   // Counter to force updates
   let updateCounter = $state(0);
   
+  // Add filter state
+  let activeFilter = $state('all');
+  
+  // Filter definitions
+  const filters = [
+    { id: 'all', label: 'All' },
+    { id: 'structures', label: 'Structures' },
+    { id: 'players', label: 'Players' },
+    { id: 'groups', label: 'Groups' },
+    { id: 'items', label: 'Items' }
+  ];
+  
   // Set up timer to update countdown values
   onMount(() => {
-    // Update every second to keep countdown accurate
     updateTimer = setInterval(() => {
       updateCounter++;
     }, 1000);
@@ -42,7 +53,6 @@
   function calculateMoveCompletionTime(group) {
     if (!group || group.status !== 'moving' || !group.moveStarted) return null;
     
-    // Access the reactive store directly without storing in a constant
     const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
     
     const moveStarted = group.moveStarted;
@@ -57,7 +67,6 @@
   function formatTimeRemaining(endTime) {
     if (!endTime) return '';
     
-    // Force this function to re-evaluate on updateCounter change
     updateCounter;
     
     const now = Date.now();
@@ -79,35 +88,203 @@
   function getStatusClass(status) {
     return status || 'idle';
   }
+  
+  // Get rarity class from item rarity
+  function getRarityClass(rarity) {
+    return rarity?.toLowerCase() || 'common';
+  }
+  
+  // Extract all entities from all visible coordinates - fixed $derived syntax
+  const allStructures = $derived(
+    $coordinates
+      .map(cell => cell.structure ? {
+        ...cell.structure,
+        x: cell.x,
+        y: cell.y,
+        distance: cell.distance
+      } : null)
+      .filter(Boolean)
+      .sort((a, b) => a.distance - b.distance)
+  );
+  
+  const allPlayers = $derived(
+    $coordinates
+      .flatMap(cell => 
+        (cell.players || []).map(player => ({
+          ...player,
+          x: cell.x,
+          y: cell.y,
+          distance: cell.distance
+        }))
+      )
+      .sort((a, b) => a.distance - b.distance)
+  );
+  
+  const allGroups = $derived(
+    $coordinates
+      .flatMap(cell => 
+        (cell.groups || []).map(group => ({
+          ...group,
+          x: cell.x,
+          y: cell.y,
+          distance: cell.distance
+        }))
+      )
+      .sort((a, b) => a.distance - b.distance)
+  );
+  
+  const allItems = $derived(
+    $coordinates
+      .flatMap(cell => 
+        (cell.items || []).map(item => ({
+          ...item,
+          x: cell.x,
+          y: cell.y,
+          distance: cell.distance
+        }))
+      )
+      .sort((a, b) => a.distance - b.distance)
+  );
+  
+  // Calculate visible chunks count - fixed $derived syntax
+  const visibleChunks = $derived(
+    $coordinates.reduce((chunks, cell) => {
+      if (cell.chunkKey) chunks.add(cell.chunkKey);
+      return chunks;
+    }, new Set()).size
+  );
+  
+  // Track non-empty filter types
+  const nonEmptyFilters = $derived(() => {
+    const nonEmpty = [];
+    if (allStructures.length > 0) nonEmpty.push('structures');
+    if (allPlayers.length > 0) nonEmpty.push('players');
+    if (allGroups.length > 0) nonEmpty.push('groups');
+    if (allItems.length > 0) nonEmpty.push('items');
+    return nonEmpty;
+  });
+  
+  // Auto-select filter if there's only one type with content
+  $effect(() => {
+    if (nonEmptyFilters.length === 1) {
+      setFilter(nonEmptyFilters[0]);
+    } else if (nonEmptyFilters.length > 0 && !nonEmptyFilters.includes(activeFilter) && activeFilter !== 'all') {
+      setFilter('all');
+    }
+  });
+  
+  // Determine if we should show filter tabs
+  const showFilterTabs = $derived(nonEmptyFilters.length > 1);
+  
+  // Check if a section should be visible based on the active filter
+  function shouldShowSection(sectionType) {
+    return activeFilter === 'all' || activeFilter === sectionType;
+  }
+  
+  // Set active filter
+  function setFilter(filter) {
+    activeFilter = filter;
+  }
+  
+  // Calculate if any content exists for a given filter
+  function hasContent(filter) {
+    switch(filter) {
+      case 'structures': return allStructures.length > 0;
+      case 'players': return allPlayers.length > 0;
+      case 'groups': return allGroups.length > 0;
+      case 'items': return allItems.length > 0;
+      case 'all': return allStructures.length > 0 || allPlayers.length > 0 || allGroups.length > 0 || allItems.length > 0;
+      default: return false;
+    }
+  }
+  
+  // Calculate count for each filter
+  function getFilterCount(filter) {
+    switch(filter) {
+      case 'structures': return allStructures.length;
+      case 'players': return allPlayers.length;
+      case 'groups': return allGroups.length;
+      case 'items': return allItems.length;
+      default: return 0;
+    }
+  }
+  
+  // Format coordinates for display
+  function formatCoords(x, y) {
+    return `${x},${y}`;
+  }
+  
+  // Check if the entity is at the target location
+  function isAtTarget(x, y) {
+    return $targetStore && $targetStore.x === x && $targetStore.y === y;
+  }
 </script>
 
 <div class="entities-wrapper" class:closing>
-  <div class="entities-panel" transition:fly|local={{ y: 200, duration: 500, easing: cubicOut }}>
-    <h3 class="title">Units & Structures</h3>
+  <div class="entities-panel" transition:fly|local={{ y: -200, duration: 500, easing: cubicOut }}>
+    <h3 class="title">
+      Map Entities
+      <span class="subtitle">{visibleChunks} chunks visible</span>
+    </h3>
+    
+    <!-- Add debug output to verify data is available -->
+    <!-- Comment out in production -->
+    <!-- 
+    <div class="debug-info" style="font-size: 0.7em; color: rgba(0,0,0,0.5); margin-bottom: 0.5em;">
+      Structures: {allStructures.length}, 
+      Players: {allPlayers.length}, 
+      Groups: {allGroups.length}, 
+      Items: {allItems.length}
+    </div>
+    -->
+    
+    {#if showFilterTabs}
+      <div class="filter-tabs">
+        {#each filters as filter}
+          <button 
+            class="filter-tab" 
+            class:active={activeFilter === filter.id}
+            class:has-content={hasContent(filter.id)} 
+            onclick={() => setFilter(filter.id)}
+            disabled={!hasContent(filter.id)}
+          >
+            {filter.label}
+            {#if filter.id !== 'all' && getFilterCount(filter.id) > 0}
+              <span class="filter-count">{getFilterCount(filter.id)}</span>
+            {/if}
+          </button>
+        {/each}
+      </div>
+    {/if}
     
     <div class="entities-content">
-      {#if $targetStore?.structure}
+      {#if shouldShowSection('structures') && allStructures.length > 0}
         <div class="entities-section">
-          <h4>Structure</h4>
-          <div class="entity structure">
-            <div class="entity-name">{$targetStore.structure.name || _fmt($targetStore.structure.type) || "Unknown"}</div>
-            <div class="entity-info">
-              {#if $targetStore.structure.faction}
-                <div class="entity-faction">{_fmt($targetStore.structure.faction)}</div>
-              {/if}
-              {#if $targetStore.structure.type}
-                <div class="entity-type">{_fmt($targetStore.structure.type)}</div>
-              {/if}
+          <h4 class:visually-hidden={activeFilter === 'structures'}>Structures ({allStructures.length})</h4>
+          {#each allStructures as structure (structure.x + ':' + structure.y)}
+            <div class="entity structure" class:at-target={isAtTarget(structure.x, structure.y)}>
+              <div class="entity-name">
+                {structure.name || _fmt(structure.type) || "Unknown"}
+                <span class="entity-coords">{formatCoords(structure.x, structure.y)}</span>
+              </div>
+              <div class="entity-info">
+                {#if structure.faction}
+                  <div class="entity-faction">{_fmt(structure.faction)}</div>
+                {/if}
+                {#if structure.type}
+                  <div class="entity-type">{_fmt(structure.type)}</div>
+                {/if}
+              </div>
             </div>
-          </div>
+          {/each}
         </div>
       {/if}
       
-      {#if $targetStore?.players && $targetStore.players.length > 0}
+      {#if shouldShowSection('players') && allPlayers.length > 0}
         <div class="entities-section">
-          <h4>Players ({$targetStore.players.length})</h4>
-          {#each $targetStore.players as entity (entity.id)}
-            <div class="entity player" class:current={entity.id === $currentPlayer?.uid}>
+          <h4 class:visually-hidden={activeFilter === 'players'}>Players ({allPlayers.length})</h4>
+          {#each allPlayers as entity (entity.id)}
+            <div class="entity player" class:current={entity.id === $currentPlayer?.uid} class:at-target={isAtTarget(entity.x, entity.y)}>
               <div class="entity-race-icon">
                 {#if entity.race?.toLowerCase() === 'human'}
                   <Human extraClass="race-icon-entity" />
@@ -122,7 +299,10 @@
                 {/if}
               </div>
               <div class="entity-info">
-                <div class="entity-name">{entity.displayName || 'Player'}</div>
+                <div class="entity-name">
+                  {entity.displayName || 'Player'}
+                  <span class="entity-coords">{formatCoords(entity.x, entity.y)}</span>
+                </div>
                 {#if entity.race}
                   <div class="entity-race">{_fmt(entity.race)}</div>
                 {/if}
@@ -132,11 +312,11 @@
         </div>
       {/if}
       
-      {#if $targetStore?.groups && $targetStore.groups.length > 0}
+      {#if shouldShowSection('groups') && allGroups.length > 0}
         <div class="entities-section">
-          <h4>Groups ({$targetStore.groups.length})</h4>
-          {#each $targetStore.groups as entity (entity.id)}
-            <div class="entity group">
+          <h4 class:visually-hidden={activeFilter === 'groups'}>Groups ({allGroups.length})</h4>
+          {#each allGroups as entity (entity.id)}
+            <div class="entity group" class:at-target={isAtTarget(entity.x, entity.y)}>
               <div class="entity-race-icon">
                 {#if entity.race?.toLowerCase() === 'human'}
                   <Human extraClass="race-icon-entity" />
@@ -151,7 +331,10 @@
                 {/if}
               </div>
               <div class="entity-info">
-                <div class="entity-name">{entity.name || entity.id}</div>
+                <div class="entity-name">
+                  {entity.name || entity.id}
+                  <span class="entity-coords">{formatCoords(entity.x, entity.y)}</span>
+                </div>
                 <div class="entity-details">
                   <span class="unit-count">{entity.unitCount || entity.units?.length || "?"} units</span>
                   {#if entity.status === 'mobilizing' && entity.readyAt}
@@ -173,10 +356,45 @@
           {/each}
         </div>
       {/if}
+
+      {#if shouldShowSection('items') && allItems.length > 0}
+        <div class="entities-section">
+          <h4 class:visually-hidden={activeFilter === 'items'}>Items ({allItems.length})</h4>
+          {#each allItems as item (item.id)}
+            <div class="entity item {getRarityClass(item.rarity)}" class:at-target={isAtTarget(item.x, item.y)}>
+              <div class="item-icon {item.type}"></div>
+              <div class="entity-info">
+                <div class="entity-name">
+                  {item.name || _fmt(item.type) || "Unknown Item"}
+                  <span class="entity-coords">{formatCoords(item.x, item.y)}</span>
+                </div>
+                <div class="entity-details">
+                  {#if item.type}
+                    <span class="item-type">{_fmt(item.type)}</span>
+                  {/if}
+                  {#if item.quantity > 1}
+                    <span class="item-quantity">×{item.quantity}</span>
+                  {/if}
+                  {#if item.rarity && item.rarity !== 'common'}
+                    <span class="item-rarity {item.rarity}">{_fmt(item.rarity)}</span>
+                  {/if}
+                </div>
+                {#if item.description}
+                  <div class="item-description">{item.description}</div>
+                {/if}
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
       
-      {#if !$targetStore?.structure && (!$targetStore?.players || $targetStore.players.length === 0) && (!$targetStore?.groups || $targetStore.groups.length === 0)}
+      {#if !hasContent(activeFilter)}
         <div class="empty-state">
-          No entities at this location
+          {#if activeFilter === 'all'}
+            No entities visible on map
+          {:else}
+            No {activeFilter} visible on map
+          {/if}
         </div>
       {/if}
     </div>
@@ -186,17 +404,45 @@
 <style>
   .entities-wrapper {
     position: absolute;
-    bottom: 2.5em;
-    left: .5em;
+    top: 0.5em;
+    right: 0.5em;
     z-index: 998;
     transition: opacity 0.2s ease;
-    font-size: 1.2em;
+    font-size: 1.4em; /* Increased from 1.2em */
     font-family: var(--font-body);
     max-width: 95%;
   }
   
   .entities-wrapper.closing {
     pointer-events: none;
+  }
+  
+  .subtitle {
+    font-size: 0.7em;
+    font-weight: normal;
+    color: rgba(0, 0, 0, 0.5);
+    margin-left: 0.6em;
+  }
+  
+  .entity-coords {
+    font-size: 0.7em;
+    color: rgba(0, 0, 0, 0.5);
+    margin-left: 0.6em;
+    font-weight: normal;
+  }
+  
+  .at-target {
+    background-color: rgba(64, 158, 255, 0.1);
+    border-color: rgba(64, 158, 255, 0.3);
+    position: relative; /* Added for ::before positioning */
+  }
+  
+  .at-target::before {
+    content: '•';
+    color: rgba(64, 158, 255, 0.8);
+    position: absolute;
+    left: 0.2em;
+    font-size: 1.3em;
   }
   
   .entities-panel {
@@ -208,12 +454,88 @@
     backdrop-filter: blur(0.5em);
     -webkit-backdrop-filter: blur(0.5em);
     width: 100%;
-    max-width: 22.5em;
+    max-width: 28em; /* Increased from 22.5em */
     display: flex;
     flex-direction: column;
     overflow: hidden;
     animation: reveal 0.4s ease-out forwards;
-    transform-origin: bottom left;
+    transform-origin: top right;
+  }
+  
+  /* Filter tabs styling */
+  .filter-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: rgba(0, 0, 0, 0.03);
+    padding: 0 0.3em;
+  }
+  
+  .filter-tab {
+    padding: 0.6em 0.8em;
+    font-family: var(--font-heading);
+    font-size: 0.8em;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    color: rgba(0, 0, 0, 0.5);
+    transition: all 0.2s ease;
+    flex: 1;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    white-space: nowrap;
+  }
+  
+  /* Hide headings when filter is specifically selected */
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  
+  .filter-tab:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.03);
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .filter-tab.active {
+    border-bottom: 2px solid #4285f4;
+    color: rgba(0, 0, 0, 0.9);
+    font-weight: 500;
+  }
+  
+  .filter-tab:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  
+  .filter-tab.has-content:not(.active) {
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .filter-count {
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0.8em;
+    padding: 0.1em 0.4em;
+    font-size: 0.7em;
+    min-width: 1.1em;
+    text-align: center;
+    margin-left: 0.4em;
+    line-height: 1.1;
+  }
+  
+  .filter-tab.active .filter-count {
+    background-color: #4285f4;
+    color: white;
   }
   
   @keyframes reveal {
@@ -405,9 +727,8 @@
   /* Fix for mobile screens */
   @media (max-width: 480px) {
     .entities-wrapper {
-      left: 0.5em;
+      top: 0.5em;
       right: 0.5em;
-      bottom: 1em;
       font-size: 1em;
     }
     
@@ -420,5 +741,170 @@
       align-items: flex-start;
       gap: 0.3em;
     }
+    
+    .filter-tabs {
+      overflow-x: auto;
+      padding: 0;
+    }
+    
+    .filter-tab {
+      padding: 0.5em;
+      font-size: 0.7em;
+    }
+  }
+
+  /* Item styles */
+  .item-icon {
+    width: 1.4em;
+    height: 1.4em;
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+    border-radius: 0.2em;
+    background-color: rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .item-icon::before {
+    content: '';
+    position: absolute;
+    width: 60%;
+    height: 60%;
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .item-icon.resource::before {
+    content: '♦';
+    font-size: 0.9em;
+    color: #228B22;
+    background: none;
+  }
+
+  .item-icon.quest_item::before {
+    content: '!';
+    font-size: 0.9em;
+    color: #FF8C00;
+    background: none;
+    font-weight: bold;
+  }
+
+  .item-icon.artifact::before {
+    content: '★';
+    font-size: 1em;
+    color: #9932CC;
+    background: none;
+  }
+
+  .item-icon.gem::before {
+    content: '◆';
+    font-size: 0.9em;
+    color: #4169E1;
+    background: none;
+  }
+
+  .item-icon.tool::before {
+    content: '⚒';
+    font-size: 0.8em;
+    color: #696969;
+    background: none;
+  }
+
+  .item-icon.currency::before {
+    content: '⚜';
+    font-size: 0.8em;
+    color: #DAA520;
+    background: none;
+  }
+
+  .item-icon.junk::before {
+    content: '✽';
+    font-size: 0.9em;
+    color: #A9A9A9;
+    background: none;
+  }
+
+  .item-icon.treasure::before {
+    content: '❖';
+    font-size: 0.9em;
+    color: #FFD700;
+    background: none;
+  }
+
+  .item-type {
+    color: rgba(0, 0, 0, 0.6);
+    white-space: nowrap;
+  }
+
+  .item-quantity {
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .item-description {
+    font-size: 0.8em;
+    font-style: italic;
+    color: rgba(0, 0, 0, 0.6);
+    margin-top: 0.3em;
+  }
+
+  .item-rarity {
+    display: inline-block;
+    font-size: 0.85em;
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .item-rarity.uncommon {
+    background: rgba(30, 255, 0, 0.15);
+    border: 1px solid rgba(30, 255, 0, 0.3);
+    color: #228B22;
+  }
+
+  .item-rarity.rare {
+    background: rgba(0, 112, 221, 0.15);
+    border: 1px solid rgba(0, 112, 221, 0.3);
+    color: #0070DD;
+  }
+
+  .item-rarity.epic {
+    background: rgba(148, 0, 211, 0.15);
+    border: 1px solid rgba(148, 0, 211, 0.3);
+    color: #9400D3;
+  }
+
+  .item-rarity.legendary {
+    background: rgba(255, 165, 0, 0.15);
+    border: 1px solid rgba(255, 165, 0, 0.3);
+    color: #FF8C00;
+  }
+
+  .item-rarity.mythic {
+    background: rgba(255, 128, 255, 0.15);
+    border: 1px solid rgba(255, 128, 255, 0.3);
+    color: #FF1493;
+  }
+
+  .entity.item.rare {
+    border-color: rgba(0, 112, 221, 0.3);
+    box-shadow: inset 0 0 0.2em rgba(0, 112, 221, 0.15);
+  }
+
+  .entity.item.epic {
+    border-color: rgba(148, 0, 211, 0.3);
+    box-shadow: inset 0 0 0.2em rgba(148, 0, 211, 0.15);
+  }
+
+  .entity.item.legendary {
+    border-color: rgba(255, 165, 0, 0.3);
+    box-shadow: inset 0 0 0.2em rgba(255, 165, 0, 0.15);
+  }
+
+  .entity.item.mythic {
+    border-color: rgba(255, 128, 255, 0.3);
+    box-shadow: inset 0 0 0.3em rgba(255, 128, 255, 0.15);
   }
 </style>

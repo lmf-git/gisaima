@@ -513,6 +513,26 @@
       default: return 'transparent';
     }
   }
+  
+  // Helper function to find the highest rarity item
+  function getHighestRarityItem(items) {
+    if (!items || !items.length) return null;
+    
+    const rarityOrder = {
+      'common': 0,
+      'uncommon': 1,
+      'rare': 2,
+      'epic': 3,
+      'legendary': 4,
+      'mythic': 5
+    };
+    
+    return items.reduce((highest, current) => {
+      const highestRank = rarityOrder[highest?.rarity || 'common'] || 0;
+      const currentRank = rarityOrder[current?.rarity || 'common'] || 0;
+      return currentRank > highestRank ? current : highest;
+    }, null);
+  }
 </script>
 
 <svelte:window
@@ -552,6 +572,7 @@
             Math.pow(cell.y - $map.target.y, 2)
           )}
           {@const isCurrentPlayerTile = hasCurrentPlayer(cell.players)}
+          {@const highestRarityItem = getHighestRarityItem(cell.items)}
           <div
             class="tile {getStructureClass(cell.structure)} {cell.terrain?.rarity || 'common'}"
             class:center={cell.isCenter}
@@ -559,17 +580,19 @@
             class:has-structure={cell.structure}
             class:has-groups={cell.groups?.length > 0}
             class:has-players={cell.players?.length > 0}
+            class:has-items={cell.items?.length > 0}
             class:player-position={isPlayerPosition(cell.x, cell.y)}
             class:current-player-tile={isCurrentPlayerTile}
             onmouseenter={() => handleTileHover(cell)}
             role="gridcell"
             tabindex="-1"
-            aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}{cell.terrain?.rarity ? ', '+cell.terrain.rarity : ''}{isPlayerPosition(cell.x, cell.y) ? ', your position' : ''}{isCurrentPlayerTile ? ', your character' : ''}"
+            aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}{cell.terrain?.rarity ? ', '+cell.terrain.rarity : ''}{isPlayerPosition(cell.x, cell.y) ? ', your position' : ''}{isCurrentPlayerTile ? ', your character' : ''}{cell.items?.length ? ', has items' : ''}"
             aria-current={cell.isCenter ? "location" : undefined}
             style="
               background-color: {cell.color};
               animation-delay: {!introduced && cell.isCenter ? 0 : (!introduced ? 0.05 * distance : 0)}s;
               {cell.terrain?.rarity && cell.terrain.rarity !== 'common' ? `box-shadow: inset 0 0 ${getRarityGlowSize(cell.terrain.rarity)} ${getRarityColor(cell.terrain.rarity)};` : ''}
+              {highestRarityItem ? `box-shadow: inset 0 0 ${getRarityGlowSize(highestRarityItem.rarity)} ${getRarityColor(highestRarityItem.rarity)};` : ''}
             "
           >
             <!-- Add Torch icon for spawn structures -->
@@ -602,6 +625,14 @@
               <div class="entity-indicator group-indicator" aria-hidden="true">
                 {#if cell.groups.length > 1}
                   <span class="count">{cell.groups.length}</span>
+                {/if}
+              </div>
+            {/if}
+            
+            {#if cell.items?.length > 0}
+              <div class="entity-indicator item-indicator {highestRarityItem?.rarity || 'common'}" aria-hidden="true">
+                {#if cell.items.length > 1}
+                  <span class="count">{cell.items.length}</span>
                 {/if}
               </div>
             {/if}
@@ -819,10 +850,17 @@
     box-shadow: inset 0 0 0.3em rgba(100, 100, 255, 0.4);
   }
   
+  .tile.has-items {
+    box-shadow: inset 0 0 0.3em rgba(255, 215, 0, 0.4);
+  }
+  
   /* Combined entity indicator styles for better visibility */
   .tile.has-structure.has-groups,
   .tile.has-structure.has-players,
-  .tile.has-groups.has-players {
+  .tile.has-structure.has-items,
+  .tile.has-groups.has-players,
+  .tile.has-groups.has-items,
+  .tile.has-players.has-items {
     box-shadow: inset 0 0 0.4em rgba(255, 255, 255, 0.5);
   }
 
@@ -1094,5 +1132,48 @@
   /* Improve the player and structure indicators visibility when highlighted */
   .tile.highlighted .entity-indicator {
     z-index: 16; /* Ensure indicators are above highlight effect */
+  }
+
+  .item-indicator {
+    bottom: .2em;
+    right: .2em;
+    width: .5em;
+    height: .5em;
+    background: rgba(255, 215, 0, 0.9);
+    border: .0625em solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 .15em rgba(255, 215, 0, 0.6);
+    border-radius: 50%;
+  }
+  
+  .item-indicator.uncommon {
+    background: rgba(30, 255, 0, 0.9);
+    box-shadow: 0 0 .15em rgba(30, 255, 0, 0.6);
+  }
+  
+  .item-indicator.rare {
+    background: rgba(0, 112, 221, 0.9);
+    box-shadow: 0 0 .15em rgba(0, 112, 221, 0.6);
+  }
+  
+  .item-indicator.epic {
+    background: rgba(148, 0, 211, 0.9);
+    box-shadow: 0 0 .15em rgba(148, 0, 211, 0.6);
+  }
+  
+  .item-indicator.legendary {
+    background: rgba(255, 165, 0, 0.9);
+    box-shadow: 0 0 .15em rgba(255, 165, 0, 0.6);
+  }
+  
+  .item-indicator.mythic {
+    background: rgba(255, 128, 255, 0.9);
+    box-shadow: 0 0 .15em rgba(255, 128, 255, 0.6);
+    animation: pulseItemMythic 2s infinite;
+  }
+  
+  @keyframes pulseItemMythic {
+    0% { box-shadow: 0 0 0 0 rgba(255, 128, 255, 0.8); }
+    70% { box-shadow: 0 0 0 0.4em rgba(255, 128, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 128, 255, 0); }
   }
 </style>
