@@ -3,6 +3,7 @@
   import Close from '../../components/icons/Close.svelte';
   import { user } from "../../lib/stores/user";
   import { onMount, onDestroy } from 'svelte';
+  import { game } from "../../lib/stores/game";
   
   // Import race icon components
   import Human from '../../components/icons/Human.svelte';
@@ -129,15 +130,30 @@
     }
   });
 
-  // Format time remaining for mobilizing groups
-  function formatTimeRemaining(readyAt) {
-    if (!readyAt) return '';
+  // Calculate estimated arrival time for moving groups
+  function calculateMoveCompletionTime(group) {
+    if (!group || group.status !== 'moving' || !group.moveStarted) return null;
+    
+    const worldId = $game.currentWorld;
+    const worldSpeed = $game.worldInfo[worldId]?.speed || 1.0;
+    
+    const moveStarted = group.moveStarted;
+    const moveSpeed = group.moveSpeed || 1.0;
+    const adjustedSpeed = moveSpeed * worldSpeed;
+    const moveTime = (1000 * 60) / adjustedSpeed; // Base 1 minute per tile, adjusted by speed
+    
+    return moveStarted + moveTime;
+  }
+
+  // Format time remaining for mobilizing or moving groups
+  function formatTimeRemaining(endTime) {
+    if (!endTime) return '';
     
     // Force this function to re-evaluate on updateCounter change
     updateCounter;
     
     const now = Date.now();
-    const remaining = readyAt - now;
+    const remaining = endTime - now;
     
     if (remaining <= 0) return 'Ready';
     
@@ -236,6 +252,10 @@
                 {#if group.status === 'mobilizing' && group.readyAt}
                   <span class="mobilizing">
                     Mobilizing: {formatTimeRemaining(group.readyAt)}
+                  </span>
+                {:else if group.status === 'moving' && group.moveStarted}
+                  <span class="moving">
+                    Moving: {formatTimeRemaining(calculateMoveCompletionTime(group))}
                   </span>
                 {:else if group.status && group.status !== 'idle'}
                   <span class="status-tag {group.status}">{_fmt(group.status)}</span>
@@ -569,6 +589,25 @@
     0% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.4); }
     50% { box-shadow: 0 0 0 4px rgba(255, 165, 0, 0); }
     100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
+  }
+
+  .moving {
+    display: inline-block;
+    background: rgba(0, 128, 0, 0.15);
+    color: #008000;
+    font-size: 0.85em;
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+    margin-left: 0.5em;
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    font-weight: 500;
+    animation: pulseMoving 2s infinite;
+  }
+  
+  @keyframes pulseMoving {
+    0% { box-shadow: 0 0 0 0 rgba(0, 128, 0, 0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(0, 128, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 128, 0, 0); }
   }
   
   .status-tag {
