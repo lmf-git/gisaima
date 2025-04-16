@@ -111,6 +111,36 @@ export const processGameTicks = onSchedule({
                 if (now >= (moveStarted + moveTime)) {
                   logger.info(`Movement complete for group ${groupId} from ${tileKey} to ${targetX},${targetY} in world ${worldId}`);
                   
+                  // Track any players in the group to update their positions
+                  const playerUnits = groupData.units ? 
+                    groupData.units.filter(unit => unit.type === 'player') : 
+                    [];
+                  
+                  // Update player positions in their profiles
+                  for (const playerUnit of playerUnits) {
+                    const playerId = playerUnit.id;
+                    logger.info(`Updating position for player ${playerId} to ${targetX}, ${targetY}`);
+                    
+                    // Update player's lastLocation in their profile
+                    updates[`players/${playerId}/worlds/${worldId}/lastLocation`] = {
+                      x: targetX,
+                      y: targetY,
+                      timestamp: now
+                    };
+                    
+                    // Move the player entity to the new tile
+                    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/players/${playerId}`] = null;
+                    
+                    // Get existing player data to move to new location
+                    if (tileData.players && tileData.players[playerId]) {
+                      const playerData = tileData.players[playerId];
+                      updates[`worlds/${worldId}/chunks/${targetChunkKey}/${targetTileKey}/players/${playerId}`] = {
+                        ...playerData,
+                        lastActive: now
+                      };
+                    }
+                  }
+                  
                   // Physical group relocation: remove from source tile and add to destination tile
                   
                   // 1. Completely remove the group from original location
