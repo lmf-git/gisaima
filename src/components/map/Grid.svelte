@@ -381,6 +381,19 @@
     event.preventDefault();
   }
 
+  function handleKeyDown(event) {
+    // Handle clicking with keyboard (Enter or Space)
+    if ((event.key === 'Enter' || event.key === ' ') && !isMoving) {
+      event.preventDefault();
+      handleGridClick(event);
+    }
+    
+    // Original keyboard handler for Escape key
+    if (event.key === 'Escape') {
+      onClose();
+    }
+  }
+
   let lastClickTime = $state(0);
   let clickCount = $state(0);
 
@@ -605,6 +618,7 @@
     ontouchend={!isPathDrawingMode ? handleTouchEnd : null}
     ontouchcancel={!isPathDrawingMode ? handleTouchEnd : null}
     onclick={handleGridClick}
+    onkeydown={handleKeyDown}
     class:moving={isMoving}
     class:path-drawing={isPathDrawingMode}
     style="--terrain-color: {backgroundColor};"
