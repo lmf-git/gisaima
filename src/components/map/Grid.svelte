@@ -588,8 +588,9 @@
     const offsetX = x - state.target.x;
     const offsetY = y - state.target.y;
     
-    const posX = ((viewportCenterX + offsetX) / state.cols) * 100;
-    const posY = ((viewportCenterY + offsetY) / state.rows) * 100;
+    // Calculate position in percentage, adding 0.5 to center within the tile
+    const posX = ((viewportCenterX + offsetX + 0.5) / state.cols) * 100;
+    const posY = ((viewportCenterY + offsetY + 0.5) / state.rows) * 100;
     
     return { posX, posY };
   }

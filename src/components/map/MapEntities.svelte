@@ -154,7 +154,7 @@
     
     // For mobilizing groups that have reached the countdown end
     // but are still waiting for the next server tick
-    if (remaining <= 0) return 'Mobilizing...';
+    if (remaining <= 0) return ''; // Return empty string instead of "Mobilizing..."
     
     const minutes = Math.floor(remaining / 60000);
     const seconds = Math.floor((remaining % 60000) / 1000);

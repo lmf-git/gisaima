@@ -489,13 +489,15 @@
     }
     
     function closeMovePopup(complete = true, startingPathDraw = false) {
+        // Always hide the dialog first
+        showMove = false;
+        
         if (!complete && startingPathDraw) {
-            showMove = false;
-            isPathDrawingMode = true;
+            // Don't do anything else - path drawing mode will be enabled by handlePathDrawingStart
             return;
         }
         
-        showMove = false;
+        // Normal closing behavior
         isPathDrawingMode = false;
         pathDrawingGroup = null;
         currentPath = [];
@@ -504,9 +506,21 @@
     
     function handlePathDrawingStart(event) {
         const { groupId, startPoint } = event.detail;
+        
+        // Ensure move dialog is fully hidden first
+        showMove = false;
+        
+        // Then activate path drawing mode
         isPathDrawingMode = true;
         pathDrawingGroup = groupId;
+        
+        // Ensure the starting point is properly initialized
         currentPath = [startPoint];
+        
+        // Immediately add the starting point to any referenced components
+        if (moveComponentRef) {
+            moveComponentRef.updateCustomPath(currentPath);
+        }
     }
     
     function handlePathDrawingCancel() {
@@ -800,14 +814,16 @@
         {/if}
 
         {#if showMove && selectedTile}
-            <Move
-                tile={selectedTile}
-                onClose={closeMovePopup}
-                on:move={handleMove}
-                on:pathDrawingStart={handlePathDrawingStart}
-                on:pathDrawingCancel={handlePathDrawingCancel}
-                bind:this={moveComponentRef}
-            />
+            <div class="move-dialog-container">
+                <Move
+                    tile={selectedTile}
+                    onClose={closeMovePopup}
+                    on:move={handleMove}
+                    on:pathDrawingStart={handlePathDrawingStart}
+                    on:pathDrawingCancel={handlePathDrawingCancel}
+                    bind:this={moveComponentRef}
+                />
+            </div>
         {/if}
 
         {#if isPathDrawingMode}
@@ -953,6 +969,20 @@
         outline-offset: 0.1em;
     }
 
+    .move-dialog-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1150;
+        pointer-events: none;
+    }
+    
+    .move-dialog-container :global(dialog) {
+        pointer-events: auto;
+    }
+
     .path-drawing-controls {
         position: absolute;
         bottom: 1em;
@@ -964,7 +994,7 @@
         display: flex;
         flex-direction: column;
         gap: 0.8em;
-        z-index: 1100;
+        z-index: 1200; /* Make sure this is higher than the dialog z-index */
         min-width: 16em;
         backdrop-filter: blur(5px);
         box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.3);

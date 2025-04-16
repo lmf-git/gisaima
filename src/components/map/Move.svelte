@@ -66,7 +66,7 @@
     if (dx === 0 && dy === 0) return; // Can't move to current position
     
     targetX = tile.x + dx;
-    targetY = tile.y + dy;
+    targetY = tile.y;
     
     // Calculate path when target changes
     calculatePath();
@@ -142,17 +142,20 @@
     if (!selectedGroup) return;
     
     // Initialize custom path with starting position
-    customPath = [{ x: tile.x, y: tile.y }];
-    isPathDrawingMode = true;
+    const startPoint = { x: tile.x, y: tile.y };
+    customPath = [startPoint];
     
-    // Notify parent component
-    dispatch('pathDrawingStart', {
-      groupId: selectedGroup.id,
-      startPoint: { x: tile.x, y: tile.y }
-    });
+    // First close the dialog completely to avoid obstruction
+    onClose(false, true);
     
-    // Close the dialog temporarily while drawing the path
-    onClose(false, true); // Pass true as second parameter to indicate we're in path drawing mode
+    // AFTER dialog is closed, notify parent component to start path drawing mode
+    setTimeout(() => {
+      // Notify parent component with the starting point
+      dispatch('pathDrawingStart', {
+        groupId: selectedGroup.id,
+        startPoint
+      });
+    }, 10);
   }
   
   // Function to update the path with new points
@@ -250,7 +253,7 @@
      open
      aria-modal="true" 
      aria-labelledby="move-title"
-     transition:fade={{ duration: 200 }}>
+     transition:fade={{ duration: 150 }}>
   
   <section 
        class="popup"
@@ -326,7 +329,7 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M3 3L9 9M3 21L21 3M15 15L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
-                Draw Path
+                Draw Path (Starting Here)
               </button>
               
               <div class="divider">OR</div>
