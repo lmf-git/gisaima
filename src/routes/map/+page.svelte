@@ -78,6 +78,7 @@
     let pathDrawingGroup = $state(null);
     let currentPath = $state([]);
     let moveComponentRef = $state(null);
+    let optimizePath = $state(true); // Add state for path optimization
 
     function parseUrlCoordinates() {
         if (!browser || !$page.url) return null;
@@ -510,12 +511,12 @@
         // Ensure move dialog is fully hidden first
         showMove = false;
         
+        // Initialize the path with the start point before activating drawing mode
+        currentPath = [startPoint];
+        
         // Then activate path drawing mode
         isPathDrawingMode = true;
         pathDrawingGroup = groupId;
-        
-        // Ensure the starting point is properly initialized
-        currentPath = [startPoint];
         
         // Immediately add the starting point to any referenced components
         if (moveComponentRef) {
@@ -547,6 +548,20 @@
                 console.log('Point already in path');
                 return;
             }
+            
+            // Path optimization: Check if we can take a more direct route
+            if (optimizePath && currentPath.length >= 2) {
+                // Try to optimize by checking if we can remove intermediate points
+                const optimizedPath = optimizePathPoints([...currentPath, point]);
+                if (optimizedPath.length < currentPath.length + 1) {
+                    // We found a more optimal path
+                    currentPath = optimizedPath;
+                    if (moveComponentRef) {
+                        moveComponentRef.updateCustomPath(currentPath);
+                    }
+                    return;
+                }
+            }
         }
         
         currentPath = [...currentPath, point];
@@ -554,6 +569,44 @@
         if (moveComponentRef) {
             moveComponentRef.updateCustomPath(currentPath);
         }
+    }
+    
+    // New function to optimize path by checking for more direct routes
+    function optimizePathPoints(path) {
+        if (path.length <= 2) return path; // Nothing to optimize with just 2 points
+        
+        let optimized = [path[0]]; // Start with first point
+        let current = 0;
+        
+        while (current < path.length - 1) {
+            // Try to find the furthest point we can directly reach from current
+            let farthest = current + 1;
+            for (let i = current + 2; i < path.length; i++) {
+                if (canDirectlyConnect(path[current], path[i])) {
+                    farthest = i;
+                }
+            }
+            
+            // Add the farthest reachable point to our optimized path
+            optimized.push(path[farthest]);
+            current = farthest;
+        }
+        
+        return optimized;
+    }
+    
+    // Function to check if two points can be directly connected (line of sight)
+    function canDirectlyConnect(p1, p2) {
+        // For simple adjacency check:
+        const dx = Math.abs(p2.x - p1.x);
+        const dy = Math.abs(p2.y - p1.y);
+        
+        // If they're directly adjacent, we can connect them
+        if (dx <= 1 && dy <= 1) return true;
+        
+        // For now, we'll just allow direct connections if points are on the same row or column
+        // This could be expanded with a more sophisticated line-of-sight algorithm if needed
+        return (p1.x === p2.x || p1.y === p2.y);
     }
     
     function confirmPathDrawing() {
@@ -830,6 +883,10 @@
             <div class="path-drawing-controls">
                 <div class="path-info">
                     <span>Drawing path: {currentPath.length} points</span>
+                    <label class="optimize-path-checkbox">
+                        <input type="checkbox" bind:checked={optimizePath}>
+                        Optimize path
+                    </label>
                 </div>
                 <div class="path-buttons">
                     <button class="cancel-path-btn" onclick={cancelPathDrawing}>
@@ -1004,6 +1061,22 @@
     .path-info {
         text-align: center;
         font-size: 0.9em;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4em;
+    }
+    
+    .optimize-path-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.4em;
+        font-size: 0.9em;
+        cursor: pointer;
+    }
+    
+    .optimize-path-checkbox input {
+        margin: 0;
     }
     
     .path-buttons {

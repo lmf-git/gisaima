@@ -40,6 +40,16 @@
   
   $effect(() => {
     if (isPathDrawingMode) {
+      // Only initialize customPathPoints if it's empty and we're starting path drawing mode
+      if (customPathPoints.length === 0 && $map.target) {
+        // Initialize with current tile as first point
+        customPathPoints = [{ x: $map.target.x, y: $map.target.y }];
+        
+        // Notify parent about initial path point
+        dispatch('addPathPoint', { x: $map.target.x, y: $map.target.y });
+      }
+    } else {
+      // Reset when path drawing ends
       customPathPoints = [];
     }
   });
@@ -764,6 +774,23 @@
               fill="none"
               opacity="0.9"
             />
+            
+            <!-- Connect adjacent points with lines -->
+            {#each customPathPoints as point, i}
+              {@const pos = coordToPosition(point.x, point.y)}
+              {#if i < customPathPoints.length - 1}
+                {@const nextPos = coordToPosition(customPathPoints[i+1].x, customPathPoints[i+1].y)}
+                <line 
+                  x1="{pos.posX}%" 
+                  y1="{pos.posY}%" 
+                  x2="{nextPos.posX}%" 
+                  y2="{nextPos.posY}%"
+                  stroke="rgba(255, 255, 255, 0.7)"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+              {/if}
+            {/each}
             
             <!-- Always render all points, including first point -->
             {#each customPathPoints as point, i}

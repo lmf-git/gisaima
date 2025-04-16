@@ -143,24 +143,61 @@
     
     // Initialize custom path with starting position
     const startPoint = { x: tile.x, y: tile.y };
-    customPath = [startPoint];
+    customPath = [startPoint]; // Set it in the component state
     
-    // First close the dialog completely to avoid obstruction
+    // Prepare the event details first to ensure it's ready
+    const eventDetail = {
+      groupId: selectedGroup.id,
+      startPoint
+    };
+    
+    // Close the dialog completely to avoid obstruction
     onClose(false, true);
     
-    // AFTER dialog is closed, notify parent component to start path drawing mode
-    setTimeout(() => {
-      // Notify parent component with the starting point
-      dispatch('pathDrawingStart', {
-        groupId: selectedGroup.id,
-        startPoint
-      });
-    }, 10);
+    // Immediately dispatch the event instead of using setTimeout
+    dispatch('pathDrawingStart', eventDetail);
+    
+    // For safety, also update the local reference
+    if (typeof updateCustomPath === 'function') {
+      updateCustomPath([startPoint]);
+    }
   }
   
   // Function to update the path with new points
   export function updateCustomPath(newPoints) {
     customPath = newPoints;
+  }
+  
+  // Add a method to optimize the custom path
+  export function optimizeCustomPath() {
+    if (customPath.length <= 2) return; // Nothing to optimize
+    
+    // Here we would implement path optimization logic
+    // For now, using a simplified version that just checks for straight lines
+    
+    let optimized = [customPath[0]]; // Start with first point
+    let current = 0;
+    
+    while (current < customPath.length - 1) {
+      // Try to find the furthest point we can directly reach from current
+      let farthest = current + 1;
+      for (let i = current + 2; i < customPath.length; i++) {
+        // For simplicity, only consider points in same row/column
+        if (customPath[current].x === customPath[i].x || 
+            customPath[current].y === customPath[i].y) {
+          farthest = i;
+        }
+      }
+      
+      // Add the farthest reachable point to our optimized path
+      optimized.push(customPath[farthest]);
+      current = farthest;
+    }
+    
+    // Update the path if we optimized it
+    if (optimized.length < customPath.length) {
+      customPath = optimized;
+    }
   }
   
   // Function to confirm the custom path
