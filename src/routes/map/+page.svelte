@@ -80,6 +80,26 @@
     let moveComponentRef = $state(null);
     let optimizePath = $state(true); // Add state for path optimization
 
+    // Add new effect to watch optimizePath changes
+    $effect(() => {
+        // When optimize path setting changes and we're in path drawing mode with a path
+        if (isPathDrawingMode && currentPath.length > 1) {
+            if (optimizePath) {
+                // Optimize the current path immediately when checkbox is toggled on
+                const optimized = optimizePathPoints([...currentPath]);
+                
+                // Only update if optimization actually reduced the path
+                if (optimized.length < currentPath.length) {
+                    currentPath = optimized;
+                    
+                    if (moveComponentRef) {
+                        moveComponentRef.updateCustomPath(currentPath);
+                    }
+                }
+            }
+        }
+    });
+
     function parseUrlCoordinates() {
         if (!browser || !$page.url) return null;
         
@@ -571,7 +591,7 @@
         }
     }
     
-    // New function to optimize path by checking for more direct routes
+    // Improve the path optimization algorithm
     function optimizePathPoints(path) {
         if (path.length <= 2) return path; // Nothing to optimize with just 2 points
         
@@ -581,10 +601,21 @@
         while (current < path.length - 1) {
             // Try to find the furthest point we can directly reach from current
             let farthest = current + 1;
-            for (let i = current + 2; i < path.length; i++) {
+            
+            // Search for furthest reachable point
+            for (let i = path.length - 1; i > current; i--) {
                 if (canDirectlyConnect(path[current], path[i])) {
                     farthest = i;
+                    break; // Take the furthest point immediately
                 }
+            }
+            
+            // If no farther point found, try next point
+            if (farthest === current + 1) {
+                // Just add the next point and continue
+                optimized.push(path[farthest]);
+                current = farthest;
+                continue;
             }
             
             // Add the farthest reachable point to our optimized path
@@ -595,7 +626,7 @@
         return optimized;
     }
     
-    // Function to check if two points can be directly connected (line of sight)
+    // Improve the canDirectlyConnect function to better check line of sight
     function canDirectlyConnect(p1, p2) {
         // For simple adjacency check:
         const dx = Math.abs(p2.x - p1.x);
@@ -604,9 +635,14 @@
         // If they're directly adjacent, we can connect them
         if (dx <= 1 && dy <= 1) return true;
         
-        // For now, we'll just allow direct connections if points are on the same row or column
-        // This could be expanded with a more sophisticated line-of-sight algorithm if needed
-        return (p1.x === p2.x || p1.y === p2.y);
+        // For same row or column, we can connect directly
+        if (p1.x === p2.x || p1.y === p2.y) return true;
+        
+        // For diagonal lines, check if there's a clear diagonal path
+        if (dx === dy) return true;
+        
+        // Otherwise, points require intermediate steps
+        return false;
     }
     
     function confirmPathDrawing() {
@@ -855,7 +891,7 @@
             <Actions 
                 tile={selectedTile} 
                 onClose={closeActionsPopup}
-                on:action={handleAction} 
+                onAction={handleAction} 
             />
         {/if}
 
@@ -863,7 +899,7 @@
             <Mobilize
                 tile={selectedTile}
                 onClose={closeMobilizePopup}
-                on:mobilize={handleMobilize}
+                onMobilize={handleMobilize}
             />
         {/if}
 
@@ -872,9 +908,9 @@
                 <Move
                     tile={selectedTile}
                     onClose={closeMovePopup}
-                    on:move={handleMove}
-                    on:pathDrawingStart={handlePathDrawingStart}
-                    on:pathDrawingCancel={handlePathDrawingCancel}
+                    onMove={handleMove}
+                    onPathDrawingStart={handlePathDrawingStart}
+                    onPathDrawingCancel={handlePathDrawingCancel}
                     bind:this={moveComponentRef}
                 />
             </div>

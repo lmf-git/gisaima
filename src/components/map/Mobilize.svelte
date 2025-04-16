@@ -1,5 +1,4 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
@@ -10,9 +9,7 @@
   import Fairy from '../icons/Fairy.svelte';
 
   // Props
-  const { tile, onClose } = $props();
-  
-  const dispatch = createEventDispatcher();
+  const { tile, onClose, onMobilize } = $props();
   
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -113,14 +110,16 @@
       return;
     }
     
-    // Dispatch mobilize event with data, including player race
-    dispatch('mobilize', {
-      units: selectedUnitIds,
-      includePlayer,
-      name: groupName,
-      race: $currentPlayer?.race, // Include player's race
-      tile
-    });
+    // Use direct function call instead of event forwarding
+    if (onMobilize) {
+      onMobilize({
+        units: selectedUnitIds,
+        includePlayer,
+        name: groupName,
+        race: $currentPlayer?.race, // Include player's race
+        tile
+      });
+    }
     
     onClose();
   }

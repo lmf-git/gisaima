@@ -1,14 +1,10 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import Close from '../icons/Close.svelte';
   import { currentPlayer } from '../../lib/stores/game.js';
 
   // Props
-  const { tile, onClose } = $props();
-  
-  // Event dispatch
-  const dispatch = createEventDispatcher();
+  const { tile, onClose, onAction } = $props();
   
   // Available actions based on tile content
   let actions = $state([]);
@@ -89,7 +85,10 @@
   
   // Handle action selection
   function selectAction(actionId) {
-    dispatch('action', { action: actionId, tile });
+    // Use direct function call instead of event forwarding
+    if (onAction) {
+      onAction({ action: actionId, tile });
+    }
     onClose();
   }
 </script>

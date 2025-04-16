@@ -1,13 +1,10 @@
 <script>
-  import { createEventDispatcher } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
 
   // Props
-  const { tile, onClose } = $props();
-  
-  const dispatch = createEventDispatcher();
+  const { tile, onClose, onMove, onPathDrawingStart, onPathDrawingCancel } = $props();
   
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -154,8 +151,10 @@
     // Close the dialog completely to avoid obstruction
     onClose(false, true);
     
-    // Immediately dispatch the event instead of using setTimeout
-    dispatch('pathDrawingStart', eventDetail);
+    // Use the function prop directly instead of event forwarding
+    if (onPathDrawingStart) {
+      onPathDrawingStart(eventDetail);
+    }
     
     // For safety, also update the local reference
     if (typeof updateCustomPath === 'function') {
@@ -172,20 +171,18 @@
   export function optimizeCustomPath() {
     if (customPath.length <= 2) return; // Nothing to optimize
     
-    // Here we would implement path optimization logic
-    // For now, using a simplified version that just checks for straight lines
-    
     let optimized = [customPath[0]]; // Start with first point
     let current = 0;
     
     while (current < customPath.length - 1) {
-      // Try to find the furthest point we can directly reach from current
+      // Try to find the furthest point we can reach directly from current
       let farthest = current + 1;
-      for (let i = current + 2; i < customPath.length; i++) {
-        // For simplicity, only consider points in same row/column
-        if (customPath[current].x === customPath[i].x || 
-            customPath[current].y === customPath[i].y) {
+      
+      // Scan from the end of path to find furthest reachable point
+      for (let i = customPath.length - 1; i > current; i--) {
+        if (canReachDirectly(customPath[current], customPath[i])) {
           farthest = i;
+          break; // Take the furthest point we can reach
         }
       }
       
@@ -194,29 +191,50 @@
       current = farthest;
     }
     
-    // Update the path if we optimized it
+    // Only update if optimization actually reduced the path
     if (optimized.length < customPath.length) {
       customPath = optimized;
     }
+  }
+  
+  // Helper function to check if two points can be directly connected
+  function canReachDirectly(p1, p2) {
+    // For adjacent cells
+    const dx = Math.abs(p2.x - p1.x);
+    const dy = Math.abs(p2.y - p1.y);
+    
+    // Adjacent cells are directly reachable
+    if (dx <= 1 && dy <= 1) return true;
+    
+    // Points on same row or column are directly reachable
+    if (p1.x === p2.x || p1.y === p2.y) return true;
+    
+    // Points with equal dx and dy form a perfect diagonal (also reachable)
+    if (dx === dy) return true;
+    
+    // Otherwise, we need intermediate points
+    return false;
   }
   
   // Function to confirm the custom path
   export function confirmCustomPath() {
     if (customPath.length < 2) return; // Need at least start and end
     
-    // Create the move event with the custom path
-    dispatch('move', {
-      groupId: selectedGroup.id,
-      from: {
-        x: tile.x, 
-        y: tile.y
-      },
-      to: {
-        x: customPath[customPath.length - 1].x, 
-        y: customPath[customPath.length - 1].y
-      },
-      path: customPath
-    });
+    // Use the function prop directly
+    if (onMove) {
+      onMove({
+        groupId: selectedGroup.id,
+        from: {
+          x: tile.x, 
+          y: tile.y
+        },
+        to: {
+          x: customPath[customPath.length - 1].x, 
+          y: customPath[customPath.length - 1].y
+        },
+        path: customPath
+      });
+    }
     
     // Reset states
     isPathDrawingMode = false;
@@ -231,8 +249,10 @@
     isPathDrawingMode = false;
     customPath = [];
     
-    // Notify parent component
-    dispatch('pathDrawingCancel');
+    // Use the function prop directly
+    if (onPathDrawingCancel) {
+      onPathDrawingCancel();
+    }
   }
   
   // Override the start movement function to handle both modes
@@ -242,19 +262,21 @@
     if (isPathDrawingMode) {
       confirmCustomPath();
     } else if (targetX !== null && targetY !== null) {
-      // Original direction-based movement
-      dispatch('move', {
-        groupId: selectedGroup.id,
-        from: {
-          x: tile.x, 
-          y: tile.y
-        },
-        to: {
-          x: targetX, 
-          y: targetY
-        },
-        path: movementPath
-      });
+      // Original direction-based movement with direct event triggering
+      if (onMove) {
+        onMove({
+          groupId: selectedGroup.id,
+          from: {
+            x: tile.x, 
+            y: tile.y
+          },
+          to: {
+            x: targetX, 
+            y: targetY
+          },
+          path: movementPath
+        });
+      }
       
       onClose(true);
     }
