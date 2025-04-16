@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { fade, fly, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
-  import { entities, targetStore, coordinates } from '../../lib/stores/map';
+  import { entities, targetStore, coordinates, moveTarget, setHighlighted } from '../../lib/stores/map';
   import { game, currentPlayer } from '../../lib/stores/game';
   
   // Import race icon components
@@ -42,11 +42,78 @@
     groups: false,
     items: false
   });
+
+  // Add state to track sorting options
+  let sortOptions = $state({
+    structures: { by: 'distance', asc: true },
+    players: { by: 'distance', asc: true },
+    groups: { by: 'distance', asc: true },
+    items: { by: 'distance', asc: true }
+  });
   
   // Function to toggle section collapse state
   function toggleSection(sectionId) {
     collapsedSections[sectionId] = !collapsedSections[sectionId];
   }
+
+  // Function to change sort option for a section
+  function setSortOption(section, by) {
+    sortOptions[section] = { 
+      by, 
+      asc: sortOptions[section].by === by ? !sortOptions[section].asc : true 
+    };
+  }
+  
+  // Function to sort entities based on current sort options
+  function sortEntities(entities, section) {
+    const option = sortOptions[section];
+    
+    return [...entities].sort((a, b) => {
+      let valueA, valueB;
+      
+      switch(option.by) {
+        case 'name':
+          valueA = (section === 'structures' ? a.name || _fmt(a.type) : a.name || a.displayName || a.id || '').toLowerCase();
+          valueB = (section === 'structures' ? b.name || _fmt(b.type) : b.name || b.displayName || b.id || '').toLowerCase();
+          break;
+        case 'type':
+          valueA = (a.type || a.race || a.faction || '').toLowerCase();
+          valueB = (b.type || b.race || b.faction || '').toLowerCase();
+          break;
+        case 'rarity':
+          // For items
+          const rarityOrder = { 'common': 0, 'uncommon': 1, 'rare': 2, 'epic': 3, 'legendary': 4, 'mythic': 5 };
+          valueA = rarityOrder[a.rarity?.toLowerCase()] || 0;
+          valueB = rarityOrder[b.rarity?.toLowerCase()] || 0;
+          break;
+        case 'status':
+          // For groups
+          valueA = a.status || 'idle';
+          valueB = b.status || 'idle';
+          break;
+        case 'distance':
+        default:
+          valueA = a.distance;
+          valueB = b.distance;
+      }
+      
+      // Handle numeric comparisons
+      if (typeof valueA === 'number' && typeof valueB === 'number') {
+        return option.asc ? valueA - valueB : valueB - valueA;
+      }
+      
+      // Handle string comparisons
+      return option.asc ? 
+        valueA.localeCompare(valueB) : 
+        valueB.localeCompare(valueA);
+    });
+  }
+  
+  // Create sorted entity lists
+  const sortedStructures = $derived(sortEntities(allStructures, 'structures'));
+  const sortedPlayers = $derived(sortEntities(allPlayers, 'players'));
+  const sortedGroups = $derived(sortEntities(allGroups, 'groups'));
+  const sortedItems = $derived(sortEntities(allItems, 'items'));
   
   // Set up timer to update countdown values
   onMount(() => {
@@ -250,6 +317,20 @@
   function isAtTarget(x, y) {
     return $targetStore && $targetStore.x === x && $targetStore.y === y;
   }
+
+  // Handler for clicking on entities in the list
+  function handleEntityClick(x, y, event) {
+    // Prevent event propagation
+    event.stopPropagation();
+    
+    console.log('Navigating to entity at:', x, y);
+    
+    // Move the map target to the entity's location
+    moveTarget(x, y);
+    
+    // Also highlight the tile
+    setHighlighted(x, y);
+  }
 </script>
 
 <div class="entities-wrapper" class:closing>
@@ -257,10 +338,6 @@
     <h3 class="title">
       Map Entities
       <span class="subtitle">{visibleChunks} chunks visible</span>
-      <!-- Debug display to verify filter state -->
-      <span class="debug-filters" style="font-size: 0.7em; margin-left: 0.5em; color: rgba(0,0,0,0.4);">
-        {nonEmptyFilters.join(', ')}
-      </span>
     </h3>
     
     <!-- Force filter tabs to always display when any entities exist -->
@@ -290,15 +367,59 @@
             <h4 class:visually-hidden={activeFilter === 'structures'}>
               Structures ({allStructures.length})
             </h4>
-            <button class="collapse-button" aria-label={collapsedSections.structures ? "Expand structures" : "Collapse structures"}>
-              {collapsedSections.structures ? '▼' : '▲'}
-            </button>
+            <div class="section-controls">
+              <div class="sort-controls">
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.structures.by === 'distance'}
+                  onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'distance'); }}
+                  aria-label={`Sort by distance ${sortOptions.structures.by === 'distance' ? (sortOptions.structures.asc ? 'ascending' : 'descending') : ''}`}
+                >
+                  <span>Distance</span>
+                  {#if sortOptions.structures.by === 'distance'}
+                    <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.structures.by === 'name'}
+                  onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'name'); }}
+                  aria-label={`Sort by name ${sortOptions.structures.by === 'name' ? (sortOptions.structures.asc ? 'ascending' : 'descending') : ''}`}
+                >
+                  <span>Name</span>
+                  {#if sortOptions.structures.by === 'name'}
+                    <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.structures.by === 'type'}
+                  onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'type'); }}
+                  aria-label={`Sort by type ${sortOptions.structures.by === 'type' ? (sortOptions.structures.asc ? 'ascending' : 'descending') : ''}`}
+                >
+                  <span>Type</span>
+                  {#if sortOptions.structures.by === 'type'}
+                    <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+              </div>
+              <button class="collapse-button" aria-label={collapsedSections.structures ? "Expand structures" : "Collapse structures"}>
+                {collapsedSections.structures ? '▼' : '▲'}
+              </button>
+            </div>
           </div>
           
           {#if !collapsedSections.structures}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each allStructures as structure (structure.x + ':' + structure.y)}
-                <div class="entity structure" class:at-target={isAtTarget(structure.x, structure.y)}>
+              {#each sortedStructures as structure (structure.x + ':' + structure.y)}
+                <div 
+                  class="entity structure" 
+                  class:at-target={isAtTarget(structure.x, structure.y)}
+                  onclick={(e) => handleEntityClick(structure.x, structure.y, e)}
+                  role="button"
+                  tabindex="0"
+                  aria-label="Navigate to {structure.name || _fmt(structure.type) || 'Structure'} at {structure.x},{structure.y}"
+                >
                   <div class="entity-race-icon">
                     {#if getFactionRace(structure.faction) === 'human'}
                       <Human extraClass="race-icon-entity" />
@@ -340,15 +461,60 @@
             <h4 class:visually-hidden={activeFilter === 'players'}>
               Players ({allPlayers.length})
             </h4>
-            <button class="collapse-button" aria-label={collapsedSections.players ? "Expand players" : "Collapse players"}>
-              {collapsedSections.players ? '▼' : '▲'}
-            </button>
+            <div class="section-controls">
+              <div class="sort-controls">
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.players.by === 'distance'}
+                  onclick={(e) => { e.stopPropagation(); setSortOption('players', 'distance'); }}
+                  aria-label={`Sort by distance ${sortOptions.players.by === 'distance' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
+                >
+                  <span>Distance</span>
+                  {#if sortOptions.players.by === 'distance'}
+                    <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.players.by === 'name'}
+                  onclick={(e) => { e.stopPropagation(); setSortOption('players', 'name'); }}
+                  aria-label={`Sort by name ${sortOptions.players.by === 'name' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
+                >
+                  <span>Name</span>
+                  {#if sortOptions.players.by === 'name'}
+                    <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.players.by === 'type'}
+                  onclick={(e) => { e.stopPropagation(); setSortOption('players', 'type'); }}
+                  aria-label={`Sort by race ${sortOptions.players.by === 'type' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
+                >
+                  <span>Race</span>
+                  {#if sortOptions.players.by === 'type'}
+                    <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+              </div>
+              <button class="collapse-button" aria-label={collapsedSections.players ? "Expand players" : "Collapse players"}>
+                {collapsedSections.players ? '▼' : '▲'}
+              </button>
+            </div>
           </div>
           
           {#if !collapsedSections.players}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each allPlayers as entity (entity.id)}
-                <div class="entity player" class:current={entity.id === $currentPlayer?.uid} class:at-target={isAtTarget(entity.x, entity.y)}>
+              {#each sortedPlayers as entity (entity.id)}
+                <div 
+                  class="entity player" 
+                  class:current={entity.id === $currentPlayer?.uid} 
+                  class:at-target={isAtTarget(entity.x, entity.y)}
+                  onclick={(e) => handleEntityClick(entity.x, entity.y, e)}
+                  role="button"
+                  tabindex="0"
+                  aria-label="Navigate to player {entity.displayName || 'Player'} at {entity.x},{entity.y}"
+                >
                   <div class="entity-race-icon">
                     {#if entity.race?.toLowerCase() === 'human'}
                       <Human extraClass="race-icon-entity" />
@@ -387,15 +553,59 @@
             <h4 class:visually-hidden={activeFilter === 'groups'}>
               Groups ({allGroups.length})
             </h4>
-            <button class="collapse-button" aria-label={collapsedSections.groups ? "Expand groups" : "Collapse groups"}>
-              {collapsedSections.groups ? '▼' : '▲'}
-            </button>
+            <div class="section-controls">
+              <div class="sort-controls">
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.groups.by === 'distance'}
+                  onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'distance'); }}
+                  aria-label={`Sort by distance ${sortOptions.groups.by === 'distance' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
+                >
+                  <span>Distance</span>
+                  {#if sortOptions.groups.by === 'distance'}
+                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.groups.by === 'name'}
+                  onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'name'); }}
+                  aria-label={`Sort by name ${sortOptions.groups.by === 'name' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
+                >
+                  <span>Name</span>
+                  {#if sortOptions.groups.by === 'name'}
+                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.groups.by === 'status'}
+                  onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'status'); }}
+                  aria-label={`Sort by status ${sortOptions.groups.by === 'status' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
+                >
+                  <span>Status</span>
+                  {#if sortOptions.groups.by === 'status'}
+                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+              </div>
+              <button class="collapse-button" aria-label={collapsedSections.groups ? "Expand groups" : "Collapse groups"}>
+                {collapsedSections.groups ? '▼' : '▲'}
+              </button>
+            </div>
           </div>
           
           {#if !collapsedSections.groups}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each allGroups as entity (entity.id)}
-                <div class="entity group" class:at-target={isAtTarget(entity.x, entity.y)}>
+              {#each sortedGroups as entity (entity.id)}
+                <div 
+                  class="entity group" 
+                  class:at-target={isAtTarget(entity.x, entity.y)}
+                  onclick={(e) => handleEntityClick(entity.x, entity.y, e)}
+                  role="button"
+                  tabindex="0"
+                  aria-label="Navigate to group {entity.name || entity.id} at {entity.x},{entity.y}"
+                >
                   <div class="entity-race-icon">
                     {#if entity.race?.toLowerCase() === 'human' || entity.faction?.toLowerCase() === 'human'}
                       <Human extraClass="race-icon-entity" />
@@ -445,15 +655,59 @@
             <h4 class:visually-hidden={activeFilter === 'items'}>
               Items ({allItems.length})
             </h4>
-            <button class="collapse-button" aria-label={collapsedSections.items ? "Expand items" : "Collapse items"}>
-              {collapsedSections.items ? '▼' : '▲'}
-            </button>
+            <div class="section-controls">
+              <div class="sort-controls">
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.items.by === 'distance'}
+                  onclick={(e) => { e.stopPropagation(); setSortOption('items', 'distance'); }}
+                  aria-label={`Sort by distance ${sortOptions.items.by === 'distance' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
+                >
+                  <span>Distance</span>
+                  {#if sortOptions.items.by === 'distance'}
+                    <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.items.by === 'name'}
+                  onclick={(e) => { e.stopPropagation(); setSortOption('items', 'name'); }}
+                  aria-label={`Sort by name ${sortOptions.items.by === 'name' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
+                >
+                  <span>Name</span>
+                  {#if sortOptions.items.by === 'name'}
+                    <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.items.by === 'rarity'}
+                  onclick={(e) => { e.stopPropagation(); setSortOption('items', 'rarity'); }}
+                  aria-label={`Sort by rarity ${sortOptions.items.by === 'rarity' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
+                >
+                  <span>Rarity</span>
+                  {#if sortOptions.items.by === 'rarity'}
+                    <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+              </div>
+              <button class="collapse-button" aria-label={collapsedSections.items ? "Expand items" : "Collapse items"}>
+                {collapsedSections.items ? '▼' : '▲'}
+              </button>
+            </div>
           </div>
           
           {#if !collapsedSections.items}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each allItems as item (item.id)}
-                <div class="entity item {getRarityClass(item.rarity)}" class:at-target={isAtTarget(item.x, item.y)}>
+              {#each sortedItems as item (item.id)}
+                <div 
+                  class="entity item {getRarityClass(item.rarity)}" 
+                  class:at-target={isAtTarget(item.x, item.y)}
+                  onclick={(e) => handleEntityClick(item.x, item.y, e)}
+                  role="button"
+                  tabindex="0"
+                  aria-label="Navigate to {item.name || _fmt(item.type) || 'Item'} at {item.x},{item.y}"
+                >
                   <div class="item-icon {item.type}"></div>
                   <div class="entity-info">
                     <div class="entity-name">
@@ -690,10 +944,18 @@
     border-radius: 0.3em;
     background-color: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
   }
   
-  .entity:last-child {
-    margin-bottom: 0;
+  .entity:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .entity:focus {
+    outline: 2px solid rgba(66, 133, 244, 0.6);
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.3);
   }
   
   .entity.player.current {
@@ -1044,5 +1306,58 @@
   
   .section-content {
     overflow: hidden;
+  }
+
+  /* Section header controls styling */
+  .section-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+  
+  .sort-controls {
+    display: flex;
+    gap: 0.2em;
+  }
+  
+  .sort-option {
+    background: none;
+    border: none;
+    font-size: 0.7em;
+    color: rgba(0, 0, 0, 0.5);
+    padding: 0.2em 0.4em;
+    border-radius: 0.3em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.2em;
+    transition: all 0.2s ease;
+  }
+  
+  .sort-option:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .sort-option.active {
+    background-color: rgba(66, 133, 244, 0.1);
+    color: rgba(66, 133, 244, 0.9);
+  }
+  
+  .sort-direction {
+    font-size: 0.9em;
+    font-weight: bold;
+  }
+  
+  /* When in mobile view or narrow screens, hide sort buttons and show collapse button only */
+  @media (max-width: 480px) {
+    .sort-controls {
+      display: none;
+    }
+    
+    /* But show them when in active filter mode */
+    .entities-section:has(h4.visually-hidden) .sort-controls {
+      display: flex;
+    }
   }
 </style>
