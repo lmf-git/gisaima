@@ -50,11 +50,27 @@
       disabledReason: tile.terrain.height <= 0.31 ? 'Cannot explore underwater areas' : null
     });
     
-    // Movement action
+    // Add Move action if player has IDLE groups at this location
+    // Changed to specifically check for idle status
+    const playerHasIdleGroups = $currentPlayer && 
+                          tile.groups && 
+                          tile.groups.some(g => g.owner === $currentPlayer.uid && g.status === 'idle');
+    
+    if (playerHasIdleGroups) {
+      newActions.push({
+        id: 'move',
+        label: 'Move Group',
+        icon: '👣',
+        description: 'Move a group to an adjacent location',
+        primary: true
+      });
+    }
+    
+    // Movement action to current tile (different from Move Group)
     newActions.push({
-      id: 'move',
+      id: 'move_to',
       label: 'Move Here',
-      icon: '👣',
+      icon: '🧭',
       description: 'Travel to this location',
       primary: false, // Not primary action
       // Disable if current player is already there
@@ -67,20 +83,17 @@
     const playerIsOnTile = $currentPlayer && 
                            tile.players && 
                            tile.players.some(p => p.id === $currentPlayer.uid);
-    const playerHasGroups = $currentPlayer && 
-                          tile.groups && 
-                          tile.groups.some(g => g.owner === $currentPlayer.uid);
                           
     // Only show mobilize if player isn't already in a group on this tile
     const playerInGroup = isPlayerInGroup(tile, $currentPlayer?.uid);
     
-    if (($currentPlayer && (playerHasGroups || playerIsOnTile) && !playerInGroup)) {
+    if (($currentPlayer && (playerHasIdleGroups || playerIsOnTile) && !playerInGroup)) {
       newActions.push({
         id: 'mobilize',
         label: 'Mobilize Forces',
         icon: '⚔️',
         description: 'Prepare units for action',
-        primary: true
+        primary: !playerHasIdleGroups // Make primary if no move action available
       });
     }
     

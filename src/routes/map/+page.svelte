@@ -43,6 +43,7 @@
     import Close from '../../components/icons/Close.svelte';
     import Actions from '../../components/map/Actions.svelte';
     import Mobilize from '../../components/map/Mobilize.svelte';
+    import Move from '../../components/map/Move.svelte';
 
     // Use $state for local component state
     let detailed = $state(false);
@@ -514,6 +515,9 @@
     // State for mobilize popup
     let showMobilize = $state(false);
     
+    // State for move popup
+    let showMove = $state(false);
+    
     // Renamed to be more semantic - opens actions for a tile
     function openActionsForTile(cell) {
         selectedTile = cell;
@@ -540,6 +544,19 @@
         setHighlighted(null, null);
     }
     
+    // Open move popup
+    function openMovePopup() {
+        showMove = true;
+        showActions = false; // Close actions when opening move
+    }
+    
+    // Close move popup
+    function closeMovePopup() {
+        showMove = false;
+        // Clear highlight when popup closes
+        setHighlighted(null, null);
+    }
+    
     // Handle action execution from the Actions component
     function handleAction(event) {
         const { action, tile } = event.detail;
@@ -551,12 +568,14 @@
             return;
         }
         
+        // Check if action is move
+        if (action === 'move') {
+            openMovePopup();
+            return;
+        }
+        
         // Handle other action types
         switch(action) {
-            case 'move':
-                console.log(`Moving to ${tile.x}, ${tile.y}`);
-                // Implement move logic
-                break;
             case 'explore':
                 console.log(`Exploring ${tile.x}, ${tile.y}`);
                 // Implement explore logic
@@ -565,98 +584,46 @@
         }
     }
     
-    // Handle mobilize event from the Mobilize component
-    function handleMobilize(event) {
-        const { units, includePlayer, name, tile } = event.detail;
-        console.log('Mobilizing units:', { units, includePlayer, name, tile });
+    // Handle move event from the Move component
+    function handleMove(event) {
+        const { groupId, from, to } = event.detail;
+        console.log('Moving group:', { groupId, from, to });
         
-        // Direct database write instead of calling a Firebase function
+        // Direct database write for the move
         const worldId = $game.currentWorld;
         const uid = $user.uid;
         
-        // Calculate chunk coordinates
+        // Calculate chunk coordinates for source tile
         const chunkSize = 20;
-        const chunkX = Math.floor(tile.x / chunkSize);
-        const chunkY = Math.floor(tile.y / chunkSize);
+        const chunkX = Math.floor(from.x / chunkSize);
+        const chunkY = Math.floor(from.y / chunkSize);
         const chunkKey = `${chunkX},${chunkY}`;
-        const tileKey = `${tile.x},${tile.y}`;
+        const tileKey = `${from.x},${from.y}`;
         
-        // Get current time and set mobilization time
+        // Get current time and set movement speed based on world speed
         const now = Date.now();
-        const mobilizationMs = 30 * 60 * 1000; // 30 minutes in ms
+        const moveSpeed = 1; // Base movement speed in tiles per hour
         const worldSpeed = $game.worldInfo[worldId]?.speed || 1.0;
-        const adjustedTime = Math.round(mobilizationMs / worldSpeed);
-        const readyAt = now + adjustedTime;
         
-        // Create group ID with timestamp for uniqueness
-        const groupId = `group_${uid}_${now}`;
+        // Create the updates object to write to the database
+        const updates = {};
         
-        // First collect the selected units
-        const selectedUnits = [];
-        let unitCount = 0;
+        // Update the group status to 'moving' and add target coordinates
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'moving';
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/targetX`] = to.x;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/targetY`] = to.y;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/moveStarted`] = now;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/moveSpeed`] = moveSpeed * worldSpeed;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastUpdated`] = now;
         
-        // Process units from the units list
-        if (units && units.length > 0) {
-            // Find the units in the current tile data
-            tile.groups?.forEach(group => {
-                if (group.units) {
-                    group.units.forEach(unit => {
-                        if (units.includes(unit.id)) {
-                            selectedUnits.push(unit);
-                            unitCount++;
-                        }
-                    });
-                }
+        // Apply the update
+        update(ref(db), updates)
+            .then(() => {
+                console.log('Movement started:', { groupId, to });
+            })
+            .catch(error => {
+                console.error('Movement error:', error);
             });
-        }
-        
-        // Add player as a unit if requested
-        if (includePlayer && tile.players) {
-            const playerData = tile.players.find(p => p.id === uid);
-            if (playerData) {
-                selectedUnits.push({
-                    id: uid,
-                    type: 'player',
-                    race: playerData.race,
-                    name: playerData.displayName || 'Player',
-                    strength: 10 // Default player strength
-                });
-                unitCount++;
-            }
-        }
-        
-        // Only proceed if we have units to mobilize
-        if (unitCount > 0) {
-            // Create the updates object to write to the database
-            const updates = {};
-            
-            // Create new mobilizing group
-            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`] = {
-                id: groupId,
-                name: name || "New Force",
-                owner: uid,
-                unitCount: unitCount,
-                created: now,
-                lastUpdated: now,
-                x: tile.x,
-                y: tile.y,
-                status: 'mobilizing',
-                readyAt: readyAt,
-                lastProcessed: now,
-                units: selectedUnits
-            };
-            
-            // Apply the update
-            update(ref(db), updates)
-                .then(() => {
-                    console.log('Mobilization started:', { groupId, readyAt });
-                })
-                .catch(error => {
-                    console.error('Mobilization error:', error);
-                });
-        } else {
-            console.warn('No units selected for mobilization');
-        }
     }
 </script>
 
@@ -753,6 +720,14 @@
                 tile={selectedTile}
                 onClose={closeMobilizePopup}
                 on:mobilize={handleMobilize}
+            />
+        {/if}
+
+        {#if showMove && selectedTile}
+            <Move
+                tile={selectedTile}
+                onClose={closeMovePopup}
+                on:move={handleMove}
             />
         {/if}
     {/if}

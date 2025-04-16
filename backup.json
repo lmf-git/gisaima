@@ -1226,6 +1226,46 @@
                     "strength": 5
                   }
                 ]
+              },
+              "group_YWln4rQwMngNR8vpai807kRzYMc2_1744860000000": {
+                "id": "group_YWln4rQwMngNR8vpai807kRzYMc2_1744860000000",
+                "name": "Goblin Scout Party",
+                "owner": "YWln4rQwMngNR8vpai807kRzYMc2",
+                "unitCount": 3,
+                "faction": "goblin",
+                "created": 1744860000000,
+                "lastUpdated": 1744860000000,
+                "x": 8,
+                "y": 20,
+                "targetX": 9,
+                "targetY": 21,
+                "status": "moving",
+                "moveStarted": 1744860000000,
+                "moveSpeed": 1.5,
+                "lastProcessed": 1744860000000,
+                "units": [
+                  {
+                    "id": "goblin_scout_1",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Scout",
+                    "strength": 5
+                  },
+                  {
+                    "id": "goblin_scout_2",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Scout",
+                    "strength": 5
+                  },
+                  {
+                    "id": "goblin_wolf_rider_1",
+                    "type": "npc",
+                    "race": "goblin",
+                    "name": "Wolf Rider",
+                    "strength": 12
+                  }
+                ]
               }
             }
           }

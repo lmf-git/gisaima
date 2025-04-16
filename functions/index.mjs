@@ -87,7 +87,74 @@ export const processGameTicks = onSchedule({
                 }
               }
               
-              // Process other time-based statuses like moving, gathering, etc.
+              // Process moving groups
+              if (groupData.status === 'moving' && 
+                  groupData.targetX !== undefined && 
+                  groupData.targetY !== undefined &&
+                  groupData.moveStarted) {
+                
+                // Calculate chunk coordinates for target
+                const targetX = groupData.targetX;
+                const targetY = groupData.targetY;
+                const chunkSize = 20; // Same chunk size as in the app
+                const targetChunkX = Math.floor(targetX / chunkSize);
+                const targetChunkY = Math.floor(targetY / chunkSize);
+                const targetChunkKey = `${targetChunkX},${targetChunkY}`;
+                const targetTileKey = `${targetX},${targetY}`;
+                
+                // Calculate elapsed time and check if move should complete based on world speed
+                const moveStarted = groupData.moveStarted;
+                const moveSpeed = groupData.moveSpeed || 1.0;
+                const adjustedSpeed = moveSpeed * worldSpeed;
+                const moveTime = (1000 * 60) / adjustedSpeed; // Base 1 minute per tile, adjusted by speed
+                
+                if (now >= (moveStarted + moveTime)) {
+                  logger.info(`Movement complete for group ${groupId} from ${tileKey} to ${targetX},${targetY} in world ${worldId}`);
+                  
+                  // If target is in the same chunk, just update the group's position
+                  if (chunkKey === targetChunkKey) {
+                    // Move group within the same chunk
+                    // 1. Delete from old tile
+                    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`] = null;
+                    
+                    // 2. Copy to new tile with updated coordinates and status
+                    updates[`worlds/${worldId}/chunks/${chunkKey}/${targetTileKey}/groups/${groupId}`] = {
+                      ...groupData,
+                      status: 'idle',
+                      x: targetX,
+                      y: targetY,
+                      lastUpdated: now,
+                      lastProcessed: now,
+                      // Remove movement properties
+                      targetX: null,
+                      targetY: null,
+                      moveStarted: null,
+                      moveSpeed: null
+                    };
+                  } else {
+                    // Move group to different chunk
+                    // 1. Delete from old chunk/tile
+                    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`] = null;
+                    
+                    // 2. Create in new chunk/tile with updated data
+                    updates[`worlds/${worldId}/chunks/${targetChunkKey}/${targetTileKey}/groups/${groupId}`] = {
+                      ...groupData,
+                      status: 'idle',
+                      x: targetX,
+                      y: targetY,
+                      lastUpdated: now,
+                      lastProcessed: now,
+                      // Remove movement properties
+                      targetX: null,
+                      targetY: null,
+                      moveStarted: null,
+                      moveSpeed: null
+                    };
+                  }
+                }
+              }
+              
+              // Process other time-based statuses like gathering, etc.
               // (Add future game logic here as needed)
             }
           }
