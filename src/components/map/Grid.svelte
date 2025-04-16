@@ -45,6 +45,7 @@
   
   $effect(() => {
     if (isPathDrawingMode) {
+      console.log('Path drawing mode activated in Grid component');
       // Only initialize customPathPoints if it's empty and we're starting path drawing mode
       if (customPathPoints.length === 0 && $map.target) {
         // Initialize with current tile as first point
@@ -670,7 +671,12 @@
   }
   
   function handlePathPoint(point) {
-    if (!isPathDrawingMode) return;
+    if (!isPathDrawingMode) {
+      console.log('Not in path drawing mode, ignoring point');
+      return;
+    }
+    
+    console.log('Adding path point:', point);
     
     if (customPathPoints.length > 0) {
       const lastPoint = customPathPoints[customPathPoints.length - 1];
@@ -758,7 +764,7 @@
     style="--tile-size: {TILE_SIZE}em;" 
     class:modal-open={detailed} 
     class:touch-active={$map.isDragging && $map.dragSource === 'map'}
-    class:path-drawing-mode={isPathDrawingMode}>
+    class:path-drawing-mode={!!isPathDrawingMode}>
   <div
     class="map"
     bind:this={mapElement}
@@ -770,7 +776,7 @@
     onclick={handleGridClick}
     onkeydown={handleKeyDown}
     class:moving={isMoving}
-    class:path-drawing={isPathDrawingMode}
+    class:path-drawing={!!isPathDrawingMode}
     style="--terrain-color: {backgroundColor};"
     role="grid"
     tabindex="0"
@@ -950,6 +956,12 @@
       </div>
     {/if}
   </div>
+  
+  {#if isPathDrawingMode}
+    <div class="path-drawing-indicator">
+      Path Drawing Mode
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -1530,13 +1542,34 @@
     z-index: 10;
   }
   
-  .path-drawing-mode .tile {
-    cursor: crosshair;
+  .path-drawing-mode .map {
+    cursor: crosshair !important;
   }
   
   .map-container.path-drawing-mode .map:not(.moving) .tile:hover {
-    box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.6);
+    box-shadow: inset 0 0 0 3px rgba(255, 255, 0, 0.8) !important;
     position: relative;
     z-index: 5;
+  }
+  
+  .path-drawing-indicator {
+    position: absolute;
+    top: 1em;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: #ffff99;
+    padding: 0.5em 1em;
+    border-radius: 0.3em;
+    font-weight: 500;
+    pointer-events: none;
+    z-index: 1000;
+    animation: pulse-indicator 2s infinite alternate;
+    border: 1px solid rgba(255, 255, 0, 0.5);
+  }
+  
+  @keyframes pulse-indicator {
+    0% { opacity: 0.7; }
+    100% { opacity: 1; }
   }
 </style>

@@ -525,23 +525,30 @@
         setHighlighted(null, null);
     }
     
-    function handlePathDrawingStart(event) {
-        const { groupId, startPoint } = event.detail;
+    function handlePathDrawingStart(eventData) {
+        console.log('Starting path drawing:', eventData); // Add logging
+        const { groupId, startPoint } = eventData;
         
-        // Ensure move dialog is fully hidden first
+        // Always reset first
+        isPathDrawingMode = false;
+        
+        // Ensure move dialog is closed
         showMove = false;
         
-        // Initialize the path with the start point before activating drawing mode
-        currentPath = [startPoint];
-        
-        // Then activate path drawing mode
-        isPathDrawingMode = true;
-        pathDrawingGroup = groupId;
-        
-        // Immediately add the starting point to any referenced components
-        if (moveComponentRef) {
-            moveComponentRef.updateCustomPath(currentPath);
-        }
+        // Initialize with a slight delay to ensure dialog is gone
+        setTimeout(() => {
+            // Initialize the path with the start point
+            currentPath = [startPoint];
+            
+            // Then activate path drawing mode
+            isPathDrawingMode = true;
+            pathDrawingGroup = groupId;
+            
+            // Update move component ref if it exists
+            if (moveComponentRef) {
+                moveComponentRef.updateCustomPath(currentPath);
+            }
+        }, 100);
     }
     
     function handlePathDrawingCancel() {
@@ -872,7 +879,7 @@
         <Grid 
             {detailed} 
             openActions={openActionsForTile} 
-            {isPathDrawingMode}
+            isPathDrawingMode={!!isPathDrawingMode}
             {moveComponentRef}
             onAddPathPoint={handlePathPoint}
         />
@@ -965,7 +972,7 @@
 
         {#if isPathDrawingMode}
             <div class="path-drawing-controls">
-                <div class="path-info">
+                <div class="path-info path-drawing-active">
                     <span>Drawing path: {currentPath.length} points</span>
                     <label class="optimize-path-checkbox">
                         <input type="checkbox" bind:checked={optimizePath}>
@@ -1000,7 +1007,8 @@
     }
     
     .map.path-drawing {
-        cursor: crosshair;
+        cursor: crosshair !important;
+        box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.5);
     }
     
     :global(body.map-page-active) {
@@ -1129,17 +1137,18 @@
         bottom: 1em;
         left: 50%;
         transform: translateX(-50%);
-        background-color: rgba(0, 0, 0, 0.7);
+        background-color: rgba(0, 0, 0, 0.85);
         border-radius: 0.5em;
-        padding: 0.8em;
+        padding: 1em;
         display: flex;
         flex-direction: column;
         gap: 0.8em;
-        z-index: 1200; /* Make sure this is higher than the dialog z-index */
-        min-width: 16em;
+        z-index: 1500; /* Ensure highest visibility */
+        min-width: 18em;
         backdrop-filter: blur(5px);
-        box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.3);
+        box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.3);
         color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
     }
     
     .path-info {
@@ -1149,6 +1158,11 @@
         flex-direction: column;
         align-items: center;
         gap: 0.4em;
+    }
+    
+    .path-drawing-active {
+        color: #ffff99;
+        font-weight: 500;
     }
     
     .optimize-path-checkbox {

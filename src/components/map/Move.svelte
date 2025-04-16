@@ -148,23 +148,15 @@
     const startPoint = { x: tile.x, y: tile.y };
     customPath = [startPoint]; // Set it in the component state
     
-    // Prepare the event details first to ensure it's ready
-    const eventDetail = {
-      groupId: selectedGroup.id,
-      startPoint
-    };
-    
     // Close the dialog completely to avoid obstruction
     onClose(false, true);
     
-    // Use the function prop directly instead of event forwarding
+    // Direct function call with plain object - no event.detail needed in runes
     if (onPathDrawingStart) {
-      onPathDrawingStart(eventDetail);
-    }
-    
-    // For safety, also update the local reference
-    if (typeof updateCustomPath === 'function') {
-      updateCustomPath([startPoint]);
+      onPathDrawingStart({
+        groupId: selectedGroup.id,
+        startPoint
+      });
     }
   }
   

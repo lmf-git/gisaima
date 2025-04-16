@@ -162,13 +162,17 @@
     }
   });
 
-  // Calculate estimated arrival time for moving groups
+  // Calculate estimated arrival time for moving groups - improved with tick awareness
   function calculateMoveCompletionTime(group) {
     if (!group || group.status !== 'moving' || !group.moveStarted) return null;
     
-    // Use reactive value directly instead of storing in a constant
-    const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
+    // Check if nextMoveTime is available directly
+    if (group.nextMoveTime) {
+      return group.nextMoveTime;
+    }
     
+    // If no nextMoveTime, calculate using the old formula
+    const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
     const moveStarted = group.moveStarted;
     const moveSpeed = group.moveSpeed || 1.0;
     const adjustedSpeed = moveSpeed * worldSpeed;
@@ -177,7 +181,18 @@
     return moveStarted + moveTime;
   }
 
-  // Format time remaining for mobilizing or moving groups
+  // Calculate the next world tick time - when server processes state changes
+  function getNextWorldTickTime() {
+    const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
+    const tickIntervalMs = 300000; // 5 minutes in milliseconds (world tick interval)
+    const adjustedInterval = Math.round(tickIntervalMs / worldSpeed);
+    
+    const now = Date.now();
+    const msIntoCurrentInterval = now % adjustedInterval;
+    return now + (adjustedInterval - msIntoCurrentInterval);
+  }
+
+  // Format time remaining with tick awareness
   function formatTimeRemaining(endTime) {
     if (!endTime) return '';
     
@@ -186,7 +201,15 @@
     
     const now = Date.now();
     const remaining = endTime - now;
+    const nextTickTime = getNextWorldTickTime();
+    const tickRemaining = nextTickTime - now;
     
+    // If past expected time but next tick hasn't happened yet
+    if (remaining <= 0 && tickRemaining > 0) {
+      return `Ready (processing)`;
+    }
+    
+    // If time is up
     if (remaining <= 0) return 'Ready';
     
     const minutes = Math.floor(remaining / 60000);
@@ -197,6 +220,15 @@
     } else {
       return `${seconds}s`;
     }
+  }
+
+  // Determine if an action is complete but waiting for tick
+  function isPendingTick(endTime) {
+    if (!endTime) return false;
+    
+    const now = Date.now();
+    const remaining = endTime - now;
+    return remaining <= 0;
   }
 </script>
 
@@ -343,11 +375,11 @@
                   <div class="group-info">
                     <span>Units: {group.unitCount || group.units?.length || "?"}</span>
                     {#if group.status === 'mobilizing' && group.readyAt}
-                      <span class="mobilizing">
+                      <span class="mobilizing" class:pending-tick={isPendingTick(group.readyAt)}>
                         Mobilizing: {formatTimeRemaining(group.readyAt)}
                       </span>
                     {:else if group.status === 'moving' && group.moveStarted}
-                      <span class="moving">
+                      <span class="moving" class:pending-tick={isPendingTick(calculateMoveCompletionTime(group))}>
                         Moving: {formatTimeRemaining(calculateMoveCompletionTime(group))}
                       </span>
                     {:else if group.status && group.status !== 'idle'}
@@ -727,9 +759,9 @@
   }
   
   @keyframes pulseMobilizing {
-    0% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.4); }
-    50% { box-shadow: 0 0 0 4px rgba(255, 165, 0, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
+    0% { opacity: 0.9; }
+    50% { opacity: 1; }
+    100% { opacity: 0.9; }
   }
 
   .moving {
@@ -746,9 +778,9 @@
   }
   
   @keyframes pulseMoving {
-    0% { box-shadow: 0 0 0 0 rgba(0, 128, 0, 0.4); }
-    50% { box-shadow: 0 0 0 4px rgba(0, 128, 0, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(0, 128, 0, 0); }
+    0% { opacity: 0.9; }
+    50% { opacity: 1; }
+    100% { opacity: 0.9; }
   }
   
   .status-tag {
@@ -973,5 +1005,18 @@
     background: rgba(255, 128, 255, 0.15);
     border: 1px solid rgba(255, 128, 255, 0.3);
     color: #FF1493;
+  }
+
+  /* Add styling for pending tick state */
+  .pending-tick {
+    background: rgba(255, 215, 0, 0.2) !important;
+    border-color: rgba(255, 215, 0, 0.5) !important;
+    color: #b8860b !important;
+    animation: pulseWaiting 1s infinite alternate !important;
+  }
+  
+  @keyframes pulseWaiting {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
   }
 </style>
