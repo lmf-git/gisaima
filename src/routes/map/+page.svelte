@@ -664,8 +664,8 @@
         }
     }
     
-    function handleAction(event) {
-        const { action, tile } = event.detail;
+    function handleAction(eventData) {
+        const { action, tile } = eventData; // Direct destructuring of the passed object
         console.log('Action selected:', action, 'for tile:', tile);
         
         if (action === 'mobilize') {
@@ -685,8 +685,8 @@
         }
     }
     
-    function handleMove(event) {
-        const { groupId, from, to, path } = event.detail;
+    function handleMove(eventData) {
+        const { groupId, from, to, path } = eventData;
         console.log('Moving group:', { groupId, from, to, path });
         
         const chunkSize = 20;
@@ -721,8 +721,8 @@
             });
     }
 
-    function handleMobilize(event) {
-        const { tile, units, includePlayer, name, race } = event.detail;
+    function handleMobilize(eventData) {
+        const { tile, units, includePlayer, name, race } = eventData;
         console.log('Mobilizing:', { tile, units, includePlayer, name, race });
         
         const chunkSize = 20;
