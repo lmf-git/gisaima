@@ -25,6 +25,21 @@
   let includePlayer = $state(true);
   // Group name
   let groupName = $state("New Force");
+  // Add state to track if player is already in a group
+  let playerAlreadyInGroup = $state(false);
+  
+  // Function to check if the player is already in a group on this tile
+  function isPlayerInGroup(tile, playerId) {
+    if (!tile || !tile.groups || !playerId) return false;
+    
+    // Check all groups on the tile
+    return tile.groups.some(group => {
+      // Check if the player is in any group's units
+      return group.units && group.units.some(unit => 
+        unit.type === 'player' && unit.id === playerId
+      );
+    });
+  }
   
   // Initialize available units based on tile content
   $effect(() => {
@@ -56,8 +71,11 @@
     // Check if the player themselves is on this tile
     const playerOnTile = tile.players?.some(p => p.id === $currentPlayer?.uid);
     
-    // Only enable includePlayer if player is on this tile
-    includePlayer = playerOnTile;
+    // Determine if the player is already in a group
+    playerAlreadyInGroup = isPlayerInGroup(tile, $currentPlayer?.uid);
+    
+    // Only enable includePlayer if player is on this tile AND not already in a group
+    includePlayer = playerOnTile && !playerAlreadyInGroup;
     
     availableUnits = units;
   });
@@ -183,17 +201,18 @@
         </div>
         
         <div class="options">
-          <div class="option-row">
-            <label for="include-player" class:disabled={!tile.players?.some(p => p.id === $currentPlayer?.uid)}>
-              <input 
-                type="checkbox" 
-                id="include-player" 
-                bind:checked={includePlayer} 
-                disabled={!tile.players?.some(p => p.id === $currentPlayer?.uid)}
-              />
-              Include yourself in mobilization
-            </label>
-          </div>
+          {#if !playerAlreadyInGroup && tile.players?.some(p => p.id === $currentPlayer?.uid)}
+            <div class="option-row">
+              <label for="include-player">
+                <input 
+                  type="checkbox" 
+                  id="include-player" 
+                  bind:checked={includePlayer} 
+                />
+                Include yourself in mobilization
+              </label>
+            </div>
+          {/if}
           
           <div class="mobilization-info">
             <p>
@@ -556,11 +575,6 @@
     gap: 0.5em;
     cursor: pointer;
     flex: 1;
-  }
-  
-  label.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
   
   input[type="checkbox"] {

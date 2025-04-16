@@ -20,6 +20,19 @@
   // Actions available for this tile
   let actions = $state([]);
   
+  // Function to check if the player is already in a group on this tile
+  function isPlayerInGroup(tile, playerId) {
+    if (!tile || !tile.groups || !playerId) return false;
+    
+    // Check all groups on the tile
+    return tile.groups.some(group => {
+      // Check if the player is in any group's units
+      return group.units && group.units.some(unit => 
+        unit.type === 'player' && unit.id === playerId
+      );
+    });
+  }
+  
   // Generate actions based on tile content
   $effect(() => {
     const newActions = [];
@@ -50,9 +63,18 @@
     });
     
     // Add Mobilize action if player has groups or is on this tile
-    if (($currentPlayer && 
-        ((tile.groups && tile.groups.some(g => g.owner === $currentPlayer.uid)) || 
-         (tile.players && tile.players.some(p => p.id === $currentPlayer.uid))))) {
+    // AND player is not already in a group
+    const playerIsOnTile = $currentPlayer && 
+                           tile.players && 
+                           tile.players.some(p => p.id === $currentPlayer.uid);
+    const playerHasGroups = $currentPlayer && 
+                          tile.groups && 
+                          tile.groups.some(g => g.owner === $currentPlayer.uid);
+                          
+    // Only show mobilize if player isn't already in a group on this tile
+    const playerInGroup = isPlayerInGroup(tile, $currentPlayer?.uid);
+    
+    if (($currentPlayer && (playerHasGroups || playerIsOnTile) && !playerInGroup)) {
       newActions.push({
         id: 'mobilize',
         label: 'Mobilize Forces',
