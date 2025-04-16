@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, createEventDispatcher } from "svelte";
   import { derived } from "svelte/store";
   import { browser } from '$app/environment';
   import { 
@@ -9,16 +9,16 @@
     TILE_SIZE,
     moveTarget,
     targetStore,
-    highlightedStore,  // Add highlightedStore import
+    highlightedStore,
     setHighlighted
   } from "../../lib/stores/map.js";
   import { game, currentPlayer } from "../../lib/stores/game.js";
-  import Torch from '../icons/Torch.svelte'; // Add Torch import
+  import Torch from '../icons/Torch.svelte';
   
-  // Convert to $props syntax with openActions function instead of cellClick
-  const { detailed = false, openActions = null } = $props();
+  const dispatch = createEventDispatcher();
   
-  // Local component state
+  const { detailed = false, openActions = null, isPathDrawingMode = false } = $props();
+  
   let mapElement = null;
   let resizeObserver = null;
   let introduced = $state(false);
@@ -27,19 +27,15 @@
   let wasDrag = $state(false);
   let dist = $state(0);
   
-  // Constants
   const DRAG_THRESHOLD = 5;
   
-  // Simplified derived state
   const isMoving = $derived($map.isDragging || keyboardNavigationInterval !== null);
   
-  // Only include grid cells that are in the main view
   const gridArray = derived(
     coordinates,
     $coordinates => $coordinates?.filter(cell => cell.isInMainView) || []
   );
   
-  // Add resizeMap function here
   function resizeMap(mapElement) {
     if (!mapElement) return;
     
@@ -49,7 +45,6 @@
       const width = mapElement.clientWidth;
       const height = mapElement.clientHeight;
 
-      // Ensure odd numbers for centered positioning
       let cols = Math.ceil(width / tileSizePx);
       cols = cols % 2 === 0 ? cols - 1 : cols;
 
@@ -67,24 +62,19 @@
     });
   }
   
-  // Add throttling for grid drag
   let lastDragUpdateTime = 0;
-  const DRAG_THROTTLE = 50; // ms
+  const DRAG_THROTTLE = 50;
   
-  // Add handleDragAction for Grid with throttling
   function handleDragAction(event, sensitivity = 1) {
     const state = $map;
     
-    // Start drag
     if (event.type === 'dragstart' || event.type === 'touchstart') {
       const clientX = event.clientX || event.touches?.[0]?.clientX || 0;
       const clientY = event.clientY || event.touches?.[0]?.clientY || 0;
       
-      // Reset drag tracking on start
       dist = 0;
       wasDrag = false;
       
-      // Clear any highlighted tile to improve performance during drag
       setHighlighted(null, null);
       
       map.update(state => ({
@@ -100,13 +90,11 @@
       return true;
     }
     
-    // Process drag
     else if (event.type === 'dragmove' || event.type === 'touchmove') {
       if (!state.isDragging || state.dragSource !== 'map') return false;
       
       const currentTime = Date.now();
       
-      // Skip updates that come too quickly
       if (currentTime - lastDragUpdateTime < DRAG_THROTTLE) {
         return false;
       }
@@ -117,7 +105,6 @@
       const deltaX = clientX - state.dragStartX;
       const deltaY = clientY - state.dragStartY;
 
-      // Calculate distance moved to determine if this is a drag
       dist += Math.sqrt(deltaX * deltaX + deltaY * deltaY);
       
       if (dist > DRAG_THRESHOLD) {
@@ -145,7 +132,6 @@
         return false;
       }
 
-      // Update timestamp for throttling
       lastDragUpdateTime = currentTime;
 
       const newX = state.target.x - cellsMovedX;
@@ -166,7 +152,6 @@
       return true;
     }
     
-    // End drag
     else if (event.type === 'dragend' || event.type === 'touchend' || event.type === 'touchcancel') {
       if (!state.isDragging || state.dragSource !== 'map') return false;
       
@@ -184,7 +169,6 @@
     return false;
   }
 
-  // Simplified keyboard navigation
   function moveMapByKeys() {
     let xChange = 0;
     let yChange = 0;
@@ -199,7 +183,6 @@
     moveTarget($map.target.x - xChange, $map.target.y - yChange);
   }
 
-  // Set up keyboard events
   function setupKeyboardNavigation() {
     const keyHandler = event => {
       if (!introduced) return;
@@ -237,7 +220,6 @@
     };
   }
   
-  // Unified drag event handlers
   function handleMouseDown(event) {
     if (!introduced || event.button !== 0) return;
     
@@ -270,7 +252,6 @@
     }
   }
   
-  // Touch event handlers
   function handleTouchStart(event) {
     if (!introduced || !$map.ready) return;
     event.preventDefault();
@@ -289,7 +270,7 @@
     handleDragAction({ 
       type: 'touchmove', 
       touches: event.touches 
-    }, 1.5); // Higher sensitivity for touch
+    }, 1.5);
   }
   
   function handleTouchEnd() {
@@ -298,34 +279,32 @@
     }
   }
   
-  // Tile hover handling
   let hoverTimeout = null;
   function handleTileHover(cell) {
+    if (isPathDrawingMode) {
+      setHighlighted(cell.x, cell.y);
+      return;
+    }
+    
     if (isMoving || $map.isDragging) return;
     
-    // Clear any pending hover updates
     if (hoverTimeout) clearTimeout(hoverTimeout);
     
-    // Set a short timeout before updating the highlighted tile
     hoverTimeout = setTimeout(() => {
-      // Compare with highlightedStore instead of map.highlighted
       if (!$map.isDragging && (!$highlightedStore || $highlightedStore.x !== cell.x || $highlightedStore.y !== cell.y)) {
         setHighlighted(cell.x, cell.y);
       }
       hoverTimeout = null;
-    }, 50); // 50ms debounce
+    }, 50);
   }
   
-  // Clear highlight state when moving or starting a drag
   $effect(() => {
     if ((isMoving || $map.isDragging) && $highlightedStore) {
       setHighlighted(null, null);
     }
   });
   
-  // Simplify handleGridClick function to call the openActions prop
   function handleGridClick(event) {
-    // Increment click counter for debugging
     clickCount++;
     lastClickTime = Date.now();
     
@@ -336,12 +315,9 @@
     
     let tileX, tileY;
     
-    // First try to find if we clicked directly on a tile
     let tileElement = event.target.closest('.tile');
     
-    // If we didn't click directly on a tile, find the tile at the click position
     if (!tileElement) {
-      // Get click position relative to the grid
       const gridElement = event.currentTarget.querySelector('.main-grid');
       if (!gridElement) {
         console.log('Click ignored: grid not found');
@@ -352,21 +328,17 @@
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
       
-      // Calculate which tile was clicked based on position
       const tileWidth = rect.width / $map.cols;
       const tileHeight = rect.height / $map.rows;
       
       const col = Math.floor(x / tileWidth);
       const row = Math.floor(y / tileHeight);
       
-      // Bounds check
       if (col < 0 || col >= $map.cols || row < 0 || row >= $map.rows) {
         console.log('Click ignored: outside grid bounds');
         return;
       }
       
-      // Calculate the global coordinates of the clicked tile
-      // The center of the grid is the target position
       const centerCol = Math.floor($map.cols / 2);
       const centerRow = Math.floor($map.rows / 2);
       
@@ -375,7 +347,6 @@
       
     } 
     else {
-      // Handle direct tile click using aria-label
       const ariaLabel = tileElement.getAttribute('aria-label');
       const coordsMatch = ariaLabel ? ariaLabel.match(/Coordinates (-?\d+),(-?\d+)/) : null;
       
@@ -388,35 +359,32 @@
       tileY = parseInt(coordsMatch[2], 10);
     }
     
-    // Only move if we found valid coordinates
     if (tileX !== undefined && tileY !== undefined) {
-      console.log('Moving to clicked tile:', { x: tileX, y: tileY });
-      
-      // Move the target as before
-      moveTarget(tileX, tileY);
-      
-      // Find the clicked tile data from coordinates and pass to openActions function
-      if (openActions) {
-        const clickedTile = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
-        if (clickedTile) {
-          openActions(clickedTile);
+      if (isPathDrawingMode) {
+        dispatch('addPathPoint', { x: tileX, y: tileY });
+      } else {
+        console.log('Moving to clicked tile:', { x: tileX, y: tileY });
+        
+        moveTarget(tileX, tileY);
+        
+        if (openActions) {
+          const clickedTile = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
+          if (clickedTile) {
+            openActions(clickedTile);
+          }
         }
+        
+        setHighlighted(null, null);
       }
-      
-      // Clear highlighted tile after moving
-      setHighlighted(null, null);
     }
     
     event.preventDefault();
   }
 
-  // Add debug state for click tracking
   let lastClickTime = $state(0);
   let clickCount = $state(0);
 
-  // Component initialization
   onMount(() => {
-    // Setup resize observer
     resizeObserver = new ResizeObserver(() => {
       if (mapElement) resizeMap(mapElement);
     });
@@ -426,10 +394,8 @@
       resizeMap(mapElement);
     }
     
-    // Setup keyboard navigation
     const keyboardCleanup = setupKeyboardNavigation();
     
-    // Show grid after a short delay
     setTimeout(() => introduced = true, 1000);
 
     return () => {
@@ -441,15 +407,12 @@
     };
   });
 
-  // Clean up hover timeout on component destroy
   onDestroy(() => {
     if (hoverTimeout) clearTimeout(hoverTimeout);
   });
 
-  // Get background color from target tile
   const backgroundColor = $derived($targetStore?.color || "var(--color-dark-blue)");
 
-  // Add a function to determine structure type class
   function getStructureClass(structure) {
     if (!structure) return '';
     
@@ -461,7 +424,6 @@
     }
   }
 
-  // Get player position from game store
   const playerPosition = $derived(() => {
     if ($game.playerWorldData?.lastLocation) {
       return {
@@ -472,25 +434,20 @@
     return null;
   });
   
-  // Function to check if a tile is the player's position
   function isPlayerPosition(x, y) {
     return playerPosition && playerPosition.x === x && playerPosition.y === y;
   }
   
-  // Get current player info from the currentPlayer store for grid display
   const currentPlayerId = $derived($currentPlayer?.uid);
   
-  // Function to check if a player entity is the current player
   function isCurrentPlayer(playerEntity) {
     return playerEntity && playerEntity.uid === currentPlayerId;
   }
   
-  // Check if any players on a tile represent the current player
   function hasCurrentPlayer(players) {
     return players && players.some(player => isCurrentPlayer(player));
   }
 
-  // Helper function to get rarity glow size
   function getRarityGlowSize(rarity) {
     switch(rarity) {
       case 'mythic': return '1.2em';
@@ -502,19 +459,17 @@
     }
   }
   
-  // Helper function to get rarity color
   function getRarityColor(rarity) {
     switch(rarity) {
-      case 'mythic': return 'rgba(255, 128, 255, 0.5)'; // Pink/Purple
-      case 'legendary': return 'rgba(255, 165, 0, 0.5)'; // Orange
-      case 'epic': return 'rgba(148, 0, 211, 0.4)'; // Purple
-      case 'rare': return 'rgba(0, 112, 221, 0.4)'; // Blue
-      case 'uncommon': return 'rgba(30, 255, 0, 0.3)'; // Green
+      case 'mythic': return 'rgba(255, 128, 255, 0.5)';
+      case 'legendary': return 'rgba(255, 165, 0, 0.5)';
+      case 'epic': return 'rgba(148, 0, 211, 0.4)';
+      case 'rare': return 'rgba(0, 112, 221, 0.4)';
+      case 'uncommon': return 'rgba(30, 255, 0, 0.3)';
       default: return 'transparent';
     }
   }
   
-  // Helper function to find the highest rarity item
   function getHighestRarityItem(items) {
     if (!items || !items.length) return null;
     
@@ -533,6 +488,99 @@
       return currentRank > highestRank ? current : highest;
     }, null);
   }
+
+  function calculatePathsForDisplay($coordinates) {
+    const paths = [];
+    
+    for (const cell of $coordinates) {
+      if (cell.groups && cell.groups.length > 0) {
+        for (const group of cell.groups) {
+          if (group.status === 'moving' && group.movementPath && Array.isArray(group.movementPath)) {
+            const currentPath = group.movementPath;
+            const currentPathIndex = group.pathIndex || 0;
+            
+            if (currentPathIndex < currentPath.length - 1) {
+              paths.push({
+                id: `path-${group.id}`,
+                owner: group.owner,
+                group: group,
+                points: currentPath.slice(currentPathIndex),
+                color: getPathColor(group)
+              });
+            }
+          }
+        }
+      }
+    }
+    
+    return paths;
+  }
+  
+  function getPathColor(group) {
+    let baseColor = "rgba(255, 255, 255, 0.6)";
+    
+    if (group.faction) {
+      switch(group.faction.toLowerCase()) {
+        case 'human': 
+          baseColor = "rgba(255, 230, 150, 0.7)";
+          break;
+        case 'elf': 
+          baseColor = "rgba(150, 255, 150, 0.7)";
+          break;
+        case 'dwarf': 
+          baseColor = "rgba(230, 180, 150, 0.7)";
+          break;
+        case 'goblin': 
+          baseColor = "rgba(150, 255, 230, 0.7)";
+          break;
+        case 'fairy': 
+          baseColor = "rgba(230, 150, 255, 0.7)";
+          break;
+        default:
+          baseColor = "rgba(255, 255, 255, 0.6)";
+      }
+    }
+    
+    if (group.owner === $currentPlayer?.uid) {
+      return baseColor.replace('0.7', '0.9');
+    }
+    
+    return baseColor;
+  }
+  
+  const movementPaths = $derived(calculatePathsForDisplay($coordinates));
+  
+  function coordToPosition(x, y) {
+    const state = $map;
+    const viewportCenterX = Math.floor(state.cols * (state.minimap ? EXPANDED_COLS_FACTOR : 1) / 2);
+    const viewportCenterY = Math.floor(state.rows * (state.minimap ? EXPANDED_ROWS_FACTOR : 1) / 2);
+    
+    const offsetX = x - state.target.x;
+    const offsetY = y - state.target.y;
+    
+    const posX = ((viewportCenterX + offsetX) / state.cols) * 100;
+    const posY = ((viewportCenterY + offsetY) / state.rows) * 100;
+    
+    return { posX, posY };
+  }
+  
+  function createPathData(points) {
+    if (!points || points.length < 2) return '';
+    
+    let pathData = '';
+    
+    for (let i = 0; i < points.length; i++) {
+      const { posX, posY } = coordToPosition(points[i].x, points[i].y);
+      
+      if (i === 0) {
+        pathData += `M ${posX}% ${posY}%`;
+      } else {
+        pathData += ` L ${posX}% ${posY}%`;
+      }
+    }
+    
+    return pathData;
+  }
 </script>
 
 <svelte:window
@@ -543,24 +591,71 @@
   onvisibilitychange={() => document.visibilityState === 'hidden' && handleMouseUp()}
 />
 
-<div class="map-container" style="--tile-size: {TILE_SIZE}em;" class:modal-open={detailed} class:touch-active={$map.isDragging && $map.dragSource === 'map'}>
-  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+<div class="map-container" 
+    style="--tile-size: {TILE_SIZE}em;" 
+    class:modal-open={detailed} 
+    class:touch-active={$map.isDragging && $map.dragSource === 'map'}
+    class:path-drawing-mode={isPathDrawingMode}>
   <div
     class="map"
     bind:this={mapElement}
-    onmousedown={handleMouseDown}
-    ontouchstart={handleTouchStart}
-    ontouchmove={handleTouchMove}
-    ontouchend={handleTouchEnd}
-    ontouchcancel={handleTouchEnd}
+    onmousedown={!isPathDrawingMode ? handleMouseDown : null}
+    ontouchstart={!isPathDrawingMode ? handleTouchStart : null}
+    ontouchmove={!isPathDrawingMode ? handleTouchMove : null}
+    ontouchend={!isPathDrawingMode ? handleTouchEnd : null}
+    ontouchcancel={!isPathDrawingMode ? handleTouchEnd : null}
     onclick={handleGridClick}
     class:moving={isMoving}
+    class:path-drawing={isPathDrawingMode}
     style="--terrain-color: {backgroundColor};"
     role="grid"
     tabindex="0"
-    aria-label="Interactive coordinate map. Use WASD or arrow keys to navigate."
+    aria-label={isPathDrawingMode 
+      ? "Click on tiles to create a movement path" 
+      : "Interactive coordinate map. Use WASD or arrow keys to navigate."}
   >    
     {#if $ready}
+      <svg class="path-layer" aria-hidden="true">
+        {#each movementPaths as path}
+          <g class="path-group" class:current-player-path={path.owner === $currentPlayer?.uid}>
+            <path 
+              d={createPathData(path.points)} 
+              stroke={path.color}
+              stroke-width="2"
+              stroke-dasharray="3,2"
+              fill="none"
+              opacity="0.8"
+            />
+            
+            {#if path.points.length > 1}
+              {@const endPoint = path.points[path.points.length - 1]}
+              {@const endPos = coordToPosition(endPoint.x, endPoint.y)}
+              <circle 
+                cx="{endPos.posX}%" 
+                cy="{endPos.posY}%" 
+                r="0.5%" 
+                fill={path.color} 
+                stroke="rgba(0,0,0,0.3)"
+                stroke-width="0.5"
+              />
+            {/if}
+            
+            {#each path.points as point, i}
+              {@const pos = coordToPosition(point.x, point.y)}
+              {#if i > 0 && i < path.points.length - 1}
+                <circle 
+                  cx="{pos.posX}%" 
+                  cy="{pos.posY}%" 
+                  r="0.25%" 
+                  fill={path.color} 
+                  opacity="0.6"
+                />
+              {/if}
+            {/each}
+          </g>
+        {/each}
+      </svg>
+      
       <div class="grid main-grid" 
         style="--cols: {$map.cols}; --rows: {$map.rows};" 
         role="presentation"
@@ -595,7 +690,6 @@
               {highestRarityItem ? `box-shadow: inset 0 0 ${getRarityGlowSize(highestRarityItem.rarity)} ${getRarityColor(highestRarityItem.rarity)};` : ''}
             "
           >
-            <!-- Add Torch icon for spawn structures -->
             {#if cell.structure && cell.structure.type === 'spawn'}
               <div class="spawn-icon-container">
                 <Torch size="85%" extraClass="spawn-icon" />
@@ -604,7 +698,6 @@
             
             <span class="coords">{cell.x},{cell.y}</span>
 
-            <!-- Add player position indicator -->
             {#if isPlayerPosition(cell.x, cell.y)}
               <div class="entity-indicator player-position-indicator" aria-hidden="true"></div>
             {/if}
@@ -651,14 +744,13 @@
     overflow: hidden;
     background: var(--color-dark-blue);
     user-select: none;
-    z-index: 1; /* Set base z-index for proper layering */
+    z-index: 1;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
   }
 
-  /* Map takes full container space with dynamic background */
   .map {
     width: 100%;
     height: 100%;
@@ -676,7 +768,7 @@
   .grid {
     display: grid;
     box-sizing: border-box;
-    z-index: 1; /* Set grid z-index lower than axes */
+    z-index: 1;
   }
 
   .main-grid {
@@ -686,30 +778,26 @@
     height: 100%;
   }
 
-  /* Only animate tiles within animated grid */
   .main-grid.animated .tile {
     opacity: 0;
     transform: scale(0.8);
     animation: revealTile 0.5s ease-out forwards;
-    animation-fill-mode: both; /* Ensures final state is maintained */
+    animation-fill-mode: both;
   }
   
-  /* For non-animated grid, tiles are always visible */
   .main-grid:not(.animated) .tile {
     opacity: 1;
     transform: scale(1);
   }
   
-  /* Center tile style - make it appear first */
   .main-grid.animated .tile.center {
     z-index: 3;
     position: relative;
     animation: revealCenterTile 0.6s ease-out forwards;
     animation-delay: 0s;
-    animation-fill-mode: both; /* Ensures final state is maintained */
+    animation-fill-mode: both;
   }
   
-  /* For non-animated grid, center tile is styled without animation */
   .main-grid:not(.animated) .tile.center {
     position: relative;
     border: 0.12em solid rgba(255, 255, 255, 0.5);
@@ -727,15 +815,14 @@
     box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 1em; /* Base size for mobile */
+    font-size: 1em;
     color: rgba(255, 255, 255, 0.7);
     text-shadow: 0 0 0.1875em rgba(0, 0, 0, 0.5);
     user-select: none;
     z-index: 1;
-    font-family: var(--font-body); /* Add body font for any text in tiles */
+    font-family: var(--font-body);
   }
 
-  /* All center tiles need the border */
   .tile.center {
     z-index: 3;
     position: relative;
@@ -743,23 +830,20 @@
     border: 0.12em solid rgba(255, 255, 255, 0.5);
   }
   
-  /* Hover effects - renamed to highlight - UPDATED to use ::after pseudo-element */
   .map:not(.moving) .tile:hover::after,
   .tile.highlighted::after {
     content: "";
     position: absolute;
-    inset: 0;  /* covers the entire tile */
+    inset: 0;
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9);
     pointer-events: none;
-    z-index: 10; /* Make sure this appears above everything else */
+    z-index: 10;
   }
   
-  /* Moving state - UPDATED to target pseudo-element */
   .map.moving .tile::after {
-    content: none; /* Remove the highlight effect when moving */
+    content: none;
   }
 
-  /* Moving state */
   .map.moving .tile {
     pointer-events: none;
     cursor: grabbing;
@@ -771,9 +855,9 @@
   }
 
   .coords {
-    font-size: 0.6em; /* Smaller coords for mobile */
+    font-size: 0.6em;
     opacity: 0.5;
-    font-family: var(--font-heading); /* Add heading font for coordinates */
+    font-family: var(--font-heading);
   }
 
   .map-container.modal-open {
@@ -827,16 +911,13 @@
     position: relative;
   }
 
-  /* Style for count text inside indicators */
   .count {
     font-size: 0.6em;
     font-weight: bold;
     color: rgba(0, 0, 0, 0.8);
     line-height: 1;
-    font-family: var(--font-heading); /* Add heading font for counts */
+    font-family: var(--font-heading);
   }
-  
-  /* Remove the pseudo element styles for data-count */
   
   .tile.has-structure {
     box-shadow: inset 0 -0.1em 0.3em rgba(255, 255, 255, 0.3);
@@ -854,7 +935,6 @@
     box-shadow: inset 0 0 0.3em rgba(255, 215, 0, 0.4);
   }
   
-  /* Combined entity indicator styles for better visibility */
   .tile.has-structure.has-groups,
   .tile.has-structure.has-players,
   .tile.has-structure.has-items,
@@ -866,7 +946,7 @@
 
   @media (hover: none) {
     .map {
-      cursor: default; /* Better default for touch devices */
+      cursor: default;
     }
     
     .map.moving {
@@ -874,7 +954,6 @@
     }
   }
 
-  /* Prevent scrolling while dragging */
   .map-container.touch-active {
     touch-action: none;
     overflow: hidden;
@@ -887,7 +966,6 @@
     height: 100%;
   }
 
-  /* Make tile sizes responsive for mobile devices */
   @media (max-width: 768px) {
     .tile {
       font-size: 0.9em;
@@ -909,7 +987,6 @@
     }
   }
 
-  /* Medium screens */
   @media (min-width: 640px) {
     .tile {
       font-size: 1.1em;
@@ -921,7 +998,6 @@
     }
   }
 
-  /* Large screens */
   @media (min-width: 1024px) {
     .tile {
       font-size: 1.2em;
@@ -933,7 +1009,6 @@
     }
   }
 
-  /* Very large screens */
   @media (min-width: 1440px) {
     .tile {
       font-size: 1.3em;
@@ -975,9 +1050,8 @@
     }
   }
 
-  /* Special styles for structure types */
   .spawn-structure {
-    box-shadow: inset 0 0 0.5em rgba(0, 255, 255, 0.4); /* Reduced intensity */
+    box-shadow: inset 0 0 0.5em rgba(0, 255, 255, 0.4);
   }
   
   .spawn-indicator {
@@ -986,26 +1060,21 @@
     border-radius: 50%;
   }
 
-  /* Keep the indicator for more visibility */
   .spawn-indicator {
     background: rgba(0, 255, 255, 0.9);
     box-shadow: 0 0 .25em rgba(0, 255, 255, 0.8);
     border-radius: 50%;
   }
 
-  /* Small glow effect on hover */
   .tile.spawn-structure:hover .spawn-icon-container :global(svg) {
     filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.8));
     opacity: 0.9;
   }
   
-  /* Make sure the entity indicators still show above the torch icon */
   .entity-indicator {
-    z-index: 4; /* Increased to ensure visibility */
-    /* ...existing styles... */
+    z-index: 4;
   }
   
-  /* Style for the spawn icon container */
   .spawn-icon-container {
     position: absolute;
     top: 0;
@@ -1015,18 +1084,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2; /* Above the tile background but below indicators */
-    pointer-events: none; /* Allow clicks to pass through */
-    opacity: 0.6; /* Make it semi-transparent */
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0.6;
   }
   
-  /* Style the icon itself */
   :global(.spawn-icon) {
     opacity: 0.8;
     filter: drop-shadow(0 0 4px rgba(0, 255, 255, 0.6));
   }
 
-  /* Make spawn structures more prominent */
   .tile.spawn-structure:before {
     content: '';
     position: absolute;
@@ -1039,13 +1106,11 @@
     z-index: 3;
   }
   
-  /* Override box-shadow styles when multiple features exist */
   .tile.has-structure.has-groups.spawn-structure,
   .tile.has-structure.has-players.spawn-structure {
     box-shadow: inset 0 0 0.5em rgba(0, 255, 255, 0.6);
   }
 
-  /* Player position indicator */
   .player-position {
     position: relative;
     box-shadow: inset 0 0 0.6em rgba(255, 215, 0, 0.7);
@@ -1079,9 +1144,8 @@
     pointer-events: none;
   }
   
-  /* Style for when the player character is on a tile */
   .current-player-tile .player-indicator {
-    background: rgba(64, 224, 208, 0.9); /* Turquoise to distinguish current player */
+    background: rgba(64, 224, 208, 0.9);
     border-color: rgba(255, 255, 255, 0.7);
     box-shadow: 0 0 0.2em turquoise;
   }
@@ -1097,7 +1161,6 @@
     100% { box-shadow: 0 0 0 0 rgba(64, 224, 208, 0); }
   }
   
-  /* Make sure player position indicator works with other indicators */
   .tile.player-position.has-structure,
   .tile.player-position.has-groups,
   .tile.player-position.has-players,
@@ -1105,9 +1168,8 @@
     box-shadow: inset 0 0 0.6em rgba(255, 215, 0, 0.7);
   }
 
-  /* Rarity styles */
   .tile.mythic {
-    z-index: 5; /* Make mythic tiles appear on top */
+    z-index: 5;
   }
   
   .tile.legendary {
@@ -1118,20 +1180,17 @@
     z-index: 3;
   }
 
-  /* Make sure rare tiles don't override highlighting */
   .tile.mythic.highlighted::after,
   .tile.legendary.highlighted::after,
   .tile.epic.highlighted::after,
   .tile.rare.highlighted::after,
   .tile.uncommon.highlighted::after {
-    /* Ensure highlight shows over rarity styles */
     box-shadow: inset 0 0 0 2px white, inset 0 0 4px 1px rgba(255, 255, 255, 0.8);
     z-index: 15;
   }
   
-  /* Improve the player and structure indicators visibility when highlighted */
   .tile.highlighted .entity-indicator {
-    z-index: 16; /* Ensure indicators are above highlight effect */
+    z-index: 16;
   }
 
   .item-indicator {
@@ -1175,5 +1234,47 @@
     0% { box-shadow: 0 0 0 0 rgba(255, 128, 255, 0.8); }
     70% { box-shadow: 0 0 0 0.4em rgba(255, 128, 255, 0); }
     100% { box-shadow: 0 0 0 0 rgba(255, 128, 255, 0); }
+  }
+
+  .path-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+    overflow: visible;
+  }
+  
+  .path-group {
+    transition: opacity 0.3s ease;
+  }
+  
+  .path-group:hover {
+    opacity: 1;
+  }
+  
+  .current-player-path {
+    z-index: 6;
+  }
+  
+  @keyframes dash {
+    to {
+      stroke-dashoffset: -16;
+    }
+  }
+  
+  .path-layer path {
+    animation: dash 40s linear infinite;
+  }
+  
+  .map-container {
+    position: relative;
+  }
+  
+  .grid {
+    position: relative;
+    z-index: 2;
   }
 </style>

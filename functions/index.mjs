@@ -30,145 +30,112 @@ export const processGameTicks = onSchedule({
     minBackoffSeconds: 30,
   },
 }, async (event) => {
+  console.log("Processing game ticks...");
+  const db = getDatabase();
+  const now = Date.now();
+  
   try {
-    logger.info("Processing game ticks...");
-    
-    // Get database reference
-    const db = getDatabase();
-    
-    // Get all worlds to determine their speeds
-    const worldsSnapshot = await db.ref('worlds').once('value');
+    // Get all world references
+    const worldsSnapshot = await db.ref("worlds").once("value");
     const worlds = worldsSnapshot.val();
     
     if (!worlds) {
-      logger.info("No worlds found");
+      console.log("No worlds found.");
       return;
     }
     
-    // Current server timestamp
-    const now = Date.now();
-    
-    // Process each world based on its speed
+    // Process each world
     for (const [worldId, worldData] of Object.entries(worlds)) {
-      const worldInfo = worldData.info || {};
-      const worldSpeed = worldInfo.speed || 1.0;
+      if (!worldData.chunks) continue;
       
-      logger.info(`Processing world: ${worldId} with speed: ${worldSpeed}`);
+      // Get world speed setting
+      const worldSpeed = worldData.info?.speed || 1.0;
+      console.log(`Processing world: ${worldId} with speed: ${worldSpeed}`);
       
-      // Skip if no chunks data
-      if (!worldData.chunks) {
-        continue;
-      }
-      
-      // Track updates to make
+      // Process mobilizations and movements
       const updates = {};
       
-      // Process each chunk
+      // Walk through all chunks and coordinates
       for (const [chunkKey, chunkData] of Object.entries(worldData.chunks)) {
-        for (const [tileKey, tileData] of Object.entries(chunkData)) {
-          // Skip lastUpdated metadata field
-          if (tileKey === 'lastUpdated') continue;
+        for (const [coordKey, tileData] of Object.entries(chunkData)) {
+          if (coordKey === "lastUpdated") continue;
           
-          // Process groups in this tile
-          if (tileData.groups) {
-            for (const [groupId, groupData] of Object.entries(tileData.groups)) {
-              // Process mobilizing groups
-              if (groupData.status === 'mobilizing' && groupData.readyAt) {
-                const readyAt = groupData.readyAt;
-                
-                // Check if mobilization is complete based on world speed
-                if (now >= readyAt) {
-                  logger.info(`Mobilization complete for group ${groupId} in world ${worldId}`);
-                  
-                  // Update group status to idle
-                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
-                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/readyAt`] = null;
-                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastProcessed`] = now;
-                }
-              }
+          // Skip if no groups on this tile
+          if (!tileData.groups) continue;
+          
+          // Process all groups on this tile
+          for (const [groupId, group] of Object.entries(tileData.groups)) {
+            const dbPath = `worlds/${worldId}/chunks/${chunkKey}/${coordKey}/groups/${groupId}`;
+            
+            // Process mobilizing groups that are ready
+            if (group.status === "mobilizing" && group.readyAt && group.readyAt <= now) {
+              updates[`${dbPath}/status`] = "idle";
+              updates[`${dbPath}/lastUpdated`] = now;
+              console.log(`Group ${groupId} mobilization complete at ${coordKey}`);
+            }
+            
+            // Process groups that are moving step by step
+            if (group.status === "moving" && group.movementPath && group.nextMoveTime && group.nextMoveTime <= now) {
+              // Get current position in the path
+              const pathIndex = group.pathIndex || 0;
               
-              // Process moving groups - physical relocation from one tile to another
-              if (groupData.status === 'moving' && 
-                  groupData.targetX !== undefined && 
-                  groupData.targetY !== undefined &&
-                  groupData.moveStarted) {
+              // Get the movement path
+              const path = group.movementPath;
+              
+              // Verify path exists and has more steps
+              if (Array.isArray(path) && pathIndex < path.length - 1) {
+                // Move to next position in path
+                const nextIndex = pathIndex + 1;
+                const nextPosition = path[nextIndex];
                 
-                // Calculate chunk coordinates for target
-                const targetX = groupData.targetX;
-                const targetY = groupData.targetY;
-                const chunkSize = 20; // Same chunk size as in the app
-                const targetChunkX = Math.floor(targetX / chunkSize);
-                const targetChunkY = Math.floor(targetY / chunkSize);
-                const targetChunkKey = `${targetChunkX},${targetChunkY}`;
-                const targetTileKey = `${targetX},${targetY}`;
+                console.log(`Moving group ${groupId} from ${coordKey} to step ${nextIndex}: ${nextPosition.x},${nextPosition.y}`);
                 
-                // Calculate elapsed time and check if move should complete based on world speed
-                const moveStarted = groupData.moveStarted;
-                const moveSpeed = groupData.moveSpeed || 1.0;
-                const adjustedSpeed = moveSpeed * worldSpeed;
-                const moveTime = (1000 * 60) / adjustedSpeed; // Base 1 minute per tile, adjusted by speed
+                // Calculate time for next step based on world speed
+                const moveIntervalMs = 60000 / worldSpeed; // Default 1 min per step, adjusted by world speed
                 
-                if (now >= (moveStarted + moveTime)) {
-                  logger.info(`Movement complete for group ${groupId} from ${tileKey} to ${targetX},${targetY} in world ${worldId}`);
+                if (nextIndex >= path.length - 1) {
+                  // This is the last step - we've reached the destination
+                  // Create the group at the destination
+                  const destChunkX = Math.floor(nextPosition.x / 20);
+                  const destChunkY = Math.floor(nextPosition.y / 20);
+                  const destChunkKey = `${destChunkX},${destChunkY}`;
+                  const destCoordKey = `${nextPosition.x},${nextPosition.y}`;
                   
-                  // Track any players in the group to update their positions
-                  const playerUnits = groupData.units ? 
-                    groupData.units.filter(unit => unit.type === 'player') : 
-                    [];
-                  
-                  // Update player positions in their profiles
-                  for (const playerUnit of playerUnits) {
-                    const playerId = playerUnit.id;
-                    logger.info(`Updating position for player ${playerId} to ${targetX}, ${targetY}`);
-                    
-                    // Update player's lastLocation in their profile
-                    updates[`players/${playerId}/worlds/${worldId}/lastLocation`] = {
-                      x: targetX,
-                      y: targetY,
-                      timestamp: now
-                    };
-                    
-                    // Move the player entity to the new tile
-                    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/players/${playerId}`] = null;
-                    
-                    // Get existing player data to move to new location
-                    if (tileData.players && tileData.players[playerId]) {
-                      const playerData = tileData.players[playerId];
-                      updates[`worlds/${worldId}/chunks/${targetChunkKey}/${targetTileKey}/players/${playerId}`] = {
-                        ...playerData,
-                        lastActive: now
-                      };
-                    }
-                  }
-                  
-                  // Physical group relocation: remove from source tile and add to destination tile
-                  
-                  // 1. Completely remove the group from original location
-                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`] = null;
-                  
-                  // 2. Create a new entry at the destination with updated coordinates
-                  const updatedGroup = {
-                    ...groupData,
-                    status: 'idle',
-                    x: targetX,
-                    y: targetY,
+                  // Move the group to the new location
+                  updates[`worlds/${worldId}/chunks/${destChunkKey}/${destCoordKey}/groups/${groupId}`] = {
+                    ...group,
+                    status: "idle",
+                    x: nextPosition.x,
+                    y: nextPosition.y,
                     lastUpdated: now,
-                    lastProcessed: now
+                    // Remove movement-specific fields
+                    movementPath: null,
+                    pathIndex: null,
+                    nextMoveTime: null,
+                    targetX: null,
+                    targetY: null,
+                    moveStarted: null,
+                    moveSpeed: null
                   };
                   
-                  // 3. Remove movement-specific properties
-                  delete updatedGroup.targetX;
-                  delete updatedGroup.targetY;
-                  delete updatedGroup.moveStarted;
-                  delete updatedGroup.moveSpeed;
+                  // Remove the group from the original location
+                  updates[`${dbPath}`] = null;
                   
-                  // 4. Add to target tile
-                  updates[`worlds/${worldId}/chunks/${targetChunkKey}/${targetTileKey}/groups/${groupId}`] = updatedGroup;
+                  console.log(`Group ${groupId} movement complete to ${destCoordKey}`);
+                } else {
+                  // This is an intermediate step
+                  // Update the pathIndex and nextMoveTime for the next step
+                  updates[`${dbPath}/pathIndex`] = nextIndex;
+                  updates[`${dbPath}/nextMoveTime`] = now + moveIntervalMs;
+                  updates[`${dbPath}/lastUpdated`] = now;
+                  
+                  // Update current position to the new step
+                  updates[`${dbPath}/x`] = nextPosition.x;
+                  updates[`${dbPath}/y`] = nextPosition.y;
+                  
+                  console.log(`Group ${groupId} moved to step ${nextIndex}, next move at ${new Date(now + moveIntervalMs)}`);
                 }
               }
-              
-              // Process other time-based statuses like gathering, etc.
-              // (Add future game logic here as needed)
             }
           }
         }
@@ -176,15 +143,16 @@ export const processGameTicks = onSchedule({
       
       // Apply all updates for this world
       if (Object.keys(updates).length > 0) {
-        logger.info(`Applying ${Object.keys(updates).length} updates for world ${worldId}`);
+        console.log(`Applying ${Object.keys(updates).length} updates for world ${worldId}`);
         await db.ref().update(updates);
       }
     }
     
-    logger.info("Game tick processing completed successfully");
+    console.log("Game tick processing complete");
     return null;
+    
   } catch (error) {
-    logger.error("Error processing game ticks:", error);
+    console.error("Error processing game ticks:", error);
     throw error;
   }
 });

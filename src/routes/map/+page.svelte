@@ -74,6 +74,11 @@
         lastProcessedTime: 0
     });
     
+    let isPathDrawingMode = $state(false);
+    let pathDrawingGroup = $state(null);
+    let currentPath = $state([]);
+    let moveComponentRef = $state(null);
+
     function parseUrlCoordinates() {
         if (!browser || !$page.url) return null;
         
@@ -483,9 +488,77 @@
         showActions = false;
     }
     
-    function closeMovePopup() {
+    function closeMovePopup(complete = true, startingPathDraw = false) {
+        if (!complete && startingPathDraw) {
+            showMove = false;
+            isPathDrawingMode = true;
+            return;
+        }
+        
         showMove = false;
+        isPathDrawingMode = false;
+        pathDrawingGroup = null;
+        currentPath = [];
         setHighlighted(null, null);
+    }
+    
+    function handlePathDrawingStart(event) {
+        const { groupId, startPoint } = event.detail;
+        isPathDrawingMode = true;
+        pathDrawingGroup = groupId;
+        currentPath = [startPoint];
+    }
+    
+    function handlePathDrawingCancel() {
+        isPathDrawingMode = false;
+        pathDrawingGroup = null;
+        currentPath = [];
+    }
+    
+    function handlePathPoint(point) {
+        if (!isPathDrawingMode) return;
+        
+        if (currentPath.length > 0) {
+            const lastPoint = currentPath[currentPath.length - 1];
+            const dx = Math.abs(point.x - lastPoint.x);
+            const dy = Math.abs(point.y - lastPoint.y);
+            
+            if (dx > 1 || dy > 1) {
+                console.log('Skipping non-adjacent point');
+                return;
+            }
+            
+            const pointExists = currentPath.some(p => p.x === point.x && p.y === point.y);
+            if (pointExists) {
+                console.log('Point already in path');
+                return;
+            }
+        }
+        
+        currentPath = [...currentPath, point];
+        
+        if (moveComponentRef) {
+            moveComponentRef.updateCustomPath(currentPath);
+        }
+    }
+    
+    function confirmPathDrawing() {
+        if (isPathDrawingMode && moveComponentRef) {
+            moveComponentRef.confirmCustomPath();
+        }
+        
+        isPathDrawingMode = false;
+        pathDrawingGroup = null;
+    }
+    
+    function cancelPathDrawing() {
+        isPathDrawingMode = false;
+        pathDrawingGroup = null;
+        currentPath = [];
+        
+        if (moveComponentRef) {
+            moveComponentRef.cancelPathDrawing();
+        }
     }
     
     function handleAction(event) {
@@ -510,8 +583,8 @@
     }
     
     function handleMove(event) {
-        const { groupId, from, to } = event.detail;
-        console.log('Moving group:', { groupId, from, to });
+        const { groupId, from, to, path } = event.detail;
+        console.log('Moving group:', { groupId, from, to, path });
         
         const chunkSize = 20;
         const chunkX = Math.floor(from.x / chunkSize);
@@ -532,9 +605,13 @@
         updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/moveSpeed`] = moveSpeed * worldSpeed;
         updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastUpdated`] = now;
         
+        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/movementPath`] = path;
+        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/pathIndex`] = 0;
+        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/nextMoveTime`] = now + (60000 / worldSpeed);
+        
         update(ref(db), updates)
             .then(() => {
-                console.log('Movement started:', { groupId, to });
+                console.log('Movement started:', { groupId, to, path });
             })
             .catch(error => {
                 console.error('Movement error:', error);
@@ -552,18 +629,26 @@
         const tileKey = `${tile.x},${tile.y}`;
         
         const now = Date.now();
-        const mobilizationMs = 30 * 60 * 1000;
-        const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
-        const adjustedTime = Math.round(mobilizationMs / worldSpeed);
-        const readyAt = now + adjustedTime;
         
-        const newGroupId = `group_${uid}_${now}`;
+        // Set mobilization to occur on the next world tick
+        // Use minimal delay (1 sec) since the server will process it on the next tick
+        const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
+        const readyAt = now + 1000; // Minimal delay - just enough to ensure it's caught by next tick
+        
+        const playerUid = $currentPlayer?.uid;
+        
+        if (!playerUid) {
+            console.error('Cannot mobilize: No user ID available');
+            return;
+        }
+        
+        const newGroupId = `group_${playerUid}_${now}`;
         
         const selectedUnits = [];
         
         if (includePlayer && $currentPlayer) {
             selectedUnits.push({
-                id: uid,
+                id: playerUid,
                 type: 'player',
                 race: $currentPlayer.race,
                 name: $currentPlayer.displayName || 'Player',
@@ -580,7 +665,7 @@
         updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${newGroupId}`] = {
             id: newGroupId,
             name: name || "New Force",
-            owner: uid,
+            owner: playerUid,
             unitCount: selectedUnits.length,
             race: race || $currentPlayer?.race,
             created: now,
@@ -603,7 +688,7 @@
     }
 </script>
 
-<div class="map" class:dragging={isDragging}>
+<div class="map" class:dragging={isDragging} class:path-drawing={isPathDrawingMode}>
     {#if combinedLoading}
         <div class="loading-overlay">
             <div class="loading-spinner"></div>
@@ -624,7 +709,12 @@
             <button onclick={() => goto('/worlds')}>Go to Worlds</button>
         </div>
     {:else}
-        <Grid {detailed} openActions={openActionsForTile} />
+        <Grid 
+            {detailed} 
+            openActions={openActionsForTile} 
+            {isPathDrawingMode}
+            on:addPathPoint={e => handlePathPoint(e.detail)}
+        />
         
         <div class="map-controls">
             <button 
@@ -704,7 +794,26 @@
                 tile={selectedTile}
                 onClose={closeMovePopup}
                 on:move={handleMove}
+                on:pathDrawingStart={handlePathDrawingStart}
+                on:pathDrawingCancel={handlePathDrawingCancel}
+                bind:this={moveComponentRef}
             />
+        {/if}
+
+        {#if isPathDrawingMode}
+            <div class="path-drawing-controls">
+                <div class="path-info">
+                    <span>Drawing path: {currentPath.length} points</span>
+                </div>
+                <div class="path-buttons">
+                    <button class="cancel-path-btn" onclick={cancelPathDrawing}>
+                        Cancel
+                    </button>
+                    <button class="confirm-path-btn" onclick={confirmPathDrawing} disabled={currentPath.length < 2}>
+                        Confirm Path
+                    </button>
+                </div>
+            </div>
         {/if}
     {/if}
 </div>
@@ -721,6 +830,10 @@
     .map.dragging {
         overflow: hidden;
         touch-action: none;
+    }
+    
+    .map.path-drawing {
+        cursor: crosshair;
     }
     
     :global(body.map-page-active) {
@@ -828,5 +941,66 @@
     .control-button:focus-visible {
         outline: 0.15em solid rgba(0, 0, 0, 0.6);
         outline-offset: 0.1em;
+    }
+
+    .path-drawing-controls {
+        position: absolute;
+        bottom: 1em;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.7);
+        border-radius: 0.5em;
+        padding: 0.8em;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8em;
+        z-index: 1100;
+        min-width: 16em;
+        backdrop-filter: blur(5px);
+        box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.3);
+        color: white;
+    }
+    
+    .path-info {
+        text-align: center;
+        font-size: 0.9em;
+    }
+    
+    .path-buttons {
+        display: flex;
+        gap: 0.8em;
+    }
+    
+    .cancel-path-btn, .confirm-path-btn {
+        flex: 1;
+        padding: 0.6em;
+        border: none;
+        border-radius: 0.3em;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .cancel-path-btn {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    .confirm-path-btn {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .cancel-path-btn:hover {
+        background-color: #5a6268;
+    }
+    
+    .confirm-path-btn:hover:not(:disabled) {
+        background-color: #218838;
+    }
+    
+    .confirm-path-btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
     }
 </style>

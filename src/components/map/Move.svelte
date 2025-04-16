@@ -20,6 +20,15 @@
   let targetX = $state(null);
   let targetY = $state(null);
   
+  // New: Add calculated path for visualization
+  let movementPath = $state([]);
+  
+  // Add state for path drawing mode
+  let isPathDrawingMode = $state(false);
+  
+  // Add state to store the current custom path being drawn
+  let customPath = $state([]);
+  
   // Initialize available groups based on tile content
   $effect(() => {
     if (!tile || !tile.groups) {
@@ -58,19 +67,104 @@
     
     targetX = tile.x + dx;
     targetY = tile.y + dy;
+    
+    // Calculate path when target changes
+    calculatePath();
   }
   
   // Clear movement target
   function clearTarget() {
     targetX = null;
     targetY = null;
+    movementPath = [];
   }
   
-  // Start movement
-  function startMovement() {
-    if (!selectedGroup || targetX === null || targetY === null) return;
+  // Calculate movement path between start and end points
+  function calculatePath() {
+    if (!tile || targetX === null || targetY === null) {
+      movementPath = [];
+      return;
+    }
     
-    // Dispatch move event with data
+    const startX = tile.x;
+    const startY = tile.y;
+    const endX = targetX;
+    const endY = targetY;
+    
+    // For simple adjacent movement, the path is just two points
+    if (Math.abs(endX - startX) <= 1 && Math.abs(endY - startY) <= 1) {
+      movementPath = [
+        { x: startX, y: startY },
+        { x: endX, y: endY }
+      ];
+      return;
+    }
+    
+    // For longer paths, use a simplified version of Bresenham's line algorithm
+    // to create a step-by-step path between points
+    const path = [];
+    
+    // Start point
+    path.push({ x: startX, y: startY });
+    
+    const dx = Math.abs(endX - startX);
+    const dy = Math.abs(endY - startY);
+    const sx = startX < endX ? 1 : -1;
+    const sy = startY < endY ? 1 : -1;
+    
+    let err = dx - dy;
+    let x = startX;
+    let y = startY;
+    
+    // Generate steps along the path
+    while (x !== endX || y !== endY) {
+      const e2 = 2 * err;
+      
+      if (e2 > -dy) {
+        err -= dy;
+        x += sx;
+      }
+      
+      if (e2 < dx) {
+        err += dx;
+        y += sy;
+      }
+      
+      // Add intermediate point
+      path.push({ x, y });
+    }
+    
+    movementPath = path;
+  }
+  
+  // Function to switch to path drawing mode
+  function enablePathDrawing() {
+    if (!selectedGroup) return;
+    
+    // Initialize custom path with starting position
+    customPath = [{ x: tile.x, y: tile.y }];
+    isPathDrawingMode = true;
+    
+    // Notify parent component
+    dispatch('pathDrawingStart', {
+      groupId: selectedGroup.id,
+      startPoint: { x: tile.x, y: tile.y }
+    });
+    
+    // Close the dialog temporarily while drawing the path
+    onClose(false, true); // Pass true as second parameter to indicate we're in path drawing mode
+  }
+  
+  // Function to update the path with new points
+  export function updateCustomPath(newPoints) {
+    customPath = newPoints;
+  }
+  
+  // Function to confirm the custom path
+  export function confirmCustomPath() {
+    if (customPath.length < 2) return; // Need at least start and end
+    
+    // Create the move event with the custom path
     dispatch('move', {
       groupId: selectedGroup.id,
       from: {
@@ -78,12 +172,52 @@
         y: tile.y
       },
       to: {
-        x: targetX, 
-        y: targetY
-      }
+        x: customPath[customPath.length - 1].x, 
+        y: customPath[customPath.length - 1].y
+      },
+      path: customPath
     });
     
-    onClose();
+    // Reset states
+    isPathDrawingMode = false;
+    customPath = [];
+    
+    // Properly close the dialog
+    onClose(true);
+  }
+  
+  // Function to cancel path drawing
+  export function cancelPathDrawing() {
+    isPathDrawingMode = false;
+    customPath = [];
+    
+    // Notify parent component
+    dispatch('pathDrawingCancel');
+  }
+  
+  // Override the start movement function to handle both modes
+  function startMovement() {
+    if (!selectedGroup) return;
+    
+    if (isPathDrawingMode) {
+      confirmCustomPath();
+    } else if (targetX !== null && targetY !== null) {
+      // Original direction-based movement
+      dispatch('move', {
+        groupId: selectedGroup.id,
+        from: {
+          x: tile.x, 
+          y: tile.y
+        },
+        to: {
+          x: targetX, 
+          y: targetY
+        },
+        path: movementPath
+      });
+      
+      onClose(true);
+    }
   }
   
   // Close on escape key
@@ -124,7 +258,7 @@
        transition:scale={{ start: 0.95, duration: 200 }}>
     <div class="header">
       <h2 id="move-title">Move Group - {tile?.x}, {tile?.y}</h2>
-      <button class="close-btn" onclick={onClose} aria-label="Close move dialog">
+      <button class="close-btn" onclick={() => onClose(true)} aria-label="Close move dialog">
         <Close size="1.5em" />
       </button>
     </div>
@@ -180,36 +314,77 @@
             </div>
           </div>
           
-          <div class="movement-grid">
-            <h3>Select Direction</h3>
-            <div class="grid">
-              {#each moveDirections as dir, i}
-                <button 
-                  class="direction-btn" 
-                  class:center={dir.x === 0 && dir.y === 0}
-                  class:selected={targetX === tile.x + dir.x && targetY === tile.y + dir.y}
-                  disabled={dir.x === 0 && dir.y === 0 || !selectedGroup}
-                  onclick={() => dir.x === 0 && dir.y === 0 ? clearTarget() : setTarget(dir.x, dir.y)}
-                  aria-label={`Move ${dir.name}`}
-                  aria-disabled={dir.x === 0 && dir.y === 0 || !selectedGroup}
-                >
-                  {dir.label}
-                </button>
-              {/each}
+          <div class="movement-options">
+            <h3>Choose Movement Method</h3>
+            <div class="method-buttons">
+              <button 
+                class="path-btn" 
+                class:selected={isPathDrawingMode}
+                disabled={!selectedGroup}
+                onclick={enablePathDrawing}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 3L9 9M3 21L21 3M15 15L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                Draw Path
+              </button>
+              
+              <div class="divider">OR</div>
+              
+              <div class="direction-section">
+                <h4>Choose Direction</h4>
+                <div class="grid">
+                  {#each moveDirections as dir, i}
+                    <button 
+                      class="direction-btn" 
+                      class:center={dir.x === 0 && dir.y === 0}
+                      class:selected={targetX === tile.x + dir.x && targetY === tile.y + dir.y}
+                      disabled={dir.x === 0 && dir.y === 0 || !selectedGroup}
+                      onclick={() => dir.x === 0 && dir.y === 0 ? clearTarget() : setTarget(dir.x, dir.y)}
+                      aria-label={`Move ${dir.name}`}
+                      aria-disabled={dir.x === 0 && dir.y === 0 || !selectedGroup}
+                    >
+                      {dir.label}
+                    </button>
+                  {/each}
+                </div>
+              </div>
             </div>
             
             <div class="target-info">
               {#if targetX !== null && targetY !== null}
                 <p>Target: {targetX}, {targetY}</p>
+              {:else if isPathDrawingMode}
+                <p>Click on the map to draw your path</p>
               {:else}
                 <p>Select a direction to move</p>
               {/if}
             </div>
             
+            {#if movementPath.length > 0 && !isPathDrawingMode}
+              <div class="path-info">
+                <h4>Movement Path</h4>
+                <div class="path-steps">
+                  {#each movementPath as point, index}
+                    <div class="path-point">
+                      {index + 1}: ({point.x}, {point.y})
+                    </div>
+                  {/each}
+                </div>
+                <div class="path-summary">
+                  Total steps: {movementPath.length - 1}
+                </div>
+              </div>
+            {/if}
+            
             <div class="movement-info">
               <p>
-                Group will be marked as "moving" until the next world tick.
-                Movement time varies based on world speed.
+                Group will move step-by-step along the path.
+                {#if isPathDrawingMode}
+                  Click on the map to create waypoints.
+                {:else}
+                  Movement speed varies based on world speed settings.
+                {/if}
               </p>
             </div>
           </div>
@@ -217,22 +392,22 @@
           <div class="button-row">
             <button 
               class="cancel-btn" 
-              onclick={onClose}
+              onclick={() => onClose(true)}
             >
               Cancel
             </button>
             <button 
               class="move-btn" 
-              disabled={!canMove}
+              disabled={!canMove && !isPathDrawingMode}
               onclick={startMovement}
             >
-              Start Movement
+              {isPathDrawingMode ? 'Draw Path on Map' : 'Start Movement'}
             </button>
           </div>
         {:else}
           <div class="no-groups">
             <p>You have no groups that can move from this location.</p>
-            <button class="close-btn wide" onclick={onClose}>Close</button>
+            <button class="close-btn wide" onclick={() => onClose(true)}>Close</button>
           </div>
         {/if}
       </div>
@@ -243,7 +418,7 @@
   
   <button 
     class="overlay-dismiss-button"
-    onclick={onClose}
+    onclick={() => onClose(true)}
     aria-label="Close dialog">
   </button>
 </dialog>
@@ -315,6 +490,12 @@
     font-size: 1.1em;
     font-weight: 500;
     color: #333;
+  }
+  
+  h4 {
+    margin: 0 0 0.5em 0;
+    font-size: 1em;
+    font-weight: 500;
   }
   
   .close-btn {
@@ -440,11 +621,84 @@
     font-size: 0.9em;
   }
   
-  .movement-grid {
+  .movement-options {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1em;
+  }
+  
+  .method-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    width: 100%;
+    margin-bottom: 1em;
+  }
+  
+  .path-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6em;
+    padding: 0.8em;
+    background-color: #f0f7ff;
+    border: 1px solid #4285f4;
+    border-radius: 0.3em;
+    color: #4285f4;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .path-btn:hover:not(:disabled) {
+    background-color: #e3f1ff;
+  }
+  
+  .path-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .path-btn.selected {
+    background-color: #4285f4;
+    color: white;
+  }
+  
+  .divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #666;
+    font-size: 0.9em;
+    margin: 0.5em 0;
+  }
+  
+  .divider::before,
+  .divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .divider::before {
+    margin-right: 0.5em;
+  }
+  
+  .divider::after {
+    margin-left: 0.5em;
+  }
+  
+  .direction-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .direction-section h4 {
+    margin: 0 0 0.5em 0;
+    align-self: flex-start;
   }
   
   .grid {
@@ -509,6 +763,39 @@
   
   .movement-info p {
     margin: 0;
+  }
+  
+  .path-info {
+    margin-top: 1em;
+    padding: 0.8em;
+    background-color: rgba(66, 133, 244, 0.08);
+    border-radius: 0.3em;
+    font-size: 0.9em;
+  }
+  
+  .path-steps {
+    max-height: 8em;
+    overflow-y: auto;
+    margin: 0.5em 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4em;
+  }
+  
+  .path-point {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.9em;
+    color: #333;
+    padding: 0.2em 0.4em;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 0.2em;
+    text-align: center;
+  }
+  
+  .path-summary {
+    margin-top: 0.5em;
+    font-weight: 500;
+    text-align: center;
   }
   
   .button-row {
