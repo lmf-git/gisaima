@@ -1,6 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { fade, fly } from 'svelte/transition';
+  import { fade, fly, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { entities, targetStore, coordinates } from '../../lib/stores/map';
   import { game, currentPlayer } from '../../lib/stores/game';
@@ -34,6 +34,19 @@
     { id: 'groups', label: 'Groups' },
     { id: 'items', label: 'Items' }
   ];
+  
+  // Add state to track collapsed sections
+  let collapsedSections = $state({
+    structures: false,
+    players: false,
+    groups: false,
+    items: false
+  });
+  
+  // Function to toggle section collapse state
+  function toggleSection(sectionId) {
+    collapsedSections[sectionId] = !collapsedSections[sectionId];
+  }
   
   // Set up timer to update countdown values
   onMount(() => {
@@ -92,6 +105,27 @@
   // Get rarity class from item rarity
   function getRarityClass(rarity) {
     return rarity?.toLowerCase() || 'common';
+  }
+  
+  // Format distance for display
+  function formatDistance(distance) {
+    if (distance === undefined || distance === null) return '';
+    if (distance === 0) return 'Here';
+    return `${distance.toFixed(1)} tiles away`;
+  }
+
+  // Maps faction to race for icon display
+  function getFactionRace(faction) {
+    // Default mapping of factions to races for icon display
+    const factionToRace = {
+      human: 'human',
+      elf: 'elf',
+      dwarf: 'dwarf',
+      goblin: 'goblin',
+      fairy: 'fairy'
+    };
+    
+    return factionToRace[faction?.toLowerCase()] || null;
   }
   
   // Extract all entities from all visible coordinates - fixed $derived syntax
@@ -154,15 +188,16 @@
     }, new Set()).size
   );
   
-  // Track non-empty filter types
-  const nonEmptyFilters = $derived(() => {
-    const nonEmpty = [];
-    if (allStructures.length > 0) nonEmpty.push('structures');
-    if (allPlayers.length > 0) nonEmpty.push('players');
-    if (allGroups.length > 0) nonEmpty.push('groups');
-    if (allItems.length > 0) nonEmpty.push('items');
-    return nonEmpty;
-  });
+  // Track non-empty filter types - fix $derived syntax
+  const nonEmptyFilters = $derived([
+    ...(allStructures.length > 0 ? ['structures'] : []),
+    ...(allPlayers.length > 0 ? ['players'] : []),
+    ...(allGroups.length > 0 ? ['groups'] : []),
+    ...(allItems.length > 0 ? ['items'] : [])
+  ]);
+  
+  // Always show filter tabs if there are any entities, not just multiple types
+  const showFilterTabs = $derived(nonEmptyFilters.length > 0);
   
   // Auto-select filter if there's only one type with content
   $effect(() => {
@@ -172,9 +207,6 @@
       setFilter('all');
     }
   });
-  
-  // Determine if we should show filter tabs
-  const showFilterTabs = $derived(nonEmptyFilters.length > 1);
   
   // Check if a section should be visible based on the active filter
   function shouldShowSection(sectionType) {
@@ -225,20 +257,14 @@
     <h3 class="title">
       Map Entities
       <span class="subtitle">{visibleChunks} chunks visible</span>
+      <!-- Debug display to verify filter state -->
+      <span class="debug-filters" style="font-size: 0.7em; margin-left: 0.5em; color: rgba(0,0,0,0.4);">
+        {nonEmptyFilters.join(', ')}
+      </span>
     </h3>
     
-    <!-- Add debug output to verify data is available -->
-    <!-- Comment out in production -->
-    <!-- 
-    <div class="debug-info" style="font-size: 0.7em; color: rgba(0,0,0,0.5); margin-bottom: 0.5em;">
-      Structures: {allStructures.length}, 
-      Players: {allPlayers.length}, 
-      Groups: {allGroups.length}, 
-      Items: {allItems.length}
-    </div>
-    -->
-    
-    {#if showFilterTabs}
+    <!-- Force filter tabs to always display when any entities exist -->
+    {#if nonEmptyFilters.length > 0}
       <div class="filter-tabs">
         {#each filters as filter}
           <button 
@@ -260,131 +286,200 @@
     <div class="entities-content">
       {#if shouldShowSection('structures') && allStructures.length > 0}
         <div class="entities-section">
-          <h4 class:visually-hidden={activeFilter === 'structures'}>Structures ({allStructures.length})</h4>
-          {#each allStructures as structure (structure.x + ':' + structure.y)}
-            <div class="entity structure" class:at-target={isAtTarget(structure.x, structure.y)}>
-              <div class="entity-name">
-                {structure.name || _fmt(structure.type) || "Unknown"}
-                <span class="entity-coords">{formatCoords(structure.x, structure.y)}</span>
-              </div>
-              <div class="entity-info">
-                {#if structure.faction}
-                  <div class="entity-faction">{_fmt(structure.faction)}</div>
-                {/if}
-                {#if structure.type}
-                  <div class="entity-type">{_fmt(structure.type)}</div>
-                {/if}
-              </div>
+          <div class="section-header" onclick={() => toggleSection('structures')}>
+            <h4 class:visually-hidden={activeFilter === 'structures'}>
+              Structures ({allStructures.length})
+            </h4>
+            <button class="collapse-button" aria-label={collapsedSections.structures ? "Expand structures" : "Collapse structures"}>
+              {collapsedSections.structures ? '▼' : '▲'}
+            </button>
+          </div>
+          
+          {#if !collapsedSections.structures}
+            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+              {#each allStructures as structure (structure.x + ':' + structure.y)}
+                <div class="entity structure" class:at-target={isAtTarget(structure.x, structure.y)}>
+                  <div class="entity-race-icon">
+                    {#if getFactionRace(structure.faction) === 'human'}
+                      <Human extraClass="race-icon-entity" />
+                    {:else if getFactionRace(structure.faction) === 'elf'}
+                      <Elf extraClass="race-icon-entity" />
+                    {:else if getFactionRace(structure.faction) === 'dwarf'}
+                      <Dwarf extraClass="race-icon-entity" />
+                    {:else if getFactionRace(structure.faction) === 'goblin'}
+                      <Goblin extraClass="race-icon-entity" />
+                    {:else if getFactionRace(structure.faction) === 'fairy'}
+                      <Fairy extraClass="race-icon-entity" />
+                    {/if}
+                  </div>
+                  <div class="entity-info">
+                    <div class="entity-name">
+                      {structure.name || _fmt(structure.type) || "Unknown"}
+                      <span class="entity-coords">{formatCoords(structure.x, structure.y)}</span>
+                    </div>
+                    <div class="entity-info">
+                      {#if structure.faction}
+                        <div class="entity-faction">{_fmt(structure.faction)}</div>
+                      {/if}
+                      {#if structure.type}
+                        <div class="entity-type">{_fmt(structure.type)}</div>
+                      {/if}
+                      <div class="entity-distance">{formatDistance(structure.distance)}</div>
+                    </div>
+                  </div>
+                </div>
+              {/each}
             </div>
-          {/each}
+          {/if}
         </div>
       {/if}
       
       {#if shouldShowSection('players') && allPlayers.length > 0}
         <div class="entities-section">
-          <h4 class:visually-hidden={activeFilter === 'players'}>Players ({allPlayers.length})</h4>
-          {#each allPlayers as entity (entity.id)}
-            <div class="entity player" class:current={entity.id === $currentPlayer?.uid} class:at-target={isAtTarget(entity.x, entity.y)}>
-              <div class="entity-race-icon">
-                {#if entity.race?.toLowerCase() === 'human'}
-                  <Human extraClass="race-icon-entity" />
-                {:else if entity.race?.toLowerCase() === 'elf'}
-                  <Elf extraClass="race-icon-entity" />
-                {:else if entity.race?.toLowerCase() === 'dwarf'}
-                  <Dwarf extraClass="race-icon-entity" />
-                {:else if entity.race?.toLowerCase() === 'goblin'}
-                  <Goblin extraClass="race-icon-entity" />
-                {:else if entity.race?.toLowerCase() === 'fairy'}
-                  <Fairy extraClass="race-icon-entity" />
-                {/if}
-              </div>
-              <div class="entity-info">
-                <div class="entity-name">
-                  {entity.displayName || 'Player'}
-                  <span class="entity-coords">{formatCoords(entity.x, entity.y)}</span>
+          <div class="section-header" onclick={() => toggleSection('players')}>
+            <h4 class:visually-hidden={activeFilter === 'players'}>
+              Players ({allPlayers.length})
+            </h4>
+            <button class="collapse-button" aria-label={collapsedSections.players ? "Expand players" : "Collapse players"}>
+              {collapsedSections.players ? '▼' : '▲'}
+            </button>
+          </div>
+          
+          {#if !collapsedSections.players}
+            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+              {#each allPlayers as entity (entity.id)}
+                <div class="entity player" class:current={entity.id === $currentPlayer?.uid} class:at-target={isAtTarget(entity.x, entity.y)}>
+                  <div class="entity-race-icon">
+                    {#if entity.race?.toLowerCase() === 'human'}
+                      <Human extraClass="race-icon-entity" />
+                    {:else if entity.race?.toLowerCase() === 'elf'}
+                      <Elf extraClass="race-icon-entity" />
+                    {:else if entity.race?.toLowerCase() === 'dwarf'}
+                      <Dwarf extraClass="race-icon-entity" />
+                    {:else if entity.race?.toLowerCase() === 'goblin'}
+                      <Goblin extraClass="race-icon-entity" />
+                    {:else if entity.race?.toLowerCase() === 'fairy'}
+                      <Fairy extraClass="race-icon-entity" />
+                    {/if}
+                  </div>
+                  <div class="entity-info">
+                    <div class="entity-name">
+                      {entity.displayName || 'Player'}
+                      <span class="entity-coords">{formatCoords(entity.x, entity.y)}</span>
+                    </div>
+                    <div class="entity-details">
+                      {#if entity.race}
+                        <div class="entity-race">{_fmt(entity.race)}</div>
+                      {/if}
+                      <div class="entity-distance">{formatDistance(entity.distance)}</div>
+                    </div>
+                  </div>
                 </div>
-                {#if entity.race}
-                  <div class="entity-race">{_fmt(entity.race)}</div>
-                {/if}
-              </div>
+              {/each}
             </div>
-          {/each}
+          {/if}
         </div>
       {/if}
       
       {#if shouldShowSection('groups') && allGroups.length > 0}
         <div class="entities-section">
-          <h4 class:visually-hidden={activeFilter === 'groups'}>Groups ({allGroups.length})</h4>
-          {#each allGroups as entity (entity.id)}
-            <div class="entity group" class:at-target={isAtTarget(entity.x, entity.y)}>
-              <div class="entity-race-icon">
-                {#if entity.race?.toLowerCase() === 'human'}
-                  <Human extraClass="race-icon-entity" />
-                {:else if entity.race?.toLowerCase() === 'elf'}
-                  <Elf extraClass="race-icon-entity" />
-                {:else if entity.race?.toLowerCase() === 'dwarf'}
-                  <Dwarf extraClass="race-icon-entity" />
-                {:else if entity.race?.toLowerCase() === 'goblin'}
-                  <Goblin extraClass="race-icon-entity" />
-                {:else if entity.race?.toLowerCase() === 'fairy'}
-                  <Fairy extraClass="race-icon-entity" />
-                {/if}
-              </div>
-              <div class="entity-info">
-                <div class="entity-name">
-                  {entity.name || entity.id}
-                  <span class="entity-coords">{formatCoords(entity.x, entity.y)}</span>
+          <div class="section-header" onclick={() => toggleSection('groups')}>
+            <h4 class:visually-hidden={activeFilter === 'groups'}>
+              Groups ({allGroups.length})
+            </h4>
+            <button class="collapse-button" aria-label={collapsedSections.groups ? "Expand groups" : "Collapse groups"}>
+              {collapsedSections.groups ? '▼' : '▲'}
+            </button>
+          </div>
+          
+          {#if !collapsedSections.groups}
+            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+              {#each allGroups as entity (entity.id)}
+                <div class="entity group" class:at-target={isAtTarget(entity.x, entity.y)}>
+                  <div class="entity-race-icon">
+                    {#if entity.race?.toLowerCase() === 'human' || entity.faction?.toLowerCase() === 'human'}
+                      <Human extraClass="race-icon-entity" />
+                    {:else if entity.race?.toLowerCase() === 'elf' || entity.faction?.toLowerCase() === 'elf'}
+                      <Elf extraClass="race-icon-entity" />
+                    {:else if entity.race?.toLowerCase() === 'dwarf' || entity.faction?.toLowerCase() === 'dwarf'}
+                      <Dwarf extraClass="race-icon-entity" />
+                    {:else if entity.race?.toLowerCase() === 'goblin' || entity.faction?.toLowerCase() === 'goblin'}
+                      <Goblin extraClass="race-icon-entity" />
+                    {:else if entity.race?.toLowerCase() === 'fairy' || entity.faction?.toLowerCase() === 'fairy'}
+                      <Fairy extraClass="race-icon-entity" />
+                    {/if}
+                  </div>
+                  <div class="entity-info">
+                    <div class="entity-name">
+                      {entity.name || entity.id}
+                      <span class="entity-coords">{formatCoords(entity.x, entity.y)}</span>
+                    </div>
+                    <div class="entity-details">
+                      <span class="unit-count">{entity.unitCount || entity.units?.length || "?"} units</span>
+                      {#if entity.status === 'mobilizing' && entity.readyAt}
+                        <span class="status mobilizing">
+                          Mobilizing: {formatTimeRemaining(entity.readyAt)}
+                        </span>
+                      {:else if entity.status === 'moving' && entity.moveStarted}
+                        <span class="status moving">
+                          Moving: {formatTimeRemaining(calculateMoveCompletionTime(entity))}
+                        </span>
+                      {:else if entity.status && entity.status !== 'idle'}
+                        <span class="status {entity.status}">{_fmt(entity.status)}</span>
+                      {:else}
+                        <span class="status idle">Idle</span>
+                      {/if}
+                      <div class="entity-distance">{formatDistance(entity.distance)}</div>
+                    </div>
+                  </div>
                 </div>
-                <div class="entity-details">
-                  <span class="unit-count">{entity.unitCount || entity.units?.length || "?"} units</span>
-                  {#if entity.status === 'mobilizing' && entity.readyAt}
-                    <span class="status mobilizing">
-                      Mobilizing: {formatTimeRemaining(entity.readyAt)}
-                    </span>
-                  {:else if entity.status === 'moving' && entity.moveStarted}
-                    <span class="status moving">
-                      Moving: {formatTimeRemaining(calculateMoveCompletionTime(entity))}
-                    </span>
-                  {:else if entity.status && entity.status !== 'idle'}
-                    <span class="status {entity.status}">{_fmt(entity.status)}</span>
-                  {:else}
-                    <span class="status idle">Idle</span>
-                  {/if}
-                </div>
-              </div>
+              {/each}
             </div>
-          {/each}
+          {/if}
         </div>
       {/if}
 
       {#if shouldShowSection('items') && allItems.length > 0}
         <div class="entities-section">
-          <h4 class:visually-hidden={activeFilter === 'items'}>Items ({allItems.length})</h4>
-          {#each allItems as item (item.id)}
-            <div class="entity item {getRarityClass(item.rarity)}" class:at-target={isAtTarget(item.x, item.y)}>
-              <div class="item-icon {item.type}"></div>
-              <div class="entity-info">
-                <div class="entity-name">
-                  {item.name || _fmt(item.type) || "Unknown Item"}
-                  <span class="entity-coords">{formatCoords(item.x, item.y)}</span>
+          <div class="section-header" onclick={() => toggleSection('items')}>
+            <h4 class:visually-hidden={activeFilter === 'items'}>
+              Items ({allItems.length})
+            </h4>
+            <button class="collapse-button" aria-label={collapsedSections.items ? "Expand items" : "Collapse items"}>
+              {collapsedSections.items ? '▼' : '▲'}
+            </button>
+          </div>
+          
+          {#if !collapsedSections.items}
+            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+              {#each allItems as item (item.id)}
+                <div class="entity item {getRarityClass(item.rarity)}" class:at-target={isAtTarget(item.x, item.y)}>
+                  <div class="item-icon {item.type}"></div>
+                  <div class="entity-info">
+                    <div class="entity-name">
+                      {item.name || _fmt(item.type) || "Unknown Item"}
+                      <span class="entity-coords">{formatCoords(item.x, item.y)}</span>
+                    </div>
+                    <div class="entity-details">
+                      {#if item.type}
+                        <span class="item-type">{_fmt(item.type)}</span>
+                      {/if}
+                      {#if item.quantity > 1}
+                        <span class="item-quantity">×{item.quantity}</span>
+                      {/if}
+                      {#if item.rarity && item.rarity !== 'common'}
+                        <span class="item-rarity {item.rarity}">{_fmt(item.rarity)}</span>
+                      {/if}
+                      <div class="entity-distance">{formatDistance(item.distance)}</div>
+                    </div>
+                    {#if item.description}
+                      <div class="item-description">{item.description}</div>
+                    {/if}
+                  </div>
                 </div>
-                <div class="entity-details">
-                  {#if item.type}
-                    <span class="item-type">{_fmt(item.type)}</span>
-                  {/if}
-                  {#if item.quantity > 1}
-                    <span class="item-quantity">×{item.quantity}</span>
-                  {/if}
-                  {#if item.rarity && item.rarity !== 'common'}
-                    <span class="item-rarity {item.rarity}">{_fmt(item.rarity)}</span>
-                  {/if}
-                </div>
-                {#if item.description}
-                  <div class="item-description">{item.description}</div>
-                {/if}
-              </div>
+              {/each}
             </div>
-          {/each}
+          {/if}
         </div>
       {/if}
       
@@ -468,6 +563,8 @@
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     background-color: rgba(0, 0, 0, 0.03);
     padding: 0 0.3em;
+    width: 100%;
+    overflow-x: auto;
   }
   
   .filter-tab {
@@ -632,6 +729,15 @@
     gap: 0.6em;
     font-size: 0.85em;
     color: rgba(0, 0, 0, 0.7);
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .entity-distance {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.5);
+    margin-left: auto;
+    white-space: nowrap;
   }
   
   .entity-race {
@@ -906,5 +1012,37 @@
   .entity.item.mythic {
     border-color: rgba(255, 128, 255, 0.3);
     box-shadow: inset 0 0 0.3em rgba(255, 128, 255, 0.15);
+  }
+
+  /* Collapsible section styles */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.2em 0;
+    user-select: none;
+  }
+  
+  .section-header:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+  }
+  
+  .collapse-button {
+    background: none;
+    border: none;
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 0.8em;
+    cursor: pointer;
+    padding: 0.2em 0.5em;
+    transition: all 0.2s ease;
+  }
+  
+  .collapse-button:hover {
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .section-content {
+    overflow: hidden;
   }
 </style>
