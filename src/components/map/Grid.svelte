@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy, createEventDispatcher } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { derived } from "svelte/store";
   import { browser } from '$app/environment';
   import { 
@@ -15,9 +15,13 @@
   import { game, currentPlayer } from "../../lib/stores/game.js";
   import Torch from '../icons/Torch.svelte';
   
-  const dispatch = createEventDispatcher();
-  
-  const { detailed = false, openActions = null, isPathDrawingMode = false, moveComponentRef = null } = $props();
+  const { 
+    detailed = false, 
+    openActions = null, 
+    isPathDrawingMode = false, 
+    moveComponentRef = null,
+    onAddPathPoint = null 
+  } = $props();
   
   let mapElement = null;
   let resizeObserver = null;
@@ -46,7 +50,9 @@
         customPathPoints = [{ x: $map.target.x, y: $map.target.y }];
         
         // Notify parent about initial path point
-        dispatch('addPathPoint', { x: $map.target.x, y: $map.target.y });
+        if (onAddPathPoint) {
+          onAddPathPoint({ x: $map.target.x, y: $map.target.y });
+        }
       }
     } else {
       // Reset when path drawing ends
@@ -711,8 +717,10 @@
           moveComponentRef.updateCustomPath(customPathPoints);
         }
         
-        // Dispatch only the end point for consistency with adjacent point handling
-        dispatch('addPathPoint', point);
+        // Call the function prop directly with the end point
+        if (onAddPathPoint) {
+          onAddPathPoint(point);
+        }
         return;
       }
     }
@@ -730,7 +738,10 @@
       moveComponentRef.updateCustomPath(customPathPoints);
     }
     
-    dispatch('addPathPoint', point);
+    // Call the function prop directly
+    if (onAddPathPoint) {
+      onAddPathPoint(point);
+    }
   }
 </script>
 

@@ -827,7 +827,7 @@
             openActions={openActionsForTile} 
             {isPathDrawingMode}
             {moveComponentRef}
-            on:addPathPoint={e => handlePathPoint(e.detail)}
+            onAddPathPoint={handlePathPoint}
         />
         
         <div class="map-controls">
