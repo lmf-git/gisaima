@@ -36,6 +36,7 @@
     import SpawnMenu from '../../components/map/SpawnMenu.svelte';
     import MapEntities from '../../components/map/MapEntities.svelte';
     import Close from '../../components/icons/Close.svelte';
+    import Actions from '../../components/map/Actions.svelte';
 
     // Use $state for local component state
     let detailed = $state(false);
@@ -499,6 +500,43 @@
             }
         }
     }
+
+    // State for actions popup
+    let showActions = $state(false);
+    let selectedTile = $state(null);
+    
+    // Renamed to be more semantic - opens actions for a tile
+    function openActionsForTile(cell) {
+        selectedTile = cell;
+        showActions = true;
+    }
+    
+    // Close the actions popup
+    function closeActionsPopup() {
+        showActions = false;
+        // Clear highlight when popup closes
+        setHighlighted(null, null);
+    }
+    
+    // Handle action execution from the Actions component
+    function handleAction(event) {
+        const { action, tile } = event.detail;
+        console.log('Action selected:', action, 'for tile:', tile);
+        
+        // Here you would implement the actual action handling
+        // For example:
+        switch(action) {
+            case 'move':
+                console.log(`Moving to ${tile.x}, ${tile.y}`);
+                // Implement move logic
+                break;
+            case 'explore':
+                console.log(`Exploring ${tile.x}, ${tile.y}`);
+                // Implement explore logic
+                break;
+            // Handle other action types
+        }
+    }
 </script>
 
 <div class="map" class:dragging={isDragging}>
@@ -522,7 +560,7 @@
             <button onclick={() => goto('/worlds')}>Go to Worlds</button>
         </div>
     {:else}
-        <Grid {detailed} />
+        <Grid {detailed} openActions={openActionsForTile} />
         
         <div class="map-controls">
             <button 
@@ -579,6 +617,14 @@
         
         {#if $needsSpawn}
             <SpawnMenu onSpawn={handleSpawnComplete} />
+        {/if}
+
+        {#if showActions && selectedTile}
+            <Actions 
+                tile={selectedTile} 
+                onClose={closeActionsPopup}
+                on:action={handleAction} 
+            />
         {/if}
     {/if}
 </div>

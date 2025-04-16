@@ -15,8 +15,8 @@
   import { game, currentPlayer } from "../../lib/stores/game.js";
   import Torch from '../icons/Torch.svelte'; // Add Torch import
   
-  // Convert to $props syntax
-  const { detailed = false } = $props();
+  // Convert to $props syntax with openActions function instead of cellClick
+  const { detailed = false, openActions = null } = $props();
   
   // Local component state
   let mapElement = null;
@@ -323,7 +323,7 @@
     }
   });
   
-  // Simplify handleGridClick function to avoid redundant URL updates
+  // Simplify handleGridClick function to call the openActions prop
   function handleGridClick(event) {
     // Increment click counter for debugging
     clickCount++;
@@ -392,8 +392,16 @@
     if (tileX !== undefined && tileY !== undefined) {
       console.log('Moving to clicked tile:', { x: tileX, y: tileY });
       
-      // moveTarget will now handle URL updates internally
+      // Move the target as before
       moveTarget(tileX, tileY);
+      
+      // Find the clicked tile data from coordinates and pass to openActions function
+      if (openActions) {
+        const clickedTile = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
+        if (clickedTile) {
+          openActions(clickedTile);
+        }
+      }
       
       // Clear highlighted tile after moving
       setHighlighted(null, null);
