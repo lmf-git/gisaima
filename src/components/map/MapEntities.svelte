@@ -129,7 +129,7 @@
     }
   });
   
-  // Calculate estimated arrival time for moving groups
+  // Calculate estimated arrival time for moving groups with improved world speed handling
   function calculateMoveCompletionTime(group) {
     if (!group || group.status !== 'moving' || !group.moveStarted) return null;
     
@@ -138,12 +138,26 @@
     const moveStarted = group.moveStarted;
     const moveSpeed = group.moveSpeed || 1.0;
     const adjustedSpeed = moveSpeed * worldSpeed;
-    const moveTime = (1000 * 60) / adjustedSpeed; // Base 1 minute per tile, adjusted by speed
     
+    // Base 1 minute per tile, adjusted by speed
+    const moveTime = (1000 * 60) / adjustedSpeed; 
+    
+    // If group has pathIndex and movementPath, calculate more accurate completion time
+    if (group.pathIndex !== undefined && group.movementPath && Array.isArray(group.movementPath)) {
+      const remainingSteps = group.movementPath.length - (group.pathIndex + 1);
+      return moveStarted + (moveTime * remainingSteps);
+    }
+    
+    // Handle case where we have nextMoveTime directly from the server
+    if (group.nextMoveTime) {
+      return group.nextMoveTime;
+    }
+    
+    // Simple case - just one step of movement
     return moveStarted + moveTime;
   }
 
-  // Format time remaining for mobilizing or moving groups
+  // Format time remaining with world speed adjustment
   function formatTimeRemaining(endTime) {
     if (!endTime) return '';
     
@@ -152,9 +166,8 @@
     const now = Date.now();
     const remaining = endTime - now;
     
-    // For mobilizing groups that have reached the countdown end
-    // but are still waiting for the next server tick
-    if (remaining <= 0) return ''; // Return empty string instead of "Mobilizing..."
+    // For groups that have reached the countdown end but are waiting for server tick
+    if (remaining <= 0) return 'Imminent'; 
     
     const minutes = Math.floor(remaining / 60000);
     const seconds = Math.floor((remaining % 60000) / 1000);
@@ -656,7 +669,7 @@
           
           {#if !collapsedSections.groups}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each sortedGroups as entity (entity.id)}
+              {#each sortedGroups as entity (entity.id + ':' + entity.x + ':' + entity.y)}
                 <div 
                   class="entity group" 
                   class:at-target={isAtTarget(entity.x, entity.y)}
