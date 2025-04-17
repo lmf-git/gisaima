@@ -2,903 +2,382 @@
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
-  import Human from '../icons/Human.svelte';
-  import Elf from '../icons/Elf.svelte';
-  import Dwarf from '../icons/Dwarf.svelte';
-  import Goblin from '../icons/Goblin.svelte';
-  import Fairy from '../icons/Fairy.svelte';
+  import { getFunctions, httpsCallable } from 'firebase/functions';
 
   // Props with default empty object to avoid destructuring errors
   const { tile = {}, onClose = () => {}, onJoinBattle = () => {} } = $props();
-  
+
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
-  // Available groups for joining battle
-  let ownGroups = $state([]);
-  // Active battles
+  // Available groups and battles
+  let availableGroups = $state([]);
   let activeBattles = $state([]);
   
-  // Selected values
+  // Selected entities
   let selectedGroup = $state(null);
   let selectedBattle = $state(null);
   let selectedSide = $state(null);
   
-  // Initialize available groups based on tile content
+  // Loading state
+  let loading = $state(false);
+  let errorMessage = $state('');
+  
+  // Find active battles at this location
   $effect(() => {
-    if (!tile) return;
+    if (!tile || !tile.groups) return;
     
-    const joinableGroups = [];
-    const battles = {};
     const playerId = $currentPlayer?.uid;
+    if (!playerId) return;
     
-    // Find all active battles on this tile
-    if (tile.groups && tile.groups.length > 0) {
-      // First identify all battles
-      tile.groups.forEach(group => {
-        if (group.inBattle && group.battleId && group.status === 'fighting') {
-          if (!battles[group.battleId]) {
-            battles[group.battleId] = {
-              id: group.battleId,
-              sides: {
-                1: { groups: [], leader: null },
-                2: { groups: [], leader: null }
-              },
-              selected: false
-            };
-          }
-          
-          // Add group to appropriate side
-          const side = group.battleSide || 1;
-          battles[group.battleId].sides[side].groups.push({
-            ...group,
-            isCurrentPlayer: group.owner === playerId
-          });
-          
-          // Check if this is a battle leader
-          if (group.battleRole === 'attacker' || group.battleRole === 'defender') {
-            battles[group.battleId].sides[side].leader = group;
-          }
-        }
-      });
-      
-      // Then find player groups that can join
-      tile.groups.forEach(group => {
-        if (group.owner === playerId && 
-            group.status !== 'mobilizing' &&
-            group.status !== 'moving' &&
-            group.status !== 'demobilising' &&
-            group.status !== 'fighting' &&
-            !group.inBattle) {
-          joinableGroups.push({
-            ...group,
+    // Find groups that can join battles
+    availableGroups = tile.groups
+      .filter(group => 
+        group.owner === playerId && 
+        group.status === 'idle' &&
+        !group.inBattle
+      )
+      .map(group => ({
+        ...group,
+        selected: false
+      }));
+    
+    // Find active battles
+    const battles = new Map();
+    let battlingGroups = [];
+    
+    // First identify all groups in battle
+    tile.groups.forEach(group => {
+      if (group.inBattle && group.battleId) {
+        battlingGroups.push(group);
+        
+        if (!battles.has(group.battleId)) {
+          battles.set(group.battleId, {
+            id: group.battleId,
+            sides: {
+              1: { groups: [], power: 0 },
+              2: { groups: [], power: 0 }
+            },
             selected: false
           });
         }
-      });
-    }
+        
+        // Add group to appropriate side
+        const side = group.battleSide || 1;
+        const battleData = battles.get(group.battleId);
+        
+        battleData.sides[side].groups.push(group);
+        battleData.sides[side].power += (group.unitCount || 1);
+      }
+    });
     
-    ownGroups = joinableGroups;
-    activeBattles = Object.values(battles);
-    
-    // Reset selections
-    selectedGroup = null;
-    selectedBattle = null;
-    selectedSide = null;
+    // Convert map to array
+    activeBattles = Array.from(battles.values());
   });
   
-  // Set selected group to join with
-  function selectGroup(groupId) {
-    ownGroups = ownGroups.map(group => {
-      return {
-        ...group,
-        selected: group.id === groupId
-      };
-    });
+  // Join a battle
+  async function joinBattle() {
+    if (!selectedGroup || !selectedBattle || !selectedSide) return;
     
-    selectedGroup = ownGroups.find(g => g.id === groupId) || null;
+    loading = true;
+    errorMessage = '';
+    
+    try {
+      const functions = getFunctions();
+      const joinBattleFn = httpsCallable(functions, 'joinBattle');
+      
+      const result = await joinBattleFn({
+        groupId: selectedGroup.id,
+        battleId: selectedBattle.id,
+        side: parseInt(selectedSide),
+        locationX: tile.x,
+        locationY: tile.y,
+        worldId: $game.currentWorld
+      });
+      
+      if (result.data.success) {
+        console.log('Joined battle:', result.data);
+        
+        // Call the callback function if provided
+        if (onJoinBattle) {
+          onJoinBattle({
+            groupId: selectedGroup.id,
+            battleId: selectedBattle.id,
+            side: parseInt(selectedSide),
+            tile
+          });
+        }
+        
+        onClose(true);
+      } else {
+        errorMessage = result.data.error || 'Failed to join battle';
+      }
+    } catch (error) {
+      console.error('Error joining battle:', error);
+      errorMessage = error.message || 'Failed to join battle';
+    } finally {
+      loading = false;
+    }
+  }
+
+  // Select a group
+  function selectGroup(group) {
+    selectedGroup = group;
   }
   
-  // Set selected battle
-  function selectBattle(battleId) {
-    activeBattles = activeBattles.map(battle => {
-      return {
-        ...battle,
-        selected: battle.id === battleId
-      };
-    });
-    
-    selectedBattle = activeBattles.find(b => b.id === battleId) || null;
-    
-    // Reset side selection when battle changes
-    selectedSide = null;
+  // Select a battle
+  function selectBattle(battle) {
+    selectedBattle = battle;
+    selectedSide = null;  // Reset side selection
   }
   
-  // Select which side to join
+  // Select a side
   function selectSide(side) {
     selectedSide = side;
   }
-
-  // Add keyboard handling for selection
-  function handleGroupKeyDown(event, groupId) {
-    // Handle Enter or Space key to select
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      selectGroup(groupId);
-    }
-  }
   
-  function handleBattleKeyDown(event, battleId) {
-    // Handle Enter or Space key to select
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      selectBattle(battleId);
-    }
-  }
-  
-  // Function to handle joining the battle
-  function joinBattle() {
-    // Check if we have all the required selections
-    if (!selectedGroup || !selectedBattle || !selectedSide) {
-      return;
-    }
-    
-    // Use direct function call
-    if (onJoinBattle) {
-      onJoinBattle({
-        groupId: selectedGroup.id,
-        battleId: selectedBattle.id,
-        side: selectedSide,
-        tile
-      });
-    }
-    
-    onClose();
-  }
-  
-  // Helper to check if joining is possible
-  let canJoin = $derived(
+  // Check if joining is possible
+  const canJoin = $derived(
     selectedGroup !== null && 
     selectedBattle !== null && 
-    selectedSide !== null
+    selectedSide !== null &&
+    !loading
   );
-
-  // Close on escape key
+  
+  // Handle keyboard events
   function handleKeyDown(event) {
     if (event.key === 'Escape') {
       onClose();
     }
   }
-
-  // Get race icon component
-  function getRaceIcon(race) {
-    if (!race) return null;
-    
-    const raceKey = race?.toLowerCase();
-    switch (raceKey) {
-      case 'human': return Human;
-      case 'elf': return Elf;
-      case 'dwarf': return Dwarf;
-      case 'goblin': return Goblin;
-      case 'fairy': return Fairy;
-      default: return null;
-    }
-  }
-  
-  // Format strength value (unit count)
-  function formatStrength(group) {
-    if (!group) return '?';
-    
-    if (group.unitCount) {
-      return group.unitCount;
-    }
-    
-    if (group.units && Array.isArray(group.units)) {
-      return group.units.length;
-    }
-    
-    return '?';
-  }
-  
-  // Calculate total strength for a side
-  function calculateSideStrength(side) {
-    if (!side || !side.groups || !Array.isArray(side.groups)) {
-      return 0;
-    }
-    
-    return side.groups.reduce((total, group) => {
-      const strength = parseInt(formatStrength(group)) || 0;
-      return total + strength;
-    }, 0);
-  }
-  
-  // Get owner display name
-  function getOwnerName(group) {
-    if (!group || !group.ownerName) return 'Unknown';
-    return group.ownerName;
-  }
 </script>
 
-<svelte:window onkeydown={handleKeyDown} />
-
-<dialog 
-     class="overlay"
-     open
-     aria-modal="true" 
-     aria-labelledby="join-battle-title"
-     transition:fade={{ duration: 200 }}>
-  
-  <section 
-       class="popup"
-       role="document" 
-       transition:scale={{ start: 0.95, duration: 200 }}>
+<div class="overlay" transition:fade={{ duration: 150 }}>
+  <div class="popup" transition:scale={{ start: 0.95, duration: 200 }}>
     <div class="header">
-      <h2 id="join-battle-title">Join Battle - {tile?.x}, {tile?.y}</h2>
-      <button class="close-btn" onclick={onClose} aria-label="Close join battle dialog">
+      <h2>Join Battle - {tile?.x}, {tile?.y}</h2>
+      <button class="close-btn" onclick={onClose} aria-label="Close dialog">
         <Close size="1.5em" />
       </button>
     </div>
     
-    {#if tile}
-      <div class="location-info">
-        <div class="terrain">
-          <div class="terrain-color" style="background-color: {tile.color}"></div>
-          <span>{_fmt(tile.biome?.name) || "Unknown"}</span>
-          
-          {#if tile.structure}
-            <span class="structure-tag">
-              {tile.structure.name || _fmt(tile.structure.type)}
-            </span>
-          {/if}
+    <div class="content">
+      {#if availableGroups.length === 0 || activeBattles.length === 0}
+        <div class="no-battle">
+          <p>No battles available to join at this location, or you don't have any groups that can join.</p>
+          <button class="close-action" onclick={onClose}>Close</button>
         </div>
-      </div>
-      
-      <div class="join-content">
-        <div class="join-info">
-          <p>Select one of your groups to join an ongoing battle. You can choose which side to support.</p>
-          <p class="warning">
-            <span class="warning-icon">⚠️</span>
-            Joining a battle will immediately engage your units in combat. This can result in casualties.
-          </p>
-        </div>
+      {:else}
+        {#if errorMessage}
+          <div class="error-message">{errorMessage}</div>
+        {/if}
         
-        <!-- Your Groups Section -->
-        <div class="selection-section">
-          <h3>Select Your Group</h3>
-          {#if ownGroups.length > 0}
+        <div class="battle-join">
+          <div class="selection-section">
+            <h3>Select Your Group</h3>
             <div class="groups-list">
-              {#each ownGroups as group}
-                <div 
+              {#each availableGroups as group}
+                <button 
                   class="group-item" 
-                  class:selected={group.selected}
-                  onclick={() => selectGroup(group.id)}
-                  onkeydown={(e) => handleGroupKeyDown(e, group.id)}
-                  role="button"
-                  tabindex="0"
-                  aria-pressed={group.selected}
-                  aria-label={`Select ${group.name || group.id} to join battle`}
+                  class:selected={selectedGroup?.id === group.id}
+                  onclick={() => selectGroup(group)}
+                  onkeydown={(e) => e.key === 'Enter' && selectGroup(group)}
+                  type="button"
+                  aria-pressed={selectedGroup?.id === group.id}
+                  aria-label={`Select group ${group.name || group.id}`}
                 >
-                  <input 
-                    type="radio" 
-                    checked={group.selected} 
-                    name="group-selection"
-                    id={`group-${group.id}`}
-                    tabindex="-1"
-                  />
-                  <div class="group-icon">
-                    {#if group.race}
-                      {#if group.race.toLowerCase() === 'human'}
-                        <Human extraClass="race-icon-small" />
-                      {:else if group.race.toLowerCase() === 'elf'}
-                        <Elf extraClass="race-icon-small" />
-                      {:else if group.race.toLowerCase() === 'dwarf'}
-                        <Dwarf extraClass="race-icon-small" />
-                      {:else if group.race.toLowerCase() === 'goblin'}
-                        <Goblin extraClass="race-icon-small" />
-                      {:else if group.race.toLowerCase() === 'fairy'}
-                        <Fairy extraClass="race-icon-small" />
-                      {/if}
-                    {/if}
-                  </div>
                   <div class="group-info">
-                    <div class="group-name">{group.name || `Group ${group.id.slice(-4)}`}</div>
-                    <div class="group-details">
-                      {#if group.race}
-                        <span class="race-tag">{_fmt(group.race)}</span>
-                      {/if}
-                      <span class="strength-tag">Strength: {formatStrength(group)}</span>
-                    </div>
+                    <div class="group-name">{group.name || group.id}</div>
+                    <div class="group-details">Units: {group.unitCount || group.units?.length || 1}</div>
                   </div>
-                </div>
+                </button>
               {/each}
             </div>
-          {:else}
-            <div class="no-groups">
-              <p>You have no groups that can join battles.</p>
-            </div>
-          {/if}
-        </div>
-        
-        <!-- Active Battles Section -->
-        {#if activeBattles.length > 0}
+          </div>
+          
           <div class="selection-section">
             <h3>Select Battle to Join</h3>
             <div class="battles-list">
               {#each activeBattles as battle}
-                <div 
+                <button 
                   class="battle-item" 
-                  class:selected={battle.selected}
-                  onclick={() => selectBattle(battle.id)}
-                  onkeydown={(e) => handleBattleKeyDown(e, battle.id)}
-                  role="button"
-                  tabindex="0"
-                  aria-pressed={battle.selected}
-                  aria-label={`Select battle ${battle.id}`}
+                  class:selected={selectedBattle?.id === battle.id}
+                  onclick={() => selectBattle(battle)}
+                  onkeydown={(e) => e.key === 'Enter' && selectBattle(battle)}
+                  type="button"
+                  aria-pressed={selectedBattle?.id === battle.id}
+                  aria-label={`Select battle ${battle.id.substring(battle.id.lastIndexOf('_') + 1)}`}
                 >
-                  <input 
-                    type="radio" 
-                    checked={battle.selected} 
-                    name="battle-selection"
-                    id={`battle-${battle.id}`}
-                    tabindex="-1"
-                  />
-                  <div class="battle-content">
-                    <div class="battle-header">
-                      <div class="battle-id">Battle {battle.id.slice(-6)}</div>
-                    </div>
-                    
+                  <div class="battle-info">
+                    <div class="battle-name">Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}</div>
                     <div class="battle-sides">
-                      <div class="battle-side">
-                        <div class="side-header">
-                          Side 1 ({battle.sides[1].groups.length} units)
-                        </div>
-                        <div class="side-groups">
-                          {#each battle.sides[1].groups.slice(0, 3) as group}
-                            <div class="battle-group-tag">
-                              {#if group.race}
-                                {#if group.race.toLowerCase() === 'human'}
-                                  <Human extraClass="race-icon-tiny" />
-                                {:else if group.race.toLowerCase() === 'elf'}
-                                  <Elf extraClass="race-icon-tiny" />
-                                {:else if group.race.toLowerCase() === 'dwarf'}
-                                  <Dwarf extraClass="race-icon-tiny" />
-                                {:else if group.race.toLowerCase() === 'goblin'}
-                                  <Goblin extraClass="race-icon-tiny" />
-                                {:else if group.race.toLowerCase() === 'fairy'}
-                                  <Fairy extraClass="race-icon-tiny" />
-                                {/if}
-                              {/if}
-                              <span class="battle-group-name">{group.name || `Group ${group.id.slice(-4)}`}</span>
-                              {#if group.isCurrentPlayer}
-                                <span class="your-group-tag">Your group</span>
-                              {/if}
-                            </div>
-                          {/each}
-                          {#if battle.sides[1].groups.length > 3}
-                            <div class="more-tag">+{battle.sides[1].groups.length - 3} more</div>
-                          {/if}
-                        </div>
+                      <div class="side-info">
+                        Side 1: {battle.sides[1].groups.length} groups ({battle.sides[1].power} strength)
                       </div>
-                      
-                      <div class="vs">VS</div>
-                      
-                      <div class="battle-side">
-                        <div class="side-header">
-                          Side 2 ({battle.sides[2].groups.length} units)
-                        </div>
-                        <div class="side-groups">
-                          {#each battle.sides[2].groups.slice(0, 3) as group}
-                            <div class="battle-group-tag">
-                              {#if group.race}
-                                {#if group.race.toLowerCase() === 'human'}
-                                  <Human extraClass="race-icon-tiny" />
-                                {:else if group.race.toLowerCase() === 'elf'}
-                                  <Elf extraClass="race-icon-tiny" />
-                                {:else if group.race.toLowerCase() === 'dwarf'}
-                                  <Dwarf extraClass="race-icon-tiny" />
-                                {:else if group.race.toLowerCase() === 'goblin'}
-                                  <Goblin extraClass="race-icon-tiny" />
-                                {:else if group.race.toLowerCase() === 'fairy'}
-                                  <Fairy extraClass="race-icon-tiny" />
-                                {/if}
-                              {/if}
-                              <span class="battle-group-name">{group.name || `Group ${group.id.slice(-4)}`}</span>
-                              {#if group.isCurrentPlayer}
-                                <span class="your-group-tag">Your group</span>
-                              {/if}
-                            </div>
-                          {/each}
-                          {#if battle.sides[2].groups.length > 3}
-                            <div class="more-tag">+{battle.sides[2].groups.length - 3} more</div>
-                          {/if}
-                        </div>
+                      <div class="side-info">
+                        Side 2: {battle.sides[2].groups.length} groups ({battle.sides[2].power} strength)
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               {/each}
             </div>
           </div>
-        {:else}
-          <div class="no-battles">
-            <p>There are no active battles to join at this location.</p>
-          </div>
-        {/if}
-        
-        {#if selectedBattle}
-          <div class="side-selection">
-            <h3>Choose a Side</h3>
-            <div class="sides-container">
-              <button 
-                class="side-button" 
-                class:selected={selectedSide === 1}
-                onclick={() => selectSide(1)}
-                aria-pressed={selectedSide === 1}
-              >
-                <div class="side-title">Side 1</div>
-                <div class="side-groups-summary">
-                  {#each selectedBattle.sides[1].groups.slice(0, 3) as group}
-                    <div class="side-group-icon">
-                      {#if group.race?.toLowerCase() === 'human'}
-                        <Human extraClass="race-icon-small" />
-                      {:else if group.race?.toLowerCase() === 'elf'}
-                        <Elf extraClass="race-icon-small" />
-                      {:else if group.race?.toLowerCase() === 'dwarf'}
-                        <Dwarf extraClass="race-icon-small" />
-                      {:else if group.race?.toLowerCase() === 'goblin'}
-                        <Goblin extraClass="race-icon-small" />
-                      {:else if group.race?.toLowerCase() === 'fairy'}
-                        <Fairy extraClass="race-icon-small" />
-                      {/if}
-                    </div>
-                  {/each}
-                </div>
-                <div class="side-strength">
-                  Strength: {calculateSideStrength(selectedBattle.sides[1])}
-                </div>
-              </button>
-              
-              <button 
-                class="side-button" 
-                class:selected={selectedSide === 2}
-                onclick={() => selectSide(2)}
-                aria-pressed={selectedSide === 2}
-              >
-                <div class="side-title">Side 2</div>
-                <div class="side-groups-summary">
-                  {#each selectedBattle.sides[2].groups.slice(0, 3) as group}
-                    <div class="side-group-icon">
-                      {#if group.race?.toLowerCase() === 'human'}
-                        <Human extraClass="race-icon-small" />
-                      {:else if group.race?.toLowerCase() === 'elf'}
-                        <Elf extraClass="race-icon-small" />
-                      {:else if group.race?.toLowerCase() === 'dwarf'}
-                        <Dwarf extraClass="race-icon-small" />
-                      {:else if group.race?.toLowerCase() === 'goblin'}
-                        <Goblin extraClass="race-icon-small" />
-                      {:else if group.race?.toLowerCase() === 'fairy'}
-                        <Fairy extraClass="race-icon-small" />
-                      {/if}
-                    </div>
-                  {/each}
-                </div>
-                <div class="side-strength">
-                  Strength: {calculateSideStrength(selectedBattle.sides[2])}
-                </div>
-              </button>
-            </div>
-          </div>
-        {/if}
-        
-        <div class="battle-summary">
-          {#if selectedGroup && selectedBattle && selectedSide}
-            <h3>Battle Summary</h3>
-            <div class="summary">
-              <p>
-                <strong>{selectedGroup.name || `Your group`}</strong> will join 
-                <strong>Side {selectedSide}</strong> in the battle.
-              </p>
-              <p class="estimate">
-                Side {selectedSide} has {calculateSideStrength(selectedBattle.sides[selectedSide])} total strength.
-                Your group contributes {formatStrength(selectedGroup)} additional strength.
-              </p>
+          
+          {#if selectedBattle}
+            <div class="side-selection">
+              <h3>Choose Side</h3>
+              <div class="sides">
+                <button 
+                  class="side-button" 
+                  class:selected={selectedSide === "1"}
+                  onclick={() => selectSide("1")}
+                  onkeydown={(e) => e.key === 'Enter' && selectSide("1")}
+                  type="button"
+                  aria-pressed={selectedSide === "1"}
+                >
+                  Side 1 ({selectedBattle.sides[1].groups.length} groups)
+                </button>
+                <button 
+                  class="side-button" 
+                  class:selected={selectedSide === "2"}
+                  onclick={() => selectSide("2")}
+                  onkeydown={(e) => e.key === 'Enter' && selectSide("2")}
+                  type="button"
+                  aria-pressed={selectedSide === "2"}
+                >
+                  Side 2 ({selectedBattle.sides[2].groups.length} groups)
+                </button>
+              </div>
             </div>
           {/if}
         </div>
         
-        <div class="button-row">
-          <button 
-            class="cancel-btn" 
-            onclick={onClose}
-          >
-            Flee
-          </button>
+        <div class="actions">
+          <button class="cancel-btn" onclick={onClose} disabled={loading}>Cancel</button>
           <button 
             class="join-btn" 
-            disabled={!canJoin}
             onclick={joinBattle}
+            disabled={!canJoin}
           >
-            Join Battle
+            {loading ? 'Joining...' : 'Join Battle'}
           </button>
         </div>
-      </div>
-    {:else}
-      <p class="no-tile">No tile selected</p>
-    {/if}
-  </section>
-  
-  <button 
-    class="overlay-dismiss-button"
-    onclick={onClose}
-    aria-label="Close dialog">
-  </button>
-</dialog>
+      {/if}
+    </div>
+  </div>
+</div>
 
 <style>
-  .overlay-dismiss-button {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    background: transparent;
-    border: none;
-    z-index: -1;
-  }
-
   .overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.7);
     display: flex;
-    align-items: center;
     justify-content: center;
-    z-index: 1200;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-    padding: 0;
-    margin: 0;
-    border: none;
+    align-items: center;
+    z-index: 1000;
   }
-  
+
   .popup {
     background: white;
     border-radius: 0.5em;
-    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
     width: 90%;
-    max-width: 35em;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
+    max-width: 40em;
+    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
     overflow: hidden;
-    font-family: var(--font-body);
   }
-  
+
   .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.8em 1em;
+    padding: 1em;
     background: #f5f5f5;
     border-bottom: 1px solid #e0e0e0;
   }
-  
-  h2 {
+
+  h2, h3 {
     margin: 0;
-    font-size: 1.3em;
-    font-weight: 600;
-    color: #333;
     font-family: var(--font-heading);
   }
   
   h3 {
-    margin: 0 0 0.8em 0;
-    font-size: 1.1em;
-    font-weight: 600;
-    color: #333;
-    text-align: center;
-  }
-  
-  .close-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.3em;
-    display: flex;
-    border-radius: 50%;
-    transition: background-color 0.2s;
-  }
-  
-  .close-btn:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-  }
-  
-  .location-info {
-    padding: 1em;
-    border-bottom: 1px solid #e0e0e0;
-  }
-  
-  .terrain {
-    display: flex;
-    align-items: center;
+    margin-bottom: 0.5em;
     font-size: 1.1em;
   }
-  
-  .terrain-color {
-    width: 1em;
-    height: 1em;
-    border-radius: 0.2em;
-    margin-right: 0.5em;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-  }
-  
-  .structure-tag {
-    margin-left: 0.8em;
-    font-size: 0.8em;
-    font-weight: bold;
-    padding: 0.2em 0.5em;
-    border-radius: 0.3em;
-    background: rgba(30, 144, 255, 0.15);
-    border: 1px solid rgba(30, 144, 255, 0.3);
-    color: #1e90ff;
-  }
-  
-  .join-content {
+
+  .content {
     padding: 1em;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .battle-join {
     display: flex;
     flex-direction: column;
     gap: 1em;
-    max-height: 60vh;
-    overflow-y: auto;
-  }
-  
-  .join-info {
-    padding: 0.8em;
-    background-color: rgba(139, 0, 0, 0.08);
-    border-radius: 0.3em;
-    font-size: 0.9em;
-    color: rgba(0, 0, 0, 0.7);
-    line-height: 1.4;
-    border-left: 3px solid rgba(139, 0, 0, 0.5);
-  }
-  
-  .join-info p {
-    margin: 0 0 0.5em 0;
-  }
-  
-  .join-info p:last-child {
-    margin-bottom: 0;
-  }
-  
-  .warning {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    font-weight: 500;
-    color: #8B0000;
-  }
-  
-  .warning-icon {
-    font-size: 1.2em;
   }
 
   .selection-section {
-    border: 1px solid #e0e0e0;
-    border-radius: 0.3em;
-    padding: 0.8em;
-    background-color: rgba(0, 0, 0, 0.02);
-  }
-  
-  .groups-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5em;
-    max-height: 12em;
-    overflow-y: auto;
-  }
-  
-  .group-item {
-    display: flex;
-    align-items: center;
-    padding: 0.6em 0.8em;
-    border: 1px solid #e0e0e0;
-    border-radius: 0.3em;
-    background: white;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .group-item:hover {
-    background-color: #f9f9f9;
-  }
-  
-  .group-item.selected {
-    background-color: rgba(66, 133, 244, 0.1);
-    border-color: rgba(66, 133, 244, 0.3);
-  }
-  
-  .group-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 0.6em;
-  }
-  
-  .group-info {
     flex: 1;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.4em;
+    padding: 1em;
   }
-  
-  .group-name {
-    font-weight: 500;
-    margin-bottom: 0.2em;
-  }
-  
-  .group-details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5em;
-    font-size: 0.8em;
-  }
-  
-  .race-tag {
-    padding: 0.1em 0.4em;
-    border-radius: 0.2em;
-    background-color: rgba(0, 0, 0, 0.06);
-    color: rgba(0, 0, 0, 0.7);
-  }
-  
-  .strength-tag {
-    padding: 0.1em 0.4em;
-    border-radius: 0.2em;
-    background-color: rgba(139, 0, 0, 0.06);
-    color: #8B0000;
-  }
-  
-  .no-groups, .no-battles, .no-tile {
-    text-align: center;
-    padding: 1em 0;
-    color: #666;
-    font-style: italic;
-  }
-  
-  .battles-list {
+
+  .groups-list, .battles-list {
     display: flex;
     flex-direction: column;
     gap: 0.5em;
     max-height: 15em;
     overflow-y: auto;
   }
-  
-  .battle-item {
-    display: flex;
-    align-items: flex-start;
-    padding: 0.6em 0.8em;
+
+  .group-item, .battle-item {
+    padding: 0.8em;
     border: 1px solid #e0e0e0;
     border-radius: 0.3em;
-    background: white;
     cursor: pointer;
     transition: all 0.2s;
   }
-  
-  .battle-item:hover {
+
+  .group-item:hover, .battle-item:hover {
     background-color: #f9f9f9;
   }
-  
-  .battle-item.selected {
-    background-color: rgba(139, 0, 0, 0.1);
-    border-color: rgba(139, 0, 0, 0.3);
+
+  .group-item.selected, .battle-item.selected {
+    background-color: rgba(0, 0, 255, 0.05);
+    border-color: rgba(0, 0, 255, 0.2);
   }
-  
-  .battle-content {
-    flex: 1;
-    margin-left: 0.8em;
+
+  .group-name, .battle-name {
+    font-weight: 600;
+    margin-bottom: 0.3em;
   }
-  
-  .battle-header {
-    font-weight: 500;
-    margin-bottom: 0.5em;
-  }
-  
-  .battle-id {
-    font-size: 1em;
-    color: #8B0000;
+
+  .group-details, .battle-sides {
+    font-size: 0.9em;
+    opacity: 0.8;
   }
   
   .battle-sides {
     display: flex;
-    gap: 0.5em;
-    align-items: stretch;
-    font-size: 0.9em;
+    justify-content: space-between;
   }
   
-  .battle-side {
-    flex: 1;
-    border: 1px solid #e0e0e0;
-    border-radius: 0.3em;
-    padding: 0.4em;
-    background-color: rgba(0, 0, 0, 0.02);
-  }
-  
-  .side-header {
-    text-align: center;
-    font-weight: 500;
-    padding-bottom: 0.3em;
-    border-bottom: 1px dashed #e0e0e0;
-    margin-bottom: 0.3em;
+  .side-info {
     font-size: 0.85em;
   }
   
-  .side-groups {
-    display: flex;
-    flex-direction: column;
-    gap: 0.3em;
-  }
-  
-  .vs {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    color: #8B0000;
-    padding: 0 0.5em;
-    font-size: 0.8em;
-  }
-  
-  .battle-group-tag {
-    display: flex;
-    align-items: center;
-    gap: 0.3em;
-    font-size: 0.8em;
-    background-color: rgba(0, 0, 0, 0.03);
-    padding: 0.2em 0.4em;
-    border-radius: 0.2em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  .battle-group-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  .your-group-tag {
-    font-size: 0.75em;
-    background-color: rgba(66, 133, 244, 0.1);
-    color: rgb(66, 133, 244);
-    padding: 0.1em 0.3em;
-    border-radius: 0.2em;
-    white-space: nowrap;
-  }
-  
-  :global(.race-icon-tiny) {
-    width: 1em;
-    height: 1em;
-    fill: rgba(0, 0, 0, 0.7);
-  }
-  
-  .more-tag {
-    text-align: center;
-    font-size: 0.75em;
-    color: #666;
-    font-style: italic;
-    padding-top: 0.2em;
-  }
-  
   .side-selection {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8em;
-    margin-top: 0.5em;
+    margin-top: 1em;
   }
   
-  .sides-container {
+  .sides {
     display: flex;
     gap: 1em;
   }
@@ -906,146 +385,84 @@
   .side-button {
     flex: 1;
     padding: 0.8em;
-    border: 2px solid #e0e0e0;
+    border: 1px solid #e0e0e0;
     border-radius: 0.3em;
-    background-color: white;
+    background: white;
     cursor: pointer;
     transition: all 0.2s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5em;
   }
   
   .side-button:hover {
     background-color: #f9f9f9;
   }
   
-  .side-button:first-child.selected {
-    background-color: rgba(0, 0, 255, 0.05);
-    border-color: rgba(0, 0, 255, 0.3);
+  .side-button.selected {
+    background-color: rgba(0, 0, 255, 0.1);
+    border-color: blue;
+    color: blue;
   }
-  
-  .side-button:last-child.selected {
-    background-color: rgba(255, 0, 0, 0.05);
-    border-color: rgba(255, 0, 0, 0.3);
-  }
-  
-  .side-title {
-    font-weight: 600;
-    font-size: 1.1em;
-  }
-  
-  .side-groups-summary {
+
+  .actions {
     display: flex;
-    gap: 0.5em;
-    margin: 0.3em 0;
+    justify-content: flex-end;
+    gap: 1em;
+    margin-top: 1.5em;
   }
-  
-  .side-group-icon {
-    width: 1.8em;
-    height: 1.8em;
-    background-color: rgba(0, 0, 0, 0.03);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .side-strength {
-    font-size: 0.9em;
-    font-weight: 500;
-  }
-  
-  .battle-summary {
-    margin-top: 0.5em;
-    border: 1px dashed #e0e0e0;
-    border-radius: 0.3em;
-    padding: 0.8em;
-    background-color: rgba(0, 0, 0, 0.02);
-    text-align: center;
-  }
-  
-  .summary {
-    font-size: 0.9em;
-  }
-  
-  .summary p {
-    margin: 0 0 0.5em 0;
-  }
-  
-  .summary p:last-child {
-    margin-bottom: 0;
-  }
-  
-  .estimate {
-    font-style: italic;
-    color: #666;
-  }
-  
-  .button-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 0.8em;
-    margin-top: 1em;
-  }
-  
-  .cancel-btn, .join-btn {
-    flex: 1;
-    padding: 0.8em 1em;
+
+  .cancel-btn, .join-btn, .close-action {
+    padding: 0.7em 1.2em;
     border-radius: 0.3em;
     border: none;
     cursor: pointer;
     font-size: 1em;
     font-weight: 500;
-    transition: all 0.2s;
   }
-  
+
   .cancel-btn {
     background-color: #f1f3f4;
     color: #3c4043;
     border: 1px solid #dadce0;
   }
-  
-  .cancel-btn:hover {
-    background-color: #e8eaed;
-  }
-  
+
   .join-btn {
-    background-color: #8B0000;
+    background-color: #1a73e8;
     color: white;
   }
-  
-  .join-btn:hover:not(:disabled) {
-    background-color: #7b0000;
-  }
-  
+
   .join-btn:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
   }
-  
-  @media (max-width: 768px) {
-    .popup {
-      width: 95%;
-      max-width: 95%;
-      max-height: 80vh;
+
+  .error-message {
+    padding: 0.8em;
+    background-color: rgba(255, 0, 0, 0.1);
+    border-left: 3px solid #d32f2f;
+    margin-bottom: 1em;
+    color: #d32f2f;
+  }
+
+  .no-battle {
+    text-align: center;
+    padding: 2em 1em;
+  }
+
+  .close-action {
+    margin-top: 1em;
+    background-color: #f1f3f4;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+  }
+
+  @media (min-width: 768px) {
+    .battle-join {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-gap: 1em;
     }
     
-    .battle-sides {
-      flex-direction: column;
-    }
-    
-    .vs {
-      padding: 0.3em 0;
-    }
-    
-    .sides-container {
-      flex-direction: column;
-    }
-    
-    .button-row {
-      flex-direction: column;
+    .side-selection {
+      grid-column: 1 / 3;
     }
   }
 </style>
