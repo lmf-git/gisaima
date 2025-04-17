@@ -77,6 +77,35 @@ export const processGameTicks = onSchedule({
               console.log(`Group ${groupId} mobilization complete at ${coordKey}`);
             }
             
+            // Process groups that are starting to gather - update status to gathering
+            if (group.status === "starting_to_gather") {
+              updates[`${dbPath}/status`] = "gathering";
+              updates[`${dbPath}/lastUpdated`] = now;
+              console.log(`Group ${groupId} started gathering at ${coordKey}`);
+            }
+            
+            // Process groups that are gathering and completed
+            if (group.status === "gathering" && group.gatheringUntil && group.gatheringUntil <= now) {
+              // Generate random items based on biome and group size
+              const items = generateGatheredItems(group, tileData.biome);
+              
+              // Update group with gathered items
+              updates[`${dbPath}/status`] = "idle";
+              updates[`${dbPath}/lastUpdated`] = now;
+              updates[`${dbPath}/gatheringUntil`] = null;
+              
+              // Set items to the group
+              if (!group.items) {
+                updates[`${dbPath}/items`] = items;
+              } else {
+                // Append to existing items
+                const existingItems = Array.isArray(group.items) ? group.items : [];
+                updates[`${dbPath}/items`] = [...existingItems, ...items];
+              }
+              
+              console.log(`Group ${groupId} finished gathering at ${coordKey}, found ${items.length} items`);
+            }
+            
             // Process groups that are moving step by step
             if (group.status === "moving" && group.movementPath && group.nextMoveTime && group.nextMoveTime <= now) {
               // Get current position in the path
@@ -159,6 +188,102 @@ export const processGameTicks = onSchedule({
     throw error;
   }
 });
+
+// Generate random items based on group and biome
+function generateGatheredItems(group, biome = 'plains') {
+  const items = [];
+  
+  // Base number of items is determined by group size
+  const unitCount = group.unitCount || (group.units ? group.units.length : 1);
+  
+  // Calculate the base number of items to generate
+  const baseItems = Math.floor(Math.random() * 2) + Math.ceil(unitCount / 2);
+  
+  // Generate biome-specific items
+  const biomeItems = getBiomeItems(biome);
+  
+  // Add common items every group finds
+  const commonItems = [
+    { id: `item_${Date.now()}_1`, name: 'Wooden Sticks', quantity: Math.floor(Math.random() * 5) + 1, type: 'resource', rarity: 'common' },
+    { id: `item_${Date.now()}_2`, name: 'Stone Pieces', quantity: Math.floor(Math.random() * 3) + 1, type: 'resource', rarity: 'common' }
+  ];
+  
+  // Combine items based on the number determined
+  const itemCount = baseItems;
+  
+  // Add common items first
+  for (let i = 0; i < Math.min(itemCount, commonItems.length); i++) {
+    items.push(commonItems[i]);
+  }
+  
+  // Add biome-specific items
+  for (let i = items.length; i < itemCount; i++) {
+    if (biomeItems.length > 0) {
+      const randomIndex = Math.floor(Math.random() * biomeItems.length);
+      const item = { ...biomeItems[randomIndex] };
+      
+      // Generate unique ID
+      item.id = `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      
+      items.push(item);
+    }
+  }
+  
+  // Rare chance (5%) for a special item
+  if (Math.random() < 0.05) {
+    items.push({
+      id: `item_${Date.now()}_special`,
+      name: 'Mysterious Artifact',
+      description: 'A strange object of unknown origin',
+      quantity: 1,
+      type: 'artifact',
+      rarity: 'rare'
+    });
+  }
+  
+  return items;
+}
+
+// Get biome-specific items
+function getBiomeItems(biome) {
+  const biomeItemMap = {
+    'plains': [
+      { name: 'Wheat', quantity: Math.floor(Math.random() * 3) + 1, type: 'resource', rarity: 'common' },
+      { name: 'Wild Berries', quantity: Math.floor(Math.random() * 2) + 1, type: 'resource', rarity: 'common' }
+    ],
+    'forest': [
+      { name: 'Oak Wood', quantity: Math.floor(Math.random() * 3) + 1, type: 'resource', rarity: 'common' },
+      { name: 'Medicinal Herbs', quantity: Math.floor(Math.random() * 2) + 1, type: 'resource', rarity: 'uncommon' }
+    ],
+    'mountains': [
+      { name: 'Iron Ore', quantity: Math.floor(Math.random() * 2) + 1, type: 'resource', rarity: 'uncommon' },
+      { name: 'Mountain Crystal', quantity: 1, type: 'gem', rarity: 'rare' }
+    ],
+    'desert': [
+      { name: 'Sand Crystal', quantity: Math.floor(Math.random() * 2) + 1, type: 'gem', rarity: 'uncommon' },
+      { name: 'Cactus Fruit', quantity: Math.floor(Math.random() * 3) + 1, type: 'resource', rarity: 'common' }
+    ],
+    'rivers': [
+      { name: 'Fresh Water', quantity: Math.floor(Math.random() * 3) + 1, type: 'resource', rarity: 'common' },
+      { name: 'Fish', quantity: Math.floor(Math.random() * 2) + 1, type: 'resource', rarity: 'common' }
+    ],
+    'oasis': [
+      { name: 'Pure Water', quantity: Math.floor(Math.random() * 2) + 1, type: 'resource', rarity: 'uncommon' },
+      { name: 'Exotic Fruit', quantity: Math.floor(Math.random() * 2) + 1, type: 'resource', rarity: 'uncommon' }
+    ],
+    'ruins': [
+      { name: 'Ancient Fragment', quantity: 1, type: 'artifact', rarity: 'rare' },
+      { name: 'Broken Tool', quantity: Math.floor(Math.random() * 2) + 1, type: 'junk', rarity: 'common' }
+    ],
+    'wastes': [
+      { name: 'Scrap Metal', quantity: Math.floor(Math.random() * 3) + 1, type: 'resource', rarity: 'common' },
+      { name: 'Strange Device', quantity: 1, type: 'artifact', rarity: 'uncommon' }
+    ]
+  };
+  
+  // Return items for the specific biome, or default to plains
+  return biomeItemMap[biome] || biomeItemMap['plains'];
+}
 
 // Function to start a mobilization for a group
 export const startMobilization = onCall(async (data, context) => {

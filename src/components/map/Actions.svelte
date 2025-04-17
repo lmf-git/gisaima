@@ -58,6 +58,14 @@
         description: 'Move selected group to another location',
         icon: '➡️',
       });
+      
+      // Add gather option for idle groups owned by the player
+      availableActions.push({
+        id: 'gather',
+        label: 'Gather Resources',
+        description: 'Collect resources from this area',
+        icon: '🧺',
+      });
     }
     
     // SIMPLIFIED LOGIC: Show mobilize action if:

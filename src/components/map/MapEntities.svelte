@@ -381,6 +381,12 @@
     // Return all tab followed by sorted others
     return [allTab, ...otherTabs];
   }
+
+  // Function to display item count for a group
+  function getGroupItemCount(group) {
+    if (!group.items) return 0;
+    return Array.isArray(group.items) ? group.items.length : Object.keys(group.items).length;
+  }
 </script>
 
 <div class="entities-wrapper" class:closing>
@@ -673,50 +679,83 @@
           
           {#if !collapsedSections.groups}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each sortedGroups as entity (entity.id + ':' + entity.x + ':' + entity.y)}
+              {#each sortedGroups as group (group.id)}
                 <div 
-                  class="entity group" 
-                  class:at-target={isAtTarget(entity.x, entity.y)}
-                  onclick={(e) => handleEntityAction(entity.x, entity.y, e)}
-                  onkeydown={(e) => handleEntityAction(entity.x, entity.y, e)}
-                  role="button"
+                  class="entity" 
+                  class:at-target={isAtTarget(group.x, group.y)}
+                  onclick={(e) => handleEntityAction(group.x, group.y, e)}
+                  onkeydown={(e) => handleEntityAction(group.x, group.y, e)}
                   tabindex="0"
-                  aria-label="Navigate to group {entity.name || entity.id} at {entity.x},{entity.y}"
+                  role="button"
+                  aria-label="View group {group.name}"
                 >
                   <div class="entity-race-icon">
-                    {#if entity.race?.toLowerCase() === 'human' || entity.faction?.toLowerCase() === 'human'}
-                      <Human extraClass="race-icon-entity" />
-                    {:else if entity.race?.toLowerCase() === 'elf' || entity.faction?.toLowerCase() === 'elf'}
-                      <Elf extraClass="race-icon-entity" />
-                    {:else if entity.race?.toLowerCase() === 'dwarf' || entity.faction?.toLowerCase() === 'dwarf'}
-                      <Dwarf extraClass="race-icon-entity" />
-                    {:else if entity.race?.toLowerCase() === 'goblin' || entity.faction?.toLowerCase() === 'goblin'}
-                      <Goblin extraClass="race-icon-entity" />
-                    {:else if entity.race?.toLowerCase() === 'fairy' || entity.faction?.toLowerCase() === 'fairy'}
-                      <Fairy extraClass="race-icon-entity" />
+                    {#if group.race === 'human'}
+                      <Human class="race-icon-entity" />
+                    {:else if group.race === 'elf'}
+                      <Elf class="race-icon-entity" />
+                    {:else if group.race === 'dwarf'}
+                      <Dwarf class="race-icon-entity" />
+                    {:else if group.race === 'goblin'}
+                      <Goblin class="race-icon-entity" />
+                    {:else if group.race === 'fairy'}
+                      <Fairy class="race-icon-entity" />
                     {/if}
                   </div>
+                  
                   <div class="entity-info">
                     <div class="entity-name">
-                      {entity.name || entity.id}
-                      <span class="entity-coords">{formatCoords(entity.x, entity.y)}</span>
+                      {group.name || `Group ${group.id.slice(-4)}`}
+                      <span class="entity-coords">({formatCoords(group.x, group.y)})</span>
                     </div>
+                    
                     <div class="entity-details">
-                      <span class="unit-count">{entity.unitCount || entity.units?.length || "?"} units</span>
-                      {#if entity.status === 'mobilizing' && entity.readyAt}
-                        <span class="status mobilizing" class:pending-tick={isPendingTick(entity.readyAt)}>
-                          Mobilizing: {formatTimeRemaining(entity.readyAt)}
-                        </span>
-                      {:else if entity.status === 'moving' && entity.moveStarted}
-                        <span class="status moving" class:pending-tick={isPendingTick(calculateMoveCompletionTime(entity))}>
-                          Moving: {formatTimeRemaining(calculateMoveCompletionTime(entity))}
-                        </span>
-                      {:else if entity.status && entity.status !== 'idle'}
-                        <span class="status {entity.status}">{_fmt(entity.status)}</span>
-                      {:else}
-                        <span class="status idle">Idle</span>
-                      {/if}
-                      <div class="entity-distance">{formatDistance(entity.distance)}</div>
+                      <span class="unit-count">
+                        {group.unitCount || (group.units ? group.units.length : 0)} units
+                        {#if getGroupItemCount(group) > 0}
+                          • <span class="item-count">{getGroupItemCount(group)} items</span>
+                        {/if}
+                      </span>
+                      
+                      <span 
+                        class="status {getStatusClass(group.status)}" 
+                        class:pending-tick={isPendingTick(
+                          group.status === 'moving' 
+                            ? group.nextMoveTime 
+                            : (group.status === 'gathering' || group.status === 'starting_to_gather' 
+                                ? group.gatheringUntil 
+                                : group.readyAt)
+                        )}
+                      >
+                        {#if group.status === 'starting_to_gather'}
+                          Preparing to Gather
+                        {:else}
+                          {_fmt(group.status)}
+                        {/if}
+                        {#if group.status === 'moving'}
+                          {#if isPendingTick(group.nextMoveTime)}
+                            ↻
+                          {:else}
+                            ({formatTimeRemaining(calculateMoveCompletionTime(group))})
+                          {/if}
+                        {:else if group.status === 'mobilizing'}
+                          {#if isPendingTick(group.readyAt)}
+                            ↻
+                          {:else}
+                            ({formatTimeRemaining(group.readyAt)})
+                          {/if}
+                        {:else if group.status === 'gathering' || group.status === 'starting_to_gather'}
+                          {#if isPendingTick(group.gatheringUntil)}
+                            ↻
+                          {:else}
+                            ({formatTimeRemaining(group.gatheringUntil)})
+                          {/if}
+                        {/if}
+                      </span>
+                      
+                      <span class="entity-distance">
+                        {formatDistance(group.distance)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -1158,9 +1197,22 @@
   }
   
   .status.gathering {
-    background: rgba(30, 144, 255, 0.15);
-    border: 1px solid rgba(30, 144, 255, 0.3);
-    color: #1e90ff;
+    background: rgba(75, 181, 67, 0.15);
+    border: 1px solid rgba(75, 181, 67, 0.3);
+    color: #2d8659;
+  }
+
+  .status.starting_to_gather {
+    background: rgba(249, 168, 37, 0.15);
+    border: 1px solid rgba(249, 168, 37, 0.3);
+    color: #E65100;
+    animation: pulseStartingGather 2s infinite;
+  }
+  
+  @keyframes pulseStartingGather {
+    0% { box-shadow: 0 0 0 0 rgba(249, 168, 37, 0.4); }
+    50% { box-shadow: 0 0 0 3px rgba(249, 168, 37, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(249, 168, 37, 0); }
   }
   
   .status.scouting {
