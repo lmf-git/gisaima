@@ -434,3 +434,312 @@ export const startMobilization = onCall(async (data, context) => {
     throw new HttpsError('internal', 'Error starting mobilization', error);
   }
 });
+
+// Demobilise units function
+export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
+  const { groupId, targetStructureId, locationX, locationY } = request.data;
+  const userId = request.auth?.uid;
+  
+  if (!userId) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+  
+  if (!groupId || locationX === undefined || locationY === undefined) {
+    throw new HttpsError("invalid-argument", "Missing required parameters");
+  }
+  
+  try {
+    const worldId = request.data.worldId || 'default';
+    const locationKey = `${locationX},${locationY}`;
+    const chunkKey = getChunkKey(locationX, locationY);
+    const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}`);
+    
+    // Get the current tile data
+    const tileSnapshot = await tileRef.once("value");
+    const tileData = tileSnapshot.val() || {};
+    
+    // Find the group to demobilise
+    const groups = tileData.groups || {};
+    const groupToProcess = Object.values(groups).find(g => g.id === groupId);
+    
+    if (!groupToProcess) {
+      throw new HttpsError("not-found", "Group not found at this location");
+    }
+    
+    // Verify ownership
+    if (groupToProcess.owner !== userId) {
+      throw new HttpsError("permission-denied", "You can only demobilise your own groups");
+    }
+    
+    // Check if there's a valid structure for demobilisation
+    const structure = tileData.structure;
+    if (!structure) {
+      throw new HttpsError("failed-precondition", "No structure available for demobilisation");
+    }
+    
+    if (targetStructureId && structure.id !== targetStructureId) {
+      throw new HttpsError("failed-precondition", "Target structure not found at this location");
+    }
+    
+    // Calculate time for demobilisation to complete
+    const worldInfoRef = db.ref(`worldInfo/${worldId}`);
+    const worldInfoSnapshot = await worldInfoRef.once("value");
+    const worldInfo = worldInfoSnapshot.val() || {};
+    
+    const worldSpeed = worldInfo.speed || 1.0;
+    const baseTickTime = 60000; // 1 minute
+    const tickTime = Math.round(baseTickTime / worldSpeed);
+    
+    const now = Date.now();
+    const readyAt = now + tickTime;
+    
+    // Update the group's status
+    await db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}`).update({
+      status: 'demobilising',
+      readyAt: readyAt,
+      targetStructureId: targetStructureId || structure.id
+    });
+    
+    return {
+      success: true,
+      message: "Group is demobilising",
+      readyAt: readyAt
+    };
+  } catch (error) {
+    console.error("Error demobilising units:", error);
+    throw new HttpsError("internal", "Failed to demobilise units");
+  }
+});
+
+// Attack another group function
+export const attackGroup = onCall({ maxInstances: 10 }, async (request) => {
+  const { attackerGroupId, defenderGroupId, locationX, locationY } = request.data;
+  const userId = request.auth?.uid;
+  
+  if (!userId) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+  
+  if (!attackerGroupId || !defenderGroupId || locationX === undefined || locationY === undefined) {
+    throw new HttpsError("invalid-argument", "Missing required parameters");
+  }
+  
+  try {
+    const worldId = request.data.worldId || 'default';
+    const locationKey = `${locationX},${locationY}`;
+    const chunkKey = getChunkKey(locationX, locationY);
+    const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}`);
+    
+    // Get the current tile data
+    const tileSnapshot = await tileRef.once("value");
+    const tileData = tileSnapshot.val() || {};
+    
+    // Check for groups
+    const groups = tileData.groups || {};
+    if (Object.keys(groups).length === 0) {
+      throw new HttpsError("not-found", "No groups found at this location");
+    }
+    
+    // Find the attacker group
+    const attackerGroup = Object.values(groups).find(g => g.id === attackerGroupId);
+    if (!attackerGroup) {
+      throw new HttpsError("not-found", "Attacker group not found at this location");
+    }
+    
+    // Verify ownership of attacker group
+    if (attackerGroup.owner !== userId) {
+      throw new HttpsError("permission-denied", "You can only attack with your own groups");
+    }
+    
+    // Find the defender group
+    const defenderGroup = Object.values(groups).find(g => g.id === defenderGroupId);
+    if (!defenderGroup) {
+      throw new HttpsError("not-found", "Defender group not found at this location");
+    }
+    
+    // Check if either group is already in battle
+    if (attackerGroup.inBattle) {
+      throw new HttpsError("failed-precondition", "Your group is already in battle");
+    }
+    if (defenderGroup.inBattle) {
+      throw new HttpsError("failed-precondition", "Target group is already in battle");
+    }
+    
+    // Create a battle ID
+    const battleId = `battle_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    
+    // Set up initial battle data
+    const worldSpeed = (await db.ref(`worldInfo/${worldId}/speed`).once("value")).val() || 1.0;
+    const baseBattleTime = 3 * 60000; // 3 minutes
+    const battleDuration = Math.round(baseBattleTime / worldSpeed);
+    
+    const now = Date.now();
+    const battleEndTime = now + battleDuration;
+    
+    // Battle data
+    const battleData = {
+      id: battleId,
+      locationX,
+      locationY,
+      started: now,
+      endTime: battleEndTime,
+      side1: {
+        groups: { [attackerGroupId]: true },
+        power: attackerGroup.unitCount || 1,
+        leader: attackerGroupId
+      },
+      side2: {
+        groups: { [defenderGroupId]: true },
+        power: defenderGroup.unitCount || 1,
+        leader: defenderGroupId
+      },
+      status: 'active'
+    };
+    
+    // Update both groups to be in battle
+    const groupUpdates = {};
+    groupUpdates[attackerGroupId] = {
+      inBattle: true,
+      battleId,
+      battleSide: 1,
+      battleRole: 'attacker',
+      status: 'fighting'
+    };
+    
+    groupUpdates[defenderGroupId] = {
+      inBattle: true,
+      battleId,
+      battleSide: 2,
+      battleRole: 'defender',
+      status: 'fighting'
+    };
+    
+    // Create transaction for atomic updates
+    const updates = {};
+    
+    // Create battle entry
+    updates[`battles/${worldId}/${battleId}`] = battleData;
+    
+    // Update groups
+    for (const [groupId, groupUpdate] of Object.entries(groupUpdates)) {
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/inBattle`] = groupUpdate.inBattle;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleId`] = groupUpdate.battleId;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleSide`] = groupUpdate.battleSide;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleRole`] = groupUpdate.battleRole;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/status`] = groupUpdate.status;
+    }
+    
+    // Execute the multi-path update
+    await db.ref().update(updates);
+    
+    return {
+      success: true,
+      message: "Battle started",
+      battleId,
+      endTime: battleEndTime
+    };
+  } catch (error) {
+    console.error("Error starting battle:", error);
+    throw new HttpsError("internal", "Failed to start battle");
+  }
+});
+
+// Join a battle function
+export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
+  const { groupId, battleId, side, locationX, locationY } = request.data;
+  const userId = request.auth?.uid;
+  
+  if (!userId) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+  
+  if (!groupId || !battleId || !side || locationX === undefined || locationY === undefined) {
+    throw new HttpsError("invalid-argument", "Missing required parameters");
+  }
+  
+  try {
+    const worldId = request.data.worldId || 'default';
+    const locationKey = `${locationX},${locationY}`;
+    const chunkKey = getChunkKey(locationX, locationY);
+    const battleRef = db.ref(`battles/${worldId}/${battleId}`);
+    
+    // Get battle data
+    const battleSnapshot = await battleRef.once("value");
+    const battleData = battleSnapshot.val();
+    
+    if (!battleData) {
+      throw new HttpsError("not-found", "Battle not found");
+    }
+    
+    if (battleData.status !== 'active') {
+      throw new HttpsError("failed-precondition", "Battle is no longer active");
+    }
+    
+    // Check if the battle is in the same location
+    if (battleData.locationX !== locationX || battleData.locationY !== locationY) {
+      throw new HttpsError("failed-precondition", "Battle is not at this location");
+    }
+    
+    // Find the group that wants to join
+    const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}`);
+    const tileSnapshot = await tileRef.once("value");
+    const tileData = tileSnapshot.val() || {};
+    const groups = tileData.groups || {};
+    
+    const joiningGroup = Object.values(groups).find(g => g.id === groupId);
+    if (!joiningGroup) {
+      throw new HttpsError("not-found", "Group not found at this location");
+    }
+    
+    // Verify ownership
+    if (joiningGroup.owner !== userId) {
+      throw new HttpsError("permission-denied", "You can only join battles with your own groups");
+    }
+    
+    // Check if the group is already in battle
+    if (joiningGroup.inBattle) {
+      throw new HttpsError("failed-precondition", "This group is already in battle");
+    }
+    
+    // Validate side choice
+    if (side !== 1 && side !== 2) {
+      throw new HttpsError("invalid-argument", "Side must be 1 or 2");
+    }
+    
+    // Update battle data with the joining group
+    const battleSideKey = side === 1 ? 'side1' : 'side2';
+    const groupUnitCount = joiningGroup.unitCount || 1;
+    
+    const updates = {};
+    
+    // Add group to the battle side
+    updates[`battles/${worldId}/${battleId}/${battleSideKey}/groups/${groupId}`] = true;
+    updates[`battles/${worldId}/${battleId}/${battleSideKey}/power`] = 
+      battleData[battleSideKey].power + groupUnitCount;
+    
+    // Update group status
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/inBattle`] = true;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleId`] = battleId;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleSide`] = side;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleRole`] = 'supporter';
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/status`] = 'fighting';
+    
+    // Execute the updates
+    await db.ref().update(updates);
+    
+    return {
+      success: true,
+      message: `Joined battle on side ${side}`,
+      battleId
+    };
+  } catch (error) {
+    console.error("Error joining battle:", error);
+    throw new HttpsError("internal", "Failed to join battle");
+  }
+});
+
+// Helper function to get chunk key
+function getChunkKey(x, y) {
+  const CHUNK_SIZE = 20;
+  return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
+}

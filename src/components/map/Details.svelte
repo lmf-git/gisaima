@@ -368,6 +368,10 @@
                       <span class="moving" class:pending-tick={isPendingTick(calculateMoveCompletionTime(group))}>
                         Moving: {formatTimeRemaining(calculateMoveCompletionTime(group))}
                       </span>
+                    {:else if group.status === 'demobilising' && group.readyAt}
+                      <span class="demobilising" class:pending-tick={isPendingTick(group.readyAt)}>
+                        Demobilising: {formatTimeRemaining(group.readyAt)}
+                      </span>
                     {:else if group.status && group.status !== 'idle'}
                       <span class="status-tag {group.status}">{_fmt(group.status)}</span>
                     {:else}
@@ -764,6 +768,25 @@
   }
   
   @keyframes pulseMoving {
+    0% { opacity: 0.9; }
+    50% { opacity: 1; }
+    100% { opacity: 0.9; }
+  }
+  
+  .demobilising {
+    display: inline-block;
+    background: rgba(147, 112, 219, 0.15);
+    color: #8a2be2;
+    font-size: 0.85em;
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+    margin-left: 0.5em;
+    border: 1px solid rgba(147, 112, 219, 0.3);
+    font-weight: 500;
+    animation: pulseDemobilising 2s infinite;
+  }
+  
+  @keyframes pulseDemobilising {
     0% { opacity: 0.9; }
     50% { opacity: 1; }
     100% { opacity: 0.9; }

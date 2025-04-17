@@ -17,9 +17,83 @@
     return tile.groups.some(group => 
       group.owner === playerId && 
       group.status !== 'mobilizing' &&
+      group.status !== 'moving' &&
+      group.status !== 'demobilising' &&
+      group.status !== 'fighting' &&
       group.units && 
       group.units.some(unit => unit.type !== 'player')
     );
+  }
+  
+  // Function to check if there are groups that can be demobilized at this location
+  function hasValidGroupsForDemobilization(tile, playerId) {
+    if (!tile || !tile.groups || !tile.structure) return false;
+    
+    // Check for groups that belong to the player and can be demobilized
+    return tile.groups.some(group => 
+      group.owner === playerId && 
+      group.status !== 'mobilizing' && 
+      group.status !== 'moving' &&
+      group.status !== 'demobilising' &&
+      group.status !== 'fighting'
+    );
+  }
+  
+  // Check if there are groups that can attack other groups
+  function hasValidGroupsForAttack(tile, playerId) {
+    if (!tile || !tile.groups || tile.groups.length < 2) return false;
+    
+    // Check if the player has any group that can attack
+    const playerGroups = tile.groups.filter(group => 
+      group.owner === playerId && 
+      group.status !== 'mobilizing' && 
+      group.status !== 'moving' &&
+      group.status !== 'demobilising' &&
+      group.status !== 'fighting' &&
+      !group.inBattle
+    );
+    
+    if (playerGroups.length === 0) return false;
+    
+    // Check if there are any non-player groups to attack
+    const enemyGroups = tile.groups.filter(group => 
+      group.owner !== playerId && 
+      group.status !== 'fighting' &&
+      !group.inBattle
+    );
+    
+    return enemyGroups.length > 0;
+  }
+  
+  // Check if there are ongoing battles that can be joined
+  function hasOngoingBattlesToJoin(tile, playerId) {
+    if (!tile || !tile.groups) return false;
+    
+    // Look for active battles
+    const battlesInProgress = new Set();
+    let hasJoinableGroups = false;
+    
+    // Find battles in progress
+    for (const group of tile.groups) {
+      if (group.inBattle && group.battleId && group.status === 'fighting') {
+        battlesInProgress.add(group.battleId);
+      }
+    }
+    
+    // If no battles, can't join any
+    if (battlesInProgress.size === 0) return false;
+    
+    // Check if player has groups that can join
+    const canJoin = tile.groups.some(group => 
+      group.owner === playerId && 
+      group.status !== 'mobilizing' && 
+      group.status !== 'moving' &&
+      group.status !== 'demobilising' &&
+      group.status !== 'fighting' &&
+      !group.inBattle
+    );
+    
+    return canJoin;
   }
   
   // Process the actions available for this tile
@@ -80,6 +154,39 @@
         label: 'Mobilize Forces',
         description: 'Create a new group from available units',
         icon: '🏕️',
+      });
+    }
+
+    // Add demobilize action if there are valid groups to demobilize
+    const hasValidGroups = hasValidGroupsForDemobilization(tile, playerId);
+    if (hasValidGroups) {
+      availableActions.push({
+        id: 'demobilize',
+        label: 'Demobilize Group',
+        description: 'Return units to the structure',
+        icon: '🏠',
+      });
+    }
+
+    // Add attack action if there are valid groups to attack
+    const hasAttackGroups = hasValidGroupsForAttack(tile, playerId);
+    if (hasAttackGroups) {
+      availableActions.push({
+        id: 'attack',
+        label: 'Attack',
+        description: 'Attack another group with your forces',
+        icon: '⚔️',
+      });
+    }
+
+    // Add join battle action if there are ongoing battles to join
+    const hasBattlesToJoin = hasOngoingBattlesToJoin(tile, playerId);
+    if (hasBattlesToJoin) {
+      availableActions.push({
+        id: 'joinBattle',
+        label: 'Join Battle',
+        description: 'Join an ongoing battle on either side',
+        icon: '➕',
       });
     }
     

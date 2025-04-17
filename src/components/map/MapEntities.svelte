@@ -1227,6 +1227,19 @@
     color: rgba(0, 0, 0, 0.6);
   }
   
+  .status.demobilising {
+    background: rgba(147, 112, 219, 0.15);
+    border: 1px solid rgba(147, 112, 219, 0.3);
+    color: #8a2be2;
+    animation: pulseDemobilising 2s infinite;
+  }
+  
+  @keyframes pulseDemobilising {
+    0% { box-shadow: 0 0 0 0 rgba(147, 112, 219, 0.4); }
+    50% { box-shadow: 0 0 0 3px rgba(147, 112, 219, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(147, 112, 219, 0); }
+  }
+  
   .pending-tick {
     background: rgba(255, 215, 0, 0.2) !important;
     border-color: rgba(255, 215, 0, 0.5) !important;
