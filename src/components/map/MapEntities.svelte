@@ -178,8 +178,8 @@
       return `${seconds}s`;
     }
   }
-  
-  // Determine if an action is complete but waiting for tick
+
+  // Keep isPendingTick for styling completed actions
   function isPendingTick(endTime) {
     if (!endTime) return false;
     

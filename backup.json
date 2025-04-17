@@ -64,6 +64,17 @@
           "lastSpawn": "0:0:5:-5",
           "race": "dwarf",
           "spawned": true
+        },
+        "fantasy-realm": {
+          "joined": 1744831622068,
+          "lastLocation": {
+            "timestamp": 1744831626495,
+            "x": -12,
+            "y": 8
+          },
+          "lastSpawn": "-1:0:-12:8",
+          "race": "human",
+          "spawned": true
         }
       }
     },
@@ -220,6 +231,19 @@
           },
           "lastSpawn": "0:0:0:0",
           "race": "human",
+          "spawned": true
+        },
+        "fantasy-realm": {
+          "inGroup": "group_G10IPWL0qGPouXcwU7VhaeI7xdD2_1744859809463",
+          "joined": 1744859794217,
+          "lastGroupJoin": 1744859809463,
+          "lastLocation": {
+            "timestamp": 1744859797357,
+            "x": 5,
+            "y": 5
+          },
+          "lastSpawn": "0:0:5:5",
+          "race": "elf",
           "spawned": true
         }
       }
@@ -422,6 +446,32 @@
         }
       }
     },
+    "bgDMvbDMhoX2ftOCngQJNAqY0cG2": {
+      "worlds": {
+        "default-world": {
+          "joined": 1744837178973,
+          "lastLocation": {
+            "timestamp": 1744837286686,
+            "x": 0,
+            "y": 0
+          },
+          "lastSpawn": "0:0:0:0",
+          "race": "human",
+          "spawned": true
+        },
+        "fantasy-realm": {
+          "joined": 1744837937629,
+          "lastLocation": {
+            "timestamp": 1744837941147,
+            "x": 12,
+            "y": 8
+          },
+          "lastSpawn": "0:0:12:8",
+          "race": "human",
+          "spawned": true
+        }
+      }
+    },
     "h4e8YaIeFTVcrMMHujeg1CP6D2I3": {
       "worlds": {
         "default-world": {
@@ -500,6 +550,55 @@
           },
           "lastSpawn": "0:0:7:7",
           "race": "goblin",
+          "spawned": true
+        }
+      }
+    },
+    "oZp2ynSHISdaBJzjzhleulAFrGh2": {
+      "worlds": {
+        "default-world": {
+          "joined": 1744844966426,
+          "lastLocation": {
+            "timestamp": 1744844980140,
+            "x": 5,
+            "y": 5
+          },
+          "lastSpawn": "0:0:5:5",
+          "race": "fairy",
+          "spawned": true
+        }
+      }
+    },
+    "pmPCqJ7LtxQV75E3ApPfEcQWenn1": {
+      "worlds": {
+        "default-world": {
+          "inGroup": "group_pmPCqJ7LtxQV75E3ApPfEcQWenn1_1744858712575",
+          "joined": 1744858701406,
+          "lastGroupJoin": 1744858712575,
+          "lastLocation": {
+            "timestamp": 1744858706181,
+            "x": 0,
+            "y": 0
+          },
+          "lastSpawn": "0:0:0:0",
+          "race": "human",
+          "spawned": true
+        }
+      }
+    },
+    "qaCAQGvHPhWfIF4OLMY19M3k3xI2": {
+      "worlds": {
+        "default-world": {
+          "inGroup": "group_qaCAQGvHPhWfIF4OLMY19M3k3xI2_1744859923027",
+          "joined": 1744859909811,
+          "lastGroupJoin": 1744859923027,
+          "lastLocation": {
+            "timestamp": 1744859914537,
+            "x": 0,
+            "y": 0
+          },
+          "lastSpawn": "0:0:0:0",
+          "race": "human",
           "spawned": true
         }
       }
@@ -588,6 +687,36 @@
           "joined": 1742623710471,
           "race": "elf",
           "spawned": false
+        }
+      }
+    },
+    "vpbS1bunhDRUSeEMSbKzaQsa1FP2": {
+      "worlds": {
+        "default-world": {
+          "inGroup": "group_vpbS1bunhDRUSeEMSbKzaQsa1FP2_1744845960447",
+          "joined": 1744845951498,
+          "lastGroupJoin": 1744845960447,
+          "lastLocation": {
+            "timestamp": 1744845955449,
+            "x": 0,
+            "y": 0
+          },
+          "lastSpawn": "0:0:0:0",
+          "race": "human",
+          "spawned": true
+        },
+        "wasteland": {
+          "inGroup": "group_vpbS1bunhDRUSeEMSbKzaQsa1FP2_1744841349989",
+          "joined": 1744840355363,
+          "lastGroupJoin": 1744841349989,
+          "lastLocation": {
+            "timestamp": 1744840359352,
+            "x": -18,
+            "y": 10
+          },
+          "lastSpawn": "-1:0:-18:10",
+          "race": "elf",
+          "spawned": true
         }
       }
     },
@@ -918,12 +1047,12 @@
                 "created": 1744828213949,
                 "id": "group_EZwnNF9WlAWPGTSXsdDYXn0Gjm62_1744828213949",
                 "lastProcessed": 1744828213949,
-                "lastUpdated": 1744828213949,
+                "lastUpdated": 1744830721276,
                 "name": "New Force",
                 "owner": "EZwnNF9WlAWPGTSXsdDYXn0Gjm62",
                 "race": "human",
                 "readyAt": 1744830013949,
-                "status": "mobilizing",
+                "status": "idle",
                 "unitCount": 1,
                 "units": [
                   {
@@ -959,6 +1088,29 @@
                 ],
                 "x": 0,
                 "y": 0
+              },
+              "group_bgDMvbDMhoX2ftOCngQJNAqY0cG2_1744837430605": {
+                "created": 1744837430605,
+                "id": "group_bgDMvbDMhoX2ftOCngQJNAqY0cG2_1744837430605",
+                "lastProcessed": 1744837430605,
+                "lastUpdated": 1744837501244,
+                "name": "New Force",
+                "owner": "bgDMvbDMhoX2ftOCngQJNAqY0cG2",
+                "race": "human",
+                "readyAt": 1744837500000,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "bgDMvbDMhoX2ftOCngQJNAqY0cG2",
+                    "name": "Guest bgDM",
+                    "race": "human",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 0,
+                "y": 0
               }
             },
             "items": [
@@ -971,50 +1123,80 @@
                 "type": "quest_item"
               }
             ],
-            "players": {
-              "4yaUHVR9Y1P46KHOPF2bkv4rnsI3": {
+            "players": [
+              {
                 "displayName": "ben.thorp",
+                "id": "0",
                 "lastActive": 1744797163165,
                 "race": "human",
-                "uid": "4yaUHVR9Y1P46KHOPF2bkv4rnsI3"
+                "uid": "4yaUHVR9Y1P46KHOPF2bkv4rnsI3",
+                "x": 0,
+                "y": 0
               },
-              "5ARWZrKpldWdXbNWwkNwds39ZRp2": {
+              {
                 "displayName": "chickenroostart",
+                "id": "1",
                 "lastActive": 1742672684017,
                 "race": "human",
-                "uid": "5ARWZrKpldWdXbNWwkNwds39ZRp2"
+                "uid": "5ARWZrKpldWdXbNWwkNwds39ZRp2",
+                "x": 0,
+                "y": 0
               },
-              "EZwnNF9WlAWPGTSXsdDYXn0Gjm62": {
+              {
                 "displayName": "Player",
+                "id": "2",
                 "lastActive": 1744828207186,
                 "race": "human",
-                "uid": "EZwnNF9WlAWPGTSXsdDYXn0Gjm62"
+                "uid": "EZwnNF9WlAWPGTSXsdDYXn0Gjm62",
+                "x": 0,
+                "y": 0
               },
-              "G10IPWL0qGPouXcwU7VhaeI7xdD2": {
+              {
                 "displayName": "Player",
+                "id": "3",
                 "lastActive": 1744829065493,
                 "race": "human",
-                "uid": "G10IPWL0qGPouXcwU7VhaeI7xdD2"
+                "uid": "G10IPWL0qGPouXcwU7VhaeI7xdD2",
+                "x": 0,
+                "y": 0
               },
-              "KusuFpPfrgc2WOWt4GUWrEzR8S73": {
+              {
                 "displayName": "Player",
+                "id": "4",
                 "lastActive": 1743825702367,
                 "race": "human",
-                "uid": "KusuFpPfrgc2WOWt4GUWrEzR8S73"
+                "uid": "KusuFpPfrgc2WOWt4GUWrEzR8S73",
+                "x": 0,
+                "y": 0
               },
-              "ro0HfxETCyO8HBT0Lkmgc0A2Riq2": {
+              {
+                "displayName": "Player",
+                "id": "5",
+                "lastActive": 1744837286760,
+                "race": "human",
+                "uid": "bgDMvbDMhoX2ftOCngQJNAqY0cG2",
+                "x": 0,
+                "y": 0
+              },
+              {
                 "displayName": "iavarice36",
+                "id": "6",
                 "lastActive": 1742879003540,
                 "race": "human",
-                "uid": "ro0HfxETCyO8HBT0Lkmgc0A2Riq2"
+                "uid": "ro0HfxETCyO8HBT0Lkmgc0A2Riq2",
+                "x": 0,
+                "y": 0
               },
-              "wFfeehech1O9cjufI8P2hEDeOmt1": {
+              {
                 "displayName": "Player",
+                "id": "7",
                 "lastActive": 1742621174438,
                 "race": "human",
-                "uid": "wFfeehech1O9cjufI8P2hEDeOmt1"
+                "uid": "wFfeehech1O9cjufI8P2hEDeOmt1",
+                "x": 0,
+                "y": 0
               }
-            },
+            ],
             "structure": {
               "description": "The central arrival point in this world",
               "faction": "human",
@@ -1023,6 +1205,62 @@
               "maxHealth": 1000,
               "name": "Central Spawn",
               "type": "spawn"
+            }
+          },
+          "1,0": {
+            "groups": {
+              "group_qaCAQGvHPhWfIF4OLMY19M3k3xI2_1744859923027": {
+                "created": 1744859923027,
+                "id": "group_qaCAQGvHPhWfIF4OLMY19M3k3xI2_1744859923027",
+                "lastProcessed": 1744859923027,
+                "lastUpdated": 1744860185215,
+                "name": "New Force",
+                "owner": "qaCAQGvHPhWfIF4OLMY19M3k3xI2",
+                "race": "human",
+                "readyAt": 1744860000000,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "qaCAQGvHPhWfIF4OLMY19M3k3xI2",
+                    "lastUpdated": 1744859923027,
+                    "name": "Guest qaCA",
+                    "race": "human",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 1,
+                "y": 0
+              }
+            }
+          },
+          "4,0": {
+            "groups": {
+              "group_pmPCqJ7LtxQV75E3ApPfEcQWenn1_1744858712575": {
+                "created": 1744858712575,
+                "id": "group_pmPCqJ7LtxQV75E3ApPfEcQWenn1_1744858712575",
+                "lastProcessed": 1744858712575,
+                "lastUpdated": 1744859401164,
+                "name": "New Force",
+                "owner": "pmPCqJ7LtxQV75E3ApPfEcQWenn1",
+                "race": "human",
+                "readyAt": 1744858800000,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "pmPCqJ7LtxQV75E3ApPfEcQWenn1",
+                    "lastUpdated": 1744858712575,
+                    "name": "Guest pmPC",
+                    "race": "human",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 4,
+                "y": 0
+              }
             }
           },
           "5,-5": {
@@ -1071,6 +1309,12 @@
                 "lastActive": 1742621588863,
                 "race": "fairy",
                 "uid": "mVvrV0rJfwfQ2l3CMvKrbRnOFjy2"
+              },
+              "oZp2ynSHISdaBJzjzhleulAFrGh2": {
+                "displayName": "Player",
+                "lastActive": 1744844980270,
+                "race": "fairy",
+                "uid": "oZp2ynSHISdaBJzjzhleulAFrGh2"
               }
             },
             "structure": {
@@ -1081,6 +1325,34 @@
               "maxHealth": 1000,
               "name": "Fairy Circle",
               "type": "spawn"
+            }
+          },
+          "8,0": {
+            "groups": {
+              "group_vpbS1bunhDRUSeEMSbKzaQsa1FP2_1744845960447": {
+                "created": 1744845960447,
+                "id": "group_vpbS1bunhDRUSeEMSbKzaQsa1FP2_1744845960447",
+                "lastProcessed": 1744845960447,
+                "lastUpdated": 1744859705432,
+                "name": "New Force",
+                "owner": "vpbS1bunhDRUSeEMSbKzaQsa1FP2",
+                "race": "human",
+                "readyAt": 1744846200000,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "vpbS1bunhDRUSeEMSbKzaQsa1FP2",
+                    "lastUpdated": 1744845960447,
+                    "name": "Guest vpbS",
+                    "race": "human",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 8,
+                "y": 0
+              }
             }
           }
         }
@@ -1097,6 +1369,7 @@
         },
         "created": 1688388000000,
         "description": "A generic starter world for new players",
+        "lastTick": 1744860241103,
         "name": "Default World",
         "playerCount": 8,
         "seed": 10101010,
@@ -1113,8 +1386,41 @@
     "fantasy-realm": {
       "chunks": {
         "-1,0": {
+          "-11,8": {
+            "groups": {
+              "group_48Hi2LGSCpYmBUU7NETPeq2qG5g1_1744831649135": {
+                "created": 1744831649135,
+                "id": "group_48Hi2LGSCpYmBUU7NETPeq2qG5g1_1744831649135",
+                "lastProcessed": 1744831649135,
+                "lastUpdated": 1744838941248,
+                "name": "New Force",
+                "owner": "48Hi2LGSCpYmBUU7NETPeq2qG5g1",
+                "race": "human",
+                "readyAt": 1744831800000,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "48Hi2LGSCpYmBUU7NETPeq2qG5g1",
+                    "name": "Guest 48Hi",
+                    "race": "human",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": -11,
+                "y": 8
+              }
+            }
+          },
           "-12,8": {
             "players": {
+              "48Hi2LGSCpYmBUU7NETPeq2qG5g1": {
+                "displayName": "Player",
+                "lastActive": 1744831626757,
+                "race": "human",
+                "uid": "48Hi2LGSCpYmBUU7NETPeq2qG5g1"
+              },
               "vxFWnOwAKWeezdUVOU1J7ArNWyj2": {
                 "displayName": "Player",
                 "lastActive": 1744792157723,
@@ -1172,12 +1478,43 @@
         },
         "0,0": {
           "12,8": {
+            "groups": {
+              "group_bgDMvbDMhoX2ftOCngQJNAqY0cG2_1744837981581": {
+                "created": 1744837981581,
+                "id": "group_bgDMvbDMhoX2ftOCngQJNAqY0cG2_1744837981581",
+                "lastProcessed": 1744837981581,
+                "lastUpdated": 1744838045516,
+                "name": "Name",
+                "owner": "bgDMvbDMhoX2ftOCngQJNAqY0cG2",
+                "race": "human",
+                "readyAt": 1744838000000,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "bgDMvbDMhoX2ftOCngQJNAqY0cG2",
+                    "name": "Guest bgDM",
+                    "race": "human",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 12,
+                "y": 8
+              }
+            },
             "players": {
               "KusuFpPfrgc2WOWt4GUWrEzR8S73": {
                 "displayName": "Player",
                 "lastActive": 1743968041614,
                 "race": "human",
                 "uid": "KusuFpPfrgc2WOWt4GUWrEzR8S73"
+              },
+              "bgDMvbDMhoX2ftOCngQJNAqY0cG2": {
+                "displayName": "Player",
+                "lastActive": 1744837941189,
+                "race": "human",
+                "uid": "bgDMvbDMhoX2ftOCngQJNAqY0cG2"
               }
             },
             "structure": {
@@ -1302,6 +1639,32 @@
             }
           },
           "5,5": {
+            "groups": {
+              "group_G10IPWL0qGPouXcwU7VhaeI7xdD2_1744859809463": {
+                "created": 1744859809463,
+                "id": "group_G10IPWL0qGPouXcwU7VhaeI7xdD2_1744859809463",
+                "lastProcessed": 1744859809463,
+                "lastUpdated": 1744860001973,
+                "name": "New Force",
+                "owner": "G10IPWL0qGPouXcwU7VhaeI7xdD2",
+                "race": "elf",
+                "readyAt": 1744860000000,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "G10IPWL0qGPouXcwU7VhaeI7xdD2",
+                    "lastUpdated": 1744859809463,
+                    "name": "Guest G10I",
+                    "race": "elf",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 5,
+                "y": 5
+              }
+            },
             "items": [
               {
                 "description": "A beautiful silver locket with ancient enchantments",
@@ -1312,14 +1675,17 @@
                 "type": "artifact"
               }
             ],
-            "players": {
-              "wFfeehech1O9cjufI8P2hEDeOmt1": {
+            "players": [
+              {
                 "displayName": "Player",
+                "id": "wFfeehech1O9cjufI8P2hEDeOmt1",
                 "lastActive": 1742622037269,
                 "race": "elf",
-                "uid": "wFfeehech1O9cjufI8P2hEDeOmt1"
+                "uid": "wFfeehech1O9cjufI8P2hEDeOmt1",
+                "x": 5,
+                "y": 5
               }
-            },
+            ],
             "structure": {
               "description": "A serene clearing at the edge of the ancient elven forest",
               "faction": "elf",
@@ -1432,11 +1798,11 @@
                 "faction": "goblin",
                 "id": "group_YWln4rQwMngNR8vpai807kRzYMc2_1744850000000",
                 "lastProcessed": 1744850000000,
-                "lastUpdated": 1744850000000,
+                "lastUpdated": 1744852801690,
                 "name": "Combined Strike Force",
                 "owner": "YWln4rQwMngNR8vpai807kRzYMc2",
                 "readyAt": 1744852800000,
-                "status": "mobilizing",
+                "status": "idle",
                 "unitCount": 4,
                 "units": [
                   {
@@ -1692,6 +2058,7 @@
         },
         "created": 1688475600000,
         "description": "A magical world filled with elves, dwarves, and mysterious creatures",
+        "lastTick": 1744860241103,
         "name": "Fantasy Realm",
         "playerCount": 6,
         "seed": 14285714,
@@ -1709,6 +2076,34 @@
     "wasteland": {
       "chunks": {
         "-1,0": {
+          "-14,10": {
+            "groups": {
+              "group_vpbS1bunhDRUSeEMSbKzaQsa1FP2_1744841349989": {
+                "created": 1744841349989,
+                "id": "group_vpbS1bunhDRUSeEMSbKzaQsa1FP2_1744841349989",
+                "lastProcessed": 1744841349989,
+                "lastUpdated": 1744845961095,
+                "name": "New Force",
+                "owner": "vpbS1bunhDRUSeEMSbKzaQsa1FP2",
+                "race": "elf",
+                "readyAt": 1744841600000,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "vpbS1bunhDRUSeEMSbKzaQsa1FP2",
+                    "lastUpdated": 1744841349989,
+                    "name": "Guest vpbS",
+                    "race": "elf",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": -14,
+                "y": 10
+              }
+            }
+          },
           "-15,7": {
             "players": {
               "4yaUHVR9Y1P46KHOPF2bkv4rnsI3": {
@@ -1734,12 +2129,12 @@
                 "created": 1744827985202,
                 "id": "group_2BRNYfq8DfQ9cR91RQK18qQtfII2_1744827985202",
                 "lastProcessed": 1744827985202,
-                "lastUpdated": 1744827985202,
+                "lastUpdated": 1744830721276,
                 "name": "New Force",
                 "owner": "2BRNYfq8DfQ9cR91RQK18qQtfII2",
                 "race": "elf",
                 "readyAt": 1744830385202,
-                "status": "mobilizing",
+                "status": "idle",
                 "unitCount": 1,
                 "units": [
                   {
@@ -1754,32 +2149,44 @@
                 "y": 10
               }
             },
-            "players": {
-              "2BRNYfq8DfQ9cR91RQK18qQtfII2": {
+            "players": [
+              {
                 "displayName": "Player",
+                "id": "2BRNYfq8DfQ9cR91RQK18qQtfII2",
                 "lastActive": 1744827198818,
                 "race": "elf",
-                "uid": "2BRNYfq8DfQ9cR91RQK18qQtfII2"
+                "uid": "2BRNYfq8DfQ9cR91RQK18qQtfII2",
+                "x": -18,
+                "y": 10
               },
-              "5YbXBupUvDbeIWjBNaozDpWW78J3": {
+              {
                 "displayName": "Player",
+                "id": "5YbXBupUvDbeIWjBNaozDpWW78J3",
                 "lastActive": 1744774626041,
                 "race": "elf",
-                "uid": "5YbXBupUvDbeIWjBNaozDpWW78J3"
+                "uid": "5YbXBupUvDbeIWjBNaozDpWW78J3",
+                "x": -18,
+                "y": 10
               },
-              "EphNRZQBlgO4dsuSdlPUOnn4VRF3": {
+              {
                 "displayName": "Guest EphN",
+                "id": "EphNRZQBlgO4dsuSdlPUOnn4VRF3",
                 "lastActive": 1742622554717,
                 "race": "elf",
-                "uid": "EphNRZQBlgO4dsuSdlPUOnn4VRF3"
+                "uid": "EphNRZQBlgO4dsuSdlPUOnn4VRF3",
+                "x": -18,
+                "y": 10
               },
-              "Znp9qIXV78Oq9tK8K3dtpp434r42": {
+              {
                 "displayName": "Guest Znp9",
+                "id": "Znp9qIXV78Oq9tK8K3dtpp434r42",
                 "lastActive": 1742622286426,
                 "race": "elf",
-                "uid": "Znp9qIXV78Oq9tK8K3dtpp434r42"
+                "uid": "Znp9qIXV78Oq9tK8K3dtpp434r42",
+                "x": -18,
+                "y": 10
               }
-            },
+            ],
             "structure": {
               "description": "A carefully tended garden in the harsh waste",
               "faction": "elf",
@@ -1989,6 +2396,7 @@
         },
         "created": 1688562000000,
         "description": "A harsh desert world with scarce resources and ancient ruins",
+        "lastTick": 1744860241103,
         "name": "The Wasteland",
         "playerCount": 5,
         "seed": 20221022,

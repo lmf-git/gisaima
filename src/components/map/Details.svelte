@@ -205,18 +205,10 @@
     // Calculate next tick based on the last recorded tick time
     const now = Date.now();
     const timeSinceLastTick = now - lastTick;
-    
-    // Add tolerance for server-client clock differences and execution delays
-    // Use modulo arithmetic to find the next minute boundary
-    const minuteBoundary = Math.ceil(now / tickIntervalMs) * tickIntervalMs;
-    
-    // Calculate next tick time based on the server's reported last tick
     const ticksElapsed = Math.floor(timeSinceLastTick / adjustedInterval);
-    const nextTickBasedOnLast = lastTick + ((ticksElapsed + 1) * adjustedInterval);
+    const nextTickTime = lastTick + ((ticksElapsed + 1) * adjustedInterval);
     
-    // Use the earlier of the two calculations to avoid long "processing" states
-    // This handles cases where the server tick might be slightly delayed
-    return Math.min(nextTickBasedOnLast, minuteBoundary + 5000); // Add 5 second buffer
+    return nextTickTime;
   }
 
   // Format time remaining with simplified display
@@ -242,7 +234,7 @@
     }
   }
 
-  // Determine if an action is complete but waiting for tick
+  // Determine if an action is complete but waiting for tick - keep this for styling
   function isPendingTick(endTime) {
     if (!endTime) return false;
     

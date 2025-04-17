@@ -55,11 +55,8 @@ export const processGameTicks = onSchedule({
       // Process mobilizations and movements
       const updates = {};
       
-      // Always update the lastTick time for each world - move this to the beginning
-      // of processing so it's updated even if there's an error later
+      // Always update the lastTick time for each world
       updates[`worlds/${worldId}/info/lastTick`] = now;
-      // Immediately apply the lastTick update to improve client timing accuracy
-      await db.ref(`worlds/${worldId}/info/lastTick`).set(now);
       
       // Walk through all chunks and coordinates
       for (const [chunkKey, chunkData] of Object.entries(worldData.chunks)) {
