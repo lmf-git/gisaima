@@ -31,6 +31,7 @@
     
     import { ref, update } from "firebase/database";
     import { db } from "../../lib/firebase/database";
+    import { getFunctions, httpsCallable } from "firebase/functions";
     
     import Tutorial from '../../components/map/Tutorial.svelte';
     import Grid from '../../components/map/Grid.svelte';
@@ -44,6 +45,8 @@
     import Actions from '../../components/map/Actions.svelte';
     import Mobilize from '../../components/map/Mobilize.svelte';
     import Move from '../../components/map/Move.svelte';
+    import AttackGroup from '../../components/map/AttackGroup.svelte';
+    import JoinBattle from '../../components/map/JoinBattle.svelte';
 
     let detailed = $state(false);
     let loading = $state(true);
@@ -79,6 +82,9 @@
     let currentPath = $state([]);
     let moveComponentRef = $state(null);
     let optimizePath = $state(true); // Add state for path optimization
+
+    let showAttack = $state(false);
+    let showJoinBattle = $state(false);
 
     // Add new effect to watch optimizePath changes
     $effect(() => {
@@ -525,6 +531,26 @@
         setHighlighted(null, null);
     }
     
+    function openAttackPopup() {
+        showAttack = true;
+        showActions = false;
+    }
+    
+    function closeAttackPopup() {
+        showAttack = false;
+        setHighlighted(null, null);
+    }
+    
+    function openJoinBattlePopup() {
+        showJoinBattle = true;
+        showActions = false;
+    }
+    
+    function closeJoinBattlePopup() {
+        showJoinBattle = false;
+        setHighlighted(null, null);
+    }
+    
     function handlePathDrawingStart(eventData) {
         console.log('Starting path drawing:', eventData); // Add logging
         const { groupId, startPoint } = eventData;
@@ -685,11 +711,72 @@
             return;
         }
         
+        if (action === 'attack') {
+            openAttackPopup();
+            return;
+        }
+        
+        if (action === 'joinBattle') {
+            openJoinBattlePopup();
+            return;
+        }
+        
         switch(action) {
             case 'explore':
                 console.log(`Exploring ${tile.x}, ${tile.y}`);
                 break;
         }
+    }
+    
+    // Handle attack action
+    function handleAttack(eventData) {
+        const { attackerGroupId, defenderGroupId, tile } = eventData;
+        console.log('Attacking:', { attackerGroupId, defenderGroupId, tile });
+        
+        const functions = getFunctions();
+        const attackGroup = httpsCallable(functions, 'attackGroup');
+        
+        attackGroup({
+            attackerGroupId,
+            defenderGroupId,
+            locationX: tile.x,
+            locationY: tile.y,
+            worldId: $game.currentWorld
+        })
+        .then((result) => {
+            console.log('Attack started:', result.data);
+            // Optionally show a success message
+        })
+        .catch((error) => {
+            console.error('Attack error:', error);
+            // Show error message to player
+        });
+    }
+    
+    // Handle join battle action
+    function handleJoinBattle(eventData) {
+        const { groupId, battleId, side, tile } = eventData;
+        console.log('Joining battle:', { groupId, battleId, side, tile });
+        
+        const functions = getFunctions();
+        const joinBattle = httpsCallable(functions, 'joinBattle');
+        
+        joinBattle({
+            groupId,
+            battleId, 
+            side,
+            locationX: tile.x,
+            locationY: tile.y,
+            worldId: $game.currentWorld
+        })
+        .then((result) => {
+            console.log('Joined battle:', result.data);
+            // Optionally show a success message
+        })
+        .catch((error) => {
+            console.error('Join battle error:', error);
+            // Show error message to player
+        });
     }
     
     function handleMove(eventData) {
@@ -968,6 +1055,22 @@
                     bind:this={moveComponentRef}
                 />
             </div>
+        {/if}
+
+        {#if showAttack && selectedTile}
+            <AttackGroup
+                tile={selectedTile}
+                onClose={closeAttackPopup}
+                onAttack={handleAttack}
+            />
+        {/if}
+
+        {#if showJoinBattle && selectedTile}
+            <JoinBattle
+                tile={selectedTile}
+                onClose={closeJoinBattlePopup}
+                onJoinBattle={handleJoinBattle}
+            />
         {/if}
 
         {#if isPathDrawingMode}

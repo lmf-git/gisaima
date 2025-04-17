@@ -372,12 +372,45 @@
                       <span class="demobilising" class:pending-tick={isPendingTick(group.readyAt)}>
                         Demobilising: {formatTimeRemaining(group.readyAt)}
                       </span>
+                    {:else if group.status === 'fighting'}
+                      <span class="fighting">
+                        Fighting
+                      </span>
                     {:else if group.status && group.status !== 'idle'}
                       <span class="status-tag {group.status}">{_fmt(group.status)}</span>
                     {:else}
                       <span class="status-tag idle">Idle</span>
                     {/if}
                   </div>
+                  {#if group.status === 'fighting' && group.battle}
+                    <div class="battle-info">
+                      <div class="battle-sides">
+                        <div class="battle-side battle-side-1">
+                          <div class="battle-side-header">Side 1</div>
+                          {#each group.battle.side1 as side1Group}
+                            <div class="battle-group">
+                              {side1Group.name || side1Group.id}
+                              <span class="battle-role attacker">Attacker</span>
+                            </div>
+                          {/each}
+                        </div>
+                        <div class="battle-side battle-side-2">
+                          <div class="battle-side-header">Side 2</div>
+                          {#each group.battle.side2 as side2Group}
+                            <div class="battle-group">
+                              {side2Group.name || side2Group.id}
+                              <span class="battle-role defender">Defender</span>
+                            </div>
+                          {/each}
+                        </div>
+                      </div>
+                      {#if group.battle.endsAt}
+                        <div class="battle-timer">
+                          Battle ends in: {formatTimeRemaining(group.battle.endsAt)}
+                        </div>
+                      {/if}
+                    </div>
+                  {/if}
                 </div>
               </li>
             {/each}
@@ -790,6 +823,93 @@
     0% { opacity: 0.9; }
     50% { opacity: 1; }
     100% { opacity: 0.9; }
+  }
+  
+  .fighting {
+    display: inline-block;
+    background: rgba(139, 0, 0, 0.15);
+    color: #8B0000;
+    font-size: 0.85em;
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+    margin-left: 0.5em;
+    border: 1px solid rgba(139, 0, 0, 0.3);
+    font-weight: 500;
+    animation: pulseFighting 2s infinite;
+  }
+  
+  @keyframes pulseFighting {
+    0% { opacity: 0.9; }
+    50% { opacity: 1; box-shadow: 0 0 5px rgba(139, 0, 0, 0.5); }
+    100% { opacity: 0.9; }
+  }
+  
+  .battle-info {
+    margin-top: 0.5em;
+    padding: 0.5em;
+    border-radius: 0.3em;
+    background-color: rgba(139, 0, 0, 0.07);
+    border: 1px dashed rgba(139, 0, 0, 0.2);
+    font-size: 0.85em;
+  }
+  
+  .battle-sides {
+    display: flex;
+    gap: 0.5em;
+    margin-top: 0.3em;
+  }
+  
+  .battle-side {
+    flex: 1;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.3em;
+    padding: 0.3em;
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+  
+  .battle-side-header {
+    font-weight: 500;
+    font-size: 0.9em;
+    padding-bottom: 0.2em;
+    margin-bottom: 0.2em;
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  
+  .battle-side-1 .battle-side-header {
+    color: #00008B;
+  }
+  
+  .battle-side-2 .battle-side-header {
+    color: #8B0000;
+  }
+  
+  .battle-group {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+    margin-bottom: 0.2em;
+    font-size: 0.9em;
+  }
+  
+  .battle-role {
+    font-size: 0.8em;
+    background-color: rgba(0, 0, 0, 0.07);
+    border-radius: 0.2em;
+    padding: 0.1em 0.3em;
+    margin-left: auto;
+  }
+  
+  .battle-role.attacker, .battle-role.defender {
+    font-weight: 500;
+  }
+  
+  .battle-timer {
+    text-align: center;
+    margin-top: 0.5em;
+    font-style: italic;
+    color: #8B0000;
+    font-weight: 500;
   }
   
   .status-tag {

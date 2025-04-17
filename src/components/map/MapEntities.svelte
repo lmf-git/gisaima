@@ -1240,6 +1240,42 @@
     100% { box-shadow: 0 0 0 0 rgba(147, 112, 219, 0); }
   }
   
+  .status.fighting {
+    background: rgba(139, 0, 0, 0.15);
+    border: 1px solid rgba(139, 0, 0, 0.3);
+    color: #8B0000;
+    animation: pulseFighting 1.5s infinite;
+  }
+  
+  @keyframes pulseFighting {
+    0% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0.4); }
+    50% { box-shadow: 0 0 0 3px rgba(139, 0, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0); }
+  }
+  
+  .battle-tag {
+    font-size: 0.75em;
+    padding: 0.1em 0.3em;
+    border-radius: 0.2em;
+    background-color: rgba(139, 0, 0, 0.07);
+    border: 1px solid rgba(139, 0, 0, 0.15);
+    color: #8B0000;
+    white-space: nowrap;
+    margin-left: 0.3em;
+  }
+  
+  .battle-side-1 {
+    background-color: rgba(0, 0, 255, 0.07);
+    border: 1px solid rgba(0, 0, 255, 0.15);
+    color: #00008B;
+  }
+  
+  .battle-side-2 {
+    background-color: rgba(139, 0, 0, 0.07);
+    border: 1px solid rgba(139, 0, 0, 0.15);
+    color: #8B0000;
+  }
+  
   .pending-tick {
     background: rgba(255, 215, 0, 0.2) !important;
     border-color: rgba(255, 215, 0, 0.5) !important;
