@@ -19,7 +19,7 @@
   let enemyGroups = $state([]);
   
   // Selected groups to attack with and target
-  let selectedAttackerGroup = $state(null);
+  let selectedAttackerGroups = $state([]);
   let selectedTargetGroup = $state(null);
   
   // Initialize available groups based on tile content
@@ -58,23 +58,36 @@
     
     ownGroups = attackers;
     enemyGroups = targets;
-    selectedAttackerGroup = null;
+    selectedAttackerGroups = [];
     selectedTargetGroup = null;
   });
   
-  // Set selected attacker group
-  function selectAttackerGroup(groupId) {
+  // Toggle attacker group selection (multiple allowed)
+  function toggleAttackerGroup(groupId) {
+    const groupIndex = selectedAttackerGroups.findIndex(g => g === groupId);
+    
+    // Update the groups UI state
     ownGroups = ownGroups.map(group => {
-      return {
-        ...group,
-        selected: group.id === groupId
-      };
+      if (group.id === groupId) {
+        return {
+          ...group,
+          selected: !group.selected
+        };
+      }
+      return group;
     });
     
-    selectedAttackerGroup = ownGroups.find(g => g.id === groupId) || null;
+    // Update the selectedAttackerGroups array
+    if (groupIndex >= 0) {
+      // Remove from selection
+      selectedAttackerGroups = selectedAttackerGroups.filter(g => g !== groupId);
+    } else {
+      // Add to selection
+      selectedAttackerGroups = [...selectedAttackerGroups, groupId];
+    }
   }
   
-  // Set selected target group
+  // Set selected target group (only one target allowed)
   function selectTargetGroup(groupId) {
     enemyGroups = enemyGroups.map(group => {
       return {
@@ -87,29 +100,33 @@
   }
 
   // Add keyboard handling for group selection
-  function handleGroupKeyDown(event, groupId, isAttacker) {
+  function handleAttackerGroupKeyDown(event, groupId) {
+    // Handle Enter or Space key to toggle selection
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      toggleAttackerGroup(groupId);
+    }
+  }
+
+  function handleTargetGroupKeyDown(event, groupId) {
     // Handle Enter or Space key to select
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      if (isAttacker) {
-        selectAttackerGroup(groupId);
-      } else {
-        selectTargetGroup(groupId);
-      }
+      selectTargetGroup(groupId);
     }
   }
   
   // Function to handle attack
   function startAttack() {
-    // Check if we have both attacker and target selected
-    if (!selectedAttackerGroup || !selectedTargetGroup) {
+    // Check if we have both attacker(s) and target selected
+    if (selectedAttackerGroups.length === 0 || !selectedTargetGroup) {
       return;
     }
     
     // Use direct function call
     if (onAttack) {
       onAttack({
-        attackerGroupId: selectedAttackerGroup.id,
+        attackerGroupIds: selectedAttackerGroups,
         defenderGroupId: selectedTargetGroup.id,
         tile
       });
@@ -118,8 +135,20 @@
     onClose();
   }
   
+  // Get the selected attacker groups as full objects
+  function getSelectedAttackerGroups() {
+    return ownGroups.filter(group => selectedAttackerGroups.includes(group.id));
+  }
+  
+  // Calculate total strength of selected attackers
+  function getTotalAttackerStrength() {
+    return getSelectedAttackerGroups().reduce((total, group) => {
+      return total + (group.unitCount || (group.units ? group.units.length : 0) || 1);
+    }, 0);
+  }
+  
   // Helper to check if attack is possible
-  let canAttack = $derived(selectedAttackerGroup !== null && selectedTargetGroup !== null);
+  let canAttack = $derived(selectedAttackerGroups.length > 0 && selectedTargetGroup !== null);
 
   // Close on escape key
   function handleKeyDown(event) {
@@ -181,7 +210,7 @@
        role="document" 
        transition:scale={{ start: 0.95, duration: 200 }}>
     <div class="header">
-      <h2 id="attack-title">Attack Group - {tile?.x}, {tile?.y}</h2>
+      <h2 id="attack-title">Attack Groups - {tile?.x}, {tile?.y}</h2>
       <button class="close-btn" onclick={onClose} aria-label="Close attack dialog">
         <Close size="1.5em" />
       </button>
@@ -203,7 +232,7 @@
       
       <div class="attack-content">
         <div class="attack-info">
-          <p>Select one of your groups to attack with and an enemy group to attack.</p>
+          <p>Select one or more of your groups to attack with and an enemy group to attack.</p>
           <p class="warning">
             <span class="warning-icon">⚠️</span>
             Battles can result in casualties and loss of units. Choose wisely.
@@ -212,22 +241,22 @@
         
         <div class="battle-selection">
           <div class="selection-column">
-            <h3>Your Forces</h3>
+            <h3>Your Forces <span class="selection-count">{selectedAttackerGroups.length} selected</span></h3>
             {#if ownGroups.length > 0}
               <div class="groups-list">
                 {#each ownGroups as group}
                   <div 
                     class="group-item" 
                     class:selected={group.selected}
-                    onclick={() => selectAttackerGroup(group.id)}
-                    onkeydown={(e) => handleGroupKeyDown(e, group.id, true)}
+                    onclick={() => toggleAttackerGroup(group.id)}
+                    onkeydown={(e) => handleAttackerGroupKeyDown(e, group.id)}
                     role="button"
                     tabindex="0"
                     aria-pressed={group.selected}
-                    aria-label={`Select ${group.name || group.id} as attacker`}
+                    aria-label={`${group.selected ? 'Deselect' : 'Select'} ${group.name || group.id} as attacker`}
                   >
                     <input 
-                      type="radio" 
+                      type="checkbox" 
                       checked={group.selected} 
                       name="attacker-selection"
                       id={`attacker-${group.id}`}
@@ -278,7 +307,7 @@
                     class="group-item" 
                     class:selected={group.selected}
                     onclick={() => selectTargetGroup(group.id)}
-                    onkeydown={(e) => handleGroupKeyDown(e, group.id, false)}
+                    onkeydown={(e) => handleTargetGroupKeyDown(e, group.id)}
                     role="button"
                     tabindex="0"
                     aria-pressed={group.selected}
@@ -328,21 +357,25 @@
         </div>
         
         <div class="battle-summary">
-          {#if selectedAttackerGroup && selectedTargetGroup}
+          {#if selectedAttackerGroups.length > 0 && selectedTargetGroup}
             <h3>Battle Summary</h3>
             <div class="summary-content">
               <p>
-                <strong>{selectedAttackerGroup.name || `Your Group`}</strong> 
-                (Strength: {formatStrength(selectedAttackerGroup)}) 
+                <strong>Your Forces</strong> ({selectedAttackerGroups.length} group{selectedAttackerGroups.length !== 1 ? 's' : ''}, 
+                Total Strength: {getTotalAttackerStrength()}) 
                 will attack 
                 <strong>{selectedTargetGroup.name || `Enemy Group`}</strong>
                 (Strength: {formatStrength(selectedTargetGroup)})
               </p>
               <p class="estimate">
-                {#if formatStrength(selectedAttackerGroup) > formatStrength(selectedTargetGroup)}
+                {#if getTotalAttackerStrength() > formatStrength(selectedTargetGroup) * 1.5}
+                  Your forces have a significant advantage in numbers.
+                {:else if getTotalAttackerStrength() > formatStrength(selectedTargetGroup)}
                   Your forces appear to have an advantage in numbers.
-                {:else if formatStrength(selectedAttackerGroup) < formatStrength(selectedTargetGroup)}
-                  Enemy forces appear to outnumber you. Consider gathering more forces.
+                {:else if getTotalAttackerStrength() < formatStrength(selectedTargetGroup) * 0.75}
+                  Enemy forces significantly outnumber you. Consider gathering more forces.
+                {:else if getTotalAttackerStrength() < formatStrength(selectedTargetGroup)}
+                  Enemy forces appear to outnumber you. Consider adding more groups.
                 {:else}
                   Forces appear to be evenly matched. Battle outcome is uncertain.
                 {/if}
@@ -447,6 +480,19 @@
     font-weight: 600;
     color: #333;
     text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5em;
+  }
+  
+  .selection-count {
+    font-size: 0.8em;
+    font-weight: normal;
+    color: #666;
+    background-color: rgba(0, 0, 0, 0.08);
+    padding: 0.2em 0.5em;
+    border-radius: 1em;
   }
   
   .close-btn {

@@ -7,6 +7,8 @@
     ready,
     coordinates,
     TILE_SIZE,
+    EXPANDED_COLS_FACTOR,  // Add missing constant
+    EXPANDED_ROWS_FACTOR,   // Add missing constant
     moveTarget,
     targetStore,
     highlightedStore,

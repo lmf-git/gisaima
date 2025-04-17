@@ -476,7 +476,7 @@
           
           {#if !collapsedSections.structures}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each sortedStructures as structure (structure.x + ':' + structure.y)}
+              {#each sortedStructures as structure (structure.type + ':' + structure.x + ':' + structure.y)}
                 <div 
                   class="entity structure" 
                   class:at-target={isAtTarget(structure.x, structure.y)}
@@ -577,7 +577,7 @@
           
           {#if !collapsedSections.players}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each sortedPlayers as entity (entity.id)}
+              {#each sortedPlayers as entity ('player:' + entity.id + ':' + entity.x + ':' + entity.y)}
                 <div 
                   class="entity player" 
                   class:current={entity.id === $currentPlayer?.uid} 
@@ -679,7 +679,7 @@
           
           {#if !collapsedSections.groups}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each sortedGroups as group (group.id)}
+              {#each sortedGroups as group ('group:' + group.id)}
                 <div 
                   class="entity" 
                   class:at-target={isAtTarget(group.x, group.y)}
@@ -824,7 +824,7 @@
           
           {#if !collapsedSections.items}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each sortedItems as item (item.id)}
+              {#each sortedItems as item ('item:' + (item.id || `${item.x}:${item.y}:${item.name || item.type}`).replace(/\s+/g, '-'))}
                 <div 
                   class="entity item {getRarityClass(item.rarity)}" 
                   class:at-target={isAtTarget(item.x, item.y)}

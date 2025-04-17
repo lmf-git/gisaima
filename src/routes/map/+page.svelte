@@ -45,7 +45,7 @@
     import Actions from '../../components/map/Actions.svelte';
     import Mobilize from '../../components/map/Mobilize.svelte';
     import Move from '../../components/map/Move.svelte';
-    import AttackGroup from '../../components/map/AttackGroup.svelte';
+    import AttackGroups from '../../components/map/AttackGroups.svelte';
     import JoinBattle from '../../components/map/JoinBattle.svelte';
 
     let detailed = $state(false);
@@ -1058,7 +1058,7 @@
         {/if}
 
         {#if showAttack && selectedTile}
-            <AttackGroup
+            <AttackGroups
                 tile={selectedTile}
                 onClose={closeAttackPopup}
                 onAttack={handleAttack}

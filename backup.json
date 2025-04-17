@@ -690,6 +690,36 @@
         }
       }
     },
+    "uVc0DZjWp8ecPMfETJlktEhGlDI3": {
+      "worlds": {
+        "default-world": {
+          "inGroup": "group_uVc0DZjWp8ecPMfETJlktEhGlDI3_1744868933625",
+          "joined": 1744868920045,
+          "lastGroupJoin": 1744868933625,
+          "lastLocation": {
+            "timestamp": 1744868925477,
+            "x": 5,
+            "y": 5
+          },
+          "lastSpawn": "0:0:5:5",
+          "race": "fairy",
+          "spawned": true
+        },
+        "fantasy-realm": {
+          "inGroup": "group_uVc0DZjWp8ecPMfETJlktEhGlDI3_1744869011630",
+          "joined": 1744868993938,
+          "lastGroupJoin": 1744869011630,
+          "lastLocation": {
+            "timestamp": 1744868998852,
+            "x": 8,
+            "y": 20
+          },
+          "lastSpawn": "0:1:8:20",
+          "race": "goblin",
+          "spawned": true
+        }
+      }
+    },
     "vpbS1bunhDRUSeEMSbKzaQsa1FP2": {
       "worlds": {
         "default-world": {
@@ -702,6 +732,19 @@
             "y": 0
           },
           "lastSpawn": "0:0:0:0",
+          "race": "human",
+          "spawned": true
+        },
+        "fantasy-realm": {
+          "inGroup": "group_vpbS1bunhDRUSeEMSbKzaQsa1FP2_1744861955969",
+          "joined": 1744861944562,
+          "lastGroupJoin": 1744861955969,
+          "lastLocation": {
+            "timestamp": 1744861949060,
+            "x": -12,
+            "y": 8
+          },
+          "lastSpawn": "-1:0:-12:8",
           "race": "human",
           "spawned": true
         },
@@ -1207,13 +1250,13 @@
               "type": "spawn"
             }
           },
-          "1,0": {
+          "3,0": {
             "groups": {
               "group_qaCAQGvHPhWfIF4OLMY19M3k3xI2_1744859923027": {
                 "created": 1744859923027,
                 "id": "group_qaCAQGvHPhWfIF4OLMY19M3k3xI2_1744859923027",
                 "lastProcessed": 1744859923027,
-                "lastUpdated": 1744860185215,
+                "lastUpdated": 1744871885922,
                 "name": "New Force",
                 "owner": "qaCAQGvHPhWfIF4OLMY19M3k3xI2",
                 "race": "human",
@@ -1230,7 +1273,7 @@
                     "type": "player"
                   }
                 ],
-                "x": 1,
+                "x": 3,
                 "y": 0
               }
             }
@@ -1284,56 +1327,13 @@
               "type": "spawn"
             }
           },
-          "5,5": {
-            "players": {
-              "NnCx3WwHYmQ8WIRnUEMZ16KLylj1": {
-                "displayName": "geage",
-                "lastActive": 1742674395384,
-                "race": "fairy",
-                "uid": "NnCx3WwHYmQ8WIRnUEMZ16KLylj1"
-              },
-              "UC5oMeFJgfMD9rcwQFDrDm02yfq2": {
-                "displayName": "Player",
-                "lastActive": 1744769370464,
-                "race": "fairy",
-                "uid": "UC5oMeFJgfMD9rcwQFDrDm02yfq2"
-              },
-              "WuFJ8g8xxhXizYWoeU7ngGFx1qk2": {
-                "displayName": "Player",
-                "lastActive": 1742656496721,
-                "race": "fairy",
-                "uid": "WuFJ8g8xxhXizYWoeU7ngGFx1qk2"
-              },
-              "mVvrV0rJfwfQ2l3CMvKrbRnOFjy2": {
-                "displayName": "Guest mVvr",
-                "lastActive": 1742621588863,
-                "race": "fairy",
-                "uid": "mVvrV0rJfwfQ2l3CMvKrbRnOFjy2"
-              },
-              "oZp2ynSHISdaBJzjzhleulAFrGh2": {
-                "displayName": "Player",
-                "lastActive": 1744844980270,
-                "race": "fairy",
-                "uid": "oZp2ynSHISdaBJzjzhleulAFrGh2"
-              }
-            },
-            "structure": {
-              "description": "A ring of mushrooms where fairies gather",
-              "faction": "fairy",
-              "health": 1000,
-              "indestructible": true,
-              "maxHealth": 1000,
-              "name": "Fairy Circle",
-              "type": "spawn"
-            }
-          },
-          "8,0": {
+          "5,0": {
             "groups": {
               "group_vpbS1bunhDRUSeEMSbKzaQsa1FP2_1744845960447": {
                 "created": 1744845960447,
                 "id": "group_vpbS1bunhDRUSeEMSbKzaQsa1FP2_1744845960447",
                 "lastProcessed": 1744845960447,
-                "lastUpdated": 1744859705432,
+                "lastUpdated": 1744866725801,
                 "name": "New Force",
                 "owner": "vpbS1bunhDRUSeEMSbKzaQsa1FP2",
                 "race": "human",
@@ -1350,9 +1350,117 @@
                     "type": "player"
                   }
                 ],
-                "x": 8,
+                "x": 5,
                 "y": 0
               }
+            }
+          },
+          "5,5": {
+            "groups": {
+              "group_uVc0DZjWp8ecPMfETJlktEhGlDI3_1744868931952": {
+                "created": 1744868931952,
+                "id": "group_uVc0DZjWp8ecPMfETJlktEhGlDI3_1744868931952",
+                "lastProcessed": 1744868931952,
+                "lastUpdated": 1744869001812,
+                "name": "New Force",
+                "owner": "uVc0DZjWp8ecPMfETJlktEhGlDI3",
+                "race": "fairy",
+                "readyAt": 1744869000000,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "uVc0DZjWp8ecPMfETJlktEhGlDI3",
+                    "lastUpdated": 1744868931952,
+                    "name": "Guest uVc0",
+                    "race": "fairy",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 5,
+                "y": 5
+              },
+              "group_uVc0DZjWp8ecPMfETJlktEhGlDI3_1744868933625": {
+                "created": 1744868933625,
+                "id": "group_uVc0DZjWp8ecPMfETJlktEhGlDI3_1744868933625",
+                "lastProcessed": 1744868933625,
+                "lastUpdated": 1744869001812,
+                "name": "New Force",
+                "owner": "uVc0DZjWp8ecPMfETJlktEhGlDI3",
+                "race": "fairy",
+                "readyAt": 1744869000000,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "uVc0DZjWp8ecPMfETJlktEhGlDI3",
+                    "lastUpdated": 1744868933625,
+                    "name": "Guest uVc0",
+                    "race": "fairy",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 5,
+                "y": 5
+              }
+            },
+            "players": [
+              {
+                "displayName": "geage",
+                "id": "NnCx3WwHYmQ8WIRnUEMZ16KLylj1",
+                "lastActive": 1742674395384,
+                "race": "fairy",
+                "uid": "NnCx3WwHYmQ8WIRnUEMZ16KLylj1",
+                "x": 5,
+                "y": 5
+              },
+              {
+                "displayName": "Player",
+                "id": "UC5oMeFJgfMD9rcwQFDrDm02yfq2",
+                "lastActive": 1744769370464,
+                "race": "fairy",
+                "uid": "UC5oMeFJgfMD9rcwQFDrDm02yfq2",
+                "x": 5,
+                "y": 5
+              },
+              {
+                "displayName": "Player",
+                "id": "WuFJ8g8xxhXizYWoeU7ngGFx1qk2",
+                "lastActive": 1742656496721,
+                "race": "fairy",
+                "uid": "WuFJ8g8xxhXizYWoeU7ngGFx1qk2",
+                "x": 5,
+                "y": 5
+              },
+              {
+                "displayName": "Guest mVvr",
+                "id": "mVvrV0rJfwfQ2l3CMvKrbRnOFjy2",
+                "lastActive": 1742621588863,
+                "race": "fairy",
+                "uid": "mVvrV0rJfwfQ2l3CMvKrbRnOFjy2",
+                "x": 5,
+                "y": 5
+              },
+              {
+                "displayName": "Player",
+                "id": "oZp2ynSHISdaBJzjzhleulAFrGh2",
+                "lastActive": 1744844980270,
+                "race": "fairy",
+                "uid": "oZp2ynSHISdaBJzjzhleulAFrGh2",
+                "x": 5,
+                "y": 5
+              }
+            ],
+            "structure": {
+              "description": "A ring of mushrooms where fairies gather",
+              "faction": "fairy",
+              "health": 1000,
+              "indestructible": true,
+              "maxHealth": 1000,
+              "name": "Fairy Circle",
+              "type": "spawn"
             }
           }
         }
@@ -1369,7 +1477,7 @@
         },
         "created": 1688388000000,
         "description": "A generic starter world for new players",
-        "lastTick": 1744860241103,
+        "lastTick": 1744872421758,
         "name": "Default World",
         "playerCount": 8,
         "seed": 10101010,
@@ -1410,24 +1518,54 @@
                 ],
                 "x": -11,
                 "y": 8
+              },
+              "group_vpbS1bunhDRUSeEMSbKzaQsa1FP2_1744861955969": {
+                "created": 1744861955969,
+                "id": "group_vpbS1bunhDRUSeEMSbKzaQsa1FP2_1744861955969",
+                "lastProcessed": 1744861955969,
+                "lastUpdated": 1744863421973,
+                "name": "New Force",
+                "owner": "vpbS1bunhDRUSeEMSbKzaQsa1FP2",
+                "race": "human",
+                "readyAt": 1744862000000,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "vpbS1bunhDRUSeEMSbKzaQsa1FP2",
+                    "lastUpdated": 1744861955969,
+                    "name": "Guest vpbS",
+                    "race": "human",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": -11,
+                "y": 8
               }
             }
           },
           "-12,8": {
-            "players": {
-              "48Hi2LGSCpYmBUU7NETPeq2qG5g1": {
+            "players": [
+              {
                 "displayName": "Player",
+                "id": "48Hi2LGSCpYmBUU7NETPeq2qG5g1",
                 "lastActive": 1744831626757,
                 "race": "human",
-                "uid": "48Hi2LGSCpYmBUU7NETPeq2qG5g1"
+                "uid": "48Hi2LGSCpYmBUU7NETPeq2qG5g1",
+                "x": -12,
+                "y": 8
               },
-              "vxFWnOwAKWeezdUVOU1J7ArNWyj2": {
+              {
                 "displayName": "Player",
+                "id": "vxFWnOwAKWeezdUVOU1J7ArNWyj2",
                 "lastActive": 1744792157723,
                 "race": "human",
-                "uid": "vxFWnOwAKWeezdUVOU1J7ArNWyj2"
+                "uid": "vxFWnOwAKWeezdUVOU1J7ArNWyj2",
+                "x": -12,
+                "y": 8
               }
-            },
+            ],
             "structure": {
               "description": "A peaceful settlement along the crystal river",
               "faction": "human",
@@ -1876,40 +2014,95 @@
                 ],
                 "x": 8,
                 "y": 20
+              },
+              "group_uVc0DZjWp8ecPMfETJlktEhGlDI3_1744869011630": {
+                "created": 1744869011630,
+                "id": "group_uVc0DZjWp8ecPMfETJlktEhGlDI3_1744869011630",
+                "lastProcessed": 1744869011630,
+                "lastUpdated": 1744872435826,
+                "moveSpeed": 1.5,
+                "moveStarted": 1744872435826,
+                "movementPath": [
+                  {
+                    "x": 8,
+                    "y": 20
+                  },
+                  {
+                    "x": 9,
+                    "y": 20
+                  }
+                ],
+                "name": "New Force",
+                "nextMoveTime": 1744872475826,
+                "owner": "uVc0DZjWp8ecPMfETJlktEhGlDI3",
+                "pathIndex": 0,
+                "race": "goblin",
+                "readyAt": 1744869200000,
+                "status": "moving",
+                "targetX": 9,
+                "targetY": 20,
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "uVc0DZjWp8ecPMfETJlktEhGlDI3",
+                    "lastUpdated": 1744869011630,
+                    "name": "Guest uVc0",
+                    "race": "goblin",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 8,
+                "y": 20
               }
             },
-            "players": {
-              "4phlqu0xieSPNwQAGpw8EKfuuXz2": {
+            "players": [
+              {
                 "displayName": "Player",
+                "id": "4phlqu0xieSPNwQAGpw8EKfuuXz2",
                 "lastActive": 1743288638287,
                 "race": "goblin",
-                "uid": "4phlqu0xieSPNwQAGpw8EKfuuXz2"
+                "uid": "4phlqu0xieSPNwQAGpw8EKfuuXz2",
+                "x": 8,
+                "y": 20
               },
-              "NnCx3WwHYmQ8WIRnUEMZ16KLylj1": {
+              {
                 "displayName": "geage",
+                "id": "NnCx3WwHYmQ8WIRnUEMZ16KLylj1",
                 "lastActive": 1742674282001,
                 "race": "goblin",
-                "uid": "NnCx3WwHYmQ8WIRnUEMZ16KLylj1"
+                "uid": "NnCx3WwHYmQ8WIRnUEMZ16KLylj1",
+                "x": 8,
+                "y": 20
               },
-              "YWln4rQwMngNR8vpai807kRzYMc2": {
+              {
                 "displayName": "Player",
+                "id": "YWln4rQwMngNR8vpai807kRzYMc2",
                 "lastActive": 1742937778312,
                 "race": "goblin",
-                "uid": "YWln4rQwMngNR8vpai807kRzYMc2"
+                "uid": "YWln4rQwMngNR8vpai807kRzYMc2",
+                "x": 8,
+                "y": 20
               },
-              "ro0HfxETCyO8HBT0Lkmgc0A2Riq2": {
+              {
                 "displayName": "iavarice36",
+                "id": "ro0HfxETCyO8HBT0Lkmgc0A2Riq2",
                 "lastActive": 1742862121838,
                 "race": "goblin",
-                "uid": "ro0HfxETCyO8HBT0Lkmgc0A2Riq2"
+                "uid": "ro0HfxETCyO8HBT0Lkmgc0A2Riq2",
+                "x": 8,
+                "y": 20
               },
-              "t9vNUrbbFrS7brYtGI08jDK2H5Y2": {
+              {
                 "displayName": "Player",
+                "id": "t9vNUrbbFrS7brYtGI08jDK2H5Y2",
                 "lastActive": 1742876181760,
                 "race": "goblin",
-                "uid": "t9vNUrbbFrS7brYtGI08jDK2H5Y2"
+                "uid": "t9vNUrbbFrS7brYtGI08jDK2H5Y2",
+                "x": 8,
+                "y": 20
               }
-            },
+            ],
             "structure": {
               "description": "A network of tunnels and caves home to goblin tribes",
               "faction": "goblin",
@@ -1945,14 +2138,43 @@
               "group_1681234567_2468": {
                 "created": 1742953650000,
                 "faction": "dwarf",
-                "gatheringUntil": 1742957255000,
                 "id": "group_1681234567_2468",
+                "items": [
+                  {
+                    "id": "item_1744863842574_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1744863842574_2",
+                    "name": "Stone Pieces",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1744863842574_227",
+                    "name": "Wheat",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1744863842574_185",
+                    "name": "Wheat",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
                 "lastProcessed": 1742953655000,
-                "lastUpdated": 1742953655000,
+                "lastUpdated": 1744863841845,
                 "name": "Dwarven Miners",
                 "owner": "3DK5F3CH8TTbB4sC5AG9yhcyKYA3",
                 "resource": "stone",
-                "status": "gathering",
+                "status": "idle",
                 "unitCount": 5,
                 "units": [
                   {
@@ -2058,7 +2280,7 @@
         },
         "created": 1688475600000,
         "description": "A magical world filled with elves, dwarves, and mysterious creatures",
-        "lastTick": 1744860241103,
+        "lastTick": 1744872421758,
         "name": "Fantasy Realm",
         "playerCount": 6,
         "seed": 14285714,
@@ -2396,7 +2618,7 @@
         },
         "created": 1688562000000,
         "description": "A harsh desert world with scarce resources and ancient ruins",
-        "lastTick": 1744860241103,
+        "lastTick": 1744872421758,
         "name": "The Wasteland",
         "playerCount": 5,
         "seed": 20221022,
