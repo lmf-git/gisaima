@@ -78,6 +78,9 @@
       onDemobilize({
         groupId: selectedGroup.id,
         targetStructureId: tile.structure?.id,
+        locationX: tile.x,
+        locationY: tile.y,
+        worldId: $game.currentWorld, // Make sure we're passing the worldId
         tile
       });
     }

@@ -437,7 +437,7 @@ export const startMobilization = onCall(async (data, context) => {
 
 // Demobilise units function
 export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
-  const { groupId, targetStructureId, locationX, locationY } = request.data;
+  const { groupId, targetStructureId, locationX, locationY, worldId = 'default' } = request.data;
   const userId = request.auth?.uid;
   
   if (!userId) {
@@ -449,7 +449,7 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
   }
   
   try {
-    const worldId = request.data.worldId || 'default';
+    // Use correct path for world info
     const locationKey = `${locationX},${locationY}`;
     const chunkKey = getChunkKey(locationX, locationY);
     const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}`);
@@ -481,8 +481,8 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError("failed-precondition", "Target structure not found at this location");
     }
     
-    // Calculate time for demobilisation to complete
-    const worldInfoRef = db.ref(`worldInfo/${worldId}`);
+    // Calculate time for demobilisation to complete - FIX: use correct path for world info
+    const worldInfoRef = db.ref(`worlds/${worldId}/info`);
     const worldInfoSnapshot = await worldInfoRef.once("value");
     const worldInfo = worldInfoSnapshot.val() || {};
     

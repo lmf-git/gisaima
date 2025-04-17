@@ -71,14 +71,17 @@
       const width = mapElement.clientWidth;
       const height = mapElement.clientHeight;
 
-      let cols = Math.ceil(width / tileSizePx);
-      cols = cols % 2 === 0 ? cols - 1 : cols;
+      // Calculate how many tiles can fit in the viewport
+      // Add 1 to ensure we fill the entire viewport plus a bit more
+      let cols = Math.ceil(width / tileSizePx) + 1;
+      let rows = Math.ceil(height / tileSizePx) + 1;
+      
+      // Ensure we have odd numbers for centered target
+      cols = cols % 2 === 0 ? cols + 1 : cols;
+      rows = rows % 2 === 0 ? rows + 1 : rows;
 
-      let rows = Math.ceil(height / tileSizePx);
-      rows = rows % 2 === 0 ? rows - 1 : rows;
-
-      cols = Math.max(cols, 5);
-      rows = Math.max(rows, 5);
+      cols = Math.max(cols, 7); // Increased minimum
+      rows = Math.max(rows, 7); // Increased minimum
 
       return {
         ...state,
@@ -426,12 +429,16 @@
 
   onMount(() => {
     resizeObserver = new ResizeObserver(() => {
-      if (mapElement) resizeMap(mapElement);
+      if (mapElement) {
+        setTimeout(() => resizeMap(mapElement), 100); // Add slight delay for more reliable sizing
+      }
     });
     
     if (mapElement) {
       resizeObserver.observe(mapElement);
+      // Call resize immediately and then again after a short delay
       resizeMap(mapElement);
+      setTimeout(() => resizeMap(mapElement), 200);
     }
     
     const keyboardCleanup = setupKeyboardNavigation();
@@ -979,6 +986,11 @@
     -ms-user-select: none;
     transform: translateZ(0);
     will-change: transform;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
   }
 
   .map {
@@ -994,7 +1006,11 @@
     );
     transition: background 1s ease;
     /* Ensure map consistency during movement */
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     margin: 0;
     padding: 0;
   }
@@ -1015,9 +1031,14 @@
     width: 100%;
     height: 100%;
     /* Ensure grid is always positioned the same way */
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     margin: 0;
     padding: 0;
+    overflow: hidden;
   }
 
   .main-grid.animated .tile {
