@@ -162,35 +162,7 @@
     }
   });
 
-  // Calculate estimated arrival time for moving groups with improved world speed handling
-  function calculateMoveCompletionTime(group) {
-    if (!group || group.status !== 'moving' || !group.moveStarted) return null;
-    
-    const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
-    
-    // Check if nextMoveTime is available directly
-    if (group.nextMoveTime) {
-      return group.nextMoveTime;
-    }
-    
-    const moveStarted = group.moveStarted;
-    const moveSpeed = group.moveSpeed || 1.0;
-    const adjustedSpeed = moveSpeed * worldSpeed;
-    
-    // Base 1 minute per tile, adjusted by speed
-    const moveTime = (1000 * 60) / adjustedSpeed;
-    
-    // If group has pathIndex and movementPath, calculate more accurate completion time
-    if (group.pathIndex !== undefined && group.movementPath && Array.isArray(group.movementPath)) {
-      const remainingSteps = group.movementPath.length - (group.pathIndex + 1);
-      return moveStarted + (moveTime * remainingSteps);
-    }
-    
-    // Simple case - just one step of movement
-    return moveStarted + moveTime;
-  }
-
-  // Calculate the next world tick time based on the last actual tick
+  // Get a more accurate next world tick time based on the 1-minute server schedule
   function getNextWorldTickTime() {
     const currentWorld = $game.currentWorld;
     const worldInfo = $game.worldInfo[currentWorld] || {};
@@ -199,31 +171,53 @@
     const worldSpeed = worldInfo.speed || 1.0;
     const lastTick = worldInfo.lastTick || Date.now();
     
-    const tickIntervalMs = 60000; // 1 minute in milliseconds (world tick interval)
-    const adjustedInterval = Math.round(tickIntervalMs / worldSpeed);
+    // Server tick interval is every 1 minute, adjusting for world speed
+    const baseTickInterval = 60000; // 1 minute in milliseconds
+    const adjustedInterval = Math.round(baseTickInterval / worldSpeed);
     
-    // Calculate next tick based on the last recorded tick time
     const now = Date.now();
-    const timeSinceLastTick = now - lastTick;
-    const ticksElapsed = Math.floor(timeSinceLastTick / adjustedInterval);
-    const nextTickTime = lastTick + ((ticksElapsed + 1) * adjustedInterval);
+    
+    // Calculate time elapsed since last server tick
+    const timeElapsed = now - lastTick;
+    
+    // Calculate how many complete ticks have occurred since lastTick
+    const completeTicks = Math.floor(timeElapsed / adjustedInterval);
+    
+    // Calculate when the next tick will happen
+    const nextTickTime = lastTick + ((completeTicks + 1) * adjustedInterval);
     
     return nextTickTime;
   }
 
-  // Format time remaining with simplified display
+  // Format time remaining aligned with server world ticks
   function formatTimeRemaining(endTime) {
     if (!endTime) return '';
     
-    // Force this function to re-evaluate on updateCounter change
+    // Force re-evaluation when counter updates
     updateCounter;
     
     const now = Date.now();
+    
+    // Calculate expected server-side tick time
+    const nextTickTime = getNextWorldTickTime();
+    
+    // If the end time has passed but we're still waiting for the next tick
+    if (endTime <= now) {
+      // Calculate time until the next server tick instead
+      const tickWait = Math.max(0, nextTickTime - now);
+      
+      // If very close to the tick (within 2 seconds), show a special message
+      if (tickWait < 2000) {
+        return 'Any moment...';
+      }
+      
+      // Otherwise show countdown to next tick
+      const seconds = Math.ceil(tickWait / 1000);
+      return `Ready (Tick: ${seconds}s)`;
+    }
+    
+    // Normal countdown calculation for time remaining to action completion
     const remaining = endTime - now;
-    
-    // Simply return empty when countdown is complete
-    if (remaining <= 0) return '';
-    
     const minutes = Math.floor(remaining / 60000);
     const seconds = Math.floor((remaining % 60000) / 1000);
     
@@ -234,13 +228,40 @@
     }
   }
 
-  // Determine if an action is complete but waiting for tick - keep this for styling
-  function isPendingTick(endTime) {
-    if (!endTime) return false;
+  // Calculate estimated arrival time for moving groups with better world tick alignment
+  function calculateMoveCompletionTime(group) {
+    if (!group || group.status !== 'moving' || !group.moveStarted) return null;
     
-    const now = Date.now();
-    const remaining = endTime - now;
-    return remaining <= 0;
+    const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
+    
+    // Use nextMoveTime from the server if available
+    if (group.nextMoveTime) {
+      return group.nextMoveTime;
+    }
+    
+    const moveStarted = group.moveStarted;
+    const moveSpeed = group.moveSpeed || 1.0;
+    const adjustedSpeed = moveSpeed * worldSpeed;
+    
+    // Server tick interval is every 1 minute, adjusted by world speed
+    const baseTickInterval = 60000; // 1 minute in milliseconds
+    const adjustedInterval = Math.round(baseTickInterval / worldSpeed);
+    
+    // Calculate how many ticks it will take to complete the movement
+    let timeToComplete = adjustedInterval; // At minimum, one tick interval
+    
+    // If path information is available, calculate more precisely
+    if (group.pathIndex !== undefined && group.movementPath && Array.isArray(group.movementPath)) {
+      const remainingSteps = group.movementPath.length - (group.pathIndex + 1);
+      timeToComplete = remainingSteps * adjustedInterval;
+    }
+    
+    // Calculate exact time when the next tick will happen after moveStarted
+    const elapsedSinceMoveStart = Date.now() - moveStarted;
+    const ticksElapsed = Math.floor(elapsedSinceMoveStart / adjustedInterval);
+    const nextTickAfterMove = moveStarted + ((ticksElapsed + 1) * adjustedInterval);
+    
+    return nextTickAfterMove;
   }
 </script>
 
