@@ -61,7 +61,6 @@ export const processGameTicks = onSchedule({
       // Walk through all chunks and coordinates
       for (const [chunkKey, chunkData] of Object.entries(worldData.chunks)) {
         for (const [coordKey, tileData] of Object.entries(chunkData)) {
-          if (coordKey === "lastUpdated") continue;
           
           // Skip if no groups on this tile
           if (!tileData.groups) continue;
