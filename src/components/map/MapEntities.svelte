@@ -157,28 +157,7 @@
     return moveStarted + moveTime;
   }
 
-  // Calculate the next world tick time based on the last actual tick
-  function getNextWorldTickTime() {
-    const currentWorld = $game.currentWorld;
-    const worldInfo = $game.worldInfo[currentWorld] || {};
-    
-    // Get the world speed and lastTick
-    const worldSpeed = worldInfo.speed || 1.0;
-    const lastTick = worldInfo.lastTick || Date.now();
-    
-    const tickIntervalMs = 60000; // 1 minute in milliseconds (world tick interval)
-    const adjustedInterval = Math.round(tickIntervalMs / worldSpeed);
-    
-    // Calculate next tick based on the last recorded tick time
-    const now = Date.now();
-    const timeSinceLastTick = now - lastTick;
-    const ticksElapsed = Math.floor(timeSinceLastTick / adjustedInterval);
-    const nextTickTime = lastTick + ((ticksElapsed + 1) * adjustedInterval);
-    
-    return nextTickTime;
-  }
-
-  // Format time remaining with world speed adjustment
+  // Format time remaining with simplified display
   function formatTimeRemaining(endTime) {
     if (!endTime) return '';
     
@@ -186,16 +165,9 @@
     
     const now = Date.now();
     const remaining = endTime - now;
-    const nextTickTime = getNextWorldTickTime();
-    const tickRemaining = nextTickTime - now;
     
-    // For groups that have reached the countdown end but are waiting for server tick
-    if (remaining <= 0 && tickRemaining > 0) {
-      return 'Processing...'; 
-    }
-    
-    // If time is completely up
-    if (remaining <= 0) return 'Ready';
+    // Simply return empty when countdown is complete
+    if (remaining <= 0) return '';
     
     const minutes = Math.floor(remaining / 60000);
     const seconds = Math.floor((remaining % 60000) / 1000);

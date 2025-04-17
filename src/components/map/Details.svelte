@@ -205,13 +205,21 @@
     // Calculate next tick based on the last recorded tick time
     const now = Date.now();
     const timeSinceLastTick = now - lastTick;
-    const ticksElapsed = Math.floor(timeSinceLastTick / adjustedInterval);
-    const nextTickTime = lastTick + ((ticksElapsed + 1) * adjustedInterval);
     
-    return nextTickTime;
+    // Add tolerance for server-client clock differences and execution delays
+    // Use modulo arithmetic to find the next minute boundary
+    const minuteBoundary = Math.ceil(now / tickIntervalMs) * tickIntervalMs;
+    
+    // Calculate next tick time based on the server's reported last tick
+    const ticksElapsed = Math.floor(timeSinceLastTick / adjustedInterval);
+    const nextTickBasedOnLast = lastTick + ((ticksElapsed + 1) * adjustedInterval);
+    
+    // Use the earlier of the two calculations to avoid long "processing" states
+    // This handles cases where the server tick might be slightly delayed
+    return Math.min(nextTickBasedOnLast, minuteBoundary + 5000); // Add 5 second buffer
   }
 
-  // Format time remaining with tick awareness
+  // Format time remaining with simplified display
   function formatTimeRemaining(endTime) {
     if (!endTime) return '';
     
@@ -220,16 +228,9 @@
     
     const now = Date.now();
     const remaining = endTime - now;
-    const nextTickTime = getNextWorldTickTime();
-    const tickRemaining = nextTickTime - now;
     
-    // If past expected time but next tick hasn't happened yet
-    if (remaining <= 0 && tickRemaining > 0) {
-      return `Processing...`;
-    }
-    
-    // If time is up
-    if (remaining <= 0) return 'Ready';
+    // Simply return empty when countdown is complete
+    if (remaining <= 0) return '';
     
     const minutes = Math.floor(remaining / 60000);
     const seconds = Math.floor((remaining % 60000) / 1000);
