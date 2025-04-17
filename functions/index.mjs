@@ -55,6 +55,9 @@ export const processGameTicks = onSchedule({
       // Process mobilizations and movements
       const updates = {};
       
+      // Always update the lastTick time for each world
+      updates[`worlds/${worldId}/info/lastTick`] = now;
+      
       // Walk through all chunks and coordinates
       for (const [chunkKey, chunkData] of Object.entries(worldData.chunks)) {
         for (const [coordKey, tileData] of Object.entries(chunkData)) {

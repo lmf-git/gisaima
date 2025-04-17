@@ -162,34 +162,53 @@
     }
   });
 
-  // Calculate estimated arrival time for moving groups - improved with tick awareness
+  // Calculate estimated arrival time for moving groups with improved world speed handling
   function calculateMoveCompletionTime(group) {
     if (!group || group.status !== 'moving' || !group.moveStarted) return null;
+    
+    const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
     
     // Check if nextMoveTime is available directly
     if (group.nextMoveTime) {
       return group.nextMoveTime;
     }
     
-    // If no nextMoveTime, calculate using the old formula
-    const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
     const moveStarted = group.moveStarted;
     const moveSpeed = group.moveSpeed || 1.0;
     const adjustedSpeed = moveSpeed * worldSpeed;
-    const moveTime = (1000 * 60) / adjustedSpeed; // Base 1 minute per tile, adjusted by speed
     
+    // Base 1 minute per tile, adjusted by speed
+    const moveTime = (1000 * 60) / adjustedSpeed;
+    
+    // If group has pathIndex and movementPath, calculate more accurate completion time
+    if (group.pathIndex !== undefined && group.movementPath && Array.isArray(group.movementPath)) {
+      const remainingSteps = group.movementPath.length - (group.pathIndex + 1);
+      return moveStarted + (moveTime * remainingSteps);
+    }
+    
+    // Simple case - just one step of movement
     return moveStarted + moveTime;
   }
 
-  // Calculate the next world tick time - when server processes state changes
+  // Calculate the next world tick time based on the last actual tick
   function getNextWorldTickTime() {
-    const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
-    const tickIntervalMs = 300000; // 5 minutes in milliseconds (world tick interval)
+    const currentWorld = $game.currentWorld;
+    const worldInfo = $game.worldInfo[currentWorld] || {};
+    
+    // Get the world speed and lastTick
+    const worldSpeed = worldInfo.speed || 1.0;
+    const lastTick = worldInfo.lastTick || Date.now();
+    
+    const tickIntervalMs = 60000; // 1 minute in milliseconds (world tick interval)
     const adjustedInterval = Math.round(tickIntervalMs / worldSpeed);
     
+    // Calculate next tick based on the last recorded tick time
     const now = Date.now();
-    const msIntoCurrentInterval = now % adjustedInterval;
-    return now + (adjustedInterval - msIntoCurrentInterval);
+    const timeSinceLastTick = now - lastTick;
+    const ticksElapsed = Math.floor(timeSinceLastTick / adjustedInterval);
+    const nextTickTime = lastTick + ((ticksElapsed + 1) * adjustedInterval);
+    
+    return nextTickTime;
   }
 
   // Format time remaining with tick awareness
@@ -206,7 +225,7 @@
     
     // If past expected time but next tick hasn't happened yet
     if (remaining <= 0 && tickRemaining > 0) {
-      return `Ready (processing)`;
+      return `Processing...`;
     }
     
     // If time is up

@@ -771,3 +771,24 @@ export function getWorldCenterCoordinates(worldId, worldInfo = null) {
   console.log(`No explicit center for world ${worldId}, using default (0,0)`);
   return { x: 0, y: 0 };
 }
+
+// Calculate the next world tick time based on the last actual tick
+export function getNextWorldTickTime() {
+  const currentWorld = getStore(game).currentWorld;
+  const worldInfo = getStore(game).worldInfo[currentWorld] || {};
+  
+  // Get the world speed and lastTick
+  const worldSpeed = worldInfo.speed || 1.0;
+  const lastTick = worldInfo.lastTick || Date.now();
+  
+  const tickIntervalMs = 60000; // 1 minute in milliseconds (world tick interval)
+  const adjustedInterval = Math.round(tickIntervalMs / worldSpeed);
+  
+  // Calculate next tick based on the last recorded tick time
+  const now = Date.now();
+  const timeSinceLastTick = now - lastTick;
+  const ticksElapsed = Math.floor(timeSinceLastTick / adjustedInterval);
+  const nextTickTime = lastTick + ((ticksElapsed + 1) * adjustedInterval);
+  
+  return nextTickTime;
+}

@@ -157,6 +157,27 @@
     return moveStarted + moveTime;
   }
 
+  // Calculate the next world tick time based on the last actual tick
+  function getNextWorldTickTime() {
+    const currentWorld = $game.currentWorld;
+    const worldInfo = $game.worldInfo[currentWorld] || {};
+    
+    // Get the world speed and lastTick
+    const worldSpeed = worldInfo.speed || 1.0;
+    const lastTick = worldInfo.lastTick || Date.now();
+    
+    const tickIntervalMs = 60000; // 1 minute in milliseconds (world tick interval)
+    const adjustedInterval = Math.round(tickIntervalMs / worldSpeed);
+    
+    // Calculate next tick based on the last recorded tick time
+    const now = Date.now();
+    const timeSinceLastTick = now - lastTick;
+    const ticksElapsed = Math.floor(timeSinceLastTick / adjustedInterval);
+    const nextTickTime = lastTick + ((ticksElapsed + 1) * adjustedInterval);
+    
+    return nextTickTime;
+  }
+
   // Format time remaining with world speed adjustment
   function formatTimeRemaining(endTime) {
     if (!endTime) return '';
@@ -165,9 +186,16 @@
     
     const now = Date.now();
     const remaining = endTime - now;
+    const nextTickTime = getNextWorldTickTime();
+    const tickRemaining = nextTickTime - now;
     
     // For groups that have reached the countdown end but are waiting for server tick
-    if (remaining <= 0) return 'Imminent'; 
+    if (remaining <= 0 && tickRemaining > 0) {
+      return 'Processing...'; 
+    }
+    
+    // If time is completely up
+    if (remaining <= 0) return 'Ready';
     
     const minutes = Math.floor(remaining / 60000);
     const seconds = Math.floor((remaining % 60000) / 1000);
@@ -177,6 +205,15 @@
     } else {
       return `${seconds}s`;
     }
+  }
+  
+  // Determine if an action is complete but waiting for tick
+  function isPendingTick(endTime) {
+    if (!endTime) return false;
+    
+    const now = Date.now();
+    const remaining = endTime - now;
+    return remaining <= 0;
   }
   
   // Get status class from status
@@ -700,11 +737,11 @@
                     <div class="entity-details">
                       <span class="unit-count">{entity.unitCount || entity.units?.length || "?"} units</span>
                       {#if entity.status === 'mobilizing' && entity.readyAt}
-                        <span class="status mobilizing">
+                        <span class="status mobilizing" class:pending-tick={isPendingTick(entity.readyAt)}>
                           Mobilizing: {formatTimeRemaining(entity.readyAt)}
                         </span>
                       {:else if entity.status === 'moving' && entity.moveStarted}
-                        <span class="status moving">
+                        <span class="status moving" class:pending-tick={isPendingTick(calculateMoveCompletionTime(entity))}>
                           Moving: {formatTimeRemaining(calculateMoveCompletionTime(entity))}
                         </span>
                       {:else if entity.status && entity.status !== 'idle'}
@@ -1169,6 +1206,18 @@
     background: rgba(0, 0, 0, 0.05);
     border: 1px solid rgba(0, 0, 0, 0.1);
     color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .pending-tick {
+    background: rgba(255, 215, 0, 0.2) !important;
+    border-color: rgba(255, 215, 0, 0.5) !important;
+    color: #b8860b !important;
+    animation: pulseWaiting 1s infinite alternate !important;
+  }
+  
+  @keyframes pulseWaiting {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
   }
   
   .empty-state {

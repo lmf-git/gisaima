@@ -152,7 +152,118 @@ export function isInternalUrlChange() {
   return isInternalUrlUpdate;
 }
 
-// Update chunks to avoid game store dependency
+// Improved function to process chunk data with proper entity cleanup
+function processChunkData(data = {}, chunkKey) {
+  // Structure for batch entity updates
+  const updates = {
+    structure: {},
+    groups: {},
+    players: {},
+    items: {}
+  };
+  
+  // Set of all valid entity keys in this chunk update
+  const validGroupKeys = new Set();
+  const validPlayerKeys = new Set();
+  const validItemKeys = new Set();
+  
+  let entitiesChanged = false;
+  
+  // Skip lastUpdated metadata field
+  Object.entries(data).forEach(([tileKey, tileData]) => {
+    if (tileKey === 'lastUpdated') return;
+    
+    const [x, y] = tileKey.split(',').map(Number);
+    const fullTileKey = `${x},${y}`;
+    
+    // Process structure
+    if (tileData.structure) {
+      updates.structure[fullTileKey] = { ...tileData.structure, x, y };
+      entitiesChanged = true;
+    }
+    
+    // Process player groups (multiple per tile)
+    if (tileData.players) {
+      updates.players[fullTileKey] = Object.entries(tileData.players)
+        .map(([id, data]) => ({ ...data, id, x, y }));
+      validPlayerKeys.add(fullTileKey);
+      entitiesChanged = true;
+    } else {
+      // Explicitly mark as empty if no players
+      updates.players[fullTileKey] = [];
+    }
+    
+    // Process unit groups (multiple per tile)
+    if (tileData.groups) {
+      updates.groups[fullTileKey] = Object.entries(tileData.groups)
+        .map(([id, data]) => ({ ...data, id, x, y }));
+      validGroupKeys.add(fullTileKey);
+      entitiesChanged = true;
+    } else {
+      // Explicitly mark as empty if no groups
+      updates.groups[fullTileKey] = [];
+    }
+    
+    // Process items (multiple per tile)
+    if (tileData.items) {
+      updates.items[fullTileKey] = tileData.items.map(item => ({ ...item, x, y }));
+      validItemKeys.add(fullTileKey);
+      entitiesChanged = true;
+    } else {
+      // Explicitly mark as empty if no items
+      updates.items[fullTileKey] = [];
+    }
+  });
+  
+  // Only update if entities changed
+  if (entitiesChanged) {
+    entities.update(current => {
+      const newState = {
+        structure: { ...current.structure, ...updates.structure },
+        players: { ...current.players },
+        groups: { ...current.groups },
+        items: { ...current.items }
+      };
+      
+      // Clean up missing groups in this chunk
+      Object.keys(current.groups).forEach(key => {
+        // Only check coordinates within this chunk
+        if (getChunkKey(parseInt(key.split(',')[0]), parseInt(key.split(',')[1])) === chunkKey) {
+          if (!validGroupKeys.has(key)) {
+            newState.groups[key] = [];
+          }
+        }
+      });
+      
+      // Clean up missing players in this chunk
+      Object.keys(current.players).forEach(key => {
+        // Only check coordinates within this chunk
+        if (getChunkKey(parseInt(key.split(',')[0]), parseInt(key.split(',')[1])) === chunkKey) {
+          if (!validPlayerKeys.has(key)) {
+            newState.players[key] = [];
+          }
+        }
+      });
+      
+      // Handle updates
+      Object.entries(updates.players).forEach(([key, value]) => {
+        newState.players[key] = value;
+      });
+      
+      Object.entries(updates.groups).forEach(([key, value]) => {
+        newState.groups[key] = value;
+      });
+      
+      Object.entries(updates.items).forEach(([key, value]) => {
+        newState.items[key] = value;
+      });
+      
+      return newState;
+    });
+  }
+}
+
+// Modify the chunks derived store to pass chunk key to processChunkData
 export const chunks = derived(
   [map],
   ([$map], set) => {
@@ -202,7 +313,8 @@ export const chunks = derived(
           const unsubscribe = onValue(chunkRef, snapshot => {
             if (snapshot.exists()) {
               const data = snapshot.val();
-              processChunkData(data);
+              // Pass chunkKey to processChunkData
+              processChunkData(data, chunkKey);
             }
           });
           
@@ -223,6 +335,47 @@ export const chunks = derived(
           const [chunkX, chunkY] = chunkKey.split(',').map(Number);
           terrain.clearChunkFromCache(chunkX, chunkY, CHUNK_SIZE);
         }
+        
+        // Also clear entity data for this chunk
+        entities.update(current => {
+          const newState = {
+            structure: { ...current.structure },
+            groups: { ...current.groups },
+            players: { ...current.players },
+            items: { ...current.items }
+          };
+          
+          // Remove entities from this chunk
+          Object.keys(current.structure).forEach(key => {
+            const [x, y] = key.split(',').map(Number);
+            if (getChunkKey(x, y) === chunkKey) {
+              delete newState.structure[key];
+            }
+          });
+          
+          Object.keys(current.groups).forEach(key => {
+            const [x, y] = key.split(',').map(Number);
+            if (getChunkKey(x, y) === chunkKey) {
+              delete newState.groups[key];
+            }
+          });
+          
+          Object.keys(current.players).forEach(key => {
+            const [x, y] = key.split(',').map(Number);
+            if (getChunkKey(x, y) === chunkKey) {
+              delete newState.players[key];
+            }
+          });
+          
+          Object.keys(current.items).forEach(key => {
+            const [x, y] = key.split(',').map(Number);
+            if (getChunkKey(x, y) === chunkKey) {
+              delete newState.items[key];
+            }
+          });
+          
+          return newState;
+        });
       }
     }
     
@@ -231,62 +384,6 @@ export const chunks = derived(
   },
   new Set()
 );
-
-// Helper function to process chunk data
-function processChunkData(data = {}) {
-  // Structure for batch entity updates
-  const updates = {
-    structure: {},
-    groups: {},
-    players: {},
-    items: {}  // Add items to updates structure
-  };
-  
-  let entitiesChanged = false;
-  
-  // Skip lastUpdated metadata field
-  Object.entries(data).forEach(([tileKey, tileData]) => {
-    if (tileKey === 'lastUpdated') return;
-    
-    const [x, y] = tileKey.split(',').map(Number);
-    
-    // Process structure
-    if (tileData.structure) {
-      updates.structure[tileKey] = { ...tileData.structure, x, y };
-      entitiesChanged = true;
-    }
-    
-    // Process player groups (multiple per tile)
-    if (tileData.players) {
-      updates.players[tileKey] = Object.entries(tileData.players)
-        .map(([id, data]) => ({ ...data, id, x, y }));
-      entitiesChanged = true;
-    }
-    
-    // Process unit groups (multiple per tile)
-    if (tileData.groups) {
-      updates.groups[tileKey] = Object.entries(tileData.groups)
-        .map(([id, data]) => ({ ...data, id, x, y }));
-      entitiesChanged = true;
-    }
-    
-    // Process items (multiple per tile)
-    if (tileData.items) {
-      updates.items[tileKey] = tileData.items.map(item => ({ ...item, x, y }));
-      entitiesChanged = true;
-    }
-  });
-  
-  // Only update if entities changed
-  if (entitiesChanged) {
-    entities.update(current => ({
-      structure: { ...current.structure, ...updates.structure },
-      groups: { ...current.groups, ...updates.groups },
-      players: { ...current.players, ...updates.players },
-      items: { ...current.items, ...updates.items }  // Add items to update
-    }));
-  }
-}
 
 export const coordinates = derived(
   [map, entities, chunks, highlightedCoords],
