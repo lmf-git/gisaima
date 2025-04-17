@@ -728,7 +728,7 @@
                         )}
                       >
                         {#if group.status === 'starting_to_gather'}
-                          Preparing to Gather
+                          Preparing to gather
                         {:else}
                           {_fmt(group.status)}
                         {/if}
@@ -1518,5 +1518,10 @@
     .entities-section:has(h4.visually-hidden) .sort-controls {
       display: flex;
     }
+  }
+
+  .item-count {
+    color: #2d8659;
+    font-weight: 500;
   }
 </style>
