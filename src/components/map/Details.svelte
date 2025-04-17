@@ -387,19 +387,23 @@
                       <div class="battle-sides">
                         <div class="battle-side battle-side-1">
                           <div class="battle-side-header">Side 1</div>
-                          {#each group.battle.side1 as side1Group}
+                          {#each group.battle.side1 as side1Group, i (group.battleId + '-side1-' + i)}
                             <div class="battle-group">
                               {side1Group.name || side1Group.id}
-                              <span class="battle-role attacker">Attacker</span>
+                              {#if side1Group.role}
+                                <span class="battle-role {side1Group.role}">{_fmt(side1Group.role)}</span>
+                              {/if}
                             </div>
                           {/each}
                         </div>
                         <div class="battle-side battle-side-2">
                           <div class="battle-side-header">Side 2</div>
-                          {#each group.battle.side2 as side2Group}
+                          {#each group.battle.side2 as side2Group, i (group.battleId + '-side2-' + i)}
                             <div class="battle-group">
                               {side2Group.name || side2Group.id}
-                              <span class="battle-role defender">Defender</span>
+                              {#if side2Group.role}
+                                <span class="battle-role {side2Group.role}">{_fmt(side2Group.role)}</span>
+                              {/if}
                             </div>
                           {/each}
                         </div>
