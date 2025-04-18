@@ -54,6 +54,9 @@
     let loading = $state(true);
     let error = $state(null);
     
+    // Fix the selectedTile initialization - ensure it has a default value
+    let selectedTile = $state(null);
+    
     let urlCoordinates = $state(null);
     let urlProcessingComplete = $state(false);
     
@@ -64,8 +67,17 @@
     const isDragging = $derived($map.isDragging);
     
     function toggleDetailsModal(show, displayTile = null) {
-        detailed = show;
-        selectedTile = displayTile || $targetStore;
+        if (show) {
+            // Make sure we have a valid tile before setting detailed to true
+            selectedTile = displayTile || $highlightedStore || $targetStore;
+            if (!selectedTile) {
+                console.error('No valid tile available for Details view');
+                return;
+            }
+            detailed = true;
+        } else {
+            detailed = false;
+        }
     }
     
     let ignoreNextUrlChange = $state(false);
@@ -919,7 +931,7 @@
             <MapEntities closing={entitiesClosing} />
         {/if}
 
-        {#if detailed}
+        {#if detailed && selectedTile}
             <Details 
                 x={selectedTile.x} 
                 y={selectedTile.y} 
@@ -931,7 +943,10 @@
             <Legend 
                 x={$targetStore.x}  
                 y={$targetStore.y}  
-                openDetails={() => toggleDetailsModal(true)} 
+                openDetails={() => {
+                    // When opening from Legend, explicitly use targetStore
+                    toggleDetailsModal(true, $targetStore);
+                }} 
             />
         {/if}
 
