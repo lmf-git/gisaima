@@ -54,9 +54,6 @@
     let loading = $state(true);
     let error = $state(null);
     
-    // Fix the selectedTile initialization - ensure it has a default value
-    let selectedTile = $state(null);
-    
     let urlCoordinates = $state(null);
     let urlProcessingComplete = $state(false);
     
@@ -68,15 +65,15 @@
     
     function toggleDetailsModal(show, displayTile = null) {
         if (show) {
-            // Make sure we have a valid tile before setting detailed to true
-            selectedTile = displayTile || $highlightedStore || $targetStore;
-            if (!selectedTile) {
-                console.error('No valid tile available for Details view');
-                return;
+            // Set highlighted tile if one was explicitly provided
+            if (displayTile) {
+                setHighlighted(displayTile.x, displayTile.y);
             }
             detailed = true;
         } else {
             detailed = false;
+            // Optionally clear highlights when closing details
+            setHighlighted(null, null);
         }
     }
     
@@ -108,6 +105,13 @@
     let showStructureOverview = $state(false);
     let selectedStructure = $state(null);
     let structureLocation = $state({ x: 0, y: 0 });
+
+    // Add temporary storage for component data
+    let mobilizeData = $state(null);
+    let moveData = $state(null);
+    let attackData = $state(null);
+    let joinBattleData = $state(null);
+    let demobilizeData = $state(null);
 
     function parseUrlCoordinates() {
         if (!browser || !$page.url) return null;
@@ -611,32 +615,27 @@
         
         // Then route to the appropriate handler
         if (action === 'mobilize') {
-            selectedTile = tile;
-            openMobilizePopup();
+            openMobilizePopup(tile);
             return;
         }
         
         if (action === 'move') {
-            selectedTile = tile;
-            openMovePopup();
+            openMovePopup(tile);
             return;
         }
         
         if (action === 'attack') {
-            selectedTile = tile;
-            openAttackPopup();
+            openAttackPopup(tile);
             return;
         }
         
         if (action === 'joinBattle') {
-            selectedTile = tile;
-            openJoinBattlePopup();
+            openJoinBattlePopup(tile);
             return;
         }
         
         if (action === 'demobilize') {
-            selectedTile = tile;
-            openDemobilizePopup();
+            openDemobilizePopup(tile);
             return;
         }
 
@@ -660,8 +659,9 @@
         }
     }
 
-    function openMobilizePopup() {
+    function openMobilizePopup(tile) {
         showMobilize = true;
+        mobilizeData = tile;
     }
 
     function closeMobilizePopup() {
@@ -669,8 +669,9 @@
         setHighlighted(null, null);
     }
 
-    function openMovePopup() {
+    function openMovePopup(tile) {
         showMove = true;
+        moveData = tile;
     }
 
     function closeMovePopup(complete = true, startingPathDraw = false) {
@@ -686,8 +687,9 @@
         setHighlighted(null, null);
     }
 
-    function openAttackPopup() {
+    function openAttackPopup(tile) {
         showAttack = true;
+        attackData = tile;
     }
 
     function closeAttackPopup() {
@@ -695,8 +697,9 @@
         setHighlighted(null, null);
     }
 
-    function openJoinBattlePopup() {
+    function openJoinBattlePopup(tile) {
         showJoinBattle = true;
+        joinBattleData = tile;
     }
 
     function closeJoinBattlePopup() {
@@ -704,8 +707,9 @@
         setHighlighted(null, null);
     }
 
-    function openDemobilizePopup() {
+    function openDemobilizePopup(tile) {
         showDemobilize = true;
+        demobilizeData = tile;
     }
 
     function closeDemobilizePopup() {
@@ -931,11 +935,11 @@
             <MapEntities closing={entitiesClosing} />
         {/if}
 
-        {#if detailed && selectedTile}
+        {#if detailed && $highlightedStore}
             <Details 
-                x={selectedTile.x} 
-                y={selectedTile.y} 
-                terrain={selectedTile.biome?.name} 
+                x={$highlightedStore.x} 
+                y={$highlightedStore.y} 
+                terrain={$highlightedStore.biome?.name} 
                 onClose={() => toggleDetailsModal(false)}
                 onAction={handleAction}
             />
@@ -960,18 +964,18 @@
             <SpawnMenu onSpawn={handleSpawnComplete} />
         {/if}
 
-        {#if showMobilize && selectedTile}
+        {#if showMobilize && mobilizeData}
             <Mobilize
-                tile={selectedTile}
+                tile={mobilizeData}
                 onClose={closeMobilizePopup}
                 onMobilize={handleMobilize}
             />
         {/if}
 
-        {#if showMove && selectedTile}
+        {#if showMove && moveData}
             <div class="move-dialog-container">
                 <Move
-                    tile={selectedTile}
+                    tile={moveData}
                     onClose={closeMovePopup}
                     onMove={handleMove}
                     onPathDrawingStart={handlePathDrawingStart}
@@ -981,25 +985,25 @@
             </div>
         {/if}
 
-        {#if showAttack && selectedTile}
+        {#if showAttack && attackData}
             <AttackGroups
-                tile={selectedTile}
+                tile={attackData}
                 onClose={closeAttackPopup}
                 onAttack={handleAttack}
             />
         {/if}
 
-        {#if showJoinBattle && selectedTile}
+        {#if showJoinBattle && joinBattleData}
             <JoinBattle
-                tile={selectedTile}
+                tile={joinBattleData}
                 onClose={closeJoinBattlePopup}
                 onJoinBattle={handleJoinBattle}
             />
         {/if}
 
-        {#if showDemobilize && selectedTile}
+        {#if showDemobilize && demobilizeData}
             <Demobilize
-                tile={selectedTile}
+                tile={demobilizeData}
                 onClose={closeDemobilizePopup}
                 onDemobilize={handleDemobilize}
             />
