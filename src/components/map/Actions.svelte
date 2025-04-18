@@ -16,6 +16,28 @@
     );
   }
   
+  // Function to check if player is available (not in a demobilising group)
+  function isPlayerAvailableOnTile(tile, playerId) {
+    if (!tile.players || !tile.players.some(p => p.id === playerId)) {
+      return false; // Player not on tile at all
+    }
+    
+    // Check if the player is in any demobilising group
+    if (tile.groups) {
+      const playerInDemobilisingGroup = tile.groups.some(group => 
+        group.status === 'demobilising' && 
+        group.owner === playerId && 
+        group.units && 
+        group.units.some(unit => unit.id === playerId && unit.type === 'player')
+      );
+      
+      // Player is only available if they're not in a demobilising group
+      return !playerInDemobilisingGroup;
+    }
+    
+    return true; // Player is on tile and not in any group
+  }
+  
   // Function to check if there are valid units that can be mobilized at this location
   function hasValidUnitsForMobilization(tile, playerId) {
     if (!tile || !tile.groups) return false;
@@ -43,6 +65,13 @@
       group.status !== 'moving' &&
       group.status !== 'demobilising' &&
       group.status !== 'fighting'
+    );
+  }
+  
+  // Function to check if there are idle groups owned by the player
+  function hasIdleGroups(tile, playerId) {
+    return tile.groups && tile.groups.some(group => 
+      group.owner === playerId && group.status === 'idle'
     );
   }
   
@@ -127,12 +156,13 @@
       return;
     }
     
-    // Only show "move" action if the tile has groups owned by the player
-    const hasOwnedGroups = tile.groups && tile.groups.some(group => 
-      group.owner === playerId && group.status === 'idle'
-    );
+    // Check if there's a group currently demobilising (only affects mobilize action)
+    const hasDemobilisingGroup = hasGroupWithStatus(tile, playerId, 'demobilising');
     
-    if (hasOwnedGroups) {
+    // Only show "move" and "gather" actions if the tile has idle groups owned by the player
+    const hasOwnedIdleGroups = hasIdleGroups(tile, playerId);
+    
+    if (hasOwnedIdleGroups) {
       availableActions.push({
         id: 'move',
         label: 'Move Group',
@@ -149,16 +179,13 @@
       });
     }
     
-    // Check if there's a group currently demobilising
-    const hasDemobilisingGroup = hasGroupWithStatus(tile, playerId, 'demobilising');
-    
-    // UPDATED: Only show mobilize if no group is demobilising and either:
-    // 1. The player is present at the tile, OR
+    // Only show mobilize if no group is demobilising and either:
+    // 1. The player is present AND available (not in a demobilising group) at the tile, OR
     // 2. There are valid units to mobilize
-    const playerOnTile = tile.players && tile.players.some(p => p.id === playerId);
+    const playerAvailableOnTile = isPlayerAvailableOnTile(tile, playerId);
     const hasValidUnits = hasValidUnitsForMobilization(tile, playerId);
     
-    if (!hasDemobilisingGroup && (playerOnTile || hasValidUnits)) {
+    if (!hasDemobilisingGroup && (playerAvailableOnTile || hasValidUnits)) {
       availableActions.push({
         id: 'mobilize',
         label: 'Mobilize Forces',
