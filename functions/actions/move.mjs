@@ -25,8 +25,18 @@ export const moveGroup = onCall({ maxInstances: 10 }, async (request) => {
     throw new HttpsError("unauthenticated", "User must be authenticated");
   }
   
-  if (!groupId || fromX === undefined || fromY === undefined || toX === undefined || toY === undefined) {
-    throw new HttpsError("invalid-argument", "Missing required parameters");
+  logger.info(`User ${userId} attempting to move group ${groupId} from (${fromX},${fromY}) to (${toX},${toY}) in world ${worldId}`);
+  
+  if (!groupId) {
+    throw new HttpsError("invalid-argument", "Missing groupId parameter");
+  }
+  
+  if (fromX === undefined || fromY === undefined) {
+    throw new HttpsError("invalid-argument", "Missing source coordinates");
+  }
+  
+  if (toX === undefined || toY === undefined) {
+    throw new HttpsError("invalid-argument", "Missing target coordinates");
   }
   
   try {
@@ -45,36 +55,48 @@ export const moveGroup = onCall({ maxInstances: 10 }, async (request) => {
     const groupData = groupSnapshot.val();
     
     if (!groupData) {
+      logger.error(`Group not found: ${groupId} at location (${fromX},${fromY}) in chunk ${chunkKey}`);
       throw new HttpsError("not-found", "Group not found at this location");
     }
     
+    logger.info(`Group found: ${JSON.stringify(groupData)}`);
+    
     // Verify ownership
     if (groupData.owner !== userId) {
+      logger.error(`Permission denied: User ${userId} does not own group ${groupId} (owner: ${groupData.owner})`);
       throw new HttpsError("permission-denied", "You can only move your own groups");
     }
     
     // Verify group status is appropriate for movement
     if (groupData.status !== 'idle') {
+      logger.error(`Group cannot move: Group ${groupId} has status ${groupData.status}`);
       throw new HttpsError("failed-precondition", `Group cannot move while in ${groupData.status} state`);
     }
     
     // Validate the path
-    const movementPath = path || [];
-    if (movementPath.length < 2) {
-      // If no valid path provided, create a basic path from start to end
-      movementPath.push({ x: fromX, y: fromY });
-      movementPath.push({ x: toX, y: toY });
+    let movementPath = path || [];
+    if (!Array.isArray(movementPath) || movementPath.length < 1) {
+      // Create a simple path from source to destination
+      movementPath = [
+        { x: fromX, y: fromY }, 
+        { x: toX, y: toY }
+      ];
+      logger.info(`Created default path: ${JSON.stringify(movementPath)}`);
     }
     
-    // Validate the path starts from correct location
+    // Validate the first point in path matches starting position
     if (movementPath[0].x !== fromX || movementPath[0].y !== fromY) {
-      throw new HttpsError("invalid-argument", "Path must start from group's current location");
+      logger.error(`Invalid path: First point ${JSON.stringify(movementPath[0])} doesn't match start position (${fromX},${fromY})`);
+      // Fix the path by prepending the starting position
+      movementPath.unshift({ x: fromX, y: fromY });
     }
     
-    // Validate the path ends at the specified target
-    if (movementPath[movementPath.length - 1].x !== toX || 
-        movementPath[movementPath.length - 1].y !== toY) {
-      throw new HttpsError("invalid-argument", "Path must end at the specified target location");
+    // Validate the last point in path matches destination
+    const lastPoint = movementPath[movementPath.length - 1];
+    if (lastPoint.x !== toX || lastPoint.y !== toY) {
+      logger.error(`Invalid path: Last point ${JSON.stringify(lastPoint)} doesn't match destination (${toX},${toY})`);
+      // Fix the path by appending the destination
+      movementPath.push({ x: toX, y: toY });
     }
     
     // Get world info to calculate movement speed
@@ -92,28 +114,42 @@ export const moveGroup = onCall({ maxInstances: 10 }, async (request) => {
     const moveInterval = Math.round(60000 / worldSpeed);  // 1 minute adjusted for world speed
     const nextMoveTime = now + moveInterval;
     
-    // Update group with movement data
-    await groupRef.update({
-      status: 'moving',
-      targetX: toX,
-      targetY: toY,
-      moveStarted: now,
-      moveSpeed: actualSpeed,
-      lastUpdated: now,
-      movementPath: movementPath,
-      pathIndex: 0,
-      nextMoveTime: nextMoveTime
-    });
+    logger.info(`Updating group ${groupId} for movement to (${toX},${toY}) with path of ${movementPath.length} points`);
     
-    return {
-      success: true,
-      message: "Group movement started",
-      nextMoveTime: nextMoveTime,
-      path: movementPath
-    };
+    try {
+      // Update group with movement data
+      await groupRef.update({
+        status: 'moving',
+        targetX: toX,
+        targetY: toY,
+        moveStarted: now,
+        moveSpeed: actualSpeed,
+        lastUpdated: now,
+        movementPath: movementPath,
+        pathIndex: 0,
+        nextMoveTime: nextMoveTime
+      });
+      
+      logger.info(`Successfully started movement for group ${groupId}`);
+      
+      return {
+        success: true,
+        message: "Group movement started",
+        nextMoveTime: nextMoveTime,
+        path: movementPath
+      };
+    } catch (dbError) {
+      logger.error(`Database update failed: ${dbError.message}`, dbError);
+      throw new HttpsError("internal", "Failed to update group data", dbError);
+    }
     
   } catch (error) {
-    logger.error("Error moving group:", error);
+    // Check if this is already an HttpsError
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+    
+    logger.error(`Error moving group:`, error);
     throw new HttpsError("internal", "Failed to move group", error);
   }
 });
