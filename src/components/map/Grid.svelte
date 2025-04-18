@@ -1008,50 +1008,51 @@
             class:has-players={cell.players?.length > 0}
             class:has-items={cell.items?.length > 0}
             class:player-position={isPlayerPosition(cell.x, cell.y)}
-            class:current-player-tile={isCurrentPlayerTile}
+            style="background-color: {cell.color || 'var(--terrain-color)'}"
             onmouseenter={() => handleTileHover(cell)}
-            role="gridcell"
-            tabindex="-1"
-            aria-label="Tile {isPlayerPosition(cell.x, cell.y) ? 'containing your position' : ''}{isCurrentPlayerTile ? ', your character' : ''}{cell.structure ? ', has ' + (cell.structure.type || 'structure') : ''}{cell.groups?.length ? ', has ' + cell.groups.length + ' groups' : ''}{cell.players?.length ? ', has ' + cell.players.length + ' players' : ''}{cell.items?.length ? ', has ' + cell.items.length + ' items' : ''}"
-            aria-current={cell.isCenter ? "location" : undefined}
-            style="
-              background-color: {cell.color};
-              animation-delay: {!introduced && cell.isCenter ? 0 : (!introduced ? 0.05 * distance : 0)}s;
-              {cell.terrain?.rarity && cell.terrain.rarity !== 'common' ? `box-shadow: inset 0 0 ${getRarityGlowSize(cell.terrain.rarity)} ${getRarityColor(cell.terrain.rarity)};` : ''}
-              {highestRarityItem ? `box-shadow: inset 0 0 ${getRarityGlowSize(highestRarityItem.rarity)} ${getRarityColor(highestRarityItem.rarity)};` : ''}
-            "
+            aria-label={`Coordinates ${cell.x},${cell.y}`}
           >
-            {#if cell.structure && cell.structure.type === 'spawn'}
-              <div class="spawn-icon-container">
-                <Torch size="85%" extraClass="spawn-icon" />
-              </div>
-            {:else if cell.structure}
-              <div class="structure-icon-container {cell.structure.type}-container">
-                <Structure size="75%" extraClass="{cell.structure.type}-icon structure-icon" />
+            <!-- Add structure icons -->
+            {#if cell.structure}
+              <div class="structure-icon-container">
+                {#if cell.structure.type === 'spawn'}
+                  <Torch size="70%" extraClass="spawn-icon" />
+                {:else}
+                  <Structure size="70%" extraClass="structure-icon {cell.structure.type}-icon" />
+                {/if}
               </div>
             {/if}
-
+            
+            <!-- Add player position indicator if this is the current player's location -->
             {#if isPlayerPosition(cell.x, cell.y)}
-              <div class="entity-indicator player-position-indicator" aria-hidden="true"></div>
+              <div class="player-position-indicator"></div>
             {/if}
-
-            <!-- Entity indicators container -->
+            
+            <!-- Add entity indicators container -->
             <div class="entity-indicators">
               {#if cell.players?.length > 0}
-                <div class="entity-indicator player-indicator" class:current-player-indicator={isCurrentPlayerTile} aria-hidden="true">
-                  <span class="count">{cell.players.length}</span>
+                <div class="entity-indicator player-indicator" class:current-player-indicator={isCurrentPlayerTile}>
+                  {#if cell.players.length > 1}
+                    <span class="count">{cell.players.length}</span>
+                  {/if}
                 </div>
               {/if}
-
+              
               {#if cell.groups?.length > 0}
-                <div class="entity-indicator group-indicator" aria-hidden="true">
-                  <span class="count">{cell.groups.length}</span>
+                <div class="entity-indicator group-indicator">
+                  {#if cell.groups.length > 1}
+                    <span class="count">{cell.groups.length}</span>
+                  {/if}
                 </div>
               {/if}
               
               {#if cell.items?.length > 0}
-                <div class="entity-indicator item-indicator {highestRarityItem?.rarity || 'common'}" aria-hidden="true">
-                  <span class="count">{cell.items.length}</span>
+                <div class="entity-indicator item-indicator {highestRarityItem?.rarity || 'common'}" 
+                  style="--glow-size: {getRarityGlowSize(highestRarityItem?.rarity)}; 
+                         --glow-color: {getRarityColor(highestRarityItem?.rarity)}">
+                  {#if cell.items.length > 1}
+                    <span class="count">{cell.items.length}</span>
+                  {/if}
                 </div>
               {/if}
             </div>
@@ -1403,7 +1404,7 @@
     box-shadow: 0 0 .25em rgba(0, 255, 255, 0.8);
     border-radius: 50%;
   }
-
+  
   .spawn-indicator {
     background: rgba(0, 255, 255, 0.9);
     box-shadow: 0 0 .25em rgba(0, 255, 255, 0.8);

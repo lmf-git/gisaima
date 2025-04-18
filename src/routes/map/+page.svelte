@@ -484,11 +484,8 @@
             const storedEntitiesVisibility = localStorage.getItem('mapEntities');
             showEntities = storedEntitiesVisibility !== 'false';
             
-            // Only update UI visibility state, data loading is always expanded
-            map.update(state => ({
-                ...state,
-                minimap: showMinimap
-            }));
+            // IMPORTANT: Don't update map's internal minimap state based on UI preferences
+            // Keep data loading consistent regardless of UI state
         }
     });
     
@@ -498,10 +495,8 @@
             setTimeout(() => {
                 showMinimap = false;
                 minimapClosing = false;
-                map.update(state => ({ 
-                    ...state, 
-                    minimap: false
-                }));
+                // IMPORTANT: Don't update the map's internal minimap state when closing UI
+                // This ensures entities keep loading with expanded area
                 if (browser) {
                     localStorage.setItem('minimap', 'false');
                 }
@@ -519,10 +514,8 @@
             }
             
             showMinimap = true;
-            map.update(state => ({ 
-                ...state, 
-                minimap: true
-            }));
+            // UI minimap state is set to true, but we shouldn't need to update map store
+            // as it should always be loading expanded data regardless
             if (browser) {
                 localStorage.setItem('minimap', 'true');
             }

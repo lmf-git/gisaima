@@ -152,7 +152,7 @@ export function isInternalUrlChange() {
   return isInternalUrlUpdate;
 }
 
-// Improved function to process chunk data with proper entity cleanup
+// Simplified function to process chunk data with proper update sequencing
 function processChunkData(data = {}, chunkKey) {
   // Structure for batch entity updates
   const updates = {
@@ -176,7 +176,7 @@ function processChunkData(data = {}, chunkKey) {
     const [x, y] = tileKey.split(',').map(Number);
     const fullTileKey = `${x},${y}`;
     
-    // Process structure
+    // Process structure - prioritize these
     if (tileData.structure) {
       updates.structure[fullTileKey] = { ...tileData.structure, x, y };
       entitiesChanged = true;
@@ -215,7 +215,7 @@ function processChunkData(data = {}, chunkKey) {
     }
   });
   
-  // Only update if entities changed
+  // Only update if entities changed - do it in one atomic update
   if (entitiesChanged) {
     entities.update(current => {
       const newState = {
@@ -225,9 +225,10 @@ function processChunkData(data = {}, chunkKey) {
         items: { ...current.items }
       };
       
+      // Process all entity types in one update
+      
       // Clean up missing groups in this chunk
       Object.keys(current.groups).forEach(key => {
-        // Only check coordinates within this chunk
         if (getChunkKey(parseInt(key.split(',')[0]), parseInt(key.split(',')[1])) === chunkKey) {
           if (!validGroupKeys.has(key)) {
             newState.groups[key] = [];
@@ -237,7 +238,6 @@ function processChunkData(data = {}, chunkKey) {
       
       // Clean up missing players in this chunk
       Object.keys(current.players).forEach(key => {
-        // Only check coordinates within this chunk
         if (getChunkKey(parseInt(key.split(',')[0]), parseInt(key.split(',')[1])) === chunkKey) {
           if (!validPlayerKeys.has(key)) {
             newState.players[key] = [];
@@ -245,7 +245,7 @@ function processChunkData(data = {}, chunkKey) {
         }
       });
       
-      // Handle updates
+      // Handle updates for all entity types
       Object.entries(updates.players).forEach(([key, value]) => {
         newState.players[key] = value;
       });
@@ -263,7 +263,7 @@ function processChunkData(data = {}, chunkKey) {
   }
 }
 
-// Modify the chunks derived store to always use expanded view
+// Prioritize loading the most visible chunks first and ensure immediate rendering
 export const chunks = derived(
   [map],
   ([$map], set) => {
@@ -272,9 +272,9 @@ export const chunks = derived(
     // Skip if map is not ready
     if (!$map.ready) return set(new Set());
     
-    // Calculate visible area chunk bounds
-    // Always use expanded view for data loading, regardless of UI visibility
-    const expandedFactor = 1; // Always use expanded factor of 1
+    // IMPORTANT FIX: Always load expanded chunks regardless of minimap state
+    // This ensures entities in main view are loaded properly
+    const expandedFactor = 1; // Always use expanded factor
     const colsRadius = Math.ceil($map.cols * (1 + expandedFactor * (EXPANDED_COLS_FACTOR - 1)) / 2);
     const rowsRadius = Math.ceil($map.rows * (1 + expandedFactor * (EXPANDED_ROWS_FACTOR - 1)) / 2);
     
@@ -299,29 +299,49 @@ export const chunks = derived(
     const chunksToRemove = new Set(chunkSubscriptions.keys());
     const visibleChunks = new Set();
     
-    // Process visible chunks
+    // Create an array of chunks ordered by distance from center
+    const chunksToLoad = [];
     for (let y = minChunkY; y <= maxChunkY; y++) {
       for (let x = minChunkX; x <= maxChunkX; x++) {
         const chunkKey = `${x},${y}`;
         visibleChunks.add(chunkKey);
         
-        // Keep if already active, add if new
+        // Calculate distance from target chunk
+        const targetChunkX = Math.floor($map.target.x / CHUNK_SIZE);
+        const targetChunkY = Math.floor($map.target.y / CHUNK_SIZE);
+        const distSq = (x - targetChunkX) ** 2 + (y - targetChunkY) ** 2;
+        
+        // If already subscribed, keep it
         if (chunkSubscriptions.has(chunkKey)) {
           chunksToRemove.delete(chunkKey);
         } else {
-          // Subscribe with updated path using worldId
-          const chunkRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}`);
-          const unsubscribe = onValue(chunkRef, snapshot => {
-            if (snapshot.exists()) {
-              const data = snapshot.val();
-              // Pass chunkKey to processChunkData
-              processChunkData(data, chunkKey);
-            }
+          // Otherwise queue for loading
+          chunksToLoad.push({
+            x, y, chunkKey, distSq,
+            isCenter: x === targetChunkX && y === targetChunkY
           });
-          
-          chunkSubscriptions.set(chunkKey, unsubscribe);
         }
       }
+    }
+    
+    // Sort chunks by distance, with center chunk first
+    chunksToLoad.sort((a, b) => {
+      if (a.isCenter) return -1;
+      if (b.isCenter) return 1;
+      return a.distSq - b.distSq;
+    });
+
+    // Process chunks in order of priority
+    for (const chunk of chunksToLoad) {
+      const chunkRef = ref(db, `worlds/${worldId}/chunks/${chunk.chunkKey}`);
+      const unsubscribe = onValue(chunkRef, snapshot => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          processChunkData(data, chunk.chunkKey);
+        }
+      });
+      
+      chunkSubscriptions.set(chunk.chunkKey, unsubscribe);
     }
     
     // Unsubscribe from any chunks that are no longer visible
@@ -337,7 +357,7 @@ export const chunks = derived(
           terrain.clearChunkFromCache(chunkX, chunkY, CHUNK_SIZE);
         }
         
-        // Also clear entity data for this chunk
+        // Clear entity data for this chunk
         entities.update(current => {
           const newState = {
             structure: { ...current.structure },
@@ -400,10 +420,10 @@ export const coordinates = derived(
       return set([]);
     }
     
-    // Always use expanded view for data loading, regardless of UI minimap visibility
-    const useExpanded = true; // This ensures we always load the expanded view data
-    const gridCols = useExpanded ? Math.floor($map.cols * EXPANDED_COLS_FACTOR) : $map.cols;
-    const gridRows = useExpanded ? Math.floor($map.rows * EXPANDED_ROWS_FACTOR) : $map.rows;
+    // IMPORTANT FIX: Always calculate the expanded grid regardless of minimap UI state
+    // This ensures entities are always loaded and available
+    const gridCols = Math.floor($map.cols * EXPANDED_COLS_FACTOR);
+    const gridRows = Math.floor($map.rows * EXPANDED_ROWS_FACTOR);
     
     const viewportCenterX = Math.floor(gridCols / 2);
     const viewportCenterY = Math.floor(gridRows / 2);
@@ -414,7 +434,7 @@ export const coordinates = derived(
     const highlightedX = $highlightedCoords?.x;
     const highlightedY = $highlightedCoords?.y;
 
-    // Precompute main view boundaries
+    // Calculate main view boundaries - use standard grid size for display purposes
     const mainViewMinX = viewportCenterX - Math.floor($map.cols / 2);
     const mainViewMaxX = viewportCenterX + Math.floor($map.cols / 2);
     const mainViewMinY = viewportCenterY - Math.floor($map.rows / 2);
@@ -433,7 +453,8 @@ export const coordinates = derived(
           Math.pow(globalY - targetY, 2)
         );
         
-        const isInMainView = !useExpanded || (
+        // IMPORTANT FIX: Keep isInMainView calculation consistent regardless of minimap state
+        const isInMainView = (
           x >= mainViewMinX && x <= mainViewMaxX && 
           y >= mainViewMinY && y <= mainViewMaxY
         );
@@ -441,10 +462,17 @@ export const coordinates = derived(
         const chunkKey = getChunkKey(globalX, globalY);
         const terrainData = terrain.getTerrainData(globalX, globalY);
         
+        // Always include entity data regardless of minimap state
         const structure = $entities.structure[locationKey];
         const groups = $entities.groups[locationKey] || [];
         const players = $entities.players[locationKey] || [];
-        const items = $entities.items[locationKey] || []; // Add items from entities store
+        const items = $entities.items[locationKey] || [];
+        
+        // Add logging for debugging
+        if (isInMainView && (structure || groups.length > 0 || players.length > 0 || items.length > 0)) {
+          console.debug(`Tile ${globalX},${globalY} has entities:`, 
+            { structure: !!structure, groups: groups.length, players: players.length, items: items.length });
+        }
         
         result.push({
           x: globalX,
@@ -458,9 +486,9 @@ export const coordinates = derived(
           structure,
           groups,
           players,
-          items,  // Add items to the result
+          items,
           terrain: terrainData,
-          distance // Add pre-calculated distance
+          distance
         });
       }
     }

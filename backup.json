@@ -1,8 +1,241 @@
 {
+  "players": {
+    "6F1E17cgojM8nlfcl7KaOZzNV4x2": {
+      "worlds": {
+        "ancient-lands": {
+          "joined": 1744966221062,
+          "lastLocation": {
+            "timestamp": 1744966224489,
+            "x": -4,
+            "y": 6
+          },
+          "lastSpawn": "0:0:-4:6",
+          "race": "elf",
+          "spawned": true
+        }
+      }
+    },
+    "83KyZzLRIYZK8tAMdXKhKvFokxw1": {
+      "worlds": {
+        "ancient-lands": {
+          "joined": 1744966277178,
+          "lastLocation": {
+            "timestamp": 1744966280844,
+            "x": 10,
+            "y": 8
+          },
+          "lastSpawn": "1:0:10:8",
+          "race": "fairy",
+          "spawned": true
+        }
+      }
+    },
+    "87chk0U5VOUJiKGsthQZwOqYdxW2": {
+      "worlds": {
+        "ancient-lands": {
+          "inGroup": "group_87chk0U5VOUJiKGsthQZwOqYdxW2_1744960959191",
+          "joined": 1744952476453,
+          "lastGroupJoin": 1744960959191,
+          "lastLocation": {
+            "timestamp": 1744964821951,
+            "x": 3,
+            "y": 7
+          },
+          "lastSpawn": "0:0:5:5",
+          "race": "human",
+          "spawned": true
+        }
+      }
+    },
+    "HsA5O4WJaBNxIMQQKTMwrkLb4aA2": {
+      "worlds": {
+        "ancient-lands": {
+          "inGroup": "group_HsA5O4WJaBNxIMQQKTMwrkLb4aA2_1744959989878",
+          "joined": 1744959950202,
+          "lastGroupJoin": 1744959989878,
+          "lastLocation": {
+            "timestamp": 1744965901997,
+            "x": -4,
+            "y": 6
+          },
+          "lastSpawn": "0:0:-4:6",
+          "race": "elf",
+          "spawned": true
+        }
+      }
+    },
+    "TdwM6R74a5OJGnLXkfOZ8LfJhxq2": {
+      "worlds": {
+        "ancient-lands": {
+          "joined": 1744964684506,
+          "lastLocation": {
+            "timestamp": 1744964695603,
+            "x": 10,
+            "y": 8
+          },
+          "lastSpawn": "1:0:10:8",
+          "race": "fairy",
+          "spawned": true
+        }
+      }
+    },
+    "Wf5MVwH80SRurJpjRgiPw8v5YMx1": {
+      "worlds": {
+        "ancient-lands": {
+          "joined": 1744952965683,
+          "lastLocation": {
+            "timestamp": 1744952972279,
+            "x": -4,
+            "y": 6
+          },
+          "lastSpawn": "0:0:-4:6",
+          "race": "elf",
+          "spawned": true
+        }
+      }
+    },
+    "lJZoOl3CPLTf8uIXjcvsDZlACad2": {
+      "worlds": {
+        "ancient-lands": {
+          "inGroup": "group_lJZoOl3CPLTf8uIXjcvsDZlACad2_1745002240479",
+          "joined": 1745002074878,
+          "lastGroupJoin": 1745002240479,
+          "lastLocation": {
+            "timestamp": 1745003701931,
+            "x": 1,
+            "y": 5
+          },
+          "lastSpawn": "1:0:15:-3",
+          "race": "goblin",
+          "spawned": true
+        }
+      }
+    },
+    "qbLuphQgl4gii9gqKbxz68dZmvx2": {
+      "worlds": {
+        "ancient-lands": {
+          "joined": 1744966555220,
+          "lastLocation": {
+            "timestamp": 1744966558769,
+            "x": 5,
+            "y": 5
+          },
+          "lastSpawn": "0:0:5:5",
+          "race": "human",
+          "spawned": true
+        }
+      }
+    },
+    "tCqV66B8UsgPxl10hDvcdZI1NTn1": {
+      "worlds": {
+        "ancient-lands": {
+          "joined": 1744981143119,
+          "lastLocation": {
+            "timestamp": 1744981166189,
+            "x": 15,
+            "y": -3
+          },
+          "lastSpawn": "1:0:15:-3",
+          "race": "goblin",
+          "spawned": true
+        }
+      }
+    }
+  },
   "worlds": {
     "ancient-lands": {
       "chunks": {
+        "-1,0": {
+          "-4,6": {
+            "groups": {
+              "group_HsA5O4WJaBNxIMQQKTMwrkLb4aA2_1744959989878": {
+                "created": 1744959989878,
+                "id": "group_HsA5O4WJaBNxIMQQKTMwrkLb4aA2_1744959989878",
+                "lastProcessed": 1744959989878,
+                "lastUpdated": 1744965901997,
+                "moveSpeed": 1,
+                "moveStarted": 1744965693595,
+                "movementPath": [
+                  {
+                    "x": -6,
+                    "y": 6
+                  },
+                  {
+                    "x": -5,
+                    "y": 6
+                  },
+                  {
+                    "x": -4,
+                    "y": 6
+                  }
+                ],
+                "name": "New Force",
+                "nextMoveTime": 1744965961997,
+                "owner": "HsA5O4WJaBNxIMQQKTMwrkLb4aA2",
+                "pathIndex": 2,
+                "race": "elf",
+                "status": "idle",
+                "targetX": -4,
+                "targetY": 6,
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "HsA5O4WJaBNxIMQQKTMwrkLb4aA2",
+                    "lastUpdated": 1744959989878,
+                    "name": "Guest HsA5",
+                    "race": "elf",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": -4,
+                "y": 6
+              }
+            },
+            "players": {
+              "0": {
+                "displayName": "Player",
+                "id": "Wf5MVwH80SRurJpjRgiPw8v5YMx1",
+                "lastActive": 1744952972489,
+                "race": "elf",
+                "uid": "Wf5MVwH80SRurJpjRgiPw8v5YMx1",
+                "x": -4,
+                "y": 6
+              },
+              "6F1E17cgojM8nlfcl7KaOZzNV4x2": {
+                "displayName": "Player",
+                "lastActive": 1744966224815,
+                "race": "elf",
+                "uid": "6F1E17cgojM8nlfcl7KaOZzNV4x2"
+              }
+            }
+          }
+        },
+        "0,-1": {
+          "15,-3": {
+            "players": [
+              {
+                "displayName": "Player",
+                "id": "tCqV66B8UsgPxl10hDvcdZI1NTn1",
+                "lastActive": 1744981166397,
+                "race": "goblin",
+                "uid": "tCqV66B8UsgPxl10hDvcdZI1NTn1",
+                "x": 15,
+                "y": -3
+              }
+            ]
+          }
+        },
         "0,0": {
+          "-4,6": {
+            "structure": {
+              "description": "An elven city built around the oldest living trees in the realm",
+              "faction": "elf",
+              "id": "structure_al_elf_spawn",
+              "name": "Ancient Arborium",
+              "type": "spawn"
+            }
+          },
           "0,0": {
             "structure": {
               "capacity": 60,
@@ -51,397 +284,285 @@
               "type": "stronghold"
             }
           },
-          "5,5": {
-            "structure": {
-              "id": "structure_al_human_spawn",
-              "type": "spawn",
-              "name": "Stoneguard Citadel",
-              "faction": "human",
-              "description": "A rugged frontier settlement where hardy humans carve out a living"
+          "1,5": {
+            "groups": {
+              "group_lJZoOl3CPLTf8uIXjcvsDZlACad2_1745002240479": {
+                "created": 1745002240479,
+                "id": "group_lJZoOl3CPLTf8uIXjcvsDZlACad2_1745002240479",
+                "lastProcessed": 1745002240479,
+                "lastUpdated": 1745003701931,
+                "moveSpeed": 1,
+                "moveStarted": 1745002298525,
+                "movementPath": [
+                  {
+                    "x": 15,
+                    "y": -3
+                  },
+                  {
+                    "x": 14,
+                    "y": -2
+                  },
+                  {
+                    "x": 13,
+                    "y": -2
+                  },
+                  {
+                    "x": 12,
+                    "y": -1
+                  },
+                  {
+                    "x": 11,
+                    "y": -1
+                  },
+                  {
+                    "x": 10,
+                    "y": 0
+                  },
+                  {
+                    "x": 9,
+                    "y": 0
+                  },
+                  {
+                    "x": 8,
+                    "y": 1
+                  },
+                  {
+                    "x": 7,
+                    "y": 2
+                  },
+                  {
+                    "x": 6,
+                    "y": 2
+                  },
+                  {
+                    "x": 5,
+                    "y": 3
+                  },
+                  {
+                    "x": 4,
+                    "y": 3
+                  },
+                  {
+                    "x": 3,
+                    "y": 4
+                  },
+                  {
+                    "x": 2,
+                    "y": 4
+                  },
+                  {
+                    "x": 1,
+                    "y": 5
+                  }
+                ],
+                "name": "New Force",
+                "nextMoveTime": 1745003761931,
+                "owner": "lJZoOl3CPLTf8uIXjcvsDZlACad2",
+                "pathIndex": 14,
+                "race": "goblin",
+                "status": "idle",
+                "targetX": 1,
+                "targetY": 5,
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "lJZoOl3CPLTf8uIXjcvsDZlACad2",
+                    "lastUpdated": 1745002240479,
+                    "name": "Guest lJZo",
+                    "race": "goblin",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 1,
+                "y": 5
+              }
             }
           },
-          "-4,6": {
+          "10,8": {
+            "players": {
+              "83KyZzLRIYZK8tAMdXKhKvFokxw1": {
+                "displayName": "Player",
+                "lastActive": 1744966281129,
+                "race": "fairy",
+                "uid": "83KyZzLRIYZK8tAMdXKhKvFokxw1"
+              },
+              "TdwM6R74a5OJGnLXkfOZ8LfJhxq2": {
+                "displayName": "Player",
+                "lastActive": 1744964695984,
+                "race": "fairy",
+                "uid": "TdwM6R74a5OJGnLXkfOZ8LfJhxq2"
+              }
+            }
+          },
+          "3,7": {
+            "groups": {
+              "group_87chk0U5VOUJiKGsthQZwOqYdxW2_1744960959191": {
+                "created": 1744960959191,
+                "id": "group_87chk0U5VOUJiKGsthQZwOqYdxW2_1744960959191",
+                "lastProcessed": 1744960959191,
+                "lastUpdated": 1744964821951,
+                "moveSpeed": 1,
+                "moveStarted": 1744964618960,
+                "movementPath": [
+                  {
+                    "x": 5,
+                    "y": 5
+                  },
+                  {
+                    "x": 4,
+                    "y": 6
+                  },
+                  {
+                    "x": 3,
+                    "y": 7
+                  }
+                ],
+                "name": "New Force",
+                "nextMoveTime": 1744964881951,
+                "owner": "87chk0U5VOUJiKGsthQZwOqYdxW2",
+                "pathIndex": 2,
+                "race": "human",
+                "status": "idle",
+                "targetX": 3,
+                "targetY": 7,
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "87chk0U5VOUJiKGsthQZwOqYdxW2",
+                    "lastUpdated": 1744960959191,
+                    "name": "Guest 87ch",
+                    "race": "human",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 3,
+                "y": 7
+              }
+            }
+          },
+          "5,5": {
+            "groups": {
+              "group_1fW63Y2zsGgmR7P0bKihLTiQk1B3_1744950815588": {
+                "created": 1744950815588,
+                "id": "group_1fW63Y2zsGgmR7P0bKihLTiQk1B3_1744950815588",
+                "lastProcessed": 1744950815588,
+                "lastUpdated": 1744951020990,
+                "name": "New Force",
+                "owner": "1fW63Y2zsGgmR7P0bKihLTiQk1B3",
+                "race": "human",
+                "readyAt": 1744951000000,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "1fW63Y2zsGgmR7P0bKihLTiQk1B3",
+                    "lastUpdated": 1744950815588,
+                    "name": "Guest 1fW6",
+                    "race": "human",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 5,
+                "y": 5
+              },
+              "group_YzkDqvO8SuTEL5C5vZ2xqcElfc82_1744950500595": {
+                "created": 1744950500595,
+                "id": "group_YzkDqvO8SuTEL5C5vZ2xqcElfc82_1744950500595",
+                "lastProcessed": 1744950500595,
+                "lastUpdated": 1744950785106,
+                "name": "New Force",
+                "owner": "YzkDqvO8SuTEL5C5vZ2xqcElfc82",
+                "race": "human",
+                "readyAt": 1744950750000,
+                "status": "idle",
+                "unitCount": 1,
+                "units": [
+                  {
+                    "id": "YzkDqvO8SuTEL5C5vZ2xqcElfc82",
+                    "lastUpdated": 1744950500595,
+                    "name": "Guest YzkD",
+                    "race": "human",
+                    "strength": 10,
+                    "type": "player"
+                  }
+                ],
+                "x": 5,
+                "y": 5
+              }
+            },
+            "players": {
+              "0": {
+                "displayName": "Player",
+                "id": "0",
+                "lastActive": 1744949641420,
+                "race": "human",
+                "uid": "VeOX6ROsNfbmepxAJHauCZvtXvv2",
+                "x": 5,
+                "y": 5
+              },
+              "qbLuphQgl4gii9gqKbxz68dZmvx2": {
+                "displayName": "Player",
+                "lastActive": 1744966559048,
+                "race": "human",
+                "uid": "qbLuphQgl4gii9gqKbxz68dZmvx2"
+              }
+            },
             "structure": {
-              "id": "structure_al_elf_spawn",
-              "type": "spawn",
-              "name": "Ancient Arborium",
-              "faction": "elf",
-              "description": "An elven city built around the oldest living trees in the realm"
+              "description": "A rugged frontier settlement where hardy humans carve out a living",
+              "faction": "human",
+              "id": "structure_al_human_spawn",
+              "name": "Stoneguard Citadel",
+              "type": "spawn"
             }
           }
         },
         "1,0": {
+          "10,8": {
+            "structure": {
+              "description": "A fairy settlement where the ancient spirits still speak",
+              "faction": "fairy",
+              "id": "structure_al_fairy_spawn",
+              "name": "Whisperwind Circle",
+              "type": "spawn"
+            }
+          },
           "12,4": {
             "structure": {
-              "id": "structure_al_dwarf_spawn",
-              "type": "spawn",
-              "name": "Deepforge Stronghold",
+              "description": "The ancestral mountain home of the dwarf clans",
               "faction": "dwarf",
-              "description": "The ancestral mountain home of the dwarf clans"
+              "id": "structure_al_dwarf_spawn",
+              "name": "Deepforge Stronghold",
+              "type": "spawn"
             }
           },
           "15,-3": {
             "structure": {
-              "id": "structure_al_goblin_spawn",
-              "type": "spawn",
-              "name": "Boneridge Camp",
+              "description": "A resourceful goblin settlement built from the remains of ancient beasts",
               "faction": "goblin",
-              "description": "A resourceful goblin settlement built from the remains of ancient beasts"
-            }
-          },
-          "10,8": {
-            "structure": {
-              "id": "structure_al_fairy_spawn",
-              "type": "spawn",
-              "name": "Whisperwind Circle",
-              "faction": "fairy",
-              "description": "A fairy settlement where the ancient spirits still speak"
+              "id": "structure_al_goblin_spawn",
+              "name": "Boneridge Camp",
+              "type": "spawn"
             }
           }
         }
       },
       "info": {
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1744947360623,
+        "lastTick": 1745008681938,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",
-        "speed": 1.2
+        "speed": 1
       },
       "spawns": {
-        "0:0:5:5": "structure_al_human_spawn",
         "0:0:-4:6": "structure_al_elf_spawn",
+        "0:0:5:5": "structure_al_human_spawn",
+        "1:0:10:8": "structure_al_fairy_spawn",
         "1:0:12:4": "structure_al_dwarf_spawn",
-        "1:0:15:-3": "structure_al_goblin_spawn",
-        "1:0:10:8": "structure_al_fairy_spawn"
-      }
-    },
-    "default-world": {
-      "chunks": {
-        "0,0": {
-          "0,0": {
-            "structure": {
-              "capacity": 50,
-              "faction": "human",
-              "features": [
-                {
-                  "description": "Allows crafting of metal items and weapons",
-                  "icon": "⚒️",
-                  "name": "Blacksmith"
-                },
-                {
-                  "description": "Create potions and healing items",
-                  "icon": "🧪",
-                  "name": "Apothecary"
-                }
-              ],
-              "id": "structure_main_fort",
-              "items": [
-                {
-                  "description": "Standard iron material for crafting",
-                  "id": "item_1001",
-                  "name": "Iron Ingot",
-                  "quantity": 15,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "id": "item_1002",
-                  "name": "Healing Herbs",
-                  "quantity": 8,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "description": "A beautiful blue gemstone that radiates magical energy",
-                  "id": "item_1003",
-                  "name": "Sapphire Gem",
-                  "quantity": 2,
-                  "rarity": "rare",
-                  "type": "gem"
-                },
-                {
-                  "description": "A mysterious scroll with arcane symbols",
-                  "id": "item_1004",
-                  "name": "Ancient Scroll",
-                  "quantity": 1,
-                  "rarity": "epic",
-                  "type": "artifact"
-                },
-                {
-                  "description": "Basic tools available to all members of the settlement",
-                  "id": "item_shared_1",
-                  "isShared": true,
-                  "name": "Community Tools",
-                  "quantity": 5,
-                  "rarity": "common",
-                  "type": "tool"
-                },
-                {
-                  "description": "Community food stores",
-                  "id": "item_shared_2",
-                  "isShared": true,
-                  "name": "Settlement Food Supplies",
-                  "quantity": 20,
-                  "rarity": "common",
-                  "type": "resource"
-                }
-              ],
-              "name": "Fort Valley",
-              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
-              "ownerName": "TestPlayer",
-              "type": "fortress"
-            }
-          },
-          "1,0": {
-            "structure": {
-              "capacity": 30,
-              "faction": "human",
-              "id": "structure_outpost",
-              "items": [
-                {
-                  "description": "Contains information about nearby territories",
-                  "id": "item_3001",
-                  "name": "Scout Report",
-                  "quantity": 1,
-                  "rarity": "uncommon",
-                  "type": "quest_item"
-                },
-                {
-                  "id": "item_3002",
-                  "name": "Leather Scraps",
-                  "quantity": 12,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "description": "A torn piece of an ancient map",
-                  "id": "item_3003",
-                  "name": "Mysterious Map Fragment",
-                  "quantity": 1,
-                  "rarity": "rare",
-                  "type": "artifact"
-                }
-              ],
-              "name": "Eastern Outpost",
-              "type": "outpost"
-            }
-          },
-          "-5,3": {
-            "structure": {
-              "id": "structure_human_spawn",
-              "type": "spawn",
-              "name": "Haven Settlement",
-              "faction": "human",
-              "description": "A welcoming human settlement where new adventurers begin their journey"
-            }
-          },
-          "7,-2": {
-            "structure": {
-              "id": "structure_elf_spawn",
-              "type": "spawn",
-              "name": "Silverleaf Enclave",
-              "faction": "elf",
-              "description": "An ethereal elven outpost built among ancient trees"
-            }
-          },
-          "-3,-6": {
-            "structure": {
-              "id": "structure_dwarf_spawn",
-              "type": "spawn",
-              "name": "Iron Refuge",
-              "faction": "dwarf",
-              "description": "A sturdy dwarven settlement with entrances to vast underground halls"
-            }
-          }
-        },
-        "0,1": {
-          "0,5": {
-            "structure": {
-              "capacity": 20,
-              "faction": "human",
-              "id": "structure_watchtower",
-              "items": [
-                {
-                  "description": "Used for long-distance observation",
-                  "id": "item_4001",
-                  "name": "Spyglass",
-                  "quantity": 1,
-                  "rarity": "uncommon",
-                  "type": "tool"
-                },
-                {
-                  "id": "item_4002",
-                  "name": "Signal Flares",
-                  "quantity": 5,
-                  "rarity": "common",
-                  "type": "resource"
-                }
-              ],
-              "name": "Northern Watchtower",
-              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
-              "ownerName": "TestPlayer",
-              "type": "watchtower"
-            }
-          },
-          "6,7": {
-            "structure": {
-              "id": "structure_goblin_spawn",
-              "type": "spawn",
-              "name": "Shadow Encampment",
-              "faction": "goblin",
-              "description": "A crafty goblin settlement hidden among rocky crags"
-            }
-          },
-          "-4,8": {
-            "structure": {
-              "id": "structure_fairy_spawn",
-              "type": "spawn",
-              "name": "Glimmerlight Grove",
-              "faction": "fairy",
-              "description": "A magical fairy settlement that shimmers with enchanted light"
-            }
-          }
-        }
-      },
-      "info": {
-        "description": "World for testing demobilisation with items",
-        "lastTick": 1744947360623,
-        "name": "Test World",
-        "seed": 12345,
-        "size": "medium",
-        "speed": 1
-      },
-      "spawns": {
-        "0:0:-5:3": "structure_human_spawn",
-        "0:0:7:-2": "structure_elf_spawn",
-        "0:0:-3:-6": "structure_dwarf_spawn",
-        "0:1:6:7": "structure_goblin_spawn",
-        "0:1:-4:8": "structure_fairy_spawn"
-      }
-    },
-    "fantasy-realm": {
-      "chunks": {
-        "0,0": {
-          "0,0": {
-            "structure": {
-              "capacity": 40,
-              "faction": "elf",
-              "features": [
-                {
-                  "description": "Allows crafting of magical items and enchantments",
-                  "icon": "✨",
-                  "name": "Enchanter"
-                },
-                {
-                  "description": "Grow magical herbs and plants",
-                  "icon": "🌱",
-                  "name": "Elven Garden"
-                }
-              ],
-              "id": "structure_elven_citadel",
-              "items": [
-                {
-                  "description": "Wood infused with magical energy",
-                  "id": "item_fr_1001",
-                  "name": "Enchanted Wood",
-                  "quantity": 12,
-                  "rarity": "uncommon",
-                  "type": "resource"
-                },
-                {
-                  "id": "item_fr_1002",
-                  "name": "Elven Silks",
-                  "quantity": 8,
-                  "rarity": "uncommon",
-                  "type": "resource"
-                },
-                {
-                  "description": "A stone that glows under moonlight",
-                  "id": "item_fr_1003",
-                  "name": "Moonstone",
-                  "quantity": 3,
-                  "rarity": "rare",
-                  "type": "gem"
-                },
-                {
-                  "description": "A collection of spells and knowledge from ancient times",
-                  "id": "item_fr_1004",
-                  "name": "Ancient Elven Manuscript",
-                  "quantity": 1,
-                  "rarity": "epic",
-                  "type": "artifact"
-                }
-              ],
-              "name": "Elven Citadel",
-              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
-              "ownerName": "TestPlayer",
-              "type": "citadel"
-            }
-          },
-          "3,4": {
-            "structure": {
-              "id": "structure_fr_human_spawn",
-              "type": "spawn",
-              "name": "Ironheart Bastion",
-              "faction": "human",
-              "description": "A proud human fortress built to protect magical artifacts"
-            }
-          },
-          "-2,5": {
-            "structure": {
-              "id": "structure_fr_elf_spawn",
-              "type": "spawn",
-              "name": "Moonshadow Haven",
-              "faction": "elf",
-              "description": "The ancient homeland of the elves, nestled within an enchanted forest"
-            }
-          }
-        },
-        "-1,0": {
-          "-15,3": {
-            "structure": {
-              "id": "structure_fr_dwarf_spawn",
-              "type": "spawn",
-              "name": "Gemfire Halls",
-              "faction": "dwarf",
-              "description": "A dwarven stronghold known for its master jewelers and smiths"
-            }
-          },
-          "-18,-5": {
-            "structure": {
-              "id": "structure_fr_goblin_spawn",
-              "type": "spawn",
-              "name": "Nightclaw Warren",
-              "faction": "goblin",
-              "description": "A labyrinthine goblin settlement with unexpected technological marvels"
-            }
-          },
-          "-12,8": {
-            "structure": {
-              "id": "structure_fr_fairy_spawn",
-              "type": "spawn",
-              "name": "Starfall Sanctuary",
-              "faction": "fairy",
-              "description": "A fairy realm where the veil between worlds is thin"
-            }
-          }
-        }
-      },
-      "info": {
-        "description": "A magical world of elves, fairies and mystical creatures",
-        "lastTick": 1744947360623,
-        "name": "Fantasy Realm",
-        "seed": 24680,
-        "size": "medium",
-        "speed": 1
-      },
-      "spawns": {
-        "0:0:3:4": "structure_fr_human_spawn",
-        "0:0:-2:5": "structure_fr_elf_spawn",
-        "-1:0:-15:3": "structure_fr_dwarf_spawn",
-        "-1:0:-18:-5": "structure_fr_goblin_spawn",
-        "-1:0:-12:8": "structure_fr_fairy_spawn"
+        "1:0:15:-3": "structure_al_goblin_spawn"
       }
     }
   }
