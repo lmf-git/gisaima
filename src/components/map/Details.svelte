@@ -3,7 +3,8 @@
   import { cubicOut } from 'svelte/easing';
   import { targetStore, coordinates } from '../../lib/stores/map';
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
-  
+  import { onMount, onDestroy } from 'svelte';
+
   // Import race icon components
   import Human from '../../components/icons/Human.svelte';
   import Elf from '../../components/icons/Elf.svelte';
@@ -12,13 +13,14 @@
   import Fairy from '../../components/icons/Fairy.svelte';
   import Structure from '../../components/icons/Structure.svelte';
   import Torch from '../../components/icons/Torch.svelte';
-  
+
   // Props with defaults using Svelte 5 $props() rune
   const { 
     x = 0, 
     y = 0, 
     terrain = 'Unknown', 
-    onClose = () => {} 
+    onClose = () => {},
+    onAction = () => {}
   } = $props();
 
   // Format text for display
@@ -34,7 +36,7 @@
       updateCounter++;
     }, 1000);
   });
-  
+
   // Clean up timer when component is destroyed
   onDestroy(() => {
     if (updateTimer) {
@@ -51,7 +53,7 @@
   function formatCoords(x, y) {
     return `${x},${y}`;
   }
-  
+
   // Format distance for display
   function formatDistance(distance) {
     if (distance === undefined || distance === null) return '';
@@ -61,7 +63,6 @@
 
   // Maps faction to race for icon display
   function getFactionRace(faction) {
-    // Default mapping of factions to races for icon display
     const factionToRace = {
       human: 'human',
       elf: 'elf',
@@ -69,7 +70,7 @@
       goblin: 'goblin',
       fairy: 'fairy'
     };
-    
+
     return factionToRace[faction?.toLowerCase()] || null;
   }
 
@@ -82,27 +83,23 @@
   // Simplify the time remaining formatter to use store
   function formatTimeRemaining(endTime, status) {
     if (!endTime) return '';
-    
+
     updateCounter; // Keep the reactive dependency
-    
-    // If mobilizing or demobilising, show next tick countdown instead
+
     if (status === 'mobilizing' || status === 'demobilising') {
       return $timeUntilNextTick;
     }
-    
-    // For other statuses, use the existing calculation
+
     const now = Date.now();
     const remaining = endTime - now;
-    
-    // If time is up or less than a minute remains, show simplified message
+
     if (remaining <= 60000) {
       return '< 1m';
     }
-    
-    // Normal countdown calculation for time remaining
+
     const minutes = Math.floor(remaining / 60000);
     const seconds = Math.floor((remaining % 60000) / 1000);
-    
+
     return `${minutes}m ${seconds}s`;
   }
 
@@ -117,7 +114,7 @@
   function getStatusClass(status) {
     return status || 'idle';
   }
-  
+
   // Get rarity class from item rarity
   function getRarityClass(rarity) {
     return rarity?.toLowerCase() || 'common';
@@ -128,8 +125,176 @@
     if (!$currentPlayer || !entity) return false;
     return entity.owner === $currentPlayer.uid || entity.uid === $currentPlayer.uid;
   }
-  
-  import { onMount, onDestroy } from 'svelte';
+
+  // Available actions based on tile content
+  let actions = $state([]);
+
+  // Action helper functions
+  function hasGroupWithStatus(tile, playerId, status) {
+    return tile.groups && tile.groups.some(group => 
+      group.owner === playerId && group.status === status
+    );
+  }
+
+  function isPlayerAvailableOnTile(tile, playerId) {
+    if (!tile.players || !tile.players.some(p => p.id === playerId || p.uid === playerId)) {
+      return false;
+    }
+    
+    if (tile.groups) {
+      const playerInDemobilisingGroup = tile.groups.some(group => 
+        group.status === 'demobilising' && 
+        group.owner === playerId && 
+        group.units && 
+        group.units.some(unit => (unit.id === playerId || unit.uid === playerId) && unit.type === 'player')
+      );
+      return !playerInDemobilisingGroup;
+    }
+    
+    return true;
+  }
+
+  function hasValidUnitsForMobilization(tile, playerId) {
+    if (!tile || !tile.groups) return false;
+    
+    return tile.groups.some(group => 
+      group.owner === playerId && 
+      group.status !== 'mobilizing' &&
+      group.status !== 'moving' &&
+      group.status !== 'demobilising' &&
+      group.status !== 'fighting' &&
+      group.units && 
+      group.units.some(unit => unit.type !== 'player')
+    );
+  }
+
+  function hasMobilizableResources(tile, playerId) {
+    const playerOnTile = isPlayerAvailableOnTile(tile, playerId);
+    const hasValidUnits = hasValidUnitsForMobilization(tile, playerId);
+    return playerOnTile || hasValidUnits;
+  }
+
+  // Process the actions available for this tile
+  $effect(() => {
+    if (!currentTile) {
+      actions = [];
+      return;
+    }
+
+    const availableActions = [];
+    const playerId = $currentPlayer?.uid;
+    
+    if (!playerId) {
+      actions = [];
+      return;
+    }
+
+    // Check for mobilization action
+    if (hasMobilizableResources(currentTile, playerId)) {
+      availableActions.push({
+        id: 'mobilize',
+        label: 'Mobilize',
+        icon: '⚔️',
+        description: 'Form a group from available units'
+      });
+    }
+    
+    // Check for movement (player groups that are idle)
+    if (hasGroupWithStatus(currentTile, playerId, 'idle')) {
+      availableActions.push({
+        id: 'move',
+        label: 'Move',
+        icon: '➡️',
+        description: 'Move your group to another location'
+      });
+    }
+    
+    // Check for demobilization (player groups can demobilize at structures)
+    if (currentTile.structure && currentTile.groups && 
+        currentTile.groups.some(g => g.owner === playerId && 
+                               g.status !== 'demobilising' && 
+                               g.status !== 'mobilizing')) {
+      availableActions.push({
+        id: 'demobilize',
+        label: 'Demobilize',
+        icon: '🏠',
+        description: 'Disband your group at this structure'
+      });
+    }
+    
+    // Check for attack opportunity (player groups can attack enemy groups)
+    const hasPlayerGroups = currentTile.groups && 
+                           currentTile.groups.some(g => g.owner === playerId && !g.inBattle);
+    const hasEnemyGroups = currentTile.groups && 
+                          currentTile.groups.some(g => g.owner !== playerId && !g.inBattle);
+                          
+    if (hasPlayerGroups && hasEnemyGroups) {
+      availableActions.push({
+        id: 'attack',
+        label: 'Attack',
+        icon: '⚔️',
+        description: 'Attack an enemy group'
+      });
+    }
+    
+    // Check for joinable battles
+    const hasBattles = currentTile.groups && 
+                      currentTile.groups.some(g => g.inBattle && g.battleId);
+    const canJoinBattle = hasPlayerGroups && hasBattles;
+    
+    if (canJoinBattle) {
+      availableActions.push({
+        id: 'joinBattle',
+        label: 'Join Battle',
+        icon: '🗡️',
+        description: 'Join an ongoing battle'
+      });
+    }
+    
+    // Check for structures to inspect
+    if (currentTile.structure) {
+      availableActions.push({
+        id: 'inspect',
+        label: 'Inspect Structure',
+        icon: '🔍',
+        description: 'View details about this structure'
+      });
+    }
+    
+    // For resources - add gather action
+    const hasResources = currentTile.items && 
+                       currentTile.items.length > 0 && 
+                       currentTile.items.some(i => i.type === 'resource');
+                       
+    if (hasPlayerGroups && hasResources) {
+      availableActions.push({
+        id: 'gather',
+        label: 'Gather Resources',
+        icon: '📦',
+        description: 'Collect resources from this location'
+      });
+    }
+
+    // Add explore action if player is present
+    if (isPlayerAvailableOnTile(currentTile, playerId)) {
+      availableActions.push({
+        id: 'explore',
+        label: 'Explore',
+        icon: '🔭',
+        description: 'Explore this location'
+      });
+    }
+
+    actions = availableActions;
+  });
+
+  // Handle action selection
+  function selectAction(actionId) {
+    if (onAction) {
+      onAction({ action: actionId, tile: currentTile });
+    }
+    onClose();
+  }
 </script>
 
 <div class="details-wrapper">
@@ -298,6 +463,29 @@
           <p>No additional details available for this tile.</p>
         </div>
       {/if}
+      
+      {#if actions.length > 0}
+        <div class="section actions-section">
+          <h4 class="section-title">Available Actions</h4>
+          <div class="actions-list">
+            {#each actions as action}
+              <button 
+                class="action-button" 
+                on:click={() => selectAction(action.id)}
+                aria-label={action.label}
+              >
+                <span class="action-icon">{action.icon}</span>
+                <div class="action-text">
+                  <div class="action-label">{action.label}</div>
+                  {#if action.description}
+                    <div class="action-description">{action.description}</div>
+                  {/if}
+                </div>
+              </button>
+            {/each}
+          </div>
+        </div>
+      {/if}
     </div>
   </div>
 </div>
@@ -425,418 +613,67 @@
     letter-spacing: 0.05em;
     font-family: var(--font-heading);
   }
+
+  .actions-section {
+    margin-top: 1.5em;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding-top: 1em;
+  }
   
-  .terrain-info {
+  .actions-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+  }
+  
+  .action-button {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    background-color: rgba(255, 255, 255, 0.5);
+    gap: 0.5em;
+    padding: 0.8em;
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.3em;
-    padding: 0.7em 1em;
+    background-color: rgba(255, 255, 255, 0.7);
+    transition: all 0.2s;
+    cursor: pointer;
+    flex-grow: 1;
+    max-width: calc(50% - 0.25em);
+    font-family: var(--font-body);
+    text-align: left;
   }
   
-  .terrain-name {
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.85);
-  }
-  
-  .terrain-rarity {
-    font-size: 0.85em;
-    padding: 0.1em 0.4em;
-    border-radius: 0.3em;
-    white-space: nowrap;
-    font-weight: 500;
-  }
-  
-  .terrain-rarity.uncommon {
-    background: rgba(30, 255, 0, 0.15);
-    border: 1px solid rgba(30, 255, 0, 0.3);
-    color: #228B22;
-  }
-  
-  .terrain-rarity.rare {
-    background: rgba(0, 112, 221, 0.15);
-    border: 1px solid rgba(0, 112, 221, 0.3);
-    color: #0070DD;
-  }
-  
-  .terrain-rarity.epic {
-    background: rgba(148, 0, 211, 0.15);
-    border: 1px solid rgba(148, 0, 211, 0.3);
-    color: #9400D3;
-  }
-  
-  .terrain-rarity.legendary {
-    background: rgba(255, 165, 0, 0.15);
-    border: 1px solid rgba(255, 165, 0, 0.3);
-    color: #FF8C00;
-  }
-  
-  .terrain-rarity.mythic {
-    background: rgba(255, 128, 255, 0.15);
-    border: 1px solid rgba(255, 128, 255, 0.3);
-    color: #FF1493;
-  }
-
-  .entity {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 0.6em;
-    padding: 0.5em 0.7em;
-    border-radius: 0.3em;
-    background-color: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    transition: background-color 0.2s ease;
-  }
-  
-  .entity:last-child {
-    margin-bottom: 0;
-  }
-  
-  .entity:hover {
-    background-color: rgba(255, 255, 255, 0.8);
+  .action-button:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
-
-  .entity-race-icon, .entity-structure-icon, .item-icon {
-    margin-right: 0.7em;
-    margin-top: 0.1em;
-    flex-shrink: 0;
+  
+  .action-icon {
+    font-size: 1.2em;
   }
   
-  .entity-info {
+  .action-text {
     flex: 1;
+    display: flex;
+    flex-direction: column;
   }
   
-  .entity-name {
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.85);
-    line-height: 1.2;
+  .action-label {
+    font-weight: 600;
+    font-size: 0.95em;
+    color: rgba(0, 0, 0, 0.8);
     margin-bottom: 0.2em;
   }
   
-  .entity-details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6em;
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.7);
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .entity-race {
-    font-size: 0.85em;
-    font-style: italic;
-    color: rgba(0, 0, 0, 0.6);
-  }
-  
-  .entity-type {
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.6);
-  }
-  
-  .unit-count {
-    color: rgba(0, 0, 0, 0.6);
-  }
-  
-  .status {
-    display: inline-block;
-    font-size: 0.9em;
-    padding: 0.1em 0.4em;
-    border-radius: 0.3em;
-    white-space: nowrap;
-    font-weight: 500;
-  }
-  
-  .status.mobilizing {
-    background: rgba(255, 165, 0, 0.15);
-    border: 1px solid rgba(255, 165, 0, 0.3);
-    color: #ff8c00;
-    animation: pulseMobilizing 2s infinite;
-  }
-  
-  @keyframes pulseMobilizing {
-    0% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.4); }
-    50% { box-shadow: 0 0 0 3px rgba(255, 165, 0, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
-  }
-  
-  .status.moving {
-    background: rgba(0, 128, 0, 0.15);
-    border: 1px solid rgba(0, 128, 0, 0.3);
-    color: #008000;
-    animation: pulseMoving 2s infinite;
-  }
-  
-  @keyframes pulseMoving {
-    0% { box-shadow: 0 0 0 0 rgba(0, 128, 0, 0.4); }
-    50% { box-shadow: 0 0 0 3px rgba(0, 128, 0, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(0, 128, 0, 0); }
-  }
-  
-  .status.gathering {
-    background: rgba(75, 181, 67, 0.15);
-    border: 1px solid rgba(75, 181, 67, 0.3);
-    color: #2d8659;
-  }
-  
-  .status.idle {
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    color: rgba(0, 0, 0, 0.6);
-  }
-  
-  .status.demobilising {
-    background: rgba(147, 112, 219, 0.15);
-    border: 1px solid rgba(147, 112, 219, 0.3);
-    color: #8a2be2;
-    animation: pulseDemobilising 2s infinite;
-  }
-  
-  @keyframes pulseDemobilising {
-    0% { box-shadow: 0 0 0 0 rgba(147, 112, 219, 0.4); }
-    50% { box-shadow: 0 0 0 3px rgba(147, 112, 219, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(147, 112, 219, 0); }
-  }
-  
-  .status.fighting {
-    background: rgba(139, 0, 0, 0.15);
-    border: 1px solid rgba(139, 0, 0, 0.3);
-    color: #8B0000;
-    animation: pulseFighting 1.5s infinite;
-  }
-  
-  @keyframes pulseFighting {
-    0% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0.4); }
-    50% { box-shadow: 0 0 0 3px rgba(139, 0, 0, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0); }
-  }
-  
-  .battle-tag {
-    font-size: 0.75em;
-    padding: 0.1em 0.3em;
-    border-radius: 0.2em;
-    background-color: rgba(139, 0, 0, 0.07);
-    border: 1px solid rgba(139, 0, 0, 0.15);
-    color: #8B0000;
-    white-space: nowrap;
-    margin-left: 0.3em;
-  }
-  
-  .battle-side-1 {
-    background-color: rgba(0, 0, 255, 0.07);
-    border: 1px solid rgba(0, 0, 255, 0.15);
-    color: #00008B;
-  }
-  
-  .battle-side-2 {
-    background-color: rgba(139, 0, 0, 0.07);
-    border: 1px solid rgba(139, 0, 0, 0.15);
-    color: #8B0000;
-  }
-  
-  .pending-tick {
-    background: rgba(255, 215, 0, 0.2) !important;
-    border-color: rgba(255, 215, 0, 0.5) !important;
-    color: #b8860b !important;
-    animation: pulseWaiting 1s infinite alternate !important;
-  }
-  
-  .empty-state {
-    padding: 1em;
-    text-align: center;
-    color: rgba(0, 0, 0, 0.5);
-    font-style: italic;
-  }
-  
-  .item-icon {
-    width: 1.4em;
-    height: 1.4em;
-    border-radius: 0.2em;
-    background-color: rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-
-  .item-icon::before {
-    content: '';
-    position: absolute;
-    width: 60%;
-    height: 60%;
-    background-color: rgba(0, 0, 0, 0.2);
-  }
-
-  .item-icon.resource::before {
-    content: '♦';
-    font-size: 0.9em;
-    color: #228B22;
-    background: none;
-  }
-
-  .item-icon.quest_item::before {
-    content: '!';
-    font-size: 0.9em;
-    color: #FF8C00;
-    background: none;
-    font-weight: bold;
-  }
-
-  .item-icon.artifact::before {
-    content: '★';
-    font-size: 1em;
-    color: #9932CC;
-    background: none;
-  }
-
-  .item-icon.gem::before {
-    content: '◆';
-    font-size: 0.9em;
-    color: #4169E1;
-    background: none;
-  }
-
-  .item-icon.tool::before {
-    content: '⚒';
+  .action-description {
     font-size: 0.8em;
-    color: #696969;
-    background: none;
-  }
-
-  .item-icon.currency::before {
-    content: '⚜';
-    font-size: 0.8em;
-    color: #DAA520;
-    background: none;
-  }
-
-  .item-icon.junk::before {
-    content: '✽';
-    font-size: 0.9em;
-    color: #A9A9A9;
-    background: none;
-  }
-
-  .item-icon.treasure::before {
-    content: '❖';
-    font-size: 0.9em;
-    color: #FFD700;
-    background: none;
-  }
-
-  .item-type {
     color: rgba(0, 0, 0, 0.6);
-    white-space: nowrap;
-  }
-
-  .item-quantity {
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.7);
-  }
-
-  .item-description {
-    font-size: 0.8em;
-    font-style: italic;
-    color: rgba(0, 0, 0, 0.6);
-    margin-top: 0.3em;
-  }
-
-  .item-rarity {
-    display: inline-block;
-    font-size: 0.85em;
-    padding: 0.1em 0.4em;
-    border-radius: 0.3em;
-    white-space: nowrap;
-    font-weight: 500;
-  }
-
-  .item-rarity.uncommon {
-    background: rgba(30, 255, 0, 0.15);
-    border: 1px solid rgba(30, 255, 0, 0.3);
-    color: #228B22;
-  }
-
-  .item-rarity.rare {
-    background: rgba(0, 112, 221, 0.15);
-    border: 1px solid rgba(0, 112, 221, 0.3);
-    color: #0070DD;
-  }
-
-  .item-rarity.epic {
-    background: rgba(148, 0, 211, 0.15);
-    border: 1px solid rgba(148, 0, 211, 0.3);
-    color: #9400D3;
-  }
-
-  .item-rarity.legendary {
-    background: rgba(255, 165, 0, 0.15);
-    border: 1px solid rgba(255, 165, 0, 0.3);
-    color: #FF8C00;
-  }
-
-  .item-rarity.mythic {
-    background: rgba(255, 128, 255, 0.15);
-    border: 1px solid rgba(255, 128, 255, 0.3);
-    color: #FF1493;
-  }
-
-  .your-entity-badge {
-    display: inline-block;
-    background: var(--color-bright-accent);
-    color: var(--color-dark-navy);
-    font-size: 0.7em;
-    padding: 0.1em 0.4em;
-    border-radius: 0.3em;
-    margin-left: 0.5em;
-    font-weight: bold;
-    vertical-align: middle;
   }
   
-  .current-player-owned {
-    border-color: var(--color-bright-accent);
-    background-color: rgba(100, 255, 218, 0.1);
-    position: relative;
-  }
-  
-  .current-player-owned::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background-color: var(--color-bright-accent);
-  }
-
-  .item-count {
-    color: #2d8659;
-    font-weight: 500;
-  }
-
-  .countdown {
-    font-size: 0.8em;
-    margin-left: 0.3em;
-    font-family: var(--font-mono, monospace);
-    white-space: nowrap;
-  }
-
   @media (max-width: 480px) {
-    .details-panel {
+    .action-button {
       max-width: 100%;
-      margin: 0.5em;
-    }
-    
-    .details-content {
-      padding: 0.8em;
-    }
-    
-    .entity-details {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.3em;
     }
   }
 </style>
