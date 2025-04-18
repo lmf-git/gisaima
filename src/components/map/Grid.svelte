@@ -7,8 +7,8 @@
     ready,
     coordinates,
     TILE_SIZE,
-    EXPANDED_COLS_FACTOR,  // Add missing constant
-    EXPANDED_ROWS_FACTOR,   // Add missing constant
+    EXPANDED_COLS_FACTOR,
+    EXPANDED_ROWS_FACTOR,
     moveTarget,
     targetStore,
     highlightedStore,
@@ -16,6 +16,7 @@
   } from "../../lib/stores/map.js";
   import { game, currentPlayer } from "../../lib/stores/game.js";
   import Torch from '../icons/Torch.svelte';
+  import Structure from '../icons/Structure.svelte';
   
   // Props with defaults to avoid destructuring errors
   const { 
@@ -1012,6 +1013,10 @@
               <div class="spawn-icon-container">
                 <Torch size="85%" extraClass="spawn-icon" />
               </div>
+            {:else if cell.structure}
+              <div class="structure-icon-container {cell.structure.type}-container">
+                <Structure size="75%" extraClass="{cell.structure.type}-icon structure-icon" />
+              </div>
             {/if}
             
             <span class="coords">{cell.x},{cell.y}</span>
@@ -1693,5 +1698,124 @@
   /* Make center tile appear above other tiles */
   .tile.center {
     z-index: 3;
+  }
+
+  .structure-icon-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0.7;
+  }
+  
+  :global(.structure-icon) {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+  }
+  
+  :global(.fortress-icon) {
+    filter: drop-shadow(0 0 3px rgba(230, 190, 138, 0.7));
+  }
+  
+  :global(.outpost-icon) {
+    filter: drop-shadow(0 0 3px rgba(138, 176, 230, 0.7));
+  }
+  
+  :global(.watchtower-icon) {
+    filter: drop-shadow(0 0 3px rgba(168, 230, 138, 0.7));
+  }
+  
+  :global(.stronghold-icon) {
+    filter: drop-shadow(0 0 3px rgba(230, 138, 138, 0.7));
+  }
+  
+  :global(.citadel-icon) {
+    filter: drop-shadow(0 0 3px rgba(209, 138, 230, 0.7));
+  }
+  
+  .fortress-structure:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 0.15em double rgba(230, 190, 138, 0.6);
+    pointer-events: none;
+    z-index: 3;
+  }
+  
+  .outpost-structure:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 0.15em double rgba(138, 176, 230, 0.6);
+    pointer-events: none;
+    z-index: 3;
+  }
+  
+  .watchtower-structure:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 0.15em double rgba(168, 230, 138, 0.6);
+    pointer-events: none;
+    z-index: 3;
+  }
+  
+  .stronghold-structure:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 0.15em double rgba(230, 138, 138, 0.6);
+    pointer-events: none;
+    z-index: 3;
+  }
+  
+  .citadel-structure:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 0.15em double rgba(209, 138, 230, 0.6);
+    pointer-events: none;
+    z-index: 3;
+  }
+  
+  .tile.fortress-structure {
+    box-shadow: inset 0 0 0.5em rgba(230, 190, 138, 0.4);
+  }
+  
+  .tile.outpost-structure {
+    box-shadow: inset 0 0 0.5em rgba(138, 176, 230, 0.4);
+  }
+  
+  .tile.watchtower-structure {
+    box-shadow: inset 0 0 0.5em rgba(168, 230, 138, 0.4);
+  }
+  
+  .tile.stronghold-structure {
+    box-shadow: inset 0 0 0.5em rgba(230, 138, 138, 0.4);
+  }
+  
+  .tile.citadel-structure {
+    box-shadow: inset 0 0 0.5em rgba(209, 138, 230, 0.4);
   }
 </style>

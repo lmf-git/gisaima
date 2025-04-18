@@ -11,6 +11,8 @@
   import Dwarf from '../../components/icons/Dwarf.svelte';
   import Goblin from '../../components/icons/Goblin.svelte';
   import Fairy from '../../components/icons/Fairy.svelte';
+  import Structure from '../../components/icons/Structure.svelte';
+  import Torch from '../../components/icons/Torch.svelte';
   
   // Props
   const { closing = false } = $props();
@@ -486,17 +488,11 @@
                   tabindex="0"
                   aria-label="Navigate to {structure.name || _fmt(structure.type) || 'Structure'} at {structure.x},{structure.y}"
                 >
-                  <div class="entity-race-icon">
-                    {#if getFactionRace(structure.faction) === 'human'}
-                      <Human extraClass="race-icon-entity" />
-                    {:else if getFactionRace(structure.faction) === 'elf'}
-                      <Elf extraClass="race-icon-entity" />
-                    {:else if getFactionRace(structure.faction) === 'dwarf'}
-                      <Dwarf extraClass="race-icon-entity" />
-                    {:else if getFactionRace(structure.faction) === 'goblin'}
-                      <Goblin extraClass="race-icon-entity" />
-                    {:else if getFactionRace(structure.faction) === 'fairy'}
-                      <Fairy extraClass="race-icon-entity" />
+                  <div class="entity-structure-icon">
+                    {#if structure.type === 'spawn'}
+                      <Torch size="1.4em" extraClass="structure-type-icon" />
+                    {:else}
+                      <Structure size="1.4em" extraClass="structure-type-icon {structure.type}-icon" />
                     {/if}
                   </div>
                   <div class="entity-info">
@@ -1567,5 +1563,36 @@
   .item-count {
     color: #2d8659;
     font-weight: 500;
+  }
+
+  .entity-structure-icon {
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+  }
+  
+  :global(.structure-type-icon) {
+    width: 1.4em;
+    height: 1.4em;
+    fill: rgba(0, 0, 0, 0.7);
+  }
+  
+  :global(.fortress-icon) {
+    fill: #E6BE8A;
+  }
+  
+  :global(.outpost-icon) {
+    fill: #8AB0E6;
+  }
+  
+  :global(.watchtower-icon) {
+    fill: #A8E68A;
+  }
+  
+  :global(.stronghold-icon) {
+    fill: #E68A8A;
+  }
+  
+  :global(.citadel-icon) {
+    fill: #D18AE6;
   }
 </style>
