@@ -32,6 +32,7 @@ export const processGameTicks = onSchedule({
     
     // Track how many updates were made
     let mobilizationsProcessed = 0;
+    let demobilizationsProcessed = 0;
     let movementsProcessed = 0;
     
     // Process each world
@@ -84,6 +85,72 @@ export const processGameTicks = onSchedule({
                     updates[`${groupPath}/status`] = 'idle';
                     updates[`${groupPath}/lastUpdated`] = now;
                     mobilizationsProcessed++;
+                  }
+                  break;
+                
+                case 'demobilising':
+                  // Check if demobilization is complete
+                  if (group.readyAt && group.readyAt <= now) {
+                    // Handle demobilization logic
+                    
+                    // Ensure we have a target structure
+                    const targetStructureId = group.targetStructureId;
+                    if (!targetStructureId) {
+                      logger.warn(`Missing target structure for demobilizing group ${groupId}`);
+                      updates[`${groupPath}/status`] = 'idle'; // Reset to idle if no target
+                      updates[`${groupPath}/lastUpdated`] = now;
+                      continue;
+                    }
+                    
+                    // Find if there's a structure on this tile
+                    if (!tile.structure) {
+                      logger.warn(`No structure found for demobilizing group ${groupId}`);
+                      updates[`${groupPath}/status`] = 'idle'; // Reset to idle if no structure
+                      updates[`${groupPath}/lastUpdated`] = now;
+                      continue;
+                    }
+                    
+                    // Transfer items from group to structure if any
+                    if (group.items && Array.isArray(group.items) && group.items.length > 0) {
+                      // Check if structure already has items
+                      const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/items`;
+                      // If structure doesn't have items array yet, create it
+                      if (!tile.structure.items) {
+                        updates[structurePath] = group.items;
+                      } else {
+                        // Append group items to structure items
+                        const updatedItems = [...(Array.isArray(tile.structure.items) ? tile.structure.items : []), ...group.items];
+                        updates[structurePath] = updatedItems;
+                      }
+                    }
+                    
+                    // Handle units: move non-player units back to the structure and keep players on the map
+                    if (group.units && Array.isArray(group.units)) {
+                      // Separate player and non-player units
+                      const playerUnits = group.units.filter(unit => unit.type === 'player');
+                      
+                      // For each player unit, make sure they remain on the tile 
+                      // but are no longer in the group
+                      for (const playerUnit of playerUnits) {
+                        if (playerUnit.id) {
+                          // Create or update a standalone player entry on this tile
+                          const playerPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/players/${playerUnit.id}`;
+                          updates[playerPath] = {
+                            id: playerUnit.id,
+                            displayName: playerUnit.name || `Player ${playerUnit.id}`,
+                            race: playerUnit.race || 'human',
+                            lastActive: now,
+                            uid: playerUnit.id,
+                            x: parseInt(tileKey.split(',')[0]),
+                            y: parseInt(tileKey.split(',')[1])
+                          };
+                        }
+                      }
+                    }
+                    
+                    // Now that we've handled all the transfers, delete the group
+                    updates[groupPath] = null;
+                    demobilizationsProcessed++;
                   }
                   break;
                   
@@ -203,7 +270,7 @@ export const processGameTicks = onSchedule({
       }
     }
     
-    console.log(`Processed ${mobilizationsProcessed} mobilizations and ${movementsProcessed} movement steps`);
+    console.log(`Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, and ${movementsProcessed} movement steps`);
     return null;
   } catch (error) {
     console.error("Error processing game ticks:", error);
