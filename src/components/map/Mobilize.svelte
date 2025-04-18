@@ -1,7 +1,6 @@
 <script>
   import { fade, scale } from 'svelte/transition';
-  import { currentPlayer, game, formatTimeUntilNextTick } from '../../lib/stores/game';
-  import { timeUntilNextTick } from '../../lib/stores/gameTime';
+  import { currentPlayer, game, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
   import Human from '../icons/Human.svelte';
   import Elf from '../icons/Elf.svelte';

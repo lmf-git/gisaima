@@ -137,8 +137,8 @@ export const nextWorldTick = derived(
     const worldSpeed = worldInfo.speed || 1.0;
     const lastTick = worldInfo.lastTick || Date.now();
     
-    // Base tick interval is 5 minutes (300000ms)
-    const baseTickInterval = 300000;
+    // Base tick interval is 1 minute (60000ms) for 1x speed worlds
+    const baseTickInterval = 60000; // 1 minute
     const adjustedInterval = Math.round(baseTickInterval / worldSpeed);
     
     // Calculate the next tick time
@@ -162,7 +162,7 @@ export const timeUntilNextTick = derived(
       return "<1m";
     }
     
-    // Format as minutes and seconds
+    // Format as minutes only for simplicity
     const minutes = Math.floor(remaining / 60000);
     return `${minutes}m`;
   }

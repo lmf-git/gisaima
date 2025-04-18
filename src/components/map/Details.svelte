@@ -5,7 +5,6 @@
   import { onMount, onDestroy } from 'svelte';
   import { game, currentPlayer, timeUntilNextTick } from "../../lib/stores/game.js";
   import { calculateNextTickTime, formatTimeUntilNextTick } from '../../lib/stores/game.js';
-  import { requiresTickProcessing } from '../../lib/stores/gameTime';
   
   // Import race icon components
   import Human from '../../components/icons/Human.svelte';
