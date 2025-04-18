@@ -1,0 +1,618 @@
+{
+  "players": {
+    "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1": {
+      "worlds": {
+        "Default-world": {
+          "inGroup": "group_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
+          "joined": 1744943635171,
+          "lastGroupJoin": 1744943650956,
+          "lastLocation": {
+            "timestamp": 1744943644706,
+            "x": 0, 
+            "y": 0
+          },
+          "lastSpawn": "0:0:0:0",
+          "race": "human",
+          "spawned": true
+        },
+        "Fantasy-realm": {
+          "inGroup": "group_fr_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
+          "joined": 1744943635171,
+          "lastGroupJoin": 1744943650956,
+          "lastLocation": {
+            "timestamp": 1744943644706,
+            "x": 0, 
+            "y": 0
+          },
+          "lastSpawn": "0:0:0:0",
+          "race": "elf",
+          "spawned": true
+        },
+        "Ancient-lands": {
+          "inGroup": "group_al_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
+          "joined": 1744943635171,
+          "lastGroupJoin": 1744943650956,
+          "lastLocation": {
+            "timestamp": 1744943644706,
+            "x": 0, 
+            "y": 0
+          },
+          "lastSpawn": "0:0:0:0",
+          "race": "dwarf",
+          "spawned": true
+        }
+      }
+    }
+  },
+  "worlds": {
+    "Default-world": {
+      "chunks": {
+        "0,0": {
+          "0,0": {
+            "structure": {
+              "id": "structure_main_fort",
+              "type": "fortress",
+              "name": "Fort Valley",
+              "faction": "human",
+              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+              "ownerName": "TestPlayer",
+              "capacity": 50,
+              "items": [
+                {
+                  "id": "item_1001",
+                  "name": "Iron Ingot",
+                  "type": "resource",
+                  "quantity": 15,
+                  "rarity": "common",
+                  "description": "Standard iron material for crafting"
+                },
+                {
+                  "id": "item_1002",
+                  "name": "Healing Herbs",
+                  "type": "resource",
+                  "quantity": 8,
+                  "rarity": "common"
+                },
+                {
+                  "id": "item_1003",
+                  "name": "Sapphire Gem",
+                  "type": "gem",
+                  "quantity": 2,
+                  "rarity": "rare",
+                  "description": "A beautiful blue gemstone that radiates magical energy"
+                },
+                {
+                  "id": "item_1004",
+                  "name": "Ancient Scroll",
+                  "type": "artifact",
+                  "quantity": 1,
+                  "rarity": "epic",
+                  "description": "A mysterious scroll with arcane symbols"
+                },
+                {
+                  "id": "item_shared_1",
+                  "name": "Community Tools",
+                  "type": "tool",
+                  "quantity": 5,
+                  "rarity": "common",
+                  "isShared": true,
+                  "description": "Basic tools available to all members of the settlement"
+                },
+                {
+                  "id": "item_shared_2",
+                  "name": "Settlement Food Supplies",
+                  "type": "resource",
+                  "quantity": 20,
+                  "rarity": "common",
+                  "isShared": true,
+                  "description": "Community food stores"
+                }
+              ],
+              "features": [
+                {
+                  "name": "Blacksmith",
+                  "description": "Allows crafting of metal items and weapons",
+                  "icon": "⚒️"
+                },
+                {
+                  "name": "Apothecary",
+                  "description": "Create potions and healing items",
+                  "icon": "🧪"
+                }
+              ],
+              "banks": {
+                "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1": [
+                  {
+                    "id": "item_bank_1",
+                    "name": "Gold Coins",
+                    "type": "currency",
+                    "quantity": 100,
+                    "rarity": "common",
+                    "description": "Standard currency"
+                  },
+                  {
+                    "id": "item_bank_2",
+                    "name": "Family Heirloom",
+                    "type": "artifact",
+                    "quantity": 1,
+                    "rarity": "epic",
+                    "description": "A treasured family item passed down for generations"
+                  },
+                  {
+                    "id": "item_bank_3",
+                    "name": "Steel Sword",
+                    "type": "weapon",
+                    "quantity": 1,
+                    "rarity": "uncommon",
+                    "description": "A reliable steel sword with good balance"
+                  }
+                ]
+              }
+            },
+            "groups": {
+              "group_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956": {
+                "id": "group_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
+                "name": "Scout Team",
+                "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+                "unitCount": 3,
+                "race": "human",
+                "status": "idle",
+                "x": 0,
+                "y": 0,
+                "created": 1744943650956,
+                "lastUpdated": 1744943650956,
+                "items": [
+                  {
+                    "id": "item_2001",
+                    "name": "Gold Ore",
+                    "type": "resource",
+                    "quantity": 5,
+                    "rarity": "uncommon",
+                    "description": "Valuable metal used for currency and special crafting"
+                  },
+                  {
+                    "id": "item_2002",
+                    "name": "Emerald Crystal",
+                    "type": "gem",
+                    "quantity": 1,
+                    "rarity": "rare",
+                    "description": "A vibrant green gemstone with magical properties"
+                  },
+                  {
+                    "id": "item_2003",
+                    "name": "Hunter's Trophy",
+                    "type": "quest_item",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "description": "Proof of a successful hunt in the wilderness"
+                  },
+                  {
+                    "id": "item_2004",
+                    "name": "Ancient Artifact",
+                    "type": "artifact",
+                    "quantity": 1,
+                    "rarity": "epic",
+                    "description": "A mysterious object emitting strange energy"
+                  },
+                  {
+                    "id": "item_2005",
+                    "name": "Healing Potion",
+                    "type": "consumable",
+                    "quantity": 2,
+                    "rarity": "uncommon",
+                    "description": "Restores health when consumed"
+                  },
+                  {
+                    "id": "item_2006",
+                    "name": "Enchanted Map",
+                    "type": "quest_item",
+                    "quantity": 1,
+                    "rarity": "rare",
+                    "description": "A map that reveals hidden locations when used by skilled explorers"
+                  }
+                ],
+                "units": [
+                  {
+                    "id": "unit_1",
+                    "type": "warrior",
+                    "name": "Soldier",
+                    "strength": 10
+                  },
+                  {
+                    "id": "unit_2",
+                    "type": "archer",
+                    "name": "Ranger",
+                    "strength": 8
+                  },
+                  {
+                    "id": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+                    "type": "player",
+                    "race": "human",
+                    "name": "TestPlayer",
+                    "strength": 15
+                  }
+                ]
+              }
+            }
+          },
+          "1,0": {
+            "structure": {
+              "id": "structure_outpost",
+              "type": "outpost",
+              "name": "Eastern Outpost",
+              "faction": "human",
+              "capacity": 30,
+              "items": [
+                {
+                  "id": "item_3001",
+                  "name": "Scout Report",
+                  "type": "quest_item",
+                  "quantity": 1,
+                  "rarity": "uncommon",
+                  "description": "Contains information about nearby territories"
+                },
+                {
+                  "id": "item_3002",
+                  "name": "Leather Scraps",
+                  "type": "resource",
+                  "quantity": 12,
+                  "rarity": "common"
+                },
+                {
+                  "id": "item_3003",
+                  "name": "Mysterious Map Fragment",
+                  "type": "artifact",
+                  "quantity": 1,
+                  "rarity": "rare",
+                  "description": "A torn piece of an ancient map"
+                }
+              ]
+            }
+          }
+        },
+        "0,1": {
+          "0,5": {
+            "structure": {
+              "id": "structure_watchtower",
+              "type": "watchtower",
+              "name": "Northern Watchtower",
+              "faction": "human",
+              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+              "ownerName": "TestPlayer",
+              "capacity": 20,
+              "items": [
+                {
+                  "id": "item_4001",
+                  "name": "Spyglass",
+                  "type": "tool",
+                  "quantity": 1,
+                  "rarity": "uncommon",
+                  "description": "Used for long-distance observation"
+                },
+                {
+                  "id": "item_4002",
+                  "name": "Signal Flares",
+                  "type": "resource",
+                  "quantity": 5,
+                  "rarity": "common"
+                }
+              ],
+              "banks": {
+                "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1": [
+                  {
+                    "id": "item_watch_bank_1",
+                    "name": "Personal Rations",
+                    "type": "resource",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "description": "Emergency food supplies"
+                  },
+                  {
+                    "id": "item_watch_bank_2",
+                    "name": "Enchanted Arrow",
+                    "type": "weapon",
+                    "quantity": 1,
+                    "rarity": "rare",
+                    "description": "An arrow that never misses its target"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "info": {
+        "seed": 12345,
+        "name": "Test World",
+        "description": "World for testing demobilisation with items",
+        "size": "medium",
+        "speed": 1.0,
+        "lastTick": 1744943650950
+      }
+    },
+    "Fantasy-realm": {
+      "chunks": {
+        "0,0": {
+          "0,0": {
+            "structure": {
+              "id": "structure_elven_citadel",
+              "type": "citadel",
+              "name": "Elven Citadel",
+              "faction": "elf",
+              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+              "ownerName": "TestPlayer",
+              "capacity": 40,
+              "items": [
+                {
+                  "id": "item_fr_1001",
+                  "name": "Enchanted Wood",
+                  "type": "resource",
+                  "quantity": 12,
+                  "rarity": "uncommon",
+                  "description": "Wood infused with magical energy"
+                },
+                {
+                  "id": "item_fr_1002",
+                  "name": "Elven Silks",
+                  "type": "resource",
+                  "quantity": 8,
+                  "rarity": "uncommon"
+                },
+                {
+                  "id": "item_fr_1003",
+                  "name": "Moonstone",
+                  "type": "gem",
+                  "quantity": 3,
+                  "rarity": "rare",
+                  "description": "A stone that glows under moonlight"
+                },
+                {
+                  "id": "item_fr_1004",
+                  "name": "Ancient Elven Manuscript",
+                  "type": "artifact",
+                  "quantity": 1,
+                  "rarity": "epic",
+                  "description": "A collection of spells and knowledge from ancient times"
+                }
+              ],
+              "features": [
+                {
+                  "name": "Enchanter",
+                  "description": "Allows crafting of magical items and enchantments",
+                  "icon": "✨"
+                },
+                {
+                  "name": "Elven Garden",
+                  "description": "Grow magical herbs and plants",
+                  "icon": "🌱"
+                }
+              ],
+              "banks": {
+                "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1": [
+                  {
+                    "id": "item_fr_bank_1",
+                    "name": "Elven Silver",
+                    "type": "currency",
+                    "quantity": 85,
+                    "rarity": "common",
+                    "description": "Currency used by elven traders"
+                  },
+                  {
+                    "id": "item_fr_bank_2",
+                    "name": "Enchanted Bow",
+                    "type": "weapon",
+                    "quantity": 1,
+                    "rarity": "rare",
+                    "description": "A bow that never misses its target"
+                  }
+                ]
+              }
+            },
+            "groups": {
+              "group_fr_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956": {
+                "id": "group_fr_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
+                "name": "Elven Patrol",
+                "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+                "unitCount": 3,
+                "race": "elf",
+                "status": "idle",
+                "x": 0,
+                "y": 0,
+                "created": 1744943650956,
+                "lastUpdated": 1744943650956,
+                "items": [
+                  {
+                    "id": "item_fr_2001",
+                    "name": "Star Crystal",
+                    "type": "gem",
+                    "quantity": 2,
+                    "rarity": "rare",
+                    "description": "A crystal that fell from the night sky"
+                  },
+                  {
+                    "id": "item_fr_2002",
+                    "name": "Fairy Dust",
+                    "type": "resource",
+                    "quantity": 5,
+                    "rarity": "uncommon",
+                    "description": "Glittering magical dust with various magical properties"
+                  }
+                ],
+                "units": [
+                  {
+                    "id": "unit_fr_1",
+                    "type": "ranger",
+                    "name": "Elven Scout",
+                    "strength": 8
+                  },
+                  {
+                    "id": "unit_fr_2",
+                    "type": "mage",
+                    "name": "Forest Mage",
+                    "strength": 12
+                  },
+                  {
+                    "id": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+                    "type": "player",
+                    "race": "elf",
+                    "name": "TestPlayer",
+                    "strength": 15
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "info": {
+        "seed": 24680,
+        "name": "Fantasy Realm",
+        "description": "A magical world of elves, fairies and mystical creatures",
+        "size": "medium",
+        "speed": 1.0,
+        "lastTick": 1744943650950
+      }
+    },
+    "Ancient-lands": {
+      "chunks": {
+        "0,0": {
+          "0,0": {
+            "structure": {
+              "id": "structure_dwarven_stronghold",
+              "type": "stronghold",
+              "name": "Dwarven Stronghold",
+              "faction": "dwarf",
+              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+              "ownerName": "TestPlayer",
+              "capacity": 60,
+              "items": [
+                {
+                  "id": "item_al_1001",
+                  "name": "Mithril Ore",
+                  "type": "resource",
+                  "quantity": 10,
+                  "rarity": "rare",
+                  "description": "Incredibly strong but lightweight metal ore"
+                },
+                {
+                  "id": "item_al_1002",
+                  "name": "Mountain Stone",
+                  "type": "resource",
+                  "quantity": 22,
+                  "rarity": "common"
+                },
+                {
+                  "id": "item_al_1003",
+                  "name": "Fire Ruby",
+                  "type": "gem",
+                  "quantity": 1,
+                  "rarity": "epic",
+                  "description": "A gem that emanates heat and light"
+                }
+              ],
+              "features": [
+                {
+                  "name": "Forge",
+                  "description": "Allows crafting of superior metal items and weapons",
+                  "icon": "🔥"
+                },
+                {
+                  "name": "Brewery",
+                  "description": "Create powerful potions and brews",
+                  "icon": "🍺"
+                }
+              ],
+              "banks": {
+                "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1": [
+                  {
+                    "id": "item_al_bank_1",
+                    "name": "Dwarven Gold",
+                    "type": "currency",
+                    "quantity": 120,
+                    "rarity": "common",
+                    "description": "Heavy gold coins minted by master dwarven smiths"
+                  },
+                  {
+                    "id": "item_al_bank_2",
+                    "name": "Ancestral Hammer",
+                    "type": "weapon",
+                    "quantity": 1,
+                    "rarity": "legendary",
+                    "description": "A mighty hammer passed down through generations"
+                  }
+                ]
+              }
+            },
+            "groups": {
+              "group_al_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956": {
+                "id": "group_al_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
+                "name": "Mountain Guard",
+                "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+                "unitCount": 4,
+                "race": "dwarf",
+                "status": "idle",
+                "x": 0,
+                "y": 0,
+                "created": 1744943650956,
+                "lastUpdated": 1744943650956,
+                "items": [
+                  {
+                    "id": "item_al_2001",
+                    "name": "Dragon Scale",
+                    "type": "resource",
+                    "quantity": 1,
+                    "rarity": "epic",
+                    "description": "A scale from an ancient dragon"
+                  },
+                  {
+                    "id": "item_al_2002",
+                    "name": "Mountain Ale",
+                    "type": "consumable",
+                    "quantity": 3,
+                    "rarity": "uncommon",
+                    "description": "Fortifying drink that increases strength temporarily"
+                  }
+                ],
+                "units": [
+                  {
+                    "id": "unit_al_1",
+                    "type": "warrior",
+                    "name": "Dwarven Guard",
+                    "strength": 15
+                  },
+                  {
+                    "id": "unit_al_2",
+                    "type": "warrior",
+                    "name": "Dwarven Guard",
+                    "strength": 15
+                  },
+                  {
+                    "id": "unit_al_3",
+                    "type": "engineer",
+                    "name": "Dwarven Engineer",
+                    "strength": 10
+                  },
+                  {
+                    "id": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+                    "type": "player",
+                    "race": "dwarf",
+                    "name": "TestPlayer",
+                    "strength": 18
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "info": {
+        "seed": 13579,
+        "name": "Ancient Lands",
+        "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
+        "size": "large",
+        "speed": 1.2,
+        "lastTick": 1744943650950
+      }
+    }
+  }
+}
