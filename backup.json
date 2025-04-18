@@ -1,307 +1,323 @@
 {
-  "players": {
-    "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1": {
-      "worlds": {
-        "default-world": {
-          "inGroup": "group_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
-          "joined": 1744943635171,
-          "lastGroupJoin": 1744943650956,
-          "lastLocation": {
-            "timestamp": 1744943644706,
-            "x": 0, 
-            "y": 0
-          },
-          "lastSpawn": "0:0:0:0",
-          "race": "human",
-          "spawned": true
-        }
-      }
-    }
-  },
   "worlds": {
+    "ancient-lands": {
+      "chunks": {
+        "0,0": {
+          "0,0": {
+            "structure": {
+              "capacity": 60,
+              "faction": "dwarf",
+              "features": [
+                {
+                  "description": "Allows crafting of superior metal items and weapons",
+                  "icon": "🔥",
+                  "name": "Forge"
+                },
+                {
+                  "description": "Create powerful potions and brews",
+                  "icon": "🍺",
+                  "name": "Brewery"
+                }
+              ],
+              "id": "structure_dwarven_stronghold",
+              "items": [
+                {
+                  "description": "Incredibly strong but lightweight metal ore",
+                  "id": "item_al_1001",
+                  "name": "Mithril Ore",
+                  "quantity": 10,
+                  "rarity": "rare",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_al_1002",
+                  "name": "Mountain Stone",
+                  "quantity": 22,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "description": "A gem that emanates heat and light",
+                  "id": "item_al_1003",
+                  "name": "Fire Ruby",
+                  "quantity": 1,
+                  "rarity": "epic",
+                  "type": "gem"
+                }
+              ],
+              "name": "Dwarven Stronghold",
+              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+              "ownerName": "TestPlayer",
+              "type": "stronghold"
+            }
+          },
+          "5,5": {
+            "structure": {
+              "id": "structure_al_human_spawn",
+              "type": "spawn",
+              "name": "Stoneguard Citadel",
+              "faction": "human",
+              "description": "A rugged frontier settlement where hardy humans carve out a living"
+            }
+          },
+          "-4,6": {
+            "structure": {
+              "id": "structure_al_elf_spawn",
+              "type": "spawn",
+              "name": "Ancient Arborium",
+              "faction": "elf",
+              "description": "An elven city built around the oldest living trees in the realm"
+            }
+          }
+        },
+        "1,0": {
+          "12,4": {
+            "structure": {
+              "id": "structure_al_dwarf_spawn",
+              "type": "spawn",
+              "name": "Deepforge Stronghold",
+              "faction": "dwarf",
+              "description": "The ancestral mountain home of the dwarf clans"
+            }
+          },
+          "15,-3": {
+            "structure": {
+              "id": "structure_al_goblin_spawn",
+              "type": "spawn",
+              "name": "Boneridge Camp",
+              "faction": "goblin",
+              "description": "A resourceful goblin settlement built from the remains of ancient beasts"
+            }
+          },
+          "10,8": {
+            "structure": {
+              "id": "structure_al_fairy_spawn",
+              "type": "spawn",
+              "name": "Whisperwind Circle",
+              "faction": "fairy",
+              "description": "A fairy settlement where the ancient spirits still speak"
+            }
+          }
+        }
+      },
+      "info": {
+        "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
+        "lastTick": 1744947360623,
+        "name": "Ancient Lands",
+        "seed": 13579,
+        "size": "large",
+        "speed": 1.2
+      },
+      "spawns": {
+        "0:0:5:5": "structure_al_human_spawn",
+        "0:0:-4:6": "structure_al_elf_spawn",
+        "1:0:12:4": "structure_al_dwarf_spawn",
+        "1:0:15:-3": "structure_al_goblin_spawn",
+        "1:0:10:8": "structure_al_fairy_spawn"
+      }
+    },
     "default-world": {
       "chunks": {
         "0,0": {
           "0,0": {
             "structure": {
-              "id": "structure_main_fort",
-              "type": "fortress",
-              "name": "Fort Valley",
-              "faction": "human",
-              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
-              "ownerName": "TestPlayer",
               "capacity": 50,
+              "faction": "human",
+              "features": [
+                {
+                  "description": "Allows crafting of metal items and weapons",
+                  "icon": "⚒️",
+                  "name": "Blacksmith"
+                },
+                {
+                  "description": "Create potions and healing items",
+                  "icon": "🧪",
+                  "name": "Apothecary"
+                }
+              ],
+              "id": "structure_main_fort",
               "items": [
                 {
+                  "description": "Standard iron material for crafting",
                   "id": "item_1001",
                   "name": "Iron Ingot",
-                  "type": "resource",
                   "quantity": 15,
                   "rarity": "common",
-                  "description": "Standard iron material for crafting"
+                  "type": "resource"
                 },
                 {
                   "id": "item_1002",
                   "name": "Healing Herbs",
-                  "type": "resource",
                   "quantity": 8,
-                  "rarity": "common"
+                  "rarity": "common",
+                  "type": "resource"
                 },
                 {
+                  "description": "A beautiful blue gemstone that radiates magical energy",
                   "id": "item_1003",
                   "name": "Sapphire Gem",
-                  "type": "gem",
                   "quantity": 2,
                   "rarity": "rare",
-                  "description": "A beautiful blue gemstone that radiates magical energy"
+                  "type": "gem"
                 },
                 {
+                  "description": "A mysterious scroll with arcane symbols",
                   "id": "item_1004",
                   "name": "Ancient Scroll",
-                  "type": "artifact",
                   "quantity": 1,
                   "rarity": "epic",
-                  "description": "A mysterious scroll with arcane symbols"
+                  "type": "artifact"
                 },
                 {
+                  "description": "Basic tools available to all members of the settlement",
                   "id": "item_shared_1",
+                  "isShared": true,
                   "name": "Community Tools",
-                  "type": "tool",
                   "quantity": 5,
                   "rarity": "common",
-                  "isShared": true,
-                  "description": "Basic tools available to all members of the settlement"
+                  "type": "tool"
                 },
                 {
+                  "description": "Community food stores",
                   "id": "item_shared_2",
+                  "isShared": true,
                   "name": "Settlement Food Supplies",
-                  "type": "resource",
                   "quantity": 20,
                   "rarity": "common",
-                  "isShared": true,
-                  "description": "Community food stores"
+                  "type": "resource"
                 }
               ],
-              "features": [
-                {
-                  "name": "Blacksmith",
-                  "description": "Allows crafting of metal items and weapons",
-                  "icon": "⚒️"
-                },
-                {
-                  "name": "Apothecary",
-                  "description": "Create potions and healing items",
-                  "icon": "🧪"
-                }
-              ],
-              "banks": {
-                "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1": [
-                  {
-                    "id": "item_bank_1",
-                    "name": "Gold Coins",
-                    "type": "currency",
-                    "quantity": 100,
-                    "rarity": "common",
-                    "description": "Standard currency"
-                  },
-                  {
-                    "id": "item_bank_2",
-                    "name": "Family Heirloom",
-                    "type": "artifact",
-                    "quantity": 1,
-                    "rarity": "epic",
-                    "description": "A treasured family item passed down for generations"
-                  },
-                  {
-                    "id": "item_bank_3",
-                    "name": "Steel Sword",
-                    "type": "weapon",
-                    "quantity": 1,
-                    "rarity": "uncommon",
-                    "description": "A reliable steel sword with good balance"
-                  }
-                ]
-              }
-            },
-            "groups": {
-              "group_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956": {
-                "id": "group_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
-                "name": "Scout Team",
-                "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
-                "unitCount": 3,
-                "race": "human",
-                "status": "idle",
-                "x": 0,
-                "y": 0,
-                "created": 1744943650956,
-                "lastUpdated": 1744943650956,
-                "items": [
-                  {
-                    "id": "item_2001",
-                    "name": "Gold Ore",
-                    "type": "resource",
-                    "quantity": 5,
-                    "rarity": "uncommon",
-                    "description": "Valuable metal used for currency and special crafting"
-                  },
-                  {
-                    "id": "item_2002",
-                    "name": "Emerald Crystal",
-                    "type": "gem",
-                    "quantity": 1,
-                    "rarity": "rare",
-                    "description": "A vibrant green gemstone with magical properties"
-                  },
-                  {
-                    "id": "item_2003",
-                    "name": "Hunter's Trophy",
-                    "type": "quest_item",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "description": "Proof of a successful hunt in the wilderness"
-                  },
-                  {
-                    "id": "item_2004",
-                    "name": "Ancient Artifact",
-                    "type": "artifact",
-                    "quantity": 1,
-                    "rarity": "epic",
-                    "description": "A mysterious object emitting strange energy"
-                  },
-                  {
-                    "id": "item_2005",
-                    "name": "Healing Potion",
-                    "type": "consumable",
-                    "quantity": 2,
-                    "rarity": "uncommon",
-                    "description": "Restores health when consumed"
-                  },
-                  {
-                    "id": "item_2006",
-                    "name": "Enchanted Map",
-                    "type": "quest_item",
-                    "quantity": 1,
-                    "rarity": "rare",
-                    "description": "A map that reveals hidden locations when used by skilled explorers"
-                  }
-                ],
-                "units": [
-                  {
-                    "id": "unit_1",
-                    "type": "warrior",
-                    "name": "Soldier",
-                    "strength": 10
-                  },
-                  {
-                    "id": "unit_2",
-                    "type": "archer",
-                    "name": "Ranger",
-                    "strength": 8
-                  },
-                  {
-                    "id": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
-                    "type": "player",
-                    "race": "human",
-                    "name": "TestPlayer",
-                    "strength": 15
-                  }
-                ]
-              }
+              "name": "Fort Valley",
+              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+              "ownerName": "TestPlayer",
+              "type": "fortress"
             }
           },
           "1,0": {
             "structure": {
-              "id": "structure_outpost",
-              "type": "outpost",
-              "name": "Eastern Outpost",
-              "faction": "human",
               "capacity": 30,
+              "faction": "human",
+              "id": "structure_outpost",
               "items": [
                 {
+                  "description": "Contains information about nearby territories",
                   "id": "item_3001",
                   "name": "Scout Report",
-                  "type": "quest_item",
                   "quantity": 1,
                   "rarity": "uncommon",
-                  "description": "Contains information about nearby territories"
+                  "type": "quest_item"
                 },
                 {
                   "id": "item_3002",
                   "name": "Leather Scraps",
-                  "type": "resource",
                   "quantity": 12,
-                  "rarity": "common"
+                  "rarity": "common",
+                  "type": "resource"
                 },
                 {
+                  "description": "A torn piece of an ancient map",
                   "id": "item_3003",
                   "name": "Mysterious Map Fragment",
-                  "type": "artifact",
                   "quantity": 1,
                   "rarity": "rare",
-                  "description": "A torn piece of an ancient map"
+                  "type": "artifact"
                 }
-              ]
+              ],
+              "name": "Eastern Outpost",
+              "type": "outpost"
+            }
+          },
+          "-5,3": {
+            "structure": {
+              "id": "structure_human_spawn",
+              "type": "spawn",
+              "name": "Haven Settlement",
+              "faction": "human",
+              "description": "A welcoming human settlement where new adventurers begin their journey"
+            }
+          },
+          "7,-2": {
+            "structure": {
+              "id": "structure_elf_spawn",
+              "type": "spawn",
+              "name": "Silverleaf Enclave",
+              "faction": "elf",
+              "description": "An ethereal elven outpost built among ancient trees"
+            }
+          },
+          "-3,-6": {
+            "structure": {
+              "id": "structure_dwarf_spawn",
+              "type": "spawn",
+              "name": "Iron Refuge",
+              "faction": "dwarf",
+              "description": "A sturdy dwarven settlement with entrances to vast underground halls"
             }
           }
         },
         "0,1": {
           "0,5": {
             "structure": {
-              "id": "structure_watchtower",
-              "type": "watchtower",
-              "name": "Northern Watchtower",
-              "faction": "human",
-              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
-              "ownerName": "TestPlayer",
               "capacity": 20,
+              "faction": "human",
+              "id": "structure_watchtower",
               "items": [
                 {
+                  "description": "Used for long-distance observation",
                   "id": "item_4001",
                   "name": "Spyglass",
-                  "type": "tool",
                   "quantity": 1,
                   "rarity": "uncommon",
-                  "description": "Used for long-distance observation"
+                  "type": "tool"
                 },
                 {
                   "id": "item_4002",
                   "name": "Signal Flares",
-                  "type": "resource",
                   "quantity": 5,
-                  "rarity": "common"
+                  "rarity": "common",
+                  "type": "resource"
                 }
               ],
-              "banks": {
-                "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1": [
-                  {
-                    "id": "item_watch_bank_1",
-                    "name": "Personal Rations",
-                    "type": "resource",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "description": "Emergency food supplies"
-                  },
-                  {
-                    "id": "item_watch_bank_2",
-                    "name": "Enchanted Arrow",
-                    "type": "weapon",
-                    "quantity": 1,
-                    "rarity": "rare",
-                    "description": "An arrow that never misses its target"
-                  }
-                ]
-              }
+              "name": "Northern Watchtower",
+              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+              "ownerName": "TestPlayer",
+              "type": "watchtower"
+            }
+          },
+          "6,7": {
+            "structure": {
+              "id": "structure_goblin_spawn",
+              "type": "spawn",
+              "name": "Shadow Encampment",
+              "faction": "goblin",
+              "description": "A crafty goblin settlement hidden among rocky crags"
+            }
+          },
+          "-4,8": {
+            "structure": {
+              "id": "structure_fairy_spawn",
+              "type": "spawn",
+              "name": "Glimmerlight Grove",
+              "faction": "fairy",
+              "description": "A magical fairy settlement that shimmers with enchanted light"
             }
           }
         }
       },
       "info": {
-        "seed": 12345,
-        "name": "Test World",
         "description": "World for testing demobilisation with items",
+        "lastTick": 1744947360623,
+        "name": "Test World",
+        "seed": 12345,
         "size": "medium",
-        "speed": 1.0,
-        "lastTick": 1744943650950
+        "speed": 1
+      },
+      "spawns": {
+        "0:0:-5:3": "structure_human_spawn",
+        "0:0:7:-2": "structure_elf_spawn",
+        "0:0:-3:-6": "structure_dwarf_spawn",
+        "0:1:6:7": "structure_goblin_spawn",
+        "0:1:-4:8": "structure_fairy_spawn"
       }
     },
     "fantasy-realm": {
@@ -309,189 +325,123 @@
         "0,0": {
           "0,0": {
             "structure": {
-              "id": "structure_elven_citadel",
-              "type": "citadel",
-              "name": "Elven Citadel",
-              "faction": "elf",
-              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
-              "ownerName": "TestPlayer",
               "capacity": 40,
+              "faction": "elf",
+              "features": [
+                {
+                  "description": "Allows crafting of magical items and enchantments",
+                  "icon": "✨",
+                  "name": "Enchanter"
+                },
+                {
+                  "description": "Grow magical herbs and plants",
+                  "icon": "🌱",
+                  "name": "Elven Garden"
+                }
+              ],
+              "id": "structure_elven_citadel",
               "items": [
                 {
+                  "description": "Wood infused with magical energy",
                   "id": "item_fr_1001",
                   "name": "Enchanted Wood",
-                  "type": "resource",
                   "quantity": 12,
                   "rarity": "uncommon",
-                  "description": "Wood infused with magical energy"
+                  "type": "resource"
                 },
                 {
                   "id": "item_fr_1002",
                   "name": "Elven Silks",
-                  "type": "resource",
                   "quantity": 8,
-                  "rarity": "uncommon"
+                  "rarity": "uncommon",
+                  "type": "resource"
                 },
                 {
+                  "description": "A stone that glows under moonlight",
                   "id": "item_fr_1003",
                   "name": "Moonstone",
-                  "type": "gem",
                   "quantity": 3,
                   "rarity": "rare",
-                  "description": "A stone that glows under moonlight"
+                  "type": "gem"
                 },
                 {
+                  "description": "A collection of spells and knowledge from ancient times",
                   "id": "item_fr_1004",
                   "name": "Ancient Elven Manuscript",
-                  "type": "artifact",
                   "quantity": 1,
                   "rarity": "epic",
-                  "description": "A collection of spells and knowledge from ancient times"
+                  "type": "artifact"
                 }
               ],
-              "features": [
-                {
-                  "name": "Enchanter",
-                  "description": "Allows crafting of magical items and enchantments",
-                  "icon": "✨"
-                },
-                {
-                  "name": "Elven Garden",
-                  "description": "Grow magical herbs and plants",
-                  "icon": "🌱"
-                }
-              ],
-              "banks": {
-
-              }
-            },
-            "groups": {
-              "group_fr_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956": {
-                "id": "group_fr_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
-                "name": "Elven Patrol",
-                "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
-                "unitCount": 3,
-                "race": "elf",
-                "status": "idle",
-                "x": 0,
-                "y": 0,
-                "created": 1744943650956,
-                "lastUpdated": 1744943650956,
-                "items": [
-                  {
-                    "id": "item_fr_2001",
-                    "name": "Star Crystal",
-                    "type": "gem",
-                    "quantity": 2,
-                    "rarity": "rare",
-                    "description": "A crystal that fell from the night sky"
-                  },
-                  {
-                    "id": "item_fr_2002",
-                    "name": "Fairy Dust",
-                    "type": "resource",
-                    "quantity": 5,
-                    "rarity": "uncommon",
-                    "description": "Glittering magical dust with various magical properties"
-                  }
-                ],
-                "units": [
-                  {
-                    "id": "unit_fr_1",
-                    "type": "ranger",
-                    "name": "Elven Scout",
-                    "strength": 8
-                  },
-                  {
-                    "id": "unit_fr_2",
-                    "type": "mage",
-                    "name": "Forest Mage",
-                    "strength": 12
-                  },
-                  {
-                    "id": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
-                    "type": "player",
-                    "race": "elf",
-                    "name": "TestPlayer",
-                    "strength": 15
-                  }
-                ]
-              }
-            }
-          }
-        }
-      },
-      "info": {
-        "seed": 24680,
-        "name": "Fantasy Realm",
-        "description": "A magical world of elves, fairies and mystical creatures",
-        "size": "medium",
-        "speed": 1.0,
-        "lastTick": 1744943650950
-      }
-    },
-    "ancient-lands": {
-      "chunks": {
-        "0,0": {
-          "0,0": {
-            "structure": {
-              "id": "structure_dwarven_stronghold",
-              "type": "stronghold",
-              "name": "Dwarven Stronghold",
-              "faction": "dwarf",
+              "name": "Elven Citadel",
               "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
               "ownerName": "TestPlayer",
-              "capacity": 60,
-              "items": [
-                {
-                  "id": "item_al_1001",
-                  "name": "Mithril Ore",
-                  "type": "resource",
-                  "quantity": 10,
-                  "rarity": "rare",
-                  "description": "Incredibly strong but lightweight metal ore"
-                },
-                {
-                  "id": "item_al_1002",
-                  "name": "Mountain Stone",
-                  "type": "resource",
-                  "quantity": 22,
-                  "rarity": "common"
-                },
-                {
-                  "id": "item_al_1003",
-                  "name": "Fire Ruby",
-                  "type": "gem",
-                  "quantity": 1,
-                  "rarity": "epic",
-                  "description": "A gem that emanates heat and light"
-                }
-              ],
-              "features": [
-                {
-                  "name": "Forge",
-                  "description": "Allows crafting of superior metal items and weapons",
-                  "icon": "🔥"
-                },
-                {
-                  "name": "Brewery",
-                  "description": "Create powerful potions and brews",
-                  "icon": "🍺"
-                }
-              ],
-              "banks": {
-              }
+              "type": "citadel"
+            }
+          },
+          "3,4": {
+            "structure": {
+              "id": "structure_fr_human_spawn",
+              "type": "spawn",
+              "name": "Ironheart Bastion",
+              "faction": "human",
+              "description": "A proud human fortress built to protect magical artifacts"
+            }
+          },
+          "-2,5": {
+            "structure": {
+              "id": "structure_fr_elf_spawn",
+              "type": "spawn",
+              "name": "Moonshadow Haven",
+              "faction": "elf",
+              "description": "The ancient homeland of the elves, nestled within an enchanted forest"
+            }
+          }
+        },
+        "-1,0": {
+          "-15,3": {
+            "structure": {
+              "id": "structure_fr_dwarf_spawn",
+              "type": "spawn",
+              "name": "Gemfire Halls",
+              "faction": "dwarf",
+              "description": "A dwarven stronghold known for its master jewelers and smiths"
+            }
+          },
+          "-18,-5": {
+            "structure": {
+              "id": "structure_fr_goblin_spawn",
+              "type": "spawn",
+              "name": "Nightclaw Warren",
+              "faction": "goblin",
+              "description": "A labyrinthine goblin settlement with unexpected technological marvels"
+            }
+          },
+          "-12,8": {
+            "structure": {
+              "id": "structure_fr_fairy_spawn",
+              "type": "spawn",
+              "name": "Starfall Sanctuary",
+              "faction": "fairy",
+              "description": "A fairy realm where the veil between worlds is thin"
             }
           }
         }
       },
       "info": {
-        "seed": 13579,
-        "name": "Ancient Lands",
-        "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "size": "large",
-        "speed": 1.2,
-        "lastTick": 1744943650950
+        "description": "A magical world of elves, fairies and mystical creatures",
+        "lastTick": 1744947360623,
+        "name": "Fantasy Realm",
+        "seed": 24680,
+        "size": "medium",
+        "speed": 1
+      },
+      "spawns": {
+        "0:0:3:4": "structure_fr_human_spawn",
+        "0:0:-2:5": "structure_fr_elf_spawn",
+        "-1:0:-15:3": "structure_fr_dwarf_spawn",
+        "-1:0:-18:-5": "structure_fr_goblin_spawn",
+        "-1:0:-12:8": "structure_fr_fairy_spawn"
       }
     }
   }
