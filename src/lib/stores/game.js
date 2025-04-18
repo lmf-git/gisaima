@@ -124,15 +124,13 @@ export const needsSpawn = derived(
       return true;
     }
     
-    // Check if we have player world data for this specific world
-    if (!$game.playerWorlds || 
-        !$game.playerWorlds[$user.uid] || 
-        !$game.playerWorlds[$user.uid][$game.currentWorld]) {
+    // Get the player's data for this specific world
+    const playerWorldData = $game.playerWorldData;
+    
+    // If no player world data exists, player needs to spawn
+    if (!playerWorldData) {
       return true;
     }
-    
-    // Get the player's data for this specific world
-    const playerWorldData = $game.playerWorlds[$user.uid][$game.currentWorld];
     
     // If alive is explicitly false, player needs to spawn
     if (playerWorldData.alive === false) {
