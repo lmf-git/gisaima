@@ -24,7 +24,8 @@
     openActions = null, 
     isPathDrawingMode = false, 
     moveComponentRef = null,
-    onAddPathPoint = null 
+    onAddPathPoint = null,
+    onClick = null // Add onClick to the props destructuring
   } = $props();
   
   let mapElement = null;
@@ -423,8 +424,8 @@
     lastClickTime = Date.now();
     
     if (wasDrag || !$ready) {
-      console.log('Click ignored: wasDrag or map not ready');
-      return;
+        console.log('Click ignored: wasDrag or map not ready');
+        return;
     }
     
     let tileX, tileY;
@@ -432,67 +433,69 @@
     let tileElement = event.target.closest('.tile');
     
     if (!tileElement) {
-      const gridElement = event.currentTarget.querySelector('.main-grid');
-      if (!gridElement) {
-        console.log('Click ignored: grid not found');
-        return;
-      }
-      
-      const rect = gridElement.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      
-      const tileWidth = rect.width / $map.cols;
-      const tileHeight = rect.height / $map.rows;
-      
-      const col = Math.floor(x / tileWidth);
-      const row = Math.floor(y / tileHeight);
-      
-      if (col < 0 || col >= $map.cols || row < 0 || row >= $map.rows) {
-        console.log('Click ignored: outside grid bounds');
-        return;
-      }
-      
-      const centerCol = Math.floor($map.cols / 2);
-      const centerRow = Math.floor($map.rows / 2);
-      
-      tileX = $map.target.x - centerCol + col;
-      tileY = $map.target.y - centerRow + row;
-      
+        const gridElement = event.currentTarget.querySelector('.main-grid');
+        if (!gridElement) {
+            console.log('Click ignored: grid not found');
+            return;
+        }
+        
+        const rect = gridElement.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        const tileWidth = rect.width / $map.cols;
+        const tileHeight = rect.height / $map.rows;
+        
+        const col = Math.floor(x / tileWidth);
+        const row = Math.floor(y / tileHeight);
+        
+        if (col < 0 || col >= $map.cols || row < 0 || row >= $map.rows) {
+            console.log('Click ignored: outside grid bounds');
+            return;
+        }
+        
+        const centerCol = Math.floor($map.cols / 2);
+        const centerRow = Math.floor($map.rows / 2);
+        
+        tileX = $map.target.x - centerCol + col;
+        tileY = $map.target.y - centerRow + row;
+        
     } 
     else {
-      const ariaLabel = tileElement.getAttribute('aria-label');
-      const coordsMatch = ariaLabel ? ariaLabel.match(/Coordinates (-?\d+),(-?\d+)/) : null;
-      
-      if (!coordsMatch) {
-        console.log('Click ignored: no coordinates found in tile');
-        return;
-      }
-      
-      tileX = parseInt(coordsMatch[1], 10);
-      tileY = parseInt(coordsMatch[2], 10);
+        const ariaLabel = tileElement.getAttribute('aria-label');
+        const coordsMatch = ariaLabel ? ariaLabel.match(/Coordinates (-?\d+),(-?\d+)/) : null;
+        
+        if (!coordsMatch) {
+            console.log('Click ignored: no coordinates found in tile');
+            return;
+        }
+        
+        tileX = parseInt(coordsMatch[1], 10);
+        tileY = parseInt(coordsMatch[2], 10);
     }
     
     if (tileX !== undefined && tileY !== undefined) {
-      if (isPathDrawingMode) {
-        const point = { x: tileX, y: tileY };
-        console.log('Grid click in path drawing mode:', point);
-        handlePathPoint(point);
-      } else {
-        console.log('Moving to clicked tile:', { x: tileX, y: tileY });
-        
-        moveTarget(tileX, tileY);
-        
-        if (openActions) {
-          const clickedTile = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
-          // Modified condition: show actions if tile has any content
-          if (clickedTile && hasTileContent(clickedTile)) {
-            openActions(clickedTile);
-          }
+        if (isPathDrawingMode) {
+            const point = { x: tileX, y: tileY };
+            console.log('Grid click in path drawing mode:', point);
+            handlePathPoint(point);
+        } else {
+            console.log('Grid click on tile:', { x: tileX, y: tileY });
+            
+            // Dispatch a custom event with the tile coordinates
+            const clickEvent = new CustomEvent('gridclick', { 
+                detail: { x: tileX, y: tileY }
+            });
+            dispatchEvent(clickEvent);
+            
+            // Check if we need to pass to parent click handler
+            if (onClick) {
+                onClick({ detail: { x: tileX, y: tileY } });
+            }
+            
+            // Move target (this should be handled by the parent)
+            moveTarget(tileX, tileY);
         }
-        
-        setHighlighted(null, null);
-      }
     }
     
     event.preventDefault();

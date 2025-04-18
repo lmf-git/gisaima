@@ -27,7 +27,8 @@
         cleanup,
         isInternalUrlChange,
         setHighlighted,
-        highlightedStore
+        highlightedStore,
+        coordinates // Import coordinates store
     } from "../../lib/stores/map.js";
     
     import { ref, update } from "firebase/database";
@@ -561,15 +562,26 @@
                 handlePathPoint(point);
             } else {
                 console.log('Moving to clicked tile:', { x: tileX, y: tileY });
+                
+                // First move target to this location
                 moveTarget(tileX, tileY);
+                
+                // Set the highlight first to ensure highlightedStore has the data
                 setHighlighted(tileX, tileY);
-                setTimeout(() => {
-                    if ($highlightedStore && hasTileContent($highlightedStore)) {
-                        toggleDetailsModal(true, $highlightedStore);
-                    } else {
-                        setHighlighted(null, null);
-                    }
-                }, 10);
+                
+                // Get the tile data from coordinates store
+                const clickedTile = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
+                
+                // Check if there's content worth showing details for
+                if (clickedTile && hasTileContent(clickedTile)) {
+                    // Open details modal with a slight delay to ensure data is loaded
+                    setTimeout(() => {
+                        toggleDetailsModal(true, clickedTile);
+                    }, 10);
+                } else {
+                    // If no content, clear the highlight
+                    setHighlighted(null, null);
+                }
             }
         }
         
