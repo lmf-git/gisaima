@@ -1573,26 +1573,26 @@
   :global(.structure-type-icon) {
     width: 1.4em;
     height: 1.4em;
-    fill: rgba(0, 0, 0, 0.7);
+    fill: #a0d6e7; /* Changed from rgba(0, 0, 0, 0.7) to a brighter color */
   }
   
   :global(.fortress-icon) {
-    fill: #E6BE8A;
+    fill: #ffdf9e !important; /* Added !important to ensure it overrides */
   }
   
   :global(.outpost-icon) {
-    fill: #8AB0E6;
+    fill: #9dc3ff !important;
   }
   
   :global(.watchtower-icon) {
-    fill: #A8E68A;
+    fill: #b9ff9e !important;
   }
   
   :global(.stronghold-icon) {
-    fill: #E68A8A;
+    fill: #ff9e9e !important;
   }
   
   :global(.citadel-icon) {
-    fill: #D18AE6;
+    fill: #e09eff !important;
   }
 </style>

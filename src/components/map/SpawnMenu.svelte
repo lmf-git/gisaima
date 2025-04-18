@@ -310,13 +310,13 @@
   :global(.race-icon-menu) {
     width: 2.5em;
     height: 2.5em;
-    fill: var(--color-teal);
+    fill: #64FFDA;  /* Changed from var(--color-teal) to a brighter color */
   }
   
   :global(.race-icon-option) {
     width: 1.2em;
     height: 1.2em;
-    fill: var(--color-teal);
+    fill: #64FFDA;  /* Changed from var(--color-teal) to a brighter color */
     margin-right: 0.3em;
   }
 

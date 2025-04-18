@@ -340,17 +340,17 @@
   :global(.race-icon) {
     width: 4em;
     height: 4em;
-    fill: var(--color-muted-teal);
+    fill: #64FFDA; /* Changed from var(--color-muted-teal) to a brighter color */
     transition: all 0.2s ease;
   }
   
   :global(.race-icon-selected) {
-    fill: var(--color-bright-accent);
+    fill: #9EFFEA; /* Lighten the selected state for even better contrast */
     transform: scale(1.05);
   }
   
   .race-option:hover :global(.race-icon) {
-    fill: var(--color-pale-green);
+    fill: #9EFFEA; /* Changed from var(--color-pale-green) to a brighter color */
   }
   
   .race-name-container {
