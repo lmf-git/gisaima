@@ -744,6 +744,65 @@
         
         return path;
     }
+
+    function handleMobilize(data) {
+        console.log('Handling mobilize:', data);
+        // Implement mobilize logic here
+        // For example: send data to backend API
+        closeMobilizePopup();
+    }
+
+    function handleMove(data) {
+        console.log('Handling move:', data);
+        // Implement move logic here
+        closeMovePopup();
+    }
+
+    function handleAttack(data) {
+        console.log('Handling attack:', data);
+        // Implement attack logic here
+        closeAttackPopup();
+    }
+
+    function handleJoinBattle(data) {
+        console.log('Handling join battle:', data);
+        // Implement join battle logic here
+        closeJoinBattlePopup();
+    }
+
+    function handleDemobilize(data) {
+        console.log('Handling demobilize:', data);
+        // Implement demobilize logic here
+        closeDemobilizePopup();
+    }
+
+    function handlePathDrawingStart(group) {
+        console.log('Starting path drawing for group:', group);
+        isPathDrawingMode = true;
+        pathDrawingGroup = group;
+        currentPath = [];
+        
+        if (group && group.x !== undefined && group.y !== undefined) {
+            // Initialize path with group's current position
+            currentPath = [{ x: group.x, y: group.y }];
+        }
+    }
+
+    function handlePathDrawingCancel() {
+        console.log('Path drawing cancelled');
+        isPathDrawingMode = false;
+        pathDrawingGroup = null;
+        currentPath = [];
+        closeMovePopup(false);
+    }
+
+    function confirmPathDrawing() {
+        console.log('Path drawing confirmed:', currentPath);
+        if (moveComponentRef && typeof moveComponentRef.confirmPath === 'function') {
+            moveComponentRef.confirmPath(currentPath);
+        }
+        isPathDrawingMode = false;
+    }
 </script>
 
 <div class="map" class:dragging={isDragging} class:path-drawing={isPathDrawingMode}>

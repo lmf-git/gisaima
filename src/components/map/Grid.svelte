@@ -498,7 +498,10 @@
         }
     }
     
-    event.preventDefault();
+    // Only call preventDefault if it's a function
+    if (event && typeof event.preventDefault === 'function') {
+        event.preventDefault();
+    }
   }
 
   function handlePathPoint(point) {
@@ -588,7 +591,9 @@
   function handleKeyDown(event) {
     // Handle clicking with keyboard (Enter or Space)
     if ((event.key === 'Enter' || event.key === ' ') && !isMoving) {
-      event.preventDefault();
+      if (typeof event.preventDefault === 'function') {
+        event.preventDefault();
+      }
       handleGridClick(event);
     }
     
