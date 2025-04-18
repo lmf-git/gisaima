@@ -1,7 +1,7 @@
 <script>
   import { map, targetStore, entities, highlightedStore } from "../../lib/stores/map";
   import Close from '../../components/icons/Close.svelte';
-  import { user } from "../../lib/stores/user";
+  import { user, currentPlayer } from "../../lib/stores/user";
   import { onMount, onDestroy } from 'svelte';
   import { game } from "../../lib/stores/game";
   
@@ -216,6 +216,12 @@
     const now = Date.now();
     return endTime <= now;
   }
+
+  // Function to check if entity belongs to current player
+  function isOwnedByCurrentPlayer(entity) {
+    if (!$currentPlayer || !entity) return false;
+    return entity.owner === $currentPlayer.uid || entity.uid === $currentPlayer.uid;
+  }
 </script>
 
 <svelte:window onkeydown={escape} />
@@ -419,6 +425,74 @@
               </li>
             {/each}
           </ul>
+        </div>
+      {/if}
+
+      <!-- Player details section -->
+      {#if detailType === 'player' && selectedEntity}
+        <div class="player-details detail-section">
+          <h3>
+            {selectedEntity.displayName || 'Player'}
+            {#if isOwnedByCurrentPlayer(selectedEntity)}
+              <span class="ownership-tag current-user">You</span>
+            {/if}
+          </h3>
+          
+          <!-- Rest of player details -->
+        </div>
+      {/if}
+
+      <!-- Structure details section -->
+      {#if detailType === 'structure' && selectedEntity}
+        <div class="structure-details detail-section">
+          <h3>
+            {selectedEntity.name || _fmt(selectedEntity.type) || 'Structure'}
+            {#if isOwnedByCurrentPlayer(selectedEntity)}
+              <span class="ownership-tag">Your Structure</span>
+            {/if}
+          </h3>
+          
+          <!-- Owner information -->
+          {#if selectedEntity.owner}
+            <div class="detail-row">
+              <span class="detail-label">Owner:</span>
+              <span class="detail-value">
+                {selectedEntity.ownerName || 'Unknown Player'}
+                {#if isOwnedByCurrentPlayer(selectedEntity)}
+                  <span class="ownership-indicator">(You)</span>
+                {/if}
+              </span>
+            </div>
+          {/if}
+          
+          <!-- Rest of structure details -->
+        </div>
+      {/if}
+
+      <!-- Group details section -->
+      {#if detailType === 'group' && selectedEntity}
+        <div class="group-details detail-section">
+          <h3>
+            {selectedEntity.name || `Group ${selectedEntity.id}` || 'Group'}
+            {#if isOwnedByCurrentPlayer(selectedEntity)}
+              <span class="ownership-tag">Your Group</span>
+            {/if}
+          </h3>
+          
+          <!-- Owner information -->
+          {#if selectedEntity.owner}
+            <div class="detail-row">
+              <span class="detail-label">Owner:</span>
+              <span class="detail-value">
+                {selectedEntity.ownerName || 'Unknown Player'}
+                {#if isOwnedByCurrentPlayer(selectedEntity)}
+                  <span class="ownership-indicator">(You)</span>
+                {/if}
+              </span>
+            </div>
+          {/if}
+          
+          <!-- Rest of group details -->
         </div>
       {/if}
     </div>
@@ -1151,5 +1225,27 @@
   @keyframes pulseWaiting {
     from { opacity: 0.7; }
     to { opacity: 1; }
+  }
+
+  .ownership-tag {
+    display: inline-block;
+    background-color: var(--color-bright-accent);
+    color: var(--color-dark-navy);
+    font-size: 0.7em;
+    padding: 0.1em 0.5em;
+    border-radius: 0.3em;
+    margin-left: 0.5em;
+    font-weight: bold;
+    vertical-align: middle;
+  }
+  
+  .ownership-indicator {
+    color: var(--color-bright-accent);
+    font-weight: 500;
+    margin-left: 0.3em;
+  }
+  
+  .current-user {
+    background-color: var(--color-bright-teal);
   }
 </style>

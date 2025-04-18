@@ -389,6 +389,12 @@
     if (!group.items) return 0;
     return Array.isArray(group.items) ? group.items.length : Object.keys(group.items).length;
   }
+
+  // Function to check if entity belongs to current player
+  function isOwnedByCurrentPlayer(entity) {
+    if (!$currentPlayer || !entity) return false;
+    return entity.owner === $currentPlayer.uid || entity.uid === $currentPlayer.uid;
+  }
 </script>
 
 <div class="entities-wrapper" class:closing>
@@ -480,8 +486,7 @@
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
               {#each sortedStructures as structure (structure.type + ':' + structure.x + ':' + structure.y)}
                 <div 
-                  class="entity structure" 
-                  class:at-target={isAtTarget(structure.x, structure.y)}
+                  class="entity structure {isAtTarget(structure.x, structure.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(structure) ? 'current-player-owned' : ''}"
                   onclick={(e) => handleEntityAction(structure.x, structure.y, e)}
                   onkeydown={(e) => handleEntityAction(structure.x, structure.y, e)}
                   role="button"
@@ -498,6 +503,9 @@
                   <div class="entity-info">
                     <div class="entity-name">
                       {structure.name || _fmt(structure.type) || "Unknown"}
+                      {#if isOwnedByCurrentPlayer(structure)}
+                        <span class="your-entity-badge">Yours</span>
+                      {/if}
                       <span class="entity-coords">{formatCoords(structure.x, structure.y)}</span>
                     </div>
                     <div class="entity-info">
@@ -575,9 +583,7 @@
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
               {#each sortedPlayers as entity ('player:' + entity.id + ':' + entity.x + ':' + entity.y)}
                 <div 
-                  class="entity player" 
-                  class:current={entity.id === $currentPlayer?.uid} 
-                  class:at-target={isAtTarget(entity.x, entity.y)}
+                  class="entity player {entity.id === $currentPlayer?.uid ? 'current' : ''} {isAtTarget(entity.x, entity.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(entity) ? 'current-player-owned' : ''}"
                   onclick={(e) => handleEntityAction(entity.x, entity.y, e)}
                   onkeydown={(e) => handleEntityAction(entity.x, entity.y, e)}
                   role="button"
@@ -600,6 +606,9 @@
                   <div class="entity-info">
                     <div class="entity-name">
                       {entity.displayName || 'Player'}
+                      {#if isOwnedByCurrentPlayer(entity)}
+                        <span class="your-entity-badge">You</span>
+                      {/if}
                       <span class="entity-coords">{formatCoords(entity.x, entity.y)}</span>
                     </div>
                     <div class="entity-details">
@@ -677,8 +686,7 @@
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
               {#each sortedGroups as group ('group:' + group.id)}
                 <div 
-                  class="entity" 
-                  class:at-target={isAtTarget(group.x, group.y)}
+                  class="entity {group.status || 'idle'} {isAtTarget(group.x, group.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(group) ? 'current-player-owned' : ''}"
                   onclick={(e) => handleEntityAction(group.x, group.y, e)}
                   onkeydown={(e) => handleEntityAction(group.x, group.y, e)}
                   tabindex="0"
@@ -702,6 +710,9 @@
                   <div class="entity-info">
                     <div class="entity-name">
                       {group.name || `Group ${group.id.slice(-4)}`}
+                      {#if isOwnedByCurrentPlayer(group)}
+                        <span class="your-entity-badge">Yours</span>
+                      {/if}
                       <span class="entity-coords">({formatCoords(group.x, group.y)})</span>
                     </div>
                     
@@ -1621,5 +1632,33 @@
   
   :global(.citadel-icon) {
     fill: #e09eff !important;
+  }
+
+  .your-entity-badge {
+    display: inline-block;
+    background: var(--color-bright-accent);
+    color: var(--color-dark-navy);
+    font-size: 0.7em;
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+    margin-left: 0.5em;
+    font-weight: bold;
+    vertical-align: middle;
+  }
+  
+  .current-player-owned {
+    border-color: var(--color-bright-accent);
+    background-color: rgba(100, 255, 218, 0.1);
+    position: relative;
+  }
+  
+  .current-player-owned::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: var(--color-bright-accent);
   }
 </style>
