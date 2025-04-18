@@ -156,6 +156,16 @@
       return;
     }
     
+    // Add "inspect" action if there's a structure
+    if (tile.structure) {
+      availableActions.push({
+        id: 'inspect',
+        label: 'Inspect Structure',
+        description: 'View details about this structure and its contents',
+        icon: '🏛️',
+      });
+    }
+    
     // Check if there's a group currently demobilising (only affects mobilize action)
     const hasDemobilisingGroup = hasGroupWithStatus(tile, playerId, 'demobilising');
     

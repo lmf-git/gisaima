@@ -1,13 +1,13 @@
 {
   "players": {
-    "XKED7fRQ7KgQca8UDxiVoxrZtLw2": {
+    "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1": {
       "worlds": {
         "default-world": {
-          "inGroup": "group_XKED7fRQ7KgQca8UDxiVoxrZtLw2_1744941208316",
-          "joined": 1744941198753,
-          "lastGroupJoin": 1744941208316,
+          "inGroup": "group_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
+          "joined": 1744943635171,
+          "lastGroupJoin": 1744943650956,
           "lastLocation": {
-            "timestamp": 1744941202198,
+            "timestamp": 1744943644706,
             "x": 0,
             "y": 0
           },
@@ -64,55 +64,29 @@
           },
           "0,0": {
             "groups": {
-              "group_XKED7fRQ7KgQca8UDxiVoxrZtLw2_1744941208316": {
-                "created": 1744941208316,
-                "id": "group_XKED7fRQ7KgQca8UDxiVoxrZtLw2_1744941208316",
-                "lastProcessed": 1744941208316,
-                "lastUpdated": 1744941208316,
+              "group_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956": {
+                "created": 1744943650956,
+                "id": "group_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
+                "lastProcessed": 1744943650956,
+                "lastUpdated": 1744943701585,
                 "name": "New Force",
-                "owner": "XKED7fRQ7KgQca8UDxiVoxrZtLw2",
+                "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
                 "race": "human",
-                "readyAt": 1744941300000,
-                "status": "mobilizing",
+                "readyAt": 1744943700000,
+                "status": "idle",
                 "unitCount": 1,
                 "units": [
                   {
-                    "id": "XKED7fRQ7KgQca8UDxiVoxrZtLw2",
-                    "lastUpdated": 1744941208316,
-                    "name": "Guest XKED",
+                    "id": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+                    "lastUpdated": 1744943650956,
+                    "name": "Guest Lxr6",
                     "race": "human",
                     "strength": 10,
                     "type": "player"
                   }
                 ],
                 "x": 0,
-                "y": 0,
-                "items": [
-                  {
-                    "id": "test_item_1",
-                    "name": "Ancient Artifact",
-                    "description": "A mysterious artifact with unknown powers",
-                    "quantity": 1,
-                    "type": "artifact",
-                    "rarity": "rare"
-                  },
-                  {
-                    "id": "test_item_2",
-                    "name": "Gold Coins",
-                    "description": "A small pouch of gold coins",
-                    "quantity": 25,
-                    "type": "currency",
-                    "rarity": "common"
-                  },
-                  {
-                    "id": "test_item_3",
-                    "name": "Healing Herb",
-                    "description": "A medicinal herb with healing properties",
-                    "quantity": 5,
-                    "type": "resource",
-                    "rarity": "uncommon"
-                  }
-                ]
+                "y": 0
               }
             },
             "items": [
@@ -129,6 +103,7 @@
               "description": "The central arrival point in this world",
               "faction": "human",
               "health": 1000,
+              "id": "structure_0_0_1744942214185",
               "indestructible": true,
               "maxHealth": 1000,
               "name": "Central Spawn",
@@ -181,7 +156,7 @@
         },
         "created": 1688388000000,
         "description": "A generic starter world for new players",
-        "lastTick": 1744941241778,
+        "lastTick": 1744943701585,
         "name": "Default World",
         "playerCount": 0,
         "seed": 10101010,
@@ -203,6 +178,7 @@
               "description": "A peaceful settlement along the crystal river",
               "faction": "human",
               "health": 1000,
+              "id": "structure_-12_8_1744942822163",
               "indestructible": true,
               "maxHealth": 1000,
               "name": "Riverside Haven",
@@ -321,7 +297,7 @@
         },
         "created": 1688475600000,
         "description": "A magical world filled with elves, dwarves, and mysterious creatures",
-        "lastTick": 1744941241778,
+        "lastTick": 1744943701585,
         "name": "Fantasy Realm",
         "playerCount": 0,
         "seed": 14285714,
@@ -434,7 +410,7 @@
         },
         "created": 1688562000000,
         "description": "A harsh desert world with scarce resources and ancient ruins",
-        "lastTick": 1744941241778,
+        "lastTick": 1744943701585,
         "name": "The Wasteland",
         "playerCount": 0,
         "seed": 20221022,

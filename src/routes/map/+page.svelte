@@ -48,6 +48,7 @@
     import AttackGroups from '../../components/map/AttackGroups.svelte';
     import JoinBattle from '../../components/map/JoinBattle.svelte';
     import Demobilize from '../../components/map/Demobilize.svelte';
+    import StructureOverview from '../../components/map/StructureOverview.svelte';
 
     let detailed = $state(false);
     let loading = $state(true);
@@ -93,6 +94,11 @@
     let showMobilize = $state(false);
     let showMove = $state(false);
     let showDemobilize = $state(false); // Add state for demobilize dialog
+
+    // State for structure overview
+    let showStructureOverview = $state(false);
+    let selectedStructure = $state(null);
+    let structureLocation = $state({ x: 0, y: 0 });
 
     // Add new effect to watch optimizePath changes
     $effect(() => {
@@ -809,12 +815,31 @@
             openDemobilizePopup();
             return;
         }
+
+        if (action === 'inspect') {
+            // Show structure overview
+            if (tile && tile.structure) {
+                selectedStructure = tile.structure;
+                structureLocation = { x: tile.x, y: tile.y };
+                showStructureOverview = true;
+            }
+            return;
+        }
         
         switch(action) {
             case 'explore':
                 console.log(`Exploring ${tile.x}, ${tile.y}`);
                 break;
         }
+    }
+
+    // Function to close structure overview
+    function closeStructureOverview() {
+        showStructureOverview = false;
+        // Keep selected structure data for animation closing
+        setTimeout(() => {
+            selectedStructure = null;
+        }, 300);
     }
     
     // Handle attack action
@@ -1192,6 +1217,15 @@
                     </button>
                 </div>
             </div>
+        {/if}
+
+        {#if showStructureOverview && selectedStructure}
+            <StructureOverview 
+                structure={selectedStructure}
+                x={structureLocation.x}
+                y={structureLocation.y}
+                onClose={closeStructureOverview} 
+            />
         {/if}
     {/if}
 </div>
