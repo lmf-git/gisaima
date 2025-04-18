@@ -116,7 +116,7 @@
       // Update the player's spawn status in user record
       const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.currentWorld}`);
       await update(playerWorldRef, { 
-        spawned: true,
+        alive: true, // Changed from spawned to alive
         lastLocation: {
           x: selectedSpot.x,
           y: selectedSpot.y

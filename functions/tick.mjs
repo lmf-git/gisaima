@@ -402,6 +402,20 @@ async function processBattles(worldId) {
                     const groupCasualties = Math.ceil((group.unitCount / side1Power) * winnerCasualties);
                     const newUnitCount = Math.max(1, group.unitCount - groupCasualties);
                     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
+                    
+                    // Check for player deaths in winning groups
+                    if (group.units) {
+                      for (const unit of group.units) {
+                        if (unit.type === 'player' && unit.id) {
+                          // Small chance for player death on winning side (20% of casualty rate)
+                          if (Math.random() < (groupCasualties / group.unitCount) * 0.2) {
+                            logger.info(`Player ${unit.id} died in battle (winner side)`);
+                            // Mark player as not alive, triggering respawn
+                            updates[`players/${unit.id}/worlds/${worldId}/alive`] = false;
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -422,6 +436,20 @@ async function processBattles(worldId) {
                     const groupCasualties = Math.ceil((group.unitCount / side2Power) * loserCasualties);
                     const newUnitCount = Math.max(1, group.unitCount - groupCasualties);
                     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
+                    
+                    // Check for player deaths in losing groups (higher chance)
+                    if (group.units) {
+                      for (const unit of group.units) {
+                        if (unit.type === 'player' && unit.id) {
+                          // Higher chance for player death on losing side (50% of casualty rate)
+                          if (Math.random() < (groupCasualties / group.unitCount) * 0.5) {
+                            logger.info(`Player ${unit.id} died in battle (loser side)`);
+                            // Mark player as not alive, triggering respawn
+                            updates[`players/${unit.id}/worlds/${worldId}/alive`] = false;
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               }

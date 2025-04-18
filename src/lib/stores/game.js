@@ -132,6 +132,19 @@ export const needsSpawn = derived(
   }
 );
 
+// Update the needsSpawn derived store to check for alive status
+export const needsSpawn = derived(
+  [playerWorldData, game], 
+  ([$playerWorldData, $game]) => {
+    // If there's no world data, or alive is explicitly false, player needs to spawn
+    if (!$playerWorldData) return true;
+    if ($playerWorldData.alive === false) return true;
+    
+    // Check if player is alive
+    return !$playerWorldData.alive;
+  }
+);
+
 // Create a derived store for the next world tick time
 export const nextWorldTick = derived(
   game,
@@ -889,9 +902,9 @@ export async function respawnPlayer(worldId) {
   try {
     const playerWorldRef = ref(db, `players/${user.current.uid}/worlds/${worldId}`);
     
-    // Update player's spawn status without setting lastSpawn
+    // Update player's alive status to false to trigger respawn
     await update(playerWorldRef, { 
-      spawned: false,
+      alive: false,
       // Don't reset lastLocation - this will be handled when they spawn again
     });
     
