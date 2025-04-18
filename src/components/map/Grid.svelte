@@ -314,8 +314,11 @@
   
   let hoverTimeout = null;
   function handleTileHover(cell) {
-    if (isPathDrawingMode) {
-      setHighlighted(cell.x, cell.y);
+    if (detailed || isPathDrawingMode) {
+      // Only set highlight in path drawing mode, not when details is open
+      if (isPathDrawingMode && !detailed) {
+        setHighlighted(cell.x, cell.y);
+      }
       return;
     }
     
@@ -324,7 +327,7 @@
     if (hoverTimeout) clearTimeout(hoverTimeout);
     
     hoverTimeout = setTimeout(() => {
-      if (!$map.isDragging && (!$highlightedStore || $highlightedStore.x !== cell.x || $highlightedStore.y !== cell.y)) {
+      if (!detailed && !$map.isDragging && (!$highlightedStore || $highlightedStore.x !== cell.x || $highlightedStore.y !== cell.y)) {
         setHighlighted(cell.x, cell.y);
       }
       hoverTimeout = null;
@@ -332,7 +335,8 @@
   }
   
   $effect(() => {
-    if ((isMoving || $map.isDragging) && $highlightedStore) {
+    // Clear highlight when dragging, but not when details is open
+    if (!detailed && (isMoving || $map.isDragging) && $highlightedStore) {
       setHighlighted(null, null);
     }
   });
@@ -423,8 +427,8 @@
     clickCount++;
     lastClickTime = Date.now();
     
-    if (wasDrag || !$ready) {
-        console.log('Click ignored: wasDrag or map not ready');
+    if (wasDrag || !$ready || detailed) {
+        console.log('Click ignored: wasDrag, map not ready, or details open');
         return;
     }
     

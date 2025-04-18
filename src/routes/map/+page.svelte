@@ -557,6 +557,11 @@
         const tileY = event.detail.y;
 
         if (tileX !== undefined && tileY !== undefined) {
+            // If details is already open, don't change the highlighted cell
+            if (detailed) {
+                return; // Prevent any action when details modal is open
+            }
+
             if (isPathDrawingMode) {
                 const point = { x: tileX, y: tileY };
                 handlePathPoint(point);
@@ -566,22 +571,19 @@
                 // First move target to this location
                 moveTarget(tileX, tileY);
                 
-                // Set the highlight first to ensure highlightedStore has the data
+                // Set the highlight and get the tile data in one consistent operation
                 setHighlighted(tileX, tileY);
                 
-                // Get the tile data from coordinates store
-                const clickedTile = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
-                
-                // Check if there's content worth showing details for
-                if (clickedTile && hasTileContent(clickedTile)) {
-                    // Open details modal with a slight delay to ensure data is loaded
-                    setTimeout(() => {
+                // Wait a brief moment for the coordinates store to update
+                setTimeout(() => {
+                    // Get the tile data from coordinates store after highlight is set
+                    const clickedTile = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
+                    
+                    // Check if there's content worth showing details for
+                    if (clickedTile && hasTileContent(clickedTile)) {
                         toggleDetailsModal(true, clickedTile);
-                    }, 10);
-                } else {
-                    // If no content, clear the highlight
-                    setHighlighted(null, null);
-                }
+                    }
+                }, 50); // Short delay to ensure data is available
             }
         }
         

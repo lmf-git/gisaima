@@ -1,6 +1,6 @@
 <script>
-  import { fade, fly, slide } from 'svelte/transition';
-  import { cubicOut } from 'svelte/easing';
+  import { fade, fly, slide } from 'svelte/transition'; // Still import for section toggles
+  import { cubicOut, elasticOut } from 'svelte/easing';
   import { targetStore, coordinates } from '../../lib/stores/map';
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   import { onMount, onDestroy } from 'svelte';
@@ -452,406 +452,369 @@
     onClose();
   }
 
-  // Handle action selection
-  function selectAction(actionId, event) {
-    // Only call preventDefault if it's a function (it's a DOM event)
-    if (event && typeof event.preventDefault === 'function') {
-      event.preventDefault();
-    }
-    
+  // Handle action selection with improved event handling
+  function selectAction(actionId) {
+    // No preventDefault needed - we're using button elements with proper onclick
     // Execute the action directly for simple actions, or delegate complex ones to parent
     executeAction(actionId, currentTile);
   }
+
+  // Add state to track animation status
+  let mounted = $state(false);
+  let closing = $state(false);
+
+  onMount(() => {
+    // Short timeout to ensure DOM is ready before animation
+    setTimeout(() => {
+      mounted = true;
+    }, 10);
+  });
+  
+  // Function to safely close the modal with proper event handling
+  function handleClose(event) {
+    // No preventDefault needed - it can interfere with normal click behavior
+    // First set closing flag to trigger exit animation
+    closing = true;
+    
+    // Then wait for animation to complete before calling onClose
+    setTimeout(() => {
+      onClose();
+    }, 300); // Match this with the transition duration
+  }
+
+  // Handle keyboard events for accessibility
+  function handleEscapeKey(event) {
+    if (event.key === 'Escape') {
+      handleClose(event);
+    }
+  }
+
+  // Function to get entity icon type
+  function getEntityIconType(entity) {
+    if (!entity.race && !entity.faction) return null;
+    
+    const race = entity.race?.toLowerCase() || 
+                getFactionRace(entity.faction?.toLowerCase());
+                
+    return race || null;
+  }
+
+  // Function to handle key events for the wrapper to match click handling
+  function handleWrapperKeyDown(event) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault(); // Prevent page scrolling on space
+      handleClose();
+    }
+  }
 </script>
 
-<div class="details-wrapper">
-  <div class="details-panel" transition:fly|local={{ y: 20, duration: 500, easing: cubicOut }}>
-    <div class="header">
-      <h3 class="title">Tile Details</h3>
-      <div class="coords">{formatCoords(x, y)}</div>
-      <button class="close-button" onclick={onClose} aria-label="Close">×</button>
-    </div>
+{#if mounted}
+  <div 
+    class="details-wrapper" 
+    class:mounted
+    class:closing
+    role="presentation"
+  >
+    <button 
+      class="modal-backdrop"
+      aria-label="Close details"
+      onclick={handleClose}
+    ></button>
     
-    <div class="details-content">
-      <div class="section terrain-section">
-        <div 
-          class="section-header"
-          onclick={() => toggleSection('terrain')}
-          role="button"
-          tabindex="0"
-          aria-expanded={!collapsedSections.terrain}
-          onkeydown={(e) => e.key === 'Enter' && toggleSection('terrain')}
-        >
-          <h4 class="section-title">Terrain</h4>
-          <button class="collapse-button" aria-label={collapsedSections.terrain ? "Expand terrain" : "Collapse terrain"}>
-            {collapsedSections.terrain ? '▼' : '▲'}
-          </button>
-        </div>
-        
-        {#if !collapsedSections.terrain}
-          <div class="section-content" transition:slide|local={{ duration: 300 }}>
-            <div class="terrain-info">
-              <div class="terrain-name">{_fmt(currentTile?.biome?.name || terrain)}</div>
-              {#if currentTile?.terrain?.rarity && currentTile.terrain.rarity !== 'common'}
-                <div class="terrain-rarity {currentTile.terrain.rarity}">
-                  {_fmt(currentTile.terrain.rarity)}
-                </div>
-              {/if}
-            </div>
-          </div>
-        {/if}
+    <div
+      class="details-panel"
+      class:mounted
+      class:closing
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="details-title"
+      tabindex="-1"
+      onkeydown={handleEscapeKey}
+    >
+      <div class="header">
+        <h3 id="details-title" class="title">Tile Details</h3>
+        <div class="coords">{formatCoords(x, y)}</div>
+        <button class="close-button" onclick={handleClose} aria-label="Close">×</button>
       </div>
       
-      {#if currentTile?.structure}
-        <div class="section structure-section">
-          <div 
-            class="section-header"
-            onclick={() => toggleSection('structure')}
-            role="button"
-            tabindex="0"
-            aria-expanded={!collapsedSections.structure}
-            onkeydown={(e) => e.key === 'Enter' && toggleSection('structure')}
+      <div class="details-content">
+        <div class="section terrain-section">
+          <button 
+            class="section-header" 
+            onclick={() => toggleSection('terrain')}
+            aria-expanded={!collapsedSections.terrain}
+            type="button"
           >
-            <h4 class="section-title">Structure</h4>
-            <button class="collapse-button" aria-label={collapsedSections.structure ? "Expand structure" : "Collapse structure"}>
-              {collapsedSections.structure ? '▼' : '▲'}
-            </button>
-          </div>
+            <h4 class="section-title">Terrain</h4>
+            <span class="collapse-button" aria-hidden="true">
+              {collapsedSections.terrain ? '▼' : '▲'}
+            </span>
+          </button>
           
-          {#if !collapsedSections.structure}
-            <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              <div class="entity structure" class:current-player-owned={isOwnedByCurrentPlayer(currentTile.structure)}>
-                <div class="entity-structure-icon">
-                  <Structure size="1.4em" extraClass="{currentTile.structure.type}-icon structure-type-icon" />
-                </div>
-                <div class="entity-info">
-                  <div class="entity-name">
-                    {_fmt(currentTile.structure.name || currentTile.structure.type)}
-                    {#if isOwnedByCurrentPlayer(currentTile.structure)}
-                      <span class="your-entity-badge">Yours</span>
-                    {/if}
+          {#if !collapsedSections.terrain}
+            <div class="section-content">
+              <div class="terrain-info">
+                <div class="terrain-name">{_fmt(currentTile?.biome?.name || terrain)}</div>
+                {#if currentTile?.terrain?.rarity && currentTile.terrain.rarity !== 'common'}
+                  <div class="terrain-rarity {currentTile.terrain.rarity}">
+                    {_fmt(currentTile.terrain.rarity)}
                   </div>
-                  <div class="entity-details">
-                    <span class="entity-type">{_fmt(currentTile.structure.type)}</span>
-                  </div>
-                </div>
+                {/if}
               </div>
             </div>
           {/if}
         </div>
-      {/if}
-      
-      {#if currentTile?.players?.length > 0}
-        <div class="section players-section">
-          <div 
-            class="section-header"
-            onclick={() => toggleSection('players')}
-            role="button"
-            tabindex="0"
-            aria-expanded={!collapsedSections.players}
-            onkeydown={(e) => e.key === 'Enter' && toggleSection('players')}
-          >
-            <h4 class="section-title">Players ({currentTile.players.length})</h4>
-            <div class="section-controls">
-              {#if !collapsedSections.players}
-                <div class="sort-controls">
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.players.by === 'name'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('players', 'name'); }}
-                    aria-label={`Sort by name ${sortOptions.players.by === 'name' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Name</span>
-                    {#if sortOptions.players.by === 'name'}
-                      <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.players.by === 'type'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('players', 'type'); }}
-                    aria-label={`Sort by race ${sortOptions.players.by === 'type' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Race</span>
-                    {#if sortOptions.players.by === 'type'}
-                      <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                </div>
-              {/if}
-              <button class="collapse-button" aria-label={collapsedSections.players ? "Expand players" : "Collapse players"}>
-                {collapsedSections.players ? '▼' : '▲'}
-              </button>
-            </div>
-          </div>
-          
-          {#if !collapsedSections.players}
-            <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each sortedPlayers as player}
-                {@const race = getFactionRace(player.race)}
-                <div class="entity player" class:current={player.uid === $currentPlayer?.uid}>
-                  <div class="entity-race-icon">
-                    {#if race === 'human'}
-                      <Human size="1.2em" extraClass="race-icon-entity" />
-                    {:else if race === 'elf'}
-                      <Elf size="1.2em" extraClass="race-icon-entity" />
-                    {:else if race === 'dwarf'}
-                      <Dwarf size="1.2em" extraClass="race-icon-entity" />
-                    {:else if race === 'goblin'}
-                      <Goblin size="1.2em" extraClass="race-icon-entity" />
-                    {:else if race === 'fairy'}
-                      <Fairy size="1.2em" extraClass="race-icon-entity" />
+        
+        {#if currentTile?.structure}
+          <div class="section structure-section">
+            <button 
+              class="section-header" 
+              onclick={() => toggleSection('structure')}
+              aria-expanded={!collapsedSections.structure}
+              type="button"
+            >
+              <h4 class="section-title">Structure</h4>
+              <span class="collapse-button" aria-hidden="true">
+                {collapsedSections.structure ? '▼' : '▲'}
+              </span>
+            </button>
+            
+            {#if !collapsedSections.structure}
+              <div class="section-content">
+                <div class="entity structure {isOwnedByCurrentPlayer(currentTile.structure) ? 'current-player-owned' : ''}">
+                  <div class="entity-structure-icon">
+                    {#if currentTile.structure.type === 'spawn'}
+                      <Torch size="1.4em" extraClass="structure-type-icon" />
+                    {:else}
+                      <Structure size="1.4em" extraClass="structure-type-icon {currentTile.structure.type}-icon" />
                     {/if}
                   </div>
                   <div class="entity-info">
                     <div class="entity-name">
-                      {player.name || player.displayName || `Player ${player.uid?.substring(0, 4)}`}
-                      {#if player.uid === $currentPlayer?.uid}
-                        <span class="your-entity-badge">You</span>
-                      {/if}
-                    </div>
-                    <div class="entity-details">
-                      <span class="entity-race">{_fmt(player.race)}</span>
-                    </div>
-                  </div>
-                </div>
-              {/each}
-            </div>
-          {/if}
-        </div>
-      {/if}
-      
-      {#if currentTile?.groups?.length > 0}
-        <div class="section groups-section">
-          <div 
-            class="section-header"
-            onclick={() => toggleSection('groups')}
-            role="button"
-            tabindex="0"
-            aria-expanded={!collapsedSections.groups}
-            onkeydown={(e) => e.key === 'Enter' && toggleSection('groups')}
-          >
-            <h4 class="section-title">Groups ({currentTile.groups.length})</h4>
-            <div class="section-controls">
-              {#if !collapsedSections.groups}
-                <div class="sort-controls">
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.groups.by === 'name'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'name'); }}
-                    aria-label={`Sort by name ${sortOptions.groups.by === 'name' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Name</span>
-                    {#if sortOptions.groups.by === 'name'}
-                      <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.groups.by === 'status'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'status'); }}
-                    aria-label={`Sort by status ${sortOptions.groups.by === 'status' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Status</span>
-                    {#if sortOptions.groups.by === 'status'}
-                      <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.groups.by === 'type'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'type'); }}
-                    aria-label={`Sort by race ${sortOptions.groups.by === 'type' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Race</span>
-                    {#if sortOptions.groups.by === 'type'}
-                      <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                </div>
-              {/if}
-              <button class="collapse-button" aria-label={collapsedSections.groups ? "Expand groups" : "Collapse groups"}>
-                {collapsedSections.groups ? '▼' : '▲'}
-              </button>
-            </div>
-          </div>
-          
-          {#if !collapsedSections.groups}
-            <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each sortedGroups as group}
-                {@const race = getFactionRace(group.race)}
-                {@const readyAt = group.readyAt}
-                {@const isPending = isPendingTick(readyAt)}
-                <div class="entity group" class:current-player-owned={isOwnedByCurrentPlayer(group)}>
-                  <div class="entity-race-icon">
-                    {#if race === 'human'}
-                      <Human size="1.2em" extraClass="race-icon-entity" />
-                    {:else if race === 'elf'}
-                      <Elf size="1.2em" extraClass="race-icon-entity" />
-                    {:else if race === 'dwarf'}
-                      <Dwarf size="1.2em" extraClass="race-icon-entity" />
-                    {:else if race === 'goblin'}
-                      <Goblin size="1.2em" extraClass="race-icon-entity" />
-                    {:else if race === 'fairy'}
-                      <Fairy size="1.2em" extraClass="race-icon-entity" />
-                    {/if}
-                  </div>
-                  <div class="entity-info">
-                    <div class="entity-name">
-                      {group.name}
-                      {#if isOwnedByCurrentPlayer(group)}
+                      {currentTile.structure.name || _fmt(currentTile.structure.type) || "Unknown"}
+                      {#if isOwnedByCurrentPlayer(currentTile.structure)}
                         <span class="your-entity-badge">Yours</span>
                       {/if}
-                      {#if group.inBattle}
-                        <span class="battle-tag battle-side-{group.battleSide || '1'}">
-                          ⚔️ Battle
-                        </span>
-                      {/if}
                     </div>
                     <div class="entity-details">
-                      <div>
-                        <span class="unit-count">{group.unitCount || 0} units</span>
-                        {#if getGroupItemCount(group) > 0}
-                          <span class="item-count">• {getGroupItemCount(group)} items</span>
+                      {#if currentTile.structure.type}
+                        <div class="entity-type">{_fmt(currentTile.structure.type)}</div>
+                      {/if}
+                      {#if currentTile.structure.description}
+                        <div class="entity-description">{currentTile.structure.description}</div>
+                      {/if}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {/if}
+          </div>
+        {/if}
+        
+        {#if currentTile?.players?.length > 0}
+          <div class="section players-section">
+            <button 
+              class="section-header" 
+              onclick={() => toggleSection('players')}
+              aria-expanded={!collapsedSections.players}
+              type="button"
+            >
+              <h4 class="section-title">Players ({currentTile.players.length})</h4>
+              <span class="collapse-button" aria-hidden="true">
+                {collapsedSections.players ? '▼' : '▲'}
+              </span>
+            </button>
+            
+            {#if !collapsedSections.players}
+              <div class="section-content">
+                {#each sortedPlayers as player}
+                  <div class="entity player {player.id === $currentPlayer?.uid ? 'current' : ''} {isOwnedByCurrentPlayer(player) ? 'current-player-owned' : ''}">
+                    <div class="entity-race-icon">
+                      {#if player.race}
+                        {#if player.race?.toLowerCase() === 'human'}
+                          <Human extraClass="race-icon-entity" />
+                        {:else if player.race?.toLowerCase() === 'elf'}
+                          <Elf extraClass="race-icon-entity" />
+                        {:else if player.race?.toLowerCase() === 'dwarf'}
+                          <Dwarf extraClass="race-icon-entity" />
+                        {:else if player.race?.toLowerCase() === 'goblin'}
+                          <Goblin extraClass="race-icon-entity" />
+                        {:else if player.race?.toLowerCase() === 'fairy'}
+                          <Fairy extraClass="race-icon-entity" />
+                        {/if}
+                      {/if}
+                    </div>
+                    <div class="entity-info">
+                      <div class="entity-name">
+                        {player.displayName || 'Player'}
+                        {#if isOwnedByCurrentPlayer(player)}
+                          <span class="your-entity-badge">You</span>
                         {/if}
                       </div>
-                      <div>
-                        <span class="status {getStatusClass(group.status)} {isPending ? 'pending-tick' : ''}">
-                          {_fmt(group.status || 'idle')}
-                          {#if readyAt && !isPending}
-                            <span class="countdown">{formatTimeRemaining(readyAt, group.status)}</span>
+                      <div class="entity-details">
+                        {#if player.race}
+                          <div class="entity-race">{_fmt(player.race)}</div>
+                        {/if}
+                      </div>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {/if}
+        
+        {#if currentTile?.groups?.length > 0}
+          <div class="section groups-section">
+            <button 
+              class="section-header" 
+              onclick={() => toggleSection('groups')}
+              aria-expanded={!collapsedSections.groups}
+              type="button"
+            >
+              <h4 class="section-title">Groups ({currentTile.groups.length})</h4>
+              <span class="collapse-button" aria-hidden="true">
+                {collapsedSections.groups ? '▼' : '▲'}
+              </span>
+            </button>
+            
+            {#if !collapsedSections.groups}
+              <div class="section-content">
+                {#each sortedGroups as group}
+                  {#if group}
+                    <div class="entity {group.status || 'idle'} {isOwnedByCurrentPlayer(group) ? 'current-player-owned' : ''}">
+                      <div class="entity-race-icon">
+                        {#if getEntityIconType(group)}
+                          {#if getEntityIconType(group) === 'human'}
+                            <Human class="race-icon-entity" />
+                          {:else if getEntityIconType(group) === 'elf'}
+                            <Elf class="race-icon-entity" />
+                          {:else if getEntityIconType(group) === 'dwarf'}
+                            <Dwarf class="race-icon-entity" />
+                          {:else if getEntityIconType(group) === 'goblin'}
+                            <Goblin class="race-icon-entity" />
+                          {:else if getEntityIconType(group) === 'fairy'}
+                            <Fairy class="race-icon-entity" />
                           {/if}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              {/each}
-            </div>
-          {/if}
-        </div>
-      {/if}
-      
-      {#if currentTile?.items?.length > 0}
-        <div class="section items-section">
-          <div 
-            class="section-header"
-            onclick={() => toggleSection('items')}
-            role="button"
-            tabindex="0"
-            aria-expanded={!collapsedSections.items}
-            onkeydown={(e) => e.key === 'Enter' && toggleSection('items')}
-          >
-            <h4 class="section-title">Items ({currentTile.items.length})</h4>
-            <div class="section-controls">
-              {#if !collapsedSections.items}
-                <div class="sort-controls">
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.items.by === 'name'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('items', 'name'); }}
-                    aria-label={`Sort by name ${sortOptions.items.by === 'name' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Name</span>
-                    {#if sortOptions.items.by === 'name'}
-                      <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.items.by === 'type'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('items', 'type'); }}
-                    aria-label={`Sort by type ${sortOptions.items.by === 'type' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Type</span>
-                    {#if sortOptions.items.by === 'type'}
-                      <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.items.by === 'rarity'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('items', 'rarity'); }}
-                    aria-label={`Sort by rarity ${sortOptions.items.by === 'rarity' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Rarity</span>
-                    {#if sortOptions.items.by === 'rarity'}
-                      <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                </div>
-              {/if}
-              <button class="collapse-button" aria-label={collapsedSections.items ? "Expand items" : "Collapse items"}>
-                {collapsedSections.items ? '▼' : '▲'}
-              </button>
-            </div>
-          </div>
-          
-          {#if !collapsedSections.items}
-            <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each sortedItems as item}
-                <div class="entity item {getRarityClass(item.rarity)}">
-                  <div class="item-icon {item.type || 'resource'}"></div>
-                  <div class="entity-info">
-                    <div class="entity-name">{item.name}</div>
-                    <div class="entity-details">
-                      <div>
-                        <span class="item-type">{_fmt(item.type || 'resource')}</span>
-                        {#if item.quantity > 1}
-                          <span class="item-quantity">× {item.quantity}</span>
                         {/if}
                       </div>
-                      {#if item.rarity && item.rarity !== 'common'}
-                        <span class="item-rarity {getRarityClass(item.rarity)}">{_fmt(item.rarity)}</span>
+                      <div class="entity-info">
+                        <div class="entity-name">
+                          {group.name || `Group ${group.id.slice(-4)}`}
+                          {#if isOwnedByCurrentPlayer(group)}
+                            <span class="your-entity-badge">Yours</span>
+                          {/if}
+                        </div>
+                        
+                        <div class="entity-details">
+                          <span class="unit-count">
+                            {group.unitCount || (group.units ? group.units.length : 0)} units
+                            {#if getGroupItemCount(group) > 0}
+                              • <span class="item-count">{getGroupItemCount(group)} items</span>
+                            {/if}
+                          </span>
+                          
+                          <span class="status {getStatusClass(group.status)}" class:pending-tick={isPendingTick(
+                            group.status === 'moving' 
+                              ? group.nextMoveTime 
+                              : (group.status === 'gathering' || group.status === 'starting_to_gather' 
+                                  ? group.gatheringUntil 
+                                  : group.readyAt)
+                          )}>
+                            {#if group.status === 'starting_to_gather'}
+                              Preparing to gather
+                            {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
+                              {_fmt(group.status)} {formatTimeRemaining(group.readyAt, group.status)}
+                            {:else if group.status === 'moving'}
+                              {_fmt(group.status)} {isPendingTick(group.nextMoveTime) ? '↻' : ''}
+                            {:else if group.status === 'gathering'}
+                              {_fmt(group.status)} {isPendingTick(group.gatheringUntil) ? '↻' : ''}
+                            {:else}
+                              {_fmt(group.status)}
+                            {/if}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  {/if}
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {/if}
+        
+        {#if currentTile?.items?.length > 0}
+          <div class="section items-section">
+            <button 
+              class="section-header" 
+              onclick={() => toggleSection('items')}
+              aria-expanded={!collapsedSections.items}
+              type="button"
+            >
+              <h4 class="section-title">Items ({currentTile.items.length})</h4>
+              <span class="collapse-button" aria-hidden="true">
+                {collapsedSections.items ? '▼' : '▲'}
+              </span>
+            </button>
+            
+            {#if !collapsedSections.items}
+              <div class="section-content">
+                {#each sortedItems as item}
+                  <div class="entity item {getRarityClass(item.rarity)}">
+                    <div class="item-icon {item.type}"></div>
+                    <div class="entity-info">
+                      <div class="entity-name">
+                        {item.name || _fmt(item.type) || "Unknown Item"}
+                      </div>
+                      <div class="entity-details">
+                        {#if item.type}
+                          <span class="item-type">{_fmt(item.type)}</span>
+                        {/if}
+                        {#if item.quantity > 1}
+                          <span class="item-quantity">×{item.quantity}</span>
+                        {/if}
+                        {#if item.rarity && item.rarity !== 'common'}
+                          <span class="item-rarity {item.rarity}">{_fmt(item.rarity)}</span>
+                        {/if}
+                      </div>
+                      {#if item.description}
+                        <div class="item-description">{item.description}</div>
                       {/if}
                     </div>
-                    {#if item.description}
-                      <div class="item-description">{item.description}</div>
-                    {/if}
                   </div>
-                </div>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {/if}
+        
+        {#if actions.length > 0}
+          <div class="section actions-section">
+            <h4 class="section-title">Available Actions</h4>
+            <div class="actions-list">
+              {#each actions as action}
+                <button 
+                  class="action-button" 
+                  onclick={() => selectAction(action.id)}
+                  aria-label={action.label}
+                  type="button"
+                >
+                  <span class="action-icon">{action.icon}</span>
+                  <div class="action-text">
+                    <div class="action-label">{action.label}</div>
+                    <div class="action-description">{action.description}</div>
+                  </div>
+                </button>
               {/each}
             </div>
-          {/if}
-        </div>
-      {/if}
-      
-      {#if !currentTile?.structure && !currentTile?.players?.length && !currentTile?.groups?.length && !currentTile?.items?.length}
-        <div class="empty-state">
-          <p>No additional details available for this tile.</p>
-        </div>
-      {/if}
-      
-      {#if actions.length > 0}
-        <div class="section actions-section">
-          <h4 class="section-title">Available Actions</h4>
-          <div class="actions-list">
-            {#each actions as action}
-              <button 
-                class="action-button" 
-                onclick={(e) => selectAction(action.id, e)}
-                aria-label={action.label}
-              >
-                <span class="action-icon">{action.icon}</span>
-                <div class="action-text">
-                  <div class="action-label">{action.label}</div>
-                  <div class="action-description">{action.description}</div>
-                </div>
-              </button>
-            {/each}
           </div>
-        </div>
-      {/if}
+        {/if}
+      </div>
     </div>
   </div>
-</div>
+{/if}
 
 <style>
-  @keyframes pulseWaiting {
-    from { opacity: 0.7; }
-    to { opacity: 1; }
-  }
-  
   .details-wrapper {
     position: fixed;
     top: 0;
@@ -861,12 +824,53 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: rgba(0, 0, 0, 0.5);
     z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  .details-wrapper.mounted {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  
+  .details-wrapper.closing {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    margin: 0;
+    transition: 
+      background-color 0.3s ease,
+      backdrop-filter 0.3s ease;
+  }
+  
+  .details-wrapper.mounted .modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
   }
   
+  .details-wrapper.closing .modal-backdrop {
+    background-color: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0);
+    -webkit-backdrop-filter: blur(0);
+    transition: 
+      background-color 0.3s ease,
+      backdrop-filter 0.3s ease;
+  }
+
   .details-panel {
     background-color: rgba(255, 255, 255, 0.95);
     border: 0.05em solid rgba(255, 255, 255, 0.2);
@@ -881,21 +885,27 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: reveal 0.4s ease-out forwards;
     transform-origin: center;
     font-family: var(--font-body);
     max-height: 90vh;
+    transform: translateY(-20px) scale(0.95);
+    opacity: 0;
+    transition: 
+      transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+      opacity 0.3s ease;
   }
   
-  @keyframes reveal {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
+  .details-panel.mounted {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  
+  .details-panel.closing {
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+    transition: 
+      transform 0.3s cubic-bezier(0.6, -0.28, 0.735, 0.045),
+      opacity 0.3s ease;
   }
   
   .header {
@@ -950,30 +960,24 @@
     max-height: calc(90vh - 4em);
     overflow-y: auto;
   }
-  
-  /* Collapsible section styles */
-  .section {
-    margin-bottom: 1.5em;
-    position: relative;
-    border-radius: 0.3em;
-    background-color: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-  }
-  
-  .section:last-child {
-    margin-bottom: 0;
-  }
-  
+
   .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
     cursor: pointer;
     padding: 0.7em 1em;
+    margin: -0.7em -1em 0.5em -1em;
     background-color: rgba(0, 0, 0, 0.03);
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     user-select: none;
+    font-family: inherit;
+    color: inherit;
+    font-size: inherit;
   }
   
   .section-header:hover {
@@ -984,203 +988,139 @@
     outline: 2px solid rgba(66, 133, 244, 0.6);
   }
   
-  .section-title {
-    margin: 0;
-    font-size: 1em;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.75);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-family: var(--font-heading);
-  }
-  
-  .section-content {
-    padding: 0.8em 1em;
-    background-color: rgba(255, 255, 255, 0.5);
-  }
-  
   .collapse-button {
-    background: none;
-    border: none;
     color: rgba(0, 0, 0, 0.5);
     font-size: 0.8em;
-    cursor: pointer;
     padding: 0.2em 0.5em;
     transition: all 0.2s ease;
   }
   
-  .collapse-button:hover {
-    color: rgba(0, 0, 0, 0.8);
+  .section {
+    margin-bottom: 1.2em;
   }
   
-  /* Section header controls styling */
-  .section-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
+  .section:last-child {
+    margin-bottom: 0;
   }
   
-  .sort-controls {
-    display: flex;
-    gap: 0.2em;
-  }
-  
-  .sort-option {
-    background: none;
-    border: none;
-    font-size: 0.7em;
-    color: rgba(0, 0, 0, 0.5);
-    padding: 0.2em 0.4em;
-    border-radius: 0.3em;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.2em;
-    transition: all 0.2s ease;
-  }
-  
-  .sort-option:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: rgba(0, 0, 0, 0.8);
-  }
-  
-  .sort-option.active {
-    background-color: rgba(66, 133, 244, 0.1);
-    color: rgba(66, 133, 244, 0.9);
-  }
-  
-  .sort-direction {
+  .section-title {
+    margin: 0;
     font-size: 0.9em;
-    font-weight: bold;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.7);
+    font-family: var(--font-heading);
   }
 
-  .actions-section {
-    margin-top: 1.5em;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-    padding-top: 1em;
-  }
-  
+  /* Action buttons styling */
   .actions-list {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 0.5em;
+    margin-top: 0.5em;
   }
   
   .action-button {
     display: flex;
     align-items: center;
-    gap: 0.5em;
-    padding: 0.8em;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 0.3em;
-    background-color: rgba(255, 255, 255, 0.8);
-    transition: all 0.2s;
+    padding: 0.8em 1em;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5em;
     cursor: pointer;
-    flex-grow: 1;
-    max-width: calc(50% - 0.25em);
-    font-family: var(--font-body);
+    transition: all 0.2s;
     text-align: left;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
   }
   
   .action-button:hover {
     background-color: rgba(255, 255, 255, 0.9);
-    border-color: rgba(0, 0, 0, 0.25);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .action-button:active {
+    transform: translateY(0);
+    box-shadow: none;
   }
   
   .action-icon {
     font-size: 1.2em;
+    margin-right: 0.8em;
   }
   
   .action-text {
     flex: 1;
-    display: flex;
-    flex-direction: column;
   }
   
   .action-label {
-    font-weight: 600;
-    font-size: 0.95em;
-    color: rgba(0, 0, 0, 0.85);
+    font-weight: 500;
     margin-bottom: 0.2em;
   }
   
   .action-description {
     font-size: 0.8em;
-    color: rgba(0, 0, 0, 0.7);
+    color: rgba(0, 0, 0, 0.6);
   }
 
-  .terrain-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5em;
-  }
-  
-  .terrain-name {
-    font-size: 1.1em;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.85);
-  }
-  
-  .terrain-rarity {
-    display: inline-block;
-    font-size: 0.8em;
-    padding: 0.2em 0.5em;
-    border-radius: 0.3em;
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    color: rgba(0, 0, 0, 0.7);
-  }
-  
+  /* Add missing entity styles from MapEntities */
   .entity {
     display: flex;
     align-items: flex-start;
     margin-bottom: 0.6em;
-    padding: 0.8em;
+    padding: 0.5em 0.7em;
     border-radius: 0.3em;
-    background-color: rgba(255, 255, 255, 0.75);
+    background-color: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(0, 0, 0, 0.1);
     transition: background-color 0.2s ease;
   }
   
-  .entity:last-child {
-    margin-bottom: 0;
-  }
-  
-  .entity:hover {
-    background-color: rgba(255, 255, 255, 0.9);
-  }
-  
-  .entity.player.current {
-    background-color: rgba(66, 133, 244, 0.08);
-    border-color: rgba(66, 133, 244, 0.3);
-    position: relative;
-  }
-  
-  .entity.player.current::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background-color: rgba(66, 133, 244, 0.8);
-  }
-  
   .entity-race-icon {
-    margin-right: 0.8em;
-    margin-top: 0.2em;
+    margin-right: 0.7em;
+    margin-top: 0.1em;
   }
   
   :global(.race-icon-entity) {
     width: 1.4em;
     height: 1.4em;
-    fill: rgba(0, 0, 0, 0.8);
+    fill: rgba(0, 0, 0, 0.7);
+  }
+  
+  .entity-info {
+    flex: 1;
+  }
+  
+  .entity-name {
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.85);
+    line-height: 1.2;
+    margin-bottom: 0.2em;
+  }
+  
+  .entity-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6em;
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.7);
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .entity-race {
+    font-size: 0.85em;
+    font-style: italic;
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .entity-type {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.6);
   }
   
   .entity-structure-icon {
-    margin-right: 0.8em;
+    margin-right: 0.7em;
     margin-top: 0.1em;
   }
   
@@ -1190,310 +1130,10 @@
     fill: #a0d6e7;
   }
   
-  :global(.fortress-icon) {
-    fill: #ffdf9e !important;
-  }
-  
-  :global(.outpost-icon) {
-    fill: #9dc3ff !important;
-  }
-  
-  :global(.watchtower-icon) {
-    fill: #b9ff9e !important;
-  }
-  
-  :global(.stronghold-icon) {
-    fill: #ff9e9e !important;
-  }
-  
-  :global(.citadel-icon) {
-    fill: #e09eff !important;
-  }
-  
-  .entity-info {
-    flex: 1;
-  }
-  
-  .entity-name {
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.9);
-    line-height: 1.3;
-    margin-bottom: 0.3em;
-    font-size: 1em;
-  }
-  
-  .entity-details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6em;
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.75);
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .entity-type {
-    font-size: 0.9em;
-    color: rgba(0, 0, 0, 0.7);
-  }
-  
-  .entity-race {
-    font-size: 0.9em;
-    font-style: italic;
-    color: rgba(0, 0, 0, 0.7);
-  }
-  
-  .unit-count {
-    color: rgba(0, 0, 0, 0.7);
-    font-weight: 500;
-  }
-  
-  .item-count {
-    color: #2d8659;
-    font-weight: 500;
-  }
-  
-  .status {
-    display: inline-block;
-    font-size: 0.9em;
-    padding: 0.2em 0.5em;
-    border-radius: 0.3em;
-    white-space: nowrap;
-    font-weight: 500;
-  }
-  
-  .status.mobilizing {
-    background: rgba(255, 165, 0, 0.15);
-    border: 1px solid rgba(255, 165, 0, 0.3);
-    color: #dd7500;
-    animation: pulseMobilizing 2s infinite;
-  }
-  
-  @keyframes pulseMobilizing {
-    0% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.4); }
-    50% { box-shadow: 0 0 0 3px rgba(255, 165, 0, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
-  }
-  
-  .status.moving {
-    background: rgba(0, 128, 0, 0.15);
-    border: 1px solid rgba(0, 128, 0, 0.3);
-    color: #006400;
-    animation: pulseMoving 2s infinite;
-  }
-  
-  @keyframes pulseMoving {
-    0% { box-shadow: 0 0 0 0 rgba(0, 128, 0, 0.4); }
-    50% { box-shadow: 0 0 0 3px rgba(0, 128, 0, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(0, 128, 0, 0); }
-  }
-  
-  .status.gathering {
-    background: rgba(75, 181, 67, 0.15);
-    border: 1px solid rgba(75, 181, 67, 0.3);
-    color: #226644;
-  }
-  
-  .status.idle {
-    background: rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    color: rgba(0, 0, 0, 0.7);
-  }
-  
-  .status.demobilising {
-    background: rgba(147, 112, 219, 0.15);
-    border: 1px solid rgba(147, 112, 219, 0.3);
-    color: #6a1fc8;
-    animation: pulseDemobilising 2s infinite;
-  }
-  
-  @keyframes pulseDemobilising {
-    0% { box-shadow: 0 0 0 0 rgba(147, 112, 219, 0.4); }
-    50% { box-shadow: 0 0 0 3px rgba(147, 112, 219, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(147, 112, 219, 0); }
-  }
-  
-  .status.fighting {
-    background: rgba(139, 0, 0, 0.15);
-    border: 1px solid rgba(139, 0, 0, 0.3);
-    color: #8B0000;
-    animation: pulseFighting 1.5s infinite;
-  }
-  
-  @keyframes pulseFighting {
-    0% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0.4); }
-    50% { box-shadow: 0 0 0 3px rgba(139, 0, 0, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0); }
-  }
-  
-  .battle-tag {
-    font-size: 0.75em;
-    padding: 0.2em 0.4em;
-    border-radius: 0.2em;
-    background-color: rgba(139, 0, 0, 0.1);
-    border: 1px solid rgba(139, 0, 0, 0.2);
-    color: #8B0000;
-    white-space: nowrap;
-    margin-left: 0.3em;
-  }
-  
-  .battle-side-1 {
-    background-color: rgba(0, 0, 255, 0.1);
-    border: 1px solid rgba(0, 0, 255, 0.2);
-    color: #00008B;
-  }
-  
-  .battle-side-2 {
-    background-color: rgba(139, 0, 0, 0.1);
-    border: 1px solid rgba(139, 0, 0, 0.2);
-    color: #8B0000;
-  }
-  
-  .pending-tick {
-    background: rgba(255, 215, 0, 0.2) !important;
-    border-color: rgba(255, 215, 0, 0.5) !important;
-    color: #b8860b !important;
-    animation: pulseWaiting 1s infinite alternate !important;
-  }
-  
-  .empty-state {
-    padding: 2em;
-    text-align: center;
-    color: rgba(0, 0, 0, 0.6);
-    font-style: italic;
-  }
-  
-  /* Item styles */
-  .item-icon {
-    width: 1.4em;
-    height: 1.4em;
-    margin-right: 0.8em;
-    margin-top: 0.1em;
-    border-radius: 0.2em;
-    background-color: rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-  
-  .item-icon::before {
-    content: '';
-    position: absolute;
-    width: 60%;
-    height: 60%;
-    background-color: rgba(0, 0, 0, 0.2);
-  }
-  
-  .item-icon.resource::before {
-    content: '♦';
-    font-size: 0.9em;
-    color: #228B22;
-    background: none;
-  }
-  
-  .item-icon.quest_item::before {
-    content: '!';
-    font-size: 0.9em;
-    color: #FF8C00;
-    background: none;
-    font-weight: bold;
-  }
-  
-  .item-icon.artifact::before {
-    content: '★';
-    font-size: 1em;
-    color: #9932CC;
-    background: none;
-  }
-  
-  .item-type {
-    color: rgba(0, 0, 0, 0.7);
-    white-space: nowrap;
-  }
-  
-  .item-quantity {
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.8);
-    margin-left: 0.3em;
-  }
-  
-  .item-description {
-    font-size: 0.85em;
-    font-style: italic;
-    color: rgba(0, 0, 0, 0.7);
-    margin-top: 0.4em;
-    line-height: 1.3;
-  }
-  
-  .item-rarity {
-    display: inline-block;
-    font-size: 0.85em;
-    padding: 0.2em 0.5em;
-    border-radius: 0.3em;
-    white-space: nowrap;
-    font-weight: 500;
-  }
-  
-  .item-rarity.uncommon {
-    background: rgba(30, 255, 0, 0.15);
-    border: 1px solid rgba(30, 255, 0, 0.3);
-    color: #228B22;
-  }
-  
-  .item-rarity.rare {
-    background: rgba(0, 112, 221, 0.15);
-    border: 1px solid rgba(0, 112, 221, 0.3);
-    color: #0070DD;
-  }
-  
-  .item-rarity.epic {
-    background: rgba(148, 0, 211, 0.15);
-    border: 1px solid rgba(148, 0, 211, 0.3);
-    color: #9400D3;
-  }
-  
-  .item-rarity.legendary {
-    background: rgba(255, 165, 0, 0.15);
-    border: 1px solid rgba(255, 165, 0, 0.3);
-    color: #FF8C00;
-  }
-  
-  .item-rarity.mythic {
-    background: rgba(255, 128, 255, 0.15);
-    border: 1px solid rgba(255, 128, 255, 0.3);
-    color: #FF1493;
-  }
-  
-  .entity.item.uncommon {
-    border-color: rgba(30, 255, 0, 0.3);
-    box-shadow: inset 0 0 0.2em rgba(30, 255, 0, 0.15);
-  }
-  
-  .entity.item.rare {
-    border-color: rgba(0, 112, 221, 0.3);
-    box-shadow: inset 0 0 0.2em rgba(0, 112, 221, 0.15);
-  }
-  
-  .entity.item.epic {
-    border-color: rgba(148, 0, 211, 0.3);
-    box-shadow: inset 0 0 0.2em rgba(148, 0, 211, 0.15);
-  }
-  
-  .entity.item.legendary {
-    border-color: rgba(255, 165, 0, 0.3);
-    box-shadow: inset 0 0 0.2em rgba(255, 165, 0, 0.15);
-  }
-  
-  .entity.item.mythic {
-    border-color: rgba(255, 128, 255, 0.3);
-    box-shadow: inset 0 0 0.3em rgba(255, 128, 255, 0.15);
-  }
-
   .your-entity-badge {
     display: inline-block;
-    background: var(--color-bright-accent, #64ffda);
-    color: var(--color-dark-navy, #0a192f);
+    background: var(--color-bright-accent);
+    color: var(--color-dark-navy);
     font-size: 0.7em;
     padding: 0.1em 0.4em;
     border-radius: 0.3em;
@@ -1503,7 +1143,7 @@
   }
   
   .current-player-owned {
-    border-color: var(--color-bright-accent, #64ffda);
+    border-color: var(--color-bright-accent);
     background-color: rgba(100, 255, 218, 0.1);
     position: relative;
   }
@@ -1515,39 +1155,115 @@
     top: 0;
     bottom: 0;
     width: 3px;
-    background-color: var(--color-bright-accent, #64ffda);
+    background-color: var(--color-bright-accent);
   }
   
-  .countdown {
-    font-size: 0.8em;
-    margin-left: 0.3em;
-    font-family: var(--font-mono, monospace);
+  /* Status styles */
+  .status {
+    display: inline-block;
+    font-size: 0.9em;
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  
+  .status.mobilizing {
+    background: rgba(255, 165, 0, 0.15);
+    border: 1px solid rgba(255, 165, 0, 0.3);
+    color: #ff8c00;
+  }
+  
+  .status.moving {
+    background: rgba(0, 128, 0, 0.15);
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #008000;
+  }
+  
+  .status.idle {
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .unit-count {
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .item-count {
+    color: #2d8659;
+    font-weight: 500;
+  }
+  
+  /* Item styles */
+  .item-icon {
+    width: 1.4em;
+    height: 1.4em;
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+    border-radius: 0.2em;
+    background-color: rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .item-icon::before {
+    content: '';
+    position: absolute;
+    width: 60%;
+    height: 60%;
+    background-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .item-icon.resource::before {
+    content: '♦';
+    font-size: 0.9em;
+    color: #228B22;
+    background: none;
+  }
+
+  .item-type {
+    color: rgba(0, 0, 0, 0.6);
     white-space: nowrap;
   }
-  
+
+  .item-quantity {
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .item-description {
+    font-size: 0.8em;
+    font-style: italic;
+    color: rgba(0, 0, 0, 0.6);
+    margin-top: 0.3em;
+  }
+
+  .item-rarity {
+    display: inline-block;
+    font-size: 0.85em;
+    padding: 0.1em 0.4em;
+    border-radius: 0.3em;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
   @media (max-width: 480px) {
     .details-panel {
-      max-width: 100%;
       margin: 0.5em;
+      max-width: calc(100% - 1em);
+      max-height: calc(100% - 1em);
     }
     
-    .entity-details {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.3em;
+    .details-content {
+      padding: 0.8em;
     }
     
-    .action-button {
-      max-width: 100%;
-    }
-    
-    .sort-controls {
-      display: none;
-    }
-    
-    .sort-controls button {
-      padding: 0.3em;
-      font-size: 0.65em;
+    .section-header {
+      padding: 0.6em 0.8em;
+      margin: -0.6em -0.8em 0.5em -0.8em;
     }
   }
 </style>
