@@ -343,9 +343,6 @@
   
   // Simplified player position logic
   const playerPosition = $derived(() => {
-  
-  // Simplified player position logic
-  const playerPosition = $derived(() => {
     // Simply return the player's last location when available
     return $game.playerWorldData?.lastLocation || null;
   });
@@ -374,17 +371,15 @@
   function hasMeaningfulActions(tile) {
     if (!tile || !$currentPlayer?.uid) return false;
     
-    const playerId = $currentPlayer.uid;
-    
     // Check for player-owned groups (enables move and gather)
     const hasOwnedGroups = tile.groups && tile.groups.some(group => 
-      group.owner === playerId && group.status === 'idle'
+      group.owner === $currentPlayer?.uid && group.status === 'idle'
     );
     
     // Check for mobilization candidates
-    const playerOnTile = tile.players && tile.players.some(p => p.id === playerId);
+    const playerOnTile = tile.players && tile.players.some(p => p.id === $currentPlayer?.uid);
     const hasValidUnits = tile.groups && tile.groups.some(group => 
-      group.owner === playerId && 
+      group.owner === $currentPlayer?.uid && 
       group.status !== 'mobilizing' &&
       group.status !== 'moving' &&
       group.status !== 'demobilising' &&
@@ -395,7 +390,7 @@
     
     // Check for demobilization candidates
     const hasValidGroupsForDemob = tile.groups && tile.structure && tile.groups.some(group => 
-      group.owner === playerId && 
+      group.owner === $currentPlayer?.uid && 
       group.status !== 'mobilizing' && 
       group.status !== 'moving' &&
       group.status !== 'demobilising' &&
@@ -404,7 +399,7 @@
     
     // Check for attack candidates
     const hasPlayerCombatGroups = tile.groups && tile.groups.some(group => 
-      group.owner === playerId && 
+      group.owner === $currentPlayer?.uid && 
       group.status !== 'mobilizing' && 
       group.status !== 'moving' &&
       group.status !== 'demobilising' &&
@@ -413,7 +408,7 @@
     );
     
     const hasEnemyGroups = tile.groups && tile.groups.some(group => 
-      group.owner !== playerId && 
+      group.owner !== $currentPlayer?.uid && 
       group.status !== 'fighting' &&
       !group.inBattle
     );
@@ -424,7 +419,7 @@
     );
     
     const playerCanJoinBattle = tile.groups && tile.groups.some(group => 
-      group.owner === playerId && 
+      group.owner === $currentPlayer?.uid && 
       group.status !== 'mobilizing' && 
       group.status !== 'moving' &&
       group.status !== 'demobilising' &&
@@ -672,7 +667,7 @@
   }
   
   function isCurrentPlayer(playerEntity) {
-    return playerEntity && playerEntity.uid === currentPlayerId;
+    return playerEntity && playerEntity.uid === $currentPlayer?.uid;
   }
   
   function hasCurrentPlayer(players) {
