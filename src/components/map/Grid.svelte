@@ -989,7 +989,7 @@
       
       <div class="grid main-grid" 
         style="--cols: {$map.cols}; --rows: {$map.rows};" 
-        role="presentation"
+        role="grid"
         class:animated={!introduced}
       >
         {#each $gridArray as cell (cell.x + ':' + cell.y)}
@@ -1002,6 +1002,7 @@
           <div
             class="tile {getStructureClass(cell.structure)} {cell.terrain?.rarity || 'common'}"
             class:center={cell.isCenter}
+            tabindex="-1"
             class:highlighted={cell.highlighted}
             class:has-structure={cell.structure}
             class:has-groups={cell.groups?.length > 0}
@@ -1011,6 +1012,7 @@
             style="background-color: {cell.color || 'var(--terrain-color)'}"
             onmouseenter={() => handleTileHover(cell)}
             aria-label={`Coordinates ${cell.x},${cell.y}`}
+            role="gridcell"
           >
             <!-- Structure icons -->
             {#if cell.structure}

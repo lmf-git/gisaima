@@ -120,7 +120,8 @@
         ...selectedRace, 
         id: raceCode,
         // Include world center coordinates
-        worldCenter
+        worldCenter,
+        alive: false // Changed from 'spawned: false' to 'alive: false'
       });
     } catch (error) {
       console.error('Error joining world:', error);

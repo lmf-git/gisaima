@@ -1,49 +1,16 @@
 {
   "players": {
-    "6F1E17cgojM8nlfcl7KaOZzNV4x2": {
-      "worlds": {
-        "ancient-lands": {
-          "joined": 1744966221062,
-          "lastLocation": {
-            "timestamp": 1744966224489,
-            "x": -4,
-            "y": 6
-          },
-          "lastSpawn": "0:0:-4:6",
-          "race": "elf",
-          "spawned": true
-        }
-      }
-    },
-    "83KyZzLRIYZK8tAMdXKhKvFokxw1": {
-      "worlds": {
-        "ancient-lands": {
-          "joined": 1744966277178,
-          "lastLocation": {
-            "timestamp": 1744966280844,
-            "x": 10,
-            "y": 8
-          },
-          "lastSpawn": "1:0:10:8",
-          "race": "fairy",
-          "spawned": true
-        }
-      }
-    },
     "87chk0U5VOUJiKGsthQZwOqYdxW2": {
       "worlds": {
         "ancient-lands": {
           "inGroup": "group_87chk0U5VOUJiKGsthQZwOqYdxW2_1744960959191",
           "joined": 1744952476453,
-          "lastGroupJoin": 1744960959191,
           "lastLocation": {
-            "timestamp": 1744964821951,
             "x": 3,
             "y": 7
           },
-          "lastSpawn": "0:0:5:5",
           "race": "human",
-          "spawned": true
+          "alive": true
         }
       }
     },
@@ -52,15 +19,26 @@
         "ancient-lands": {
           "inGroup": "group_HsA5O4WJaBNxIMQQKTMwrkLb4aA2_1744959989878",
           "joined": 1744959950202,
-          "lastGroupJoin": 1744959989878,
           "lastLocation": {
-            "timestamp": 1744965901997,
             "x": -4,
             "y": 6
           },
-          "lastSpawn": "0:0:-4:6",
           "race": "elf",
-          "spawned": true
+          "alive": true
+        }
+      }
+    },
+    "N5blwd8kTkTyu2fs7CkjVkpm0cI2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "joined": 1745010962045,
+          "lastLocation": {
+            "x": 12,
+            "y": 4
+          },
+          "race": "dwarf",
+          "alive": false
         }
       }
     },
@@ -69,13 +47,12 @@
         "ancient-lands": {
           "joined": 1744964684506,
           "lastLocation": {
-            "timestamp": 1744964695603,
             "x": 10,
             "y": 8
           },
           "lastSpawn": "1:0:10:8",
           "race": "fairy",
-          "spawned": true
+          "alive": true
         }
       }
     },
@@ -84,13 +61,41 @@
         "ancient-lands": {
           "joined": 1744952965683,
           "lastLocation": {
-            "timestamp": 1744952972279,
             "x": -4,
             "y": 6
           },
           "lastSpawn": "0:0:-4:6",
           "race": "elf",
-          "spawned": true
+          "alive": true
+        }
+      }
+    },
+    "b42rwEn4YCSvJUKEoZWW7LGrfeb2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "joined": 1745011115296,
+          "lastLocation": {
+            "x": -4,
+            "y": 6
+          },
+          "race": "elf",
+          "alive": false
+        }
+      }
+    },
+    "k2OQxfn8gScJLmT0NQ83ByPF8rG3": {
+      "worlds": {
+        "ancient-lands": {
+          "joined": 1745010215995,
+          "lastLocation": {
+            "timestamp": 1745010223169,
+            "x": 5,
+            "y": 5
+          },
+          "lastSpawn": "0:0:5:5",
+          "race": "human",
+          "alive": true
         }
       }
     },
@@ -99,15 +104,13 @@
         "ancient-lands": {
           "inGroup": "group_lJZoOl3CPLTf8uIXjcvsDZlACad2_1745002240479",
           "joined": 1745002074878,
-          "lastGroupJoin": 1745002240479,
           "lastLocation": {
-            "timestamp": 1745003701931,
             "x": 1,
             "y": 5
           },
           "lastSpawn": "1:0:15:-3",
           "race": "goblin",
-          "spawned": true
+          "alive": true
         }
       }
     },
@@ -116,28 +119,26 @@
         "ancient-lands": {
           "joined": 1744966555220,
           "lastLocation": {
-            "timestamp": 1744966558769,
             "x": 5,
             "y": 5
           },
           "lastSpawn": "0:0:5:5",
           "race": "human",
-          "spawned": true
+          "alive": true
         }
       }
     },
-    "tCqV66B8UsgPxl10hDvcdZI1NTn1": {
+    "zUgn53fc2Qh5Inj9vfrK6ad4qaG2": {
       "worlds": {
         "ancient-lands": {
-          "joined": 1744981143119,
+          "alive": true,
+          "joined": 1745010628929,
           "lastLocation": {
-            "timestamp": 1744981166189,
-            "x": 15,
-            "y": -3
+            "x": -4,
+            "y": 6
           },
-          "lastSpawn": "1:0:15:-3",
-          "race": "goblin",
-          "spawned": true
+          "race": "elf",
+          "alive": false
         }
       }
     }
@@ -193,37 +194,25 @@
               }
             },
             "players": {
-              "0": {
-                "displayName": "Player",
-                "id": "Wf5MVwH80SRurJpjRgiPw8v5YMx1",
-                "lastActive": 1744952972489,
-                "race": "elf",
-                "uid": "Wf5MVwH80SRurJpjRgiPw8v5YMx1",
-                "x": -4,
-                "y": 6
-              },
               "6F1E17cgojM8nlfcl7KaOZzNV4x2": {
                 "displayName": "Player",
                 "lastActive": 1744966224815,
                 "race": "elf",
                 "uid": "6F1E17cgojM8nlfcl7KaOZzNV4x2"
+              },
+              "b42rwEn4YCSvJUKEoZWW7LGrfeb2": {
+                "displayName": "Player",
+                "lastActive": 1745011120819,
+                "race": "elf",
+                "uid": "b42rwEn4YCSvJUKEoZWW7LGrfeb2"
+              },
+              "zUgn53fc2Qh5Inj9vfrK6ad4qaG2": {
+                "displayName": "Player",
+                "lastActive": 1745010634909,
+                "race": "elf",
+                "uid": "zUgn53fc2Qh5Inj9vfrK6ad4qaG2"
               }
             }
-          }
-        },
-        "0,-1": {
-          "15,-3": {
-            "players": [
-              {
-                "displayName": "Player",
-                "id": "tCqV66B8UsgPxl10hDvcdZI1NTn1",
-                "lastActive": 1744981166397,
-                "race": "goblin",
-                "uid": "tCqV66B8UsgPxl10hDvcdZI1NTn1",
-                "x": 15,
-                "y": -3
-              }
-            ]
           }
         },
         "0,0": {
@@ -395,6 +384,16 @@
               }
             }
           },
+          "12,4": {
+            "players": {
+              "N5blwd8kTkTyu2fs7CkjVkpm0cI2": {
+                "displayName": "Player",
+                "lastActive": 1745010966710,
+                "race": "dwarf",
+                "uid": "N5blwd8kTkTyu2fs7CkjVkpm0cI2"
+              }
+            }
+          },
           "3,7": {
             "groups": {
               "group_87chk0U5VOUJiKGsthQZwOqYdxW2_1744960959191": {
@@ -494,18 +493,15 @@
               }
             },
             "players": {
-              "0": {
+              "k2OQxfn8gScJLmT0NQ83ByPF8rG3": {
                 "displayName": "Player",
-                "id": "0",
-                "lastActive": 1744949641420,
+                "lastActive": 1745010223286,
                 "race": "human",
-                "uid": "VeOX6ROsNfbmepxAJHauCZvtXvv2",
-                "x": 5,
-                "y": 5
+                "uid": "k2OQxfn8gScJLmT0NQ83ByPF8rG3"
               },
               "qbLuphQgl4gii9gqKbxz68dZmvx2": {
                 "displayName": "Player",
-                "lastActive": 1744966559048,
+                "lastActive": 1745010206970,
                 "race": "human",
                 "uid": "qbLuphQgl4gii9gqKbxz68dZmvx2"
               }
@@ -551,7 +547,7 @@
       },
       "info": {
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745008681938,
+        "lastTick": 1745011202002,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",

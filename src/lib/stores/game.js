@@ -99,7 +99,7 @@ export const currentPlayer = derived(
         world: $game.currentWorld,
         worldName: $game.worldInfo[$game.currentWorld]?.name,
         // Player status in this world
-        spawned: $game.playerWorldData.spawned || false,
+        alive: $game.playerWorldData.alive || false,
         lastLocation: $game.playerWorldData.lastLocation || null,
         // Race information
         race: $game.playerWorldData.race,
@@ -115,33 +115,37 @@ export const currentPlayer = derived(
   }
 );
 
-// Create a derived store for player's spawn status in the current world
+// Fix the needsSpawn store to properly check player alive status
 export const needsSpawn = derived(
   [game, user], 
   ([$game, $user]) => {
-    if (!$user || !$user.uid || !$game.currentWorld) return true;
+    // If there's no current user or no current world, player needs to spawn
+    if (!$user?.uid || !$game.currentWorld) {
+      return true;
+    }
     
-    const worldData = $game.playerWorlds && 
-                     $game.playerWorlds[$user.uid] && 
-                     $game.playerWorlds[$user.uid][$game.currentWorld];
+    // Check if we have player world data for this specific world
+    if (!$game.playerWorlds || 
+        !$game.playerWorlds[$user.uid] || 
+        !$game.playerWorlds[$user.uid][$game.currentWorld]) {
+      return true;
+    }
     
-    if (!worldData) return true;
-    if (worldData.spawned === false) return true;
+    // Get the player's data for this specific world
+    const playerWorldData = $game.playerWorlds[$user.uid][$game.currentWorld];
     
-    return !worldData.spawned;
-  }
-);
-
-// Update the needsSpawn derived store to check for alive status
-export const needsSpawn = derived(
-  [playerWorldData, game], 
-  ([$playerWorldData, $game]) => {
-    // If there's no world data, or alive is explicitly false, player needs to spawn
-    if (!$playerWorldData) return true;
-    if ($playerWorldData.alive === false) return true;
+    // If alive is explicitly false, player needs to spawn
+    if (playerWorldData.alive === false) {
+      return true;
+    }
     
-    // Check if player is alive
-    return !$playerWorldData.alive;
+    // If alive is true, player doesn't need to spawn
+    if (playerWorldData.alive === true) {
+      return false;
+    }
+    
+    // Default: If no alive property exists, player needs to spawn
+    return true;
   }
 );
 
@@ -695,7 +699,6 @@ export function initGameStore() {
       }
       
       if (activePlayerWorldDataSubscription) {
-        activePlayerWorldDataSubscription();
         activePlayerWorldDataSubscription = null;
       }
       
@@ -735,7 +738,7 @@ export async function joinWorld(worldId, userId, race) {
     await set(playerWorldRef, {
       joined: Date.now(),
       race: race || 'human', // Default to human if race not specified
-      spawned: false,
+      alive: false,
       // Set initial target to world center
       lastLocation: {
         x: centerCoords.x,
