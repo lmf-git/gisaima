@@ -9,7 +9,7 @@ import { logger } from "firebase-functions";
 
 // Demobilise units function
 export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
-  const { groupId, targetStructureId, locationX, locationY, worldId = 'default' } = request.data;
+  const { groupId, targetStructureId, locationX, locationY, worldId = 'default', storageDestination = 'shared' } = request.data;
   const userId = request.auth?.uid;
   
   if (!userId) {
@@ -26,70 +26,71 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
     // Calculate chunk coordinates (inline, always using 20)
     const chunkX = Math.floor(locationX / 20);
     const chunkY = Math.floor(locationY / 20);
+    
     const chunkKey = `${chunkX},${chunkY}`;
-    const locationKey = `${locationX},${locationY}`;
-    const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}`);
+    const tileKey = `${locationX},${locationY}`;
     
-    // Get the current tile data
-    const tileSnapshot = await tileRef.once("value");
-    const tileData = tileSnapshot.val() || {};
+    // Get the full path to this group
+    const groupRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`);
     
-    // Find the group to demobilise
-    const groups = tileData.groups || {};
-    const groupToProcess = Object.values(groups).find(g => g.id === groupId);
+    // Get the group data
+    const groupSnapshot = await groupRef.once('value');
+    const groupData = groupSnapshot.val();
     
-    if (!groupToProcess) {
-      throw new HttpsError("not-found", "Group not found at this location");
+    if (!groupData) {
+      throw new HttpsError("not-found", "Group not found");
     }
     
-    // Verify ownership
-    if (groupToProcess.owner !== userId) {
-      throw new HttpsError("permission-denied", "You can only demobilise your own groups");
+    // Check ownership
+    if (groupData.owner !== userId) {
+      throw new HttpsError("permission-denied", "You do not own this group");
     }
     
-    // Check if there's a valid structure for demobilisation
-    const structure = tileData.structure;
-    if (!structure) {
-      throw new HttpsError("failed-precondition", "No structure available for demobilisation");
+    // Check status
+    if (groupData.status === 'demobilising') {
+      throw new HttpsError("failed-precondition", "Group is already demobilising");
     }
     
-    // Generate a structure identifier if none exists
-    // This fixes the undefined targetStructureId error
-    const structureId = targetStructureId || 
-                        structure.id || 
-                        `structure_${locationX}_${locationY}_${Date.now()}`;
+    // Check if there's a structure to demobilize into
+    const structureRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
+    const structureSnapshot = await structureRef.once('value');
     
-    // Calculate time for demobilisation to complete
-    const worldInfoRef = db.ref(`worlds/${worldId}/info`);
-    const worldInfoSnapshot = await worldInfoRef.once("value");
-    const worldInfo = worldInfoSnapshot.val() || {};
+    if (!structureSnapshot.exists()) {
+      throw new HttpsError("failed-precondition", "No structure found at this location");
+    }
     
-    const worldSpeed = worldInfo.speed || 1.0;
-    const baseTickTime = 60000; // 1 minute
-    const tickTime = Math.round(baseTickTime / worldSpeed);
-    
+    // Group timestamp based updates
     const now = Date.now();
-    const readyAt = now + tickTime;
     
-    // Update the group's status with a valid structure ID
-    await db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}`).update({
+    // Calculate demobilization time based on world speed
+    const worldInfoRef = db.ref(`worlds/${worldId}/info`);
+    const worldInfoSnapshot = await worldInfoRef.once('value');
+    const worldInfo = worldInfoSnapshot.val() || {};
+    const worldSpeed = worldInfo.speed || 1.0;
+    
+    // Base demobilization time is 5 minutes, adjusted for world speed
+    const demobilizeTimeMs = Math.round(300000 / worldSpeed); 
+    const readyAt = now + demobilizeTimeMs;
+    
+    // Update the group to demobilising status
+    await groupRef.update({
       status: 'demobilising',
       readyAt: readyAt,
-      targetStructureId: structureId
+      lastUpdated: now,
+      targetStructureId: targetStructureId,
+      storageDestination: storageDestination // Add the storage choice
     });
     
-    // If structure doesn't already have an ID, add one
-    if (!structure.id) {
-      await db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/id`).set(structureId);
-    }
+    // Transfer items immediately if using tick function, otherwise wait for tick
+    // Using tick function, so we don't need to transfer items here.
     
     return {
-      success: true,
-      message: "Group is demobilising",
-      readyAt: readyAt
+      status: "demobilising",
+      readyAt: readyAt,
+      message: "Group is demobilising"
     };
   } catch (error) {
-    logger.error("Error demobilising units:", error);
-    throw new HttpsError("internal", "Failed to demobilise units", error.message);
+    console.error("Error in demobiliseUnits:", error);
+    throw new HttpsError("internal", error.message);
   }
 });

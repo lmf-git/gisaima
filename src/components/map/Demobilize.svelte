@@ -18,6 +18,8 @@
   let availableGroups = $state([]);
   // Selected group to demobilize
   let selectedGroup = $state(null);
+  // Selected storage destination
+  let selectedStorageDestination = $state('shared'); // Default to shared storage
   
   // Initialize available groups based on tile content
   $effect(() => {
@@ -81,6 +83,7 @@
         locationX: tile.x,
         locationY: tile.y,
         worldId: $game.currentWorld, // Make sure we're passing the worldId
+        storageDestination: selectedStorageDestination, // Add the new storage destination parameter
         tile
       });
     }
@@ -209,6 +212,41 @@
               {/each}
             </div>
           </div>
+          
+          {#if availableGroups.some(group => group.items && Object.keys(group.items).length > 0)}
+            <div class="storage-selection">
+              <h3>Storage Destination</h3>
+              <div class="storage-options">
+                <label class="storage-option">
+                  <input 
+                    type="radio" 
+                    name="storage" 
+                    value="shared" 
+                    checked={selectedStorageDestination === 'shared'} 
+                    onchange={() => selectedStorageDestination = 'shared'}
+                  />
+                  <div class="storage-info">
+                    <div class="storage-name">Shared Storage</div>
+                    <div class="storage-desc">Items available to all structure users</div>
+                  </div>
+                </label>
+                
+                <label class="storage-option">
+                  <input 
+                    type="radio" 
+                    name="storage" 
+                    value="personal" 
+                    checked={selectedStorageDestination === 'personal'} 
+                    onchange={() => selectedStorageDestination = 'personal'}
+                  />
+                  <div class="storage-info">
+                    <div class="storage-name">Personal Bank</div>
+                    <div class="storage-desc">Items only accessible by you</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          {/if}
         {:else}
           <div class="no-groups">
             <p>You have no groups that can be demobilized at this location.</p>
@@ -456,6 +494,48 @@
   }
   
   .unit-count {
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .storage-selection {
+    padding: 1em 0;
+  }
+  
+  .storage-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+  }
+  
+  .storage-option {
+    display: flex;
+    align-items: center;
+    padding: 0.6em 0.8em;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.3em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .storage-option:hover {
+    background-color: #f9f9f9;
+  }
+  
+  .storage-option input {
+    margin-right: 0.6em;
+  }
+  
+  .storage-info {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .storage-name {
+    font-weight: 500;
+  }
+  
+  .storage-desc {
+    font-size: 0.8em;
     color: rgba(0, 0, 0, 0.7);
   }
   

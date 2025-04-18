@@ -21,24 +21,29 @@
   // Check if current player owns this structure
   const isOwned = $derived(structure.owner === $currentPlayer?.uid);
   
-  // Group items by type for better organization
+  // Group items by type for better organization - FIX: Ensure we return a proper object rather than a Map
   const groupedItems = $derived(() => {
     if (!structure.items || !Array.isArray(structure.items) || structure.items.length === 0) {
-      return new Map();
+      return {};  // Return an empty object instead of Map
     }
     
-    const grouped = new Map();
+    const grouped = {};  // Use a plain object instead of Map
     
     for (const item of structure.items) {
       const type = item.type || 'misc';
-      if (!grouped.has(type)) {
-        grouped.set(type, []);
+      if (!grouped[type]) {
+        grouped[type] = [];
       }
-      grouped.get(type).push(item);
+      grouped[type].push(item);
     }
     
     return grouped;
   });
+  
+  // Create an array of type-items pairs for easier iteration in the template
+  const groupedItemsList = $derived(
+    Object.entries(groupedItems).map(([type, items]) => ({ type, items }))
+  );
   
   // Calculate total item count
   const totalItems = $derived(structure.items?.length || 0);
@@ -102,7 +107,8 @@
       
       {#if totalItems > 0}
         <div class="items-container">
-          {#each [...groupedItems.entries()] as [type, items]}
+          <!-- FIX: Use the pre-calculated array instead of trying to use Map entries() -->
+          {#each groupedItemsList as { type, items }}
             <div class="item-group">
               <h4 class="item-group-header">{formatText(type)}</h4>
               <div class="items-grid">

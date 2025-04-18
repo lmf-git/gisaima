@@ -110,17 +110,36 @@ export const processGameTicks = onSchedule({
                       continue;
                     }
                     
-                    // Transfer items from group to structure if any
+                    // Get storage preference (defaults to shared if not specified)
+                    const storageDestination = group.storageDestination || 'shared';
+                    
+                    // Transfer items from group to structure based on storage preference
                     if (group.items && Array.isArray(group.items) && group.items.length > 0) {
-                      // Check if structure already has items
-                      const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/items`;
-                      // If structure doesn't have items array yet, create it
-                      if (!tile.structure.items) {
-                        updates[structurePath] = group.items;
+                      if (storageDestination === 'personal' && group.owner) {
+                        // Store in personal bank
+                        const bankPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/banks/${group.owner}`;
+                        
+                        // Check if personal bank already exists
+                        let existingBankItems = [];
+                        if (tile.structure.banks && tile.structure.banks[group.owner]) {
+                          existingBankItems = Array.isArray(tile.structure.banks[group.owner]) ? 
+                            tile.structure.banks[group.owner] : [];
+                        }
+                        
+                        // Combine existing bank items with new items from group
+                        updates[bankPath] = [...existingBankItems, ...group.items];
                       } else {
-                        // Append group items to structure items
-                        const updatedItems = [...(Array.isArray(tile.structure.items) ? tile.structure.items : []), ...group.items];
-                        updates[structurePath] = updatedItems;
+                        // Store in shared storage (default behavior)
+                        const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/items`;
+                        
+                        // If structure doesn't have items array yet, create it
+                        if (!tile.structure.items) {
+                          updates[structurePath] = group.items;
+                        } else {
+                          // Append group items to structure items
+                          const updatedItems = [...(Array.isArray(tile.structure.items) ? tile.structure.items : []), ...group.items];
+                          updates[structurePath] = updatedItems;
+                        }
                       }
                     }
                     
