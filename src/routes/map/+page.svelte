@@ -812,18 +812,16 @@
             </button>
         </div>
         
-        <div class="entity-toggle">
-            <button 
-                class="control-button entity-button" 
-                onclick={toggleEntities}
-                aria-label={showEntities ? "Hide entities" : "Show entities"}>
-                {#if showEntities || entitiesClosing}
-                    <Close size="1.2em" extraClass="close-icon-dark" />
-                {:else}
-                    <span class="button-text">E</span>
-                {/if}
-            </button>
-        </div>
+        <button 
+            class="control-button entity-button" 
+            onclick={toggleEntities}
+            aria-label={showEntities ? "Hide entities" : "Show entities"}>
+            {#if showEntities || entitiesClosing}
+                <Close size="1.2em" extraClass="close-icon-dark" />
+            {:else}
+                <span class="button-text">E</span>
+            {/if}
+        </button>
         
         {#if showMinimap || minimapClosing}
             <Minimap closing={minimapClosing} />
@@ -1017,14 +1015,11 @@
         z-index: 999;
     }
     
-    .entity-toggle {
+    .entity-button {
         position: absolute;
         bottom: 0.5em;
-        left: 0.5em;
+        left: 2.5em; /* Positioned to be next to the help button */
         z-index: 999;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5em;
     }
     
     .control-button {
