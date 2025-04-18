@@ -65,14 +65,12 @@
     
     function toggleDetailsModal(show, displayTile = null) {
         if (show) {
-            // Set highlighted tile if one was explicitly provided
             if (displayTile) {
                 setHighlighted(displayTile.x, displayTile.y);
             }
             detailed = true;
         } else {
             detailed = false;
-            // Optionally clear highlights when closing details
             setHighlighted(null, null);
         }
     }
@@ -101,17 +99,80 @@
     let showMove = $state(false);
     let showDemobilize = $state(false);
 
-    // State for structure overview
     let showStructureOverview = $state(false);
     let selectedStructure = $state(null);
     let structureLocation = $state({ x: 0, y: 0 });
 
-    // Add temporary storage for component data
     let mobilizeData = $state(null);
     let moveData = $state(null);
     let attackData = $state(null);
     let joinBattleData = $state(null);
     let demobilizeData = $state(null);
+
+    function openMobilizePopup(tile) {
+        showMobilize = true;
+        mobilizeData = tile;
+    }
+
+    function closeMobilizePopup() {
+        showMobilize = false;
+        setHighlighted(null, null);
+    }
+
+    function openMovePopup(tile) {
+        showMove = true;
+        moveData = tile;
+    }
+
+    function closeMovePopup(complete = true, startingPathDraw = false) {
+        showMove = false;
+        
+        if (!complete && startingPathDraw) {
+            return;
+        }
+        
+        isPathDrawingMode = false;
+        pathDrawingGroup = null;
+        currentPath = [];
+        setHighlighted(null, null);
+    }
+
+    function openAttackPopup(tile) {
+        showAttack = true;
+        attackData = tile;
+    }
+
+    function closeAttackPopup() {
+        showAttack = false;
+        setHighlighted(null, null);
+    }
+
+    function openJoinBattlePopup(tile) {
+        showJoinBattle = true;
+        joinBattleData = tile;
+    }
+
+    function closeJoinBattlePopup() {
+        showJoinBattle = false;
+        setHighlighted(null, null);
+    }
+
+    function openDemobilizePopup(tile) {
+        showDemobilize = true;
+        demobilizeData = tile;
+    }
+
+    function closeDemobilizePopup() {
+        showDemobilize = false;
+        setHighlighted(null, null);
+    }
+
+    function closeStructureOverview() {
+        showStructureOverview = false;
+        setTimeout(() => {
+            selectedStructure = null;
+        }, 300);
+    }
 
     function parseUrlCoordinates() {
         if (!browser || !$page.url) return null;
@@ -459,7 +520,7 @@
             }
         }
     }
-    
+
     function toggleEntities() {
         if (showEntities) {
             entitiesClosing = true;
@@ -496,17 +557,12 @@
 
         if (tileX !== undefined && tileY !== undefined) {
             if (isPathDrawingMode) {
-                // Handle path drawing logic
+                const point = { x: tileX, y: tileY };
+                handlePathPoint(point);
             } else {
                 console.log('Moving to clicked tile:', { x: tileX, y: tileY });
-                
-                // Set the highlight first to ensure highlightedStore has the data
-                setHighlighted(tileX, tileY);
-                // Then move target
                 moveTarget(tileX, tileY);
-                
-                // Get the tile data from highlightedStore after a brief delay
-                // to ensure it's been updated with the new coordinates
+                setHighlighted(tileX, tileY);
                 setTimeout(() => {
                     if ($highlightedStore && hasTileContent($highlightedStore)) {
                         toggleDetailsModal(true, $highlightedStore);
@@ -542,13 +598,11 @@
         if (currentPath.length > 0) {
             const lastPoint = currentPath[currentPath.length - 1];
             
-            // Don't add if it's the same as the last point
             if (lastPoint.x === point.x && lastPoint.y === point.y) {
                 console.log('Point is duplicate of last point, skipping');
                 return;
             }
             
-            // Check if point already exists in path
             const pointExists = currentPath.some(p => p.x === point.x && p.y === point.y);
             if (pointExists) {
                 console.log('Point already in path');
@@ -558,7 +612,6 @@
             const dx = Math.abs(point.x - lastPoint.x);
             const dy = Math.abs(point.y - lastPoint.y);
             
-            // For non-adjacent points, calculate path between them
             if (dx > 1 || dy > 1) {
                 console.log('Calculating path to non-adjacent point');
                 const intermediatePath = calculatePathBetweenPoints(
@@ -566,44 +619,36 @@
                     point.x, point.y
                 );
                 
-                // Check if adding these points would exceed 20 steps
                 if (currentPath.length + intermediatePath.length > 20) {
                     console.log('Path exceeds 20 steps limit, truncating...');
                     
-                    // Calculate how many points we can add without exceeding limit
                     const pointsToAdd = 20 - currentPath.length;
                     if (pointsToAdd <= 0) {
                         console.log('Path already at maximum length');
                         return;
                     }
                     
-                    // Add only allowed number of points
                     currentPath = [
                         ...currentPath,
                         ...intermediatePath.slice(0, pointsToAdd)
                     ];
                 } else {
-                    // Add all intermediate points
                     currentPath = [...currentPath, ...intermediatePath];
                 }
             } else {
-                // Check if adding this point would exceed 20 steps
                 if (currentPath.length >= 20) {
                     console.log('Maximum path length reached (20 steps)');
                     return;
                 }
                 
-                // For adjacent point, add directly
                 currentPath = [...currentPath, point];
             }
         } else {
-            // First point in path
             currentPath = [point];
         }
         
         console.log('Updated path:', currentPath);
         
-        // Update move component ref with new path data
         if (moveComponentRef && typeof moveComponentRef.updateCustomPath === 'function') {
             moveComponentRef.updateCustomPath(currentPath);
         }
@@ -613,157 +658,53 @@
         const { action, tile } = eventData;
         console.log('Action selected:', action, 'for tile:', tile);
         
-        // Close details first
         toggleDetailsModal(false);
         
-        // Then route to the appropriate handler
-        if (action === 'mobilize') {
-            openMobilizePopup(tile);
-            return;
-        }
-        
-        if (action === 'move') {
-            openMovePopup(tile);
-            return;
-        }
-        
-        if (action === 'attack') {
-            openAttackPopup(tile);
-            return;
-        }
-        
-        if (action === 'joinBattle') {
-            openJoinBattlePopup(tile);
-            return;
-        }
-        
-        if (action === 'demobilize') {
-            openDemobilizePopup(tile);
-            return;
-        }
-
-        if (action === 'inspect') {
-            // Show structure overview
-            if (tile && tile.structure) {
-                selectedStructure = tile.structure;
-                structureLocation = { x: tile.x, y: tile.y };
-                showStructureOverview = true;
-            }
-            return;
-        }
-        
         switch(action) {
+            case 'mobilize':
+                openMobilizePopup(tile);
+                return;
+                
+            case 'move':
+                openMovePopup(tile);
+                return;
+                
+            case 'attack':
+                openAttackPopup(tile);
+                return;
+                
+            case 'joinBattle':
+                openJoinBattlePopup(tile);
+                return;
+                
+            case 'demobilize':
+                openDemobilizePopup(tile);
+                return;
+                
+            case 'inspect':
+                if (tile && tile.structure) {
+                    selectedStructure = tile.structure;
+                    structureLocation = { x: tile.x, y: tile.y };
+                    showStructureOverview = true;
+                }
+                return;
+                
             case 'explore':
                 console.log(`Exploring ${tile.x}, ${tile.y}`);
                 break;
+                
             case 'gather':
                 console.log(`Gathering resources at ${tile.x}, ${tile.y}`);
                 break;
-        }
-    }
-
-    function openMobilizePopup(tile) {
-        showMobilize = true;
-        mobilizeData = tile;
-    }
-
-    function closeMobilizePopup() {
-        showMobilize = false;
-        setHighlighted(null, null);
-    }
-
-    function openMovePopup(tile) {
-        showMove = true;
-        moveData = tile;
-    }
-
-    function closeMovePopup(complete = true, startingPathDraw = false) {
-        showMove = false;
-        
-        if (!complete && startingPathDraw) {
-            return;
-        }
-        
-        isPathDrawingMode = false;
-        pathDrawingGroup = null;
-        currentPath = [];
-        setHighlighted(null, null);
-    }
-
-    function openAttackPopup(tile) {
-        showAttack = true;
-        attackData = tile;
-    }
-
-    function closeAttackPopup() {
-        showAttack = false;
-        setHighlighted(null, null);
-    }
-
-    function openJoinBattlePopup(tile) {
-        showJoinBattle = true;
-        joinBattleData = tile;
-    }
-
-    function closeJoinBattlePopup() {
-        showJoinBattle = false;
-        setHighlighted(null, null);
-    }
-
-    function openDemobilizePopup(tile) {
-        showDemobilize = true;
-        demobilizeData = tile;
-    }
-
-    function closeDemobilizePopup() {
-        showDemobilize = false;
-        setHighlighted(null, null);
-    }
-
-    function closeStructureOverview() {
-        showStructureOverview = false;
-        setTimeout(() => {
-            selectedStructure = null;
-        }, 300);
-    }
-
-    function handlePathDrawingStart(eventData) {
-        console.log('Starting path drawing:', eventData);
-        const { groupId, startPoint } = eventData;
-        
-        isPathDrawingMode = false;
-        currentPath = [];
-        
-        showMove = false;
-        
-        setTimeout(() => {
-            currentPath = [startPoint];
-            isPathDrawingMode = true;
-            pathDrawingGroup = groupId;
-            
-            console.log('Path drawing mode activated with group:', groupId);
-            
-            if (moveComponentRef && typeof moveComponentRef.updateCustomPath === 'function') {
-                moveComponentRef.updateCustomPath(currentPath);
-            }
-        }, 100);
-    }
-
-    function handlePathDrawingCancel() {
-        console.log('Path drawing cancelled');
-        isPathDrawingMode = false;
-        pathDrawingGroup = null;
-        currentPath = [];
-        
-        if (moveComponentRef && typeof moveComponentRef.cancelPathDrawing === 'function') {
-            moveComponentRef.cancelPathDrawing();
+                
+            default:
+                console.log(`Unhandled action: ${action}`);
         }
     }
 
     function calculatePathBetweenPoints(startX, startY, endX, endY) {
         const path = [];
         
-        // Calculate steps using Bresenham's line algorithm
         const dx = Math.abs(endX - startX);
         const dy = Math.abs(endY - startY);
         const sx = startX < endX ? 1 : -1;
@@ -773,7 +714,6 @@
         let x = startX;
         let y = startY;
         
-        // Generate intermediate steps (excluding start point which is already in the path)
         while (x !== endX || y !== endY) {
             const e2 = 2 * err;
             
@@ -787,93 +727,10 @@
                 y += sy;
             }
             
-            // Add intermediate point
             path.push({ x, y });
         }
         
         return path;
-    }
-
-    function confirmPathDrawing() {
-        if (!isPathDrawingMode || !pathDrawingGroup || currentPath.length < 2) {
-            console.warn('Cannot confirm path drawing: Invalid state or path too short');
-            return;
-        }
-        
-        console.log('Confirming path drawing with', currentPath.length, 'points');
-        
-        // Call the Cloud Function directly
-        const functions = getFunctions();
-        const moveGroup = httpsCallable(functions, 'moveGroup');
-        
-        const startPoint = currentPath[0];
-        const endPoint = currentPath[currentPath.length - 1];
-        
-        moveGroup({
-            groupId: pathDrawingGroup,
-            fromX: startPoint.x,
-            fromY: startPoint.y,
-            toX: endPoint.x,
-            toY: endPoint.y,
-            path: currentPath,
-            worldId: $game.currentWorld
-        })
-        .then((result) => {
-            console.log('Path movement started:', result.data);
-        })
-        .catch((error) => {
-            console.error('Path movement error:', error);
-            alert(`Error: ${error.message || 'Failed to start movement'}`);
-        });
-        
-        if (moveComponentRef && typeof moveComponentRef.confirmCustomPath === 'function') {
-            moveComponentRef.confirmCustomPath();
-        }
-        
-        // Reset path drawing state
-        isPathDrawingMode = false;
-        pathDrawingGroup = null;
-        currentPath = [];
-    }
-
-    function handleMove(eventData) {
-        const { groupId, from, to, path } = eventData;
-        console.log('Moving group:', { groupId, from, to, path });
-        
-        const functions = getFunctions();
-        const moveGroup = httpsCallable(functions, 'moveGroup');
-        
-        moveGroup({
-            groupId: groupId,
-            fromX: from.x,
-            fromY: from.y,
-            toX: to.x,
-            toY: to.y,
-            path: path,
-            worldId: $game.currentWorld
-        })
-        .then((result) => {
-            console.log('Movement started:', result.data);
-        })
-        .catch((error) => {
-            console.error('Movement error:', error);
-        });
-    }
-
-    function handleMobilize(eventData) {
-        // ...existing implementation...
-    }
-
-    function handleAttack(eventData) {
-        // ...existing implementation...
-    }
-
-    function handleJoinBattle(eventData) {
-        // ...existing implementation...
-    }
-
-    function handleDemobilize(eventData) {
-        // ...existing implementation...
     }
 </script>
 
@@ -899,10 +756,10 @@
         </div>
     {:else}
         <Grid 
-            {detailed} 
+            detailed={detailed}
             onClick={handleGridClick}
             isPathDrawingMode={!!isPathDrawingMode}
-            {moveComponentRef}
+            moveComponentRef={moveComponentRef}
             onAddPathPoint={handlePathPoint}
         />
         
@@ -951,7 +808,6 @@
                 x={$targetStore.x}  
                 y={$targetStore.y}  
                 openDetails={() => {
-                    // When opening from Legend, explicitly use targetStore
                     toggleDetailsModal(true, $targetStore);
                 }} 
             />
@@ -1066,8 +922,8 @@
     }
     
     :global(body.map-page-active) {
-        overscroll-behavior: none;
         overflow: hidden;
+        overscroll-behavior: none;
         position: fixed;
         width: 100%;
         height: 100%;
