@@ -65,6 +65,7 @@ export const map = writable({
   rows: 0,
   target: { x: 0, y: 0 },
   minimap: true,
+  expandedViewActive: true, // Added flag to control expanded data loading independent of UI visibility
   world: 'default',
   isDragging: false,
   dragStartX: 0,
@@ -263,7 +264,7 @@ function processChunkData(data = {}, chunkKey) {
   }
 }
 
-// Modify the chunks derived store to pass chunk key to processChunkData
+// Modify the chunks derived store to use expandedViewActive
 export const chunks = derived(
   [map],
   ([$map], set) => {
@@ -273,7 +274,8 @@ export const chunks = derived(
     if (!$map.ready) return set(new Set());
     
     // Calculate visible area chunk bounds
-    const expandedFactor = $map.minimap ? 1 : 0;
+    // Always use expanded view for data loading, regardless of UI visibility
+    const expandedFactor = $map.expandedViewActive ? 1 : 0;
     const colsRadius = Math.ceil($map.cols * (1 + expandedFactor * (EXPANDED_COLS_FACTOR - 1)) / 2);
     const rowsRadius = Math.ceil($map.rows * (1 + expandedFactor * (EXPANDED_ROWS_FACTOR - 1)) / 2);
     
@@ -399,7 +401,8 @@ export const coordinates = derived(
       return set([]);
     }
     
-    const useExpanded = $map.minimap;
+    // Always use expanded view for data loading, regardless of UI visibility
+    const useExpanded = $map.expandedViewActive;
     const gridCols = useExpanded ? Math.floor($map.cols * EXPANDED_COLS_FACTOR) : $map.cols;
     const gridRows = useExpanded ? Math.floor($map.rows * EXPANDED_ROWS_FACTOR) : $map.rows;
     
@@ -811,6 +814,7 @@ export function cleanup() {
     rows: 0,
     target: { x: 0, y: 0 },
     minimap: true,
+    expandedViewActive: true, // Keep expanded data loading on by default
     world: null,
     isDragging: false,
     dragStartX: 0,

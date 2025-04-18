@@ -484,9 +484,11 @@
             const storedEntitiesVisibility = localStorage.getItem('mapEntities');
             showEntities = storedEntitiesVisibility !== 'false';
             
+            // Update UI visibility but always keep data loading with expanded view
             map.update(state => ({
                 ...state,
-                minimap: showMinimap
+                minimap: showMinimap,
+                expandedViewActive: true // Always keep expanded data loading
             }));
         }
     });
@@ -497,7 +499,11 @@
             setTimeout(() => {
                 showMinimap = false;
                 minimapClosing = false;
-                map.update(state => ({ ...state, minimap: false }));
+                map.update(state => ({ 
+                    ...state, 
+                    minimap: false,
+                    expandedViewActive: true // Keep expanded data loading
+                }));
                 if (browser) {
                     localStorage.setItem('minimap', 'false');
                 }
@@ -515,7 +521,11 @@
             }
             
             showMinimap = true;
-            map.update(state => ({ ...state, minimap: true }));
+            map.update(state => ({ 
+                ...state, 
+                minimap: true,
+                expandedViewActive: true // Keep expanded data loading
+            }));
             if (browser) {
                 localStorage.setItem('minimap', 'true');
             }
