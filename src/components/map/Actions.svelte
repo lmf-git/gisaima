@@ -9,6 +9,13 @@
   // Available actions based on tile content
   let actions = $state([]);
   
+  // Function to check if there's a group with specific status on the tile
+  function hasGroupWithStatus(tile, playerId, status) {
+    return tile.groups && tile.groups.some(group => 
+      group.owner === playerId && group.status === status
+    );
+  }
+  
   // Function to check if there are valid units that can be mobilized at this location
   function hasValidUnitsForMobilization(tile, playerId) {
     if (!tile || !tile.groups) return false;
@@ -142,13 +149,16 @@
       });
     }
     
-    // SIMPLIFIED LOGIC: Show mobilize action if:
+    // Check if there's a group currently demobilising
+    const hasDemobilisingGroup = hasGroupWithStatus(tile, playerId, 'demobilising');
+    
+    // UPDATED: Only show mobilize if no group is demobilising and either:
     // 1. The player is present at the tile, OR
     // 2. There are valid units to mobilize
     const playerOnTile = tile.players && tile.players.some(p => p.id === playerId);
     const hasValidUnits = hasValidUnitsForMobilization(tile, playerId);
     
-    if (playerOnTile || hasValidUnits) {
+    if (!hasDemobilisingGroup && (playerOnTile || hasValidUnits)) {
       availableActions.push({
         id: 'mobilize',
         label: 'Mobilize Forces',

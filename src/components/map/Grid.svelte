@@ -335,6 +335,88 @@
     }
   });
   
+  // Add a new function to check if a tile has any content
+  function hasTileContent(tile) {
+    if (!tile) return false;
+    
+    return (
+      tile.structure || 
+      (tile.groups && tile.groups.length > 0) || 
+      (tile.players && tile.players.length > 0) || 
+      (tile.items && tile.items.length > 0)
+    );
+  }
+
+  // Keep the existing hasMeaningfulActions function for deciding which actions to show
+  function hasMeaningfulActions(tile) {
+    if (!tile || !$currentPlayer?.uid) return false;
+    
+    const playerId = $currentPlayer.uid;
+    
+    // Check for player-owned groups (enables move and gather)
+    const hasOwnedGroups = tile.groups && tile.groups.some(group => 
+      group.owner === playerId && group.status === 'idle'
+    );
+    
+    // Check for mobilization candidates
+    const playerOnTile = tile.players && tile.players.some(p => p.id === playerId);
+    const hasValidUnits = tile.groups && tile.groups.some(group => 
+      group.owner === playerId && 
+      group.status !== 'mobilizing' &&
+      group.status !== 'moving' &&
+      group.status !== 'demobilising' &&
+      group.status !== 'fighting' &&
+      group.units && 
+      group.units.some(unit => unit.type !== 'player')
+    );
+    
+    // Check for demobilization candidates
+    const hasValidGroupsForDemob = tile.groups && tile.structure && tile.groups.some(group => 
+      group.owner === playerId && 
+      group.status !== 'mobilizing' && 
+      group.status !== 'moving' &&
+      group.status !== 'demobilising' &&
+      group.status !== 'fighting'
+    );
+    
+    // Check for attack candidates
+    const hasPlayerCombatGroups = tile.groups && tile.groups.some(group => 
+      group.owner === playerId && 
+      group.status !== 'mobilizing' && 
+      group.status !== 'moving' &&
+      group.status !== 'demobilising' &&
+      group.status !== 'fighting' &&
+      !group.inBattle
+    );
+    
+    const hasEnemyGroups = tile.groups && tile.groups.some(group => 
+      group.owner !== playerId && 
+      group.status !== 'fighting' &&
+      !group.inBattle
+    );
+    
+    // Check for ongoing battles
+    const hasBattles = tile.groups && tile.groups.some(group => 
+      group.inBattle && group.battleId && group.status === 'fighting'
+    );
+    
+    const playerCanJoinBattle = tile.groups && tile.groups.some(group => 
+      group.owner === playerId && 
+      group.status !== 'mobilizing' && 
+      group.status !== 'moving' &&
+      group.status !== 'demobilising' &&
+      group.status !== 'fighting' &&
+      !group.inBattle
+    );
+    
+    // Return true if any meaningful action is available
+    return hasOwnedGroups || 
+           (playerOnTile || hasValidUnits) || 
+           hasValidGroupsForDemob || 
+           (hasPlayerCombatGroups && hasEnemyGroups) ||
+           (hasBattles && playerCanJoinBattle);
+  }
+
   function handleGridClick(event) {
     clickCount++;
     lastClickTime = Date.now();
@@ -402,7 +484,8 @@
         
         if (openActions) {
           const clickedTile = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
-          if (clickedTile) {
+          // Modified condition: show actions if tile has any content
+          if (clickedTile && hasTileContent(clickedTile)) {
             openActions(clickedTile);
           }
         }

@@ -729,20 +729,13 @@
                       >
                         {#if group.status === 'starting_to_gather'}
                           Preparing to gather
-                        {:else}
-                          {_fmt(group.status)}
-                        {/if}
-                        {#if group.status === 'moving'}
+                        {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
+                          {_fmt(group.status)} {formatTimeRemaining(group.readyAt)}
+                        {:else if group.status === 'moving'}
                           {#if isPendingTick(group.nextMoveTime)}
                             ↻
                           {:else}
                             ({formatTimeRemaining(calculateMoveCompletionTime(group))})
-                          {/if}
-                        {:else if group.status === 'mobilizing'}
-                          {#if isPendingTick(group.readyAt)}
-                            ↻
-                          {:else}
-                            ({formatTimeRemaining(group.readyAt)})
                           {/if}
                         {:else if group.status === 'gathering' || group.status === 'starting_to_gather'}
                           {#if isPendingTick(group.gatheringUntil)}
@@ -750,6 +743,8 @@
                           {:else}
                             ({formatTimeRemaining(group.gatheringUntil)})
                           {/if}
+                        {:else}
+                          {_fmt(group.status)}
                         {/if}
                       </span>
                       
