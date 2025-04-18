@@ -403,15 +403,15 @@
       <div class="filter-tabs">
         {#each getSortedFilterTabs() as filter}
           <button 
-            class="filter-tab" 
-            class:active={activeFilter === filter.id}
-            class:has-content={hasContent(filter.id)} 
+            class="filter-tab {filter.id === activeFilter ? 'active' : ''} {hasContent(filter.id) ? 'has-content' : ''}"
             onclick={() => setFilter(filter.id)}
             disabled={!hasContent(filter.id)}
           >
             {filter.label}
-            {#if filter.id !== 'all' && getFilterCount(filter.id) > 0}
-              <span class="filter-count">{getFilterCount(filter.id)}</span>
+            {#if getFilterCount(filter.id) > 0}
+              <span class="filter-count" class:filter-count-structures={filter.id === 'structures'} class:filter-count-players={filter.id === 'players'} class:filter-count-groups={filter.id === 'groups'} class:filter-count-items={filter.id === 'items'}>
+                {getFilterCount(filter.id)}
+              </span>
             {/if}
           </button>
         {/each}
@@ -1009,19 +1009,46 @@
   }
   
   .filter-count {
-    background-color: rgba(0, 0, 0, 0.1);
-    border-radius: 0.8em;
-    padding: 0.1em 0.4em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 1.2em;
+    height: 1.2em;
     font-size: 0.7em;
-    min-width: 1.1em;
-    text-align: center;
+    font-weight: bold;
     margin-left: 0.4em;
-    line-height: 1.1;
+    line-height: 1;
+    background: rgba(0, 0, 0, 0.2);
+    color: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);
   }
   
   .filter-tab.active .filter-count {
-    background-color: #4285f4;
-    color: white;
+    background: rgba(64, 158, 255, 0.9);
+    box-shadow: 0 0 0.2em rgba(64, 158, 255, 0.6);
+  }
+  
+  .filter-count-structures {
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: rgba(0, 0, 0, 0.8) !important;
+    border-radius: 0 !important;
+  }
+  
+  .filter-count-players {
+    background: rgba(100, 100, 255, 0.9) !important;
+    box-shadow: 0 0 .15em rgba(100, 100, 255, 0.6) !important;
+  }
+  
+  .filter-count-groups {
+    background: rgba(255, 100, 100, 0.9) !important;
+    box-shadow: 0 0 .15em rgba(255, 100, 100, 0.6) !important;
+  }
+  
+  .filter-count-items {
+    background: rgba(255, 215, 0, 0.9) !important;
+    box-shadow: 0 0 .15em rgba(255, 215, 0, 0.6) !important;
   }
   
   @keyframes reveal {

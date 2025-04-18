@@ -827,9 +827,9 @@
         console.log('Attacking:', { attackerGroupId, defenderGroupId, tile });
         
         const functions = getFunctions();
-        const attackGroup = httpsCallable(functions, 'attackGroup');
+        const attackGroups = httpsCallable(functions, 'attackGroups');
         
-        attackGroup({
+        attackGroups({
             attackerGroupId,
             defenderGroupId,
             locationX: tile.x,

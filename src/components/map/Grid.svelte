@@ -1025,33 +1025,36 @@
               <div class="entity-indicator player-position-indicator" aria-hidden="true"></div>
             {/if}
 
-            {#if cell.structure}
-              <div class="entity-indicator structure-indicator {cell.structure.type}-indicator" aria-hidden="true"></div>
-            {/if}
+            <!-- Entity indicators container -->
+            <div class="entity-indicators">
+              {#if cell.structure}
+                <div class="entity-indicator structure-indicator {cell.structure.type}-indicator" aria-hidden="true"></div>
+              {/if}
 
-            {#if cell.players?.length > 0}
-              <div class="entity-indicator player-indicator" class:current-player-indicator={isCurrentPlayerTile} aria-hidden="true">
-                {#if cell.players.length > 1}
-                  <span class="count">{cell.players.length}</span>
-                {/if}
-              </div>
-            {/if}
+              {#if cell.players?.length > 0}
+                <div class="entity-indicator player-indicator" class:current-player-indicator={isCurrentPlayerTile} aria-hidden="true">
+                  {#if cell.players.length > 1}
+                    <span class="count">{cell.players.length}</span>
+                  {/if}
+                </div>
+              {/if}
 
-            {#if cell.groups?.length > 0}
-              <div class="entity-indicator group-indicator" aria-hidden="true">
-                {#if cell.groups.length > 1}
-                  <span class="count">{cell.groups.length}</span>
-                {/if}
-              </div>
-            {/if}
-            
-            {#if cell.items?.length > 0}
-              <div class="entity-indicator item-indicator {highestRarityItem?.rarity || 'common'}" aria-hidden="true">
-                {#if cell.items.length > 1}
-                  <span class="count">{cell.items.length}</span>
-                {/if}
-              </div>
-            {/if}
+              {#if cell.groups?.length > 0}
+                <div class="entity-indicator group-indicator" aria-hidden="true">
+                  {#if cell.groups.length > 1}
+                    <span class="count">{cell.groups.length}</span>
+                  {/if}
+                </div>
+              {/if}
+              
+              {#if cell.items?.length > 0}
+                <div class="entity-indicator item-indicator {highestRarityItem?.rarity || 'common'}" aria-hidden="true">
+                  {#if cell.items.length > 1}
+                    <span class="count">{cell.items.length}</span>
+                  {/if}
+                </div>
+              {/if}
+            </div>
           </div>
         {/each}
       </div>
@@ -1222,47 +1225,54 @@
     pointer-events: all;
   }
 
-  .entity-indicator {
+  .entity-indicators {
     position: absolute;
-    pointer-events: none;
+    display: flex;
+    gap: 0.15em;
+    bottom: 0.2em;
+    right: 0.2em;
     z-index: 4;
+    pointer-events: none;
+  }
+
+  .entity-indicator {
+    width: 0.5em;
+    height: 0.5em;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 50%;
+    border: 0.0625em solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.3);
   }
   
   .structure-indicator {
-    bottom: .2em;
-    left: .2em;
-    width: .6em;
-    height: .6em;
     background: rgba(255, 255, 255, 0.9);
-    border: .0625em solid rgba(0, 0, 0, 0.3);
-    box-shadow: 0 0 .15em rgba(255, 255, 255, 0.6);
+    border-radius: 0;
   }
   
   .group-indicator {
-    top: .2em;
-    right: .2em;
-    width: .5em;
-    height: .5em;
-    border-radius: 50%;
     background: rgba(255, 100, 100, 0.9);
-    border: .0625em solid rgba(0, 0, 0, 0.3);
     box-shadow: 0 0 .15em rgba(255, 100, 100, 0.6);
-    position: relative;
   }
   
   .player-indicator {
-    top: .2em;
-    left: .2em;
-    width: .5em;
-    height: .5em;
     background: rgba(100, 100, 255, 0.9);
-    border-radius: 50%;
-    border: .0625em solid rgba(0, 0, 0, 0.3);
     box-shadow: 0 0 .15em rgba(100, 100, 255, 0.6);
-    position: relative;
+  }
+  
+  .player-position-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0.7em;
+    height: 0.7em;
+    background: gold;
+    border: 0.1em solid rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    box-shadow: 0 0 0.3em gold;
+    z-index: 10;
   }
 
   .count {
@@ -1272,7 +1282,12 @@
     line-height: 1;
     font-family: var(--font-heading);
   }
-  
+
+  .item-indicator {
+    background: rgba(255, 215, 0, 0.9);
+    box-shadow: 0 0 .15em rgba(255, 215, 0, 0.6);
+  }
+
   .tile.has-structure {
     box-shadow: inset 0 -0.1em 0.3em rgba(255, 255, 255, 0.3);
   }

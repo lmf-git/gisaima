@@ -62,7 +62,7 @@
     
     try {
       const functions = getFunctions();
-      const attackGroupFn = httpsCallable(functions, 'attackGroup');
+      const attackGroupFn = httpsCallable(functions, 'attackGroups');
       
       // Use the first attacker as the primary attacker
       const primaryAttackerGroupId = selectedAttackers[0].id;

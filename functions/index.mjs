@@ -8,7 +8,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { processGameTicks } from './tick.mjs';
 import { startMobilization } from './actions/mobilize.mjs';
 import { demobiliseUnits } from './actions/demobilize.mjs';
-import { attackGroup } from './actions/attackGroup.mjs';
+import { attackGroups } from './actions/attackGroups.mjs';
 import { joinBattle } from './actions/joinBattle.mjs';
 import { startGathering } from './actions/gather.mjs';
 import { moveGroup } from './actions/move.mjs'; // Import the new moveGroup function
@@ -21,7 +21,7 @@ export {
   processGameTicks,
   startMobilization,
   demobiliseUnits,
-  attackGroup,
+  attackGroups,
   joinBattle,
   startGathering,
   moveGroup // Export the new moveGroup function
