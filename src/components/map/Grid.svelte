@@ -1673,20 +1673,33 @@
     top: 1em;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.7);
-    color: #ffff99;
+    background-color: rgba(255, 255, 255, 0.85);
+    color: rgba(0, 0, 0, 0.8);
     padding: 0.5em 1em;
     border-radius: 0.3em;
     font-weight: 500;
     pointer-events: none;
     z-index: 1000;
-    animation: pulse-indicator 2s infinite alternate;
-    border: 1px solid rgba(255, 255, 0, 0.5);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(0.5em);
+    -webkit-backdrop-filter: blur(0.5em);
+    animation: reveal 0.4s ease-out forwards;
+    font-family: var(--font-heading);
+    font-size: 0.9em;
+    box-sizing: border-box;
+    margin: 0;
   }
   
-  @keyframes pulse-indicator {
-    0% { opacity: 0.7; }
-    100% { opacity: 1; }
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -1em);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
   }
 
   /* Make sure tiles don't block paths */

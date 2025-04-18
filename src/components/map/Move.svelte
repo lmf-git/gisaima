@@ -182,39 +182,9 @@
     customPath = newPoints;
   }
   
-  // Add a method to optimize the custom path
-  export function optimizeCustomPath() {
-    if (customPath.length <= 2) return; // Nothing to optimize
-    
-    let optimized = [customPath[0]]; // Start with first point
-    let current = 0;
-    
-    while (current < customPath.length - 1) {
-      // Try to find the furthest point we can reach directly from current
-      let farthest = current + 1;
-      
-      // Scan from the end of path to find furthest reachable point
-      for (let i = customPath.length - 1; i > current; i--) {
-        if (canReachDirectly(customPath[current], customPath[i])) {
-          farthest = i;
-          break; // Take the furthest point we can reach
-        }
-      }
-      
-      // Add the farthest reachable point to our optimized path
-      optimized.push(customPath[farthest]);
-      current = farthest;
-    }
-    
-    // Only update if optimization actually reduced the path
-    if (optimized.length < customPath.length) {
-      customPath = optimized;
-    }
-  }
-  
   // Helper function to check if two points can be directly connected
   function canReachDirectly(p1, p2) {
-    // For adjacent cells
+    // Adjacent cells are directly reachable
     const dx = Math.abs(p2.x - p1.x);
     const dy = Math.abs(p2.y - p1.y);
     

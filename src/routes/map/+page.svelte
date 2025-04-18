@@ -83,7 +83,6 @@
     let pathDrawingGroup = $state(null);
     let currentPath = $state([]);
     let moveComponentRef = $state(null);
-    let optimizePath = $state(true); // Add state for path optimization
 
     let showAttack = $state(false);
     let showJoinBattle = $state(false);
@@ -93,32 +92,12 @@
     
     let showMobilize = $state(false);
     let showMove = $state(false);
-    let showDemobilize = $state(false); // Add state for demobilize dialog
+    let showDemobilize = $state(false);
 
     // State for structure overview
     let showStructureOverview = $state(false);
     let selectedStructure = $state(null);
     let structureLocation = $state({ x: 0, y: 0 });
-
-    // Add new effect to watch optimizePath changes
-    $effect(() => {
-        // When optimize path setting changes and we're in path drawing mode with a path
-        if (isPathDrawingMode && currentPath.length > 1) {
-            if (optimizePath) {
-                // Optimize the current path immediately when checkbox is toggled on
-                const optimized = optimizePathPoints([...currentPath]);
-                
-                // Only update if optimization actually reduced the path
-                if (optimized.length < currentPath.length) {
-                    currentPath = optimized;
-                    
-                    if (moveComponentRef) {
-                        moveComponentRef.updateCustomPath(currentPath);
-                    }
-                }
-            }
-        }
-    });
 
     function parseUrlCoordinates() {
         if (!browser || !$page.url) return null;
@@ -1196,10 +1175,6 @@
             <div class="path-drawing-controls">
                 <div class="path-info path-drawing-active">
                     <span>Drawing path: {currentPath.length} points</span>
-                    <label class="optimize-path-checkbox">
-                        <input type="checkbox" bind:checked={optimizePath}>
-                        Optimize path
-                    </label>
                 </div>
                 <div class="path-buttons">
                     <button 
@@ -1375,18 +1350,22 @@
         bottom: 1em;
         left: 50%;
         transform: translateX(-50%);
-        background-color: rgba(0, 0, 0, 0.85);
-        border-radius: 0.5em;
+        background-color: rgba(255, 255, 255, 0.85);
+        border: 0.05em solid rgba(255, 255, 255, 0.2);
+        border-radius: 0.3em;
         padding: 1em;
         display: flex;
         flex-direction: column;
         gap: 0.8em;
         z-index: 1500; /* Ensure highest visibility */
         min-width: 18em;
-        backdrop-filter: blur(5px);
-        box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.3);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(0.5em);
+        -webkit-backdrop-filter: blur(0.5em);
+        color: rgba(0, 0, 0, 0.8);
+        text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+        box-shadow: none;
+        font-family: var(--font-body);
+        animation: reveal 0.4s ease-out forwards;
     }
     
     .path-info {
@@ -1396,23 +1375,12 @@
         flex-direction: column;
         align-items: center;
         gap: 0.4em;
-    }
-    
-    .path-drawing-active {
-        color: #ffff99;
         font-weight: 500;
     }
     
-    .optimize-path-checkbox {
-        display: flex;
-        align-items: center;
-        gap: 0.4em;
-        font-size: 0.9em;
-        cursor: pointer;
-    }
-    
-    .optimize-path-checkbox input {
-        margin: 0;
+    .path-drawing-active {
+        color: rgba(0, 0, 0, 0.8);
+        font-weight: 600;
     }
     
     .path-buttons {
@@ -1428,28 +1396,45 @@
         font-weight: 500;
         cursor: pointer;
         transition: all 0.2s;
+        font-family: var(--font-heading);
     }
     
     .cancel-path-btn {
-        background-color: #6c757d;
-        color: white;
+        background-color: rgba(0, 0, 0, 0.1);
+        color: rgba(0, 0, 0, 0.7);
+        border: 1px solid rgba(0, 0, 0, 0.2);
     }
     
     .confirm-path-btn {
-        background-color: #28a745;
+        background-color: var(--color-teal);
         color: white;
+        border: 1px solid var(--color-muted-teal);
     }
     
     .cancel-path-btn:hover {
-        background-color: #5a6268;
+        background-color: rgba(0, 0, 0, 0.2);
+        transform: translateY(-0.1em);
     }
     
     .confirm-path-btn:hover:not(:disabled) {
-        background-color: #218838;
+        background-color: var(--color-bright-teal);
+        transform: translateY(-0.1em);
+        box-shadow: 0 0.2em 0.4em rgba(0, 150, 150, 0.3);
     }
     
     .confirm-path-btn:disabled {
         opacity: 0.65;
         cursor: not-allowed;
+    }
+
+    @keyframes reveal {
+        from {
+            opacity: 0;
+            transform: translateY(1em) translateX(-50%);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) translateX(-50%);
+        }
     }
 </style>

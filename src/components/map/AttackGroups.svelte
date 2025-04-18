@@ -5,7 +5,7 @@
   import { getFunctions, httpsCallable } from 'firebase/functions';
 
   // Props with default empty object to avoid destructuring errors
-  const { tile = {}, onClose = () => {} } = $props();
+  const { tile = {}, onClose = () => {}, onAttack = () => {} } = $props();
 
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -13,8 +13,9 @@
   // Available groups for attack/defense
   let attackerGroups = $state([]);
   let defenderGroups = $state([]);
-  // Selected groups
-  let selectedAttacker = $state(null);
+  
+  // Selected groups - now arrays for multi-select
+  let selectedAttackers = $state([]);
   let selectedDefender = $state(null);
   
   // Loading state
@@ -54,7 +55,7 @@
   
   // Start an attack
   async function startAttack() {
-    if (!selectedAttacker || !selectedDefender) return;
+    if (selectedAttackers.length === 0 || !selectedDefender) return;
     
     loading = true;
     errorMessage = '';
@@ -63,8 +64,17 @@
       const functions = getFunctions();
       const attackGroupFn = httpsCallable(functions, 'attackGroup');
       
+      // Use the first attacker as the primary attacker
+      const primaryAttackerGroupId = selectedAttackers[0].id;
+      
+      // Store additional attackers if applicable
+      const additionalAttackerIds = selectedAttackers.length > 1 ? 
+        selectedAttackers.slice(1).map(a => a.id) : 
+        [];
+      
       const result = await attackGroupFn({
-        attackerGroupId: selectedAttacker.id,
+        attackerGroupId: primaryAttackerGroupId,
+        additionalAttackerGroupIds: additionalAttackerIds,
         defenderGroupId: selectedDefender.id,
         locationX: tile.x,
         locationY: tile.y,
@@ -73,6 +83,17 @@
       
       if (result.data.success) {
         console.log('Battle started:', result.data);
+        
+        // Call onAttack callback with all selected groups
+        if (onAttack) {
+          onAttack({
+            attackerGroupId: primaryAttackerGroupId,
+            additionalAttackerGroupIds: additionalAttackerIds,
+            defenderGroupId: selectedDefender.id,
+            tile
+          });
+        }
+        
         onClose(true);
       } else {
         errorMessage = result.data.error || 'Failed to start attack';
@@ -85,12 +106,25 @@
     }
   }
 
-  // Select attacker group
-  function selectAttacker(group) {
-    selectedAttacker = group;
+  // Toggle selection of attacker group (for multi-select)
+  function toggleAttacker(group) {
+    const index = selectedAttackers.findIndex(g => g.id === group.id);
+    
+    if (index >= 0) {
+      // Remove from selection
+      selectedAttackers = selectedAttackers.filter(g => g.id !== group.id);
+    } else {
+      // Add to selection
+      selectedAttackers = [...selectedAttackers, group];
+    }
   }
   
-  // Select defender group
+  // Check if attacker is selected
+  function isAttackerSelected(group) {
+    return selectedAttackers.some(g => g.id === group.id);
+  }
+  
+  // Select defender group (single select)
   function selectDefender(group) {
     selectedDefender = group;
   }
@@ -100,16 +134,21 @@
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       if (isAttacker) {
-        selectAttacker(group);
+        toggleAttacker(group);
       } else {
         selectDefender(group);
       }
     }
   }
   
+  // Calculate total attacker strength
+  const totalAttackerStrength = $derived(
+    selectedAttackers.reduce((total, group) => total + (group.unitCount || 1), 0)
+  );
+  
   // Check if attack is possible
   const canAttack = $derived(
-    selectedAttacker !== null && selectedDefender !== null && !loading
+    selectedAttackers.length > 0 && selectedDefender !== null && !loading
   );
 </script>
 
@@ -135,19 +174,26 @@
         
         <div class="battle-setup">
           <div class="selection-section">
-            <h3>Select Your Group</h3>
+            <h3>Select Your Groups <span class="selection-hint">(select multiple)</span></h3>
             <div class="groups-list">
               {#each attackerGroups as group}
                 <div 
                   class="group-item" 
-                  class:selected={selectedAttacker?.id === group.id}
-                  onclick={() => selectAttacker(group)}
+                  class:selected={isAttackerSelected(group)}
+                  onclick={() => toggleAttacker(group)}
                   onkeydown={(e) => handleKeyDown(e, group, true)}
                   role="button"
                   tabindex="0"
-                  aria-pressed={selectedAttacker?.id === group.id}
+                  aria-pressed={isAttackerSelected(group)}
                   aria-label="Select attacking group {group.name || group.id}"
                 >
+                  <div class="selection-indicator">
+                    {#if isAttackerSelected(group)}
+                      <div class="checkbox checked">✓</div>
+                    {:else}
+                      <div class="checkbox"></div>
+                    {/if}
+                  </div>
                   <div class="group-info">
                     <div class="group-name">{group.name || group.id}</div>
                     <div class="group-details">Units: {group.unitCount || group.units?.length || 1}</div>
@@ -155,6 +201,13 @@
                 </div>
               {/each}
             </div>
+            
+            {#if selectedAttackers.length > 0}
+              <div class="selection-summary">
+                <span>Selected: {selectedAttackers.length} groups</span>
+                <span>Total strength: {totalAttackerStrength}</span>
+              </div>
+            {/if}
           </div>
           
           <div class="vs-indicator">VS</div>
@@ -173,6 +226,13 @@
                   aria-pressed={selectedDefender?.id === group.id}
                   aria-label="Select defending group {group.name || group.id}"
                 >
+                  <div class="selection-indicator">
+                    {#if selectedDefender?.id === group.id}
+                      <div class="radio-button checked"></div>
+                    {:else}
+                      <div class="radio-button"></div>
+                    {/if}
+                  </div>
                   <div class="group-info">
                     <div class="group-name">{group.name || group.id}</div>
                     <div class="group-details">Units: {group.unitCount || group.units?.length || 1}</div>
@@ -181,6 +241,22 @@
               {/each}
             </div>
           </div>
+        </div>
+        
+        <div class="battle-preview">
+          {#if selectedAttackers.length > 0 && selectedDefender}
+            <div class="battle-odds">
+              <div class="side attacker">
+                <span class="side-label">Your Force</span>
+                <span class="strength">{totalAttackerStrength} units</span>
+              </div>
+              <div class="odds-indicator">vs</div>
+              <div class="side defender">
+                <span class="side-label">Enemy</span>
+                <span class="strength">{selectedDefender.unitCount || 1} units</span>
+              </div>
+            </div>
+          {/if}
         </div>
         
         <div class="actions">
@@ -210,15 +286,18 @@
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    backdrop-filter: blur(2px);
   }
 
   .popup {
-    background: white;
+    background: var(--color-dark-navy);
+    border: 2px solid var(--color-panel-border);
     border-radius: 0.5em;
     width: 90%;
-    max-width: 40em;
-    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
+    max-width: 42em;
+    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.5);
     overflow: hidden;
+    color: var(--color-text);
   }
 
   .header {
@@ -226,18 +305,28 @@
     justify-content: space-between;
     align-items: center;
     padding: 1em;
-    background: #f5f5f5;
-    border-bottom: 1px solid #e0e0e0;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--color-panel-border);
   }
 
   h2, h3 {
     margin: 0;
     font-family: var(--font-heading);
+    color: var(--color-bright-accent);
   }
   
   h3 {
-    margin-bottom: 0.5em;
+    margin-bottom: 0.8em;
     font-size: 1.1em;
+    display: flex;
+    align-items: center;
+  }
+
+  .selection-hint {
+    font-size: 0.8em;
+    opacity: 0.7;
+    margin-left: 0.5em;
+    font-weight: normal;
   }
 
   .content {
@@ -254,9 +343,10 @@
 
   .selection-section {
     flex: 1;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--color-panel-border);
     border-radius: 0.4em;
     padding: 1em;
+    background: rgba(0, 0, 0, 0.2);
   }
 
   .groups-list {
@@ -269,37 +359,88 @@
 
   .group-item {
     padding: 0.8em;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--color-panel-border);
     border-radius: 0.3em;
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
     overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
   }
 
   .group-item:hover {
-    background-color: #f9f9f9;
-    border-color: #d0d0d0;
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
   }
 
   .group-item:focus {
-    outline: 2px solid #d32f2f;
+    outline: 2px solid var(--color-bright-accent);
     outline-offset: 2px;
   }
   
   .group-item.selected {
-    background-color: rgba(255, 0, 0, 0.05);
-    border-color: rgba(255, 0, 0, 0.2);
+    background-color: rgba(100, 255, 218, 0.1);
+    border-color: var(--color-bright-accent);
+  }
+
+  .selection-indicator {
+    margin-right: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .checkbox {
+    width: 1.2em;
+    height: 1.2em;
+    border: 1px solid var(--color-muted-teal);
+    border-radius: 0.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+
+  .checkbox.checked {
+    background-color: var(--color-bright-accent);
+    border-color: var(--color-bright-accent);
+  }
+
+  .radio-button {
+    width: 1.2em;
+    height: 1.2em;
+    border: 1px solid var(--color-muted-teal);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .radio-button.checked:after {
+    content: '';
+    width: 0.6em;
+    height: 0.6em;
+    background-color: var(--color-bright-accent);
+    border-radius: 50%;
+    position: absolute;
+  }
+
+  .group-info {
+    flex: 1;
   }
 
   .group-name {
     font-weight: 600;
     margin-bottom: 0.3em;
+    color: var(--color-text);
   }
 
   .group-details {
     font-size: 0.9em;
-    opacity: 0.8;
+    color: var(--color-text-secondary);
   }
 
   .vs-indicator {
@@ -307,7 +448,7 @@
     font-weight: bold;
     font-size: 1.2em;
     padding: 0.5em;
-    color: #d32f2f;
+    color: var(--color-bright-accent);
   }
 
   .actions {
@@ -320,34 +461,47 @@
   .cancel-btn, .attack-btn, .close-action {
     padding: 0.7em 1.2em;
     border-radius: 0.3em;
-    border: none;
     cursor: pointer;
     font-size: 1em;
     font-weight: 500;
+    font-family: var(--font-heading);
+    transition: all 0.2s;
   }
 
   .cancel-btn {
-    background-color: #f1f3f4;
-    color: #3c4043;
-    border: 1px solid #dadce0;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--color-text);
+    border: 1px solid var(--color-panel-border);
+  }
+
+  .cancel-btn:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.15);
   }
 
   .attack-btn {
-    background-color: #d32f2f;
+    background-color: var(--color-button-primary);
     color: white;
+    border: 1px solid var(--color-muted-teal);
   }
 
-  .attack-btn:disabled {
+  .attack-btn:hover:not(:disabled) {
+    background-color: var(--color-button-primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 0.2em 0.5em rgba(0, 150, 150, 0.3);
+  }
+
+  .attack-btn:disabled, .cancel-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transform: none;
   }
 
   .error-message {
     padding: 0.8em;
-    background-color: rgba(255, 0, 0, 0.1);
-    border-left: 3px solid #d32f2f;
+    background-color: rgba(255, 50, 50, 0.2);
+    border-left: 3px solid #ff3232;
     margin-bottom: 1em;
-    color: #d32f2f;
+    color: #ff9090;
   }
 
   .no-battle {
@@ -357,9 +511,63 @@
 
   .close-action {
     margin-top: 1em;
-    background-color: #f1f3f4;
-    color: #3c4043;
-    border: 1px solid #dadce0;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--color-text);
+    border: 1px solid var(--color-panel-border);
+  }
+
+  .selection-summary {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.8em;
+    padding-top: 0.8em;
+    border-top: 1px dashed var(--color-panel-border);
+    color: var(--color-bright-accent);
+    font-size: 0.9em;
+  }
+
+  .battle-preview {
+    margin-top: 1.5em;
+  }
+
+  .battle-odds {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1em;
+    border: 1px solid var(--color-panel-border);
+    border-radius: 0.3em;
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .side-label {
+    font-size: 0.9em;
+    opacity: 0.8;
+    margin-bottom: 0.3em;
+  }
+
+  .strength {
+    font-weight: bold;
+    color: var(--color-bright-accent);
+  }
+
+  .odds-indicator {
+    font-size: 1.2em;
+    font-weight: bold;
+  }
+
+  .attacker .strength {
+    color: #64FFDA;
+  }
+
+  .defender .strength {
+    color: #FF6464;
   }
 
   @media (min-width: 768px) {
