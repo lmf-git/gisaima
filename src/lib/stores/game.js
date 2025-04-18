@@ -1,6 +1,6 @@
 import { writable, derived, get as getStore, get } from 'svelte/store';
 import { browser } from '$app/environment';
-import { ref, onValue, get as dbGet, set } from "firebase/database";
+import { ref, onValue, get as dbGet, set, update } from "firebase/database";
 import { db } from '../firebase/database.js';
 import { userStore } from './user.js'; 
 
@@ -101,7 +101,6 @@ export const currentPlayer = derived(
         // Player status in this world
         spawned: $game.playerWorldData.spawned || false,
         lastLocation: $game.playerWorldData.lastLocation || null,
-        lastSpawn: $game.playerWorldData.lastSpawn || null,
         // Race information
         race: $game.playerWorldData.race,
         // Joined timestamp
@@ -118,10 +117,18 @@ export const currentPlayer = derived(
 
 // Create a derived store for player's spawn status in the current world
 export const needsSpawn = derived(
-  currentPlayer,
-  $player => {
-    if (!$player) return true;
-    return $player.spawned === false;
+  [game, user], 
+  ([$game, $user]) => {
+    if (!$user || !$user.uid || !$game.currentWorld) return true;
+    
+    const worldData = $game.playerWorlds && 
+                     $game.playerWorlds[$user.uid] && 
+                     $game.playerWorlds[$user.uid][$game.currentWorld];
+    
+    if (!worldData) return true;
+    if (worldData.spawned === false) return true;
+    
+    return !worldData.spawned;
   }
 );
 
@@ -873,4 +880,24 @@ export function formatTimeUntilNextTick(worldId) {
   }
   
   return `${minutes}m ${seconds}s`;
+}
+
+// If there's a function that handles respawn mechanics, update it
+export async function respawnPlayer(worldId) {
+  if (!user.current || !worldId) return false;
+  
+  try {
+    const playerWorldRef = ref(db, `players/${user.current.uid}/worlds/${worldId}`);
+    
+    // Update player's spawn status without setting lastSpawn
+    await update(playerWorldRef, { 
+      spawned: false,
+      // Don't reset lastLocation - this will be handled when they spawn again
+    });
+    
+    return true;
+  } catch (err) {
+    console.error('Error respawning player:', err);
+    return false;
+  }
 }

@@ -117,11 +117,9 @@
       const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.currentWorld}`);
       await update(playerWorldRef, { 
         spawned: true,
-        lastSpawn: selectedSpot.id,
         lastLocation: {
           x: selectedSpot.x,
-          y: selectedSpot.y,
-          timestamp: Date.now()
+          y: selectedSpot.y
         }
       });
       

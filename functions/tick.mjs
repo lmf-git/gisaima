@@ -219,11 +219,10 @@ export const processGameTicks = onSchedule({
                           if (group.units && Array.isArray(group.units)) {
                             for (const unit of group.units) {
                               if (unit.type === 'player' && unit.id) {
-                                // Update player location record
+                                // Update player location record with simplified structure
                                 updates[`players/${unit.id}/worlds/${worldId}/lastLocation`] = {
                                   x: nextPoint.x,
-                                  y: nextPoint.y,
-                                  timestamp: now
+                                  y: nextPoint.y
                                 };
                               }
                             }
