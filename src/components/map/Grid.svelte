@@ -1000,7 +1000,7 @@
             onmouseenter={() => handleTileHover(cell)}
             role="gridcell"
             tabindex="-1"
-            aria-label="Coordinates {cell.x},{cell.y}, biome: {cell.biome.name}{cell.terrain?.rarity ? ', '+cell.terrain.rarity : ''}{isPlayerPosition(cell.x, cell.y) ? ', your position' : ''}{isCurrentPlayerTile ? ', your character' : ''}{cell.items?.length ? ', has items' : ''}"
+            aria-label="Tile {isPlayerPosition(cell.x, cell.y) ? 'containing your position' : ''}{isCurrentPlayerTile ? ', your character' : ''}{cell.structure ? ', has ' + (cell.structure.type || 'structure') : ''}{cell.groups?.length ? ', has ' + cell.groups.length + ' groups' : ''}{cell.players?.length ? ', has ' + cell.players.length + ' players' : ''}{cell.items?.length ? ', has ' + cell.items.length + ' items' : ''}"
             aria-current={cell.isCenter ? "location" : undefined}
             style="
               background-color: {cell.color};
@@ -1018,8 +1018,6 @@
                 <Structure size="75%" extraClass="{cell.structure.type}-icon structure-icon" />
               </div>
             {/if}
-            
-            <span class="coords">{cell.x},{cell.y}</span>
 
             {#if isPlayerPosition(cell.x, cell.y)}
               <div class="entity-indicator player-position-indicator" aria-hidden="true"></div>
@@ -1028,30 +1026,26 @@
             <!-- Entity indicators container -->
             <div class="entity-indicators">
               {#if cell.structure}
-                <div class="entity-indicator structure-indicator {cell.structure.type}-indicator" aria-hidden="true"></div>
+                <div class="entity-indicator structure-indicator {cell.structure.type}-indicator" aria-hidden="true">
+                  <span class="count">S</span>
+                </div>
               {/if}
 
               {#if cell.players?.length > 0}
                 <div class="entity-indicator player-indicator" class:current-player-indicator={isCurrentPlayerTile} aria-hidden="true">
-                  {#if cell.players.length > 1}
-                    <span class="count">{cell.players.length}</span>
-                  {/if}
+                  <span class="count">{cell.players.length}</span>
                 </div>
               {/if}
 
               {#if cell.groups?.length > 0}
                 <div class="entity-indicator group-indicator" aria-hidden="true">
-                  {#if cell.groups.length > 1}
-                    <span class="count">{cell.groups.length}</span>
-                  {/if}
+                  <span class="count">{cell.groups.length}</span>
                 </div>
               {/if}
               
               {#if cell.items?.length > 0}
                 <div class="entity-indicator item-indicator {highestRarityItem?.rarity || 'common'}" aria-hidden="true">
-                  {#if cell.items.length > 1}
-                    <span class="count">{cell.items.length}</span>
-                  {/if}
+                  <span class="count">{cell.items.length}</span>
                 </div>
               {/if}
             </div>
@@ -1211,12 +1205,6 @@
     cursor: grabbing;
   }
 
-  .coords {
-    font-size: 0.6em;
-    opacity: 0.5;
-    font-family: var(--font-heading);
-  }
-
   .map-container.modal-open {
     cursor: grab;
   }
@@ -1339,20 +1327,11 @@
     .tile {
       font-size: 0.9em;
     }
-    
-    .coords {
-      font-size: 0.6em;
-    }
   }
 
   @media (max-width: 480px) {
     .tile {
       font-size: 0.7em;
-    }
-    
-    .coords {
-      opacity: 0.5;
-      font-size: 0.5em;
     }
   }
 
@@ -1360,21 +1339,11 @@
     .tile {
       font-size: 1.1em;
     }
-    
-    .coords {
-      font-size: 0.65em;
-      opacity: 0.55;
-    }
   }
 
   @media (min-width: 1024px) {
     .tile {
       font-size: 1.2em;
-    }
-    
-    .coords {
-      font-size: 0.7em;
-      opacity: 0.6;
     }
   }
 
