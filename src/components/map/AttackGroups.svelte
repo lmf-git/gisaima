@@ -95,6 +95,18 @@
     selectedDefender = group;
   }
   
+  // Handle keyboard selection for groups
+  function handleKeyDown(event, group, isAttacker) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      if (isAttacker) {
+        selectAttacker(group);
+      } else {
+        selectDefender(group);
+      }
+    }
+  }
+  
   // Check if attack is possible
   const canAttack = $derived(
     selectedAttacker !== null && selectedDefender !== null && !loading
@@ -130,6 +142,11 @@
                   class="group-item" 
                   class:selected={selectedAttacker?.id === group.id}
                   onclick={() => selectAttacker(group)}
+                  onkeydown={(e) => handleKeyDown(e, group, true)}
+                  role="button"
+                  tabindex="0"
+                  aria-pressed={selectedAttacker?.id === group.id}
+                  aria-label="Select attacking group {group.name || group.id}"
                 >
                   <div class="group-info">
                     <div class="group-name">{group.name || group.id}</div>
@@ -150,6 +167,11 @@
                   class="group-item" 
                   class:selected={selectedDefender?.id === group.id}
                   onclick={() => selectDefender(group)}
+                  onkeydown={(e) => handleKeyDown(e, group, false)}
+                  role="button"
+                  tabindex="0"
+                  aria-pressed={selectedDefender?.id === group.id}
+                  aria-label="Select defending group {group.name || group.id}"
                 >
                   <div class="group-info">
                     <div class="group-name">{group.name || group.id}</div>
@@ -251,12 +273,20 @@
     border-radius: 0.3em;
     cursor: pointer;
     transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
   }
 
   .group-item:hover {
     background-color: #f9f9f9;
+    border-color: #d0d0d0;
   }
 
+  .group-item:focus {
+    outline: 2px solid #d32f2f;
+    outline-offset: 2px;
+  }
+  
   .group-item.selected {
     background-color: rgba(255, 0, 0, 0.05);
     border-color: rgba(255, 0, 0, 0.2);
