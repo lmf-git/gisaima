@@ -3,7 +3,7 @@
   import { fade, fly, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { entities, targetStore, coordinates, moveTarget, setHighlighted } from '../../lib/stores/map';
-  import { game, currentPlayer } from '../../lib/stores/game';
+  import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick } from '../../lib/stores/game';
   
   // Import race icon components
   import Human from '../../components/icons/Human.svelte';
@@ -132,11 +132,17 @@
   });
 
   // Simplify the time remaining formatter
-  function formatTimeRemaining(endTime) {
+  function formatTimeRemaining(endTime, status) {
     if (!endTime) return '';
     
-    updateCounter;
+    updateCounter; // Keep the reactive dependency
     
+    // If mobilizing or demobilising, show next tick countdown instead
+    if (status === 'mobilizing' || status === 'demobilising') {
+      return formatTimeUntilNextTick($game.currentWorld);
+    }
+    
+    // For other statuses, use the existing calculation
     const now = Date.now();
     const remaining = endTime - now;
     
@@ -737,7 +743,7 @@
                         {#if group.status === 'starting_to_gather'}
                           Preparing to gather
                         {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
-                          {_fmt(group.status)} {formatTimeRemaining(group.readyAt)}
+                          {_fmt(group.status)} {formatTimeRemaining(group.readyAt, group.status)}
                         {:else if group.status === 'moving'}
                           {#if isPendingTick(group.nextMoveTime)}
                             ↻
@@ -1660,5 +1666,12 @@
     bottom: 0;
     width: 3px;
     background-color: var(--color-bright-accent);
+  }
+
+  .countdown {
+    font-size: 0.8em;
+    margin-left: 0.3em;
+    font-family: var(--font-mono, monospace);
+    white-space: nowrap;
   }
 </style>

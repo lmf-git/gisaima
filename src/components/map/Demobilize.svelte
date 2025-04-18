@@ -1,6 +1,6 @@
 <script>
   import { fade, scale } from 'svelte/transition';
-  import { currentPlayer, game } from '../../lib/stores/game';
+  import { currentPlayer, game, formatTimeUntilNextTick } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
   import Human from '../icons/Human.svelte';
   import Elf from '../icons/Elf.svelte';
@@ -157,6 +157,15 @@
           <p class="note">
             Units will be marked as "demobilising" until the next world tick.
             Demobilization time varies based on world speed.
+          </p>
+        </div>
+        
+        <div class="demobilization-info">
+          <p>
+            The group will be disbanded and units will return to this structure.
+            <br>
+            Demobilization will complete on the next world update
+            <span class="next-tick-time">({formatTimeUntilNextTick($game.currentWorld)})</span>
           </p>
         </div>
         
@@ -426,6 +435,26 @@
     font-size: 0.9em;
     color: rgba(0, 0, 0, 0.6);
     font-style: italic;
+  }
+
+  .demobilization-info {
+    padding: 0.8em;
+    background-color: rgba(147, 112, 219, 0.08);
+    border-radius: 0.3em;
+    font-size: 0.9em;
+    color: rgba(0, 0, 0, 0.7);
+    line-height: 1.4;
+    border-left: 3px solid rgba(147, 112, 219, 0.5);
+  }
+
+  .demobilization-info p {
+    margin: 0;
+  }
+
+  .next-tick-time {
+    font-family: var(--font-mono, monospace);
+    font-weight: 500;
+    color: var(--color-bright-accent);
   }
 
   .groups-section {

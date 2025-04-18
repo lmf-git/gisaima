@@ -1,6 +1,6 @@
 <script>
   import { fade, scale } from 'svelte/transition';
-  import { currentPlayer, game } from '../../lib/stores/game';
+  import { currentPlayer, game, formatTimeUntilNextTick } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
   import Human from '../icons/Human.svelte';
   import Elf from '../icons/Elf.svelte';
@@ -203,8 +203,10 @@
           
           <div class="mobilization-info">
             <p>
-              Units will be marked as "mobilizing" until the next world tick.
-              Mobilization time varies based on world speed.
+              Selected units will form a new group at this location.
+              <br>
+              Mobilization will complete on the next world update
+              <span class="next-tick-time">({formatTimeUntilNextTick($game.currentWorld)})</span>
             </p>
           </div>
         </div>
@@ -582,6 +584,12 @@
   
   .mobilization-info p {
     margin: 0;
+  }
+
+  .next-tick-time {
+    font-family: var(--font-mono, monospace);
+    font-weight: 500;
+    color: var(--color-bright-accent);
   }
   
   .button-row {

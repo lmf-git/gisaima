@@ -1,9 +1,10 @@
 <script>
   import { map, targetStore, entities, highlightedStore } from "../../lib/stores/map";
   import Close from '../../components/icons/Close.svelte';
-  import { user, currentPlayer } from "../../lib/stores/user";
+  import { user } from "../../lib/stores/user";
   import { onMount, onDestroy } from 'svelte';
-  import { game } from "../../lib/stores/game";
+  import { game, currentPlayer } from "../../lib/stores/game.js";
+  import { calculateNextTickTime, formatTimeUntilNextTick } from '../../lib/stores/game.js';
   
   // Import race icon components
   import Human from '../../components/icons/Human.svelte';
@@ -221,6 +222,35 @@
   function isOwnedByCurrentPlayer(entity) {
     if (!$currentPlayer || !entity) return false;
     return entity.owner === $currentPlayer.uid || entity.uid === $currentPlayer.uid;
+  }
+
+  // Add a helper function to format group status with appropriate time info
+  function formatGroupStatus(group) {
+    if (!group) return "";
+    
+    let statusText = _fmt(group.status) || "Idle";
+    
+    // For mobilizing or demobilising groups, show next tick info
+    if (group.status === 'mobilizing' || group.status === 'demobilising') {
+      const nextTickInfo = formatTimeUntilNextTick($game.currentWorld);
+      statusText += ` (Ready: ${nextTickInfo})`;
+    }
+    // For other statuses with readyAt times
+    else if (group.readyAt && group.status !== 'idle') {
+      // Existing time formatting
+      const now = Date.now();
+      const remaining = group.readyAt - now;
+      
+      if (remaining > 0) {
+        const minutes = Math.floor(remaining / 60000);
+        const seconds = Math.floor((remaining % 60000) / 1000);
+        statusText += ` (${minutes}m ${seconds}s)`;
+      } else {
+        statusText += " (Pending update)";
+      }
+    }
+    
+    return statusText;
   }
 </script>
 
@@ -491,6 +521,13 @@
               </span>
             </div>
           {/if}
+
+          <div class="detail-row">
+            <span class="detail-label">Status:</span>
+            <span class="detail-value status {selectedEntity.status || 'idle'}">
+              {formatGroupStatus(selectedEntity)}
+            </span>
+          </div>
           
           <!-- Rest of group details -->
         </div>

@@ -792,3 +792,42 @@ export function getNextWorldTickTime() {
   
   return nextTickTime;
 }
+
+// Add a function to calculate when the next tick will likely occur
+export function calculateNextTickTime(worldId) {
+  const worldInfo = get(game).worldInfo?.[worldId];
+  if (!worldInfo) return null;
+  
+  const worldSpeed = worldInfo.speed || 1.0;
+  const lastTick = worldInfo.lastTick || Date.now();
+  
+  // Base tick interval is 5 minutes (300000ms)
+  const baseTickInterval = 300000;
+  const adjustedInterval = Math.round(baseTickInterval / worldSpeed);
+  
+  // Calculate the next tick time
+  return lastTick + adjustedInterval;
+}
+
+// Helper function to format time remaining until next tick
+export function formatTimeUntilNextTick(worldId) {
+  const nextTickTime = calculateNextTickTime(worldId);
+  if (!nextTickTime) return "Unknown";
+  
+  const now = Date.now();
+  const remaining = nextTickTime - now;
+  
+  if (remaining <= 0) {
+    return "Any moment now";
+  }
+  
+  // Format as minutes and seconds
+  const minutes = Math.floor(remaining / 60000);
+  const seconds = Math.floor((remaining % 60000) / 1000);
+  
+  if (minutes <= 0) {
+    return `${seconds}s`;
+  }
+  
+  return `${minutes}m ${seconds}s`;
+}
