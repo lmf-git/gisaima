@@ -679,7 +679,31 @@
     }
     
     function confirmPathDrawing() {
-        if (isPathDrawingMode && moveComponentRef) {
+        if (isPathDrawingMode && moveComponentRef && pathDrawingGroup) {
+            // Call the Cloud Function directly here to ensure it's executed
+            const functions = getFunctions();
+            const moveGroup = httpsCallable(functions, 'moveGroup');
+            
+            const startPoint = currentPath[0];
+            const endPoint = currentPath[currentPath.length - 1];
+            
+            moveGroup({
+                groupId: pathDrawingGroup,
+                fromX: startPoint.x,
+                fromY: startPoint.y,
+                toX: endPoint.x,
+                toY: endPoint.y,
+                path: currentPath,
+                worldId: $game.currentWorld
+            })
+            .then((result) => {
+                console.log('Path movement started:', result.data);
+            })
+            .catch((error) => {
+                console.error('Path movement error:', error);
+            });
+            
+            // Also call moveComponentRef.confirmCustomPath() for UI updates
             moveComponentRef.confirmCustomPath();
         }
         
