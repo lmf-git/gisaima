@@ -341,6 +341,27 @@
     }
   });
   
+  const playerPosition = $derived(() => {
+    // Check multiple sources for player position, in order of reliability
+    if ($currentPlayer?.lastLocation) {
+      return {
+        x: $currentPlayer.lastLocation.x,
+        y: $currentPlayer.lastLocation.y
+      };
+    } 
+    else if ($game.playerWorldData?.lastLocation) {
+      return {
+        x: $game.playerWorldData.lastLocation.x,
+        y: $game.playerWorldData.lastLocation.y
+      };
+    }
+    return null;
+  });
+  
+  function isPlayerPosition(x, y) {
+    return playerPosition && playerPosition.x === x && playerPosition.y === y;
+  }
+
   // Add a new function to check if a tile has any content
   function hasTileContent(tile) {
     if (!tile) return false;
@@ -349,7 +370,8 @@
       tile.structure || 
       (tile.groups && tile.groups.length > 0) || 
       (tile.players && tile.players.length > 0) || 
-      (tile.items && tile.items.length > 0)
+      (tile.items && tile.items.length > 0) ||
+      isPlayerPosition(tile.x, tile.y) // Consider player position as content
     );
   }
 
@@ -654,20 +676,6 @@
     }
   }
 
-  const playerPosition = $derived(() => {
-    if ($game.playerWorldData?.lastLocation) {
-      return {
-        x: $game.playerWorldData.lastLocation.x,
-        y: $game.playerWorldData.lastLocation.y
-      };
-    }
-    return null;
-  });
-  
-  function isPlayerPosition(x, y) {
-    return playerPosition && playerPosition.x === x && playerPosition.y === y;
-  }
-  
   const currentPlayerId = $derived($currentPlayer?.uid);
   
   function isCurrentPlayer(playerEntity) {

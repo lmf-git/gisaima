@@ -1,0 +1,191 @@
+{
+  "players": {
+    "DCf3H3ZFYhWNH4Od9JueuEBjazk2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "joined": 1745012066239,
+          "lastLocation": {
+            "x": 12,
+            "y": 4
+          },
+          "race": "dwarf"
+        }
+      }
+    },
+    "b42rwEn4YCSvJUKEoZWW7LGrfeb2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "joined": 1745011870285,
+          "lastLocation": {
+            "x": 5,
+            "y": 5
+          },
+          "race": "human"
+        }
+      }
+    },
+    "gewtlvAU9Sh62euUQvtLgklBjM63": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "joined": 1745012166458,
+          "lastLocation": {
+            "x": -4,
+            "y": 6
+          },
+          "race": "elf"
+        }
+      }
+    }
+  },
+  "worlds": {
+    "ancient-lands": {
+      "chunks": {
+        "-1,0": {
+          "-4,6": {
+            "players": {
+              "gewtlvAU9Sh62euUQvtLgklBjM63": {
+                "displayName": "Player",
+                "lastActive": 1745012169315,
+                "race": "elf",
+                "uid": "gewtlvAU9Sh62euUQvtLgklBjM63"
+              }
+            }
+          }
+        },
+        "0,0": {
+          "-4,6": {
+            "structure": {
+              "description": "An elven city built around the oldest living trees in the realm",
+              "faction": "elf",
+              "id": "structure_al_elf_spawn",
+              "name": "Ancient Arborium",
+              "type": "spawn"
+            }
+          },
+          "0,0": {
+            "structure": {
+              "capacity": 60,
+              "faction": "dwarf",
+              "features": [
+                {
+                  "description": "Allows crafting of superior metal items and weapons",
+                  "icon": "🔥",
+                  "name": "Forge"
+                },
+                {
+                  "description": "Create powerful potions and brews",
+                  "icon": "🍺",
+                  "name": "Brewery"
+                }
+              ],
+              "id": "structure_dwarven_stronghold",
+              "items": [
+                {
+                  "description": "Incredibly strong but lightweight metal ore",
+                  "id": "item_al_1001",
+                  "name": "Mithril Ore",
+                  "quantity": 10,
+                  "rarity": "rare",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_al_1002",
+                  "name": "Mountain Stone",
+                  "quantity": 22,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "description": "A gem that emanates heat and light",
+                  "id": "item_al_1003",
+                  "name": "Fire Ruby",
+                  "quantity": 1,
+                  "rarity": "epic",
+                  "type": "gem"
+                }
+              ],
+              "name": "Dwarven Stronghold",
+              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+              "ownerName": "TestPlayer",
+              "type": "stronghold"
+            }
+          },
+          "12,4": {
+            "players": {
+              "DCf3H3ZFYhWNH4Od9JueuEBjazk2": {
+                "displayName": "Player",
+                "lastActive": 1745012069070,
+                "race": "dwarf",
+                "uid": "DCf3H3ZFYhWNH4Od9JueuEBjazk2"
+              }
+            }
+          },
+          "5,5": {
+            "players": {
+              "b42rwEn4YCSvJUKEoZWW7LGrfeb2": {
+                "displayName": "Player",
+                "lastActive": 1745011873373,
+                "race": "human",
+                "uid": "b42rwEn4YCSvJUKEoZWW7LGrfeb2"
+              }
+            },
+            "structure": {
+              "description": "A rugged frontier settlement where hardy humans carve out a living",
+              "faction": "human",
+              "id": "structure_al_human_spawn",
+              "name": "Stoneguard Citadel",
+              "type": "spawn"
+            }
+          }
+        },
+        "1,0": {
+          "10,8": {
+            "structure": {
+              "description": "A fairy settlement where the ancient spirits still speak",
+              "faction": "fairy",
+              "id": "structure_al_fairy_spawn",
+              "name": "Whisperwind Circle",
+              "type": "spawn"
+            }
+          },
+          "12,4": {
+            "structure": {
+              "description": "The ancestral mountain home of the dwarf clans",
+              "faction": "dwarf",
+              "id": "structure_al_dwarf_spawn",
+              "name": "Deepforge Stronghold",
+              "type": "spawn"
+            }
+          },
+          "15,-3": {
+            "structure": {
+              "description": "A resourceful goblin settlement built from the remains of ancient beasts",
+              "faction": "goblin",
+              "id": "structure_al_goblin_spawn",
+              "name": "Boneridge Camp",
+              "type": "spawn"
+            }
+          }
+        }
+      },
+      "info": {
+        "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
+        "lastTick": 1745012281297,
+        "name": "Ancient Lands",
+        "seed": 13579,
+        "size": "large",
+        "speed": 1
+      },
+      "spawns": {
+        "0:0:-4:6": "structure_al_elf_spawn",
+        "0:0:5:5": "structure_al_human_spawn",
+        "1:0:10:8": "structure_al_fairy_spawn",
+        "1:0:12:4": "structure_al_dwarf_spawn",
+        "1:0:15:-3": "structure_al_goblin_spawn"
+      }
+    }
+  }
+}

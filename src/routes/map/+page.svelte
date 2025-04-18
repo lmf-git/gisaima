@@ -283,6 +283,20 @@
         }
     });
 
+    // Add new effect to ensure player position is centered after load
+    $effect(() => {
+        if (!$ready || !$game.playerWorldData?.lastLocation || urlProcessingComplete) return;
+        
+        // If player is alive and has a location, make sure we're centered there
+        if ($game.playerWorldData.alive === true && $game.playerWorldData.lastLocation) {
+            const location = $game.playerWorldData.lastLocation;
+            console.log('Centering map on player location:', location);
+            moveTarget(location.x, location.y);
+            urlProcessingComplete = true;
+            lastProcessedLocation = { ...location };
+        }
+    });
+
     function handleSpawnComplete(spawnLocation) {
         if (spawnLocation) {
             moveTarget(spawnLocation.x, spawnLocation.y);
