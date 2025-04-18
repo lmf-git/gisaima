@@ -1025,12 +1025,6 @@
 
             <!-- Entity indicators container -->
             <div class="entity-indicators">
-              {#if cell.structure}
-                <div class="entity-indicator structure-indicator {cell.structure.type}-indicator" aria-hidden="true">
-                  <span class="count">S</span>
-                </div>
-              {/if}
-
               {#if cell.players?.length > 0}
                 <div class="entity-indicator player-indicator" class:current-player-indicator={isCurrentPlayerTile} aria-hidden="true">
                   <span class="count">{cell.players.length}</span>
