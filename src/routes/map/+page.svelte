@@ -672,26 +672,27 @@
         
         toggleDetailsModal(false);
         
+        // Just handle UI transitions - actual function calls happen in the specialized components
         switch(action) {
             case 'mobilize':
                 openMobilizePopup(tile);
-                return;
+                break;
                 
             case 'move':
                 openMovePopup(tile);
-                return;
+                break;
                 
             case 'attack':
                 openAttackPopup(tile);
-                return;
+                break;
                 
             case 'joinBattle':
                 openJoinBattlePopup(tile);
-                return;
+                break;
                 
             case 'demobilize':
                 openDemobilizePopup(tile);
-                return;
+                break;
                 
             case 'inspect':
                 if (tile && tile.structure) {
@@ -699,18 +700,11 @@
                     structureLocation = { x: tile.x, y: tile.y };
                     showStructureOverview = true;
                 }
-                return;
-                
-            case 'explore':
-                console.log(`Exploring ${tile.x}, ${tile.y}`);
-                break;
-                
-            case 'gather':
-                console.log(`Gathering resources at ${tile.x}, ${tile.y}`);
                 break;
                 
             default:
-                console.log(`Unhandled action: ${action}`);
+                // Other actions are handled directly in Details.svelte
+                console.log(`Action ${action} was handled in Details component`);
         }
     }
 
@@ -743,37 +737,6 @@
         }
         
         return path;
-    }
-
-    function handleMobilize(data) {
-        console.log('Handling mobilize:', data);
-        // Implement mobilize logic here
-        // For example: send data to backend API
-        closeMobilizePopup();
-    }
-
-    function handleMove(data) {
-        console.log('Handling move:', data);
-        // Implement move logic here
-        closeMovePopup();
-    }
-
-    function handleAttack(data) {
-        console.log('Handling attack:', data);
-        // Implement attack logic here
-        closeAttackPopup();
-    }
-
-    function handleJoinBattle(data) {
-        console.log('Handling join battle:', data);
-        // Implement join battle logic here
-        closeJoinBattlePopup();
-    }
-
-    function handleDemobilize(data) {
-        console.log('Handling demobilize:', data);
-        // Implement demobilize logic here
-        closeDemobilizePopup();
     }
 
     function handlePathDrawingStart(group) {
@@ -898,7 +861,7 @@
             <Mobilize
                 tile={mobilizeData}
                 onClose={closeMobilizePopup}
-                onMobilize={handleMobilize}
+                onMobilize={openMobilizePopup}
             />
         {/if}
 
@@ -907,7 +870,7 @@
                 <Move
                     tile={moveData}
                     onClose={closeMovePopup}
-                    onMove={handleMove}
+                    onMove={openMovePopup}
                     onPathDrawingStart={handlePathDrawingStart}
                     onPathDrawingCancel={handlePathDrawingCancel}
                     bind:this={moveComponentRef}
@@ -919,7 +882,7 @@
             <AttackGroups
                 tile={attackData}
                 onClose={closeAttackPopup}
-                onAttack={handleAttack}
+                onAttack={openAttackPopup}
             />
         {/if}
 
@@ -927,7 +890,7 @@
             <JoinBattle
                 tile={joinBattleData}
                 onClose={closeJoinBattlePopup}
-                onJoinBattle={handleJoinBattle}
+                onJoinBattle={openJoinBattlePopup}
             />
         {/if}
 
@@ -935,7 +898,7 @@
             <Demobilize
                 tile={demobilizeData}
                 onClose={closeDemobilizePopup}
-                onDemobilize={handleDemobilize}
+                onDemobilize={openDemobilizePopup}
             />
         {/if}
 

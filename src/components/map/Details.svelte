@@ -4,6 +4,7 @@
   import { targetStore, coordinates } from '../../lib/stores/map';
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   import { onMount, onDestroy } from 'svelte';
+  import { getFunctions, httpsCallable } from "firebase/functions";
 
   // Import race icon components
   import Human from '../../components/icons/Human.svelte';
@@ -288,12 +289,98 @@
     actions = availableActions;
   });
 
-  // Handle action selection
-  function selectAction(actionId) {
-    if (onAction) {
-      onAction({ action: actionId, tile: currentTile });
+  // Direct Firebase function calls
+  async function executeAction(actionId, tile) {
+    const functions = getFunctions();
+    
+    try {
+      switch(actionId) {
+        case 'mobilize':
+          // Open mobilize modal instead of directly calling function
+          if (onAction) {
+            onAction({ action: actionId, tile });
+          }
+          break;
+          
+        case 'move':
+          // Open move modal instead of directly calling function
+          if (onAction) {
+            onAction({ action: actionId, tile });
+          }
+          break;
+          
+        case 'attack':
+          // Open attack modal instead of directly calling function  
+          if (onAction) {
+            onAction({ action: actionId, tile });
+          }
+          break;
+          
+        case 'joinBattle':
+          // Open join battle modal instead of directly calling function
+          if (onAction) {
+            onAction({ action: actionId, tile });
+          }
+          break;
+          
+        case 'demobilize':
+          // Open demobilize modal instead of directly calling function
+          if (onAction) {
+            onAction({ action: actionId, tile });
+          }
+          break;
+          
+        case 'inspect':
+          // This is UI-only action - delegate to parent component
+          if (onAction) {
+            onAction({ action: actionId, tile });
+          }
+          break;
+          
+        case 'explore':
+          // This would directly call the explore function
+          const exploreFunction = httpsCallable(functions, 'exploreLocation');
+          const result = await exploreFunction({ 
+            x: tile.x, 
+            y: tile.y,
+            worldId: $game.currentWorld
+          });
+          console.log('Explore result:', result.data);
+          break;
+          
+        case 'gather':
+          // This would directly call the gather function
+          const gatherFunction = httpsCallable(functions, 'startGathering');
+          const gatherResult = await gatherFunction({
+            x: tile.x,
+            y: tile.y,
+            worldId: $game.currentWorld,
+            groupId: tile.groups.find(g => g.owner === $currentPlayer?.uid)?.id
+          });
+          console.log('Gather result:', gatherResult.data);
+          break;
+          
+        default:
+          console.log(`Unhandled action: ${actionId}`);
+      }
+    } catch (error) {
+      console.error(`Error executing action ${actionId}:`, error);
+      // Could add error handling/display here
     }
+    
+    // Close the details modal
     onClose();
+  }
+
+  // Handle action selection
+  function selectAction(actionId, event) {
+    // Only call preventDefault if it's a function (it's a DOM event)
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+    
+    // Execute the action directly for simple actions, or delegate complex ones to parent
+    executeAction(actionId, currentTile);
   }
 </script>
 
@@ -471,15 +558,13 @@
             {#each actions as action}
               <button 
                 class="action-button" 
-                onclick={() => selectAction(action.id)}
+                onclick={(e) => selectAction(action.id, e)}
                 aria-label={action.label}
               >
                 <span class="action-icon">{action.icon}</span>
                 <div class="action-text">
                   <div class="action-label">{action.label}</div>
-                  {#if action.description}
-                    <div class="action-description">{action.description}</div>
-                  {/if}
+                  <div class="action-description">{action.description}</div>
                 </div>
               </button>
             {/each}
