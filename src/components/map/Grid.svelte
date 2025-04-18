@@ -341,28 +341,23 @@
     }
   });
   
+  // Simplified player position logic
   const playerPosition = $derived(() => {
-    // Check multiple sources for player position, in order of reliability
-    if ($currentPlayer?.lastLocation) {
-      return {
-        x: $currentPlayer.lastLocation.x,
-        y: $currentPlayer.lastLocation.y
-      };
-    } 
-    else if ($game.playerWorldData?.lastLocation) {
-      return {
-        x: $game.playerWorldData.lastLocation.x,
-        y: $game.playerWorldData.lastLocation.y
-      };
-    }
-    return null;
+  
+  // Simplified player position logic
+  const playerPosition = $derived(() => {
+    // Simply return the player's last location when available
+    return $game.playerWorldData?.lastLocation || null;
   });
   
   function isPlayerPosition(x, y) {
-    return playerPosition && playerPosition.x === x && playerPosition.y === y;
+    // Simplest approach - just check if coordinates match the player's position
+    // Don't worry about whether player is also in a unit group
+    return playerPosition && 
+           playerPosition.x === x && 
+           playerPosition.y === y;
   }
 
-  // Add a new function to check if a tile has any content
   function hasTileContent(tile) {
     if (!tile) return false;
     
@@ -675,8 +670,6 @@
       default: return '';
     }
   }
-
-  const currentPlayerId = $derived($currentPlayer?.uid);
   
   function isCurrentPlayer(playerEntity) {
     return playerEntity && playerEntity.uid === currentPlayerId;

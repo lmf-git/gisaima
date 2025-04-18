@@ -283,18 +283,44 @@
         }
     });
 
-    // Add new effect to ensure player position is centered after load
+    // Keep this effect but simplify it to purely focus on player position
     $effect(() => {
-        if (!$ready || !$game.playerWorldData?.lastLocation || urlProcessingComplete) return;
+        if (!$ready || !$game.playerWorldData?.lastLocation) return;
         
-        // If player is alive and has a location, make sure we're centered there
-        if ($game.playerWorldData.alive === true && $game.playerWorldData.lastLocation) {
+        // If we haven't processed coordinates yet and the player is alive
+        if (!urlProcessingComplete && $game.playerWorldData.alive === true) {
             const location = $game.playerWorldData.lastLocation;
             console.log('Centering map on player location:', location);
             moveTarget(location.x, location.y);
             urlProcessingComplete = true;
             lastProcessedLocation = { ...location };
         }
+    });
+
+    // Add debug output for player data loading
+    $effect(() => {
+      console.log("Player data status:", {
+        ready: $ready,
+        currentWorld: $game.currentWorld,
+        playerData: $game.playerWorldData,
+        alive: $game.playerWorldData?.alive,
+        lastLocation: $game.playerWorldData?.lastLocation
+      });
+    });
+
+    // Ensure player data is fully loaded after map is ready 
+    $effect(() => {
+      if ($ready && $game.currentWorld && $user?.uid && !$game.playerWorldData) {
+        // Request player data load if it's not loaded yet
+        console.log("Requesting player data reload for", $user.uid, $game.currentWorld);
+        const userId = $user.uid;
+        const worldId = $game.currentWorld;
+        
+        // This will set up a listener that updates the game store
+        import("../../lib/stores/game.js").then(module => {
+          module.loadPlayerWorldData(userId, worldId);
+        });
+      }
     });
 
     function handleSpawnComplete(spawnLocation) {
