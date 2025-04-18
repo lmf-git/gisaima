@@ -284,6 +284,10 @@ export const processGameTicks = onSchedule({
         await db.ref().update(updates);
         console.log(`Applied ${Object.keys(updates).length} updates to world ${worldId}`);
       }
+
+      // Process battles for the world
+      const battlesProcessed = await processBattles(worldId);
+      console.log(`Processed ${battlesProcessed} battles in world ${worldId}`);
     }
     
     console.log(`Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, and ${movementsProcessed} movement steps`);
@@ -293,6 +297,154 @@ export const processGameTicks = onSchedule({
     return null;
   }
 });
+
+// Update the battle processing code to handle multiple groups per side
+async function processBattles(worldId) {
+  try {
+    const db = getDatabase();
+    const now = Date.now();
+    
+    // Get active battles
+    const battlesRef = db.ref(`battles/${worldId}`).orderByChild('status').equalTo('active');
+    const battlesSnapshot = await battlesRef.once('value');
+    
+    if (!battlesSnapshot.exists()) {
+      logger.debug(`No active battles found for world ${worldId}`);
+      return 0;
+    }
+    
+    const battles = [];
+    battlesSnapshot.forEach(snapshot => {
+      battles.push({
+        id: snapshot.key,
+        ...snapshot.val()
+      });
+    });
+    
+    logger.info(`Processing ${battles.length} active battles in world ${worldId}`);
+    let battleProcessCount = 0;
+    
+    for (const battle of battles) {
+      // Check if battle should end
+      if (battle.endTime && battle.endTime <= now) {
+        try {
+          // Process battle outcome
+          const side1Power = battle.side1.power || 0;
+          const side2Power = battle.side2.power || 0;
+          
+          // Determine winner (simple power comparison for now)
+          let winner, loser;
+          if (side1Power >= side2Power) {
+            winner = battle.side1;
+            loser = battle.side2;
+            battle.result = {
+              winningSide: 1,
+              winnerPower: side1Power,
+              loserPower: side2Power
+            };
+          } else {
+            winner = battle.side2;
+            loser = battle.side1;
+            battle.result = {
+              winningSide: 2,
+              winnerPower: side2Power,
+              loserPower: side1Power
+            };
+          }
+          
+          // Calculate casualties (simplified version)
+          const casualtyRate = Math.min(0.8, (loser.power / winner.power) * 0.5);
+          const winnerCasualties = Math.round(winner.power * casualtyRate * 0.5);
+          const loserCasualties = Math.round(loser.power * casualtyRate);
+          
+          battle.result.winnerCasualties = winnerCasualties;
+          battle.result.loserCasualties = loserCasualties;
+          
+          // Update battle status
+          battle.status = 'completed';
+          battle.completedAt = now;
+          
+          // Get the chunk key
+          const chunkX = Math.floor(battle.locationX / 20);
+          const chunkY = Math.floor(battle.locationY / 20);
+          const chunkKey = `${chunkX},${chunkY}`;
+          const tileKey = `${battle.locationX},${battle.locationY}`;
+          
+          // Prepare updates
+          const updates = {};
+          
+          // Update battle in database
+          updates[`battles/${worldId}/${battle.id}/status`] = battle.status;
+          updates[`battles/${worldId}/${battle.id}/completedAt`] = battle.completedAt;
+          updates[`battles/${worldId}/${battle.id}/result`] = battle.result;
+          
+          // Get groups from this tile to update them
+          const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
+          const tileSnapshot = await tileRef.once('value');
+          
+          if (tileSnapshot.exists()) {
+            const tileData = tileSnapshot.val();
+            
+            // Process all groups on both sides
+            if (tileData.groups) {
+              // Process all side 1 groups (winners)
+              const side1GroupIds = Object.keys(battle.side1.groups || {});
+              for (const groupId of side1GroupIds) {
+                if (tileData.groups[groupId]) {
+                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/inBattle`] = false;
+                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleId`] = null;
+                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
+                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleRole`] = null;
+                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
+                  
+                  // Apply casualties to winning groups
+                  const group = tileData.groups[groupId];
+                  if (group && group.unitCount) {
+                    const groupCasualties = Math.ceil((group.unitCount / side1Power) * winnerCasualties);
+                    const newUnitCount = Math.max(1, group.unitCount - groupCasualties);
+                    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
+                  }
+                }
+              }
+              
+              // Process all side 2 groups (losers)
+              const side2GroupIds = Object.keys(battle.side2.groups || {});
+              for (const groupId of side2GroupIds) {
+                if (tileData.groups[groupId]) {
+                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/inBattle`] = false;
+                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleId`] = null;
+                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
+                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleRole`] = null;
+                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
+                  
+                  // Apply casualties to losing groups
+                  const group = tileData.groups[groupId];
+                  if (group && group.unitCount) {
+                    const groupCasualties = Math.ceil((group.unitCount / side2Power) * loserCasualties);
+                    const newUnitCount = Math.max(1, group.unitCount - groupCasualties);
+                    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
+                  }
+                }
+              }
+            }
+          }
+          
+          // Apply all updates
+          await db.ref().update(updates);
+          battleProcessCount++;
+          logger.info(`Completed battle ${battle.id} in world ${worldId}`);
+        } catch (error) {
+          logger.error(`Error processing battle ${battle.id}:`, error);
+        }
+      }
+    }
+    
+    return battleProcessCount;
+  } catch (error) {
+    logger.error(`Error processing battles for world ${worldId}:`, error);
+    return 0;
+  }
+}
 
 // Generate random items based on group and biome - kept in this file as it's only used here
 function generateGatheredItems(group, biome = 'plains') {

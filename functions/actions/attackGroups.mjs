@@ -7,17 +7,20 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 
-// Attack another group function
+// Attack another group function - updated for multi-group battles
 export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
-  const { attackerGroupId, defenderGroupId, locationX, locationY } = request.data;
+  const { attackerGroupIds, defenderGroupIds, locationX, locationY } = request.data;
   const userId = request.auth?.uid;
   
   if (!userId) {
     throw new HttpsError("unauthenticated", "User must be authenticated");
   }
   
-  if (!attackerGroupId || !defenderGroupId || locationX === undefined || locationY === undefined) {
-    throw new HttpsError("invalid-argument", "Missing required parameters");
+  // Validate that we have arrays of attacker and defender IDs
+  if (!Array.isArray(attackerGroupIds) || !Array.isArray(defenderGroupIds) || 
+      attackerGroupIds.length === 0 || defenderGroupIds.length === 0 || 
+      locationX === undefined || locationY === undefined) {
+    throw new HttpsError("invalid-argument", "Missing required parameters or invalid group selections");
   }
   
   try {
@@ -42,29 +45,43 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError("not-found", "No groups found at this location");
     }
     
-    // Find the attacker group
-    const attackerGroup = Object.values(groups).find(g => g.id === attackerGroupId);
-    if (!attackerGroup) {
-      throw new HttpsError("not-found", "Attacker group not found at this location");
+    // Validate attacker groups - all must exist and belong to the user
+    const attackerGroups = [];
+    let attackerTotalPower = 0;
+    
+    for (const groupId of attackerGroupIds) {
+      const group = groups[groupId];
+      if (!group) {
+        throw new HttpsError("not-found", `Attacker group ${groupId} not found at this location`);
+      }
+      if (group.owner !== userId) {
+        throw new HttpsError("permission-denied", "You can only attack with your own groups");
+      }
+      if (group.inBattle) {
+        throw new HttpsError("failed-precondition", `Group ${group.name || group.id} is already in battle`);
+      }
+      
+      // Add to our validated list and calculate power
+      attackerGroups.push(group);
+      attackerTotalPower += calculateGroupPower(group);
     }
     
-    // Verify ownership of attacker group
-    if (attackerGroup.owner !== userId) {
-      throw new HttpsError("permission-denied", "You can only attack with your own groups");
-    }
+    // Validate defender groups - all must exist and not already be in battle
+    const defenderGroups = [];
+    let defenderTotalPower = 0;
     
-    // Find the defender group
-    const defenderGroup = Object.values(groups).find(g => g.id === defenderGroupId);
-    if (!defenderGroup) {
-      throw new HttpsError("not-found", "Defender group not found at this location");
-    }
-    
-    // Check if either group is already in battle
-    if (attackerGroup.inBattle) {
-      throw new HttpsError("failed-precondition", "Your group is already in battle");
-    }
-    if (defenderGroup.inBattle) {
-      throw new HttpsError("failed-precondition", "Target group is already in battle");
+    for (const groupId of defenderGroupIds) {
+      const group = groups[groupId];
+      if (!group) {
+        throw new HttpsError("not-found", `Defender group ${groupId} not found at this location`);
+      }
+      if (group.inBattle) {
+        throw new HttpsError("failed-precondition", `Target group ${group.name || group.id} is already in battle`);
+      }
+      
+      // Add to our validated list and calculate power
+      defenderGroups.push(group);
+      defenderTotalPower += calculateGroupPower(group);
     }
     
     // Create a battle ID
@@ -82,6 +99,17 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
     const now = Date.now();
     const battleEndTime = now + battleDuration;
     
+    // Prepare side groups
+    const side1Groups = {};
+    attackerGroupIds.forEach(id => side1Groups[id] = true);
+    
+    const side2Groups = {};
+    defenderGroupIds.forEach(id => side2Groups[id] = true);
+    
+    // Choose leaders (first group of each side)
+    const side1Leader = attackerGroupIds[0];
+    const side2Leader = defenderGroupIds[0];
+    
     // Battle data
     const battleData = {
       id: battleId,
@@ -90,35 +118,42 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
       started: now,
       endTime: battleEndTime,
       side1: {
-        groups: { [attackerGroupId]: true },
-        power: attackerGroup.unitCount || 1,
-        leader: attackerGroupId
+        groups: side1Groups,
+        power: attackerTotalPower,
+        leader: side1Leader
       },
       side2: {
-        groups: { [defenderGroupId]: true },
-        power: defenderGroup.unitCount || 1,
-        leader: defenderGroupId
+        groups: side2Groups,
+        power: defenderTotalPower,
+        leader: side2Leader
       },
       status: 'active'
     };
     
-    // Update both groups to be in battle
+    // Update all groups to be in battle
     const groupUpdates = {};
-    groupUpdates[attackerGroupId] = {
-      inBattle: true,
-      battleId,
-      battleSide: 1,
-      battleRole: 'attacker',
-      status: 'fighting'
-    };
     
-    groupUpdates[defenderGroupId] = {
-      inBattle: true,
-      battleId,
-      battleSide: 2,
-      battleRole: 'defender',
-      status: 'fighting'
-    };
+    // Update attacker groups
+    attackerGroupIds.forEach(groupId => {
+      groupUpdates[groupId] = {
+        inBattle: true,
+        battleId,
+        battleSide: 1,
+        battleRole: 'attacker',
+        status: 'fighting'
+      };
+    });
+    
+    // Update defender groups
+    defenderGroupIds.forEach(groupId => {
+      groupUpdates[groupId] = {
+        inBattle: true,
+        battleId,
+        battleSide: 2,
+        battleRole: 'defender',
+        status: 'fighting'
+      };
+    });
     
     // Create transaction for atomic updates
     const updates = {};
@@ -140,7 +175,7 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
     
     return {
       success: true,
-      message: "Battle started",
+      message: `Battle started between ${attackerGroups.length} attackers and ${defenderGroups.length} defenders`,
       battleId,
       endTime: battleEndTime
     };
@@ -149,3 +184,23 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
     throw new HttpsError("internal", "Failed to start battle");
   }
 });
+
+// Helper function to calculate group power
+function calculateGroupPower(group) {
+  // Base calculation using unit count
+  let power = group.unitCount || 1;
+  
+  // If we have detailed units data, use it for better calculations
+  if (group.units && Array.isArray(group.units)) {
+    power = group.units.reduce((total, unit) => {
+      // Calculate unit strength (default to 1 if not specified)
+      const unitStrength = unit.strength || 1;
+      return total + unitStrength;
+    }, 0);
+    
+    // Ensure minimum power of 1
+    power = Math.max(1, power);
+  }
+  
+  return power;
+}

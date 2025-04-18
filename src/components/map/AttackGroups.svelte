@@ -11,12 +11,12 @@
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
   // Available groups for attack/defense
-  let attackerGroups = $state([]);
-  let defenderGroups = $state([]);
+  let yourGroups = $state([]);
+  let enemyGroups = $state([]);
   
   // Selected groups - now arrays for multi-select
   let selectedAttackers = $state([]);
-  let selectedDefender = $state(null);
+  let selectedDefenders = $state([]);
   
   // Loading state
   let loading = $state(false);
@@ -24,38 +24,87 @@
   
   // Initialize available groups based on tile content
   $effect(() => {
-    if (!tile || !tile.groups) return;
+    if (!tile) return;
     
+    const userGroups = [];
+    const targetGroups = [];
     const playerId = $currentPlayer?.uid;
-    if (!playerId) return;
     
-    // Filter player's groups that can attack
-    attackerGroups = tile.groups
-      .filter(group => 
-        group.owner === playerId && 
-        group.status === 'idle' &&
-        !group.inBattle
-      )
-      .map(group => ({
-        ...group,
-        selected: false
-      }));
+    // Check for groups on this tile
+    if (tile.groups && Object.values(tile.groups).length > 0) {
+      Object.values(tile.groups).forEach(group => {
+        // Skip groups that are already in battle
+        if (group.inBattle) return;
+        
+        // Skip groups that are moving or mobilizing/demobilising
+        if (['moving', 'mobilizing', 'demobilising'].includes(group.status)) return;
+        
+        if (group.owner === playerId) {
+          userGroups.push({
+            ...group,
+            selected: false
+          });
+        } else {
+          targetGroups.push({
+            ...group,
+            selected: false
+          });
+        }
+      });
+    }
     
-    // Filter other groups that can be attacked
-    defenderGroups = tile.groups
-      .filter(group => 
-        group.owner !== playerId && 
-        !group.inBattle
-      )
-      .map(group => ({
-        ...group,
-        selected: false
-      }));
+    yourGroups = userGroups;
+    enemyGroups = targetGroups;
+    selectedAttackers = [];
+    selectedDefenders = [];
   });
   
-  // Start an attack
+  // Toggle attacker selection
+  function toggleAttacker(groupId) {
+    yourGroups = yourGroups.map(group => {
+      if (group.id === groupId) {
+        return { ...group, selected: !group.selected };
+      }
+      return group;
+    });
+    
+    // Update selected attackers
+    selectedAttackers = yourGroups.filter(g => g.selected).map(g => g.id);
+  }
+  
+  // Toggle defender selection
+  function toggleDefender(groupId) {
+    enemyGroups = enemyGroups.map(group => {
+      if (group.id === groupId) {
+        return { ...group, selected: !group.selected };
+      }
+      return group;
+    });
+    
+    // Update selected defenders
+    selectedDefenders = enemyGroups.filter(g => g.selected).map(g => g.id);
+  }
+  
+  // Handle keyboard interactions
+  function handleAttackerKeyDown(event, groupId) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      toggleAttacker(groupId);
+    }
+  }
+  
+  function handleDefenderKeyDown(event, groupId) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      toggleDefender(groupId);
+    }
+  }
+
+  // Function to initiate attack
   async function startAttack() {
-    if (selectedAttackers.length === 0 || !selectedDefender) return;
+    if (selectedAttackers.length === 0 || selectedDefenders.length === 0) {
+      return;
+    }
     
     loading = true;
     errorMessage = '';
@@ -64,18 +113,9 @@
       const functions = getFunctions();
       const attackGroupFn = httpsCallable(functions, 'attackGroups');
       
-      // Use the first attacker as the primary attacker
-      const primaryAttackerGroupId = selectedAttackers[0].id;
-      
-      // Store additional attackers if applicable
-      const additionalAttackerIds = selectedAttackers.length > 1 ? 
-        selectedAttackers.slice(1).map(a => a.id) : 
-        [];
-      
       const result = await attackGroupFn({
-        attackerGroupId: primaryAttackerGroupId,
-        additionalAttackerGroupIds: additionalAttackerIds,
-        defenderGroupId: selectedDefender.id,
+        attackerGroupIds: selectedAttackers, 
+        defenderGroupIds: selectedDefenders,
         locationX: tile.x,
         locationY: tile.y,
         worldId: $game.currentWorld
@@ -84,12 +124,10 @@
       if (result.data.success) {
         console.log('Battle started:', result.data);
         
-        // Call onAttack callback with all selected groups
         if (onAttack) {
           onAttack({
-            attackerGroupId: primaryAttackerGroupId,
-            additionalAttackerGroupIds: additionalAttackerIds,
-            defenderGroupId: selectedDefender.id,
+            attackerGroupIds: selectedAttackers,
+            defenderGroupIds: selectedDefenders,
             tile
           });
         }
@@ -105,64 +143,24 @@
       loading = false;
     }
   }
-
-  // Toggle selection of attacker group (for multi-select)
-  function toggleAttacker(group) {
-    const index = selectedAttackers.findIndex(g => g.id === group.id);
-    
-    if (index >= 0) {
-      // Remove from selection
-      selectedAttackers = selectedAttackers.filter(g => g.id !== group.id);
-    } else {
-      // Add to selection
-      selectedAttackers = [...selectedAttackers, group];
-    }
-  }
   
-  // Check if attacker is selected
-  function isAttackerSelected(group) {
-    return selectedAttackers.some(g => g.id === group.id);
-  }
-  
-  // Select defender group (single select)
-  function selectDefender(group) {
-    selectedDefender = group;
-  }
-  
-  // Handle keyboard selection for groups
-  function handleKeyDown(event, group, isAttacker) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      if (isAttacker) {
-        toggleAttacker(group);
-      } else {
-        selectDefender(group);
-      }
-    }
-  }
-  
-  // Calculate total attacker strength
-  const totalAttackerStrength = $derived(
-    selectedAttackers.reduce((total, group) => total + (group.unitCount || 1), 0)
-  );
-  
-  // Check if attack is possible
+  // Helper to check if attack is possible
   const canAttack = $derived(
-    selectedAttackers.length > 0 && selectedDefender !== null && !loading
+    selectedAttackers.length > 0 && selectedDefenders.length > 0 && !loading
   );
 </script>
 
-<div class="overlay" transition:fade={{ duration: 150 }}>
+<dialog class="overlay" open aria-modal="true" aria-labelledby="attack-title">
   <div class="popup" transition:scale={{ start: 0.95, duration: 200 }}>
     <div class="header">
-      <h2>Attack Group - {tile?.x}, {tile?.y}</h2>
+      <h2 id="attack-title">Attack Group - {tile?.x}, {tile?.y}</h2>
       <button class="close-btn" onclick={onClose} aria-label="Close dialog">
         <Close size="1.5em" />
       </button>
     </div>
     
     <div class="content">
-      {#if attackerGroups.length === 0 || defenderGroups.length === 0}
+      {#if yourGroups.length === 0 || enemyGroups.length === 0}
         <div class="no-battle">
           <p>Cannot initiate battle at this location. You need at least one group that can attack and one enemy group to attack.</p>
           <button class="close-action" onclick={onClose}>Close</button>
@@ -174,86 +172,96 @@
         
         <div class="battle-setup">
           <div class="selection-section">
-            <h3>Select Your Groups <span class="selection-hint">(select multiple)</span></h3>
+            <h3>Your Forces</h3>
             <div class="groups-list">
-              {#each attackerGroups as group}
+              {#each yourGroups as group}
                 <div 
                   class="group-item" 
-                  class:selected={isAttackerSelected(group)}
-                  onclick={() => toggleAttacker(group)}
-                  onkeydown={(e) => handleKeyDown(e, group, true)}
-                  role="button"
+                  class:selected={group.selected}
+                  onclick={() => toggleAttacker(group.id)}
+                  onkeydown={(e) => handleAttackerKeyDown(e, group.id)}
+                  role="checkbox"
                   tabindex="0"
-                  aria-pressed={isAttackerSelected(group)}
-                  aria-label="Select attacking group {group.name || group.id}"
+                  aria-checked={group.selected}
                 >
                   <div class="selection-indicator">
-                    {#if isAttackerSelected(group)}
+                    {#if group.selected}
                       <div class="checkbox checked">✓</div>
                     {:else}
                       <div class="checkbox"></div>
                     {/if}
                   </div>
                   <div class="group-info">
-                    <div class="group-name">{group.name || group.id}</div>
-                    <div class="group-details">Units: {group.unitCount || group.units?.length || 1}</div>
+                    <div class="group-name">{group.name || `Group ${group.id.slice(-5)}`}</div>
+                    <div class="group-details">
+                      <span class="unit-count">Units: {group.unitCount || (group.units?.length || 0)}</span>
+                      {#if group.race}
+                        <span class="race-tag">{_fmt(group.race)}</span>
+                      {/if}
+                    </div>
                   </div>
                 </div>
               {/each}
             </div>
-            
-            {#if selectedAttackers.length > 0}
-              <div class="selection-summary">
-                <span>Selected: {selectedAttackers.length} groups</span>
-                <span>Total strength: {totalAttackerStrength}</span>
-              </div>
-            {/if}
+            <div class="selection-summary">
+              Selected: {selectedAttackers.length} group{selectedAttackers.length !== 1 ? 's' : ''}
+            </div>
           </div>
           
           <div class="vs-indicator">VS</div>
           
           <div class="selection-section">
-            <h3>Select Target Group</h3>
+            <h3>Enemy Forces</h3>
             <div class="groups-list">
-              {#each defenderGroups as group}
+              {#each enemyGroups as group}
                 <div 
                   class="group-item" 
-                  class:selected={selectedDefender?.id === group.id}
-                  onclick={() => selectDefender(group)}
-                  onkeydown={(e) => handleKeyDown(e, group, false)}
-                  role="button"
+                  class:selected={group.selected}
+                  onclick={() => toggleDefender(group.id)}
+                  onkeydown={(e) => handleDefenderKeyDown(e, group.id)}
+                  role="checkbox"
                   tabindex="0"
-                  aria-pressed={selectedDefender?.id === group.id}
-                  aria-label="Select defending group {group.name || group.id}"
+                  aria-checked={group.selected}
                 >
                   <div class="selection-indicator">
-                    {#if selectedDefender?.id === group.id}
-                      <div class="radio-button checked"></div>
+                    {#if group.selected}
+                      <div class="checkbox checked">✓</div>
                     {:else}
-                      <div class="radio-button"></div>
+                      <div class="checkbox"></div>
                     {/if}
                   </div>
                   <div class="group-info">
-                    <div class="group-name">{group.name || group.id}</div>
-                    <div class="group-details">Units: {group.unitCount || group.units?.length || 1}</div>
+                    <div class="group-name">{group.name || `Group ${group.id.slice(-5)}`}</div>
+                    <div class="group-details">
+                      <span class="unit-count">Units: {group.unitCount || (group.units?.length || 0)}</span>
+                      {#if group.race}
+                        <span class="race-tag">{_fmt(group.race)}</span>
+                      {/if}
+                      {#if group.owner}
+                        <span class="owner-tag">Owner: {group.ownerName || group.owner.slice(0, 5)}</span>
+                      {/if}
+                    </div>
                   </div>
                 </div>
               {/each}
+            </div>
+            <div class="selection-summary">
+              Selected: {selectedDefenders.length} group{selectedDefenders.length !== 1 ? 's' : ''}
             </div>
           </div>
         </div>
         
         <div class="battle-preview">
-          {#if selectedAttackers.length > 0 && selectedDefender}
+          {#if selectedAttackers.length > 0 && selectedDefenders.length > 0}
             <div class="battle-odds">
               <div class="side attacker">
                 <span class="side-label">Your Force</span>
-                <span class="strength">{totalAttackerStrength} units</span>
+                <span class="strength">{selectedAttackers.length} groups</span>
               </div>
               <div class="odds-indicator">vs</div>
               <div class="side defender">
                 <span class="side-label">Enemy</span>
-                <span class="strength">{selectedDefender.unitCount || 1} units</span>
+                <span class="strength">{selectedDefenders.length} groups</span>
               </div>
             </div>
           {/if}
@@ -272,7 +280,7 @@
       {/if}
     </div>
   </div>
-</div>
+</dialog>
 
 <style>
   .overlay {
@@ -320,13 +328,6 @@
     font-size: 1.1em;
     display: flex;
     align-items: center;
-  }
-
-  .selection-hint {
-    font-size: 0.8em;
-    opacity: 0.7;
-    margin-left: 0.5em;
-    font-weight: normal;
   }
 
   .content {
@@ -406,26 +407,6 @@
   .checkbox.checked {
     background-color: var(--color-bright-accent);
     border-color: var(--color-bright-accent);
-  }
-
-  .radio-button {
-    width: 1.2em;
-    height: 1.2em;
-    border: 1px solid var(--color-muted-teal);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-
-  .radio-button.checked:after {
-    content: '';
-    width: 0.6em;
-    height: 0.6em;
-    background-color: var(--color-bright-accent);
-    border-radius: 50%;
-    position: absolute;
   }
 
   .group-info {
