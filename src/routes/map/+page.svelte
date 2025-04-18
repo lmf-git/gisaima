@@ -505,12 +505,15 @@
                 // Then move target
                 moveTarget(tileX, tileY);
                 
-                // Use the highlightedStore from the map store
-                if ($highlightedStore && hasTileContent($highlightedStore)) {
-                    toggleDetailsModal(true, $highlightedStore);
-                } else {
-                    setHighlighted(null, null);
-                }
+                // Get the tile data from highlightedStore after a brief delay
+                // to ensure it's been updated with the new coordinates
+                setTimeout(() => {
+                    if ($highlightedStore && hasTileContent($highlightedStore)) {
+                        toggleDetailsModal(true, $highlightedStore);
+                    } else {
+                        setHighlighted(null, null);
+                    }
+                }, 10);
             }
         }
         

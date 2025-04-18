@@ -302,7 +302,7 @@
     <div class="header">
       <h3 class="title">Tile Details</h3>
       <div class="coords">{formatCoords(x, y)}</div>
-      <button class="close-button" on:click={onClose} aria-label="Close">×</button>
+      <button class="close-button" onclick={onClose} aria-label="Close">×</button>
     </div>
     
     <div class="details-content">
@@ -471,7 +471,7 @@
             {#each actions as action}
               <button 
                 class="action-button" 
-                on:click={() => selectAction(action.id)}
+                onclick={() => selectAction(action.id)}
                 aria-label={action.label}
               >
                 <span class="action-icon">{action.icon}</span>
