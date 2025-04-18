@@ -53,9 +53,11 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError("failed-precondition", "No structure available for demobilisation");
     }
     
-    if (targetStructureId && structure.id !== targetStructureId) {
-      throw new HttpsError("failed-precondition", "Target structure not found at this location");
-    }
+    // Generate a structure identifier if none exists
+    // This fixes the undefined targetStructureId error
+    const structureId = targetStructureId || 
+                        structure.id || 
+                        `structure_${locationX}_${locationY}_${Date.now()}`;
     
     // Calculate time for demobilisation to complete
     const worldInfoRef = db.ref(`worlds/${worldId}/info`);
@@ -69,12 +71,17 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
     const now = Date.now();
     const readyAt = now + tickTime;
     
-    // Update the group's status
+    // Update the group's status with a valid structure ID
     await db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}`).update({
       status: 'demobilising',
       readyAt: readyAt,
-      targetStructureId: targetStructureId || structure.id
+      targetStructureId: structureId
     });
+    
+    // If structure doesn't already have an ID, add one
+    if (!structure.id) {
+      await db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/id`).set(structureId);
+    }
     
     return {
       success: true,
@@ -82,7 +89,7 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       readyAt: readyAt
     };
   } catch (error) {
-    console.error("Error demobilising units:", error);
-    throw new HttpsError("internal", "Failed to demobilise units");
+    logger.error("Error demobilising units:", error);
+    throw new HttpsError("internal", "Failed to demobilise units", error.message);
   }
 });
