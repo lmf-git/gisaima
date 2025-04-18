@@ -207,20 +207,7 @@
     if (distance === 0) return 'Here';
     return `${distance.toFixed(1)} tiles away`;
   }
-
-  // Maps faction to race for icon display
-  function getFactionRace(faction) {
-    // Default mapping of factions to races for icon display
-    const factionToRace = {
-      human: 'human',
-      elf: 'elf',
-      dwarf: 'dwarf',
-      goblin: 'goblin',
-      fairy: 'fairy'
-    };
-    
-    return factionToRace[faction?.toLowerCase()] || null;
-  }
+  
   
   // Extract all entities from all visible coordinates - fixed $derived syntax
   const allStructures = $derived(
@@ -404,7 +391,7 @@
 </script>
 
 <div class="entities-wrapper" class:closing>
-  <div class="entities-panel" transition:fly|local={{ y: -200, duration: 500, easing: cubicOut }}>
+  <div class="entities-panel" transition:fly|local={{ y: 200, duration: 500, easing: cubicOut }}>
     <h3 class="title">
       Map Entities
       <span class="subtitle">{visibleChunks} chunks visible</span>
@@ -887,8 +874,8 @@
 <style>
   .entities-wrapper {
     position: absolute;
-    top: 0.5em;
-    right: 0.5em;
+    bottom: 3em; /* Changed from top to bottom and increased to avoid overlap with entity toggle button */
+    left: 0.5em; /* Changed from right to left */
     z-index: 998;
     transition: opacity 0.2s ease;
     font-size: 1.4em; /* Increased from 1.2em */
@@ -942,7 +929,7 @@
     flex-direction: column;
     overflow: hidden;
     animation: reveal 0.4s ease-out forwards;
-    transform-origin: top right;
+    transform-origin: bottom left; /* Changed from top right to bottom left */
   }
 
   .map-entities {
@@ -1333,8 +1320,8 @@
   /* Fix for mobile screens */
   @media (max-width: 480px) {
     .entities-wrapper {
-      top: 0.5em;
-      right: 0.5em;
+      bottom: 3em;
+      left: 0.5em;
       font-size: 1em;
     }
      
