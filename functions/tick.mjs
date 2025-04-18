@@ -115,26 +115,28 @@ export const processGameTicks = onSchedule({
                         const moveInterval = Math.round(60000 / worldSpeed); // 1 minute adjusted for world speed
                         const nextMoveTime = now + moveInterval;
                         
-                        // If changing tiles (next point is different from current position)
-                        if (nextTileKey !== tileKey) {
-                          // Create a new group at the next position with updated data
+                        // If position is changing (next point is different from current tile)
+                        if (nextChunkKey !== chunkKey || nextTileKey !== tileKey) {
+                          // Create a new group at the next position with the correct status
                           updates[`worlds/${worldId}/chunks/${nextChunkKey}/${nextTileKey}/groups/${groupId}`] = {
                             ...group,
-                            x: nextPoint.x, // Update x coordinate
-                            y: nextPoint.y, // Update y coordinate
+                            x: nextPoint.x,
+                            y: nextPoint.y,
                             lastUpdated: now,
-                            pathIndex: nextIndex, // Update path index
-                            nextMoveTime: nextMoveTime
+                            pathIndex: nextIndex,
+                            nextMoveTime: nextMoveTime,
+                            // Ensure status remains 'moving' throughout the path
+                            status: nextIndex < group.movementPath.length - 1 ? 'moving' : 'idle'
                           };
                           
                           // Remove the group from the current position
                           updates[`${groupPath}`] = null;
                           
-                          // If a player is in the group, update their position too
+                          // Update player position if they're in this group
                           if (group.units && Array.isArray(group.units)) {
                             for (const unit of group.units) {
                               if (unit.type === 'player' && unit.id) {
-                                // Update the player's last location in their data
+                                // Update player location record
                                 updates[`players/${unit.id}/worlds/${worldId}/lastLocation`] = {
                                   x: nextPoint.x,
                                   y: nextPoint.y,
@@ -144,10 +146,19 @@ export const processGameTicks = onSchedule({
                             }
                           }
                         } else {
-                          // Just update the path index and next move time, but don't change position
+                          // Just update status, path index, and next move time without changing position
                           updates[`${groupPath}/pathIndex`] = nextIndex;
                           updates[`${groupPath}/lastUpdated`] = now;
                           updates[`${groupPath}/nextMoveTime`] = nextMoveTime;
+                          // If this is the last step, set status to idle
+                          if (nextIndex === group.movementPath.length - 1) {
+                            updates[`${groupPath}/status`] = 'idle';
+                            // Clean up movement data
+                            updates[`${groupPath}/moveStarted`] = null;
+                            updates[`${groupPath}/moveSpeed`] = null;
+                            updates[`${groupPath}/targetX`] = null;
+                            updates[`${groupPath}/targetY`] = null;
+                          }
                         }
                         
                         movementsProcessed++;

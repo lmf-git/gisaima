@@ -4,8 +4,8 @@
  */
 
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
+import { getDatabase } from "firebase-admin/database";
 
 // Move group function
 export const moveGroup = onCall({ maxInstances: 10 }, async (request) => {
@@ -42,115 +42,96 @@ export const moveGroup = onCall({ maxInstances: 10 }, async (request) => {
   try {
     const db = getDatabase();
     
-    // Calculate chunk coordinates for the starting location
+    // Generate chunk and tile keys
     const chunkSize = 20;
     const chunkX = Math.floor(fromX / chunkSize);
     const chunkY = Math.floor(fromY / chunkSize);
     const chunkKey = `${chunkX},${chunkY}`;
-    const locationKey = `${fromX},${fromY}`;
+    const tileKey = `${fromX},${fromY}`;
     
-    // Get group data to validate ownership
-    const groupRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}`);
-    const groupSnapshot = await groupRef.once("value");
-    const groupData = groupSnapshot.val();
+    // Check if group exists and belongs to user
+    const groupRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`);
+    const groupSnapshot = await groupRef.once('value');
     
-    if (!groupData) {
-      logger.error(`Group not found: ${groupId} at location (${fromX},${fromY}) in chunk ${chunkKey}`);
-      throw new HttpsError("not-found", "Group not found at this location");
+    if (!groupSnapshot.exists()) {
+      throw new HttpsError("not-found", "Group not found at specified coordinates");
     }
     
-    logger.info(`Group found: ${JSON.stringify(groupData)}`);
+    const group = groupSnapshot.val();
     
-    // Verify ownership
-    if (groupData.owner !== userId) {
-      logger.error(`Permission denied: User ${userId} does not own group ${groupId} (owner: ${groupData.owner})`);
-      throw new HttpsError("permission-denied", "You can only move your own groups");
+    if (group.owner !== userId) {
+      throw new HttpsError("permission-denied", "You don't have permission to move this group");
     }
     
-    // Verify group status is appropriate for movement
-    if (groupData.status !== 'idle') {
-      logger.error(`Group cannot move: Group ${groupId} has status ${groupData.status}`);
-      throw new HttpsError("failed-precondition", `Group cannot move while in ${groupData.status} state`);
+    if (group.status !== 'idle') {
+      throw new HttpsError("failed-precondition", "Group is not idle and cannot be moved");
     }
     
-    // Validate the path
-    let movementPath = path || [];
-    if (!Array.isArray(movementPath) || movementPath.length < 1) {
-      // Create a simple path from source to destination
+    // Determine the movement path
+    let movementPath;
+    
+    if (path && Array.isArray(path) && path.length >= 2) {
+      // Use provided path
+      movementPath = path;
+      
+      // Basic validation of path
+      if (path[0].x !== fromX || path[0].y !== fromY) {
+        throw new HttpsError("invalid-argument", "Path must start at the group's current position");
+      }
+      
+      if (path[path.length - 1].x !== toX || path[path.length - 1].y !== toY) {
+        throw new HttpsError("invalid-argument", "Path must end at the target position");
+      }
+      
+      // Limit path length to prevent abuse
+      if (path.length > 50) {
+        throw new HttpsError("invalid-argument", "Path is too long (maximum 50 steps)");
+      }
+    } else {
+      // Calculate a simple path if none provided
       movementPath = [
-        { x: fromX, y: fromY }, 
+        { x: fromX, y: fromY },
         { x: toX, y: toY }
       ];
-      logger.info(`Created default path: ${JSON.stringify(movementPath)}`);
     }
     
-    // Validate the first point in path matches starting position
-    if (movementPath[0].x !== fromX || movementPath[0].y !== fromY) {
-      logger.error(`Invalid path: First point ${JSON.stringify(movementPath[0])} doesn't match start position (${fromX},${fromY})`);
-      // Fix the path by prepending the starting position
-      movementPath.unshift({ x: fromX, y: fromY });
-    }
-    
-    // Validate the last point in path matches destination
-    const lastPoint = movementPath[movementPath.length - 1];
-    if (lastPoint.x !== toX || lastPoint.y !== toY) {
-      logger.error(`Invalid path: Last point ${JSON.stringify(lastPoint)} doesn't match destination (${toX},${toY})`);
-      // Fix the path by appending the destination
-      movementPath.push({ x: toX, y: toY });
-    }
-    
-    // Get world info to calculate movement speed
+    // Calculate world speed for movement timing
     const worldInfoRef = db.ref(`worlds/${worldId}/info`);
-    const worldInfoSnapshot = await worldInfoRef.once("value");
-    const worldInfo = worldInfoSnapshot.val() || {};
+    const worldInfoSnap = await worldInfoRef.once('value');
+    const worldInfo = worldInfoSnap.val() || {};
     const worldSpeed = worldInfo.speed || 1.0;
     
-    // Calculate timing
+    // Calculate the next move time
     const now = Date.now();
-    const moveSpeed = 1;  // Base move speed (adjust as needed)
-    const actualSpeed = moveSpeed * worldSpeed;
-    
-    // Calculate next move time (in milliseconds)
-    const moveInterval = Math.round(60000 / worldSpeed);  // 1 minute adjusted for world speed
+    const moveInterval = Math.round(60000 / worldSpeed); // 1 minute adjusted by world speed
     const nextMoveTime = now + moveInterval;
     
-    logger.info(`Updating group ${groupId} for movement to (${toX},${toY}) with path of ${movementPath.length} points`);
+    // Update group to start moving
+    const updates = {
+      [`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`]: 'moving',
+      [`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/moveStarted`]: now,
+      [`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/moveSpeed`]: worldSpeed,
+      [`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/movementPath`]: movementPath,
+      [`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/pathIndex`]: 0,
+      [`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/nextMoveTime`]: nextMoveTime,
+      [`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/targetX`]: toX,
+      [`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/targetY`]: toY,
+      [`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastUpdated`]: now
+    };
     
-    try {
-      // Update group with movement data
-      await groupRef.update({
-        status: 'moving',
-        targetX: toX,
-        targetY: toY,
-        moveStarted: now,
-        moveSpeed: actualSpeed,
-        lastUpdated: now,
-        movementPath: movementPath,
-        pathIndex: 0,
-        nextMoveTime: nextMoveTime
-      });
-      
-      logger.info(`Successfully started movement for group ${groupId}`);
-      
-      return {
-        success: true,
-        message: "Group movement started",
-        nextMoveTime: nextMoveTime,
-        path: movementPath
-      };
-    } catch (dbError) {
-      logger.error(`Database update failed: ${dbError.message}`, dbError);
-      throw new HttpsError("internal", "Failed to update group data", dbError);
-    }
+    await db.ref().update(updates);
     
+    logger.info(`Group ${groupId} movement started from (${fromX},${fromY}) to (${toX},${toY}) with ${movementPath.length} steps`);
+    
+    return {
+      success: true,
+      message: "Movement started",
+      nextMove: nextMoveTime,
+      steps: movementPath.length
+    };
   } catch (error) {
-    // Check if this is already an HttpsError
-    if (error instanceof HttpsError) {
-      throw error;
-    }
-    
-    logger.error(`Error moving group:`, error);
-    throw new HttpsError("internal", "Failed to move group", error);
+    logger.error("Error starting group movement:", error);
+    throw new HttpsError("internal", `Failed to start movement: ${error.message}`);
   }
 });
 
