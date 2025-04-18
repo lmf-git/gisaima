@@ -852,7 +852,7 @@
 
         <Tutorial />
         
-        {#if $needsSpawn}
+        {#if $needsSpawn && $user}
             <SpawnMenu onSpawn={handleSpawnComplete} />
         {/if}
 

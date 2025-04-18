@@ -115,35 +115,22 @@ export const currentPlayer = derived(
   }
 );
 
-// Fix the needsSpawn store to properly check player alive status
+// Fix the needsSpawn store to properly check player alive status with cleaner logic
 export const needsSpawn = derived(
   [game, user], 
   ([$game, $user]) => {
-    // If there's no current user or no current world, player needs to spawn
-    if (!$user?.uid || !$game.currentWorld) {
-      return true;
-    }
+    // Only show spawn menu when all these conditions are met:
+    // 1. User is logged in
+    // 2. Current world is selected
+    // 3. Player has joined this world (playerWorldData exists)
+    // 4. Player is not alive in this world
     
-    // Get the player's data for this specific world
-    const playerWorldData = $game.playerWorldData;
-    
-    // If no player world data exists, player needs to spawn
-    if (!playerWorldData) {
-      return true;
-    }
-    
-    // If alive is explicitly false, player needs to spawn
-    if (playerWorldData.alive === false) {
-      return true;
-    }
-    
-    // If alive is true, player doesn't need to spawn
-    if (playerWorldData.alive === true) {
-      return false;
-    }
-    
-    // Default: If no alive property exists, player needs to spawn
-    return true;
+    return (
+      !!$user?.uid && 
+      !!$game.currentWorld && 
+      !!$game.playerWorldData && 
+      $game.playerWorldData.alive !== true
+    );
   }
 );
 
