@@ -21,13 +21,17 @@
   // Check if current player owns this structure
   const isOwned = $derived(structure.owner === $currentPlayer?.uid);
   
-  // Group items by type for better organization - FIX: Ensure we return a proper object rather than a Map
+  // Add debug logging to help diagnose the issue
+  console.log('Structure data:', structure);
+  
+  // Group items by type for better organization
   const groupedItems = $derived(() => {
+    console.log('Processing structure items:', structure.items);
     if (!structure.items || !Array.isArray(structure.items) || structure.items.length === 0) {
-      return {};  // Return an empty object instead of Map
+      return {};
     }
     
-    const grouped = {};  // Use a plain object instead of Map
+    const grouped = {};
     
     for (const item of structure.items) {
       const type = item.type || 'misc';
@@ -37,13 +41,16 @@
       grouped[type].push(item);
     }
     
+    console.log('Grouped items result:', grouped);
     return grouped;
   });
   
   // Create an array of type-items pairs for easier iteration in the template
-  const groupedItemsList = $derived(
-    Object.entries(groupedItems).map(([type, items]) => ({ type, items }))
-  );
+  const groupedItemsList = $derived(() => {
+    const result = Object.entries(groupedItems).map(([type, items]) => ({ type, items }));
+    console.log('Grouped items list:', result);
+    return result;
+  });
   
   // Calculate total item count
   const totalItems = $derived(structure.items?.length || 0);
@@ -53,6 +60,28 @@
     current: totalItems,
     max: structure.capacity || 100,
     percentage: ((totalItems / (structure.capacity || 100)) * 100).toFixed(0)
+  });
+
+  // Add specific debug logging for banks data
+  console.log('Structure banks data:', structure.banks);
+  console.log('Current player ID:', $currentPlayer?.uid);
+
+  // Get player's bank items if available - Fixed to handle the structure correctly
+  const playerBank = $derived(() => {
+    if (structure.banks && $currentPlayer?.uid) {
+      const playerItems = structure.banks[$currentPlayer.uid];
+      console.log('Found player bank items:', playerItems);
+      return Array.isArray(playerItems) ? playerItems : [];
+    }
+    console.log('No player bank items found');
+    return [];
+  });
+
+  // Check if the player has bank items - using length check
+  const hasBankItems = $derived(() => {
+    const hasItems = playerBank.length > 0;
+    console.log('Has bank items:', hasItems, 'Count:', playerBank.length);
+    return hasItems;
   });
 </script>
 
@@ -105,10 +134,9 @@
       
       <h3>Structure Contents</h3>
       
-      {#if totalItems > 0}
+      {#if structure.items && structure.items.length > 0}
         <div class="items-container">
-          <!-- FIX: Use the pre-calculated array instead of trying to use Map entries() -->
-          {#each groupedItemsList as { type, items }}
+          {#each Object.entries(groupedItems) as [type, items]}
             <div class="item-group">
               <h4 class="item-group-header">{formatText(type)}</h4>
               <div class="items-grid">
@@ -123,6 +151,9 @@
                       {#if item.rarity && item.rarity !== 'common'}
                         <div class="item-rarity-tag">{formatText(item.rarity)}</div>
                       {/if}
+                      {#if item.isShared}
+                        <div class="item-shared-tag">Shared</div>
+                      {/if}
                     </div>
                     {#if item.description}
                       <div class="item-description">{item.description}</div>
@@ -136,6 +167,34 @@
       {:else}
         <div class="empty-items">
           <p>This structure is empty</p>
+        </div>
+      {/if}
+      
+      <!-- Personal Bank Section - Fixed rendering logic -->
+      {#if hasBankItems}
+        <h3>Your Personal Bank</h3>
+        <div class="items-container">
+          <div class="item-group bank-items">
+            <div class="items-grid">
+              {#each playerBank as item}
+                <div class="item {getRarityClass(item.rarity)} bank-item">
+                  <div class="item-icon {item.type}"></div>
+                  <div class="item-details">
+                    <div class="item-name">{item.name}</div>
+                    {#if item.quantity > 1}
+                      <div class="item-quantity">×{item.quantity}</div>
+                    {/if}
+                    {#if item.rarity && item.rarity !== 'common'}
+                      <div class="item-rarity-tag">{formatText(item.rarity)}</div>
+                    {/if}
+                  </div>
+                  {#if item.description}
+                    <div class="item-description">{item.description}</div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          </div>
         </div>
       {/if}
       
@@ -532,7 +591,41 @@
     font-size: 0.9em;
     color: #666;
   }
+
+  /* Add styles for bank items */
+  .bank-items {
+    border: 1px solid #e1e2ff;
+    background-color: #f8f9ff;
+  }
   
+  .bank-item {
+    background-color: #fafbff;
+    border-color: #d8daff;
+  }
+  
+  .bank-item:hover {
+    background-color: #f1f3ff;
+    box-shadow: 0 3px 5px rgba(0, 0, 128, 0.1);
+  }
+  
+  .item-shared-tag {
+    font-size: 0.7em;
+    padding: 0.1em 0.3em;
+    border-radius: 0.2em;
+    display: inline-block;
+    background: #e1f5fe;
+    color: #0277bd;
+  }
+  
+  /* Add this to make bank section more distinguishable */
+  .bank-items .item-icon {
+    background-color: rgba(0, 0, 128, 0.08);
+  }
+
+  .bank-items .items-grid {
+    background-color: rgba(240, 240, 255, 0.4);
+  }
+
   @media (max-width: 480px) {
     .structure-overview {
       width: 95%;

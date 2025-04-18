@@ -2,7 +2,7 @@
   "players": {
     "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1": {
       "worlds": {
-        "Default-world": {
+        "default-world": {
           "inGroup": "group_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
           "joined": 1744943635171,
           "lastGroupJoin": 1744943650956,
@@ -14,38 +14,12 @@
           "lastSpawn": "0:0:0:0",
           "race": "human",
           "spawned": true
-        },
-        "Fantasy-realm": {
-          "inGroup": "group_fr_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
-          "joined": 1744943635171,
-          "lastGroupJoin": 1744943650956,
-          "lastLocation": {
-            "timestamp": 1744943644706,
-            "x": 0, 
-            "y": 0
-          },
-          "lastSpawn": "0:0:0:0",
-          "race": "elf",
-          "spawned": true
-        },
-        "Ancient-lands": {
-          "inGroup": "group_al_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
-          "joined": 1744943635171,
-          "lastGroupJoin": 1744943650956,
-          "lastLocation": {
-            "timestamp": 1744943644706,
-            "x": 0, 
-            "y": 0
-          },
-          "lastSpawn": "0:0:0:0",
-          "race": "dwarf",
-          "spawned": true
         }
       }
     }
   },
   "worlds": {
-    "Default-world": {
+    "default-world": {
       "chunks": {
         "0,0": {
           "0,0": {
@@ -330,7 +304,7 @@
         "lastTick": 1744943650950
       }
     },
-    "Fantasy-realm": {
+    "fantasy-realm": {
       "chunks": {
         "0,0": {
           "0,0": {
@@ -388,24 +362,7 @@
                 }
               ],
               "banks": {
-                "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1": [
-                  {
-                    "id": "item_fr_bank_1",
-                    "name": "Elven Silver",
-                    "type": "currency",
-                    "quantity": 85,
-                    "rarity": "common",
-                    "description": "Currency used by elven traders"
-                  },
-                  {
-                    "id": "item_fr_bank_2",
-                    "name": "Enchanted Bow",
-                    "type": "weapon",
-                    "quantity": 1,
-                    "rarity": "rare",
-                    "description": "A bow that never misses its target"
-                  }
-                ]
+
               }
             },
             "groups": {
@@ -473,7 +430,7 @@
         "lastTick": 1744943650950
       }
     },
-    "Ancient-lands": {
+    "ancient-lands": {
       "chunks": {
         "0,0": {
           "0,0": {
@@ -523,83 +480,6 @@
                 }
               ],
               "banks": {
-                "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1": [
-                  {
-                    "id": "item_al_bank_1",
-                    "name": "Dwarven Gold",
-                    "type": "currency",
-                    "quantity": 120,
-                    "rarity": "common",
-                    "description": "Heavy gold coins minted by master dwarven smiths"
-                  },
-                  {
-                    "id": "item_al_bank_2",
-                    "name": "Ancestral Hammer",
-                    "type": "weapon",
-                    "quantity": 1,
-                    "rarity": "legendary",
-                    "description": "A mighty hammer passed down through generations"
-                  }
-                ]
-              }
-            },
-            "groups": {
-              "group_al_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956": {
-                "id": "group_al_Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1_1744943650956",
-                "name": "Mountain Guard",
-                "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
-                "unitCount": 4,
-                "race": "dwarf",
-                "status": "idle",
-                "x": 0,
-                "y": 0,
-                "created": 1744943650956,
-                "lastUpdated": 1744943650956,
-                "items": [
-                  {
-                    "id": "item_al_2001",
-                    "name": "Dragon Scale",
-                    "type": "resource",
-                    "quantity": 1,
-                    "rarity": "epic",
-                    "description": "A scale from an ancient dragon"
-                  },
-                  {
-                    "id": "item_al_2002",
-                    "name": "Mountain Ale",
-                    "type": "consumable",
-                    "quantity": 3,
-                    "rarity": "uncommon",
-                    "description": "Fortifying drink that increases strength temporarily"
-                  }
-                ],
-                "units": [
-                  {
-                    "id": "unit_al_1",
-                    "type": "warrior",
-                    "name": "Dwarven Guard",
-                    "strength": 15
-                  },
-                  {
-                    "id": "unit_al_2",
-                    "type": "warrior",
-                    "name": "Dwarven Guard",
-                    "strength": 15
-                  },
-                  {
-                    "id": "unit_al_3",
-                    "type": "engineer",
-                    "name": "Dwarven Engineer",
-                    "strength": 10
-                  },
-                  {
-                    "id": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
-                    "type": "player",
-                    "race": "dwarf",
-                    "name": "TestPlayer",
-                    "strength": 18
-                  }
-                ]
               }
             }
           }
