@@ -1,4 +1,4 @@
-import { writable, derived, get as getStore } from 'svelte/store';
+import { writable, derived, get as getStore, get } from 'svelte/store';
 import { browser } from '$app/environment';
 import { ref, onValue, get as dbGet, set } from "firebase/database";
 import { db } from '../firebase/database.js';
@@ -122,6 +122,49 @@ export const needsSpawn = derived(
   $player => {
     if (!$player) return true;
     return $player.spawned === false;
+  }
+);
+
+// Create a derived store for the next world tick time
+export const nextWorldTick = derived(
+  game,
+  ($game) => {
+    if (!$game.currentWorld || !$game.worldInfo[$game.currentWorld]) {
+      return null;
+    }
+    
+    const worldInfo = $game.worldInfo[$game.currentWorld];
+    const worldSpeed = worldInfo.speed || 1.0;
+    const lastTick = worldInfo.lastTick || Date.now();
+    
+    // Base tick interval is 5 minutes (300000ms)
+    const baseTickInterval = 300000;
+    const adjustedInterval = Math.round(baseTickInterval / worldSpeed);
+    
+    // Calculate the next tick time
+    return lastTick + adjustedInterval;
+  }
+);
+
+// Add a derived store for formatted time remaining until next tick
+export const timeUntilNextTick = derived(
+  nextWorldTick,
+  ($nextWorldTick) => {
+    if (!$nextWorldTick) {
+      return "Unknown";
+    }
+    
+    const now = Date.now();
+    const remaining = $nextWorldTick - now;
+    
+    // Simplified time display - show "<1m" when close to tick
+    if (remaining <= 60000) {
+      return "<1m";
+    }
+    
+    // Format as minutes and seconds
+    const minutes = Math.floor(remaining / 60000);
+    return `${minutes}m`;
   }
 );
 

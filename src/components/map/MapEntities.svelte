@@ -3,7 +3,7 @@
   import { fade, fly, slide } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
   import { entities, targetStore, coordinates, moveTarget, setHighlighted } from '../../lib/stores/map';
-  import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick } from '../../lib/stores/game';
+  import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   
   // Import race icon components
   import Human from '../../components/icons/Human.svelte';
@@ -131,7 +131,7 @@
     }
   });
 
-  // Simplify the time remaining formatter
+  // Simplify the time remaining formatter to use store
   function formatTimeRemaining(endTime, status) {
     if (!endTime) return '';
     
@@ -139,7 +139,7 @@
     
     // If mobilizing or demobilising, show next tick countdown instead
     if (status === 'mobilizing' || status === 'demobilising') {
-      return formatTimeUntilNextTick($game.currentWorld);
+      return $timeUntilNextTick;
     }
     
     // For other statuses, use the existing calculation

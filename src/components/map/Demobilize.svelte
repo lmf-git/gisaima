@@ -1,6 +1,7 @@
 <script>
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game, formatTimeUntilNextTick } from '../../lib/stores/game';
+  import { timeUntilNextTick } from '../../lib/stores/gameTime';
   import Close from '../icons/Close.svelte';
   import Human from '../icons/Human.svelte';
   import Elf from '../icons/Elf.svelte';
@@ -165,7 +166,7 @@
             The group will be disbanded and units will return to this structure.
             <br>
             Demobilization will complete on the next world update
-            <span class="next-tick-time">({formatTimeUntilNextTick($game.currentWorld)})</span>
+            <span class="next-tick-time">({$timeUntilNextTick})</span>
           </p>
         </div>
         

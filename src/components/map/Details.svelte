@@ -3,8 +3,9 @@
   import Close from '../../components/icons/Close.svelte';
   import { user } from "../../lib/stores/user";
   import { onMount, onDestroy } from 'svelte';
-  import { game, currentPlayer } from "../../lib/stores/game.js";
+  import { game, currentPlayer, timeUntilNextTick } from "../../lib/stores/game.js";
   import { calculateNextTickTime, formatTimeUntilNextTick } from '../../lib/stores/game.js';
+  import { requiresTickProcessing } from '../../lib/stores/gameTime';
   
   // Import race icon components
   import Human from '../../components/icons/Human.svelte';
@@ -232,12 +233,10 @@
     
     // For mobilizing or demobilising groups, show next tick info
     if (group.status === 'mobilizing' || group.status === 'demobilising') {
-      const nextTickInfo = formatTimeUntilNextTick($game.currentWorld);
-      statusText += ` (Ready: ${nextTickInfo})`;
+      statusText += ` (Ready: ${$timeUntilNextTick})`;
     }
     // For other statuses with readyAt times
     else if (group.readyAt && group.status !== 'idle') {
-      // Existing time formatting
       const now = Date.now();
       const remaining = group.readyAt - now;
       
