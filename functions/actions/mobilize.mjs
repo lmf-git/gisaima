@@ -37,12 +37,8 @@ export const startMobilization = onCall(async (data, context) => {
     const chunkKey = `${chunkX},${chunkY}`;
     const tileKey = `${tileX},${tileY}`;
     
-    // Get current time and calculate ready time based on world speed
+    // Get current time
     const now = Date.now();
-    // Default mobilization time is 30 minutes if not specified
-    const mobilizationMs = 30 * 60 * 1000; // 30 minutes in ms
-    const adjustedTime = Math.round(mobilizationMs / worldSpeed); // Adjust by world speed
-    const readyAt = now + adjustedTime;
     
     // Create a new group ID with timestamp for uniqueness
     const newGroupId = `group_${uid}_${now}`;
@@ -124,7 +120,7 @@ export const startMobilization = onCall(async (data, context) => {
       const groupRace = race || (playerData ? playerData.race : null);
       
       // Create new mobilizing group
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${newGroupId}`] = {
+      const mobilizeData = {
         id: newGroupId,
         name: name || "New Force",
         owner: uid,
@@ -135,17 +131,19 @@ export const startMobilization = onCall(async (data, context) => {
         x: tileX,
         y: tileY,
         status: 'mobilizing',
-        readyAt: readyAt,
-        lastProcessed: now,
+        pendingAction: true,  // Flag for the tick processor
+        startedAt: now,
         units: selectedUnits
       };
+      
+      // Update the group structure with the mobilization status
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${newGroupId}`] = mobilizeData;
       
       // Apply all updates
       await db.ref().update(updates);
       return { 
-        success: true, 
-        readyAt,
-        groupId: newGroupId
+        status: "mobilizing",
+        message: "Units are being mobilized and will be ready on next world update"
       };
     } else {
       return { success: false, error: 'No valid units to mobilize' };

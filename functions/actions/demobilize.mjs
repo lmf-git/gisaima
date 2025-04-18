@@ -59,35 +59,22 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError("failed-precondition", "No structure found at this location");
     }
     
-    // Group timestamp based updates
+    // Use status flag for tick processing instead of time calculation
     const now = Date.now();
     
-    // Calculate demobilization time based on world speed
-    const worldInfoRef = db.ref(`worlds/${worldId}/info`);
-    const worldInfoSnapshot = await worldInfoRef.once('value');
-    const worldInfo = worldInfoSnapshot.val() || {};
-    const worldSpeed = worldInfo.speed || 1.0;
-    
-    // Base demobilization time is 5 minutes, adjusted for world speed
-    const demobilizeTimeMs = Math.round(300000 / worldSpeed); 
-    const readyAt = now + demobilizeTimeMs;
-    
-    // Update the group to demobilising status
+    // Update the group to demobilising status with pending action flag
     await groupRef.update({
       status: 'demobilising',
-      readyAt: readyAt,
+      pendingAction: true,  // Flag for the tick processor to handle this on next tick
+      startedAt: now,
       lastUpdated: now,
       targetStructureId: targetStructureId,
-      storageDestination: storageDestination // Add the storage choice
+      storageDestination: storageDestination
     });
-    
-    // Transfer items immediately if using tick function, otherwise wait for tick
-    // Using tick function, so we don't need to transfer items here.
     
     return {
       status: "demobilising",
-      readyAt: readyAt,
-      message: "Group is demobilising"
+      message: "Group is demobilising and will complete on next world update"
     };
   } catch (error) {
     console.error("Error in demobiliseUnits:", error);
