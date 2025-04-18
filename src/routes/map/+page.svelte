@@ -509,33 +509,62 @@
     let showEntities = $state(true);
     let minimapClosing = $state(false);
     let entitiesClosing = $state(false);
+    let isTutorialVisible = $state(false);
     
     const ANIMATION_DURATION = 800;
     
+    // Simplify the initialization of panel visibility states
     $effect(() => {
         if (browser) {
-            const storedMinimapVisibility = localStorage.getItem('minimap');
-            const defaultMinimapVisibility = window.innerWidth >= 768;
-            
-            showMinimap = storedMinimapVisibility === 'false' ? false : 
-                          storedMinimapVisibility === 'true' ? true : 
-                          defaultMinimapVisibility;
-            
-            const storedEntitiesVisibility = localStorage.getItem('mapEntities');
-            showEntities = storedEntitiesVisibility !== 'false';
-            
-            // IMPORTANT: Don't update map's internal minimap state based on UI preferences
-            // Keep data loading consistent regardless of UI state
+            // If spawn menu or tutorial is visible, keep panels closed by default
+            if ($needsSpawn || isTutorialVisible) {
+                showMinimap = false;
+                showEntities = false;
+            } else {
+                // Only use stored preferences when no modal is active
+                const storedMinimapVisibility = localStorage.getItem('minimap');
+                const defaultMinimapVisibility = window.innerWidth >= 768;
+                
+                showMinimap = storedMinimapVisibility === 'false' ? false : 
+                              storedMinimapVisibility === 'true' ? true : 
+                              defaultMinimapVisibility;
+                
+                const storedEntitiesVisibility = localStorage.getItem('mapEntities');
+                showEntities = storedEntitiesVisibility !== 'false';
+            }
         }
     });
     
+    // Update the spawn menu watcher to set panel state directly
+    $effect(() => {
+        if ($needsSpawn && (showMinimap || showEntities)) {
+            showMinimap = false;
+            showEntities = false;
+        }
+    });
+    
+    // Update the tutorial visibility handler
+    function handleTutorialVisibility(isVisible) {
+        isTutorialVisible = isVisible;
+        
+        // If tutorial becomes visible, close panels immediately
+        if (isTutorialVisible && (showMinimap || showEntities)) {
+            showMinimap = false;
+            showEntities = false;
+        }
+    }
+    
     function toggleMinimap() {
+        // If spawn or tutorial is active, don't allow opening
+        if ($needsSpawn || isTutorialVisible) {
+            return;
+        }
+        
         if (showMinimap) {
             minimapClosing = true;
             setTimeout(() => {
                 showMinimap = false;
                 minimapClosing = false;
-                // Don't change the map's internal state - just update UI visibility
                 if (browser) {
                     localStorage.setItem('minimap', 'false');
                 }
@@ -560,6 +589,11 @@
     }
 
     function toggleEntities() {
+        // If spawn or tutorial is active, don't allow opening
+        if ($needsSpawn || isTutorialVisible) {
+            return;
+        }
+        
         if (showEntities) {
             entitiesClosing = true;
             setTimeout(() => {
@@ -840,7 +874,8 @@
             <button 
                 class="control-button minimap-button" 
                 onclick={toggleMinimap}
-                aria-label={showMinimap ? "Hide minimap" : "Show minimap"}>
+                aria-label={showMinimap ? "Hide minimap" : "Show minimap"}
+                disabled={$needsSpawn || isTutorialVisible}>
                 {#if showMinimap || minimapClosing}
                     <Close size="1.2em" extraClass="close-icon-dark" />
                 {:else}
@@ -849,16 +884,19 @@
             </button>
         </div>
         
-        <button 
-            class="control-button entity-button" 
-            onclick={toggleEntities}
-            aria-label={showEntities ? "Hide entities" : "Show entities"}>
-            {#if showEntities || entitiesClosing}
-                <Close size="1.2em" extraClass="close-icon-dark" />
-            {:else}
-                <span class="button-text">E</span>
-            {/if}
-        </button>
+        <div class="entity-controls">
+            <button 
+                class="control-button entity-button" 
+                onclick={toggleEntities}
+                aria-label={showEntities ? "Hide entities" : "Show entities"}
+                disabled={$needsSpawn || isTutorialVisible}>
+                {#if showEntities || entitiesClosing}
+                    <Close size="1.2em" extraClass="close-icon-dark" />
+                {:else}
+                    <span class="button-text">E</span>
+                {/if}
+            </button>
+        </div>
         
         {#if showMinimap || minimapClosing}
             <Minimap closing={minimapClosing} />
@@ -890,7 +928,7 @@
             <Axes />
         {/if}
 
-        <Tutorial />
+        <Tutorial onVisibilityChange={handleTutorialVisibility} />
         
         {#if $needsSpawn && $user}
             <SpawnMenu onSpawn={handleSpawnComplete} />
@@ -1052,11 +1090,11 @@
         z-index: 999;
     }
     
-    .entity-button {
+    .entity-controls {
         position: absolute;
-        bottom: 0.5em;
-        left: 2.5em; /* Positioned to be next to the help button */
-        z-index: 999;
+        bottom: 2em;
+        left: 4em;
+        z-index: 1001;
     }
     
     .control-button {
@@ -1082,9 +1120,14 @@
         animation: fadeInButton 0.7s ease-out 0.5s forwards;
     }
     
-    .control-button:hover {
+    .control-button:hover:not(:disabled) {
         background-color: rgba(255, 255, 255, 0.95);
         border-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    .control-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
     
     .button-text {

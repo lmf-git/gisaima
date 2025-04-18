@@ -4,8 +4,8 @@
   import Close from '../../components/icons/Close.svelte';
   import { map } from "../../lib/stores/map.js";
 
-  // Remove detailed prop
-  const { } = $props();
+  // Use a function prop for visibility changes
+  const { onVisibilityChange = () => {} } = $props();
   
   let closed = $state(false)
   let ready = $state(false)
@@ -21,6 +21,9 @@
     if (browser) {
       closed = localStorage.getItem('tutorial-state') === 'closed'
       ready = true
+      
+      // Notify parent of initial tutorial visibility state using the prop function
+      onVisibilityChange(ready && !closed);
     }
   }
   
@@ -29,11 +32,13 @@
   const close = () => {
     closed = true
     localStorage.setItem('tutorial-state', 'closed')
+    onVisibilityChange(false);
   }
   
   const open = () => {
     closed = false
     localStorage.setItem('tutorial-state', 'open')
+    onVisibilityChange(true);
   }
   
   // Toggle functions for each section
