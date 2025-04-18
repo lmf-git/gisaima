@@ -1012,7 +1012,7 @@
             onmouseenter={() => handleTileHover(cell)}
             aria-label={`Coordinates ${cell.x},${cell.y}`}
           >
-            <!-- Add structure icons -->
+            <!-- Structure icons -->
             {#if cell.structure}
               <div class="structure-icon-container">
                 {#if cell.structure.type === 'spawn'}
@@ -1023,12 +1023,12 @@
               </div>
             {/if}
             
-            <!-- Add player position indicator if this is the current player's location -->
+            <!-- Player position indicator -->
             {#if isPlayerPosition(cell.x, cell.y)}
               <div class="player-position-indicator"></div>
             {/if}
             
-            <!-- Add entity indicators container -->
+            <!-- Entity indicators -->
             <div class="entity-indicators">
               {#if cell.players?.length > 0}
                 <div class="entity-indicator player-indicator" class:current-player-indicator={isCurrentPlayerTile}>

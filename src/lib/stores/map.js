@@ -272,9 +272,9 @@ export const chunks = derived(
     // Skip if map is not ready
     if (!$map.ready) return set(new Set());
     
-    // IMPORTANT FIX: Always load expanded chunks regardless of minimap state
+    // Always load expanded chunks regardless of minimap UI state
     // This ensures entities in main view are loaded properly
-    const expandedFactor = 1; // Always use expanded factor
+    const expandedFactor = 1;
     const colsRadius = Math.ceil($map.cols * (1 + expandedFactor * (EXPANDED_COLS_FACTOR - 1)) / 2);
     const rowsRadius = Math.ceil($map.rows * (1 + expandedFactor * (EXPANDED_ROWS_FACTOR - 1)) / 2);
     
@@ -420,7 +420,7 @@ export const coordinates = derived(
       return set([]);
     }
     
-    // IMPORTANT FIX: Always calculate the expanded grid regardless of minimap UI state
+    // Always calculate the expanded grid regardless of minimap UI state
     // This ensures entities are always loaded and available
     const gridCols = Math.floor($map.cols * EXPANDED_COLS_FACTOR);
     const gridRows = Math.floor($map.rows * EXPANDED_ROWS_FACTOR);
@@ -434,7 +434,7 @@ export const coordinates = derived(
     const highlightedX = $highlightedCoords?.x;
     const highlightedY = $highlightedCoords?.y;
 
-    // Calculate main view boundaries - use standard grid size for display purposes
+    // Calculate main view boundaries for display purposes
     const mainViewMinX = viewportCenterX - Math.floor($map.cols / 2);
     const mainViewMaxX = viewportCenterX + Math.floor($map.cols / 2);
     const mainViewMinY = viewportCenterY - Math.floor($map.rows / 2);
@@ -453,7 +453,7 @@ export const coordinates = derived(
           Math.pow(globalY - targetY, 2)
         );
         
-        // IMPORTANT FIX: Keep isInMainView calculation consistent regardless of minimap state
+        // Keep isInMainView calculation consistent regardless of minimap state
         const isInMainView = (
           x >= mainViewMinX && x <= mainViewMaxX && 
           y >= mainViewMinY && y <= mainViewMaxY
@@ -467,12 +467,6 @@ export const coordinates = derived(
         const groups = $entities.groups[locationKey] || [];
         const players = $entities.players[locationKey] || [];
         const items = $entities.items[locationKey] || [];
-        
-        // Add logging for debugging
-        if (isInMainView && (structure || groups.length > 0 || players.length > 0 || items.length > 0)) {
-          console.debug(`Tile ${globalX},${globalY} has entities:`, 
-            { structure: !!structure, groups: groups.length, players: players.length, items: items.length });
-        }
         
         result.push({
           x: globalX,

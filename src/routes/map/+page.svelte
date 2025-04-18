@@ -495,8 +495,7 @@
             setTimeout(() => {
                 showMinimap = false;
                 minimapClosing = false;
-                // IMPORTANT: Don't update the map's internal minimap state when closing UI
-                // This ensures entities keep loading with expanded area
+                // Don't change the map's internal state - just update UI visibility
                 if (browser) {
                     localStorage.setItem('minimap', 'false');
                 }
@@ -514,8 +513,6 @@
             }
             
             showMinimap = true;
-            // UI minimap state is set to true, but we shouldn't need to update map store
-            // as it should always be loading expanded data regardless
             if (browser) {
                 localStorage.setItem('minimap', 'true');
             }
