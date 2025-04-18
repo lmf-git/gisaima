@@ -47,6 +47,7 @@
     import Move from '../../components/map/Move.svelte';
     import AttackGroups from '../../components/map/AttackGroups.svelte';
     import JoinBattle from '../../components/map/JoinBattle.svelte';
+    import Demobilize from '../../components/map/Demobilize.svelte';
 
     let detailed = $state(false);
     let loading = $state(true);
@@ -85,6 +86,13 @@
 
     let showAttack = $state(false);
     let showJoinBattle = $state(false);
+
+    let showActions = $state(false);
+    let selectedTile = $state(null);
+    
+    let showMobilize = $state(false);
+    let showMove = $state(false);
+    let showDemobilize = $state(false); // Add state for demobilize dialog
 
     // Add new effect to watch optimizePath changes
     $effect(() => {
@@ -483,13 +491,6 @@
         }
     }
 
-    let showActions = $state(false);
-    let selectedTile = $state(null);
-    
-    let showMobilize = $state(false);
-    
-    let showMove = $state(false);
-    
     function openActionsForTile(cell) {
         selectedTile = cell;
         showActions = true;
@@ -548,6 +549,16 @@
     
     function closeJoinBattlePopup() {
         showJoinBattle = false;
+        setHighlighted(null, null);
+    }
+    
+    function openDemobilizePopup() {
+        showDemobilize = true;
+        showActions = false;
+    }
+    
+    function closeDemobilizePopup() {
+        showDemobilize = false;
         setHighlighted(null, null);
     }
     
@@ -794,6 +805,11 @@
             return;
         }
         
+        if (action === 'demobilize') {
+            openDemobilizePopup();
+            return;
+        }
+        
         switch(action) {
             case 'explore':
                 console.log(`Exploring ${tile.x}, ${tile.y}`);
@@ -891,16 +907,12 @@
         // Calculate the next world tick time
         const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
         
-        // World ticks are typically aligned to specific time intervals
-        // For example, every 5 minutes, aligned to the hour 
         const tickIntervalMs = 300000; // 5 minutes in milliseconds
         const adjustedInterval = Math.round(tickIntervalMs / worldSpeed);
         
-        // Calculate the next tick aligned to the interval
         const msIntoCurrentInterval = now % adjustedInterval;
         const msToNextTick = adjustedInterval - msIntoCurrentInterval;
         
-        // Set the readyAt time to the next world tick
         const readyAt = now + msToNextTick;
         
         const playerUid = $currentPlayer?.uid;
@@ -914,9 +926,7 @@
         
         const selectedUnits = [];
         
-        // Add selected existing units
         if (units && units.length > 0) {
-            // Find the units from the original groups
             if (tile.groups && tile.groups.length > 0) {
                 for (const group of tile.groups) {
                     if (group.units && Array.isArray(group.units)) {
@@ -933,7 +943,6 @@
             }
         }
         
-        // Add the player if requested
         if (includePlayer && $currentPlayer) {
             selectedUnits.push({
                 id: playerUid,
@@ -947,7 +956,6 @@
         
         const updates = {};
         
-        // Create the new group
         updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${newGroupId}`] = {
             id: newGroupId,
             name: name || "New Force",
@@ -964,30 +972,24 @@
             units: selectedUnits
         };
         
-        // If player is being mobilized, remove them from the tile's players list
         if (includePlayer) {
-            // Find the player's index in the tile's players array
             const playerIndex = tile.players?.findIndex(p => p.id === playerUid);
             
             if (playerIndex !== undefined && playerIndex >= 0 && tile.players) {
-                // Create a new array without the player
                 const updatedPlayers = [...tile.players];
                 updatedPlayers.splice(playerIndex, 1);
                 
-                // If there are still players, update the list; otherwise remove it
                 if (updatedPlayers.length > 0) {
                     updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/players`] = updatedPlayers;
                 } else {
                     updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/players`] = null;
                 }
                 
-                // Also update the player's last location to show they're in a group
                 updates[`players/${playerUid}/worlds/${$game.currentWorld}/inGroup`] = newGroupId;
                 updates[`players/${playerUid}/worlds/${$game.currentWorld}/lastGroupJoin`] = now;
             }
         }
         
-        // Apply all updates
         update(ref(db), updates)
             .then(() => {
                 console.log('Mobilization started:', { 
@@ -1000,6 +1002,29 @@
             .catch(error => {
                 console.error('Mobilization error:', error);
             });
+    }
+
+    function handleDemobilize(eventData) {
+        const { groupId, targetStructureId, locationX, locationY, worldId, tile } = eventData;
+        console.log('Demobilizing:', { groupId, targetStructureId, locationX, locationY, worldId });
+        
+        const functions = getFunctions();
+        const demobiliseUnits = httpsCallable(functions, 'demobiliseUnits');
+        
+        demobiliseUnits({
+            groupId,
+            targetStructureId,
+            locationX,
+            locationY,
+            worldId: $game.currentWorld
+        })
+        .then((result) => {
+            console.log('Demobilization started:', result.data);
+        })
+        .catch((error) => {
+            console.error('Demobilization error:', error);
+            alert(`Error: ${error.message || 'Failed to demobilize group'}`);
+        });
     }
 </script>
 
@@ -1131,6 +1156,14 @@
                 tile={selectedTile}
                 onClose={closeJoinBattlePopup}
                 onJoinBattle={handleJoinBattle}
+            />
+        {/if}
+
+        {#if showDemobilize && selectedTile}
+            <Demobilize
+                tile={selectedTile}
+                onClose={closeDemobilizePopup}
+                onDemobilize={handleDemobilize}
             />
         {/if}
 
