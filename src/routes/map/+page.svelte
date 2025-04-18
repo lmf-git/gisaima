@@ -552,11 +552,12 @@
     }
     
     function handlePathDrawingStart(eventData) {
-        console.log('Starting path drawing:', eventData); // Add logging
+        console.log('Starting path drawing:', eventData);
         const { groupId, startPoint } = eventData;
         
         // Always reset first
         isPathDrawingMode = false;
+        currentPath = [];
         
         // Ensure move dialog is closed
         showMove = false;
@@ -570,153 +571,201 @@
             isPathDrawingMode = true;
             pathDrawingGroup = groupId;
             
+            console.log('Path drawing mode activated with group:', groupId);
+            console.log('Initial path:', currentPath);
+            
             // Update move component ref if it exists
-            if (moveComponentRef) {
+            if (moveComponentRef && typeof moveComponentRef.updateCustomPath === 'function') {
                 moveComponentRef.updateCustomPath(currentPath);
             }
         }, 100);
     }
-    
-    function handlePathDrawingCancel() {
-        isPathDrawingMode = false;
-        pathDrawingGroup = null;
-        currentPath = [];
-    }
-    
+
     function handlePathPoint(point) {
-        if (!isPathDrawingMode) return;
+        if (!isPathDrawingMode) {
+            console.log('Not in path drawing mode, ignoring point');
+            return;
+        }
+        
+        console.log('Page: Received path point:', point);
         
         if (currentPath.length > 0) {
             const lastPoint = currentPath[currentPath.length - 1];
             const dx = Math.abs(point.x - lastPoint.x);
             const dy = Math.abs(point.y - lastPoint.y);
             
-            if (dx > 1 || dy > 1) {
-                console.log('Skipping non-adjacent point');
+            // Don't add the same point twice
+            if (lastPoint.x === point.x && lastPoint.y === point.y) {
+                console.log('Point is duplicate of last point, skipping');
                 return;
             }
             
+            // Check if point already exists in path
             const pointExists = currentPath.some(p => p.x === point.x && p.y === point.y);
             if (pointExists) {
                 console.log('Point already in path');
                 return;
             }
             
-            // Path optimization: Check if we can take a more direct route
-            if (optimizePath && currentPath.length >= 2) {
-                // Try to optimize by checking if we can remove intermediate points
-                const optimizedPath = optimizePathPoints([...currentPath, point]);
-                if (optimizedPath.length < currentPath.length + 1) {
-                    // We found a more optimal path
-                    currentPath = optimizedPath;
-                    if (moveComponentRef) {
-                        moveComponentRef.updateCustomPath(currentPath);
+            // For non-adjacent points, calculate path between them
+            if (dx > 1 || dy > 1) {
+                console.log('Calculating path to non-adjacent point');
+                const intermediatePath = calculatePathBetweenPoints(
+                    lastPoint.x, lastPoint.y, 
+                    point.x, point.y
+                );
+                
+                // Check if adding these points would exceed 20 steps
+                if (currentPath.length + intermediatePath.length > 20) {
+                    console.log('Path exceeds 20 steps limit, truncating...');
+                    
+                    // Calculate how many points we can add without exceeding limit
+                    const pointsToAdd = 20 - currentPath.length;
+                    if (pointsToAdd <= 0) {
+                        console.log('Path already at maximum length');
+                        return;
                     }
+                    
+                    // Add only allowed number of points
+                    currentPath = [
+                        ...currentPath,
+                        ...intermediatePath.slice(0, pointsToAdd)
+                    ];
+                } else {
+                    // Add all intermediate points
+                    currentPath = [...currentPath, ...intermediatePath];
+                }
+            } else {
+                // Check if adding this point would exceed 20 steps
+                if (currentPath.length >= 20) {
+                    console.log('Maximum path length reached (20 steps)');
                     return;
                 }
+                
+                // For adjacent point, add directly
+                currentPath = [...currentPath, point];
             }
+        } else {
+            // First point in path
+            currentPath = [point];
         }
         
-        currentPath = [...currentPath, point];
+        console.log('Updated path in page component:', currentPath);
         
-        if (moveComponentRef) {
+        // Update move component ref with new path data
+        if (moveComponentRef && typeof moveComponentRef.updateCustomPath === 'function') {
             moveComponentRef.updateCustomPath(currentPath);
         }
     }
-    
-    // Improve the path optimization algorithm
-    function optimizePathPoints(path) {
-        if (path.length <= 2) return path; // Nothing to optimize with just 2 points
+
+    // Add helper function to calculate path between points
+    function calculatePathBetweenPoints(startX, startY, endX, endY) {
+        const path = [];
         
-        let optimized = [path[0]]; // Start with first point
-        let current = 0;
+        // Calculate steps using Bresenham's line algorithm
+        const dx = Math.abs(endX - startX);
+        const dy = Math.abs(endY - startY);
+        const sx = startX < endX ? 1 : -1;
+        const sy = startY < endY ? 1 : -1;
         
-        while (current < path.length - 1) {
-            // Try to find the furthest point we can directly reach from current
-            let farthest = current + 1;
+        let err = dx - dy;
+        let x = startX;
+        let y = startY;
+        
+        // First point is already in the path, so we skip it
+        
+        // Generate intermediate steps
+        while (x !== endX || y !== endY) {
+            const e2 = 2 * err;
             
-            // Search for furthest reachable point
-            for (let i = path.length - 1; i > current; i--) {
-                if (canDirectlyConnect(path[current], path[i])) {
-                    farthest = i;
-                    break; // Take the furthest point immediately
-                }
+            if (e2 > -dy) {
+                err -= dy;
+                x += sx;
             }
             
-            // If no farther point found, try next point
-            if (farthest === current + 1) {
-                // Just add the next point and continue
-                optimized.push(path[farthest]);
-                current = farthest;
-                continue;
+            if (e2 < dx) {
+                err += dx;
+                y += sy;
             }
             
-            // Add the farthest reachable point to our optimized path
-            optimized.push(path[farthest]);
-            current = farthest;
+            // Add intermediate point
+            path.push({ x, y });
         }
         
-        return optimized;
+        return path;
     }
-    
-    // Improve the canDirectlyConnect function to better check line of sight
-    function canDirectlyConnect(p1, p2) {
-        // For simple adjacency check:
-        const dx = Math.abs(p2.x - p1.x);
-        const dy = Math.abs(p2.y - p1.y);
-        
-        // If they're directly adjacent, we can connect them
-        if (dx <= 1 && dy <= 1) return true;
-        
-        // For same row or column, we can connect directly
-        if (p1.x === p2.x || p1.y === p2.y) return true;
-        
-        // For diagonal lines, check if there's a clear diagonal path
-        if (dx === dy) return true;
-        
-        // Otherwise, points require intermediate steps
-        return false;
-    }
-    
+
     function confirmPathDrawing() {
-        if (isPathDrawingMode && moveComponentRef && pathDrawingGroup) {
-            // Call the Cloud Function directly here to ensure it's executed
-            const functions = getFunctions();
-            const moveGroup = httpsCallable(functions, 'moveGroup');
-            
-            const startPoint = currentPath[0];
-            const endPoint = currentPath[currentPath.length - 1];
-            
-            moveGroup({
-                groupId: pathDrawingGroup,
-                fromX: startPoint.x,
-                fromY: startPoint.y,
-                toX: endPoint.x,
-                toY: endPoint.y,
-                path: currentPath,
-                worldId: $game.currentWorld
-            })
-            .then((result) => {
-                console.log('Path movement started:', result.data);
-            })
-            .catch((error) => {
-                console.error('Path movement error:', error);
-            });
-            
-            // Also call moveComponentRef.confirmCustomPath() for UI updates
+        if (!isPathDrawingMode || !pathDrawingGroup || currentPath.length < 2) {
+            console.warn('Cannot confirm path drawing: Invalid state or path too short');
+            return;
+        }
+        
+        console.log('Confirming path drawing with', currentPath.length, 'points');
+        
+        // Call the Cloud Function directly
+        const functions = getFunctions();
+        const moveGroup = httpsCallable(functions, 'moveGroup');
+        
+        const startPoint = currentPath[0];
+        const endPoint = currentPath[currentPath.length - 1];
+        
+        console.log('Calling moveGroup with path:', {
+            groupId: pathDrawingGroup,
+            fromX: startPoint.x,
+            fromY: startPoint.y,
+            toX: endPoint.x,
+            toY: endPoint.y,
+            path: currentPath,
+            worldId: $game.currentWorld
+        });
+        
+        moveGroup({
+            groupId: pathDrawingGroup,
+            fromX: startPoint.x,
+            fromY: startPoint.y,
+            toX: endPoint.x,
+            toY: endPoint.y,
+            path: currentPath,
+            worldId: $game.currentWorld
+        })
+        .then((result) => {
+            console.log('Path movement started:', result.data);
+        })
+        .catch((error) => {
+            console.error('Path movement error:', error);
+            alert(`Error: ${error.message || 'Failed to start movement'}`);
+        });
+        
+        // Also call moveComponentRef.confirmCustomPath() for UI updates
+        if (moveComponentRef && typeof moveComponentRef.confirmCustomPath === 'function') {
             moveComponentRef.confirmCustomPath();
         }
         
+        // Reset path drawing state
         isPathDrawingMode = false;
         pathDrawingGroup = null;
+        currentPath = [];
     }
-    
+
     function cancelPathDrawing() {
         isPathDrawingMode = false;
         pathDrawingGroup = null;
         currentPath = [];
         
         if (moveComponentRef) {
+            moveComponentRef.cancelPathDrawing();
+        }
+    }
+
+    function handlePathDrawingCancel() {
+        console.log('Path drawing cancelled');
+        isPathDrawingMode = false;
+        pathDrawingGroup = null;
+        currentPath = [];
+        
+        // If we have a reference to the Move component, call its cancelPathDrawing method
+        if (moveComponentRef && typeof moveComponentRef.cancelPathDrawing === 'function') {
             moveComponentRef.cancelPathDrawing();
         }
     }
@@ -1095,10 +1144,17 @@
                     </label>
                 </div>
                 <div class="path-buttons">
-                    <button class="cancel-path-btn" onclick={cancelPathDrawing}>
+                    <button 
+                        class="cancel-path-btn" 
+                        onclick={handlePathDrawingCancel}
+                    >
                         Cancel
                     </button>
-                    <button class="confirm-path-btn" onclick={confirmPathDrawing} disabled={currentPath.length < 2}>
+                    <button 
+                        class="confirm-path-btn" 
+                        disabled={currentPath.length < 2}
+                        onclick={confirmPathDrawing}
+                    >
                         Confirm Path
                     </button>
                 </div>

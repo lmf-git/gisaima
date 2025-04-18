@@ -26,5 +26,10 @@
       }
     ]
   },
-  "database": {}
+  "database": {},
+  "emulators": {
+    "functions": {
+      "port": 5001
+    }
+  }
 }

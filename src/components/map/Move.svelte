@@ -149,20 +149,36 @@
     const startPoint = { x: tile.x, y: tile.y };
     customPath = [startPoint]; // Set it in the component state
     
+    // Log that we're enabling path drawing mode
+    console.log('Enabling path drawing mode with starting point:', startPoint);
+    
     // Close the dialog completely to avoid obstruction
     onClose(false, true);
     
-    // Direct function call with plain object - no event.detail needed in runes
+    // Direct function call with plain object
     if (onPathDrawingStart) {
-      onPathDrawingStart({
-        groupId: selectedGroup.id,
-        startPoint
-      });
+      try {
+        onPathDrawingStart({
+          groupId: selectedGroup.id,
+          startPoint
+        });
+        console.log('Path drawing start event dispatched');
+      } catch (error) {
+        console.error('Error starting path drawing:', error);
+      }
+    } else {
+      console.warn('No onPathDrawingStart handler provided');
     }
   }
   
   // Function to update the path with new points
   export function updateCustomPath(newPoints) {
+    if (!newPoints || !Array.isArray(newPoints)) {
+      console.warn('Invalid points passed to updateCustomPath:', newPoints);
+      return;
+    }
+    
+    console.log('Move component: Updating custom path with points:', newPoints);
     customPath = newPoints;
   }
   
@@ -217,17 +233,33 @@
   
   // Function to confirm the custom path
   export function confirmCustomPath() {
-    if (customPath.length < 2) return; // Need at least start and end
+    if (!customPath || customPath.length < 2) {
+      console.warn('Cannot confirm path: Path too short or missing');
+      return;
+    }
+    
+    console.log('Confirming custom path with', customPath.length, 'points');
+    
+    // Ensure we have the required data
+    if (!selectedGroup) {
+      console.error('No group selected for movement');
+      return;
+    }
     
     const functions = getFunctions();
-    const moveGroup = httpsCallable(functions, 'moveGroup');
+    const moveGroupFunction = httpsCallable(functions, 'moveGroup');
     
-    moveGroup({
+    const startPoint = customPath[0];
+    const endPoint = customPath[customPath.length - 1];
+    
+    console.log('Calling moveGroup with path:', customPath);
+    
+    moveGroupFunction({
       groupId: selectedGroup.id,
-      fromX: tile.x,
-      fromY: tile.y,
-      toX: customPath[customPath.length - 1].x,
-      toY: customPath[customPath.length - 1].y,
+      fromX: startPoint.x,
+      fromY: startPoint.y,
+      toX: endPoint.x,
+      toY: endPoint.y,
       path: customPath,
       worldId: $game.currentWorld
     })
@@ -238,11 +270,8 @@
       if (onMove) {
         onMove({
           groupId: selectedGroup.id,
-          from: { x: tile.x, y: tile.y },
-          to: { 
-            x: customPath[customPath.length - 1].x, 
-            y: customPath[customPath.length - 1].y 
-          },
+          from: { x: startPoint.x, y: startPoint.y },
+          to: { x: endPoint.x, y: endPoint.y },
           path: customPath
         });
       }
@@ -250,6 +279,7 @@
     .catch((error) => {
       console.error('Custom path movement error:', error);
       // Could show an error message to the user here
+      alert(`Error: ${error.message || 'Failed to start movement'}`);
     });
     
     // Reset states

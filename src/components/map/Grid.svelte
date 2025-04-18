@@ -393,6 +393,7 @@
     if (tileX !== undefined && tileY !== undefined) {
       if (isPathDrawingMode) {
         const point = { x: tileX, y: tileY };
+        console.log('Grid click in path drawing mode:', point);
         handlePathPoint(point);
       } else {
         console.log('Moving to clicked tile:', { x: tileX, y: tileY });
@@ -411,6 +412,90 @@
     }
     
     event.preventDefault();
+  }
+
+  function handlePathPoint(point) {
+    if (!isPathDrawingMode) {
+        console.log('Not in path drawing mode, ignoring point');
+        return;
+    }
+    
+    console.log('Grid: Adding path point:', point);
+    
+    // Check if point already exists in path
+    if (customPathPoints.length > 0) {
+        const lastPoint = customPathPoints[customPathPoints.length - 1];
+        
+        // Don't add if it's the same as the last point
+        if (lastPoint.x === point.x && lastPoint.y === point.y) {
+            console.log('Point is duplicate of last point, skipping');
+            return;
+        }
+        
+        // Check if point already exists in path
+        const pointExists = customPathPoints.some(p => p.x === point.x && p.y === point.y);
+        if (pointExists) {
+            console.log('Point already in path');
+            return;
+        }
+        
+        const dx = Math.abs(point.x - lastPoint.x);
+        const dy = Math.abs(point.y - lastPoint.y);
+        
+        // For non-adjacent points, calculate path between them
+        if (dx > 1 || dy > 1) {
+            console.log('Calculating path to non-adjacent point');
+            const intermediatePath = calculatePathBetweenPoints(
+                lastPoint.x, lastPoint.y, 
+                point.x, point.y
+            );
+            
+            // Check if adding these points would exceed 20 steps
+            if (customPathPoints.length + intermediatePath.length > 20) {
+                console.log('Path exceeds 20 steps limit, truncating...');
+                
+                // Calculate how many points we can add without exceeding limit
+                const pointsToAdd = 20 - customPathPoints.length;
+                if (pointsToAdd <= 0) {
+                    console.log('Path already at maximum length');
+                    return;
+                }
+                
+                // Add only allowed number of points
+                customPathPoints = [
+                    ...customPathPoints,
+                    ...intermediatePath.slice(0, pointsToAdd)
+                ];
+            } else {
+                // Add all intermediate points
+                customPathPoints = [...customPathPoints, ...intermediatePath];
+            }
+        } else {
+            // Check if adding this point would exceed 20 steps
+            if (customPathPoints.length >= 20) {
+                console.log('Maximum path length reached (20 steps)');
+                return;
+            }
+            
+            // For adjacent or first point, add directly
+            customPathPoints = [...customPathPoints, point];
+        }
+    } else {
+        // First point in path
+        customPathPoints = [point];
+    }
+    
+    console.log('Updated path points:', customPathPoints);
+    
+    // Call the parent function with the entire path, not just the new point
+    if (onAddPathPoint) {
+        onAddPathPoint(point);
+    }
+    
+    // Update move component
+    if (moveComponentRef && typeof moveComponentRef.updateCustomPath === 'function') {
+        moveComponentRef.updateCustomPath(customPathPoints);
+    }
   }
 
   function handleKeyDown(event) {
@@ -677,87 +762,6 @@
     }
     
     return path;
-  }
-  
-  function handlePathPoint(point) {
-    if (!isPathDrawingMode) {
-      console.log('Not in path drawing mode, ignoring point');
-      return;
-    }
-    
-    console.log('Adding path point:', point);
-    
-    if (customPathPoints.length > 0) {
-      const lastPoint = customPathPoints[customPathPoints.length - 1];
-      const dx = Math.abs(point.x - lastPoint.x);
-      const dy = Math.abs(point.y - lastPoint.y);
-      
-      // Check if point already exists in path
-      const pointExists = customPathPoints.some(p => p.x === point.x && p.y === point.y);
-      if (pointExists) {
-        console.log('Point already in path');
-        return;
-      }
-      
-      // For non-adjacent points, calculate path between them
-      if (dx > 1 || dy > 1) {
-        console.log('Calculating path to non-adjacent point');
-        const intermediatePath = calculatePathBetweenPoints(
-          lastPoint.x, lastPoint.y, 
-          point.x, point.y
-        );
-        
-        // Check if adding these points would exceed 20 steps
-        if (customPathPoints.length + intermediatePath.length > 20) {
-          console.log('Path exceeds 20 steps limit, truncating...');
-          
-          // Calculate how many points we can add without exceeding limit
-          const pointsToAdd = 20 - customPathPoints.length;
-          if (pointsToAdd <= 0) {
-            console.log('Path already at maximum length');
-            return;
-          }
-          
-          // Add only allowed number of points
-          customPathPoints = [
-            ...customPathPoints,
-            ...intermediatePath.slice(0, pointsToAdd)
-          ];
-        } else {
-          // Add all intermediate points
-          customPathPoints = [...customPathPoints, ...intermediatePath];
-        }
-        
-        // Update move component and dispatch to parent
-        if (moveComponentRef) {
-          moveComponentRef.updateCustomPath(customPathPoints);
-        }
-        
-        // Call the function prop directly with the end point
-        if (onAddPathPoint) {
-          onAddPathPoint(point);
-        }
-        return;
-      }
-    }
-    
-    // Check if adding this point would exceed 20 steps
-    if (customPathPoints.length >= 20) {
-      console.log('Maximum path length reached (20 steps)');
-      return;
-    }
-    
-    // For adjacent or first point, add directly (original behavior)
-    customPathPoints = [...customPathPoints, point];
-    
-    if (moveComponentRef) {
-      moveComponentRef.updateCustomPath(customPathPoints);
-    }
-    
-    // Call the function prop directly
-    if (onAddPathPoint) {
-      onAddPathPoint(point);
-    }
   }
 </script>
 
@@ -1505,9 +1509,8 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 5; /* Keep this lower than UI components */
+    z-index: 50; /* Increased from 5 to ensure it's above tiles but below UI */
     overflow: visible;
-    /* Fix wobbling issue by ensuring proper positioning */
     transform: translateZ(0);
     will-change: transform;
     touch-action: none;
@@ -1515,6 +1518,7 @@
   
   .path-group {
     transition: opacity 0.3s ease;
+    pointer-events: none; /* Ensure paths don't block clicks */
   }
   
   .path-group:hover {
@@ -1522,34 +1526,35 @@
   }
   
   .current-player-path {
-    z-index: 6;
+    z-index: 55; /* Ensure current player paths are more visible */
   }
   
   @keyframes dash {
     to {
-      stroke-dashoffset: -26; /* Increased for more visible animation */
+      stroke-dashoffset: -26; 
     }
   }
   
   .path-layer path {
     animation: dash 40s linear infinite;
-    /* Adding default stroke properties for all paths */
     stroke-linejoin: round;  
     stroke-linecap: round;
     vector-effect: non-scaling-stroke;
     stroke-width: 1;
+    pointer-events: none;
   }
   
-  /* Custom path animations for different path types */
   .custom-path-group path {
-    animation: dash 16s linear infinite; /* Faster animation for custom path */
-    stroke-dasharray: 6,4; /* Ensure consistent dash pattern */
+    animation: dash 16s linear infinite;
+    stroke-dasharray: 6,4;
+    stroke-width: 2; /* Make custom path thicker */
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5)); /* Add glow effect */
   }
   
-  /* Make current player paths animate slightly faster to be more noticeable */
   .current-player-path path {
     animation: dash 30s linear infinite;
-    stroke-dasharray: 8,4; /* Slightly different dash pattern */
+    stroke-dasharray: 8,4;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3));
   }
   
   .map-container {
@@ -1562,7 +1567,7 @@
   }
 
   .custom-path-group {
-    z-index: 10;
+    z-index: 60; /* Ensure custom path is on top */
   }
   
   .path-drawing-mode .map {
@@ -1572,7 +1577,7 @@
   .map-container.path-drawing-mode .map:not(.moving) .tile:hover {
     box-shadow: inset 0 0 0 3px rgba(255, 255, 0, 0.8) !important;
     position: relative;
-    z-index: 5;
+    z-index: 45; /* Lower than path layer but higher than other tiles */
   }
   
   .path-drawing-indicator {
@@ -1594,5 +1599,16 @@
   @keyframes pulse-indicator {
     0% { opacity: 0.7; }
     100% { opacity: 1; }
+  }
+
+  /* Make sure tiles don't block paths */
+  .tile {
+    /* ...existing tile styles... */
+    z-index: 1;
+  }
+
+  /* Make center tile appear above other tiles */
+  .tile.center {
+    z-index: 3;
   }
 </style>
