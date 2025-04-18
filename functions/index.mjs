@@ -11,6 +11,7 @@ import { demobiliseUnits } from './actions/demobilize.mjs';
 import { attackGroup } from './actions/attackGroup.mjs';
 import { joinBattle } from './actions/joinBattle.mjs';
 import { startGathering } from './actions/gather.mjs';
+import { moveGroup } from './actions/move.mjs'; // Import the new moveGroup function
 
 // Initialize Firebase Admin SDK once at the entry point
 initializeApp();
@@ -22,5 +23,6 @@ export {
   demobiliseUnits,
   attackGroup,
   joinBattle,
-  startGathering
+  startGathering,
+  moveGroup // Export the new moveGroup function
 };

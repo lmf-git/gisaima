@@ -783,36 +783,24 @@
         const { groupId, from, to, path } = eventData;
         console.log('Moving group:', { groupId, from, to, path });
         
-        const chunkSize = 20;
-        const chunkX = Math.floor(from.x / chunkSize);
-        const chunkY = Math.floor(from.y / chunkSize);
-        const chunkKey = `${chunkX},${chunkY}`;
-        const tileKey = `${from.x},${from.y}`;
+        const functions = getFunctions();
+        const moveGroup = httpsCallable(functions, 'moveGroup');
         
-        const now = Date.now();
-        const moveSpeed = 1;
-        const worldSpeed = $game.worldInfo[$game.currentWorld]?.speed || 1.0;
-        
-        const updates = {};
-        
-        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'moving';
-        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/targetX`] = to.x;
-        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/targetY`] = to.y;
-        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/moveStarted`] = now;
-        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/moveSpeed`] = moveSpeed * worldSpeed;
-        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastUpdated`] = now;
-        
-        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/movementPath`] = path;
-        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/pathIndex`] = 0;
-        updates[`worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/nextMoveTime`] = now + (60000 / worldSpeed);
-        
-        update(ref(db), updates)
-            .then(() => {
-                console.log('Movement started:', { groupId, to, path });
-            })
-            .catch(error => {
-                console.error('Movement error:', error);
-            });
+        moveGroup({
+            groupId: groupId,
+            fromX: from.x,
+            fromY: from.y,
+            toX: to.x,
+            toY: to.y,
+            path: path,
+            worldId: $game.currentWorld
+        })
+        .then((result) => {
+            console.log('Movement started:', result.data);
+        })
+        .catch((error) => {
+            console.error('Movement error:', error);
+        });
     }
 
     function handleMobilize(eventData) {

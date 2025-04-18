@@ -1,7 +1,8 @@
 <script>
   import { fade, scale } from 'svelte/transition';
-  import { currentPlayer } from '../../lib/stores/game';
+  import { currentPlayer, game } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
+  import { getFunctions, httpsCallable } from "firebase/functions";
 
   // Props with default empty object/function to avoid destructuring errors
   const { 
@@ -218,21 +219,38 @@
   export function confirmCustomPath() {
     if (customPath.length < 2) return; // Need at least start and end
     
-    // Use the function prop directly
-    if (onMove) {
-      onMove({
-        groupId: selectedGroup.id,
-        from: {
-          x: tile.x, 
-          y: tile.y
-        },
-        to: {
-          x: customPath[customPath.length - 1].x, 
-          y: customPath[customPath.length - 1].y
-        },
-        path: customPath
-      });
-    }
+    const functions = getFunctions();
+    const moveGroup = httpsCallable(functions, 'moveGroup');
+    
+    moveGroup({
+      groupId: selectedGroup.id,
+      fromX: tile.x,
+      fromY: tile.y,
+      toX: customPath[customPath.length - 1].x,
+      toY: customPath[customPath.length - 1].y,
+      path: customPath,
+      worldId: $game.currentWorld
+    })
+    .then((result) => {
+      console.log('Custom path movement started:', result.data);
+      
+      // Use the function prop directly for UI updates if needed
+      if (onMove) {
+        onMove({
+          groupId: selectedGroup.id,
+          from: { x: tile.x, y: tile.y },
+          to: { 
+            x: customPath[customPath.length - 1].x, 
+            y: customPath[customPath.length - 1].y 
+          },
+          path: customPath
+        });
+      }
+    })
+    .catch((error) => {
+      console.error('Custom path movement error:', error);
+      // Could show an error message to the user here
+    });
     
     // Reset states
     isPathDrawingMode = false;
@@ -260,21 +278,35 @@
     if (isPathDrawingMode) {
       confirmCustomPath();
     } else if (targetX !== null && targetY !== null) {
-      // Original direction-based movement with direct event triggering
-      if (onMove) {
-        onMove({
-          groupId: selectedGroup.id,
-          from: {
-            x: tile.x, 
-            y: tile.y
-          },
-          to: {
-            x: targetX, 
-            y: targetY
-          },
-          path: movementPath
-        });
-      }
+      // Call the Cloud Function instead of direct database update
+      const functions = getFunctions();
+      const moveGroup = httpsCallable(functions, 'moveGroup');
+      
+      moveGroup({
+        groupId: selectedGroup.id,
+        fromX: tile.x,
+        fromY: tile.y,
+        toX: targetX,
+        toY: targetY,
+        path: movementPath,
+        worldId: $game.currentWorld
+      })
+      .then((result) => {
+        console.log('Movement started:', result.data);
+        if (onMove) {
+          // Still trigger onMove for local UI updates if needed
+          onMove({
+            groupId: selectedGroup.id,
+            from: { x: tile.x, y: tile.y },
+            to: { x: targetX, y: targetY },
+            path: movementPath
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('Movement error:', error);
+        // Could show an error message to the user here
+      });
       
       onClose(true);
     }
