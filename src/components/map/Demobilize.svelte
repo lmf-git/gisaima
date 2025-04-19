@@ -9,34 +9,24 @@
   import Fairy from '../icons/Fairy.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
 
-  // Props with default empty object to avoid destructuring errors
   const { tile = {}, onClose = () => {}, onDemobilize = () => {} } = $props();
   
-  // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
-  // Available groups for demobilization
   let availableGroups = $state([]);
-  // Selected group to demobilize
   let selectedGroup = $state(null);
-  // Selected storage destination
-  let selectedStorageDestination = $state('shared'); // Default to shared storage
-  // Error state
+  let selectedStorageDestination = $state('shared');
   let error = $state(null);
-  // Loading state
   let isLoading = $state(false);
   
-  // Get functions instance directly
   const functions = getFunctions();
   
-  // Initialize available groups based on tile content
   $effect(() => {
     if (!tile) return;
     
     const groups = [];
     const playerId = $currentPlayer?.uid;
     
-    // Check for groups owned by the player on this tile
     if (tile.groups && tile.groups.length > 0 && tile.structure) {
       tile.groups.forEach(group => {
         if (group.owner === playerId && 
@@ -56,7 +46,6 @@
     error = null;
   });
   
-  // Set selected group
   function selectGroup(groupId) {
     availableGroups = availableGroups.map(group => {
       return {
@@ -68,24 +57,19 @@
     selectedGroup = availableGroups.find(g => g.id === groupId) || null;
   }
 
-  // Add keyboard handling for group selection
   function handleGroupKeyDown(event, groupId) {
-    // Handle Enter or Space key to select
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       selectGroup(groupId);
     }
   }
   
-  // Function to handle demobilization
   async function startDemobilization() {
-    // Check if we have a selected group
     if (!selectedGroup || !tile?.structure) {
       error = "Please select a group and ensure there's a structure.";
       return;
     }
     
-    // Additional validation to prevent null object errors
     if (!selectedGroup.id) {
       error = "Invalid group selection. Group ID is missing.";
       return;
@@ -105,7 +89,6 @@
     isLoading = true;
     
     try {
-      // Call the cloud function directly
       const demobiliseFn = httpsCallable(functions, 'demobiliseUnits');
       
       const params = {
@@ -122,7 +105,6 @@
       
       console.log('Demobilization started:', result.data);
       
-      // Update UI or notify user of success
       const message = document.createElement('div');
       message.className = 'success-toast';
       message.textContent = 'Demobilization started!';
@@ -133,12 +115,10 @@
         setTimeout(() => message.remove(), 500);
       }, 2000);
       
-      // Simplified: Just signal success without passing redundant data
       if (onDemobilize) {
         onDemobilize(true);
       }
       
-      // Close dialog
       onClose();
       
     } catch (err) {
@@ -149,17 +129,14 @@
     }
   }
   
-  // Helper to check if demobilization is possible
   let canDemobilize = $derived(selectedGroup !== null && !isLoading);
 
-  // Close on escape key
   function handleKeyDown(event) {
     if (event.key === 'Escape') {
       onClose();
     }
   }
 
-  // Determine unit race icon component
   function getRaceIcon(race) {
     if (!race) return null;
     
@@ -255,21 +232,6 @@
                     id={`group-${group.id}`}
                     tabindex="-1"
                   />
-                  <div class="group-icon">
-                    {#if group.race}
-                      {#if group.race.toLowerCase() === 'human'}
-                        <Human extraClass="race-icon-small" />
-                      {:else if group.race.toLowerCase() === 'elf'}
-                        <Elf extraClass="race-icon-small" />
-                      {:else if group.race.toLowerCase() === 'dwarf'}
-                        <Dwarf extraClass="race-icon-small" />
-                      {:else if group.race.toLowerCase() === 'goblin'}
-                        <Goblin extraClass="race-icon-small" />
-                      {:else if group.race.toLowerCase() === 'fairy'}
-                        <Fairy extraClass="race-icon-small" />
-                      {/if}
-                    {/if}
-                  </div>
                   <div class="group-info">
                     <div class="group-name">{group.name || `Group ${group.id.slice(-4)}`}</div>
                     <div class="group-details">
@@ -278,6 +240,9 @@
                       {/if}
                       {#if group.unitCount || (group.units && group.units.length)}
                         <span class="unit-count">Units: {group.unitCount || group.units.length}</span>
+                      {/if}
+                      {#if group.items && Object.keys(group.items).length > 0}
+                        <span class="item-count">Items: {Object.keys(group.items).length}</span>
                       {/if}
                     </div>
                   </div>
@@ -535,7 +500,7 @@
   .groups-list {
     display: flex;
     flex-direction: column;
-    gap: 0.4em;
+    gap: 0.5em;
   }
   
   .group-item {
@@ -557,15 +522,9 @@
     border-color: rgba(147, 112, 219, 0.3);
   }
   
-  .group-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 0.6em;
-  }
-  
   .group-info {
     flex: 1;
+    margin-left: 0.8em;
   }
   
   .group-name {
@@ -577,7 +536,8 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5em;
-    font-size: 0.8em;
+    font-size: 0.9em;
+    color: #555;
   }
   
   .race-tag {
@@ -589,6 +549,15 @@
   
   .unit-count {
     color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .item-count {
+    color: #2d8659;
+    font-weight: 500;
+    padding: 0.1em 0.4em;
+    border-radius: 0.2em;
+    background-color: rgba(45, 134, 89, 0.1);
+    border: 1px solid rgba(45, 134, 89, 0.2);
   }
   
   .storage-selection {
@@ -695,7 +664,6 @@
     margin: 0;
   }
   
-  /* Success toast style for feedback */
   :global(.success-toast) {
     position: fixed;
     top: 20px;
