@@ -815,49 +815,50 @@
       <svg class="path-layer" aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none">
         {#if isPathDrawingMode && customPathPoints.length > 0}
           {@const pathData = createPathData(customPathPoints)}
-          {#if pathData}
-            <g class="path-group custom-path-group">
-              <path 
-                d={pathData} 
-                stroke="rgba(255, 255, 255, 0.9)"
-                stroke-width="2"
-                stroke-dasharray="6,4"
-                stroke-linejoin="round" 
-                stroke-linecap="round"
-                fill="none"
-                opacity="0.9"
+          <g class="path-group custom-path-group">
+            <path 
+              d={pathData} 
+              stroke="rgba(255, 255, 255, 0.9)"
+              stroke-width="2"
+              stroke-dasharray="6,4"
+              stroke-linejoin="round" 
+              stroke-linecap="round"
+              fill="none"
+              opacity="0.9"
+            />
+            
+            <!-- Draw direction dots along the path -->
+            {#each customPathPoints as point, i}
+              {@const pos = coordToPosition(point.x, point.y)}
+              
+              <!-- Draw point markers -->
+              <circle 
+                cx="{pos.posX * 100}" 
+                cy="{pos.posY * 100}" 
+                r="{i === 0 || i === customPathPoints.length - 1 ? '1' : '0.6'}" 
+                fill="{i === 0 ? 'rgba(50, 205, 50, 0.9)' : i === customPathPoints.length - 1 ? 'rgba(220, 20, 60, 0.9)' : 'white'}" 
+                stroke="rgba(0, 0, 0, 0.5)"
+                stroke-width="0.5"
               />
               
-              <!-- Draw direction dots along the path -->
-              {#each customPathPoints as point, i}
-                {@const pos = coordToPosition(point.x, point.y)}
-                {#if i < customPathPoints.length - 1 && i % 2 === 0}
-                  {@const nextPos = coordToPosition(customPathPoints[i+1].x, customPathPoints[i+1].y)}
-                  {@const midX = (pos.posX * 100 + nextPos.posX * 100) / 2}
-                  {@const midY = (pos.posY * 100 + nextPos.posY * 100) / 2}
-                  {#if Math.abs(nextPos.posX - pos.posX) > 0.02 || Math.abs(nextPos.posY - pos.posY) > 0.02}
-                    <circle 
-                      cx="{midX}" 
-                      cy="{midY}" 
-                      r="0.5" 
-                      fill="rgba(255, 255, 255, 0.9)"
-                      opacity="0.9"
-                    />
-                  {/if}
-                {/if}
+              <!-- Draw connection dots between points -->
+              {#if i < customPathPoints.length - 1}
+                {@const nextPos = coordToPosition(customPathPoints[i+1].x, customPathPoints[i+1].y)}
+                {@const midX = (pos.posX * 100 + nextPos.posX * 100) / 2}
+                {@const midY = (pos.posY * 100 + nextPos.posY * 100) / 2}
                 
-                <!-- Draw point markers -->
-                <circle 
-                  cx="{pos.posX * 100}" 
-                  cy="{pos.posY * 100}" 
-                  r="{i === 0 || i === customPathPoints.length - 1 ? '1' : '0.6'}" 
-                  fill="{i === 0 ? 'rgba(50, 205, 50, 0.9)' : i === customPathPoints.length - 1 ? 'rgba(220, 20, 60, 0.9)' : 'white'}" 
-                  stroke="rgba(0, 0, 0, 0.5)"
-                  stroke-width="0.5"
-                />
-              {/each}
-            </g>
-          {/if}
+                {#if Math.abs(nextPos.posX - pos.posX) > 0.02 || Math.abs(nextPos.posY - pos.posY) > 0.02}
+                  <circle 
+                    cx="{midX}" 
+                    cy="{midY}" 
+                    r="0.5" 
+                    fill="rgba(255, 255, 255, 0.9)"
+                    opacity="0.9"
+                  />
+                {/if}
+              {/if}
+            {/each}
+          </g>
         {/if}
         
         {#each movementPaths as path}
@@ -876,20 +877,6 @@
             <!-- Draw direction dots along the path -->
             {#each path.points as point, i}
               {@const pos = coordToPosition(point.x, point.y)}
-              {#if i < path.points.length - 1 && i % 2 === 0}
-                {@const nextPos = coordToPosition(path.points[i+1].x, path.points[i+1].y)}
-                {@const midX = (pos.posX * 100 + nextPos.posX * 100) / 2}
-                {@const midY = (pos.posY * 100 + nextPos.posY * 100) / 2}
-                {#if Math.abs(nextPos.posX - pos.posX) > 0.02 || Math.abs(nextPos.posY - pos.posY) > 0.02}
-                  <circle 
-                    cx="{midX}" 
-                    cy="{midY}" 
-                    r="0.35" 
-                    fill={path.color}
-                    opacity="0.9"
-                  />
-                {/if}
-              {/if}
               
               <circle 
                 cx="{pos.posX * 100}" 
@@ -900,6 +887,22 @@
                 stroke-width="0.5"
                 opacity="{i === 0 || i === path.points.length - 1 ? '1' : '0.6'}"
               />
+              
+              {#if i < path.points.length - 1}
+                {@const nextPos = coordToPosition(path.points[i+1].x, path.points[i+1].y)}
+                {@const midX = (pos.posX * 100 + nextPos.posX * 100) / 2}
+                {@const midY = (pos.posY * 100 + nextPos.posY * 100) / 2}
+                
+                {#if Math.abs(nextPos.posX - pos.posX) > 0.02 || Math.abs(nextPos.posY - pos.posY) > 0.02}
+                  <circle 
+                    cx="{midX}" 
+                    cy="{midY}" 
+                    r="0.35" 
+                    fill={path.color}
+                    opacity="0.9"
+                  />
+                {/if}
+              {/if}
             {/each}
           </g>
         {/each}
@@ -1517,35 +1520,30 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 100; /* Increased from 50 to ensure visibility */
+    z-index: 100;
     overflow: visible;
     transform: translateZ(0);
     will-change: transform;
-    touch-action: none;
   }
   
   .path-group {
     transition: opacity 0.3s ease;
-    pointer-events: none; /* Ensure paths don't block clicks */
-  }
-  
-  .path-group:hover {
-    opacity: 1;
+    pointer-events: none;
   }
   
   .custom-path-group {
-    z-index: 200; /* Ensure custom path is on top */
+    z-index: 200;
   }
   
   .custom-path-group path {
     animation: dash 16s linear infinite;
     stroke-dasharray: 6,4;
-    stroke-width: 2.5; /* Make custom path thicker */
-    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.7)); /* Add stronger glow effect */
+    stroke-width: 2.5;
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.7));
   }
 
   .current-player-path {
-    z-index: 55; /* Ensure current player paths are more visible */
+    z-index: 55;
   }
   
   @keyframes dash {
@@ -1566,7 +1564,7 @@
   .map-container.path-drawing-mode .map:not(.moving) .tile:hover {
     box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.9) !important;
     position: relative;
-    z-index: 45; /* Lower than path layer but higher than other tiles */
+    z-index: 45;
   }
   
   .path-drawing-indicator {
@@ -1603,13 +1601,10 @@
     }
   }
 
-  /* Make sure tiles don't block paths */
   .tile {
-    /* ...existing tile styles... */
     z-index: 1;
   }
 
-  /* Make center tile appear above other tiles */
   .tile.center {
     z-index: 3;
   }

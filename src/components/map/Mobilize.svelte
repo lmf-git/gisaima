@@ -46,20 +46,28 @@
       });
     }
     
-    // Adjust player detection to handle both array and object formats
-    const playerOnTile = Array.isArray(tile.players) 
-      ? tile.players.some(p => p.id === playerId || p.uid === playerId)
-      : tile.players && (
-          tile.players[playerId] !== undefined || 
-          Object.values(tile.players).some(p => p.uid === playerId || p.id === playerId)
-        );
-        
-    console.log("Player on tile check:", {
-      playerId,
-      playerOnTile,
-      tilePlayers: tile.players
-    });
-        
+    // Improved player detection with better logging
+    let playerOnTile = false;
+    
+    if (Array.isArray(tile.players)) {
+      playerOnTile = tile.players.some(p => p.uid === playerId || p.id === playerId);
+      console.log("Player detection (array format):", {
+        playerId,
+        playerOnTile,
+        playerCount: tile.players.length
+      });
+    } else if (tile.players) {
+      playerOnTile = tile.players[playerId] !== undefined || 
+                    Object.values(tile.players).some(p => p.uid === playerId || p.id === playerId);
+      console.log("Player detection (object format):", {
+        playerId,
+        playerOnTile,
+        playerKeys: Object.keys(tile.players)
+      });
+    } else {
+      console.log("No players on tile");
+    }
+    
     includePlayer = playerOnTile;
     availableUnits = units;
   });
@@ -140,7 +148,7 @@
     (selectedUnits.length > 0) || 
     (includePlayer && (
       Array.isArray(tile?.players)
-        ? tile.players.some(p => p.id === $currentPlayer?.uid || p.uid === $currentPlayer?.uid)
+        ? tile.players.some(p => p.uid === $currentPlayer?.uid || p.id === $currentPlayer?.uid)
         : tile?.players && (
             tile.players[$currentPlayer?.uid] !== undefined || 
             Object.values(tile.players).some(p => p.uid === $currentPlayer?.uid || p.id === $currentPlayer?.uid)

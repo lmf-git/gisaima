@@ -596,57 +596,60 @@
                     return;
                 }
                 
-                const dx = Math.abs(point.x - lastPoint.x);
-                const dy = Math.abs(point.y - lastPoint.y);
-                
-                if (dx > 1 || dy > 1) {
-                    console.log('Calculating path to non-adjacent point');
-                    const intermediatePath = calculatePathBetweenPoints(
-                        lastPoint.x, lastPoint.y, 
-                        point.x, point.y
-                    );
-                    
-                    if (currentPath.length + intermediatePath.length > 20) {
-                        console.log('Path exceeds 20 steps limit, truncating...');
-                        
-                        const pointsToAdd = 20 - currentPath.length;
-                        if (pointsToAdd <= 0) {
-                            console.log('Path already at maximum length');
-                            return;
-                        }
-                        
-                        const newPath = [
-                            ...currentPath,
-                            ...intermediatePath.slice(0, pointsToAdd)
-                        ];
-                        
-                        currentPath = newPath;
-                        moveComponentRef.updateCustomPath(newPath);
-                    } else {
-                        const newPath = [...currentPath, ...intermediatePath];
-                        currentPath = newPath;
-                        moveComponentRef.updateCustomPath(newPath);
-                    }
-                } else {
-                    if (currentPath.length >= 20) {
-                        console.log('Maximum path length reached (20 steps)');
-                        return;
-                    }
-                    
-                    const newPath = [...currentPath, point];
-                    currentPath = newPath;
-                    moveComponentRef.updateCustomPath(newPath);
-                }
+                // Rest of the logic to add points to the path
+                const newPath = [...currentPath, point];
+                currentPath = newPath;
+                moveComponentRef.updateCustomPath(newPath);
             } else {
                 const newPath = [point];
                 currentPath = newPath;
+                console.log('Created new path with first point:', newPath);
                 moveComponentRef.updateCustomPath(newPath);
             }
             
             console.log('Current path updated:', currentPath);
         } else {
-            console.log('Move component ref not available or missing updateCustomPath method');
+            console.error('Move component ref not available or missing updateCustomPath method');
         }
+    }
+
+    function handlePathDrawingStart(group) {
+        console.log('Starting path drawing for group:', group);
+        isPathDrawingMode = true;
+        pathDrawingGroup = group;
+        
+        // Initialize with the group's starting position
+        if (group && group.startPoint) {
+            currentPath = [group.startPoint];
+            console.log("Initialized path with starting point:", group.startPoint);
+        } else if (group && group.x !== undefined && group.y !== undefined) {
+            // Fallback to group's position if startPoint not provided
+            currentPath = [{ x: group.x, y: group.y }];
+            console.log("Initialized path with group position:", { x: group.x, y: group.y });
+        } else if ($targetStore) {
+            // Fallback to current target position
+            currentPath = [{ x: $targetStore.x, y: $targetStore.y }];
+            console.log("Initialized path with current target position:", { x: $targetStore.x, y: $targetStore.y });
+        } else {
+            currentPath = [];
+            console.warn("No starting point available for path");
+        }
+    }
+
+    function handlePathDrawingCancel() {
+        console.log('Path drawing cancelled');
+        isPathDrawingMode = false;
+        pathDrawingGroup = null;
+        currentPath = [];
+        showMove = false;
+    }
+
+    function confirmPathDrawing() {
+        console.log('Path drawing confirmed with path:', currentPath);
+        if (moveComponentRef && typeof moveComponentRef.confirmCustomPath === 'function') {
+            moveComponentRef.confirmCustomPath(currentPath);
+        }
+        isPathDrawingMode = false;
     }
 
     function handleAction(eventData) {
@@ -723,45 +726,6 @@
         }
         
         return path;
-    }
-
-    function handlePathDrawingStart(group) {
-        console.log('Starting path drawing for group:', group);
-        isPathDrawingMode = true;
-        pathDrawingGroup = group;
-        
-        // Initialize with the group's starting position
-        if (group && group.startPoint) {
-            currentPath = [group.startPoint];
-            console.log("Initialized path with starting point:", group.startPoint);
-        } else if (group && group.x !== undefined && group.y !== undefined) {
-            // Fallback to group's position if startPoint not provided
-            currentPath = [{ x: group.x, y: group.y }];
-            console.log("Initialized path with group position:", { x: group.x, y: group.y });
-        } else if ($targetStore) {
-            // Fallback to current target position
-            currentPath = [{ x: $targetStore.x, y: $targetStore.y }];
-            console.log("Initialized path with current target position:", { x: $targetStore.x, y: $targetStore.y });
-        } else {
-            currentPath = [];
-            console.warn("No starting point available for path");
-        }
-    }
-
-    function handlePathDrawingCancel() {
-        console.log('Path drawing cancelled');
-        isPathDrawingMode = false;
-        pathDrawingGroup = null;
-        currentPath = [];
-        showMove = false;
-    }
-
-    function confirmPathDrawing() {
-        console.log('Path drawing confirmed with path:', currentPath);
-        if (moveComponentRef && typeof moveComponentRef.confirmCustomPath === 'function') {
-            moveComponentRef.confirmCustomPath(currentPath);
-        }
-        isPathDrawingMode = false;
     }
 </script>
 

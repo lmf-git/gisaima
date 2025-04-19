@@ -587,12 +587,10 @@ export function setHighlighted(x, y) {
 
 // Get chunk key for coordinates - matches database structure
 export function getChunkKey(x, y) {
-  // The database has chunk coordinates that correspond to a coordinate system
-  // where (0,0) is the "anchor" of each 20x20 chunk.
-  // Coordinates like (-4,6) and (5,5) are in chunk (0,0) while (12,4) is in (1,0)
-  const chunkSize = CHUNK_SIZE;
-  const chunkX = Math.floor(x >= 0 ? x / chunkSize : (x + 1) / chunkSize - 1);
-  const chunkY = Math.floor(y >= 0 ? y / chunkSize : (y + 1) / chunkSize - 1);
+  // Handle negative coordinates correctly by adjusting division for negative values
+  const chunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
+  const chunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
+  
   return `${chunkX},${chunkY}`;
 }
 

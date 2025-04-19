@@ -74,10 +74,12 @@
     if (dx === 0 && dy === 0) return; // Can't move to current position
     
     targetX = tile.x + dx;
-    targetY = tile.y;
+    targetY = tile.y + dy;  // Fixed to correctly add dy to tile.y
     
     // Calculate path when target changes
     calculatePath();
+    
+    console.log(`Set movement target to: ${targetX}, ${targetY}`);
   }
   
   // Clear movement target

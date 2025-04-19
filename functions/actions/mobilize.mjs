@@ -37,10 +37,9 @@ export const startMobilization = onCall(async (request) => {
 
   // Calculate chunk coordinates to match database structure with correction for world coordinates
   function getChunkKey(x, y) {
-    // Correction for coordinate system to properly handle world coordinates
-    // For coordinates like (10,8), this should find the correct chunk
-    const chunkX = Math.floor(x / CHUNK_SIZE);
-    const chunkY = Math.floor(y / CHUNK_SIZE);
+    // FIXED VERSION: Handle negative coordinates correctly
+    const chunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
+    const chunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
     
     // Log the calculation for debugging
     console.log(`Chunk calculation: (${x},${y}) -> chunk (${chunkX},${chunkY})`);
@@ -84,8 +83,22 @@ export const startMobilization = onCall(async (request) => {
       const players = tileData.players || {};
       console.log(`Checking if player ${uid} is on tile ${tileKey}, players:`, JSON.stringify(players));
       
-      const playerOnTile = players[uid] !== undefined || 
-                          Object.values(players).some(p => p.uid === uid);
+      // Enhanced player detection logic to handle both array and object formats
+      let playerOnTile = false;
+      
+      if (Array.isArray(players)) {
+        // Handle array format
+        console.log("Players data is in array format");
+        playerOnTile = players.some(p => p.uid === uid || p.id === uid);
+      } else {
+        // Handle object format
+        console.log("Players data is in object format");
+        playerOnTile = players[uid] !== undefined || 
+                       Object.values(players).some(p => p.uid === uid || p.id === uid);
+      }
+      
+      // Log the detection result
+      console.log(`Player detection result: ${playerOnTile ? "FOUND" : "NOT FOUND"}`);
       
       if (!playerOnTile) {
         console.log(`Player ${uid} not found on tile ${tileKey}`);
@@ -181,24 +194,56 @@ export const startMobilization = onCall(async (request) => {
       }
       
       if (includePlayer && currentTile.players) {
-        const playerKeys = Object.keys(currentTile.players);
+        // Enhanced player handling for the transaction
+        let playerFound = false;
         
-        for (const playerKey of playerKeys) {
-          const player = currentTile.players[playerKey];
-          
-          if (player.uid === uid || player.id === uid) {
+        if (Array.isArray(currentTile.players)) {
+          // Handle array format
+          const playerIndex = currentTile.players.findIndex(p => p.uid === uid || p.id === uid);
+          if (playerIndex !== -1) {
+            const player = currentTile.players[playerIndex];
+            // Generate a consistent key for the player
+            const playerKey = player.uid || player.id;
+            
             newGroup.units[playerKey] = {
               ...player,
               type: 'player'
             };
             unitCount++;
-            delete currentTile.players[playerKey];
             
-            if (Object.keys(currentTile.players).length === 0) {
+            // Remove the player from the array
+            currentTile.players.splice(playerIndex, 1);
+            if (currentTile.players.length === 0) {
               delete currentTile.players;
             }
-            break;
+            playerFound = true;
           }
+        } else {
+          // Handle object format (original logic)
+          const playerKeys = Object.keys(currentTile.players);
+          
+          for (const playerKey of playerKeys) {
+            const player = currentTile.players[playerKey];
+            
+            if (player.uid === uid || player.id === uid) {
+              newGroup.units[playerKey] = {
+                ...player,
+                type: 'player'
+              };
+              unitCount++;
+              delete currentTile.players[playerKey];
+              
+              if (Object.keys(currentTile.players).length === 0) {
+                delete currentTile.players;
+              }
+              playerFound = true;
+              break;
+            }
+          }
+        }
+        
+        if (includePlayer && !playerFound) {
+          console.log(`Warning: Player was detected but couldn't be moved to the group`);
         }
       }
       
