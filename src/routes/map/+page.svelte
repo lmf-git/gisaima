@@ -999,9 +999,22 @@
                     showDemobilize = false;
                     setHighlighted(null, null);
                 }}
-                onDemobilize={(tile) => {
-                    showDemobilize = true;
-                    demobilizeData = tile;
+                onDemobilize={(data) => {
+                    console.log('Demobilization started:', data);
+                    
+                    // Show success toast when direct component handling successful
+                    const message = document.createElement('div');
+                    message.className = 'success-toast';
+                    message.textContent = 'Demobilization started!';
+                    document.body.appendChild(message);
+                    
+                    setTimeout(() => {
+                        message.classList.add('fade-out');
+                        setTimeout(() => message.remove(), 500);
+                    }, 2000);
+                    
+                    // Close immediately on success
+                    showDemobilize = false;
                 }}
             />
         {/if}
@@ -1294,5 +1307,15 @@
             opacity: 1;
             transform: translateY(0) translateX(-50%);
         }
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translate(-50%, -20px); }
+        to { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+    @keyframes fadeOut {
+        from { opacity: 1; transform: translate(-50%, 0); }
+        to { opacity: 0; transform: translate(-50%, -20px); }
     }
 </style>

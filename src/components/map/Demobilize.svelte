@@ -7,6 +7,7 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
+  import { getFunctions, httpsCallable } from 'firebase/functions';
 
   // Props with default empty object to avoid destructuring errors
   const { tile = {}, onClose = () => {}, onDemobilize = () => {} } = $props();
@@ -20,6 +21,13 @@
   let selectedGroup = $state(null);
   // Selected storage destination
   let selectedStorageDestination = $state('shared'); // Default to shared storage
+  // Error state
+  let error = $state(null);
+  // Loading state
+  let isLoading = $state(false);
+  
+  // Get functions instance directly
+  const functions = getFunctions();
   
   // Initialize available groups based on tile content
   $effect(() => {
@@ -45,6 +53,7 @@
     
     availableGroups = groups;
     selectedGroup = null;
+    error = null;
   });
   
   // Set selected group
@@ -69,30 +78,78 @@
   }
   
   // Function to handle demobilization
-  function startDemobilization() {
+  async function startDemobilization() {
     // Check if we have a selected group
-    if (!selectedGroup) {
+    if (!selectedGroup || !tile?.structure) {
+      error = "Please select a group and ensure there's a structure.";
       return;
     }
     
-    // Use direct function call instead of event forwarding
-    if (onDemobilize) {
-      onDemobilize({
+    error = null;
+    isLoading = true;
+    
+    try {
+      // Call the cloud function directly
+      const demobiliseFn = httpsCallable(functions, 'demobiliseUnits');
+      
+      console.log('Calling demobiliseUnits with params:', {
         groupId: selectedGroup.id,
         targetStructureId: tile.structure?.id,
         locationX: tile.x,
         locationY: tile.y,
-        worldId: $game.currentWorld, // Make sure we're passing the worldId
-        storageDestination: selectedStorageDestination, // Add the new storage destination parameter
-        tile
+        worldId: $game.currentWorld,
+        storageDestination: selectedStorageDestination
       });
+      
+      const result = await demobiliseFn({
+        groupId: selectedGroup.id,
+        targetStructureId: tile.structure?.id,
+        locationX: tile.x,
+        locationY: tile.y,
+        worldId: $game.currentWorld,
+        storageDestination: selectedStorageDestination
+      });
+      
+      console.log('Demobilization started:', result.data);
+      
+      // Update UI or notify user of success
+      const message = document.createElement('div');
+      message.className = 'success-toast';
+      message.textContent = 'Demobilization started!';
+      document.body.appendChild(message);
+      
+      setTimeout(() => {
+        message.classList.add('fade-out');
+        setTimeout(() => message.remove(), 500);
+      }, 2000);
+      
+      // Also update parent component if needed
+      if (onDemobilize) {
+        onDemobilize({
+          groupId: selectedGroup.id,
+          targetStructureId: tile.structure?.id,
+          locationX: tile.x,
+          locationY: tile.y,
+          worldId: $game.currentWorld,
+          storageDestination: selectedStorageDestination,
+          tile,
+          result: result.data
+        });
+      }
+      
+      // Close dialog
+      onClose();
+      
+    } catch (err) {
+      console.error('Error during demobilization:', err);
+      error = err.message || 'Failed to start demobilization';
+    } finally {
+      isLoading = false;
     }
-    
-    onClose();
   }
   
   // Helper to check if demobilization is possible
-  let canDemobilize = $derived(selectedGroup !== null);
+  let canDemobilize = $derived(selectedGroup !== null && !isLoading);
 
   // Close on escape key
   function handleKeyDown(event) {
@@ -168,6 +225,12 @@
             <span class="next-tick-time">({$timeUntilNextTick})</span>
           </p>
         </div>
+        
+        {#if error}
+          <div class="error-message">
+            <p>{error}</p>
+          </div>
+        {/if}
         
         {#if availableGroups.length > 0}
           <div class="groups-section">
@@ -267,6 +330,7 @@
           <button 
             class="cancel-btn" 
             onclick={onClose}
+            disabled={isLoading}
           >
             Cancel
           </button>
@@ -275,7 +339,7 @@
             disabled={!canDemobilize}
             onclick={startDemobilization}
           >
-            Demobilize Group
+            {isLoading ? 'Processing...' : 'Demobilize Group'}
           </button>
         </div>
       </div>
@@ -614,6 +678,50 @@
     padding: 2em 0;
     color: #666;
     font-style: italic;
+  }
+
+  .error-message {
+    padding: 0.8em;
+    background-color: rgba(255, 0, 0, 0.1);
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    color: #ff5757;
+    border-radius: 0.3em;
+    margin: 0.5em 0;
+    font-size: 0.9em;
+  }
+  
+  .error-message p {
+    margin: 0;
+  }
+  
+  /* Success toast style for feedback */
+  :global(.success-toast) {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(46, 204, 113, 0.9);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    z-index: 10000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    font-family: var(--font-heading);
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  :global(.success-toast.fade-out) {
+    animation: fadeOut 0.5s ease-out forwards;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+  
+  @keyframes fadeOut {
+    from { opacity: 1; transform: translate(-50%, 0); }
+    to { opacity: 0; transform: translate(-50%, -20px); }
   }
   
   @media (max-width: 480px) {
