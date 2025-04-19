@@ -623,42 +623,38 @@
         }
     }
 
-    function handleGridClick(event) {
-        const tileX = event.detail.x;
-        const tileY = event.detail.y;
-
-        if (tileX !== undefined && tileY !== undefined) {
-            // If details is already open, don't change the highlighted cell
-            if (detailed) {
-                return; // Prevent any action when details modal is open
-            }
-
-            if (isPathDrawingMode) {
-                const point = { x: tileX, y: tileY };
-                handlePathPoint(point);
-            } else {
-                console.log('Moving to clicked tile:', { x: tileX, y: tileY });
-                
-                // First move target to this location
-                moveTarget(tileX, tileY);
-                
-                // Set the highlight and get the tile data in one consistent operation
-                setHighlighted(tileX, tileY);
-                
-                // Wait a brief moment for the coordinates store to update
-                setTimeout(() => {
-                    // Get the tile data from coordinates store after highlight is set
-                    const clickedTile = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
-                    
-                    // Check if there's content worth showing details for
-                    if (clickedTile && hasTileContent(clickedTile)) {
-                        toggleDetailsModal(true, clickedTile);
-                    }
-                }, 50); // Short delay to ensure data is available
-            }
-        }
+    function handleGridClick(coords) {
+        // Expect direct coordinates object from Grid component
+        const { x, y } = coords;
         
-        event.preventDefault();
+        // Skip if no coordinates or details modal is open
+        if (x === undefined || y === undefined || detailed) {
+            return;
+        }
+
+        if (isPathDrawingMode) {
+            const point = { x, y };
+            handlePathPoint(point);
+        } else {
+            console.log('Moving to clicked tile:', { x, y });
+            
+            // First move target to this location
+            moveTarget(x, y);
+            
+            // Set the highlight and get the tile data in one consistent operation
+            setHighlighted(x, y);
+            
+            // Wait a brief moment for the coordinates store to update
+            setTimeout(() => {
+                // Get the tile data from coordinates store after highlight is set
+                const clickedTile = $coordinates.find(cell => cell.x === x && cell.y === y);
+                
+                // Check if there's content worth showing details for
+                if (clickedTile && hasTileContent(clickedTile)) {
+                    toggleDetailsModal(true, clickedTile);
+                }
+            }, 50); // Short delay to ensure data is available
+        }
     }
 
     function hasTileContent(tile) {

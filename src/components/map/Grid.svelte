@@ -18,14 +18,14 @@
   import Torch from '../icons/Torch.svelte';
   import Structure from '../icons/Structure.svelte';
   
-  // Props with defaults to avoid destructuring errors
+  // Props with defaults to avoid destructuring errors - remove unused props
   const { 
     detailed = false, 
-    openActions = null, 
     isPathDrawingMode = false, 
     moveComponentRef = null,
     onAddPathPoint = null,
-    onClick = null // Add onClick to the props destructuring
+    onClick = null,
+    onClose = () => {} // Add this prop with a default empty function
   } = $props();
   
   let mapElement = null;
@@ -367,86 +367,6 @@
     return cell.players ? cell.players.length : 0;
   }
 
-  function hasTileContent(tile) {
-    if (!tile) return false;
-    
-    return (
-      tile.structure || 
-      (tile.groups && tile.groups.length > 0) || 
-      (tile.players && tile.players.length > 0) || 
-      (tile.items && tile.items.length > 0) ||
-      isPlayerPosition(tile.x, tile.y) // Consider player position as content
-    );
-  }
-
-  // Keep the existing hasMeaningfulActions function for deciding which actions to show
-  function hasMeaningfulActions(tile) {
-    if (!tile || !$currentPlayer?.uid) return false;
-    
-    // Check for player-owned groups (enables move and gather)
-    const hasOwnedGroups = tile.groups && tile.groups.some(group => 
-      group.owner === $currentPlayer?.uid && group.status === 'idle'
-    );
-    
-    // Check for mobilization candidates
-    const playerOnTile = tile.players && tile.players.some(p => p.id === $currentPlayer?.uid);
-    const hasValidUnits = tile.groups && tile.groups.some(group => 
-      group.owner === $currentPlayer?.uid && 
-      group.status !== 'mobilizing' &&
-      group.status !== 'moving' &&
-      group.status !== 'demobilising' &&
-      group.status !== 'fighting' &&
-      group.units && 
-      group.units.some(unit => unit.type !== 'player')
-    );
-    
-    // Check for demobilization candidates
-    const hasValidGroupsForDemob = tile.groups && tile.structure && tile.groups.some(group => 
-      group.owner === $currentPlayer?.uid && 
-      group.status !== 'mobilizing' && 
-      group.status !== 'moving' &&
-      group.status !== 'demobilising' &&
-      group.status !== 'fighting'
-    );
-    
-    // Check for attack candidates
-    const hasPlayerCombatGroups = tile.groups && tile.groups.some(group => 
-      group.owner === $currentPlayer?.uid && 
-      group.status !== 'mobilizing' && 
-      group.status !== 'moving' &&
-      group.status !== 'demobilising' &&
-      group.status !== 'fighting' &&
-      !group.inBattle
-    );
-    
-    const hasEnemyGroups = tile.groups && tile.groups.some(group => 
-      group.owner !== $currentPlayer?.uid && 
-      group.status !== 'fighting' &&
-      !group.inBattle
-    );
-    
-    // Check for ongoing battles
-    const hasBattles = tile.groups && tile.groups.some(group => 
-      group.inBattle && group.battleId && group.status === 'fighting'
-    );
-    
-    const playerCanJoinBattle = tile.groups && tile.groups.some(group => 
-      group.owner === $currentPlayer?.uid && 
-      group.status !== 'mobilizing' && 
-      group.status !== 'moving' &&
-      group.status !== 'demobilising' &&
-      group.status !== 'fighting' &&
-      !group.inBattle
-    );
-    
-    // Return true if any meaningful action is available
-    return hasOwnedGroups || 
-           (playerOnTile || hasValidUnits) || 
-           hasValidGroupsForDemob || 
-           (hasPlayerCombatGroups && hasEnemyGroups) ||
-           (hasBattles && playerCanJoinBattle);
-  }
-
   function handleGridClick(event) {
     clickCount++;
     lastClickTime = Date.now();
@@ -508,28 +428,22 @@
             console.log('Grid click in path drawing mode:', point);
             handlePathPoint(point);
         } else {
-            console.log('Grid click on tile:', { x: tileX, y: tileY });
+            console.log('Moving to clicked tile:', { x: tileX, y: tileY });
             
-            // Dispatch a custom event with the tile coordinates
-            const clickEvent = new CustomEvent('gridclick', { 
-                detail: { x: tileX, y: tileY }
-            });
-            dispatchEvent(clickEvent);
-            
-            // Check if we need to pass to parent click handler
-            if (onClick) {
-                onClick({ detail: { x: tileX, y: tileY } });
-            }
-            
-            // Move target (this should be handled by the parent)
+            // First move target to this location
             moveTarget(tileX, tileY);
+            
+            // Set the highlight and get the tile data in one consistent operation
+            setHighlighted(tileX, tileY);
+            
+            // Simply call onClick with the coordinates if provided
+            if (onClick) {
+                onClick({ x: tileX, y: tileY });
+            }
         }
     }
     
-    // Only call preventDefault if it's a function
-    if (event && typeof event.preventDefault === 'function') {
-        event.preventDefault();
-    }
+    // No preventDefault needed for map tile clicks
   }
 
   function handlePathPoint(point) {
