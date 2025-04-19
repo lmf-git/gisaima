@@ -9,18 +9,33 @@ import { logger } from "firebase-functions";
 
 // Function to start a mobilization for a group
 export const startMobilization = onCall(async (data, context) => {
-  // Ensure user is authenticated - with improved logging for troubleshooting
+  // Enhanced authentication checking with detailed logging
   if (!context.auth) {
+    // Log more details about the failed auth context for debugging
     logger.error("Authentication failed: No auth context provided", {
-      authHeader: context.rawRequest?.headers?.authorization ? "Present" : "Missing"
+      headers: context.rawRequest?.headers ? Object.keys(context.rawRequest.headers) : "No headers",
+      authHeader: context.rawRequest?.headers?.authorization ? "Present" : "Missing",
+      origin: context.rawRequest?.headers?.origin || "Unknown"
     });
     throw new HttpsError('unauthenticated', 'User must be logged in to mobilize units');
   }
   
   const uid = context.auth.uid;
+  const isAnonymous = context.auth.token.firebase?.sign_in_provider === 'anonymous';
+  
   logger.info(`User ${uid} attempting mobilization`, {
-    isAnonymous: context.auth.token.firebase?.sign_in_provider === 'anonymous'
+    isAnonymous: isAnonymous,
+    provider: context.auth.token.firebase?.sign_in_provider || "unknown",
+    token: {
+      issued: context.auth.token.iat,
+      expires: context.auth.token.exp
+    }
   });
+  
+  // Allow anonymous users to proceed - explicitly accept anonymous auth
+  if (isAnonymous) {
+    logger.info(`Processing request for anonymous user ${uid}`);
+  }
   
   const { worldId, tileX, tileY, units: unitIds, includePlayer, name, race } = data;
   
@@ -157,7 +172,7 @@ export const startMobilization = onCall(async (data, context) => {
     }
     
   } catch (error) {
-    logger.error("Error starting mobilization:", error);
+    logger.error(`Error starting mobilization for user ${uid}:`, error);
     throw new HttpsError('internal', 'Error starting mobilization', error);
   }
 });

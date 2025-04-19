@@ -16,7 +16,8 @@
     import GuestWarning from '../components/GuestWarning.svelte';
     import { initAuthListener } from '$lib/stores/user';
     import { initialize, initializeMapForWorld } from '$lib/stores/map.js';
-  
+    import { setupTokenRefresh } from '$lib/stores/auth-helper';
+
     const { children } = $props();
 
     // State
@@ -170,6 +171,11 @@
             const authUnsubscribe = initAuthListener();
             console.log('Auth listener initialized');
             
+            // Set up token refresh listener for enhanced auth state management
+            const tokenRefreshUnsubscribe = setupTokenRefresh(user => {
+                console.log("Auth token refreshed for user:", user?.uid || "none");
+            });
+            
             // Wait for auth to be ready before proceeding
             if (!$isAuthReady) {
                 console.log('Waiting for auth to be ready...');
@@ -209,10 +215,11 @@
             
             console.log('Core services successfully initialized');
             
-            // Return cleanup
+            // Return cleanup with enhanced token refresh unsubscribe
             return () => {
                 authUnsubscribe && authUnsubscribe();
                 gameUnsubscribe && gameUnsubscribe();
+                tokenRefreshUnsubscribe && tokenRefreshUnsubscribe();
             };
         } catch (error) {
             console.error('Error initializing core services:', error);

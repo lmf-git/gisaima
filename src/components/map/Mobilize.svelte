@@ -7,8 +7,7 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
-  import { functions } from "../../lib/firebase/firebase";
-  import { httpsCallable } from "firebase/functions";
+  import { auth, createCallable } from "../../lib/firebase/firebase";
 
   const { tile = {}, onClose = () => {} } = $props();
   
@@ -18,6 +17,10 @@
   let selectedUnits = $state([]);
   let includePlayer = $state(true);
   let groupName = $state("New Force");
+  let mobilizeError = $state(null);
+
+  // Create callable function using our enhanced wrapper
+  const startMobilizationFn = createCallable('startMobilization');
   
   $effect(() => {
     if (!tile) return;
@@ -76,8 +79,15 @@
       return;
     }
 
-    try {
+    mobilizeError = null;
     
+    try {
+      console.log("Current auth state:", {
+        currentUser: auth.currentUser?.uid || 'none',
+        isAnonymous: auth.currentUser?.isAnonymous,
+        authenticated: !!auth.currentUser
+      });
+      
       console.log("Preparing mobilization request with:", {
         worldId: $game.currentWorld,
         tileX: tile.x,
@@ -88,26 +98,22 @@
         race: $currentPlayer?.race
       });
       
-      // Call function directly
-      try {
-        const startMobilizationFn = httpsCallable(functions, 'startMobilization');
-        const result = await startMobilizationFn({
-          worldId: $game.currentWorld,
-          tileX: tile.x,
-          tileY: tile.y,
-          units: selectedUnitIds,
-          includePlayer,
-          name: groupName,
-          race: $currentPlayer?.race
-        });
-        
-        console.log('Mobilization result:', result.data);
-        onClose(); // Close only after success
-      } catch (error) {
-        console.error('Error during mobilization:', error);
-      }
+      // Use our enhanced function wrapper
+      const result = await startMobilizationFn({
+        worldId: $game.currentWorld,
+        tileX: tile.x,
+        tileY: tile.y,
+        units: selectedUnitIds,
+        includePlayer,
+        name: groupName,
+        race: $currentPlayer?.race
+      });
+      
+      console.log('Mobilization result:', result);
+      onClose(); // Close only after success
     } catch (error) {
-      console.error("Exception in startMobilization:", error);
+      console.error('Error during mobilization:', error);
+      mobilizeError = error.message || "Failed to mobilize forces";
     }
   }
   
@@ -210,6 +216,12 @@
             </p>
           </div>
         </div>
+        
+        {#if mobilizeError}
+          <div class="mobilize-error">
+            {mobilizeError}
+          </div>
+        {/if}
         
         {#if availableUnits.length > 0}
           <div class="units-section">
@@ -590,6 +602,16 @@
     font-family: var(--font-mono, monospace);
     font-weight: 500;
     color: var(--color-bright-accent);
+  }
+  
+  .mobilize-error {
+    background-color: rgba(255, 0, 0, 0.1);
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    color: #ff5757;
+    padding: 0.8em;
+    margin: 1em 0;
+    border-radius: 0.3em;
+    font-size: 0.9em;
   }
   
   .button-row {
