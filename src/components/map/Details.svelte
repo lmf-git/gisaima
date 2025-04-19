@@ -375,6 +375,9 @@
 
   // Direct Firebase function calls
   async function executeAction(actionId, tile) {
+    // Initialize error variable so it's available outside the catch block
+    let actionError = null;
+    
     try {
       switch(actionId) {
         case 'mobilize':
@@ -400,6 +403,7 @@
             });
             console.log('Explore result:', result.data);
           } catch (error) {
+            actionError = error; // Store error for later check
             console.error('Error exploring location:', error);
             // Check for specific auth error code
             if (error.code === 'unauthenticated') {
@@ -423,6 +427,7 @@
             });
             console.log('Gather result:', gatherResult.data);
           } catch (error) {
+            actionError = error; // Store error for later check
             console.error('Error gathering resources:', error);
              // Check for specific auth error code
             if (error.code === 'unauthenticated') {
@@ -437,6 +442,7 @@
           console.log(`Unhandled action: ${actionId}`);
       }
     } catch (error) {
+      actionError = error; // Store error for later check
       console.error(`Error executing action ${actionId}:`, error);
        // Check for specific auth error code
       if (error.code === 'unauthenticated') {
@@ -447,7 +453,7 @@
     }
     
     // Close the details modal only if the action didn't fail due to auth
-    if (!(error && error.code === 'unauthenticated')) {
+    if (!(actionError && actionError.code === 'unauthenticated')) {
       onClose();
     }
   }
