@@ -51,6 +51,7 @@
         for (const spawnId of spawnIds) {
           try {
             // Parse the location from the spawn ID (format: "chunkX:chunkY:x:y")
+            // These are the exact coordinates we need to preserve
             const [chunkX, chunkY, x, y] = spawnId.split(':');
             const chunkKey = `${chunkX},${chunkY}`;
             const locationKey = `${x},${y}`;
@@ -68,6 +69,9 @@
                   id: spawnId,
                   x: parseInt(x),
                   y: parseInt(y),
+                  // Store the exact chunk information to ensure consistency
+                  chunkX: parseInt(chunkX),
+                  chunkY: parseInt(chunkY),
                   name: spawnData.name || `Spawn Point ${spawnPoints.length + 1}`,
                   description: spawnData.description,
                   faction: spawnData.faction
@@ -113,7 +117,7 @@
     error = null;
     
     try {
-      // Update the player's spawn status in user record with alive:true instead of spawned:true
+      // Update the player's spawn status in user record with alive:true
       const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.currentWorld}`);
       await update(playerWorldRef, { 
         alive: true,
@@ -123,12 +127,12 @@
         }
       });
       
-      // Also add player to the world chunk data so they appear on the map
-      // Calculate chunk key and location key
-      const chunkKey = getChunkKey(selectedSpot.x, selectedSpot.y);
+      // IMPORTANT: Use the exact chunk coordinates from the spawn point
+      // NOT calculated from the coordinates, to ensure consistency
+      const chunkKey = `${selectedSpot.chunkX},${selectedSpot.chunkY}`;
       const locationKey = `${selectedSpot.x},${selectedSpot.y}`;
       
-      // Create a player entity in the world
+      // Create a player entity in the world in the exact same chunk as the spawn structure
       const playerEntityRef = ref(
         db, 
         `worlds/${$game.currentWorld}/chunks/${chunkKey}/${locationKey}/players/${$user.uid}`
@@ -137,7 +141,7 @@
       // Get existing player profile data
       const displayName = $user.displayName || $user.email?.split('@')[0] || 'Player';
       
-      // Set player data in the world, including race
+      // Set player data in the world, including race and timestamp
       await set(playerEntityRef, {
         displayName,
         lastActive: Date.now(),

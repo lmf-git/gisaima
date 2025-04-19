@@ -1,36 +1,10 @@
 {
   "players": {
-    "DCf3H3ZFYhWNH4Od9JueuEBjazk2": {
+    "W9SgXSWhWWfre0LsM5CifMnJpta2": {
       "worlds": {
         "ancient-lands": {
           "alive": true,
-          "joined": 1745012066239,
-          "lastLocation": {
-            "x": 12,
-            "y": 4
-          },
-          "race": "dwarf"
-        }
-      }
-    },
-    "b42rwEn4YCSvJUKEoZWW7LGrfeb2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745011870285,
-          "lastLocation": {
-            "x": 5,
-            "y": 5
-          },
-          "race": "human"
-        }
-      }
-    },
-    "gewtlvAU9Sh62euUQvtLgklBjM63": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745012166458,
+          "joined": 1745014298908,
           "lastLocation": {
             "x": -4,
             "y": 6
@@ -46,11 +20,11 @@
         "-1,0": {
           "-4,6": {
             "players": {
-              "gewtlvAU9Sh62euUQvtLgklBjM63": {
+              "W9SgXSWhWWfre0LsM5CifMnJpta2": {
                 "displayName": "Player",
-                "lastActive": 1745012169315,
+                "lastActive": 1745014319612,
                 "race": "elf",
-                "uid": "gewtlvAU9Sh62euUQvtLgklBjM63"
+                "uid": "W9SgXSWhWWfre0LsM5CifMnJpta2"
               }
             }
           }
@@ -113,25 +87,7 @@
               "type": "stronghold"
             }
           },
-          "12,4": {
-            "players": {
-              "DCf3H3ZFYhWNH4Od9JueuEBjazk2": {
-                "displayName": "Player",
-                "lastActive": 1745012069070,
-                "race": "dwarf",
-                "uid": "DCf3H3ZFYhWNH4Od9JueuEBjazk2"
-              }
-            }
-          },
           "5,5": {
-            "players": {
-              "b42rwEn4YCSvJUKEoZWW7LGrfeb2": {
-                "displayName": "Player",
-                "lastActive": 1745011873373,
-                "race": "human",
-                "uid": "b42rwEn4YCSvJUKEoZWW7LGrfeb2"
-              }
-            },
             "structure": {
               "description": "A rugged frontier settlement where hardy humans carve out a living",
               "faction": "human",
@@ -173,7 +129,7 @@
       },
       "info": {
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745012281297,
+        "lastTick": 1745016541500,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",

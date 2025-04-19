@@ -343,16 +343,28 @@
   
   // Simplified player position logic
   const playerPosition = $derived(() => {
-    // Simply return the player's last location when available
-    return $game.playerWorldData?.lastLocation || null;
+    // Only use lastLocation when needed
+    return $game.playerWorldData?.alive ? $game.playerWorldData?.lastLocation : null;
   });
   
-  function isPlayerPosition(x, y) {
-    // Simplest approach - just check if coordinates match the player's position
-    // Don't worry about whether player is also in a unit group
-    return playerPosition && 
-           playerPosition.x === x && 
-           playerPosition.y === y;
+  function isCurrentPlayer(playerEntity) {
+    return playerEntity && $currentPlayer && playerEntity.uid === $currentPlayer.uid;
+  }
+  
+  function hasCurrentPlayerEntity(cell) {
+    return cell.players && cell.players.some(p => isCurrentPlayer(p));
+  }
+  
+  function shouldShowPlayerPosition(cell) {
+    // Show player marker if either:
+    // 1. This cell contains the current player entity
+    // 2. This is where lastLocation says the player should be (as fallback)
+    return hasCurrentPlayerEntity(cell) || 
+           (playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y);
+  }
+  
+  function getPlayerCount(cell) {
+    return cell.players ? cell.players.length : 0;
   }
 
   function hasTileContent(tile) {
@@ -666,14 +678,6 @@
     }
   }
   
-  function isCurrentPlayer(playerEntity) {
-    return playerEntity && playerEntity.uid === $currentPlayer?.uid;
-  }
-  
-  function hasCurrentPlayer(players) {
-    return players && players.some(player => isCurrentPlayer(player));
-  }
-
   function getRarityGlowSize(rarity) {
     switch(rarity) {
       case 'mythic': return '1.2em';
@@ -989,12 +993,10 @@
         class:animated={!introduced}
       >
         {#each $gridArray as cell (cell.x + ':' + cell.y)}
-          {@const distance = Math.sqrt(
-            Math.pow(cell.x - $map.target.x, 2) + 
-            Math.pow(cell.y - $map.target.y, 2)
-          )}
-          {@const isCurrentPlayerTile = hasCurrentPlayer(cell.players)}
           {@const highestRarityItem = getHighestRarityItem(cell.items)}
+          {@const hasPlayers = cell.players && cell.players.length > 0}
+          {@const isCurrentPlayerHere = shouldShowPlayerPosition(cell)}
+          {@const playerCount = getPlayerCount(cell)}
           <div
             class="tile {getStructureClass(cell.structure)} {cell.terrain?.rarity || 'common'}"
             class:center={cell.isCenter}
@@ -1002,9 +1004,10 @@
             class:highlighted={cell.highlighted}
             class:has-structure={cell.structure}
             class:has-groups={cell.groups?.length > 0}
-            class:has-players={cell.players?.length > 0}
+            class:has-players={hasPlayers}
             class:has-items={cell.items?.length > 0}
-            class:player-position={isPlayerPosition(cell.x, cell.y)}
+            class:player-position={isCurrentPlayerHere}
+            class:from-world-data={playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y && !hasCurrentPlayerEntity(cell)}
             style="background-color: {cell.color || 'var(--terrain-color)'}"
             onmouseenter={() => handleTileHover(cell)}
             aria-label={`Coordinates ${cell.x},${cell.y}`}
@@ -1021,17 +1024,19 @@
               </div>
             {/if}
             
-            <!-- Player position indicator -->
-            {#if isPlayerPosition(cell.x, cell.y)}
-              <div class="player-position-indicator"></div>
+            <!-- Player position indicator - only show for current player -->
+            {#if isCurrentPlayerHere}
+              <div class="player-position-indicator" 
+                   class:from-world-data={playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y && !hasCurrentPlayerEntity(cell)}></div>
             {/if}
             
             <!-- Entity indicators -->
             <div class="entity-indicators">
-              {#if cell.players?.length > 0}
-                <div class="entity-indicator player-indicator" class:current-player-indicator={isCurrentPlayerTile}>
-                  {#if cell.players.length > 1}
-                    <span class="count">{cell.players.length}</span>
+              {#if hasPlayers}
+                <div class="entity-indicator player-indicator" 
+                     class:current-player-indicator={isCurrentPlayerHere}>
+                  {#if playerCount > 1}
+                    <span class="count">{playerCount}</span>
                   {/if}
                 </div>
               {/if}
@@ -1266,6 +1271,14 @@
     border-radius: 50%;
     box-shadow: 0 0 0.3em gold;
     z-index: 10;
+  }
+
+  .player-position-indicator.from-world-data {
+    background: linear-gradient(135deg, gold, #ffd700);
+    width: 0.75em;
+    height: 0.75em;
+    box-shadow: 0 0 0.4em gold, 0 0 0.8em rgba(255, 215, 0, 0.5);
+    z-index: 11;
   }
 
   .count {
