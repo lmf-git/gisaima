@@ -120,6 +120,28 @@
         setHighlighted(null, null);
     }
 
+    async function handleMobilizeAction(mobilizeParams) {
+        try {
+            const functions = getFunctions();
+            const mobilizeFunction = httpsCallable(functions, 'mobilize');
+            
+            console.log('Starting mobilization with params:', mobilizeParams);
+            
+            const result = await mobilizeFunction({
+                x: mobilizeParams.tile.x,
+                y: mobilizeParams.tile.y,
+                includePlayer: mobilizeParams.includePlayer,
+                unitIds: mobilizeParams.units,
+                groupName: mobilizeParams.name,
+                race: mobilizeParams.race
+            });
+            
+            console.log('Mobilization started successfully:', result.data);
+        } catch (error) {
+            console.error('Error starting mobilization:', error);
+        }
+    }
+
     function openMovePopup(tile) {
         showMove = true;
         moveData = tile;
@@ -283,11 +305,9 @@
         }
     });
 
-    // Keep this effect but simplify it to purely focus on player position
     $effect(() => {
         if (!$ready || !$game.playerWorldData?.lastLocation) return;
         
-        // If we haven't processed coordinates yet and the player is alive
         if (!urlProcessingComplete && $game.playerWorldData.alive === true) {
             const location = $game.playerWorldData.lastLocation;
             console.log('Centering map on player location:', location);
@@ -297,7 +317,6 @@
         }
     });
 
-    // Add debug output for player data loading
     $effect(() => {
       console.log("Player data status:", {
         ready: $ready,
@@ -308,15 +327,12 @@
       });
     });
 
-    // Ensure player data is fully loaded after map is ready 
     $effect(() => {
       if ($ready && $game.currentWorld && $user?.uid && !$game.playerWorldData) {
-        // Request player data load if it's not loaded yet
         console.log("Requesting player data reload for", $user.uid, $game.currentWorld);
         const userId = $user.uid;
         const worldId = $game.currentWorld;
         
-        // This will set up a listener that updates the game store
         import("../../lib/stores/game.js").then(module => {
           module.loadPlayerWorldData(userId, worldId);
         });
@@ -513,15 +529,12 @@
     
     const ANIMATION_DURATION = 800;
     
-    // Simplify the initialization of panel visibility states
     $effect(() => {
         if (browser) {
-            // If spawn menu or tutorial is visible, keep panels closed by default
             if ($needsSpawn || isTutorialVisible) {
                 showMinimap = false;
                 showEntities = false;
             } else {
-                // Only use stored preferences when no modal is active
                 const storedMinimapVisibility = localStorage.getItem('minimap');
                 const defaultMinimapVisibility = window.innerWidth >= 768;
                 
@@ -535,7 +548,6 @@
         }
     });
     
-    // Update the spawn menu watcher to set panel state directly
     $effect(() => {
         if ($needsSpawn && (showMinimap || showEntities)) {
             showMinimap = false;
@@ -543,11 +555,9 @@
         }
     });
     
-    // Update the tutorial visibility handler
     function handleTutorialVisibility(isVisible) {
         isTutorialVisible = isVisible;
         
-        // If tutorial becomes visible, close panels immediately
         if (isTutorialVisible && (showMinimap || showEntities)) {
             showMinimap = false;
             showEntities = false;
@@ -555,7 +565,6 @@
     }
     
     function toggleMinimap() {
-        // If spawn or tutorial is active, don't allow opening
         if ($needsSpawn || isTutorialVisible) {
             return;
         }
@@ -589,7 +598,6 @@
     }
 
     function toggleEntities() {
-        // If spawn or tutorial is active, don't allow opening
         if ($needsSpawn || isTutorialVisible) {
             return;
         }
@@ -624,10 +632,8 @@
     }
 
     function handleGridClick(coords) {
-        // Expect direct coordinates object from Grid component
         const { x, y } = coords;
         
-        // Skip if no coordinates or details modal is open
         if (x === undefined || y === undefined || detailed) {
             return;
         }
@@ -638,22 +644,17 @@
         } else {
             console.log('Moving to clicked tile:', { x, y });
             
-            // First move target to this location
             moveTarget(x, y);
             
-            // Set the highlight and get the tile data in one consistent operation
             setHighlighted(x, y);
             
-            // Wait a brief moment for the coordinates store to update
             setTimeout(() => {
-                // Get the tile data from coordinates store after highlight is set
                 const clickedTile = $coordinates.find(cell => cell.x === x && cell.y === y);
                 
-                // Check if there's content worth showing details for
                 if (clickedTile && hasTileContent(clickedTile)) {
                     toggleDetailsModal(true, clickedTile);
                 }
-            }, 50); // Short delay to ensure data is available
+            }, 50);
         }
     }
 
@@ -741,7 +742,6 @@
         
         toggleDetailsModal(false);
         
-        // Just handle UI transitions - actual function calls happen in the specialized components
         switch(action) {
             case 'mobilize':
                 openMobilizePopup(tile);
@@ -772,7 +772,6 @@
                 break;
                 
             default:
-                // Other actions are handled directly in Details.svelte
                 console.log(`Action ${action} was handled in Details component`);
         }
     }
@@ -815,7 +814,6 @@
         currentPath = [];
         
         if (group && group.x !== undefined && group.y !== undefined) {
-            // Initialize path with group's current position
             currentPath = [{ x: group.x, y: group.y }];
         }
     }
@@ -934,7 +932,7 @@
             <Mobilize
                 tile={mobilizeData}
                 onClose={closeMobilizePopup}
-                onMobilize={openMobilizePopup}
+                onMobilize={handleMobilizeAction}
             />
         {/if}
 

@@ -459,6 +459,14 @@
     executeAction(actionId, currentTile);
   }
 
+  // Add keyboard event handler for action buttons
+  function handleActionKeydown(action, event) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      executeAction(action.id, currentTile);
+    }
+  }
+
   // Add state to track animation status
   let mounted = $state(false);
   let closing = $state(false);
@@ -796,6 +804,7 @@
                 <button 
                   class="action-button" 
                   onclick={() => selectAction(action.id)}
+                  onkeydown={(event) => handleActionKeydown(action, event)}
                   aria-label={action.label}
                   type="button"
                 >
