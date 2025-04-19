@@ -32,7 +32,10 @@
   // Add a helper function to ensure consistent chunk key calculation
   function getCorrectChunkKey(x, y) {
     const CHUNK_SIZE = 20;
-    return `${Math.floor((x + 10) / CHUNK_SIZE)},${Math.floor((y + 10) / CHUNK_SIZE)}`;
+    // Match the database structure for chunks
+    const chunkX = Math.floor(x >= 0 ? x / CHUNK_SIZE : (x + 1) / CHUNK_SIZE - 1);
+    const chunkY = Math.floor(y >= 0 ? y / CHUNK_SIZE : (y + 1) / CHUNK_SIZE - 1);
+    return `${chunkX},${chunkY}`;
   }
   
   // Load spawn points from the database and filter by race

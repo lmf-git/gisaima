@@ -32,13 +32,19 @@ export const startMobilization = onCall(async (request) => {
   const db = getDatabase();
   const tileKey = `${tileX},${tileY}`; 
 
-  // Define CHUNK_SIZE constant
+  // Define constants for consistency
   const CHUNK_SIZE = 20;
 
-  // Use the simplified chunk calculation formula
-  const chunkX = Math.floor((tileX + 10) / CHUNK_SIZE);
-  const chunkY = Math.floor((tileY + 10) / CHUNK_SIZE);
-  const chunkKey = `${chunkX},${chunkY}`;
+  // Calculate chunk coordinates to match database structure
+  function getChunkKey(x, y) {
+    // The chunk calculation must match database structure where
+    // coordinates like (-4,6) and (5,5) are in chunk (0,0)
+    const chunkX = Math.floor(x >= 0 ? x / CHUNK_SIZE : (x + 1) / CHUNK_SIZE - 1);
+    const chunkY = Math.floor(y >= 0 ? y / CHUNK_SIZE : (y + 1) / CHUNK_SIZE - 1);
+    return `${chunkX},${chunkY}`;
+  }
+
+  const chunkKey = getChunkKey(tileX, tileY);
 
   console.log(`Calculated chunk coordinates: ${chunkKey} for tile ${tileKey}`);
   
