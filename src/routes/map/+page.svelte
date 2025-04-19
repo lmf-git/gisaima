@@ -630,6 +630,8 @@
             console.log('Created new path with first point:', newPath);
         }
         
+        // Important: Force reactivity update by creating a new array
+        currentPath = [...currentPath];
         console.log('Current path updated:', currentPath);
     }
 
@@ -665,14 +667,49 @@
         console.log('Path drawing confirmed with path:', path || currentPath);
         
         if (path) {
-            currentPath = path;
+            currentPath = [...path];
         }
         
-        if (showMove && pathDrawingGroup) {
-            showMove = false;
+        // If we have a selected group and the Move dialog was shown, handle the movement
+        if (showMove && pathDrawingGroup && currentPath.length >= 2) {
+            // Get a reference to the Move component via the dialog
+            const moveDialog = document.querySelector('.move-dialog-container dialog');
+            if (moveDialog && moveDialog.__svelte_component__) {
+                // Let the Move component handle the confirmation through the self reference
+                moveDialog.__svelte_component__.confirmCustomPath(currentPath);
+            } else {
+                // Fallback if we can't access the component directly
+                const functions = getFunctions();
+                const moveGroupFn = httpsCallable(functions, 'moveGroup');
+                const startPoint = currentPath[0];
+                const endPoint = currentPath[currentPath.length - 1];
+                
+                moveGroupFn({
+                    groupId: pathDrawingGroup.groupId,
+                    fromX: startPoint.x,
+                    fromY: startPoint.y,
+                    toX: endPoint.x,
+                    toY: endPoint.y,
+                    path: currentPath,
+                    worldId: $game.currentWorld
+                }).then(result => {
+                    console.log('Movement started:', result.data);
+                    showMove = false;
+                }).catch(error => {
+                    console.error('Error confirming path:', error);
+                    alert('Error: ' + (error.message || 'Failed to start movement'));
+                });
+            }
         }
         
         isPathDrawingMode = false;
+        setTimeout(() => {
+            // Clear path only after transition completes
+            if (!isPathDrawingMode) {
+                pathDrawingGroup = null;
+                currentPath = [];
+            }
+        }, 500);
     }
 
     function calculatePathBetweenPoints(startX, startY, endX, endY) {
@@ -922,6 +959,7 @@
             <div class="path-drawing-controls">
                 <div class="path-info path-drawing-active">
                     <span>Drawing path: {currentPath.length} points</span>
+                    <span class="path-hint">Click on map to add points</span>
                 </div>
                 <div class="path-buttons">
                     <button 
@@ -933,7 +971,7 @@
                     <button 
                         class="confirm-path-btn" 
                         disabled={currentPath.length < 2}
-                        onclick={confirmPathDrawing}
+                        onclick={() => confirmPathDrawing()}
                     >
                         Confirm Path
                     </button>
@@ -1114,20 +1152,20 @@
         bottom: 1em;
         left: 50%;
         transform: translateX(-50%);
-        background-color: rgba(255, 255, 255, 0.85);
-        border: 0.05em solid rgba(255, 255, 255, 0.2);
-        border-radius: 0.3em;
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 0.05em solid rgba(255, 255, 255, 0.3);
+        border-radius: 0.5em;
         padding: 1em;
         display: flex;
         flex-direction: column;
         gap: 0.8em;
-        z-index: 1500; /* Ensure highest visibility */
+        z-index: 1500;
         min-width: 18em;
         backdrop-filter: blur(0.5em);
         -webkit-backdrop-filter: blur(0.5em);
         color: rgba(0, 0, 0, 0.8);
         text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-        box-shadow: none;
+        box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
         font-family: var(--font-body);
         animation: reveal 0.4s ease-out forwards;
     }
@@ -1140,6 +1178,11 @@
         align-items: center;
         gap: 0.4em;
         font-weight: 500;
+    }
+    
+    .path-hint {
+        font-size: 0.8em;
+        opacity: 0.7;
     }
     
     .path-drawing-active {

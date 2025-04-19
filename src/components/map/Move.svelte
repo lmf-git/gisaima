@@ -168,8 +168,8 @@
     }
   }
   
-  // Function to confirm the custom path
-  async function confirmCustomPath() {
+  // Function to confirm the custom path - now as a regular function
+  async function confirmCustomPath(customPath = null) {
     if (!currentPath || currentPath.length < 2) {
       console.warn('Cannot confirm path: Path too short or missing');
       return;
@@ -224,12 +224,24 @@
     }
   }
   
+  // Make the component instance available for parent components
+  // This is a Svelte 5 way to expose the instance
+  let self;
+  $effect(() => {
+    self = { confirmCustomPath };
+    if (typeof document !== 'undefined') {
+      if (document.querySelector('dialog.overlay')) {
+        document.querySelector('dialog.overlay').__svelte_component__ = self;
+      }
+    }
+  });
+  
   // Override the start movement function to handle both modes
   async function startMovement() {
     if (!selectedGroup) return;
     
     if (isPathDrawingMode) {
-      confirmCustomPath();
+      enablePathDrawing();
     } else if (targetX !== null && targetY !== null) {
       try {
         const moveGroupFn = httpsCallable(functions, 'moveGroup');
@@ -695,6 +707,8 @@
   
   .path-btn:hover:not(:disabled) {
     background-color: #e3f1ff;
+    transform: translateY(-0.1em);
+    box-shadow: 0 0.2em 0.4em rgba(66, 133, 244, 0.2);
   }
   
   .path-btn:disabled {

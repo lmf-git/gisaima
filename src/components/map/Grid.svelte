@@ -629,8 +629,8 @@
 
   function coordToPosition(x, y) {
     const state = $map;
-    const viewportCenterX = Math.floor(state.cols * (state.minimap ? EXPANDED_COLS_FACTOR : 1) / 2);
-    const viewportCenterY = Math.floor(state.rows * (state.minimap ? EXPANDED_ROWS_FACTOR : 1) / 2);
+    const viewportCenterX = Math.floor(state.cols / 2);
+    const viewportCenterY = Math.floor(state.rows / 2);
     
     const offsetX = x - state.target.x;
     const offsetY = y - state.target.y;
@@ -737,10 +737,11 @@
       : "Interactive coordinate map. Use WASD or arrow keys to navigate."}
   >    
     {#if $ready}
-      <svg class="path-layer" aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none">
-        {#if isPathDrawingMode && customPathPoints.length > 0}
+      <svg class="path-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <!-- Custom path drawing group -->
+        {#if isPathDrawingMode && customPathPoints && customPathPoints.length > 0}
           {@const pathData = createPathData(customPathPoints)}
-          <g class="path-group custom-path-group">
+          <g class="path-group custom-path-group" aria-label="Custom movement path">
             <path 
               d={pathData} 
               stroke="rgba(255, 255, 255, 0.9)"
@@ -760,7 +761,7 @@
               <circle 
                 cx="{pos.posX * 100}" 
                 cy="{pos.posY * 100}" 
-                r="{i === 0 || i === customPathPoints.length - 1 ? '1' : '0.6'}" 
+                r="{i === 0 || i === customPathPoints.length - 1 ? '1.2' : '0.8'}" 
                 fill="{i === 0 ? 'rgba(50, 205, 50, 0.9)' : i === customPathPoints.length - 1 ? 'rgba(220, 20, 60, 0.9)' : 'white'}" 
                 stroke="rgba(0, 0, 0, 0.5)"
                 stroke-width="0.5"
@@ -776,7 +777,7 @@
                   <circle 
                     cx="{midX}" 
                     cy="{midY}" 
-                    r="0.5" 
+                    r="0.7" 
                     fill="rgba(255, 255, 255, 0.9)"
                     opacity="0.9"
                   />
@@ -786,51 +787,39 @@
           </g>
         {/if}
         
-        {#each movementPaths as path}
-          <g class="path-group" class:current-player-path={path.owner === $currentPlayer?.uid}>
-            <path 
-              d={createPathData(path.points)} 
-              stroke={path.color}
-              stroke-width="1"
-              stroke-dasharray="8,5"
-              stroke-linejoin="round"
-              stroke-linecap="round"
-              fill="none"
-              opacity="0.8"
-            />
-            
-            <!-- Draw direction dots along the path -->
-            {#each path.points as point, i}
-              {@const pos = coordToPosition(point.x, point.y)}
-              
-              <circle 
-                cx="{pos.posX * 100}" 
-                cy="{pos.posY * 100}" 
-                r="{i === 0 || i === path.points.length - 1 ? '0.5' : '0.25'}" 
-                fill={path.color} 
-                stroke="rgba(0,0,0,0.3)"
-                stroke-width="0.5"
-                opacity="{i === 0 || i === path.points.length - 1 ? '1' : '0.6'}"
+        <!-- Movement paths group -->
+        <g class="movement-paths-group" aria-label="Active movement paths">
+          {#each movementPaths as path}
+            <g class="path-group" class:current-player-path={path.owner === $currentPlayer?.uid}>
+              <path 
+                d={createPathData(path.points)} 
+                stroke={path.color}
+                stroke-width="1"
+                stroke-dasharray="8,5"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+                fill="none"
+                opacity="0.8"
+                aria-label={`Movement path for ${path.owner === $currentPlayer?.uid ? 'your' : 'another'} group`}
               />
               
-              {#if i < path.points.length - 1}
-                {@const nextPos = coordToPosition(path.points[i+1].x, path.points[i+1].y)}
-                {@const midX = (pos.posX * 100 + nextPos.posX * 100) / 2}
-                {@const midY = (pos.posY * 100 + nextPos.posY * 100) / 2}
+              <!-- Draw direction dots along the path with better performance -->
+              {#each path.points.filter((_, i) => i === 0 || i === path.points.length - 1 || i % 3 === 0) as point, i}
+                {@const pos = coordToPosition(point.x, point.y)}
                 
-                {#if Math.abs(nextPos.posX - pos.posX) > 0.02 || Math.abs(nextPos.posY - pos.posY) > 0.02}
-                  <circle 
-                    cx="{midX}" 
-                    cy="{midY}" 
-                    r="0.35" 
-                    fill={path.color}
-                    opacity="0.9"
-                  />
-                {/if}
-              {/if}
-            {/each}
-          </g>
-        {/each}
+                <circle 
+                  cx="{pos.posX * 100}" 
+                  cy="{pos.posY * 100}" 
+                  r="{i === 0 || i === path.points.length - 1 ? '0.5' : '0.25'}" 
+                  fill={path.color} 
+                  stroke="rgba(0,0,0,0.3)"
+                  stroke-width="0.5"
+                  opacity="{i === 0 || i === path.points.length - 1 ? '1' : '0.6'}"
+                />
+              {/each}
+            </g>
+          {/each}
+        </g>
       </svg>
       
       <div class="grid main-grid" 
@@ -913,7 +902,7 @@
   
   {#if isPathDrawingMode}
     <div class="path-drawing-indicator">
-      Path Drawing Mode - {customPathPoints.length} points
+      Path Drawing Mode - {customPathPoints?.length || 0} points
     </div>
   {/if}
 </div>
@@ -1445,10 +1434,13 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 100;
+    z-index: 500;
     overflow: visible;
     transform: translateZ(0);
     will-change: transform;
+    
+    /* Improve SVG rendering performance */
+    shape-rendering: optimizeSpeed;
   }
   
   .path-group {
@@ -1457,7 +1449,7 @@
   }
   
   .custom-path-group {
-    z-index: 200;
+    z-index: 600;
   }
   
   .custom-path-group path {
@@ -1468,7 +1460,7 @@
   }
 
   .current-player-path {
-    z-index: 55;
+    z-index: 550;
   }
   
   @keyframes dash {
@@ -1482,7 +1474,7 @@
     stroke-linejoin: round;  
     stroke-linecap: round;
     vector-effect: non-scaling-stroke;
-    stroke-width: 1;
+    stroke-width: 1.5;
     pointer-events: none;
   }
   
@@ -1513,6 +1505,7 @@
     font-size: 0.9em;
     box-sizing: border-box;
     margin: 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   }
 
   @keyframes reveal {
