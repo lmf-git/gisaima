@@ -79,6 +79,14 @@
     selectedGroup = group;
     error = null;
   }
+  
+  // Add keyboard event handler for group selection
+  function handleGroupKeyDown(event, group) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault(); // Prevent page scroll on space
+      selectGroup(group);
+    }
+  }
 </script>
 
 <dialog open>
@@ -110,16 +118,20 @@
             
             <div class="groups-list">
               {#each availableGroups as group}
-                <div 
+                <!-- Replace div with button for better accessibility -->
+                <button 
                   class="group-option" 
                   class:selected={selectedGroup?.id === group.id}
                   onclick={() => selectGroup(group)}
+                  onkeydown={(e) => handleGroupKeyDown(e, group)}
+                  aria-pressed={selectedGroup?.id === group.id}
+                  type="button"
                 >
                   <div class="group-info">
                     <div class="group-name">{group.name || `Group ${group.id.substring(0,4)}`}</div>
                     <div class="group-units">{group.unitCount || (group.units ? Object.keys(group.units).length : 0)} units</div>
                   </div>
-                </div>
+                </button>
               {/each}
             </div>
             
@@ -242,6 +254,7 @@
     overflow-y: auto;
   }
   
+  /* Update group-option to style the button properly */
   .group-option {
     padding: 0.8em;
     border-radius: 0.3em;
@@ -249,6 +262,11 @@
     border: 0.1em solid var(--color-navy-highlight);
     cursor: pointer;
     transition: all 0.2s;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-body);
+    color: var(--color-text);
+    font-size: 1em;
   }
   
   .group-option:hover {
@@ -259,6 +277,11 @@
     background-color: var(--color-navy-highlight);
     border-color: var(--color-bright-accent);
     box-shadow: 0 0 0.5em rgba(100, 255, 218, 0.3);
+  }
+  
+  .group-option:focus-visible {
+    outline: 0.2em solid var(--color-bright-accent);
+    outline-offset: 0.1em;
   }
   
   .group-name {
@@ -325,7 +348,7 @@
   .gather-button:hover:not(:disabled) {
     background-color: var(--color-bright-accent);
     transform: translateY(-0.1em);
-    box-shadow: 0 0.2em 0.5em rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0.2em rgba(0, 0, 0, 0.3);
   }
   
   .gather-button:disabled {
