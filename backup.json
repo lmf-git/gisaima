@@ -1,120 +1,8 @@
 {
-  "players": {
-    "30Qfi11AOWZ5RmA7326FRKdvevt1": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745043056078,
-          "lastLocation": {
-            "x": -4,
-            "y": 6
-          },
-          "race": "elf"
-        }
-      }
-    },
-    "7ClpkDWGEtXaOKJzNEbfDBUr9my2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745038841090,
-          "lastLocation": {
-            "x": 10,
-            "y": 8
-          },
-          "race": "fairy"
-        }
-      }
-    },
-    "9OebzA4v6bZxZSWe9K8GehIlCkB3": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745044297384,
-          "lastLocation": {
-            "x": 12,
-            "y": 4
-          },
-          "race": "dwarf"
-        }
-      }
-    },
-    "OaHv0DRPExbQL3WX8PlN1Yoj8s82": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "groups": {
-            "-OOBOEYFr8OX_TJyyBcG": {
-              "at": "5,5",
-              "id": "-OOBOEYFr8OX_TJyyBcG",
-              "readyAt": 1745038467411,
-              "status": "mobilizing"
-            }
-          },
-          "inGroup": "-OOBOEYFr8OX_TJyyBcG",
-          "joined": 1745038399775,
-          "lastLocation": {
-            "x": 5,
-            "y": 5
-          },
-          "race": "human"
-        }
-      }
-    },
-    "oq2ueuC8TBeXwHlcDPCClN4D2Hp1": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745041769295,
-          "lastLocation": {
-            "x": -4,
-            "y": 6
-          },
-          "race": "elf"
-        }
-      }
-    },
-    "othuFXN7AMZ45VYGcn7dcF0FXEE2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745039428105,
-          "lastLocation": {
-            "x": 15,
-            "y": -3
-          },
-          "race": "goblin"
-        }
-      }
-    }
-  },
   "worlds": {
     "ancient-lands": {
       "chunks": {
         "0,0": {
-          "-4,6": {
-            "players": {
-              "30Qfi11AOWZ5RmA7326FRKdvevt1": {
-                "displayName": "Player",
-                "lastActive": 1745043059280,
-                "race": "elf",
-                "uid": "30Qfi11AOWZ5RmA7326FRKdvevt1"
-              },
-              "oq2ueuC8TBeXwHlcDPCClN4D2Hp1": {
-                "displayName": "Player",
-                "lastActive": 1745041791595,
-                "race": "elf",
-                "uid": "oq2ueuC8TBeXwHlcDPCClN4D2Hp1"
-              }
-            },
-            "structure": {
-              "description": "An elven city built around the oldest living trees in the realm",
-              "faction": "elf",
-              "id": "structure_al_elf_spawn",
-              "name": "Ancient Arborium",
-              "type": "spawn"
-            }
-          },
           "0,0": {
             "structure": {
               "capacity": 60,
@@ -228,16 +116,21 @@
               "name": "Deepforge Stronghold",
               "type": "spawn"
             }
-          },
+          }
+        },
+        "-1,0": {
+          "-4,6": {
+            "structure": {
+              "description": "An elven city built around the oldest living trees in the realm",
+              "faction": "elf",
+              "id": "structure_al_elf_spawn",
+              "name": "Ancient Arborium",
+              "type": "spawn"
+            }
+          }
+        },
+        "0,-1": {
           "15,-3": {
-            "players": {
-              "othuFXN7AMZ45VYGcn7dcF0FXEE2": {
-                "displayName": "Player",
-                "lastActive": 1745039429979,
-                "race": "goblin",
-                "uid": "othuFXN7AMZ45VYGcn7dcF0FXEE2"
-              }
-            },
             "structure": {
               "description": "A resourceful goblin settlement built from the remains of ancient beasts",
               "faction": "goblin",
@@ -257,11 +150,11 @@
         "speed": 1
       },
       "spawns": {
-        "0:0:-4:6": "structure_al_elf_spawn",
+        "-1:0:-4:6": "structure_al_elf_spawn",
         "0:0:5:5": "structure_al_human_spawn",
         "0:0:10:8": "structure_al_fairy_spawn",
         "0:0:12:4": "structure_al_dwarf_spawn",
-        "0:0:15:-3": "structure_al_goblin_spawn"
+        "0:-1:15:-3": "structure_al_goblin_spawn"
       }
     }
   }

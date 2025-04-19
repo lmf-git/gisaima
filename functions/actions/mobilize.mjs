@@ -119,26 +119,13 @@ function isPlayerOnTile(tileData, playerId) {
   return false;
 }
 
-// Calculate chunk coordinates to match database structure with correction for world coordinates
+// Calculate chunk coordinates to match database structure
 function getChunkKey(x, y) {
-  const CHUNK_SIZE = 20; // Standard chunk size used throughout codebase
-  
-  // Fix for negative coordinates: ensure consistent handling
-  // For negative numbers, we need to handle the integer division differently
-  // to align with how Firebase stores the data
+  const CHUNK_SIZE = 20;
   const chunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
   const chunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
   
   console.log(`Chunk calculation: (${x},${y}) -> chunk (${chunkX},${chunkY})`);
-  
-  // For debugging, also show what the coordinate would be with simple division
-  const simpleX = Math.floor(x / CHUNK_SIZE);
-  const simpleY = Math.floor(y / CHUNK_SIZE);
-  
-  if (simpleX !== chunkX || simpleY !== chunkY) {
-    console.log(`Note: Simple division would give: (${simpleX},${simpleY})`);
-  }
-  
   return `${chunkX},${chunkY}`;
 }
 
