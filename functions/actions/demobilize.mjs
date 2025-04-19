@@ -64,22 +64,66 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError("failed-precondition", "No structure found at this location");
     }
     
+    // Parse chunk coordinates from the chunk key
+    const [chunkXStr, chunkYStr] = chunkKey.split(',');
+    const chunkX = parseInt(chunkXStr);
+    const chunkY = parseInt(chunkYStr);
+    
+    // Check if the group has a player unit
+    let hasPlayerUnit = false;
+    if (groupData.units) {
+      // Handle both array and object formats
+      const units = Array.isArray(groupData.units) ? groupData.units : Object.values(groupData.units);
+      hasPlayerUnit = units.some(unit => unit.type === 'player');
+    }
+    
     // Use status flag for tick processing instead of time calculation
     const now = Date.now();
     
-    // Update the group to demobilising status with pending action flag
+    // Enhanced update with more precise location data for player placement
     await groupRef.update({
       status: 'demobilising',
       pendingAction: true,  // Flag for the tick processor to handle this on next tick
       startedAt: now,
       lastUpdated: now,
       targetStructureId: targetStructureId,
-      storageDestination: storageDestination
+      storageDestination: storageDestination,
+      // Add precise location data for player placement
+      demobilizationData: {
+        hasPlayer: hasPlayerUnit,
+        exactLocation: {
+          x: locationX,
+          y: locationY,
+          chunkX: chunkX,
+          chunkY: chunkY,
+          tileKey: tileKey,
+          chunkKey: chunkKey
+        }
+      }
     });
+    
+    // If this group has a player, also update player's world data to indicate pending relocation
+    if (hasPlayerUnit) {
+      const playerWorldRef = db.ref(`players/${userId}/worlds/${worldId}`);
+      await playerWorldRef.update({
+        pendingRelocation: {
+          x: locationX,
+          y: locationY,
+          chunkX: chunkX,
+          chunkY: chunkY,
+          tileKey: tileKey,
+          chunkKey: chunkKey,
+          timestamp: now
+        }
+      });
+      
+      logger.info(`Player ${userId} will be relocated to ${locationX},${locationY} (chunk ${chunkKey}) after demobilization`);
+    }
     
     return {
       status: "demobilising",
-      message: "Group is demobilising and will complete on next world update"
+      message: "Group is demobilising and will complete on next world update",
+      hasPlayer: hasPlayerUnit
     };
   } catch (error) {
     console.error("Error in demobiliseUnits:", error);
