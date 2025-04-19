@@ -144,14 +144,18 @@ export const processGameTicks = onSchedule({
                   }
                   
                   // Handle units: move non-player units back to the structure and keep players on the map
-                  if (group.units && Array.isArray(group.units)) {
+                  if (group.units) {
+                    // Handle both array and object structure
+                    const unitValues = Array.isArray(group.units) ? 
+                      group.units : Object.values(group.units);
+                      
                     // Separate player and non-player units
-                    const playerUnits = group.units.filter(unit => unit.type === 'player');
+                    const playerUnits = unitValues.filter(unit => unit.type === 'player');
                   
                     // For each player unit, make sure they remain on the tile 
                     // but are no longer in the group
                     for (const playerUnit of playerUnits) {
-                      if (playerUnit.id) {
+                      if (playerUnit.uid || playerUnit.id) {
                         // Use the exact location data from demobilizationData if available
                         // This ensures consistent chunk calculation
                         let exactLocationData;
@@ -169,24 +173,33 @@ export const processGameTicks = onSchedule({
                         // Use the exact chunk key from demobilization data to ensure proper placement
                         const playerChunkKey = exactLocationData.chunkKey || chunkKey;
                         const playerTileKey = `${exactLocationData.x},${exactLocationData.y}`;
+                        const playerId = playerUnit.uid || playerUnit.id;
                         
                         // Create or update a standalone player entry on this tile
-                        const playerPath = `worlds/${worldId}/chunks/${playerChunkKey}/${playerTileKey}/players/${playerUnit.id}`;
+                        // IMPORTANT: Match the exact structure created by SpawnMenu.svelte
+                        const playerPath = `worlds/${worldId}/chunks/${playerChunkKey}/${playerTileKey}/players/${playerId}`;
                         updates[playerPath] = {
-                          id: playerUnit.id,
-                          displayName: playerUnit.name || `Player ${playerUnit.id}`,
-                          race: playerUnit.race || 'human',
+                          displayName: playerUnit.displayName || playerUnit.name || `Player ${playerId}`,
                           lastActive: now,
-                          uid: playerUnit.id,
-                          // Use exact coordinates
-                          x: exactLocationData.x,
-                          y: exactLocationData.y
+                          uid: playerId,
+                          race: playerUnit.race || 'human'
                         };
                         
-                        // Also clean up any pendingRelocation status for the player
-                        updates[`players/${playerUnit.id}/worlds/${worldId}/pendingRelocation`] = null;
+                        // ALSO update player's world record to keep everything in sync
+                        updates[`players/${playerId}/worlds/${worldId}/lastLocation`] = {
+                          x: exactLocationData.x,
+                          y: exactLocationData.y,
+                          timestamp: now
+                        };
                         
-                        logger.info(`Player ${playerUnit.id} placed at ${playerTileKey} in chunk ${playerChunkKey} after demobilization`);
+                        // Make sure alive status is true
+                        updates[`players/${playerId}/worlds/${worldId}/alive`] = true;
+                        
+                        // Also clean up any pendingRelocation status for the player
+                        updates[`players/${playerId}/worlds/${worldId}/pendingRelocation`] = null;
+                        updates[`players/${playerId}/worlds/${worldId}/inGroup`] = null;
+                        
+                        logger.info(`Player ${playerId} placed at ${playerTileKey} in chunk ${playerChunkKey} after demobilization`);
                       }
                     }
                   }

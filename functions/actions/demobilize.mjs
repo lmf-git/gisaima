@@ -24,17 +24,21 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
   try {
     const db = getDatabase();
     
-    // Fix chunk calculation for negative coordinates
+    // Fix chunk calculation for negative coordinates - Updated to match mobilize.mjs
     const CHUNK_SIZE = 20;
     function getChunkKey(x, y) {
-      // Handle negative coordinates correctly by adjusting division for negative values
-      const chunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
-      const chunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
+      // Simple integer division matches the database structure
+      const chunkX = Math.floor(x / CHUNK_SIZE);
+      const chunkY = Math.floor(y / CHUNK_SIZE);
+      
+      console.log(`Chunk calculation: (${x},${y}) -> chunk (${chunkX},${chunkY})`);
       return `${chunkX},${chunkY}`;
     }
     
     const chunkKey = getChunkKey(locationX, locationY);
     const tileKey = `${locationX},${locationY}`;
+    
+    console.log(`Demobilizing at coordinates ${locationX},${locationY} in chunk ${chunkKey}`);
     
     // Get the full path to this group
     const groupRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`);
@@ -44,6 +48,7 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
     const groupData = groupSnapshot.val();
     
     if (!groupData) {
+      console.log(`Group not found at path: worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`);
       throw new HttpsError("not-found", "Group not found");
     }
     
