@@ -65,7 +65,13 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError("failed-precondition", "No structure found at this location");
     }
     
-    // No need to store structure ID - it's implied by the tile location
+    // Get the structure data and extract the ID
+    const structureData = structureSnapshot.val();
+    const structureId = structureData.id;
+    
+    if (!structureId) {
+      throw new HttpsError("failed-precondition", "Structure has no ID");
+    }
     
     // Parse chunk coordinates from the chunk key
     const [chunkXStr, chunkYStr] = chunkKey.split(',');
@@ -88,6 +94,7 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       status: 'demobilising',  // This status alone is sufficient for the tick processor
       startedAt: now,
       lastUpdated: now,
+      targetStructureId: structureId, // Still include this for tick processor compatibility
       storageDestination: storageDestination,
       // Add precise location data for player placement
       demobilizationData: {
