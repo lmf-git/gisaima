@@ -46,7 +46,20 @@
       });
     }
     
-    const playerOnTile = tile.players?.some(p => p.id === playerId);
+    // Adjust player detection to handle both array and object formats
+    const playerOnTile = Array.isArray(tile.players) 
+      ? tile.players.some(p => p.id === playerId || p.uid === playerId)
+      : tile.players && (
+          tile.players[playerId] !== undefined || 
+          Object.values(tile.players).some(p => p.uid === playerId || p.id === playerId)
+        );
+        
+    console.log("Player on tile check:", {
+      playerId,
+      playerOnTile,
+      tilePlayers: tile.players
+    });
+        
     includePlayer = playerOnTile;
     availableUnits = units;
   });
@@ -125,7 +138,14 @@
   
   let canMobilize = $derived(
     (selectedUnits.length > 0) || 
-    (includePlayer && tile?.players?.some(p => p.id === $currentPlayer?.uid))
+    (includePlayer && (
+      Array.isArray(tile?.players)
+        ? tile.players.some(p => p.id === $currentPlayer?.uid || p.uid === $currentPlayer?.uid)
+        : tile?.players && (
+            tile.players[$currentPlayer?.uid] !== undefined || 
+            Object.values(tile.players).some(p => p.uid === $currentPlayer?.uid || p.id === $currentPlayer?.uid)
+          )
+    ))
   );
 
   function handleKeyDown(event) {
@@ -200,7 +220,12 @@
         </div>
         
         <div class="options">
-          {#if tile.players?.some(p => p.id === $currentPlayer?.uid)}
+          {#if Array.isArray(tile?.players)
+              ? tile.players.some(p => p.id === $currentPlayer?.uid || p.uid === $currentPlayer?.uid)
+              : tile?.players && (
+                  tile.players[$currentPlayer?.uid] !== undefined || 
+                  Object.values(tile.players).some(p => p.uid === $currentPlayer?.uid || p.id === $currentPlayer?.uid)
+                )}
             <div class="option-row">
               <label for="include-player">
                 <input 

@@ -30,9 +30,12 @@ export const startMobilization = onCall(async (request) => {
   console.log(`Mobilization request by ${uid} for world ${worldId} at ${tileX},${tileY}`);
   
   const db = getDatabase();
-  const tileKey = `${tileX}_${tileY}`;
-  const tileRef = db.ref(`tiles/${worldId}/${tileKey}`);
-  const worldRef = db.ref(`worlds/${worldId}`);
+  const tileKey = `${tileX},${tileY}`; // Fixed: changed underscore to comma to match database format
+  const chunkX = Math.floor(tileX / 20);
+  const chunkY = Math.floor(tileY / 20);
+  const chunkKey = `${chunkX},${chunkY}`;
+  const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
+  const worldRef = db.ref(`worlds/${worldId}/info`);
   
   try {
     // Get world info to calculate next tick time
@@ -46,14 +49,19 @@ export const startMobilization = onCall(async (request) => {
     const tileSnapshot = await tileRef.once('value');
     const tileData = tileSnapshot.val() || {};
     
+    console.log(`Tile data fetched:`, JSON.stringify(tileData));
+    
     // Verify player is on the tile if including player
     if (includePlayer) {
       const players = tileData.players || {};
-      const playerOnTile = Object.values(players).some(p => 
-        p.uid === uid || p.id === uid
-      );
+      console.log(`Checking if player ${uid} is on tile, players:`, JSON.stringify(players));
+      
+      // Check if player exists as a key in the players object (real database structure)
+      const playerOnTile = players[uid] !== undefined || 
+                          Object.values(players).some(p => p.uid === uid);
       
       if (!playerOnTile) {
+        console.log(`Player ${uid} not found on tile ${tileKey}`);
         throw new HttpsError('failed-precondition', 'Player not found on this tile.');
       }
     }

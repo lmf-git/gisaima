@@ -185,7 +185,11 @@ function processChunkData(data = {}, chunkKey) {
     // Process player groups (multiple per tile)
     if (tileData.players) {
       updates.players[fullTileKey] = Object.entries(tileData.players)
-        .map(([id, data]) => ({ ...data, id, x, y }));
+        .map(([id, data]) => ({ 
+          ...data, 
+          id: data.uid || id,  // Prioritize existing uid if available
+          x, y 
+        }));
       validPlayerKeys.add(fullTileKey);
       entitiesChanged = true;
     } else {
