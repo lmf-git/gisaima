@@ -1168,9 +1168,6 @@
   
   .section-header:focus {
     outline: 2px solid rgba(66, 133, 244, 0.6);
-  
-  .section-header:focus {
-    outline: 2px solid rgba(66, 133, 244, 0.6);
   }
   
   .collapse-button {
