@@ -9,12 +9,19 @@ import { logger } from "firebase-functions";
 
 // Function to start a mobilization for a group
 export const startMobilization = onCall(async (data, context) => {
-  // Ensure user is authenticated
+  // Ensure user is authenticated - with improved logging for troubleshooting
   if (!context.auth) {
+    logger.error("Authentication failed: No auth context provided", {
+      authHeader: context.rawRequest?.headers?.authorization ? "Present" : "Missing"
+    });
     throw new HttpsError('unauthenticated', 'User must be logged in to mobilize units');
   }
   
   const uid = context.auth.uid;
+  logger.info(`User ${uid} attempting mobilization`, {
+    isAnonymous: context.auth.token.firebase?.sign_in_provider === 'anonymous'
+  });
+  
   const { worldId, tileX, tileY, units: unitIds, includePlayer, name, race } = data;
   
   if (!worldId || tileX === undefined || tileY === undefined) {

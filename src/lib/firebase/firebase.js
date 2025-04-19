@@ -24,4 +24,5 @@ export const app = initializeApp(firebaseConfig);
 // Initialize services
 export const auth = getAuth(app);
 export const db = getDatabase(app);
-export const functions = getFunctions(app);
+export const functions = getFunctions(app, 'us-central1'); // Specify the region if needed
+

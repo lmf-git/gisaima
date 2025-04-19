@@ -77,6 +77,7 @@
     }
 
     try {
+    
       console.log("Preparing mobilization request with:", {
         worldId: $game.currentWorld,
         tileX: tile.x,
@@ -86,12 +87,6 @@
         name: groupName,
         race: $currentPlayer?.race
       });
-      
-      // First ensure we have a current user
-      if (!$currentPlayer || !$currentPlayer.uid) {
-        alert('You must be logged in to mobilize units.');
-        return;
-      }
       
       // Call function directly
       try {
@@ -110,11 +105,9 @@
         onClose(); // Close only after success
       } catch (error) {
         console.error('Error during mobilization:', error);
-        alert(`Mobilization failed: ${error.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error("Exception in startMobilization:", error);
-      alert(`Error: ${error.message || 'Unknown error occurred'}`);
     }
   }
   
