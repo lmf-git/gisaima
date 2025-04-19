@@ -4,8 +4,8 @@
   import { targetStore, coordinates } from '../../lib/stores/map';
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   import { onMount, onDestroy } from 'svelte';
-  import { getFunctions, httpsCallable } from "firebase/functions";
-  import { callFunction } from '../../lib/firebase/functions';
+  // Import callFunction from firebase.js instead of functions.js
+  import { callFunction } from '../../lib/firebase/firebase';
 
   // Import race icon components
   import Human from '../../components/icons/Human.svelte';

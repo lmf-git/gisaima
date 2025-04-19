@@ -2,7 +2,7 @@
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
-  import { callFunction } from '../../lib/firebase/functions';
+  import { callFunction } from '../../lib/firebase/firebase';
 
   // Props with default empty object to avoid destructuring errors
   const { tile = {}, onClose = () => {}, onAttack = () => {} } = $props();

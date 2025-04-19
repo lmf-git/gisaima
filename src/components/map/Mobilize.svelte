@@ -7,8 +7,8 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
-  // Import the new function helper
-  import { callFunction } from "../../lib/firebase/functions";
+  // Import callFunction from firebase.js instead of functions.js
+  import { callFunction } from "../../lib/firebase/firebase";
 
   // Props with default empty object - removed onMobilize
   const { tile = {}, onClose = () => {} } = $props();

@@ -2,8 +2,8 @@
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
-  // Import the new function helper
-  import { callFunction } from '../../lib/firebase/functions';
+  // Import callFunction from firebase.js instead of functions.js
+  import { callFunction } from '../../lib/firebase/firebase';
 
   // Props with default empty object to avoid destructuring errors
   const { tile = {}, onClose = () => {}, onJoinBattle = () => {} } = $props();

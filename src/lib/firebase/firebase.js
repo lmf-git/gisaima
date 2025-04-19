@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getFunctions } from 'firebase/functions';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getDatabase } from 'firebase/database';
 import { getStorage } from 'firebase/storage';
 import { browser } from '$app/environment';
@@ -28,4 +28,37 @@ export const firestore = getFirestore(app);
 export const functions = getFunctions(app, 'us-central1'); // Explicitly set region
 export const storage = getStorage(app);
 
-// The token refresh code has been removed as it's unnecessary at this early stage
+/**
+ * Calls a Firebase Cloud Function with minimal authentication handling
+ * @param {string} functionName - Name of the Firebase function to call
+ * @param {object} data - Data to pass to the function
+ * @returns {Promise} - Promise resolving to the function result
+ */
+export async function callFunction(functionName, data = {}) {
+  try {
+    // Basic check if user is authenticated - let Firebase handle token management
+    if (!auth.currentUser) {
+      console.error(`Attempting to call ${functionName} without authentication`);
+      throw new Error('User not authenticated. Please sign in to continue.');
+    }
+    
+    // Simple logging for debugging
+    console.log(`Calling function ${functionName} as ${auth.currentUser.uid}`);
+    
+    // Create callable and execute function - Firebase SDK will handle token management
+    const functionCall = httpsCallable(functions, functionName);
+    const result = await functionCall(data);
+    return result.data;
+  } catch (error) {
+    console.error(`Error calling function ${functionName}:`, error);
+    
+    // Simple error categorization
+    if (error.code?.includes('auth/') || 
+        error.code === 'unauthenticated' || 
+        error.code === 'permission-denied') {
+      throw new Error(`Authentication error: ${error.message}`);
+    }
+    
+    throw error;
+  }
+}
