@@ -462,14 +462,24 @@
           
         case 'gather':
           try {
+            // Find an idle group owned by the current player
+            const groupToGather = tile.groups?.find(g => 
+              g.owner === $currentPlayer?.uid && 
+              g.status === 'idle'
+            );
+            
+            if (!groupToGather) {
+              alert('No idle group available for gathering');
+              return;
+            }
+            
             // Call gather function using the imported functions instance and httpsCallable
             const gatherFn = httpsCallable(functions, 'startGathering');
             const gatherResult = await gatherFn({
-              x: tile.x,
-              y: tile.y,
-              worldId: $game.currentWorld,
-              // Ensure groupId is correctly determined or handled if missing
-              groupId: tile.groups?.find(g => g.owner === $currentPlayer?.uid && g.status === 'idle')?.id 
+              groupId: groupToGather.id,
+              locationX: tile.x, // Using locationX instead of x to match cloud function
+              locationY: tile.y, // Using locationY instead of y to match cloud function
+              worldId: $game.currentWorld
             });
             console.log('Gather result:', gatherResult.data);
           } catch (error) {

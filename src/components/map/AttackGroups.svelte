@@ -114,6 +114,14 @@
     errorMessage = '';
     
     try {
+      console.log('Starting attack with params:', {
+        attackerGroupIds: selectedAttackers, 
+        defenderGroupIds: selectedDefenders,
+        locationX: tile.x,
+        locationY: tile.y,
+        worldId: $game.currentWorld
+      });
+      
       const attackGroupsFn = httpsCallable(functions, 'attackGroups');
       const result = await attackGroupsFn({
         attackerGroupIds: selectedAttackers, 
@@ -140,7 +148,14 @@
       }
     } catch (error) {
       console.error('Error starting attack:', error);
-      errorMessage = error.message || 'Failed to start attack';
+      // More specific error handling
+      if (error.code === 'unauthenticated') {
+        errorMessage = 'Authentication error: Please log in again.';
+      } else if (error.code === 'not-found') {
+        errorMessage = 'One of the groups was not found. They may have moved or been disbanded.';
+      } else {
+        errorMessage = error.message || 'Failed to start attack';
+      }
     } finally {
       loading = false;
     }

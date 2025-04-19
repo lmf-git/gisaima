@@ -87,6 +87,15 @@
     errorMessage = '';
     
     try {
+      console.log('Joining battle with params:', {
+        groupId: selectedGroup.id,
+        battleId: selectedBattle.id,
+        side: parseInt(selectedSide),
+        locationX: tile.x,
+        locationY: tile.y,
+        worldId: $game.currentWorld
+      });
+      
       // Use the functions instance from above
       const joinBattleFn = httpsCallable(functions, 'joinBattle');
       const result = await joinBattleFn({
@@ -117,7 +126,14 @@
       }
     } catch (error) {
       console.error('Error joining battle:', error);
-      errorMessage = error.message || 'Failed to join battle';
+      // More specific error handling
+      if (error.code === 'unauthenticated') {
+        errorMessage = 'Authentication error: Please log in again.';
+      } else if (error.code === 'not-found') {
+        errorMessage = 'Battle not found. It may have ended.';
+      } else {
+        errorMessage = error.message || 'Failed to join battle';
+      }
     } finally {
       loading = false;
     }
