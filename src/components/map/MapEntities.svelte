@@ -971,6 +971,16 @@
                       {/if}
                       <div class="entity-distance">{formatDistance(battle.distance)}</div>
                     </div>
+                    {#if isPlayerAvailableOnTile(currentTile, $currentPlayer?.uid) && hasIdlePlayerGroups}
+                      <div class="battle-actions">
+                        <button 
+                          class="join-battle-btn"
+                          onclick={() => executeAction('joinBattle', currentTile)}
+                        >
+                          Join Battle
+                        </button>
+                      </div>
+                    {/if}
                   </div>
                 </div>
               {/each}

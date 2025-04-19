@@ -13,7 +13,8 @@
     onClose, 
     onConfirm, 
     animatingOut = false, 
-    class: className = '' 
+    class: className = '',
+    initialName = '' // Add initial name prop with default
   } = $props();
 
   // Available races with icon components mapping
@@ -57,6 +58,8 @@
 
   // Selected race
   let selectedRace = $state(null);
+  let displayName = $state(initialName); // Add display name state
+  let displayNameError = $state(''); // Add validation error state
   let submitting = $state(false);
   
   // Track expanded state for each race on mobile
@@ -104,9 +107,24 @@
     }
   }
 
+  // Add validation for display name
+  function validateDisplayName() {
+    if (!displayName || displayName.trim().length < 2) {
+      displayNameError = 'Display name must be at least 2 characters';
+      return false;
+    }
+    if (displayName.trim().length > 20) {
+      displayNameError = 'Display name must be less than 20 characters';
+      return false;
+    }
+    displayNameError = '';
+    return true;
+  }
+
   // Handle confirmation
   async function handleConfirm() {
     if (!selectedRace) return;
+    if (!validateDisplayName()) return;
     
     submitting = true;
     try {
@@ -121,7 +139,8 @@
         id: raceCode,
         // Include world center coordinates
         worldCenter,
-        alive: false // Changed from 'spawned: false' to 'alive: false'
+        alive: false, // Changed from 'spawned: false' to 'alive: false'
+        displayName: displayName.trim() // Add display name
       });
     } catch (error) {
       console.error('Error joining world:', error);
@@ -143,6 +162,23 @@
   </div>
   
   <div class="confirmation-content">
+    <!-- Add display name input field -->
+    <div class="name-input-container">
+      <label for="display-name">Choose your Display Name:</label>
+      <input 
+        type="text" 
+        id="display-name" 
+        placeholder="Enter your name" 
+        bind:value={displayName} 
+        onblur={validateDisplayName}
+        class:error={displayNameError}
+        disabled={submitting}
+      />
+      {#if displayNameError}
+        <div class="input-error">{displayNameError}</div>
+      {/if}
+    </div>
+
     <p>Before joining this world, select your race:</p>
     
     <div class="race-selection">
@@ -205,7 +241,7 @@
       <button 
         class="confirm-button" 
         onclick={handleConfirm} 
-        disabled={!selectedRace || submitting}
+        disabled={!selectedRace || submitting || displayNameError}
       >
         {#if submitting}
           <div class="spinner"></div>
@@ -570,5 +606,49 @@
       justify-content: space-between; /* Restore space-between on mobile for toggle button */
       align-items: center;
     }
+  }
+
+  /* Add styles for the display name input */
+  .name-input-container {
+    margin-bottom: 1.5em;
+    text-align: center;
+  }
+  
+  .name-input-container label {
+    display: block;
+    margin-bottom: 0.5em;
+    color: var(--color-pale-green);
+    font-family: var(--font-heading);
+    font-size: 1.1em;
+  }
+  
+  .name-input-container input {
+    width: 100%;
+    max-width: 400px;
+    padding: 0.8em;
+    font-size: 1em;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 0.3em;
+    color: var(--color-text);
+    font-family: var(--font-body);
+    transition: all 0.2s ease;
+  }
+  
+  .name-input-container input:focus {
+    outline: none;
+    border-color: var(--color-bright-accent);
+    box-shadow: 0 0 0 2px rgba(100, 255, 218, 0.3);
+  }
+  
+  .name-input-container input.error {
+    border-color: #e24144;
+    box-shadow: 0 0 0 2px rgba(226, 65, 68, 0.3);
+  }
+  
+  .input-error {
+    color: #e24144;
+    font-size: 0.8em;
+    margin-top: 0.5em;
   }
 </style>

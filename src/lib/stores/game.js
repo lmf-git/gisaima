@@ -76,12 +76,16 @@ export const currentPlayer = derived(
     if (!$game.playerWorldData) return null;
     
     try {
-      // Get appropriate display name based on auth status
-      let displayName;
-      if ($user.isAnonymous) {
-        displayName = `Guest ${$user.uid.substring(0, 4)}`;
-      } else {
-        displayName = $user.displayName || ($user.email ? $user.email.split('@')[0] : `Player ${$user.uid.substring(0, 4)}`);
+      // Use the stored display name if available, otherwise fall back to auth
+      let displayName = $game.playerWorldData.displayName;
+      
+      // If no stored display name, use fallback logic
+      if (!displayName) {
+        if ($user.isAnonymous) {
+          displayName = `Guest ${$user.uid.substring(0, 4)}`;
+        } else {
+          displayName = $user.displayName || ($user.email ? $user.email.split('@')[0] : `Player ${$user.uid.substring(0, 4)}`);
+        }
       }
       
       // Base player info from user auth data
@@ -701,12 +705,12 @@ export function initGameStore() {
 }
 
 // Function to join a world with race selection
-export async function joinWorld(worldId, userId, race) {
+export async function joinWorld(worldId, userId, race, displayName) {
   if (!worldId || !userId) {
     throw new Error('Missing required parameters for joining world');
   }
   
-  console.log(`User ${userId} joining world ${worldId} as ${race}`);
+  console.log(`User ${userId} joining world ${worldId} as ${race} with name "${displayName}"`);
   
   try {
     // Set loading state
@@ -723,6 +727,7 @@ export async function joinWorld(worldId, userId, race) {
       joined: Date.now(),
       race: race || 'human', // Default to human if race not specified
       alive: false,
+      displayName: displayName || '',  // Store the display name
       // Set initial target to world center
       lastLocation: {
         x: centerCoords.x,

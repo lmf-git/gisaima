@@ -28,6 +28,14 @@
   // Get player's race from game store
   const playerRace = $derived($game.playerWorldData?.race || 'human');
   
+  // Also get the displayName from game store if available 
+  const playerDisplayName = $derived($game.playerWorldData?.displayName || null);
+  
+  // Function to safely check if a value is valid
+  function isValidValue(value) {
+    return value !== undefined && value !== null && value !== '';
+  }
+  
   // Function to consistently calculate chunk key
   function getChunkKey(x, y) {
     const CHUNK_SIZE = 20;
@@ -146,8 +154,16 @@
         `worlds/${$game.currentWorld}/chunks/${chunkKey}/${locationKey}/players/${$user.uid}`
       );
       
-      // Get existing player profile data
-      const displayName = $user.displayName || $user.email?.split('@')[0] || 'Player';
+      // Get display name with better fallback priority:
+      // 1. Use displayName from game.playerWorldData (set during join)
+      // 2. Use user.displayName from Firebase Auth
+      // 3. Use email prefix
+      // 4. Default to 'Player'
+      const displayName = isValidValue(playerDisplayName) 
+                          ? playerDisplayName 
+                          : ($user.displayName || $user.email?.split('@')[0] || 'Player');
+      
+      console.log(`Setting player entity with displayName: ${displayName}`);
       
       // Set player data in the world, including race and timestamp
       await set(playerEntityRef, {

@@ -328,7 +328,6 @@
       goto(`/map?world=${world.id}${coordParams}`);
       return;
     }
-    
     // Otherwise, show the confirmation dialog
     selectedWorld = world;
     showConfirmation = true;
@@ -342,8 +341,8 @@
       animatingOut = false;
     }, 300); // Match animation duration
   }
-  
-  async function handleJoinWorld(race) {
+
+  async function handleJoinWorld(raceData) {
     if (!$user || !selectedWorld) {
       return;
     }
@@ -352,8 +351,14 @@
     const coordParams = getCoordinateParams();
     
     try {
-      // Join the world with race information (lowercase ID)
-      await joinWorld(selectedWorld.id, $user.uid, race.id.toLowerCase());
+      // Join the world with race information and display name
+      await joinWorld(
+        selectedWorld.id, 
+        $user.uid, 
+        raceData.id.toLowerCase(),
+        raceData.displayName  // Pass the display name
+      );
+
       // joinWorld already saves to localStorage, so we don't need to call setCurrentWorld
       goto(`/map?world=${selectedWorld.id}${coordParams}`);
     } catch (error) {
@@ -418,14 +423,12 @@
               worldCenter={world.center || worldCenters[world.id]}
               debug={true}
             />
-            
             {#if !loadedWorldCards.has(world.id)}
               <div class="card-loading-overlay">
                 <div class="loading-spinner"></div>
               </div>
             {/if}
           </div>
-          
           <div class="world-info">
             <h2>{world.name || world.id}</h2>
             <p class="world-description">{world.description || 'No description available'}</p>
@@ -459,7 +462,7 @@
 </div>
 
 {#if showConfirmation && selectedWorld}
-  <JoinConfirmation
+  <JoinConfirmation 
     world={selectedWorld}
     onClose={closeConfirmation}
     onConfirm={handleJoinWorld}
@@ -476,18 +479,18 @@
     margin: 0 auto;
     padding: 2rem 1rem;
   }
-  
+
   h1 {
     margin-bottom: 2rem;
     text-align: center;
   }
-  
+
   .loading, .no-worlds {
     text-align: center;
     margin: 3rem 0;
     font-size: 1.2rem;
   }
-  
+
   .worlds-grid {
     display: flex;
     flex-direction: column;
@@ -506,14 +509,14 @@
     width: 100%;
     will-change: transform; /* Hint for hardware acceleration */
   }
-  
+
   .world-preview {
     position: relative;
     width: 100%;
     aspect-ratio: 2 / 1;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
-  
+
   .world-info {
     padding: 1rem;
     display: flex;
@@ -552,13 +555,13 @@
     border-radius: 4px;
     background-color: rgba(0, 0, 0, 0.2);
   }
-  
+
   .stat-label {
     font-weight: 600;
     color: var(--color-pale-green);
     margin-right: 0.5rem;
   }
-  
+
   .stat-value {
     margin-left: auto;
     color: rgba(255, 255, 255, 0.95);
@@ -588,7 +591,7 @@
     position: relative; /* Ensure z-index works */
     z-index: 10; /* Keep button above overlay */
   }
-  
+
   .world-action-button:hover {
     transform: translateY(-0.1em);
     background-color: rgba(58, 125, 140, 0.9);
@@ -599,7 +602,7 @@
     background-color: rgba(46, 139, 87, 0.9);
     border-color: rgba(60, 159, 104, 0.8);
   }
-  
+
   .world-action-button.joined:hover {
     background-color: rgba(57, 163, 103, 0.9);
   }
@@ -627,7 +630,7 @@
       border-right: 1px solid rgba(255, 255, 255, 0.1);
       border-bottom: none;
     }
-    
+      
     .world-info {
       flex: 1;
       padding: 1.25rem;
@@ -642,13 +645,13 @@
       padding: 0 2rem;
       gap: 2rem;
     }
-    
+
     .world-card {
       flex: 0 0 calc(50% - 1rem);
       max-width: calc(50% - 1rem);
       flex-direction: column;
     }
-    
+
     .world-preview {
       width: 100%;
       aspect-ratio: 2 / 1;
@@ -656,7 +659,7 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
   }
-  
+
   @media (min-width: 1024px) {
     .worlds-page {
       margin: 4rem auto;
@@ -666,7 +669,7 @@
     .worlds-grid {
       padding: 0 3rem;
     }
-    
+
     .world-card {
       flex: 0 0 calc(33.333% - 1.333rem);
       max-width: calc(33.333% - 1.333rem);
@@ -675,14 +678,14 @@
 
   .error-message {
     text-align: center;
-    margin: 3rem 0;
+    margin: 3rem 0; 
     padding: 1rem;
     color: #dc3545;
     background-color: rgba(220, 53, 69, 0.1);
     border: 1px solid rgba(220, 53, 69, 0.3);
     border-radius: 8px;
   }
-  
+
   .retry-button {
     display: inline-block;
     margin-top: 1rem;

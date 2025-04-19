@@ -906,7 +906,7 @@
                         </div>
                       </div>
                       
-                      {#if isPlayerAvailableOnTile(currentTile, $currentPlayer?.uid) && availableGroups.length > 0}
+                      {#if isPlayerAvailableOnTile(currentTile, $currentPlayer?.uid) && hasIdlePlayerGroups}
                         <div class="battle-actions">
                           <button 
                             class="join-battle-btn"
