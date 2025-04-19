@@ -2,7 +2,7 @@
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
-  import { getFunctions, httpsCallable } from 'firebase/functions';
+  import { callFunction } from '../../lib/firebase/functions';
 
   // Props with default empty object to avoid destructuring errors
   const { tile = {}, onClose = () => {}, onAttack = () => {} } = $props();
@@ -110,10 +110,7 @@
     errorMessage = '';
     
     try {
-      const functions = getFunctions();
-      const attackGroupFn = httpsCallable(functions, 'attackGroups');
-      
-      const result = await attackGroupFn({
+      const result = await callFunction('attackGroups', {
         attackerGroupIds: selectedAttackers, 
         defenderGroupIds: selectedDefenders,
         locationX: tile.x,
@@ -121,8 +118,8 @@
         worldId: $game.currentWorld
       });
       
-      if (result.data.success) {
-        console.log('Battle started:', result.data);
+      if (result.success) {
+        console.log('Battle started:', result);
         
         if (onAttack) {
           onAttack({
@@ -134,7 +131,7 @@
         
         onClose(true);
       } else {
-        errorMessage = result.data.error || 'Failed to start attack';
+        errorMessage = result.error || 'Failed to start attack';
       }
     } catch (error) {
       console.error('Error starting attack:', error);

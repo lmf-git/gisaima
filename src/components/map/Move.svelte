@@ -3,6 +3,8 @@
   import { currentPlayer, game } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
   import { getFunctions, httpsCallable } from "firebase/functions";
+  // Import the new function helper
+  import { callFunction } from "../../lib/firebase/functions";
 
   // Props with default empty object/function to avoid destructuring errors
   const { 
@@ -220,11 +222,8 @@
     const endPoint = customPath[customPath.length - 1];
     
     try {
-      // Use direct Firebase function call instead of callFunction
-      const functions = getFunctions();
-      const moveGroupFunction = httpsCallable(functions, 'moveGroup');
-      
-      const result = await moveGroupFunction({
+      // Use our helper function instead of direct Firebase call
+      const result = await callFunction('moveGroup', {
         groupId: selectedGroup.id,
         fromX: startPoint.x,
         fromY: startPoint.y,
@@ -234,7 +233,7 @@
         worldId: $game.currentWorld
       });
       
-      console.log('Custom path movement started:', result.data);
+      console.log('Custom path movement started:', result);
       
       // Use the function prop directly for UI updates if needed
       if (onMove) {
@@ -266,11 +265,8 @@
       confirmCustomPath();
     } else if (targetX !== null && targetY !== null) {
       try {
-        // Use direct Firebase function call instead of callFunction
-        const functions = getFunctions();
-        const moveGroupFunction = httpsCallable(functions, 'moveGroup');
-        
-        const result = await moveGroupFunction({
+        // Use our helper function instead of direct Firebase call
+        const result = await callFunction('moveGroup', {
           groupId: selectedGroup.id,
           fromX: tile.x,
           fromY: tile.y,
@@ -280,7 +276,7 @@
           worldId: $game.currentWorld
         });
         
-        console.log('Movement started:', result.data);
+        console.log('Movement started:', result);
         
         if (onMove) {
           // Still trigger onMove for local UI updates if needed

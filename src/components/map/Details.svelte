@@ -5,6 +5,7 @@
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   import { onMount, onDestroy } from 'svelte';
   import { getFunctions, httpsCallable } from "firebase/functions";
+  import { callFunction } from '../../lib/firebase/functions';
 
   // Import race icon components
   import Human from '../../components/icons/Human.svelte';
@@ -372,47 +373,15 @@
 
   // Direct Firebase function calls
   async function executeAction(actionId, tile) {
-    const functions = getFunctions();
-    
     try {
       switch(actionId) {
         case 'mobilize':
-          // Open mobilize modal instead of directly calling function
-          if (onAction) {
-            onAction({ action: actionId, tile });
-          }
-          break;
-          
         case 'move':
-          // Open move modal instead of directly calling function
-          if (onAction) {
-            onAction({ action: actionId, tile });
-          }
-          break;
-          
         case 'attack':
-          // Open attack modal instead of directly calling function  
-          if (onAction) {
-            onAction({ action: actionId, tile });
-          }
-          break;
-          
         case 'joinBattle':
-          // Open join battle modal instead of directly calling function
-          if (onAction) {
-            onAction({ action: actionId, tile });
-          }
-          break;
-          
         case 'demobilize':
-          // Open demobilize modal instead of directly calling function
-          if (onAction) {
-            onAction({ action: actionId, tile });
-          }
-          break;
-          
         case 'inspect':
-          // This is UI-only action - delegate to parent component
+          // These are UI-only actions - delegate to parent component
           if (onAction) {
             onAction({ action: actionId, tile });
           }
@@ -420,25 +389,23 @@
           
         case 'explore':
           // This would directly call the explore function
-          const exploreFunction = httpsCallable(functions, 'exploreLocation');
-          const result = await exploreFunction({ 
+          const result = await callFunction('exploreLocation', { 
             x: tile.x, 
             y: tile.y,
             worldId: $game.currentWorld
           });
-          console.log('Explore result:', result.data);
+          console.log('Explore result:', result);
           break;
           
         case 'gather':
           // This would directly call the gather function
-          const gatherFunction = httpsCallable(functions, 'startGathering');
-          const gatherResult = await gatherFunction({
+          const gatherResult = await callFunction('startGathering', {
             x: tile.x,
             y: tile.y,
             worldId: $game.currentWorld,
             groupId: tile.groups.find(g => g.owner === $currentPlayer?.uid)?.id
           });
-          console.log('Gather result:', gatherResult.data);
+          console.log('Gather result:', gatherResult);
           break;
           
         default:
@@ -446,7 +413,7 @@
       }
     } catch (error) {
       console.error(`Error executing action ${actionId}:`, error);
-      // Could add error handling/display here
+      alert(`Error: ${error.message || 'Failed to perform action'}`);
     }
     
     // Close the details modal
