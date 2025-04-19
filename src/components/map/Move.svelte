@@ -2,8 +2,9 @@
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
-  // Import callFunction from firebase.js instead of functions.js
-  import { callFunction } from "../../lib/firebase/firebase";
+  // Import functions and httpsCallable directly
+  import { functions } from "../../lib/firebase/firebase";
+  import { httpsCallable } from "firebase/functions";
 
   // Props with default empty object/function to avoid destructuring errors
   const { 
@@ -221,8 +222,9 @@
     const endPoint = customPath[customPath.length - 1];
     
     try {
-      // Use our helper function instead of direct Firebase call
-      const result = await callFunction('moveGroup', {
+      // Use httpsCallable directly
+      const moveGroupFn = httpsCallable(functions, 'moveGroup');
+      const result = await moveGroupFn({
         groupId: selectedGroup.id,
         fromX: startPoint.x,
         fromY: startPoint.y,
@@ -232,7 +234,7 @@
         worldId: $game.currentWorld
       });
       
-      console.log('Custom path movement started:', result);
+      console.log('Custom path movement started:', result.data);
       
       // Use the function prop directly for UI updates if needed
       if (onMove) {
@@ -264,8 +266,9 @@
       confirmCustomPath();
     } else if (targetX !== null && targetY !== null) {
       try {
-        // Use our helper function instead of direct Firebase call
-        const result = await callFunction('moveGroup', {
+        // Use httpsCallable directly
+        const moveGroupFn = httpsCallable(functions, 'moveGroup');
+        const result = await moveGroupFn({
           groupId: selectedGroup.id,
           fromX: tile.x,
           fromY: tile.y,
@@ -275,7 +278,7 @@
           worldId: $game.currentWorld
         });
         
-        console.log('Movement started:', result);
+        console.log('Movement started:', result.data);
         
         if (onMove) {
           // Still trigger onMove for local UI updates if needed

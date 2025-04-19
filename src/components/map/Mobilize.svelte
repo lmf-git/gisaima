@@ -7,8 +7,9 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
-  // Import callFunction from firebase.js
-  import { callFunction } from "../../lib/firebase/firebase";
+  // Import functions and httpsCallable directly
+  import { functions } from "../../lib/firebase/firebase";
+  import { httpsCallable } from "firebase/functions";
 
   // Props with default empty object - removed onMobilize
   const { tile = {}, onClose = () => {} } = $props();
@@ -113,8 +114,9 @@
         return;
       }
       
-      // Use the callFunction helper with proper error handling
-      const result = await callFunction('startMobilization', {
+      // Call function directly instead of using the wrapper
+      const startMobilizationFn = httpsCallable(functions, 'startMobilization');
+      const result = await startMobilizationFn({
         worldId: $game.currentWorld,
         tileX: tile.x,
         tileY: tile.y,
@@ -124,7 +126,7 @@
         race: $currentPlayer?.race
       });
       
-      console.log('Mobilization result:', result);
+      console.log('Mobilization result:', result.data);
       onClose(); // Close only after success
     } catch (error) {
       console.error("Exception in startMobilization:", error);

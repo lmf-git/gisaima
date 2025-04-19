@@ -4,8 +4,9 @@
   import { targetStore, coordinates } from '../../lib/stores/map';
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   import { onMount, onDestroy } from 'svelte';
-  // Import callFunction from firebase.js instead of functions.js
-  import { callFunction } from '../../lib/firebase/firebase';
+  // Import functions and httpsCallable directly
+  import { functions } from '../../lib/firebase/firebase';
+  import { httpsCallable } from 'firebase/functions';
 
   // Import race icon components
   import Human from '../../components/icons/Human.svelte';
@@ -388,24 +389,26 @@
           break;
           
         case 'explore':
-          // This would directly call the explore function
-          const result = await callFunction('exploreLocation', { 
+          // Call explore function directly
+          const exploreFn = httpsCallable(functions, 'exploreLocation');
+          const result = await exploreFn({ 
             x: tile.x, 
             y: tile.y,
             worldId: $game.currentWorld
           });
-          console.log('Explore result:', result);
+          console.log('Explore result:', result.data);
           break;
           
         case 'gather':
-          // This would directly call the gather function
-          const gatherResult = await callFunction('startGathering', {
+          // Call gather function directly
+          const gatherFn = httpsCallable(functions, 'startGathering');
+          const gatherResult = await gatherFn({
             x: tile.x,
             y: tile.y,
             worldId: $game.currentWorld,
             groupId: tile.groups.find(g => g.owner === $currentPlayer?.uid)?.id
           });
-          console.log('Gather result:', gatherResult);
+          console.log('Gather result:', gatherResult.data);
           break;
           
         default:

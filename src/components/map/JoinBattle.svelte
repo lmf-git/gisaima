@@ -2,8 +2,9 @@
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
-  // Import callFunction from firebase.js instead of functions.js
-  import { callFunction } from '../../lib/firebase/firebase';
+  // Import functions and httpsCallable directly
+  import { functions } from '../../lib/firebase/firebase';
+  import { httpsCallable } from 'firebase/functions';
 
   // Props with default empty object to avoid destructuring errors
   const { tile = {}, onClose = () => {}, onJoinBattle = () => {} } = $props();
@@ -84,8 +85,9 @@
     errorMessage = '';
     
     try {
-      // Use our helper function instead of direct Firebase call
-      const result = await callFunction('joinBattle', {
+      // Use httpsCallable directly
+      const joinBattleFn = httpsCallable(functions, 'joinBattle');
+      const result = await joinBattleFn({
         groupId: selectedGroup.id,
         battleId: selectedBattle.id,
         side: parseInt(selectedSide),
@@ -94,8 +96,8 @@
         worldId: $game.currentWorld
       });
       
-      if (result.success) {
-        console.log('Joined battle:', result);
+      if (result.data.success) {
+        console.log('Joined battle:', result.data);
         
         // Call the callback function if provided
         if (onJoinBattle) {
@@ -109,7 +111,7 @@
         
         onClose(true);
       } else {
-        errorMessage = result.error || 'Failed to join battle';
+        errorMessage = result.data.error || 'Failed to join battle';
       }
     } catch (error) {
       console.error('Error joining battle:', error);

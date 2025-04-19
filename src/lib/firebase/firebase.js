@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions } from 'firebase/functions';
 import { getDatabase } from 'firebase/database';
 import { getStorage } from 'firebase/storage';
 import { browser } from '$app/environment';
@@ -28,23 +28,4 @@ export const firestore = getFirestore(app);
 export const functions = getFunctions(app, 'us-central1'); // Explicitly set region
 export const storage = getStorage(app);
 
-/**
- * Calls a Firebase Cloud Function with minimal wrapper
- * @param {string} functionName - Name of the Firebase function to call
- * @param {object} data - Data to pass to the function
- * @returns {Promise} - Promise resolving to the function result
- */
-export async function callFunction(functionName, data = {}) {
-  try {
-    // Create callable with the functions instance from firebase.js
-    const functionCall = httpsCallable(functions, functionName);
-    
-    // Let Firebase SDK handle authentication - it should work with anonymous users
-    const result = await functionCall(data);
-    return result.data;
-  } catch (error) {
-
-    console.error(`Error calling function ${functionName}:`, error);
-    throw error;
-  }
-}
+// callFunction has been removed - use httpsCallable directly in components
