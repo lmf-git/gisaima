@@ -25,43 +25,19 @@ export const initAuthListener = () => {
   if (!browser) return loading.set(false);
   
   try {
-    onAuthStateChanged(auth, userData => {
-      console.log('Auth state changed:', userData ? 'User logged in' : 'No user');
-      userStore.set(userData);
+    const unsubscribe = onAuthStateChanged(auth, firebaseUser => {
+      console.log('Auth state changed:', firebaseUser ? 'User logged in' : 'No user');
+      userStore.set(firebaseUser);
       loading.set(false);
     });
+    
+    // Return unsubscribe function to clean up listener
+    return unsubscribe;
   } catch (error) {
     console.error('Error initializing auth listener:', error);
     loading.set(false);
   }
 };
-
-// Make sure the user store properly signals when auth state is determined
-if (browser) {
-  onAuthStateChanged(auth, (firebaseUser) => {
-    if (firebaseUser) {
-      // User is signed in
-      // If anonymous user, make sure they have a consistent label
-      if (firebaseUser.isAnonymous) {
-        // Add a displayName property if it doesn't exist
-        if (!firebaseUser.displayName) {
-          const shortId = firebaseUser.uid.substring(0, 4);
-          // We can't modify the firebaseUser object directly, so create a new one with the properties we want
-          const enhancedUser = {
-            ...firebaseUser,
-            displayName: `Guest ${shortId}`
-          };
-          userStore.set(enhancedUser);
-          return;
-        }
-      }
-      userStore.set(firebaseUser);
-    } else {
-      // User is signed out
-      userStore.set(null);  // Set to null (not undefined) to indicate "determined, but not logged in"
-    }
-  });
-}
 
 // Auth helper functions
 export const signIn = async (email, password) => {
