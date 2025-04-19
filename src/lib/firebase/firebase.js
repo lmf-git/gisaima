@@ -27,5 +27,3 @@ export const db = getDatabase(app);
 export const firestore = getFirestore(app);
 export const functions = getFunctions(app, 'us-central1'); // Explicitly set region
 export const storage = getStorage(app);
-
-// callFunction has been removed - use httpsCallable directly in components

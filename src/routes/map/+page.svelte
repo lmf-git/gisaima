@@ -31,10 +31,6 @@
         coordinates // Import coordinates store
     } from "../../lib/stores/map.js";
     
-    import { ref, update } from "firebase/database";
-    import { db } from "../../lib/firebase/database";
-    import { functions, callFunction } from "../../lib/firebase/firebase";
-
     import Tutorial from '../../components/map/Tutorial.svelte';
     import Grid from '../../components/map/Grid.svelte';
     import Minimap from '../../components/map/Minimap.svelte';
