@@ -1,16 +1,25 @@
 {
   "players": {
-    "gHRK4vHJITfLnqwrwyisdc7uklK2": {
+    "kv0uM1cphrYBimiGvsyXG5WYkH53": {
       "worlds": {
         "ancient-lands": {
-          "alive": false,
-          "joined": 1745052434554,
-          "lastLocation": {
-            "timestamp": 1745052434554,
-            "x": 0,
-            "y": 0
+          "alive": true,
+          "displayName": "test1",
+          "groups": {
+            "-OOCpSRgz7vhPjISNJT6": {
+              "at": "5,5",
+              "id": "-OOCpSRgz7vhPjISNJT6",
+              "readyAt": 1745062621674,
+              "status": "mobilizing"
+            }
           },
-          "race": "elf"
+          "joined": 1745062571308,
+          "lastLocation": {
+            "timestamp": 1745062801272,
+            "x": 5,
+            "y": 5
+          },
+          "race": "human"
         }
       }
     }
@@ -35,6 +44,15 @@
               "description": "A resourceful goblin settlement built from the remains of ancient beasts",
               "faction": "goblin",
               "id": "structure_al_goblin_spawn",
+              "items": [
+                {
+                  "id": "item_1745060101976_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 1,
+                  "rarity": "common",
+                  "type": "resource"
+                }
+              ],
               "name": "Boneridge Camp",
               "type": "spawn"
             }
@@ -108,10 +126,34 @@
             }
           },
           "5,5": {
+            "players": {
+              "kv0uM1cphrYBimiGvsyXG5WYkH53": {
+                "displayName": "test1",
+                "lastActive": 1745062801272,
+                "race": "human",
+                "uid": "kv0uM1cphrYBimiGvsyXG5WYkH53"
+              }
+            },
             "structure": {
               "description": "A rugged frontier settlement where hardy humans carve out a living",
               "faction": "human",
               "id": "structure_al_human_spawn",
+              "items": [
+                {
+                  "id": "item_1745062741988_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 5,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745062741988_2",
+                  "name": "Stone Pieces",
+                  "quantity": 1,
+                  "rarity": "common",
+                  "type": "resource"
+                }
+              ],
               "name": "Stoneguard Citadel",
               "type": "spawn"
             }
@@ -120,7 +162,7 @@
       },
       "info": {
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745052421620,
+        "lastTick": 1745062801272,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",
