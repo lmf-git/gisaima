@@ -133,18 +133,9 @@
         setTimeout(() => message.remove(), 500);
       }, 2000);
       
-      // Also update parent component if needed
+      // Simplified: Just signal success without passing redundant data
       if (onDemobilize) {
-        onDemobilize({
-          groupId: selectedGroup.id,
-          targetStructureId: tile.structure.id,
-          locationX: tile.x,
-          locationY: tile.y,
-          worldId: $game.currentWorld,
-          storageDestination: selectedStorageDestination,
-          tile,
-          result: result.data
-        });
+        onDemobilize(true);
       }
       
       // Close dialog
