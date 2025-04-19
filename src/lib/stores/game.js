@@ -270,35 +270,7 @@ export function loadPlayerWorldData(userId, worldId) {
         ...state, 
         playerWorldData
       }));
-      
-      // If player is marked as alive but we can't find their entity, check if we need to sync
-      if (playerWorldData.alive && playerWorldData.lastLocation) {
-        const { x, y } = playerWorldData.lastLocation;
-        
-        // Calculate chunk key for validation
-        const CHUNK_SIZE = 20; // Match the value from map.js
-        const chunkX = Math.floor(x / CHUNK_SIZE);
-        const chunkY = Math.floor(y / CHUNK_SIZE);
-        const chunkKey = `${chunkX},${chunkY}`;
-        const locationKey = `${x},${y}`;
-        
-        // Check if player entity exists at their last location
-        try {
-          const playerEntityRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/players/${userId}`);
-          const playerSnapshot = await dbGet(playerEntityRef);
-          
-          // If player entity doesn't exist at that location, we may need to create it
-          // This ensures that moving between client sessions keeps player entities synced
-          if (!playerSnapshot.exists()) {
-            console.log(`Player entity missing for ${userId} at ${x},${y}, may need sync`);
-            
-            // Additional checks could be added here to determine if we should
-            // automatically recreate the player entity
-          }
-        } catch (err) {
-          console.error('Error checking player entity:', err);
-        }
-      }
+    
     } else {
       game.update(state => ({ ...state, playerWorldData: null }));
     }
