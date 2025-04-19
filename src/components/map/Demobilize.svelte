@@ -94,7 +94,7 @@
       
       console.log('Calling demobiliseUnits with params:', {
         groupId: selectedGroup.id,
-        targetStructureId: tile.structure?.id,
+        targetStructureId: tile.structure.id,  // Simply pass the structure ID directly
         locationX: tile.x,
         locationY: tile.y,
         worldId: $game.currentWorld,
@@ -103,7 +103,7 @@
       
       const result = await demobiliseFn({
         groupId: selectedGroup.id,
-        targetStructureId: tile.structure?.id,
+        targetStructureId: tile.structure.id,  // Simply pass the structure ID directly
         locationX: tile.x,
         locationY: tile.y,
         worldId: $game.currentWorld,
@@ -127,7 +127,7 @@
       if (onDemobilize) {
         onDemobilize({
           groupId: selectedGroup.id,
-          targetStructureId: tile.structure?.id,
+          targetStructureId: tile.structure.id,
           locationX: tile.x,
           locationY: tile.y,
           worldId: $game.currentWorld,

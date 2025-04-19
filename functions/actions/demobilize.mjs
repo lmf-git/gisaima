@@ -86,7 +86,7 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       pendingAction: true,  // Flag for the tick processor to handle this on next tick
       startedAt: now,
       lastUpdated: now,
-      targetStructureId: targetStructureId,
+      targetStructureId: targetStructureId, // Use the provided ID directly
       storageDestination: storageDestination,
       // Add precise location data for player placement
       demobilizationData: {
@@ -106,18 +106,18 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
     if (hasPlayerUnit) {
       const playerWorldRef = db.ref(`players/${userId}/worlds/${worldId}`);
       await playerWorldRef.update({
-        pendingRelocation: {
+        // Simplified pendingRelocation - just basic coordinates needed
+        lastLocation: {
           x: locationX,
-          y: locationY,
-          chunkX: chunkX,
-          chunkY: chunkY,
-          tileKey: tileKey,
-          chunkKey: chunkKey,
+          y: locationY
+        },
+        // Flag to indicate demobilization in progress
+        pendingRelocation: {
           timestamp: now
         }
       });
       
-      logger.info(`Player ${userId} will be relocated to ${locationX},${locationY} (chunk ${chunkKey}) after demobilization`);
+      logger.info(`Player ${userId} will be relocated to ${locationX},${locationY} after demobilization`);
     }
     
     return {
