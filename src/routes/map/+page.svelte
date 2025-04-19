@@ -28,10 +28,10 @@
         isInternalUrlChange,
         setHighlighted,
         highlightedStore,
-        coordinates // Import coordinates store
+        coordinates 
     } from "../../lib/stores/map.js";
     
-    import { getFunctions, httpsCallable } from 'firebase/functions'; // Add missing Firebase import
+    import { getFunctions, httpsCallable } from 'firebase/functions'; 
     
     import Tutorial from '../../components/map/Tutorial.svelte';
     import Grid from '../../components/map/Grid.svelte';
@@ -48,6 +48,7 @@
     import JoinBattle from '../../components/map/JoinBattle.svelte';
     import Demobilize from '../../components/map/Demobilize.svelte';
     import StructureOverview from '../../components/map/StructureOverview.svelte';
+    import Gather from '../../components/map/Gather.svelte';
 
     let detailed = $state(false);
     let loading = $state(true);
@@ -93,6 +94,7 @@
     let showMobilize = $state(false);
     let showMove = $state(false);
     let showDemobilize = $state(false);
+    let showGather = $state(false);
     let showStructureOverview = $state(false);
 
     // Data for each modal
@@ -101,6 +103,7 @@
     let attackData = $state(null);
     let joinBattleData = $state(null);
     let demobilizeData = $state(null);
+    let gatherData = $state(null);
     let selectedStructure = $state(null);
     let structureLocation = $state({ x: 0, y: 0 });
 
@@ -732,18 +735,6 @@
             }).then(result => {
                 console.log('Movement started successfully:', result.data);
                 showMove = false;
-                
-                // Display success message to user
-                const message = document.createElement('div');
-                message.className = 'success-toast';
-                message.textContent = 'Movement started!';
-                document.body.appendChild(message);
-                
-                setTimeout(() => {
-                    message.classList.add('fade-out');
-                    setTimeout(() => message.remove(), 500);
-                }, 2000);
-                
             }).catch(error => {
                 console.error('Error confirming path with cloud function:', error);
                 alert('Error: ' + (error.message || 'Failed to start movement'));
@@ -899,6 +890,10 @@
                             showDemobilize = true;
                             demobilizeData = data;
                             break;
+                        case 'gather':
+                            showGather = true;
+                            gatherData = data;
+                            break;
                         case 'inspect':
                             showStructureOverview = true;
                             selectedStructure = data.structure;
@@ -992,6 +987,20 @@
             />
         {/if}
 
+        {#if showGather && gatherData}
+            <Gather
+                tile={gatherData}
+                onClose={() => {
+                    showGather = false;
+                    setHighlighted(null, null);
+                }}
+                onGather={(data) => {
+                    console.log('Gathering started:', data);
+                    showGather = false;
+                }}
+            />
+        {/if}
+
         {#if showDemobilize && demobilizeData}
             <Demobilize
                 tile={demobilizeData}
@@ -1001,19 +1010,6 @@
                 }}
                 onDemobilize={(data) => {
                     console.log('Demobilization started:', data);
-                    
-                    // Show success toast when direct component handling successful
-                    const message = document.createElement('div');
-                    message.className = 'success-toast';
-                    message.textContent = 'Demobilization started!';
-                    document.body.appendChild(message);
-                    
-                    setTimeout(() => {
-                        message.classList.add('fade-out');
-                        setTimeout(() => message.remove(), 500);
-                    }, 2000);
-                    
-                    // Close immediately on success
                     showDemobilize = false;
                 }}
             />
@@ -1307,15 +1303,5 @@
             opacity: 1;
             transform: translateY(0) translateX(-50%);
         }
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translate(-50%, -20px); }
-        to { opacity: 1; transform: translate(-50%, 0); }
-    }
-
-    @keyframes fadeOut {
-        from { opacity: 1; transform: translate(-50%, 0); }
-        to { opacity: 0; transform: translate(-50%, -20px); }
     }
 </style>

@@ -17,12 +17,13 @@ import { moveGroup } from './actions/move.mjs';
 initializeApp();
 
 // Export all functions
-export {
-  processGameTicks,
-  mobilizeUnits, // Fix: export the correct function name
-  demobiliseUnits,
-  attackGroups,
-  joinBattle,
-  startGathering,
-  moveGroup
-};
+
+// Action functions
+export { mobilizeUnits } from './actions/mobilize.mjs';
+export { demobiliseUnits } from './actions/demobilize.mjs';
+export { moveGroup } from './actions/move.mjs';
+export { attackGroups } from './actions/attackGroups.mjs';
+export { startGathering } from './actions/gather.mjs';  // Add this export
+
+// Scheduled tasks
+export { processGameTicks } from './tick.mjs';

@@ -1,85 +1,107 @@
 /**
  * Gathering function for Gisaima
- * Allows groups to gather resources from their surroundings
+ * Handles resource gathering by groups
  */
 
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 
-// Start gathering resources
+// Function to safely get chunk key, consistent with other functions
+function getChunkKey(x, y) {
+  const CHUNK_SIZE = 20;
+  // Simple integer division works for both positive and negative coordinates
+  const chunkX = Math.floor(x / CHUNK_SIZE);
+  const chunkY = Math.floor(y / CHUNK_SIZE);
+  return `${chunkX},${chunkY}`;
+}
+
+// Initiate gathering function
 export const startGathering = onCall({ maxInstances: 10 }, async (request) => {
+  // Check authentication
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+  }
+  
+  // Get request parameters
   const { groupId, locationX, locationY, worldId = 'default' } = request.data;
-  const userId = request.auth?.uid;
+  const userId = request.auth.uid;
   
-  if (!userId) {
-    throw new HttpsError("unauthenticated", "User must be authenticated");
-  }
-  
+  // Validate required parameters
   if (!groupId || locationX === undefined || locationY === undefined) {
-    throw new HttpsError("invalid-argument", "Missing required parameters");
+    throw new HttpsError('invalid-argument', 'Missing required parameters');
   }
-  
+
   try {
     const db = getDatabase();
-    
-    // Fix chunk calculation for negative coordinates
-    const CHUNK_SIZE = 20;
-    function getChunkKey(x, y) {
-      // Handle negative coordinates correctly by adjusting division for negative values
-      const chunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
-      const chunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
-      return `${chunkX},${chunkY}`;
-    }
-    
     const chunkKey = getChunkKey(locationX, locationY);
-    const locationKey = `${locationX},${locationY}`;
-    const groupRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}`);
+    const tileKey = `${locationX},${locationY}`;
     
-    // Get group data
-    const groupSnapshot = await groupRef.once("value");
+    // Get reference to the group
+    const groupRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`);
+    
+    // Get the group data
+    const groupSnapshot = await groupRef.once('value');
     const groupData = groupSnapshot.val();
     
+    // Check if group exists
     if (!groupData) {
-      throw new HttpsError("not-found", "Group not found at this location");
+      throw new HttpsError('not-found', 'Group not found');
     }
     
-    // Verify ownership
+    // Check ownership
     if (groupData.owner !== userId) {
-      throw new HttpsError("permission-denied", "You can only gather with your own groups");
+      throw new HttpsError('permission-denied', 'You do not own this group');
     }
     
-    // Verify group is not already busy
+    // Check status - must be idle
     if (groupData.status !== 'idle') {
-      throw new HttpsError("failed-precondition", `Group cannot gather while ${groupData.status}`);
+      throw new HttpsError(
+        'failed-precondition', 
+        `Group is currently ${groupData.status} and cannot gather resources`
+      );
     }
     
-    // Calculate gathering time based on group size and world speed
-    const worldInfoRef = db.ref(`worlds/${worldId}/info`);
-    const worldInfoSnapshot = await worldInfoRef.once("value");
-    const worldInfo = worldInfoSnapshot.val() || {};
+    // Get world info to calculate next tick time
+    const worldRef = db.ref(`worlds/${worldId}/info`);
+    const worldSnapshot = await worldRef.once('value');
+    const worldInfo = worldSnapshot.val();
     
+    if (!worldInfo) {
+      throw new HttpsError('not-found', 'World not found');
+    }
+
+    // Calculate when gathering will complete (next world tick)
+    const now = Date.now();
     const worldSpeed = worldInfo.speed || 1.0;
-    const unitCount = groupData.unitCount || (groupData.units ? groupData.units.length : 1);
-    const baseGatherTimeMs = 180000; // 3 minutes
-    const adjustedGatherTime = Math.round(baseGatherTimeMs / worldSpeed) / Math.sqrt(unitCount);
-    const gatheringUntil = Date.now() + adjustedGatherTime;
+    const baseGatherTime = 60000; // 1 minute base time
+    const adjustedGatherTime = Math.round(baseGatherTime / worldSpeed);
+    const gatheringUntil = now + adjustedGatherTime;
     
-    // Update the group's status
+    // Update group status to gathering
     await groupRef.update({
-      status: 'starting_to_gather',
+      status: 'gathering',
+      gatheringStarted: now,
       gatheringUntil: gatheringUntil,
-      lastUpdated: Date.now()
+      lastUpdated: now,
+      // Add biome information for better resource generation
+      gatheringBiome: groupData.biome || 'plains'
     });
+    
+    logger.info(`Group ${groupId} started gathering at ${locationX},${locationY}`);
     
     return {
       success: true,
-      message: "Group has started gathering resources",
-      gatheringUntil: gatheringUntil,
-      estimatedTimeMinutes: Math.round(adjustedGatherTime / 60000 * 10) / 10 // Round to 1 decimal place
+      groupId,
+      completesAt: gatheringUntil,
+      message: "Gathering started"
     };
   } catch (error) {
-    logger.error("Error starting gathering:", error);
-    throw new HttpsError("internal", "Failed to start gathering");
+    logger.error('Error in startGathering:', error);
+    throw new HttpsError(
+      error.code || 'internal',
+      error.message || 'Failed to start gathering',
+      error
+    );
   }
 });

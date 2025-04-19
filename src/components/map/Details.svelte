@@ -328,13 +328,21 @@
       });
     }
     
-    // Check for movement (player groups that are idle)
+    // Check for movement and gathering (if player has idle groups)
     if (hasGroupWithStatus(currentTile, playerId, 'idle')) {
       availableActions.push({
         id: 'move',
         label: 'Move',
         icon: '➡️',
         description: 'Move your group to another location'
+      });
+      
+      // Add gather action for any idle group - no item check needed
+      availableActions.push({
+        id: 'gather',
+        label: 'Gather',
+        icon: '🧺',
+        description: 'Gather resources from this area'
       });
     }
     
@@ -390,20 +398,6 @@
       });
     }
     
-    // For resources - add gather action
-    const hasResources = currentTile.items && 
-                       currentTile.items.length > 0 && 
-                       currentTile.items.some(i => i.type === 'resource');
-                       
-    if (hasPlayerGroups && hasResources) {
-      availableActions.push({
-        id: 'gather',
-        label: 'Gather Resources',
-        icon: '📦',
-        description: 'Collect resources from this location'
-      });
-    }
-
     // Add explore action if player is present
     if (isPlayerAvailableOnTile(currentTile, playerId)) {
       availableActions.push({

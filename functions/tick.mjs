@@ -45,6 +45,7 @@ export const processGameTicks = onSchedule({
     let mobilizationsProcessed = 0;
     let demobilizationsProcessed = 0;
     let movementsProcessed = 0;
+    let gatheringsProcessed = 0;  // Add a counter for gatherings
     
     // Process each world
     for (const worldId in worlds) {
@@ -304,6 +305,45 @@ export const processGameTicks = onSchedule({
                     }
                   }
                   break;
+
+                // Add case for gathering
+                case 'gathering':
+                  // Check if gathering is complete
+                  if (group.gatheringUntil && group.gatheringUntil <= now) {
+                    // Generate gathered items based on group and biome
+                    const biome = group.gatheringBiome || tile.biome?.name || 'plains';
+                    const gatheredItems = generateGatheredItems(group, biome);
+                    
+                    // Add items to group
+                    if (!group.items) {
+                      updates[`${groupPath}/items`] = gatheredItems;
+                    } else {
+                      // Combine existing items with new gathered items
+                      const updatedItems = [
+                        ...(Array.isArray(group.items) ? group.items : []), 
+                        ...gatheredItems
+                      ];
+                      updates[`${groupPath}/items`] = updatedItems;
+                    }
+                    
+                    // Reset group status to idle
+                    updates[`${groupPath}/status`] = 'idle';
+                    updates[`${groupPath}/lastUpdated`] = now;
+                    updates[`${groupPath}/gatheringUntil`] = null;
+                    updates[`${groupPath}/gatheringStarted`] = null;
+                    updates[`${groupPath}/gatheringBiome`] = null;
+                    
+                    // Add a message about the gathering
+                    const itemCount = gatheredItems.length;
+                    updates[`${groupPath}/lastMessage`] = {
+                      text: `Gathered ${itemCount} item${itemCount !== 1 ? 's' : ''}`,
+                      timestamp: now
+                    };
+                    
+                    gatheringsProcessed++;
+                    logger.info(`Group ${groupId} completed gathering and found ${itemCount} items`);
+                  }
+                  break;
                 
                 // Add more status handlers as needed
                 default:
@@ -326,7 +366,7 @@ export const processGameTicks = onSchedule({
       console.log(`Processed ${battlesProcessed} battles in world ${worldId}`);
     }
     
-    console.log(`Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, and ${movementsProcessed} movement steps`);
+    console.log(`Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, ${movementsProcessed} movement steps, and ${gatheringsProcessed} gatherings`);
     return null;
   } catch (error) {
     console.error("Error processing game ticks:", error);
