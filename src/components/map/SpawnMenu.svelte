@@ -28,8 +28,8 @@
   // Get player's race from game store
   const playerRace = $derived($game.playerWorldData?.race || 'human');
   
-  // Also get the displayName from game store if available 
-  const playerDisplayName = $derived($game.playerWorldData?.displayName || null);
+  // Get the displayName directly from game store
+  const playerDisplayName = $derived($game.playerWorldData?.displayName || '');
   
   // Function to safely check if a value is valid
   function isValidValue(value) {
@@ -154,16 +154,11 @@
         `worlds/${$game.currentWorld}/chunks/${chunkKey}/${locationKey}/players/${$user.uid}`
       );
       
-      // Get display name with better fallback priority:
-      // 1. Use displayName from game.playerWorldData (set during join)
-      // 2. Use user.displayName from Firebase Auth
-      // 3. Use email prefix
-      // 4. Default to 'Player'
-      const displayName = isValidValue(playerDisplayName) 
-                          ? playerDisplayName 
-                          : ($user.displayName || $user.email?.split('@')[0] || 'Player');
+      // Simply use the displayName from the world data - no fallback needed
+      // This ensures we consistently use what was entered in JoinConfirmation
+      const displayName = playerDisplayName || 'Player'; // Just add a minimal fallback
       
-      console.log(`Setting player entity with displayName: ${displayName}`);
+      console.log(`Setting player entity with displayName: ${displayName} (from world data)`);
       
       // Set player data in the world, including race and timestamp
       await set(playerEntityRef, {
@@ -192,6 +187,13 @@
     if (spawnOptions.length > 0) {
       selectSpawn(spawnOptions[0]);
     }
+
+    // Debug output to verify displayName access
+    console.log('Player data available in SpawnMenu:', {
+      displayName: playerDisplayName,
+      race: playerRace, 
+      worldData: $game.playerWorldData
+    });
   });
 </script>
 
