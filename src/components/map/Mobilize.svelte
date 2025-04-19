@@ -7,40 +7,29 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
-  // Import functions and httpsCallable directly
   import { functions } from "../../lib/firebase/firebase";
   import { httpsCallable } from "firebase/functions";
 
-  // Props with default empty object - removed onMobilize
   const { tile = {}, onClose = () => {} } = $props();
   
-  // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
-  // Available units for mobilization
   let availableUnits = $state([]);
-  // Selected units to mobilize
   let selectedUnits = $state([]);
-  // Include player in mobilization
   let includePlayer = $state(true);
-  // Group name
   let groupName = $state("New Force");
   
-  // Initialize available units based on tile content
   $effect(() => {
     if (!tile) return;
     
     const units = [];
     const playerId = $currentPlayer?.uid;
     
-    // Check for groups owned by the player on this tile
     if (tile.groups && tile.groups.length > 0) {
       tile.groups.forEach(group => {
         if (group.owner === playerId && group.status !== 'mobilizing' && group.status !== 'moving') {
-          // Extract individual units from each group
           if (group.units) {
             group.units.forEach(unit => {
-              // Skip player units, we'll handle those separately
               if (unit.type !== 'player') {
                 units.push({
                   ...unit,
@@ -54,16 +43,11 @@
       });
     }
     
-    // Check if the player themselves is on this tile
     const playerOnTile = tile.players?.some(p => p.id === playerId);
-    
-    // Only enable includePlayer if player is on this tile
     includePlayer = playerOnTile;
-    
     availableUnits = units;
   });
   
-  // Toggle unit selection
   function toggleUnit(unitId) {
     availableUnits = availableUnits.map(unit => {
       if (unit.id === unitId) {
@@ -72,20 +56,16 @@
       return unit;
     });
     
-    // Update selectedUnits based on selection
     selectedUnits = availableUnits.filter(u => u.selected);
   }
 
-  // Add keyboard handling for unit item selection
   function handleUnitKeyDown(event, unitId) {
-    // Handle Enter or Space key to toggle selection
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       toggleUnit(unitId);
     }
   }
   
-  // Function to handle mobilization
   async function startMobilization() {
     const selectedUnitIds = availableUnits
       .filter(u => u.selected)
@@ -93,7 +73,6 @@
     
     // Check if we're mobilizing anything
     if (selectedUnitIds.length === 0 && !includePlayer) {
-      // Nothing to mobilize
       return;
     }
 
@@ -114,40 +93,42 @@
         return;
       }
       
-      // Call function directly instead of using the wrapper
-      const startMobilizationFn = httpsCallable(functions, 'startMobilization');
-      const result = await startMobilizationFn({
-        worldId: $game.currentWorld,
-        tileX: tile.x,
-        tileY: tile.y,
-        units: selectedUnitIds,
-        includePlayer,
-        name: groupName,
-        race: $currentPlayer?.race
-      });
-      
-      console.log('Mobilization result:', result.data);
-      onClose(); // Close only after success
+      // Call function directly
+      try {
+        const startMobilizationFn = httpsCallable(functions, 'startMobilization');
+        const result = await startMobilizationFn({
+          worldId: $game.currentWorld,
+          tileX: tile.x,
+          tileY: tile.y,
+          units: selectedUnitIds,
+          includePlayer,
+          name: groupName,
+          race: $currentPlayer?.race
+        });
+        
+        console.log('Mobilization result:', result.data);
+        onClose(); // Close only after success
+      } catch (error) {
+        console.error('Error during mobilization:', error);
+        alert(`Mobilization failed: ${error.message || 'Unknown error'}`);
+      }
     } catch (error) {
       console.error("Exception in startMobilization:", error);
       alert(`Error: ${error.message || 'Unknown error occurred'}`);
     }
   }
   
-  // Helper to check if mobilization is possible
   let canMobilize = $derived(
     (selectedUnits.length > 0) || 
     (includePlayer && tile?.players?.some(p => p.id === $currentPlayer?.uid))
   );
 
-  // Close on escape key
   function handleKeyDown(event) {
     if (event.key === 'Escape') {
       onClose();
     }
   }
 
-  // Determine unit race icon component
   function getRaceIcon(race) {
     if (!race) return null;
     

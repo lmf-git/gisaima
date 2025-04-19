@@ -389,26 +389,36 @@
           break;
           
         case 'explore':
-          // Call explore function directly
-          const exploreFn = httpsCallable(functions, 'exploreLocation');
-          const result = await exploreFn({ 
-            x: tile.x, 
-            y: tile.y,
-            worldId: $game.currentWorld
-          });
-          console.log('Explore result:', result.data);
+          try {
+            // Call explore function directly
+            const exploreFn = httpsCallable(functions, 'exploreLocation');
+            const result = await exploreFn({ 
+              x: tile.x, 
+              y: tile.y,
+              worldId: $game.currentWorld
+            });
+            console.log('Explore result:', result.data);
+          } catch (error) {
+            console.error('Error exploring location:', error);
+            alert(`Error exploring: ${error.message || 'Unknown error'}`);
+          }
           break;
           
         case 'gather':
-          // Call gather function directly
-          const gatherFn = httpsCallable(functions, 'startGathering');
-          const gatherResult = await gatherFn({
-            x: tile.x,
-            y: tile.y,
-            worldId: $game.currentWorld,
-            groupId: tile.groups.find(g => g.owner === $currentPlayer?.uid)?.id
-          });
-          console.log('Gather result:', gatherResult.data);
+          try {
+            // Call gather function directly
+            const gatherFn = httpsCallable(functions, 'startGathering');
+            const gatherResult = await gatherFn({
+              x: tile.x,
+              y: tile.y,
+              worldId: $game.currentWorld,
+              groupId: tile.groups.find(g => g.owner === $currentPlayer?.uid)?.id
+            });
+            console.log('Gather result:', gatherResult.data);
+          } catch (error) {
+            console.error('Error gathering resources:', error);
+            alert(`Error gathering: ${error.message || 'Unknown error'}`);
+          }
           break;
           
         default:
