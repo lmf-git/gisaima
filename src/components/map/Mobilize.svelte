@@ -105,9 +105,9 @@
       onClose();
       return;
     }
-    
+
     try {
-      // Use the simple pattern that works in other components
+      // Use the simple pattern that was working before
       const functions = getFunctions();
       const startMobilizationFn = httpsCallable(functions, 'startMobilization');
       
@@ -129,25 +129,22 @@
         includePlayer,
         name: groupName,
         race: $currentPlayer?.race
-      }).then(result => {
+      })
+      .then(result => {
         console.log('Mobilization result:', result.data);
-      }).catch(error => {
+        onClose(); // Close only after success
+      })
+      .catch(error => {
         console.error('Error starting mobilization:', error);
         // Extract the detailed error message if available
         const errorMessage = error.message || 'Unknown error occurred';
         const detailedMessage = error.details ? JSON.stringify(error.details) : errorMessage;
         alert(`Error: ${detailedMessage}`);
-        
-        // No more fallback to onMobilize prop since that's removed
       });
     } catch (error) {
       console.error("Exception in startMobilization:", error);
       alert(`Error: ${error.message || 'Unknown error occurred'}`);
-      
-      // No more fallback to onMobilize prop
     }
-    
-    onClose();
   }
   
   // Helper to check if mobilization is possible

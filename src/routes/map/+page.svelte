@@ -90,87 +90,22 @@
     let currentPath = $state([]);
     let moveComponentRef = $state(null);
 
+    // Modal visibility state variables
     let showAttack = $state(false);
     let showJoinBattle = $state(false);
-
     let showMobilize = $state(false);
     let showMove = $state(false);
     let showDemobilize = $state(false);
-
     let showStructureOverview = $state(false);
-    let selectedStructure = $state(null);
-    let structureLocation = $state({ x: 0, y: 0 });
 
+    // Data for each modal
     let mobilizeData = $state(null);
     let moveData = $state(null);
     let attackData = $state(null);
     let joinBattleData = $state(null);
     let demobilizeData = $state(null);
-
-    function openMobilizePopup(tile) {
-        showMobilize = true;
-        mobilizeData = tile;
-    }
-
-    function closeMobilizePopup() {
-        showMobilize = false;
-        setHighlighted(null, null);
-    }
-
-    function openMovePopup(tile) {
-        showMove = true;
-        moveData = tile;
-    }
-
-    function closeMovePopup(complete = true, startingPathDraw = false) {
-        showMove = false;
-        
-        if (!complete && startingPathDraw) {
-            return;
-        }
-        
-        isPathDrawingMode = false;
-        pathDrawingGroup = null;
-        currentPath = [];
-        setHighlighted(null, null);
-    }
-
-    function openAttackPopup(tile) {
-        showAttack = true;
-        attackData = tile;
-    }
-
-    function closeAttackPopup() {
-        showAttack = false;
-        setHighlighted(null, null);
-    }
-
-    function openJoinBattlePopup(tile) {
-        showJoinBattle = true;
-        joinBattleData = tile;
-    }
-
-    function closeJoinBattlePopup() {
-        showJoinBattle = false;
-        setHighlighted(null, null);
-    }
-
-    function openDemobilizePopup(tile) {
-        showDemobilize = true;
-        demobilizeData = tile;
-    }
-
-    function closeDemobilizePopup() {
-        showDemobilize = false;
-        setHighlighted(null, null);
-    }
-
-    function closeStructureOverview() {
-        showStructureOverview = false;
-        setTimeout(() => {
-            selectedStructure = null;
-        }, 300);
-    }
+    let selectedStructure = $state(null);
+    let structureLocation = $state({ x: 0, y: 0 });
 
     function parseUrlCoordinates() {
         if (!browser || !$page.url) return null;
@@ -719,23 +654,28 @@
         
         switch(action) {
             case 'mobilize':
-                openMobilizePopup(tile);
+                showMobilize = true;
+                mobilizeData = tile;
                 break;
                 
             case 'move':
-                openMovePopup(tile);
+                showMove = true;
+                moveData = tile;
                 break;
                 
             case 'attack':
-                openAttackPopup(tile);
+                showAttack = true;
+                attackData = tile;
                 break;
                 
             case 'joinBattle':
-                openJoinBattlePopup(tile);
+                showJoinBattle = true;
+                joinBattleData = tile;
                 break;
                 
             case 'demobilize':
-                openDemobilizePopup(tile);
+                showDemobilize = true;
+                demobilizeData = tile;
                 break;
                 
             case 'inspect':
@@ -798,7 +738,7 @@
         isPathDrawingMode = false;
         pathDrawingGroup = null;
         currentPath = [];
-        closeMovePopup(false);
+        showMove = false;
     }
 
     function confirmPathDrawing() {
@@ -906,7 +846,10 @@
         {#if showMobilize && mobilizeData}
             <Mobilize
                 tile={mobilizeData}
-                onClose={closeMobilizePopup}
+                onClose={() => {
+                    showMobilize = false;
+                    setHighlighted(null, null);
+                }}
             />
         {/if}
 
@@ -914,8 +857,18 @@
             <div class="move-dialog-container">
                 <Move
                     tile={moveData}
-                    onClose={closeMovePopup}
-                    onMove={openMovePopup}
+                    onClose={(complete = true, startingPathDraw = false) => {
+                        showMove = false;
+                        
+                        if (!complete && startingPathDraw) {
+                            return;
+                        }
+                        
+                        isPathDrawingMode = false;
+                        pathDrawingGroup = null;
+                        currentPath = [];
+                        setHighlighted(null, null);
+                    }}
                     onPathDrawingStart={handlePathDrawingStart}
                     onPathDrawingCancel={handlePathDrawingCancel}
                     bind:this={moveComponentRef}
@@ -926,24 +879,42 @@
         {#if showAttack && attackData}
             <AttackGroups
                 tile={attackData}
-                onClose={closeAttackPopup}
-                onAttack={openAttackPopup}
+                onClose={() => {
+                    showAttack = false;
+                    setHighlighted(null, null);
+                }}
+                onAttack={(tile) => {
+                    showAttack = true;
+                    attackData = tile;
+                }}
             />
         {/if}
 
         {#if showJoinBattle && joinBattleData}
             <JoinBattle
                 tile={joinBattleData}
-                onClose={closeJoinBattlePopup}
-                onJoinBattle={openJoinBattlePopup}
+                onClose={() => {
+                    showJoinBattle = false;
+                    setHighlighted(null, null);
+                }}
+                onJoinBattle={(tile) => {
+                    showJoinBattle = true;
+                    joinBattleData = tile;
+                }}
             />
         {/if}
 
         {#if showDemobilize && demobilizeData}
             <Demobilize
                 tile={demobilizeData}
-                onClose={closeDemobilizePopup}
-                onDemobilize={openDemobilizePopup}
+                onClose={() => {
+                    showDemobilize = false;
+                    setHighlighted(null, null);
+                }}
+                onDemobilize={(tile) => {
+                    showDemobilize = true;
+                    demobilizeData = tile;
+                }}
             />
         {/if}
 
@@ -975,7 +946,12 @@
                 structure={selectedStructure}
                 x={structureLocation.x}
                 y={structureLocation.y}
-                onClose={closeStructureOverview} 
+                onClose={() => {
+                    showStructureOverview = false;
+                    setTimeout(() => {
+                        selectedStructure = null;
+                    }, 300);
+                }}
             />
         {/if}
     {/if}
