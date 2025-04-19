@@ -8,7 +8,7 @@ import { browser } from '$app/environment';
 
 // Your Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDzEj04-d7UJJTInOerz24uz1VNe74",
+  apiKey: "AIzaSyDzEj04-d7UJJTInOerz24uz1d_q1VNe74",
   authDomain: "gisaima.firebaseapp.com",
   databaseURL: "https://gisaima-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "gisaima",
