@@ -25,7 +25,7 @@
     y = 0, 
     terrain = 'Unknown', 
     onClose = () => {},
-    onAction = () => {}
+    onShowModal = () => {} // Replace onAction with onShowModal for clarity
   } = $props();
 
   // Format text for display
@@ -429,12 +429,14 @@
         case 'attack':
         case 'joinBattle':
         case 'demobilize':
+          // For modal-based actions, use the onShowModal callback
+          onShowModal({ type: actionId, data: tile });
+          return; // Early return - no need to close the dialog here
+        
         case 'inspect':
-          // These are UI-only actions - delegate to parent component
-          if (onAction) {
-            onAction({ action: actionId, tile });
-          }
-          break;
+          // For structure inspection
+          onShowModal({ type: actionId, data: tile });
+          return; // Early return - no need to close the dialog here
           
         case 'explore':
           try {

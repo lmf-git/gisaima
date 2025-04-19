@@ -778,7 +778,41 @@
                 y={$highlightedStore.y} 
                 terrain={$highlightedStore.biome?.name} 
                 onClose={() => toggleDetailsModal(false)}
-                onAction={handleAction}
+                onShowModal={({ type, data }) => {
+                    // Close the details first
+                    toggleDetailsModal(false);
+                    
+                    // Then show the appropriate modal
+                    switch(type) {
+                        case 'mobilize':
+                            showMobilize = true;
+                            mobilizeData = data;
+                            break;
+                        case 'move':
+                            showMove = true;
+                            moveData = data;
+                            break;
+                        case 'attack':
+                            showAttack = true;
+                            attackData = data;
+                            break;
+                        case 'joinBattle':
+                            showJoinBattle = true;
+                            joinBattleData = data;
+                            break;
+                        case 'demobilize':
+                            showDemobilize = true;
+                            demobilizeData = data;
+                            break;
+                        case 'inspect':
+                            showStructureOverview = true;
+                            selectedStructure = data.structure;
+                            structureLocation = { x: data.x, y: data.y };
+                            break;
+                        default:
+                            console.log(`Unhandled modal type: ${type}`);
+                    }
+                }}
             />
         {:else}
             <Legend 
