@@ -7,9 +7,12 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
+  import { getFunctions, httpsCallable } from "firebase/functions";
+  import { getAuth } from "firebase/auth";
+  import { getApp } from "firebase/app";
 
-  // Props with default empty object to avoid destructuring errors
-  const { tile = {}, onClose = () => {}, onMobilize = () => {} } = $props();
+  // Props with default empty object - removed onMobilize
+  const { tile = {}, onClose = () => {} } = $props();
   
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -94,15 +97,54 @@
       return;
     }
     
-    // Use direct function call instead of event forwarding
-    if (onMobilize) {
-      onMobilize({
+    // Get current user authentication state
+    const auth = getAuth();
+    if (!auth.currentUser) {
+      console.error("Authentication error: No user is signed in");
+      alert("You must be logged in to mobilize units. Please sign in and try again.");
+      onClose();
+      return;
+    }
+    
+    try {
+      // Use the simple pattern that works in other components
+      const functions = getFunctions();
+      const startMobilizationFn = httpsCallable(functions, 'startMobilization');
+      
+      console.log("Calling startMobilization with:", {
+        worldId: $game.currentWorld,
+        tileX: tile.x,
+        tileY: tile.y,
         units: selectedUnitIds,
         includePlayer,
         name: groupName,
-        race: $currentPlayer?.race, // Include player's race
-        tile
+        race: $currentPlayer?.race
       });
+      
+      startMobilizationFn({
+        worldId: $game.currentWorld,
+        tileX: tile.x,
+        tileY: tile.y,
+        units: selectedUnitIds,
+        includePlayer,
+        name: groupName,
+        race: $currentPlayer?.race
+      }).then(result => {
+        console.log('Mobilization result:', result.data);
+      }).catch(error => {
+        console.error('Error starting mobilization:', error);
+        // Extract the detailed error message if available
+        const errorMessage = error.message || 'Unknown error occurred';
+        const detailedMessage = error.details ? JSON.stringify(error.details) : errorMessage;
+        alert(`Error: ${detailedMessage}`);
+        
+        // No more fallback to onMobilize prop since that's removed
+      });
+    } catch (error) {
+      console.error("Exception in startMobilization:", error);
+      alert(`Error: ${error.message || 'Unknown error occurred'}`);
+      
+      // No more fallback to onMobilize prop
     }
     
     onClose();

@@ -79,9 +79,6 @@
     let ignoreNextUrlChange = $state(false);
     let lastProcessedLocation = $state(null);
     
-    let urlCoordinatesProcessing = $state(false);
-    let urlCoordinatesLastProcessed = $state({ x: null, y: null });
-    
     let coordinateProcessingState = $state({
         processing: false,
         processed: new Set(),
@@ -118,28 +115,6 @@
     function closeMobilizePopup() {
         showMobilize = false;
         setHighlighted(null, null);
-    }
-
-    async function handleMobilizeAction(mobilizeParams) {
-        try {
-            const functions = getFunctions();
-            const mobilizeFunction = httpsCallable(functions, 'mobilize');
-            
-            console.log('Starting mobilization with params:', mobilizeParams);
-            
-            const result = await mobilizeFunction({
-                x: mobilizeParams.tile.x,
-                y: mobilizeParams.tile.y,
-                includePlayer: mobilizeParams.includePlayer,
-                unitIds: mobilizeParams.units,
-                groupName: mobilizeParams.name,
-                race: mobilizeParams.race
-            });
-            
-            console.log('Mobilization started successfully:', result.data);
-        } catch (error) {
-            console.error('Error starting mobilization:', error);
-        }
     }
 
     function openMovePopup(tile) {
@@ -932,7 +907,6 @@
             <Mobilize
                 tile={mobilizeData}
                 onClose={closeMobilizePopup}
-                onMobilize={handleMobilizeAction}
             />
         {/if}
 
