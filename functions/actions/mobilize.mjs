@@ -10,7 +10,25 @@ import { getDatabase } from 'firebase-admin/database';
  * Mobilizes units into a new group at a specific location.
  * Requires authentication.
  */
-export const startMobilization = onCall(async (request) => {
+
+// Improved function to check if player exists on tile
+function isPlayerOnTile(tileData, playerId) {
+  if (!tileData || !tileData.players) return false;
+  
+  // Handle players stored as an array
+  if (Array.isArray(tileData.players)) {
+    return tileData.players.some(p => p.uid === playerId || p.id === playerId);
+  }
+  
+  // Handle players stored as an object with keys
+  if (typeof tileData.players === 'object') {
+    return Object.values(tileData.players).some(p => p.uid === playerId || p.id === playerId);
+  }
+  
+  return false;
+}
+
+export const mobilizeUnits = onCall({ maxInstances: 10 }, async (request) => {
   // Check authentication context provided by onCall
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
@@ -67,45 +85,13 @@ export const startMobilization = onCall(async (request) => {
     const tileData = tileSnapshot.val() || {};
     console.log(`Tile data fetched from chunk ${chunkKey}:`, JSON.stringify(tileData));
 
-    // Add additional logging to help diagnose issues
-    if (includePlayer) {
-      console.log("Attempting to include player in mobilization");
-      
-      if (!tileData.players) {
-        console.warn(`No players found on tile ${tileKey} in chunk ${chunkKey}`);
-      } else {
-        console.log(`Players on tile: ${JSON.stringify(Object.keys(tileData.players))}`);
-      }
+    // Use improved player detection
+    if (!isPlayerOnTile(tileData, uid)) {
+      console.warn(`mobilizeUnits: Player ${uid} not found on tile at ${tileKey} in chunk ${chunkKey}`);
+      console.info(`Players data:`, JSON.stringify(tileData.players || {}));
+      throw new HttpsError('failed-precondition', 'Player not found on this tile');
     }
 
-    // Verify player is on the tile if including player
-    if (includePlayer) {
-      const players = tileData.players || {};
-      console.log(`Checking if player ${uid} is on tile ${tileKey}, players:`, JSON.stringify(players));
-      
-      // Enhanced player detection logic to handle both array and object formats
-      let playerOnTile = false;
-      
-      if (Array.isArray(players)) {
-        // Handle array format
-        console.log("Players data is in array format");
-        playerOnTile = players.some(p => p.uid === uid || p.id === uid);
-      } else {
-        // Handle object format
-        console.log("Players data is in object format");
-        playerOnTile = players[uid] !== undefined || 
-                       Object.values(players).some(p => p.uid === uid || p.id === uid);
-      }
-      
-      // Log the detection result
-      console.log(`Player detection result: ${playerOnTile ? "FOUND" : "NOT FOUND"}`);
-      
-      if (!playerOnTile) {
-        console.log(`Player ${uid} not found on tile ${tileKey}`);
-        throw new HttpsError('failed-precondition', 'Player not found on this tile.');
-      }
-    }
-    
     // Verify ownership of units
     if (units.length > 0) {
       const groups = tileData.groups || {};

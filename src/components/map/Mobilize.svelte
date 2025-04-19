@@ -22,6 +22,18 @@
 
   const startMobilizationFn = httpsCallable(functions, 'startMobilization');
   
+  function isPlayerOnTile(tile, playerId) {
+    if (!tile || !tile.players) return false;
+    
+    if (Array.isArray(tile.players)) {
+      return tile.players.some(p => p.uid === playerId);
+    } else if (typeof tile.players === 'object') {
+      return Object.values(tile.players).some(p => p.uid === playerId);
+    }
+    
+    return false;
+  }
+
   $effect(() => {
     if (!tile) return;
     
@@ -46,29 +58,18 @@
       });
     }
     
-    // Improved player detection with better logging
-    let playerOnTile = false;
-    
-    if (Array.isArray(tile.players)) {
-      playerOnTile = tile.players.some(p => p.uid === playerId || p.id === playerId);
-      console.log("Player detection (array format):", {
-        playerId,
-        playerOnTile,
-        playerCount: tile.players.length
-      });
-    } else if (tile.players) {
-      playerOnTile = tile.players[playerId] !== undefined || 
-                    Object.values(tile.players).some(p => p.uid === playerId || p.id === playerId);
-      console.log("Player detection (object format):", {
-        playerId,
-        playerOnTile,
-        playerKeys: Object.keys(tile.players)
-      });
-    } else {
-      console.log("No players on tile");
+    if (!$currentPlayer) {
+      mobilizeError = 'You need to be logged in to mobilize units.';
+      return;
     }
     
-    includePlayer = playerOnTile;
+    if (!isPlayerOnTile(tile, $currentPlayer.uid)) {
+      console.warn('Player not found on tile. Players data:', tile.players);
+      mobilizeError = 'Player not found on this tile.';
+      return;
+    }
+    
+    includePlayer = isPlayerOnTile(tile, playerId);
     availableUnits = units;
   });
   
