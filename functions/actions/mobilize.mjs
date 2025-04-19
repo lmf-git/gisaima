@@ -104,15 +104,19 @@ export const startMobilization = onCall(async (request) => {
     const newGroupId = db.ref().push().key;
     
     // Use a transaction to ensure data consistency when moving units
+    // Fix: Use the correct database path structure matching our DB
     await db.ref().transaction(currentData => {
       if (!currentData) return null;
       
-      // Get the latest tile data
-      if (!currentData.tiles) currentData.tiles = {};
-      if (!currentData.tiles[worldId]) currentData.tiles[worldId] = {};
-      if (!currentData.tiles[worldId][tileKey]) currentData.tiles[worldId][tileKey] = {};
+      // Fix: Use the correct path to match the actual database structure
+      if (!currentData.worlds) currentData.worlds = {};
+      if (!currentData.worlds[worldId]) currentData.worlds[worldId] = {};
+      if (!currentData.worlds[worldId].chunks) currentData.worlds[worldId].chunks = {};
+      if (!currentData.worlds[worldId].chunks[chunkKey]) currentData.worlds[worldId].chunks[chunkKey] = {};
+      if (!currentData.worlds[worldId].chunks[chunkKey][tileKey]) currentData.worlds[worldId].chunks[chunkKey][tileKey] = {};
       
-      const currentTile = currentData.tiles[worldId][tileKey];
+      // Get the current tile data using the correct path
+      const currentTile = currentData.worlds[worldId].chunks[chunkKey][tileKey];
       
       // Create new group
       const newGroup = {
@@ -135,7 +139,7 @@ export const startMobilization = onCall(async (request) => {
       
       // Process selected units from existing groups
       if (units.length > 0) {
-        Object.keys(currentTile.groups).forEach(groupId => {
+        Object.keys(currentTile.groups || {}).forEach(groupId => {
           const group = currentTile.groups[groupId];
           
           if (group.owner === uid && group.units) {
