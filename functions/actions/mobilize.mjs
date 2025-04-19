@@ -30,13 +30,21 @@ export const startMobilization = onCall(async (request) => {
   console.log(`Mobilization request by ${uid} for world ${worldId} at ${tileX},${tileY}`);
   
   const db = getDatabase();
-  const tileKey = `${tileX},${tileY}`; // Fixed: changed underscore to comma to match database format
-  const chunkX = Math.floor(tileX / 20);
-  const chunkY = Math.floor(tileY / 20);
+  const tileKey = `${tileX},${tileY}`; 
+
+  // Define CHUNK_SIZE constant
+  const CHUNK_SIZE = 20;
+
+  // Use the simplified chunk calculation formula
+  const chunkX = Math.floor((tileX + 10) / CHUNK_SIZE);
+  const chunkY = Math.floor((tileY + 10) / CHUNK_SIZE);
   const chunkKey = `${chunkX},${chunkY}`;
+
+  console.log(`Calculated chunk coordinates: ${chunkKey} for tile ${tileKey}`);
+  
   const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
   const worldRef = db.ref(`worlds/${worldId}/info`);
-  
+
   try {
     // Get world info to calculate next tick time
     const worldSnapshot = await worldRef.once('value');
@@ -44,19 +52,17 @@ export const startMobilization = onCall(async (request) => {
     if (!worldData) {
       throw new HttpsError('not-found', 'World not found.');
     }
-    
+
     // Get current tile data to validate units and player presence
     const tileSnapshot = await tileRef.once('value');
     const tileData = tileSnapshot.val() || {};
-    
-    console.log(`Tile data fetched:`, JSON.stringify(tileData));
-    
+    console.log(`Tile data fetched from chunk ${chunkKey}:`, JSON.stringify(tileData));
+
     // Verify player is on the tile if including player
     if (includePlayer) {
       const players = tileData.players || {};
-      console.log(`Checking if player ${uid} is on tile, players:`, JSON.stringify(players));
+      console.log(`Checking if player ${uid} is on tile ${tileKey}, players:`, JSON.stringify(players));
       
-      // Check if player exists as a key in the players object (real database structure)
       const playerOnTile = players[uid] !== undefined || 
                           Object.values(players).some(p => p.uid === uid);
       
@@ -71,7 +77,6 @@ export const startMobilization = onCall(async (request) => {
       const groups = tileData.groups || {};
       const ownedUnits = new Set();
       
-      // Collect all unit IDs owned by player
       Object.values(groups).forEach(group => {
         if (group.owner === uid && group.units) {
           Object.values(group.units).forEach(unit => {
@@ -81,8 +86,7 @@ export const startMobilization = onCall(async (request) => {
           });
         }
       });
-      
-      // Check if all requested units are owned
+
       const invalidUnits = units.filter(unitId => !ownedUnits.has(unitId));
       if (invalidUnits.length > 0) {
         throw new HttpsError(
@@ -91,7 +95,7 @@ export const startMobilization = onCall(async (request) => {
         );
       }
     }
-    
+
     // Calculate when mobilization will complete (next world tick)
     const now = Date.now();
     const tickInterval = worldData.tickInterval || 60000; // Default 1 minute
@@ -99,26 +103,21 @@ export const startMobilization = onCall(async (request) => {
     while (nextTickTime <= now) {
       nextTickTime += tickInterval;
     }
-    
+
     // Generate new group ID
     const newGroupId = db.ref().push().key;
     
     // Use a transaction to ensure data consistency when moving units
-    // Fix: Use the correct database path structure matching our DB
     await db.ref().transaction(currentData => {
       if (!currentData) return null;
-      
-      // Fix: Use the correct path to match the actual database structure
       if (!currentData.worlds) currentData.worlds = {};
       if (!currentData.worlds[worldId]) currentData.worlds[worldId] = {};
       if (!currentData.worlds[worldId].chunks) currentData.worlds[worldId].chunks = {};
       if (!currentData.worlds[worldId].chunks[chunkKey]) currentData.worlds[worldId].chunks[chunkKey] = {};
       if (!currentData.worlds[worldId].chunks[chunkKey][tileKey]) currentData.worlds[worldId].chunks[chunkKey][tileKey] = {};
-      
-      // Get the current tile data using the correct path
+
       const currentTile = currentData.worlds[worldId].chunks[chunkKey][tileKey];
       
-      // Create new group
       const newGroup = {
         id: newGroupId,
         name,
@@ -134,10 +133,8 @@ export const startMobilization = onCall(async (request) => {
       
       if (!currentTile.groups) currentTile.groups = {};
       
-      // Add units to new group
       let unitCount = 0;
       
-      // Process selected units from existing groups
       if (units.length > 0) {
         Object.keys(currentTile.groups || {}).forEach(groupId => {
           const group = currentTile.groups[groupId];
@@ -148,17 +145,13 @@ export const startMobilization = onCall(async (request) => {
             groupUnitKeys.forEach(unitKey => {
               const unit = group.units[unitKey];
               
-              if (units.includes(unit.id) && unit.type !== 'player') {
-                // Add to new group
+              if (units.includes(unit.id) && unit.type !== 'player') { 
                 newGroup.units[unitKey] = unit;
                 unitCount++;
-                
-                // Remove from old group
                 delete group.units[unitKey];
               }
             });
-            
-            // If group is now empty, delete it
+
             if (Object.keys(group.units).length === 0) {
               delete currentTile.groups[groupId];
             }
@@ -166,7 +159,6 @@ export const startMobilization = onCall(async (request) => {
         });
       }
       
-      // Include player if requested
       if (includePlayer && currentTile.players) {
         const playerKeys = Object.keys(currentTile.players);
         
@@ -174,17 +166,13 @@ export const startMobilization = onCall(async (request) => {
           const player = currentTile.players[playerKey];
           
           if (player.uid === uid || player.id === uid) {
-            // Copy player to the group as a unit
             newGroup.units[playerKey] = {
               ...player,
               type: 'player'
             };
             unitCount++;
-            
-            // Remove player from the tile's players collection
             delete currentTile.players[playerKey];
             
-            // If players is now empty, delete it
             if (Object.keys(currentTile.players).length === 0) {
               delete currentTile.players;
             }
@@ -193,41 +181,36 @@ export const startMobilization = onCall(async (request) => {
         }
       }
       
-      // Add the new group to the tile
       newGroup.unitCount = unitCount;
       currentTile.groups[newGroupId] = newGroup;
-      
-      // Update player data to track this group
+
       if (!currentData.players) currentData.players = {};
       if (!currentData.players[uid]) currentData.players[uid] = {};
       if (!currentData.players[uid].worlds) currentData.players[uid].worlds = {};
       if (!currentData.players[uid].worlds[worldId]) currentData.players[uid].worlds[worldId] = {};
       if (!currentData.players[uid].worlds[worldId].groups) currentData.players[uid].worlds[worldId].groups = {};
-      
-      // Add group reference to player data
+
       currentData.players[uid].worlds[worldId].groups[newGroupId] = {
         id: newGroupId,
         at: `${tileX},${tileY}`,
         status: 'mobilizing',
         readyAt: nextTickTime
       };
-      
-      // Update player location if they're part of the group
+
       if (includePlayer) {
         currentData.players[uid].worlds[worldId].lastLocation = { x: tileX, y: tileY };
         currentData.players[uid].worlds[worldId].inGroup = newGroupId;
       }
-      
+
       return currentData;
     });
-    
+
     console.log(`Mobilization successful for user ${uid}, group ${newGroupId}`);
     return { 
       success: true, 
       groupId: newGroupId,
       completesAt: nextTickTime
     };
-    
   } catch (error) {
     console.error('Mobilization failed:', error);
     throw new HttpsError(

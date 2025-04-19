@@ -587,7 +587,8 @@ export function setHighlighted(x, y) {
 
 // Get chunk key for coordinates
 export function getChunkKey(x, y) {
-  return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
+  // Simple formula that handles both positive and negative coordinates consistently
+  return `${Math.floor((x + 10) / CHUNK_SIZE)},${Math.floor((y + 10) / CHUNK_SIZE)}`;
 }
 
 // Unified initialization function with localStorage support and better error handling

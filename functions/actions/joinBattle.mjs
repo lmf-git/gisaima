@@ -24,9 +24,10 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     const db = getDatabase();
     const worldId = request.data.worldId || 'default';
     
-    // Calculate chunk key (inline, always using 20 for chunk size)
-    const chunkX = Math.floor(locationX / 20);
-    const chunkY = Math.floor(locationY / 20);
+    // Calculate chunk key with simplified formula
+    const CHUNK_SIZE = 20;
+    const chunkX = Math.floor((locationX + 10) / CHUNK_SIZE);
+    const chunkY = Math.floor((locationY + 10) / CHUNK_SIZE);
     const chunkKey = `${chunkX},${chunkY}`;
     
     const locationKey = `${locationX},${locationY}`;

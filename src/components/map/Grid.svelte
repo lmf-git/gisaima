@@ -12,7 +12,8 @@
     moveTarget,
     targetStore,
     highlightedStore,
-    setHighlighted
+    setHighlighted,
+    getChunkKey
   } from "../../lib/stores/map.js";
   import { game, currentPlayer } from "../../lib/stores/game.js";
   import Torch from '../icons/Torch.svelte';
@@ -772,6 +773,10 @@
     }
     
     return path;
+  }
+
+  function getCoordinateChunkKey(x, y) {
+    return getChunkKey(x, y);
   }
 </script>
 
