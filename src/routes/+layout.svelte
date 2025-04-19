@@ -1,12 +1,12 @@
 <script>
     import { page } from '$app/stores';
     import { user, signOut, loading as userLoading } from '$lib/stores/user';
-    import { browser } from '$app/environment'; // Add this missing import
+    import { browser } from '$app/environment'; 
     import Logo from '../components/Logo.svelte';
     import SignOut from '../components/icons/SignOut.svelte';
     import XIcon from '../components/icons/XIcon.svelte';
     import DiscordIcon from '../components/icons/DiscordIcon.svelte';
-    import GitHubIcon from '../components/icons/GitHubIcon.svelte'; // Import the new GitHub icon
+    import GitHubIcon from '../components/icons/GitHubIcon.svelte'; 
     import MobileMenu from '../components/MobileMenu.svelte';
     import { onMount, onDestroy } from 'svelte';
     import { initGameStore, game, isAuthReady, setMapInitializer } from '../lib/stores/game.js';
@@ -16,9 +16,8 @@
     import GuestWarning from '../components/GuestWarning.svelte';
     import { initAuthListener } from '$lib/stores/user';
     import { initialize, initializeMapForWorld } from '$lib/stores/map.js';
-    import { setupTokenRefresh } from '$lib/stores/auth-helper';
 
-    const { children } = $props();
+    const { children, data } = $props();
 
     // State
     let mobileMenuOpen = $state(false);
@@ -76,7 +75,8 @@
         }
     }
 
-    let gameUnsubscribe;
+    // Track gameStore unsubscribe function from +layout.js load function
+    let gameUnsubscribe = data?.unsubscribe;
     
     // Subscribe to player data when auth changes
     $effect(() => {
@@ -106,12 +106,9 @@
     });
     
     onMount(() => {
-        try {
-            gameUnsubscribe = initGameStore();
-        } catch (e) {
-            console.error('Error initializing game store:', e);
-        }
-
+        // Only connect map and game stores - initialization is handled by +layout.js
+        setMapInitializer(initializeMapForWorld);
+        
         if (browser) {
             hasShownGuestWarning = localStorage.getItem('guest-warning-shown') === 'true';
         }
@@ -154,86 +151,6 @@
             guestWarningAnimatingOut = false;
         }, 300);
     }
-
-    // Use this flag to prevent duplicate initialization
-    let servicesInitialized = $state(false);
-    let servicesInitializing = $state(false);
-
-    // Properly initialize core services in sequence
-    async function initializeCoreServices() {
-        if (servicesInitialized || servicesInitializing) return;
-        
-        try {
-            servicesInitializing = true;
-            console.log('Layout mounted, initializing core services');
-            
-            // Initialize Firebase services in proper order
-            const authUnsubscribe = initAuthListener();
-            console.log('Auth listener initialized');
-            
-            // Set up token refresh listener for enhanced auth state management
-            const tokenRefreshUnsubscribe = setupTokenRefresh(user => {
-                console.log("Auth token refreshed for user:", user?.uid || "none");
-            });
-            
-            // Wait for auth to be ready before proceeding
-            if (!$isAuthReady) {
-                console.log('Waiting for auth to be ready...');
-                await new Promise(resolve => {
-                    const unsub = isAuthReady.subscribe(ready => {
-                        if (ready) {
-                            unsub();
-                            resolve();
-                        }
-                    });
-                    
-                    // Set a reasonable timeout to avoid hanging indefinitely
-                    setTimeout(() => {
-                        unsub();
-                        console.warn('Auth readiness timeout - proceeding anyway');
-                        resolve();
-                    }, 3000);
-                });
-            }
-            console.log('Auth is ready, continuing initialization');
-            
-            // Initialize game store after auth
-            const gameUnsubscribe = initGameStore();
-            console.log('Game store initialized');
-            
-            // Connect map and game stores after game store is initialized
-            console.log('Connecting map and game stores...');
-            
-            // Set the map initializer in game store
-            setMapInitializer(initializeMapForWorld);
-            
-            // We'll let the map component handle its own initialization
-            // instead of trying to initialize it here
-            
-            servicesInitialized = true;
-            servicesInitializing = false;
-            
-            console.log('Core services successfully initialized');
-            
-            // Return cleanup with enhanced token refresh unsubscribe
-            return () => {
-                authUnsubscribe && authUnsubscribe();
-                gameUnsubscribe && gameUnsubscribe();
-                tokenRefreshUnsubscribe && tokenRefreshUnsubscribe();
-            };
-        } catch (error) {
-            console.error('Error initializing core services:', error);
-            servicesInitializing = false;
-            // Don't set servicesInitialized to true if there was an error
-        }
-    }
-
-    // Add separate mount logic to ensure proper initialization order
-    onMount(() => {
-        if (browser && !servicesInitialized && !servicesInitializing) {
-            initializeCoreServices();
-        }
-    });
 </script>
 
 <div class={`app ${isMapPage ? 'map' : ''}`}>

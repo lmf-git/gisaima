@@ -2,11 +2,14 @@
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
-  import { functions } from '../../lib/firebase/firebase';
-  import { httpsCallable } from 'firebase/functions';
+  // Update imports to use getFunctions directly instead of importing from firebase.js
+  import { getFunctions, httpsCallable } from 'firebase/functions';
 
   // Props with default empty object to avoid destructuring errors
   const { tile = {}, onClose = () => {}, onAttack = () => {} } = $props();
+  
+  // Get functions instance directly
+  const functions = getFunctions();
 
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());

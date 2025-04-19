@@ -2,9 +2,8 @@
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
-  // Import functions and httpsCallable directly
-  import { functions } from "../../lib/firebase/firebase";
-  import { httpsCallable } from "firebase/functions";
+  // Update imports to use getFunctions directly instead of importing from firebase.js
+  import { getFunctions, httpsCallable } from 'firebase/functions';
 
   // Props with default empty object/function to avoid destructuring errors
   const { 
@@ -14,6 +13,9 @@
     onPathDrawingStart = () => {}, 
     onPathDrawingCancel = () => {} 
   } = $props();
+  
+  // Get functions instance directly
+  const functions = getFunctions();
   
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -222,7 +224,7 @@
     const endPoint = customPath[customPath.length - 1];
     
     try {
-      // Use httpsCallable directly
+      // Use functions instance from above
       const moveGroupFn = httpsCallable(functions, 'moveGroup');
       const result = await moveGroupFn({
         groupId: selectedGroup.id,
@@ -266,7 +268,7 @@
       confirmCustomPath();
     } else if (targetX !== null && targetY !== null) {
       try {
-        // Use httpsCallable directly
+        // Use functions instance from above
         const moveGroupFn = httpsCallable(functions, 'moveGroup');
         const result = await moveGroupFn({
           groupId: selectedGroup.id,

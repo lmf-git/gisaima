@@ -7,7 +7,8 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
-  import { auth, createCallable } from "../../lib/firebase/firebase";
+  import { auth } from "../../lib/firebase/firebase";
+  import { getFunctions, httpsCallable } from "firebase/functions";
 
   const { tile = {}, onClose = () => {} } = $props();
   
@@ -19,8 +20,8 @@
   let groupName = $state("New Force");
   let mobilizeError = $state(null);
 
-  // Create callable function using our enhanced wrapper
-  const startMobilizationFn = createCallable('startMobilization');
+  const functions = getFunctions();
+  const startMobilizationFn = httpsCallable(functions, 'startMobilization');
   
   $effect(() => {
     if (!tile) return;
@@ -74,7 +75,6 @@
       .filter(u => u.selected)
       .map(u => u.id);
     
-    // Check if we're mobilizing anything
     if (selectedUnitIds.length === 0 && !includePlayer) {
       return;
     }
@@ -82,6 +82,10 @@
     mobilizeError = null;
     
     try {
+      if (!auth.currentUser) {
+        throw new Error('You must be logged in to mobilize forces');
+      }
+      
       console.log("Current auth state:", {
         currentUser: auth.currentUser?.uid || 'none',
         isAnonymous: auth.currentUser?.isAnonymous,
@@ -98,7 +102,6 @@
         race: $currentPlayer?.race
       });
       
-      // Use our enhanced function wrapper
       const result = await startMobilizationFn({
         worldId: $game.currentWorld,
         tileX: tile.x,
@@ -109,8 +112,8 @@
         race: $currentPlayer?.race
       });
       
-      console.log('Mobilization result:', result);
-      onClose(); // Close only after success
+      console.log('Mobilization result:', result.data);
+      onClose();
     } catch (error) {
       console.error('Error during mobilization:', error);
       mobilizeError = error.message || "Failed to mobilize forces";

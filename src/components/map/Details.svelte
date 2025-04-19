@@ -4,9 +4,8 @@
   import { targetStore, coordinates } from '../../lib/stores/map';
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   import { onMount, onDestroy } from 'svelte';
-  // Import functions and httpsCallable directly
-  import { functions } from '../../lib/firebase/firebase';
-  import { httpsCallable } from 'firebase/functions';
+  // Update imports to use getFunctions directly instead of importing from firebase.js
+  import { getFunctions, httpsCallable } from 'firebase/functions';
 
   // Import race icon components
   import Human from '../../components/icons/Human.svelte';
@@ -17,6 +16,9 @@
   import Structure from '../../components/icons/Structure.svelte';
   import Torch from '../../components/icons/Torch.svelte';
   import Close from '../icons/Close.svelte';
+
+  // Get functions instance directly
+  const functions = getFunctions();
 
   // Props with defaults using Svelte 5 $props() rune
   const { 
@@ -390,7 +392,7 @@
           
         case 'explore':
           try {
-            // Call explore function directly
+            // Call explore function with the functions instance from above
             const exploreFn = httpsCallable(functions, 'exploreLocation');
             const result = await exploreFn({ 
               x: tile.x, 
@@ -406,7 +408,7 @@
           
         case 'gather':
           try {
-            // Call gather function directly
+            // Call gather function with the functions instance from above
             const gatherFn = httpsCallable(functions, 'startGathering');
             const gatherResult = await gatherFn({
               x: tile.x,
