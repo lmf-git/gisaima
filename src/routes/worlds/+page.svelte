@@ -475,9 +475,9 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
+    width: 100%;
+    margin: 0;
+    padding: 1rem;
   }
 
   h1 {
@@ -495,8 +495,8 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    padding: 0 0.5rem;
     width: 100%;
+    align-items: center; /* Center single cards */
   }
   
   .world-card {
@@ -571,7 +571,7 @@
   .world-action-button {
     align-self: center;
     margin-top: 1rem;
-    min-width: 180px;
+    width: 100%;
     background-color: rgba(42, 107, 122, 0.9);
     border: 0.05em solid var(--color-muted-teal);
     box-shadow: 0 0.3em 0.8em rgba(0, 0, 0, 0.4);
@@ -605,75 +605,6 @@
 
   .world-action-button.joined:hover {
     background-color: rgba(57, 163, 103, 0.9);
-  }
-
-  @media (min-width: 640px) {
-    .worlds-page {
-      margin: 3rem auto;
-      padding: 1.5rem;
-    }
-    
-    .worlds-grid {
-      padding: 0 1.5rem;
-      gap: 2rem;
-    }
-    
-    .world-card {
-      flex-direction: row;
-      align-items: stretch;
-    }
-    
-    .world-preview {
-      width: 40%;
-      min-width: 200px;
-      aspect-ratio: 1 / 1;
-      border-right: 1px solid rgba(255, 255, 255, 0.1);
-      border-bottom: none;
-    }
-      
-    .world-info {
-      flex: 1;
-      padding: 1.25rem;
-    }
-  }
-  
-  @media (min-width: 768px) {
-    .worlds-grid {
-      flex-direction: row;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 0 2rem;
-      gap: 2rem;
-    }
-
-    .world-card {
-      flex: 0 0 calc(50% - 1rem);
-      max-width: calc(50% - 1rem);
-      flex-direction: column;
-    }
-
-    .world-preview {
-      width: 100%;
-      aspect-ratio: 2 / 1;
-      border-right: none;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .worlds-page {
-      margin: 4rem auto;
-      padding: 2rem;
-    }
-    
-    .worlds-grid {
-      padding: 0 3rem;
-    }
-
-    .world-card {
-      flex: 0 0 calc(33.333% - 1.333rem);
-      max-width: calc(33.333% - 1.333rem);
-    }
   }
 
   .error-message {
@@ -713,11 +644,11 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background-color: rgba(0, 0, 0, 0.5); /* Reduced from 0.7 to 0.5 */
+    background-color: rgba(0, 0, 0, 0.5);
     color: white;
     font-size: 0.9rem;
     z-index: 5;
-    pointer-events: none; /* Allow clicks to pass through to buttons */
+    pointer-events: none;
   }
   
   .loading-spinner {
@@ -727,11 +658,87 @@
     border-radius: 50%;
     border-top-color: var(--color-pale-green);
     animation: spin 1s linear infinite;
-    /* Removed bottom margin since there's no text */
-    will-change: transform; /* Hint for hardware acceleration */
+    will-change: transform;
   }
   
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  /* Mobile-first responsive breakpoints */
+  @media (min-width: 640px) {
+    .worlds-page {
+      padding: 1.5rem;
+    }
+    
+    .worlds-grid {
+      gap: 2rem;
+    }
+    
+    .world-card {
+      flex-direction: row;
+      align-items: stretch;
+    }
+    
+    .world-preview {
+      width: 40%;
+      aspect-ratio: 1 / 1;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: none;
+    }
+      
+    .world-info {
+      flex: 1;
+      padding: 1.25rem;
+    }
+
+    .world-action-button {
+      width: auto;
+      padding: 0.8em 2em;
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .worlds-page {
+      padding: 2rem;
+      width: 90%;
+      margin: 0 auto;
+    }
+    
+    .worlds-grid {
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .world-card {
+      flex: 0 1 calc(50% - 2rem);
+      flex-direction: column;
+    }
+
+    .world-preview {
+      width: 100%;
+      aspect-ratio: 2 / 1;
+      border-right: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .worlds-page {
+      width: 85%;
+      margin: 2rem auto;
+    }
+    
+    .world-card {
+      flex: 0 1 calc(33.333% - 2rem);
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .worlds-page {
+      width: 80%;
+      max-width: 1400px;
+    }
   }
 </style>
