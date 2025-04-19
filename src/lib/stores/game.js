@@ -4,10 +4,6 @@ import { ref, onValue, get as dbGet, set, update } from "firebase/database";
 import { db } from '../firebase/database.js';
 import { userStore } from './user.js'; 
 
-// Remove circular dependency by not importing from map.js
-// We'll define a local function for map initialization
-// Which can be overridden later by the actual map module
-
 // Constants for localStorage
 const CURRENT_WORLD_KEY = 'gisaima-current-world';
 

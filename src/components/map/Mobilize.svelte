@@ -7,7 +7,7 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
-  import { auth } from "../../lib/firebase/firebase";
+  import { app, auth } from "../../lib/firebase/firebase";
   import { getFunctions, httpsCallable } from "firebase/functions";
 
   const { tile = {}, onClose = () => {} } = $props();
@@ -20,7 +20,7 @@
   let groupName = $state("New Force");
   let mobilizeError = $state(null);
 
-  const functions = getFunctions();
+  const functions = getFunctions(app);
   const startMobilizationFn = httpsCallable(functions, 'startMobilization');
   
   $effect(() => {

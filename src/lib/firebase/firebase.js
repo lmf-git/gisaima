@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
-import { browser } from '$app/environment';
+
 
 // Your Firebase configuration
 const firebaseConfig = {
@@ -18,17 +18,8 @@ const firebaseConfig = {
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
 
-// Initialize services with improved auth configuration
 export const auth = getAuth(app);
 
-// Set persistence to LOCAL for better token handling (client-side only)
-if (browser) {
-  setPersistence(auth, browserLocalPersistence)
-    .catch(error => {
-      console.error("Auth persistence error:", error);
-    });
-}
 
 export const db = getDatabase(app);
-// Note: functions is no longer exported, components will get it directly
 
