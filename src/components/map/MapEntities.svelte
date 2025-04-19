@@ -777,15 +777,12 @@
                           {_fmt(group.status)} {formatTimeRemaining(group.readyAt, group.status)}
                         {:else if group.status === 'moving'}
                           {_fmt(group.status)} 
-                          {#if isPendingTick(group.nextMoveTime)}
-                            ↻
-                          {:else}
+                          {#if !isPendingTick(group.nextMoveTime)}
                             ({formatTimeRemaining(calculateMoveCompletionTime(group))})
                           {/if}
-                        {:else if group.status === 'gathering' || group.status === 'starting_to_gather'}
-                          {#if isPendingTick(group.gatheringUntil)}
-                            ↻
-                          {:else}
+                        {:else if group.status === 'gathering'}
+                          {_fmt(group.status)} 
+                          {#if !isPendingTick(group.gatheringUntil)}
                             ({formatTimeRemaining(group.gatheringUntil)})
                           {/if}
                         {:else}

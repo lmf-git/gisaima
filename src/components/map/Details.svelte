@@ -394,9 +394,7 @@
     
     // Check for demobilization (player groups can demobilize at structures)
     if (currentTile.structure && currentTile.groups && 
-        currentTile.groups.some(g => g.owner === playerId && 
-                               g.status !== 'demobilising' && 
-                               g.status !== 'mobilizing')) {
+        hasGroupWithStatus(currentTile, playerId, 'idle')) {
       availableActions.push({
         id: 'demobilize',
         label: 'Demobilize',
@@ -406,12 +404,11 @@
     }
     
     // Check for attack opportunity (player groups can attack enemy groups)
-    const hasPlayerGroups = currentTile.groups && 
-                           currentTile.groups.some(g => g.owner === playerId && !g.inBattle);
+    const hasIdlePlayerGroups = hasGroupWithStatus(currentTile, playerId, 'idle');
     const hasEnemyGroups = currentTile.groups && 
                           currentTile.groups.some(g => g.owner !== playerId && !g.inBattle);
                           
-    if (hasPlayerGroups && hasEnemyGroups) {
+    if (hasIdlePlayerGroups && hasEnemyGroups) {
       availableActions.push({
         id: 'attack',
         label: 'Attack',
@@ -423,7 +420,7 @@
     // Check for joinable battles
     const hasBattles = currentTile.groups && 
                       currentTile.groups.some(g => g.inBattle && g.battleId);
-    const canJoinBattle = hasPlayerGroups && hasBattles;
+    const canJoinBattle = hasIdlePlayerGroups && hasBattles;
     
     if (canJoinBattle) {
       availableActions.push({
@@ -846,9 +843,15 @@
                             {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
                               {_fmt(group.status)} {formatTimeRemaining(group.readyAt, group.status)}
                             {:else if group.status === 'moving'}
-                              {_fmt(group.status)} {isPendingTick(group.nextMoveTime) ? '↻' : ''}
+                              {_fmt(group.status)} 
+                              {#if !isPendingTick(group.nextMoveTime)}
+                                ({formatTimeRemaining(calculateMoveCompletionTime(group))})
+                              {/if}
                             {:else if group.status === 'gathering'}
-                              {_fmt(group.status)} {isPendingTick(group.gatheringUntil) ? '↻' : ''}
+                              {_fmt(group.status)} 
+                              {#if !isPendingTick(group.gatheringUntil)}
+                                ({formatTimeRemaining(group.gatheringUntil)})
+                              {/if}
                             {:else}
                               {_fmt(group.status)}
                             {/if}
@@ -1162,6 +1165,9 @@
   .section-header:hover {
     background-color: rgba(0, 0, 0, 0.05);
   }
+  
+  .section-header:focus {
+    outline: 2px solid rgba(66, 133, 244, 0.6);
   
   .section-header:focus {
     outline: 2px solid rgba(66, 133, 244, 0.6);
