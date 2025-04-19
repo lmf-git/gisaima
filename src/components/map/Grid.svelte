@@ -702,6 +702,41 @@
   function getCoordinateChunkKey(x, y) {
     return getChunkKey(x, y);
   }
+
+  // Helper function to check if a tile has an active battle
+  function hasBattle(tile) {
+    // First check direct battle references
+    if (tile.battles && tile.battles.length > 0) {
+      return true;
+    }
+    
+    // Fallback to checking groups for backwards compatibility
+    if (tile.groups) {
+      return tile.groups.some(group => group.inBattle && group.battleId);
+    }
+    
+    return false;
+  }
+  
+  // Optional: Get battle count
+  function getBattleCount(tile) {
+    if (tile.battles) {
+      return tile.battles.length;
+    }
+    
+    // Fallback using groups
+    if (tile.groups) {
+      const battleIds = new Set();
+      tile.groups.forEach(group => {
+        if (group.inBattle && group.battleId) {
+          battleIds.add(group.battleId);
+        }
+      });
+      return battleIds.size;
+    }
+    
+    return 0;
+  }
 </script>
 
 <svelte:window
@@ -894,6 +929,13 @@
                 </div>
               {/if}
             </div>
+
+            <!-- Battle indicator -->
+            {#if hasBattle(cell)}
+              <div class="battle-indicator" title="Active battle in progress">
+                ⚔️
+              </div>
+            {/if}
           </div>
         {/each}
       </div>
@@ -1644,5 +1686,21 @@
   
   .tile.citadel-structure {
     box-shadow: inset 0 0 0.5em rgba(209, 138, 230, 0.4);
+  }
+
+  .battle-indicator {
+    position: absolute;
+    top: 5%;
+    left: 5%;
+    font-size: 0.7em;
+    z-index: 10;
+    filter: drop-shadow(0px 0px 2px rgba(0,0,0,0.8));
+    animation: pulseBattle 2s infinite alternate;
+    transform-origin: center;
+  }
+  
+  @keyframes pulseBattle {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.2); }
   }
 </style>

@@ -176,6 +176,15 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/status`] = groupUpdate.status;
     }
     
+    // Also add a reference to the battle directly on the tile
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = {
+      id: battleId,
+      startTime: now,
+      endTime: now + battleDuration,
+      side1Power: attackerTotalPower,
+      side2Power: defenderTotalPower
+    };
+    
     // Execute the multi-path update
     await db.ref().update(updates);
     

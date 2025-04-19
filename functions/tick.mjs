@@ -451,6 +451,15 @@ async function processBattles(worldId) {
           updates[`battles/${worldId}/${battle.id}/status`] = battle.status;
           updates[`battles/${worldId}/${battle.id}/completedAt`] = battle.completedAt;
           updates[`battles/${worldId}/${battle.id}/result`] = battle.result;
+
+          // Update battle status in tile data as well
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/status`] = battle.status;
+          if (battle.status === 'completed') {
+            // Schedule removal of the battle reference after a delay to allow clients to see the result
+            setTimeout(async () => {
+              await db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}`).remove();
+            }, 60000); // Keep completed battle visible for 1 minute
+          }
           
           // Get groups from this tile to update them
           const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);

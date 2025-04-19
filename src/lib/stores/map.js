@@ -77,11 +77,13 @@ export const map = writable({
 // New separate store for highlighted coordinates
 export const highlightedCoords = writable(null);
 
+// Initialize the entities store with battles included
 export const entities = writable({
   structure: {},
   groups: {},
   players: {},
-  items: {}  // Add items to initial state
+  items: {},
+  battles: {}  // Add battles to the entities store
 });
 
 export const ready = derived(map, $map => $map.ready);
@@ -159,13 +161,15 @@ function processChunkData(data = {}, chunkKey) {
     structure: {},
     groups: {},
     players: {},
-    items: {}
+    items: {},
+    battles: {}  // Add battles to updates
   };
   
   // Set of all valid entity keys in this chunk update
   const validGroupKeys = new Set();
   const validPlayerKeys = new Set();
   const validItemKeys = new Set();
+  const validBattleKeys = new Set();  // Track valid battle keys
   
   let entitiesChanged = false;
   
@@ -197,15 +201,87 @@ function processChunkData(data = {}, chunkKey) {
       updates.players[fullTileKey] = [];
     }
     
-    // Process unit groups (multiple per tile)
+    // Process unit groups and extract battle information
     if (tileData.groups) {
+      // Process groups
       updates.groups[fullTileKey] = Object.entries(tileData.groups)
         .map(([id, data]) => ({ ...data, id, x, y }));
       validGroupKeys.add(fullTileKey);
       entitiesChanged = true;
+      
+      // Extract battle information from groups
+      const battlingGroups = Object.values(tileData.groups).filter(g => g.inBattle && g.battleId);
+      
+      if (battlingGroups.length > 0) {
+        const battlesMap = new Map();
+        
+        battlingGroups.forEach(group => {
+          if (!battlesMap.has(group.battleId)) {
+            battlesMap.set(group.battleId, {
+              id: group.battleId,
+              x, y,
+              sides: {
+                1: { groups: [], power: 0 },
+                2: { groups: [], power: 0 }
+              },
+              status: group.battleStatus || 'active',
+              started: group.battleStarted || Date.now()
+            });
+          }
+          
+          // Add group to appropriate side
+          const side = group.battleSide || 1;
+          const battleInfo = battlesMap.get(group.battleId);
+          
+          battleInfo.sides[side].groups.push(group.id);
+          battleInfo.sides[side].power += (group.unitCount || 1);
+        });
+        
+        // Add battles to updates
+        updates.battles[fullTileKey] = Array.from(battlesMap.values());
+        validBattleKeys.add(fullTileKey);
+        entitiesChanged = true;
+      } else {
+        updates.battles[fullTileKey] = [];
+      }
     } else {
       // Explicitly mark as empty if no groups
       updates.groups[fullTileKey] = [];
+      updates.battles[fullTileKey] = [];
+    }
+    
+    // Process direct battle references (from database)
+    if (tileData.battles) {
+      const directBattles = Object.entries(tileData.battles).map(([battleId, battleData]) => ({
+        ...battleData,
+        id: battleId,
+        x, y,
+        // Ensure we have sides structure even for direct battle references
+        sides: battleData.sides || {
+          1: { groups: [], power: battleData.side1Power || 0 },
+          2: { groups: [], power: battleData.side2Power || 0 }
+        }
+      }));
+      
+      // If we already extracted battles from groups, merge them 
+      if (updates.battles[fullTileKey]?.length > 0) {
+        // Map to track battles we've already processed
+        const existingBattleIds = new Set(
+          updates.battles[fullTileKey].map(battle => battle.id)
+        );
+        
+        // Add only battles we haven't seen yet
+        directBattles.forEach(battle => {
+          if (!existingBattleIds.has(battle.id)) {
+            updates.battles[fullTileKey].push(battle);
+          }
+        });
+      } else {
+        updates.battles[fullTileKey] = directBattles;
+      }
+      
+      validBattleKeys.add(fullTileKey);
+      entitiesChanged = true;
     }
     
     // Process items (multiple per tile)
@@ -226,7 +302,8 @@ function processChunkData(data = {}, chunkKey) {
         structure: { ...current.structure, ...updates.structure },
         players: { ...current.players },
         groups: { ...current.groups },
-        items: { ...current.items }
+        items: { ...current.items },
+        battles: { ...current.battles }  // Include battles in state update
       };
       
       // Process all entity types in one update
@@ -249,6 +326,15 @@ function processChunkData(data = {}, chunkKey) {
         }
       });
       
+      // Clean up missing battles in this chunk
+      Object.keys(current.battles).forEach(key => {
+        if (getChunkKey(parseInt(key.split(',')[0]), parseInt(key.split(',')[1])) === chunkKey) {
+          if (!validBattleKeys.has(key)) {
+            newState.battles[key] = [];
+          }
+        }
+      });
+      
       // Handle updates for all entity types
       Object.entries(updates.players).forEach(([key, value]) => {
         newState.players[key] = value;
@@ -260,6 +346,10 @@ function processChunkData(data = {}, chunkKey) {
       
       Object.entries(updates.items).forEach(([key, value]) => {
         newState.items[key] = value;
+      });
+      
+      Object.entries(updates.battles).forEach(([key, value]) => {
+        newState.battles[key] = value;
       });
       
       return newState;
@@ -367,7 +457,8 @@ export const chunks = derived(
             structure: { ...current.structure },
             groups: { ...current.groups },
             players: { ...current.players },
-            items: { ...current.items }
+            items: { ...current.items },
+            battles: { ...current.battles }
           };
           
           // Remove entities from this chunk
@@ -396,6 +487,13 @@ export const chunks = derived(
             const [x, y] = key.split(',').map(Number);
             if (getChunkKey(x, y) === chunkKey) {
               delete newState.items[key];
+            }
+          });
+
+          Object.keys(current.battles).forEach(key => {
+            const [x, y] = key.split(',').map(Number);
+            if (getChunkKey(x, y) === chunkKey) {
+              delete newState.battles[key];
             }
           });
           
@@ -471,6 +569,7 @@ export const coordinates = derived(
         const groups = $entities.groups[locationKey] || [];
         const players = $entities.players[locationKey] || [];
         const items = $entities.items[locationKey] || [];
+        const battles = $entities.battles[locationKey] || [];  // Add battles
         
         result.push({
           x: globalX,
@@ -485,6 +584,7 @@ export const coordinates = derived(
           groups,
           players,
           items,
+          battles,  // Include battles in the coordinate data
           terrain: terrainData,
           distance
         });
@@ -858,7 +958,8 @@ export function cleanup() {
     structure: {},
     groups: {},
     players: {},
-    items: {}  // Include items in the reset
+    items: {},
+    battles: {}  // Include battles in the reset
   });
 }
 

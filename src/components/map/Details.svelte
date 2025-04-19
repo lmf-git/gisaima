@@ -54,13 +54,14 @@
     $coordinates.find(cell => cell.x === x && cell.y === y) || { x, y, biome: { name: terrain } }
   );
 
-  // Add state to track collapsed sections
+  // Add state to track collapsed sections (add battles)
   let collapsedSections = $state({
     terrain: false,
     structure: false,
     players: false,
     groups: false,
-    items: false
+    items: false,
+    battles: false  // Add battles section
   });
 
   // Add state to track sorting options
@@ -68,7 +69,8 @@
     structures: { by: 'type', asc: true },
     players: { by: 'name', asc: true },
     groups: { by: 'status', asc: true },
-    items: { by: 'name', asc: true }
+    items: { by: 'name', asc: true },
+    battles: { by: 'id', asc: true }  // Add battles sort options
   });
 
   // Function to toggle section collapse state
@@ -133,6 +135,50 @@
   const sortedPlayers = $derived(currentTile.players ? sortEntities(currentTile.players, 'players') : []);
   const sortedGroups = $derived(currentTile.groups ? sortEntities(currentTile.groups, 'groups') : []);
   const sortedItems = $derived(currentTile.items ? sortEntities(currentTile.items, 'items') : []);
+
+  // Use battles directly from currentTile, falling back to extracting from groups if needed
+  const tileBattles = $derived(() => {
+    if (!currentTile) return [];
+    
+    // First check if we have direct battle references
+    if (currentTile.battles && currentTile.battles.length > 0) {
+      return currentTile.battles;
+    }
+    
+    // Fallback to extracting from groups
+    if (!currentTile.groups) return [];
+    
+    const battlingGroups = currentTile.groups.filter(g => g.inBattle && g.battleId);
+    if (battlingGroups.length === 0) return [];
+    
+    // Create a map of unique battles
+    const battlesMap = new Map();
+    
+    battlingGroups.forEach(group => {
+      if (!battlesMap.has(group.battleId)) {
+        // Create initial battle info
+        battlesMap.set(group.battleId, {
+          id: group.battleId,
+          sides: {
+            1: { groups: [], power: 0 },
+            2: { groups: [], power: 0 }
+          }
+        });
+      }
+      
+      // Add group to appropriate side
+      const side = group.battleSide || 1;
+      const battleInfo = battlesMap.get(group.battleId);
+      
+      battleInfo.sides[side].groups.push(group);
+      battleInfo.sides[side].power += (group.unitCount || 1);
+    });
+    
+    return Array.from(battlesMap.values());
+  });
+
+  // Create sorted battles list
+  const sortedBattles = $derived(sortEntities(tileBattles, 'battles'));
 
   // Format coordinates for display
   function formatCoords(x, y) {
@@ -570,6 +616,13 @@
       handleClose();
     }
   }
+
+  // Helper function to get the display name for a battle
+  function getBattleDisplayName(battleId) {
+    if (!battleId) return 'Unknown Battle';
+    const idParts = battleId.split('_');
+    return `Battle ${idParts[idParts.length - 1]}`;
+  }
 </script>
 
 {#if mounted}
@@ -804,6 +857,64 @@
                       </div>
                     </div>
                   {/if}
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {/if}
+        
+        {#if tileBattles.length > 0}
+          <div class="section battles-section">
+            <button 
+              class="section-header" 
+              onclick={() => toggleSection('battles')}
+              aria-expanded={!collapsedSections.battles}
+              type="button"
+            >
+              <h4 class="section-title">Battles ({tileBattles.length})</h4>
+              <span class="collapse-button" aria-hidden="true">
+                {collapsedSections.battles ? '▼' : '▲'}
+              </span>
+            </button>
+            
+            {#if !collapsedSections.battles}
+              <div class="section-content">
+                {#each sortedBattles as battle}
+                  <div class="entity battle">
+                    <div class="entity-battle-icon">⚔️</div>
+                    <div class="entity-info">
+                      <div class="entity-name">
+                        {getBattleDisplayName(battle.id)}
+                      </div>
+                      
+                      <div class="battle-sides">
+                        <div class="battle-side side1">
+                          <div class="side-header">Side 1</div>
+                          <div class="side-stats">
+                            {battle.sides[1].groups.length} groups ({battle.sides[1].power} strength)
+                          </div>
+                        </div>
+                        
+                        <div class="battle-side side2">
+                          <div class="side-header">Side 2</div>
+                          <div class="side-stats">
+                            {battle.sides[2].groups.length} groups ({battle.sides[2].power} strength)
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {#if isPlayerAvailableOnTile(currentTile, $currentPlayer?.uid) && availableGroups.length > 0}
+                        <div class="battle-actions">
+                          <button 
+                            class="join-battle-btn"
+                            onclick={() => executeAction('joinBattle', currentTile)}
+                          >
+                            Join Battle
+                          </button>
+                        </div>
+                      {/if}
+                    </div>
+                  </div>
                 {/each}
               </div>
             {/if}
@@ -1322,6 +1433,75 @@
     border-radius: 0.3em;
     white-space: nowrap;
     font-weight: 500;
+  }
+
+  .entity.battle {
+    background-color: rgba(139, 0, 0, 0.05);
+    border: 1px solid rgba(139, 0, 0, 0.2);
+  }
+  
+  .entity-battle-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.4em;
+    height: 1.4em;
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+    font-size: 1.2em;
+  }
+  
+  .battle-sides {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6em;
+    margin: 0.5em 0;
+    width: 100%;
+  }
+  
+  .battle-side {
+    padding: 0.5em 0.7em;
+    border-radius: 0.3em;
+  }
+  
+  .battle-side.side1 {
+    background-color: rgba(0, 0, 255, 0.07);
+    border: 1px solid rgba(0, 0, 255, 0.15);
+  }
+  
+  .battle-side.side2 {
+    background-color: rgba(139, 0, 0, 0.07);
+    border: 1px solid rgba(139, 0, 0, 0.15);
+  }
+  
+  .side-header {
+    font-weight: 600;
+    font-size: 0.9em;
+    margin-bottom: 0.2em;
+  }
+  
+  .side-stats {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .battle-actions {
+    margin-top: 0.8em;
+  }
+  
+  .join-battle-btn {
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    padding: 0.5em 1em;
+    border-radius: 0.3em;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .join-battle-btn:hover {
+    background-color: rgba(0, 0, 0, 0.85);
   }
 
   @media (max-width: 480px) {

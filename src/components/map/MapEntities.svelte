@@ -34,7 +34,8 @@
     { id: 'structures', label: 'Structures' },
     { id: 'players', label: 'Players' },
     { id: 'groups', label: 'Groups' },
-    { id: 'items', label: 'Items' }
+    { id: 'items', label: 'Items' },
+    { id: 'battles', label: 'Battles' }  // Add battles filter
   ];
   
   // Add state to track collapsed sections
@@ -42,7 +43,8 @@
     structures: false,
     players: false,
     groups: false,
-    items: false
+    items: false,
+    battles: false  // Add battles section
   });
 
   // Add state to track sorting options
@@ -50,7 +52,8 @@
     structures: { by: 'distance', asc: true },
     players: { by: 'distance', asc: true },
     groups: { by: 'distance', asc: true },
-    items: { by: 'distance', asc: true }
+    items: { by: 'distance', asc: true },
+    battles: { by: 'distance', asc: true }  // Add battles sort options
   });
   
   // Function to toggle section collapse state
@@ -116,6 +119,7 @@
   const sortedPlayers = $derived(sortEntities(allPlayers, 'players'));
   const sortedGroups = $derived(sortEntities(allGroups, 'groups'));
   const sortedItems = $derived(sortEntities(allItems, 'items'));
+  const sortedBattles = $derived(sortEntities(allBattles, 'battles'));
   
   // Set up timer to update countdown values
   onMount(() => {
@@ -268,6 +272,12 @@
       )
       .sort((a, b) => a.distance - b.distance)
   );
+
+  const allBattles = $derived(
+    $coordinates
+      .flatMap(cell => cell.battles || [])
+      .sort((a, b) => a.distance - b.distance)
+  );
   
   // Calculate visible chunks count - fixed $derived syntax
   const visibleChunks = $derived(
@@ -282,7 +292,8 @@
     ...(allStructures.length > 0 ? ['structures'] : []),
     ...(allPlayers.length > 0 ? ['players'] : []),
     ...(allGroups.length > 0 ? ['groups'] : []),
-    ...(allItems.length > 0 ? ['items'] : [])
+    ...(allItems.length > 0 ? ['items'] : []),
+    ...(allBattles.length > 0 ? ['battles'] : [])  // Add battles
   ]);
   
   // Always show filter tabs if there are any entities, not just multiple types
@@ -319,7 +330,8 @@
       case 'players': return allPlayers.length > 0;
       case 'groups': return allGroups.length > 0;
       case 'items': return allItems.length > 0;
-      case 'all': return allStructures.length > 0 || allPlayers.length > 0 || allGroups.length > 0 || allItems.length > 0;
+      case 'battles': return allBattles.length > 0;
+      case 'all': return allStructures.length > 0 || allPlayers.length > 0 || allGroups.length > 0 || allItems.length > 0 || allBattles.length > 0;
       default: return false;
     }
   }
@@ -331,6 +343,7 @@
       case 'players': return allPlayers.length;
       case 'groups': return allGroups.length;
       case 'items': return allItems.length;
+      case 'battles': return allBattles.length;
       default: return 0;
     }
   }
@@ -396,6 +409,29 @@
     if (!$currentPlayer || !entity) return false;
     return entity.owner === $currentPlayer.uid || entity.uid === $currentPlayer.uid;
   }
+
+  // Calculate battle time remaining
+  function formatBattleTimeRemaining(battle) {
+    if (!battle || !battle.endTime) return '';
+    
+    updateCounter; // Keep the reactive dependency
+    
+    const now = Date.now();
+    const remaining = battle.endTime - now;
+    
+    // If time is up or less than a minute remains
+    if (remaining <= 0) {
+      return 'Ending soon';
+    } else if (remaining <= 60000) {
+      return '< 1m';
+    }
+    
+    // Normal countdown calculation
+    const minutes = Math.floor(remaining / 60000);
+    const seconds = Math.floor((remaining % 60000) / 1000);
+    
+    return `${minutes}m ${seconds}s`;
+  }
 </script>
 
 <div class="entities-wrapper" class:closing>
@@ -416,7 +452,7 @@
           >
             {filter.label}
             {#if getFilterCount(filter.id) > 0}
-              <span class="filter-count" class:filter-count-structures={filter.id === 'structures'} class:filter-count-players={filter.id === 'players'} class:filter-count-groups={filter.id === 'groups'} class:filter-count-items={filter.id === 'items'}>
+              <span class="filter-count" class:filter-count-structures={filter.id === 'structures'} class:filter-count-players={filter.id === 'players'} class:filter-count-groups={filter.id === 'groups'} class:filter-count-items={filter.id === 'items'} class:filter-count-battles={filter.id === 'battles'}>
                 {getFilterCount(filter.id)}
               </span>
             {/if}
@@ -865,6 +901,85 @@
           {/if}
         </div>
       {/if}
+
+      {#if shouldShowSection('battles') && allBattles.length > 0}
+        <div class="entities-section">
+          <div 
+            class="section-header" 
+            onclick={() => toggleSection('battles')}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.battles}
+            onkeydown={(e) => e.key === 'Enter' && toggleSection('battles')}
+          >
+            <h4 class:visually-hidden={activeFilter === 'battles'}>
+              Battles ({allBattles.length})
+            </h4>
+            <div class="section-controls">
+              {#if !collapsedSections.battles}
+                <div class="sort-controls">
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.battles.by === 'distance'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('battles', 'distance'); }}
+                    aria-label={`Sort by distance ${sortOptions.battles.by === 'distance' ? (sortOptions.battles.asc ? 'ascending' : 'descending') : ''}`}
+                  >
+                    <span>Distance</span>
+                    {#if sortOptions.battles.by === 'distance'}
+                      <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                </div>
+              {/if}
+              <button class="collapse-button" aria-label={collapsedSections.battles ? "Expand battles" : "Collapse battles"}>
+                {collapsedSections.battles ? '▼' : '▲'}
+              </button>
+            </div>
+          </div>
+          
+          {#if !collapsedSections.battles}
+            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+              {#each sortedBattles as battle (battle.id)}
+                <div 
+                  class="entity battle"
+                  class:at-target={isAtTarget(battle.x, battle.y)}
+                  onclick={(e) => handleEntityAction(battle.x, battle.y, e)}
+                  onkeydown={(e) => handleEntityAction(battle.x, battle.y, e)}
+                  role="button"
+                  tabindex="0"
+                  aria-label="Navigate to battle at {battle.x},{battle.y}"
+                >
+                  <div class="entity-battle-icon">
+                    ⚔️
+                  </div>
+                  <div class="entity-info">
+                    <div class="entity-name">
+                      Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}
+                      <span class="entity-coords">{formatCoords(battle.x, battle.y)}</span>
+                    </div>
+                    <div class="entity-details">
+                      <div class="battle-sides">
+                        <div class="battle-side side1">
+                          <span class="side-name">Side 1:</span> {battle.sides[1]?.groups?.length || 0} groups
+                          ({battle.sides[1]?.power || 0})
+                        </div>
+                        <div class="battle-side side2">
+                          <span class="side-name">Side 2:</span> {battle.sides[2]?.groups?.length || 0} groups
+                          ({battle.sides[2]?.power || 0})
+                        </div>
+                      </div>
+                      {#if battle.endTime}
+                        <div class="battle-timer">{formatBattleTimeRemaining(battle)}</div>
+                      {/if}
+                      <div class="entity-distance">{formatDistance(battle.distance)}</div>
+                    </div>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/if}
       
       {#if !hasContent(activeFilter)}
         <div class="empty-state">
@@ -1061,6 +1176,12 @@
   .filter-count-items {
     background: rgba(255, 215, 0, 0.9) !important;
     box-shadow: 0 0 .15em rgba(255, 215, 0, 0.6) !important;
+  }
+
+  .filter-count-battles {
+    background: rgba(139, 0, 0, 0.9) !important;
+    box-shadow: 0 0 .15em rgba(139, 0, 0, 0.6) !important;
+    color: white !important;
   }
   
   @keyframes reveal {
@@ -1668,5 +1789,56 @@
     margin-left: 0.3em;
     font-family: var(--font-mono, monospace);
     white-space: nowrap;
+  }
+
+  .entity.battle {
+    background-color: rgba(139, 0, 0, 0.05);
+    border: 1px solid rgba(139, 0, 0, 0.2);
+  }
+  
+  .entity-battle-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.4em;
+    height: 1.4em;
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+    font-size: 1.2em;
+  }
+  
+  .battle-sides {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3em;
+    font-size: 0.85em;
+  }
+  
+  .battle-side {
+    padding: 0.1em 0.4em;
+    border-radius: 0.2em;
+  }
+  
+  .battle-side.side1 {
+    background-color: rgba(0, 0, 255, 0.07);
+    border: 1px solid rgba(0, 0, 255, 0.15);
+    color: #00008B;
+  }
+  
+  .battle-side.side2 {
+    background-color: rgba(139, 0, 0, 0.07);
+    border: 1px solid rgba(139, 0, 0, 0.15);
+    color: #8B0000;
+  }
+  
+  .side-name {
+    font-weight: 500;
+  }
+  
+  .battle-timer {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.85em;
+    color: #d32f2f;
+    margin-top: 0.3em;
   }
 </style>
