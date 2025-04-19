@@ -439,8 +439,8 @@
     display: flex;
     flex-direction: column;
     gap: 1em;
-    max-height: 60vh;
-    overflow-y: auto;
+    height: 60vh; /* Changed from max-height to fixed height */
+    overflow: auto; /* Changed from overflow-y to overflow */
   }
   
   .demobilize-info {
@@ -491,7 +491,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.5em;
-    max-height: 30vh;
+    max-height: 40vh; /* Increased from 30vh for a larger scroll area */
     overflow-y: auto;
     padding: 0.5em 0;
     border-bottom: 1px solid #e0e0e0;
@@ -501,6 +501,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.5em;
+    padding-right: 0.5em; /* Add padding for scrollbar to avoid content being cut off */
   }
   
   .group-item {
@@ -696,11 +697,15 @@
   @media (max-width: 480px) {
     .popup {
       width: 95%;
-      max-height: 80vh;
+      max-height: 85vh; /* Slightly increased for mobile */
     }
     
-    h2 {
-      font-size: 1.1em;
+    .demobilize-content {
+      height: 70vh; /* Adjust height for mobile screens */
+    }
+    
+    .groups-section {
+      max-height: 45vh; /* Even taller on mobile where vertical space is limited */
     }
     
     .button-row {
@@ -709,6 +714,12 @@
     
     .button-row button {
       width: 100%;
+    }
+  }
+  
+  @media (min-height: 800px) {
+    .groups-section {
+      max-height: 50vh; /* More space on taller screens */
     }
   }
 </style>
