@@ -23,6 +23,12 @@ function isPlayerOnTile(tileData, playerId) {
   // Log the exact keys available
   console.log("Available properties in tile data:", Object.keys(tileData));
   
+  // DIRECT CHECK: Try to access player directly with playerId as the key
+  if (tileData.players?.[playerId]) {
+    console.log(`Direct hit! Found player ${playerId} as direct key in players object`);
+    return true;
+  }
+  
   // First, check directly in the players property
   if (tileData?.players) {
     console.log('Players property exists on tile');
@@ -122,10 +128,20 @@ function isPlayerOnTile(tileData, playerId) {
 // Calculate chunk coordinates to match database structure
 function getChunkKey(x, y) {
   const CHUNK_SIZE = 20;
-  const chunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
-  const chunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
+  
+  // Simple integer division matches the database structure
+  const chunkX = Math.floor(x / CHUNK_SIZE);
+  const chunkY = Math.floor(y / CHUNK_SIZE);
   
   console.log(`Chunk calculation: (${x},${y}) -> chunk (${chunkX},${chunkY})`);
+  
+  // Log how the previous calculation would have handled it
+  const oldChunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
+  const oldChunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
+  if (x < 0 || y < 0) {
+    console.log(`Note: Previous calculation would give: (${oldChunkX},${oldChunkY})`);
+  }
+  
   return `${chunkX},${chunkY}`;
 }
 
@@ -180,6 +196,8 @@ export const mobilizeUnits = onCall({ maxInstances: 10 }, async (request) => {
       console.warn(`mobilizeUnits: Player ${uid} not found on tile at ${tileKey} in chunk ${chunkKey}`);
       console.info(`Players data:`, JSON.stringify(tileData.players || {}));
       
+      console.log(`Full path checked: worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
+      
       // Try to find the player's actual location to help debugging
       const playerWorldRef = db.ref(`players/${uid}/worlds/${worldId}`);
       const playerWorldSnapshot = await playerWorldRef.once('value');
@@ -197,6 +215,31 @@ export const mobilizeUnits = onCall({ maxInstances: 10 }, async (request) => {
         
         if (playerLocChunk !== chunkKey) {
           console.warn(`Chunk mismatch! Request is for chunk ${chunkKey} but player seems to be in chunk ${playerLocChunk}`);
+        }
+      }
+      
+      // Desperate measures - scan the entire chunk for the player
+      console.log(`Scanning entire chunk ${chunkKey} for player ${uid}...`);
+      const chunkRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}`);
+      const chunkSnapshot = await chunkRef.once('value');
+      const chunkData = chunkSnapshot.val();
+      
+      let playerFoundInChunk = false;
+      if (chunkData) {
+        for (const [tileLoc, tileContent] of Object.entries(chunkData)) {
+          // Skip metadata fields
+          if (tileLoc === 'lastUpdated') continue;
+          
+          if (tileContent.players && (tileContent.players[uid] || 
+             Object.values(tileContent.players).some(p => p.uid === uid))) {
+            playerFoundInChunk = true;
+            console.log(`Found player ${uid} in chunk ${chunkKey} but at tile ${tileLoc} instead of requested ${tileKey}`);
+            
+            throw new HttpsError(
+              'failed-precondition', 
+              `You appear to be at coordinates ${tileLoc}, not at ${tileKey}. Please refresh or try from your actual location.`
+            );
+          }
         }
       }
       

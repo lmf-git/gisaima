@@ -1,7 +1,45 @@
 {
+  "players": {
+    "gHRK4vHJITfLnqwrwyisdc7uklK2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": false,
+          "joined": 1745052434554,
+          "lastLocation": {
+            "timestamp": 1745052434554,
+            "x": 0,
+            "y": 0
+          },
+          "race": "elf"
+        }
+      }
+    }
+  },
   "worlds": {
     "ancient-lands": {
       "chunks": {
+        "-1,0": {
+          "-4,6": {
+            "structure": {
+              "description": "An elven city built around the oldest living trees in the realm",
+              "faction": "elf",
+              "id": "structure_al_elf_spawn",
+              "name": "Ancient Arborium",
+              "type": "spawn"
+            }
+          }
+        },
+        "0,-1": {
+          "15,-3": {
+            "structure": {
+              "description": "A resourceful goblin settlement built from the remains of ancient beasts",
+              "faction": "goblin",
+              "id": "structure_al_goblin_spawn",
+              "name": "Boneridge Camp",
+              "type": "spawn"
+            }
+          }
+        },
         "0,0": {
           "0,0": {
             "structure": {
@@ -51,47 +89,7 @@
               "type": "stronghold"
             }
           },
-          "5,5": {
-            "groups": {
-              "-OOBOEYFr8OX_TJyyBcG": {
-                "createdAt": 1745038407946,
-                "id": "-OOBOEYFr8OX_TJyyBcG",
-                "lastUpdated": 1745038441883,
-                "name": "New Force",
-                "owner": "OaHv0DRPExbQL3WX8PlN1Yoj8s82",
-                "race": "human",
-                "status": "idle",
-                "unitCount": 1,
-                "units": {
-                  "OaHv0DRPExbQL3WX8PlN1Yoj8s82": {
-                    "displayName": "Player",
-                    "lastActive": 1745038401939,
-                    "race": "human",
-                    "type": "player",
-                    "uid": "OaHv0DRPExbQL3WX8PlN1Yoj8s82"
-                  }
-                },
-                "x": 5,
-                "y": 5
-              }
-            },
-            "structure": {
-              "description": "A rugged frontier settlement where hardy humans carve out a living",
-              "faction": "human",
-              "id": "structure_al_human_spawn",
-              "name": "Stoneguard Citadel",
-              "type": "spawn"
-            }
-          },
           "10,8": {
-            "players": {
-              "7ClpkDWGEtXaOKJzNEbfDBUr9my2": {
-                "displayName": "Player",
-                "lastActive": 1745038843646,
-                "race": "fairy",
-                "uid": "7ClpkDWGEtXaOKJzNEbfDBUr9my2"
-              }
-            },
             "structure": {
               "description": "A fairy settlement where the ancient spirits still speak",
               "faction": "fairy",
@@ -101,14 +99,6 @@
             }
           },
           "12,4": {
-            "players": {
-              "9OebzA4v6bZxZSWe9K8GehIlCkB3": {
-                "displayName": "Player",
-                "lastActive": 1745044299597,
-                "race": "dwarf",
-                "uid": "9OebzA4v6bZxZSWe9K8GehIlCkB3"
-              }
-            },
             "structure": {
               "description": "The ancestral mountain home of the dwarf clans",
               "faction": "dwarf",
@@ -116,26 +106,13 @@
               "name": "Deepforge Stronghold",
               "type": "spawn"
             }
-          }
-        },
-        "-1,0": {
-          "-4,6": {
+          },
+          "5,5": {
             "structure": {
-              "description": "An elven city built around the oldest living trees in the realm",
-              "faction": "elf",
-              "id": "structure_al_elf_spawn",
-              "name": "Ancient Arborium",
-              "type": "spawn"
-            }
-          }
-        },
-        "0,-1": {
-          "15,-3": {
-            "structure": {
-              "description": "A resourceful goblin settlement built from the remains of ancient beasts",
-              "faction": "goblin",
-              "id": "structure_al_goblin_spawn",
-              "name": "Boneridge Camp",
+              "description": "A rugged frontier settlement where hardy humans carve out a living",
+              "faction": "human",
+              "id": "structure_al_human_spawn",
+              "name": "Stoneguard Citadel",
               "type": "spawn"
             }
           }
@@ -143,7 +120,7 @@
       },
       "info": {
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745044741836,
+        "lastTick": 1745052421620,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",
@@ -151,10 +128,10 @@
       },
       "spawns": {
         "-1:0:-4:6": "structure_al_elf_spawn",
-        "0:0:5:5": "structure_al_human_spawn",
+        "0:-1:15:-3": "structure_al_goblin_spawn",
         "0:0:10:8": "structure_al_fairy_spawn",
         "0:0:12:4": "structure_al_dwarf_spawn",
-        "0:-1:15:-3": "structure_al_goblin_spawn"
+        "0:0:5:5": "structure_al_human_spawn"
       }
     }
   }
