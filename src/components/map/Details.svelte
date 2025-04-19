@@ -14,6 +14,7 @@
   import Fairy from '../../components/icons/Fairy.svelte';
   import Structure from '../../components/icons/Structure.svelte';
   import Torch from '../../components/icons/Torch.svelte';
+  import Close from '../icons/Close.svelte';
 
   // Props with defaults using Svelte 5 $props() rune
   const { 
@@ -529,6 +530,7 @@
       onclick={handleClose}
     ></button>
     
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
       class="details-panel"
       class:mounted
@@ -539,11 +541,13 @@
       tabindex="-1"
       onkeydown={handleEscapeKey}
     >
-      <div class="header">
+      <header class="details-header">
         <h3 id="details-title" class="title">Tile Details</h3>
         <div class="coords">{formatCoords(x, y)}</div>
-        <button class="close-button" onclick={handleClose} aria-label="Close">×</button>
-      </div>
+        <button class="close-button" onclick={handleClose} aria-label="Close">
+          <Close size="1.8em" extraClass="close-icon-light" />
+        </button>
+      </header>
       
       <div class="details-content">
         <div class="section terrain-section">
@@ -917,12 +921,13 @@
       opacity 0.3s ease;
   }
   
-  .header {
+  .details-header {
     display: flex;
     align-items: center;
     padding: 0.8em 1em;
     background-color: rgba(0, 0, 0, 0.08);
     border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+    justify-content: space-between;
   }
   
   .title {
@@ -943,25 +948,24 @@
   }
   
   .close-button {
-    background: none;
+    background: transparent;
     border: none;
-    color: rgba(0, 0, 0, 0.6);
-    font-size: 1.5em;
+    color: var(--color-text);
+    padding: 0.3em;
     cursor: pointer;
-    padding: 0;
-    width: 1.2em;
-    height: 1.2em;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
-    line-height: 1;
-    border-radius: 50%;
   }
   
   .close-button:hover {
-    color: rgba(0, 0, 0, 0.9);
-    background-color: rgba(0, 0, 0, 0.1);
+    opacity: 0.8;
+  }
+  
+  .close-button:focus-visible {
+    outline: 2px solid var(--color-bright-accent);
+    outline-offset: 2px;
+    border-radius: 0.25em;
   }
   
   .details-content {
@@ -1031,27 +1035,33 @@
   .action-button {
     display: flex;
     align-items: center;
-    padding: 0.8em 1em;
-    background-color: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 0.5em;
+    padding: 0.8em;
+    margin-bottom: 0.5em;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 0.3em;
     cursor: pointer;
-    transition: all 0.2s;
-    text-align: left;
+    border: none;
+    width: 100%;
     font-family: inherit;
     font-size: inherit;
     color: inherit;
+    text-align: left;
+    transition: all 0.2s ease;
   }
   
-  .action-button:hover {
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  .action-button:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.4);
     transform: translateY(-2px);
   }
   
-  .action-button:active {
-    transform: translateY(0);
-    box-shadow: none;
+  .action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .action-button:focus-visible {
+    outline: 2px solid var(--color-bright-accent);
+    outline-offset: 2px;
   }
   
   .action-icon {
