@@ -776,6 +776,7 @@
                         {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
                           {_fmt(group.status)} {formatTimeRemaining(group.readyAt, group.status)}
                         {:else if group.status === 'moving'}
+                          {_fmt(group.status)} 
                           {#if isPendingTick(group.nextMoveTime)}
                             ↻
                           {:else}
@@ -1428,13 +1429,17 @@
   }
   
   .pending-tick {
-    background: rgba(255, 215, 0, 0.2) !important;
-    border-color: rgba(255, 215, 0, 0.5) !important;
-    color: #b8860b !important;
-    animation: pulseWaiting 1s infinite alternate !important;
+    position: relative;
+    animation: pulse 1s infinite alternate !important;
   }
-  
-  @keyframes pulseWaiting {
+
+  .pending-tick::after {
+    content: '↻';
+    margin-left: 0.3em;
+    font-weight: bold;
+  }
+
+  @keyframes pulse {
     from { opacity: 0.7; }
     to { opacity: 1; }
   }

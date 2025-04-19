@@ -1504,6 +1504,23 @@
     background-color: rgba(0, 0, 0, 0.85);
   }
 
+  /* Replace the existing .pending-tick style with a more subtle one */
+  .pending-tick {
+    position: relative;
+    animation: pulse 1s infinite alternate !important;
+  }
+
+  .pending-tick::after {
+    content: '↻';
+    margin-left: 0.3em;
+    font-weight: bold;
+  }
+
+  @keyframes pulse {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+  }
+
   @media (max-width: 480px) {
     .details-panel {
       margin: 0.5em;
