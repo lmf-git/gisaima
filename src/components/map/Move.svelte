@@ -155,13 +155,19 @@
     // Tell the parent component to start path drawing
     if (onPathDrawingStart) {
       try {
+        // Ensure we pass all the necessary data, especially the group ID
         onPathDrawingStart({
-          groupId: selectedGroup.id,
+          id: selectedGroup.id,
+          groupId: selectedGroup.id, // Include both formats for compatibility
           startPoint: { x: tile.x, y: tile.y },
           x: tile.x,
-          y: tile.y
+          y: tile.y,
+          // Include any other useful group properties
+          name: selectedGroup.name,
+          unitCount: selectedGroup.unitCount,
+          status: selectedGroup.status
         });
-        console.log('Path drawing start event dispatched');
+        console.log('Path drawing start event dispatched with group ID:', selectedGroup.id);
       } catch (error) {
         console.error('Error starting path drawing:', error);
       }

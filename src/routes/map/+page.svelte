@@ -640,7 +640,18 @@
     function handlePathDrawingStart(group) {
         console.log('Starting path drawing for group:', group);
         isPathDrawingMode = true;
-        pathDrawingGroup = group;
+        
+        // Make sure we store the proper group ID for later use
+        pathDrawingGroup = {
+            id: group.id || group.groupId,  // Handle both id formats
+            groupId: group.id || group.groupId, // Store both for compatibility
+            startPoint: group.startPoint || { x: group.x, y: group.y },
+            x: group.x,
+            y: group.y
+        };
+        
+        // Log the created path drawing group for debugging
+        console.log("Path drawing group data:", pathDrawingGroup);
         
         if (group && group.startPoint) {
             currentPath = [group.startPoint];
@@ -672,44 +683,74 @@
             currentPath = [...path];
         }
         
-        // If we have a selected group and the Move dialog was shown, handle the movement
-        if (showMove && pathDrawingGroup && currentPath.length >= 2) {
-            try {
-                // Simply call the cloud function directly - no need to reference the component
-                const functions = getFunctions();
-                const moveGroupFn = httpsCallable(functions, 'moveGroup');
-                const startPoint = currentPath[0];
-                const endPoint = currentPath[currentPath.length - 1];
+        // Ensure we have a valid path and group ID
+        if (currentPath.length < 2 || !pathDrawingGroup) {
+            console.error("Cannot confirm path: Invalid path or missing group data", {
+                pathLength: currentPath.length,
+                pathDrawingGroup
+            });
+            alert("Error: Cannot confirm path - missing data");
+            return;
+        }
+        
+        // Extract group ID, handling both possible formats
+        const groupId = pathDrawingGroup.id || pathDrawingGroup.groupId;
+        
+        if (!groupId) {
+            console.error("Cannot confirm path: Missing group ID", pathDrawingGroup);
+            alert("Error: Cannot confirm path - missing group ID");
+            return;
+        }
+        
+        try {
+            // Get Firebase functions instance
+            const functions = getFunctions();
+            const moveGroupFn = httpsCallable(functions, 'moveGroup');
+            
+            const startPoint = currentPath[0];
+            const endPoint = currentPath[currentPath.length - 1];
+            
+            console.log('Calling moveGroup function with params:', {
+                groupId: groupId,
+                fromX: startPoint.x,
+                fromY: startPoint.y,
+                toX: endPoint.x,
+                toY: endPoint.y,
+                path: currentPath,
+                worldId: $game.currentWorld
+            });
+            
+            // Call the cloud function directly
+            moveGroupFn({
+                groupId: groupId,
+                fromX: startPoint.x,
+                fromY: startPoint.y,
+                toX: endPoint.x,
+                toY: endPoint.y,
+                path: currentPath,
+                worldId: $game.currentWorld
+            }).then(result => {
+                console.log('Movement started successfully:', result.data);
+                showMove = false;
                 
-                console.log('Calling moveGroup function with params:', {
-                    groupId: pathDrawingGroup.groupId,
-                    fromX: startPoint.x,
-                    fromY: startPoint.y,
-                    toX: endPoint.x,
-                    toY: endPoint.y,
-                    path: currentPath,
-                    worldId: $game.currentWorld
-                });
+                // Display success message to user
+                const message = document.createElement('div');
+                message.className = 'success-toast';
+                message.textContent = 'Movement started!';
+                document.body.appendChild(message);
                 
-                moveGroupFn({
-                    groupId: pathDrawingGroup.groupId,
-                    fromX: startPoint.x,
-                    fromY: startPoint.y,
-                    toX: endPoint.x,
-                    toY: endPoint.y,
-                    path: currentPath,
-                    worldId: $game.currentWorld
-                }).then(result => {
-                    console.log('Movement started:', result.data);
-                    showMove = false;
-                }).catch(error => {
-                    console.error('Error confirming path:', error);
-                    alert('Error: ' + (error.message || 'Failed to start movement'));
-                });
-            } catch (error) {
-                console.error('Exception in path confirmation:', error);
-                alert('Error confirming path: ' + (error.message || 'Unknown error'));
-            }
+                setTimeout(() => {
+                    message.classList.add('fade-out');
+                    setTimeout(() => message.remove(), 500);
+                }, 2000);
+                
+            }).catch(error => {
+                console.error('Error confirming path with cloud function:', error);
+                alert('Error: ' + (error.message || 'Failed to start movement'));
+            });
+        } catch (error) {
+            console.error('Exception in path confirmation:', error);
+            alert('Error confirming path: ' + (error.message || 'Unknown error'));
         }
         
         isPathDrawingMode = false;
