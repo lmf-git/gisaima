@@ -7,7 +7,7 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
-  // Import callFunction from firebase.js instead of functions.js
+  // Import callFunction from firebase.js
   import { callFunction } from "../../lib/firebase/firebase";
 
   // Props with default empty object - removed onMobilize
@@ -85,7 +85,7 @@
   }
   
   // Function to handle mobilization
-  function startMobilization() {
+  async function startMobilization() {
     const selectedUnitIds = availableUnits
       .filter(u => u.selected)
       .map(u => u.id);
@@ -97,7 +97,7 @@
     }
 
     try {
-      console.log("Calling startMobilization with:", {
+      console.log("Preparing mobilization request with:", {
         worldId: $game.currentWorld,
         tileX: tile.x,
         tileY: tile.y,
@@ -114,7 +114,7 @@
       }
       
       // Use the callFunction helper with proper error handling
-      callFunction('startMobilization', {
+      const result = await callFunction('startMobilization', {
         worldId: $game.currentWorld,
         tileX: tile.x,
         tileY: tile.y,
@@ -122,15 +122,10 @@
         includePlayer,
         name: groupName,
         race: $currentPlayer?.race
-      })
-      .then(result => {
-        console.log('Mobilization result:', result);
-        onClose(); // Close only after success
-      })
-      .catch(error => {
-        console.error('Error starting mobilization:', error);
-        alert(`Error: ${error.message || 'Unknown error occurred'}`);
       });
+      
+      console.log('Mobilization result:', result);
+      onClose(); // Close only after success
     } catch (error) {
       console.error("Exception in startMobilization:", error);
       alert(`Error: ${error.message || 'Unknown error occurred'}`);

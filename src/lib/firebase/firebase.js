@@ -8,7 +8,7 @@ import { browser } from '$app/environment';
 
 // Your Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDzEj04-d7UJJTInOerz24uz1d_q1VNe74",
+  apiKey: "AIzaSyDzEj04-d7UJJTInOerz24uz1VNe74",
   authDomain: "gisaima.firebaseapp.com",
   databaseURL: "https://gisaima-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "gisaima",
@@ -29,36 +29,22 @@ export const functions = getFunctions(app, 'us-central1'); // Explicitly set reg
 export const storage = getStorage(app);
 
 /**
- * Calls a Firebase Cloud Function with minimal authentication handling
+ * Calls a Firebase Cloud Function with minimal wrapper
  * @param {string} functionName - Name of the Firebase function to call
  * @param {object} data - Data to pass to the function
  * @returns {Promise} - Promise resolving to the function result
  */
 export async function callFunction(functionName, data = {}) {
   try {
-    // Basic check if user is authenticated - let Firebase handle token management
-    if (!auth.currentUser) {
-      console.error(`Attempting to call ${functionName} without authentication`);
-      throw new Error('User not authenticated. Please sign in to continue.');
-    }
-    
-    // Simple logging for debugging
-    console.log(`Calling function ${functionName} as ${auth.currentUser.uid}`);
-    
-    // Create callable and execute function - Firebase SDK will handle token management
+    // Create callable with the functions instance from firebase.js
     const functionCall = httpsCallable(functions, functionName);
+    
+    // Let Firebase SDK handle authentication - it should work with anonymous users
     const result = await functionCall(data);
     return result.data;
   } catch (error) {
+
     console.error(`Error calling function ${functionName}:`, error);
-    
-    // Simple error categorization
-    if (error.code?.includes('auth/') || 
-        error.code === 'unauthenticated' || 
-        error.code === 'permission-denied') {
-      throw new Error(`Authentication error: ${error.message}`);
-    }
-    
     throw error;
   }
 }
