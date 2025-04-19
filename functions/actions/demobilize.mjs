@@ -9,7 +9,8 @@ import { logger } from "firebase-functions";
 
 // Demobilise units function
 export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
-  const { groupId, targetStructureId, locationX, locationY, worldId = 'default', storageDestination = 'shared' } = request.data;
+  // Make targetStructureId optional since we can use the structure at the location
+  const { groupId, locationX, locationY, worldId = 'default', storageDestination = 'shared' } = request.data;
   const userId = request.auth?.uid;
   
   if (!userId) {
@@ -64,6 +65,8 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError("failed-precondition", "No structure found at this location");
     }
     
+    // No need to store structure ID - it's implied by the tile location
+    
     // Parse chunk coordinates from the chunk key
     const [chunkXStr, chunkYStr] = chunkKey.split(',');
     const chunkX = parseInt(chunkXStr);
@@ -85,7 +88,6 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       status: 'demobilising',  // This status alone is sufficient for the tick processor
       startedAt: now,
       lastUpdated: now,
-      targetStructureId: targetStructureId,
       storageDestination: storageDestination,
       // Add precise location data for player placement
       demobilizationData: {

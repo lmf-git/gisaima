@@ -102,8 +102,7 @@ export const processGameTicks = onSchedule({
                   // UPDATED: Complete demobilization on next tick regardless of time elapsed
                   // Handle demobilization logic
                   
-                  // We don't strictly need a target structure ID as we can use the current structure
-                  // The tick processor can work just with the current location's structure
+                  // We don't need a target structure ID as we can use the current structure
                   if (!tile.structure) {
                     logger.warn(`No structure found for demobilizing group ${groupId}`);
                     updates[`${groupPath}/status`] = 'idle'; // Reset to idle if no structure
