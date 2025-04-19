@@ -13,16 +13,32 @@ import { getDatabase } from 'firebase-admin/database';
 
 // Improved function to check if player exists on tile
 function isPlayerOnTile(tileData, playerId) {
+  console.log(`Checking if player ${playerId} is on tile:`, JSON.stringify(tileData?.players || "no players"));
+  
   if (!tileData || !tileData.players) return false;
   
   // Handle players stored as an array
   if (Array.isArray(tileData.players)) {
+    console.log('Players stored as array:', tileData.players);
     return tileData.players.some(p => p.uid === playerId || p.id === playerId);
   }
   
   // Handle players stored as an object with keys
   if (typeof tileData.players === 'object') {
-    return Object.values(tileData.players).some(p => p.uid === playerId || p.id === playerId);
+    console.log('Players stored as object:', tileData.players);
+    
+    // First check if the player's ID is a direct key in the object
+    if (tileData.players[playerId]) {
+      console.log(`Found player directly with key ${playerId}`);
+      return true;
+    }
+    
+    // Then check all player objects for matching uid/id
+    return Object.values(tileData.players).some(p => {
+      const match = p.uid === playerId || p.id === playerId;
+      if (match) console.log(`Found matching player:`, p);
+      return match;
+    });
   }
   
   return false;
@@ -84,9 +100,11 @@ export const mobilizeUnits = onCall({ maxInstances: 10 }, async (request) => {
     const tileSnapshot = await tileRef.once('value');
     const tileData = tileSnapshot.val() || {};
     console.log(`Tile data fetched from chunk ${chunkKey}:`, JSON.stringify(tileData));
-
-    // Use improved player detection
-    if (!isPlayerOnTile(tileData, uid)) {
+    
+    // Check if player exists directly on this tile - no fallbacks
+    const playerFoundOnTile = isPlayerOnTile(tileData, uid);
+    
+    if (!playerFoundOnTile) {
       console.warn(`mobilizeUnits: Player ${uid} not found on tile at ${tileKey} in chunk ${chunkKey}`);
       console.info(`Players data:`, JSON.stringify(tileData.players || {}));
       throw new HttpsError('failed-precondition', 'Player not found on this tile');

@@ -90,7 +90,7 @@
   }
   
   async function startMobilization() {
-    if (mobilizeError || selectedUnits.length === 0 || !includePlayer) {
+    if (mobilizeError || (selectedUnits.length === 0 && !includePlayer)) {
       return;
     }
 
