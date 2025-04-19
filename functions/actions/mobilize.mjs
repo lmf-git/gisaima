@@ -35,12 +35,16 @@ export const startMobilization = onCall(async (request) => {
   // Define constants for consistency
   const CHUNK_SIZE = 20;
 
-  // Calculate chunk coordinates to match database structure
+  // Calculate chunk coordinates to match database structure with correction for world coordinates
   function getChunkKey(x, y) {
-    // The chunk calculation must match database structure where
-    // coordinates like (-4,6) and (5,5) are in chunk (0,0)
-    const chunkX = Math.floor(x >= 0 ? x / CHUNK_SIZE : (x + 1) / CHUNK_SIZE - 1);
-    const chunkY = Math.floor(y >= 0 ? y / CHUNK_SIZE : (y + 1) / CHUNK_SIZE - 1);
+    // Correction for coordinate system to properly handle world coordinates
+    // For coordinates like (10,8), this should find the correct chunk
+    const chunkX = Math.floor(x / CHUNK_SIZE);
+    const chunkY = Math.floor(y / CHUNK_SIZE);
+    
+    // Log the calculation for debugging
+    console.log(`Chunk calculation: (${x},${y}) -> chunk (${chunkX},${chunkY})`);
+    
     return `${chunkX},${chunkY}`;
   }
 
@@ -63,6 +67,17 @@ export const startMobilization = onCall(async (request) => {
     const tileSnapshot = await tileRef.once('value');
     const tileData = tileSnapshot.val() || {};
     console.log(`Tile data fetched from chunk ${chunkKey}:`, JSON.stringify(tileData));
+
+    // Add additional logging to help diagnose issues
+    if (includePlayer) {
+      console.log("Attempting to include player in mobilization");
+      
+      if (!tileData.players) {
+        console.warn(`No players found on tile ${tileKey} in chunk ${chunkKey}`);
+      } else {
+        console.log(`Players on tile: ${JSON.stringify(Object.keys(tileData.players))}`);
+      }
+    }
 
     // Verify player is on the tile if including player
     if (includePlayer) {

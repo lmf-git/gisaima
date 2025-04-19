@@ -214,6 +214,51 @@
   // Available actions based on tile content
   let actions = $state([]);
 
+  // Helper function to safely check if a group has units of a specific type
+  function hasUnitType(group, type, checkNotType = false) {
+    if (!group || !group.units) return false;
+    
+    if (Array.isArray(group.units)) {
+      return checkNotType 
+        ? group.units.some(unit => unit.type !== type)
+        : group.units.some(unit => unit.type === type);
+    } 
+    
+    // If units is an object
+    return checkNotType 
+      ? Object.values(group.units).some(unit => unit.type !== type)
+      : Object.values(group.units).some(unit => unit.type === type);
+  }
+  
+  // Helper function to check if a group has a specific player
+  function hasPlayerUnit(group, playerId) {
+    if (!group || !group.units) return false;
+    
+    if (Array.isArray(group.units)) {
+      return group.units.some(unit => 
+        (unit.id === playerId || unit.uid === playerId) && unit.type === 'player'
+      );
+    } 
+    
+    // If units is an object
+    return Object.values(group.units).some(unit => 
+      (unit.id === playerId || unit.uid === playerId) && unit.type === 'player'
+    );
+  }
+
+  // Function to count units in a group handling both array and object formats
+  function countUnits(group) {
+    if (!group || !group.units) return 0;
+    
+    if (group.unitCount !== undefined) return group.unitCount;
+    
+    if (Array.isArray(group.units)) {
+      return group.units.length;
+    }
+    
+    return Object.keys(group.units).length;
+  }
+
   // Action helper functions
   function hasGroupWithStatus(tile, playerId, status) {
     return tile.groups && tile.groups.some(group => 
@@ -230,8 +275,7 @@
       const playerInDemobilisingGroup = tile.groups.some(group => 
         group.status === 'demobilising' && 
         group.owner === playerId && 
-        group.units && 
-        group.units.some(unit => (unit.id === playerId || unit.uid === playerId) && unit.type === 'player')
+        hasPlayerUnit(group, playerId)
       );
       return !playerInDemobilisingGroup;
     }
@@ -249,7 +293,7 @@
       group.status !== 'demobilising' &&
       group.status !== 'fighting' &&
       group.units && 
-      group.units.some(unit => unit.type !== 'player')
+      hasUnitType(group, 'player', true) // Check for any non-player units
     );
   }
 
@@ -725,7 +769,7 @@
                         
                         <div class="entity-details">
                           <span class="unit-count">
-                            {group.unitCount || (group.units ? group.units.length : 0)} units
+                            {countUnits(group)} units
                             {#if getGroupItemCount(group) > 0}
                               • <span class="item-count">{getGroupItemCount(group)} items</span>
                             {/if}

@@ -1,132 +1,24 @@
 {
   "players": {
-    "3HInFT5hLXhmiaMuPlJkgQTiDF52": {
+    "OaHv0DRPExbQL3WX8PlN1Yoj8s82": {
       "worlds": {
         "ancient-lands": {
           "alive": true,
-          "joined": 1745034685605,
-          "lastLocation": {
-            "x": -4,
-            "y": 6
+          "groups": {
+            "-OOBOEYFr8OX_TJyyBcG": {
+              "at": "5,5",
+              "id": "-OOBOEYFr8OX_TJyyBcG",
+              "readyAt": 1745038467411,
+              "status": "mobilizing"
+            }
           },
-          "race": "elf"
-        }
-      }
-    },
-    "3O3t5H6XCmez226g3mBpLZY8XPd2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745033038700,
+          "inGroup": "-OOBOEYFr8OX_TJyyBcG",
+          "joined": 1745038399775,
           "lastLocation": {
             "x": 5,
             "y": 5
           },
           "race": "human"
-        }
-      }
-    },
-    "7rvHSl4vGlVMbkSFXPh8uYXCgtn2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745032363287,
-          "lastLocation": {
-            "x": 12,
-            "y": 4
-          },
-          "race": "dwarf"
-        }
-      }
-    },
-    "8Q0ybLTzvygJMUNKzdfs8EDtX7t2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745033203812,
-          "lastLocation": {
-            "x": 15,
-            "y": -3
-          },
-          "race": "goblin"
-        }
-      }
-    },
-    "NCzHQXkYbqZmZ5u9mCub9LfJPxr2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745027958035,
-          "lastLocation": {
-            "x": -4,
-            "y": 6
-          },
-          "race": "elf"
-        }
-      }
-    },
-    "OaHv0DRPExbQL3WX8PlN1Yoj8s82": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745035467830,
-          "lastLocation": {
-            "x": -4,
-            "y": 6
-          },
-          "race": "elf"
-        }
-      }
-    },
-    "PGRomS7G5UR8YOItYWesH3m0nbs1": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745029496163,
-          "lastLocation": {
-            "x": 12,
-            "y": 4
-          },
-          "race": "dwarf"
-        }
-      }
-    },
-    "VQVboPkUvUfVBl2P2dyDHmMRG1D3": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745026577695,
-          "lastLocation": {
-            "x": 12,
-            "y": 4
-          },
-          "race": "dwarf"
-        }
-      }
-    },
-    "mGQ3G5TV1xhV87wJBd90hUSo3632": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745026428467,
-          "lastLocation": {
-            "x": 15,
-            "y": -3
-          },
-          "race": "goblin"
-        }
-      }
-    },
-    "wUU4sKCV0wcN2CkwNqgMUs4OOQU2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "joined": 1745036426441,
-          "lastLocation": {
-            "x": 15,
-            "y": -3
-          },
-          "race": "goblin"
         }
       }
     }
@@ -136,26 +28,6 @@
       "chunks": {
         "0,0": {
           "-4,6": {
-            "players": {
-              "3HInFT5hLXhmiaMuPlJkgQTiDF52": {
-                "displayName": "Player",
-                "lastActive": 1745034993607,
-                "race": "elf",
-                "uid": "3HInFT5hLXhmiaMuPlJkgQTiDF52"
-              },
-              "NCzHQXkYbqZmZ5u9mCub9LfJPxr2": {
-                "displayName": "Player",
-                "lastActive": 1745027961960,
-                "race": "elf",
-                "uid": "NCzHQXkYbqZmZ5u9mCub9LfJPxr2"
-              },
-              "OaHv0DRPExbQL3WX8PlN1Yoj8s82": {
-                "displayName": "Player",
-                "lastActive": 1745035474824,
-                "race": "elf",
-                "uid": "OaHv0DRPExbQL3WX8PlN1Yoj8s82"
-              }
-            },
             "structure": {
               "description": "An elven city built around the oldest living trees in the realm",
               "faction": "elf",
@@ -213,12 +85,27 @@
             }
           },
           "5,5": {
-            "players": {
-              "3O3t5H6XCmez226g3mBpLZY8XPd2": {
-                "displayName": "Player",
-                "lastActive": 1745033041208,
+            "groups": {
+              "-OOBOEYFr8OX_TJyyBcG": {
+                "createdAt": 1745038407946,
+                "id": "-OOBOEYFr8OX_TJyyBcG",
+                "lastUpdated": 1745038441883,
+                "name": "New Force",
+                "owner": "OaHv0DRPExbQL3WX8PlN1Yoj8s82",
                 "race": "human",
-                "uid": "3O3t5H6XCmez226g3mBpLZY8XPd2"
+                "status": "idle",
+                "unitCount": 1,
+                "units": {
+                  "OaHv0DRPExbQL3WX8PlN1Yoj8s82": {
+                    "displayName": "Player",
+                    "lastActive": 1745038401939,
+                    "race": "human",
+                    "type": "player",
+                    "uid": "OaHv0DRPExbQL3WX8PlN1Yoj8s82"
+                  }
+                },
+                "x": 5,
+                "y": 5
               }
             },
             "structure": {
@@ -241,26 +128,6 @@
             }
           },
           "12,4": {
-            "players": {
-              "7rvHSl4vGlVMbkSFXPh8uYXCgtn2": {
-                "displayName": "Player",
-                "lastActive": 1745032382357,
-                "race": "dwarf",
-                "uid": "7rvHSl4vGlVMbkSFXPh8uYXCgtn2"
-              },
-              "PGRomS7G5UR8YOItYWesH3m0nbs1": {
-                "displayName": "Player",
-                "lastActive": 1745029524871,
-                "race": "dwarf",
-                "uid": "PGRomS7G5UR8YOItYWesH3m0nbs1"
-              },
-              "VQVboPkUvUfVBl2P2dyDHmMRG1D3": {
-                "displayName": "Player",
-                "lastActive": 1745026580890,
-                "race": "dwarf",
-                "uid": "VQVboPkUvUfVBl2P2dyDHmMRG1D3"
-              }
-            },
             "structure": {
               "description": "The ancestral mountain home of the dwarf clans",
               "faction": "dwarf",
@@ -270,26 +137,6 @@
             }
           },
           "15,-3": {
-            "players": {
-              "8Q0ybLTzvygJMUNKzdfs8EDtX7t2": {
-                "displayName": "iavarice36+test",
-                "lastActive": 1745033205796,
-                "race": "goblin",
-                "uid": "8Q0ybLTzvygJMUNKzdfs8EDtX7t2"
-              },
-              "mGQ3G5TV1xhV87wJBd90hUSo3632": {
-                "displayName": "Player",
-                "lastActive": 1745026431668,
-                "race": "goblin",
-                "uid": "mGQ3G5TV1xhV87wJBd90hUSo3632"
-              },
-              "wUU4sKCV0wcN2CkwNqgMUs4OOQU2": {
-                "displayName": "Player",
-                "lastActive": 1745036429646,
-                "race": "goblin",
-                "uid": "wUU4sKCV0wcN2CkwNqgMUs4OOQU2"
-              }
-            },
             "structure": {
               "description": "A resourceful goblin settlement built from the remains of ancient beasts",
               "faction": "goblin",
@@ -302,7 +149,7 @@
       },
       "info": {
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745037005500,
+        "lastTick": 1745038745427,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",
