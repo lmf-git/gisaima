@@ -439,8 +439,7 @@
     display: flex;
     flex-direction: column;
     gap: 1em;
-    height: 60vh; /* Changed from max-height to fixed height */
-    overflow: auto; /* Changed from overflow-y to overflow */
+    overflow: auto;
   }
   
   .demobilize-info {

@@ -3,10 +3,9 @@
   import { cubicOut } from 'svelte/easing';
   import Close from '../icons/Close.svelte';
   import { currentPlayer } from '../../lib/stores/game.js';
-  import { coordinates } from '../../lib/stores/map.js';
   
-  // Only take the minimum props needed for lookup
-  const { x = 0, y = 0, onClose = () => {} } = $props();
+  // Structure and location information - rely directly on the tile data passed from Details
+  const { x = 0, y = 0, tile = null, onClose = () => {} } = $props();
   
   // Format text for display
   function formatText(text) {
@@ -19,68 +18,69 @@
     return rarity?.toLowerCase() || 'common';
   }
   
-  // Find the tile data directly from coordinates store
-  const tileData = $derived(() => {
-    return $coordinates.find(tile => tile.x === x && tile.y === y) || null;
-  });
-  
-  // Get structure data directly from the found tile
-  const structure = $derived(() => tileData?.structure || null);
+  // Get structure data directly from the tile prop
+  const structure = $derived(tile?.structure || null);
   
   // Check if current player owns this structure
   const isOwned = $derived(structure?.owner === $currentPlayer?.uid);
   
-  // Extract shared items directly - with safety checks
+  // Extract shared items directly from structure
   const sharedItems = $derived(() => {
-    if (!structure) return [];
-    return Array.isArray(structure.items) ? structure.items : [];
+    if (!structure?.items) return [];
+    return structure.items.map(item => ({
+      ...item,
+      isShared: true
+    }));
   });
   
-  // Extract personal bank items directly - with safety checks 
+  // Extract personal bank items with proper null checks
   const personalItems = $derived(() => {
-    if (!structure || !structure.banks || !$currentPlayer?.uid) return [];
+    if (!structure?.banks || !$currentPlayer?.uid) return [];
+    
     const playerBank = structure.banks[$currentPlayer.uid];
-    return Array.isArray(playerBank) ? playerBank : [];
+    if (!playerBank || !Array.isArray(playerBank)) return [];
+    
+    return playerBank.map(item => ({
+      ...item,
+      isPersonal: true
+    }));
   });
   
-  // Group shared items by type - with safety check
+  // Group shared items by type
   const groupedSharedItems = $derived(() => {
-    if (!sharedItems || !sharedItems.length) return {};
+    if (!sharedItems.length) return {};
     
     const grouped = {};
     for (const item of sharedItems) {
       const type = item.type || 'misc';
       if (!grouped[type]) grouped[type] = [];
-      grouped[type].push({
-        ...item,
-        isShared: true
-      });
+      grouped[type].push(item);
     }
     
     return grouped;
   });
   
-  // Group personal items by type - with safety check
+  // Group personal items by type
   const groupedPersonalItems = $derived(() => {
-    if (!personalItems || !personalItems.length) return {};
+    if (!personalItems.length) return {};
     
     const grouped = {};
     for (const item of personalItems) {
       const type = item.type || 'misc';
       if (!grouped[type]) grouped[type] = [];
-      grouped[type].push({
-        ...item,
-        isPersonal: true
-      });
+      grouped[type].push(item);
     }
     
     return grouped;
   });
   
-  // Simple derived values for item counts and flags
+  // Check if we have any shared items
   const hasSharedItems = $derived(sharedItems.length > 0);
+  
+  // Check if we have any personal items  
   const hasPersonalItems = $derived(personalItems.length > 0);
   
+  // Calculate total item counts
   const itemCounts = $derived({
     shared: sharedItems.length,
     personal: personalItems.length,
@@ -108,7 +108,6 @@
     </div>
     
     <div class="content">
-      <!-- Structure info section -->
       <div class="structure-info">
         <div class="info-row">
           <span class="info-label">Type:</span>

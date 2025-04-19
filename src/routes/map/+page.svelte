@@ -106,6 +106,7 @@
     let gatherData = $state(null);
     let selectedStructure = $state(null);
     let structureLocation = $state({ x: 0, y: 0 });
+    let selectedTile = $state(null);
 
     function parseUrlCoordinates() {
         if (!browser || !$page.url) return null;
@@ -559,6 +560,7 @@
             setHighlighted(x, y);
             
             setTimeout(() => {
+                // Fix accessing coordinates by using $coordinates properly - it's imported as a store
                 const clickedTile = $coordinates.find(cell => cell.x === x && cell.y === y);
                 
                 if (clickedTile && hasTileContent(clickedTile)) {
@@ -858,11 +860,11 @@
             />
         {/if}
 
-        {#if detailed && $highlightedStore}
+        {#if detailed && highlightedStore}
             <Details 
-                x={$highlightedStore.x} 
-                y={$highlightedStore.y} 
-                terrain={$highlightedStore.biome?.name} 
+                x={highlightedStore.x} 
+                y={highlightedStore.y} 
+                terrain={highlightedStore.biome?.name} 
                 onClose={() => toggleDetailsModal(false)}
                 onShowModal={({ type, data }) => {
                     // Close the details first
@@ -898,6 +900,7 @@
                             showStructureOverview = true;
                             selectedStructure = data.structure;
                             structureLocation = { x: data.x, y: data.y };
+                            selectedTile = data.tile;
                             break;
                         default:
                             console.log(`Unhandled modal type: ${type}`);
@@ -1044,10 +1047,12 @@
                 structure={selectedStructure}
                 x={structureLocation.x}
                 y={structureLocation.y}
+                tile={selectedTile}
                 onClose={() => {
                     showStructureOverview = false;
                     setTimeout(() => {
                         selectedStructure = null;
+                        selectedTile = null;
                     }, 300);
                 }}
             />

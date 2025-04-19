@@ -1,15 +1,12 @@
 <script>
   import { fade, fly, slide } from 'svelte/transition'; // Still import for section toggles
   import { cubicOut, elasticOut } from 'svelte/easing';
-  import { targetStore, coordinates } from '../../lib/stores/map';
+  import { targetStore } from '../../lib/stores/map'; // Use targetStore directly
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   import { onMount, onDestroy } from 'svelte';
-  // Import the functions instance from firebase.js
   import { functions } from '../../lib/firebase/firebase.js';
-  // Import httpsCallable
   import { httpsCallable } from 'firebase/functions';
 
-  // Import race icon components
   import Human from '../../components/icons/Human.svelte';
   import Elf from '../../components/icons/Elf.svelte';
   import Dwarf from '../../components/icons/Dwarf.svelte';
@@ -19,14 +16,8 @@
   import Torch from '../../components/icons/Torch.svelte';
   import Close from '../icons/Close.svelte';
 
-  // Props with defaults using Svelte 5 $props() rune
-  const { 
-    x = 0, 
-    y = 0, 
-    terrain = 'Unknown', 
-    onClose = () => {},
-    onShowModal = () => {} // Replace onAction with onShowModal for clarity
-  } = $props();
+  // Replace export let with proper Svelte 5 $props() syntax
+  const { x = 0, y = 0, terrain = '', onClose = () => {}, onShowModal = () => {} } = $props();
 
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -35,50 +26,39 @@
   let updateTimer;
   let updateCounter = $state(0);
 
-  // Set up timer to update countdown values
   onMount(() => {
     updateTimer = setInterval(() => {
       updateCounter++;
     }, 1000);
   });
 
-  // Clean up timer when component is destroyed
   onDestroy(() => {
     if (updateTimer) {
       clearInterval(updateTimer);
     }
   });
 
-  // Get current tile data from coordinates store based on x,y props
-  const currentTile = $derived(
-    $coordinates.find(cell => cell.x === x && cell.y === y) || { x, y, biome: { name: terrain } }
-  );
-
-  // Add state to track collapsed sections (add battles)
   let collapsedSections = $state({
     terrain: false,
     structure: false,
     players: false,
     groups: false,
     items: false,
-    battles: false  // Add battles section
+    battles: false
   });
 
-  // Add state to track sorting options
   let sortOptions = $state({
     structures: { by: 'type', asc: true },
     players: { by: 'name', asc: true },
     groups: { by: 'status', asc: true },
     items: { by: 'name', asc: true },
-    battles: { by: 'id', asc: true }  // Add battles sort options
+    battles: { by: 'id', asc: true }
   });
 
-  // Function to toggle section collapse state
   function toggleSection(sectionId) {
     collapsedSections[sectionId] = !collapsedSections[sectionId];
   }
 
-  // Function to change sort option for a section
   function setSortOption(section, by) {
     sortOptions[section] = { 
       by, 
@@ -86,7 +66,6 @@
     };
   }
 
-  // Function to sort entities based on current sort options
   function sortEntities(entities, section) {
     if (!entities || !entities.length) return [];
     const option = sortOptions[section];
@@ -104,13 +83,11 @@
           valueB = (b.type || b.race || b.faction || '').toLowerCase();
           break;
         case 'rarity':
-          // For items
           const rarityOrder = { 'common': 0, 'uncommon': 1, 'rare': 2, 'epic': 3, 'legendary': 4, 'mythic': 5 };
           valueA = rarityOrder[a.rarity?.toLowerCase()] || 0;
           valueB = rarityOrder[b.rarity?.toLowerCase()] || 0;
           break;
         case 'status':
-          // For groups
           valueA = a.status || 'idle';
           valueB = b.status || 'idle';
           break;
@@ -119,44 +96,36 @@
           valueB = b;
       }
       
-      // Handle numeric comparisons
       if (typeof valueA === 'number' && typeof valueB === 'number') {
         return option.asc ? valueA - valueB : valueB - valueA;
       }
       
-      // Handle string comparisons
       return option.asc ? 
         valueA.localeCompare(valueB) : 
         valueB.localeCompare(valueA);
     });
   }
 
-  // Create sorted entity lists
-  const sortedPlayers = $derived(currentTile.players ? sortEntities(currentTile.players, 'players') : []);
-  const sortedGroups = $derived(currentTile.groups ? sortEntities(currentTile.groups, 'groups') : []);
-  const sortedItems = $derived(currentTile.items ? sortEntities(currentTile.items, 'items') : []);
+  const sortedPlayers = $derived(targetStore.players ? sortEntities(targetStore.players, 'players') : []);
+  const sortedGroups = $derived(targetStore.groups ? sortEntities(targetStore.groups, 'groups') : []);
+  const sortedItems = $derived(targetStore.items ? sortEntities(targetStore.items, 'items') : []);
 
-  // Use battles directly from currentTile, falling back to extracting from groups if needed
   const tileBattles = $derived(() => {
-    if (!currentTile) return [];
+    if (!targetStore) return [];
     
-    // First check if we have direct battle references
-    if (currentTile.battles && currentTile.battles.length > 0) {
-      return currentTile.battles;
+    if (targetStore.battles && targetStore.battles.length > 0) {
+      return targetStore.battles;
     }
     
-    // Fallback to extracting from groups
-    if (!currentTile.groups) return [];
+    if (!targetStore.groups) return [];
     
-    const battlingGroups = currentTile.groups.filter(g => g.inBattle && g.battleId);
+    const battlingGroups = targetStore.groups.filter(g => g.inBattle && g.battleId);
     if (battlingGroups.length === 0) return [];
     
-    // Create a map of unique battles
     const battlesMap = new Map();
     
     battlingGroups.forEach(group => {
       if (!battlesMap.has(group.battleId)) {
-        // Create initial battle info
         battlesMap.set(group.battleId, {
           id: group.battleId,
           sides: {
@@ -166,7 +135,6 @@
         });
       }
       
-      // Add group to appropriate side
       const side = group.battleSide || 1;
       const battleInfo = battlesMap.get(group.battleId);
       
@@ -177,22 +145,18 @@
     return Array.from(battlesMap.values());
   });
 
-  // Create sorted battles list
   const sortedBattles = $derived(sortEntities(tileBattles, 'battles'));
 
-  // Format coordinates for display
   function formatCoords(x, y) {
     return `${x},${y}`;
   }
 
-  // Format distance for display
   function formatDistance(distance) {
     if (distance === undefined || distance === null) return '';
     if (distance === 0) return 'Here';
     return `${distance.toFixed(1)} tiles away`;
   }
 
-  // Maps faction to race for icon display
   function getFactionRace(faction) {
     const factionToRace = {
       human: 'human',
@@ -205,17 +169,15 @@
     return factionToRace[faction?.toLowerCase()] || null;
   }
 
-  // Function to display item count for a group
   function getGroupItemCount(group) {
     if (!group.items) return 0;
     return Array.isArray(group.items) ? group.items.length : Object.keys(group.items).length;
   }
 
-  // Simplify the time remaining formatter to use store
   function formatTimeRemaining(endTime, status) {
     if (!endTime) return '';
 
-    updateCounter; // Keep the reactive dependency
+    updateCounter;
 
     if (status === 'mobilizing' || status === 'demobilising') {
       return $timeUntilNextTick;
@@ -234,33 +196,27 @@
     return `${minutes}m ${seconds}s`;
   }
 
-  // Simplified function to determine if waiting for tick
   function isPendingTick(endTime) {
     if (!endTime) return false;
     const now = Date.now();
     return endTime <= now;
   }
 
-  // Get status class from status
   function getStatusClass(status) {
     return status || 'idle';
   }
 
-  // Get rarity class from item rarity
   function getRarityClass(rarity) {
     return rarity?.toLowerCase() || 'common';
   }
 
-  // Function to check if entity belongs to current player
   function isOwnedByCurrentPlayer(entity) {
     if (!$currentPlayer || !entity) return false;
     return entity.owner === $currentPlayer.uid || entity.uid === $currentPlayer.uid;
   }
 
-  // Available actions based on tile content
   let actions = $state([]);
 
-  // Helper function to safely check if a group has units of a specific type
   function hasUnitType(group, type, checkNotType = false) {
     if (!group || !group.units) return false;
     
@@ -270,13 +226,11 @@
         : group.units.some(unit => unit.type === type);
     } 
     
-    // If units is an object
     return checkNotType 
       ? Object.values(group.units).some(unit => unit.type !== type)
       : Object.values(group.units).some(unit => unit.type === type);
   }
   
-  // Helper function to check if a group has a specific player
   function hasPlayerUnit(group, playerId) {
     if (!group || !group.units) return false;
     
@@ -286,13 +240,11 @@
       );
     } 
     
-    // If units is an object
     return Object.values(group.units).some(unit => 
       (unit.id === playerId || unit.uid === playerId) && unit.type === 'player'
     );
   }
 
-  // Function to count units in a group handling both array and object formats
   function countUnits(group) {
     if (!group || !group.units) return 0;
     
@@ -305,7 +257,6 @@
     return Object.keys(group.units).length;
   }
 
-  // Action helper functions
   function hasGroupWithStatus(tile, playerId, status) {
     return tile.groups && tile.groups.some(group => 
       group.owner === playerId && group.status === status
@@ -339,7 +290,7 @@
       group.status !== 'demobilising' &&
       group.status !== 'fighting' &&
       group.units && 
-      hasUnitType(group, 'player', true) // Check for any non-player units
+      hasUnitType(group, 'player', true)
     );
   }
 
@@ -349,9 +300,8 @@
     return playerOnTile || hasValidUnits;
   }
 
-  // Process the actions available for this tile
   $effect(() => {
-    if (!currentTile) {
+    if (!targetStore) {
       actions = [];
       return;
     }
@@ -364,8 +314,7 @@
       return;
     }
 
-    // Check for mobilization action
-    if (hasMobilizableResources(currentTile, playerId)) {
+    if (hasMobilizableResources(targetStore, playerId)) {
       availableActions.push({
         id: 'mobilize',
         label: 'Mobilize',
@@ -374,8 +323,7 @@
       });
     }
     
-    // Check for movement and gathering (if player has idle groups)
-    if (hasGroupWithStatus(currentTile, playerId, 'idle')) {
+    if (hasGroupWithStatus(targetStore, playerId, 'idle')) {
       availableActions.push({
         id: 'move',
         label: 'Move',
@@ -383,7 +331,6 @@
         description: 'Move your group to another location'
       });
       
-      // Add gather action for any idle group - no item check needed
       availableActions.push({
         id: 'gather',
         label: 'Gather',
@@ -392,9 +339,8 @@
       });
     }
     
-    // Check for demobilization (player groups can demobilize at structures)
-    if (currentTile.structure && currentTile.groups && 
-        hasGroupWithStatus(currentTile, playerId, 'idle')) {
+    if (targetStore.structure && targetStore.groups && 
+        hasGroupWithStatus(targetStore, playerId, 'idle')) {
       availableActions.push({
         id: 'demobilize',
         label: 'Demobilize',
@@ -403,10 +349,9 @@
       });
     }
     
-    // Check for attack opportunity (player groups can attack enemy groups)
-    const hasIdlePlayerGroups = hasGroupWithStatus(currentTile, playerId, 'idle');
-    const hasEnemyGroups = currentTile.groups && 
-                          currentTile.groups.some(g => g.owner !== playerId && !g.inBattle);
+    const hasIdlePlayerGroups = hasGroupWithStatus(targetStore, playerId, 'idle');
+    const hasEnemyGroups = targetStore.groups && 
+                          targetStore.groups.some(g => g.owner !== playerId && !g.inBattle);
                           
     if (hasIdlePlayerGroups && hasEnemyGroups) {
       availableActions.push({
@@ -417,9 +362,8 @@
       });
     }
     
-    // Check for joinable battles
-    const hasBattles = currentTile.groups && 
-                      currentTile.groups.some(g => g.inBattle && g.battleId);
+    const hasBattles = targetStore.groups && 
+                      targetStore.groups.some(g => g.inBattle && g.battleId);
     const canJoinBattle = hasIdlePlayerGroups && hasBattles;
     
     if (canJoinBattle) {
@@ -431,8 +375,7 @@
       });
     }
     
-    // Check for structures to inspect
-    if (currentTile.structure) {
+    if (targetStore.structure) {
       availableActions.push({
         id: 'inspect',
         label: 'Inspect Structure',
@@ -441,8 +384,7 @@
       });
     }
     
-    // Add explore action if player is present
-    if (isPlayerAvailableOnTile(currentTile, playerId)) {
+    if (isPlayerAvailableOnTile(targetStore, playerId)) {
       availableActions.push({
         id: 'explore',
         label: 'Explore',
@@ -454,9 +396,7 @@
     actions = availableActions;
   });
 
-  // Direct Firebase function calls
   async function executeAction(actionId, tile) {
-    // Initialize error variable so it's available outside the catch block
     let actionError = null;
     
     try {
@@ -466,18 +406,22 @@
         case 'attack':
         case 'joinBattle':
         case 'demobilize':
-          // For modal-based actions, use the onShowModal callback
           onShowModal({ type: actionId, data: tile });
-          return; // Early return - no need to close the dialog here
+          return;
         
         case 'inspect':
-          // For structure inspection
-          onShowModal({ type: actionId, data: tile });
-          return; // Early return - no need to close the dialog here
+          onShowModal({
+            type: 'inspect',
+            data: {
+              tile: targetStore,
+              x: targetStore.x,
+              y: targetStore.y
+            }
+          });
+          return;
           
         case 'explore':
           try {
-            // Call explore function using the imported functions instance and httpsCallable
             const exploreFn = httpsCallable(functions, 'exploreLocation');
             const result = await exploreFn({ 
               x: tile.x, 
@@ -486,9 +430,8 @@
             });
             console.log('Explore result:', result.data);
           } catch (error) {
-            actionError = error; // Store error for later check
+            actionError = error;
             console.error('Error exploring location:', error);
-            // Check for specific auth error code
             if (error.code === 'unauthenticated') {
               alert('Error exploring: You are not logged in.');
             } else {
@@ -499,7 +442,6 @@
           
         case 'gather':
           try {
-            // Find an idle group owned by the current player
             const groupToGather = tile.groups?.find(g => 
               g.owner === $currentPlayer?.uid && 
               g.status === 'idle'
@@ -510,19 +452,17 @@
               return;
             }
             
-            // Call gather function using the imported functions instance and httpsCallable
             const gatherFn = httpsCallable(functions, 'startGathering');
             const gatherResult = await gatherFn({
               groupId: groupToGather.id,
-              locationX: tile.x, // Using locationX instead of x to match cloud function
-              locationY: tile.y, // Using locationY instead of y to match cloud function
+              locationX: tile.x,
+              locationY: tile.y,
               worldId: $game.currentWorld
             });
             console.log('Gather result:', gatherResult.data);
           } catch (error) {
-            actionError = error; // Store error for later check
+            actionError = error;
             console.error('Error gathering resources:', error);
-             // Check for specific auth error code
             if (error.code === 'unauthenticated') {
               alert('Error gathering: You are not logged in.');
             } else {
@@ -535,9 +475,8 @@
           console.log(`Unhandled action: ${actionId}`);
       }
     } catch (error) {
-      actionError = error; // Store error for later check
+      actionError = error;
       console.error(`Error executing action ${actionId}:`, error);
-       // Check for specific auth error code
       if (error.code === 'unauthenticated') {
         alert(`Error: You are not logged in.`);
       } else {
@@ -545,58 +484,45 @@
       }
     }
     
-    // Close the details modal only if the action didn't fail due to auth
     if (!(actionError && actionError.code === 'unauthenticated')) {
       onClose();
     }
   }
 
-  // Handle action selection with improved event handling
   function selectAction(actionId) {
-    // No preventDefault needed - we're using button elements with proper onclick
-    // Execute the action directly for simple actions, or delegate complex ones to parent
-    executeAction(actionId, currentTile);
+    executeAction(actionId, targetStore);
   }
 
-  // Add keyboard event handler for action buttons
   function handleActionKeydown(action, event) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      executeAction(action.id, currentTile);
+      executeAction(action.id, targetStore);
     }
   }
 
-  // Add state to track animation status
   let mounted = $state(false);
   let closing = $state(false);
 
   onMount(() => {
-    // Short timeout to ensure DOM is ready before animation
     setTimeout(() => {
       mounted = true;
     }, 10);
   });
   
-  // Function to safely close the modal with proper event handling
   function handleClose(event) {
-    // No preventDefault needed - it can interfere with normal click behavior
-    // First set closing flag to trigger exit animation
     closing = true;
     
-    // Then wait for animation to complete before calling onClose
     setTimeout(() => {
       onClose();
-    }, 300); // Match this with the transition duration
+    }, 300);
   }
 
-  // Handle keyboard events for accessibility
   function handleEscapeKey(event) {
     if (event.key === 'Escape') {
       handleClose(event);
     }
   }
 
-  // Function to get entity icon type
   function getEntityIconType(entity) {
     if (!entity.race && !entity.faction) return null;
     
@@ -606,15 +532,13 @@
     return race || null;
   }
 
-  // Function to handle key events for the wrapper to match click handling
   function handleWrapperKeyDown(event) {
     if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault(); // Prevent page scrolling on space
+      event.preventDefault();
       handleClose();
     }
   }
 
-  // Helper function to get the display name for a battle
   function getBattleDisplayName(battleId) {
     if (!battleId) return 'Unknown Battle';
     const idParts = battleId.split('_');
@@ -635,7 +559,6 @@
       onclick={handleClose}
     ></button>
     
-    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
       class="details-panel"
       class:mounted
@@ -671,10 +594,10 @@
           {#if !collapsedSections.terrain}
             <div class="section-content">
               <div class="terrain-info">
-                <div class="terrain-name">{_fmt(currentTile?.biome?.name || terrain)}</div>
-                {#if currentTile?.terrain?.rarity && currentTile.terrain.rarity !== 'common'}
-                  <div class="terrain-rarity {currentTile.terrain.rarity}">
-                    {_fmt(currentTile.terrain.rarity)}
+                <div class="terrain-name">{_fmt(targetStore?.biome?.name || terrain)}</div>
+                {#if targetStore?.terrain?.rarity && targetStore.terrain.rarity !== 'common'}
+                  <div class="terrain-rarity {targetStore.terrain.rarity}">
+                    {_fmt(targetStore.terrain.rarity)}
                   </div>
                 {/if}
               </div>
@@ -682,7 +605,7 @@
           {/if}
         </div>
         
-        {#if currentTile?.structure}
+        {#if targetStore?.structure}
           <div class="section structure-section">
             <button 
               class="section-header" 
@@ -698,27 +621,27 @@
             
             {#if !collapsedSections.structure}
               <div class="section-content">
-                <div class="entity structure {isOwnedByCurrentPlayer(currentTile.structure) ? 'current-player-owned' : ''}">
+                <div class="entity structure {isOwnedByCurrentPlayer(targetStore.structure) ? 'current-player-owned' : ''}">
                   <div class="entity-structure-icon">
-                    {#if currentTile.structure.type === 'spawn'}
+                    {#if targetStore.structure.type === 'spawn'}
                       <Torch size="1.4em" extraClass="structure-type-icon" />
                     {:else}
-                      <Structure size="1.4em" extraClass="structure-type-icon {currentTile.structure.type}-icon" />
+                      <Structure size="1.4em" extraClass="structure-type-icon {targetStore.structure.type}-icon" />
                     {/if}
                   </div>
                   <div class="entity-info">
                     <div class="entity-name">
-                      {currentTile.structure.name || _fmt(currentTile.structure.type) || "Unknown"}
-                      {#if isOwnedByCurrentPlayer(currentTile.structure)}
+                      {targetStore.structure.name || _fmt(targetStore.structure.type) || "Unknown"}
+                      {#if isOwnedByCurrentPlayer(targetStore.structure)}
                         <span class="your-entity-badge">Yours</span>
                       {/if}
                     </div>
                     <div class="entity-details">
-                      {#if currentTile.structure.type}
-                        <div class="entity-type">{_fmt(currentTile.structure.type)}</div>
+                      {#if targetStore.structure.type}
+                        <div class="entity-type">{_fmt(targetStore.structure.type)}</div>
                       {/if}
-                      {#if currentTile.structure.description}
-                        <div class="entity-description">{currentTile.structure.description}</div>
+                      {#if targetStore.structure.description}
+                        <div class="entity-description">{targetStore.structure.description}</div>
                       {/if}
                     </div>
                   </div>
@@ -728,7 +651,7 @@
           </div>
         {/if}
         
-        {#if currentTile?.players?.length > 0}
+        {#if targetStore?.players?.length > 0}
           <div class="section players-section">
             <button 
               class="section-header" 
@@ -736,7 +659,7 @@
               aria-expanded={!collapsedSections.players}
               type="button"
             >
-              <h4 class="section-title">Players ({currentTile.players.length})</h4>
+              <h4 class="section-title">Players ({targetStore.players.length})</h4>
               <span class="collapse-button" aria-hidden="true">
                 {collapsedSections.players ? '▼' : '▲'}
               </span>
@@ -781,7 +704,7 @@
           </div>
         {/if}
         
-        {#if currentTile?.groups?.length > 0}
+        {#if targetStore?.groups?.length > 0}
           <div class="section groups-section">
             <button 
               class="section-header" 
@@ -789,7 +712,7 @@
               aria-expanded={!collapsedSections.groups}
               type="button"
             >
-              <h4 class="section-title">Groups ({currentTile.groups.length})</h4>
+              <h4 class="section-title">Groups ({targetStore.groups.length})</h4>
               <span class="collapse-button" aria-hidden="true">
                 {collapsedSections.groups ? '▼' : '▲'}
               </span>
@@ -906,11 +829,11 @@
                         </div>
                       </div>
                       
-                      {#if isPlayerAvailableOnTile(currentTile, $currentPlayer?.uid) && hasIdlePlayerGroups}
+                      {#if isPlayerAvailableOnTile(targetStore, $currentPlayer?.uid) && hasIdlePlayerGroups}
                         <div class="battle-actions">
                           <button 
                             class="join-battle-btn"
-                            onclick={() => executeAction('joinBattle', currentTile)}
+                            onclick={() => executeAction('joinBattle', targetStore)}
                           >
                             Join Battle
                           </button>
@@ -924,7 +847,7 @@
           </div>
         {/if}
         
-        {#if currentTile?.items?.length > 0}
+        {#if targetStore?.items?.length > 0}
           <div class="section items-section">
             <button 
               class="section-header" 
@@ -932,7 +855,7 @@
               aria-expanded={!collapsedSections.items}
               type="button"
             >
-              <h4 class="section-title">Items ({currentTile.items.length})</h4>
+              <h4 class="section-title">Items ({targetStore.items.length})</h4>
               <span class="collapse-button" aria-hidden="true">
                 {collapsedSections.items ? '▼' : '▲'}
               </span>
@@ -1193,7 +1116,6 @@
     font-family: var(--font-heading);
   }
 
-  /* Action buttons styling */
   .actions-list {
     display: flex;
     flex-direction: column;
@@ -1252,7 +1174,6 @@
     color: rgba(0, 0, 0, 0.6);
   }
 
-  /* Add missing entity styles from MapEntities */
   .entity {
     display: flex;
     align-items: flex-start;
@@ -1346,7 +1267,6 @@
     background-color: var(--color-bright-accent);
   }
   
-  /* Status styles */
   .status {
     display: inline-block;
     font-size: 0.9em;
@@ -1383,7 +1303,6 @@
     font-weight: 500;
   }
   
-  /* Item styles */
   .item-icon {
     width: 1.4em;
     height: 1.4em;
@@ -1507,7 +1426,6 @@
     background-color: rgba(0, 0, 0, 0.85);
   }
 
-  /* Replace the existing .pending-tick style with a more subtle one */
   .pending-tick {
     position: relative;
     animation: pulse 1s infinite alternate !important;
