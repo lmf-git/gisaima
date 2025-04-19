@@ -7,6 +7,17 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 
+// Define CHUNK_SIZE constant for consistent usage
+const CHUNK_SIZE = 20;
+
+// Function to calculate chunk key consistently
+function getChunkKey(x, y) {
+  // Simple integer division works for both positive and negative coordinates
+  const chunkX = Math.floor(x / CHUNK_SIZE);
+  const chunkY = Math.floor(y / CHUNK_SIZE);
+  return `${chunkX},${chunkY}`;
+}
+
 // Function to calculate a simple path between two points using Bresenham's line algorithm
 function calculatePath(startX, startY, endX, endY) {
   const path = [];
@@ -78,10 +89,8 @@ export const moveGroup = onCall({ maxInstances: 10 }, async (request) => {
   try {
     const db = getDatabase();
     
-    // Calculate chunk coordinates for the starting position
-    const chunkX = Math.floor(fromX / 20);
-    const chunkY = Math.floor(fromY / 20);
-    const chunkKey = `${chunkX},${chunkY}`;
+    // Calculate chunk coordinates for the starting position - use getChunkKey function
+    const chunkKey = getChunkKey(fromX, fromY);
     const tileKey = `${fromX},${fromY}`;
     
     // Check if the group exists at the specified location

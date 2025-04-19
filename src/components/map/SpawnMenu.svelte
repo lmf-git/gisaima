@@ -5,7 +5,6 @@
   import { user } from '../../lib/stores/user.js';
   import { game } from '../../lib/stores/game.js';
   import { map, moveTarget } from '../../lib/stores/map.js';
-  import { getChunkKey } from '../../lib/stores/map.js';
   import { goto } from '$app/navigation';
   import Torch from '../icons/Torch.svelte';
   
@@ -28,6 +27,15 @@
   
   // Get player's race from game store
   const playerRace = $derived($game.playerWorldData?.race || 'human');
+  
+  // Function to consistently calculate chunk key
+  function getChunkKey(x, y) {
+    const CHUNK_SIZE = 20;
+    // Simple integer division works for both positive and negative coordinates
+    const chunkX = Math.floor(x / CHUNK_SIZE);
+    const chunkY = Math.floor(y / CHUNK_SIZE);
+    return `${chunkX},${chunkY}`;
+  }
   
   // Load spawn points from the database and filter by race
   async function loadSpawnPoints() {
