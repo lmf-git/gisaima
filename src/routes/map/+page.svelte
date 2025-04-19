@@ -84,7 +84,6 @@
     let isPathDrawingMode = $state(false);
     let pathDrawingGroup = $state(null);
     let currentPath = $state([]);
-    let moveComponentRef = $state(null);
 
     // Modal visibility state variables
     let showAttack = $state(false);
@@ -583,34 +582,55 @@
         
         console.log('Page: Adding path point:', point);
         
-        // First, ensure moveComponentRef is updated
-        if (moveComponentRef && typeof moveComponentRef.updateCustomPath === 'function') {
-            console.log('Updating path in Move component');
+        if (currentPath.length > 0) {
+            const lastPoint = currentPath[currentPath.length - 1];
             
-            // Update current path state
-            if (currentPath.length > 0) {
-                const lastPoint = currentPath[currentPath.length - 1];
+            if (lastPoint.x === point.x && lastPoint.y === point.y) {
+                console.log('Point is duplicate of last point, skipping');
+                return;
+            }
+            
+            const dx = Math.abs(point.x - lastPoint.x);
+            const dy = Math.abs(point.y - lastPoint.y);
+            
+            if (dx > 1 || dy > 1) {
+                console.log('Calculating path to non-adjacent point');
+                const intermediatePath = calculatePathBetweenPoints(
+                    lastPoint.x, lastPoint.y, 
+                    point.x, point.y
+                );
                 
-                if (lastPoint.x === point.x && lastPoint.y === point.y) {
-                    console.log('Point is duplicate of last point, skipping');
+                if (currentPath.length + intermediatePath.length > 20) {
+                    console.log('Path exceeds 20 steps limit, truncating...');
+                    
+                    const pointsToAdd = 20 - currentPath.length;
+                    if (pointsToAdd <= 0) {
+                        console.log('Path already at maximum length');
+                        return;
+                    }
+                    
+                    currentPath = [
+                        ...currentPath,
+                        ...intermediatePath.slice(0, pointsToAdd)
+                    ];
+                } else {
+                    currentPath = [...currentPath, ...intermediatePath];
+                }
+            } else {
+                if (currentPath.length >= 20) {
+                    console.log('Maximum path length reached (20 steps)');
                     return;
                 }
                 
-                // Rest of the logic to add points to the path
-                const newPath = [...currentPath, point];
-                currentPath = newPath;
-                moveComponentRef.updateCustomPath(newPath);
-            } else {
-                const newPath = [point];
-                currentPath = newPath;
-                console.log('Created new path with first point:', newPath);
-                moveComponentRef.updateCustomPath(newPath);
+                currentPath = [...currentPath, point];
             }
-            
-            console.log('Current path updated:', currentPath);
         } else {
-            console.error('Move component ref not available or missing updateCustomPath method');
+            const newPath = [point];
+            currentPath = newPath;
+            console.log('Created new path with first point:', newPath);
         }
+        
+        console.log('Current path updated:', currentPath);
     }
 
     function handlePathDrawingStart(group) {
@@ -618,16 +638,13 @@
         isPathDrawingMode = true;
         pathDrawingGroup = group;
         
-        // Initialize with the group's starting position
         if (group && group.startPoint) {
             currentPath = [group.startPoint];
             console.log("Initialized path with starting point:", group.startPoint);
         } else if (group && group.x !== undefined && group.y !== undefined) {
-            // Fallback to group's position if startPoint not provided
             currentPath = [{ x: group.x, y: group.y }];
             console.log("Initialized path with group position:", { x: group.x, y: group.y });
         } else if ($targetStore) {
-            // Fallback to current target position
             currentPath = [{ x: $targetStore.x, y: $targetStore.y }];
             console.log("Initialized path with current target position:", { x: $targetStore.x, y: $targetStore.y });
         } else {
@@ -644,57 +661,18 @@
         showMove = false;
     }
 
-    function confirmPathDrawing() {
-        console.log('Path drawing confirmed with path:', currentPath);
-        if (moveComponentRef && typeof moveComponentRef.confirmCustomPath === 'function') {
-            moveComponentRef.confirmCustomPath(currentPath);
+    function confirmPathDrawing(path) {
+        console.log('Path drawing confirmed with path:', path || currentPath);
+        
+        if (path) {
+            currentPath = path;
         }
+        
+        if (showMove && pathDrawingGroup) {
+            showMove = false;
+        }
+        
         isPathDrawingMode = false;
-    }
-
-    function handleAction(eventData) {
-        const { action, tile } = eventData;
-        console.log('Action selected:', action, 'for tile:', tile);
-        
-        toggleDetailsModal(false);
-        
-        switch(action) {
-            case 'mobilize':
-                showMobilize = true;
-                mobilizeData = tile;
-                break;
-                
-            case 'move':
-                showMove = true;
-                moveData = tile;
-                break;
-                
-            case 'attack':
-                showAttack = true;
-                attackData = tile;
-                break;
-                
-            case 'joinBattle':
-                showJoinBattle = true;
-                joinBattleData = tile;
-                break;
-                
-            case 'demobilize':
-                showDemobilize = true;
-                demobilizeData = tile;
-                break;
-                
-            case 'inspect':
-                if (tile && tile.structure) {
-                    selectedStructure = tile.structure;
-                    structureLocation = { x: tile.x, y: tile.y };
-                    showStructureOverview = true;
-                }
-                break;
-                
-            default:
-                console.log(`Action ${action} was handled in Details component`);
-        }
     }
 
     function calculatePathBetweenPoints(startX, startY, endX, endY) {
@@ -753,9 +731,9 @@
         <Grid 
             detailed={detailed}
             onClick={handleGridClick}
-            isPathDrawingMode={!!isPathDrawingMode}
-            moveComponentRef={moveComponentRef}
+            isPathDrawingMode={isPathDrawingMode}
             onAddPathPoint={handlePathPoint}
+            customPathPoints={currentPath}
         />
         
         <div class="map-controls">
@@ -850,7 +828,9 @@
                     }}
                     onPathDrawingStart={handlePathDrawingStart}
                     onPathDrawingCancel={handlePathDrawingCancel}
-                    bind:this={moveComponentRef}
+                    onConfirmPath={confirmPathDrawing}
+                    {pathDrawingGroup}
+                    {currentPath}
                 />
             </div>
         {/if}

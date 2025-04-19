@@ -23,10 +23,16 @@ export const startGathering = onCall({ maxInstances: 10 }, async (request) => {
   try {
     const db = getDatabase();
     
-    // Calculate chunk coordinates
-    const chunkX = Math.floor(locationX / 20);
-    const chunkY = Math.floor(locationY / 20);
-    const chunkKey = `${chunkX},${chunkY}`;
+    // Fix chunk calculation for negative coordinates
+    const CHUNK_SIZE = 20;
+    function getChunkKey(x, y) {
+      // Handle negative coordinates correctly by adjusting division for negative values
+      const chunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
+      const chunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
+      return `${chunkX},${chunkY}`;
+    }
+    
+    const chunkKey = getChunkKey(locationX, locationY);
     const locationKey = `${locationX},${locationY}`;
     const groupRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}`);
     

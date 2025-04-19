@@ -24,11 +24,16 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     const db = getDatabase();
     const worldId = request.data.worldId || 'default';
     
-    // Calculate chunk key with simplified formula
+    // Fix chunk calculation for negative coordinates
     const CHUNK_SIZE = 20;
-    const chunkX = Math.floor((locationX + 10) / CHUNK_SIZE);
-    const chunkY = Math.floor((locationY + 10) / CHUNK_SIZE);
-    const chunkKey = `${chunkX},${chunkY}`;
+    function getChunkKey(x, y) {
+      // Handle negative coordinates correctly by adjusting division for negative values
+      const chunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
+      const chunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
+      return `${chunkX},${chunkY}`;
+    }
+    
+    const chunkKey = getChunkKey(locationX, locationY);
     
     const locationKey = `${locationX},${locationY}`;
     const battleRef = db.ref(`battles/${worldId}/${battleId}`);

@@ -159,6 +159,7 @@
           const baseWorldX = worldCenterX + (x - centerX) * summaryFactor;
           const baseWorldY = worldCenterY + (y - centerY) * summaryFactor;
           
+          // Note: This doesn't calculate chunk keys, so it doesn't need the Math.floor fix
           // Simply sample from the center of the area
           const centerSampleX = baseWorldX + Math.floor(summaryFactor / 2);
           const centerSampleY = baseWorldY + Math.floor(summaryFactor / 2);

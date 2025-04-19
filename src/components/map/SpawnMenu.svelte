@@ -32,9 +32,9 @@
   // Add a helper function to ensure consistent chunk key calculation
   function getCorrectChunkKey(x, y) {
     const CHUNK_SIZE = 20;
-    // Match the database structure for chunks
-    const chunkX = Math.floor(x >= 0 ? x / CHUNK_SIZE : (x + 1) / CHUNK_SIZE - 1);
-    const chunkY = Math.floor(y >= 0 ? y / CHUNK_SIZE : (y + 1) / CHUNK_SIZE - 1);
+    // Handle negative coordinates correctly by adjusting division for negative values
+    const chunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
+    const chunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
     return `${chunkX},${chunkY}`;
   }
   

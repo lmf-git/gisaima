@@ -23,11 +23,16 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
   try {
     const db = getDatabase();
     
-    // Calculate chunk coordinates (inline, always using 20)
-    const chunkX = Math.floor(locationX / 20);
-    const chunkY = Math.floor(locationY / 20);
+    // Fix chunk calculation for negative coordinates
+    const CHUNK_SIZE = 20;
+    function getChunkKey(x, y) {
+      // Handle negative coordinates correctly by adjusting division for negative values
+      const chunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
+      const chunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
+      return `${chunkX},${chunkY}`;
+    }
     
-    const chunkKey = `${chunkX},${chunkY}`;
+    const chunkKey = getChunkKey(locationX, locationY);
     const tileKey = `${locationX},${locationY}`;
     
     // Get the full path to this group

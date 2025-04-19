@@ -2,7 +2,6 @@
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
-  // Update imports to use getFunctions directly instead of importing from firebase.js
   import { getFunctions, httpsCallable } from 'firebase/functions';
 
   // Props with default empty object/function to avoid destructuring errors
@@ -11,7 +10,10 @@
     onClose = () => {}, 
     onMove = () => {}, 
     onPathDrawingStart = () => {}, 
-    onPathDrawingCancel = () => {} 
+    onPathDrawingCancel = () => {},
+    onConfirmPath = () => {}, // New prop for confirming path
+    pathDrawingGroup = null,  // Group for path drawing
+    currentPath = []          // Current path data from parent
   } = $props();
   
   // Get functions instance directly
@@ -22,20 +24,19 @@
   
   // Available groups for movement
   let availableGroups = $state([]);
+  
   // Selected group to move
   let selectedGroup = $state(null);
+  
   // Movement target coordinates
   let targetX = $state(null);
   let targetY = $state(null);
   
-  // New: Add calculated path for visualization
+  // Path for visualization
   let movementPath = $state([]);
   
-  // Add state for path drawing mode
+  // Path drawing mode state
   let isPathDrawingMode = $state(false);
-  
-  // Add state to store the current custom path being drawn
-  let customPath = $state([]);
   
   // Initialize available groups based on tile content
   $effect(() => {
@@ -47,7 +48,6 @@
     // Filter only groups owned by the current player and with idle status
     availableGroups = tile.groups
       .filter(group => {
-        // Direct access to group status instead of using getGroupStatusInfo
         return group.owner === $currentPlayer?.uid && group.status === 'idle';
       })
       .map(group => ({
@@ -74,7 +74,7 @@
     if (dx === 0 && dy === 0) return; // Can't move to current position
     
     targetX = tile.x + dx;
-    targetY = tile.y + dy;  // Fixed to correctly add dy to tile.y
+    targetY = tile.y + dy;
     
     // Calculate path when target changes
     calculatePath();
@@ -111,10 +111,7 @@
     }
     
     // For longer paths, use a simplified version of Bresenham's line algorithm
-    // to create a step-by-step path between points
     const path = [];
-    
-    // Start point
     path.push({ x: startX, y: startY });
     
     const dx = Math.abs(endX - startX);
@@ -126,7 +123,6 @@
     let x = startX;
     let y = startY;
     
-    // Generate steps along the path
     while (x !== endX || y !== endY) {
       const e2 = 2 * err;
       
@@ -140,7 +136,6 @@
         y += sy;
       }
       
-      // Add intermediate point
       path.push({ x, y });
     }
     
@@ -151,22 +146,18 @@
   function enablePathDrawing() {
     if (!selectedGroup) return;
     
-    // Initialize custom path with starting position
-    const startPoint = { x: tile.x, y: tile.y };
-    customPath = [startPoint]; // Set it in the component state
+    // Initialize path drawing through the parent component
+    console.log('Enabling path drawing with starting point:', { x: tile.x, y: tile.y });
     
-    // Log that we're enabling path drawing mode
-    console.log('Enabling path drawing mode with starting point:', startPoint);
-    
-    // Close the dialog completely to avoid obstruction
+    // Close the dialog to avoid obstruction
     onClose(false, true);
     
-    // Dispatch the path drawing start event with essential data
+    // Tell the parent component to start path drawing
     if (onPathDrawingStart) {
       try {
         onPathDrawingStart({
           groupId: selectedGroup.id,
-          startPoint,
+          startPoint: { x: tile.x, y: tile.y },
           x: tile.x,
           y: tile.y
         });
@@ -174,31 +165,17 @@
       } catch (error) {
         console.error('Error starting path drawing:', error);
       }
-    } else {
-      console.warn('No onPathDrawingStart handler provided');
     }
   }
   
-  // Function to update the path with new points
-  export function updateCustomPath(newPoints) {
-    if (!newPoints || !Array.isArray(newPoints)) {
-      console.warn('Invalid points passed to updateCustomPath:', newPoints);
-      return;
-    }
-    
-    console.log('Move component: Updating custom path with', newPoints.length, 'points:', newPoints);
-    // Create a fresh copy to ensure reactivity
-    customPath = [...newPoints];
-  }
-
   // Function to confirm the custom path
-  export async function confirmCustomPath() {
-    if (!customPath || customPath.length < 2) {
+  async function confirmCustomPath() {
+    if (!currentPath || currentPath.length < 2) {
       console.warn('Cannot confirm path: Path too short or missing');
       return;
     }
     
-    console.log('Confirming custom path with', customPath.length, 'points');
+    console.log('Confirming custom path with', currentPath.length, 'points');
     
     // Ensure we have the required data
     if (!selectedGroup) {
@@ -206,8 +183,8 @@
       return;
     }
     
-    const startPoint = customPath[0];
-    const endPoint = customPath[customPath.length - 1];
+    const startPoint = currentPath[0];
+    const endPoint = currentPath[currentPath.length - 1];
     
     try {
       // Use functions instance from above
@@ -218,25 +195,26 @@
         fromY: startPoint.y,
         toX: endPoint.x,
         toY: endPoint.y,
-        path: customPath,
+        path: currentPath,
         worldId: $game.currentWorld
       });
       
       console.log('Custom path movement started:', result.data);
       
-      // Use the function prop directly for UI updates if needed
+      // Use the function prop directly for UI updates
       if (onMove) {
         onMove({
           groupId: selectedGroup.id,
           from: { x: startPoint.x, y: startPoint.y },
           to: { x: endPoint.x, y: endPoint.y },
-          path: customPath
+          path: currentPath
         });
       }
       
-      // Reset states
-      isPathDrawingMode = false;
-      customPath = [];
+      // Notify parent that path was confirmed
+      if (onConfirmPath) {
+        onConfirmPath(currentPath);
+      }
       
       // Properly close the dialog
       onClose(true);
@@ -254,7 +232,6 @@
       confirmCustomPath();
     } else if (targetX !== null && targetY !== null) {
       try {
-        // Use functions instance from above
         const moveGroupFn = httpsCallable(functions, 'moveGroup');
         const result = await moveGroupFn({
           groupId: selectedGroup.id,
@@ -269,7 +246,6 @@
         console.log('Movement started:', result.data);
         
         if (onMove) {
-          // Still trigger onMove for local UI updates if needed
           onMove({
             groupId: selectedGroup.id,
             from: { x: tile.x, y: tile.y },

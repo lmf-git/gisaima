@@ -19,14 +19,14 @@
   import Torch from '../icons/Torch.svelte';
   import Structure from '../icons/Structure.svelte';
   
-  // Props with defaults to avoid destructuring errors - remove unused props
+  // Props with defaults using Svelte 5 $props() rune
   const { 
     detailed = false, 
     isPathDrawingMode = false, 
-    moveComponentRef = null,
     onAddPathPoint = null,
     onClick = null,
-    onClose = () => {} // Add this prop with a default empty function
+    onClose = () => {},
+    customPathPoints = [] // Accept path points directly as a prop instead of using a ref
   } = $props();
   
   let mapElement = null;
@@ -46,8 +46,6 @@
     $coordinates => $coordinates?.filter(cell => cell.isInMainView) || []
   );
   
-  let customPathPoints = $state([]);
-  
   $effect(() => {
     if (isPathDrawingMode) {
       console.log('Path drawing mode activated in Grid component');
@@ -56,16 +54,10 @@
       // Only initialize if empty and we have a target position
       if (customPathPoints.length === 0 && $map.target) {
         console.log('Initializing path with starting point:', $map.target);
-        customPathPoints = [{ x: $map.target.x, y: $map.target.y }];
-        
         if (onAddPathPoint) {
           onAddPathPoint({ x: $map.target.x, y: $map.target.y });
         }
       }
-    } else if (customPathPoints.length > 0) {
-      // Clear path points when leaving drawing mode
-      console.log('Exiting path drawing mode, clearing points');
-      customPathPoints = [];
     }
   });
 
@@ -457,76 +449,9 @@
     
     console.log('Grid: Adding path point:', point);
     
-    // Check if point already exists in path
-    if (customPathPoints.length > 0) {
-      const lastPoint = customPathPoints[customPathPoints.length - 1];
-      
-      // Don't add if it's the same as the last point
-      if (lastPoint.x === point.x && lastPoint.y === point.y) {
-        console.log('Point is duplicate of last point, skipping');
-        return;
-      }
-      
-      // Don't check for duplicates elsewhere in the path - allow loops
-      // This matches behavior in +page.svelte
-      
-      const dx = Math.abs(point.x - lastPoint.x);
-      const dy = Math.abs(point.y - lastPoint.y);
-      
-      // For non-adjacent points, calculate path between them
-      if (dx > 1 || dy > 1) {
-        console.log('Calculating path to non-adjacent point');
-        const intermediatePath = calculatePathBetweenPoints(
-          lastPoint.x, lastPoint.y, 
-          point.x, point.y
-        );
-        
-        // Check if adding these points would exceed 20 steps
-        if (customPathPoints.length + intermediatePath.length > 20) {
-          console.log('Path exceeds 20 steps limit, truncating...');
-          
-          // Calculate how many points we can add
-          const pointsToAdd = 20 - customPathPoints.length;
-          if (pointsToAdd <= 0) {
-            console.log('Path already at maximum length');
-            return;
-          }
-          
-          // Add only allowed number of points
-          customPathPoints = [
-            ...customPathPoints,
-            ...intermediatePath.slice(0, pointsToAdd)
-          ];
-        } else {
-          // Add all intermediate points
-          customPathPoints = [...customPathPoints, ...intermediatePath];
-        }
-      } else {
-        // Check if adding this point would exceed 20 steps
-        if (customPathPoints.length >= 20) {
-          console.log('Maximum path length reached (20 steps)');
-          return;
-        }
-        
-        // For adjacent point, add directly
-        customPathPoints = [...customPathPoints, point];
-      }
-    } else {
-      // First point in path
-      customPathPoints = [point];
-    }
-    
-    console.log('Updated path points:', customPathPoints);
-    console.log('Path now has', customPathPoints.length, 'points');
-    
-    // Call the parent function with the new point
+    // Simply call the parent function with the new point
     if (onAddPathPoint) {
       onAddPathPoint(point);
-    }
-    
-    // Update move component
-    if (moveComponentRef && typeof moveComponentRef.updateCustomPath === 'function') {
-      moveComponentRef.updateCustomPath(customPathPoints);
     }
   }
 
