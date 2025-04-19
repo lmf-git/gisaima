@@ -1,5 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+// Add import for getFunctions
+import { getFunctions } from 'firebase/functions';
+// Import getDatabase if it's missing
 import { getDatabase } from 'firebase/database';
 
 
@@ -20,6 +23,8 @@ export const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 
+// Initialize Functions
+export const functions = getFunctions(app);
 
 export const db = getDatabase(app);
 

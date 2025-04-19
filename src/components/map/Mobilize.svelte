@@ -7,8 +7,8 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
-  import { app, auth } from "../../lib/firebase/firebase";
-  import { getFunctions, httpsCallable } from "firebase/functions";
+  import { functions, auth } from "../../lib/firebase/firebase";
+  import { httpsCallable } from "firebase/functions";
 
   const { tile = {}, onClose = () => {} } = $props();
   
@@ -20,7 +20,6 @@
   let groupName = $state("New Force");
   let mobilizeError = $state(null);
 
-  const functions = getFunctions(app);
   const startMobilizationFn = httpsCallable(functions, 'startMobilization');
   
   $effect(() => {
@@ -83,7 +82,7 @@
     
     try {
       if (!auth.currentUser) {
-        throw new Error('You must be logged in to mobilize forces');
+        throw { code: 'unauthenticated', message: 'You must be logged in to mobilize forces' };
       }
       
       console.log("Current auth state:", {
@@ -116,7 +115,11 @@
       onClose();
     } catch (error) {
       console.error('Error during mobilization:', error);
-      mobilizeError = error.message || "Failed to mobilize forces";
+      if (error.code === 'unauthenticated') {
+         mobilizeError = 'Authentication error: Please log in again.';
+      } else {
+         mobilizeError = error.message || "Failed to mobilize forces";
+      }
     }
   }
   

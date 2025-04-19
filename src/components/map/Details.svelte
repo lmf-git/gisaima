@@ -4,8 +4,10 @@
   import { targetStore, coordinates } from '../../lib/stores/map';
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   import { onMount, onDestroy } from 'svelte';
-  // Update imports to use getFunctions directly instead of importing from firebase.js
-  import { getFunctions, httpsCallable } from 'firebase/functions';
+  // Import the functions instance from firebase.js
+  import { functions } from '../../lib/firebase/firebase.js';
+  // Import httpsCallable
+  import { httpsCallable } from 'firebase/functions';
 
   // Import race icon components
   import Human from '../../components/icons/Human.svelte';
@@ -16,9 +18,6 @@
   import Structure from '../../components/icons/Structure.svelte';
   import Torch from '../../components/icons/Torch.svelte';
   import Close from '../icons/Close.svelte';
-
-  // Get functions instance directly
-  const functions = getFunctions();
 
   // Props with defaults using Svelte 5 $props() rune
   const { 
@@ -392,7 +391,7 @@
           
         case 'explore':
           try {
-            // Call explore function with the functions instance from above
+            // Call explore function using the imported functions instance and httpsCallable
             const exploreFn = httpsCallable(functions, 'exploreLocation');
             const result = await exploreFn({ 
               x: tile.x, 
@@ -402,24 +401,35 @@
             console.log('Explore result:', result.data);
           } catch (error) {
             console.error('Error exploring location:', error);
-            alert(`Error exploring: ${error.message || 'Unknown error'}`);
+            // Check for specific auth error code
+            if (error.code === 'unauthenticated') {
+              alert('Error exploring: You are not logged in.');
+            } else {
+              alert(`Error exploring: ${error.message || 'Unknown error'}`);
+            }
           }
           break;
           
         case 'gather':
           try {
-            // Call gather function with the functions instance from above
+            // Call gather function using the imported functions instance and httpsCallable
             const gatherFn = httpsCallable(functions, 'startGathering');
             const gatherResult = await gatherFn({
               x: tile.x,
               y: tile.y,
               worldId: $game.currentWorld,
-              groupId: tile.groups.find(g => g.owner === $currentPlayer?.uid)?.id
+              // Ensure groupId is correctly determined or handled if missing
+              groupId: tile.groups?.find(g => g.owner === $currentPlayer?.uid && g.status === 'idle')?.id 
             });
             console.log('Gather result:', gatherResult.data);
           } catch (error) {
             console.error('Error gathering resources:', error);
-            alert(`Error gathering: ${error.message || 'Unknown error'}`);
+             // Check for specific auth error code
+            if (error.code === 'unauthenticated') {
+              alert('Error gathering: You are not logged in.');
+            } else {
+              alert(`Error gathering: ${error.message || 'Unknown error'}`);
+            }
           }
           break;
           
@@ -428,11 +438,18 @@
       }
     } catch (error) {
       console.error(`Error executing action ${actionId}:`, error);
-      alert(`Error: ${error.message || 'Failed to perform action'}`);
+       // Check for specific auth error code
+      if (error.code === 'unauthenticated') {
+        alert(`Error: You are not logged in.`);
+      } else {
+        alert(`Error: ${error.message || 'Failed to perform action'}`);
+      }
     }
     
-    // Close the details modal
-    onClose();
+    // Close the details modal only if the action didn't fail due to auth
+    if (!(error && error.code === 'unauthenticated')) {
+      onClose();
+    }
   }
 
   // Handle action selection with improved event handling
