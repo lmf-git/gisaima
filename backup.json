@@ -11,11 +11,17 @@
               "id": "-OOCpSRgz7vhPjISNJT6",
               "readyAt": 1745062621674,
               "status": "mobilizing"
+            },
+            "-OOCqYVDC9uWmkg1md9J": {
+              "at": "5,5",
+              "id": "-OOCqYVDC9uWmkg1md9J",
+              "readyAt": 1745062921870,
+              "status": "mobilizing"
             }
           },
           "joined": 1745062571308,
           "lastLocation": {
-            "timestamp": 1745062801272,
+            "timestamp": 1745063221951,
             "x": 5,
             "y": 5
           },
@@ -129,7 +135,7 @@
             "players": {
               "kv0uM1cphrYBimiGvsyXG5WYkH53": {
                 "displayName": "test1",
-                "lastActive": 1745062801272,
+                "lastActive": 1745063221951,
                 "race": "human",
                 "uid": "kv0uM1cphrYBimiGvsyXG5WYkH53"
               }
@@ -152,6 +158,28 @@
                   "quantity": 1,
                   "rarity": "common",
                   "type": "resource"
+                },
+                {
+                  "id": "item_1745062986244_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 5,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745062986245_2",
+                  "name": "Stone Pieces",
+                  "quantity": 3,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "description": "A strange object of unknown origin",
+                  "id": "item_1745062986245_special",
+                  "name": "Mysterious Artifact",
+                  "quantity": 1,
+                  "rarity": "rare",
+                  "type": "artifact"
                 }
               ],
               "name": "Stoneguard Citadel",
@@ -162,7 +190,7 @@
       },
       "info": {
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745062801272,
+        "lastTick": 1745063521923,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",

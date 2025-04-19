@@ -3,9 +3,10 @@
   import { cubicOut } from 'svelte/easing';
   import Close from '../icons/Close.svelte';
   import { currentPlayer } from '../../lib/stores/game.js';
+  import { coordinates } from '../../lib/stores/map.js';
   
-  // Structure and location information
-  const { structure = {}, x = 0, y = 0, onClose = () => {} } = $props();
+  // Only take the minimum props needed for lookup
+  const { x = 0, y = 0, onClose = () => {} } = $props();
   
   // Format text for display
   function formatText(text) {
@@ -18,70 +19,79 @@
     return rarity?.toLowerCase() || 'common';
   }
   
+  // Find the tile data directly from coordinates store
+  const tileData = $derived(() => {
+    return $coordinates.find(tile => tile.x === x && tile.y === y) || null;
+  });
+  
+  // Get structure data directly from the found tile
+  const structure = $derived(() => tileData?.structure || null);
+  
   // Check if current player owns this structure
-  const isOwned = $derived(structure.owner === $currentPlayer?.uid);
+  const isOwned = $derived(structure?.owner === $currentPlayer?.uid);
   
-  // Add debug logging to help diagnose the issue
-  console.log('Structure data:', structure);
+  // Extract shared items directly - with safety checks
+  const sharedItems = $derived(() => {
+    if (!structure) return [];
+    return Array.isArray(structure.items) ? structure.items : [];
+  });
   
-  // Group items by type for better organization
-  const groupedItems = $derived(() => {
-    console.log('Processing structure items:', structure.items);
-    if (!structure.items || !Array.isArray(structure.items) || structure.items.length === 0) {
-      return {};
-    }
+  // Extract personal bank items directly - with safety checks 
+  const personalItems = $derived(() => {
+    if (!structure || !structure.banks || !$currentPlayer?.uid) return [];
+    const playerBank = structure.banks[$currentPlayer.uid];
+    return Array.isArray(playerBank) ? playerBank : [];
+  });
+  
+  // Group shared items by type - with safety check
+  const groupedSharedItems = $derived(() => {
+    if (!sharedItems || !sharedItems.length) return {};
     
     const grouped = {};
-    
-    for (const item of structure.items) {
+    for (const item of sharedItems) {
       const type = item.type || 'misc';
-      if (!grouped[type]) {
-        grouped[type] = [];
-      }
-      grouped[type].push(item);
+      if (!grouped[type]) grouped[type] = [];
+      grouped[type].push({
+        ...item,
+        isShared: true
+      });
     }
     
-    console.log('Grouped items result:', grouped);
     return grouped;
   });
   
-  // Create an array of type-items pairs for easier iteration in the template
-  const groupedItemsList = $derived(() => {
-    const result = Object.entries(groupedItems).map(([type, items]) => ({ type, items }));
-    console.log('Grouped items list:', result);
-    return result;
+  // Group personal items by type - with safety check
+  const groupedPersonalItems = $derived(() => {
+    if (!personalItems || !personalItems.length) return {};
+    
+    const grouped = {};
+    for (const item of personalItems) {
+      const type = item.type || 'misc';
+      if (!grouped[type]) grouped[type] = [];
+      grouped[type].push({
+        ...item,
+        isPersonal: true
+      });
+    }
+    
+    return grouped;
   });
   
-  // Calculate total item count
-  const totalItems = $derived(structure.items?.length || 0);
+  // Simple derived values for item counts and flags
+  const hasSharedItems = $derived(sharedItems.length > 0);
+  const hasPersonalItems = $derived(personalItems.length > 0);
+  
+  const itemCounts = $derived({
+    shared: sharedItems.length,
+    personal: personalItems.length,
+    total: sharedItems.length + personalItems.length
+  });
   
   // Get structure capacity information
   const capacity = $derived({
-    current: totalItems,
-    max: structure.capacity || 100,
-    percentage: ((totalItems / (structure.capacity || 100)) * 100).toFixed(0)
-  });
-
-  // Add specific debug logging for banks data
-  console.log('Structure banks data:', structure.banks);
-  console.log('Current player ID:', $currentPlayer?.uid);
-
-  // Get player's bank items if available - Fixed to handle the structure correctly
-  const playerBank = $derived(() => {
-    if (structure.banks && $currentPlayer?.uid) {
-      const playerItems = structure.banks[$currentPlayer.uid];
-      console.log('Found player bank items:', playerItems);
-      return Array.isArray(playerItems) ? playerItems : [];
-    }
-    console.log('No player bank items found');
-    return [];
-  });
-
-  // Check if the player has bank items - using length check
-  const hasBankItems = $derived(() => {
-    const hasItems = playerBank.length > 0;
-    console.log('Has bank items:', hasItems, 'Count:', playerBank.length);
-    return hasItems;
+    current: itemCounts.total,
+    max: structure?.capacity || 100,
+    percentage: Math.min(100, Math.round((itemCounts.total / (structure?.capacity || 100)) * 100))
   });
 </script>
 
@@ -89,7 +99,7 @@
   <div class="structure-overview" transition:scale={{ start: 0.95, duration: 300, easing: cubicOut }}>
     <div class="header">
       <div class="header-content">
-        <h2>{structure.name || formatText(structure.type) || "Structure"}</h2>
+        <h2>{structure?.name || formatText(structure?.type) || "Structure"}</h2>
         <div class="location">Location: {x}, {y}</div>
       </div>
       <button class="close-btn" onclick={onClose} aria-label="Close structure overview">
@@ -98,20 +108,21 @@
     </div>
     
     <div class="content">
+      <!-- Structure info section -->
       <div class="structure-info">
         <div class="info-row">
           <span class="info-label">Type:</span>
-          <span class="info-value">{formatText(structure.type)}</span>
+          <span class="info-value">{formatText(structure?.type)}</span>
         </div>
         
-        {#if structure.faction}
+        {#if structure?.faction}
           <div class="info-row">
             <span class="info-label">Faction:</span>
             <span class="info-value">{formatText(structure.faction)}</span>
           </div>
         {/if}
         
-        {#if structure.owner}
+        {#if structure?.owner}
           <div class="info-row">
             <span class="info-label">Owner:</span>
             <span class="info-value owner {isOwned ? 'current-player' : ''}">
@@ -127,17 +138,28 @@
           <span class="info-label">Storage:</span>
           <div class="capacity-bar-container">
             <div class="capacity-bar" style="width: {capacity.percentage}%"></div>
-            <span class="capacity-text">{capacity.current} / {capacity.max}</span>
+            <span class="capacity-text">
+              {capacity.current} / {capacity.max}
+              {#if itemCounts.shared > 0 && itemCounts.personal > 0}
+                ({itemCounts.shared} shared, {itemCounts.personal} personal)
+              {/if}
+            </span>
           </div>
         </div>
       </div>
       
-      <h3>Structure Contents</h3>
+      <!-- Shared Structure Items -->
+      <div class="section-header">
+        <h3>Shared Structure Storage</h3>
+        {#if hasSharedItems}
+          <span class="item-count">{itemCounts.shared} items</span>
+        {/if}
+      </div>
       
-      {#if structure.items && structure.items.length > 0}
+      {#if hasSharedItems}
         <div class="items-container">
-          {#each Object.entries(groupedItems) as [type, items]}
-            <div class="item-group">
+          {#each Object.entries(groupedSharedItems) as [type, items]}
+            <div class="item-group shared-items">
               <h4 class="item-group-header">{formatText(type)}</h4>
               <div class="items-grid">
                 {#each items as item}
@@ -148,12 +170,12 @@
                       {#if item.quantity > 1}
                         <div class="item-quantity">×{item.quantity}</div>
                       {/if}
-                      {#if item.rarity && item.rarity !== 'common'}
-                        <div class="item-rarity-tag">{formatText(item.rarity)}</div>
-                      {/if}
-                      {#if item.isShared}
+                      <div class="item-tags">
+                        {#if item.rarity && item.rarity !== 'common'}
+                          <div class="item-rarity-tag">{formatText(item.rarity)}</div>
+                        {/if}
                         <div class="item-shared-tag">Shared</div>
-                      {/if}
+                      </div>
                     </div>
                     {#if item.description}
                       <div class="item-description">{item.description}</div>
@@ -166,39 +188,57 @@
         </div>
       {:else}
         <div class="empty-items">
-          <p>This structure is empty</p>
+          <p>No shared items in this structure</p>
         </div>
       {/if}
       
-      <!-- Personal Bank Section - Fixed rendering logic -->
-      {#if hasBankItems}
-        <h3>Your Personal Bank</h3>
-        <div class="items-container">
-          <div class="item-group bank-items">
-            <div class="items-grid">
-              {#each playerBank as item}
-                <div class="item {getRarityClass(item.rarity)} bank-item">
-                  <div class="item-icon {item.type}"></div>
-                  <div class="item-details">
-                    <div class="item-name">{item.name}</div>
-                    {#if item.quantity > 1}
-                      <div class="item-quantity">×{item.quantity}</div>
-                    {/if}
-                    {#if item.rarity && item.rarity !== 'common'}
-                      <div class="item-rarity-tag">{formatText(item.rarity)}</div>
-                    {/if}
-                  </div>
-                  {#if item.description}
-                    <div class="item-description">{item.description}</div>
-                  {/if}
+      <!-- Personal Bank Items -->
+      {#if $currentPlayer}
+        <div class="section-header">
+          <h3>Your Personal Bank</h3>
+          {#if hasPersonalItems}
+            <span class="item-count">{itemCounts.personal} items</span>
+          {/if}
+        </div>
+        
+        {#if hasPersonalItems}
+          <div class="items-container">
+            {#each Object.entries(groupedPersonalItems) as [type, items]}
+              <div class="item-group bank-items">
+                <h4 class="item-group-header">{formatText(type)}</h4>
+                <div class="items-grid">
+                  {#each items as item}
+                    <div class="item {getRarityClass(item.rarity)} bank-item">
+                      <div class="item-icon {item.type}"></div>
+                      <div class="item-details">
+                        <div class="item-name">{item.name}</div>
+                        {#if item.quantity > 1}
+                          <div class="item-quantity">×{item.quantity}</div>
+                        {/if}
+                        <div class="item-tags">
+                          {#if item.rarity && item.rarity !== 'common'}
+                            <div class="item-rarity-tag">{formatText(item.rarity)}</div>
+                          {/if}
+                          <div class="item-personal-tag">Personal</div>
+                        </div>
+                      </div>
+                      {#if item.description}
+                        <div class="item-description">{item.description}</div>
+                      {/if}
+                    </div>
+                  {/each}
                 </div>
-              {/each}
-            </div>
+              </div>
+            {/each}
           </div>
-        </div>
+        {:else}
+          <div class="empty-items bank-empty">
+            <p>Your personal bank is empty</p>
+          </div>
+        {/if}
       {/if}
       
-      {#if structure.features && structure.features.length > 0}
+      {#if structure?.features && structure.features.length > 0}
         <h3>Structure Features</h3>
         <div class="features-list">
           {#each structure.features as feature}
@@ -592,20 +632,39 @@
     color: #666;
   }
 
-  /* Add styles for bank items */
-  .bank-items {
-    border: 1px solid #e1e2ff;
-    background-color: #f8f9ff;
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0.5em 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5em;
+  }
+
+  .section-header h3 {
+    margin: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .item-count {
+    font-size: 0.85em;
+    color: #666;
+    background: #f0f0f0;
+    padding: 0.2em 0.5em;
+    border-radius: 1em;
+  }
+
+  .item-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3em;
+    margin-top: 0.3em;
   }
   
-  .bank-item {
-    background-color: #fafbff;
-    border-color: #d8daff;
-  }
-  
-  .bank-item:hover {
-    background-color: #f1f3ff;
-    box-shadow: 0 3px 5px rgba(0, 0, 128, 0.1);
+  .shared-items {
+    border-color: #e2f2ff;
+    background-color: #f9fcff;
   }
   
   .item-shared-tag {
@@ -616,14 +675,19 @@
     background: #e1f5fe;
     color: #0277bd;
   }
-  
-  /* Add this to make bank section more distinguishable */
-  .bank-items .item-icon {
-    background-color: rgba(0, 0, 128, 0.08);
-  }
 
-  .bank-items .items-grid {
-    background-color: rgba(240, 240, 255, 0.4);
+  .item-personal-tag {
+    font-size: 0.7em;
+    padding: 0.1em 0.3em;
+    border-radius: 0.2em;
+    display: inline-block;
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+  
+  .bank-empty {
+    background-color: #f8f9ff;
+    border-color: #e1e2ff;
   }
 
   @media (max-width: 480px) {
