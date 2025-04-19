@@ -152,17 +152,41 @@ export const processGameTicks = onSchedule({
                     // but are no longer in the group
                     for (const playerUnit of playerUnits) {
                       if (playerUnit.id) {
+                        // Use the exact location data from demobilizationData if available
+                        // This ensures consistent chunk calculation
+                        let exactLocationData;
+                        if (group.demobilizationData && group.demobilizationData.exactLocation) {
+                          exactLocationData = group.demobilizationData.exactLocation;
+                        } else {
+                          // Fallback to current tile location if exact data is missing
+                          exactLocationData = {
+                            x: parseInt(tileKey.split(',')[0]),
+                            y: parseInt(tileKey.split(',')[1]),
+                            chunkKey: chunkKey
+                          };
+                        }
+                        
+                        // Use the exact chunk key from demobilization data to ensure proper placement
+                        const playerChunkKey = exactLocationData.chunkKey || chunkKey;
+                        const playerTileKey = `${exactLocationData.x},${exactLocationData.y}`;
+                        
                         // Create or update a standalone player entry on this tile
-                        const playerPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/players/${playerUnit.id}`;
+                        const playerPath = `worlds/${worldId}/chunks/${playerChunkKey}/${playerTileKey}/players/${playerUnit.id}`;
                         updates[playerPath] = {
                           id: playerUnit.id,
                           displayName: playerUnit.name || `Player ${playerUnit.id}`,
                           race: playerUnit.race || 'human',
                           lastActive: now,
                           uid: playerUnit.id,
-                          x: parseInt(tileKey.split(',')[0]),
-                          y: parseInt(tileKey.split(',')[1])
+                          // Use exact coordinates
+                          x: exactLocationData.x,
+                          y: exactLocationData.y
                         };
+                        
+                        // Also clean up any pendingRelocation status for the player
+                        updates[`players/${playerUnit.id}/worlds/${worldId}/pendingRelocation`] = null;
+                        
+                        logger.info(`Player ${playerUnit.id} placed at ${playerTileKey} in chunk ${playerChunkKey} after demobilization`);
                       }
                     }
                   }

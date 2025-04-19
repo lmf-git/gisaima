@@ -85,6 +85,22 @@
       return;
     }
     
+    // Additional validation to prevent null object errors
+    if (!selectedGroup.id) {
+      error = "Invalid group selection. Group ID is missing.";
+      return;
+    }
+    
+    if (typeof tile.x === 'undefined' || typeof tile.y === 'undefined') {
+      error = "Location coordinates are invalid.";
+      return;
+    }
+    
+    if (!$game?.currentWorld) {
+      error = "World information is missing.";
+      return;
+    }
+    
     error = null;
     isLoading = true;
     
@@ -92,21 +108,17 @@
       // Call the cloud function directly
       const demobiliseFn = httpsCallable(functions, 'demobiliseUnits');
       
-      console.log('Calling demobiliseUnits with params:', {
+      const params = {
         groupId: selectedGroup.id,
         locationX: tile.x,
         locationY: tile.y,
         worldId: $game.currentWorld,
         storageDestination: selectedStorageDestination
-      });
+      };
       
-      const result = await demobiliseFn({
-        groupId: selectedGroup.id,
-        locationX: tile.x,
-        locationY: tile.y,
-        worldId: $game.currentWorld,
-        storageDestination: selectedStorageDestination
-      });
+      console.log('Calling demobiliseUnits with params:', params);
+      
+      const result = await demobiliseFn(params);
       
       console.log('Demobilization started:', result.data);
       
