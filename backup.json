@@ -1,5 +1,18 @@
 {
   "players": {
+    "7ClpkDWGEtXaOKJzNEbfDBUr9my2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "joined": 1745038841090,
+          "lastLocation": {
+            "x": 10,
+            "y": 8
+          },
+          "race": "fairy"
+        }
+      }
+    },
     "OaHv0DRPExbQL3WX8PlN1Yoj8s82": {
       "worlds": {
         "ancient-lands": {
@@ -19,6 +32,19 @@
             "y": 5
           },
           "race": "human"
+        }
+      }
+    },
+    "othuFXN7AMZ45VYGcn7dcF0FXEE2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "joined": 1745039428105,
+          "lastLocation": {
+            "x": 15,
+            "y": -3
+          },
+          "race": "goblin"
         }
       }
     }
@@ -119,6 +145,14 @@
         },
         "1,0": {
           "10,8": {
+            "players": {
+              "7ClpkDWGEtXaOKJzNEbfDBUr9my2": {
+                "displayName": "Player",
+                "lastActive": 1745038843646,
+                "race": "fairy",
+                "uid": "7ClpkDWGEtXaOKJzNEbfDBUr9my2"
+              }
+            },
             "structure": {
               "description": "A fairy settlement where the ancient spirits still speak",
               "faction": "fairy",
@@ -137,6 +171,14 @@
             }
           },
           "15,-3": {
+            "players": {
+              "othuFXN7AMZ45VYGcn7dcF0FXEE2": {
+                "displayName": "Player",
+                "lastActive": 1745039429979,
+                "race": "goblin",
+                "uid": "othuFXN7AMZ45VYGcn7dcF0FXEE2"
+              }
+            },
             "structure": {
               "description": "A resourceful goblin settlement built from the remains of ancient beasts",
               "faction": "goblin",
@@ -149,7 +191,7 @@
       },
       "info": {
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745038745427,
+        "lastTick": 1745040241559,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",

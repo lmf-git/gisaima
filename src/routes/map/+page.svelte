@@ -581,64 +581,71 @@
             return;
         }
         
-        console.log('Adding path point:', point);
+        console.log('Page: Adding path point:', point);
         
-        if (currentPath.length > 0) {
-            const lastPoint = currentPath[currentPath.length - 1];
+        // First, ensure moveComponentRef is updated
+        if (moveComponentRef && typeof moveComponentRef.updateCustomPath === 'function') {
+            console.log('Updating path in Move component');
             
-            if (lastPoint.x === point.x && lastPoint.y === point.y) {
-                console.log('Point is duplicate of last point, skipping');
-                return;
-            }
-            
-            const pointExists = currentPath.some(p => p.x === point.x && p.y === point.y);
-            if (pointExists) {
-                console.log('Point already in path');
-                return;
-            }
-            
-            const dx = Math.abs(point.x - lastPoint.x);
-            const dy = Math.abs(point.y - lastPoint.y);
-            
-            if (dx > 1 || dy > 1) {
-                console.log('Calculating path to non-adjacent point');
-                const intermediatePath = calculatePathBetweenPoints(
-                    lastPoint.x, lastPoint.y, 
-                    point.x, point.y
-                );
+            // Update current path state
+            if (currentPath.length > 0) {
+                const lastPoint = currentPath[currentPath.length - 1];
                 
-                if (currentPath.length + intermediatePath.length > 20) {
-                    console.log('Path exceeds 20 steps limit, truncating...');
-                    
-                    const pointsToAdd = 20 - currentPath.length;
-                    if (pointsToAdd <= 0) {
-                        console.log('Path already at maximum length');
-                        return;
-                    }
-                    
-                    currentPath = [
-                        ...currentPath,
-                        ...intermediatePath.slice(0, pointsToAdd)
-                    ];
-                } else {
-                    currentPath = [...currentPath, ...intermediatePath];
-                }
-            } else {
-                if (currentPath.length >= 20) {
-                    console.log('Maximum path length reached (20 steps)');
+                if (lastPoint.x === point.x && lastPoint.y === point.y) {
+                    console.log('Point is duplicate of last point, skipping');
                     return;
                 }
                 
-                currentPath = [...currentPath, point];
+                const dx = Math.abs(point.x - lastPoint.x);
+                const dy = Math.abs(point.y - lastPoint.y);
+                
+                if (dx > 1 || dy > 1) {
+                    console.log('Calculating path to non-adjacent point');
+                    const intermediatePath = calculatePathBetweenPoints(
+                        lastPoint.x, lastPoint.y, 
+                        point.x, point.y
+                    );
+                    
+                    if (currentPath.length + intermediatePath.length > 20) {
+                        console.log('Path exceeds 20 steps limit, truncating...');
+                        
+                        const pointsToAdd = 20 - currentPath.length;
+                        if (pointsToAdd <= 0) {
+                            console.log('Path already at maximum length');
+                            return;
+                        }
+                        
+                        const newPath = [
+                            ...currentPath,
+                            ...intermediatePath.slice(0, pointsToAdd)
+                        ];
+                        
+                        currentPath = newPath;
+                        moveComponentRef.updateCustomPath(newPath);
+                    } else {
+                        const newPath = [...currentPath, ...intermediatePath];
+                        currentPath = newPath;
+                        moveComponentRef.updateCustomPath(newPath);
+                    }
+                } else {
+                    if (currentPath.length >= 20) {
+                        console.log('Maximum path length reached (20 steps)');
+                        return;
+                    }
+                    
+                    const newPath = [...currentPath, point];
+                    currentPath = newPath;
+                    moveComponentRef.updateCustomPath(newPath);
+                }
+            } else {
+                const newPath = [point];
+                currentPath = newPath;
+                moveComponentRef.updateCustomPath(newPath);
             }
+            
+            console.log('Current path updated:', currentPath);
         } else {
-            currentPath = [point];
-        }
-        
-        console.log('Updated path:', currentPath);
-        
-        if (moveComponentRef && typeof moveComponentRef.updateCustomPath === 'function') {
-            moveComponentRef.updateCustomPath(currentPath);
+            console.log('Move component ref not available or missing updateCustomPath method');
         }
     }
 
@@ -722,10 +729,22 @@
         console.log('Starting path drawing for group:', group);
         isPathDrawingMode = true;
         pathDrawingGroup = group;
-        currentPath = [];
         
-        if (group && group.x !== undefined && group.y !== undefined) {
+        // Initialize with the group's starting position
+        if (group && group.startPoint) {
+            currentPath = [group.startPoint];
+            console.log("Initialized path with starting point:", group.startPoint);
+        } else if (group && group.x !== undefined && group.y !== undefined) {
+            // Fallback to group's position if startPoint not provided
             currentPath = [{ x: group.x, y: group.y }];
+            console.log("Initialized path with group position:", { x: group.x, y: group.y });
+        } else if ($targetStore) {
+            // Fallback to current target position
+            currentPath = [{ x: $targetStore.x, y: $targetStore.y }];
+            console.log("Initialized path with current target position:", { x: $targetStore.x, y: $targetStore.y });
+        } else {
+            currentPath = [];
+            console.warn("No starting point available for path");
         }
     }
 
@@ -738,9 +757,9 @@
     }
 
     function confirmPathDrawing() {
-        console.log('Path drawing confirmed:', currentPath);
-        if (moveComponentRef && typeof moveComponentRef.confirmPath === 'function') {
-            moveComponentRef.confirmPath(currentPath);
+        console.log('Path drawing confirmed with path:', currentPath);
+        if (moveComponentRef && typeof moveComponentRef.confirmCustomPath === 'function') {
+            moveComponentRef.confirmCustomPath(currentPath);
         }
         isPathDrawingMode = false;
     }

@@ -159,12 +159,14 @@
     // Close the dialog completely to avoid obstruction
     onClose(false, true);
     
-    // Direct function call with plain object
+    // Dispatch the path drawing start event with essential data
     if (onPathDrawingStart) {
       try {
         onPathDrawingStart({
           groupId: selectedGroup.id,
-          startPoint
+          startPoint,
+          x: tile.x,
+          y: tile.y
         });
         console.log('Path drawing start event dispatched');
       } catch (error) {
@@ -182,29 +184,11 @@
       return;
     }
     
-    console.log('Move component: Updating custom path with points:', newPoints);
-    customPath = newPoints;
+    console.log('Move component: Updating custom path with', newPoints.length, 'points:', newPoints);
+    // Create a fresh copy to ensure reactivity
+    customPath = [...newPoints];
   }
-  
-  // Helper function to check if two points can be directly connected
-  function canReachDirectly(p1, p2) {
-    // Adjacent cells are directly reachable
-    const dx = Math.abs(p2.x - p1.x);
-    const dy = Math.abs(p2.y - p1.y);
-    
-    // Adjacent cells are directly reachable
-    if (dx <= 1 && dy <= 1) return true;
-    
-    // Points on same row or column are directly reachable
-    if (p1.x === p2.x || p1.y === p2.y) return true;
-    
-    // Points with equal dx and dy form a perfect diagonal (also reachable)
-    if (dx === dy) return true;
-    
-    // Otherwise, we need intermediate points
-    return false;
-  }
-  
+
   // Function to confirm the custom path
   export async function confirmCustomPath() {
     if (!customPath || customPath.length < 2) {
