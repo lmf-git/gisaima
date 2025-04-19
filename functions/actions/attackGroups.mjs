@@ -30,9 +30,9 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
     // Fix chunk calculation for negative coordinates
     const CHUNK_SIZE = 20;
     function getChunkKey(x, y) {
-      // Handle negative coordinates correctly by adjusting division for negative values
-      const chunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
-      const chunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
+      // Simple integer division works for both positive and negative coordinates
+      const chunkX = Math.floor(x / CHUNK_SIZE);
+      const chunkY = Math.floor(y / CHUNK_SIZE);
       return `${chunkX},${chunkY}`;
     }
     
