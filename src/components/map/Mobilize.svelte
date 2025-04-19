@@ -20,8 +20,6 @@
   let groupName = $state("New Force");
   let mobilizeError = $state(null);
 
-  const startMobilizationFn = httpsCallable(functions, 'startMobilization');
-  
   function isPlayerOnTile(tile, playerId) {
     if (!tile || !tile.players) return false;
     
@@ -92,15 +90,12 @@
   }
   
   async function startMobilization() {
-    const selectedUnitIds = availableUnits
-      .filter(u => u.selected)
-      .map(u => u.id);
-    
-    if (selectedUnitIds.length === 0 && !includePlayer) {
+    if (mobilizeError || selectedUnits.length === 0 || !includePlayer) {
       return;
     }
 
     mobilizeError = null;
+    let isLoading = false;
     
     try {
       if (!auth.currentUser) {
@@ -117,17 +112,19 @@
         worldId: $game.currentWorld,
         tileX: tile.x,
         tileY: tile.y,
-        units: selectedUnitIds,
+        units: selectedUnits.map(u => u.id),
         includePlayer,
         name: groupName,
         race: $currentPlayer?.race
       });
       
-      const result = await startMobilizationFn({
+      const mobilizeFn = httpsCallable(functions, 'mobilizeUnits');
+      
+      const result = await mobilizeFn({
         worldId: $game.currentWorld,
         tileX: tile.x,
         tileY: tile.y,
-        units: selectedUnitIds,
+        units: selectedUnits.map(u => u.id),
         includePlayer,
         name: groupName,
         race: $currentPlayer?.race
@@ -142,6 +139,8 @@
       } else {
          mobilizeError = error.message || "Failed to mobilize forces";
       }
+    } finally {
+      isLoading = false;
     }
   }
   

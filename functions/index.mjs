@@ -6,7 +6,7 @@ import { initializeApp } from 'firebase-admin/app';
 
 // Import all cloud functions from their specific files
 import { processGameTicks } from './tick.mjs';
-import { startMobilization } from './actions/mobilize.mjs';
+import { mobilizeUnits } from './actions/mobilize.mjs'; // Fix: import the correct function name
 import { demobiliseUnits } from './actions/demobilize.mjs';
 import { attackGroups } from './actions/attackGroups.mjs';
 import { joinBattle } from './actions/joinBattle.mjs';
@@ -19,7 +19,7 @@ initializeApp();
 // Export all functions
 export {
   processGameTicks,
-  startMobilization,
+  mobilizeUnits, // Fix: export the correct function name
   demobiliseUnits,
   attackGroups,
   joinBattle,
