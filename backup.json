@@ -1,5 +1,18 @@
 {
   "players": {
+    "30Qfi11AOWZ5RmA7326FRKdvevt1": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "joined": 1745043056078,
+          "lastLocation": {
+            "x": -4,
+            "y": 6
+          },
+          "race": "elf"
+        }
+      }
+    },
     "7ClpkDWGEtXaOKJzNEbfDBUr9my2": {
       "worlds": {
         "ancient-lands": {
@@ -10,6 +23,19 @@
             "y": 8
           },
           "race": "fairy"
+        }
+      }
+    },
+    "9OebzA4v6bZxZSWe9K8GehIlCkB3": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "joined": 1745044297384,
+          "lastLocation": {
+            "x": 12,
+            "y": 4
+          },
+          "race": "dwarf"
         }
       }
     },
@@ -35,6 +61,19 @@
         }
       }
     },
+    "oq2ueuC8TBeXwHlcDPCClN4D2Hp1": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "joined": 1745041769295,
+          "lastLocation": {
+            "x": -4,
+            "y": 6
+          },
+          "race": "elf"
+        }
+      }
+    },
     "othuFXN7AMZ45VYGcn7dcF0FXEE2": {
       "worlds": {
         "ancient-lands": {
@@ -54,6 +93,20 @@
       "chunks": {
         "0,0": {
           "-4,6": {
+            "players": {
+              "30Qfi11AOWZ5RmA7326FRKdvevt1": {
+                "displayName": "Player",
+                "lastActive": 1745043059280,
+                "race": "elf",
+                "uid": "30Qfi11AOWZ5RmA7326FRKdvevt1"
+              },
+              "oq2ueuC8TBeXwHlcDPCClN4D2Hp1": {
+                "displayName": "Player",
+                "lastActive": 1745041791595,
+                "race": "elf",
+                "uid": "oq2ueuC8TBeXwHlcDPCClN4D2Hp1"
+              }
+            },
             "structure": {
               "description": "An elven city built around the oldest living trees in the realm",
               "faction": "elf",
@@ -141,9 +194,7 @@
               "name": "Stoneguard Citadel",
               "type": "spawn"
             }
-          }
-        },
-        "1,0": {
+          },
           "10,8": {
             "players": {
               "7ClpkDWGEtXaOKJzNEbfDBUr9my2": {
@@ -162,6 +213,14 @@
             }
           },
           "12,4": {
+            "players": {
+              "9OebzA4v6bZxZSWe9K8GehIlCkB3": {
+                "displayName": "Player",
+                "lastActive": 1745044299597,
+                "race": "dwarf",
+                "uid": "9OebzA4v6bZxZSWe9K8GehIlCkB3"
+              }
+            },
             "structure": {
               "description": "The ancestral mountain home of the dwarf clans",
               "faction": "dwarf",
@@ -191,7 +250,7 @@
       },
       "info": {
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745040241559,
+        "lastTick": 1745044741836,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",
@@ -200,9 +259,9 @@
       "spawns": {
         "0:0:-4:6": "structure_al_elf_spawn",
         "0:0:5:5": "structure_al_human_spawn",
-        "1:0:10:8": "structure_al_fairy_spawn",
-        "1:0:12:4": "structure_al_dwarf_spawn",
-        "1:0:15:-3": "structure_al_goblin_spawn"
+        "0:0:10:8": "structure_al_fairy_spawn",
+        "0:0:12:4": "structure_al_dwarf_spawn",
+        "0:0:15:-3": "structure_al_goblin_spawn"
       }
     }
   }

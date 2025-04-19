@@ -11,36 +11,78 @@ import { getDatabase } from 'firebase-admin/database';
  * Requires authentication.
  */
 
-// Improved function to check if player exists on tile
+// Enhanced function to check if player exists on tile with better debugging
 function isPlayerOnTile(tileData, playerId) {
-  console.log(`Checking if player ${playerId} is on tile:`, JSON.stringify(tileData?.players || "no players"));
+  console.log(`Checking if player ${playerId} is on tile:`, JSON.stringify(tileData || "no tile data"));
   
-  if (!tileData || !tileData.players) return false;
-  
-  // Handle players stored as an array
-  if (Array.isArray(tileData.players)) {
-    console.log('Players stored as array:', tileData.players);
-    return tileData.players.some(p => p.uid === playerId || p.id === playerId);
-  }
-  
-  // Handle players stored as an object with keys
-  if (typeof tileData.players === 'object') {
-    console.log('Players stored as object:', tileData.players);
+  // First, check directly in the players property
+  if (tileData?.players) {
+    console.log('Players property exists on tile');
     
-    // First check if the player's ID is a direct key in the object
-    if (tileData.players[playerId]) {
-      console.log(`Found player directly with key ${playerId}`);
-      return true;
+    // Handle players stored as an array
+    if (Array.isArray(tileData.players)) {
+      console.log('Players stored as array:', JSON.stringify(tileData.players));
+      const found = tileData.players.some(p => p.uid === playerId || p.id === playerId);
+      if (found) {
+        console.log(`Found player ${playerId} in players array`);
+        return true;
+      }
     }
     
-    // Then check all player objects for matching uid/id
-    return Object.values(tileData.players).some(p => {
-      const match = p.uid === playerId || p.id === playerId;
-      if (match) console.log(`Found matching player:`, p);
-      return match;
-    });
+    // Handle players stored as an object with keys
+    if (typeof tileData.players === 'object') {
+      console.log('Players stored as object:', JSON.stringify(tileData.players));
+      
+      // First check if the player's ID is a direct key in the object
+      if (tileData.players[playerId]) {
+        console.log(`Found player directly with key ${playerId}`);
+        return true;
+      }
+      
+      // Then check all player objects for matching uid/id
+      const foundInValues = Object.values(tileData.players).some(p => {
+        const match = p && (p.uid === playerId || p.id === playerId);
+        if (match) console.log(`Found matching player:`, JSON.stringify(p));
+        return match;
+      });
+      
+      if (foundInValues) return true;
+    }
+  } else {
+    console.log('No players property on tile');
   }
   
+  // Second, check in groups for player units
+  if (tileData?.groups) {
+    console.log('Checking groups for player units');
+    for (const groupId in tileData.groups) {
+      const group = tileData.groups[groupId];
+      if (group.units) {
+        // Handle units as array
+        if (Array.isArray(group.units)) {
+          const found = group.units.some(unit => 
+            unit.type === 'player' && (unit.uid === playerId || unit.id === playerId)
+          );
+          if (found) {
+            console.log(`Found player ${playerId} in group ${groupId} units array`);
+            return true;
+          }
+        }
+        // Handle units as object
+        else if (typeof group.units === 'object') {
+          const found = Object.values(group.units).some(unit => 
+            unit.type === 'player' && (unit.uid === playerId || unit.id === playerId)
+          );
+          if (found) {
+            console.log(`Found player ${playerId} in group ${groupId} units object`);
+            return true;
+          }
+        }
+      }
+    }
+  }
+  
+  console.log(`Player ${playerId} not found on tile`);
   return false;
 }
 
@@ -66,16 +108,14 @@ export const mobilizeUnits = onCall({ maxInstances: 10 }, async (request) => {
   const db = getDatabase();
   const tileKey = `${tileX},${tileY}`; 
 
-  // Define constants for consistency
-  const CHUNK_SIZE = 20;
-
   // Calculate chunk coordinates to match database structure with correction for world coordinates
   function getChunkKey(x, y) {
-    // FIXED VERSION: Handle negative coordinates correctly
+    const CHUNK_SIZE = 20; // Standard chunk size used throughout codebase
+    
+    // Handle negative coordinates correctly
     const chunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
     const chunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
     
-    // Log the calculation for debugging
     console.log(`Chunk calculation: (${x},${y}) -> chunk (${chunkX},${chunkY})`);
     
     return `${chunkX},${chunkY}`;
@@ -85,7 +125,7 @@ export const mobilizeUnits = onCall({ maxInstances: 10 }, async (request) => {
 
   console.log(`Calculated chunk coordinates: ${chunkKey} for tile ${tileKey}`);
   
-  const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
+  let tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
   const worldRef = db.ref(`worlds/${worldId}/info`);
 
   try {
@@ -98,12 +138,14 @@ export const mobilizeUnits = onCall({ maxInstances: 10 }, async (request) => {
 
     // Get current tile data to validate units and player presence
     const tileSnapshot = await tileRef.once('value');
-    const tileData = tileSnapshot.val() || {};
-    console.log(`Tile data fetched from chunk ${chunkKey}:`, JSON.stringify(tileData));
+    let tileData = tileSnapshot.val() || {};
+    console.log(`Mobilizing at coordinates ${tileX},${tileY} in chunk ${chunkKey}`);
+    console.log(`Tile data fetched from database:`, JSON.stringify(tileData));
     
-    // Check if player exists directly on this tile - no fallbacks
-    const playerFoundOnTile = isPlayerOnTile(tileData, uid);
+    // Check if player exists at this location
+    let playerFoundOnTile = isPlayerOnTile(tileData, uid);
     
+    // If still not found, fail with error
     if (!playerFoundOnTile) {
       console.warn(`mobilizeUnits: Player ${uid} not found on tile at ${tileKey} in chunk ${chunkKey}`);
       console.info(`Players data:`, JSON.stringify(tileData.players || {}));
