@@ -9,7 +9,6 @@
   import Fairy from '../icons/Fairy.svelte';
   import { getFunctions, httpsCallable } from "firebase/functions";
   import { getAuth } from "firebase/auth";
-  import { getApp } from "firebase/app";
 
   // Props with default empty object - removed onMobilize
   const { tile = {}, onClose = () => {} } = $props();
@@ -107,7 +106,7 @@
     }
 
     try {
-      // Use the simple pattern that was working before
+      // Use the direct approach that was working before
       const functions = getFunctions();
       const startMobilizationFn = httpsCallable(functions, 'startMobilization');
       

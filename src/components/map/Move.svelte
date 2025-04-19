@@ -202,7 +202,7 @@
   }
   
   // Function to confirm the custom path
-  export function confirmCustomPath() {
+  export async function confirmCustomPath() {
     if (!customPath || customPath.length < 2) {
       console.warn('Cannot confirm path: Path too short or missing');
       return;
@@ -216,24 +216,24 @@
       return;
     }
     
-    const functions = getFunctions();
-    const moveGroupFunction = httpsCallable(functions, 'moveGroup');
-    
     const startPoint = customPath[0];
     const endPoint = customPath[customPath.length - 1];
     
-    console.log('Calling moveGroup with path:', customPath);
-    
-    moveGroupFunction({
-      groupId: selectedGroup.id,
-      fromX: startPoint.x,
-      fromY: startPoint.y,
-      toX: endPoint.x,
-      toY: endPoint.y,
-      path: customPath,
-      worldId: $game.currentWorld
-    })
-    .then((result) => {
+    try {
+      // Use direct Firebase function call instead of callFunction
+      const functions = getFunctions();
+      const moveGroupFunction = httpsCallable(functions, 'moveGroup');
+      
+      const result = await moveGroupFunction({
+        groupId: selectedGroup.id,
+        fromX: startPoint.x,
+        fromY: startPoint.y,
+        toX: endPoint.x,
+        toY: endPoint.y,
+        path: customPath,
+        worldId: $game.currentWorld
+      });
+      
       console.log('Custom path movement started:', result.data);
       
       // Use the function prop directly for UI updates if needed
@@ -245,54 +245,43 @@
           path: customPath
         });
       }
-    })
-    .catch((error) => {
+      
+      // Reset states
+      isPathDrawingMode = false;
+      customPath = [];
+      
+      // Properly close the dialog
+      onClose(true);
+    } catch (error) {
       console.error('Custom path movement error:', error);
-      // Could show an error message to the user here
       alert(`Error: ${error.message || 'Failed to start movement'}`);
-    });
-    
-    // Reset states
-    isPathDrawingMode = false;
-    customPath = [];
-    
-    // Properly close the dialog
-    onClose(true);
-  }
-  
-  // Function to cancel path drawing
-  export function cancelPathDrawing() {
-    isPathDrawingMode = false;
-    customPath = [];
-    
-    // Use the function prop directly
-    if (onPathDrawingCancel) {
-      onPathDrawingCancel();
     }
   }
   
   // Override the start movement function to handle both modes
-  function startMovement() {
+  async function startMovement() {
     if (!selectedGroup) return;
     
     if (isPathDrawingMode) {
       confirmCustomPath();
     } else if (targetX !== null && targetY !== null) {
-      // Call the Cloud Function instead of direct database update
-      const functions = getFunctions();
-      const moveGroup = httpsCallable(functions, 'moveGroup');
-      
-      moveGroup({
-        groupId: selectedGroup.id,
-        fromX: tile.x,
-        fromY: tile.y,
-        toX: targetX,
-        toY: targetY,
-        path: movementPath,
-        worldId: $game.currentWorld
-      })
-      .then((result) => {
+      try {
+        // Use direct Firebase function call instead of callFunction
+        const functions = getFunctions();
+        const moveGroupFunction = httpsCallable(functions, 'moveGroup');
+        
+        const result = await moveGroupFunction({
+          groupId: selectedGroup.id,
+          fromX: tile.x,
+          fromY: tile.y,
+          toX: targetX,
+          toY: targetY,
+          path: movementPath,
+          worldId: $game.currentWorld
+        });
+        
         console.log('Movement started:', result.data);
+        
         if (onMove) {
           // Still trigger onMove for local UI updates if needed
           onMove({
@@ -302,13 +291,12 @@
             path: movementPath
           });
         }
-      })
-      .catch((error) => {
+        
+        onClose(true);
+      } catch (error) {
         console.error('Movement error:', error);
-        // Could show an error message to the user here
-      });
-      
-      onClose(true);
+        alert(`Error: ${error.message || 'Failed to start movement'}`);
+      }
     }
   }
   

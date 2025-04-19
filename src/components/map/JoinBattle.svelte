@@ -83,6 +83,7 @@
     errorMessage = '';
     
     try {
+      // Use direct Firebase function call instead of callFunction
       const functions = getFunctions();
       const joinBattleFn = httpsCallable(functions, 'joinBattle');
       
