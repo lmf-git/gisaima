@@ -29,15 +29,6 @@
   // Get player's race from game store
   const playerRace = $derived($game.playerWorldData?.race || 'human');
   
-  // Add a helper function to ensure consistent chunk key calculation
-  function getCorrectChunkKey(x, y) {
-    const CHUNK_SIZE = 20;
-    // Handle negative coordinates correctly by adjusting division for negative values
-    const chunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
-    const chunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
-    return `${chunkX},${chunkY}`;
-  }
-  
   // Load spawn points from the database and filter by race
   async function loadSpawnPoints() {
     if (!$game.currentWorld) {

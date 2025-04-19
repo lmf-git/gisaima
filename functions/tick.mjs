@@ -6,6 +6,17 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 
+// Add a consistent chunk size constant and getChunkKey function
+const CHUNK_SIZE = 20; // Standard chunk size used throughout codebase
+
+// Function to ensure consistent chunk key calculation
+function getChunkKey(x, y) {
+  // Handle negative coordinates correctly by adjusting division for negative values
+  const chunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
+  const chunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
+  return `${chunkX},${chunkY}`;
+}
+
 // Process world ticks to handle mobilizations and other time-based events
 export const processGameTicks = onSchedule({
   schedule: "every 1 minutes",
@@ -184,10 +195,8 @@ export const processGameTicks = onSchedule({
                         const nextPoint = group.movementPath[nextIndex];
                         
                         // Calculate the next chunk and tile for the new position
-                        const chunkSize = 20; // Standard chunk size
-                        const nextChunkX = Math.floor(nextPoint.x / chunkSize);
-                        const nextChunkY = Math.floor(nextPoint.y / chunkSize);
-                        const nextChunkKey = `${nextChunkX},${nextChunkY}`;
+                        // UPDATED: Use consistent chunk calculation
+                        const nextChunkKey = getChunkKey(nextPoint.x, nextPoint.y);
                         const nextTileKey = `${nextPoint.x},${nextPoint.y}`;
                         
                         // Calculate time for the next step based on world speed
@@ -363,10 +372,8 @@ async function processBattles(worldId) {
           battle.status = 'completed';
           battle.completedAt = now;
           
-          // Get the chunk key
-          const chunkX = Math.floor(battle.locationX / 20);
-          const chunkY = Math.floor(battle.locationY / 20);
-          const chunkKey = `${chunkX},${chunkY}`;
+          // Get the chunk key - UPDATED to use consistent function
+          const chunkKey = getChunkKey(battle.locationX, battle.locationY);
           const tileKey = `${battle.locationX},${battle.locationY}`;
           
           // Prepare updates
