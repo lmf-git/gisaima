@@ -11,7 +11,7 @@
     onMove = () => {}, 
     onPathDrawingStart = () => {}, 
     onPathDrawingCancel = () => {},
-    onConfirmPath = () => {}, // New prop for confirming path
+    onConfirmPath = () => {}, // Callback for path confirmation
     pathDrawingGroup = null,  // Group for path drawing
     currentPath = []          // Current path data from parent
   } = $props();
@@ -168,34 +168,62 @@
     }
   }
   
-  // Function to confirm the custom path - now as a regular function
+  // Function to confirm the custom path with better error handling
   async function confirmCustomPath(customPath = null) {
-    if (!currentPath || currentPath.length < 2) {
+    console.log('Move component: confirmCustomPath called with', 
+      customPath ? customPath.length : 0, 'points');
+    
+    // Use the provided path or fall back to current path
+    const pathToUse = customPath || currentPath;
+    
+    if (!pathToUse || pathToUse.length < 2) {
       console.warn('Cannot confirm path: Path too short or missing');
       return;
     }
     
-    console.log('Confirming custom path with', currentPath.length, 'points');
-    
     // Ensure we have the required data
     if (!selectedGroup) {
       console.error('No group selected for movement');
+      alert('Error: No group selected');
       return;
     }
     
-    const startPoint = currentPath[0];
-    const endPoint = currentPath[currentPath.length - 1];
+    const startPoint = pathToUse[0];
+    const endPoint = pathToUse[pathToUse.length - 1];
+    
+    // Log validation checks
+    console.log('Path validation:', {
+      selectedGroup: !!selectedGroup,
+      hasStartPoint: !!startPoint,
+      hasEndPoint: !!endPoint,
+      worldId: $game.currentWorld,
+      path: pathToUse
+    });
     
     try {
-      // Use functions instance from above
-      const moveGroupFn = httpsCallable(functions, 'moveGroup');
+      // Make sure we have a functions instance
+      const functionInstance = getFunctions();
+      console.log('Getting moveGroup function reference');
+      
+      const moveGroupFn = httpsCallable(functionInstance, 'moveGroup');
+      
+      console.log('Calling moveGroup with params:', {
+        groupId: selectedGroup.id,
+        fromX: startPoint.x,
+        fromY: startPoint.y, 
+        toX: endPoint.x,
+        toY: endPoint.y,
+        path: pathToUse,
+        worldId: $game.currentWorld
+      });
+      
       const result = await moveGroupFn({
         groupId: selectedGroup.id,
         fromX: startPoint.x,
         fromY: startPoint.y,
         toX: endPoint.x,
         toY: endPoint.y,
-        path: currentPath,
+        path: pathToUse,
         worldId: $game.currentWorld
       });
       
@@ -207,34 +235,23 @@
           groupId: selectedGroup.id,
           from: { x: startPoint.x, y: startPoint.y },
           to: { x: endPoint.x, y: endPoint.y },
-          path: currentPath
+          path: pathToUse
         });
       }
       
       // Notify parent that path was confirmed
       if (onConfirmPath) {
-        onConfirmPath(currentPath);
+        onConfirmPath(pathToUse);
       }
       
       // Properly close the dialog
       onClose(true);
+      
     } catch (error) {
       console.error('Custom path movement error:', error);
       alert(`Error: ${error.message || 'Failed to start movement'}`);
     }
   }
-  
-  // Make the component instance available for parent components
-  // This is a Svelte 5 way to expose the instance
-  let self;
-  $effect(() => {
-    self = { confirmCustomPath };
-    if (typeof document !== 'undefined') {
-      if (document.querySelector('dialog.overlay')) {
-        document.querySelector('dialog.overlay').__svelte_component__ = self;
-      }
-    }
-  });
   
   // Override the start movement function to handle both modes
   async function startMovement() {

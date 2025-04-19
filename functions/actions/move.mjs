@@ -50,18 +50,30 @@ function calculatePath(startX, startY, endX, endY) {
 
 // Function to initiate group movement
 export const moveGroup = onCall({ maxInstances: 10 }, async (request) => {
+  logger.info('moveGroup function called with data:', request.data);
+  
   // Ensure user is authenticated
   if (!request.auth) {
+    logger.warn('Unauthenticated call to moveGroup');
     throw new HttpsError('unauthenticated', 'User must be logged in to move groups');
   }
   
   const uid = request.auth.uid;
-  const { groupId, fromX, fromY, toX, toY, worldId = 'default' } = request.data;
+  const { groupId, fromX, fromY, toX, toY, path, worldId = 'default' } = request.data;
   
-  if (!groupId || fromX === undefined || fromY === undefined || 
-      toX === undefined || toY === undefined) {
-    throw new HttpsError('invalid-argument', 'Missing required parameters');
+  // Validate required parameters
+  if (!groupId) {
+    logger.warn('Missing groupId parameter');
+    throw new HttpsError('invalid-argument', 'Missing groupId parameter');
   }
+  
+  if (fromX === undefined || fromY === undefined || 
+      toX === undefined || toY === undefined) {
+    logger.warn('Missing coordinates parameters');
+    throw new HttpsError('invalid-argument', 'Missing coordinates parameters');
+  }
+  
+  logger.info(`User ${uid} moving group ${groupId} from (${fromX},${fromY}) to (${toX},${toY}) in world ${worldId}`);
   
   try {
     const db = getDatabase();
@@ -77,6 +89,7 @@ export const moveGroup = onCall({ maxInstances: 10 }, async (request) => {
     const groupSnapshot = await groupRef.once('value');
     
     if (!groupSnapshot.exists()) {
+      logger.warn(`Group ${groupId} not found at (${fromX},${fromY})`);
       throw new HttpsError('not-found', 'Group not found at specified location');
     }
     
@@ -84,22 +97,28 @@ export const moveGroup = onCall({ maxInstances: 10 }, async (request) => {
     
     // Verify ownership
     if (group.owner !== uid) {
+      logger.warn(`User ${uid} tried to move group ${groupId} owned by ${group.owner}`);
       throw new HttpsError('permission-denied', 'You can only move your own groups');
     }
     
     // Check if group can be moved (must be idle, not mobilizing, etc.)
     if (group.status !== 'idle') {
+      logger.warn(`Group ${groupId} cannot be moved while in ${group.status} status`);
       throw new HttpsError('failed-precondition', `Group cannot be moved while in ${group.status} status`);
     }
+    
+    // Use provided path or calculate one if not provided
+    let movementPath = path && Array.isArray(path) && path.length > 1 
+      ? path 
+      : calculatePath(fromX, fromY, toX, toY);
+    
+    logger.info(`Movement path has ${movementPath.length} points`);
     
     // Get world speed to adjust movement time
     const worldInfoRef = db.ref(`worlds/${worldId}/info`);
     const worldInfoSnapshot = await worldInfoRef.once('value');
     const worldInfo = worldInfoSnapshot.val() || {};
     const worldSpeed = worldInfo.speed || 1.0;
-    
-    // Calculate path between points
-    const path = calculatePath(fromX, fromY, toX, toY);
     
     // Calculate time for the first movement step
     const now = Date.now();
@@ -110,7 +129,7 @@ export const moveGroup = onCall({ maxInstances: 10 }, async (request) => {
     // Update the group with path information and set status to 'moving'
     await groupRef.update({
       status: 'moving',
-      movementPath: path,
+      movementPath: movementPath,
       pathIndex: 0, // Start at first position (which is current position)
       moveStarted: now,
       moveSpeed: 1, // Base speed, can be modified by terrain, items, etc.
@@ -123,14 +142,14 @@ export const moveGroup = onCall({ maxInstances: 10 }, async (request) => {
     return {
       success: true,
       message: 'Group movement started',
-      path: path,
-      totalSteps: path.length,
-      estimatedTimeMs: adjustedTickTime * (path.length - 1) // -1 because we're already at the first position
+      path: movementPath,
+      totalSteps: movementPath.length,
+      estimatedTimeMs: adjustedTickTime * (movementPath.length - 1) // -1 because we're already at the first position
     };
     
   } catch (error) {
-    logger.error("Error moving group:", error);
-    throw new HttpsError('internal', 'Failed to move group', error);
+    logger.error(`Error moving group ${groupId}:`, error);
+    throw new HttpsError('internal', 'Failed to move group: ' + error.message, error);
   }
 });
 

@@ -31,6 +31,8 @@
         coordinates // Import coordinates store
     } from "../../lib/stores/map.js";
     
+    import { getFunctions, httpsCallable } from 'firebase/functions'; // Add missing Firebase import
+    
     import Tutorial from '../../components/map/Tutorial.svelte';
     import Grid from '../../components/map/Grid.svelte';
     import Minimap from '../../components/map/Minimap.svelte';
@@ -672,17 +674,22 @@
         
         // If we have a selected group and the Move dialog was shown, handle the movement
         if (showMove && pathDrawingGroup && currentPath.length >= 2) {
-            // Get a reference to the Move component via the dialog
-            const moveDialog = document.querySelector('.move-dialog-container dialog');
-            if (moveDialog && moveDialog.__svelte_component__) {
-                // Let the Move component handle the confirmation through the self reference
-                moveDialog.__svelte_component__.confirmCustomPath(currentPath);
-            } else {
-                // Fallback if we can't access the component directly
+            try {
+                // Simply call the cloud function directly - no need to reference the component
                 const functions = getFunctions();
                 const moveGroupFn = httpsCallable(functions, 'moveGroup');
                 const startPoint = currentPath[0];
                 const endPoint = currentPath[currentPath.length - 1];
+                
+                console.log('Calling moveGroup function with params:', {
+                    groupId: pathDrawingGroup.groupId,
+                    fromX: startPoint.x,
+                    fromY: startPoint.y,
+                    toX: endPoint.x,
+                    toY: endPoint.y,
+                    path: currentPath,
+                    worldId: $game.currentWorld
+                });
                 
                 moveGroupFn({
                     groupId: pathDrawingGroup.groupId,
@@ -699,6 +706,9 @@
                     console.error('Error confirming path:', error);
                     alert('Error: ' + (error.message || 'Failed to start movement'));
                 });
+            } catch (error) {
+                console.error('Exception in path confirmation:', error);
+                alert('Error confirming path: ' + (error.message || 'Unknown error'));
             }
         }
         
