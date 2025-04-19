@@ -769,7 +769,14 @@
         {/if}
         
         {#if showEntities || entitiesClosing}
-            <MapEntities closing={entitiesClosing} />
+            <MapEntities 
+              closing={entitiesClosing} 
+              onShowStructure={({ structure, x, y }) => {
+                showStructureOverview = true;
+                selectedStructure = structure;
+                structureLocation = { x, y };
+              }}
+            />
         {/if}
 
         {#if detailed && $highlightedStore}

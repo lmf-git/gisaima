@@ -15,7 +15,7 @@
   import Torch from '../../components/icons/Torch.svelte';
   
   // Props
-  const { closing = false } = $props();
+  const { closing = false, onShowStructure = null } = $props();
   
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -208,6 +208,14 @@
     return `${distance.toFixed(1)} tiles away`;
   }
   
+  // Function to handle clicking on a structure
+  function handleStructureClick(structure, x, y) {
+    if (onShowStructure) {
+      onShowStructure({ structure, x, y });
+    } else {
+      console.log('Structure clicked but no onShowStructure handler provided:', structure);
+    }
+  }
   
   // Extract all entities from all visible coordinates - fixed $derived syntax
   const allStructures = $derived(
@@ -480,11 +488,11 @@
               {#each sortedStructures as structure (structure.type + ':' + structure.x + ':' + structure.y)}
                 <div 
                   class="entity structure {isAtTarget(structure.x, structure.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(structure) ? 'current-player-owned' : ''}"
-                  onclick={(e) => handleEntityAction(structure.x, structure.y, e)}
                   onkeydown={(e) => handleEntityAction(structure.x, structure.y, e)}
                   role="button"
                   tabindex="0"
                   aria-label="Navigate to {structure.name || _fmt(structure.type) || 'Structure'} at {structure.x},{structure.y}"
+                  onclick={() => handleStructureClick(structure, structure.x, structure.y)}
                 >
                   <div class="entity-structure-icon">
                     {#if structure.type === 'spawn'}
