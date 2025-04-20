@@ -647,7 +647,7 @@ let moveTargetTimeout = null;
 const MOVE_TARGET_DEBOUNCE = 30; // Increase from 20ms to 30ms
 
 // Unified map movement function with improved URL handling
-export function moveTarget(newX, newY) {
+export function moveTarget(newX, newY, options = {}) {
   if (newX === undefined || newY === undefined) {
     console.warn('Invalid coordinates passed to moveTarget:', { newX, newY });
     return;
@@ -655,6 +655,9 @@ export function moveTarget(newX, newY) {
 
   const x = Math.round(newX);
   const y = Math.round(newY);
+  
+  // Extract options with defaults
+  const { preserveHighlight = false } = options;
 
   // Quick check to avoid unnecessary updates
   const currentState = get(map);
@@ -675,8 +678,10 @@ export function moveTarget(newX, newY) {
       target: { x, y },
     }));
 
-    // Clear highlighted tile when moving
-    highlightedCoords.set(null);
+    // Only clear highlighted tile when not explicitly preserved
+    if (!preserveHighlight) {
+      highlightedCoords.set(null);
+    }
 
     // Update URL to reflect the new position - with a lower priority
     if (!isInternalUrlUpdate) {

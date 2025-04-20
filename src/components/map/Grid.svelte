@@ -432,7 +432,14 @@
         
         // Always call onClick handler with coordinates regardless of any other state
         if (onClick) {
-            onClick({ x: tileX, y: tileY });
+            // Find the complete tile data if possible
+            const tileData = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
+            onClick({ 
+                x: tileX, 
+                y: tileY,
+                // Include full tile data if available
+                tileData: tileData || null
+            });
         }
     }
   }

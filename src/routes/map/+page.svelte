@@ -82,6 +82,7 @@
             detailed = false;
             // Only clear highlight when explicitly closing
             setHighlighted(null, null);
+            lastClickedCoords = null;
         }
     }
     
@@ -636,15 +637,30 @@
             } else {
                 // Otherwise handle normal tile click to show details
                 console.log('Normal click on tile:', { x, y });
-                moveTarget(x, y);
-                setHighlighted(x, y);
                 
-                // Find the clicked tile directly from coordinates
+                // Save clicked location for reference with explicit coordinates
+                lastClickedCoords = { x: x, y: y };
+                
+                // Find the tile directly from coordinates before updating stores
+                // This ensures we're checking content on the tile that was actually clicked
                 const clickedTile = $coordinates.find(cell => cell.x === x && cell.y === y);
                 
-                // Only show details if the tile has content worth showing
-                if (clickedTile && hasTileContent(clickedTile)) {
+                // Check if tile has content before showing details
+                const hasContent = clickedTile && hasTileContent(clickedTile);
+                
+                if (hasContent) {
+                    // Set highlighted first, to ensure it's preserved during target movement
+                    setHighlighted(x, y);
+                    
+                    // Move target but preserve the highlight we just set
+                    moveTarget(x, y, { preserveHighlight: true });
+                    
+                    // Show details panel
                     detailed = true;
+                } else {
+                    // If no content, just move the map without showing details
+                    moveTarget(x, y);
+                    setHighlighted(null, null);
                 }
             }
         } finally {
@@ -686,6 +702,12 @@
     function handlePathPoint(point) {
         if (!isPathDrawingMode) return;
         
+        // Validate that point has valid coordinates
+        if (!point || point.x === undefined || point.y === undefined) {
+            console.error('Invalid point in handlePathPoint:', point);
+            return;
+        }
+        
         console.log('Adding path point:', point);
         
         if (currentPath.length > 0) {
@@ -699,7 +721,7 @@
         }
         
         // Add the new point to the path
-        currentPath = [...currentPath, point];
+        currentPath = [...currentPath, { x: point.x, y: point.y }];
     }
 
     function handlePathDrawingStart(group) {
@@ -721,19 +743,25 @@
         // Set path drawing mode ON
         isPathDrawingMode = true;
         
-        // Initialize with starting point if available
-        if (group.startPoint) {
-            currentPath = [group.startPoint];
+        // Initialize with starting point if available, with proper coordinate validation
+        if (group.startPoint && group.startPoint.x !== undefined && group.startPoint.y !== undefined) {
+            currentPath = [{ x: group.startPoint.x, y: group.startPoint.y }];
         } else if (group.x !== undefined && group.y !== undefined) {
             currentPath = [{ x: group.x, y: group.y }];
         } else {
-            // Default to current target if no starting point is provided
+            // Default to current target if no starting point is provided, with validation
             const target = $map.target;
-            if (target) {
+            if (target && target.x !== undefined && target.y !== undefined) {
                 currentPath = [{ x: target.x, y: target.y }];
             } else {
                 currentPath = [];
+                console.warn('No valid starting coordinates for path drawing');
             }
+        }
+        
+        // Log the initial path point for debugging
+        if (currentPath.length > 0) {
+            console.log('Initial path point:', currentPath[0]);
         }
         
         // Reset the transition flag after a delay to allow state to settle

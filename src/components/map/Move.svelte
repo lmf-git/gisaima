@@ -158,6 +158,12 @@
     setTimeout(() => {
       if (onPathDrawingStart) {
         try {
+          // Ensure valid coordinates are passed
+          if (!tileData || tileData.x === undefined || tileData.y === undefined) {
+            console.error('Invalid tile coordinates for path drawing start');
+            return;
+          }
+          
           onPathDrawingStart({
             id: selectedGroup.id,
             groupId: selectedGroup.id,
@@ -175,7 +181,7 @@
           console.error('Error starting path drawing:', error);
         }
       }
-    }, 200);  // Increased from 100ms to 200ms for more reliable transition
+    }, 300);  // Increased from 200ms to 300ms for more reliable transition
   }
   
   // Function to confirm the custom path with better error handling
