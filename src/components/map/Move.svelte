@@ -144,6 +144,72 @@
     
     movementPath = path;
   }
+
+  // New function to generate a complete path with single-coordinate steps between points
+  function interpolateFullPath(points) {
+    if (!points || points.length < 2) return points;
+    
+    const fullPath = [points[0]]; // Start with the first point
+    
+    // For each pair of consecutive points
+    for (let i = 0; i < points.length - 1; i++) {
+      const startPoint = points[i];
+      const endPoint = points[i + 1];
+      
+      // Skip adding intermediate points if they're already adjacent
+      if (Math.abs(endPoint.x - startPoint.x) <= 1 && Math.abs(endPoint.y - startPoint.y) <= 1) {
+        fullPath.push(endPoint);
+        continue;
+      }
+      
+      // Use Bresenham's line algorithm to interpolate between points (same as in move.mjs)
+      const steps = calculatePathBetweenPoints(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+      
+      // Add all intermediate steps (excluding the first which would duplicate)
+      for (const step of steps) {
+        fullPath.push(step);
+      }
+    }
+    
+    console.log(`Interpolated ${points.length} waypoints into ${fullPath.length} individual steps`);
+    return fullPath;
+  }
+  
+  // Helper function to calculate path between two points using Bresenham's algorithm
+  function calculatePathBetweenPoints(startX, startY, endX, endY) {
+    const path = [];
+    
+    // Calculate steps using Bresenham's line algorithm
+    const dx = Math.abs(endX - startX);
+    const dy = Math.abs(endY - startY);
+    const sx = startX < endX ? 1 : -1;
+    const sy = startY < endY ? 1 : -1;
+    
+    let err = dx - dy;
+    let x = startX;
+    let y = startY;
+    
+    // Generate all steps including the end point
+    while (true) {
+      path.push({ x, y });
+      
+      if (x === endX && y === endY) break;
+      
+      const e2 = 2 * err;
+      
+      if (e2 > -dy) {
+        err -= dy;
+        x += sx;
+      }
+      
+      if (e2 < dx) {
+        err += dx;
+        y += sy;
+      }
+    }
+    
+    return path;
+  }
   
   // Function to switch to path drawing mode
   function enablePathDrawing() {
@@ -190,11 +256,22 @@
       customPath ? customPath.length : 0, 'points');
     
     // Use the provided path or fall back to current path
-    const pathToUse = customPath || currentPath;
+    let pathToUse = customPath || currentPath;
     
     if (!pathToUse || pathToUse.length < 2) {
       console.warn('Cannot confirm path: Path too short or missing');
       return;
+    }
+    
+    // Path is already fully interpolated, no need to do it again
+    // But verify the path has single-coordinate moves for safety
+    const isValid = validatePathHasSingleSteps(pathToUse);
+    if (!isValid) {
+      console.warn('Path contains invalid moves (more than one tile at a time)');
+      // Fall back to re-interpolating if needed
+      const interpolatedPath = interpolateFullPath(pathToUse);
+      console.log(`Re-interpolated path from ${pathToUse.length} to ${interpolatedPath.length} points`);
+      pathToUse = interpolatedPath;
     }
     
     // Ensure we have the required data
@@ -213,7 +290,7 @@
       hasStartPoint: !!startPoint,
       hasEndPoint: !!endPoint,
       worldId: $game.currentWorld,
-      path: pathToUse
+      originalWaypoints: pathToUse.length
     });
     
     try {
@@ -229,7 +306,7 @@
         fromY: startPoint.y, 
         toX: endPoint.x,
         toY: endPoint.y,
-        path: pathToUse,
+        path: pathToUse, // Send the validated path
         worldId: $game.currentWorld
       });
       
@@ -239,7 +316,7 @@
         fromY: startPoint.y,
         toX: endPoint.x,
         toY: endPoint.y,
-        path: pathToUse,
+        path: pathToUse, // Send the validated path
         worldId: $game.currentWorld
       });
       
@@ -251,13 +328,13 @@
           groupId: selectedGroup.id,
           from: { x: startPoint.x, y: startPoint.y },
           to: { x: endPoint.x, y: endPoint.y },
-          path: pathToUse
+          path: pathToUse // Pass the validated path
         });
       }
       
       // Notify parent that path was confirmed
       if (onConfirmPath) {
-        onConfirmPath(pathToUse);
+        onConfirmPath(pathToUse); // Pass the validated path
       }
       
       // Properly close the dialog
@@ -267,6 +344,23 @@
       console.error('Custom path movement error:', error);
       alert(`Error: ${error.message || 'Failed to start movement'}`);
     }
+  }
+  
+  // Function to validate that a path only contains single-coordinate steps
+  function validatePathHasSingleSteps(path) {
+    if (!path || path.length < 2) return true;
+    
+    for (let i = 1; i < path.length; i++) {
+      const prev = path[i-1];
+      const current = path[i];
+      
+      // Check if any step moves more than one tile at once
+      if (Math.abs(current.x - prev.x) > 1 || Math.abs(current.y - prev.y) > 1) {
+        return false;
+      }
+    }
+    
+    return true;
   }
   
   // Override the start movement function to handle both modes

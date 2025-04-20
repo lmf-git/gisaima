@@ -622,8 +622,11 @@
   
   const movementPaths = $derived(calculatePathsForDisplay($coordinates));
   
+  // Modify the currentDrawnPath to use the raw path points directly
+  // since they're now already interpolated in the parent component
   const currentDrawnPath = $derived({
     id: 'custom-path-drawing',
+    // No need to interpolate here anymore - it's done when points are added
     points: customPathPoints,
     color: 'rgba(255, 255, 255, 0.9)'
   });
@@ -665,41 +668,6 @@
     }
     
     return pathData;
-  }
-
-  // Add a function to calculate path between two points using a simplified line algorithm
-  function calculatePathBetweenPoints(startX, startY, endX, endY) {
-    const path = [];
-    
-    // Calculate steps using Bresenham's line algorithm
-    const dx = Math.abs(endX - startX);
-    const dy = Math.abs(endY - startY);
-    const sx = startX < endX ? 1 : -1;
-    const sy = startY < endY ? 1 : -1;
-    
-    let err = dx - dy;
-    let x = startX;
-    let y = startY;
-    
-    // Generate intermediate steps (excluding start point which is already in the path)
-    while (x !== endX || y !== endY) {
-      const e2 = 2 * err;
-      
-      if (e2 > -dy) {
-        err -= dy;
-        x += sx;
-      }
-      
-      if (e2 < dx) {
-        err += dx;
-        y += sy;
-      }
-      
-      // Add intermediate point
-      path.push({ x, y });
-    }
-    
-    return path;
   }
 
   function getCoordinateChunkKey(x, y) {

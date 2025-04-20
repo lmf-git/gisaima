@@ -683,10 +683,70 @@
             if (lastPoint.x === point.x && lastPoint.y === point.y) {
                 return;
             }
+            
+            // Calculate all intermediate steps between the last point and new point
+            const intermediatePoints = calculatePathBetweenPoints(
+                lastPoint.x, 
+                lastPoint.y, 
+                point.x, 
+                point.y
+            );
+            
+            // Add all intermediate points (except the first which would duplicate the last point)
+            if (intermediatePoints.length > 1) {
+                // Skip the first point as it duplicates the last point in currentPath
+                const pathAddition = intermediatePoints.slice(1);
+                currentPath = [...currentPath, ...pathAddition];
+                console.log(`Path extended with ${pathAddition.length} interpolated points`);
+            }
+        } else {
+            // First point in the path
+            currentPath = [{ x: point.x, y: point.y }];
+        }
+    }
+
+    // Add the path calculation function that matches what's in Move.svelte and Grid.svelte
+    function calculatePathBetweenPoints(startX, startY, endX, endY) {
+        const path = [];
+        
+        // Calculate steps using Bresenham's line algorithm
+        const dx = Math.abs(endX - startX);
+        const dy = Math.abs(endY - startY);
+        const sx = startX < endX ? 1 : -1;
+        const sy = startY < endY ? 1 : -1;
+        
+        let err = dx - dy;
+        let x = startX;
+        let y = startY;
+        
+        // Add start point
+        path.push({ x, y });
+        
+        // Generate steps
+        while (!(x === endX && y === endY)) {
+            const e2 = 2 * err;
+            
+            if (e2 > -dy) {
+                err -= dy;
+                x += sx;
+            }
+            
+            if (e2 < dx) {
+                err += dx;
+                y += sy;
+            }
+            
+            // Add intermediate point
+            path.push({ x, y });
+            
+            // Safety check
+            if (path.length > 1000) {
+                console.warn('Path too long, truncating');
+                break;
+            }
         }
         
-        // Add the new point to the path
-        currentPath = [...currentPath, { x: point.x, y: point.y }];
+        return path;
     }
 
     function handlePathDrawingStart(group) {
