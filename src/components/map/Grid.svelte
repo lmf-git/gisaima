@@ -783,7 +783,7 @@
             <path 
               d={pathData} 
               stroke="rgba(255, 255, 255, 0.9)"
-              stroke-width="2"
+              stroke-width="1"
               stroke-dasharray="6,4"
               stroke-linejoin="round" 
               stroke-linecap="round"
@@ -795,13 +795,13 @@
             {#each customPathPoints as point, i}
               {@const pos = coordToPosition(point.x, point.y)}
               
-              <!-- Draw point markers -->
+              <!-- Draw point markers with consistent colors -->
               <circle 
                 cx="{pos.posX * 100}" 
                 cy="{pos.posY * 100}" 
                 r="{i === 0 || i === customPathPoints.length - 1 ? '1.2' : '0.8'}" 
-                fill="{i === 0 ? 'rgba(50, 205, 50, 0.9)' : i === customPathPoints.length - 1 ? 'rgba(220, 20, 60, 0.9)' : 'white'}" 
-                stroke="rgba(0, 0, 0, 0.5)"
+                fill="{i === 0 ? 'rgba(255, 255, 255, 0.9)' : i === customPathPoints.length - 1 ? 'rgba(255, 255, 255, 0.9)' : 'rgba(200, 200, 255, 0.8)'}" 
+                stroke="{i === 0 ? 'rgba(66, 133, 244, 0.9)' : i === customPathPoints.length - 1 ? 'rgba(66, 133, 244, 0.9)' : 'rgba(0, 0, 0, 0.3)'}"
                 stroke-width="0.5"
               />
               
@@ -815,9 +815,9 @@
                   <circle 
                     cx="{midX}" 
                     cy="{midY}" 
-                    r="0.7" 
-                    fill="rgba(255, 255, 255, 0.9)"
-                    opacity="0.9"
+                    r="0.5" 
+                    fill="rgba(200, 200, 255, 0.7)"
+                    opacity="0.7"
                   />
                 {/if}
               {/if}
@@ -838,6 +838,7 @@
                 stroke-linecap="round"
                 fill="none"
                 opacity="0.8"
+                class="animated-path"
                 aria-label={`Movement path for ${path.owner === $currentPlayer?.uid ? 'your' : 'another'} group`}
               />
               
@@ -848,12 +849,26 @@
                 <circle 
                   cx="{pos.posX * 100}" 
                   cy="{pos.posY * 100}" 
-                  r="{i === 0 || i === path.points.length - 1 ? '0.5' : '0.25'}" 
+                  r="{i === 0 || i === path.points.length - 1 ? '0.4' : '0.2'}" 
                   fill={path.color} 
-                  stroke="rgba(0,0,0,0.3)"
-                  stroke-width="0.5"
-                  opacity="{i === 0 || i === path.points.length - 1 ? '1' : '0.6'}"
+                  stroke="rgba(0,0,0,0.2)"
+                  stroke-width="0.4"
+                  opacity="{i === 0 || i === path.points.length - 1 ? '0.9' : '0.5'}"
                 />
+                
+                <!-- Add direction indicator at the end point -->
+                {#if i === path.points.length - 1 && path.points.length > 1}
+                  {@const prevPos = coordToPosition(path.points[path.points.length - 2].x, path.points[path.points.length - 2].y)}
+                  {@const angle = Math.atan2(pos.posY - prevPos.posY, pos.posX - prevPos.posX) * 180 / Math.PI}
+                  <polygon 
+                    points="0,-0.8 0.7,0.7 -0.7,0.7" 
+                    transform="translate({pos.posX * 100}, {pos.posY * 100}) rotate({angle + 90})" 
+                    fill={path.color}
+                    opacity="0.9"
+                    stroke="rgba(0,0,0,0.3)"
+                    stroke-width="0.2"
+                  />
+                {/if}
               {/each}
             </g>
           {/each}
@@ -886,7 +901,6 @@
             aria-label={`Coordinates ${cell.x},${cell.y}`}
             role="gridcell"
           >
-            <!-- Structure icons -->
             {#if cell.structure}
               <div class="structure-icon-container">
                 {#if cell.structure.type === 'spawn'}
@@ -896,11 +910,18 @@
                 {/if}
               </div>
             {/if}
-            
+
             <!-- Player position indicator - only show for current player -->
             {#if isCurrentPlayerHere}
               <div class="player-position-indicator" 
                    class:from-world-data={playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y && !hasCurrentPlayerEntity(cell)}></div>
+            {/if}
+            
+            <!-- Battle indicator -->
+            {#if hasBattle(cell)}
+              <div class="battle-indicator" title="Active battle in progress">
+                ⚔️
+              </div>
             {/if}
             
             <!-- Entity indicators -->
@@ -932,13 +953,6 @@
                 </div>
               {/if}
             </div>
-
-            <!-- Battle indicator -->
-            {#if hasBattle(cell)}
-              <div class="battle-indicator" title="Active battle in progress">
-                ⚔️
-              </div>
-            {/if}
           </div>
         {/each}
       </div>
@@ -946,8 +960,28 @@
   </div>
   
   {#if isPathDrawingMode}
-    <div class="path-drawing-indicator">
-      Path Drawing Mode - {customPathPoints?.length || 0} points
+    <div class="path-controls">
+      <div class="path-point-counter">
+        <span class="group-name">{customPathPoints?.length > 0 ? 'Path: ' : ''}{customPathPoints?.length || 0} points</span>
+      </div>
+      <div class="path-buttons">
+        <button class="path-control-btn cancel-btn" onclick={() => onClose()} aria-label="Cancel path drawing">
+          Cancel
+        </button>
+        {#if customPathPoints?.length >= 2}
+          <button 
+            class="path-control-btn confirm-btn" 
+            onclick={() => {
+              console.log('Grid: Path confirm button clicked, notifying parent');
+              // Pass the confirmPath flag directly to ensure it's recognized
+              onClick?.({ confirmPath: true });
+            }} 
+            aria-label="Confirm path"
+          >
+            Confirm Path
+          </button>
+        {/if}
+      </div>
     </div>
   {/if}
 </div>
@@ -1057,7 +1091,7 @@
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible; /* Changed from hidden to visible */
     text-overflow: ellipsis;
     font-size: 1em;
     color: rgba(255, 255, 255, 0.7);
@@ -1065,6 +1099,7 @@
     user-select: none;
     z-index: 1;
     font-family: var(--font-body);
+    position: relative; /* Ensure this is set for absolute positioning */
   }
 
   .tile.center {
@@ -1491,7 +1526,7 @@
     will-change: transform;
     
     /* Improve SVG rendering performance */
-    shape-rendering: optimizeSpeed;
+    shape-rendering: geometricPrecision;
   }
   
   .path-group {
@@ -1503,79 +1538,156 @@
     z-index: 600;
   }
   
-  .custom-path-group path {
-    animation: dash 16s linear infinite;
-    stroke-dasharray: 6,4;
-    stroke-width: 2.5;
-    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.7));
+  .custom-path-group path,
+  .path-group .animated-path {
+    animation: dash 20s linear infinite;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
   }
 
-  .current-player-path {
-    z-index: 550;
+  .custom-path-group path {
+    stroke-dasharray: 6,4;
+    stroke-width: 1;
   }
-  
+
+  .custom-path-group circle {
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.4));
+  }
+
   @keyframes dash {
     to {
-      stroke-dashoffset: -26; 
+      stroke-dashoffset: -30;
     }
   }
-  
-  .path-layer path {
-    animation: dash 40s linear infinite;
-    stroke-linejoin: round;  
-    stroke-linecap: round;
-    vector-effect: non-scaling-stroke;
-    stroke-width: 1.5;
-    pointer-events: none;
-  }
-  
+
   .map-container.path-drawing-mode .map:not(.moving) .tile:hover {
-    box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.9) !important;
+    box-shadow: inset 0 0 0 2px rgba(66, 133, 244, 0.9) !important;
     position: relative;
     z-index: 45;
-  }
-  
-  .path-drawing-indicator {
-    position: absolute;
-    top: 1em;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(255, 255, 255, 0.95);
-    color: rgba(0, 0, 0, 0.8);
-    padding: 0.5em 1em;
-    border-radius: 0.3em;
-    font-weight: 600;
-    pointer-events: none;
-    z-index: 1000;
-    border: 0.05em solid rgba(255, 255, 255, 0.2);
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(0.5em);
-    -webkit-backdrop-filter: blur(0.5em);
-    animation: reveal 0.4s ease-out forwards;
-    font-family: var(--font-heading);
-    font-size: 0.9em;
-    box-sizing: border-box;
-    margin: 0;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    transition: box-shadow 0.2s ease;
   }
 
-  @keyframes reveal {
+  .map-container.path-drawing-mode .map:not(.moving) .tile:hover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0.3em rgba(66, 133, 244, 0.6);
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .path-controls {
+    position: fixed; /* Change from absolute to fixed for better isolation */
+    bottom: 1.5em;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 255, 255, 0.85);
+    border-radius: 0.5em;
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(0.5em);
+    -webkit-backdrop-filter: blur(0.5em);
+    z-index: 1000;
+    padding: 0.6em 0.8em;
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    font-family: var(--font-heading);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5em;
+    min-width: 12em;
+    max-width: 90%;
+    animation: slide-up 0.4s ease-out forwards;
+    pointer-events: auto; /* Ensure controls are clickable */
+  }
+  
+  .path-point-counter {
+    font-weight: 600;
+    font-size: 1em;
+    color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+  
+  .path-point-counter::before {
+    content: "✏️";
+    font-size: 1.1em;
+  }
+  
+  .group-name {
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  
+  .path-buttons {
+    display: flex;
+    gap: 0.8em;
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .path-control-btn {
+    padding: 0.5em 1em;
+    border-radius: 0.3em;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: all 0.2s;
+    font-family: var(--font-body);
+  }
+  
+  .path-control-btn.cancel-btn {
+    background-color: #f1f3f4;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+  }
+  
+  .path-control-btn.cancel-btn:hover {
+    background-color: #e8eaed;
+  }
+  
+  .path-control-btn.confirm-btn {
+    background-color: rgba(66, 133, 244, 0.9);
+    color: white;
+    border: 1px solid rgba(66, 133, 244, 0.3);
+  }
+  
+  .path-control-btn.confirm-btn:hover {
+    background-color: rgba(66, 133, 244, 1);
+    transform: translateY(-1px);
+    box-shadow: 0 0.2em 0.4em rgba(66, 133, 244, 0.2);
+  }
+  
+  .path-control-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+  
+  @keyframes slide-up {
     from {
       opacity: 0;
-      transform: translate(-50%, -1em);
+      transform: translate(-50%, 1em);
     }
     to {
       opacity: 1;
       transform: translate(-50%, 0);
     }
   }
-
-  .tile {
-    z-index: 1;
-  }
-
-  .tile.center {
-    z-index: 3;
+  
+  @media (max-width: 480px) {
+    .path-controls {
+      padding: 0.5em 0.6em;
+      min-width: 10em;
+      bottom: 1em;
+    }
+    
+    .path-control-btn {
+      padding: 0.4em 0.7em;
+      font-size: 0.9em;
+    }
   }
 
   .structure-icon-container {
@@ -1589,127 +1701,40 @@
     justify-content: center;
     z-index: 2;
     pointer-events: none;
-    opacity: 0.7;
+    opacity: 0.6;
+  }
+  
+  :global(.spawn-icon) {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 4px rgba(0, 255, 255, 0.6));
   }
   
   :global(.structure-icon) {
     opacity: 0.8;
-    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
   }
   
-  :global(.fortress-icon) {
-    filter: drop-shadow(0 0 3px rgba(230, 190, 138, 0.7));
-  }
-  
-  :global(.outpost-icon) {
-    filter: drop-shadow(0 0 3px rgba(138, 176, 230, 0.7));
-  }
-  
-  :global(.watchtower-icon) {
-    filter: drop-shadow(0 0 3px rgba(168, 230, 138, 0.7));
-  }
-  
-  :global(.stronghold-icon) {
-    filter: drop-shadow(0 0 3px rgba(230, 138, 138, 0.7));
-  }
-  
-  :global(.citadel-icon) {
-    filter: drop-shadow(0 0 3px rgba(209, 138, 230, 0.7));
-  }
-  
-  .fortress-structure:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border: 0.15em double rgba(230, 190, 138, 0.6);
-    pointer-events: none;
-    z-index: 3;
-  }
-  
-  .outpost-structure:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border: 0.15em double rgba(138, 176, 230, 0.6);
-    pointer-events: none;
-    z-index: 3;
-  }
-  
-  .watchtower-structure:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border: 0.15em double rgba(168, 230, 138, 0.6);
-    pointer-events: none;
-    z-index: 3;
-  }
-  
-  .stronghold-structure:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border: 0.15em double rgba(230, 138, 138, 0.6);
-    pointer-events: none;
-    z-index: 3;
-  }
-  
-  .citadel-structure:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border: 0.15em double rgba(209, 138, 230, 0.6);
-    pointer-events: none;
-    z-index: 3;
-  }
-  
-  .tile.fortress-structure {
-    box-shadow: inset 0 0 0.5em rgba(230, 190, 138, 0.4);
-  }
-  
-  .tile.outpost-structure {
-    box-shadow: inset 0 0 0.5em rgba(138, 176, 230, 0.4);
-  }
-  
-  .tile.watchtower-structure {
-    box-shadow: inset 0 0 0.5em rgba(168, 230, 138, 0.4);
-  }
-  
-  .tile.stronghold-structure {
-    box-shadow: inset 0 0 0.5em rgba(230, 138, 138, 0.4);
-  }
-  
-  .tile.citadel-structure {
-    box-shadow: inset 0 0 0.5em rgba(209, 138, 230, 0.4);
-  }
-
   .battle-indicator {
     position: absolute;
-    top: 5%;
-    left: 5%;
-    font-size: 0.7em;
-    z-index: 10;
-    filter: drop-shadow(0px 0px 2px rgba(0,0,0,0.8));
-    animation: pulseBattle 2s infinite alternate;
-    transform-origin: center;
+    top: 0.2em;
+    right: 0.2em;
+    font-size: 0.8em;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1em;
+    height: 1em;
+    border-radius: 50%;
+    background-color: rgba(255, 0, 0, 0.2);
+    box-shadow: 0 0 0.3em rgba(255, 0, 0, 0.4);
+    pointer-events: none;
+    animation: pulse-battle 2s infinite;
   }
   
-  @keyframes pulseBattle {
-    0% { transform: scale(1); }
-    100% { transform: scale(1.2); }
+  @keyframes pulse-battle {
+    0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4); }
+    70% { box-shadow: 0 0 0 0.4em rgba(255, 0, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
   }
 </style>

@@ -605,6 +605,13 @@
     }
 
     function handleGridClick(coords) {
+        // Check if this is a path confirmation action
+        if (coords && coords.confirmPath === true) {
+            console.log('Path confirmation received from Grid component');
+            confirmPathDrawing(currentPath);
+            return;
+        }
+
         const { x, y } = coords;
         
         if (x === undefined || y === undefined) {
@@ -799,6 +806,13 @@
             isPathDrawingMode={isPathDrawingMode}
             onAddPathPoint={handlePathPoint}
             customPathPoints={currentPath}
+            onClose={() => {
+                if (isPathDrawingMode) {
+                    handlePathDrawingCancel();
+                } else {
+                    // Handle regular close if needed
+                }
+            }}
         />
         
         <div class="map-controls">
@@ -957,33 +971,6 @@
             />
           {/if}
         {/if}
-
-        {#if isPathDrawingMode}
-            <div class="path-drawing-controls">
-                <div class="path-info">
-                    <span class="path-label">Drawing path for group: </span>
-                    <span class="path-group-name">{pathDrawingGroup?.name || pathDrawingGroup?.id || ''}</span>
-                    <div class="path-hint">Click on tiles to create waypoints</div>
-                </div>
-                
-                <div class="path-buttons">
-                    <button 
-                        class="cancel-path-btn" 
-                        onclick={handlePathDrawingCancel}
-                    >
-                        Cancel Path
-                    </button>
-                    
-                    <button 
-                        class="confirm-path-btn" 
-                        onclick={() => confirmPathDrawing(currentPath)}
-                        disabled={currentPath.length < 2}
-                    >
-                        Confirm Path ({currentPath.length} points)
-                    </button>
-                </div>
-            </div>
-        {/if}
     {/if}
 </div>
 
@@ -1122,88 +1109,5 @@
     .control-button:focus-visible {
         outline: 0.15em solid rgba(0, 0, 0, 0.6);
         outline-offset: 0.1em;
-    }
-
-    .path-drawing-controls {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 1em;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        z-index: 900;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border-top: 1px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
-        animation: reveal 0.3s ease-out forwards;
-    }
-    
-    .path-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.3em;
-    }
-    
-    .path-group-name {
-        font-weight: bold;
-        font-size: 1.1em;
-        color: #64ffda;
-    }
-    
-    .path-hint {
-        font-size: 0.9em;
-        opacity: 0.8;
-    }
-    
-    .path-buttons {
-        display: flex;
-        gap: 1em;
-    }
-    
-    .cancel-path-btn, .confirm-path-btn {
-        padding: 0.7em 1.2em;
-        border-radius: 4px;
-        font-weight: 500;
-        cursor: pointer;
-        border: none;
-        transition: all 0.2s;
-    }
-    
-    .cancel-path-btn {
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-    }
-    
-    .confirm-path-btn {
-        background: #64ffda;
-        color: rgba(0, 0, 0, 0.8);
-    }
-    
-    .cancel-path-btn:hover {
-        background: rgba(255, 255, 255, 0.3);
-    }
-    
-    .confirm-path-btn:hover:not(:disabled) {
-        background: #80ffdf;
-        transform: translateY(-2px);
-    }
-    
-    .confirm-path-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    @keyframes reveal {
-        from {
-            transform: translateY(100%);
-        }
-        to {
-            transform: translateY(0);
-        }
     }
 </style>

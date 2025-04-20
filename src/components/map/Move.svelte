@@ -730,17 +730,18 @@
     justify-content: center;
     gap: 0.6em;
     padding: 0.8em;
-    background-color: #f0f7ff;
-    border: 1px solid #4285f4;
+    background-color: rgba(66, 133, 244, 0.1);
+    border: 1px solid rgba(66, 133, 244, 0.3);
     border-radius: 0.3em;
-    color: #4285f4;
+    color: rgba(66, 133, 244, 0.9);
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
+    font-family: var(--font-body);
   }
   
   .path-btn:hover:not(:disabled) {
-    background-color: #e3f1ff;
+    background-color: rgba(66, 133, 244, 0.2);
     transform: translateY(-0.1em);
     box-shadow: 0 0.2em 0.4em rgba(66, 133, 244, 0.2);
   }
@@ -751,8 +752,13 @@
   }
   
   .path-btn.selected {
-    background-color: #4285f4;
+    background-color: rgba(66, 133, 244, 0.9);
     color: white;
+    border-color: rgba(66, 133, 244, 0.9);
+  }
+  
+  .path-btn svg {
+    filter: drop-shadow(0 0 1px rgba(66, 133, 244, 0.3));
   }
   
   .divider {
