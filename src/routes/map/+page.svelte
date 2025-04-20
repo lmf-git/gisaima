@@ -602,33 +602,32 @@
         if (isProcessingClick) return;
         isProcessingClick = true;
 
-        // If we're in path drawing mode, don't open details or change state
-        if (isPathDrawingMode && coords) {
-            // Just let the parent component handle path drawing
-            // We don't need to do anything here - Grid component will
-            // call the onAddPathPoint method directly
+        // If we're in path drawing mode and have coordinates, add them to the path
+        if (isPathDrawingMode && coords && coords.x !== undefined && coords.y !== undefined) {
+            // Add the point to the path
+            handlePathPoint(coords);
             
-            // Reset debounce flag with short timeout
+            // Reset debounce flag with short timeout for responsiveness in drawing mode
             setTimeout(() => {
                 isProcessingClick = false;
-            }, 200); // Shorter timeout for responsiveness in drawing mode
+            }, 100);
             return;
         }
 
         // Regular grid click handling (not in path drawing mode)
         if (coords) {
-            // First move the target to the clicked location - just like minimap does
+            // First move the target to the clicked location
             moveTarget(coords.x, coords.y);
 
             // Get the tile data after moving
             const clickedTile = $coordinates.find(c => c.x === coords.x && c.y === coords.y);
             
-            // Only highlight and open details if there's meaningful content
-            if (clickedTile && hasTileContent(clickedTile)) {
+            // Only highlight and open details if there's meaningful content and not in path drawing mode
+            if (clickedTile && hasTileContent(clickedTile) && !isPathDrawingMode) {
                 setHighlighted(coords.x, coords.y);
                 toggleDetailsModal(true);
-            } else {
-                // If there's no content, just ensure nothing is highlighted
+            } else if (!isPathDrawingMode) {
+                // If there's no content and not in path drawing mode, just ensure nothing is highlighted
                 setHighlighted(null, null);
                 toggleDetailsModal(false);
             }
@@ -743,6 +742,10 @@
         if (!group) return;
         
         console.log('Starting path drawing for group:', group.id || group.groupId);
+        
+        // Close any open modals or details that might interfere
+        toggleDetailsModal(false);
+        setHighlighted(null, null);
         
         // Set flag to prevent details panel from opening
         isTransitioningToPathDrawing = true;

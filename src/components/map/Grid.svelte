@@ -251,6 +251,12 @@
   function handleMouseDown(event) {
     if (!introduced || event.button !== 0) return;
     
+    // Don't initiate dragging in path drawing mode
+    if (isPathDrawingMode) {
+      // In path drawing mode, we only want clicks, not drags
+      return;
+    }
+    
     // Reset the drag state on each mousedown
     wasDrag = false;
     dist = 0;
@@ -268,6 +274,9 @@
   }
   
   function handleMouseMove(event) {
+    // Skip drag handling when in path drawing mode
+    if (isPathDrawingMode) return;
+    
     if ($map.isDragging && $map.dragSource === 'map') {
       handleDragAction({ 
         type: 'dragmove', 
@@ -278,6 +287,9 @@
   }
   
   function handleMouseUp() {
+    // Skip drag handling when in path drawing mode
+    if (isPathDrawingMode) return;
+    
     if ($map.isDragging && $map.dragSource === 'map') {
       handleDragAction({ type: 'dragend' });
       if (mapElement) mapElement.style.cursor = "grab";
@@ -286,6 +298,15 @@
   
   function handleTouchStart(event) {
     if (!introduced || !$map.ready) return;
+    
+    // Don't initiate dragging in path drawing mode
+    if (isPathDrawingMode) {
+      // Allow single touch for path points but prevent default
+      // to avoid scrolling the page
+      event.preventDefault();
+      return;
+    }
+    
     event.preventDefault();
     
     const touch = event.touches[0];
@@ -296,6 +317,9 @@
   }
   
   function handleTouchMove(event) {
+    // Skip drag handling when in path drawing mode
+    if (isPathDrawingMode) return;
+    
     if (!$map.isDragging || $map.dragSource !== 'map') return;
     event.preventDefault();
     
@@ -306,6 +330,9 @@
   }
   
   function handleTouchEnd() {
+    // Skip drag handling when in path drawing mode
+    if (isPathDrawingMode) return;
+    
     if ($map.isDragging && $map.dragSource === 'map') {
       handleDragAction({ type: 'touchend' });
     }
@@ -371,14 +398,14 @@
     lastClickTime = Date.now();
     
     if (wasDrag) {
-        console.log('Click ignored: drag detected');
-        wasDrag = false; // Reset drag state for next click
-        return;
+      console.log('Click ignored: drag detected');
+      wasDrag = false; // Reset drag state for next click
+      return;
     }
     
     if (!$ready) {
-        console.log('Click ignored: map not ready');
-        return;
+      console.log('Click ignored: map not ready');
+      return;
     }
     
     let tileX, tileY;
@@ -386,61 +413,65 @@
     let tileElement = event.target.closest('.tile');
     
     if (!tileElement) {
-        const gridElement = event.currentTarget.querySelector('.main-grid');
-        if (!gridElement) {
-            console.log('Click ignored: grid not found');
-            return;
-        }
-        
-        const rect = gridElement.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        
-        const tileWidth = rect.width / $map.cols;
-        const tileHeight = rect.height / $map.rows;
-        
-        const col = Math.floor(x / tileWidth);
-        const row = Math.floor(y / tileHeight);
-        
-        if (col < 0 || col >= $map.cols || row < 0 || row >= $map.rows) {
-            console.log('Click ignored: outside grid bounds');
-            return;
-        }
-        
-        const centerCol = Math.floor($map.cols / 2);
-        const centerRow = Math.floor($map.rows / 2);
-        
-        tileX = $map.target.x - centerCol + col;
-        tileY = $map.target.y - centerRow + row;
-        
+      const gridElement = event.currentTarget.querySelector('.main-grid');
+      if (!gridElement) {
+        console.log('Click ignored: grid not found');
+        return;
+      }
+      
+      const rect = gridElement.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      
+      const tileWidth = rect.width / $map.cols;
+      const tileHeight = rect.height / $map.rows;
+      
+      const col = Math.floor(x / tileWidth);
+      const row = Math.floor(y / tileHeight);
+      
+      if (col < 0 || col >= $map.cols || row < 0 || row >= $map.rows) {
+        console.log('Click ignored: outside grid bounds');
+        return;
+      }
+      
+      const centerCol = Math.floor($map.cols / 2);
+      const centerRow = Math.floor($map.rows / 2);
+      
+      tileX = $map.target.x - centerCol + col;
+      tileY = $map.target.y - centerRow + row;
+      
     } 
     else {
-        const ariaLabel = tileElement.getAttribute('aria-label');
-        const coordsMatch = ariaLabel ? ariaLabel.match(/Coordinates (-?\d+),(-?\d+)/) : null;
-        
-        if (!coordsMatch) {
-            console.log('Click ignored: no coordinates found in tile');
-            return;
-        }
-        
-        tileX = parseInt(coordsMatch[1], 10);
-        tileY = parseInt(coordsMatch[2], 10);
+      const ariaLabel = tileElement.getAttribute('aria-label');
+      const coordsMatch = ariaLabel ? ariaLabel.match(/Coordinates (-?\d+),(-?\d+)/) : null;
+      
+      if (!coordsMatch) {
+        console.log('Click ignored: no coordinates found in tile');
+        return;
+      }
+      
+      tileX = parseInt(coordsMatch[1], 10);
+      tileY = parseInt(coordsMatch[2], 10);
     }
     
     if (tileX !== undefined && tileY !== undefined) {
-        console.log('Grid: valid click detected at', { x: tileX, y: tileY });
-        
-        // Always call onClick handler with coordinates regardless of any other state
-        if (onClick) {
-            // Find the complete tile data if possible
-            const tileData = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
-            onClick({ 
-                x: tileX, 
-                y: tileY,
-                // Include full tile data if available
-                tileData: tileData || null
-            });
-        }
+      console.log('Grid: valid click detected at', { x: tileX, y: tileY });
+      
+      // First handle path drawing if in that mode
+      if (isPathDrawingMode) {
+        handlePathPoint({ x: tileX, y: tileY });
+        return; // Exit early to prevent other click behaviors
+      }
+      
+      // For regular mode, handle as before
+      if (onClick) {
+        const tileData = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
+        onClick({ 
+          x: tileX, 
+          y: tileY,
+          tileData: tileData || null
+        });
+      }
     }
   }
 

@@ -217,37 +217,39 @@
     
     console.log('Enabling path drawing with starting point:', { x: tileData?.x, y: tileData?.y });
     
-    // First completely close the dialog
-    onClose(true, true);
-    
-    // Wait for modal animation to complete before starting path drawing
-    setTimeout(() => {
-      if (onPathDrawingStart) {
-        try {
-          // Ensure valid coordinates are passed
-          if (!tileData || tileData.x === undefined || tileData.y === undefined) {
-            console.error('Invalid tile coordinates for path drawing start');
-            return;
+    // First completely close the dialog and prevent any other interactions
+    if (onClose) {
+      onClose(true, true);
+      
+      // Wait for modal animation to complete before starting path drawing
+      setTimeout(() => {
+        if (onPathDrawingStart) {
+          try {
+            // Ensure valid coordinates are passed
+            if (!tileData || tileData.x === undefined || tileData.y === undefined) {
+              console.error('Invalid tile coordinates for path drawing start');
+              return;
+            }
+            
+            onPathDrawingStart({
+              id: selectedGroup.id,
+              groupId: selectedGroup.id,
+              startPoint: { x: tileData.x, y: tileData.y },
+              x: tileData.x,
+              y: tileData.y,
+              name: selectedGroup.name,
+              unitCount: selectedGroup.unitCount,
+              status: selectedGroup.status,
+              persist: true
+            });
+            
+            console.log('Path drawing start event dispatched with group ID:', selectedGroup.id);
+          } catch (error) {
+            console.error('Error starting path drawing:', error);
           }
-          
-          onPathDrawingStart({
-            id: selectedGroup.id,
-            groupId: selectedGroup.id,
-            startPoint: { x: tileData.x, y: tileData.y },
-            x: tileData.x,
-            y: tileData.y,
-            name: selectedGroup.name,
-            unitCount: selectedGroup.unitCount,
-            status: selectedGroup.status,
-            persist: true
-          });
-          
-          console.log('Path drawing start event dispatched with group ID:', selectedGroup.id);
-        } catch (error) {
-          console.error('Error starting path drawing:', error);
         }
-      }
-    }, 300);  // Increased from 200ms to 300ms for more reliable transition
+      }, 300);
+    }
   }
   
   // Function to confirm the custom path with better error handling

@@ -710,6 +710,38 @@ export function getChunkKey(x, y) {
   return `${chunkX},${chunkY}`;
 }
 
+// Modified function to handle drag start to respect path drawing mode
+function handleDragAction(event, sensitivity = 1) {
+  const state = $map;
+  
+  // If the store is configured to ignore drag events, exit early
+  if (state.ignoreDrag) {
+    return false;
+  }
+  
+  if (event.type === 'dragstart' || event.type === 'touchstart') {
+    const clientX = event.clientX || event.touches?.[0]?.clientX || 0;
+    const clientY = event.clientY || event.touches?.[0]?.clientY || 0;
+    
+    dist = 0;
+    wasDrag = false;
+    
+    setHighlighted(null, null);
+    
+    map.update(state => ({
+      ...state,
+      isDragging: true,
+      dragStartX: clientX,
+      dragStartY: clientY,
+      dragAccumX: 0,
+      dragAccumY: 0,
+      dragSource: 'map'
+    }));
+    
+    return true;
+  }
+}
+
 // Unified initialization function with localStorage support and better error handling
 export function initialize(options = {}) {
   // SSR guard - don't initialize terrain on server
