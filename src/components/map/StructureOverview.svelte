@@ -228,12 +228,6 @@
               Dismantle
             </button>
           {/if}
-          
-          {#if targetStructure?.type === 'spawn'}
-            <button class="action-button" onclick={() => handleStructureAction('viewSpawn')}>
-              View Spawn Area
-            </button>
-          {/if}
         </div>
       </div>
       
