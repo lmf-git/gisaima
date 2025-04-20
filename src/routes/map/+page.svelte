@@ -552,17 +552,6 @@
                 }
             }, ANIMATION_DURATION);
         } else {
-            if (showEntities) {
-                entitiesClosing = true;
-                setTimeout(() => {
-                    showEntities = false;
-                    entitiesClosing = false;
-                    if (browser) {
-                        localStorage.setItem('overview', 'false');
-                    }
-                }, ANIMATION_DURATION);
-            }
-            
             showMinimap = true;
             if (browser) {
                 localStorage.setItem('minimap', 'true');
@@ -585,18 +574,6 @@
                 }
             }, ANIMATION_DURATION);
         } else {
-            if (showMinimap) {
-                minimapClosing = true;
-                setTimeout(() => {
-                    showMinimap = false;
-                    minimapClosing = false;
-                    map.update(state => ({ ...state, minimap: false }));
-                    if (browser) {
-                        localStorage.setItem('minimap', 'false');
-                    }
-                }, ANIMATION_DURATION);
-            }
-            
             showEntities = true;
             if (browser) {
                 localStorage.setItem('overview', 'true');
