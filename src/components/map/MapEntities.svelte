@@ -1509,6 +1509,32 @@
     box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);
   }
 
+  /* Match these colors to the grid entity indicators */
+  .filter-count-structures {
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.6);
+  }
+  
+  .filter-count-groups {
+    background: rgba(255, 100, 100, 0.9);
+    box-shadow: 0 0 0.15em rgba(255, 100, 100, 0.6);
+  }
+  
+  .filter-count-players {
+    background: rgba(100, 100, 255, 0.9);
+    box-shadow: 0 0 0.15em rgba(100, 100, 255, 0.6);
+  }
+  
+  .filter-count-items {
+    background: rgba(255, 215, 0, 0.9);
+    box-shadow: 0 0 0.15em rgba(255, 215, 0, 0.6);
+  }
+  
+  .filter-count-battles {
+    background: rgba(139, 0, 0, 0.8);
+    box-shadow: 0 0 0.15em rgba(139, 0, 0, 0.6);
+  }
+
   .filter-tab.active .filter-count {
     background: rgba(64, 158, 255, 0.9);
     box-shadow: 0 0 0.2em rgba(64, 158, 255, 0.6);
@@ -1812,7 +1838,7 @@
     align-items: center;
     padding: 0.5em 0;
     cursor: pointer;
-    margin-bottom: 0.5em;
+    /* Remove margin-bottom to fix spacing */
     user-select: none;
     position: relative;
     width: 100%;
@@ -1888,7 +1914,7 @@
   /* Tab-specific sort controls */
   .tab-sort-controls {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center; /* Change from flex-end to center */
     margin-bottom: 0.5em;
     padding: 0.3em 0;
   }
