@@ -13,62 +13,83 @@
   let selectedGroupId = $state(null);
   let isSubmitting = $state(false);
   let error = $state(null);
-  // Remove redundant isReady state
 
   // Derived states - fix how we determine the currentTile
   const currentTile = $derived(() => {
-    // Log what data we received to help with debugging
-    console.log('Gather data received:', data);
-    
-    if (data?.group) {
-      // If a specific group was provided, use the data as is
-      return data;
-    } 
-    else if (data?.x !== undefined && data?.y !== undefined) {
-      // If we received tile coordinates but no specific group
-      return data;
+    // Start with data passed from parent components
+    if (data) {
+      console.log('Raw data received:', JSON.stringify(data));
+      
+      // Preserve the groups array from data if it exists
+      const groups = data.groups || 
+                    (data.tile?.groups) || 
+                    ($highlightedStore?.groups) || 
+                    ($targetStore?.groups) || 
+                    [];
+                    
+      return {
+        ...$targetStore,
+        ...$highlightedStore,
+        ...data,
+        ...data.tile, // Extract tile data if nested
+        groups  // Ensure we have the groups array
+      };
     }
+    
     // Fallback to highlighted or target store
-    return $highlightedStore || $targetStore;
+    return $highlightedStore || $targetStore || {};
   });
   
   const eligibleGroups = $derived(getEligibleGroups());
   const availableItems = $derived(getAvailableItems());
   
   onMount(() => {
-    console.log('Gather component mounted, currentTile:', currentTile);
-    console.log('Available items:', availableItems);
-    console.log('Eligible groups:', eligibleGroups);
+    console.log('Gather component mounted with tile:', currentTile);
+    console.log('Current tile coordinates:', currentTile.x, currentTile.y);
+    
+    if (currentTile.groups) {
+      console.log('All groups on tile:', currentTile.groups.length); 
+      
+      // Log each group's key details for debugging
+      currentTile.groups.forEach(g => {
+        console.log(`Group ${g.id || 'unknown'}: owner=${g.owner}, status=${g.status}, inBattle=${g.inBattle}`);
+      });
+    }
+    
+    console.log('Eligible groups found:', eligibleGroups.length);
+    console.log('Available items:', availableItems.length);
     
     // Auto-select the group if provided in data
-    if (data?.group) {
+    if (data?.group?.id) {
       selectedGroupId = data.group.id;
-      console.log('Auto-selected group:', selectedGroupId);
+      console.log('Auto-selected group by passed data:', selectedGroupId);
     }
     // Auto-select first group if there's only one
     else if (eligibleGroups.length === 1) {
       selectedGroupId = eligibleGroups[0].id;
       console.log('Auto-selected only available group:', selectedGroupId);
     }
-    
-    // Remove timeout that set isReady
   });
 
   function getEligibleGroups() {
-    // Get groups owned by current player that are idle and not in battle
-    if (!currentTile?.groups || !$currentPlayer) {
-      console.log('No eligible groups: missing groups or player data');
-      return [];
+    if (!currentTile) return [];
+    if (!$currentPlayer) return [];
+    
+    // Ensure groups is an array
+    let groups = currentTile.groups || [];
+    
+    // Handle case where groups might be an object
+    if (groups && !Array.isArray(groups) && typeof groups === 'object') {
+      groups = Object.values(groups);
     }
     
-    const eligible = currentTile.groups.filter(group => 
+    // Simple filtering to match other components
+    return groups.filter(group => 
+      group && 
       group.owner === $currentPlayer.uid && 
-      group.status === 'idle' &&
+      group.status === 'idle' && 
       !group.inBattle
     );
-    
-    console.log('Filtered eligible groups:', eligible.length);
-    return eligible;
   }
 
   function getAvailableItems() {
@@ -244,11 +265,7 @@
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    /* No need for pointer-events: none and opacity: 0 since the component is
-       only mounted when it should be visible */
   }
-  
-  /* Remove .modal-container.ready selector as it's no longer needed */
   
   .overlay-backdrop {
     position: absolute;
@@ -278,7 +295,6 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* Keep animation for appearance when component mounts */
     animation: modalAppear 0.3s ease-out forwards;
   }
 
