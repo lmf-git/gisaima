@@ -13,7 +13,7 @@
   let selectedGroupId = $state(null);
   let isSubmitting = $state(false);
   let error = $state(null);
-  let isReady = $state(false);
+  // Remove redundant isReady state
 
   // Derived states - fix how we determine the currentTile
   const currentTile = $derived(() => {
@@ -51,8 +51,7 @@
       console.log('Auto-selected only available group:', selectedGroupId);
     }
     
-    // Short timeout to ensure DOM is ready before animation
-    setTimeout(() => isReady = true, 10);
+    // Remove timeout that set isReady
   });
 
   function getEligibleGroups() {
@@ -141,7 +140,7 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<div class="modal-container" class:ready={isReady}>
+<div class="modal-container">
   <div class="modal-content">
     <header class="modal-header">
       <h3>Gather Items</h3>
@@ -245,14 +244,11 @@
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s ease-out;
+    /* No need for pointer-events: none and opacity: 0 since the component is
+       only mounted when it should be visible */
   }
   
-  .modal-container.ready {
-    opacity: 1;
-  }
+  /* Remove .modal-container.ready selector as it's no longer needed */
   
   .overlay-backdrop {
     position: absolute;
@@ -282,8 +278,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transform: scale(0.95);
-    opacity: 0;
+    /* Keep animation for appearance when component mounts */
     animation: modalAppear 0.3s ease-out forwards;
   }
 
