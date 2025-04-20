@@ -345,11 +345,13 @@
             </span>
           </div>
           
-          {#if $highlightedStore?.terrain?.rarity}
+          {#if $highlightedStore?.terrain?.rarity || $highlightedStore?.rarity}
             <div class="attribute">
               <span class="attribute-label">Rarity</span>
               <span class="attribute-value">
-                {_fmt($highlightedStore?.terrain?.rarity)}
+                <span class="rarity-badge {($highlightedStore?.terrain?.rarity || $highlightedStore?.rarity)?.toLowerCase()}">
+                  {_fmt($highlightedStore?.terrain?.rarity || $highlightedStore?.rarity)}
+                </span>
               </span>
             </div>
           {/if}
@@ -1254,6 +1256,50 @@
   
   .inspect-button:hover {
     background-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .rarity-badge {
+    display: inline-block;
+    font-size: 0.9em;
+    padding: 0.1em 0.5em;
+    border-radius: 0.3em;
+    font-weight: 500;
+  }
+  
+  .rarity-badge.common {
+    background-color: rgba(158, 158, 158, 0.2);
+    color: #616161;
+    border: 1px solid rgba(158, 158, 158, 0.4);
+  }
+  
+  .rarity-badge.uncommon {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+    border: 1px solid rgba(76, 175, 80, 0.4);
+  }
+  
+  .rarity-badge.rare {
+    background-color: rgba(33, 150, 243, 0.2);
+    color: #0277bd;
+    border: 1px solid rgba(33, 150, 243, 0.4);
+  }
+  
+  .rarity-badge.epic {
+    background-color: rgba(156, 39, 176, 0.2);
+    color: #7b1fa2;
+    border: 1px solid rgba(156, 39, 176, 0.4);
+  }
+  
+  .rarity-badge.legendary {
+    background-color: rgba(255, 152, 0, 0.2);
+    color: #ef6c00;
+    border: 1px solid rgba(255, 152, 0, 0.4);
+  }
+  
+  .rarity-badge.mythic {
+    background-color: rgba(233, 30, 99, 0.2);
+    color: #c2185b;
+    border: 1px solid rgba(233, 30, 99, 0.4);
   }
 
   @keyframes pulse {
