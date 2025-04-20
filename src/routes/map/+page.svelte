@@ -72,15 +72,14 @@
 
     function toggleDetailsModal(show) {
         if (show && !detailed) {
-            // When opening, make sure we keep the highlighted tile
+            // When opening details, make sure highlight persists
             if (lastClickedCoords) {
-                // Ensure highlight matches the clicked coords
                 setHighlighted(lastClickedCoords.x, lastClickedCoords.y);
             }
             detailed = true;
         } else if (!show && detailed) {
+            // When closing, clear everything
             detailed = false;
-            // Only clear highlight when explicitly closing
             setHighlighted(null, null);
             lastClickedCoords = null;
         }
@@ -620,83 +619,50 @@
             return;
         }
         
-        // Don't process clicks while we're already processing one
-        if (isProcessingClick) {
-            console.log('Click ignored: already processing a click');
-            return;
-        }
-        
-        // Set flag to prevent multiple processing
+        // Simple debounce to prevent multiple rapid clicks
+        if (isProcessingClick) return;
         isProcessingClick = true;
         
         try {
-            // If in path drawing mode, handle adding point to path
             if (isPathDrawingMode) {
-                console.log('Adding path point in handleGridClick:', x, y);
+                // Path drawing mode - add waypoint
                 handlePathPoint({ x, y });
             } else {
-                // Otherwise handle normal tile click to show details
-                console.log('Normal click on tile:', { x, y });
+                // Normal tile click - show details if there's content
+                lastClickedCoords = { x, y };
                 
-                // Save clicked location for reference with explicit coordinates
-                lastClickedCoords = { x: x, y: y };
-                
-                // Find the tile directly from coordinates before updating stores
-                // This ensures we're checking content on the tile that was actually clicked
+                // Find the clicked tile content
                 const clickedTile = $coordinates.find(cell => cell.x === x && cell.y === y);
                 
-                // Check if tile has content before showing details
-                const hasContent = clickedTile && hasTileContent(clickedTile);
+                // First set highlighted to ensure it persists
+                setHighlighted(x, y);
                 
-                if (hasContent) {
-                    // Set highlighted first, to ensure it's preserved during target movement
-                    setHighlighted(x, y);
-                    
-                    // Move target but preserve the highlight we just set
-                    moveTarget(x, y, { preserveHighlight: true });
-                    
-                    // Show details panel
+                // Move the target but preserve our highlight
+                moveTarget(x, y, { preserveHighlight: true });
+                
+                // Show details if tile has content
+                if (clickedTile && hasTileContent(clickedTile)) {
                     detailed = true;
-                } else {
-                    // If no content, just move the map without showing details
-                    moveTarget(x, y);
-                    setHighlighted(null, null);
                 }
             }
         } finally {
-            // Clear the flag after a short delay
-            setTimeout(() => {
-                isProcessingClick = false;
-            }, 100);
+            // Clear click processing flag after a short delay
+            setTimeout(() => isProcessingClick = false, 100);
         }
     }
 
+    // Simplified function to check if a tile has content
     function hasTileContent(tile) {
         if (!tile) return false;
         
-        const hasContent = (
-            // Has any structure
+        return (
+            // Check for any meaningful content on the tile
             (tile.structure && Object.keys(tile.structure).length > 0) ||
-            // Has any groups
             (tile.groups && tile.groups.length > 0) ||
-            // Has any players
             (tile.players && tile.players.length > 0) ||
-            // Has any items
             (tile.items && tile.items.length > 0) ||
-            // Has any battles
             (tile.battles && tile.battles.length > 0)
         );
-        
-        console.log('Checking tile content:', {
-            hasStructure: tile.structure && Object.keys(tile.structure).length > 0,
-            groupsCount: tile.groups?.length || 0,
-            playersCount: tile.players?.length || 0,
-            itemsCount: tile.items?.length || 0,
-            battlesCount: tile.battles?.length || 0,
-            hasContent
-        });
-        
-        return hasContent;
     }
 
     function handlePathPoint(point) {
