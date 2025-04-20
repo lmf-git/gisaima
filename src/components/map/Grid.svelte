@@ -757,7 +757,15 @@
               stroke-linecap="round"
               fill="none"
               opacity="0.8"
-            />
+            >
+              <animate 
+                attributeName="stroke-dashoffset" 
+                from="0" 
+                to="-7" 
+                dur="20s" 
+                repeatCount="indefinite"
+              />
+            </path>
             
             <!-- Draw direction dots along the path -->
             {#each customPathPoints as point, i}
@@ -810,7 +818,15 @@
                 opacity="0.7"
                 class="animated-path"
                 aria-label={`Movement path for ${path.owner === $currentPlayer?.uid ? 'your' : 'another'} group`}
-              />
+              >
+                <animate 
+                  attributeName="stroke-dashoffset" 
+                  from="0" 
+                  to="-10" 
+                  dur="20s" 
+                  repeatCount="indefinite"
+                />
+              </path>
               
               <!-- Draw direction dots along the path with better performance -->
               {#each path.points.filter((_, i) => i === 0 || i === path.points.length - 1 || i % 3 === 0) as point, i}
@@ -1500,6 +1516,7 @@
   }
   
   .path-group {
+    /* Keep opacity transition only - this won't cause rasterization */
     transition: opacity 0.3s ease;
     pointer-events: none;
   }
@@ -1508,25 +1525,22 @@
     z-index: 600;
   }
   
-  .custom-path-group path,
-  .path-group .animated-path {
-    animation: dash 20s linear infinite;
-    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
-  }
-
+  /* Remove all CSS styling that would affect path animation rendering */
+  /* All animation should be handled by SVG <animate> elements instead */
   .custom-path-group path {
-    stroke-dasharray: 4,3;
+    /* Only keep non-animation related styling */
     stroke-width: 0.6;
   }
-
-  .custom-path-group circle {
-    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3));
+  
+  /* Remove all redundant CSS animation properties */
+  /* SVG animate tags in the markup handle the animations properly */
+  .path-group .animated-path {
+    /* Let SVG handle all animations for vector-perfect rendering */
   }
 
-  @keyframes dash {
-    to {
-      stroke-dashoffset: -30;
-    }
+  /* No CSS animations for SVG circles to prevent rasterization */
+  .custom-path-group circle {
+    /* Use SVG attributes for styling where possible */
   }
 
   .map-container.path-drawing-mode .map:not(.moving) .tile:hover {
