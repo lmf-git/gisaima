@@ -341,6 +341,7 @@
           <div class="attribute">
             <span class="attribute-label">Type</span>
             <span class="attribute-value">
+              <span class="terrain-color" style="background-color: {$highlightedStore?.terrain?.color || $highlightedStore?.color || '#cccccc'}"></span>
               {_fmt($highlightedStore?.terrain?.biome?.name || 'Unknown')}
             </span>
           </div>
@@ -871,6 +872,17 @@
   .attribute-value {
     flex-grow: 1;
     color: rgba(0, 0, 0, 0.8);
+  }
+
+  .terrain-color {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border-radius: 0.2em;
+    margin-right: 0.5em;
+    vertical-align: middle;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
   }
 
   .actions-grid {
