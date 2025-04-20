@@ -1,6 +1,6 @@
 <script>
   import { fade, scale } from 'svelte/transition';
-  import { highlightedStore } from '../../lib/stores/map';
+  import { highlightedStore, targetStore } from '../../lib/stores/map';
   import { currentPlayer, game, timeUntilNextTick } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -11,8 +11,8 @@
   // Get functions instance directly
   const functions = getFunctions();
   
-  // Get tile data directly from the highlightedStore
-  let tileData = $derived($highlightedStore || null);
+  // Change to targetStore instead of highlightedStore since players demobilize at their current location
+  let tileData = $derived($targetStore || null);
   
   // Available groups for demobilization
   let availableGroups = $state([]);

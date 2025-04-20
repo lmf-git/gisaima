@@ -22,8 +22,8 @@
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
-  // Get tile data directly from the highlightedStore
-  let tileData = $derived($highlightedStore || null);
+  // Use targetStore instead of highlightedStore for the current player's location
+  let tileData = $derived($targetStore || null);
   
   // Available groups for movement
   let availableGroups = $state([]);

@@ -7,8 +7,9 @@
 
   const { onClose = () => {}, onJoinBattle = () => {} } = $props();
 
-  // Get tile data directly from the highlightedStore
-  let tileData = $derived($highlightedStore || null);
+  // Get tile data directly from the targetStore (same as current player location)
+  // This makes more sense as players can only join battles at their current location
+  let tileData = $derived($targetStore || null);
 
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -29,56 +30,77 @@
   let loading = $state(false);
   let errorMessage = $state('');
   
-  // Find active battles at this location
+  // Improved battle detection logic
   $effect(() => {
-    if (!tileData || !tileData.groups) return;
+    if (!tileData) return;
     
     const playerId = $currentPlayer?.uid;
     if (!playerId) return;
     
     // Find groups that can join battles
     availableGroups = tileData.groups
-      .filter(group => 
-        group.owner === playerId && 
-        group.status === 'idle' &&
-        !group.inBattle
-      )
-      .map(group => ({
-        ...group,
-        selected: false
-      }));
+      ? tileData.groups.filter(group => 
+          group.owner === playerId && 
+          group.status === 'idle' &&
+          !group.inBattle
+        ).map(group => ({
+          ...group,
+          selected: false
+        }))
+      : [];
     
-    // Find active battles
+    // Find active battles with improved detection
     const battles = new Map();
-    let battlingGroups = [];
     
-    // First identify all groups in battle
-    tileData.groups.forEach(group => {
-      if (group.inBattle && group.battleId) {
-        battlingGroups.push(group);
-        
-        if (!battles.has(group.battleId)) {
-          battles.set(group.battleId, {
-            id: group.battleId,
-            sides: {
-              1: { groups: [], power: 0 },
-              2: { groups: [], power: 0 }
+    // First handle direct battle references in tileData.battles
+    if (tileData.battles && tileData.battles.length > 0) {
+      tileData.battles.forEach(battle => {
+        if (battle && battle.id && (battle.status !== 'resolved')) {
+          battles.set(battle.id, {
+            ...battle,
+            sides: battle.sides || {
+              1: { groups: [], power: battle.side1Power || 0 },
+              2: { groups: [], power: battle.side2Power || 0 }
             },
             selected: false
           });
         }
-        
-        // Add group to appropriate side
-        const side = group.battleSide || 1;
-        const battleData = battles.get(group.battleId);
-        
-        battleData.sides[side].groups.push(group);
-        battleData.sides[side].power += (group.unitCount || 1);
-      }
-    });
+      });
+    }
+    
+    // Also look for groups in battle as a fallback
+    if (tileData.groups) {
+      tileData.groups.forEach(group => {
+        if (group.inBattle && group.battleId) {
+          if (!battles.has(group.battleId)) {
+            battles.set(group.battleId, {
+              id: group.battleId,
+              sides: {
+                1: { groups: [], power: 0 },
+                2: { groups: [], power: 0 }
+              },
+              status: group.battleStatus || 'active',
+              selected: false
+            });
+          }
+          
+          // Add group to appropriate side
+          const side = group.battleSide || 1;
+          const battleData = battles.get(group.battleId);
+          
+          if (!battleData.sides[side].groups.includes(group.id)) {
+            battleData.sides[side].groups.push(group.id);
+            battleData.sides[side].power += (group.unitCount || 1);
+          }
+        }
+      });
+    }
     
     // Convert map to array
     activeBattles = Array.from(battles.values());
+    
+    console.log('Found battles:', activeBattles.length, activeBattles);
+    console.log('Available groups:', availableGroups.length);
   });
   
   // Join a battle
