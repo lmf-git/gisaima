@@ -13,6 +13,7 @@
   let selectedGroupId = $state(null);
   let isSubmitting = $state(false);
   let error = $state(null);
+  let isReady = $state(false);
 
   // Derived states - fix how we determine the currentTile
   const currentTile = $derived(() => {
@@ -33,21 +34,11 @@
   
   const eligibleGroups = $derived(getEligibleGroups());
   const availableItems = $derived(getAvailableItems());
-
-  // Set up dialog reference for accessibility
-  let dialog;
   
   onMount(() => {
     console.log('Gather component mounted, currentTile:', currentTile);
     console.log('Available items:', availableItems);
     console.log('Eligible groups:', eligibleGroups);
-    
-    // Show the modal dialog
-    if (dialog) {
-      dialog.showModal();
-    } else {
-      console.error('Dialog element not found in Gather component');
-    }
     
     // Auto-select the group if provided in data
     if (data?.group) {
@@ -59,6 +50,9 @@
       selectedGroupId = eligibleGroups[0].id;
       console.log('Auto-selected only available group:', selectedGroupId);
     }
+    
+    // Short timeout to ensure DOM is ready before animation
+    setTimeout(() => isReady = true, 10);
   });
 
   function getEligibleGroups() {
@@ -147,12 +141,8 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<dialog 
-  bind:this={dialog} 
-  class="gather-dialog"
-  transition:fade={{ duration: 200 }}
->
-  <div class="modal-content" transition:scale={{ duration: 200, start: 0.95 }}>
+<div class="modal-container" class:ready={isReady}>
+  <div class="modal-content">
     <header class="modal-header">
       <h3>Gather Items</h3>
       <button class="close-button" onclick={onClose}>
@@ -240,33 +230,72 @@
       </button>
     </footer>
   </div>
-</dialog>
+  
+  <div class="overlay-backdrop" onclick={onClose}></div>
+</div>
 
 <style>
-  dialog {
-    background: none;
-    border: none;
-    padding: 0;
-    max-height: 90vh;
-    max-width: 90vw;
-    width: 30em;
+  .modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
   }
-
-  dialog::backdrop {
+  
+  .modal-container.ready {
+    opacity: 1;
+  }
+  
+  .overlay-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    z-index: -1;
+    cursor: pointer;
+    pointer-events: auto;
   }
 
   .modal-content {
+    pointer-events: auto;
+    width: 90%;
+    max-width: 30em;
+    max-height: 85vh;
     background-color: rgba(255, 255, 255, 0.85);
     border: 0.05em solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.5em;
+    border-radius: 0.3em;
     box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
     font-family: var(--font-body);
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    transform: scale(0.95);
+    opacity: 0;
+    animation: modalAppear 0.3s ease-out forwards;
+  }
+
+  @keyframes modalAppear {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   .modal-header {
@@ -539,23 +568,9 @@
   }
 
   @media (max-width: 768px) {
-    dialog {
-      width: 100%;
-      max-width: 100%;
-      height: 100%;
-      max-height: 100%;
-      margin: 0;
-      border-radius: 0;
-    }
-
     .modal-content {
-      height: 100%;
-      border-radius: 0;
-      max-height: 100vh;
-    }
-
-    .modal-body {
-      flex: 1;
+      width: 95%;
+      max-height: 80vh;
     }
   }
 </style>
