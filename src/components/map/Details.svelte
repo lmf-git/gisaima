@@ -331,13 +331,10 @@
     </header>
     
     <div class="modal-content">
-      <!-- Terrain Information -->
-      <div class="entities-section">
-        <div class="section-header">
-          <h4>Terrain</h4>
-        </div>
-        
+      <!-- Combined terrain and actions in a single core section -->
+      <div class="core-section">
         <div class="section-content">
+          <!-- Terrain Information -->
           <div class="attribute">
             <span class="attribute-label">Type</span>
             <span class="attribute-value">
@@ -361,29 +358,10 @@
             <span class="attribute-label">Coordinates</span>
             <span class="attribute-value">{$highlightedStore ? formatCoords($highlightedStore.x, $highlightedStore.y) : ''}</span>
           </div>
-        </div>
-      </div>
-      
-      <!-- Available actions section -->
-      {#if $highlightedStore}
-        <div class="entities-section">
-          <div 
-            class="section-header"
-            onclick={() => toggleSection('actions')}
-            role="button"
-            tabindex="0"
-            aria-expanded={!collapsedSections.actions}
-          >
-            <h4>Available Actions</h4>
-            <div class="section-controls">
-              <button class="collapse-button">
-                {collapsedSections.actions ? '▼' : '▲'}
-              </button>
-            </div>
-          </div>
           
-          {#if !collapsedSections.actions}
-            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+          <!-- Available actions section in same container -->
+          {#if $highlightedStore}
+            <div class="core-actions">
               <div class="actions-grid">
                 {#if $highlightedStore.structure}
                   <button class="action-button" onclick={() => executeAction('inspect')}>
@@ -424,292 +402,292 @@
             </div>
           {/if}
         </div>
-        
-        <!-- Structure section -->
-        {#if $highlightedStore.structure}
-          <div class="entities-section">
-            <div 
-              class="section-header"
-              onclick={() => toggleSection('structures')}
-              role="button"
-              tabindex="0"
-              aria-expanded={!collapsedSections.structures}
-            >
-              <h4>Structure</h4>
-              <div class="section-controls">
-                <button class="collapse-button">
-                  {collapsedSections.structures ? '▼' : '▲'}
+      </div>
+      
+      <!-- Structure section -->
+      {#if $highlightedStore.structure}
+        <div class="entities-section">
+          <div 
+            class="section-header"
+            onclick={() => toggleSection('structures')}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.structures}
+          >
+            <h4>Structure</h4>
+            <div class="section-controls">
+              <button class="collapse-button">
+                {collapsedSections.structures ? '▼' : '▲'}
+              </button>
+            </div>
+          </div>
+          
+          {#if !collapsedSections.structures}
+            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+              <div class="entity structure">
+                <div class="entity-info">
+                  <div class="entity-name">
+                    {$highlightedStore.structure.name || _fmt($highlightedStore.structure.type) || 'Unnamed'}
+                    {#if isOwnedByCurrentPlayer($highlightedStore.structure)}
+                      <span class="entity-badge owner-badge">Yours</span>
+                    {/if}
+                  </div>
+                  <div class="entity-details">
+                    <div class="entity-type">{_fmt($highlightedStore.structure.type)}</div>
+                  </div>
+                </div>
+                <button class="inspect-button" onclick={() => executeAction('inspect')}>
+                  Inspect
                 </button>
               </div>
             </div>
-            
-            {#if !collapsedSections.structures}
-              <div class="section-content" transition:slide|local={{ duration: 300 }}>
-                <div class="entity structure">
+          {/if}
+        </div>
+      {/if}
+      
+      <!-- Groups section -->
+      {#if $highlightedStore.groups?.length > 0}
+        <div class="entities-section">
+          <div 
+            class="section-header"
+            onclick={() => toggleSection('groups')}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.groups}
+          >
+            <h4>Groups ({$highlightedStore.groups.length})</h4>
+            <div class="section-controls">
+              <button class="collapse-button">
+                {collapsedSections.groups ? '▼' : '▲'}
+              </button>
+            </div>
+          </div>
+          
+          {#if !collapsedSections.groups}
+            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+              {#each $highlightedStore.groups as group}
+                <div class="entity group {isOwnedByCurrentPlayer(group) ? 'player-owned' : ''}">
                   <div class="entity-info">
                     <div class="entity-name">
-                      {$highlightedStore.structure.name || _fmt($highlightedStore.structure.type) || 'Unnamed'}
-                      {#if isOwnedByCurrentPlayer($highlightedStore.structure)}
+                      {formatEntityName(group)}
+                      {#if isOwnedByCurrentPlayer(group)}
                         <span class="entity-badge owner-badge">Yours</span>
                       {/if}
                     </div>
-                    <div class="entity-details">
-                      <div class="entity-type">{_fmt($highlightedStore.structure.type)}</div>
-                    </div>
-                  </div>
-                  <button class="inspect-button" onclick={() => executeAction('inspect')}>
-                    Inspect
-                  </button>
-                </div>
-              </div>
-            {/if}
-          </div>
-        {/if}
-        
-        <!-- Groups section -->
-        {#if $highlightedStore.groups?.length > 0}
-          <div class="entities-section">
-            <div 
-              class="section-header"
-              onclick={() => toggleSection('groups')}
-              role="button"
-              tabindex="0"
-              aria-expanded={!collapsedSections.groups}
-            >
-              <h4>Groups ({$highlightedStore.groups.length})</h4>
-              <div class="section-controls">
-                <button class="collapse-button">
-                  {collapsedSections.groups ? '▼' : '▲'}
-                </button>
-              </div>
-            </div>
-            
-            {#if !collapsedSections.groups}
-              <div class="section-content" transition:slide|local={{ duration: 300 }}>
-                {#each $highlightedStore.groups as group}
-                  <div class="entity group {isOwnedByCurrentPlayer(group) ? 'player-owned' : ''}">
-                    <div class="entity-info">
-                      <div class="entity-name">
-                        {formatEntityName(group)}
-                        {#if isOwnedByCurrentPlayer(group)}
-                          <span class="entity-badge owner-badge">Yours</span>
-                        {/if}
-                      </div>
-                      
-                      <div class="entity-details">
-                        <span class="unit-count">
-                          {group.unitCount || (group.units ? group.units.length : 0)} units
-                          {#if getGroupItemCount(group) > 0}
-                            • <span class="item-count">{getGroupItemCount(group)} items</span>
-                          {/if}
-                        </span>
-                        
-                        <span class="entity-status-badge {getStatusClass(group.status)}"
-                          class:pending-tick={isPendingTick(
-                            group.status === 'moving' 
-                              ? group.nextMoveTime 
-                              : (group.status === 'gathering' || group.status === 'starting_to_gather' 
-                                  ? group.gatheringUntil 
-                                  : group.readyAt)
-                          )}
-                        >
-                          {_fmt(group.status)}
-                          {#if (group.status === 'mobilizing' || group.status === 'demobilising') && group.readyAt}
-                            ({formatTimeRemaining(group.readyAt, group.status)})
-                          {/if}
-                        </span>
-                      </div>
-                    </div>
                     
-                    {#if isOwnedByCurrentPlayer(group) && group.status === 'idle' && !group.inBattle}
-                      <div class="entity-actions">
-                        <button class="entity-action" onclick={() => executeAction('move', { group })}>
-                          Move
-                        </button>
-                        {#if $highlightedStore.items?.length > 0}
-                          <button class="entity-action" onclick={() => executeAction('gather', { group })}>
-                            Gather
-                          </button>
+                    <div class="entity-details">
+                      <span class="unit-count">
+                        {group.unitCount || (group.units ? group.units.length : 0)} units
+                        {#if getGroupItemCount(group) > 0}
+                          • <span class="item-count">{getGroupItemCount(group)} items</span>
                         {/if}
-                        {#if $highlightedStore.battles?.some(b => b.status === 'active')}
-                          <button class="entity-action" onclick={() => executeAction('joinBattle', { group })}>
-                            Join Battle
-                          </button>
+                      </span>
+                      
+                      <span class="entity-status-badge {getStatusClass(group.status)}"
+                        class:pending-tick={isPendingTick(
+                          group.status === 'moving' 
+                            ? group.nextMoveTime 
+                            : (group.status === 'gathering' || group.status === 'starting_to_gather' 
+                                ? group.gatheringUntil 
+                                : group.readyAt)
+                        )}
+                      >
+                        {_fmt(group.status)}
+                        {#if (group.status === 'mobilizing' || group.status === 'demobilising') && group.readyAt}
+                          ({formatTimeRemaining(group.readyAt, group.status)})
                         {/if}
-                      </div>
-                    {/if}
-                  </div>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/if}
-        
-        <!-- Players section -->
-        {#if $highlightedStore.players?.length > 0}
-          <div class="entities-section">
-            <div 
-              class="section-header"
-              onclick={() => toggleSection('players')}
-              role="button"
-              tabindex="0"
-              aria-expanded={!collapsedSections.players}
-            >
-              <h4>Players ({$highlightedStore.players.length})</h4>
-              <div class="section-controls">
-                <button class="collapse-button">
-                  {collapsedSections.players ? '▼' : '▲'}
-                </button>
-              </div>
-            </div>
-            
-            {#if !collapsedSections.players}
-              <div class="section-content" transition:slide|local={{ duration: 300 }}>
-                {#each $highlightedStore.players as player}
-                  <div class="entity player {player.id === $currentPlayer?.uid ? 'current' : ''} {isOwnedByCurrentPlayer(player) ? 'player-owned' : ''}">
-                    <div class="entity-info">
-                      <div class="entity-name">
-                        {player.displayName || 'Player'}
-                        {#if player.id === $currentPlayer?.uid}
-                          <span class="entity-badge owner-badge">You</span>
-                        {/if}
-                      </div>
-                      <div class="entity-details">
-                        {#if player.race}
-                          <div class="entity-race">{_fmt(player.race)}</div>
-                        {/if}
-                      </div>
+                      </span>
                     </div>
                   </div>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/if}
-        
-        <!-- Items section -->
-        {#if $highlightedStore.items?.length > 0}
-          <div class="entities-section">
-            <div 
-              class="section-header"
-              onclick={() => toggleSection('items')}
-              role="button"
-              tabindex="0"
-              aria-expanded={!collapsedSections.items}
-            >
-              <h4>Items ({$highlightedStore.items.length})</h4>
-              <div class="section-controls">
-                <button class="collapse-button">
-                  {collapsedSections.items ? '▼' : '▲'}
-                </button>
-              </div>
+                  
+                  {#if isOwnedByCurrentPlayer(group) && group.status === 'idle' && !group.inBattle}
+                    <div class="entity-actions">
+                      <button class="entity-action" onclick={() => executeAction('move', { group })}>
+                        Move
+                      </button>
+                      {#if $highlightedStore.items?.length > 0}
+                        <button class="entity-action" onclick={() => executeAction('gather', { group })}>
+                          Gather
+                        </button>
+                      {/if}
+                      {#if $highlightedStore.battles?.some(b => b.status === 'active')}
+                        <button class="entity-action" onclick={() => executeAction('joinBattle', { group })}>
+                          Join Battle
+                        </button>
+                      {/if}
+                    </div>
+                  {/if}
+                </div>
+              {/each}
             </div>
-            
-            {#if !collapsedSections.items}
-              <div class="section-content" transition:slide|local={{ duration: 300 }}>
-                {#each $highlightedStore.items as item}
-                  <div class="entity item {getRarityClass(item.rarity)}">
-                    <div class="entity-info">
-                      <div class="entity-name">
-                        {item.name || _fmt(item.type) || "Unknown Item"}
-                      </div>
-                      <div class="entity-details">
-                        {#if item.type}
-                          <span class="item-type">{_fmt(item.type)}</span>
-                        {/if}
-                        {#if item.quantity > 1}
-                          <span class="item-quantity">×{item.quantity}</span>
-                        {/if}
-                        {#if item.rarity && item.rarity !== 'common'}
-                          <span class="item-rarity {item.rarity}">{_fmt(item.rarity)}</span>
-                        {/if}
-                      </div>
-                      {#if item.description}
-                        <div class="item-description">{item.description}</div>
+          {/if}
+        </div>
+      {/if}
+      
+      <!-- Players section -->
+      {#if $highlightedStore.players?.length > 0}
+        <div class="entities-section">
+          <div 
+            class="section-header"
+            onclick={() => toggleSection('players')}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.players}
+          >
+            <h4>Players ({$highlightedStore.players.length})</h4>
+            <div class="section-controls">
+              <button class="collapse-button">
+                {collapsedSections.players ? '▼' : '▲'}
+              </button>
+            </div>
+          </div>
+          
+          {#if !collapsedSections.players}
+            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+              {#each $highlightedStore.players as player}
+                <div class="entity player {player.id === $currentPlayer?.uid ? 'current' : ''} {isOwnedByCurrentPlayer(player) ? 'player-owned' : ''}">
+                  <div class="entity-info">
+                    <div class="entity-name">
+                      {player.displayName || 'Player'}
+                      {#if player.id === $currentPlayer?.uid}
+                        <span class="entity-badge owner-badge">You</span>
+                      {/if}
+                    </div>
+                    <div class="entity-details">
+                      {#if player.race}
+                        <div class="entity-race">{_fmt(player.race)}</div>
                       {/if}
                     </div>
                   </div>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/if}
-        
-        <!-- Battles section -->
-        {#if $highlightedStore.battles?.length > 0}
-          <div class="entities-section">
-            <div 
-              class="section-header"
-              onclick={() => toggleSection('battles')}
-              role="button"
-              tabindex="0"
-              aria-expanded={!collapsedSections.battles}
-            >
-              <h4>Battles ({$highlightedStore.battles.length})</h4>
-              <div class="section-controls">
-                <button class="collapse-button">
-                  {collapsedSections.battles ? '▼' : '▲'}
-                </button>
-              </div>
+                </div>
+              {/each}
             </div>
-            
-            {#if !collapsedSections.battles}
-              <div class="section-content" transition:slide|local={{ duration: 300 }}>
-                {#each $highlightedStore.battles as battle}
-                  <div class="entity battle">
-                    <div class="entity-info">
-                      <div class="entity-name">
-                        Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}
-                        <span class="entity-status-badge {battle.status === 'resolved' ? 'resolved' : 'active'}">
-                          {battle.status === 'resolved' ? 'Resolved' : 'Active'}
-                        </span>
-                      </div>
-                      
-                      <div class="entity-details">
-                        <div class="battle-sides">
-                          <div class="battle-side side1 {getWinningSideClass(battle, 1)}">
-                            <span class="side-name">Side 1:</span> 
-                            {getParticipantCountBySide(battle, 1)} groups
-                            ({formatPower(battle.sides?.[1]?.power || battle.power?.[1])})
-                            {#if battle.status === 'resolved' && battle.winner === 1}
-                              <span class="battle-winner">Winner</span>
-                            {/if}
-                          </div>
-                          
-                          <div class="battle-side side2 {getWinningSideClass(battle, 2)}">
-                            <span class="side-name">Side 2:</span> 
-                            {getParticipantCountBySide(battle, 2)} groups
-                            ({formatPower(battle.sides?.[2]?.power || battle.power?.[2])})
-                            {#if battle.status === 'resolved' && battle.winner === 2}
-                              <span class="battle-winner">Winner</span>
-                            {/if}
-                          </div>
-                        </div>
-                        
-                        {#if battle.status === 'active' && battle.startTime && battle.endTime}
-                          <div class="battle-progress">
-                            <div class="progress-bar">
-                              <div class="progress-fill" style="width: {calculateBattleProgress(battle)}%"></div>
-                            </div>
-                            <div class="battle-timer">
-                              {formatBattleTimeRemaining(battle)}
-                            </div>
-                          </div>
-                        {/if}
-                      </div>
+          {/if}
+        </div>
+      {/if}
+      
+      <!-- Items section -->
+      {#if $highlightedStore.items?.length > 0}
+        <div class="entities-section">
+          <div 
+            class="section-header"
+            onclick={() => toggleSection('items')}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.items}
+          >
+            <h4>Items ({$highlightedStore.items.length})</h4>
+            <div class="section-controls">
+              <button class="collapse-button">
+                {collapsedSections.items ? '▼' : '▲'}
+              </button>
+            </div>
+          </div>
+          
+          {#if !collapsedSections.items}
+            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+              {#each $highlightedStore.items as item}
+                <div class="entity item {getRarityClass(item.rarity)}">
+                  <div class="entity-info">
+                    <div class="entity-name">
+                      {item.name || _fmt(item.type) || "Unknown Item"}
                     </div>
-                    
-                    {#if battle.status === 'active' && canJoinBattle($highlightedStore)}
-                      <button class="join-battle-btn" onclick={() => executeAction('joinBattle')}>
-                        Join Battle
-                      </button>
+                    <div class="entity-details">
+                      {#if item.type}
+                        <span class="item-type">{_fmt(item.type)}</span>
+                      {/if}
+                      {#if item.quantity > 1}
+                        <span class="item-quantity">×{item.quantity}</span>
+                      {/if}
+                      {#if item.rarity && item.rarity !== 'common'}
+                        <span class="item-rarity {item.rarity}">{_fmt(item.rarity)}</span>
+                      {/if}
+                    </div>
+                    {#if item.description}
+                      <div class="item-description">{item.description}</div>
                     {/if}
                   </div>
-                {/each}
-              </div>
-            {/if}
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/if}
+      
+      <!-- Battles section -->
+      {#if $highlightedStore.battles?.length > 0}
+        <div class="entities-section">
+          <div 
+            class="section-header"
+            onclick={() => toggleSection('battles')}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.battles}
+          >
+            <h4>Battles ({$highlightedStore.battles.length})</h4>
+            <div class="section-controls">
+              <button class="collapse-button">
+                {collapsedSections.battles ? '▼' : '▲'}
+              </button>
+            </div>
           </div>
-        {/if}
+          
+          {#if !collapsedSections.battles}
+            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+              {#each $highlightedStore.battles as battle}
+                <div class="entity battle">
+                  <div class="entity-info">
+                    <div class="entity-name">
+                      Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}
+                      <span class="entity-status-badge {battle.status === 'resolved' ? 'resolved' : 'active'}">
+                        {battle.status === 'resolved' ? 'Resolved' : 'Active'}
+                      </span>
+                    </div>
+                    
+                    <div class="entity-details">
+                      <div class="battle-sides">
+                        <div class="battle-side side1 {getWinningSideClass(battle, 1)}">
+                          <span class="side-name">Side 1:</span> 
+                          {getParticipantCountBySide(battle, 1)} groups
+                          ({formatPower(battle.sides?.[1]?.power || battle.power?.[1])})
+                          {#if battle.status === 'resolved' && battle.winner === 1}
+                            <span class="battle-winner">Winner</span>
+                          {/if}
+                        </div>
+                        
+                        <div class="battle-side side2 {getWinningSideClass(battle, 2)}">
+                          <span class="side-name">Side 2:</span> 
+                          {getParticipantCountBySide(battle, 2)} groups
+                          ({formatPower(battle.sides?.[2]?.power || battle.power?.[2])})
+                          {#if battle.status === 'resolved' && battle.winner === 2}
+                            <span class="battle-winner">Winner</span>
+                          {/if}
+                        </div>
+                      </div>
+                      
+                      {#if battle.status === 'active' && battle.startTime && battle.endTime}
+                        <div class="battle-progress">
+                          <div class="progress-bar">
+                            <div class="progress-fill" style="width: {calculateBattleProgress(battle)}%"></div>
+                          </div>
+                          <div class="battle-timer">
+                            {formatBattleTimeRemaining(battle)}
+                          </div>
+                        </div>
+                      {/if}
+                    </div>
+                  </div>
+                  
+                  {#if battle.status === 'active' && canJoinBattle($highlightedStore)}
+                    <button class="join-battle-btn" onclick={() => executeAction('joinBattle')}>
+                      Join Battle
+                    </button>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
       {/if}
     </div>
   </div>
@@ -787,6 +765,19 @@
   .modal-content {
     padding: 0.8em;
     overflow-y: auto;
+  }
+
+  /* Core section styling */
+  .core-section {
+    margin-bottom: 1.2em;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .core-actions {
+    margin-top: 1em;
   }
 
   /* Entities section styling */
