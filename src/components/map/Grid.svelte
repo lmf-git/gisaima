@@ -641,9 +641,10 @@
     const offsetX = x - state.target.x;
     const offsetY = y - state.target.y;
     
-    // Calculate position as decimal values from 0 to 1 instead of percentages
-    const posX = (viewportCenterX + offsetX + 0.5) / state.cols;
-    const posY = (viewportCenterY + offsetY + 0.5) / state.rows;
+    // Calculate position as decimal values from 0 to 1
+    // Changed from 0.5 (center) to 0.2, 0.8 (bottom left)
+    const posX = (viewportCenterX + offsetX + 0.2) / state.cols;
+    const posY = (viewportCenterY + offsetY + 0.8) / state.rows;
     
     return { posX, posY };
   }
@@ -661,9 +662,9 @@
       const svgY = posY * 100;
       
       if (i === 0) {
-        pathData += `M${svgX} ${svgY}`;  // Remove percentage signs, add proper spacing
+        pathData += `M${svgX} ${svgY}`;
       } else {
-        pathData += ` L${svgX} ${svgY}`;  // Remove percentage signs, add proper spacing
+        pathData += ` L${svgX} ${svgY}`;
       }
     }
     
