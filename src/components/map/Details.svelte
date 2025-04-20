@@ -404,7 +404,26 @@
     if (!battle || !battle.sides || !battle.sides[side]) return 0;
     return battle.sides[side].groups?.length || 0;
   }
+
+  // Add keyboard handler for the Escape key
+  function handleKeyDown(event) {
+    if (event.key === 'Escape') {
+      onClose();
+    }
+  }
+  
+  // Function to handle keyboard events on interactive elements
+  function handleSectionKeyDown(event, sectionId) {
+    // Toggle section on Enter or Space key
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault(); // Prevent page scroll on space
+      toggleSection(sectionId);
+    }
+  }
 </script>
+
+<!-- Add global keyboard event listener -->
+<svelte:window on:keydown={handleKeyDown} />
 
 <div class="modal-wrapper" transition:fly|local={{ y: 20, duration: 300, easing: quintOut }}>
   <div class="modal details-modal">
@@ -529,6 +548,7 @@
           <div 
             class="section-header"
             onclick={() => toggleSection('groups')}
+            onkeydown={(e) => handleSectionKeyDown(e, 'groups')}
             role="button"
             tabindex="0"
             aria-expanded={!collapsedSections.groups}
@@ -559,9 +579,9 @@
                   </button>
                 </div>
               {/if}
-              <button class="collapse-button">
+              <div class="collapse-button">
                 {collapsedSections.groups ? '▼' : '▲'}
-              </button>
+              </div>
             </div>
           </div>
           
@@ -632,6 +652,7 @@
           <div 
             class="section-header"
             onclick={() => toggleSection('players')}
+            onkeydown={(e) => handleSectionKeyDown(e, 'players')}
             role="button"
             tabindex="0"
             aria-expanded={!collapsedSections.players}
@@ -662,9 +683,9 @@
                   </button>
                 </div>
               {/if}
-              <button class="collapse-button">
+              <div class="collapse-button">
                 {collapsedSections.players ? '▼' : '▲'}
-              </button>
+              </div>
             </div>
           </div>
           
@@ -698,6 +719,7 @@
           <div 
             class="section-header"
             onclick={() => toggleSection('items')}
+            onkeydown={(e) => handleSectionKeyDown(e, 'items')}
             role="button"
             tabindex="0"
             aria-expanded={!collapsedSections.items}
@@ -728,9 +750,9 @@
                   </button>
                 </div>
               {/if}
-              <button class="collapse-button">
+              <div class="collapse-button">
                 {collapsedSections.items ? '▼' : '▲'}
-              </button>
+              </div>
             </div>
           </div>
           
@@ -770,6 +792,7 @@
           <div 
             class="section-header"
             onclick={() => toggleSection('battles')}
+            onkeydown={(e) => handleSectionKeyDown(e, 'battles')}
             role="button"
             tabindex="0"
             aria-expanded={!collapsedSections.battles}
@@ -800,9 +823,9 @@
                   </button>
                 </div>
               {/if}
-              <button class="collapse-button">
+              <div class="collapse-button">
                 {collapsedSections.battles ? '▼' : '▲'}
-              </button>
+              </div>
             </div>
           </div>
           
@@ -975,10 +998,21 @@
     background-color: rgba(0, 0, 0, 0.03);
     cursor: pointer;
     user-select: none;
+    width: 100%;
+    text-align: left;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
   }
   
   .section-header:hover {
     background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .section-header:focus {
+    outline: 2px solid rgba(66, 133, 244, 0.6);
+    outline-offset: -2px;
   }
   
   .section-controls {
