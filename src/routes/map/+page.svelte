@@ -128,6 +128,14 @@
         
         console.log('Opening modal:', options.type, options.data);
         
+        // Close Details modal when opening structure overview or action modals
+        if (['inspect', 'mobilize', 'move', 'gather', 'demobilize', 'joinBattle'].includes(options.type)) {
+            if (detailed) {
+                console.log('Closing Details panel to show modal');
+                toggleDetailsModal(false);
+            }
+        }
+        
         if (options.type === 'inspect' && options.data) {
             // Update modal state for structure inspection
             modalState = {
@@ -937,9 +945,22 @@
             <MapEntities 
               closing={entitiesClosing} 
               onShowStructure={({ structure, x, y }) => {
-                showStructureOverview = true;
-                selectedStructure = structure;
-                structureLocation = { x, y };
+                modalState = {
+                  type: 'inspect',
+                  data: {
+                    x,
+                    y,
+                    tile: {
+                      x,
+                      y,
+                      structure,
+                    }
+                  },
+                  visible: true
+                };
+                if (window.innerWidth < 768) {
+                  toggleEntities();
+                }
               }}
               onClose={() => toggleEntities()}
             />

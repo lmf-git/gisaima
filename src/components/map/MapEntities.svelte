@@ -215,6 +215,7 @@
   
   // Function to handle clicking on a structure
   function handleStructureClick(structure, x, y) {
+    console.log('Structure clicked, showing structure overview:', structure);
     if (onShowStructure) {
       onShowStructure({ structure, x, y });
     } else {
@@ -692,11 +693,13 @@
                 <div 
                   class="entity structure {isAtTarget(structure.x, structure.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(structure) ? 'current-player-owned' : ''}"
                   onkeydown={(e) => handleEntityAction(structure.x, structure.y, e)}
-                  onclick={(e) => handleEntityAction(structure.x, structure.y, e)}
                   role="button"
                   tabindex="0"
                   aria-label="Navigate to {structure.name || _fmt(structure.type) || 'Structure'} at {structure.x},{structure.y}"
-                  ondblclick={() => handleStructureClick(structure, structure.x, structure.y)}
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    handleStructureClick(structure, structure.x, structure.y);
+                  }}
                 >
                   <div class="entity-structure-icon">
                     {#if structure.type === 'spawn'}
