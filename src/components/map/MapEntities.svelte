@@ -565,9 +565,9 @@
       Map Entities
       <span class="subtitle">{visibleChunks} chunks visible</span>
       
-      <!-- Add close button -->
+      <!-- Replace the close button to match minimap styling -->
       <button class="close-button" onclick={handleClose} aria-label="Close map entities panel">
-        <Close size="1em" extraClass="close-icon" />
+        <Close size="1em" extraClass="close-icon-dark" />
       </button>
     </h3>
     

@@ -563,7 +563,7 @@
         <h3 id="details-title" class="title">Tile Details</h3>
         <div class="coords">{formatCoords(x, y)}</div>
         <button class="close-button" onclick={handleClose} aria-label="Close">
-          <Close size="1.8em" extraClass="close-icon-light" />
+          <Close size="1.8em" extraClass="close-icon-dark" />
         </button>
       </header>
       
