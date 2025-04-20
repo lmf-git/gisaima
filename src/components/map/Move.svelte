@@ -1,19 +1,19 @@
 <script>
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game } from '../../lib/stores/game';
+  import { highlightedStore, targetStore } from '../../lib/stores/map';
   import Close from '../icons/Close.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
 
-  // Props with default empty object/function to avoid destructuring errors
+  // Props with default empty function to avoid destructuring errors
   const { 
-    tile = {}, 
     onClose = () => {}, 
     onMove = () => {}, 
     onPathDrawingStart = () => {}, 
     onPathDrawingCancel = () => {},
-    onConfirmPath = () => {}, // Callback for path confirmation
-    pathDrawingGroup = null,  // Group for path drawing
-    currentPath = []          // Current path data from parent
+    onConfirmPath = () => {},
+    pathDrawingGroup = null,
+    currentPath = []
   } = $props();
   
   // Get functions instance directly
@@ -21,6 +21,9 @@
   
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  
+  // Get tile data directly from the highlightedStore
+  let tileData = $derived($highlightedStore || null);
   
   // Available groups for movement
   let availableGroups = $state([]);
@@ -40,13 +43,13 @@
   
   // Initialize available groups based on tile content
   $effect(() => {
-    if (!tile || !tile.groups) {
+    if (!tileData || !tileData.groups) {
       availableGroups = [];
       return;
     }
     
     // Filter only groups owned by the current player and with idle status
-    availableGroups = tile.groups
+    availableGroups = tileData.groups
       .filter(group => {
         return group.owner === $currentPlayer?.uid && group.status === 'idle';
       })
@@ -73,8 +76,8 @@
   function setTarget(dx, dy) {
     if (dx === 0 && dy === 0) return; // Can't move to current position
     
-    targetX = tile.x + dx;
-    targetY = tile.y + dy;
+    targetX = tileData?.x + dx;
+    targetY = tileData?.y + dy;
     
     // Calculate path when target changes
     calculatePath();
@@ -91,13 +94,13 @@
   
   // Calculate movement path between start and end points
   function calculatePath() {
-    if (!tile || targetX === null || targetY === null) {
+    if (!tileData || targetX === null || targetY === null) {
       movementPath = [];
       return;
     }
     
-    const startX = tile.x;
-    const startY = tile.y;
+    const startX = tileData.x;
+    const startY = tileData.y;
     const endX = targetX;
     const endY = targetY;
     
@@ -147,7 +150,7 @@
     if (!selectedGroup) return;
     
     // Initialize path drawing through the parent component
-    console.log('Enabling path drawing with starting point:', { x: tile.x, y: tile.y });
+    console.log('Enabling path drawing with starting point:', { x: tileData?.x, y: tileData?.y });
     
     // Close the dialog to avoid obstruction
     onClose(false, true);
@@ -159,9 +162,9 @@
         onPathDrawingStart({
           id: selectedGroup.id,
           groupId: selectedGroup.id, // Include both formats for compatibility
-          startPoint: { x: tile.x, y: tile.y },
-          x: tile.x,
-          y: tile.y,
+          startPoint: { x: tileData.x, y: tileData.y },
+          x: tileData.x,
+          y: tileData.y,
           // Include any other useful group properties
           name: selectedGroup.name,
           unitCount: selectedGroup.unitCount,
@@ -270,8 +273,8 @@
         const moveGroupFn = httpsCallable(functions, 'moveGroup');
         const result = await moveGroupFn({
           groupId: selectedGroup.id,
-          fromX: tile.x,
-          fromY: tile.y,
+          fromX: tileData.x,
+          fromY: tileData.y,
           toX: targetX,
           toY: targetY,
           path: movementPath,
@@ -283,7 +286,7 @@
         if (onMove) {
           onMove({
             groupId: selectedGroup.id,
-            from: { x: tile.x, y: tile.y },
+            from: { x: tileData.x, y: tileData.y },
             to: { x: targetX, y: targetY },
             path: movementPath
           });
@@ -334,21 +337,21 @@
        role="document" 
        transition:scale={{ start: 0.95, duration: 200 }}>
     <div class="header">
-      <h2 id="move-title">Move Group - {tile?.x}, {tile?.y}</h2>
+      <h2 id="move-title">Move Group - {tileData?.x}, {tileData?.y}</h2>
       <button class="close-btn" onclick={() => onClose(true)} aria-label="Close move dialog">
         <Close size="1.5em" />
       </button>
     </div>
     
-    {#if tile}
+    {#if tileData}
       <div class="location-info">
         <div class="terrain">
-          <div class="terrain-color" style="background-color: {tile.color}"></div>
-          <span>{_fmt(tile.biome?.name) || "Unknown"}</span>
+          <div class="terrain-color" style="background-color: {tileData.color}"></div>
+          <span>{_fmt(tileData.biome?.name) || "Unknown"}</span>
           
-          {#if tile.structure}
+          {#if tileData.structure}
             <span class="structure-tag">
-              {tile.structure.name || _fmt(tile.structure.type)}
+              {tileData.structure.name || _fmt(tileData.structure.type)}
             </span>
           {/if}
         </div>
@@ -415,7 +418,7 @@
                     <button 
                       class="direction-btn" 
                       class:center={dir.x === 0 && dir.y === 0}
-                      class:selected={targetX === tile.x + dir.x && targetY === tile.y + dir.y}
+                      class:selected={targetX === tileData.x + dir.x && targetY === tileData.y + dir.y}
                       disabled={dir.x === 0 && dir.y === 0 || !selectedGroup}
                       onclick={() => dir.x === 0 && dir.y === 0 ? clearTarget() : setTarget(dir.x, dir.y)}
                       aria-label={`Move ${dir.name}`}

@@ -1,12 +1,14 @@
 <script>
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game } from '../../lib/stores/game';
+  import { highlightedStore, targetStore } from '../../lib/stores/map';
   import Close from '../icons/Close.svelte';
-  // Update imports to use getFunctions directly instead of importing from firebase.js
   import { getFunctions, httpsCallable } from 'firebase/functions';
 
-  // Props with default empty object to avoid destructuring errors
-  const { tile = {}, onClose = () => {}, onJoinBattle = () => {} } = $props();
+  const { onClose = () => {}, onJoinBattle = () => {} } = $props();
+
+  // Get tile data directly from the highlightedStore
+  let tileData = $derived($highlightedStore || null);
 
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -29,13 +31,13 @@
   
   // Find active battles at this location
   $effect(() => {
-    if (!tile || !tile.groups) return;
+    if (!tileData || !tileData.groups) return;
     
     const playerId = $currentPlayer?.uid;
     if (!playerId) return;
     
     // Find groups that can join battles
-    availableGroups = tile.groups
+    availableGroups = tileData.groups
       .filter(group => 
         group.owner === playerId && 
         group.status === 'idle' &&
@@ -51,7 +53,7 @@
     let battlingGroups = [];
     
     // First identify all groups in battle
-    tile.groups.forEach(group => {
+    tileData.groups.forEach(group => {
       if (group.inBattle && group.battleId) {
         battlingGroups.push(group);
         
@@ -91,8 +93,8 @@
         groupId: selectedGroup.id,
         battleId: selectedBattle.id,
         side: parseInt(selectedSide),
-        locationX: tile.x,
-        locationY: tile.y,
+        locationX: tileData.x,
+        locationY: tileData.y,
         worldId: $game.currentWorld
       });
       
@@ -102,8 +104,8 @@
         groupId: selectedGroup.id,
         battleId: selectedBattle.id,
         side: parseInt(selectedSide),
-        locationX: tile.x,
-        locationY: tile.y,
+        locationX: tileData.x,
+        locationY: tileData.y,
         worldId: $game.currentWorld
       });
       
@@ -116,7 +118,7 @@
             groupId: selectedGroup.id,
             battleId: selectedBattle.id,
             side: parseInt(selectedSide),
-            tile
+            tile: tileData
           });
         }
         
@@ -174,7 +176,7 @@
 <div class="overlay" transition:fade={{ duration: 150 }}>
   <div class="popup" transition:scale={{ start: 0.95, duration: 200 }}>
     <div class="header">
-      <h2>Join Battle - {tile?.x}, {tile?.y}</h2>
+      <h2>Join Battle - {tileData?.x}, {tileData?.y}</h2>
       <button class="close-btn" onclick={onClose} aria-label="Close dialog">
         <Close size="1.5em" />
       </button>

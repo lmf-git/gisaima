@@ -371,50 +371,12 @@
         case 'attack':
         case 'joinBattle':
         case 'demobilize':
-          onShowModal({ type: actionId, data: tile });
-          return;
-        
-        case 'inspect':
-          onShowModal({
-            type: 'inspect',
-            data: {
-              tile: tileData,
-              x: tileData.x,
-              y: tileData.y
-            }
-          });
-          return;
-          
         case 'gather':
-          try {
-            const groupToGather = tile.groups?.find(g => 
-              g.owner === $currentPlayer?.uid && 
-              g.status === 'idle'
-            );
-            
-            if (!groupToGather) {
-              alert('No idle group available for gathering');
-              return;
-            }
-            
-            const gatherFn = httpsCallable(functions, 'startGathering');
-            const gatherResult = await gatherFn({
-              groupId: groupToGather.id,
-              locationX: tile.x,
-              locationY: tile.y,
-              worldId: $game.currentWorld
-            });
-            console.log('Gather result:', gatherResult.data);
-          } catch (error) {
-            actionError = error;
-            console.error('Error gathering resources:', error);
-            if (error.code === 'unauthenticated') {
-              alert('Error gathering: You are not logged in.');
-            } else {
-              alert(`Error gathering: ${error.message || 'Unknown error'}`);
-            }
-          }
-          break;
+        case 'inspect':
+          // Use consistent approach for all action types
+          // All action components will access data from highlightedStore
+          onShowModal({ type: actionId });
+          return;
           
         default:
           console.log(`Unhandled action: ${actionId}`);

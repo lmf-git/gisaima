@@ -1,14 +1,15 @@
 <script>
   import { fade, scale } from 'svelte/transition';
-  import { onMount } from 'svelte';
-  import { functions } from "../../lib/firebase/firebase";
-  import { httpsCallable } from "firebase/functions";
   import { currentPlayer, game } from '../../lib/stores/game';
+  import { highlightedStore, targetStore } from '../../lib/stores/map';
   import Close from '../icons/Close.svelte';
+  import { getFunctions, httpsCallable } from 'firebase/functions';
 
-  // Props with default empty object to avoid destructuring errors
-  const { tile = {}, onClose = () => {}, onAttack = () => {} } = $props();
-  
+  const { onClose = () => {}, onAttack = () => {} } = $props();
+
+  // Get tile data directly from the highlightedStore
+  let tileData = $derived($highlightedStore || null);
+
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
@@ -26,15 +27,15 @@
   
   // Initialize available groups based on tile content
   $effect(() => {
-    if (!tile) return;
+    if (!tileData) return;
     
     const userGroups = [];
     const targetGroups = [];
     const playerId = $currentPlayer?.uid;
     
     // Check for groups on this tile
-    if (tile.groups && Object.values(tile.groups).length > 0) {
-      Object.values(tile.groups).forEach(group => {
+    if (tileData.groups && Object.values(tileData.groups).length > 0) {
+      Object.values(tileData.groups).forEach(group => {
         // Skip groups that are already in battle
         if (group.inBattle) return;
         
@@ -115,17 +116,18 @@
       console.log('Starting attack with params:', {
         attackerGroupIds: selectedAttackers, 
         defenderGroupIds: selectedDefenders,
-        locationX: tile.x,
-        locationY: tile.y,
+        locationX: tileData.x,
+        locationY: tileData.y,
         worldId: $game.currentWorld
       });
       
+      const functions = getFunctions();
       const attackGroupsFn = httpsCallable(functions, 'attackGroups');
       const result = await attackGroupsFn({
         attackerGroupIds: selectedAttackers, 
         defenderGroupIds: selectedDefenders,
-        locationX: tile.x,
-        locationY: tile.y,
+        locationX: tileData.x,
+        locationY: tileData.y,
         worldId: $game.currentWorld
       });
       
@@ -136,7 +138,7 @@
           onAttack({
             attackerGroupIds: selectedAttackers,
             defenderGroupIds: selectedDefenders,
-            tile
+            tile: tileData
           });
         }
         
@@ -168,7 +170,7 @@
 <dialog class="overlay" open aria-modal="true" aria-labelledby="attack-title">
   <div class="popup" transition:scale={{ start: 0.95, duration: 200 }}>
     <div class="header">
-      <h2 id="attack-title">Attack Group - {tile?.x}, {tile?.y}</h2>
+      <h2 id="attack-title">Attack Group - {tileData?.x}, {tileData?.y}</h2>
       <button class="close-btn" onclick={onClose} aria-label="Close dialog">
         <Close size="1.5em" />
       </button>

@@ -1,17 +1,20 @@
 <script>
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
+  import { highlightedStore, targetStore } from '../../lib/stores/map';
   import Close from '../icons/Close.svelte';
   import Human from '../icons/Human.svelte';
   import Elf from '../icons/Elf.svelte';
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
-  import { functions, auth } from "../../lib/firebase/firebase";
-  import { httpsCallable } from "firebase/functions";
+  import { getFunctions, httpsCallable } from 'firebase/functions';
 
-  const { tile = {}, onClose = () => {} } = $props();
-  
+  const { onClose = () => {} } = $props();
+
+  // Get tile data directly from the highlightedStore
+  let tileData = $derived($highlightedStore || null);
+
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
   let availableUnits = $state([]);
@@ -33,13 +36,13 @@
   }
 
   $effect(() => {
-    if (!tile) return;
+    if (!tileData) return;
     
     const units = [];
     const playerId = $currentPlayer?.uid;
     
-    if (tile.groups && tile.groups.length > 0) {
-      tile.groups.forEach(group => {
+    if (tileData.groups && tileData.groups.length > 0) {
+      tileData.groups.forEach(group => {
         if (group.owner === playerId && group.status !== 'mobilizing' && group.status !== 'moving') {
           if (group.units) {
             group.units.forEach(unit => {
@@ -61,13 +64,13 @@
       return;
     }
     
-    if (!isPlayerOnTile(tile, $currentPlayer.uid)) {
-      console.warn('Player not found on tile. Players data:', tile.players);
+    if (!isPlayerOnTile(tileData, $currentPlayer.uid)) {
+      console.warn('Player not found on tile. Players data:', tileData.players);
       mobilizeError = 'Player not found on this tile.';
       return;
     }
     
-    includePlayer = isPlayerOnTile(tile, playerId);
+    includePlayer = isPlayerOnTile(tileData, playerId);
     availableUnits = units;
   });
   
@@ -110,20 +113,20 @@
       
       console.log("Preparing mobilization request with:", {
         worldId: $game.currentWorld,
-        tileX: tile.x,
-        tileY: tile.y,
+        tileX: tileData.x,
+        tileY: tileData.y,
         units: selectedUnits.map(u => u.id),
         includePlayer,
         name: groupName,
         race: $currentPlayer?.race
       });
       
-      const mobilizeFn = httpsCallable(functions, 'mobilizeUnits');
+      const mobilizeFn = httpsCallable(getFunctions(), 'mobilizeUnits');
       
       const result = await mobilizeFn({
         worldId: $game.currentWorld,
-        tileX: tile.x,
-        tileY: tile.y,
+        tileX: tileData.x,
+        tileY: tileData.y,
         units: selectedUnits.map(u => u.id),
         includePlayer,
         name: groupName,
@@ -147,11 +150,11 @@
   let canMobilize = $derived(
     (selectedUnits.length > 0) || 
     (includePlayer && (
-      Array.isArray(tile?.players)
-        ? tile.players.some(p => p.uid === $currentPlayer?.uid || p.id === $currentPlayer?.uid)
-        : tile?.players && (
-            tile.players[$currentPlayer?.uid] !== undefined || 
-            Object.values(tile.players).some(p => p.uid === $currentPlayer?.uid || p.id === $currentPlayer?.uid)
+      Array.isArray(tileData?.players)
+        ? tileData.players.some(p => p.uid === $currentPlayer?.uid || p.id === $currentPlayer?.uid)
+        : tileData?.players && (
+            tileData.players[$currentPlayer?.uid] !== undefined || 
+            Object.values(tileData.players).some(p => p.uid === $currentPlayer?.uid || p.id === $currentPlayer?.uid)
           )
     ))
   );
@@ -191,21 +194,21 @@
        role="document" 
        transition:scale={{ start: 0.95, duration: 200 }}>
     <div class="header">
-      <h2 id="mobilize-title">Mobilize Forces - {tile?.x}, {tile?.y}</h2>
+      <h2 id="mobilize-title">Mobilize Forces - {tileData?.x}, {tileData?.y}</h2>
       <button class="close-btn" onclick={onClose} aria-label="Close mobilize dialog">
         <Close size="1.5em" />
       </button>
     </div>
     
-    {#if tile}
+    {#if tileData}
       <div class="location-info">
         <div class="terrain">
-          <div class="terrain-color" style="background-color: {tile.color}"></div>
-          <span>{_fmt(tile.biome?.name) || "Unknown"}</span>
+          <div class="terrain-color" style="background-color: {tileData.color}"></div>
+          <span>{_fmt(tileData.biome?.name) || "Unknown"}</span>
           
-          {#if tile.structure}
+          {#if tileData.structure}
             <span class="structure-tag">
-              {tile.structure.name || _fmt(tile.structure.type)}
+              {tileData.structure.name || _fmt(tileData.structure.type)}
             </span>
           {/if}
         </div>
@@ -228,11 +231,11 @@
         </div>
         
         <div class="options">
-          {#if Array.isArray(tile?.players)
-              ? tile.players.some(p => p.id === $currentPlayer?.uid || p.uid === $currentPlayer?.uid)
-              : tile?.players && (
-                  tile.players[$currentPlayer?.uid] !== undefined || 
-                  Object.values(tile.players).some(p => p.uid === $currentPlayer?.uid || p.id === $currentPlayer?.uid)
+          {#if Array.isArray(tileData?.players)
+              ? tileData.players.some(p => p.id === $currentPlayer?.uid || p.uid === $currentPlayer?.uid)
+              : tileData?.players && (
+                  tileData.players[$currentPlayer?.uid] !== undefined || 
+                  Object.values(tileData.players).some(p => p.uid === $currentPlayer?.uid || p.id === $currentPlayer?.uid)
                 )}
             <div class="option-row">
               <label for="include-player">
@@ -326,7 +329,7 @@
           <h3>Summary</h3>
           <p>
             Units selected: {selectedUnits.length}
-            {#if includePlayer && tile?.players?.some(p => p.id === $currentPlayer?.uid)}
+            {#if includePlayer && tileData?.players?.some(p => p.id === $currentPlayer?.uid)}
               + You
             {/if}
           </p>

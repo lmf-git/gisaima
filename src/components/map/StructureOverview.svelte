@@ -1,11 +1,14 @@
 <script>
   import { fade, scale } from 'svelte/transition';
-  import { cubicOut } from 'svelte/easing';
+  import { highlightedStore } from '../../lib/stores/map';
+  import { currentPlayer, game } from '../../lib/stores/game';
   import Close from '../icons/Close.svelte';
-  import { currentPlayer } from '../../lib/stores/game.js';
   
-  // Structure and location information - rely directly on the tile data passed from Details
-  const { x = 0, y = 0, tile = null, onClose = () => {} } = $props();
+  // Props can remain but we'll prioritize store data
+  const { onClose = () => {} } = $props();
+  
+  // Get tile data directly from the highlightedStore
+  let tileData = $derived($highlightedStore || null);
   
   // Format text for display
   function formatText(text) {
@@ -18,8 +21,8 @@
     return rarity?.toLowerCase() || 'common';
   }
   
-  // Get structure data directly from the tile prop
-  const structure = $derived(tile?.structure || null);
+  // Get structure data directly from the tileData
+  const structure = $derived(tileData?.structure || null);
   
   // Check if current player owns this structure
   const isOwned = $derived(structure?.owner === $currentPlayer?.uid);
@@ -100,7 +103,7 @@
     <div class="header">
       <div class="header-content">
         <h2>{structure?.name || formatText(structure?.type) || "Structure"}</h2>
-        <div class="location">Location: {x}, {y}</div>
+        <div class="location">Location: {tileData?.x}, {tileData?.y}</div>
       </div>
       <button class="close-btn" onclick={onClose} aria-label="Close structure overview">
         <Close size="1.5em" />

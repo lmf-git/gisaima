@@ -971,95 +971,69 @@
             <SpawnMenu onSpawn={handleSpawnComplete} />
         {/if}
 
-        {#if showMobilize && mobilizeData}
+        {#if modalState.visible}
+          {#if modalState.type === 'inspect' && modalState.data}
+            <StructureOverview 
+              x={modalState.data.x}
+              y={modalState.data.y}
+              tile={modalState.data.tile}
+              onClose={closeModal}
+            />
+          {:else if modalState.type === 'mobilize'}
             <Mobilize
-                tile={mobilizeData}
-                onClose={() => {
-                    showMobilize = false;
-                    setHighlighted(null, null);
-                }}
+              onClose={closeModal}
             />
-        {/if}
-
-        {#if showMove && moveData}
-            <div class="move-dialog-container">
-                <Move
-                    tile={moveData}
-                    onClose={(complete = true, startingPathDraw = false) => {
-                        showMove = false;
-                        
-                        if (!complete && startingPathDraw) {
-                            return;
-                        }
-                        
-                        isPathDrawingMode = false;
-                        pathDrawingGroup = null;
-                        currentPath = [];
-                        setHighlighted(null, null);
-                    }}
-                    onPathDrawingStart={handlePathDrawingStart}
-                    onPathDrawingCancel={handlePathDrawingCancel}
-                    onConfirmPath={confirmPathDrawing}
-                    {pathDrawingGroup}
-                    {currentPath}
-                />
-            </div>
-        {/if}
-
-        {#if showAttack && attackData}
+          {:else if modalState.type === 'move'}
+            <Move
+              onClose={(complete = true, startingPathDraw = false) => {
+                if (!complete && startingPathDraw) {
+                  return;
+                }
+                
+                isPathDrawingMode = false;
+                pathDrawingGroup = null;
+                currentPath = [];
+                closeModal();
+              }}
+              onPathDrawingStart={handlePathDrawingStart}
+              onPathDrawingCancel={handlePathDrawingCancel}
+              onConfirmPath={confirmPathDrawing}
+              {pathDrawingGroup}
+              {currentPath}
+            />
+          {:else if modalState.type === 'attack'}
             <AttackGroups
-                tile={attackData}
-                onClose={() => {
-                    showAttack = false;
-                    setHighlighted(null, null);
-                }}
-                onAttack={(tile) => {
-                    showAttack = true;
-                    attackData = tile;
-                }}
+              onClose={closeModal}
+              onAttack={(data) => {
+                console.log('Attack started:', data);
+                closeModal();
+              }}
             />
-        {/if}
-
-        {#if showJoinBattle && joinBattleData}
+          {:else if modalState.type === 'joinBattle'}
             <JoinBattle
-                tile={joinBattleData}
-                onClose={() => {
-                    showJoinBattle = false;
-                    setHighlighted(null, null);
-                }}
-                onJoinBattle={(tile) => {
-                    showJoinBattle = true;
-                    joinBattleData = tile;
-                }}
+              onClose={closeModal}
+              onJoinBattle={(data) => {
+                console.log('Joined battle:', data);
+                closeModal();
+              }}
             />
-        {/if}
-
-        {#if showGather && gatherData}
+          {:else if modalState.type === 'gather'}
             <Gather
-                tile={gatherData}
-                onClose={() => {
-                    showGather = false;
-                    setHighlighted(null, null);
-                }}
-                onGather={(data) => {
-                    console.log('Gathering started:', data);
-                    showGather = false;
-                }}
+              onClose={closeModal}
+              onGather={(data) => {
+                console.log('Gathering started:', data);
+                closeModal();
+              }}
             />
-        {/if}
-
-        {#if showDemobilize && demobilizeData}
+          {:else if modalState.type === 'demobilize'}
             <Demobilize
-                tile={demobilizeData}
-                onClose={() => {
-                    showDemobilize = false;
-                    setHighlighted(null, null);
-                }}
-                onDemobilize={(data) => {
-                    console.log('Demobilization started:', data);
-                    showDemobilize = false;
-                }}
+              onClose={closeModal}
+              onDemobilize={(data) => {
+                console.log('Demobilization started:', data);
+                closeModal();
+              }}
             />
+          {/if}
         {/if}
 
         {#if isPathDrawingMode}
@@ -1084,17 +1058,6 @@
                     </button>
                 </div>
             </div>
-        {/if}
-
-        {#if modalState.visible}
-            {#if modalState.type === 'inspect' && modalState.data}
-                <StructureOverview 
-                    x={modalState.data.x}
-                    y={modalState.data.y}
-                    tile={modalState.data.tile}
-                    onClose={closeModal}
-                />
-            {/if}
         {/if}
     {/if}
 </div>

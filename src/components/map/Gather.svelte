@@ -1,16 +1,14 @@
 <script>
-  import { onMount } from 'svelte';
-  import { functions } from "../../lib/firebase/firebase";
-  import { httpsCallable } from "firebase/functions";
-  import { currentPlayer } from '../../lib/stores/game.js';
+  import { fade, scale } from 'svelte/transition';
+  import { currentPlayer, game } from '../../lib/stores/game';
+  import { highlightedStore, targetStore } from '../../lib/stores/map';
   import Close from '../icons/Close.svelte';
+  import { getFunctions, httpsCallable } from 'firebase/functions';
   
-  // Props with defaults using Svelte 5 $props() rune
-  const { 
-    tile = null, 
-    onClose = () => {},
-    onGather = () => {}
-  } = $props();
+  const { onClose = () => {}, onGather = () => {} } = $props();
+  
+  // Get tile data directly from the highlightedStore
+  let tileData = $derived($highlightedStore || null);
   
   // Component state
   let loading = $state(false);
@@ -21,12 +19,12 @@
   
   // Extract idle groups from the tile
   $effect(() => {
-    if (!tile || !tile.groups || !$currentPlayer) return;
+    if (!tileData || !tileData.groups || !$currentPlayer) return;
     
     // Filter for idle groups owned by the player
-    const groups = Array.isArray(tile.groups) ? 
-      tile.groups.filter(g => g.status === 'idle' && g.owner === $currentPlayer.uid) :
-      Object.values(tile.groups).filter(g => g.status === 'idle' && g.owner === $currentPlayer.uid);
+    const groups = Array.isArray(tileData.groups) ? 
+      tileData.groups.filter(g => g.status === 'idle' && g.owner === $currentPlayer.uid) :
+      Object.values(tileData.groups).filter(g => g.status === 'idle' && g.owner === $currentPlayer.uid);
     
     availableGroups = groups;
     
@@ -47,12 +45,13 @@
     error = null;
     
     try {
+      const functions = getFunctions();
       const startGatheringFn = httpsCallable(functions, 'startGathering');
       
       const result = await startGatheringFn({
         groupId: selectedGroup.id,
-        locationX: tile.x,
-        locationY: tile.y,
+        locationX: tileData.x,
+        locationY: tileData.y,
         worldId: $currentPlayer.world
       });
       
@@ -106,7 +105,7 @@
           <p class="info">Your group will gather resources until the next game tick.</p>
         </div>
       {:else}
-        <p class="location">Location: {tile?.x}, {tile?.y}</p>
+        <p class="location">Location: {tileData?.x}, {tileData?.y}</p>
         
         {#if availableGroups.length === 0}
           <div class="error-message">
