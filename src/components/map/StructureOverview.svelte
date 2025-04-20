@@ -89,7 +89,7 @@
         {formatText(tile?.structure?.type || 'Structure')} 
         {tile ? `(${formatCoords(tile.x, tile.y)})` : ''}
       </h3>
-      <button class="close-button" on:click={onClose}>
+      <button class="close-button" onclick={onClose}>
         <Close size="1.6em" extraClass="close-icon-dark" />
       </button>
     </header>
@@ -143,7 +143,13 @@
         <div class="entities-section">
           <div 
             class="section-header"
-            on:click={() => toggleSection('items')}
+            onclick={() => toggleSection('items')}
+            onkeydown={(e) => {
+              if (e.key === 'Escape' && !collapsedSections.items) {
+                toggleSection('items');
+                e.preventDefault();
+              }
+            }}
             role="button"
             tabindex="0"
             aria-expanded={!collapsedSections.items}
@@ -160,7 +166,7 @@
                 <div class="storage-tabs">
                   <button 
                     class="tab-button {activeTab === 'shared' ? 'active' : ''}" 
-                    on:click={() => activeTab = 'shared'}
+                    onclick={() => activeTab = 'shared'}
                   >
                     Shared Storage
                     {#if tile?.structure?.items && tile?.structure?.items.length > 0}
@@ -171,7 +177,7 @@
                   {#if hasPersonalBank}
                     <button 
                       class="tab-button {activeTab === 'personal' ? 'active' : ''}"
-                      on:click={() => activeTab = 'personal'}
+                      onclick={() => activeTab = 'personal'}
                     >
                       Your Bank
                       <span class="tab-count">{tile?.structure?.banks[$currentPlayer.uid].length}</span>
