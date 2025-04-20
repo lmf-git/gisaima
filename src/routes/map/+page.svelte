@@ -917,19 +917,17 @@
             </button>
         </div>
         
-        <div class="entity-controls">
-            <button 
-                class="control-button entity-button" 
-                onclick={toggleEntities}
-                aria-label={showEntities ? "Hide entities" : "Show entities"}
-                disabled={$needsSpawn || isTutorialVisible}>
-                {#if showEntities || entitiesClosing}
-                    <Close size="1.2em" extraClass="close-icon-dark" />
-                {:else}
+        {#if !(showEntities || entitiesClosing)}
+            <div class="entity-controls">
+                <button 
+                    class="control-button entity-button" 
+                    onclick={toggleEntities}
+                    aria-label="Show entities"
+                    disabled={$needsSpawn || isTutorialVisible}>
                     <span class="button-text">E</span>
-                {/if}
-            </button>
-        </div>
+                </button>
+            </div>
+        {/if}
         
         {#if showMinimap || minimapClosing}
             <Minimap closing={minimapClosing} />
@@ -943,6 +941,7 @@
                 selectedStructure = structure;
                 structureLocation = { x, y };
               }}
+              onClose={() => toggleEntities()}
             />
         {/if}
 

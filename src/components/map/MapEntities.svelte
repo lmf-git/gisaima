@@ -13,9 +13,10 @@
   import Fairy from '../../components/icons/Fairy.svelte';
   import Structure from '../../components/icons/Structure.svelte';
   import Torch from '../../components/icons/Torch.svelte';
+  import Close from '../../components/icons/Close.svelte'; // Add Close icon import
   
   // Props
-  const { closing = false, onShowStructure = null } = $props();
+  const { closing = false, onShowStructure = null, onClose = null } = $props();
   
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -219,6 +220,11 @@
     } else {
       console.log('Structure clicked but no onShowStructure handler provided:', structure);
     }
+  }
+  
+  // Function to handle close button click
+  function handleClose() {
+    if (onClose) onClose();
   }
   
   // Extract all entities from all visible coordinates - fixed $derived syntax
@@ -558,6 +564,11 @@
     <h3 class="title">
       Map Entities
       <span class="subtitle">{visibleChunks} chunks visible</span>
+      
+      <!-- Add close button -->
+      <button class="close-button" onclick={handleClose} aria-label="Close map entities panel">
+        <Close size="1em" extraClass="close-icon" />
+      </button>
     </h3>
     
     <!-- Force filter tabs to always display when any entities exist -->
@@ -1509,6 +1520,28 @@
     background-color: rgba(0, 0, 0, 0.05);
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     font-family: var(--font-heading);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .close-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.3em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-left: auto;
+    transition: background-color 0.2s;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .close-button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.9);
   }
 
   .entities-content {
