@@ -357,15 +357,6 @@
         description: 'View details about this structure'
       });
     }
-    
-    if (isPlayerAvailableOnTile(tileData, playerId)) {
-      availableActions.push({
-        id: 'explore',
-        label: 'Explore',
-        icon: '🔭',
-        description: 'Explore this location'
-      });
-    }
 
     actions = availableActions;
   });
@@ -393,26 +384,6 @@
             }
           });
           return;
-          
-        case 'explore':
-          try {
-            const exploreFn = httpsCallable(functions, 'exploreLocation');
-            const result = await exploreFn({ 
-              x: tile.x, 
-              y: tile.y,
-              worldId: $game.currentWorld
-            });
-            console.log('Explore result:', result.data);
-          } catch (error) {
-            actionError = error;
-            console.error('Error exploring location:', error);
-            if (error.code === 'unauthenticated') {
-              alert('Error exploring: You are not logged in.');
-            } else {
-              alert(`Error exploring: ${error.message || 'Unknown error'}`);
-            }
-          }
-          break;
           
         case 'gather':
           try {
@@ -1144,21 +1115,24 @@
     align-items: center;
     padding: 0.8em;
     margin-bottom: 0.5em;
-    background: rgba(0, 0, 0, 0.25);
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.15);
     border-radius: 0.3em;
     cursor: pointer;
-    border: none;
     width: 100%;
     font-family: inherit;
     font-size: inherit;
-    color: inherit;
+    color: rgba(0, 0, 0, 0.8);
     text-align: left;
     transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
   
   .action-button:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.4);
+    background-color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.2);
     transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
   }
   
   .action-button:disabled {
