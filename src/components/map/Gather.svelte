@@ -1,20 +1,36 @@
 <script>
   import { fade, scale } from 'svelte/transition';
+  import { onMount } from 'svelte';
   import { currentPlayer, game, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   import { highlightedStore, targetStore } from '../../lib/stores/map';
   import { getFunctions, httpsCallable } from 'firebase/functions';
   import Close from '../icons/Close.svelte';
   
   // Props
-  const { onClose = () => {}, onGather = () => {} } = $props();
+  const { onClose = () => {}, onGather = () => {}, data = null } = $props();
 
   // States
   let selectedGroupId = $state(null);
   let isSubmitting = $state(false);
   let error = $state(null);
 
-  // Derived states
-  const currentTile = $derived($highlightedStore || $targetStore);
+  // Derived states - fix how we determine the currentTile
+  const currentTile = $derived(() => {
+    // Log what data we received to help with debugging
+    console.log('Gather data received:', data);
+    
+    if (data?.group) {
+      // If a specific group was provided, use the data as is
+      return data;
+    } 
+    else if (data?.x !== undefined && data?.y !== undefined) {
+      // If we received tile coordinates but no specific group
+      return data;
+    }
+    // Fallback to highlighted or target store
+    return $highlightedStore || $targetStore;
+  });
+  
   const eligibleGroups = $derived(getEligibleGroups());
   const availableItems = $derived(getAvailableItems());
 
@@ -22,28 +38,51 @@
   let dialog;
   
   onMount(() => {
-    dialog?.showModal();
+    console.log('Gather component mounted, currentTile:', currentTile);
+    console.log('Available items:', availableItems);
+    console.log('Eligible groups:', eligibleGroups);
     
+    // Show the modal dialog
+    if (dialog) {
+      dialog.showModal();
+    } else {
+      console.error('Dialog element not found in Gather component');
+    }
+    
+    // Auto-select the group if provided in data
+    if (data?.group) {
+      selectedGroupId = data.group.id;
+      console.log('Auto-selected group:', selectedGroupId);
+    }
     // Auto-select first group if there's only one
-    if (eligibleGroups.length === 1) {
+    else if (eligibleGroups.length === 1) {
       selectedGroupId = eligibleGroups[0].id;
+      console.log('Auto-selected only available group:', selectedGroupId);
     }
   });
 
   function getEligibleGroups() {
     // Get groups owned by current player that are idle and not in battle
-    if (!currentTile?.groups || !$currentPlayer) return [];
+    if (!currentTile?.groups || !$currentPlayer) {
+      console.log('No eligible groups: missing groups or player data');
+      return [];
+    }
     
-    return currentTile.groups.filter(group => 
+    const eligible = currentTile.groups.filter(group => 
       group.owner === $currentPlayer.uid && 
       group.status === 'idle' &&
       !group.inBattle
     );
+    
+    console.log('Filtered eligible groups:', eligible.length);
+    return eligible;
   }
 
   function getAvailableItems() {
     // Get items on the current tile
-    return currentTile?.items || [];
+    const items = currentTile?.items || [];
+    console.log('Available items on tile:', items.length);
+    return items;
   }
 
   function handleKeyDown(event) {

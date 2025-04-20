@@ -150,7 +150,15 @@
         break;
         
       case 'gather':
-        onShowModal({ type: 'gather', data: data ? { ...tileData, group: data.group } : tileData });
+        console.log('Starting gather action with data:', data);
+        console.log('Tile data:', tileData);
+        
+        // Fix: Ensure we always include the tileData, regardless of whether a specific group was selected
+        const gatherData = data && data.group 
+          ? { ...tileData, group: data.group } 
+          : { ...tileData };
+          
+        onShowModal({ type: 'gather', data: gatherData });
         break;
         
       case 'demobilize':
@@ -241,14 +249,17 @@
   }
   
   function canGather(tile) {
-    if (!tile || !$currentPlayer) return false;
+    if (!tile || !$currentPlayer) {
+      return false;
+    }
     
-    // Check if there are any player-owned groups that are idle and items on the tile
+    // Only check if there are any player-owned groups that are idle and not in battle
+    // (Similar to canDemobilize, but don't check for items)
     return tile.groups?.some(g => 
       g.owner === $currentPlayer.uid && 
       g.status === 'idle' &&
       !g.inBattle
-    ) && tile.items?.length > 0;
+    );
   }
   
   function canJoinBattle(tile) {
@@ -520,7 +531,7 @@
                 {/if}
                 
                 {#if canGather($highlightedStore)}
-                  <button class="action-button" onclick={() => executeAction('gather')}>
+                  <button class="action-button" onclick={() => executeAction('gather', { source: 'details' })}>
                     Gather
                   </button>
                 {/if}

@@ -1,8 +1,8 @@
 <script>
-    import { onMount, onDestroy } from 'svelte';
     import { browser } from '$app/environment';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
+    import { get } from 'svelte/store'; // Get the 'get' function from svelte/store instead
     import { user, loading as userLoading } from '../../lib/stores/user.js'; 
     import { 
       game, 
@@ -159,6 +159,18 @@
                 y: options.data.y || 0
             };
             selectedTile = options.data.tile || null;
+        } else if (options.type === 'gather') {
+            // Add special handling for gather modal
+            console.log('Setting up gather modal with data:', options.data);
+            
+            modalState = {
+                type: 'gather',
+                data: options.data,
+                visible: true
+            };
+            
+            // Store relevant data for gather action
+            gatherData = options.data;
         } else if (options.type) {
             // Handle other modal types
             modalState = {
@@ -182,10 +194,11 @@
     }
 
     function parseUrlCoordinates() {
-        if (!browser || !$page.url) return null;
+        if (!browser || !page) return null;
         
-        const x = $page.url.searchParams.get('x');
-        const y = $page.url.searchParams.get('y');
+        const url = get(page).url;
+        const x = url.searchParams.get('x');
+        const y = url.searchParams.get('y');
         
         if (x !== null && y !== null) {
             const parsedX = parseInt(x, 10);
@@ -219,8 +232,9 @@
     }
     
     $effect(() => {
-        if (coordinateProcessingState.processing || !browser || !$page.url) return;
+        if (coordinateProcessingState.processing || !browser || !page) return;
         
+        const url = get(page).url;
         const newCoords = parseUrlCoordinates();
         
         if (newCoords && !isInternalUrlChange()) {
@@ -438,7 +452,8 @@
     
     $effect(() => {
       if (browser && !$userLoading && $user === null) {
-        const worldId = $page.url.searchParams.get('world') || $game.currentWorld;
+        const url = get(page).url;
+        const worldId = url.searchParams.get('world') || $game.currentWorld;
         const redirectPath = worldId ? `/map?world=${worldId}` : '/map';
         goto(`/login?redirect=${encodeURIComponent(redirectPath)}`);
       }
@@ -449,18 +464,28 @@
     $effect(() => {
         if (!browser) return;
         
-        const worldFromUrl = $page.url.searchParams.get('world');
+        const url = get(page).url;
+        const worldFromUrl = url.searchParams.get('world');
         const worldFromStore = $game?.currentWorld;
         
         currentWorldId = worldFromUrl || worldFromStore || null;
     });
 
-    onMount(() => {
-        if (!browser) return;
+    // Add a flag to track initialization
+    let initialized = $state(false);
+    
+    // Use $effect correctly with only one argument
+    $effect(() => {
+        // Skip if already initialized or not in browser
+        if (initialized || !browser) return;
+        
+        // Set initialized flag immediately to prevent duplicate execution
+        initialized = true;
         
         document.body.classList.add('map-page-active');
         
-        const worldId = $page.url.searchParams.get('world') || $game.currentWorld;
+        const url = get(page).url;
+        const worldId = url.searchParams.get('world') || $game.currentWorld;
         const coords = parseUrlCoordinates();
         
         if (coords) {
@@ -496,13 +521,18 @@
                 loading = false;
             });
         }
-    });
-    
-    onDestroy(() => {
-        if (browser) {
-            document.body.classList.remove('map-page-active');
-            cleanup();
-        }
+        
+        // Set up cleanup function for component destruction
+        window.addEventListener('beforeunload', cleanup);
+        
+        // Return cleanup function (will be called when effect is re-run, which doesn't happen in this case)
+        return () => {
+            if (browser) {
+                document.body.classList.remove('map-page-active');
+                cleanup();
+                window.removeEventListener('beforeunload', cleanup);
+            }
+        };
     });
 
     let showMinimap = $state(true);
@@ -1067,6 +1097,7 @@
                 console.log('Gathering started:', data);
                 closeModal();
               }}
+              data={modalState.data}
             />
           {:else if modalState.type === 'demobilize'}
             <Demobilize
