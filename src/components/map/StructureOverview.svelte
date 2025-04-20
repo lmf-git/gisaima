@@ -80,7 +80,17 @@
     hasPersonalBank || 
     (tile?.structure?.items && tile?.structure?.items.length > 0)
   );
+  
+  // Add keyboard handler for the Escape key
+  function handleKeyDown(event) {
+    if (event.key === 'Escape') {
+      onClose();
+    }
+  }
 </script>
+
+<!-- Add global keyboard event listener -->
+<svelte:window on:keydown={handleKeyDown} />
 
 <div class="modal-wrapper">
   <div class="modal structure-modal">
