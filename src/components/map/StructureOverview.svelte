@@ -4,6 +4,12 @@
   import Close from '../icons/Close.svelte';
   import Structure from '../icons/Structure.svelte';
   import Torch from '../icons/Torch.svelte';
+  // Import race icons for faction-specific structures
+  import Human from '../icons/Human.svelte';
+  import Elf from '../icons/Elf.svelte';
+  import Dwarf from '../icons/Dwarf.svelte';
+  import Goblin from '../icons/Goblin.svelte';
+  import Fairy from '../icons/Fairy.svelte';
 
   // Props
   const { x = 0, y = 0, tile = null, onClose = () => {} } = $props();
@@ -37,6 +43,21 @@
   function getRarityClass(rarity) {
     return rarity?.toLowerCase() || 'common';
   }
+  
+  // Get race icon component based on faction
+  function getRaceIcon(faction) {
+    if (!faction) return null;
+    
+    const factionLower = faction.toLowerCase();
+    switch(factionLower) {
+      case 'human': return Human;
+      case 'elf': return Elf;
+      case 'dwarf': return Dwarf;
+      case 'goblin': return Goblin;
+      case 'fairy': return Fairy;
+      default: return null;
+    }
+  }
 </script>
 
 <div class="modal-wrapper">
@@ -59,13 +80,46 @@
           {:else}
             <Structure size="3.5em" extraClass="structure-type-icon {tile?.structure?.type || ''}-icon" />
           {/if}
+          
+          <!-- Add race icon if the structure has a faction -->
+          {#if tile?.structure?.faction}
+            {#if tile?.structure?.faction.toLowerCase() === 'human'}
+              <Human extraClass="race-icon-structure" />
+            {:else if tile?.structure?.faction.toLowerCase() === 'elf'}
+              <Elf extraClass="race-icon-structure" />
+            {:else if tile?.structure?.faction.toLowerCase() === 'dwarf'}
+              <Dwarf extraClass="race-icon-structure" />
+            {:else if tile?.structure?.faction.toLowerCase() === 'goblin'}
+              <Goblin extraClass="race-icon-structure" />
+            {:else if tile?.structure?.faction.toLowerCase() === 'fairy'}
+              <Fairy extraClass="race-icon-structure" />
+            {/if}
+          {/if}
         </div>
         
         <div class="structure-info">
           <div class="structure-name">
-            {formatText(tile?.structure?.type || 'Unknown')}
+            <h2>{tile?.structure?.name || formatText(tile?.structure?.type) || 'Unknown'}</h2>
             {#if isOwnedByCurrentPlayer(tile?.structure)}
               <span class="entity-badge owner-badge">Yours</span>
+            {/if}
+            
+            {#if tile?.structure?.faction}
+              <span class="entity-badge faction-badge">
+                <!-- Add race icon inside the faction badge -->
+                {#if tile?.structure?.faction.toLowerCase() === 'human'}
+                  <Human extraClass="race-icon-badge" />
+                {:else if tile?.structure?.faction.toLowerCase() === 'elf'}
+                  <Elf extraClass="race-icon-badge" />
+                {:else if tile?.structure?.faction.toLowerCase() === 'dwarf'}
+                  <Dwarf extraClass="race-icon-badge" />
+                {:else if tile?.structure?.faction.toLowerCase() === 'goblin'}
+                  <Goblin extraClass="race-icon-badge" />
+                {:else if tile?.structure?.faction.toLowerCase() === 'fairy'}
+                  <Fairy extraClass="race-icon-badge" />
+                {/if}
+                <span>{formatText(tile?.structure?.faction)}</span>
+              </span>
             {/if}
           </div>
           
@@ -211,8 +265,11 @@
 
   .structure-icon-container {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+    gap: 0.5em;
+    min-width: 4em;
   }
   
   .structure-info {
@@ -220,13 +277,19 @@
   }
   
   .structure-name {
-    font-size: 1.1em;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.8);
-    margin-bottom: 0.5em;
     display: flex;
     align-items: center;
     gap: 0.5em;
+    flex-wrap: wrap;
+    margin-bottom: 0.5em;
+  }
+  
+  .structure-name h2 {
+    margin: 0;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.8);
+    font-family: var(--font-heading);
   }
   
   .structure-description {
@@ -241,12 +304,29 @@
     padding: 0.2em 0.4em;
     border-radius: 0.3em;
     font-weight: 500;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
   }
 
   .owner-badge {
     background-color: rgba(76, 175, 80, 0.2);
     color: #2e7d32;
     border: 1px solid rgba(76, 175, 80, 0.4);
+  }
+  
+  .faction-badge {
+    background-color: rgba(33, 150, 243, 0.2);
+    color: #0277bd;
+    border: 1px solid rgba(33, 150, 243, 0.4);
+  }
+
+  /* Race icon styling inside the badge */
+  :global(.race-icon-badge) {
+    width: 1em;
+    height: 1em;
+    fill: #000000 !important;
   }
 
   /* Section styling */
@@ -484,6 +564,13 @@
   
   :global(.citadel-icon) {
     filter: drop-shadow(0 0 2px rgba(209, 138, 230, 0.7));
+  }
+
+  :global(.race-icon-structure) {
+    width: 1.8em;
+    height: 1.8em;
+    fill: #64FFDA;
+    margin-top: -0.8em;
   }
 
   @keyframes appear {
