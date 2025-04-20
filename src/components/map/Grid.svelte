@@ -1118,8 +1118,14 @@
   }
   
   .structure-indicator {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(0, 0, 0, 0.9);
     border-radius: 0;
+  }
+
+  .structure-indicator {
+    background: rgba(0, 0, 0, 0.9);
+    box-shadow: 0 0 .25em rgba(0, 0, 0, 0.8);
+    border-radius: 50%;
   }
   
   .group-indicator {
@@ -1581,7 +1587,7 @@
   
   :global(.structure-icon) {
     opacity: 0.8;
-    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.5));
   }
   
   :global(.fortress-icon) {

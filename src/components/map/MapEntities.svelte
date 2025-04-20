@@ -1511,8 +1511,9 @@
 
   /* Match these colors to the grid entity indicators */
   .filter-count-structures {
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.6);
+    background: rgba(0, 0, 0, 0.9);
+    box-shadow: 0 0 0.15em rgba(0, 0, 0, 0.6);
+    color: rgba(255, 255, 255, 0.9); /* Add white text color for visibility against black background */
   }
   
   .filter-count-groups {
