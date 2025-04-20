@@ -783,12 +783,12 @@
             <path 
               d={pathData} 
               stroke="rgba(255, 255, 255, 0.9)"
-              stroke-width="1"
-              stroke-dasharray="6,4"
+              stroke-width="0.6"
+              stroke-dasharray="4,3"
               stroke-linejoin="round" 
               stroke-linecap="round"
               fill="none"
-              opacity="0.9"
+              opacity="0.8"
             />
             
             <!-- Draw direction dots along the path -->
@@ -799,10 +799,10 @@
               <circle 
                 cx="{pos.posX * 100}" 
                 cy="{pos.posY * 100}" 
-                r="{i === 0 || i === customPathPoints.length - 1 ? '1.2' : '0.8'}" 
-                fill="{i === 0 ? 'rgba(255, 255, 255, 0.9)' : i === customPathPoints.length - 1 ? 'rgba(255, 255, 255, 0.9)' : 'rgba(200, 200, 255, 0.8)'}" 
-                stroke="{i === 0 ? 'rgba(66, 133, 244, 0.9)' : i === customPathPoints.length - 1 ? 'rgba(66, 133, 244, 0.9)' : 'rgba(0, 0, 0, 0.3)'}"
-                stroke-width="0.5"
+                r="{i === 0 || i === customPathPoints.length - 1 ? '0.7' : '0.5'}" 
+                fill="{i === 0 ? 'rgba(255, 255, 255, 0.3)' : i === customPathPoints.length - 1 ? 'rgba(255, 255, 255, 0.3)' : 'rgba(200, 200, 255, 0.2)'}" 
+                stroke="{i === 0 ? 'rgba(66, 133, 244, 0.9)' : i === customPathPoints.length - 1 ? 'rgba(66, 133, 244, 0.9)' : 'rgba(200, 200, 255, 0.8)'}"
+                stroke-width="0.4"
               />
               
               <!-- Draw connection dots between points -->
@@ -815,8 +815,10 @@
                   <circle 
                     cx="{midX}" 
                     cy="{midY}" 
-                    r="0.5" 
-                    fill="rgba(200, 200, 255, 0.7)"
+                    r="0.3" 
+                    fill="transparent"
+                    stroke="rgba(200, 200, 255, 0.7)"
+                    stroke-width="0.3"
                     opacity="0.7"
                   />
                 {/if}
@@ -832,12 +834,12 @@
               <path 
                 d={createPathData(path.points)} 
                 stroke={path.color}
-                stroke-width="1"
-                stroke-dasharray="8,5"
+                stroke-width="0.5"
+                stroke-dasharray="6,4"
                 stroke-linejoin="round"
                 stroke-linecap="round"
                 fill="none"
-                opacity="0.8"
+                opacity="0.7"
                 class="animated-path"
                 aria-label={`Movement path for ${path.owner === $currentPlayer?.uid ? 'your' : 'another'} group`}
               />
@@ -849,11 +851,11 @@
                 <circle 
                   cx="{pos.posX * 100}" 
                   cy="{pos.posY * 100}" 
-                  r="{i === 0 || i === path.points.length - 1 ? '0.4' : '0.2'}" 
-                  fill={path.color} 
-                  stroke="rgba(0,0,0,0.2)"
-                  stroke-width="0.4"
-                  opacity="{i === 0 || i === path.points.length - 1 ? '0.9' : '0.5'}"
+                  r="{i === 0 || i === path.points.length - 1 ? '0.35' : '0.2'}" 
+                  fill="transparent" 
+                  stroke={path.color}
+                  stroke-width="0.3"
+                  opacity="{i === 0 || i === path.points.length - 1 ? '0.9' : '0.7'}"
                 />
                 
                 <!-- Add direction indicator at the end point -->
@@ -861,12 +863,12 @@
                   {@const prevPos = coordToPosition(path.points[path.points.length - 2].x, path.points[path.points.length - 2].y)}
                   {@const angle = Math.atan2(pos.posY - prevPos.posY, pos.posX - prevPos.posX) * 180 / Math.PI}
                   <polygon 
-                    points="0,-0.8 0.7,0.7 -0.7,0.7" 
+                    points="0,-0.5 0.5,0.4 -0.5,0.4" 
                     transform="translate({pos.posX * 100}, {pos.posY * 100}) rotate({angle + 90})" 
                     fill={path.color}
                     opacity="0.9"
-                    stroke="rgba(0,0,0,0.3)"
-                    stroke-width="0.2"
+                    stroke="rgba(0,0,0,0.2)"
+                    stroke-width="0.1"
                   />
                 {/if}
               {/each}
@@ -1545,12 +1547,12 @@
   }
 
   .custom-path-group path {
-    stroke-dasharray: 6,4;
-    stroke-width: 1;
+    stroke-dasharray: 4,3;
+    stroke-width: 0.6;
   }
 
   .custom-path-group circle {
-    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.4));
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3));
   }
 
   @keyframes dash {
