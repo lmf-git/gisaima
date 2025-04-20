@@ -12,8 +12,8 @@
 
   const { onClose = () => {} } = $props();
 
-  // Get tile data directly from the highlightedStore
-  let tileData = $derived($highlightedStore || null);
+  // Get tile data directly from the targetStore
+  let tileData = $derived($targetStore || null);
 
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
