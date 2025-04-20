@@ -565,9 +565,9 @@
       Map Entities
       <span class="subtitle">{visibleChunks} chunks visible</span>
       
-      <!-- Replace the close button to match minimap styling -->
+      <!-- Replace the close button to match the size in Details component -->
       <button class="close-button" onclick={handleClose} aria-label="Close map entities panel">
-        <Close size="1em" extraClass="close-icon-dark" />
+        <Close size="1.6em" extraClass="close-icon-dark" />
       </button>
     </h3>
     
@@ -1529,7 +1529,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0.3em;
+    padding: 0.4em;  /* Increased padding for larger hit area */
     display: flex;
     align-items: center;
     justify-content: center;
