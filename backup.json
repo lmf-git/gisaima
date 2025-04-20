@@ -1,5 +1,91 @@
 {
+  "battles": {
+    "ancient-lands": {
+      "battle_1745064128195_796": {
+        "endTime": 1745064308301,
+        "id": "battle_1745064128195_796",
+        "locationX": 5,
+        "locationY": 5,
+        "side1": {
+          "groups": {
+            "-OOCubEbAOYrbP3MrkZZ": true
+          },
+          "leader": "-OOCubEbAOYrbP3MrkZZ",
+          "power": 1
+        },
+        "side2": {
+          "groups": {
+            "-OOCtynp1EZGh2-xetQ9": true
+          },
+          "leader": "-OOCtynp1EZGh2-xetQ9",
+          "power": 1
+        },
+        "started": 1745064128301,
+        "status": "active"
+      }
+    }
+  },
   "players": {
+    "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "Dinosauri",
+          "groups": {
+            "-OOCwr--AyAH5F7bX7kj": {
+              "at": "12,4",
+              "id": "-OOCwr--AyAH5F7bX7kj",
+              "readyAt": 1745064542038,
+              "status": "mobilizing"
+            }
+          },
+          "joined": 1745064489453,
+          "lastLocation": {
+            "timestamp": 1745073606015,
+            "x": 12,
+            "y": 4
+          },
+          "race": "dwarf"
+        }
+      }
+    },
+    "bVGJF7jmMpe471K6hk9PWHKM7Hx2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "testhuman",
+          "groups": {
+            "-OOCubEbAOYrbP3MrkZZ": {
+              "at": "5,5",
+              "id": "-OOCubEbAOYrbP3MrkZZ",
+              "readyAt": 1745063941874,
+              "status": "mobilizing"
+            }
+          },
+          "inGroup": "-OOCubEbAOYrbP3MrkZZ",
+          "joined": 1745063924250,
+          "lastLocation": {
+            "x": 5,
+            "y": 5
+          },
+          "race": "human"
+        }
+      }
+    },
+    "g9FCdT5Gz8RWdwP9GSmM5r8PBBJ3": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "test23",
+          "joined": 1745065015243,
+          "lastLocation": {
+            "x": 10,
+            "y": 8
+          },
+          "race": "fairy"
+        }
+      }
+    },
     "kv0uM1cphrYBimiGvsyXG5WYkH53": {
       "worlds": {
         "ancient-lands": {
@@ -17,15 +103,35 @@
               "id": "-OOCqYVDC9uWmkg1md9J",
               "readyAt": 1745062921870,
               "status": "mobilizing"
+            },
+            "-OOCtynp1EZGh2-xetQ9": {
+              "at": "5,5",
+              "id": "-OOCtynp1EZGh2-xetQ9",
+              "readyAt": 1745063821824,
+              "status": "mobilizing"
             }
           },
+          "inGroup": "-OOCtynp1EZGh2-xetQ9",
           "joined": 1745062571308,
           "lastLocation": {
-            "timestamp": 1745063221951,
             "x": 5,
             "y": 5
           },
           "race": "human"
+        }
+      }
+    },
+    "ml9FNegJSpXgrMgQLsIato8v8uz1": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "testing",
+          "joined": 1745063889648,
+          "lastLocation": {
+            "x": 15,
+            "y": -3
+          },
+          "race": "goblin"
         }
       }
     }
@@ -46,6 +152,14 @@
         },
         "0,-1": {
           "15,-3": {
+            "players": {
+              "ml9FNegJSpXgrMgQLsIato8v8uz1": {
+                "displayName": "testing",
+                "lastActive": 1745063896394,
+                "race": "goblin",
+                "uid": "ml9FNegJSpXgrMgQLsIato8v8uz1"
+              }
+            },
             "structure": {
               "description": "A resourceful goblin settlement built from the remains of ancient beasts",
               "faction": "goblin",
@@ -114,6 +228,14 @@
             }
           },
           "10,8": {
+            "players": {
+              "g9FCdT5Gz8RWdwP9GSmM5r8PBBJ3": {
+                "displayName": "test23",
+                "lastActive": 1745065018933,
+                "race": "fairy",
+                "uid": "g9FCdT5Gz8RWdwP9GSmM5r8PBBJ3"
+              }
+            },
             "structure": {
               "description": "A fairy settlement where the ancient spirits still speak",
               "faction": "fairy",
@@ -123,21 +245,125 @@
             }
           },
           "12,4": {
+            "players": {
+              "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2": {
+                "displayName": "Dinosauri",
+                "lastActive": 1745073606015,
+                "race": "dwarf",
+                "uid": "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2"
+              }
+            },
             "structure": {
               "description": "The ancestral mountain home of the dwarf clans",
               "faction": "dwarf",
               "id": "structure_al_dwarf_spawn",
+              "items": [
+                {
+                  "id": "item_1745066642078_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 5,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "description": "A strange object of unknown origin",
+                  "id": "item_1745066642078_special",
+                  "name": "Mysterious Artifact",
+                  "quantity": 1,
+                  "rarity": "rare",
+                  "type": "artifact"
+                },
+                {
+                  "id": "item_1745067425452_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 2,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745068081699_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 1,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745068081699_2",
+                  "name": "Stone Pieces",
+                  "quantity": 2,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745068202061_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 1,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745068202061_2",
+                  "name": "Stone Pieces",
+                  "quantity": 1,
+                  "rarity": "common",
+                  "type": "resource"
+                }
+              ],
               "name": "Deepforge Stronghold",
               "type": "spawn"
             }
           },
           "5,5": {
-            "players": {
-              "kv0uM1cphrYBimiGvsyXG5WYkH53": {
-                "displayName": "test1",
-                "lastActive": 1745063221951,
+            "groups": {
+              "-OOCtynp1EZGh2-xetQ9": {
+                "battleId": "battle_1745064128195_796",
+                "battleRole": "defender",
+                "battleSide": 2,
+                "createdAt": 1745063767343,
+                "id": "-OOCtynp1EZGh2-xetQ9",
+                "inBattle": true,
+                "lastUpdated": 1745063821299,
+                "name": "New Force",
+                "owner": "kv0uM1cphrYBimiGvsyXG5WYkH53",
                 "race": "human",
-                "uid": "kv0uM1cphrYBimiGvsyXG5WYkH53"
+                "status": "fighting",
+                "unitCount": 1,
+                "units": {
+                  "kv0uM1cphrYBimiGvsyXG5WYkH53": {
+                    "displayName": "test1",
+                    "lastActive": 1745063221951,
+                    "race": "human",
+                    "type": "player",
+                    "uid": "kv0uM1cphrYBimiGvsyXG5WYkH53"
+                  }
+                },
+                "x": 5,
+                "y": 5
+              },
+              "-OOCubEbAOYrbP3MrkZZ": {
+                "battleId": "battle_1745064128195_796",
+                "battleRole": "attacker",
+                "battleSide": 1,
+                "createdAt": 1745063932961,
+                "id": "-OOCubEbAOYrbP3MrkZZ",
+                "inBattle": true,
+                "lastUpdated": 1745063941339,
+                "name": "New Force",
+                "owner": "bVGJF7jmMpe471K6hk9PWHKM7Hx2",
+                "race": "human",
+                "status": "fighting",
+                "unitCount": 1,
+                "units": {
+                  "bVGJF7jmMpe471K6hk9PWHKM7Hx2": {
+                    "displayName": "testhuman",
+                    "lastActive": 1745063927500,
+                    "race": "human",
+                    "type": "player",
+                    "uid": "bVGJF7jmMpe471K6hk9PWHKM7Hx2"
+                  }
+                },
+                "x": 5,
+                "y": 5
               }
             },
             "structure": {
@@ -190,7 +416,7 @@
       },
       "info": {
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745063521923,
+        "lastTick": 1745111341993,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",

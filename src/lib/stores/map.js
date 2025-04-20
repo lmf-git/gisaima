@@ -237,8 +237,25 @@ function processChunkData(data = {}, chunkKey) {
           battleInfo.sides[side].power += (group.unitCount || 1);
         });
 
-        // Add battles to updates
-        updates.battles[fullTileKey] = Array.from(battlesMap.values());
+        // Enhanced battle processing
+        const battlesArray = Array.from(battlesMap.values()).map(battle => {
+          return {
+            ...battle,
+            id: battle.id || `battle_${chunkKey}_${tileKey}`,
+            x: parseInt(x),
+            y: parseInt(y),
+            distance: Math.sqrt(Math.pow(x - get(map).target.x, 2) + Math.pow(y - get(map).target.y, 2)),
+            sides: battle.sides || {},
+            startTime: battle.startTime || Date.now(),
+            endTime: battle.endTime,
+            status: battle.status || 'active',
+            participants: battle.participants || [],
+            power: battle.power || { 1: 0, 2: 0 },
+            winner: battle.winner,
+            rewards: battle.rewards
+          };
+        });
+        updates.battles[fullTileKey] = battlesArray;
         validBattleKeys.add(fullTileKey);
         entitiesChanged = true;
       } else {

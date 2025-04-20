@@ -410,27 +410,85 @@
     return entity.owner === $currentPlayer.uid || entity.uid === $currentPlayer.uid;
   }
 
-  // Calculate battle time remaining
+  // Enhance formatBattleTimeRemaining function to handle more states
   function formatBattleTimeRemaining(battle) {
-    if (!battle || !battle.endTime) return '';
+    if (!battle) return '';
     
-    updateCounter; // Keep the reactive dependency
+    updateCounter; // Keep reactive dependency
+    
+    // Handle different battle statuses
+    if (battle.status === 'resolved') {
+      return 'Completed';
+    }
+    
+    if (!battle.endTime) {
+      return 'In progress';
+    }
     
     const now = Date.now();
     const remaining = battle.endTime - now;
     
-    // If time is up or less than a minute remains
     if (remaining <= 0) {
-      return 'Ending soon';
+      return 'Resolving...';
     } else if (remaining <= 60000) {
       return '< 1m';
     }
     
-    // Normal countdown calculation
     const minutes = Math.floor(remaining / 60000);
     const seconds = Math.floor((remaining % 60000) / 1000);
     
     return `${minutes}m ${seconds}s`;
+  }
+
+  // Function to format battle duration - removed duplicate declaration
+  function formatDuration(startTime, endTime) {
+    if (!startTime || !endTime) return '';
+    const durationMs = endTime - startTime;
+    const minutes = Math.floor(durationMs / 60000);
+    const seconds = Math.floor((durationMs % 60000) / 1000);
+    return `${minutes}m ${seconds}s`;
+  }
+
+  // Calculate battle progress percentage
+  function calculateBattleProgress(battle) {
+    if (!battle || !battle.startTime || !battle.endTime || battle.status === 'resolved') {
+      return 100;
+    }
+    
+    const now = Date.now();
+    const total = battle.endTime - battle.startTime;
+    const elapsed = now - battle.startTime;
+    
+    // Cap at 100%
+    return Math.min(100, Math.floor((elapsed / total) * 100));
+  }
+  
+  // Format total power for each side
+  function formatPower(power) {
+    if (!power && power !== 0) return '?';
+    return power.toLocaleString();
+  }
+
+  // Determine winning side CSS class
+  function getWinningSideClass(battle, side) {
+    if (!battle || battle.status !== 'resolved') return '';
+    return battle.winner === side ? 'winning-side' : 'losing-side';
+  }
+
+  // Get battle participant groups count for each side
+  function getParticipantCountBySide(battle, side) {
+    if (!battle || !battle.sides || !battle.sides[side]) return 0;
+    return battle.sides[side].groups?.length || 0;
+  }
+
+  // Check if current player is participating in battle
+  function isPlayerInBattle(battle) {
+    if (!battle || !battle.participants || !$currentPlayer) return false;
+    
+    // Check if player ID is in participants list
+    return battle.participants.some(p => 
+      p.id === $currentPlayer.uid || p.uid === $currentPlayer.uid
+    );
   }
 
   // Add the missing function - isPlayerAvailableOnTile
@@ -465,6 +523,34 @@
       (unit.id === playerId || unit.uid === playerId) && unit.type === 'player'
     );
   }
+  
+  // Check if a group is idle on a specific tile
+  function hasIdlePlayerGroups(tile, playerId) {
+    if (!tile || !tile.groups || !playerId) return false;
+    return tile.groups.some(group => 
+      group.owner === playerId && 
+      group.status === 'idle' && 
+      !group.inBattle
+    );
+  }
+  
+  // Handle battle-specific actions
+  function handleBattleAction(actionType, battle) {
+    console.log(`Battle action: ${actionType} for battle:`, battle);
+    
+    // Navigate to the battle location first
+    moveTarget(battle.x, battle.y);
+    setHighlighted(battle.x, battle.y);
+    
+    // For join battle, also show the join battle modal
+    if (actionType === 'joinBattle') {
+      // Find the tile data for this location
+      const tile = $coordinates.find(c => c.x === battle.x && c.y === battle.y);
+      if (tile) {
+        onShowModal?.({ type: 'joinBattle', data: tile });
+      }
+    }
+  }
 </script>
 
 <div class="entities-wrapper" class:closing>
@@ -494,11 +580,12 @@
       </div>
     {/if}
     
-    <div class="entities-content">
+    <div class="entities-content"> 
+      <!-- Structures Section -->
       {#if shouldShowSection('structures') && allStructures.length > 0}
         <div class="entities-section">
           <div 
-            class="section-header" 
+            class="section-header"
             onclick={() => toggleSection('structures')}
             role="button"
             tabindex="0"
@@ -512,7 +599,7 @@
               {#if !collapsedSections.structures}
                 <div class="sort-controls">
                   <button 
-                    class="sort-option" 
+                    class="sort-option"
                     class:active={sortOptions.structures.by === 'distance'}
                     onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'distance'); }}
                     aria-label={`Sort by distance ${sortOptions.structures.by === 'distance' ? (sortOptions.structures.asc ? 'ascending' : 'descending') : ''}`}
@@ -558,10 +645,11 @@
                 <div 
                   class="entity structure {isAtTarget(structure.x, structure.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(structure) ? 'current-player-owned' : ''}"
                   onkeydown={(e) => handleEntityAction(structure.x, structure.y, e)}
+                  onclick={(e) => handleEntityAction(structure.x, structure.y, e)}
                   role="button"
                   tabindex="0"
                   aria-label="Navigate to {structure.name || _fmt(structure.type) || 'Structure'} at {structure.x},{structure.y}"
-                  onclick={() => handleStructureClick(structure, structure.x, structure.y)}
+                  ondblclick={() => handleStructureClick(structure, structure.x, structure.y)}
                 >
                   <div class="entity-structure-icon">
                     {#if structure.type === 'spawn'}
@@ -591,11 +679,12 @@
           {/if}
         </div>
       {/if}
-      
+       
+      <!-- Players Section -->
       {#if shouldShowSection('players') && allPlayers.length > 0}
         <div class="entities-section">
           <div 
-            class="section-header" 
+            class="section-header"
             onclick={() => toggleSection('players')}
             role="button"
             tabindex="0"
@@ -609,7 +698,7 @@
               {#if !collapsedSections.players}
                 <div class="sort-controls">
                   <button 
-                    class="sort-option" 
+                    class="sort-option"
                     class:active={sortOptions.players.by === 'distance'}
                     onclick={(e) => { e.stopPropagation(); setSortOption('players', 'distance'); }}
                     aria-label={`Sort by distance ${sortOptions.players.by === 'distance' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
@@ -694,11 +783,12 @@
           {/if}
         </div>
       {/if}
-      
+       
+      <!-- Groups Section -->
       {#if shouldShowSection('groups') && allGroups.length > 0}
         <div class="entities-section">
           <div 
-            class="section-header" 
+            class="section-header"
             onclick={() => toggleSection('groups')}
             role="button"
             tabindex="0"
@@ -712,7 +802,7 @@
               {#if !collapsedSections.groups}
                 <div class="sort-controls">
                   <button 
-                    class="sort-option" 
+                    class="sort-option"
                     class:active={sortOptions.groups.by === 'distance'}
                     onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'distance'); }}
                     aria-label={`Sort by distance ${sortOptions.groups.by === 'distance' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
@@ -794,7 +884,7 @@
                         {/if}
                       </span>
                       
-                      <span 
+                      <span
                         class="status {getStatusClass(group.status)}" 
                         class:pending-tick={isPendingTick(
                           group.status === 'moving' 
@@ -835,10 +925,11 @@
         </div>
       {/if}
 
+      <!-- Items Section -->
       {#if shouldShowSection('items') && allItems.length > 0}
         <div class="entities-section">
           <div 
-            class="section-header" 
+            class="section-header"
             onclick={() => toggleSection('items')}
             role="button"
             tabindex="0"
@@ -852,7 +943,7 @@
               {#if !collapsedSections.items}
                 <div class="sort-controls">
                   <button 
-                    class="sort-option" 
+                    class="sort-option"
                     class:active={sortOptions.items.by === 'distance'}
                     onclick={(e) => { e.stopPropagation(); setSortOption('items', 'distance'); }}
                     aria-label={`Sort by distance ${sortOptions.items.by === 'distance' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
@@ -933,10 +1024,11 @@
         </div>
       {/if}
 
+      <!-- Battles Section -->
       {#if shouldShowSection('battles') && allBattles.length > 0}
         <div class="entities-section">
           <div 
-            class="section-header" 
+            class="section-header"
             onclick={() => toggleSection('battles')}
             role="button"
             tabindex="0"
@@ -950,13 +1042,24 @@
               {#if !collapsedSections.battles}
                 <div class="sort-controls">
                   <button 
-                    class="sort-option" 
+                    class="sort-option"
                     class:active={sortOptions.battles.by === 'distance'}
                     onclick={(e) => { e.stopPropagation(); setSortOption('battles', 'distance'); }}
                     aria-label={`Sort by distance ${sortOptions.battles.by === 'distance' ? (sortOptions.battles.asc ? 'ascending' : 'descending') : ''}`}
                   >
                     <span>Distance</span>
                     {#if sortOptions.battles.by === 'distance'}
+                      <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.battles.by === 'status'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('battles', 'status'); }}
+                    aria-label={`Sort by status ${sortOptions.battles.by === 'status' ? (sortOptions.battles.asc ? 'ascending' : 'descending') : ''}`}
+                  >
+                    <span>Status</span>
+                    {#if sortOptions.battles.by === 'status'}
                       <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
                     {/if}
                   </button>
@@ -974,6 +1077,9 @@
                 <div 
                   class="entity battle"
                   class:at-target={isAtTarget(battle.x, battle.y)}
+                  class:resolved={battle.status === 'resolved'}
+                  class:active={battle.status === 'active'}
+                  class:player-participating={isPlayerInBattle(battle)}
                   onclick={(e) => handleEntityAction(battle.x, battle.y, e)}
                   onkeydown={(e) => handleEntityAction(battle.x, battle.y, e)}
                   role="button"
@@ -981,34 +1087,88 @@
                   aria-label="Navigate to battle at {battle.x},{battle.y}"
                 >
                   <div class="entity-battle-icon">
-                    ⚔️
+                    {battle.status === 'resolved' ? '🏆' : '⚔️'}
                   </div>
+                  
                   <div class="entity-info">
                     <div class="entity-name">
                       Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}
+                      {#if battle.status === 'resolved'}
+                        <span class="battle-status resolved">Resolved</span>
+                      {:else}
+                        <span class="battle-status active">Active</span>
+                      {/if}
                       <span class="entity-coords">{formatCoords(battle.x, battle.y)}</span>
                     </div>
+                    
                     <div class="entity-details">
                       <div class="battle-sides">
-                        <div class="battle-side side1">
-                          <span class="side-name">Side 1:</span> {battle.sides[1]?.groups?.length || 0} groups
-                          ({battle.sides[1]?.power || 0})
+                        <div class="battle-side side1 {getWinningSideClass(battle, 1)}">
+                          <span class="side-name">Side 1:</span> 
+                          {getParticipantCountBySide(battle, 1)} groups
+                          ({formatPower(battle.sides?.[1]?.power || battle.power?.[1])})
+                          {#if battle.status === 'resolved' && battle.winner === 1}
+                            <span class="battle-winner">Winner</span>
+                          {/if}
                         </div>
-                        <div class="battle-side side2">
-                          <span class="side-name">Side 2:</span> {battle.sides[2]?.groups?.length || 0} groups
-                          ({battle.sides[2]?.power || 0})
+                        
+                        <div class="battle-side side2 {getWinningSideClass(battle, 2)}">
+                          <span class="side-name">Side 2:</span> 
+                          {getParticipantCountBySide(battle, 2)} groups
+                          ({formatPower(battle.sides?.[2]?.power || battle.power?.[2])})
+                          {#if battle.status === 'resolved' && battle.winner === 2}
+                            <span class="battle-winner">Winner</span>
+                          {/if}
                         </div>
                       </div>
-                      {#if battle.endTime}
-                        <div class="battle-timer">{formatBattleTimeRemaining(battle)}</div>
+                      
+                      <!-- Show battle participants count -->
+                      {#if battle.participants && battle.participants.length > 0}
+                        <div class="battle-participants">
+                          {battle.participants.length} participants
+                          {#if isPlayerInBattle(battle)}
+                            <span class="player-participating-badge">You're in this battle</span>
+                          {/if}
+                        </div>
                       {/if}
+                      
+                      <!-- Battle progress bar for active battles -->
+                      {#if battle.status === 'active' && battle.startTime && battle.endTime}
+                        <div class="battle-progress">
+                          <div class="progress-bar">
+                            <div class="progress-fill" style="width: {calculateBattleProgress(battle)}%"></div>
+                          </div>
+                          <div class="battle-timer">
+                            {formatBattleTimeRemaining(battle)}
+                          </div>
+                        </div>
+                      {:else if battle.startTime && battle.endTime && battle.status === 'resolved'}
+                        <div class="battle-duration">
+                          Duration: {formatDuration(battle.startTime, battle.endTime)}
+                        </div>
+                      {/if}
+                      
                       <div class="entity-distance">{formatDistance(battle.distance)}</div>
                     </div>
-                    {#if isPlayerAvailableOnTile($targetStore, $currentPlayer?.uid) && hasIdlePlayerGroups}
+                    
+                    <!-- Show rewards for resolved battles -->
+                    {#if battle.status === 'resolved' && battle.rewards}
+                      <div class="battle-rewards">
+                        <span class="rewards-label">Rewards:</span>
+                        {battle.rewards.exp ? `${battle.rewards.exp} XP` : ''}
+                        {battle.rewards.items ? `${Object.keys(battle.rewards.items).length} items` : ''}
+                      </div>
+                    {/if}
+                    
+                    <!-- Join battle action -->
+                    {#if battle.status === 'active' && isPlayerAvailableOnTile($coordinates.find(c => c.x === battle.x && c.y === battle.y), $currentPlayer?.uid) && hasIdlePlayerGroups($coordinates.find(c => c.x === battle.x && c.y === battle.y), $currentPlayer?.uid)}
                       <div class="battle-actions">
                         <button 
                           class="join-battle-btn"
-                          onclick={() => executeAction('joinBattle', $targetStore)}
+                          onclick={(e) => { 
+                            e.stopPropagation(); 
+                            handleBattleAction('joinBattle', battle); 
+                          }}
                         >
                           Join Battle
                         </button>
@@ -1021,7 +1181,7 @@
           {/if}
         </div>
       {/if}
-      
+
       {#if !hasContent(activeFilter)}
         <div class="empty-state">
           {#if activeFilter === 'all'}
@@ -1038,39 +1198,39 @@
 <style>
   .entities-wrapper {
     position: absolute;
-    bottom: 3em; /* Changed from top to bottom and increased to avoid overlap with entity toggle button */
-    left: 0.5em; /* Changed from right to left */
+    bottom: 3em;
+    left: 0.5em;
     z-index: 998;
     transition: opacity 0.2s ease;
-    font-size: 1.4em; /* Increased from 1.2em */
+    font-size: 1.4em;
     font-family: var(--font-body);
     max-width: 95%;
   }
-  
+
   .entities-wrapper.closing {
     pointer-events: none;
   }
-  
+
   .subtitle {
     font-size: 0.7em;
     font-weight: normal;
     color: rgba(0, 0, 0, 0.5);
     margin-left: 0.6em;
   }
-  
+
   .entity-coords {
     font-size: 0.7em;
     color: rgba(0, 0, 0, 0.5);
     margin-left: 0.6em;
     font-weight: normal;
   }
-  
+
   .at-target {
     background-color: rgba(64, 158, 255, 0.1);
     border-color: rgba(64, 158, 255, 0.3);
-    position: relative; /* Added for ::before positioning */
+    position: relative;
   }
-  
+
   .at-target::before {
     content: '•';
     color: rgba(64, 158, 255, 0.8);
@@ -1078,7 +1238,7 @@
     left: 0.2em;
     font-size: 1.3em;
   }
-  
+
   .entities-panel {
     background-color: rgba(255, 255, 255, 0.85);
     border: 0.05em solid rgba(255, 255, 255, 0.2);
@@ -1088,12 +1248,12 @@
     backdrop-filter: blur(0.5em);
     -webkit-backdrop-filter: blur(0.5em);
     width: 100%;
-    max-width: 28em; /* Increased from 22.5em */
+    max-width: 28em;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     animation: reveal 0.4s ease-out forwards;
-    transform-origin: bottom left; /* Changed from top right to bottom left */
+    transform-origin: bottom left;
   }
 
   .map-entities {
@@ -1106,15 +1266,14 @@
     display: flex;
     flex-direction: column;
     gap: .5em;
-    z-index: 1100; /* Increase z-index to be higher than the grid */
-    transform: translateZ(0); /* Create own stacking context */
-    will-change: transform; /* Optimize for transform changes */
-    pointer-events: none; /* Allow clicks to pass through to map */
+    z-index: 1100;
+    transform: translateZ(0);
+    will-change: transform;
+    pointer-events: none;
     max-height: 100vh;
     overflow: hidden;
   }
-  
-  /* Filter tabs styling */
+
   .filter-tabs {
     display: flex;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
@@ -1123,7 +1282,7 @@
     width: 100%;
     overflow-x: auto;
   }
-  
+
   .filter-tab {
     padding: 0.6em 0.8em;
     font-family: var(--font-heading);
@@ -1142,40 +1301,27 @@
     position: relative;
     white-space: nowrap;
   }
-  
-  /* Hide headings when filter is specifically selected */
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border-width: 0;
-  }
-  
+
   .filter-tab:hover:not(:disabled) {
     background-color: rgba(0, 0, 0, 0.03);
     color: rgba(0, 0, 0, 0.8);
   }
-  
+
   .filter-tab.active {
     border-bottom: 2px solid #4285f4;
     color: rgba(0, 0, 0, 0.9);
     font-weight: 500;
   }
-  
+
   .filter-tab:disabled {
     opacity: 0.4;
     cursor: not-allowed;
   }
-  
+
   .filter-tab.has-content:not(.active) {
     color: rgba(0, 0, 0, 0.7);
   }
-  
+
   .filter-count {
     display: flex;
     align-items: center;
@@ -1192,52 +1338,12 @@
     border: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);
   }
-  
+
   .filter-tab.active .filter-count {
     background: rgba(64, 158, 255, 0.9);
     box-shadow: 0 0 0.2em rgba(64, 158, 255, 0.6);
   }
-  
-  .filter-count-structures {
-    background: rgba(255, 255, 255, 0.9) !important;
-    color: rgba(0, 0, 0, 0.8) !important;
-    border-radius: 0 !important;
-  }
-  
-  .filter-count-players {
-    background: rgba(100, 100, 255, 0.9) !important;
-    box-shadow: 0 0 .15em rgba(100, 100, 255, 0.6) !important;
-  }
-  
-  .filter-count-groups {
-    background: rgba(255, 100, 100, 0.9) !important;
-    box-shadow: 0 0 .15em rgba(255, 100, 100, 0.6) !important;
-  }
-  
-  .filter-count-items {
-    background: rgba(255, 215, 0, 0.9) !important;
-    box-shadow: 0 0 .15em rgba(255, 215, 0, 0.6) !important;
-  }
 
-  .filter-count-battles {
-    background: rgba(139, 0, 0, 0.9) !important;
-    box-shadow: 0 0 .15em rgba(139, 0, 0, 0.6) !important;
-    color: white !important;
-  }
-  
-  @keyframes reveal {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-      border-color: transparent;
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-      border-color: rgba(255, 255, 255, 0.2);
-    }
-  }
-  
   .title {
     margin: 0;
     padding: 0.8em 1em;
@@ -1248,21 +1354,21 @@
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     font-family: var(--font-heading);
   }
-  
+
   .entities-content {
     padding: 0.8em;
     max-height: 60vh;
     overflow-y: auto;
   }
-  
+
   .entities-section {
     margin-bottom: 1.2em;
   }
-  
+
   .entities-section:last-child {
     margin-bottom: 0;
   }
-  
+
   h4 {
     margin: 0 0 0.5em 0;
     font-size: 0.9em;
@@ -1271,7 +1377,7 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
-  
+
   .entity {
     display: flex;
     align-items: flex-start;
@@ -1283,44 +1389,38 @@
     cursor: pointer;
     transition: background-color 0.2s ease;
   }
-  
+
   .entity:hover {
     background-color: rgba(255, 255, 255, 0.8);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
-  
+
   .entity:focus {
     outline: 2px solid rgba(66, 133, 244, 0.6);
     box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.3);
   }
-  
+
   .entity.player.current {
     background-color: rgba(66, 133, 244, 0.05);
     border-color: rgba(66, 133, 244, 0.3);
   }
-  
+
   .entity-race-icon {
     margin-right: 0.7em;
     margin-top: 0.1em;
   }
-  
-  :global(.race-icon-entity) {
-    width: 1.4em;
-    height: 1.4em;
-    fill: rgba(0, 0, 0, 0.7);
-  }
-  
+
   .entity-info {
     flex: 1;
   }
-  
+
   .entity-name {
     font-weight: 500;
     color: rgba(0, 0, 0, 0.85);
     line-height: 1.2;
     margin-bottom: 0.2em;
   }
-  
+
   .entity-details {
     display: flex;
     flex-wrap: wrap;
@@ -1330,503 +1430,11 @@
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .entity-distance {
     font-size: 0.85em;
     color: rgba(0, 0, 0, 0.5);
     margin-left: auto;
-    white-space: nowrap;
-  }
-  
-  .entity-race {
-    font-size: 0.85em;
-    font-style: italic;
-    color: rgba(0, 0, 0, 0.6);
-  }
-  
-  .entity-type {
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.6);
-  }
-  
-  .unit-count {
-    color: rgba(0, 0, 0, 0.6);
-  }
-  
-  .status {
-    display: inline-block;
-    font-size: 0.9em;
-    padding: 0.1em 0.4em;
-    border-radius: 0.3em;
-    white-space: nowrap;
-    font-weight: 500;
-  }
-  
-  .status.mobilizing {
-    background: rgba(255, 165, 0, 0.15);
-    border: 1px solid rgba(255, 165, 0, 0.3);
-    color: #ff8c00;
-    animation: pulseMobilizing 2s infinite;
-  }
-  
-  @keyframes pulseMobilizing {
-    0% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.4); }
-    50% { box-shadow: 0 0 0 3px rgba(255, 165, 0, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
-  }
-  
-  .status.moving {
-    background: rgba(0, 128, 0, 0.15);
-    border: 1px solid rgba(0, 128, 0, 0.3);
-    color: #008000;
-    animation: pulseMoving 2s infinite;
-  }
-  
-  @keyframes pulseMoving {
-    0% { box-shadow: 0 0 0 0 rgba(0, 128, 0, 0.4); }
-    50% { box-shadow: 0 0 0 3px rgba(0, 128, 0, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(0, 128, 0, 0); }
-  }
-  
-  .status.gathering {
-    background: rgba(75, 181, 67, 0.15);
-    border: 1px solid rgba(75, 181, 67, 0.3);
-    color: #2d8659;
-  }
-
-  .status.starting_to_gather {
-    background: rgba(249, 168, 37, 0.15);
-    border: 1px solid rgba(249, 168, 37, 0.3);
-    color: #E65100;
-    animation: pulseStartingGather 2s infinite;
-  }
-  
-  @keyframes pulseStartingGather {
-    0% { box-shadow: 0 0 0 0 rgba(249, 168, 37, 0.4); }
-    50% { box-shadow: 0 0 0 3px rgba(249, 168, 37, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(249, 168, 37, 0); }
-  }
-  
-  .status.scouting {
-    background: rgba(148, 0, 211, 0.15);
-    border: 1px solid rgba(148, 0, 211, 0.3);
-    color: #9400d3;
-  }
-  
-  .status.idle {
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    color: rgba(0, 0, 0, 0.6);
-  }
-  
-  .status.demobilising {
-    background: rgba(147, 112, 219, 0.15);
-    border: 1px solid rgba(147, 112, 219, 0.3);
-    color: #8a2be2;
-    animation: pulseDemobilising 2s infinite;
-  }
-  
-  @keyframes pulseDemobilising {
-    0% { box-shadow: 0 0 0 0 rgba(147, 112, 219, 0.4); }
-    50% { box-shadow: 0 0 0 3px rgba(147, 112, 219, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(147, 112, 219, 0); }
-  }
-  
-  .status.fighting {
-    background: rgba(139, 0, 0, 0.15);
-    border: 1px solid rgba(139, 0, 0, 0.3);
-    color: #8B0000;
-    animation: pulseFighting 1.5s infinite;
-  }
-  
-  @keyframes pulseFighting {
-    0% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0.4); }
-    50% { box-shadow: 0 0 0 3px rgba(139, 0, 0, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0); }
-  }
-  
-  .battle-tag {
-    font-size: 0.75em;
-    padding: 0.1em 0.3em;
-    border-radius: 0.2em;
-    background-color: rgba(139, 0, 0, 0.07);
-    border: 1px solid rgba(139, 0, 0, 0.15);
-    color: #8B0000;
-    white-space: nowrap;
-    margin-left: 0.3em;
-  }
-  
-  .battle-side-1 {
-    background-color: rgba(0, 0, 255, 0.07);
-    border: 1px solid rgba(0, 0, 255, 0.15);
-    color: #00008B;
-  }
-  
-  .battle-side-2 {
-    background-color: rgba(139, 0, 0, 0.07);
-    border: 1px solid rgba(139, 0, 0, 0.15);
-    color: #8B0000;
-  }
-  
-  .pending-tick {
-    position: relative;
-    animation: pulse 1s infinite alternate !important;
-  }
-
-  .pending-tick::after {
-    from { opacity: 0.7; }
-    to { opacity: 1; }
-  }
-  
-  .empty-state {
-    padding: 2em;
-    text-align: center;
-    color: rgba(0, 0, 0, 0.5);
-    font-style: italic;
-  }
-  
-  /* Fix for mobile screens */
-  @media (max-width: 480px) {
-    .entities-wrapper {
-      bottom: 3em;
-      left: 0.5em;
-      font-size: 1em;
-    }
-     
-    .entities-panel {
-      max-width: 100%;
-    }
-    
-    .entity-details {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.3em;
-    }
-    
-    .filter-tabs {
-      overflow-x: auto;
-      padding: 0;
-    }
-    
-    .filter-tab {
-      padding: 0.5em;
-      font-size: 0.7em;
-    }
-  }
-
-  /* Item styles */
-  .item-icon {
-    width: 1.4em;
-    height: 1.4em;
-    margin-right: 0.7em;
-    margin-top: 0.1em;
-    border-radius: 0.2em;
-    background-color: rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-
-  .item-icon::before {
-    content: '';
-    position: absolute;
-    width: 60%;
-    height: 60%;
-    background-color: rgba(0, 0, 0, 0.2);
-  }
-
-  .item-icon.resource::before {
-    content: '♦';
-    font-size: 0.9em;
-    color: #228B22;
-    background: none;
-  }
-
-  .item-icon.quest_item::before {
-    content: '!';
-    font-size: 0.9em;
-    color: #FF8C00;
-    background: none;
-    font-weight: bold;
-  }
-
-  .item-icon.artifact::before {
-    content: '★';
-    font-size: 1em;
-    color: #9932CC;
-    background: none;
-  }
-
-  .item-icon.gem::before {
-    content: '◆';
-    font-size: 0.9em;
-    color: #4169E1;
-    background: none;
-  }
-
-  .item-icon.tool::before {
-    content: '⚒';
-    font-size: 0.8em;
-    color: #696969;
-    background: none;
-  }
-
-  .item-icon.currency::before {
-    content: '⚜';
-    font-size: 0.8em;
-    color: #DAA520;
-    background: none;
-  }
-
-  .item-icon.junk::before {
-    content: '✽';
-    font-size: 0.9em;
-    color: #A9A9A9;
-    background: none;
-  }
-
-  .item-icon.treasure::before {
-    content: '❖';
-    font-size: 0.9em;
-    color: #FFD700;
-    background: none;
-  }
-
-  .item-type {
-    color: rgba(0, 0, 0, 0.6);
-    white-space: nowrap;
-  }
-
-  .item-quantity {
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.7);
-  }
-
-  .item-description {
-    font-size: 0.8em;
-    font-style: italic;
-    color: rgba(0, 0, 0, 0.6);
-    margin-top: 0.3em;
-  }
-
-  .item-rarity {
-    display: inline-block;
-    font-size: 0.85em;
-    padding: 0.1em 0.4em;
-    border-radius: 0.3em;
-    white-space: nowrap;
-    font-weight: 500;
-  }
-
-  .item-rarity.uncommon {
-    background: rgba(30, 255, 0, 0.15);
-    border: 1px solid rgba(30, 255, 0, 0.3);
-    color: #228B22;
-  }
-
-  .item-rarity.rare {
-    background: rgba(0, 112, 221, 0.15);
-    border: 1px solid rgba(0, 112, 221, 0.3);
-    color: #0070DD;
-  }
-
-  .item-rarity.epic {
-    background: rgba(148, 0, 211, 0.15);
-    border: 1px solid rgba(148, 0, 211, 0.3);
-    color: #9400D3;
-  }
-
-  .item-rarity.legendary {
-    background: rgba(255, 165, 0, 0.15);
-    border: 1px solid rgba(255, 165, 0, 0.3);
-    color: #FF8C00;
-  }
-
-  .item-rarity.mythic {
-    background: rgba(255, 128, 255, 0.15);
-    border: 1px solid rgba(255, 128, 255, 0.3);
-    color: #FF1493;
-  }
-
-  .entity.item.rare {
-    border-color: rgba(0, 112, 221, 0.3);
-    box-shadow: inset 0 0 0.2em rgba(0, 112, 221, 0.15);
-  }
-
-  .entity.item.epic {
-    border-color: rgba(148, 0, 211, 0.3);
-    box-shadow: inset 0 0 0.2em rgba(148, 0, 211, 0.15);
-  }
-
-  .entity.item.legendary {
-    border-color: rgba(255, 165, 0, 0.3);
-    box-shadow: inset 0 0 0.2em rgba(255, 165, 0, 0.15);
-  }
-
-  .entity.item.mythic {
-    border-color: rgba(255, 128, 255, 0.3);
-    box-shadow: inset 0 0 0.3em rgba(255, 128, 255, 0.15);
-  }
-
-  /* Collapsible section styles */
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    padding: 0.2em 0;
-    user-select: none;
-  }
-  
-  .section-header:hover {
-    background-color: rgba(0, 0, 0, 0.03);
-  }
-  
-  .section-header:focus {
-    outline: 2px solid rgba(66, 133, 244, 0.6);
-    border-radius: 0.3em;
-  }
-  
-  .collapse-button {
-    background: none;
-    border: none;
-    color: rgba(0, 0, 0, 0.5);
-    font-size: 0.8em;
-    cursor: pointer;
-    padding: 0.2em 0.5em;
-    transition: all 0.2s ease;
-  }
-  
-  .collapse-button:hover {
-    color: rgba(0, 0, 0, 0.8);
-  }
-  
-  .section-content {
-    overflow: hidden;
-  }
-
-  /* Section header controls styling */
-  .section-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-  }
-  
-  .sort-controls {
-    display: flex;
-    gap: 0.2em;
-  }
-  
-  .sort-option {
-    background: none;
-    border: none;
-    font-size: 0.7em;
-    color: rgba(0, 0, 0, 0.5);
-    padding: 0.2em 0.4em;
-    border-radius: 0.3em;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.2em;
-    transition: all 0.2s ease;
-  }
-  
-  .sort-option:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: rgba(0, 0, 0, 0.8);
-  }
-  
-  .sort-option.active {
-    background-color: rgba(66, 133, 244, 0.1);
-    color: rgba(66, 133, 244, 0.9);
-  }
-  
-  .sort-direction {
-    font-size: 0.9em;
-    font-weight: bold;
-  }
-  
-  /* When in mobile view or narrow screens, hide sort buttons and show collapse button only */
-  @media (max-width: 480px) {
-    .sort-controls {
-      display: none;
-    }
-    
-    /* But show them when in active filter mode */
-    .entities-section:has(h4.visually-hidden) .sort-controls {
-      display: flex;
-    }
-  }
-
-  .item-count {
-    color: #2d8659;
-    font-weight: 500;
-  }
-
-  .entity-structure-icon {
-    margin-right: 0.7em;
-    margin-top: 0.1em;
-  }
-  
-  :global(.structure-type-icon) {
-    width: 1.4em;
-    height: 1.4em;
-    fill: #a0d6e7; /* Changed from rgba(0, 0, 0, 0.7) to a brighter color */
-  }
-  
-  :global(.fortress-icon) {
-    fill: #ffdf9e !important; /* Added !important to ensure it overrides */
-  }
-  
-  :global(.outpost-icon) {
-    fill: #9dc3ff !important;
-  }
-  
-  :global(.watchtower-icon) {
-    fill: #b9ff9e !important;
-  }
-  
-  :global(.stronghold-icon) {
-    fill: #ff9e9e !important;
-  }
-  
-  :global(.citadel-icon) {
-    fill: #e09eff !important;
-  }
-
-  .your-entity-badge {
-    display: inline-block;
-    background: var(--color-bright-accent);
-    color: var(--color-dark-navy);
-    font-size: 0.7em;
-    padding: 0.1em 0.4em;
-    border-radius: 0.3em;
-    margin-left: 0.5em;
-    font-weight: bold;
-    vertical-align: middle;
-  }
-  
-  .current-player-owned {
-    border-color: var(--color-bright-accent);
-    background-color: rgba(100, 255, 218, 0.1);
-    position: relative;
-  }
-  
-  .current-player-owned::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background-color: var(--color-bright-accent);
-  }
-
-  .countdown {
-    font-size: 0.8em;
-    margin-left: 0.3em;
-    font-family: var(--font-mono, monospace);
     white-space: nowrap;
   }
 
@@ -1834,7 +1442,7 @@
     background-color: rgba(139, 0, 0, 0.05);
     border: 1px solid rgba(139, 0, 0, 0.2);
   }
-  
+
   .entity-battle-icon {
     display: flex;
     align-items: center;
@@ -1845,39 +1453,140 @@
     margin-top: 0.1em;
     font-size: 1.2em;
   }
-  
+
   .battle-sides {
     display: flex;
     flex-direction: column;
     gap: 0.3em;
     font-size: 0.85em;
   }
-  
+
   .battle-side {
     padding: 0.1em 0.4em;
     border-radius: 0.2em;
   }
-  
+
   .battle-side.side1 {
     background-color: rgba(0, 0, 255, 0.07);
     border: 1px solid rgba(0, 0, 255, 0.15);
     color: #00008B;
   }
-  
+
   .battle-side.side2 {
     background-color: rgba(139, 0, 0, 0.07);
     border: 1px solid rgba(139, 0, 0, 0.15);
     color: #8B0000;
   }
-  
+
   .side-name {
     font-weight: 500;
   }
-  
+
   .battle-timer {
     font-family: var(--font-mono, monospace);
     font-size: 0.85em;
     color: #d32f2f;
     margin-top: 0.3em;
+  }
+
+  .battle-status.resolved {
+    color: #4caf50;
+    font-weight: bold;
+    margin-left: 0.5em;
+  }
+
+  .battle-status.active {
+    color: #f44336;
+    font-weight: bold;
+    margin-left: 0.5em;
+  }
+
+  .battle-winner {
+    color: #ff9800;
+    font-weight: bold;
+    margin-left: 0.5em;
+  }
+
+  .battle-rewards {
+    font-size: 0.85em;
+    color: #795548;
+    margin-top: 0.3em;
+  }
+
+  .rewards-label {
+    font-weight: bold;
+    margin-right: 0.3em;
+  }
+
+  .battle-duration {
+    font-size: 0.85em;
+    color: #607d8b;
+    margin-top: 0.3em;
+  }
+
+  .battle-actions {
+    margin-top: 0.5em;
+  }
+
+  .join-battle-btn {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 0.5em 1em;
+    border-radius: 0.3em;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background-color 0.2s ease;
+  }
+
+  .join-battle-btn:hover {
+    background-color: #388e3c;
+  }
+
+  .battle-progress {
+    margin-top: 0.4em;
+    width: 100%;
+  }
+
+  .progress-bar {
+    height: 0.5em;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0.25em;
+    overflow: hidden;
+    margin-bottom: 0.2em;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background-color: rgba(139, 0, 0, 0.7);
+    transition: width 1s ease;
+  }
+
+  .entity.battle.resolved .progress-fill {
+    background-color: rgba(0, 128, 0, 0.7);
+  }
+
+  .entity.battle.player-participating {
+    background-color: rgba(66, 133, 244, 0.1);
+    border: 1px solid rgba(66, 133, 244, 0.3);
+  }
+
+  .player-participating-badge {
+    font-size: 0.7em;
+    background-color: rgba(66, 133, 244, 0.7);
+    color: white;
+    padding: 0.1em 0.4em;
+    border-radius: 1em;
+    margin-left: 0.4em;
+  }
+
+  .winning-side {
+    background-color: rgba(0, 128, 0, 0.1);
+    border-color: rgba(0, 128, 0, 0.3) !important;
+  }
+
+  .losing-side {
+    background-color: rgba(128, 128, 128, 0.1);
+    border-color: rgba(128, 128, 128, 0.3) !important;
   }
 </style>
