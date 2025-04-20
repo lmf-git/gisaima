@@ -496,6 +496,18 @@
     let isTutorialVisible = $state(false);
     
     const ANIMATION_DURATION = 800;
+
+    let tutorialRef; // Reference to the Tutorial component
+
+    function toggleTutorial() {
+        // Dispatch the custom event to toggle tutorial
+        window.dispatchEvent(new CustomEvent('tutorial:toggle'));
+    }
+    
+    // Function to handle tutorial state changes
+    function handleTutorialToggle(isOpen) {
+        console.log('Tutorial visibility changed:', isOpen);
+    }
     
     $effect(() => {
         if (browser) {
@@ -913,6 +925,13 @@
         
         <div class="map-controls">
             <button 
+                class="control-button help-button" 
+                onclick={toggleTutorial}
+                aria-label="Show tutorial"
+                disabled={$needsSpawn}>
+                ?
+            </button>
+            <button 
                 class="control-button minimap-button" 
                 onclick={toggleMinimap}
                 aria-label={showMinimap ? "Hide minimap" : "Show minimap"}
@@ -986,7 +1005,12 @@
             <Axes />
         {/if}
 
-        <Tutorial onVisibilityChange={handleTutorialVisibility} />
+        <Tutorial 
+            bind:this={tutorialRef}
+            onVisibilityChange={handleTutorialVisibility}
+            hideToggleButton={true}
+            onToggle={handleTutorialToggle}
+        />
         
         {#if $needsSpawn && $user}
             <SpawnMenu onSpawn={handleSpawnComplete} />
@@ -1168,13 +1192,12 @@
     }
     
     .control-button {
-        width: 2em;
         height: 2em;
         background-color: rgba(255, 255, 255, 0.85);
         border: 0.05em solid rgba(255, 255, 255, 0.2);
         border-radius: 0.3em;
         color: rgba(0, 0, 0, 0.8);
-        padding: 0.3em;
+        padding: 0.3em 0.8em; /* Increased horizontal padding to fit text */
         font-size: 1em;
         font-weight: bold;
         cursor: pointer;

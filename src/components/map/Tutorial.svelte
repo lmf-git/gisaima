@@ -4,11 +4,15 @@
   import Close from '../../components/icons/Close.svelte';
   import { map } from "../../lib/stores/map.js";
 
-  // Use a function prop for visibility changes
-  const { onVisibilityChange = () => {} } = $props();
+  // Use proper Svelte 5 props
+  const { 
+    onVisibilityChange = () => {},
+    hideToggleButton = false,
+    onToggle = () => {} // Function to call when toggling
+  } = $props();
   
-  let closed = $state(false)
-  let ready = $state(false)
+  let closed = $state(false);
+  let ready = $state(false);
   
   // Track expanded state for each section
   let worldExpanded = $state(false)
@@ -47,6 +51,34 @@
   const toggleStructures = () => structuresExpanded = !structuresExpanded
   const toggleUnits = () => unitsExpanded = !unitsExpanded
   const toggleControls = () => controlsExpanded = !controlsExpanded
+
+  // Toggle function that will be called by parent component
+  function handleToggle() {
+    if (closed) {
+      open();
+    } else {
+      close();
+    }
+    onToggle(!closed); // Let parent know about the new state
+  }
+
+  // Make toggle function accessible from outside via event dispatch
+  export function toggle() {
+    handleToggle();
+  }
+
+  // Expose the API to the parent
+  $effect(() => {
+    if (ready && window) {
+      // Make toggle function available via custom event
+      window.addEventListener('tutorial:toggle', () => handleToggle());
+    }
+    return () => {
+      if (window) {
+        window.removeEventListener('tutorial:toggle', () => handleToggle());
+      }
+    };
+  });
 </script>
 
 {#if ready && !closed}
@@ -160,8 +192,8 @@
       </div>
     </div>
   </div>
-{:else if ready && closed}
-  <button class="help" onclick={open} aria-label="Show tutorial">?</button>
+{:else if ready && closed && !hideToggleButton}
+  <button class="help" onclick={handleToggle} aria-label="Show tutorial">?</button>
 {/if}
 
 <style>
@@ -311,33 +343,7 @@
   }
   
   .help {
-    position: absolute;
-    bottom: 2em;
-    left: 2em;
-    height: 1.75em;
-    background-color: rgba(255, 255, 255, 0.85); /* Increased opacity from 0.6 to 0.85 */
-    color: rgba(0, 0, 0, 0.8);
-    border: 0.05em solid rgba(255, 255, 255, 0.2); /* Match Legend's border */
-    border-radius: 0.3em;
-    font-size: 1.2em;
-    font-weight: bold;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    padding: 0.3em 0.6em;
-    transition: all 0.2s ease;
-    z-index: 1001;
-    backdrop-filter: blur(0.5em);
-    -webkit-backdrop-filter: blur(0.5em);
-    opacity: 0;
-    animation: fadeInHelp 0.7s ease-out forwards;
-  }
-  
-  .help:hover {
-    background-color: rgba(255, 255, 255, 0.95); /* Increased hover opacity from 0.8 to 0.95 */
-    border-color: rgba(255, 255, 255, 0.5);
+    display: none; /* Hide by default since we'll use the button in map-controls */
   }
   
   @keyframes fadeInHelp {
