@@ -65,23 +65,16 @@
     
     // Add a flag to prevent multiple click handling and debounce
     let isProcessingClick = false;
-    let lastClickedCoords = null;
 
     // Add flag to track path drawing transition
     let isTransitioningToPathDrawing = $state(false);
 
     function toggleDetailsModal(show) {
-        if (show && !detailed) {
-            // When opening details, make sure highlight persists
-            if (lastClickedCoords) {
-                setHighlighted(lastClickedCoords.x, lastClickedCoords.y);
-            }
-            detailed = true;
-        } else if (!show && detailed) {
-            // When closing, clear everything
-            detailed = false;
+        detailed = show === undefined ? !detailed : show;
+        
+        // When closing, also clear highlight
+        if (!detailed) {
             setHighlighted(null, null);
-            lastClickedCoords = null;
         }
     }
     
@@ -628,21 +621,20 @@
                 // Path drawing mode - add waypoint
                 handlePathPoint({ x, y });
             } else {
-                // Normal tile click - show details if there's content
-                lastClickedCoords = { x, y };
+                // First just move the map target
+                moveTarget(x, y);
                 
                 // Find the clicked tile content
                 const clickedTile = $coordinates.find(cell => cell.x === x && cell.y === y);
                 
-                // First set highlighted to ensure it persists
-                setHighlighted(x, y);
-                
-                // Move the target but preserve our highlight
-                moveTarget(x, y, { preserveHighlight: true });
-                
-                // Show details if tile has content
+                // Only set highlight and show details if tile has content
                 if (clickedTile && hasTileContent(clickedTile)) {
+                    setHighlighted(x, y);
                     detailed = true;
+                } else {
+                    // If no content, clear highlights and hide details
+                    setHighlighted(null, null);
+                    detailed = false;
                 }
             }
         } finally {
