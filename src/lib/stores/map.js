@@ -154,6 +154,49 @@ export function isInternalUrlChange() {
   return isInternalUrlUpdate;
 }
 
+// Track modal hierarchies for keyboard handling
+export const modalHierarchy = writable({
+  structureOverview: false,
+  details: false, 
+  pathDrawing: false,
+  anyOtherModal: false,
+  minimap: true,
+  overview: true
+});
+
+// Process keyboard events with hierarchy
+export function handleKeyboardEvent(event, componentState) {
+  if (event.key !== 'Escape') return false;
+  
+  // Update component hierarchy state
+  modalHierarchy.update(state => ({
+    ...state,
+    ...componentState
+  }));
+  
+  const hierarchy = get(modalHierarchy);
+  
+  // Check component visibility in priority order
+  if (hierarchy.structureOverview) return false; // Let StructureOverview handle it
+  if (hierarchy.details) return false; // Let Details handle it  
+  if (hierarchy.pathDrawing) return false; // Let pathDrawing handle it
+  if (hierarchy.anyOtherModal) return false; // Let other modals handle it
+  
+  // If no higher priority components are visible, handle minimap and overview
+  if (hierarchy.minimap) return 'minimap';
+  if (hierarchy.overview) return 'overview';
+  
+  return false;
+}
+
+// Update modal hierarchy state
+export function updateModalState(componentState) {
+  modalHierarchy.update(state => ({
+    ...state,
+    ...componentState
+  }));
+}
+
 // Simplified function to process chunk data with proper update sequencing
 function processChunkData(data = {}, chunkKey) {
   // Structure for batch entity updates

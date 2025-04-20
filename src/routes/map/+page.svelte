@@ -28,7 +28,9 @@
         isInternalUrlChange,
         setHighlighted,
         highlightedStore,
-        coordinates 
+        coordinates,
+        handleKeyboardEvent,
+        updateModalState 
     } from "../../lib/stores/map.js";
     
     import { getFunctions, httpsCallable } from 'firebase/functions'; 
@@ -842,7 +844,53 @@
             alert(`Error: ${error.message || 'Failed to start movement'}`);
         });
     }
+
+    // Enhanced keyboard event handler for the page
+    function handleMapKeyDown(event) {
+        if (event.key !== 'Escape') return;
+        
+        // Update the global modal hierarchy state
+        const componentState = {
+            structureOverview: showStructureOverview,
+            details: detailed,
+            pathDrawing: isPathDrawingMode,
+            anyOtherModal: modalState.visible,
+            minimap: showMinimap && !minimapClosing,
+            overview: showEntities && !entitiesClosing
+        };
+        
+        // Process the keyboard event based on component hierarchy
+        const actionTarget = handleKeyboardEvent(event, componentState);
+        
+        // Handle closing components in order of priority
+        if (actionTarget === 'minimap') {
+            toggleMinimap();
+            event.preventDefault();
+            event.stopPropagation();
+        } else if (actionTarget === 'overview') {
+            toggleEntities();
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }
+    
+    // Update modal state when components change visibility
+    $effect(() => {
+        if (browser) {
+            updateModalState({
+                structureOverview: showStructureOverview,
+                details: detailed,
+                pathDrawing: isPathDrawingMode,
+                anyOtherModal: modalState.visible,
+                minimap: showMinimap && !minimapClosing,
+                overview: showEntities && !entitiesClosing
+            });
+        }
+    });
 </script>
+
+<!-- Add global keyboard event handler -->
+<svelte:window on:keydown={handleMapKeyDown} />
 
 <div class="map" class:dragging={isDragging} class:path-drawing={isPathDrawingMode}>
     {#if combinedLoading}
