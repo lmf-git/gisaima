@@ -50,6 +50,8 @@
     import StructureOverview from '../../components/map/StructureOverview.svelte';
     import Gather from '../../components/map/Gather.svelte';
 
+    let isTutorialVisible = $state(false);
+
     let detailed = $state(false);
     let loading = $state(true);
     let error = $state(null);
@@ -451,7 +453,7 @@
         
         currentWorldId = worldFromUrl || worldFromStore || null;
     });
-    
+
     onMount(() => {
         if (!browser) return;
         
@@ -475,7 +477,7 @@
             initialize({ 
                 worldId: currentWorldId, 
                 worldInfo: $game.worldInfo[currentWorldId],
-                initialX: urlCoordinates?.x,
+                initialX: urlCoordinates?.x, 
                 initialY: urlCoordinates?.y
             });
             
@@ -488,7 +490,7 @@
             }
         } else {
             initializeMap(worldId).catch(err => {
-                console.error(`Failed to initialize map:`, err); 
+                console.error(`Failed to initialize map:`, err);
                 error = err.message || `Failed to load world`;
                 loading = false;
             });
@@ -506,7 +508,6 @@
     let showEntities = $state(true);
     let minimapClosing = $state(false);
     let entitiesClosing = $state(false);
-    let isTutorialVisible = $state(false);
     
     const ANIMATION_DURATION = 800;
 
@@ -516,8 +517,20 @@
     }
     
     // Function to handle tutorial state changes
-    function handleTutorialToggle(isOpen) {
-        console.log('Tutorial visibility changed:', isOpen);
+    function handleTutorialVisibility(isVisible) {
+        isTutorialVisible = isVisible;
+        
+        if (isTutorialVisible && (showMinimap || showEntities)) {
+            showMinimap = false;
+            showEntities = false;
+        }
+    }
+    
+    // Add the missing function that was referenced in the Tutorial component
+    function handleTutorialToggle(isVisible) {
+        console.log('Tutorial visibility toggled:', isVisible);
+        // This function is called when the tutorial is opened or closed manually
+        // You can add any additional logic needed when tutorial state changes
     }
     
     $effect(() => {
@@ -545,15 +558,6 @@
             showEntities = false;
         }
     });
-    
-    function handleTutorialVisibility(isVisible) {
-        isTutorialVisible = isVisible;
-        
-        if (isTutorialVisible && (showMinimap || showEntities)) {
-            showMinimap = false;
-            showEntities = false;
-        }
-    }
     
     function toggleMinimap() {
         if ($needsSpawn || isTutorialVisible) {
@@ -1004,13 +1008,6 @@
           {:else if modalState.type === 'move'}
             <Move
               onClose={(complete = true, startingPathDraw = false) => {
-                if (!complete && startingPathDraw) {
-                  return;
-                }
-                
-                isPathDrawingMode = false;
-                pathDrawingGroup = null;
-                currentPath = [];
                 closeModal();
               }}
               onPathDrawingStart={handlePathDrawingStart}
@@ -1192,4 +1189,5 @@
         outline: 0.15em solid rgba(0, 0, 0, 0.6);
         outline-offset: 0.1em;
     }
+
 </style>

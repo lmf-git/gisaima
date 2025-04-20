@@ -10,7 +10,10 @@
   import Fairy from '../icons/Fairy.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
 
-  const { onClose = () => {} } = $props();
+  // Remove isTutorialVisible prop - not needed in this component
+  const { 
+    onClose = () => {}
+  } = $props();
 
   // Get tile data directly from the targetStore
   let tileData = $derived($targetStore || null);

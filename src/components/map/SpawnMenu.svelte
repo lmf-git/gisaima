@@ -252,7 +252,7 @@
                   <Fairy extraClass="race-icon-option" />
                 {/if}
               </div>
-              <Torch size="1.2em" />
+              <Torch size="1.2em" extraClass="torch-icon" />
             </div>
             <div class="option-content">
               <span class="option-name">{spot.name}</span>
@@ -292,8 +292,8 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.85);
-    z-index: 100;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -301,27 +301,42 @@
   }
   
   .spawn-container {
-    background: var(--color-dark-navy);
-    border: 2px solid var(--color-teal);
-    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.85);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.3em;
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(0.5em);
+    -webkit-backdrop-filter: blur(0.5em);
     padding: 2rem;
     width: 90%;
     max-width: 500px;
-    color: white;
-    box-shadow: 0 0 20px rgba(0, 150, 150, 0.3);
-    text-align: center;
+    color: rgba(0, 0, 0, 0.8);
+    animation: fadeIn 0.8s ease-out forwards;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-1em);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   
   h2 {
     margin-top: 0;
-    color: var(--color-teal);
+    color: rgba(0, 0, 0, 0.85);
     margin-bottom: 0.5rem;
     font-family: var(--font-heading);
+    font-size: 1.6em;
   }
   
   .description {
     margin-bottom: 1.5rem;
-    opacity: 0.8;
+    color: rgba(0, 0, 0, 0.7);
   }
   
   .title-with-icon {
@@ -338,14 +353,21 @@
   :global(.race-icon-menu) {
     width: 2.5em;
     height: 2.5em;
-    fill: #64FFDA;  /* Changed from var(--color-teal) to a brighter color */
+    fill: white;
+    filter: drop-shadow(0 0 0.15em rgba(0, 0, 0, 0.5));
   }
   
   :global(.race-icon-option) {
     width: 1.2em;
     height: 1.2em;
-    fill: #64FFDA;  /* Changed from var(--color-teal) to a brighter color */
+    fill: white;
     margin-right: 0.3em;
+    filter: drop-shadow(0 0 0.15em rgba(0, 0, 0, 0.5));
+  }
+  
+  :global(.torch-icon) {
+    fill: white;
+    filter: drop-shadow(0 0 0.2em rgba(255, 160, 0, 0.7));
   }
 
   .spawn-options {
@@ -357,26 +379,27 @@
   
   .spawn-option {
     padding: 0.75rem;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.3em;
     cursor: pointer;
     text-align: left;
     display: flex;
     align-items: center;
     transition: all 0.2s;
-    color: white;
+    color: rgba(0, 0, 0, 0.8);
   }
   
   .spawn-option:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
   }
   
   .spawn-option.selected {
-    background: rgba(0, 150, 150, 0.2);
-    border-color: var(--color-teal);
-    box-shadow: 0 0 8px rgba(0, 150, 150, 0.4);
+    background: rgba(64, 158, 255, 0.1);
+    border-color: rgba(64, 158, 255, 0.3);
+    box-shadow: 0 0 8px rgba(64, 158, 255, 0.2);
   }
   
   .option-icon {
@@ -385,6 +408,10 @@
     align-items: center;
     justify-content: center;
     min-width: 2.5rem;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.4em;
+    border-radius: 50%;
+    box-shadow: 0 0 0.3em rgba(0, 0, 0, 0.2);
   }
 
   .faction-icon {
@@ -400,13 +427,14 @@
   }
   
   .option-name {
-    font-weight: bold;
+    font-weight: 600;
     margin-bottom: 0.25rem;
+    color: rgba(0, 0, 0, 0.85);
   }
   
   .option-coords {
     font-size: 0.85rem;
-    opacity: 0.7;
+    color: rgba(0, 0, 0, 0.6);
   }
   
   .action-container {
@@ -418,14 +446,14 @@
   .cta-button {
     display: inline-block;
     padding: 0.8em 2em;
-    background-color: var(--color-button-primary);
-    color: var(--color-text);
+    background-color: rgba(64, 158, 255, 0.1);
+    color: rgba(0, 0, 0, 0.8);
     border-radius: 0.3em;
+    border: 1px solid rgba(64, 158, 255, 0.3);
     font-size: 1.1em;
     text-decoration: none;
     font-weight: 600;
     transition: all 0.3s ease;
-    border: 0.05em solid transparent;
     font-family: var(--font-heading);
     cursor: pointer;
     position: relative;
@@ -434,15 +462,16 @@
 
   .spawn-button {
     min-width: 200px;
-    background: linear-gradient(135deg, var(--color-teal) 0%, var(--color-bright-teal) 100%);
-    color: #ffffff;
-    border: 1px solid var(--color-muted-teal);
-    box-shadow: 0 0.3em 0.6em rgba(0, 150, 150, 0.4);
+    background: rgba(64, 158, 255, 0.8);
+    color: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(64, 158, 255, 0.6);
+    box-shadow: 0 0.3em 0.6em rgba(64, 158, 255, 0.3);
     letter-spacing: 0.05em;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    text-shadow: 0 0 0.2em rgba(0, 0, 0, 0.3);
   }
   
   .spawn-button::before {
@@ -458,8 +487,8 @@
   
   .spawn-button:hover:not(:disabled) {
     transform: translateY(-0.2em);
-    box-shadow: 0 0.4em 0.8em rgba(0, 150, 150, 0.6);
-    background: linear-gradient(135deg, var(--color-bright-teal) 0%, var(--color-teal) 100%);
+    box-shadow: 0 0.4em 0.8em rgba(64, 158, 255, 0.4);
+    background: rgba(64, 158, 255, 0.9);
   }
   
   .spawn-button:hover:not(:disabled)::before {
@@ -479,22 +508,25 @@
   .loading, .error {
     padding: 1rem;
     margin: 1rem 0;
-    border-radius: 4px;
+    border-radius: 0.3em;
   }
   
   .loading {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.7);
   }
   
   .error {
-    background: rgba(255, 0, 0, 0.15);
-    color: #ff7070;
+    background: rgba(255, 0, 0, 0.1);
+    color: rgba(220, 53, 69, 0.9);
+    border: 1px solid rgba(220, 53, 69, 0.2);
   }
   
   .hint {
-    font-size: 0.8rem;
-    opacity: 0.6;
+    font-size: 0.85rem;
+    color: rgba(0, 0, 0, 0.5);
     margin-top: 1rem;
+    font-style: italic;
   }
   
   .spinner {
@@ -531,16 +563,16 @@
   .option-desc {
     font-size: 0.8rem;
     font-style: italic;
-    opacity: 0.8;
+    color: rgba(0, 0, 0, 0.6);
     margin-top: 0.25rem;
   }
 
   .secondary-button {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     padding: 0.8em 1.5em;
-    border-radius: 4px;
+    border-radius: 0.3em;
     font-size: 0.95em;
     cursor: pointer;
     margin-top: 1rem;
@@ -550,19 +582,20 @@
   }
   
   .secondary-button:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.1);
     transform: translateY(-0.1em);
-    box-shadow: 0 0.2em 0.5em rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0.2em 0.5em rgba(0, 0, 0, 0.1);
   }
 
   .faction-tag {
     font-size: 0.8rem;
-    background: rgba(0, 150, 150, 0.2);
-    color: var(--color-teal);
+    background: rgba(64, 158, 255, 0.1);
+    color: rgba(64, 158, 255, 0.9);
     padding: 0.2rem 0.5rem;
-    border-radius: 4px;
+    border-radius: 0.3em;
     display: inline-block;
     margin-top: 0.25rem;
     font-weight: 500;
+    border: 1px solid rgba(64, 158, 255, 0.2);
   }
 </style>

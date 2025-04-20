@@ -1575,17 +1575,6 @@
     /* Only keep non-animation related styling */
     stroke-width: 0.6;
   }
-  
-  /* Remove all redundant CSS animation properties */
-  /* SVG animate tags in the markup handle the animations properly */
-  .path-group .animated-path {
-    /* Let SVG handle all animations for vector-perfect rendering */
-  }
-
-  /* No CSS animations for SVG circles to prevent rasterization */
-  .custom-path-group circle {
-    /* Use SVG attributes for styling where possible */
-  }
 
   .map-container.path-drawing-mode .map:not(.moving) .tile:hover {
     box-shadow: inset 0 0 0 2px rgba(66, 133, 244, 0.9) !important;
