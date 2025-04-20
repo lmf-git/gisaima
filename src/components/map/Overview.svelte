@@ -1,7 +1,5 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { fade, fly, slide } from 'svelte/transition';
-  import { cubicOut } from 'svelte/easing';
   import { entities, targetStore, coordinates, moveTarget, setHighlighted } from '../../lib/stores/map';
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   
@@ -561,7 +559,7 @@
 </script>
 
 <div class="entities-wrapper" class:closing>
-  <div class="entities-panel" transition:fly|local={{ y: 200, duration: 500, easing: cubicOut }}>
+  <div class="entities-panel">
     <h3 class="title">
       Map Entities
       <span class="subtitle">{visibleChunks} chunks visible</span>
@@ -1368,7 +1366,7 @@
 <style>
   .entities-wrapper {
     position: absolute;
-    bottom: 0.5em; /* Changed from 3em to 0.5em to position it at the bottom */
+    bottom: 0.5em;
     left: 0.5em;
     z-index: 998;
     transition: opacity 0.2s ease;
@@ -1379,6 +1377,50 @@
 
   .entities-wrapper.closing {
     pointer-events: none;
+  }
+
+  .entities-panel {
+    background-color: rgba(255, 255, 255, 0.85);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.3em;
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(0.5em);
+    -webkit-backdrop-filter: blur(0.5em);
+    width: 100%;
+    max-width: 28em;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideInFromBottom 0.8s ease-out forwards;
+    transform-origin: bottom left;
+  }
+  
+  /* Add animations to match Minimap's style */
+  .entities-wrapper.closing .entities-panel {
+    animation: slideOutToBottom 0.8s ease-in forwards;
+  }
+  
+  @keyframes slideInFromBottom {
+    0% {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideOutToBottom {
+    0% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100%);
+      opacity: 0;
+    }
   }
 
   .subtitle {
@@ -1407,23 +1449,6 @@
     position: absolute;
     left: 0.2em;
     font-size: 1.3em;
-  }
-
-  .entities-panel {
-    background-color: rgba(255, 255, 255, 0.85);
-    border: 0.05em solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.3em;
-    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(0.5em);
-    -webkit-backdrop-filter: blur(0.5em);
-    width: 100%;
-    max-width: 28em;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    animation: reveal 0.4s ease-out forwards;
-    transform-origin: bottom left;
   }
 
   .map-entities {
