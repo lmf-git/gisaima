@@ -426,7 +426,9 @@
 <div class="modal-container" class:ready={isReady}>
   <div class="details-modal" key={renderKey}>
     <header class="modal-header">
-      <h3>Tile Details {$highlightedStore ? `(${$highlightedStore.x},${$highlightedStore.y})` : ''}</h3>
+      <h3>
+        Tile Details {$highlightedStore ? `(${$highlightedStore.x},${$highlightedStore.y})` : ''}
+      </h3>
       <button class="close-button" onclick={onClose}>
         <Close size="1.6em" extraClass="close-icon-dark" />
       </button>
@@ -937,6 +939,41 @@
       opacity: 1;
       transform: scale(1);
     }
+  }
+
+  .modal-header {
+    padding: 0.8em 1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    font-family: var(--font-heading);
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.8);
+  }
+
+  .close-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.4em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .close-button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.9);
   }
 
   /* Core section styling */

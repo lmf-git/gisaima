@@ -602,8 +602,21 @@
         if (isProcessingClick) return;
         isProcessingClick = true;
 
-        // If we have coordinates and not in path drawing mode, handle tile click
-        if (coords && !isPathDrawingMode) {
+        // If we're in path drawing mode, don't open details or change state
+        if (isPathDrawingMode && coords) {
+            // Just let the parent component handle path drawing
+            // We don't need to do anything here - Grid component will
+            // call the onAddPathPoint method directly
+            
+            // Reset debounce flag with short timeout
+            setTimeout(() => {
+                isProcessingClick = false;
+            }, 200); // Shorter timeout for responsiveness in drawing mode
+            return;
+        }
+
+        // Regular grid click handling (not in path drawing mode)
+        if (coords) {
             // First move the target to the clicked location - just like minimap does
             moveTarget(coords.x, coords.y);
 
