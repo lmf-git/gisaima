@@ -22,11 +22,94 @@
     items: false,
     battles: false
   });
+
+  // Add state to track sorting options
+  let sortOptions = $state({
+    groups: { by: 'name', asc: true },
+    players: { by: 'name', asc: true },
+    items: { by: 'name', asc: true },
+    battles: { by: 'status', asc: true }
+  });
   
   // Function to toggle section collapse state
   function toggleSection(sectionId) {
     collapsedSections[sectionId] = !collapsedSections[sectionId];
   }
+
+  // Function to change sort option for a section
+  function setSortOption(section, by) {
+    sortOptions[section] = { 
+      by, 
+      asc: sortOptions[section].by === by ? !sortOptions[section].asc : true 
+    };
+  }
+  
+  // Function to sort entities based on current sort options
+  function sortEntities(entities, section) {
+    if (!entities || !entities.length) return [];
+    
+    const option = sortOptions[section];
+    
+    return [...entities].sort((a, b) => {
+      let valueA, valueB;
+      
+      switch(option.by) {
+        case 'name':
+          valueA = (a.name || a.displayName || formatEntityName(a) || '').toLowerCase();
+          valueB = (b.name || b.displayName || formatEntityName(b) || '').toLowerCase();
+          break;
+        case 'type':
+          valueA = (a.type || a.race || '').toLowerCase();
+          valueB = (b.type || b.race || '').toLowerCase();
+          break;
+        case 'rarity':
+          // For items
+          const rarityOrder = { 'common': 0, 'uncommon': 1, 'rare': 2, 'epic': 3, 'legendary': 4, 'mythic': 5 };
+          valueA = rarityOrder[a.rarity?.toLowerCase()] || 0;
+          valueB = rarityOrder[b.rarity?.toLowerCase()] || 0;
+          break;
+        case 'status':
+          valueA = a.status || '';
+          valueB = b.status || '';
+          break;
+        case 'power':
+          // For battles/groups
+          valueA = a.power || 0;
+          valueB = b.power || 0;
+          break;
+        default:
+          valueA = a.id || '';
+          valueB = b.id || '';
+      }
+      
+      // Handle numeric comparisons
+      if (typeof valueA === 'number' && typeof valueB === 'number') {
+        return option.asc ? valueA - valueB : valueB - valueA;
+      }
+      
+      // Handle string comparisons
+      return option.asc ? 
+        valueA.localeCompare(valueB) : 
+        valueB.localeCompare(valueA);
+    });
+  }
+
+  // Create sorted entity lists 
+  $effect(() => {
+    // These will be recalculated whenever highlightedStore or sortOptions changes
+    if (!$highlightedStore) return;
+    
+    sortedGroups = sortEntities($highlightedStore.groups || [], 'groups');
+    sortedPlayers = sortEntities($highlightedStore.players || [], 'players');
+    sortedItems = sortEntities($highlightedStore.items || [], 'items');
+    sortedBattles = sortEntities($highlightedStore.battles || [], 'battles');
+  });
+
+  // Define the sorted arrays
+  let sortedGroups = $state([]);
+  let sortedPlayers = $state([]);
+  let sortedItems = $state([]);
+  let sortedBattles = $state([]);
 
   // Function to execute action
   function executeAction(action, data = null) {
@@ -440,7 +523,7 @@
         </div>
       </div>
       
-      <!-- Groups section -->
+      <!-- Groups section with sorting -->
       {#if $highlightedStore.groups?.length > 0}
         <div class="entities-section">
           <div 
@@ -450,8 +533,32 @@
             tabindex="0"
             aria-expanded={!collapsedSections.groups}
           >
-            <h4>Groups ({$highlightedStore.groups.length})</h4>
+            <h4>Groups <span class="section-count">({$highlightedStore.groups.length})</span></h4>
             <div class="section-controls">
+              {#if !collapsedSections.groups}
+                <div class="sort-controls">
+                  <button 
+                    class="sort-option"
+                    class:active={sortOptions.groups.by === 'name'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'name'); }}
+                  >
+                    <span>Name</span>
+                    {#if sortOptions.groups.by === 'name'}
+                      <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.groups.by === 'status'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'status'); }}
+                  >
+                    <span>Status</span>
+                    {#if sortOptions.groups.by === 'status'}
+                      <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                </div>
+              {/if}
               <button class="collapse-button">
                 {collapsedSections.groups ? '▼' : '▲'}
               </button>
@@ -460,7 +567,7 @@
           
           {#if !collapsedSections.groups}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each $highlightedStore.groups as group}
+              {#each sortedGroups as group}
                 <div class="entity group {isOwnedByCurrentPlayer(group) ? 'player-owned' : ''}">
                   <div class="entity-info">
                     <div class="entity-name">
@@ -519,7 +626,7 @@
         </div>
       {/if}
       
-      <!-- Players section -->
+      <!-- Players section with sorting -->
       {#if $highlightedStore.players?.length > 0}
         <div class="entities-section">
           <div 
@@ -529,8 +636,32 @@
             tabindex="0"
             aria-expanded={!collapsedSections.players}
           >
-            <h4>Players ({$highlightedStore.players.length})</h4>
+            <h4>Players <span class="section-count">({$highlightedStore.players.length})</span></h4>
             <div class="section-controls">
+              {#if !collapsedSections.players}
+                <div class="sort-controls">
+                  <button 
+                    class="sort-option"
+                    class:active={sortOptions.players.by === 'name'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('players', 'name'); }}
+                  >
+                    <span>Name</span>
+                    {#if sortOptions.players.by === 'name'}
+                      <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.players.by === 'type'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('players', 'type'); }}
+                  >
+                    <span>Race</span>
+                    {#if sortOptions.players.by === 'type'}
+                      <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                </div>
+              {/if}
               <button class="collapse-button">
                 {collapsedSections.players ? '▼' : '▲'}
               </button>
@@ -539,7 +670,7 @@
           
           {#if !collapsedSections.players}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each $highlightedStore.players as player}
+              {#each sortedPlayers as player}
                 <div class="entity player {player.id === $currentPlayer?.uid ? 'current' : ''} {isOwnedByCurrentPlayer(player) ? 'player-owned' : ''}">
                   <div class="entity-info">
                     <div class="entity-name">
@@ -561,7 +692,7 @@
         </div>
       {/if}
       
-      <!-- Items section -->
+      <!-- Items section with sorting -->
       {#if $highlightedStore.items?.length > 0}
         <div class="entities-section">
           <div 
@@ -571,8 +702,32 @@
             tabindex="0"
             aria-expanded={!collapsedSections.items}
           >
-            <h4>Items ({$highlightedStore.items.length})</h4>
+            <h4>Items <span class="section-count">({$highlightedStore.items.length})</span></h4>
             <div class="section-controls">
+              {#if !collapsedSections.items}
+                <div class="sort-controls">
+                  <button 
+                    class="sort-option"
+                    class:active={sortOptions.items.by === 'name'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('items', 'name'); }}
+                  >
+                    <span>Name</span>
+                    {#if sortOptions.items.by === 'name'}
+                      <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.items.by === 'rarity'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('items', 'rarity'); }}
+                  >
+                    <span>Rarity</span>
+                    {#if sortOptions.items.by === 'rarity'}
+                      <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                </div>
+              {/if}
               <button class="collapse-button">
                 {collapsedSections.items ? '▼' : '▲'}
               </button>
@@ -581,7 +736,7 @@
           
           {#if !collapsedSections.items}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each $highlightedStore.items as item}
+              {#each sortedItems as item}
                 <div class="entity item {getRarityClass(item.rarity)}">
                   <div class="entity-info">
                     <div class="entity-name">
@@ -609,9 +764,9 @@
         </div>
       {/if}
       
-      <!-- Battles section -->
+      <!-- Battles section with sorting -->
       {#if $highlightedStore.battles?.length > 0}
-        <div class="entities-section">
+        <div class="entities-section battles-section">
           <div 
             class="section-header"
             onclick={() => toggleSection('battles')}
@@ -619,8 +774,32 @@
             tabindex="0"
             aria-expanded={!collapsedSections.battles}
           >
-            <h4>Battles ({$highlightedStore.battles.length})</h4>
+            <h4>Battles <span class="section-count battles-count">({$highlightedStore.battles.length})</span></h4>
             <div class="section-controls">
+              {#if !collapsedSections.battles}
+                <div class="sort-controls">
+                  <button 
+                    class="sort-option"
+                    class:active={sortOptions.battles.by === 'status'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('battles', 'status'); }}
+                  >
+                    <span>Status</span>
+                    {#if sortOptions.battles.by === 'status'}
+                      <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.battles.by === 'power'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('battles', 'power'); }}
+                  >
+                    <span>Power</span>
+                    {#if sortOptions.battles.by === 'power'}
+                      <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
+                </div>
+              {/if}
               <button class="collapse-button">
                 {collapsedSections.battles ? '▼' : '▲'}
               </button>
@@ -629,7 +808,7 @@
           
           {#if !collapsedSections.battles}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each $highlightedStore.battles as battle}
+              {#each sortedBattles as battle}
                 <div class="entity battle">
                   <div class="entity-info">
                     <div class="entity-name">
@@ -1411,5 +1590,59 @@
     .tile-info-container:has(.terrain-column:only-child) .terrain-column {
       width: 100%;
     }
+  }
+
+  /* Sort controls styling */
+  .sort-controls {
+    display: flex;
+    gap: 0.2em;
+    margin-right: 0.5em;
+  }
+  
+  .sort-option {
+    background: none;
+    border: none;
+    font-size: 0.7em;
+    color: rgba(0, 0, 0, 0.5);
+    padding: 0.2em 0.4em;
+    border-radius: 0.3em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.2em;
+    transition: all 0.2s ease;
+  }
+  
+  .sort-option:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .sort-option.active {
+    background-color: rgba(66, 133, 244, 0.1);
+    color: rgba(66, 133, 244, 0.9);
+  }
+  
+  .sort-direction {
+    font-size: 0.9em;
+    font-weight: bold;
+  }
+  
+  /* Section count styling */
+  .section-count {
+    font-size: 0.8em;
+    font-weight: 500;
+    margin-left: 0.3em;
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  /* Battle-specific styling */
+  .battles-count {
+    color: rgba(220, 20, 60, 0.9);
+    font-weight: 600;
+  }
+  
+  .battles-section h4 {
+    color: rgba(139, 0, 0, 0.8);
   }
 </style>
