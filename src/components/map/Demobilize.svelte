@@ -71,7 +71,7 @@
     
     try {
       // Create the function reference
-      const demobilizeFn = httpsCallable(functions, 'demobilizeGroup');
+      const demobilizeFn = httpsCallable(functions, 'demobiliseUnits');
       
       // Call with the required parameters
       const result = await demobilizeFn({
