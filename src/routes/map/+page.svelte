@@ -1183,8 +1183,8 @@
     
     .entity-controls {
         position: absolute;
-        bottom: 2em;
-        left: 4em;
+        bottom: 1em; /* Changed from 2em to 1em to reduce the gap at the bottom */
+        left: 1em;
         z-index: 1001;
     }
     

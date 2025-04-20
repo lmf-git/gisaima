@@ -39,8 +39,8 @@
 <style>
   .legend {
     position: absolute;
-    bottom: 2.5em;
-    right: 0.5em;
+    bottom: 1em; /* Changed from 2.5em to 1em to move it closer to the bottom */
+    right: 1em;
     z-index: 1001;
     cursor: pointer;
     border-radius: 0.3em;

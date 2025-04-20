@@ -1368,7 +1368,7 @@
 <style>
   .entities-wrapper {
     position: absolute;
-    bottom: 3em;
+    bottom: 0.5em; /* Changed from 3em to 0.5em to position it at the bottom */
     left: 0.5em;
     z-index: 998;
     transition: opacity 0.2s ease;
