@@ -69,13 +69,11 @@
     // Add flag to track path drawing transition
     let isTransitioningToPathDrawing = $state(false);
 
+    // Add a counter to ensure proper re-rendering
+    let structureRenderCount = $state(0);
+
     function toggleDetailsModal(show) {
         detailed = show === undefined ? !detailed : show;
-        
-        // When closing, also clear highlight
-        if (!detailed) {
-            setHighlighted(null, null);
-        }
     }
     
     let ignoreNextUrlChange = $state(false);
@@ -126,19 +124,31 @@
         
         // Close Details modal when opening structure overview or action modals
         if (['inspect', 'mobilize', 'move', 'gather', 'demobilize', 'joinBattle'].includes(options.type)) {
+            // Close details if it's open
             if (detailed) {
-                console.log('Closing Details panel to show modal');
                 toggleDetailsModal(false);
             }
         }
         
         if (options.type === 'inspect' && options.data) {
+            // Increment render count for proper animation
+            structureRenderCount++;
+            
             // Update modal state for structure inspection
             modalState = {
                 type: 'inspect',
                 data: options.data,
                 visible: true
             };
+
+            // Set specific states for structure modal
+            selectedStructure = options.data.tile?.structure || null;
+            structureLocation = { 
+                x: options.data.x || 0, 
+                y: options.data.y || 0
+            };
+            selectedTile = options.data.tile || null;
+            showStructureOverview = true;
         } else if (options.type) {
             // Handle other modal types
             modalState = {
@@ -584,47 +594,24 @@
     function handleGridClick(coords) {
         // Check if this is a path confirmation action
         if (coords && coords.confirmPath === true) {
-            console.log('Path confirmation received from Grid component');
             confirmPathDrawing(currentPath);
             return;
         }
 
-        const { x, y } = coords;
-        
-        if (x === undefined || y === undefined) {
-            console.log('Invalid coordinates in grid click');
-            return;
-        }
-        
-        // Simple debounce to prevent multiple rapid clicks
+        // Simple debounce
         if (isProcessingClick) return;
         isProcessingClick = true;
-        
-        try {
-            if (isPathDrawingMode) {
-                // Path drawing mode - add waypoint
-                handlePathPoint({ x, y });
-            } else {
-                // First just move the map target
-                moveTarget(x, y);
-                
-                // Find the clicked tile content
-                const clickedTile = $coordinates.find(cell => cell.x === x && cell.y === y);
-                
-                // Only set highlight and show details if tile has content
-                if (clickedTile && hasTileContent(clickedTile)) {
-                    setHighlighted(x, y);
-                    detailed = true;
-                } else {
-                    // If no content, clear highlights and hide details
-                    setHighlighted(null, null);
-                    detailed = false;
-                }
-            }
-        } finally {
-            // Clear click processing flag after a short delay
-            setTimeout(() => isProcessingClick = false, 100);
+
+        // Basic flow: highlight tile and show details
+        if (coords && !isPathDrawingMode) {
+            setHighlighted(coords.x, coords.y);
+            toggleDetailsModal(true);
         }
+
+        // Reset debounce flag
+        setTimeout(() => {
+            isProcessingClick = false;
+        }, 300);
     }
 
     // Simplified function to check if a tile has content
@@ -911,6 +898,26 @@
                 }
               }}
               onClose={() => toggleEntities()}
+            />
+        {/if}
+
+        {#if detailed}
+            <Details 
+                onClose={() => toggleDetailsModal(false)} 
+                onShowModal={showModal} 
+            />
+        {/if}
+
+        {#if showStructureOverview}
+            <StructureOverview 
+                x={structureLocation.x}
+                y={structureLocation.y}
+                tile={selectedTile}
+                onClose={() => { 
+                    showStructureOverview = false;
+                    modalState.visible = false;
+                }}
+                key={structureRenderCount}
             />
         {/if}
 

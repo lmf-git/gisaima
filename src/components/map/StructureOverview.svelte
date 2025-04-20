@@ -1,5 +1,6 @@
 <script>
   import { slide } from "svelte/transition";
+  import { onMount, onDestroy } from "svelte";
   import { currentPlayer } from "../../lib/stores/game.js";
   import Close from '../icons/Close.svelte';
   import Structure from '../icons/Structure.svelte';
@@ -21,6 +22,21 @@
   
   // Add state for storage tab selection
   let activeTab = $state('shared');
+  
+  // Add a render counter to force fresh animation on each open
+  let renderKey = $state(0);
+  
+  // Simplify animation control
+  let isReady = $state(false);
+  
+  onMount(() => {
+    // Short timeout to ensure DOM is ready
+    setTimeout(() => isReady = true, 10);
+  });
+  
+  onDestroy(() => {
+    isReady = false;
+  });
   
   // Function to toggle section collapse state
   function toggleSection(sectionId) {
@@ -92,8 +108,9 @@
 <!-- Add global keyboard event listener -->
 <svelte:window on:keydown={handleKeyDown} />
 
-<div class="modal-wrapper">
-  <div class="modal structure-modal">
+<div class="modal-container" class:ready={isReady}>
+  <!-- Use key binding to force re-render on each open -->
+  <div class="structure-modal" key={renderKey}>
     <header class="modal-header">
       <h3>
         {formatText(tile?.structure?.type || 'Structure')} 
@@ -171,7 +188,7 @@
           </div>
           
           {#if !collapsedSections.items}
-            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+            <div class="section-content">
               {#if hasPersonalBank || (tile?.structure?.items && tile?.structure?.items.length > 0)}
                 <div class="storage-tabs">
                   <button 
@@ -236,7 +253,7 @@
 </div>
 
 <style>
-  .modal-wrapper {
+  .modal-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -246,27 +263,46 @@
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
-    font-size: 1.4em;
-    font-family: var(--font-body);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+  }
+  
+  .modal-container.ready {
+    opacity: 1;
   }
 
-  .modal {
+  .structure-modal {
+    pointer-events: auto;
+    width: 90%;
+    max-width: 34em;
+    max-height: 85vh;
     background-color: rgba(255, 255, 255, 0.85);
     border: 0.05em solid rgba(255, 255, 255, 0.2);
     border-radius: 0.3em;
     box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(0.5em);
-    -webkit-backdrop-filter: blur(0.5em);
-    width: 90%;
-    max-width: 34em;
-    max-height: 85vh;
+    z-index: 1000;
+    font-size: 1.4em;
+    font-family: var(--font-body);
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: appear 0.3s ease-out;
-    overflow: hidden;
+    /* Use transform animation for better performance */
+    transform: scale(0.95);
+    opacity: 0;
+    animation: modalAppear 0.3s ease-out forwards;
+  }
+
+  @keyframes modalAppear {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   .modal-header {
@@ -676,16 +712,5 @@
   
   :global(.citadel-icon) {
     filter: drop-shadow(0 0 2px rgba(209, 138, 230, 0.7));
-  }
-
-  @keyframes appear {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
   }
 </style>

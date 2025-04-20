@@ -1,8 +1,7 @@
 <script>
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { get } from "svelte/store";
-  import { fly, slide } from "svelte/transition";
-  import { quintOut } from "svelte/easing";
+  import { slide } from "svelte/transition";
   import { highlightedStore, coordinates, targetStore, moveTarget } from "../../lib/stores/map.js";
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from "../../lib/stores/game.js";
   import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -29,6 +28,22 @@
     players: { by: 'name', asc: true },
     items: { by: 'name', asc: true },
     battles: { by: 'status', asc: true }
+  });
+
+  // Add a render counter to force fresh animation on each open
+  let renderKey = $state(0);
+  
+  // Add a flag to track if component is ready to render
+  let isReady = $state(false);
+  
+  // Use simpler mounting animation control
+  onMount(() => {
+    // Short timeout to ensure DOM is ready
+    setTimeout(() => isReady = true, 10);
+  });
+  
+  onDestroy(() => {
+    isReady = false;
   });
   
   // Function to toggle section collapse state
@@ -113,30 +128,13 @@
 
   // Function to execute action
   function executeAction(action, data = null) {
-    console.log("Executing action:", action, data);
-    
-    // If we don't have a callback to show modals, log an error
-    if (!onShowModal) {
-      console.error("No onShowModal handler provided to Details component");
-      return;
-    }
+    if (!onShowModal || !$highlightedStore) return;
 
-    // Get the current highlighted tile if needed
-    const highlightedTile = get(highlightedStore);
-    if (!highlightedTile) {
-      console.error("No highlighted tile available for action:", action);
-      return;
-    }
-
-    // Find complete tile data from coordinates
     const tileData = get(coordinates).find(c => 
-      c.x === highlightedTile.x && c.y === highlightedTile.y
+      c.x === $highlightedStore.x && c.y === $highlightedStore.y
     );
 
-    if (!tileData) {
-      console.error("Could not find tile data for action:", action);
-      return;
-    }
+    if (!tileData) return;
 
     switch (action) {
       case 'mobilize':
@@ -425,8 +423,8 @@
 <!-- Add global keyboard event listener -->
 <svelte:window on:keydown={handleKeyDown} />
 
-<div class="modal-wrapper" transition:fly|local={{ y: 20, duration: 300, easing: quintOut }}>
-  <div class="modal details-modal">
+<div class="modal-container" class:ready={isReady}>
+  <div class="details-modal" key={renderKey}>
     <header class="modal-header">
       <h3>Tile Details {$highlightedStore ? `(${$highlightedStore.x},${$highlightedStore.y})` : ''}</h3>
       <button class="close-button" onclick={onClose}>
@@ -891,7 +889,7 @@
 </div>
 
 <style>
-  .modal-wrapper {
+  .modal-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -901,67 +899,63 @@
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
-    font-size: 1.4em;
-    font-family: var(--font-body);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+  }
+  
+  .modal-container.ready {
+    opacity: 1;
   }
 
-  .modal {
+  .details-modal {
+    pointer-events: auto;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+  }
+  
+  .modal-container.mounted {
+    opacity: 1;
+  }
+
+  .details-modal {
+    pointer-events: auto;
+    width: 90%;
+    max-width: 34em;
+    max-height: 85vh;
     background-color: rgba(255, 255, 255, 0.85);
     border: 0.05em solid rgba(255, 255, 255, 0.2);
     border-radius: 0.3em;
     box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(0.5em);
-    -webkit-backdrop-filter: blur(0.5em);
-    width: 90%;
-    max-width: 34em;
-    max-height: 85vh;
+    font-size: 1.4em;
+    font-family: var(--font-body);
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: appear 0.3s ease-out;
-    overflow: hidden;
+    transform: scale(0.95);
+    opacity: 0;
+    animation: modalAppear 0.3s ease-out forwards;
   }
 
-  .modal-header {
-    padding: 0.8em 1em;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    font-family: var(--font-heading);
-  }
-
-  h3 {
-    margin: 0;
-    font-size: 1.1em;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.8);
-  }
-
-  .close-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.4em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: background-color 0.2s;
-    color: rgba(0, 0, 0, 0.6);
-  }
-
-  .close-button:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-    color: rgba(0, 0, 0, 0.9);
-  }
-
-  .modal-content {
-    padding: 0.8em;
-    overflow-y: auto;
+  @keyframes modalAppear {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   /* Core section styling */
@@ -1538,17 +1532,6 @@
     }
     to {
       box-shadow: 0 0 10px 2px rgba(233, 30, 99, 0.3);
-    }
-  }
-
-  @keyframes appear {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
     }
   }
 
