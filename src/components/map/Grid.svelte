@@ -251,6 +251,10 @@
   function handleMouseDown(event) {
     if (!introduced || event.button !== 0) return;
     
+    // Reset the drag state on each mousedown
+    wasDrag = false;
+    dist = 0;
+    
     if (handleDragAction({ 
       type: 'dragstart', 
       clientX: event.clientX, 
@@ -366,8 +370,14 @@
     clickCount++;
     lastClickTime = Date.now();
     
-    if (wasDrag || !$ready || detailed) {
-        console.log('Click ignored: wasDrag, map not ready, or details open');
+    if (wasDrag) {
+        console.log('Click ignored: drag detected');
+        wasDrag = false; // Reset drag state for next click
+        return;
+    }
+    
+    if (!$ready) {
+        console.log('Click ignored: map not ready');
         return;
     }
     
@@ -418,27 +428,13 @@
     }
     
     if (tileX !== undefined && tileY !== undefined) {
-        if (isPathDrawingMode) {
-            const point = { x: tileX, y: tileY };
-            console.log('Grid click in path drawing mode:', point);
-            handlePathPoint(point);
-        } else {
-            console.log('Moving to clicked tile:', { x: tileX, y: tileY });
-            
-            // First move target to this location
-            moveTarget(tileX, tileY);
-            
-            // Set the highlight and get the tile data in one consistent operation
-            setHighlighted(tileX, tileY);
-            
-            // Simply call onClick with the coordinates if provided
-            if (onClick) {
-                onClick({ x: tileX, y: tileY });
-            }
+        console.log('Grid: valid click detected at', { x: tileX, y: tileY });
+        
+        // Always call onClick handler with coordinates regardless of any other state
+        if (onClick) {
+            onClick({ x: tileX, y: tileY });
         }
     }
-    
-    // No preventDefault needed for map tile clicks
   }
 
   function handlePathPoint(point) {

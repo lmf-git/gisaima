@@ -432,6 +432,39 @@
     
     return `${minutes}m ${seconds}s`;
   }
+
+  // Add the missing function - isPlayerAvailableOnTile
+  function isPlayerAvailableOnTile(tile, playerId) {
+    if (!tile || !tile.players || !tile.players.some(p => p.id === playerId || p.uid === playerId)) {
+      return false;
+    }
+    
+    if (tile.groups) {
+      const playerInDemobilisingGroup = tile.groups.some(group => 
+        group.status === 'demobilising' && 
+        group.owner === playerId && 
+        hasPlayerUnit(group, playerId)
+      );
+      return !playerInDemobilisingGroup;
+    }
+    
+    return true;
+  }
+
+  // Add helper function if it's not already defined
+  function hasPlayerUnit(group, playerId) {
+    if (!group || !group.units) return false;
+    
+    if (Array.isArray(group.units)) {
+      return group.units.some(unit => 
+        (unit.id === playerId || unit.uid === playerId) && unit.type === 'player'
+      );
+    } 
+    
+    return Object.values(group.units).some(unit => 
+      (unit.id === playerId || unit.uid === playerId) && unit.type === 'player'
+    );
+  }
 </script>
 
 <div class="entities-wrapper" class:closing>
@@ -971,11 +1004,11 @@
                       {/if}
                       <div class="entity-distance">{formatDistance(battle.distance)}</div>
                     </div>
-                    {#if isPlayerAvailableOnTile(currentTile, $currentPlayer?.uid) && hasIdlePlayerGroups}
+                    {#if isPlayerAvailableOnTile($targetStore, $currentPlayer?.uid) && hasIdlePlayerGroups}
                       <div class="battle-actions">
                         <button 
                           class="join-battle-btn"
-                          onclick={() => executeAction('joinBattle', currentTile)}
+                          onclick={() => executeAction('joinBattle', $targetStore)}
                         >
                           Join Battle
                         </button>
@@ -1441,12 +1474,6 @@
   }
 
   .pending-tick::after {
-    content: '↻';
-    margin-left: 0.3em;
-    font-weight: bold;
-  }
-
-  @keyframes pulse {
     from { opacity: 0.7; }
     to { opacity: 1; }
   }

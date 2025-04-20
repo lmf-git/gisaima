@@ -63,11 +63,21 @@
     
     const isDragging = $derived($map.isDragging);
     
+    // Add a flag to prevent multiple click handling and debounce
+    let isProcessingClick = false;
+    let lastClickedCoords = null;
+
     function toggleDetailsModal(show) {
-        if (show) {
+        if (show && !detailed) {
+            // When opening, make sure we keep the highlighted tile
+            if (lastClickedCoords) {
+                // Ensure highlight matches the clicked coords
+                setHighlighted(lastClickedCoords.x, lastClickedCoords.y);
+            }
             detailed = true;
-        } else {
+        } else if (!show && detailed) {
             detailed = false;
+            // Only clear highlight when explicitly closing
             setHighlighted(null, null);
         }
     }
@@ -542,40 +552,85 @@
     function handleGridClick(coords) {
         const { x, y } = coords;
         
-        if (x === undefined || y === undefined || detailed) {
+        if (x === undefined || y === undefined) {
             return;
         }
 
+        // Don't process clicks while we're already processing one
+        if (isProcessingClick) {
+            console.log('Ignoring click: already processing another click');
+            return;
+        }
+        
+        // Store the clicked coordinates
+        lastClickedCoords = { x, y };
+        
+        // Set flag to prevent multiple processing
+        isProcessingClick = true;
+
+        // Handle path drawing mode immediately
         if (isPathDrawingMode) {
             const point = { x, y };
             handlePathPoint(point);
-        } else {
-            console.log('Moving to clicked tile:', { x, y });
-            
-            moveTarget(x, y);
-            
-            setHighlighted(x, y);
-            
-            setTimeout(() => {
-                const clickedTile = $coordinates.find(cell => cell.x === x && cell.y === y);
-                
-                if (clickedTile && hasTileContent(clickedTile)) {
-                    toggleDetailsModal(true);
-                }
-            }, 50);
+            isProcessingClick = false;
+            return;
         }
+        
+        console.log('Moving to clicked tile:', { x, y });
+        
+        // First, move target to this location
+        moveTarget(x, y);
+        
+        // Next, set highlighted location to match
+        setHighlighted(x, y);
+        
+        // Wait for state to update properly before checking tile content
+        setTimeout(() => {
+            // Get the coordinates data directly, which should be updated by now
+            const clickedTile = $coordinates.find(cell => 
+                cell.x === lastClickedCoords.x && cell.y === lastClickedCoords.y
+            );
+            
+            if (clickedTile && hasTileContent(clickedTile)) {
+                console.log('Tile has content, opening details modal');
+                
+                // Use another timeout to ensure any conflicting events have completed
+                setTimeout(() => {
+                    if (!detailed) {
+                        toggleDetailsModal(true);
+                    }
+                    isProcessingClick = false;
+                }, 50);
+            } else {
+                console.log('Tile has no content, not opening details modal');
+                isProcessingClick = false;
+            }
+        }, 100);
     }
 
     function hasTileContent(tile) {
         if (!tile) return false;
         
-        return (
-            tile.structure || 
+        const hasContent = (
+            !!tile.structure || 
             (tile.groups && tile.groups.length > 0) || 
             (tile.players && tile.players.length > 0) || 
             (tile.items && tile.items.length > 0) ||
             (tile.battles && tile.battles.length > 0)
         );
+        
+        console.log('Checking tile content:', {
+            x: tile.x,
+            y: tile.y,
+            hasContent,
+            structure: !!tile.structure,
+            groupsCount: tile.groups?.length || 0,
+            playersCount: tile.players?.length || 0,
+            itemsCount: tile.items?.length || 0,
+            battlesCount: tile.battles?.length || 0
+        });
+        
+        return hasContent;
     }
 
     function handlePathPoint(point) {
