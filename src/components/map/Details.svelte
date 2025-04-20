@@ -1,1447 +1,1523 @@
 <script>
-  import { fade, fly, slide } from 'svelte/transition'; // Still import for section toggles
-  import { cubicOut, elasticOut } from 'svelte/easing';
-  import { targetStore, highlightedStore, coordinates } from '../../lib/stores/map'; // Import both stores
-  import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
-  import { onMount, onDestroy } from 'svelte';
-  import { functions } from '../../lib/firebase/firebase.js';
-  import { httpsCallable } from 'firebase/functions';
-
-  import Human from '../../components/icons/Human.svelte';
-  import Elf from '../../components/icons/Elf.svelte';
-  import Dwarf from '../../components/icons/Dwarf.svelte';
-  import Goblin from '../../components/icons/Goblin.svelte';
-  import Fairy from '../../components/icons/Fairy.svelte';
-  import Structure from '../../components/icons/Structure.svelte';
-  import Torch from '../../components/icons/Torch.svelte';
+  import { onMount } from "svelte";
+  import { get } from "svelte/store";
+  import { fly } from "svelte/transition";
+  import { slide } from "svelte/transition";
+  import { quintOut } from "svelte/easing";
+  import { highlightedStore, coordinates, targetStore, moveTarget } from "../../lib/stores/map.js";
+  import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from "../../lib/stores/game.js";
+  import { getFunctions, httpsCallable } from 'firebase/functions';
   import Close from '../icons/Close.svelte';
+  
+  // Props
+  const { onClose = () => {}, onShowModal = null } = $props();
 
-  // Replace export let with proper Svelte 5 $props() rune
-  const { onClose = () => {}, onShowModal = () => {} } = $props();
+  // State for the component
+  let activeTab = $state('overview');
 
-  // Use the highlightedStore directly instead of taking coordinates as props
-  // This ensures we always have the latest data for the highlighted tile
-  let x = $derived($highlightedStore?.x || 0);
-  let y = $derived($highlightedStore?.y || 0);
-  let terrain = $derived($highlightedStore?.terrain?.name || $highlightedStore?.biome?.name || '');
-
-  // Get the current tile data from the store
-  let tileData = $derived($highlightedStore || null);
-
-  // Format text for display
-  const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-
-  // Timer for updating countdown
-  let updateTimer;
-  let updateCounter = $state(0);
-
-  onMount(() => {
-    updateTimer = setInterval(() => {
-      updateCounter++;
-    }, 1000);
-  });
-
-  onDestroy(() => {
-    if (updateTimer) {
-      clearInterval(updateTimer);
-    }
-  });
-
+  // Add state to track collapsed sections
   let collapsedSections = $state({
-    terrain: false,
-    structure: false,
+    structures: false,
     players: false,
     groups: false,
     items: false,
     battles: false
   });
-
-  let sortOptions = $state({
-    structures: { by: 'type', asc: true },
-    players: { by: 'name', asc: true },
-    groups: { by: 'status', asc: true },
-    items: { by: 'name', asc: true },
-    battles: { by: 'id', asc: true }
-  });
-
+  
+  // Function to toggle section collapse state
   function toggleSection(sectionId) {
     collapsedSections[sectionId] = !collapsedSections[sectionId];
   }
 
-  function setSortOption(section, by) {
-    sortOptions[section] = { 
-      by, 
-      asc: sortOptions[section].by === by ? !sortOptions[section].asc : true 
-    };
-  }
-
-  function sortEntities(entities, section) {
-    if (!entities || !entities.length) return [];
-    const option = sortOptions[section];
+  // Keep executeAction function for compatibility with MapEntities
+  // and other components that may expect this interface
+  function executeAction(action, data = null) {
+    console.log("Executing action:", action, data);
     
-    return [...entities].sort((a, b) => {
-      let valueA, valueB;
-      
-      switch(option.by) {
-        case 'name':
-          valueA = (section === 'structures' ? a.name || _fmt(a.type) : a.name || a.displayName || a.id || '').toLowerCase();
-          valueB = (section === 'structures' ? b.name || _fmt(b.type) : b.name || b.displayName || b.id || '').toLowerCase();
-          break;
-        case 'type':
-          valueA = (a.type || a.race || a.faction || '').toLowerCase();
-          valueB = (b.type || b.race || b.faction || '').toLowerCase();
-          break;
-        case 'rarity':
-          const rarityOrder = { 'common': 0, 'uncommon': 1, 'rare': 2, 'epic': 3, 'legendary': 4, 'mythic': 5 };
-          valueA = rarityOrder[a.rarity?.toLowerCase()] || 0;
-          valueB = rarityOrder[b.rarity?.toLowerCase()] || 0;
-          break;
-        case 'status':
-          valueA = a.status || 'idle';
-          valueB = b.status || 'idle';
-          break;
-        default:
-          valueA = a;
-          valueB = b;
-      }
-      
-      if (typeof valueA === 'number' && typeof valueB === 'number') {
-        return option.asc ? valueA - valueB : valueB - valueA;
-      }
-      
-      return option.asc ? 
-        valueA.localeCompare(valueB) : 
-        valueB.localeCompare(valueA);
-    });
+    // If we don't have a callback to show modals, log an error
+    if (!onShowModal) {
+      console.error("No onShowModal handler provided to Details component");
+      return;
+    }
+
+    // Get the current highlighted tile if needed
+    const highlightedTile = get(highlightedStore);
+    if (!highlightedTile) {
+      console.error("No highlighted tile available for action:", action);
+      return;
+    }
+
+    // Find complete tile data from coordinates
+    const tileData = get(coordinates).find(c => 
+      c.x === highlightedTile.x && c.y === highlightedTile.y
+    );
+
+    if (!tileData) {
+      console.error("Could not find tile data for action:", action);
+      return;
+    }
+
+    switch (action) {
+      case 'mobilize':
+        onShowModal({ type: 'mobilize', data: tileData });
+        break;
+        
+      case 'move':
+        onShowModal({ type: 'move', data: data ? { ...tileData, group: data.group } : tileData });
+        break;
+        
+      case 'attack':
+        onShowModal({ type: 'attack', data: tileData });
+        break;
+        
+      case 'gather':
+        onShowModal({ type: 'gather', data: data ? { ...tileData, group: data.group } : tileData });
+        break;
+        
+      case 'demobilize':
+        onShowModal({ type: 'demobilize', data: tileData });
+        break;
+        
+      case 'joinBattle':
+        onShowModal({ type: 'joinBattle', data: data ? { ...tileData, group: data.group } : tileData });
+        break;
+        
+      case 'inspect':
+        // For structure inspection, pass both the structure and its location
+        if (!tileData.structure) {
+          console.error("No structure to inspect on this tile");
+          return;
+        }
+        
+        // Pass the complete tile data for rendering in StructureOverview
+        onShowModal({ 
+          type: 'inspect', 
+          data: { 
+            x: tileData.x, 
+            y: tileData.y, 
+            tile: tileData 
+          } 
+        });
+        break;
+        
+      default:
+        console.warn("Unknown action:", action);
+    }
   }
 
-  // Create sorted entity lists from the direct tile data
-  let sortedPlayers = $derived(tileData?.players ? sortEntities(tileData.players, 'players') : []);
-  let sortedGroups = $derived(tileData?.groups ? sortEntities(tileData.groups, 'groups') : []);
-  let sortedItems = $derived(tileData?.items ? sortEntities(tileData.items, 'items') : []);
-  let sortedBattles = $derived(tileData?.battles ? sortEntities(tileData.battles, 'battles') : []);
-
-  function formatCoords(x, y) {
-    return `${x},${y}`;
+  // Function to format entity name
+  function formatEntityName(entity) {
+    if (!entity) return "Unknown";
+    return entity.name || entity.displayName || entity.type || "Unnamed";
   }
 
+  // Function to format text with proper capitalization
+  function _fmt(text) {
+    if (!text) return '';
+    return text.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  // Check if current player owns a group
+  function isOwnedByCurrentPlayer(entity) {
+    if (!entity || !$currentPlayer) return false;
+    return entity.owner === $currentPlayer.uid || entity.uid === $currentPlayer.uid;
+  }
+  
+  // Functions to check what actions are available
+  function canMobilize(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Check if player is on the tile
+    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.uid || p.uid === $currentPlayer.uid);
+    
+    // Check if player is not already in a mobilizing/demobilising group
+    const inProcessGroup = tile.groups?.some(g => 
+      (g.status === 'mobilizing' || g.status === 'demobilising') && 
+      g.owner === $currentPlayer.uid
+    );
+    
+    return playerOnTile && !inProcessGroup;
+  }
+  
+  function canDemobilize(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Check if there are any player-owned groups that are idle
+    return tile.groups?.some(g => 
+      g.owner === $currentPlayer.uid && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+  }
+  
+  function canMove(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Check if there are any player-owned groups that are idle
+    return tile.groups?.some(g => 
+      g.owner === $currentPlayer.uid && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+  }
+  
+  function canGather(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Check if there are any player-owned groups that are idle and items on the tile
+    return tile.groups?.some(g => 
+      g.owner === $currentPlayer.uid && 
+      g.status === 'idle' &&
+      !g.inBattle
+    ) && tile.items?.length > 0;
+  }
+  
+  function canJoinBattle(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Check if there's an active battle and player has idle groups
+    return tile.battles?.some(b => b.status === 'active') &&
+           tile.groups?.some(g => 
+             g.owner === $currentPlayer.uid && 
+             g.status === 'idle' &&
+             !g.inBattle
+           );
+  }
+
+  // Get status class from status
+  function getStatusClass(status) {
+    return status || 'idle';
+  }
+  
+  // Get rarity class from item rarity
+  function getRarityClass(rarity) {
+    return rarity?.toLowerCase() || 'common';
+  }
+  
+  // Format distance for display
   function formatDistance(distance) {
     if (distance === undefined || distance === null) return '';
     if (distance === 0) return 'Here';
     return `${distance.toFixed(1)} tiles away`;
   }
 
-  function getFactionRace(faction) {
-    const factionToRace = {
-      human: 'human',
-      elf: 'elf',
-      dwarf: 'dwarf',
-      goblin: 'goblin',
-      fairy: 'fairy'
+  // Format coordinates for display
+  function formatCoords(x, y) {
+    return `${x},${y}`;
+  }
+
+  // Timer for updating countdown
+  let updateTimer;
+  // Counter to force updates
+  let updateCounter = $state(0);
+
+  // Set up timer to update countdown values
+  onMount(() => {
+    updateTimer = setInterval(() => {
+      updateCounter++;
+    }, 1000);
+    
+    return () => {
+      if (updateTimer) clearInterval(updateTimer);
     };
+  });
 
-    return factionToRace[faction?.toLowerCase()] || null;
-  }
-
-  function getGroupItemCount(group) {
-    if (!group.items) return 0;
-    return Array.isArray(group.items) ? group.items.length : Object.keys(group.items).length;
-  }
-
+  // Function to handle time remaining display
   function formatTimeRemaining(endTime, status) {
     if (!endTime) return '';
-
-    updateCounter;
-
+    
+    updateCounter; // Keep the reactive dependency
+    
+    // If mobilizing or demobilising, show next tick countdown instead
     if (status === 'mobilizing' || status === 'demobilising') {
       return $timeUntilNextTick;
     }
-
+    
+    // For other statuses, use the existing calculation
     const now = Date.now();
     const remaining = endTime - now;
-
+    
+    // If time is up or less than a minute remains, show simplified message
     if (remaining <= 60000) {
       return '< 1m';
     }
-
+    
+    // Normal countdown calculation for time remaining
     const minutes = Math.floor(remaining / 60000);
     const seconds = Math.floor((remaining % 60000) / 1000);
-
+    
     return `${minutes}m ${seconds}s`;
   }
-
+  
+  // Simplified function to determine if waiting for tick
   function isPendingTick(endTime) {
     if (!endTime) return false;
     const now = Date.now();
     return endTime <= now;
   }
 
-  function getStatusClass(status) {
-    return status || 'idle';
+  // Function to display item count for a group
+  function getGroupItemCount(group) {
+    if (!group.items) return 0;
+    return Array.isArray(group.items) ? group.items.length : Object.keys(group.items).length;
   }
 
-  function getRarityClass(rarity) {
-    return rarity?.toLowerCase() || 'common';
-  }
-
-  function isOwnedByCurrentPlayer(entity) {
-    if (!$currentPlayer || !entity) return false;
-    return entity.owner === $currentPlayer.uid || entity.uid === $currentPlayer.uid;
-  }
-
-  let actions = $state([]);
-
-  function hasUnitType(group, type, checkNotType = false) {
-    if (!group || !group.units) return false;
+  // Enhanced battle-specific functions
+  function formatBattleTimeRemaining(battle) {
+    if (!battle) return '';
     
-    if (Array.isArray(group.units)) {
-      return checkNotType 
-        ? group.units.some(unit => unit.type !== type)
-        : group.units.some(unit => unit.type === type);
-    } 
+    updateCounter; // Keep reactive dependency
     
-    return checkNotType 
-      ? Object.values(group.units).some(unit => unit.type !== type)
-      : Object.values(group.units).some(unit => unit.type === type);
+    // Handle different battle statuses
+    if (battle.status === 'resolved') {
+      return 'Completed';
+    }
+    
+    if (!battle.endTime) {
+      return 'In progress';
+    }
+    
+    const now = Date.now();
+    const remaining = battle.endTime - now;
+    
+    if (remaining <= 0) {
+      return 'Resolving...';
+    } else if (remaining <= 60000) {
+      return '< 1m';
+    }
+    
+    const minutes = Math.floor(remaining / 60000);
+    const seconds = Math.floor((remaining % 60000) / 1000);
+    
+    return `${minutes}m ${seconds}s`;
   }
   
-  function hasPlayerUnit(group, playerId) {
-    if (!group || !group.units) return false;
+  // Calculate battle progress percentage
+  function calculateBattleProgress(battle) {
+    if (!battle || !battle.startTime || !battle.endTime || battle.status === 'resolved') {
+      return 100;
+    }
     
-    if (Array.isArray(group.units)) {
-      return group.units.some(unit => 
-        (unit.id === playerId || unit.uid === playerId) && unit.type === 'player'
-      );
-    } 
+    const now = Date.now();
+    const total = battle.endTime - battle.startTime;
+    const elapsed = now - battle.startTime;
     
-    return Object.values(group.units).some(unit => 
-      (unit.id === playerId || unit.uid === playerId) && unit.type === 'player'
-    );
+    // Cap at 100%
+    return Math.min(100, Math.floor((elapsed / total) * 100));
   }
-
-  function countUnits(group) {
-    if (!group || !group.units) return 0;
-    
-    if (group.unitCount !== undefined) return group.unitCount;
-    
-    if (Array.isArray(group.units)) {
-      return group.units.length;
-    }
-    
-    return Object.keys(group.units).length;
-  }
-
-  function hasGroupWithStatus(tile, playerId, status) {
-    return tile.groups && tile.groups.some(group => 
-      group.owner === playerId && group.status === status
-    );
-  }
-
-  function isPlayerAvailableOnTile(tile, playerId) {
-    if (!tile.players || !tile.players.some(p => p.id === playerId || p.uid === playerId)) {
-      return false;
-    }
-    
-    if (tile.groups) {
-      const playerInDemobilisingGroup = tile.groups.some(group => 
-        group.status === 'demobilising' && 
-        group.owner === playerId && 
-        hasPlayerUnit(group, playerId)
-      );
-      return !playerInDemobilisingGroup;
-    }
-    
-    return true;
-  }
-
-  function hasValidUnitsForMobilization(tile, playerId) {
-    if (!tile || !tile.groups) return false;
-    
-    return tile.groups.some(group => 
-      group.owner === playerId && 
-      group.status !== 'mobilizing' &&
-      group.status !== 'moving' &&
-      group.status !== 'demobilising' &&
-      group.status !== 'fighting' &&
-      group.units && 
-      hasUnitType(group, 'player', true)
-    );
-  }
-
-  function hasMobilizableResources(tile, playerId) {
-    const playerOnTile = isPlayerAvailableOnTile(tile, playerId);
-    const hasValidUnits = hasValidUnitsForMobilization(tile, playerId);
-    return playerOnTile || hasValidUnits;
-  }
-
-  $effect(() => {
-    if (!tileData) {
-      actions = [];
-      return;
-    }
-
-    const availableActions = [];
-    const playerId = $currentPlayer?.uid;
-    
-    if (!playerId) {
-      actions = [];
-      return;
-    }
-
-    if (hasMobilizableResources(tileData, playerId)) {
-      availableActions.push({
-        id: 'mobilize',
-        label: 'Mobilize',
-        icon: '⚔️',
-        description: 'Form a group from available units'
-      });
-    }
-    
-    if (hasGroupWithStatus(tileData, playerId, 'idle')) {
-      availableActions.push({
-        id: 'move',
-        label: 'Move',
-        icon: '➡️',
-        description: 'Move your group to another location'
-      });
-      
-      availableActions.push({
-        id: 'gather',
-        label: 'Gather',
-        icon: '🧺',
-        description: 'Gather resources from this area'
-      });
-    }
-    
-    if (tileData.structure && tileData.groups && 
-        hasGroupWithStatus(tileData, playerId, 'idle')) {
-      availableActions.push({
-        id: 'demobilize',
-        label: 'Demobilize',
-        icon: '🏠',
-        description: 'Disband your group at this structure'
-      });
-    }
-    
-    const hasIdlePlayerGroups = hasGroupWithStatus(tileData, playerId, 'idle');
-    const hasEnemyGroups = tileData.groups && 
-                          tileData.groups.some(g => g.owner !== playerId && !g.inBattle);
-                          
-    if (hasIdlePlayerGroups && hasEnemyGroups) {
-      availableActions.push({
-        id: 'attack',
-        label: 'Attack',
-        icon: '⚔️',
-        description: 'Attack an enemy group'
-      });
-    }
-    
-    const hasBattles = tileData.groups && 
-                      tileData.groups.some(g => g.inBattle && g.battleId);
-    const canJoinBattle = hasIdlePlayerGroups && hasBattles;
-    
-    if (canJoinBattle) {
-      availableActions.push({
-        id: 'joinBattle',
-        label: 'Join Battle',
-        icon: '🗡️',
-        description: 'Join an ongoing battle'
-      });
-    }
-    
-    if (tileData.structure) {
-      availableActions.push({
-        id: 'inspect',
-        label: 'Inspect Structure',
-        icon: '🔍',
-        description: 'View details about this structure'
-      });
-    }
-
-    actions = availableActions;
-  });
-
-  async function executeAction(actionId, tile) {
-    let actionError = null;
-    
-    try {
-      switch(actionId) {
-        case 'mobilize':
-        case 'move':
-        case 'attack':
-        case 'joinBattle':
-        case 'demobilize':
-        case 'gather':
-        case 'inspect':
-          // Use consistent approach for all action types
-          // All action components will access data from highlightedStore
-          onShowModal({ type: actionId });
-          return;
-          
-        default:
-          console.log(`Unhandled action: ${actionId}`);
-      }
-    } catch (error) {
-      actionError = error;
-      console.error(`Error executing action ${actionId}:`, error);
-      if (error.code === 'unauthenticated') {
-        alert(`Error: You are not logged in.`);
-      } else {
-        alert(`Error: ${error.message || 'Failed to perform action'}`);
-      }
-    }
-    
-    if (!(actionError && actionError.code === 'unauthenticated')) {
-      onClose();
-    }
-  }
-
-  function selectAction(actionId) {
-    executeAction(actionId, tileData);
-  }
-
-  function handleActionKeydown(action, event) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      executeAction(action.id, tileData);
-    }
-  }
-
-  let mounted = $state(false);
-  let closing = $state(false);
-
-  onMount(() => {
-    setTimeout(() => {
-      mounted = true;
-    }, 10);
-  });
   
-  function handleClose(event) {
-    closing = true;
-    
-    setTimeout(() => {
-      onClose();
-    }, 300);
+  // Format total power for each side
+  function formatPower(power) {
+    if (!power && power !== 0) return '?';
+    return power.toLocaleString();
   }
 
-  function handleEscapeKey(event) {
-    if (event.key === 'Escape') {
-      handleClose(event);
-    }
+  // Determine winning side CSS class
+  function getWinningSideClass(battle, side) {
+    if (!battle || battle.status !== 'resolved') return '';
+    return battle.winner === side ? 'winning-side' : 'losing-side';
   }
 
-  function getEntityIconType(entity) {
-    if (!entity.race && !entity.faction) return null;
-    
-    const race = entity.race?.toLowerCase() || 
-                getFactionRace(entity.faction?.toLowerCase());
-                
-    return race || null;
-  }
-
-  function handleWrapperKeyDown(event) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleClose();
-    }
-  }
-
-  function getBattleDisplayName(battleId) {
-    if (!battleId) return 'Unknown Battle';
-    const idParts = battleId.split('_');
-    return `Battle ${idParts[idParts.length - 1]}`;
-  }
-
-  function calculateMoveCompletionTime(group) {
-    if (!group) return null;
-    
-    if (group.nextMoveTime) {
-      return group.nextMoveTime;
-    }
-    
-    // Fallback calculations
-    if (group.pathProgress !== undefined && group.pathStartTime && group.path) {
-      const remainingSteps = Math.max(0, group.path.length - group.pathProgress);
-      const moveTimePerStep = group.moveTimePerStep || 10000; // 10 seconds default
-      return group.pathStartTime + (group.pathProgress * moveTimePerStep) + (remainingSteps * moveTimePerStep);
-    }
-    
-    return null;
+  // Get battle participant groups count for each side
+  function getParticipantCountBySide(battle, side) {
+    if (!battle || !battle.sides || !battle.sides[side]) return 0;
+    return battle.sides[side].groups?.length || 0;
   }
 </script>
 
-{#if mounted}
-  <div 
-    class="details-wrapper" 
-    class:mounted
-    class:closing
-    role="presentation"
-  >
-    <button 
-      class="modal-backdrop"
-      aria-label="Close details"
-      onclick={handleClose}
-    ></button>
+<div class="modal-wrapper" transition:fly|local={{ y: 20, duration: 300, easing: quintOut }}>
+  <div class="modal details-modal">
+    <header class="modal-header">
+      <h3>Tile Details {$highlightedStore ? `(${$highlightedStore.x},${$highlightedStore.y})` : ''}</h3>
+      <button class="close-button" onclick={onClose}>
+        <Close size="1.6em" extraClass="close-icon-dark" />
+      </button>
+    </header>
     
-    <div
-      class="details-panel"
-      class:mounted
-      class:closing
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="details-title"
-      tabindex="-1"
-    >
-      <header class="details-header">
-        <h3 id="details-title" class="title">Tile Details</h3>
-        <div class="coords">{formatCoords(x, y)}</div>
-        <button class="close-button" onclick={handleClose} aria-label="Close">
-          <Close size="1.8em" extraClass="close-icon-dark" />
+    <!-- Tab navigation -->
+    <div class="tabs">
+      <button 
+        class="tab-button" 
+        class:active={activeTab === 'overview'} 
+        onclick={() => activeTab = 'overview'}>
+        Overview
+      </button>
+      {#if $highlightedStore?.structure}
+        <button 
+          class="tab-button" 
+          class:active={activeTab === 'structure'} 
+          onclick={() => activeTab = 'structure'}>
+          Structure
         </button>
-      </header>
-      
-      <div class="details-content">
-        <div class="section terrain-section">
-          <button 
-            class="section-header" 
-            onclick={() => toggleSection('terrain')}
-            aria-expanded={!collapsedSections.terrain}
-            type="button"
-          >
-            <h4 class="section-title">Terrain</h4>
-            <span class="collapse-button" aria-hidden="true">
-              {collapsedSections.terrain ? '▼' : '▲'}
-            </span>
-          </button>
+      {/if}
+      {#if $highlightedStore?.groups?.length}
+        <button 
+          class="tab-button" 
+          class:active={activeTab === 'groups'} 
+          onclick={() => activeTab = 'groups'}>
+          Groups ({$highlightedStore.groups.length})
+        </button>
+      {/if}
+      {#if $highlightedStore?.players?.length}
+        <button 
+          class="tab-button" 
+          class:active={activeTab === 'players'} 
+          onclick={() => activeTab = 'players'}>
+          Players ({$highlightedStore.players.length})
+        </button>
+      {/if}
+      {#if $highlightedStore?.items?.length}
+        <button 
+          class="tab-button" 
+          class:active={activeTab === 'items'} 
+          onclick={() => activeTab = 'items'}>
+          Items ({$highlightedStore.items.length})
+        </button>
+      {/if}
+      {#if $highlightedStore?.battles?.length}
+        <button 
+          class="tab-button" 
+          class:active={activeTab === 'battles'} 
+          onclick={() => activeTab = 'battles'}>
+          Battles ({$highlightedStore.battles.length})
+        </button>
+      {/if}
+    </div>
+    
+    <div class="modal-content">
+      {#if activeTab === 'overview'}
+        <div class="section">
+          <h4>Terrain</h4>
+          <div class="attribute">
+            <span class="attribute-label">Type</span>
+            <span class="attribute-value">{$highlightedStore?.terrain?.biome || 'Unknown'}</span>
+          </div>
           
-          {#if !collapsedSections.terrain}
-            <div class="section-content">
-              <div class="terrain-info">
-                <div class="terrain-name">{_fmt(tileData?.biome?.name || terrain)}</div>
-                {#if tileData?.terrain?.rarity && tileData.terrain.rarity !== 'common'}
-                  <div class="terrain-rarity {tileData.terrain.rarity}">
-                    {_fmt(tileData.terrain.rarity)}
+          <!-- Available actions section -->
+          {#if $highlightedStore}
+            <div class="entities-section">
+              <div 
+                class="section-header"
+                onclick={() => toggleSection('actions')}
+                role="button"
+                tabindex="0"
+                aria-expanded={!collapsedSections.actions}
+              >
+                <h4>Available Actions</h4>
+                <div class="section-controls">
+                  <button class="collapse-button">
+                    {collapsedSections.actions ? '▼' : '▲'}
+                  </button>
+                </div>
+              </div>
+              
+              {#if !collapsedSections.actions}
+                <div class="section-content" transition:slide|local={{ duration: 300 }}>
+                  <div class="actions-grid">
+                    {#if $highlightedStore.structure}
+                      <button class="action-button" onclick={() => executeAction('inspect')}>
+                        Inspect Structure
+                      </button>
+                    {/if}
+                    
+                    {#if canMobilize($highlightedStore)}
+                      <button class="action-button" onclick={() => executeAction('mobilize')}>
+                        Mobilize
+                      </button>
+                    {/if}
+                    
+                    {#if canMove($highlightedStore)}
+                      <button class="action-button" onclick={() => executeAction('move')}>
+                        Move
+                      </button>
+                    {/if}
+                    
+                    {#if canGather($highlightedStore)}
+                      <button class="action-button" onclick={() => executeAction('gather')}>
+                        Gather
+                      </button>
+                    {/if}
+                    
+                    {#if canJoinBattle($highlightedStore)}
+                      <button class="action-button" onclick={() => executeAction('joinBattle')}>
+                        Join Battle
+                      </button>
+                    {/if}
+                    
+                    {#if canDemobilize($highlightedStore)}
+                      <button class="action-button" onclick={() => executeAction('demobilize')}>
+                        Demobilize
+                      </button>
+                    {/if}
+                  </div>
+                </div>
+              {/if}
+            </div>
+            
+            <!-- Structure quick view section -->
+            {#if $highlightedStore.structure}
+              <div class="entities-section">
+                <div 
+                  class="section-header"
+                  onclick={() => toggleSection('structures')}
+                  role="button"
+                  tabindex="0"
+                  aria-expanded={!collapsedSections.structures}
+                >
+                  <h4>Structure</h4>
+                  <div class="section-controls">
+                    <button class="collapse-button">
+                      {collapsedSections.structures ? '▼' : '▲'}
+                    </button>
+                  </div>
+                </div>
+                
+                {#if !collapsedSections.structures}
+                  <div class="section-content" transition:slide|local={{ duration: 300 }}>
+                    <div class="entity structure">
+                      <div class="entity-info">
+                        <div class="entity-name">
+                          {$highlightedStore.structure.name || _fmt($highlightedStore.structure.type) || 'Unnamed'}
+                          {#if isOwnedByCurrentPlayer($highlightedStore.structure)}
+                            <span class="entity-badge owner-badge">Yours</span>
+                          {/if}
+                        </div>
+                        <div class="entity-details">
+                          <div class="entity-type">{_fmt($highlightedStore.structure.type)}</div>
+                        </div>
+                      </div>
+                      <button class="inspect-button" onclick={() => executeAction('inspect')}>
+                        Inspect
+                      </button>
+                    </div>
                   </div>
                 {/if}
               </div>
-            </div>
+            {/if}
+            
+            <!-- Groups quick view section -->
+            {#if $highlightedStore.groups?.length > 0}
+              <div class="entities-section">
+                <div 
+                  class="section-header"
+                  onclick={() => toggleSection('groups')}
+                  role="button"
+                  tabindex="0"
+                  aria-expanded={!collapsedSections.groups}
+                >
+                  <h4>Groups ({$highlightedStore.groups.length})</h4>
+                  <div class="section-controls">
+                    <button class="collapse-button">
+                      {collapsedSections.groups ? '▼' : '▲'}
+                    </button>
+                  </div>
+                </div>
+                
+                {#if !collapsedSections.groups}
+                  <div class="section-content" transition:slide|local={{ duration: 300 }}>
+                    {#each $highlightedStore.groups as group}
+                      <div class="entity group {isOwnedByCurrentPlayer(group) ? 'player-owned' : ''}">
+                        <div class="entity-info">
+                          <div class="entity-name">
+                            {formatEntityName(group)}
+                            {#if isOwnedByCurrentPlayer(group)}
+                              <span class="entity-badge owner-badge">Yours</span>
+                            {/if}
+                          </div>
+                          
+                          <div class="entity-details">
+                            <span class="unit-count">
+                              {group.unitCount || (group.units ? group.units.length : 0)} units
+                              {#if getGroupItemCount(group) > 0}
+                                • <span class="item-count">{getGroupItemCount(group)} items</span>
+                              {/if}
+                            </span>
+                            
+                            <span class="entity-status-badge {getStatusClass(group.status)}"
+                              class:pending-tick={isPendingTick(
+                                group.status === 'moving' 
+                                  ? group.nextMoveTime 
+                                  : (group.status === 'gathering' || group.status === 'starting_to_gather' 
+                                      ? group.gatheringUntil 
+                                      : group.readyAt)
+                              )}
+                            >
+                              {_fmt(group.status)}
+                              {#if (group.status === 'mobilizing' || group.status === 'demobilising') && group.readyAt}
+                                ({formatTimeRemaining(group.readyAt, group.status)})
+                              {/if}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {#if isOwnedByCurrentPlayer(group) && group.status === 'idle' && !group.inBattle}
+                          <div class="entity-actions">
+                            <button class="entity-action" onclick={() => executeAction('move', { group })}>
+                              Move
+                            </button>
+                            {#if $highlightedStore.items?.length > 0}
+                              <button class="entity-action" onclick={() => executeAction('gather', { group })}>
+                                Gather
+                              </button>
+                            {/if}
+                            {#if $highlightedStore.battles?.some(b => b.status === 'active')}
+                              <button class="entity-action" onclick={() => executeAction('joinBattle', { group })}>
+                                Join Battle
+                              </button>
+                            {/if}
+                          </div>
+                        {/if}
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            {/if}
+            
+            <!-- Players quick view section -->
+            {#if $highlightedStore.players?.length > 0}
+              <div class="entities-section">
+                <div 
+                  class="section-header"
+                  onclick={() => toggleSection('players')}
+                  role="button"
+                  tabindex="0"
+                  aria-expanded={!collapsedSections.players}
+                >
+                  <h4>Players ({$highlightedStore.players.length})</h4>
+                  <div class="section-controls">
+                    <button class="collapse-button">
+                      {collapsedSections.players ? '▼' : '▲'}
+                    </button>
+                  </div>
+                </div>
+                
+                {#if !collapsedSections.players}
+                  <div class="section-content" transition:slide|local={{ duration: 300 }}>
+                    {#each $highlightedStore.players as player}
+                      <div class="entity player {player.id === $currentPlayer?.uid ? 'current' : ''} {isOwnedByCurrentPlayer(player) ? 'player-owned' : ''}">
+                        <div class="entity-info">
+                          <div class="entity-name">
+                            {player.displayName || 'Player'}
+                            {#if player.id === $currentPlayer?.uid}
+                              <span class="entity-badge owner-badge">You</span>
+                            {/if}
+                          </div>
+                          <div class="entity-details">
+                            {#if player.race}
+                              <div class="entity-race">{_fmt(player.race)}</div>
+                            {/if}
+                          </div>
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            {/if}
+            
+            <!-- Items quick view section -->
+            {#if $highlightedStore.items?.length > 0}
+              <div class="entities-section">
+                <div 
+                  class="section-header"
+                  onclick={() => toggleSection('items')}
+                  role="button"
+                  tabindex="0"
+                  aria-expanded={!collapsedSections.items}
+                >
+                  <h4>Items ({$highlightedStore.items.length})</h4>
+                  <div class="section-controls">
+                    <button class="collapse-button">
+                      {collapsedSections.items ? '▼' : '▲'}
+                    </button>
+                  </div>
+                </div>
+                
+                {#if !collapsedSections.items}
+                  <div class="section-content" transition:slide|local={{ duration: 300 }}>
+                    {#each $highlightedStore.items as item}
+                      <div class="entity item {getRarityClass(item.rarity)}">
+                        <div class="entity-info">
+                          <div class="entity-name">
+                            {item.name || _fmt(item.type) || "Unknown Item"}
+                          </div>
+                          <div class="entity-details">
+                            {#if item.type}
+                              <span class="item-type">{_fmt(item.type)}</span>
+                            {/if}
+                            {#if item.quantity > 1}
+                              <span class="item-quantity">×{item.quantity}</span>
+                            {/if}
+                            {#if item.rarity && item.rarity !== 'common'}
+                              <span class="item-rarity {item.rarity}">{_fmt(item.rarity)}</span>
+                            {/if}
+                          </div>
+                          {#if item.description}
+                            <div class="item-description">{item.description}</div>
+                          {/if}
+                        </div>
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            {/if}
+            
+            <!-- Battles quick view section -->
+            {#if $highlightedStore.battles?.length > 0}
+              <div class="entities-section">
+                <div 
+                  class="section-header"
+                  onclick={() => toggleSection('battles')}
+                  role="button"
+                  tabindex="0"
+                  aria-expanded={!collapsedSections.battles}
+                >
+                  <h4>Battles ({$highlightedStore.battles.length})</h4>
+                  <div class="section-controls">
+                    <button class="collapse-button">
+                      {collapsedSections.battles ? '▼' : '▲'}
+                    </button>
+                  </div>
+                </div>
+                
+                {#if !collapsedSections.battles}
+                  <div class="section-content" transition:slide|local={{ duration: 300 }}>
+                    {#each $highlightedStore.battles as battle}
+                      <div class="entity battle">
+                        <div class="entity-info">
+                          <div class="entity-name">
+                            Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}
+                            <span class="entity-status-badge {battle.status === 'resolved' ? 'resolved' : 'active'}">
+                              {battle.status === 'resolved' ? 'Resolved' : 'Active'}
+                            </span>
+                          </div>
+                          
+                          <div class="entity-details">
+                            <div class="battle-sides">
+                              <div class="battle-side side1 {getWinningSideClass(battle, 1)}">
+                                <span class="side-name">Side 1:</span> 
+                                {getParticipantCountBySide(battle, 1)} groups
+                                ({formatPower(battle.sides?.[1]?.power || battle.power?.[1])})
+                                {#if battle.status === 'resolved' && battle.winner === 1}
+                                  <span class="battle-winner">Winner</span>
+                                {/if}
+                              </div>
+                              
+                              <div class="battle-side side2 {getWinningSideClass(battle, 2)}">
+                                <span class="side-name">Side 2:</span> 
+                                {getParticipantCountBySide(battle, 2)} groups
+                                ({formatPower(battle.sides?.[2]?.power || battle.power?.[2])})
+                                {#if battle.status === 'resolved' && battle.winner === 2}
+                                  <span class="battle-winner">Winner</span>
+                                {/if}
+                              </div>
+                            </div>
+                            
+                            {#if battle.status === 'active' && battle.startTime && battle.endTime}
+                              <div class="battle-progress">
+                                <div class="progress-bar">
+                                  <div class="progress-fill" style="width: {calculateBattleProgress(battle)}%"></div>
+                                </div>
+                                <div class="battle-timer">
+                                  {formatBattleTimeRemaining(battle)}
+                                </div>
+                              </div>
+                            {/if}
+                          </div>
+                        </div>
+                        
+                        {#if battle.status === 'active' && canJoinBattle($highlightedStore)}
+                          <button class="join-battle-btn" onclick={() => executeAction('joinBattle')}>
+                            Join Battle
+                          </button>
+                        {/if}
+                      </div>
+                    {/each}
+                  </div>
+                {/if}
+              </div>
+            {/if}
           {/if}
         </div>
-        
-        {#if tileData?.structure}
-          <div class="section structure-section">
-            <button 
-              class="section-header" 
-              onclick={() => toggleSection('structure')}
-              aria-expanded={!collapsedSections.structure}
-              type="button"
-            >
-              <h4 class="section-title">Structure</h4>
-              <span class="collapse-button" aria-hidden="true">
-                {collapsedSections.structure ? '▼' : '▲'}
-              </span>
-            </button>
-            
-            {#if !collapsedSections.structure}
-              <div class="section-content">
-                <div class="entity structure {isOwnedByCurrentPlayer(tileData.structure) ? 'current-player-owned' : ''}">
-                  <div class="entity-structure-icon">
-                    {#if tileData.structure.type === 'spawn'}
-                      <Torch size="1.4em" extraClass="structure-type-icon" />
-                    {:else}
-                      <Structure size="1.4em" extraClass="structure-type-icon {tileData.structure.type}-icon" />
+      {/if}
+      
+      <!-- Structure Tab -->
+      {#if activeTab === 'structure' && $highlightedStore?.structure}
+        <div class="section">
+          <h4>Structure Details</h4>
+          <div class="entity structure detailed">
+            <div class="entity-info">
+              <div class="entity-name">
+                {$highlightedStore.structure.name || _fmt($highlightedStore.structure.type) || 'Unnamed'}
+                {#if isOwnedByCurrentPlayer($highlightedStore.structure)}
+                  <span class="entity-badge owner-badge">Yours</span>
+                {/if}
+              </div>
+              
+              <div class="structure-attributes">
+                <div class="attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">{_fmt($highlightedStore.structure.type)}</span>
+                </div>
+                
+                {#if $highlightedStore.structure.owner}
+                  <div class="attribute">
+                    <span class="attribute-label">Owner</span>
+                    <span class="attribute-value">
+                      {isOwnedByCurrentPlayer($highlightedStore.structure) ? 'You' : $highlightedStore.structure.ownerName || 'Unknown player'}
+                    </span>
+                  </div>
+                {/if}
+                
+                {#if $highlightedStore.structure.level !== undefined}
+                  <div class="attribute">
+                    <span class="attribute-label">Level</span>
+                    <span class="attribute-value">{$highlightedStore.structure.level}</span>
+                  </div>
+                {/if}
+                
+                {#if $highlightedStore.structure.capacity !== undefined}
+                  <div class="attribute">
+                    <span class="attribute-label">Capacity</span>
+                    <span class="attribute-value">{$highlightedStore.structure.capacity}</span>
+                  </div>
+                {/if}
+                
+                {#if $highlightedStore.structure.hp !== undefined && $highlightedStore.structure.maxHp !== undefined}
+                  <div class="attribute">
+                    <span class="attribute-label">Health</span>
+                    <span class="attribute-value">{$highlightedStore.structure.hp} / {$highlightedStore.structure.maxHp}</span>
+                  </div>
+                {/if}
+              </div>
+              
+              {#if $highlightedStore.structure.description}
+                <div class="structure-description">
+                  {$highlightedStore.structure.description}
+                </div>
+              {/if}
+            </div>
+          </div>
+          
+          <button class="action-button full" onclick={() => executeAction('inspect')}>
+            View Structure Details
+          </button>
+        </div>
+      {/if}
+      
+      <!-- Groups Tab -->
+      {#if activeTab === 'groups' && $highlightedStore?.groups?.length}
+        <div class="section">
+          <h4>Groups ({$highlightedStore.groups.length})</h4>
+          
+          <div class="entity-list">
+            {#each $highlightedStore.groups as group}
+              <div class="entity group {isOwnedByCurrentPlayer(group) ? 'player-owned' : ''}">
+                <div class="entity-info">
+                  <div class="entity-name">
+                    {formatEntityName(group)}
+                    {#if isOwnedByCurrentPlayer(group)}
+                      <span class="entity-badge owner-badge">Yours</span>
                     {/if}
                   </div>
-                  <div class="entity-info">
-                    <div class="entity-name">
-                      {tileData.structure.name || _fmt(tileData.structure.type) || "Unknown"}
-                      {#if isOwnedByCurrentPlayer(tileData.structure)}
-                        <span class="your-entity-badge">Yours</span>
-                      {/if}
+                  
+                  <div class="entity-details">
+                    <div class="attribute">
+                      <span class="attribute-label">Units</span>
+                      <span class="attribute-value">{group.unitCount || 'Unknown'}</span>
                     </div>
-                    <div class="entity-details">
-                      {#if tileData.structure.type}
-                        <div class="entity-type">{_fmt(tileData.structure.type)}</div>
-                      {/if}
-                      {#if tileData.structure.description}
-                        <div class="entity-description">{tileData.structure.description}</div>
-                      {/if}
+                    
+                    <div class="attribute">
+                      <span class="attribute-label">Status</span>
+                      <span class="attribute-value status-{group.status || 'idle'}">{_fmt(group.status || 'Idle')}</span>
                     </div>
+                    
+                    {#if group.race}
+                      <div class="attribute">
+                        <span class="attribute-label">Race</span>
+                        <span class="attribute-value">{_fmt(group.race)}</span>
+                      </div>
+                    {/if}
+                    
+                    {#if group.inBattle}
+                      <div class="attribute">
+                        <span class="attribute-label">In Battle</span>
+                        <span class="attribute-value battle-status">Yes</span>
+                      </div>
+                    {/if}
+                  </div>
+                </div>
+                
+                {#if isOwnedByCurrentPlayer(group) && group.status === 'idle' && !group.inBattle}
+                  <div class="entity-actions">
+                    <button class="entity-action" onclick={() => executeAction('move', { group })}>
+                      Move
+                    </button>
+                    {#if $highlightedStore.items?.length > 0}
+                      <button class="entity-action" onclick={() => executeAction('gather', { group })}>
+                        Gather
+                      </button>
+                    {/if}
+                    {#if $highlightedStore.battles?.some(b => b.status === 'active')}
+                      <button class="entity-action" onclick={() => executeAction('joinBattle', { group })}>
+                        Join Battle
+                      </button>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
+      
+      <!-- Players Tab -->
+      {#if activeTab === 'players' && $highlightedStore?.players?.length}
+        <div class="section">
+          <h4>Players ({$highlightedStore.players.length})</h4>
+          
+          <div class="entity-list">
+            {#each $highlightedStore.players as player}
+              <div class="entity player {player.id === $currentPlayer?.uid ? 'current' : ''} {isOwnedByCurrentPlayer(player) ? 'player-owned' : ''}">
+                <div class="entity-info">
+                  <div class="entity-name">
+                    {player.displayName || 'Player'}
+                    {#if player.id === $currentPlayer?.uid}
+                      <span class="entity-badge owner-badge">You</span>
+                    {/if}
+                  </div>
+                  
+                  <div class="entity-details">
+                    {#if player.race}
+                      <div class="attribute">
+                        <span class="attribute-label">Race</span>
+                        <span class="attribute-value">{_fmt(player.race)}</span>
+                      </div>
+                    {/if}
+                    
+                    {#if player.faction}
+                      <div class="attribute">
+                        <span class="attribute-label">Faction</span>
+                        <span class="attribute-value">{_fmt(player.faction)}</span>
+                      </div>
+                    {/if}
                   </div>
                 </div>
               </div>
-            {/if}
+            {/each}
           </div>
-        {/if}
-        
-        {#if sortedPlayers.length > 0}
-          <div class="section players-section">
-            <button 
-              class="section-header" 
-              onclick={() => toggleSection('players')}
-              aria-expanded={!collapsedSections.players}
-              type="button"
-            >
-              <h4 class="section-title">Players ({sortedPlayers.length})</h4>
-              <span class="collapse-button" aria-hidden="true">
-                {collapsedSections.players ? '▼' : '▲'}
-              </span>
-            </button>
-            
-            {#if !collapsedSections.players}
-              <div class="section-content">
-                {#each sortedPlayers as player}
-                  <div class="entity player {player.id === $currentPlayer?.uid ? 'current' : ''} {isOwnedByCurrentPlayer(player) ? 'current-player-owned' : ''}">
-                    <div class="entity-race-icon">
-                      {#if player.race}
-                        {#if player.race?.toLowerCase() === 'human'}
-                          <Human extraClass="race-icon-entity" />
-                        {:else if player.race?.toLowerCase() === 'elf'}
-                          <Elf extraClass="race-icon-entity" />
-                        {:else if player.race?.toLowerCase() === 'dwarf'}
-                          <Dwarf extraClass="race-icon-entity" />
-                        {:else if player.race?.toLowerCase() === 'goblin'}
-                          <Goblin extraClass="race-icon-entity" />
-                        {:else if player.race?.toLowerCase() === 'fairy'}
-                          <Fairy extraClass="race-icon-entity" />
-                        {/if}
+        </div>
+      {/if}
+      
+      <!-- Items Tab -->
+      {#if activeTab === 'items' && $highlightedStore?.items?.length}
+        <div class="section">
+          <h4>Items ({$highlightedStore.items.length})</h4>
+          
+          <div class="entity-list">
+            {#each $highlightedStore.items as item}
+              <div class="entity item {getRarityClass(item.rarity)}">
+                <div class="entity-info">
+                  <div class="entity-name">
+                    {item.name || _fmt(item.type) || "Unknown Item"}
+                    {#if item.quantity > 1}
+                      <span class="item-quantity">×{item.quantity}</span>
+                    {/if}
+                  </div>
+                  <div class="entity-details">
+                    {#if item.type}
+                      <div class="attribute">
+                        <span class="attribute-label">Type</span>
+                        <span class="attribute-value">{_fmt(item.type)}</span>
+                      </div>
+                    {/if}
+                    
+                    {#if item.rarity && item.rarity !== 'common'}
+                      <div class="attribute">
+                        <span class="attribute-label">Rarity</span>
+                        <span class="attribute-value item-rarity {item.rarity}">{_fmt(item.rarity)}</span>
+                      </div>
+                    {/if}
+                  </div>
+                  
+                  {#if item.description}
+                    <div class="item-description">
+                      {item.description}
+                    </div>
+                  {/if}
+                </div>
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
+      
+      <!-- Battles Tab -->
+      {#if activeTab === 'battles' && $highlightedStore?.battles?.length}
+        <div class="section">
+          <h4>Battles ({$highlightedStore.battles.length})</h4>
+          
+          <div class="entity-list">
+            {#each $highlightedStore.battles as battle}
+              <div class="entity battle {battle.status}">
+                <div class="entity-info">
+                  <div class="entity-name">
+                    Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}
+                    <span class="entity-status-badge {battle.status === 'resolved' ? 'resolved' : 'active'}">
+                      {battle.status === 'resolved' ? 'Resolved' : 'Active'}
+                    </span>
+                  </div>
+                  
+                  <div class="battle-sides">
+                    <div class="battle-side side1 {getWinningSideClass(battle, 1)}">
+                      <span class="side-name">Side 1:</span> 
+                      {getParticipantCountBySide(battle, 1)} groups
+                      ({formatPower(battle.sides?.[1]?.power || battle.power?.[1])})
+                      {#if battle.status === 'resolved' && battle.winner === 1}
+                        <span class="battle-winner">Winner</span>
                       {/if}
                     </div>
-                    <div class="entity-info">
-                      <div class="entity-name">
-                        {player.displayName || 'Player'}
-                        {#if isOwnedByCurrentPlayer(player)}
-                          <span class="your-entity-badge">You</span>
-                        {/if}
-                      </div>
-                      <div class="entity-details">
-                        {#if player.race}
-                          <div class="entity-race">{_fmt(player.race)}</div>
-                        {/if}
-                      </div>
+                    
+                    <div class="battle-side side2 {getWinningSideClass(battle, 2)}">
+                      <span class="side-name">Side 2:</span> 
+                      {getParticipantCountBySide(battle, 2)} groups
+                      ({formatPower(battle.sides?.[2]?.power || battle.power?.[2])})
+                      {#if battle.status === 'resolved' && battle.winner === 2}
+                        <span class="battle-winner">Winner</span>
+                      {/if}
                     </div>
                   </div>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/if}
-        
-        {#if sortedGroups.length > 0}
-          <div class="section groups-section">
-            <button 
-              class="section-header" 
-              onclick={() => toggleSection('groups')}
-              aria-expanded={!collapsedSections.groups}
-              type="button"
-            >
-              <h4 class="section-title">Groups ({sortedGroups.length})</h4>
-              <span class="collapse-button" aria-hidden="true">
-                {collapsedSections.groups ? '▼' : '▲'}
-              </span>
-            </button>
-            
-            {#if !collapsedSections.groups}
-              <div class="section-content">
-                {#each sortedGroups as group}
-                  {#if group}
-                    <div class="entity {group.status || 'idle'} {isOwnedByCurrentPlayer(group) ? 'current-player-owned' : ''}">
-                      <div class="entity-race-icon">
-                        {#if getEntityIconType(group)}
-                          {#if getEntityIconType(group) === 'human'}
-                            <Human class="race-icon-entity" />
-                          {:else if getEntityIconType(group) === 'elf'}
-                            <Elf class="race-icon-entity" />
-                          {:else if getEntityIconType(group) === 'dwarf'}
-                            <Dwarf class="race-icon-entity" />
-                          {:else if getEntityIconType(group) === 'goblin'}
-                            <Goblin class="race-icon-entity" />
-                          {:else if getEntityIconType(group) === 'fairy'}
-                            <Fairy class="race-icon-entity" />
-                          {/if}
-                        {/if}
+                  
+                  {#if battle.status === 'active' && battle.startTime && battle.endTime}
+                    <div class="battle-progress">
+                      <div class="progress-bar">
+                        <div class="progress-fill" style="width: {calculateBattleProgress(battle)}%"></div>
                       </div>
-                      <div class="entity-info">
-                        <div class="entity-name">
-                          {group.name || `Group ${group.id.slice(-4)}`}
-                          {#if isOwnedByCurrentPlayer(group)}
-                            <span class="your-entity-badge">Yours</span>
-                          {/if}
-                        </div>
-                        
-                        <div class="entity-details">
-                          <span class="unit-count">
-                            {countUnits(group)} units
-                            {#if getGroupItemCount(group) > 0}
-                              • <span class="item-count">{getGroupItemCount(group)} items</span>
-                            {/if}
-                          </span>
-                          
-                          <span class="status {getStatusClass(group.status)}" class:pending-tick={isPendingTick(
-                            group.status === 'moving' 
-                              ? group.nextMoveTime 
-                              : (group.status === 'gathering' || group.status === 'starting_to_gather' 
-                                  ? group.gatheringUntil 
-                                  : group.readyAt)
-                          )}>
-                            {#if group.status === 'starting_to_gather'}
-                              Preparing to gather
-                            {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
-                              {_fmt(group.status)} {formatTimeRemaining(group.readyAt, group.status)}
-                            {:else if group.status === 'moving'}
-                              {_fmt(group.status)} 
-                              {#if !isPendingTick(group.nextMoveTime)}
-                                ({formatTimeRemaining(calculateMoveCompletionTime(group))})
-                              {/if}
-                            {:else if group.status === 'gathering'}
-                              {_fmt(group.status)} 
-                              {#if !isPendingTick(group.gatheringUntil)}
-                                ({formatTimeRemaining(group.gatheringUntil)})
-                              {/if}
-                            {:else}
-                              {_fmt(group.status)}
-                            {/if}
-                          </span>
-                        </div>
+                      <div class="battle-timer">
+                        {formatBattleTimeRemaining(battle)}
                       </div>
                     </div>
                   {/if}
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/if}
-        
-        {#if sortedBattles.length > 0}
-          <div class="section battles-section">
-            <button 
-              class="section-header" 
-              onclick={() => toggleSection('battles')}
-              aria-expanded={!collapsedSections.battles}
-              type="button"
-            >
-              <h4 class="section-title">Battles ({sortedBattles.length})</h4>
-              <span class="collapse-button" aria-hidden="true">
-                {collapsedSections.battles ? '▼' : '▲'}
-              </span>
-            </button>
-            
-            {#if !collapsedSections.battles}
-              <div class="section-content">
-                {#each sortedBattles as battle}
-                  <div class="entity battle">
-                    <div class="entity-battle-icon">⚔️</div>
-                    <div class="entity-info">
-                      <div class="entity-name">
-                        {getBattleDisplayName(battle.id)}
-                      </div>
-                      
-                      <div class="battle-sides">
-                        <div class="battle-side side1">
-                          <div class="side-header">Side 1</div>
-                          <div class="side-stats">
-                            {battle.sides[1].groups.length} groups ({battle.sides[1].power} strength)
-                          </div>
-                        </div>
-                        
-                        <div class="battle-side side2">
-                          <div class="side-header">Side 2</div>
-                          <div class="side-stats">
-                            {battle.sides[2].groups.length} groups ({battle.sides[2].power} strength)
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {#if isPlayerAvailableOnTile(tileData, $currentPlayer?.uid) && hasIdlePlayerGroups}
-                        <div class="battle-actions">
-                          <button 
-                            class="join-battle-btn"
-                            onclick={() => executeAction('joinBattle', tileData)}
-                          >
-                            Join Battle
-                          </button>
-                        </div>
-                      {/if}
-                    </div>
+                </div>
+                
+                {#if battle.status === 'active' && canJoinBattle($highlightedStore)}
+                  <div class="battle-actions">
+                    <button class="join-battle-btn" onclick={() => executeAction('joinBattle')}>
+                      Join Battle
+                    </button>
                   </div>
-                {/each}
+                {/if}
               </div>
-            {/if}
+            {/each}
           </div>
-        {/if}
-        
-        {#if sortedItems.length > 0}
-          <div class="section items-section">
-            <button 
-              class="section-header" 
-              onclick={() => toggleSection('items')}
-              aria-expanded={!collapsedSections.items}
-              type="button"
-            >
-              <h4 class="section-title">Items ({sortedItems.length})</h4>
-              <span class="collapse-button" aria-hidden="true">
-                {collapsedSections.items ? '▼' : '▲'}
-              </span>
-            </button>
-            
-            {#if !collapsedSections.items}
-              <div class="section-content">
-                {#each sortedItems as item}
-                  <div class="entity item {getRarityClass(item.rarity)}">
-                    <div class="item-icon {item.type}"></div>
-                    <div class="entity-info">
-                      <div class="entity-name">
-                        {item.name || _fmt(item.type) || "Unknown Item"}
-                      </div>
-                      <div class="entity-details">
-                        {#if item.type}
-                          <span class="item-type">{_fmt(item.type)}</span>
-                        {/if}
-                        {#if item.quantity > 1}
-                          <span class="item-quantity">×{item.quantity}</span>
-                        {/if}
-                        {#if item.rarity && item.rarity !== 'common'}
-                          <span class="item-rarity {item.rarity}">{_fmt(item.rarity)}</span>
-                        {/if}
-                      </div>
-                      {#if item.description}
-                        <div class="item-description">{item.description}</div>
-                      {/if}
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/if}
-        
-        {#if actions.length > 0}
-          <div class="section actions-section">
-            <h4 class="section-title">Available Actions</h4>
-            <div class="actions-list">
-              {#each actions as action}
-                <button 
-                  class="action-button" 
-                  onclick={() => selectAction(action.id)}
-                  onkeydown={(event) => handleActionKeydown(action, event)}
-                  aria-label={action.label}
-                  type="button"
-                >
-                  <span class="action-icon">{action.icon}</span>
-                  <div class="action-text">
-                    <div class="action-label">{action.label}</div>
-                    <div class="action-description">{action.description}</div>
-                  </div>
-                </button>
-              {/each}
-            </div>
-          </div>
-        {/if}
-      </div>
+        </div>
+      {/if}
     </div>
   </div>
-{/if}
+</div>
 
 <style>
-  .details-wrapper {
+  .modal-wrapper {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    opacity: 0;
-    pointer-events: none;
-  }
-  
-  .details-wrapper.mounted {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  
-  .details-wrapper.closing {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-  }
-
-  .modal-backdrop {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: transparent;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    margin: 0;
-    transition: 
-      background-color 0.3s ease,
-      backdrop-filter 0.3s ease;
-  }
-  
-  .details-wrapper.mounted .modal-backdrop {
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-  }
-  
-  .details-wrapper.closing .modal-backdrop {
-    background-color: rgba(0, 0, 0, 0);
-    backdrop-filter: blur(0);
-    -webkit-backdrop-filter: blur(0);
-    transition: 
-      background-color 0.3s ease,
-      backdrop-filter 0.3s ease;
-  }
-
-  .details-panel {
-    background-color: rgba(255, 255, 255, 0.95);
-    border: 0.05em solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.5em;
-    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(0.5em);
-    -webkit-backdrop-filter: blur(0.5em);
     width: 100%;
-    max-width: 30em;
-    margin: 1em;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+  }
+
+  .modal {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    max-width: 500px;
+    width: 90%;
+    max-height: 85vh;
     display: flex;
     flex-direction: column;
+    animation: appear 0.3s ease-out;
     overflow: hidden;
-    transform-origin: center;
-    font-family: var(--font-body);
-    max-height: 90vh;
-    transform: translateY(-20px) scale(0.95);
-    opacity: 0;
-    transition: 
-      transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-      opacity 0.3s ease;
   }
-  
-  .details-panel.mounted {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
-  
-  .details-panel.closing {
-    transform: translateY(20px) scale(0.95);
-    opacity: 0;
-    transition: 
-      transform 0.3s cubic-bezier(0.6, -0.28, 0.735, 0.045),
-      opacity 0.3s ease;
-  }
-  
-  .details-header {
+
+  .modal-header {
+    padding: 16px;
     display: flex;
-    align-items: center;
-    padding: 0.8em 1em;
-    background-color: rgba(0, 0, 0, 0.08);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.15);
     justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    background-color: #f9f9f9;
   }
-  
-  .title {
-    flex: 1;
+
+  h3 {
     margin: 0;
-    font-size: 1.2em;
+    font-size: 18px;
     font-weight: 600;
-    color: rgba(0, 0, 0, 0.9);
-    font-family: var(--font-heading);
+    color: #333;
   }
-  
-  .coords {
-    font-size: 0.9em;
-    color: rgba(0, 0, 0, 0.7);
-    margin-right: 1em;
-    font-weight: 500;
-    font-family: var(--font-mono, monospace);
-  }
-  
+
   .close-button {
-    background: transparent;
+    background: none;
     border: none;
-    color: var(--color-text);
-    padding: 0.3em;
     cursor: pointer;
+    padding: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
   }
-  
+
   .close-button:hover {
-    opacity: 0.8;
+    background-color: rgba(0, 0, 0, 0.1);
   }
-  
-  .close-button:focus-visible {
-    outline: 2px solid var(--color-bright-accent);
-    outline-offset: 2px;
-    border-radius: 0.25em;
-  }
-  
-  .details-content {
-    font-weight: 500;
-    font-family: var(--font-mono, monospace);
-  }
-  
-  .close-button {
-    background: transparent;
-    border: none;
-    color: var(--color-text);
-    padding: 0.3em;
-    cursor: pointer;
+
+  .tabs {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    overflow-x: auto;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #eee;
   }
-  
-  .close-button:hover {
-    opacity: 0.8;
+
+  .tab-button {
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    color: #666;
+    transition: all 0.2s;
   }
-  
-  .close-button:focus-visible {
-    outline: 2px solid var(--color-bright-accent);
-    outline-offset: 2px;
-    border-radius: 0.25em;
+
+  .tab-button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #333;
   }
-  
-  .details-content {
-    padding: 1em;
-    max-height: calc(90vh - 4em);
+
+  .tab-button.active {
+    border-bottom-color: #4a90e2;
+    color: #333;
+    font-weight: 500;
+  }
+
+  .modal-content {
+    padding: 16px;
     overflow-y: auto;
   }
 
+  .section {
+    margin-bottom: 24px;
+  }
+
+  h4 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    color: #555;
+    font-weight: 500;
+  }
+
+  .attribute {
+    display: flex;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .attribute-label {
+    width: 100px;
+    color: #666;
+    font-weight: 500;
+  }
+
+  .attribute-value {
+    flex-grow: 1;
+    color: #333;
+  }
+
+  /* Entities section styling similar to MapEntities */
+  .entities-section {
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #eee;
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+  
   .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
+    padding: 10px 16px;
+    background-color: #f5f5f5;
     cursor: pointer;
-    padding: 0.7em 1em;
-    margin: -0.7em -1em 0.5em -1em;
-    background-color: rgba(0, 0, 0, 0.03);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     user-select: none;
-    font-family: inherit;
-    color: inherit;
-    font-size: inherit;
   }
   
   .section-header:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: #efefef;
   }
   
-  .section-header:focus {
-    outline: 2px solid rgba(66, 133, 244, 0.6);
+  .section-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
   
   .collapse-button {
-    color: rgba(0, 0, 0, 0.5);
-    font-size: 0.8em;
-    padding: 0.2em 0.5em;
-    transition: all 0.2s ease;
-  }
-  
-  .section {
-    margin-bottom: 1.2em;
-  }
-  
-  .section:last-child {
-    margin-bottom: 0;
-  }
-  
-  .section-title {
-    margin: 0;
-    font-size: 0.9em;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.7);
-    font-family: var(--font-heading);
-  }
-
-  .actions-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5em;
-    margin-top: 0.5em;
-  }
-  
-  .action-button {
-    display: flex;
-    align-items: center;
-    padding: 0.8em;
-    margin-bottom: 0.5em;
-    background-color: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 0.3em;
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 14px;
     cursor: pointer;
-    width: 100%;
-    font-family: inherit;
-    font-size: inherit;
-    color: rgba(0, 0, 0, 0.8);
-    text-align: left;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    padding: 4px;
   }
   
-  .action-button:hover:not(:disabled) {
-    background-color: rgba(255, 255, 255, 0.9);
-    border-color: rgba(0, 0, 0, 0.2);
-    transform: translateY(-2px);
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+  .collapse-button:hover {
+    color: #333;
   }
   
-  .action-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  .action-button:focus-visible {
-    outline: 2px solid var(--color-bright-accent);
-    outline-offset: 2px;
-  }
-  
-  .action-icon {
-    font-size: 1.2em;
-    margin-right: 0.8em;
-  }
-  
-  .action-text {
-    flex: 1;
-  }
-  
-  .action-label {
-    font-weight: 500;
-    margin-bottom: 0.2em;
-  }
-  
-  .action-description {
-    font-size: 0.8em;
-    color: rgba(0, 0, 0, 0.6);
+  .section-content {
+    padding: 8px 16px;
+    overflow: hidden;
   }
 
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .action-button {
+    padding: 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .action-button:hover {
+    background-color: #e0e0e0;
+  }
+
+  .action-button.full {
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px;
+    font-weight: 500;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+  }
+
+  .action-button.full:hover {
+    background-color: #3a80d2;
+  }
+
+  /* Entity styling */
   .entity {
     display: flex;
+    justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 0.6em;
-    padding: 0.5em 0.7em;
-    border-radius: 0.3em;
-    background-color: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    transition: background-color 0.2s ease;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    background-color: white;
+    border: 1px solid #eee;
   }
-  
-  .entity-race-icon {
-    margin-right: 0.7em;
-    margin-top: 0.1em;
+
+  .entity:last-child {
+    margin-bottom: 0;
   }
-  
-  :global(.race-icon-entity) {
-    width: 1.4em;
-    height: 1.4em;
-    fill: rgba(0, 0, 0, 0.7);
-  }
-  
+
   .entity-info {
-    flex: 1;
+    flex-grow: 1;
+    min-width: 0; /* to allow text truncation */
   }
-  
+
   .entity-name {
     font-weight: 500;
-    color: rgba(0, 0, 0, 0.85);
-    line-height: 1.2;
-    margin-bottom: 0.2em;
+    margin-bottom: 4px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .entity-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+  }
+  
+  .owner-badge {
+    background-color: #4caf50;
+    color: white;
   }
   
   .entity-details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6em;
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.7);
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .entity-race {
-    font-size: 0.85em;
-    font-style: italic;
-    color: rgba(0, 0, 0, 0.6);
-  }
-  
-  .entity-type {
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.6);
-  }
-  
-  .entity-structure-icon {
-    margin-right: 0.7em;
-    margin-top: 0.1em;
-  }
-  
-  :global(.structure-type-icon) {
-    width: 1.4em;
-    height: 1.4em;
-    fill: #a0d6e7;
-  }
-  
-  .your-entity-badge {
-    display: inline-block;
-    background: var(--color-bright-accent);
-    color: var(--color-dark-navy);
-    font-size: 0.7em;
-    padding: 0.1em 0.4em;
-    border-radius: 0.3em;
-    margin-left: 0.5em;
-    font-weight: bold;
-    vertical-align: middle;
-  }
-  
-  .current-player-owned {
-    border-color: var(--color-bright-accent);
-    background-color: rgba(100, 255, 218, 0.1);
-    position: relative;
-  }
-  
-  .current-player-owned::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background-color: var(--color-bright-accent);
-  }
-  
-  .status {
-    display: inline-block;
-    font-size: 0.9em;
-    padding: 0.1em 0.4em;
-    border-radius: 0.3em;
-    white-space: nowrap;
-    font-weight: 500;
-  }
-  
-  .status.idle {
-    background: rgba(128, 128, 128, 0.15);
-    border: 1px solid rgba(128, 128, 128, 0.3);
-    color: rgba(0, 0, 0, 0.7);
-  }
-  
-  .status.moving {
-    background: rgba(0, 128, 0, 0.15);
-    border: 1px solid rgba(0, 128, 0, 0.3);
-    color: #006400;
-  }
-  
-  .status.mobilizing {
-    background: rgba(255, 140, 0, 0.15);
-    border: 1px solid rgba(255, 140, 0, 0.3);
-    color: #d06000;
-  }
-  
-  .status.demobilising {
-    background: rgba(138, 43, 226, 0.15);
-    border: 1px solid rgba(138, 43, 226, 0.3);
-    color: #6a1b9a;
+    font-size: 12px;
+    color: #666;
   }
 
-  .status.gathering, 
-  .status.starting_to_gather {
-    background: rgba(138, 43, 226, 0.15);
-    border: 1px solid rgba(138, 43, 226, 0.3);
-    color: #8a2be2;
+  .player-owned {
+    border-left: 3px solid #4caf50;
   }
-  
-  .status.fighting {
-    background: rgba(220, 20, 60, 0.15);
-    border: 1px solid rgba(220, 20, 60, 0.3);
+
+  .entity-actions {
+    display: flex;
+    gap: 6px;
+    margin-left: 8px;
+  }
+
+  .entity-action {
+    padding: 4px 10px;
+    font-size: 12px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .entity-action:hover {
+    background-color: #e0e0e0;
+  }
+
+  .inspect-button {
+    padding: 6px 12px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+
+  .inspect-button:hover {
+    background-color: #3a80d2;
+  }
+
+  /* Status badge styling */
+  .entity-status-badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background-color: #f0f0f0;
+  }
+
+  .status-idle {
+    background-color: #f0f0f0;
+    color: #666;
+  }
+
+  .status-moving {
+    background-color: rgba(0, 128, 0, 0.1);
+    color: #2e7d32;
+  }
+
+  .status-mobilizing {
+    background-color: rgba(255, 152, 0, 0.1);
+    color: #ef6c00;
+  }
+
+  .status-demobilising {
+    background-color: rgba(156, 39, 176, 0.1);
+    color: #7b1fa2;
+  }
+
+  .status-fighting {
+    background-color: rgba(211, 47, 47, 0.1);
     color: #c62828;
   }
-  
-  .status.pending-tick {
+
+  .status-gathering {
+    background-color: rgba(103, 58, 183, 0.1);
+    color: #512da8;
+  }
+
+  .entity-status-badge.pending-tick {
     position: relative;
     animation: pulse 1s infinite alternate;
   }
   
-  .status.pending-tick::after {
+  .entity-status-badge.pending-tick::after {
     content: '↻';
-    margin-left: 0.3em;
+    margin-left: 3px;
     font-weight: bold;
+  }
+
+  /* Item styling */
+  .item-description {
+    font-size: 12px;
+    margin-top: 4px;
+    color: #666;
+    font-style: italic;
+  }
+  
+  .item-rarity {
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  
+  .item-rarity.uncommon {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: #2e7d32;
+  }
+  
+  .item-rarity.rare {
+    background-color: rgba(33, 150, 243, 0.1);
+    color: #0277bd;
+  }
+  
+  .item-rarity.epic {
+    background-color: rgba(156, 39, 176, 0.1);
+    color: #7b1fa2;
+  }
+  
+  .item-rarity.legendary {
+    background-color: rgba(255, 152, 0, 0.1);
+    color: #ef6c00;
+  }
+  
+  .item-rarity.mythic {
+    background-color: rgba(233, 30, 99, 0.1);
+    color: #c2185b;
+  }
+
+  /* Battle styling */
+  .battle-sides {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+  
+  .battle-side {
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    background-color: #f5f5f5;
+  }
+  
+  .battle-side.side1 {
+    border-left: 3px solid #2196f3;
+  }
+  
+  .battle-side.side2 {
+    border-left: 3px solid #f44336;
+  }
+
+  .battle-winner {
+    color: #ff9800;
+    font-weight: bold;
+    margin-left: 4px;
+  }
+
+  .battle-progress {
+    margin-top: 8px;
+  }
+  
+  .progress-bar {
+    height: 4px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background-color: #f44336;
+    transition: width 1s ease;
+  }
+  
+  .battle-timer {
+    font-size: 11px;
+    color: #d32f2f;
+    text-align: right;
+  }
+
+  .join-battle-btn {
+    padding: 6px 12px;
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-top: 8px;
+    align-self: flex-end;
+  }
+  
+  .join-battle-btn:hover {
+    background-color: #d32f2f;
+  }
+
+  .entity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
   
   .unit-count {
-    color: rgba(0, 0, 0, 0.6);
+    color: #555;
+    font-weight: 500;
   }
   
   .item-count {
     color: #2d8659;
-    font-weight: 500;
   }
   
-  .item-icon {
-    width: 1.4em;
-    height: 1.4em;
-    margin-right: 0.7em;
-    margin-top: 0.1em;
-    border-radius: 0.2em;
-    background-color: rgba(0, 0, 0, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-
-  .item-icon::before {
-    content: '';
-    position: absolute;
-    width: 60%;
-    height: 60%;
-    background-color: rgba(0, 0, 0, 0.2);
-  }
-
-  .item-icon.resource::before {
-    content: '♦';
-    font-size: 0.9em;
-    color: #228B22;
-    background: none;
-  }
-
-  .item-type {
-    color: rgba(0, 0, 0, 0.6);
-    white-space: nowrap;
-  }
-
   .item-quantity {
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.7);
-  }
-
-  .item-description {
-    font-size: 0.8em;
-    font-style: italic;
-    color: rgba(0, 0, 0, 0.6);
-    margin-top: 0.3em;
-  }
-
-  .item-rarity {
-    display: inline-block;
-    font-size: 0.85em;
-    padding: 0.1em 0.4em;
-    border-radius: 0.3em;
-    white-space: nowrap;
+    color: #555;
     font-weight: 500;
+    margin-left: 4px;
+  }
+  
+  /* Enhanced structure details */
+  .structure-attributes {
+    margin-bottom: 12px;
+  }
+  
+  .structure-description {
+    font-size: 12px;
+    color: #666;
+    margin-top: 8px;
+    font-style: italic;
+  }
+  
+  .entity.structure.detailed {
+    padding: 16px;
   }
 
-  .entity.battle {
-    background-color: rgba(139, 0, 0, 0.05);
-    border: 1px solid rgba(139, 0, 0, 0.2);
+  @keyframes appear {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
   
-  .entity-battle-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.4em;
-    height: 1.4em;
-    margin-right: 0.7em;
-    margin-top: 0.1em;
-    font-size: 1.2em;
-  }
-  
-  .battle-sides {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6em;
-    margin: 0.5em 0;
-    width: 100%;
-  }
-  
-  .battle-side {
-    padding: 0.5em 0.7em;
-    border-radius: 0.3em;
-  }
-  
-  .battle-side.side1 {
-    background-color: rgba(0, 0, 255, 0.07);
-    border: 1px solid rgba(0, 0, 255, 0.15);
-    color: rgba(0, 0, 100, 0.85); /* Darker blue text for better contrast */
-  }
-  
-  .battle-side.side2 {
-    background-color: rgba(139, 0, 0, 0.07);
-    border: 1px solid rgba(139, 0, 0, 0.15);
-    color: rgba(100, 0, 0, 0.85); /* Darker red text for better contrast */
-  }
-  
-  .side-header {
-    font-weight: 600;
-    font-size: 0.9em;
-    margin-bottom: 0.2em;
-    color: inherit; /* Will inherit from parent battle-side color */
-  }
-  
-  .side-stats {
-    font-size: 0.85em;
-    color: inherit; /* Will inherit from parent battle-side color */
-    opacity: 0.9; /* Slightly reduce opacity for hierarchy */
-  }
-  
-  .battle-actions {
-    margin-top: 0.8em;
-  }
-  
-  .join-battle-btn {
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
-    border: none;
-    padding: 0.5em 1em;
-    border-radius: 0.3em;
-    font-size: 0.9em;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-  
-  .join-battle-btn:hover {
-    background-color: rgba(0, 0, 0, 0.85);
-  }
-
-  .pending-tick {
-    position: relative;
-    animation: pulse 1s infinite alternate !important;
-  }
-
-  .pending-tick::after {
-    content: '↻';
-    margin-left: 0.3em;
-    font-weight: bold;
-  }
-
   @keyframes pulse {
-    from { opacity: 0.7; }
+    from { opacity: 0.8; }
     to { opacity: 1; }
-  }
-
-  @media (max-width: 480px) {
-    .details-panel {
-      margin: 0.5em;
-      max-width: calc(100% - 1em);
-      max-height: calc(100% - 1em);
-    }
-    
-    .details-content {
-      padding: 0.8em;
-    }
-    
-    .section-header {
-      padding: 0.6em 0.8em;
-      margin: -0.6em -0.8em 0.5em -0.8em;
-    }
   }
 </style>
