@@ -13,6 +13,10 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
   const { groupId, locationX, locationY, worldId = 'default', storageDestination = 'shared' } = request.data;
   const userId = request.auth?.uid;
   
+  // Make sure storageDestination is either 'shared' or 'personal'
+  const validatedStorageDestination = ['shared', 'personal'].includes(storageDestination) ? 
+    storageDestination : 'shared';
+  
   if (!userId) {
     throw new HttpsError("unauthenticated", "User must be authenticated");
   }
@@ -100,7 +104,7 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       startedAt: now,
       lastUpdated: now,
       targetStructureId: structureId, // Still include this for tick processor compatibility
-      storageDestination: storageDestination,
+      storageDestination: validatedStorageDestination, // Use validated storage destination
       // Add precise location data for player placement
       demobilizationData: {
         hasPlayer: hasPlayerUnit,
@@ -136,7 +140,8 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
     return {
       status: "demobilising",
       message: "Group is demobilising and will complete on next world update",
-      hasPlayer: hasPlayerUnit
+      hasPlayer: hasPlayerUnit,
+      storageDestination: validatedStorageDestination
     };
   } catch (error) {
     console.error("Error in demobiliseUnits:", error);

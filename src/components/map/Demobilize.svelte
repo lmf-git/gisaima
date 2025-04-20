@@ -20,6 +20,9 @@
   // Selected group to demobilize
   let selectedGroup = $state(null);
   
+  // Add storage destination option
+  let storageDestination = $state('shared');
+  
   // Error state
   let error = $state(null);
   
@@ -76,7 +79,8 @@
         structureId: tileData.structure.id,
         locationX: tileData.x,
         locationY: tileData.y,
-        worldId: $game.currentWorld
+        worldId: $game.currentWorld,
+        storageDestination: storageDestination // Add the storage destination
       });
       
       console.log('Demobilization started:', result.data);
@@ -89,7 +93,8 @@
       onDemobilize({
         group: selectedGroup,
         structure: tileData.structure,
-        location: { x: tileData.x, y: tileData.y }
+        location: { x: tileData.x, y: tileData.y },
+        storageDestination: storageDestination
       });
       
       // Clear selected group
@@ -184,6 +189,38 @@
               {tileData.structure.name || _fmt(tileData.structure.type) || 'Structure'}
             </div>
             <div class="coordinates">{tileData.x}, {tileData.y}</div>
+          </div>
+          
+          <!-- Add storage destination options -->
+          <div class="storage-options">
+            <h3>Storage Options</h3>
+            <div class="radio-options">
+              <label class="radio-label">
+                <input 
+                  type="radio" 
+                  name="storage" 
+                  value="shared" 
+                  checked={storageDestination === 'shared'}
+                  onchange={() => storageDestination = 'shared'}
+                  disabled={processing}
+                />
+                <span class="radio-text">Shared Storage</span>
+                <span class="radio-description">Items will be accessible by anyone at this structure</span>
+              </label>
+              
+              <label class="radio-label">
+                <input 
+                  type="radio" 
+                  name="storage" 
+                  value="personal"
+                  checked={storageDestination === 'personal'} 
+                  onchange={() => storageDestination = 'personal'}
+                  disabled={processing}
+                />
+                <span class="radio-text">Personal Bank</span>
+                <span class="radio-description">Items will only be accessible by you</span>
+              </label>
+            </div>
           </div>
           
           <div class="actions">
@@ -368,6 +405,62 @@
     font-size: 0.9em;
     color: #555;
     font-family: var(--font-mono, monospace);
+  }
+  
+  /* Storage options styling */
+  .storage-options {
+    margin-bottom: 1.5em;
+  }
+  
+  .radio-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+  }
+  
+  .radio-label {
+    display: flex;
+    flex-direction: column;
+    padding: 0.8em;
+    border: 1px solid #ddd;
+    border-radius: 0.3em;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    padding-left: 2.5em;
+  }
+  
+  .radio-label:hover {
+    background: #f9f9f9;
+  }
+  
+  .radio-label input {
+    position: absolute;
+    left: 0.8em;
+    top: 0.9em;
+  }
+  
+  .radio-text {
+    font-weight: 500;
+    margin-bottom: 0.3em;
+  }
+  
+  .radio-description {
+    font-size: 0.8em;
+    color: #666;
+  }
+  
+  .radio-label input:checked + .radio-text {
+    color: #1e88e5;
+  }
+  
+  .radio-label input:checked ~ .radio-description {
+    color: #555;
+  }
+  
+  .radio-label:has(input:checked) {
+    border-color: rgba(33, 150, 243, 0.4);
+    background: rgba(33, 150, 243, 0.05);
   }
   
   .error {

@@ -11,13 +11,16 @@
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
 
-  // Props
+  // Props - using correct Svelte 5 runes syntax
   const { x = 0, y = 0, tile = null, onClose = () => {} } = $props();
   
   // Add state to track collapsed sections
   let collapsedSections = $state({
     items: false
   });
+  
+  // Add state for storage tab selection
+  let activeTab = $state('shared');
   
   // Function to toggle section collapse state
   function toggleSection(sectionId) {
@@ -58,6 +61,25 @@
       default: return null;
     }
   }
+  
+  // Reactive declarations using $derived
+  let hasPersonalBank = $derived(
+    $currentPlayer?.uid && 
+    tile?.structure?.banks && 
+    tile?.structure?.banks[$currentPlayer.uid] && 
+    tile?.structure?.banks[$currentPlayer.uid].length > 0
+  );
+  
+  let displayItems = $derived(
+    activeTab === 'shared' 
+      ? (tile?.structure?.items || [])
+      : (hasPersonalBank ? tile?.structure?.banks[$currentPlayer.uid] : [])
+  );
+  
+  let showStorageTabs = $derived(
+    hasPersonalBank || 
+    (tile?.structure?.items && tile?.structure?.items.length > 0)
+  );
 </script>
 
 <div class="modal-wrapper">
@@ -67,7 +89,7 @@
         {formatText(tile?.structure?.type || 'Structure')} 
         {tile ? `(${formatCoords(tile.x, tile.y)})` : ''}
       </h3>
-      <button class="close-button" onclick={onClose}>
+      <button class="close-button" on:click={onClose}>
         <Close size="1.6em" extraClass="close-icon-dark" />
       </button>
     </header>
@@ -80,8 +102,6 @@
           {:else}
             <Structure size="3.5em" extraClass="structure-type-icon {tile?.structure?.type || ''}-icon" />
           {/if}
-          
-          <!-- Race icon next to structure icon removed -->
         </div>
         
         <div class="structure-info">
@@ -118,17 +138,17 @@
         </div>
       </div>
       
-      <!-- Only show items section - no groups section -->
-      {#if tile?.structure?.items && tile.structure.items.length > 0}
+      <!-- Storage section - includes both shared and personal items -->
+      {#if showStorageTabs}
         <div class="entities-section">
           <div 
             class="section-header"
-            onclick={() => toggleSection('items')}
+            on:click={() => toggleSection('items')}
             role="button"
             tabindex="0"
             aria-expanded={!collapsedSections.items}
           >
-            <h4>Items <span class="entity-count items-count">{tile.structure.items.length}</span></h4>
+            <h4>Storage <span class="entity-count items-count">{displayItems.length}</span></h4>
             <button class="collapse-button">
               {collapsedSections.items ? '▼' : '▲'}
             </button>
@@ -136,29 +156,61 @@
           
           {#if !collapsedSections.items}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              {#each tile.structure.items as item}
-                <div class="entity item {getRarityClass(item.rarity)}">
-                  <div class="item-info">
-                    <div class="item-name">
-                      {item.name || formatText(item.type) || "Unknown Item"}
-                    </div>
-                    <div class="item-details">
-                      {#if item.type}
-                        <span class="item-type">{formatText(item.type)}</span>
-                      {/if}
-                      {#if item.quantity > 1}
-                        <span class="item-quantity">×{item.quantity}</span>
-                      {/if}
-                      {#if item.rarity && item.rarity !== 'common'}
-                        <span class="item-rarity {item.rarity}">{formatText(item.rarity)}</span>
-                      {/if}
-                    </div>
-                    {#if item.description}
-                      <div class="item-description">{item.description}</div>
+              {#if hasPersonalBank || (tile?.structure?.items && tile?.structure?.items.length > 0)}
+                <div class="storage-tabs">
+                  <button 
+                    class="tab-button {activeTab === 'shared' ? 'active' : ''}" 
+                    on:click={() => activeTab = 'shared'}
+                  >
+                    Shared Storage
+                    {#if tile?.structure?.items && tile?.structure?.items.length > 0}
+                      <span class="tab-count">{tile?.structure?.items.length}</span>
                     {/if}
-                  </div>
+                  </button>
+                  
+                  {#if hasPersonalBank}
+                    <button 
+                      class="tab-button {activeTab === 'personal' ? 'active' : ''}"
+                      on:click={() => activeTab = 'personal'}
+                    >
+                      Your Bank
+                      <span class="tab-count">{tile?.structure?.banks[$currentPlayer.uid].length}</span>
+                    </button>
+                  {/if}
                 </div>
-              {/each}
+              {/if}
+              
+              {#if displayItems.length === 0}
+                <div class="empty-state">
+                  {activeTab === 'shared' ? 
+                    'No items in shared storage' : 
+                    'Your personal bank is empty'}
+                </div>
+              {:else}
+                {#each displayItems as item}
+                  <div class="entity item {getRarityClass(item.rarity)}">
+                    <div class="item-info">
+                      <div class="item-name">
+                        {item.name || formatText(item.type) || "Unknown Item"}
+                      </div>
+                      <div class="item-details">
+                        {#if item.type}
+                          <span class="item-type">{formatText(item.type)}</span>
+                        {/if}
+                        {#if item.quantity > 1}
+                          <span class="item-quantity">×{item.quantity}</span>
+                        {/if}
+                        {#if item.rarity && item.rarity !== 'common'}
+                          <span class="item-rarity {item.rarity}">{formatText(item.rarity)}</span>
+                        {/if}
+                      </div>
+                      {#if item.description}
+                        <div class="item-description">{item.description}</div>
+                      {/if}
+                    </div>
+                  </div>
+                {/each}
+              {/if}
             </div>
           {/if}
         </div>
@@ -372,6 +424,65 @@
 
   .section-content {
     padding: 0.8em;
+  }
+
+  /* Tab system for shared/personal storage */
+  .storage-tabs {
+    display: flex;
+    margin-bottom: 1em;
+    border-radius: 0.3em;
+    overflow: hidden;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .tab-button {
+    flex: 1;
+    padding: 0.6em 0.8em;
+    background: rgba(255, 255, 255, 0.5);
+    border: none;
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+    font-family: inherit;
+    font-size: 0.85em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4em;
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .tab-button:last-child {
+    border-right: none;
+  }
+  
+  .tab-button.active {
+    background: rgba(66, 133, 244, 0.1);
+    color: rgba(0, 0, 0, 0.85);
+    font-weight: 600;
+  }
+  
+  .tab-button:hover:not(.active) {
+    background: rgba(0, 0, 0, 0.03);
+  }
+  
+  .tab-count {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 1em;
+    padding: 0.1em 0.5em;
+    font-size: 0.85em;
+    min-width: 1.2em;
+    text-align: center;
+  }
+  
+  /* Empty state styling */
+  .empty-state {
+    padding: 2em 0;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.5);
+    font-style: italic;
+    font-size: 0.9em;
   }
 
   /* Item styling */

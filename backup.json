@@ -72,11 +72,34 @@
         }
       }
     },
+    "fY0P149vzFgndoeGgaak6ntSDJy1": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "LMF",
+          "joined": 1745136995044,
+          "lastLocation": {
+            "x": 5,
+            "y": 5
+          },
+          "race": "human"
+        }
+      }
+    },
     "g9FCdT5Gz8RWdwP9GSmM5r8PBBJ3": {
       "worlds": {
         "ancient-lands": {
           "alive": true,
           "displayName": "test23",
+          "groups": {
+            "-OOH2tMkQooOt7m37XuV": {
+              "at": "10,8",
+              "id": "-OOH2tMkQooOt7m37XuV",
+              "readyAt": 1745133481939,
+              "status": "mobilizing"
+            }
+          },
+          "inGroup": "-OOH2tMkQooOt7m37XuV",
           "joined": 1745065015243,
           "lastLocation": {
             "x": 10,
@@ -228,12 +251,27 @@
             }
           },
           "10,8": {
-            "players": {
-              "g9FCdT5Gz8RWdwP9GSmM5r8PBBJ3": {
-                "displayName": "test23",
-                "lastActive": 1745065018933,
+            "groups": {
+              "-OOH2tMkQooOt7m37XuV": {
+                "createdAt": 1745133475368,
+                "id": "-OOH2tMkQooOt7m37XuV",
+                "lastUpdated": 1745133481523,
+                "name": "New Force",
+                "owner": "g9FCdT5Gz8RWdwP9GSmM5r8PBBJ3",
                 "race": "fairy",
-                "uid": "g9FCdT5Gz8RWdwP9GSmM5r8PBBJ3"
+                "status": "idle",
+                "unitCount": 1,
+                "units": {
+                  "g9FCdT5Gz8RWdwP9GSmM5r8PBBJ3": {
+                    "displayName": "test23",
+                    "lastActive": 1745065018933,
+                    "race": "fairy",
+                    "type": "player",
+                    "uid": "g9FCdT5Gz8RWdwP9GSmM5r8PBBJ3"
+                  }
+                },
+                "x": 10,
+                "y": 8
               }
             },
             "structure": {
@@ -366,6 +404,14 @@
                 "y": 5
               }
             },
+            "players": {
+              "fY0P149vzFgndoeGgaak6ntSDJy1": {
+                "displayName": "LMF",
+                "lastActive": 1745137029316,
+                "race": "human",
+                "uid": "fY0P149vzFgndoeGgaak6ntSDJy1"
+              }
+            },
             "structure": {
               "description": "A rugged frontier settlement where hardy humans carve out a living",
               "faction": "human",
@@ -416,7 +462,7 @@
       },
       "info": {
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745111341993,
+        "lastTick": 1745141401479,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",
