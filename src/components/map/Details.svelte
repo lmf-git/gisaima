@@ -847,12 +847,16 @@
     display: flex;
     margin-bottom: 0.6em;
     font-size: 0.9em;
+    gap: 0.8em; /* Add gap between label and value */
+    align-items: flex-start;
   }
 
   .attribute-label {
-    width: 120px;
+    /* Remove fixed width */
     color: rgba(0, 0, 0, 0.6);
     font-weight: 500;
+    min-width: 40px; /* Just a small minimum width to prevent very narrow labels */
+    flex-shrink: 0; /* Prevents the label from shrinking */
   }
 
   .attribute-value {
