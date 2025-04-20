@@ -1981,4 +1981,18 @@
     align-items: center;
     justify-content: center;
   }
+
+  /* Add entity badge styling */
+  .entity-badge {
+    font-size: 0.7em;
+    padding: 0.2em 0.4em;
+    border-radius: 0.3em;
+    font-weight: 500;
+  }
+
+  .owner-badge {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+    border: 1px solid rgba(76, 175, 80, 0.4);
+  }
 </style>
