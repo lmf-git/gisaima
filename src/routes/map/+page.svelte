@@ -63,11 +63,8 @@
     
     const isDragging = $derived($map.isDragging);
     
-    function toggleDetailsModal(show, displayTile = null) {
+    function toggleDetailsModal(show) {
         if (show) {
-            if (displayTile) {
-                setHighlighted(displayTile.x, displayTile.y);
-            }
             detailed = true;
         } else {
             detailed = false;
@@ -560,11 +557,10 @@
             setHighlighted(x, y);
             
             setTimeout(() => {
-                // Fix accessing coordinates by using $coordinates properly - it's imported as a store
                 const clickedTile = $coordinates.find(cell => cell.x === x && cell.y === y);
                 
                 if (clickedTile && hasTileContent(clickedTile)) {
-                    toggleDetailsModal(true, clickedTile);
+                    toggleDetailsModal(true);
                 }
             }, 50);
         }
@@ -577,7 +573,8 @@
             tile.structure || 
             (tile.groups && tile.groups.length > 0) || 
             (tile.players && tile.players.length > 0) || 
-            (tile.items && tile.items.length > 0)
+            (tile.items && tile.items.length > 0) ||
+            (tile.battles && tile.battles.length > 0)
         );
     }
 
@@ -637,7 +634,6 @@
             console.log('Created new path with first point:', newPath);
         }
         
-        // Important: Force reactivity update by creating a new array
         currentPath = [...currentPath];
         console.log('Current path updated:', currentPath);
     }
@@ -646,16 +642,14 @@
         console.log('Starting path drawing for group:', group);
         isPathDrawingMode = true;
         
-        // Make sure we store the proper group ID for later use
         pathDrawingGroup = {
-            id: group.id || group.groupId,  // Handle both id formats
-            groupId: group.id || group.groupId, // Store both for compatibility
+            id: group.id || group.groupId,
+            groupId: group.id || group.groupId,
             startPoint: group.startPoint || { x: group.x, y: group.y },
             x: group.x,
             y: group.y
         };
         
-        // Log the created path drawing group for debugging
         console.log("Path drawing group data:", pathDrawingGroup);
         
         if (group && group.startPoint) {
@@ -688,7 +682,6 @@
             currentPath = [...path];
         }
         
-        // Ensure we have a valid path and group ID
         if (currentPath.length < 2 || !pathDrawingGroup) {
             console.error("Cannot confirm path: Invalid path or missing group data", {
                 pathLength: currentPath.length,
@@ -698,7 +691,6 @@
             return;
         }
         
-        // Extract group ID, handling both possible formats
         const groupId = pathDrawingGroup.id || pathDrawingGroup.groupId;
         
         if (!groupId) {
@@ -708,7 +700,6 @@
         }
         
         try {
-            // Get Firebase functions instance
             const functions = getFunctions();
             const moveGroupFn = httpsCallable(functions, 'moveGroup');
             
@@ -725,7 +716,6 @@
                 worldId: $game.currentWorld
             });
             
-            // Call the cloud function directly
             moveGroupFn({
                 groupId: groupId,
                 fromX: startPoint.x,
@@ -748,7 +738,6 @@
         
         isPathDrawingMode = false;
         setTimeout(() => {
-            // Clear path only after transition completes
             if (!isPathDrawingMode) {
                 pathDrawingGroup = null;
                 currentPath = [];
@@ -860,17 +849,12 @@
             />
         {/if}
 
-        {#if detailed && highlightedStore}
+        {#if detailed && $highlightedStore}
             <Details 
-                x={highlightedStore.x} 
-                y={highlightedStore.y} 
-                terrain={highlightedStore.biome?.name} 
                 onClose={() => toggleDetailsModal(false)}
                 onShowModal={({ type, data }) => {
-                    // Close the details first
                     toggleDetailsModal(false);
                     
-                    // Then show the appropriate modal
                     switch(type) {
                         case 'mobilize':
                             showMobilize = true;
@@ -912,7 +896,8 @@
                 x={$targetStore.x}  
                 y={$targetStore.y}  
                 openDetails={() => {
-                    toggleDetailsModal(true, $targetStore);
+                    setHighlighted($targetStore.x, $targetStore.y);
+                    toggleDetailsModal(true);
                 }} 
             />
         {/if}

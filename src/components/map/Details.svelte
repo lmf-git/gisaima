@@ -1,7 +1,7 @@
 <script>
   import { fade, fly, slide } from 'svelte/transition'; // Still import for section toggles
   import { cubicOut, elasticOut } from 'svelte/easing';
-  import { targetStore } from '../../lib/stores/map'; // Use targetStore directly
+  import { targetStore, highlightedStore, coordinates } from '../../lib/stores/map'; // Import both stores
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   import { onMount, onDestroy } from 'svelte';
   import { functions } from '../../lib/firebase/firebase.js';
@@ -16,8 +16,17 @@
   import Torch from '../../components/icons/Torch.svelte';
   import Close from '../icons/Close.svelte';
 
-  // Replace export let with proper Svelte 5 $props() syntax
-  const { x = 0, y = 0, terrain = '', onClose = () => {}, onShowModal = () => {} } = $props();
+  // Replace export let with proper Svelte 5 $props() rune
+  const { onClose = () => {}, onShowModal = () => {} } = $props();
+
+  // Use the highlightedStore directly instead of taking coordinates as props
+  // This ensures we always have the latest data for the highlighted tile
+  let x = $derived($highlightedStore?.x || 0);
+  let y = $derived($highlightedStore?.y || 0);
+  let terrain = $derived($highlightedStore?.terrain?.name || $highlightedStore?.biome?.name || '');
+
+  // Get the current tile data from the store
+  let tileData = $derived($highlightedStore || null);
 
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -106,46 +115,11 @@
     });
   }
 
-  const sortedPlayers = $derived(targetStore.players ? sortEntities(targetStore.players, 'players') : []);
-  const sortedGroups = $derived(targetStore.groups ? sortEntities(targetStore.groups, 'groups') : []);
-  const sortedItems = $derived(targetStore.items ? sortEntities(targetStore.items, 'items') : []);
-
-  const tileBattles = $derived(() => {
-    if (!targetStore) return [];
-    
-    if (targetStore.battles && targetStore.battles.length > 0) {
-      return targetStore.battles;
-    }
-    
-    if (!targetStore.groups) return [];
-    
-    const battlingGroups = targetStore.groups.filter(g => g.inBattle && g.battleId);
-    if (battlingGroups.length === 0) return [];
-    
-    const battlesMap = new Map();
-    
-    battlingGroups.forEach(group => {
-      if (!battlesMap.has(group.battleId)) {
-        battlesMap.set(group.battleId, {
-          id: group.battleId,
-          sides: {
-            1: { groups: [], power: 0 },
-            2: { groups: [], power: 0 }
-          }
-        });
-      }
-      
-      const side = group.battleSide || 1;
-      const battleInfo = battlesMap.get(group.battleId);
-      
-      battleInfo.sides[side].groups.push(group);
-      battleInfo.sides[side].power += (group.unitCount || 1);
-    });
-    
-    return Array.from(battlesMap.values());
-  });
-
-  const sortedBattles = $derived(sortEntities(tileBattles, 'battles'));
+  // Create sorted entity lists from the direct tile data
+  let sortedPlayers = $derived(tileData?.players ? sortEntities(tileData.players, 'players') : []);
+  let sortedGroups = $derived(tileData?.groups ? sortEntities(tileData.groups, 'groups') : []);
+  let sortedItems = $derived(tileData?.items ? sortEntities(tileData.items, 'items') : []);
+  let sortedBattles = $derived(tileData?.battles ? sortEntities(tileData.battles, 'battles') : []);
 
   function formatCoords(x, y) {
     return `${x},${y}`;
@@ -301,7 +275,7 @@
   }
 
   $effect(() => {
-    if (!targetStore) {
+    if (!tileData) {
       actions = [];
       return;
     }
@@ -314,7 +288,7 @@
       return;
     }
 
-    if (hasMobilizableResources(targetStore, playerId)) {
+    if (hasMobilizableResources(tileData, playerId)) {
       availableActions.push({
         id: 'mobilize',
         label: 'Mobilize',
@@ -323,7 +297,7 @@
       });
     }
     
-    if (hasGroupWithStatus(targetStore, playerId, 'idle')) {
+    if (hasGroupWithStatus(tileData, playerId, 'idle')) {
       availableActions.push({
         id: 'move',
         label: 'Move',
@@ -339,8 +313,8 @@
       });
     }
     
-    if (targetStore.structure && targetStore.groups && 
-        hasGroupWithStatus(targetStore, playerId, 'idle')) {
+    if (tileData.structure && tileData.groups && 
+        hasGroupWithStatus(tileData, playerId, 'idle')) {
       availableActions.push({
         id: 'demobilize',
         label: 'Demobilize',
@@ -349,9 +323,9 @@
       });
     }
     
-    const hasIdlePlayerGroups = hasGroupWithStatus(targetStore, playerId, 'idle');
-    const hasEnemyGroups = targetStore.groups && 
-                          targetStore.groups.some(g => g.owner !== playerId && !g.inBattle);
+    const hasIdlePlayerGroups = hasGroupWithStatus(tileData, playerId, 'idle');
+    const hasEnemyGroups = tileData.groups && 
+                          tileData.groups.some(g => g.owner !== playerId && !g.inBattle);
                           
     if (hasIdlePlayerGroups && hasEnemyGroups) {
       availableActions.push({
@@ -362,8 +336,8 @@
       });
     }
     
-    const hasBattles = targetStore.groups && 
-                      targetStore.groups.some(g => g.inBattle && g.battleId);
+    const hasBattles = tileData.groups && 
+                      tileData.groups.some(g => g.inBattle && g.battleId);
     const canJoinBattle = hasIdlePlayerGroups && hasBattles;
     
     if (canJoinBattle) {
@@ -375,7 +349,7 @@
       });
     }
     
-    if (targetStore.structure) {
+    if (tileData.structure) {
       availableActions.push({
         id: 'inspect',
         label: 'Inspect Structure',
@@ -384,7 +358,7 @@
       });
     }
     
-    if (isPlayerAvailableOnTile(targetStore, playerId)) {
+    if (isPlayerAvailableOnTile(tileData, playerId)) {
       availableActions.push({
         id: 'explore',
         label: 'Explore',
@@ -413,9 +387,9 @@
           onShowModal({
             type: 'inspect',
             data: {
-              tile: targetStore,
-              x: targetStore.x,
-              y: targetStore.y
+              tile: tileData,
+              x: tileData.x,
+              y: tileData.y
             }
           });
           return;
@@ -490,13 +464,13 @@
   }
 
   function selectAction(actionId) {
-    executeAction(actionId, targetStore);
+    executeAction(actionId, tileData);
   }
 
   function handleActionKeydown(action, event) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      executeAction(action.id, targetStore);
+      executeAction(action.id, tileData);
     }
   }
 
@@ -544,6 +518,23 @@
     const idParts = battleId.split('_');
     return `Battle ${idParts[idParts.length - 1]}`;
   }
+
+  function calculateMoveCompletionTime(group) {
+    if (!group) return null;
+    
+    if (group.nextMoveTime) {
+      return group.nextMoveTime;
+    }
+    
+    // Fallback calculations
+    if (group.pathProgress !== undefined && group.pathStartTime && group.path) {
+      const remainingSteps = Math.max(0, group.path.length - group.pathProgress);
+      const moveTimePerStep = group.moveTimePerStep || 10000; // 10 seconds default
+      return group.pathStartTime + (group.pathProgress * moveTimePerStep) + (remainingSteps * moveTimePerStep);
+    }
+    
+    return null;
+  }
 </script>
 
 {#if mounted}
@@ -567,7 +558,6 @@
       aria-modal="true"
       aria-labelledby="details-title"
       tabindex="-1"
-      onkeydown={handleEscapeKey}
     >
       <header class="details-header">
         <h3 id="details-title" class="title">Tile Details</h3>
@@ -594,10 +584,10 @@
           {#if !collapsedSections.terrain}
             <div class="section-content">
               <div class="terrain-info">
-                <div class="terrain-name">{_fmt(targetStore?.biome?.name || terrain)}</div>
-                {#if targetStore?.terrain?.rarity && targetStore.terrain.rarity !== 'common'}
-                  <div class="terrain-rarity {targetStore.terrain.rarity}">
-                    {_fmt(targetStore.terrain.rarity)}
+                <div class="terrain-name">{_fmt(tileData?.biome?.name || terrain)}</div>
+                {#if tileData?.terrain?.rarity && tileData.terrain.rarity !== 'common'}
+                  <div class="terrain-rarity {tileData.terrain.rarity}">
+                    {_fmt(tileData.terrain.rarity)}
                   </div>
                 {/if}
               </div>
@@ -605,7 +595,7 @@
           {/if}
         </div>
         
-        {#if targetStore?.structure}
+        {#if tileData?.structure}
           <div class="section structure-section">
             <button 
               class="section-header" 
@@ -621,27 +611,27 @@
             
             {#if !collapsedSections.structure}
               <div class="section-content">
-                <div class="entity structure {isOwnedByCurrentPlayer(targetStore.structure) ? 'current-player-owned' : ''}">
+                <div class="entity structure {isOwnedByCurrentPlayer(tileData.structure) ? 'current-player-owned' : ''}">
                   <div class="entity-structure-icon">
-                    {#if targetStore.structure.type === 'spawn'}
+                    {#if tileData.structure.type === 'spawn'}
                       <Torch size="1.4em" extraClass="structure-type-icon" />
                     {:else}
-                      <Structure size="1.4em" extraClass="structure-type-icon {targetStore.structure.type}-icon" />
+                      <Structure size="1.4em" extraClass="structure-type-icon {tileData.structure.type}-icon" />
                     {/if}
                   </div>
                   <div class="entity-info">
                     <div class="entity-name">
-                      {targetStore.structure.name || _fmt(targetStore.structure.type) || "Unknown"}
-                      {#if isOwnedByCurrentPlayer(targetStore.structure)}
+                      {tileData.structure.name || _fmt(tileData.structure.type) || "Unknown"}
+                      {#if isOwnedByCurrentPlayer(tileData.structure)}
                         <span class="your-entity-badge">Yours</span>
                       {/if}
                     </div>
                     <div class="entity-details">
-                      {#if targetStore.structure.type}
-                        <div class="entity-type">{_fmt(targetStore.structure.type)}</div>
+                      {#if tileData.structure.type}
+                        <div class="entity-type">{_fmt(tileData.structure.type)}</div>
                       {/if}
-                      {#if targetStore.structure.description}
-                        <div class="entity-description">{targetStore.structure.description}</div>
+                      {#if tileData.structure.description}
+                        <div class="entity-description">{tileData.structure.description}</div>
                       {/if}
                     </div>
                   </div>
@@ -651,7 +641,7 @@
           </div>
         {/if}
         
-        {#if targetStore?.players?.length > 0}
+        {#if sortedPlayers.length > 0}
           <div class="section players-section">
             <button 
               class="section-header" 
@@ -659,7 +649,7 @@
               aria-expanded={!collapsedSections.players}
               type="button"
             >
-              <h4 class="section-title">Players ({targetStore.players.length})</h4>
+              <h4 class="section-title">Players ({sortedPlayers.length})</h4>
               <span class="collapse-button" aria-hidden="true">
                 {collapsedSections.players ? '▼' : '▲'}
               </span>
@@ -704,7 +694,7 @@
           </div>
         {/if}
         
-        {#if targetStore?.groups?.length > 0}
+        {#if sortedGroups.length > 0}
           <div class="section groups-section">
             <button 
               class="section-header" 
@@ -712,7 +702,7 @@
               aria-expanded={!collapsedSections.groups}
               type="button"
             >
-              <h4 class="section-title">Groups ({targetStore.groups.length})</h4>
+              <h4 class="section-title">Groups ({sortedGroups.length})</h4>
               <span class="collapse-button" aria-hidden="true">
                 {collapsedSections.groups ? '▼' : '▲'}
               </span>
@@ -789,7 +779,7 @@
           </div>
         {/if}
         
-        {#if tileBattles.length > 0}
+        {#if sortedBattles.length > 0}
           <div class="section battles-section">
             <button 
               class="section-header" 
@@ -797,7 +787,7 @@
               aria-expanded={!collapsedSections.battles}
               type="button"
             >
-              <h4 class="section-title">Battles ({tileBattles.length})</h4>
+              <h4 class="section-title">Battles ({sortedBattles.length})</h4>
               <span class="collapse-button" aria-hidden="true">
                 {collapsedSections.battles ? '▼' : '▲'}
               </span>
@@ -829,11 +819,11 @@
                         </div>
                       </div>
                       
-                      {#if isPlayerAvailableOnTile(targetStore, $currentPlayer?.uid) && hasIdlePlayerGroups}
+                      {#if isPlayerAvailableOnTile(tileData, $currentPlayer?.uid) && hasIdlePlayerGroups}
                         <div class="battle-actions">
                           <button 
                             class="join-battle-btn"
-                            onclick={() => executeAction('joinBattle', targetStore)}
+                            onclick={() => executeAction('joinBattle', tileData)}
                           >
                             Join Battle
                           </button>
@@ -847,7 +837,7 @@
           </div>
         {/if}
         
-        {#if targetStore?.items?.length > 0}
+        {#if sortedItems.length > 0}
           <div class="section items-section">
             <button 
               class="section-header" 
@@ -855,7 +845,7 @@
               aria-expanded={!collapsedSections.items}
               type="button"
             >
-              <h4 class="section-title">Items ({targetStore.items.length})</h4>
+              <h4 class="section-title">Items ({sortedItems.length})</h4>
               <span class="collapse-button" aria-hidden="true">
                 {collapsedSections.items ? '▼' : '▲'}
               </span>
@@ -1035,6 +1025,32 @@
     font-size: 0.9em;
     color: rgba(0, 0, 0, 0.7);
     margin-right: 1em;
+    font-weight: 500;
+    font-family: var(--font-mono, monospace);
+  }
+  
+  .close-button {
+    background: transparent;
+    border: none;
+    color: var(--color-text);
+    padding: 0.3em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .close-button:hover {
+    opacity: 0.8;
+  }
+  
+  .close-button:focus-visible {
+    outline: 2px solid var(--color-bright-accent);
+    outline-offset: 2px;
+    border-radius: 0.25em;
+  }
+  
+  .details-content {
     font-weight: 500;
     font-family: var(--font-mono, monospace);
   }

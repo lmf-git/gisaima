@@ -22,7 +22,7 @@ const TARGET_Y_PREFIX = '-targetY';
 // Add utility functions for localStorage persistence
 function saveTargetToLocalStorage(worldId, x, y) {
   if (typeof window === 'undefined' || !worldId) return;
-  
+
   try {
     localStorage.setItem(`${worldId}${TARGET_X_PREFIX}`, x.toString());
     localStorage.setItem(`${worldId}${TARGET_Y_PREFIX}`, y.toString());
@@ -33,15 +33,15 @@ function saveTargetToLocalStorage(worldId, x, y) {
 
 function loadTargetFromLocalStorage(worldId) {
   if (typeof window === 'undefined' || !worldId) return null;
-  
+
   try {
     const x = localStorage.getItem(`${worldId}${TARGET_X_PREFIX}`);
     const y = localStorage.getItem(`${worldId}${TARGET_Y_PREFIX}`);
-    
+
     if (x !== null && y !== null) {
       const parsedX = parseInt(x, 10);
       const parsedY = parseInt(y, 10);
-      
+
       if (!isNaN(parsedX) && !isNaN(parsedY)) {
         console.log(`Loaded saved position for world ${worldId}: ${parsedX},${parsedY}`);
         return { x: parsedX, y: parsedY };
@@ -50,7 +50,7 @@ function loadTargetFromLocalStorage(worldId) {
   } catch (err) {
     console.warn('Failed to load target coordinates from localStorage:', err);
   }
-  
+
   return null;
 }
 
@@ -90,9 +90,9 @@ export const ready = derived(map, $map => $map.ready);
 
 // Create a derived store that efficiently tracks target position changes
 export const targetPosition = derived(map, ($map) => {
-  return { 
-    x: $map.target.x, 
-    y: $map.target.y 
+  return {
+    x: $map.target.x,
+    y: $map.target.y
   };
 }, { x: 0, y: 0 });
 
@@ -102,41 +102,41 @@ const URL_UPDATE_DEBOUNCE = 500; // Increase from 300ms to 500ms for better perf
 
 // Flag to track if the URL is being updated by us or externally
 let isInternalUrlUpdate = false;
-let lastUrlUpdate = { x: null, y: null }; // Track last updated coordinates
+let lastUrlUpdate = { x: null, y: null };
 
 // Improved function to update URL with current coordinates
 function updateUrlWithCoordinates(x, y) {
   if (typeof window === 'undefined') return;
-  
+
   // Skip if coordinates match the last ones we updated (prevent redundancy)
   const roundedX = Math.round(x);
   const roundedY = Math.round(y);
   if (lastUrlUpdate.x === roundedX && lastUrlUpdate.y === roundedY) {
     return;
   }
-  
+
   // Cancel any pending updates
   if (urlUpdateTimeout) {
     clearTimeout(urlUpdateTimeout);
   }
-  
+
   // Debounce URL updates to prevent performance issues
   urlUpdateTimeout = setTimeout(() => {
     try {
       // Mark this as an internal update
       isInternalUrlUpdate = true;
-      
+
       // Create updated URL
       const url = new URL(window.location);
       url.searchParams.set('x', roundedX.toString());
       url.searchParams.set('y', roundedY.toString());
-      
+
       // Store the coordinates we're updating to
       lastUrlUpdate = { x: roundedX, y: roundedY };
-      
+
       // Use SvelteKit's replaceState instead of history.replaceState
       replaceState(url, {});
-      
+
       // Reset flag after a short delay to allow for popstate event to be processed
       setTimeout(() => {
         isInternalUrlUpdate = false;
@@ -164,35 +164,35 @@ function processChunkData(data = {}, chunkKey) {
     items: {},
     battles: {}  // Add battles to updates
   };
-  
+
   // Set of all valid entity keys in this chunk update
   const validGroupKeys = new Set();
   const validPlayerKeys = new Set();
   const validItemKeys = new Set();
   const validBattleKeys = new Set();  // Track valid battle keys
-  
+
   let entitiesChanged = false;
-  
+
   // Skip lastUpdated metadata field
   Object.entries(data).forEach(([tileKey, tileData]) => {
     if (tileKey === 'lastUpdated') return;
-    
+
     const [x, y] = tileKey.split(',').map(Number);
     const fullTileKey = `${x},${y}`;
-    
+
     // Process structure - prioritize these
     if (tileData.structure) {
       updates.structure[fullTileKey] = { ...tileData.structure, x, y };
       entitiesChanged = true;
     }
-    
+
     // Process player groups (multiple per tile)
     if (tileData.players) {
       updates.players[fullTileKey] = Object.entries(tileData.players)
-        .map(([id, data]) => ({ 
-          ...data, 
+        .map(([id, data]) => ({
+          ...data,
           id: data.uid || id,  // Prioritize existing uid if available
-          x, y 
+          x, y
         }));
       validPlayerKeys.add(fullTileKey);
       entitiesChanged = true;
@@ -200,7 +200,7 @@ function processChunkData(data = {}, chunkKey) {
       // Explicitly mark as empty if no players
       updates.players[fullTileKey] = [];
     }
-    
+
     // Process unit groups and extract battle information
     if (tileData.groups) {
       // Process groups
@@ -208,13 +208,13 @@ function processChunkData(data = {}, chunkKey) {
         .map(([id, data]) => ({ ...data, id, x, y }));
       validGroupKeys.add(fullTileKey);
       entitiesChanged = true;
-      
+
       // Extract battle information from groups
       const battlingGroups = Object.values(tileData.groups).filter(g => g.inBattle && g.battleId);
-      
+
       if (battlingGroups.length > 0) {
         const battlesMap = new Map();
-        
+
         battlingGroups.forEach(group => {
           if (!battlesMap.has(group.battleId)) {
             battlesMap.set(group.battleId, {
@@ -228,15 +228,15 @@ function processChunkData(data = {}, chunkKey) {
               started: group.battleStarted || Date.now()
             });
           }
-          
+
           // Add group to appropriate side
           const side = group.battleSide || 1;
           const battleInfo = battlesMap.get(group.battleId);
-          
+
           battleInfo.sides[side].groups.push(group.id);
           battleInfo.sides[side].power += (group.unitCount || 1);
         });
-        
+
         // Add battles to updates
         updates.battles[fullTileKey] = Array.from(battlesMap.values());
         validBattleKeys.add(fullTileKey);
@@ -249,7 +249,7 @@ function processChunkData(data = {}, chunkKey) {
       updates.groups[fullTileKey] = [];
       updates.battles[fullTileKey] = [];
     }
-    
+
     // Process direct battle references (from database)
     if (tileData.battles) {
       const directBattles = Object.entries(tileData.battles).map(([battleId, battleData]) => ({
@@ -262,14 +262,14 @@ function processChunkData(data = {}, chunkKey) {
           2: { groups: [], power: battleData.side2Power || 0 }
         }
       }));
-      
+
       // If we already extracted battles from groups, merge them 
       if (updates.battles[fullTileKey]?.length > 0) {
         // Map to track battles we've already processed
         const existingBattleIds = new Set(
           updates.battles[fullTileKey].map(battle => battle.id)
         );
-        
+
         // Add only battles we haven't seen yet
         directBattles.forEach(battle => {
           if (!existingBattleIds.has(battle.id)) {
@@ -279,11 +279,11 @@ function processChunkData(data = {}, chunkKey) {
       } else {
         updates.battles[fullTileKey] = directBattles;
       }
-      
+
       validBattleKeys.add(fullTileKey);
       entitiesChanged = true;
     }
-    
+
     // Process items (multiple per tile)
     if (tileData.items) {
       updates.items[fullTileKey] = tileData.items.map(item => ({ ...item, x, y }));
@@ -294,7 +294,7 @@ function processChunkData(data = {}, chunkKey) {
       updates.items[fullTileKey] = [];
     }
   });
-  
+
   // Only update if entities changed - do it in one atomic update
   if (entitiesChanged) {
     entities.update(current => {
@@ -305,9 +305,9 @@ function processChunkData(data = {}, chunkKey) {
         items: { ...current.items },
         battles: { ...current.battles }  // Include battles in state update
       };
-      
+
       // Process all entity types in one update
-      
+
       // Clean up missing groups in this chunk
       Object.keys(current.groups).forEach(key => {
         if (getChunkKey(parseInt(key.split(',')[0]), parseInt(key.split(',')[1])) === chunkKey) {
@@ -316,7 +316,7 @@ function processChunkData(data = {}, chunkKey) {
           }
         }
       });
-      
+
       // Clean up missing players in this chunk
       Object.keys(current.players).forEach(key => {
         if (getChunkKey(parseInt(key.split(',')[0]), parseInt(key.split(',')[1])) === chunkKey) {
@@ -325,7 +325,7 @@ function processChunkData(data = {}, chunkKey) {
           }
         }
       });
-      
+
       // Clean up missing battles in this chunk
       Object.keys(current.battles).forEach(key => {
         if (getChunkKey(parseInt(key.split(',')[0]), parseInt(key.split(',')[1])) === chunkKey) {
@@ -334,24 +334,24 @@ function processChunkData(data = {}, chunkKey) {
           }
         }
       });
-      
+
       // Handle updates for all entity types
       Object.entries(updates.players).forEach(([key, value]) => {
         newState.players[key] = value;
       });
-      
+
       Object.entries(updates.groups).forEach(([key, value]) => {
         newState.groups[key] = value;
       });
-      
+
       Object.entries(updates.items).forEach(([key, value]) => {
         newState.items[key] = value;
       });
-      
+
       Object.entries(updates.battles).forEach(([key, value]) => {
         newState.battles[key] = value;
       });
-      
+
       return newState;
     });
   }
@@ -362,49 +362,49 @@ export const chunks = derived(
   [map],
   ([$map], set) => {
     const worldId = $map.world || 'default';
-    
+
     // Skip if map is not ready
     if (!$map.ready) return set(new Set());
-    
+
     // Always load expanded chunks regardless of minimap UI state
     // This ensures entities in main view are loaded properly
     const expandedFactor = 1;
     const colsRadius = Math.ceil($map.cols * (1 + expandedFactor * (EXPANDED_COLS_FACTOR - 1)) / 2);
     const rowsRadius = Math.ceil($map.rows * (1 + expandedFactor * (EXPANDED_ROWS_FACTOR - 1)) / 2);
-    
+
     const minX = $map.target.x - colsRadius;
     const maxX = $map.target.x + colsRadius;
     const minY = $map.target.y - rowsRadius;
     const maxY = $map.target.y + rowsRadius;
-    
+
     const minChunkX = Math.floor(minX / CHUNK_SIZE);
     const maxChunkX = Math.floor(maxX / CHUNK_SIZE);
     const minChunkY = Math.floor(minY / CHUNK_SIZE);
     const maxChunkY = Math.floor(maxY / CHUNK_SIZE);
-    
+
     // Update cache size based on visible area
     if (terrain) {
       const visibleCols = $map.cols * (1 + expandedFactor * (EXPANDED_COLS_FACTOR - 1));
       const visibleRows = $map.rows * (1 + expandedFactor * (EXPANDED_ROWS_FACTOR - 1));
       terrain.updateCacheSize(visibleCols, visibleRows, CHUNK_SIZE);
     }
-    
+
     // Track chunks to remove
     const chunksToRemove = new Set(chunkSubscriptions.keys());
     const visibleChunks = new Set();
-    
+
     // Create an array of chunks ordered by distance from center
     const chunksToLoad = [];
     for (let y = minChunkY; y <= maxChunkY; y++) {
       for (let x = minChunkX; x <= maxChunkX; x++) {
         const chunkKey = `${x},${y}`;
         visibleChunks.add(chunkKey);
-        
+
         // Calculate distance from target chunk
         const targetChunkX = Math.floor($map.target.x / CHUNK_SIZE);
         const targetChunkY = Math.floor($map.target.y / CHUNK_SIZE);
         const distSq = (x - targetChunkX) ** 2 + (y - targetChunkY) ** 2;
-        
+
         // If already subscribed, keep it
         if (chunkSubscriptions.has(chunkKey)) {
           chunksToRemove.delete(chunkKey);
@@ -417,7 +417,7 @@ export const chunks = derived(
         }
       }
     }
-    
+
     // Sort chunks by distance, with center chunk first
     chunksToLoad.sort((a, b) => {
       if (a.isCenter) return -1;
@@ -434,23 +434,23 @@ export const chunks = derived(
           processChunkData(data, chunk.chunkKey);
         }
       });
-      
+
       chunkSubscriptions.set(chunk.chunkKey, unsubscribe);
     }
-    
+
     // Unsubscribe from any chunks that are no longer visible
     for (const chunkKey of chunksToRemove) {
       const unsubscribe = chunkSubscriptions.get(chunkKey);
       if (typeof unsubscribe === 'function') {
         unsubscribe();
         chunkSubscriptions.delete(chunkKey);
-        
+
         // Clear cache entries for this chunk
         if (terrain) {
           const [chunkX, chunkY] = chunkKey.split(',').map(Number);
           terrain.clearChunkFromCache(chunkX, chunkY, CHUNK_SIZE);
         }
-        
+
         // Clear entity data for this chunk
         entities.update(current => {
           const newState = {
@@ -460,7 +460,7 @@ export const chunks = derived(
             items: { ...current.items },
             battles: { ...current.battles }
           };
-          
+
           // Remove entities from this chunk
           Object.keys(current.structure).forEach(key => {
             const [x, y] = key.split(',').map(Number);
@@ -468,21 +468,21 @@ export const chunks = derived(
               delete newState.structure[key];
             }
           });
-          
+
           Object.keys(current.groups).forEach(key => {
             const [x, y] = key.split(',').map(Number);
             if (getChunkKey(x, y) === chunkKey) {
               delete newState.groups[key];
             }
           });
-          
+
           Object.keys(current.players).forEach(key => {
             const [x, y] = key.split(',').map(Number);
             if (getChunkKey(x, y) === chunkKey) {
               delete newState.players[key];
             }
           });
-          
+
           Object.keys(current.items).forEach(key => {
             const [x, y] = key.split(',').map(Number);
             if (getChunkKey(x, y) === chunkKey) {
@@ -496,12 +496,12 @@ export const chunks = derived(
               delete newState.battles[key];
             }
           });
-          
+
           return newState;
         });
       }
     }
-    
+
     // Return visible chunks set
     return visibleChunks;
   },
@@ -515,18 +515,18 @@ export const coordinates = derived(
     if (!$map.ready) {
       return set([]);
     }
-    
+
     // Additional validation
     if ($map.cols <= 0 || $map.rows <= 0) {
       console.error('Invalid grid dimensions');
       return set([]);
     }
-    
+
     // Always calculate the expanded grid regardless of minimap UI state
     // This ensures entities are always loaded and available
     const gridCols = Math.floor($map.cols * EXPANDED_COLS_FACTOR);
     const gridRows = Math.floor($map.rows * EXPANDED_ROWS_FACTOR);
-    
+
     const viewportCenterX = Math.floor(gridCols / 2);
     const viewportCenterY = Math.floor(gridRows / 2);
     const targetX = $map.target.x;
@@ -548,29 +548,29 @@ export const coordinates = derived(
         const globalX = x - viewportCenterX + targetX;
         const globalY = y - viewportCenterY + targetY;
         const locationKey = `${globalX},${globalY}`;
-        
+
         // Calculate distance from target position
         const distance = Math.sqrt(
-          Math.pow(globalX - targetX, 2) + 
+          Math.pow(globalX - targetX, 2) +
           Math.pow(globalY - targetY, 2)
         );
-        
+
         // Keep isInMainView calculation consistent regardless of minimap state
         const isInMainView = (
-          x >= mainViewMinX && x <= mainViewMaxX && 
+          x >= mainViewMinX && x <= mainViewMaxX &&
           y >= mainViewMinY && y <= mainViewMaxY
         );
-        
+
         const chunkKey = getChunkKey(globalX, globalY);
         const terrainData = terrain.getTerrainData(globalX, globalY);
-        
+
         // Always include entity data regardless of minimap state
         const structure = $entities.structure[locationKey];
         const groups = $entities.groups[locationKey] || [];
         const players = $entities.players[locationKey] || [];
         const items = $entities.items[locationKey] || [];
         const battles = $entities.battles[locationKey] || [];  // Add battles
-        
+
         result.push({
           x: globalX,
           y: globalY,
@@ -602,7 +602,7 @@ export const targetStore = derived(
   ([$map, $coordinates]) => {
     // Find the center tile in coordinates
     const targetTile = $coordinates.find(c => c.x === $map.target.x && c.y === $map.target.y);
-    
+
     // If found, return complete data; if not, return minimal location data
     return targetTile || { x: $map.target.x, y: $map.target.y };
   }
@@ -614,12 +614,12 @@ export const highlightedStore = derived(
   ([$highlightedCoords, $coordinates]) => {
     // If no tile is highlighted, return null
     if (!$highlightedCoords) return null;
-    
+
     // Find the highlighted tile with full data from coordinates
     const highlightedTile = $coordinates.find(
       c => c.x === $highlightedCoords.x && c.y === $highlightedCoords.y
     );
-    
+
     // Return the found tile with complete data, or fall back to basic coords
     return highlightedTile || $highlightedCoords;
   }
@@ -638,18 +638,18 @@ export function moveTarget(newX, newY) {
 
   const x = Math.round(newX);
   const y = Math.round(newY);
-  
+
   // Quick check to avoid unnecessary updates
   const currentState = get(map);
   if (currentState.target.x === x && currentState.target.y === y) {
     return; // No change needed
   }
-  
+
   // Clear any pending timeout
   if (moveTargetTimeout) {
     clearTimeout(moveTargetTimeout);
   }
-  
+
   // Debounce rapid updates
   moveTargetTimeout = setTimeout(() => {
     // Update map position immediately for responsive UI
@@ -657,21 +657,21 @@ export function moveTarget(newX, newY) {
       ...prev,
       target: { x, y },
     }));
-    
+
     // Clear highlighted tile when moving
     highlightedCoords.set(null);
-    
+
     // Update URL to reflect the new position - with a lower priority
     if (!isInternalUrlUpdate) {
       updateUrlWithCoordinates(x, y);
     }
-    
+
     // Save target position to localStorage
     const worldId = currentState.world;
     if (worldId) {
       saveTargetToLocalStorage(worldId, x, y);
     }
-    
+
     moveTargetTimeout = null;
   }, MOVE_TARGET_DEBOUNCE);
 }
@@ -690,7 +690,7 @@ export function getChunkKey(x, y) {
   // Simple integer division works for both positive and negative coordinates
   const chunkX = Math.floor(x / CHUNK_SIZE);
   const chunkY = Math.floor(y / CHUNK_SIZE);
-  
+
   return `${chunkX},${chunkY}`;
 }
 
@@ -704,18 +704,18 @@ export function initialize(options = {}) {
 
   // Don't reinitialize if already ready with the same world
   const currentMapState = get(map);
-  
+
   // Return early if already initializing to prevent redundant attempts
   if (currentMapState.initializing) {
     console.log('Map initialization already in progress, skipping redundant attempt');
     return false;
   }
-  
+
   // Mark that we're starting initialization
-  map.update(state => ({...state, initializing: true, initializationAttempted: true}));
-  
+  map.update(state => ({ ...state, initializing: true, initializationAttempted: true }));
+
   let worldId = options.world || options.worldId || 'default';
-  
+
   try {
     // Handle different input formats for extracting worldId
     if (options.gameStore) {
@@ -724,21 +724,21 @@ export function initialize(options = {}) {
         worldId = gameState.currentWorld;
       }
     }
-    
+
     // Early return if already initialized with same world
     if (currentMapState.ready && currentMapState.world === worldId) {
       console.log(`Map already initialized for world ${worldId}, skipping redundant setup`);
-      
+
       // Update initializing flag
-      map.update(state => ({...state, initializing: false}));
-      
+      map.update(state => ({ ...state, initializing: false }));
+
       // Still process URL coordinates if needed
       const urlX = options.initialX;
       const urlY = options.initialY;
       if (urlX !== undefined && urlY !== undefined) {
         moveTarget(urlX, urlY);
       }
-      
+
       return true;
     }
 
@@ -752,18 +752,18 @@ export function initialize(options = {}) {
       const gameState = get(options.gameStore);
       if (!gameState || !gameState.currentWorld) {
         console.log('No current world in game state');
-        map.update(state => ({...state, initializing: false}));
+        map.update(state => ({ ...state, initializing: false }));
         return false;
       }
-      
+
       worldId = gameState.currentWorld;
-      
+
       if (!gameState.worldInfo || !gameState.worldInfo[worldId]) {
         console.log(`No world info for world: ${worldId}`);
-        map.update(state => ({...state, initializing: false}));
+        map.update(state => ({ ...state, initializing: false }));
         return false;
       }
-      
+
       seed = gameState.worldInfo[worldId].seed;
     } else if (options.worldInfo) {
       // Case 2: Direct worldInfo object provided
@@ -777,7 +777,7 @@ export function initialize(options = {}) {
     // Validate we have the required seed
     if (seed === undefined || seed === null) {
       console.error('No seed provided for map initialization');
-      map.update(state => ({...state, initializing: false}));
+      map.update(state => ({ ...state, initializing: false }));
       return false;
     }
 
@@ -785,7 +785,7 @@ export function initialize(options = {}) {
     const seedNumber = typeof seed === 'string' ? Number(seed) : seed;
     if (isNaN(seedNumber)) {
       console.error(`Invalid seed value provided: ${seed}`);
-      map.update(state => ({...state, initializing: false}));
+      map.update(state => ({ ...state, initializing: false }));
       return false;
     }
 
@@ -802,7 +802,7 @@ export function initialize(options = {}) {
     // 5. Default (0,0)
     let targetPosition = { x: 0, y: 0 };
     const hasInitialCoords = initialX !== undefined && initialY !== undefined;
-    
+
     if (hasInitialCoords) {
       // 1. URL parameters take highest priority
       targetPosition = { x: Math.round(initialX), y: Math.round(initialY) };
@@ -829,15 +829,15 @@ export function initialize(options = {}) {
         }
       }
     }
-    
+
     // Calculate optimal cache size
     const visibleTiles = initialCols * initialRows;
     const cacheMultiplier = Math.max(1.2, Math.min(1.5, window.innerWidth / 1000));
     const initialCacheSize = Math.ceil(visibleTiles * cacheMultiplier);
-    
+
     // Initialize the terrain generator
     terrain = new TerrainGenerator(seedNumber, initialCacheSize);
-    
+
     // Update the map store
     map.update(state => {
       return {
@@ -850,20 +850,20 @@ export function initialize(options = {}) {
         target: targetPosition
       };
     });
-    
+
     // Update URL if initial coordinates were provided
     if (hasInitialCoords) {
       updateUrlWithCoordinates(targetPosition.x, targetPosition.y);
     }
-    
+
     // Always save the initial position to localStorage
     saveTargetToLocalStorage(worldId, targetPosition.x, targetPosition.y);
-    
+
     console.log(`Map successfully initialized for world ${worldId}`);
     return true;
   } catch (err) {
     console.error('Error in map initialization:', err);
-    map.update(state => ({...state, initializing: false}));
+    map.update(state => ({ ...state, initializing: false }));
     return false;
   }
 }
@@ -889,7 +889,7 @@ export function getCurrentWorld() {
 // Switch to different world
 export function switchWorld(worldId) {
   const currentWorldId = get(map).world;
-  
+
   if (worldId && worldId !== currentWorldId) {
     // Clear existing subscriptions
     for (const [_, unsubscribe] of chunkSubscriptions.entries()) {
@@ -898,7 +898,7 @@ export function switchWorld(worldId) {
       }
     }
     chunkSubscriptions.clear();
-    
+
     // Update map store with new world ID
     map.update(state => ({ ...state, world: worldId }));
   }
@@ -908,13 +908,13 @@ export function switchWorld(worldId) {
 export function cleanup() {
   // Reset the internal URL update flag
   isInternalUrlUpdate = false;
-  
+
   // Clear any pending timeouts
   if (moveTargetTimeout) {
     clearTimeout(moveTargetTimeout);
     moveTargetTimeout = null;
   }
-  
+
   if (urlUpdateTimeout) {
     clearTimeout(urlUpdateTimeout);
     urlUpdateTimeout = null;
@@ -925,7 +925,7 @@ export function cleanup() {
     terrain.clearCache();
     terrain = null;
   }
-  
+
   // Clear all subscriptions
   for (const [_, unsubscribe] of chunkSubscriptions.entries()) {
     if (typeof unsubscribe === 'function') {
@@ -933,7 +933,7 @@ export function cleanup() {
     }
   }
   chunkSubscriptions.clear();
-  
+
   // Reset stores
   map.set({
     ready: false,
@@ -951,9 +951,9 @@ export function cleanup() {
     dragAccumY: 0,
     dragSource: null
   });
-  
+
   highlightedCoords.set(null);
-  
+
   entities.set({
     structure: {},
     groups: {},
@@ -966,33 +966,33 @@ export function cleanup() {
 // Initialize map for world with localStorage support
 export function initializeMapForWorld(worldId, worldData = null) {
   if (!worldId) return;
-  
+
   console.log(`Initializing map for world: ${worldId}`);
-  
+
   // Get current map state
   const currentMapState = get(map);
-  
+
   // Don't reinitialize if already set up
   if (currentMapState.ready && currentMapState.world === worldId) {
     console.log(`Map already initialized for world ${worldId}`);
     return;
   }
-  
+
   // Clean up existing map if needed
   if (currentMapState.ready) {
     cleanup();
   }
-  
+
   // Try to load saved position for this world
   const savedPosition = loadTargetFromLocalStorage(worldId);
-  
+
   // Get world center coordinates
   const worldCenter = getWorldCenterCoordinates(worldId, worldData);
-  
+
   // Initialize with world data if available
   if (worldData && worldData.seed !== undefined) {
     console.log(`Initializing map with provided worldData, seed: ${worldData.seed}`);
-    
+
     // If we have saved coordinates, include them in setup
     if (savedPosition) {
       setup({
@@ -1012,6 +1012,6 @@ export function initializeMapForWorld(worldId, worldData = null) {
     }
     return;
   }
-  
+
   console.log(`Cannot initialize map for world ${worldId} - no seed data available`);
 }
