@@ -4,17 +4,15 @@
   import Close from '../../components/icons/Close.svelte';
   import { map } from "../../lib/stores/map.js";
 
-  // Use proper Svelte 5 props
   const { 
     onVisibilityChange = () => {},
     hideToggleButton = false,
-    onToggle = () => {} // Function to call when toggling
+    onToggle = () => {}
   } = $props();
   
   let closed = $state(false);
   let ready = $state(false);
   
-  // Track expanded state for each section
   let worldExpanded = $state(false)
   let terrainExpanded = $state(false)
   let structuresExpanded = $state(false)
@@ -25,8 +23,6 @@
     if (browser) {
       closed = localStorage.getItem('tutorial-state') === 'closed'
       ready = true
-      
-      // Notify parent of initial tutorial visibility state using the prop function
       onVisibilityChange(ready && !closed);
     }
   }
@@ -45,32 +41,27 @@
     onVisibilityChange(true);
   }
   
-  // Toggle functions for each section
   const toggleWorld = () => worldExpanded = !worldExpanded
   const toggleTerrain = () => terrainExpanded = !terrainExpanded
   const toggleStructures = () => structuresExpanded = !structuresExpanded
   const toggleUnits = () => unitsExpanded = !unitsExpanded
   const toggleControls = () => controlsExpanded = !controlsExpanded
 
-  // Toggle function that will be called by parent component
   function handleToggle() {
     if (closed) {
       open();
     } else {
       close();
     }
-    onToggle(!closed); // Let parent know about the new state
+    onToggle(!closed);
   }
 
-  // Make toggle function accessible from outside via event dispatch
   export function toggle() {
     handleToggle();
   }
 
-  // Expose the API to the parent
   $effect(() => {
     if (ready && window) {
-      // Make toggle function available via custom event
       window.addEventListener('tutorial:toggle', () => handleToggle());
     }
     return () => {
@@ -82,10 +73,10 @@
 </script>
 
 {#if ready && !closed}
-  <div class="tut tutorial-container">
+  <div class="tutorial-container">
     <div class="box">
       <button class="close-btn" aria-label="Close tutorial" onclick={close}>
-        <Close size="2.2em" color="var(--color-text)" />
+        <Close size="2.2em" color="rgba(0, 0, 0, 0.6)" />
       </button>
       <h2>Welcome to Gisaima</h2>
       
@@ -197,7 +188,7 @@
 {/if}
 
 <style>
-  .tut {
+  .tutorial-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -206,43 +197,69 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1010; /* Increase from 1000 to be higher than legend's 1001 */
-    background-color: rgba(0, 0, 0, 0.7);
-
-    transition: opacity 0.3s ease;
+    z-index: 1010;
+    pointer-events: none;
+    animation: fadeInTutorial 0.7s ease-out forwards;
+    opacity: 0;
   }
   
   .box {
     position: relative;
-    background: rgba(21, 38, 60, 0.95);
-    border: 2px solid var(--color-muted-teal);
-    border-radius: 0.5em;
-    box-shadow: 0 0.3em 1em rgba(0, 0, 0, 0.5);
+    background-color: rgba(255, 255, 255, 0.85);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.3em;
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(0.5em);
+    -webkit-backdrop-filter: blur(0.5em);
     padding: 2em;
     max-width: 50em;
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch; /* Enable momentum scrolling on iOS */
-    overscroll-behavior: contain; /* Prevent scroll chaining */
-    color: var(--color-text);
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    color: rgba(0, 0, 0, 0.8);
+    pointer-events: auto;
+    animation: appear 0.3s ease-out;
+  }
+  
+  @keyframes appear {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes fadeInTutorial {
+    0% {
+      opacity: 0;
+      transform: translateY(1em);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
   
   h2 {
-    color: var(--color-pale-green);
+    color: rgba(0, 0, 0, 0.8);
     text-align: center;
     font-size: 2em;
     margin: 0 0 0.8em 0;
-    text-shadow: 0 0 0.5em rgba(0, 0, 0, 0.5);
     font-family: var(--font-heading);
-    font-weight: 700; /* Bold for main tutorial header */
+    font-weight: 700;
   }
   
   h3 {
-    color: var(--color-muted-teal);
+    color: rgba(0, 0, 0, 0.7);
     margin: 0 0 0.5em 0;
     font-family: var(--font-heading);
-    font-weight: 600; /* Semi-bold for section headers */
+    font-weight: 600;
   }
   
   .content {
@@ -257,44 +274,8 @@
     line-height: 1.5;
     text-align: center;
     margin: 0;
-    font-weight: 500; /* Medium weight for important summary */
-  }
-  
-  .features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(20em, 1fr));
-    gap: 2em;
-  }
-  
-  .feature ul {
-    margin: 0;
-    padding-left: 1.5em;
-    line-height: 1.4;
-    font-weight: 400; /* Regular weight for list items */
-  }
-  
-  .feature li {
-    margin-bottom: 0.5em;
-  }
-  
-  .controls {
-    text-align: center;
-    margin: 1em 0;
-    padding: 1em;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 0.3em;
-  }
-  
-  .key {
-    display: inline-block;
-    background: var(--color-dark-teal);
-    color: var(--color-text);
-    font-weight: bold;
-    padding: 0.2em 0.5em;
-    border-radius: 0.2em;
-    border: 1px solid var(--color-muted-teal);
-    box-shadow: 0 0.1em 0.2em rgba(0, 0, 0, 0.3);
-    font-family: var(--font-heading);
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.7);
   }
   
   .close-btn {
@@ -305,26 +286,26 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.05);
+    border: none;
     border-radius: 50%;
-    color: var(--color-text);
     cursor: pointer;
     opacity: 0.7;
     transition: all 0.2s ease;
     padding: 0;
+    color: rgba(0, 0, 0, 0.6);
   }
   
   .close-btn:hover {
     opacity: 1;
-    background: rgba(255, 255, 255, 0.1);
+    background-color: rgba(0, 0, 0, 0.1);
     transform: scale(1.05);
   }
   
   .start-button {
     align-self: center;
-    background-color: var(--color-button-primary);
-    color: var(--color-text);
+    background-color: var(--color-button-primary, #4285f4);
+    color: white;
     border: none;
     border-radius: 0.3em;
     padding: 0.8em 2em;
@@ -337,66 +318,18 @@
   }
   
   .start-button:hover {
-    background-color: var(--color-button-primary-hover);
+    background-color: var(--color-button-primary-hover, #3367d6);
     transform: translateY(-0.125em);
-    box-shadow: 0 0.2em 0.5em var(--color-shadow);
+    box-shadow: 0 0.2em 0.5em rgba(0, 0, 0, 0.2);
   }
   
   .help {
-    display: none; /* Hide by default since we'll use the button in map-controls */
+    display: none;
   }
   
-  @keyframes fadeInHelp {
-    0% {
-      opacity: 0;
-      transform: translateY(1em);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  @media (max-width: 768px) {
-    .box {
-      padding: 1.5em;
-      max-height: 80vh; /* Slightly smaller height on mobile for better visibility of scrollable area */
-      margin: 1em 0;
-    }
-    
-    .features {
-      grid-template-columns: 1fr;
-    }
-    
-    h2 {
-      font-size: 1.6em;
-    }
-    
-    /* Additional padding for better touch area when scrolling */
-    .content {
-      padding-bottom: 1.5em;
-    }
-  }
-
-  .tutorial-container {
-    animation: fadeInTutorial 0.7s ease-out forwards;
-    opacity: 0;
-  }
-  
-  @keyframes fadeInTutorial {
-    0% {
-      opacity: 0;
-      transform: translateY(1em);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
   .collapsible {
     margin-bottom: 0.8em;
-    border: 1px solid rgba(var(--color-muted-teal-rgb), 0.3);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.4em;
     overflow: hidden;
   }
@@ -406,7 +339,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.05);
     border: none;
     color: inherit;
     padding: 0.8em 1em;
@@ -416,7 +349,7 @@
   }
   
   .section-header:hover {
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.08);
   }
   
   .section-header h3 {
@@ -427,24 +360,25 @@
   .toggle-icon {
     font-size: 1.2em;
     font-weight: bold;
-    color: var(--color-pale-green);
+    color: var(--color-button-primary, #4285f4);
     width: 1.5em;
     height: 1.5em;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.05);
   }
   
   .section-content {
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease-out;
+    background: rgba(255, 255, 255, 0.5);
   }
   
   .section-content.expanded {
-    max-height: 20em; /* Adjust based on content needs */
+    max-height: 20em;
   }
   
   .controls {
@@ -460,6 +394,19 @@
     padding: 1em 1em 1em 2.5em;
     line-height: 1.4;
     font-weight: 400;
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .key {
+    display: inline-block;
+    background: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.8);
+    font-weight: bold;
+    padding: 0.2em 0.5em;
+    border-radius: 0.2em;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0.1em 0.2em rgba(0, 0, 0, 0.1);
+    font-family: var(--font-heading);
   }
 
   .controls-grid {
@@ -467,7 +414,7 @@
     grid-template-columns: repeat(auto-fit, minmax(10em, 1fr));
     gap: 0.8em;
     padding: 1em;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.05);
   }
   
   .control-item {
@@ -475,39 +422,40 @@
     align-items: center;
     gap: 0.5em;
     font-size: 0.9em;
+    color: rgba(0, 0, 0, 0.7);
   }
 
   .guide-link-container {
     text-align: center;
     margin: 1.5em 0;
     padding: 1em;
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.03);
     border-radius: 0.4em;
-    border: 1px solid rgba(var(--color-muted-teal-rgb), 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
   
   .guide-link-container p {
     margin: 0 0 0.8em 0;
     font-size: 0.95em;
-    color: var(--color-pale-green);
+    color: rgba(0, 0, 0, 0.7);
   }
   
   .guide-link {
     display: inline-flex;
     align-items: center;
     gap: 0.5em;
-    background-color: rgba(100, 255, 218, 0.1);
-    color: var(--color-pale-green);
+    background-color: rgba(66, 133, 244, 0.1);
+    color: rgba(0, 0, 0, 0.8);
     text-decoration: none;
     padding: 0.6em 1.2em;
     border-radius: 0.3em;
-    border: 1px solid rgba(var(--color-muted-teal-rgb), 0.3);
+    border: 1px solid rgba(66, 133, 244, 0.3);
     transition: all 0.2s ease;
     font-weight: 500;
   }
   
   .guide-link:hover {
-    background-color: rgba(100, 255, 218, 0.2);
+    background-color: rgba(66, 133, 244, 0.2);
     transform: translateY(-0.1em);
   }
   
@@ -516,10 +464,29 @@
     line-height: 1;
   }
   
-  .feature ul {
-    margin: 0;
-    padding: 1em 1em 1em 2.5em;
-    line-height: 1.4;
-    font-weight: 400;
+  @media (max-width: 768px) {
+    .box {
+      padding: 1.5em;
+      max-height: 80vh;
+      margin: 1em 0;
+    }
+    
+    .features {
+      grid-template-columns: 1fr;
+    }
+    
+    h2 {
+      font-size: 1.6em;
+    }
+    
+    .content {
+      padding-bottom: 1.5em;
+    }
+  }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(20em, 1fr));
+    gap: 2em;
   }
 </style>

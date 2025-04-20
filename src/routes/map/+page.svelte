@@ -497,8 +497,6 @@
     
     const ANIMATION_DURATION = 800;
 
-    let tutorialRef; // Reference to the Tutorial component
-
     function toggleTutorial() {
         // Dispatch the custom event to toggle tutorial
         window.dispatchEvent(new CustomEvent('tutorial:toggle'));
@@ -1006,7 +1004,6 @@
         {/if}
 
         <Tutorial 
-            bind:this={tutorialRef}
             onVisibilityChange={handleTutorialVisibility}
             hideToggleButton={true}
             onToggle={handleTutorialToggle}
