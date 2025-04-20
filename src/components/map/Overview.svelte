@@ -606,9 +606,9 @@
               aria-expanded={!collapsedSections.structures}
               onkeydown={(e) => e.key === 'Enter' && toggleSection('structures')}
             >
-              <h4>
+              <div class="section-title">
                 Structures <span class="section-count filter-count filter-count-structures">{allStructures.length}</span>
-              </h4>
+              </div>
               <div class="section-controls">
                 {#if !collapsedSections.structures}
                   <div class="sort-controls">
@@ -742,9 +742,9 @@
               aria-expanded={!collapsedSections.players}
               onkeydown={(e) => e.key === 'Enter' && toggleSection('players')}
             >
-              <h4>
+              <div class="section-title">
                 Players <span class="section-count filter-count filter-count-players">{allPlayers.length}</span>
-              </h4>
+              </div>
               <div class="section-controls">
                 {#if !collapsedSections.players}
                   <div class="sort-controls">
@@ -880,9 +880,9 @@
               aria-expanded={!collapsedSections.groups}
               onkeydown={(e) => e.key === 'Enter' && toggleSection('groups')}
             >
-              <h4>
+              <div class="section-title">
                 Groups <span class="section-count filter-count filter-count-groups">{allGroups.length}</span>
-              </h4>
+              </div>
               <div class="section-controls">
                 {#if !collapsedSections.groups}
                   <div class="sort-controls">
@@ -1054,9 +1054,9 @@
               aria-expanded={!collapsedSections.items}
               onkeydown={(e) => e.key === 'Enter' && toggleSection('items')}
             >
-              <h4>
+              <div class="section-title">
                 Items <span class="section-count filter-count filter-count-items">{allItems.length}</span>
-              </h4>
+              </div>
               <div class="section-controls">
                 {#if !collapsedSections.items}
                   <div class="sort-controls">
@@ -1187,9 +1187,9 @@
               aria-expanded={!collapsedSections.battles}
               onkeydown={(e) => e.key === 'Enter' && toggleSection('battles')}
             >
-              <h4>
+              <div class="section-title">
                 Battles <span class="section-count filter-count filter-count-battles">{allBattles.length}</span>
-              </h4>
+              </div>
               <div class="section-controls">
                 {#if !collapsedSections.battles}
                   <div class="sort-controls">
@@ -1582,21 +1582,24 @@
 
   .entities-section {
     margin-bottom: 1.2em;
+    border-radius: 0.3em;
+    overflow: hidden;
   }
 
   .entities-section:last-child {
     margin-bottom: 0;
   }
 
-  h4 {
-    margin: 0 0 0.5em 0;
+  .section-title {
+    margin: 0;
     font-size: 0.9em;
     font-weight: 600;
     color: rgba(0, 0, 0, 0.6);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     display: flex;
-    align-items: center; /* Center align the badge with the text */
+    align-items: center;
+    gap: 0.3em;
   }
 
   .entity {
@@ -1839,16 +1842,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5em 0;
+    padding: 0.5em 1em;  /* Add horizontal padding */
     cursor: pointer;
-    /* Remove margin-bottom to fix spacing */
     user-select: none;
     position: relative;
     width: 100%;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 0.3em 0.3em 0 0;
   }
   
   .section-header:hover {
-    background-color: rgba(0, 0, 0, 0.03);
+    background-color: rgba(0, 0, 0, 0.05);
   }
   
   .section-controls {
@@ -1858,6 +1862,22 @@
     margin-left: auto;
   }
   
+  /* Update section content padding for consistency */
+  .section-content {
+    padding: 0.8em;
+    overflow: hidden;
+  }
+
+  /* Update tab sort controls for better alignment */
+  .tab-sort-controls {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.5em 1em;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 0.3em 0.3em 0 0;
+    margin-bottom: 0;
+  }
+
   .collapse-button {
     background: none;
     border: none;
