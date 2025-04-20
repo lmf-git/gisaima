@@ -584,66 +584,99 @@
       <!-- Structures Section -->
       {#if shouldShowSection('structures') && allStructures.length > 0}
         <div class="entities-section">
-          <div 
-            class="section-header"
-            onclick={() => toggleSection('structures')}
-            role="button"
-            tabindex="0"
-            aria-expanded={!collapsedSections.structures}
-            onkeydown={(e) => e.key === 'Enter' && toggleSection('structures')}
-          >
-            <!-- Only show full header with count on "all" tab -->
-            {#if activeFilter === 'all'}
+          <!-- Only show section header when on "all" tab -->
+          {#if activeFilter === 'all'}
+            <div 
+              class="section-header"
+              onclick={() => toggleSection('structures')}
+              role="button"
+              tabindex="0"
+              aria-expanded={!collapsedSections.structures}
+              onkeydown={(e) => e.key === 'Enter' && toggleSection('structures')}
+            >
               <h4>
                 Structures ({allStructures.length})
               </h4>
-            {/if}
-            <div class="section-controls">
-              {#if !collapsedSections.structures}
-                <div class="sort-controls">
-                  <button 
-                    class="sort-option"
-                    class:active={sortOptions.structures.by === 'distance'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'distance'); }}
-                    aria-label={`Sort by distance ${sortOptions.structures.by === 'distance' ? (sortOptions.structures.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Distance</span>
-                    {#if sortOptions.structures.by === 'distance'}
-                      <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.structures.by === 'name'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'name'); }}
-                    aria-label={`Sort by name ${sortOptions.structures.by === 'name' ? (sortOptions.structures.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Name</span>
-                    {#if sortOptions.structures.by === 'name'}
-                      <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.structures.by === 'type'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'type'); }}
-                    aria-label={`Sort by type ${sortOptions.structures.by === 'type' ? (sortOptions.structures.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Type</span>
-                    {#if sortOptions.structures.by === 'type'}
-                      <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                </div>
-              {/if}
-              <button class="collapse-button" aria-label={collapsedSections.structures ? "Expand structures" : "Collapse structures"}>
-                {collapsedSections.structures ? '▼' : '▲'}
-              </button>
+              <div class="section-controls">
+                {#if !collapsedSections.structures}
+                  <div class="sort-controls">
+                    <button 
+                      class="sort-option"
+                      class:active={sortOptions.structures.by === 'distance'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'distance'); }}
+                    >
+                      <span>Distance</span>
+                      {#if sortOptions.structures.by === 'distance'}
+                        <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.structures.by === 'name'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'name'); }}
+                    >
+                      <span>Name</span>
+                      {#if sortOptions.structures.by === 'name'}
+                        <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.structures.by === 'type'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'type'); }}
+                    >
+                      <span>Type</span>
+                      {#if sortOptions.structures.by === 'type'}
+                        <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                  </div>
+                {/if}
+                <button class="collapse-button">
+                  {collapsedSections.structures ? '▼' : '▲'}
+                </button>
+              </div>
             </div>
-          </div>
+          {:else}
+            <!-- Just show sort controls on specific tabs -->
+            <div class="tab-sort-controls">
+              <div class="sort-controls">
+                <button 
+                  class="sort-option"
+                  class:active={sortOptions.structures.by === 'distance'}
+                  onclick={() => setSortOption('structures', 'distance')}
+                >
+                  <span>Distance</span>
+                  {#if sortOptions.structures.by === 'distance'}
+                    <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.structures.by === 'name'}
+                  onclick={() => setSortOption('structures', 'name')}
+                >
+                  <span>Name</span>
+                  {#if sortOptions.structures.by === 'name'}
+                    <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.structures.by === 'type'}
+                  onclick={() => setSortOption('structures', 'type')}
+                >
+                  <span>Type</span>
+                  {#if sortOptions.structures.by === 'type'}
+                    <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+              </div>
+            </div>
+          {/if}
           
-          {#if !collapsedSections.structures}
-            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+          {#if activeFilter !== 'all' || !collapsedSections.structures}
+            <div class="section-content" class:with-transition={activeFilter === 'all'} transition:slide|local={{ duration: 300 }}>
               {#each sortedStructures as structure (structure.type + ':' + structure.x + ':' + structure.y)}
                 <div 
                   class="entity structure {isAtTarget(structure.x, structure.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(structure) ? 'current-player-owned' : ''}"
@@ -665,11 +698,11 @@
                     <div class="entity-name">
                       {structure.name || _fmt(structure.type) || "Unknown"}
                       {#if isOwnedByCurrentPlayer(structure)}
-                        <span class="your-entity-badge">Yours</span>
+                        <span class="entity-badge owner-badge">Yours</span>
                       {/if}
                       <span class="entity-coords">{formatCoords(structure.x, structure.y)}</span>
                     </div>
-                    <div class="entity-info">
+                    <div class="entity-details">
                       {#if structure.type}
                         <div class="entity-type">{_fmt(structure.type)}</div>
                       {/if}
@@ -686,66 +719,97 @@
       <!-- Players Section -->
       {#if shouldShowSection('players') && allPlayers.length > 0}
         <div class="entities-section">
-          <div 
-            class="section-header"
-            onclick={() => toggleSection('players')}
-            role="button"
-            tabindex="0"
-            aria-expanded={!collapsedSections.players}
-            onkeydown={(e) => e.key === 'Enter' && toggleSection('players')}
-          >
-            <!-- Only show full header with count on "all" tab -->
-            {#if activeFilter === 'all'}
+          {#if activeFilter === 'all'}
+            <div 
+              class="section-header"
+              onclick={() => toggleSection('players')}
+              role="button"
+              tabindex="0"
+              aria-expanded={!collapsedSections.players}
+              onkeydown={(e) => e.key === 'Enter' && toggleSection('players')}
+            >
               <h4>
                 Players ({allPlayers.length})
               </h4>
-            {/if}
-            <div class="section-controls">
-              {#if !collapsedSections.players}
-                <div class="sort-controls">
-                  <button 
-                    class="sort-option"
-                    class:active={sortOptions.players.by === 'distance'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('players', 'distance'); }}
-                    aria-label={`Sort by distance ${sortOptions.players.by === 'distance' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Distance</span>
-                    {#if sortOptions.players.by === 'distance'}
-                      <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.players.by === 'name'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('players', 'name'); }}
-                    aria-label={`Sort by name ${sortOptions.players.by === 'name' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Name</span>
-                    {#if sortOptions.players.by === 'name'}
-                      <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.players.by === 'type'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('players', 'type'); }}
-                    aria-label={`Sort by race ${sortOptions.players.by === 'type' ? (sortOptions.players.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Race</span>
-                    {#if sortOptions.players.by === 'type'}
-                      <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                </div>
-              {/if}
-              <button class="collapse-button" aria-label={collapsedSections.players ? "Expand players" : "Collapse players"}>
-                {collapsedSections.players ? '▼' : '▲'}
-              </button>
+              <div class="section-controls">
+                {#if !collapsedSections.players}
+                  <div class="sort-controls">
+                    <button 
+                      class="sort-option"
+                      class:active={sortOptions.players.by === 'distance'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('players', 'distance'); }}
+                    >
+                      <span>Distance</span>
+                      {#if sortOptions.players.by === 'distance'}
+                        <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.players.by === 'name'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('players', 'name'); }}
+                    >
+                      <span>Name</span>
+                      {#if sortOptions.players.by === 'name'}
+                        <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.players.by === 'type'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('players', 'type'); }}
+                    >
+                      <span>Race</span>
+                      {#if sortOptions.players.by === 'type'}
+                        <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                  </div>
+                {/if}
+                <button class="collapse-button">
+                  {collapsedSections.players ? '▼' : '▲'}
+                </button>
+              </div>
             </div>
-          </div>
+          {:else}
+            <div class="tab-sort-controls">
+              <div class="sort-controls">
+                <button 
+                  class="sort-option"
+                  class:active={sortOptions.players.by === 'distance'}
+                  onclick={() => setSortOption('players', 'distance')}
+                >
+                  <span>Distance</span>
+                  {#if sortOptions.players.by === 'distance'}
+                    <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.players.by === 'name'}
+                  onclick={() => setSortOption('players', 'name')}
+                >
+                  <span>Name</span>
+                  {#if sortOptions.players.by === 'name'}
+                    <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.players.by === 'type'}
+                  onclick={() => setSortOption('players', 'type')}
+                >
+                  <span>Race</span>
+                  {#if sortOptions.players.by === 'type'}
+                    <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+              </div>
+            </div>
+          {/if}
           
-          {#if !collapsedSections.players}
-            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+          {#if activeFilter !== 'all' || !collapsedSections.players}
+            <div class="section-content" class:with-transition={activeFilter === 'all'} transition:slide|local={{ duration: 300 }}>
               {#each sortedPlayers as entity ('player:' + entity.id + ':' + entity.x + ':' + entity.y)}
                 <div 
                   class="entity player {entity.id === $currentPlayer?.uid ? 'current' : ''} {isAtTarget(entity.x, entity.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(entity) ? 'current-player-owned' : ''}"
@@ -772,7 +836,7 @@
                     <div class="entity-name">
                       {entity.displayName || 'Player'}
                       {#if isOwnedByCurrentPlayer(entity)}
-                        <span class="your-entity-badge">You</span>
+                        <span class="entity-badge owner-badge">You</span>
                       {/if}
                       <span class="entity-coords">{formatCoords(entity.x, entity.y)}</span>
                     </div>
@@ -793,69 +857,100 @@
       <!-- Groups Section -->
       {#if shouldShowSection('groups') && allGroups.length > 0}
         <div class="entities-section">
-          <div 
-            class="section-header"
-            onclick={() => toggleSection('groups')}
-            role="button"
-            tabindex="0"
-            aria-expanded={!collapsedSections.groups}
-            onkeydown={(e) => e.key === 'Enter' && toggleSection('groups')}
-          >
-            <!-- Only show full header with count on "all" tab -->
-            {#if activeFilter === 'all'}
+          {#if activeFilter === 'all'}
+            <div 
+              class="section-header"
+              onclick={() => toggleSection('groups')}
+              role="button"
+              tabindex="0"
+              aria-expanded={!collapsedSections.groups}
+              onkeydown={(e) => e.key === 'Enter' && toggleSection('groups')}
+            >
               <h4>
                 Groups ({allGroups.length})
               </h4>
-            {/if}
-            <div class="section-controls">
-              {#if !collapsedSections.groups}
-                <div class="sort-controls">
-                  <button 
-                    class="sort-option"
-                    class:active={sortOptions.groups.by === 'distance'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'distance'); }}
-                    aria-label={`Sort by distance ${sortOptions.groups.by === 'distance' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Distance</span>
-                    {#if sortOptions.groups.by === 'distance'}
-                      <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.groups.by === 'name'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'name'); }}
-                    aria-label={`Sort by name ${sortOptions.groups.by === 'name' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Name</span>
-                    {#if sortOptions.groups.by === 'name'}
-                      <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.groups.by === 'status'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'status'); }}
-                    aria-label={`Sort by status ${sortOptions.groups.by === 'status' ? (sortOptions.groups.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Status</span>
-                    {#if sortOptions.groups.by === 'status'}
-                      <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                </div>
-              {/if}
-              <button class="collapse-button" aria-label={collapsedSections.groups ? "Expand groups" : "Collapse groups"}>
-                {collapsedSections.groups ? '▼' : '▲'}
-              </button>
+              <div class="section-controls">
+                {#if !collapsedSections.groups}
+                  <div class="sort-controls">
+                    <button 
+                      class="sort-option"
+                      class:active={sortOptions.groups.by === 'distance'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'distance'); }}
+                    >
+                      <span>Distance</span>
+                      {#if sortOptions.groups.by === 'distance'}
+                        <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.groups.by === 'name'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'name'); }}
+                    >
+                      <span>Name</span>
+                      {#if sortOptions.groups.by === 'name'}
+                        <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.groups.by === 'status'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'status'); }}
+                    >
+                      <span>Status</span>
+                      {#if sortOptions.groups.by === 'status'}
+                        <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                  </div>
+                {/if}
+                <button class="collapse-button">
+                  {collapsedSections.groups ? '▼' : '▲'}
+                </button>
+              </div>
             </div>
-          </div>
+          {:else}
+            <div class="tab-sort-controls">
+              <div class="sort-controls">
+                <button 
+                  class="sort-option"
+                  class:active={sortOptions.groups.by === 'distance'}
+                  onclick={() => setSortOption('groups', 'distance')}
+                >
+                  <span>Distance</span>
+                  {#if sortOptions.groups.by === 'distance'}
+                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.groups.by === 'name'}
+                  onclick={() => setSortOption('groups', 'name')}
+                >
+                  <span>Name</span>
+                  {#if sortOptions.groups.by === 'name'}
+                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.groups.by === 'status'}
+                  onclick={() => setSortOption('groups', 'status')}
+                >
+                  <span>Status</span>
+                  {#if sortOptions.groups.by === 'status'}
+                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+              </div>
+            </div>
+          {/if}
           
-          {#if !collapsedSections.groups}
-            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+          {#if activeFilter !== 'all' || !collapsedSections.groups}
+            <div class="section-content" class:with-transition={activeFilter === 'all'} transition:slide|local={{ duration: 300 }}>
               {#each sortedGroups as group ('group:' + group.id)}
                 <div 
-                  class="entity {group.status || 'idle'} {isAtTarget(group.x, group.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(group) ? 'current-player-owned' : ''}"
+                  class="entity {isAtTarget(group.x, group.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(group) ? 'current-player-owned' : ''}"
                   onclick={(e) => handleEntityAction(group.x, group.y, e)}
                   onkeydown={(e) => handleEntityAction(group.x, group.y, e)}
                   tabindex="0"
@@ -880,7 +975,7 @@
                     <div class="entity-name">
                       {group.name || `Group ${group.id.slice(-4)}`}
                       {#if isOwnedByCurrentPlayer(group)}
-                        <span class="your-entity-badge">Yours</span>
+                        <span class="entity-badge owner-badge">Yours</span>
                       {/if}
                       <span class="entity-coords">({formatCoords(group.x, group.y)})</span>
                     </div>
@@ -893,8 +988,7 @@
                         {/if}
                       </span>
                       
-                      <span
-                        class="status {getStatusClass(group.status)}" 
+                      <span class="entity-status-badge {getStatusClass(group.status)}"
                         class:pending-tick={isPendingTick(
                           group.status === 'moving' 
                             ? group.nextMoveTime 
@@ -937,66 +1031,97 @@
       <!-- Items Section -->
       {#if shouldShowSection('items') && allItems.length > 0}
         <div class="entities-section">
-          <div 
-            class="section-header"
-            onclick={() => toggleSection('items')}
-            role="button"
-            tabindex="0"
-            aria-expanded={!collapsedSections.items}
-            onkeydown={(e) => e.key === 'Enter' && toggleSection('items')}
-          >
-            <!-- Only show full header with count on "all" tab -->
-            {#if activeFilter === 'all'}
+          {#if activeFilter === 'all'}
+            <div 
+              class="section-header"
+              onclick={() => toggleSection('items')}
+              role="button"
+              tabindex="0"
+              aria-expanded={!collapsedSections.items}
+              onkeydown={(e) => e.key === 'Enter' && toggleSection('items')}
+            >
               <h4>
                 Items ({allItems.length})
               </h4>
-            {/if}
-            <div class="section-controls">
-              {#if !collapsedSections.items}
-                <div class="sort-controls">
-                  <button 
-                    class="sort-option"
-                    class:active={sortOptions.items.by === 'distance'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('items', 'distance'); }}
-                    aria-label={`Sort by distance ${sortOptions.items.by === 'distance' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Distance</span>
-                    {#if sortOptions.items.by === 'distance'}
-                      <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.items.by === 'name'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('items', 'name'); }}
-                    aria-label={`Sort by name ${sortOptions.items.by === 'name' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Name</span>
-                    {#if sortOptions.items.by === 'name'}
-                      <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.items.by === 'rarity'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('items', 'rarity'); }}
-                    aria-label={`Sort by rarity ${sortOptions.items.by === 'rarity' ? (sortOptions.items.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Rarity</span>
-                    {#if sortOptions.items.by === 'rarity'}
-                      <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                </div>
-              {/if}
-              <button class="collapse-button" aria-label={collapsedSections.items ? "Expand items" : "Collapse items"}>
-                {collapsedSections.items ? '▼' : '▲'}
-              </button>
+              <div class="section-controls">
+                {#if !collapsedSections.items}
+                  <div class="sort-controls">
+                    <button 
+                      class="sort-option"
+                      class:active={sortOptions.items.by === 'distance'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('items', 'distance'); }}
+                    >
+                      <span>Distance</span>
+                      {#if sortOptions.items.by === 'distance'}
+                        <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.items.by === 'name'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('items', 'name'); }}
+                    >
+                      <span>Name</span>
+                      {#if sortOptions.items.by === 'name'}
+                        <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.items.by === 'rarity'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('items', 'rarity'); }}
+                    >
+                      <span>Rarity</span>
+                      {#if sortOptions.items.by === 'rarity'}
+                        <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                  </div>
+                {/if}
+                <button class="collapse-button">
+                  {collapsedSections.items ? '▼' : '▲'}
+                </button>
+              </div>
             </div>
-          </div>
+          {:else}
+            <div class="tab-sort-controls">
+              <div class="sort-controls">
+                <button 
+                  class="sort-option"
+                  class:active={sortOptions.items.by === 'distance'}
+                  onclick={() => setSortOption('items', 'distance')}
+                >
+                  <span>Distance</span>
+                  {#if sortOptions.items.by === 'distance'}
+                    <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.items.by === 'name'}
+                  onclick={() => setSortOption('items', 'name')}
+                >
+                  <span>Name</span>
+                  {#if sortOptions.items.by === 'name'}
+                    <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.items.by === 'rarity'}
+                  onclick={() => setSortOption('items', 'rarity')}
+                >
+                  <span>Rarity</span>
+                  {#if sortOptions.items.by === 'rarity'}
+                    <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+              </div>
+            </div>
+          {/if}
           
-          {#if !collapsedSections.items}
-            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+          {#if activeFilter !== 'all' || !collapsedSections.items}
+            <div class="section-content" class:with-transition={activeFilter === 'all'} transition:slide|local={{ duration: 300 }}>
               {#each sortedItems as item ('item:' + (item.id || `${item.x}:${item.y}:${item.name || item.type}`).replace(/\s+/g, '-'))}
                 <div 
                   class="entity item {getRarityClass(item.rarity)}" 
@@ -1039,55 +1164,77 @@
       <!-- Battles Section -->
       {#if shouldShowSection('battles') && allBattles.length > 0}
         <div class="entities-section">
-          <div 
-            class="section-header"
-            onclick={() => toggleSection('battles')}
-            role="button"
-            tabindex="0"
-            aria-expanded={!collapsedSections.battles}
-            onkeydown={(e) => e.key === 'Enter' && toggleSection('battles')}
-          >
-            <!-- Only show full header with count on "all" tab -->
-            {#if activeFilter === 'all'}
+          {#if activeFilter === 'all'}
+            <div 
+              class="section-header"
+              onclick={() => toggleSection('battles')}
+              role="button"
+              tabindex="0"
+              aria-expanded={!collapsedSections.battles}
+              onkeydown={(e) => e.key === 'Enter' && toggleSection('battles')}
+            >
               <h4>
                 Battles ({allBattles.length})
               </h4>
-            {/if}
-            <div class="section-controls">
-              {#if !collapsedSections.battles}
-                <div class="sort-controls">
-                  <button 
-                    class="sort-option"
-                    class:active={sortOptions.battles.by === 'distance'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('battles', 'distance'); }}
-                    aria-label={`Sort by distance ${sortOptions.battles.by === 'distance' ? (sortOptions.battles.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Distance</span>
-                    {#if sortOptions.battles.by === 'distance'}
-                      <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
-                    class="sort-option" 
-                    class:active={sortOptions.battles.by === 'status'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('battles', 'status'); }}
-                    aria-label={`Sort by status ${sortOptions.battles.by === 'status' ? (sortOptions.battles.asc ? 'ascending' : 'descending') : ''}`}
-                  >
-                    <span>Status</span>
-                    {#if sortOptions.battles.by === 'status'}
-                      <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                </div>
-              {/if}
-              <button class="collapse-button" aria-label={collapsedSections.battles ? "Expand battles" : "Collapse battles"}>
-                {collapsedSections.battles ? '▼' : '▲'}
-              </button>
+              <div class="section-controls">
+                {#if !collapsedSections.battles}
+                  <div class="sort-controls">
+                    <button 
+                      class="sort-option"
+                      class:active={sortOptions.battles.by === 'distance'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('battles', 'distance'); }}
+                    >
+                      <span>Distance</span>
+                      {#if sortOptions.battles.by === 'distance'}
+                        <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.battles.by === 'status'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('battles', 'status'); }}
+                    >
+                      <span>Status</span>
+                      {#if sortOptions.battles.by === 'status'}
+                        <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                  </div>
+                {/if}
+                <button class="collapse-button">
+                  {collapsedSections.battles ? '▼' : '▲'}
+                </button>
+              </div>
             </div>
-          </div>
+          {:else}
+            <div class="tab-sort-controls">
+              <div class="sort-controls">
+                <button 
+                  class="sort-option"
+                  class:active={sortOptions.battles.by === 'distance'}
+                  onclick={() => setSortOption('battles', 'distance')}
+                >
+                  <span>Distance</span>
+                  {#if sortOptions.battles.by === 'distance'}
+                    <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.battles.by === 'status'}
+                  onclick={() => setSortOption('battles', 'status')}
+                >
+                  <span>Status</span>
+                  {#if sortOptions.battles.by === 'status'}
+                    <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+              </div>
+            </div>
+          {/if}
           
-          {#if !collapsedSections.battles}
-            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+          {#if activeFilter !== 'all' || !collapsedSections.battles}
+            <div class="section-content" class:with-transition={activeFilter === 'all'} transition:slide|local={{ duration: 300 }}>
               {#each sortedBattles as battle (battle.id)}
                 <div 
                   class="entity battle"
@@ -1108,11 +1255,9 @@
                   <div class="entity-info">
                     <div class="entity-name">
                       Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}
-                      {#if battle.status === 'resolved'}
-                        <span class="battle-status resolved">Resolved</span>
-                      {:else}
-                        <span class="battle-status active">Active</span>
-                      {/if}
+                      <span class="entity-status-badge {battle.status === 'resolved' ? 'resolved' : 'active'}">
+                        {battle.status === 'resolved' ? 'Resolved' : 'Active'}
+                      </span>
                       <span class="entity-coords">{formatCoords(battle.x, battle.y)}</span>
                     </div>
                     
@@ -1137,17 +1282,15 @@
                         </div>
                       </div>
                       
-                      <!-- Show battle participants count -->
                       {#if battle.participants && battle.participants.length > 0}
                         <div class="battle-participants">
                           {battle.participants.length} participants
                           {#if isPlayerInBattle(battle)}
-                            <span class="player-participating-badge">You're in this battle</span>
+                            <span class="entity-badge participating-badge">You're in this battle</span>
                           {/if}
                         </div>
                       {/if}
                       
-                      <!-- Battle progress bar for active battles -->
                       {#if battle.status === 'active' && battle.startTime && battle.endTime}
                         <div class="battle-progress">
                           <div class="progress-bar">
@@ -1166,7 +1309,6 @@
                       <div class="entity-distance">{formatDistance(battle.distance)}</div>
                     </div>
                     
-                    <!-- Show rewards for resolved battles -->
                     {#if battle.status === 'resolved' && battle.rewards}
                       <div class="battle-rewards">
                         <span class="rewards-label">Rewards:</span>
@@ -1175,7 +1317,6 @@
                       </div>
                     {/if}
                     
-                    <!-- Join battle action -->
                     {#if battle.status === 'active' && isPlayerAvailableOnTile($coordinates.find(c => c.x === battle.x && c.y === battle.y), $currentPlayer?.uid) && hasIdlePlayerGroups($coordinates.find(c => c.x === battle.x && c.y === battle.y), $currentPlayer?.uid)}
                       <div class="battle-actions">
                         <button 
@@ -1469,30 +1610,140 @@
     font-size: 1.2em;
   }
 
+  /* Updated badge and status styles */
+  .entity-badge {
+    display: inline-block;
+    font-size: 0.7em;
+    padding: 0.1em 0.5em;
+    border-radius: 0.3em;
+    margin-left: 0.5em;
+    font-weight: bold;
+    vertical-align: middle;
+    color: var(--color-dark-navy);
+  }
+  
+  .owner-badge {
+    background: var(--color-bright-accent, #64ffda);
+    color: var(--color-dark-navy, #0a192f);
+  }
+  
+  .participating-badge {
+    background-color: rgba(66, 133, 244, 0.9);
+    color: white;
+  }
+
+  .entity-status-badge {
+    display: inline-block;
+    font-size: 0.8em;
+    font-weight: 500;
+    padding: 0.1em 0.5em;
+    border-radius: 0.3em;
+    white-space: nowrap;
+    text-transform: capitalize;
+  }
+  
+  .entity-status-badge.idle {
+    background: rgba(128, 128, 128, 0.15);
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .entity-status-badge.moving {
+    background: rgba(0, 128, 0, 0.15);
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #006400;
+  }
+  
+  .entity-status-badge.mobilizing {
+    background: rgba(255, 165, 0, 0.15);
+    border: 1px solid rgba(255, 165, 0, 0.3);
+    color: #ff8c00;
+  }
+  
+  .entity-status-badge.demobilising {
+    background: rgba(0, 0, 255, 0.15);
+    border: 1px solid rgba(0, 0, 255, 0.3);
+    color: #00008B;
+  }
+  
+  .entity-status-badge.gathering, 
+  .entity-status-badge.starting_to_gather {
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    color: #8a2be2;
+  }
+  
+  .entity-status-badge.active {
+    background: rgba(255, 0, 0, 0.15);
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    color: #d32f2f;
+  }
+  
+  .entity-status-badge.resolved {
+    background: rgba(0, 128, 0, 0.15);
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #2e7d32;
+  }
+  
+  .entity-status-badge.pending-tick {
+    position: relative;
+    animation: pulse 1s infinite alternate;
+  }
+  
+  .entity-status-badge.pending-tick::after {
+    content: '↻';
+    margin-left: 0.3em;
+    font-weight: bold;
+  }
+
+  .current-player-owned {
+    border-color: var(--color-bright-accent, #64ffda);
+    background-color: rgba(100, 255, 218, 0.05);
+    position: relative;
+  }
+  
+  .current-player-owned::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: var(--color-bright-accent, #64ffda);
+  }
+
+  /* Battle-specific styles */
+  .battle-winner {
+    color: #ff9800;
+    font-weight: bold;
+    margin-left: 0.5em;
+  }
+  
   .battle-sides {
     display: flex;
     flex-direction: column;
     gap: 0.3em;
     font-size: 0.85em;
+    margin-top: 0.4em;
   }
-
+  
   .battle-side {
-    padding: 0.1em 0.4em;
-    border-radius: 0.2em;
+    padding: 0.2em 0.5em;
+    border-radius: 0.3em;
   }
-
+  
   .battle-side.side1 {
     background-color: rgba(0, 0, 255, 0.07);
     border: 1px solid rgba(0, 0, 255, 0.15);
     color: #00008B;
   }
-
+  
   .battle-side.side2 {
     background-color: rgba(139, 0, 0, 0.07);
     border: 1px solid rgba(139, 0, 0, 0.15);
     color: #8B0000;
   }
-
+  
   .side-name {
     font-weight: 500;
   }
@@ -1504,65 +1755,11 @@
     margin-top: 0.3em;
   }
 
-  .battle-status.resolved {
-    color: #4caf50;
-    font-weight: bold;
-    margin-left: 0.5em;
-  }
-
-  .battle-status.active {
-    color: #f44336;
-    font-weight: bold;
-    margin-left: 0.5em;
-  }
-
-  .battle-winner {
-    color: #ff9800;
-    font-weight: bold;
-    margin-left: 0.5em;
-  }
-
-  .battle-rewards {
-    font-size: 0.85em;
-    color: #795548;
-    margin-top: 0.3em;
-  }
-
-  .rewards-label {
-    font-weight: bold;
-    margin-right: 0.3em;
-  }
-
-  .battle-duration {
-    font-size: 0.85em;
-    color: #607d8b;
-    margin-top: 0.3em;
-  }
-
-  .battle-actions {
-    margin-top: 0.5em;
-  }
-
-  .join-battle-btn {
-    background-color: #4caf50;
-    color: white;
-    border: none;
-    padding: 0.5em 1em;
-    border-radius: 0.3em;
-    cursor: pointer;
-    font-size: 0.85em;
-    transition: background-color 0.2s ease;
-  }
-
-  .join-battle-btn:hover {
-    background-color: #388e3c;
-  }
-
   .battle-progress {
     margin-top: 0.4em;
     width: 100%;
   }
-
+  
   .progress-bar {
     height: 0.5em;
     background-color: rgba(0, 0, 0, 0.1);
@@ -1570,42 +1767,24 @@
     overflow: hidden;
     margin-bottom: 0.2em;
   }
-
+  
   .progress-fill {
     height: 100%;
     background-color: rgba(139, 0, 0, 0.7);
     transition: width 1s ease;
   }
 
-  .entity.battle.resolved .progress-fill {
-    background-color: rgba(0, 128, 0, 0.7);
+  .unit-count {
+    color: rgba(0, 0, 0, 0.7);
+    font-weight: 500;
+  }
+  
+  .item-count {
+    color: #2d8659;
+    font-weight: 500;
   }
 
-  .entity.battle.player-participating {
-    background-color: rgba(66, 133, 244, 0.1);
-    border: 1px solid rgba(66, 133, 244, 0.3);
-  }
-
-  .player-participating-badge {
-    font-size: 0.7em;
-    background-color: rgba(66, 133, 244, 0.7);
-    color: white;
-    padding: 0.1em 0.4em;
-    border-radius: 1em;
-    margin-left: 0.4em;
-  }
-
-  .winning-side {
-    background-color: rgba(0, 128, 0, 0.1);
-    border-color: rgba(0, 128, 0, 0.3) !important;
-  }
-
-  .losing-side {
-    background-color: rgba(128, 128, 128, 0.1);
-    border-color: rgba(128, 128, 128, 0.3) !important;
-  }
-
-  /* Fixed section header styling */
+  /* Section header and controls */
   .section-header {
     display: flex;
     justify-content: space-between;
@@ -1629,7 +1808,6 @@
     margin-left: auto;
   }
   
-  /* Fixed collapsible button styling */
   .collapse-button {
     background: none;
     border: none;
@@ -1651,7 +1829,6 @@
     border-radius: 50%;
   }
   
-  /* Fixed sort controls styling */
   .sort-controls {
     display: flex;
     gap: 0.2em;
@@ -1686,35 +1863,44 @@
     font-size: 0.9em;
     font-weight: bold;
   }
-  
-  /* Make sure sections have proper spacing */
-  .entities-section {
-    margin-bottom: 0.8em;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    padding-bottom: 0.5em;
+
+  /* Tab-specific sort controls */
+  .tab-sort-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.5em;
+    padding: 0.3em 0;
   }
-  
-  .entities-section:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-  }
-  
-  /* Ensure section content animates properly */
-  .section-content {
+
+  /* Animation and transitions */
+  .section-content.with-transition {
     overflow: hidden;
   }
-  
-  /* Fix overflow issues with entity details */
-  .entity-details {
-    overflow: hidden;
+
+  .section-content:not(.with-transition) {
+    transition: none !important;
   }
   
-  /* Empty state styling */
   .empty-state {
     padding: 2em;
     text-align: center;
     color: rgba(0, 0, 0, 0.5);
     font-style: italic;
+  }
+
+  @keyframes pulse {
+    from { opacity: 0.8; }
+    to { opacity: 1; }
+  }
+
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 </style>

@@ -115,6 +115,48 @@
     let structureLocation = $state({ x: 0, y: 0 });
     let selectedTile = $state(null);
 
+    // Modal management state
+    let modalState = $state({
+        type: null,
+        data: null,
+        visible: false
+    });
+
+    // Function to show modal content
+    function showModal(options) {
+        if (!options) return;
+        
+        console.log('Opening modal:', options.type, options.data);
+        
+        if (options.type === 'inspect' && options.data) {
+            // Update modal state for structure inspection
+            modalState = {
+                type: 'inspect',
+                data: options.data,
+                visible: true
+            };
+        } else if (options.type) {
+            // Handle other modal types
+            modalState = {
+                type: options.type,
+                data: options.data,
+                visible: true
+            };
+        }
+    }
+
+    // Function to close modal
+    function closeModal() {
+        modalState.visible = false;
+        // Reset modal data after animation completes
+        setTimeout(() => {
+            if (!modalState.visible) {
+                modalState.type = null;
+                modalState.data = null;
+            }
+        }, 300);
+    }
+
     function parseUrlCoordinates() {
         if (!browser || !$page.url) return null;
         
@@ -907,44 +949,7 @@
         {#if detailed && $highlightedStore}
             <Details 
                 onClose={() => toggleDetailsModal(false)}
-                onShowModal={({ type, data }) => {
-                    toggleDetailsModal(false);
-                    
-                    switch(type) {
-                        case 'mobilize':
-                            showMobilize = true;
-                            mobilizeData = data;
-                            break;
-                        case 'move':
-                            showMove = true;
-                            moveData = data;
-                            break;
-                        case 'attack':
-                            showAttack = true;
-                            attackData = data;
-                            break;
-                        case 'joinBattle':
-                            showJoinBattle = true;
-                            joinBattleData = data;
-                            break;
-                        case 'demobilize':
-                            showDemobilize = true;
-                            demobilizeData = data;
-                            break;
-                        case 'gather':
-                            showGather = true;
-                            gatherData = data;
-                            break;
-                        case 'inspect':
-                            showStructureOverview = true;
-                            selectedStructure = data.structure;
-                            structureLocation = { x: data.x, y: data.y };
-                            selectedTile = data.tile;
-                            break;
-                        default:
-                            console.log(`Unhandled modal type: ${type}`);
-                    }
-                }}
+                onShowModal={showModal}
             />
         {:else}
             <Legend 
@@ -1082,20 +1087,15 @@
             </div>
         {/if}
 
-        {#if showStructureOverview && selectedStructure}
-            <StructureOverview 
-                structure={selectedStructure}
-                x={structureLocation.x}
-                y={structureLocation.y}
-                tile={selectedTile}
-                onClose={() => {
-                    showStructureOverview = false;
-                    setTimeout(() => {
-                        selectedStructure = null;
-                        selectedTile = null;
-                    }, 300);
-                }}
-            />
+        {#if modalState.visible}
+            {#if modalState.type === 'inspect' && modalState.data}
+                <StructureOverview 
+                    x={modalState.data.x}
+                    y={modalState.data.y}
+                    tile={modalState.data.tile}
+                    onClose={closeModal}
+                />
+            {/if}
         {/if}
     {/if}
 </div>
