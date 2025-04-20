@@ -81,20 +81,7 @@
             <Structure size="3.5em" extraClass="structure-type-icon {tile?.structure?.type || ''}-icon" />
           {/if}
           
-          <!-- Add race icon if the structure has a faction -->
-          {#if tile?.structure?.faction}
-            {#if tile?.structure?.faction.toLowerCase() === 'human'}
-              <Human extraClass="race-icon-structure" />
-            {:else if tile?.structure?.faction.toLowerCase() === 'elf'}
-              <Elf extraClass="race-icon-structure" />
-            {:else if tile?.structure?.faction.toLowerCase() === 'dwarf'}
-              <Dwarf extraClass="race-icon-structure" />
-            {:else if tile?.structure?.faction.toLowerCase() === 'goblin'}
-              <Goblin extraClass="race-icon-structure" />
-            {:else if tile?.structure?.faction.toLowerCase() === 'fairy'}
-              <Fairy extraClass="race-icon-structure" />
-            {/if}
-          {/if}
+          <!-- Race icon next to structure icon removed -->
         </div>
         
         <div class="structure-info">
@@ -106,7 +93,7 @@
             
             {#if tile?.structure?.faction}
               <span class="entity-badge faction-badge">
-                <!-- Add race icon inside the faction badge -->
+                <!-- Race icon in faction badge is kept -->
                 {#if tile?.structure?.faction.toLowerCase() === 'human'}
                   <Human extraClass="race-icon-badge" />
                 {:else if tile?.structure?.faction.toLowerCase() === 'elf'}
@@ -265,10 +252,8 @@
 
   .structure-icon-container {
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 0.5em;
     min-width: 4em;
   }
   
@@ -564,13 +549,6 @@
   
   :global(.citadel-icon) {
     filter: drop-shadow(0 0 2px rgba(209, 138, 230, 0.7));
-  }
-
-  :global(.race-icon-structure) {
-    width: 1.8em;
-    height: 1.8em;
-    fill: #64FFDA;
-    margin-top: -0.8em;
   }
 
   @keyframes appear {
