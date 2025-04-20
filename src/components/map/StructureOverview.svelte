@@ -1,5 +1,6 @@
 <script>
   import { fly } from "svelte/transition";
+  import { slide } from "svelte/transition";
   import { quintOut } from "svelte/easing";
   import { coordinates, targetStore } from "../../lib/stores/map.js";
   import { game, currentPlayer } from "../../lib/stores/game.js";
@@ -113,188 +114,200 @@
   }
 </script>
 
-<div class="modal-wrapper" transition:fly|local={{ y: 20, duration: 300, easing: quintOut }}>
-  <div class="modal structure-modal">
-    <header class="modal-header {targetStructure?.type || ''}">
+<div class="entities-wrapper">
+  <div class="entities-panel" transition:fly|local={{ y: 20, duration: 500, easing: quintOut }}>
+    <h3 class="title">
       <div class="structure-icon">
         {#if targetStructure?.type === 'spawn'}
-          <Torch size="2em" extraClass="structure-type-icon" />
+          <Torch size="1.6em" extraClass="structure-type-icon" />
         {:else}
-          <Structure size="2em" extraClass="structure-type-icon {targetStructure?.type}-icon" />
+          <Structure size="1.6em" extraClass="structure-type-icon {targetStructure?.type}-icon" />
         {/if}
       </div>
-      <h3>{targetStructure?.name || formatText(targetStructure?.type) || 'Structure'}</h3>
+      {targetStructure?.name || formatText(targetStructure?.type) || 'Structure'}
       <button class="close-button" onclick={onClose}>
-        <Close size="1.6em" extraClass="close-icon-light" />
+        <Close size="1.6em" extraClass="close-icon-dark" />
       </button>
-    </header>
+    </h3>
     
-    <!-- Tab navigation -->
-    <div class="structure-tabs">
+    <!-- Tab navigation styled like filter-tabs -->
+    <div class="filter-tabs">
       <button 
-        class="tab-button" 
-        class:active={activeTab === 'overview'} 
+        class="filter-tab {activeTab === 'overview' ? 'active' : ''} has-content" 
         onclick={() => activeTab = 'overview'}>
         Overview
       </button>
       
       <button 
-        class="tab-button" 
-        class:active={activeTab === 'items'} 
+        class="filter-tab {activeTab === 'items' ? 'active' : ''} {structureItems?.length ? 'has-content' : ''}" 
         onclick={() => activeTab = 'items'}>
-        Items ({structureItems?.length || 0})
+        Items 
+        {#if structureItems?.length}
+          <span class="filter-count filter-count-items">{structureItems.length}</span>
+        {/if}
       </button>
       
       {#if tile?.groups?.length || tile?.players?.length}
         <button 
-          class="tab-button" 
-          class:active={activeTab === 'entities'} 
+          class="filter-tab {activeTab === 'entities' ? 'active' : ''} has-content" 
           onclick={() => activeTab = 'entities'}>
           Entities
+          {#if (tile?.groups?.length || 0) + (tile?.players?.length || 0) > 0}
+            <span class="filter-count filter-count-groups">{(tile?.groups?.length || 0) + (tile?.players?.length || 0)}</span>
+          {/if}
         </button>
       {/if}
     </div>
     
-    <div class="modal-content">
+    <div class="entities-content">
       {#if activeTab === 'overview'}
-        <div class="structure-details">
-          <div class="attribute">
-            <span class="attribute-label">Type</span>
-            <span class="attribute-value">{formatText(targetStructure?.type) || 'Unknown'}</span>
-          </div>
-          
-          <div class="attribute">
-            <span class="attribute-label">Location</span>
-            <span class="attribute-value">{formatCoords(structureLocation.x, structureLocation.y)}</span>
-          </div>
-          
-          {#if targetStructure?.owner}
-            <div class="attribute">
-              <span class="attribute-label">Owner</span>
-              <span class="attribute-value">
-                {#if isOwnedByCurrentPlayer()}
-                  <span class="owner-badge">You</span>
-                {:else}
-                  {targetStructure.ownerName || 'Unknown player'}
+        <div class="entities-section">
+          <div class="section-content">
+            <div class="structure-details">
+              <div class="attribute">
+                <span class="attribute-label">Type</span>
+                <span class="attribute-value">{formatText(targetStructure?.type) || 'Unknown'}</span>
+              </div>
+              
+              <div class="attribute">
+                <span class="attribute-label">Location</span>
+                <span class="attribute-value">{formatCoords(structureLocation.x, structureLocation.y)}</span>
+              </div>
+              
+              {#if targetStructure?.owner}
+                <div class="attribute">
+                  <span class="attribute-label">Owner</span>
+                  <span class="attribute-value">
+                    {#if isOwnedByCurrentPlayer()}
+                      <span class="entity-badge owner-badge">You</span>
+                    {:else}
+                      {targetStructure.ownerName || 'Unknown player'}
+                    {/if}
+                  </span>
+                </div>
+              {/if}
+              
+              {#if targetStructure?.faction}
+                <div class="attribute">
+                  <span class="attribute-label">Faction</span>
+                  <span class="attribute-value">{formatText(targetStructure.faction)}</span>
+                </div>
+              {/if}
+              
+              {#if targetStructure?.level !== undefined}
+                <div class="attribute">
+                  <span class="attribute-label">Level</span>
+                  <span class="attribute-value">{targetStructure.level}</span>
+                </div>
+              {/if}
+              
+              {#if targetStructure?.capacity !== undefined}
+                <div class="attribute">
+                  <span class="attribute-label">Capacity</span>
+                  <span class="attribute-value">{targetStructure.capacity}</span>
+                </div>
+              {/if}
+              
+              {#if targetStructure?.hp !== undefined && targetStructure?.maxHp !== undefined}
+                <div class="attribute">
+                  <span class="attribute-label">Health</span>
+                  <span class="attribute-value">{targetStructure.hp} / {targetStructure.maxHp}</span>
+                </div>
+              {/if}
+              
+              {#if targetStructure?.durability !== undefined && targetStructure?.maxDurability !== undefined}
+                <div class="attribute">
+                  <span class="attribute-label">Durability</span>
+                  <span class="attribute-value">{targetStructure.durability} / {targetStructure.maxDurability}</span>
+                </div>
+              {/if}
+              
+              {#if targetStructure?.description}
+                <div class="structure-description">
+                  {targetStructure.description}
+                </div>
+              {/if}
+            </div>
+            
+            <div class="structure-actions">
+              {#if isOwnedByCurrentPlayer() && targetStructure?.type !== 'spawn'}
+                <button class="action-button" onclick={() => handleStructureAction('manage')}>
+                  Manage Structure
+                </button>
+                
+                {#if targetStructure?.canUpgrade}
+                  <button class="action-button" onclick={() => handleStructureAction('upgrade')}>
+                    Upgrade Structure
+                  </button>
                 {/if}
-              </span>
+                
+                <button class="action-button danger" onclick={() => handleStructureAction('dismantle')}>
+                  Dismantle
+                </button>
+              {/if}
+              
+              {#if targetStructure?.type === 'spawn'}
+                <button class="action-button" onclick={() => handleStructureAction('viewSpawn')}>
+                  View Spawn Area
+                </button>
+              {/if}
             </div>
-          {/if}
-          
-          {#if targetStructure?.faction}
-            <div class="attribute">
-              <span class="attribute-label">Faction</span>
-              <span class="attribute-value">{formatText(targetStructure.faction)}</span>
-            </div>
-          {/if}
-          
-          {#if targetStructure?.level !== undefined}
-            <div class="attribute">
-              <span class="attribute-label">Level</span>
-              <span class="attribute-value">{targetStructure.level}</span>
-            </div>
-          {/if}
-          
-          {#if targetStructure?.capacity !== undefined}
-            <div class="attribute">
-              <span class="attribute-label">Capacity</span>
-              <span class="attribute-value">{targetStructure.capacity}</span>
-            </div>
-          {/if}
-          
-          {#if targetStructure?.hp !== undefined && targetStructure?.maxHp !== undefined}
-            <div class="attribute">
-              <span class="attribute-label">Health</span>
-              <span class="attribute-value">{targetStructure.hp} / {targetStructure.maxHp}</span>
-            </div>
-          {/if}
-          
-          {#if targetStructure?.durability !== undefined && targetStructure?.maxDurability !== undefined}
-            <div class="attribute">
-              <span class="attribute-label">Durability</span>
-              <span class="attribute-value">{targetStructure.durability} / {targetStructure.maxDurability}</span>
-            </div>
-          {/if}
-          
-          {#if targetStructure?.description}
-            <div class="structure-description">
-              {targetStructure.description}
-            </div>
-          {/if}
-        </div>
-        
-        <div class="structure-actions">
-          {#if isOwnedByCurrentPlayer() && targetStructure?.type !== 'spawn'}
-            <button class="action-button" onclick={() => handleStructureAction('manage')}>
-              Manage Structure
-            </button>
-            
-            {#if targetStructure?.canUpgrade}
-              <button class="action-button" onclick={() => handleStructureAction('upgrade')}>
-                Upgrade Structure
-              </button>
-            {/if}
-            
-            <button class="action-button danger" onclick={() => handleStructureAction('dismantle')}>
-              Dismantle
-            </button>
-          {/if}
-          
-          {#if targetStructure?.type === 'spawn'}
-            <button class="action-button" onclick={() => handleStructureAction('viewSpawn')}>
-              View Spawn Area
-            </button>
-          {/if}
+          </div>
         </div>
       {/if}
       
       {#if activeTab === 'items'}
-        <div class="items-list">
-          {#if structureItems?.length > 0}
-            {#each structureItems as item}
-              <div class="item {getRarityClass(item.rarity)}">
-                <div class="item-info">
-                  <div class="item-name">
-                    {item.name || formatText(item.type) || 'Unknown Item'}
-                    {#if item.quantity > 1}
-                      <span class="item-quantity">×{item.quantity}</span>
-                    {/if}
-                  </div>
-                  
-                  <div class="item-details">
-                    {#if item.type}
-                      <span class="item-type">{formatText(item.type)}</span>
-                    {/if}
-                    
-                    {#if item.rarity && item.rarity !== 'common'}
-                      <span class="item-rarity-badge {item.rarity}">{formatText(item.rarity)}</span>
-                    {/if}
-                  </div>
-                  
-                  {#if item.description}
-                    <div class="item-description">
-                      {item.description}
+        <div class="entities-section">
+          <div class="section-content">
+            {#if structureItems?.length > 0}
+              {#each structureItems as item}
+                <div class="entity item {getRarityClass(item.rarity)}">
+                  <div class="item-icon {item.type}"></div>
+                  <div class="entity-info">
+                    <div class="entity-name">
+                      {item.name || formatText(item.type) || 'Unknown Item'}
+                      {#if item.quantity > 1}
+                        <span class="item-quantity">×{item.quantity}</span>
+                      {/if}
                     </div>
-                  {/if}
+                    
+                    <div class="entity-details">
+                      {#if item.type}
+                        <span class="item-type">{formatText(item.type)}</span>
+                      {/if}
+                      
+                      {#if item.rarity && item.rarity !== 'common'}
+                        <span class="item-rarity {item.rarity}">{formatText(item.rarity)}</span>
+                      {/if}
+                    </div>
+                    
+                    {#if item.description}
+                      <div class="item-description">
+                        {item.description}
+                      </div>
+                    {/if}
+                  </div>
                 </div>
+              {/each}
+            {:else}
+              <div class="empty-state">
+                No items in this structure
               </div>
-            {/each}
-          {:else}
-            <div class="empty-state">
-              No items in this structure
-            </div>
-          {/if}
+            {/if}
+          </div>
         </div>
       {/if}
       
       {#if activeTab === 'entities'}
         {#if tile?.groups && tile.groups.length > 0}
           <div class="entities-section">
-            <h4>Groups ({tile.groups.length})</h4>
+            <div class="section-header">
+              <h4>Groups ({tile.groups.length})</h4>
+            </div>
             
-            <div class="entities-list">
+            <div class="section-content" transition:slide|local={{ duration: 300 }}>
               {#each tile.groups as group}
-                <div class="entity group" class:player-owned={group.owner === $currentPlayer?.uid}>
+                <div class="entity group" class:current-player-owned={group.owner === $currentPlayer?.uid}>
                   <div class="entity-race-icon">
                     {#if group.race === 'human'}
                       <Human extraClass="race-icon-entity" />
@@ -335,11 +348,13 @@
         
         {#if tile?.players && tile.players.length > 0}
           <div class="entities-section">
-            <h4>Players ({tile.players.length})</h4>
+            <div class="section-header">
+              <h4>Players ({tile.players.length})</h4>
+            </div>
             
-            <div class="entities-list">
+            <div class="section-content" transition:slide|local={{ duration: 300 }}>
               {#each tile.players as player}
-                <div class="entity player" class:current-player={player.uid === $currentPlayer?.uid}>
+                <div class="entity player" class:current={player.uid === $currentPlayer?.uid}>
                   <div class="entity-race-icon">
                     {#if player.race === 'human'}
                       <Human extraClass="race-icon-entity" />
@@ -385,7 +400,7 @@
 </div>
 
 <style>
-  .modal-wrapper {
+  .entities-wrapper {
     position: fixed;
     top: 0;
     left: 0;
@@ -397,309 +412,223 @@
     z-index: 1000;
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    font-size: 1.4em;
+    font-family: var(--font-body);
   }
 
-  .modal {
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    max-width: 500px;
+  .entities-panel {
+    background-color: rgba(255, 255, 255, 0.85);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.3em;
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(0.5em);
+    -webkit-backdrop-filter: blur(0.5em);
     width: 90%;
-    max-height: 85vh;
+    max-width: 28em;
     display: flex;
     flex-direction: column;
-    animation: appear 0.3s ease-out forwards;
     overflow: hidden;
+    animation: reveal 0.4s ease-out forwards;
+    transform-origin: center;
+    max-height: 85vh;
   }
 
-  .modal-header {
-    padding: 16px;
+  .title {
+    margin: 0;
+    padding: 0.8em 1em;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    font-family: var(--font-heading);
     display: flex;
     align-items: center;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    background-color: #3a3a3a;
-    color: white;
-  }
-  
-  .modal-header.spawn {
-    background-color: #00acc1;
-  }
-  
-  .modal-header.fortress {
-    background-color: #8d6e63;
-  }
-  
-  .modal-header.watchtower {
-    background-color: #7cb342;
-  }
-  
-  .modal-header.outpost {
-    background-color: #5c6bc0;
+    justify-content: space-between;
   }
 
   .structure-icon {
-    margin-right: 16px;
-  }
-
-  h3 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-    flex-grow: 1;
-  }
-
-  h4 {
-    margin: 0 0 12px;
-    font-size: 16px;
-    color: #555;
-    font-weight: 500;
+    margin-right: 0.7em;
   }
 
   .close-button {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 4px;
+    padding: 0.4em;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
+    margin-left: auto;
     transition: background-color 0.2s;
+    color: rgba(0, 0, 0, 0.6);
   }
 
   .close-button:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.9);
   }
 
-  .structure-tabs {
+  .filter-tabs {
     display: flex;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: rgba(0, 0, 0, 0.03);
+    padding: 0 0.3em;
+    width: 100%;
     overflow-x: auto;
-    background-color: #f5f5f5;
-    border-bottom: 1px solid #eee;
   }
 
-  .tab-button {
-    padding: 12px 16px;
+  .filter-tab {
+    padding: 0.6em 0.8em;
+    font-family: var(--font-heading);
+    font-size: 0.8em;
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
     cursor: pointer;
+    color: rgba(0, 0, 0, 0.5);
+    transition: all 0.2s ease;
+    flex: 1;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
     white-space: nowrap;
-    color: #666;
-    transition: all 0.2s;
   }
 
-  .tab-button:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: #333;
+  .filter-tab:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.03);
+    color: rgba(0, 0, 0, 0.8);
   }
 
-  .tab-button.active {
-    border-bottom-color: #4a90e2;
-    color: #333;
+  .filter-tab.active {
+    border-bottom: 2px solid #4285f4;
+    color: rgba(0, 0, 0, 0.9);
     font-weight: 500;
   }
 
-  .modal-content {
-    padding: 16px;
+  .filter-tab:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .filter-tab.has-content:not(.active) {
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .filter-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 1.2em;
+    height: 1.2em;
+    font-size: 0.7em;
+    font-weight: bold;
+    margin-left: 0.4em;
+    line-height: 1;
+    background: rgba(0, 0, 0, 0.2);
+    color: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);
+  }
+
+  .filter-tab.active .filter-count {
+    background: rgba(64, 158, 255, 0.9);
+    box-shadow: 0 0 0.2em rgba(64, 158, 255, 0.6);
+  }
+
+  .filter-count-items {
+    background-color: rgba(255, 215, 0, 0.7);
+  }
+
+  .filter-count-groups {
+    background-color: rgba(255, 100, 100, 0.7);
+  }
+
+  .entities-content {
+    padding: 0.8em;
+    max-height: 60vh;
     overflow-y: auto;
   }
 
-  .structure-details {
-    margin-bottom: 24px;
+  .entities-section {
+    margin-bottom: 1.2em;
+  }
+
+  .entities-section:last-child {
+    margin-bottom: 0;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5em 0;
+    margin-bottom: 0.5em;
+  }
+
+  h4 {
+    margin: 0;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
   .attribute {
     display: flex;
-    margin-bottom: 12px;
-    font-size: 15px;
+    margin-bottom: 0.6em;
+    font-size: 0.9em;
   }
 
   .attribute-label {
     width: 120px;
-    color: #666;
+    color: rgba(0, 0, 0, 0.6);
     font-weight: 500;
   }
 
   .attribute-value {
     flex-grow: 1;
-    color: #333;
-  }
-
-  .owner-badge {
-    background-color: #4caf50;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
+    color: rgba(0, 0, 0, 0.8);
   }
 
   .structure-description {
-    margin-top: 16px;
-    font-size: 14px;
+    margin-top: 1em;
+    font-size: 0.85em;
     line-height: 1.5;
-    color: #555;
-  }
-
-  .structure-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .action-button {
-    padding: 12px;
-    font-size: 15px;
-    background-color: #4a90e2;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s;
-  }
-
-  .action-button:hover {
-    background-color: #3a80d2;
-  }
-
-  .action-button.danger {
-    background-color: #f44336;
-  }
-
-  .action-button.danger:hover {
-    background-color: #d32f2f;
-  }
-
-  /* Items styling */
-  .items-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .item {
-    padding: 12px;
-    border-radius: 6px;
-    background-color: #f9f9f9;
-    border: 1px solid #eee;
-  }
-
-  .item.uncommon {
-    border-color: rgba(76, 175, 80, 0.3);
-    background-color: rgba(76, 175, 80, 0.05);
-  }
-
-  .item.rare {
-    border-color: rgba(33, 150, 243, 0.3);
-    background-color: rgba(33, 150, 243, 0.05);
-  }
-
-  .item.epic {
-    border-color: rgba(156, 39, 176, 0.3);
-    background-color: rgba(156, 39, 176, 0.05);
-  }
-
-  .item.legendary {
-    border-color: rgba(255, 152, 0, 0.3);
-    background-color: rgba(255, 152, 0, 0.05);
-  }
-
-  .item.mythic {
-    border-color: rgba(233, 30, 99, 0.3);
-    background-color: rgba(233, 30, 99, 0.05);
-    animation: pulseMythic 2s infinite alternate;
-  }
-
-  .item-name {
-    font-weight: 500;
-    font-size: 16px;
-    margin-bottom: 4px;
-    display: flex;
-    align-items: center;
-  }
-
-  .item-quantity {
-    margin-left: 6px;
-    font-size: 14px;
-    color: #666;
-  }
-
-  .item-details {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 6px;
-    flex-wrap: wrap;
-  }
-
-  .item-type {
-    font-size: 14px;
-    color: #666;
-  }
-
-  .item-rarity-badge {
-    font-size: 12px;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-weight: 500;
-  }
-
-  .item-rarity-badge.uncommon {
-    background-color: rgba(76, 175, 80, 0.2);
-    color: #2e7d32;
-  }
-
-  .item-rarity-badge.rare {
-    background-color: rgba(33, 150, 243, 0.2);
-    color: #0277bd;
-  }
-
-  .item-rarity-badge.epic {
-    background-color: rgba(156, 39, 176, 0.2);
-    color: #7b1fa2;
-  }
-
-  .item-rarity-badge.legendary {
-    background-color: rgba(255, 152, 0, 0.2);
-    color: #ef6c00;
-  }
-
-  .item-rarity-badge.mythic {
-    background-color: rgba(233, 30, 99, 0.2);
-    color: #c2185b;
-  }
-
-  .item-description {
-    font-size: 14px;
-    color: #666;
+    color: rgba(0, 0, 0, 0.7);
     font-style: italic;
-    margin-top: 4px;
-  }
-
-  /* Entities styling */
-  .entities-section {
-    margin-bottom: 20px;
-  }
-
-  .entities-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
   }
 
   .entity {
-    padding: 12px;
-    border-radius: 6px;
-    background-color: #f9f9f9;
-    border: 1px solid #eee;
     display: flex;
     align-items: flex-start;
+    margin-bottom: 0.6em;
+    padding: 0.5em 0.7em;
+    border-radius: 0.3em;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s ease;
+  }
+
+  .entity:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+
+  .entity.player.current {
+    background-color: rgba(66, 133, 244, 0.05);
+    border-color: rgba(66, 133, 244, 0.3);
   }
 
   .entity-race-icon {
-    margin-right: 12px;
-    margin-top: 2px;
+    margin-right: 0.7em;
+    margin-top: 0.1em;
   }
 
   .entity-info {
@@ -708,86 +637,205 @@
 
   .entity-name {
     font-weight: 500;
-    font-size: 16px;
-    margin-bottom: 4px;
+    color: rgba(0, 0, 0, 0.85);
+    line-height: 1.2;
+    margin-bottom: 0.2em;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
+    gap: 0.5em;
   }
 
   .entity-details {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    font-size: 14px;
-    color: #666;
+    gap: 0.6em;
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.7);
+    width: 100%;
+    justify-content: space-between;
   }
 
   .entity-badge {
-    font-size: 12px;
-    padding: 2px 6px;
-    border-radius: 3px;
+    font-size: 0.7em;
+    padding: 0.2em 0.4em;
+    border-radius: 0.3em;
     font-weight: 500;
   }
 
-  .entity-race {
-    color: #555;
-  }
-
-  .unit-count {
-    font-weight: 500;
-  }
-
-  .entity.player-owned {
-    border-color: rgba(76, 175, 80, 0.3);
-    background-color: rgba(76, 175, 80, 0.05);
-  }
-
-  .entity.current-player {
-    border-color: rgba(33, 150, 243, 0.3);
-    background-color: rgba(33, 150, 243, 0.05);
+  .owner-badge {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+    border: 1px solid rgba(76, 175, 80, 0.4);
   }
 
   .entity-status-badge {
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 12px;
+    display: inline-block;
+    font-size: 0.8em;
+    font-weight: 500;
+    padding: 0.1em 0.5em;
+    border-radius: 0.3em;
+    white-space: nowrap;
+    text-transform: capitalize;
+  }
+  
+  .entity-status-badge.idle {
+    background: rgba(128, 128, 128, 0.15);
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .entity-status-badge.moving {
+    background: rgba(0, 128, 0, 0.15);
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #006400;
+  }
+
+  .current-player-owned {
+    border-color: var(--color-bright-accent, #64ffda);
+    background-color: rgba(100, 255, 218, 0.05);
+    position: relative;
+  }
+  
+  .current-player-owned::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: var(--color-bright-accent, #64ffda);
+  }
+
+  .unit-count {
+    color: rgba(0, 0, 0, 0.7);
     font-weight: 500;
   }
 
-  .entity-status-badge.idle {
-    background-color: rgba(158, 158, 158, 0.2);
-    color: #616161;
+  .item-icon {
+    width: 1em;
+    height: 1em;
+    background-color: rgba(255, 215, 0, 0.3);
+    border-radius: 50%;
+    margin-right: 0.7em;
+    margin-top: 0.2em;
   }
 
-  .entity-status-badge.moving {
-    background-color: rgba(0, 150, 136, 0.2);
-    color: #00796b;
+  .item-type {
+    font-weight: 500;
   }
 
-  .entity-status-badge.mobilizing {
-    background-color: rgba(255, 152, 0, 0.2);
-    color: #ef6c00;
+  .item-rarity {
+    font-size: 0.8em;
+    padding: 0.1em 0.4em;
+    border-radius: 0.2em;
   }
 
-  .entity-status-badge.demobilising {
+  .item-rarity.uncommon {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+  }
+
+  .item-rarity.rare {
+    background-color: rgba(33, 150, 243, 0.2);
+    color: #0277bd;
+  }
+
+  .item-rarity.epic {
     background-color: rgba(156, 39, 176, 0.2);
     color: #7b1fa2;
   }
 
-  .entity-status-badge.fighting {
-    background-color: rgba(244, 67, 54, 0.2);
-    color: #d32f2f;
+  .item-rarity.legendary {
+    background-color: rgba(255, 152, 0, 0.2);
+    color: #ef6c00;
+  }
+
+  .item-rarity.mythic {
+    background-color: rgba(233, 30, 99, 0.2);
+    color: #c2185b;
+  }
+
+  .item-description {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.6);
+    font-style: italic;
+    margin-top: 0.4em;
+  }
+
+  .entity.item.uncommon {
+    border-color: rgba(76, 175, 80, 0.3);
+    background-color: rgba(76, 175, 80, 0.05);
+  }
+
+  .entity.item.rare {
+    border-color: rgba(33, 150, 243, 0.3);
+    background-color: rgba(33, 150, 243, 0.05);
+  }
+
+  .entity.item.epic {
+    border-color: rgba(156, 39, 176, 0.3);
+    background-color: rgba(156, 39, 176, 0.05);
+  }
+
+  .entity.item.legendary {
+    border-color: rgba(255, 152, 0, 0.3);
+    background-color: rgba(255, 152, 0, 0.05);
+  }
+
+  .entity.item.mythic {
+    border-color: rgba(233, 30, 99, 0.3);
+    background-color: rgba(233, 30, 99, 0.05);
+    animation: pulseMythic 2s infinite alternate;
+  }
+
+  .item-quantity {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.6);
+    margin-left: 0.2em;
   }
 
   .empty-state {
+    padding: 2em;
     text-align: center;
-    padding: 24px;
-    color: #666;
+    color: rgba(0, 0, 0, 0.5);
     font-style: italic;
   }
 
-  @keyframes appear {
+  .structure-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6em;
+    margin-top: 1.2em;
+  }
+
+  .action-button {
+    padding: 0.8em;
+    font-size: 0.9em;
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 0.3em;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    font-family: var(--font-body);
+  }
+
+  .action-button:hover {
+    background-color: #357ae8;
+    transform: translateY(-0.05em);
+  }
+
+  .action-button.danger {
+    background-color: #db4437;
+  }
+
+  .action-button.danger:hover {
+    background-color: #c53929;
+  }
+
+  @keyframes reveal {
     from {
       opacity: 0;
       transform: scale(0.95);
