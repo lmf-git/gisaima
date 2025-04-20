@@ -523,7 +523,7 @@
         </div>
       </div>
       
-      <!-- Groups section with sorting -->
+      <!-- Groups section with styled count -->
       {#if $highlightedStore.groups?.length > 0}
         <div class="entities-section">
           <div 
@@ -533,7 +533,7 @@
             tabindex="0"
             aria-expanded={!collapsedSections.groups}
           >
-            <h4>Groups <span class="section-count">({$highlightedStore.groups.length})</span></h4>
+            <h4>Groups <span class="entity-count groups-count">{$highlightedStore.groups.length}</span></h4>
             <div class="section-controls">
               {#if !collapsedSections.groups}
                 <div class="sort-controls">
@@ -626,7 +626,7 @@
         </div>
       {/if}
       
-      <!-- Players section with sorting -->
+      <!-- Players section with styled count -->
       {#if $highlightedStore.players?.length > 0}
         <div class="entities-section">
           <div 
@@ -636,7 +636,7 @@
             tabindex="0"
             aria-expanded={!collapsedSections.players}
           >
-            <h4>Players <span class="section-count">({$highlightedStore.players.length})</span></h4>
+            <h4>Players <span class="entity-count players-count">{$highlightedStore.players.length}</span></h4>
             <div class="section-controls">
               {#if !collapsedSections.players}
                 <div class="sort-controls">
@@ -692,7 +692,7 @@
         </div>
       {/if}
       
-      <!-- Items section with sorting -->
+      <!-- Items section with styled count -->
       {#if $highlightedStore.items?.length > 0}
         <div class="entities-section">
           <div 
@@ -702,7 +702,7 @@
             tabindex="0"
             aria-expanded={!collapsedSections.items}
           >
-            <h4>Items <span class="section-count">({$highlightedStore.items.length})</span></h4>
+            <h4>Items <span class="entity-count items-count">{$highlightedStore.items.length}</span></h4>
             <div class="section-controls">
               {#if !collapsedSections.items}
                 <div class="sort-controls">
@@ -764,7 +764,7 @@
         </div>
       {/if}
       
-      <!-- Battles section with sorting -->
+      <!-- Battles section with styled count -->
       {#if $highlightedStore.battles?.length > 0}
         <div class="entities-section battles-section">
           <div 
@@ -774,7 +774,7 @@
             tabindex="0"
             aria-expanded={!collapsedSections.battles}
           >
-            <h4>Battles <span class="section-count battles-count">({$highlightedStore.battles.length})</span></h4>
+            <h4>Battles <span class="entity-count battles-count">{$highlightedStore.battles.length}</span></h4>
             <div class="section-controls">
               {#if !collapsedSections.battles}
                 <div class="sort-controls">
@@ -1020,6 +1020,9 @@
     color: rgba(0, 0, 0, 0.6);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
   }
 
   .attribute {
@@ -1628,21 +1631,50 @@
     font-weight: bold;
   }
   
-  /* Section count styling */
-  .section-count {
+  /* Replace the old section-count styling with this new entity-count styling */
+  .entity-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1em;
     font-size: 0.8em;
     font-weight: 500;
+    padding: 0.1em 0.6em;
     margin-left: 0.3em;
-    color: rgba(0, 0, 0, 0.6);
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);
   }
   
-  /* Battle-specific styling */
+  /* Entity-specific count styling to match MapEntities and Grid */
+  .groups-count {
+    background: rgba(255, 100, 100, 0.8);
+    border-color: rgba(255, 100, 100, 0.5);
+    box-shadow: 0 0 0.15em rgba(255, 100, 100, 0.6);
+  }
+  
+  .players-count {
+    background: rgba(100, 100, 255, 0.8);
+    border-color: rgba(100, 100, 255, 0.5);
+    box-shadow: 0 0 0.15em rgba(100, 100, 255, 0.6);
+  }
+  
+  .items-count {
+    background: rgba(255, 215, 0, 0.8);
+    border-color: rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 0.15em rgba(255, 215, 0, 0.6);
+  }
+  
   .battles-count {
-    color: rgba(220, 20, 60, 0.9);
-    font-weight: 600;
+    background: rgba(139, 0, 0, 0.8);
+    border-color: rgba(139, 0, 0, 0.5);
+    box-shadow: 0 0 0.15em rgba(139, 0, 0, 0.6);
+    color: white;
   }
-  
-  .battles-section h4 {
-    color: rgba(139, 0, 0, 0.8);
+
+  /* Remove the old section-count style that we're replacing */
+  .section-count {
+    display: none;
   }
 </style>
