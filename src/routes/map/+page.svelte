@@ -67,6 +67,9 @@
     let isProcessingClick = false;
     let lastClickedCoords = null;
 
+    // Add flag to track path drawing transition
+    let isTransitioningToPathDrawing = $state(false);
+
     function toggleDetailsModal(show) {
         if (show && !detailed) {
             // When opening, make sure we keep the highlighted tile
@@ -156,12 +159,11 @@
     // Function to close modal
     function closeModal() {
         modalState.visible = false;
-        // Reset modal data after animation completes
+        
+        // Reset modal data after animation completes, but preserve path drawing state
         setTimeout(() => {
-            if (!modalState.visible) {
-                modalState.type = null;
-                modalState.data = null;
-            }
+            modalState.type = null;
+            modalState.data = null;
         }, 300);
     }
 
@@ -613,282 +615,174 @@
         const { x, y } = coords;
         
         if (x === undefined || y === undefined) {
-            return;
-        }
-
-        // Don't process clicks while we're already processing one
-        if (isProcessingClick) {
-            console.log('Ignoring click: already processing another click');
+            console.log('Invalid coordinates in grid click');
             return;
         }
         
-        // Store the clicked coordinates
-        lastClickedCoords = { x, y };
+        // Don't process clicks while we're already processing one
+        if (isProcessingClick) {
+            console.log('Click ignored: already processing a click');
+            return;
+        }
         
         // Set flag to prevent multiple processing
         isProcessingClick = true;
-
-        // Handle path drawing mode immediately
-        if (isPathDrawingMode) {
-            const point = { x, y };
-            handlePathPoint(point);
-            isProcessingClick = false;
-            return;
-        }
         
-        console.log('Moving to clicked tile:', { x, y });
-        
-        // First, move target to this location
-        moveTarget(x, y);
-        
-        // Next, set highlighted location to match
-        setHighlighted(x, y);
-        
-        // Wait for state to update properly before checking tile content
-        setTimeout(() => {
-            // Get the coordinates data directly, which should be updated by now
-            const clickedTile = $coordinates.find(cell => 
-                cell.x === lastClickedCoords.x && cell.y === lastClickedCoords.y
-            );
-            
-            if (clickedTile && hasTileContent(clickedTile)) {
-                console.log('Tile has content, opening details modal');
-                
-                // Use another timeout to ensure any conflicting events have completed
-                setTimeout(() => {
-                    if (!detailed) {
-                        toggleDetailsModal(true);
-                    }
-                    isProcessingClick = false;
-                }, 50);
+        try {
+            // If in path drawing mode, handle adding point to path
+            if (isPathDrawingMode) {
+                console.log('Adding path point in handleGridClick:', x, y);
+                handlePathPoint({ x, y });
             } else {
-                console.log('Tile has no content, not opening details modal');
-                isProcessingClick = false;
+                // Otherwise handle normal tile click to show details
+                console.log('Normal click on tile:', { x, y });
+                moveTarget(x, y);
+                setHighlighted(x, y);
+                
+                // Find the clicked tile directly from coordinates
+                const clickedTile = $coordinates.find(cell => cell.x === x && cell.y === y);
+                
+                // Only show details if the tile has content worth showing
+                if (clickedTile && hasTileContent(clickedTile)) {
+                    detailed = true;
+                }
             }
-        }, 100);
+        } finally {
+            // Clear the flag after a short delay
+            setTimeout(() => {
+                isProcessingClick = false;
+            }, 100);
+        }
     }
 
     function hasTileContent(tile) {
         if (!tile) return false;
         
         const hasContent = (
-            !!tile.structure || 
-            (tile.groups && tile.groups.length > 0) || 
-            (tile.players && tile.players.length > 0) || 
+            // Has any structure
+            (tile.structure && Object.keys(tile.structure).length > 0) ||
+            // Has any groups
+            (tile.groups && tile.groups.length > 0) ||
+            // Has any players
+            (tile.players && tile.players.length > 0) ||
+            // Has any items
             (tile.items && tile.items.length > 0) ||
+            // Has any battles
             (tile.battles && tile.battles.length > 0)
         );
         
         console.log('Checking tile content:', {
-            x: tile.x,
-            y: tile.y,
-            hasContent,
-            structure: !!tile.structure,
+            hasStructure: tile.structure && Object.keys(tile.structure).length > 0,
             groupsCount: tile.groups?.length || 0,
             playersCount: tile.players?.length || 0,
             itemsCount: tile.items?.length || 0,
-            battlesCount: tile.battles?.length || 0
+            battlesCount: tile.battles?.length || 0,
+            hasContent
         });
         
         return hasContent;
     }
 
     function handlePathPoint(point) {
-        if (!isPathDrawingMode) {
-            console.log('Not in path drawing mode, ignoring point');
-            return;
-        }
+        if (!isPathDrawingMode) return;
         
-        console.log('Page: Adding path point:', point);
+        console.log('Adding path point:', point);
         
         if (currentPath.length > 0) {
+            // Get the last point in the path
             const lastPoint = currentPath[currentPath.length - 1];
             
+            // Check if this is a duplicate point (avoid adding same point twice)
             if (lastPoint.x === point.x && lastPoint.y === point.y) {
-                console.log('Point is duplicate of last point, skipping');
                 return;
             }
-            
-            const dx = Math.abs(point.x - lastPoint.x);
-            const dy = Math.abs(point.y - lastPoint.y);
-            
-            if (dx > 1 || dy > 1) {
-                console.log('Calculating path to non-adjacent point');
-                const intermediatePath = calculatePathBetweenPoints(
-                    lastPoint.x, lastPoint.y, 
-                    point.x, point.y
-                );
-                
-                if (currentPath.length + intermediatePath.length > 20) {
-                    console.log('Path exceeds 20 steps limit, truncating...');
-                    
-                    const pointsToAdd = 20 - currentPath.length;
-                    if (pointsToAdd <= 0) {
-                        console.log('Path already at maximum length');
-                        return;
-                    }
-                    
-                    currentPath = [
-                        ...currentPath,
-                        ...intermediatePath.slice(0, pointsToAdd)
-                    ];
-                } else {
-                    currentPath = [...currentPath, ...intermediatePath];
-                }
-            } else {
-                if (currentPath.length >= 20) {
-                    console.log('Maximum path length reached (20 steps)');
-                    return;
-                }
-                
-                currentPath = [...currentPath, point];
-            }
-        } else {
-            const newPath = [point];
-            currentPath = newPath;
-            console.log('Created new path with first point:', newPath);
         }
         
-        currentPath = [...currentPath];
-        console.log('Current path updated:', currentPath);
+        // Add the new point to the path
+        currentPath = [...currentPath, point];
     }
 
     function handlePathDrawingStart(group) {
-        console.log('Starting path drawing for group:', group);
-        isPathDrawingMode = true;
+        if (!group) return;
         
+        console.log('Starting path drawing for group:', group.id || group.groupId);
+        
+        // Set flag to prevent details panel from opening
+        isTransitioningToPathDrawing = true;
+        
+        // Store the group information for later use
         pathDrawingGroup = {
             id: group.id || group.groupId,
-            groupId: group.id || group.groupId,
-            startPoint: group.startPoint || { x: group.x, y: group.y },
-            x: group.x,
-            y: group.y
+            name: group.name,
+            unitCount: group.unitCount,
+            status: group.status
         };
         
-        console.log("Path drawing group data:", pathDrawingGroup);
+        // Set path drawing mode ON
+        isPathDrawingMode = true;
         
-        if (group && group.startPoint) {
+        // Initialize with starting point if available
+        if (group.startPoint) {
             currentPath = [group.startPoint];
-            console.log("Initialized path with starting point:", group.startPoint);
-        } else if (group && group.x !== undefined && group.y !== undefined) {
+        } else if (group.x !== undefined && group.y !== undefined) {
             currentPath = [{ x: group.x, y: group.y }];
-            console.log("Initialized path with group position:", { x: group.x, y: group.y });
-        } else if ($targetStore) {
-            currentPath = [{ x: $targetStore.x, y: $targetStore.y }];
-            console.log("Initialized path with current target position:", { x: $targetStore.x, y: $targetStore.y });
         } else {
-            currentPath = [];
-            console.warn("No starting point available for path");
-        }
-    }
-
-    function handlePathDrawingCancel() {
-        console.log('Path drawing cancelled');
-        isPathDrawingMode = false;
-        pathDrawingGroup = null;
-        currentPath = [];
-        showMove = false;
-    }
-
-    function confirmPathDrawing(path) {
-        console.log('Path drawing confirmed with path:', path || currentPath);
-        
-        if (path) {
-            currentPath = [...path];
-        }
-        
-        if (currentPath.length < 2 || !pathDrawingGroup) {
-            console.error("Cannot confirm path: Invalid path or missing group data", {
-                pathLength: currentPath.length,
-                pathDrawingGroup
-            });
-            alert("Error: Cannot confirm path - missing data");
-            return;
-        }
-        
-        const groupId = pathDrawingGroup.id || pathDrawingGroup.groupId;
-        
-        if (!groupId) {
-            console.error("Cannot confirm path: Missing group ID", pathDrawingGroup);
-            alert("Error: Cannot confirm path - missing group ID");
-            return;
-        }
-        
-        try {
-            const functions = getFunctions();
-            const moveGroupFn = httpsCallable(functions, 'moveGroup');
-            
-            const startPoint = currentPath[0];
-            const endPoint = currentPath[currentPath.length - 1];
-            
-            console.log('Calling moveGroup function with params:', {
-                groupId: groupId,
-                fromX: startPoint.x,
-                fromY: startPoint.y,
-                toX: endPoint.x,
-                toY: endPoint.y,
-                path: currentPath,
-                worldId: $game.currentWorld
-            });
-            
-            moveGroupFn({
-                groupId: groupId,
-                fromX: startPoint.x,
-                fromY: startPoint.y,
-                toX: endPoint.x,
-                toY: endPoint.y,
-                path: currentPath,
-                worldId: $game.currentWorld
-            }).then(result => {
-                console.log('Movement started successfully:', result.data);
-                showMove = false;
-            }).catch(error => {
-                console.error('Error confirming path with cloud function:', error);
-                alert('Error: ' + (error.message || 'Failed to start movement'));
-            });
-        } catch (error) {
-            console.error('Exception in path confirmation:', error);
-            alert('Error confirming path: ' + (error.message || 'Unknown error'));
-        }
-        
-        isPathDrawingMode = false;
-        setTimeout(() => {
-            if (!isPathDrawingMode) {
-                pathDrawingGroup = null;
+            // Default to current target if no starting point is provided
+            const target = $map.target;
+            if (target) {
+                currentPath = [{ x: target.x, y: target.y }];
+            } else {
                 currentPath = [];
             }
+        }
+        
+        // Reset the transition flag after a delay to allow state to settle
+        setTimeout(() => {
+            isTransitioningToPathDrawing = false;
         }, 500);
     }
 
-    function calculatePathBetweenPoints(startX, startY, endX, endY) {
-        const path = [];
-        
-        const dx = Math.abs(endX - startX);
-        const dy = Math.abs(endY - startY);
-        const sx = startX < endX ? 1 : -1;
-        const sy = startY < endY ? 1 : -1;
-        
-        let err = dx - dy;
-        let x = startX;
-        let y = startY;
-        
-        while (x !== endX || y !== endY) {
-            const e2 = 2 * err;
-            
-            if (e2 > -dy) {
-                err -= dy;
-                x += sx;
-            }
-            
-            if (e2 < dx) {
-                err += dx;
-                y += sy;
-            }
-            
-            path.push({ x, y });
+    function handlePathDrawingCancel() {
+        isPathDrawingMode = false;
+        pathDrawingGroup = null;
+        currentPath = [];
+    }
+
+    function confirmPathDrawing(path) {
+        if (!path || path.length < 2 || !pathDrawingGroup) {
+            console.error('Cannot confirm path: Invalid path or missing group');
+            return;
         }
         
-        return path;
+        console.log('Confirming path for group:', pathDrawingGroup.id);
+        
+        // Execute the move with the path
+        const functions = getFunctions();
+        const moveGroupFn = httpsCallable(functions, 'moveGroup');
+        
+        const startPoint = path[0];
+        const endPoint = path[path.length - 1];
+        
+        moveGroupFn({
+            groupId: pathDrawingGroup.id,
+            fromX: startPoint.x,
+            fromY: startPoint.y,
+            toX: endPoint.x,
+            toY: endPoint.y,
+            path: path,
+            worldId: $game.currentWorld
+        })
+        .then((result) => {
+            console.log('Path movement started:', result.data);
+            // Reset path drawing mode
+            isPathDrawingMode = false;
+            pathDrawingGroup = null;
+            currentPath = [];
+        })
+        .catch((error) => {
+            console.error('Error starting path movement:', error);
+            alert(`Error: ${error.message || 'Failed to start movement'}`);
+        });
     }
 </script>
 
@@ -1080,23 +974,26 @@
 
         {#if isPathDrawingMode}
             <div class="path-drawing-controls">
-                <div class="path-info path-drawing-active">
-                    <span>Drawing path: {currentPath.length} points</span>
-                    <span class="path-hint">Click on map to add points</span>
+                <div class="path-info">
+                    <span class="path-label">Drawing path for group: </span>
+                    <span class="path-group-name">{pathDrawingGroup?.name || pathDrawingGroup?.id || ''}</span>
+                    <div class="path-hint">Click on tiles to create waypoints</div>
                 </div>
+                
                 <div class="path-buttons">
                     <button 
                         class="cancel-path-btn" 
                         onclick={handlePathDrawingCancel}
                     >
-                        Cancel
+                        Cancel Path
                     </button>
+                    
                     <button 
                         class="confirm-path-btn" 
+                        onclick={() => confirmPathDrawing(currentPath)}
                         disabled={currentPath.length < 2}
-                        onclick={() => confirmPathDrawing()}
                     >
-                        Confirm Path
+                        Confirm Path ({currentPath.length} points)
                     </button>
                 </div>
             </div>
@@ -1242,100 +1139,85 @@
     }
 
     .path-drawing-controls {
-        position: absolute;
-        bottom: 1em;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: rgba(255, 255, 255, 0.95);
-        border: 0.05em solid rgba(255, 255, 255, 0.3);
-        border-radius: 0.5em;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
         padding: 1em;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
         display: flex;
-        flex-direction: column;
-        gap: 0.8em;
-        z-index: 1500;
-        min-width: 18em;
-        backdrop-filter: blur(0.5em);
-        -webkit-backdrop-filter: blur(0.5em);
-        color: rgba(0, 0, 0, 0.8);
-        text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-        box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
-        font-family: var(--font-body);
-        animation: reveal 0.4s ease-out forwards;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 900;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+        animation: reveal 0.3s ease-out forwards;
     }
     
     .path-info {
-        text-align: center;
-        font-size: 0.9em;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        gap: 0.4em;
-        font-weight: 500;
+        gap: 0.3em;
+    }
+    
+    .path-group-name {
+        font-weight: bold;
+        font-size: 1.1em;
+        color: #64ffda;
     }
     
     .path-hint {
-        font-size: 0.8em;
-        opacity: 0.7;
-    }
-    
-    .path-drawing-active {
-        color: rgba(0, 0, 0, 0.8);
-        font-weight: 600;
+        font-size: 0.9em;
+        opacity: 0.8;
     }
     
     .path-buttons {
         display: flex;
-        gap: 0.8em;
+        gap: 1em;
     }
     
     .cancel-path-btn, .confirm-path-btn {
-        flex: 1;
-        padding: 0.6em;
-        border: none;
-        border-radius: 0.3em;
+        padding: 0.7em 1.2em;
+        border-radius: 4px;
         font-weight: 500;
         cursor: pointer;
+        border: none;
         transition: all 0.2s;
-        font-family: var(--font-heading);
     }
     
     .cancel-path-btn {
-        background-color: rgba(0, 0, 0, 0.1);
-        color: rgba(0, 0, 0, 0.7);
-        border: 1px solid rgba(0, 0, 0, 0.2);
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
     }
     
     .confirm-path-btn {
-        background-color: var(--color-teal);
-        color: white;
-        border: 1px solid var(--color-muted-teal);
+        background: #64ffda;
+        color: rgba(0, 0, 0, 0.8);
     }
     
     .cancel-path-btn:hover {
-        background-color: rgba(0, 0, 0, 0.2);
-        transform: translateY(-0.1em);
+        background: rgba(255, 255, 255, 0.3);
     }
     
     .confirm-path-btn:hover:not(:disabled) {
-        background-color: var(--color-bright-teal);
-        transform: translateY(-0.1em);
-        box-shadow: 0 0.2em 0.4em rgba(0, 150, 150, 0.3);
+        background: #80ffdf;
+        transform: translateY(-2px);
     }
     
     .confirm-path-btn:disabled {
-        opacity: 0.65;
+        opacity: 0.5;
         cursor: not-allowed;
     }
 
     @keyframes reveal {
         from {
-            opacity: 0;
-            transform: translateY(1em) translateX(-50%);
+            transform: translateY(100%);
         }
         to {
-            opacity: 1;
-            transform: translateY(0) translateX(-50%);
+            transform: translateY(0);
         }
     }
 </style>

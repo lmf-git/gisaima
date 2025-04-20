@@ -149,32 +149,33 @@
   function enablePathDrawing() {
     if (!selectedGroup) return;
     
-    // Initialize path drawing through the parent component
     console.log('Enabling path drawing with starting point:', { x: tileData?.x, y: tileData?.y });
     
-    // Close the dialog to avoid obstruction
-    onClose(false, true);
+    // First completely close the dialog
+    onClose(true, true);
     
-    // Tell the parent component to start path drawing
-    if (onPathDrawingStart) {
-      try {
-        // Ensure we pass all the necessary data, especially the group ID
-        onPathDrawingStart({
-          id: selectedGroup.id,
-          groupId: selectedGroup.id, // Include both formats for compatibility
-          startPoint: { x: tileData.x, y: tileData.y },
-          x: tileData.x,
-          y: tileData.y,
-          // Include any other useful group properties
-          name: selectedGroup.name,
-          unitCount: selectedGroup.unitCount,
-          status: selectedGroup.status
-        });
-        console.log('Path drawing start event dispatched with group ID:', selectedGroup.id);
-      } catch (error) {
-        console.error('Error starting path drawing:', error);
+    // Wait for modal animation to complete before starting path drawing
+    setTimeout(() => {
+      if (onPathDrawingStart) {
+        try {
+          onPathDrawingStart({
+            id: selectedGroup.id,
+            groupId: selectedGroup.id,
+            startPoint: { x: tileData.x, y: tileData.y },
+            x: tileData.x,
+            y: tileData.y,
+            name: selectedGroup.name,
+            unitCount: selectedGroup.unitCount,
+            status: selectedGroup.status,
+            persist: true
+          });
+          
+          console.log('Path drawing start event dispatched with group ID:', selectedGroup.id);
+        } catch (error) {
+          console.error('Error starting path drawing:', error);
+        }
       }
-    }
+    }, 200);  // Increased from 100ms to 200ms for more reliable transition
   }
   
   // Function to confirm the custom path with better error handling
@@ -267,6 +268,7 @@
     if (!selectedGroup) return;
     
     if (isPathDrawingMode) {
+      // Just call the enablePathDrawing function
       enablePathDrawing();
     } else if (targetX !== null && targetY !== null) {
       try {
