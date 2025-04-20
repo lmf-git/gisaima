@@ -995,14 +995,7 @@
                 onClose={() => toggleDetailsModal(false)} 
                 onShowModal={showModal} 
             />
-        {/if}
-
-        {#if detailed && $highlightedStore}
-            <Details 
-                onClose={() => toggleDetailsModal(false)}
-                onShowModal={showModal}
-            />
-        {:else}
+        {:else if $ready}
             <Legend 
                 x={$targetStore.x}  
                 y={$targetStore.y}  
