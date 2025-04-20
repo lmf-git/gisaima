@@ -7,6 +7,8 @@
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from "../../lib/stores/game.js";
   import { getFunctions, httpsCallable } from 'firebase/functions';
   import Close from '../icons/Close.svelte';
+  import Torch from '../icons/Torch.svelte';
+  import Structure from '../icons/Structure.svelte';
   
   // Props
   const { onClose = () => {}, onShowModal = null } = $props();
@@ -334,29 +336,63 @@
       <!-- Combined terrain and actions in a single core section -->
       <div class="core-section">
         <div class="section-content">
-          <!-- Terrain Information -->
-          <div class="attribute">
-            <span class="attribute-label">Type</span>
-            <span class="attribute-value">
-              <span class="terrain-color" style="background-color: {$highlightedStore?.terrain?.color || $highlightedStore?.color || '#cccccc'}"></span>
-              {_fmt($highlightedStore?.terrain?.biome?.name || 'Unknown')}
-            </span>
-          </div>
-          
-          {#if $highlightedStore?.terrain?.rarity || $highlightedStore?.rarity}
-            <div class="attribute">
-              <span class="attribute-label">Rarity</span>
-              <span class="attribute-value">
-                <span class="rarity-badge {($highlightedStore?.terrain?.rarity || $highlightedStore?.rarity)?.toLowerCase()}">
-                  {_fmt($highlightedStore?.terrain?.rarity || $highlightedStore?.rarity)}
+          <!-- Desktop two-column layout container -->
+          <div class="tile-info-container">
+            <!-- Left column: Structure information (if available) -->
+            {#if $highlightedStore?.structure}
+              <div class="structure-column">
+                <div class="attribute">
+                  <span class="attribute-label">Name</span>
+                  <span class="attribute-value structure-name">
+                    {$highlightedStore.structure.name || _fmt($highlightedStore.structure.type) || 'Unnamed Structure'}
+                    {#if isOwnedByCurrentPlayer($highlightedStore.structure)}
+                      <span class="entity-badge owner-badge">Yours</span>
+                    {/if}
+                  </span>
+                </div>
+                
+                <div class="attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value structure-type">
+                    <span class="structure-type-icon-container">
+                      {#if $highlightedStore.structure.type === 'spawn'}
+                        <Torch size="1.2em" extraClass="structure-type-icon" />
+                      {:else}
+                        <Structure size="1.2em" extraClass="structure-type-icon {$highlightedStore.structure.type}-icon" />
+                      {/if}
+                    </span>
+                    {_fmt($highlightedStore.structure.type)}
+                  </span>
+                </div>
+              </div>
+            {/if}
+            
+            <!-- Right column: Terrain Information -->
+            <div class="terrain-column">
+              <div class="attribute">
+                <span class="attribute-label">Type</span>
+                <span class="attribute-value">
+                  <span class="terrain-color" style="background-color: {$highlightedStore?.terrain?.color || $highlightedStore?.color || '#cccccc'}"></span>
+                  {_fmt($highlightedStore?.terrain?.biome?.name || 'Unknown')}
                 </span>
-              </span>
+              </div>
+              
+              {#if $highlightedStore?.terrain?.rarity || $highlightedStore?.rarity}
+                <div class="attribute">
+                  <span class="attribute-label">Rarity</span>
+                  <span class="attribute-value">
+                    <span class="rarity-badge {($highlightedStore?.terrain?.rarity || $highlightedStore?.rarity)?.toLowerCase()}">
+                      {_fmt($highlightedStore?.terrain?.rarity || $highlightedStore?.rarity)}
+                    </span>
+                  </span>
+                </div>
+              {/if}
+              
+              <div class="attribute">
+                <span class="attribute-label">Coordinates</span>
+                <span class="attribute-value">{$highlightedStore ? formatCoords($highlightedStore.x, $highlightedStore.y) : ''}</span>
+              </div>
             </div>
-          {/if}
-          
-          <div class="attribute">
-            <span class="attribute-label">Coordinates</span>
-            <span class="attribute-value">{$highlightedStore ? formatCoords($highlightedStore.x, $highlightedStore.y) : ''}</span>
           </div>
           
           <!-- Available actions section in same container -->
@@ -364,8 +400,8 @@
             <div class="core-actions">
               <div class="actions-grid">
                 {#if $highlightedStore.structure}
-                  <button class="action-button" onclick={() => executeAction('inspect')}>
-                    Inspect Structure
+                  <button class="action-button inspect-button" onclick={() => executeAction('inspect')}>
+                    Inspect
                   </button>
                 {/if}
                 
@@ -403,47 +439,6 @@
           {/if}
         </div>
       </div>
-      
-      <!-- Structure section -->
-      {#if $highlightedStore.structure}
-        <div class="entities-section">
-          <div 
-            class="section-header"
-            onclick={() => toggleSection('structures')}
-            role="button"
-            tabindex="0"
-            aria-expanded={!collapsedSections.structures}
-          >
-            <h4>Structure</h4>
-            <div class="section-controls">
-              <button class="collapse-button">
-                {collapsedSections.structures ? '▼' : '▲'}
-              </button>
-            </div>
-          </div>
-          
-          {#if !collapsedSections.structures}
-            <div class="section-content" transition:slide|local={{ duration: 300 }}>
-              <div class="entity structure">
-                <div class="entity-info">
-                  <div class="entity-name">
-                    {$highlightedStore.structure.name || _fmt($highlightedStore.structure.type) || 'Unnamed'}
-                    {#if isOwnedByCurrentPlayer($highlightedStore.structure)}
-                      <span class="entity-badge owner-badge">Yours</span>
-                    {/if}
-                  </div>
-                  <div class="entity-details">
-                    <div class="entity-type">{_fmt($highlightedStore.structure.type)}</div>
-                  </div>
-                </div>
-                <button class="inspect-button" onclick={() => executeAction('inspect')}>
-                  Inspect
-                </button>
-              </div>
-            </div>
-          {/if}
-        </div>
-      {/if}
       
       <!-- Groups section -->
       {#if $highlightedStore.groups?.length > 0}
@@ -719,7 +714,7 @@
     backdrop-filter: blur(0.5em);
     -webkit-backdrop-filter: blur(0.5em);
     width: 90%;
-    max-width: 28em;
+    max-width: 34em;
     max-height: 85vh;
     display: flex;
     flex-direction: column;
@@ -892,11 +887,33 @@
     color: rgba(0, 0, 0, 0.8);
     font-family: var(--font-body);
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
   }
 
   .action-button:hover {
     background-color: rgba(66, 133, 244, 0.2);
     transform: translateY(-1px);
+  }
+  
+  .inspect-button {
+    background-color: rgba(0, 150, 136, 0.1);
+    border-color: rgba(0, 150, 136, 0.3);
+  }
+  
+  .inspect-button:hover {
+    background-color: rgba(0, 150, 136, 0.2);
+  }
+
+  :global(.action-icon) {
+    opacity: 0.8;
+    vertical-align: middle;
+  }
+  
+  :global(.spawn-icon) {
+    filter: drop-shadow(0 0 2px rgba(0, 255, 255, 0.4));
   }
 
   .entity {
@@ -1137,6 +1154,7 @@
   .item-rarity.mythic {
     background-color: rgba(233, 30, 99, 0.2);
     color: #c2185b;
+    border: 1px solid rgba(233, 30, 99, 0.4);
   }
 
   .item-description {
@@ -1245,22 +1263,6 @@
     background-color: #b71c1c;
   }
 
-  .inspect-button {
-    padding: 0.3em 0.7em;
-    background-color: rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 0.3em;
-    cursor: pointer;
-    font-size: 0.8em;
-    align-self: center;
-    margin-left: 0.5em;
-    transition: all 0.2s;
-  }
-  
-  .inspect-button:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-  }
-
   .rarity-badge {
     display: inline-block;
     font-size: 0.9em;
@@ -1327,6 +1329,83 @@
     to {
       opacity: 1;
       transform: scale(1);
+    }
+  }
+
+  /* Add styles for the integrated structure elements */
+  .structure-name {
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+  
+  .structure-type {
+    display: flex;
+    align-items: center;
+  }
+
+  .structure-type-icon-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5em;
+    vertical-align: middle;
+  }
+  
+  :global(.structure-type-icon) {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+  }
+  
+  :global(.spawn-icon) {
+    filter: drop-shadow(0 0 2px rgba(0, 255, 255, 0.6));
+  }
+  
+  :global(.fortress-icon) {
+    filter: drop-shadow(0 0 2px rgba(230, 190, 138, 0.7));
+  }
+  
+  :global(.outpost-icon) {
+    filter: drop-shadow(0 0 2px rgba(138, 176, 230, 0.7));
+  }
+  
+  :global(.watchtower-icon) {
+    filter: drop-shadow(0 0 2px rgba(168, 230, 138, 0.7));
+  }
+  
+  :global(.stronghold-icon) {
+    filter: drop-shadow(0 0 2px rgba(230, 138, 138, 0.7));
+  }
+  
+  :global(.citadel-icon) {
+    filter: drop-shadow(0 0 2px rgba(209, 138, 230, 0.7));
+  }
+
+  /* New styles for desktop two-column layout */
+  .tile-info-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+  }
+  
+  /* Desktop layout - structure on left, terrain on right */
+  @media (min-width: 640px) {
+    .tile-info-container {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1.5em;
+    }
+    
+    .structure-column,
+    .terrain-column {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .tile-info-container:has(.terrain-column:only-child) .terrain-column {
+      width: 100%;
     }
   }
 </style>
