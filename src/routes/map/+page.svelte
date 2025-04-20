@@ -602,10 +602,23 @@
         if (isProcessingClick) return;
         isProcessingClick = true;
 
-        // Basic flow: highlight tile and show details
+        // If we have coordinates and not in path drawing mode, handle tile click
         if (coords && !isPathDrawingMode) {
-            setHighlighted(coords.x, coords.y);
-            toggleDetailsModal(true);
+            // First move the target to the clicked location - just like minimap does
+            moveTarget(coords.x, coords.y);
+
+            // Get the tile data after moving
+            const clickedTile = $coordinates.find(c => c.x === coords.x && c.y === coords.y);
+            
+            // Only highlight and open details if there's meaningful content
+            if (clickedTile && hasTileContent(clickedTile)) {
+                setHighlighted(coords.x, coords.y);
+                toggleDetailsModal(true);
+            } else {
+                // If there's no content, just ensure nothing is highlighted
+                setHighlighted(null, null);
+                toggleDetailsModal(false);
+            }
         }
 
         // Reset debounce flag
@@ -614,7 +627,7 @@
         }, 300);
     }
 
-    // Simplified function to check if a tile has content
+    // Improved function to check if a tile has meaningful content
     function hasTileContent(tile) {
         if (!tile) return false;
         

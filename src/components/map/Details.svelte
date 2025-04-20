@@ -910,25 +910,6 @@
 
   .details-modal {
     pointer-events: auto;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s ease-out;
-  }
-  
-  .modal-container.mounted {
-    opacity: 1;
-  }
-
-  .details-modal {
-    pointer-events: auto;
     width: 90%;
     max-width: 34em;
     max-height: 85vh;
