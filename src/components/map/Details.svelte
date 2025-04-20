@@ -1409,22 +1409,26 @@
   .battle-side.side1 {
     background-color: rgba(0, 0, 255, 0.07);
     border: 1px solid rgba(0, 0, 255, 0.15);
+    color: rgba(0, 0, 100, 0.85); /* Darker blue text for better contrast */
   }
   
   .battle-side.side2 {
     background-color: rgba(139, 0, 0, 0.07);
     border: 1px solid rgba(139, 0, 0, 0.15);
+    color: rgba(100, 0, 0, 0.85); /* Darker red text for better contrast */
   }
   
   .side-header {
     font-weight: 600;
     font-size: 0.9em;
     margin-bottom: 0.2em;
+    color: inherit; /* Will inherit from parent battle-side color */
   }
   
   .side-stats {
     font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.7);
+    color: inherit; /* Will inherit from parent battle-side color */
+    opacity: 0.9; /* Slightly reduce opacity for hierarchy */
   }
   
   .battle-actions {
