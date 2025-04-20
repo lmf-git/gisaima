@@ -920,7 +920,7 @@
                 {#if showMinimap || minimapClosing}
                     <Close size="1.2em" extraClass="close-icon-dark" />
                 {:else}
-                    <span class="button-text">M</span>
+                    <span class="button-text">MINIMAP</span>
                 {/if}
             </button>
         </div>
@@ -932,7 +932,7 @@
                     onclick={toggleEntities}
                     aria-label="Show entities"
                     disabled={$needsSpawn || isTutorialVisible}>
-                    <span class="button-text">E</span>
+                    <span class="button-text">OVERVIEW</span>
                 </button>
             </div>
         {/if}
