@@ -592,9 +592,12 @@
             aria-expanded={!collapsedSections.structures}
             onkeydown={(e) => e.key === 'Enter' && toggleSection('structures')}
           >
-            <h4 class:visually-hidden={activeFilter === 'structures'}>
-              Structures ({allStructures.length})
-            </h4>
+            <!-- Only show full header with count on "all" tab -->
+            {#if activeFilter === 'all'}
+              <h4>
+                Structures ({allStructures.length})
+              </h4>
+            {/if}
             <div class="section-controls">
               {#if !collapsedSections.structures}
                 <div class="sort-controls">
@@ -691,9 +694,12 @@
             aria-expanded={!collapsedSections.players}
             onkeydown={(e) => e.key === 'Enter' && toggleSection('players')}
           >
-            <h4 class:visually-hidden={activeFilter === 'players'}>
-              Players ({allPlayers.length})
-            </h4>
+            <!-- Only show full header with count on "all" tab -->
+            {#if activeFilter === 'all'}
+              <h4>
+                Players ({allPlayers.length})
+              </h4>
+            {/if}
             <div class="section-controls">
               {#if !collapsedSections.players}
                 <div class="sort-controls">
@@ -795,9 +801,12 @@
             aria-expanded={!collapsedSections.groups}
             onkeydown={(e) => e.key === 'Enter' && toggleSection('groups')}
           >
-            <h4 class:visually-hidden={activeFilter === 'groups'}>
-              Groups ({allGroups.length})
-            </h4>
+            <!-- Only show full header with count on "all" tab -->
+            {#if activeFilter === 'all'}
+              <h4>
+                Groups ({allGroups.length})
+              </h4>
+            {/if}
             <div class="section-controls">
               {#if !collapsedSections.groups}
                 <div class="sort-controls">
@@ -936,9 +945,12 @@
             aria-expanded={!collapsedSections.items}
             onkeydown={(e) => e.key === 'Enter' && toggleSection('items')}
           >
-            <h4 class:visually-hidden={activeFilter === 'items'}>
-              Items ({allItems.length})
-            </h4>
+            <!-- Only show full header with count on "all" tab -->
+            {#if activeFilter === 'all'}
+              <h4>
+                Items ({allItems.length})
+              </h4>
+            {/if}
             <div class="section-controls">
               {#if !collapsedSections.items}
                 <div class="sort-controls">
@@ -1035,9 +1047,12 @@
             aria-expanded={!collapsedSections.battles}
             onkeydown={(e) => e.key === 'Enter' && toggleSection('battles')}
           >
-            <h4 class:visually-hidden={activeFilter === 'battles'}>
-              Battles ({allBattles.length})
-            </h4>
+            <!-- Only show full header with count on "all" tab -->
+            {#if activeFilter === 'all'}
+              <h4>
+                Battles ({allBattles.length})
+              </h4>
+            {/if}
             <div class="section-controls">
               {#if !collapsedSections.battles}
                 <div class="sort-controls">
@@ -1588,5 +1603,118 @@
   .losing-side {
     background-color: rgba(128, 128, 128, 0.1);
     border-color: rgba(128, 128, 128, 0.3) !important;
+  }
+
+  /* Fixed section header styling */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5em 0;
+    cursor: pointer;
+    margin-bottom: 0.5em;
+    user-select: none;
+    position: relative;
+    width: 100%;
+  }
+  
+  .section-header:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+  }
+  
+  .section-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-left: auto;
+  }
+  
+  /* Fixed collapsible button styling */
+  .collapse-button {
+    background: none;
+    border: none;
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 0.8em;
+    cursor: pointer;
+    padding: 0.2em 0.5em;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5em;
+    min-height: 1.5em;
+  }
+  
+  .collapse-button:hover {
+    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
+  }
+  
+  /* Fixed sort controls styling */
+  .sort-controls {
+    display: flex;
+    gap: 0.2em;
+    margin-right: 0.5em;
+  }
+  
+  .sort-option {
+    background: none;
+    border: none;
+    font-size: 0.7em;
+    color: rgba(0, 0, 0, 0.5);
+    padding: 0.2em 0.4em;
+    border-radius: 0.3em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.2em;
+    transition: all 0.2s ease;
+  }
+  
+  .sort-option:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .sort-option.active {
+    background-color: rgba(66, 133, 244, 0.1);
+    color: rgba(66, 133, 244, 0.9);
+  }
+  
+  .sort-direction {
+    font-size: 0.9em;
+    font-weight: bold;
+  }
+  
+  /* Make sure sections have proper spacing */
+  .entities-section {
+    margin-bottom: 0.8em;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding-bottom: 0.5em;
+  }
+  
+  .entities-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+  
+  /* Ensure section content animates properly */
+  .section-content {
+    overflow: hidden;
+  }
+  
+  /* Fix overflow issues with entity details */
+  .entity-details {
+    overflow: hidden;
+  }
+  
+  /* Empty state styling */
+  .empty-state {
+    padding: 2em;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.5);
+    font-style: italic;
   }
 </style>
