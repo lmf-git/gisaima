@@ -1,4 +1,5 @@
 <script>
+  import { onMount } from 'svelte';
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   import { highlightedStore, targetStore } from '../../lib/stores/map';
@@ -148,5 +149,217 @@
 </dialog>
 
 <style>
-  /* Styles would go here - similar to Gather.svelte */
+  dialog {
+    background: none;
+    border: none;
+    padding: 0;
+    max-height: 90vh;
+    max-width: 90vw;
+    width: 30em;
+  }
+
+  dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+  }
+
+  .modal-content {
+    background-color: rgba(255, 255, 255, 0.85);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.5em;
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    font-family: var(--font-body);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    padding: 0.8em 1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    font-family: var(--font-heading);
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.8);
+  }
+
+  .close-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.4em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .close-button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.9);
+  }
+
+  .modal-body {
+    padding: 1em;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+  }
+
+  .section {
+    margin-bottom: 1em;
+  }
+
+  h4 {
+    margin: 0 0 0.5em 0;
+    font-size: 1em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .groups-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+  }
+
+  .group-option {
+    display: flex;
+    align-items: center;
+    padding: 0.5em;
+    border-radius: 0.3em;
+    cursor: pointer;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+  }
+
+  .group-option:hover {
+    background-color: rgba(255, 255, 255, 0.7);
+  }
+
+  .group-option.selected {
+    background-color: rgba(66, 133, 244, 0.1);
+    border-color: rgba(66, 133, 244, 0.3);
+  }
+
+  .group-option input {
+    margin-right: 0.5em;
+  }
+
+  .group-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2em;
+  }
+
+  .group-name {
+    font-weight: 500;
+  }
+
+  .group-units {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .info-box {
+    padding: 0.6em;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 0.3em;
+    font-size: 0.9em;
+    color: rgba(0, 0, 0, 0.7);
+    text-align: center;
+  }
+
+  .message {
+    padding: 0.7em;
+    border-radius: 0.3em;
+    font-size: 0.9em;
+    text-align: center;
+  }
+
+  .message.error {
+    background-color: rgba(244, 67, 54, 0.1);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    color: #d32f2f;
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 1em;
+    padding: 0.8em 1em;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .cancel-button, .action-button {
+    padding: 0.5em 1em;
+    border-radius: 0.3em;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .cancel-button {
+    background-color: #f1f3f4;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+  }
+
+  .cancel-button:hover:not(:disabled) {
+    background-color: #e8eaed;
+  }
+
+  .action-button {
+    background-color: rgba(66, 133, 244, 0.8);
+    color: white;
+    flex-grow: 1;
+  }
+
+  .action-button:hover:not(:disabled) {
+    background-color: rgba(66, 133, 244, 0.9);
+    transform: translateY(-1px);
+  }
+
+  .action-button:disabled, .cancel-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  @media (max-width: 768px) {
+    dialog {
+      width: 100%;
+      max-width: 100%;
+      height: 100%;
+      max-height: 100%;
+      margin: 0;
+      border-radius: 0;
+    }
+
+    .modal-content {
+      height: 100%;
+      border-radius: 0;
+      max-height: 100vh;
+    }
+
+    .modal-body {
+      flex: 1;
+    }
+  }
 </style>

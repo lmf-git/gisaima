@@ -153,14 +153,14 @@
                 visible: true
             };
 
-            // Set specific states for structure modal
+            // Store structure data in state variables but DON'T set showStructureOverview flag
+            // This prevents double rendering of the component
             selectedStructure = options.data.tile?.structure || null;
             structureLocation = { 
                 x: options.data.x || 0, 
                 y: options.data.y || 0
             };
             selectedTile = options.data.tile || null;
-            showStructureOverview = true;
         } else if (options.type) {
             // Handle other modal types
             modalState = {
@@ -173,7 +173,9 @@
 
     // Function to close modal
     function closeModal() {
+        // Reset both modal flags to ensure both instances close
         modalState.visible = false;
+        showStructureOverview = false;
         
         // Reset modal data after animation completes, but preserve path drawing state
         setTimeout(() => {
@@ -998,19 +1000,6 @@
             />
         {/if}
 
-        {#if showStructureOverview}
-            <StructureOverview 
-                x={structureLocation.x}
-                y={structureLocation.y}
-                tile={selectedTile}
-                onClose={() => { 
-                    showStructureOverview = false;
-                    modalState.visible = false;
-                }}
-                key={structureRenderCount}
-            />
-        {/if}
-
         {#if detailed && $highlightedStore}
             <Details 
                 onClose={() => toggleDetailsModal(false)}
@@ -1048,6 +1037,7 @@
               y={modalState.data.y}
               tile={modalState.data.tile}
               onClose={closeModal}
+              key={structureRenderCount}
             />
           {:else if modalState.type === 'mobilize'}
             <Mobilize
