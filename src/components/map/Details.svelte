@@ -340,8 +340,19 @@
         <div class="section-content">
           <div class="attribute">
             <span class="attribute-label">Type</span>
-            <span class="attribute-value">{$highlightedStore?.terrain?.biome || 'Unknown'}</span>
+            <span class="attribute-value">
+              {_fmt($highlightedStore?.terrain?.biome?.name || 'Unknown')}
+            </span>
           </div>
+          
+          {#if $highlightedStore?.terrain?.rarity}
+            <div class="attribute">
+              <span class="attribute-label">Rarity</span>
+              <span class="attribute-value">
+                {_fmt($highlightedStore?.terrain?.rarity)}
+              </span>
+            </div>
+          {/if}
           
           <div class="attribute">
             <span class="attribute-label">Coordinates</span>
