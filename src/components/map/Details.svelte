@@ -1292,22 +1292,52 @@
     font-weight: 500;
   }
   
-  .status.mobilizing {
-    background: rgba(255, 165, 0, 0.15);
-    border: 1px solid rgba(255, 165, 0, 0.3);
-    color: #ff8c00;
+  .status.idle {
+    background: rgba(128, 128, 128, 0.15);
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    color: rgba(0, 0, 0, 0.7);
   }
   
   .status.moving {
     background: rgba(0, 128, 0, 0.15);
     border: 1px solid rgba(0, 128, 0, 0.3);
-    color: #008000;
+    color: #006400;
   }
   
-  .status.idle {
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    color: rgba(0, 0, 0, 0.6);
+  .status.mobilizing {
+    background: rgba(255, 140, 0, 0.15);
+    border: 1px solid rgba(255, 140, 0, 0.3);
+    color: #d06000;
+  }
+  
+  .status.demobilising {
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    color: #6a1b9a;
+  }
+
+  .status.gathering, 
+  .status.starting_to_gather {
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    color: #8a2be2;
+  }
+  
+  .status.fighting {
+    background: rgba(220, 20, 60, 0.15);
+    border: 1px solid rgba(220, 20, 60, 0.3);
+    color: #c62828;
+  }
+  
+  .status.pending-tick {
+    position: relative;
+    animation: pulse 1s infinite alternate;
+  }
+  
+  .status.pending-tick::after {
+    content: '↻';
+    margin-left: 0.3em;
+    font-weight: bold;
   }
   
   .unit-count {

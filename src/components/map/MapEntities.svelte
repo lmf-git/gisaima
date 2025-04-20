@@ -1610,28 +1610,7 @@
     font-size: 1.2em;
   }
 
-  /* Updated badge and status styles */
-  .entity-badge {
-    display: inline-block;
-    font-size: 0.7em;
-    padding: 0.1em 0.5em;
-    border-radius: 0.3em;
-    margin-left: 0.5em;
-    font-weight: bold;
-    vertical-align: middle;
-    color: var(--color-dark-navy);
-  }
-  
-  .owner-badge {
-    background: var(--color-bright-accent, #64ffda);
-    color: var(--color-dark-navy, #0a192f);
-  }
-  
-  .participating-badge {
-    background-color: rgba(66, 133, 244, 0.9);
-    color: white;
-  }
-
+  /* Updated status badge colors with improved contrast */
   .entity-status-badge {
     display: inline-block;
     font-size: 0.8em;
@@ -1655,15 +1634,15 @@
   }
   
   .entity-status-badge.mobilizing {
-    background: rgba(255, 165, 0, 0.15);
-    border: 1px solid rgba(255, 165, 0, 0.3);
-    color: #ff8c00;
+    background: rgba(255, 140, 0, 0.15);
+    border: 1px solid rgba(255, 140, 0, 0.3);
+    color: #d06000;
   }
   
   .entity-status-badge.demobilising {
-    background: rgba(0, 0, 255, 0.15);
-    border: 1px solid rgba(0, 0, 255, 0.3);
-    color: #00008B;
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    color: #6a1b9a;
   }
   
   .entity-status-badge.gathering, 
@@ -1671,6 +1650,12 @@
     background: rgba(138, 43, 226, 0.15);
     border: 1px solid rgba(138, 43, 226, 0.3);
     color: #8a2be2;
+  }
+  
+  .entity-status-badge.fighting {
+    background: rgba(220, 20, 60, 0.15);
+    border: 1px solid rgba(220, 20, 60, 0.3);
+    color: #c62828;
   }
   
   .entity-status-badge.active {
