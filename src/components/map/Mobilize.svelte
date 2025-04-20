@@ -101,15 +101,8 @@
     let isLoading = false;
     
     try {
-      if (!auth.currentUser) {
-        throw { code: 'unauthenticated', message: 'You must be logged in to mobilize forces' };
-      }
       
-      console.log("Current auth state:", {
-        currentUser: auth.currentUser?.uid || 'none',
-        isAnonymous: auth.currentUser?.isAnonymous,
-        authenticated: !!auth.currentUser
-      });
+
       
       console.log("Preparing mobilization request with:", {
         worldId: $game.currentWorld,
