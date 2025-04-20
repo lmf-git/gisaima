@@ -1,12 +1,10 @@
 <script>
   import { onMount } from 'svelte';
-  import { fade, scale } from 'svelte/transition';
-  import { currentPlayer, game, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
+  import { currentPlayer } from '../../lib/stores/game';
   import { highlightedStore, targetStore } from '../../lib/stores/map';
-  import { getFunctions, httpsCallable } from 'firebase/functions';
   import Close from '../icons/Close.svelte';
   
-  // Props
+  // Props using $props() rune
   const { 
     onClose = () => {}, 
     onPathDrawingStart = () => {},
@@ -20,21 +18,23 @@
   let selectedGroupId = $state(null);
   let isSubmitting = $state(false);
   let error = $state(null);
-  
-  // Dialog reference
-  let dialog;
+  let isReady = $state(false);
+  let renderKey = $state(Date.now());
   
   // Derived states
   const currentTile = $derived($highlightedStore || $targetStore);
   const eligibleGroups = $derived(getEligibleGroups());
   
   onMount(() => {
-    dialog?.showModal();
-    
     // Auto-select first group if there's only one
     if (eligibleGroups.length === 1) {
       selectedGroupId = eligibleGroups[0].id;
     }
+    
+    // Set ready state after a short delay to ensure DOM is ready
+    setTimeout(() => {
+      isReady = true;
+    }, 10);
   });
 
   function getEligibleGroups() {
@@ -79,12 +79,8 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<dialog 
-  bind:this={dialog} 
-  class="move-dialog"
-  transition:fade={{ duration: 200 }}
->
-  <div class="modal-content" transition:scale={{ duration: 200, start: 0.95 }}>
+<div class="modal-container" class:ready={isReady}>
+  <div class="move-modal" key={renderKey}>
     <header class="modal-header">
       <h3>Move Group</h3>
       <button class="close-button" onclick={onClose}>
@@ -146,24 +142,33 @@
       </button>
     </footer>
   </div>
-</dialog>
+</div>
 
 <style>
-  dialog {
-    background: none;
-    border: none;
-    padding: 0;
-    max-height: 90vh;
-    max-width: 90vw;
-    width: 30em;
+  .modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+  }
+  
+  .modal-container.ready {
+    opacity: 1;
+    pointer-events: auto;
   }
 
-  dialog::backdrop {
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
-  }
-
-  .modal-content {
+  .move-modal {
+    width: 90%;
+    max-width: 30em;
+    max-height: 85vh;
     background-color: rgba(255, 255, 255, 0.85);
     border: 0.05em solid rgba(255, 255, 255, 0.2);
     border-radius: 0.5em;
@@ -173,6 +178,21 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    z-index: 1010;
+    transform: scale(0.95);
+    opacity: 0;
+    animation: modalAppear 0.3s ease-out forwards;
+  }
+  
+  @keyframes modalAppear {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   .modal-header {
@@ -343,23 +363,9 @@
   }
 
   @media (max-width: 768px) {
-    dialog {
-      width: 100%;
-      max-width: 100%;
-      height: 100%;
-      max-height: 100%;
-      margin: 0;
-      border-radius: 0;
-    }
-
-    .modal-content {
-      height: 100%;
-      border-radius: 0;
-      max-height: 100vh;
-    }
-
-    .modal-body {
-      flex: 1;
+    .move-modal {
+      width: 95%;
+      max-width: none;
     }
   }
 </style>

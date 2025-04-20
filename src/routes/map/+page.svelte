@@ -89,20 +89,17 @@
         lastProcessedTime: 0
     });
     
-    let isPathDrawingMode = $state(false);
-    let pathDrawingGroup = $state(null);
-    let currentPath = $state([]);
-
-    // Modal visibility state variables
+    // Modal visibility state variables - consolidated to avoid redeclarations
     let showAttack = $state(false);
     let showJoinBattle = $state(false);
     let showMobilize = $state(false);
     let showMove = $state(false);
     let showDemobilize = $state(false);
     let showGather = $state(false);
-    let showStructureOverview = $state(false);
+    let isPathDrawingMode = $state(false);
+    let isReady = $state(true); // Add missing isReady state
 
-    // Data for each modal
+    // Modal data state
     let mobilizeData = $state(null);
     let moveData = $state(null);
     let attackData = $state(null);
@@ -112,8 +109,10 @@
     let selectedStructure = $state(null);
     let structureLocation = $state({ x: 0, y: 0 });
     let selectedTile = $state(null);
+    let pathDrawingGroup = $state(null);
+    let currentPath = $state([]);
 
-    // Modal management state
+    // Modal management state - single source of truth
     let modalState = $state({
         type: null,
         data: null,
@@ -153,8 +152,7 @@
                 visible: true
             };
 
-            // Store structure data in state variables but DON'T set showStructureOverview flag
-            // This prevents double rendering of the component
+            // Store structure data in state variables
             selectedStructure = options.data.tile?.structure || null;
             structureLocation = { 
                 x: options.data.x || 0, 
@@ -173,11 +171,10 @@
 
     // Function to close modal
     function closeModal() {
-        // Reset both modal flags to ensure both instances close
+        // Reset modal state
         modalState.visible = false;
-        showStructureOverview = false;
         
-        // Reset modal data after animation completes, but preserve path drawing state
+        // Reset modal data after animation completes
         setTimeout(() => {
             modalState.type = null;
             modalState.data = null;
@@ -853,10 +850,10 @@
         
         // Update the global modal hierarchy state
         const componentState = {
-            structureOverview: showStructureOverview,
+            structureOverview: modalState.type === 'inspect' && modalState.visible,
             details: detailed,
             pathDrawing: isPathDrawingMode,
-            anyOtherModal: modalState.visible,
+            anyOtherModal: modalState.visible && modalState.type !== 'inspect',
             minimap: showMinimap && !minimapClosing,
             overview: showEntities && !entitiesClosing
         };
@@ -880,10 +877,10 @@
     $effect(() => {
         if (browser) {
             updateModalState({
-                structureOverview: showStructureOverview,
+                structureOverview: modalState.type === 'inspect' && modalState.visible,
                 details: detailed,
                 pathDrawing: isPathDrawingMode,
-                anyOtherModal: modalState.visible,
+                anyOtherModal: modalState.visible && modalState.type !== 'inspect',
                 minimap: showMinimap && !minimapClosing,
                 overview: showEntities && !entitiesClosing
             });
