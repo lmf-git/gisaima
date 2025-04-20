@@ -652,3 +652,143 @@ function getBiomeItems(biome) {
   // Return items for the specific biome, or default to plains
   return biomeItemMap[biome] || biomeItemMap['plains'];
 }
+
+/**
+ * Process game tick events
+ * 
+ * @returns {Object} Result of the tick processing
+ */
+export async function processTick() {
+  const db = getDatabase();
+  const now = Date.now();
+  
+  try {
+    // Get all worlds
+    const worldsSnapshot = await db.ref('worlds').once('value');
+    const worlds = worldsSnapshot.val() || {};
+    
+    let totalProcessed = 0;
+    let gatheringProcessed = 0;
+    
+    // Process each world
+    for (const [worldId, world] of Object.entries(worlds)) {
+      // Skip if no chunks
+      if (!world.chunks) continue;
+      
+      // Process each chunk
+      for (const [chunkKey, chunk] of Object.entries(world.chunks)) {
+        // Skip metadata fields
+        if (chunkKey === 'lastUpdated') continue;
+        
+        // Process each tile in the chunk
+        for (const [tileKey, tile] of Object.entries(chunk)) {
+          if (tileKey === 'lastUpdated') continue;
+          
+          // Process gathering groups
+          if (tile.groups) {
+            for (const [groupId, group] of Object.entries(tile.groups)) {
+              // Handle gathering groups
+              if (group.status === 'gathering' && group.gatheringUntil && group.gatheringUntil <= now) {
+                await processGathering(db, worldId, chunkKey, tileKey, groupId, group);
+                gatheringProcessed++;
+                totalProcessed++;
+              }
+              
+              // Process other group actions here (mobilizing, demobilising, etc.)
+              // ... existing code for other actions ...
+            }
+          }
+        }
+      }
+    }
+    
+    console.log(`Tick processed: ${totalProcessed} total actions, ${gatheringProcessed} gathering actions`);
+    
+    return {
+      success: true,
+      processed: totalProcessed,
+      gathering: gatheringProcessed
+    };
+  } catch (error) {
+    console.error('Error processing tick:', error);
+    throw new Error('Failed to process tick');
+  }
+}
+
+/**
+ * Process a gathering group
+ * 
+ * @param {Object} db Database reference
+ * @param {string} worldId World ID
+ * @param {string} chunkKey Chunk key
+ * @param {string} tileKey Tile key
+ * @param {string} groupId Group ID
+ * @param {Object} group Group data
+ */
+async function processGathering(db, worldId, chunkKey, tileKey, groupId, group) {
+  try {
+    // Reference to the group
+    const groupRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`);
+    
+    // Reference to the tile
+    const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
+    
+    // Get current tile data to check items
+    const tileSnapshot = await tileRef.once('value');
+    const tileData = tileSnapshot.val() || {};
+    
+    // Check if there are any items to gather
+    if (!tileData.items || tileData.items.length === 0) {
+      // No items to gather, reset the group to idle
+      await groupRef.update({
+        status: 'idle',
+        gatheringStarted: null,
+        gatheringUntil: null,
+        itemsBeingGathered: null
+      });
+      return;
+    }
+    
+    // Get or initialize group items array
+    const groupItems = group.items || [];
+    
+    // Add gathered items to the group
+    const gatheredItems = tileData.items.map(item => ({
+      ...item,
+      gatheredAt: Date.now()
+    }));
+    
+    // Update group with gathered items
+    await groupRef.update({
+      status: 'idle',
+      gatheringStarted: null,
+      gatheringUntil: null,
+      itemsBeingGathered: null,
+      items: [...groupItems, ...gatheredItems]
+    });
+    
+    // Remove items from the tile
+    await tileRef.update({
+      items: []
+    });
+    
+    console.log(`Group ${groupId} gathered ${gatheredItems.length} items from ${tileKey}`);
+  } catch (error) {
+    console.error(`Error processing gathering for group ${groupId}:`, error);
+    
+    // Try to reset the group to idle state if there was an error
+    try {
+      const groupRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`);
+      await groupRef.update({
+        status: 'idle',
+        gatheringStarted: null,
+        gatheringUntil: null,
+        itemsBeingGathered: null
+      });
+    } catch (resetError) {
+      console.error(`Failed to reset group ${groupId} state:`, resetError);
+    }
+  }
+}
+
+export default processTick;

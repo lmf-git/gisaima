@@ -1,1064 +1,152 @@
 <script>
   import { fade, scale } from 'svelte/transition';
-  import { currentPlayer, game } from '../../lib/stores/game';
+  import { currentPlayer, game, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   import { highlightedStore, targetStore } from '../../lib/stores/map';
-  import Close from '../icons/Close.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
-
-  // Props with default empty function to avoid destructuring errors
+  import Close from '../icons/Close.svelte';
+  
+  // Props
   const { 
     onClose = () => {}, 
-    onMove = () => {}, 
-    onPathDrawingStart = () => {}, 
+    onPathDrawingStart = () => {},
     onPathDrawingCancel = () => {},
     onConfirmPath = () => {},
     pathDrawingGroup = null,
     currentPath = []
   } = $props();
+
+  // States
+  let selectedGroupId = $state(null);
+  let isSubmitting = $state(false);
+  let error = $state(null);
   
-  // Get functions instance directly
-  const functions = getFunctions();
+  // Dialog reference
+  let dialog;
   
-  // Format text for display
-  const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  // Derived states
+  const currentTile = $derived($highlightedStore || $targetStore);
+  const eligibleGroups = $derived(getEligibleGroups());
   
-  // Use targetStore instead of highlightedStore for the current player's location
-  let tileData = $derived($targetStore || null);
-  
-  // Available groups for movement
-  let availableGroups = $state([]);
-  
-  // Selected group to move
-  let selectedGroup = $state(null);
-  
-  // Movement target coordinates
-  let targetX = $state(null);
-  let targetY = $state(null);
-  
-  // Path for visualization
-  let movementPath = $state([]);
-  
-  // Path drawing mode state
-  let isPathDrawingMode = $state(false);
-  
-  // Initialize available groups based on tile content
-  $effect(() => {
-    if (!tileData || !tileData.groups) {
-      availableGroups = [];
-      return;
-    }
+  onMount(() => {
+    dialog?.showModal();
     
-    // Filter only groups owned by the current player and with idle status
-    availableGroups = tileData.groups
-      .filter(group => {
-        return group.owner === $currentPlayer?.uid && group.status === 'idle';
-      })
-      .map(group => ({
-        ...group,
-        selected: false
-      }));
+    // Auto-select first group if there's only one
+    if (eligibleGroups.length === 1) {
+      selectedGroupId = eligibleGroups[0].id;
+    }
   });
-  
-  // Calculate movement directions (3x3 grid with center being current position)
-  const moveDirections = [
-    { x: -1, y: -1, label: '↖', name: 'Northwest' },
-    { x: 0, y: -1, label: '↑', name: 'North' },
-    { x: 1, y: -1, label: '↗', name: 'Northeast' },
-    { x: -1, y: 0, label: '←', name: 'West' },
-    { x: 0, y: 0, label: '•', name: 'Current' },
-    { x: 1, y: 0, label: '→', name: 'East' },
-    { x: -1, y: 1, label: '↙', name: 'Southwest' },
-    { x: 0, y: 1, label: '↓', name: 'South' },
-    { x: 1, y: 1, label: '↘', name: 'Southeast' },
-  ];
-  
-  // Set movement target
-  function setTarget(dx, dy) {
-    if (dx === 0 && dy === 0) return; // Can't move to current position
+
+  function getEligibleGroups() {
+    // Get groups owned by current player that are idle and not in battle
+    if (!currentTile?.groups || !$currentPlayer) return [];
     
-    targetX = tileData?.x + dx;
-    targetY = tileData?.y + dy;
-    
-    // Calculate path when target changes
-    calculatePath();
-    
-    console.log(`Set movement target to: ${targetX}, ${targetY}`);
-  }
-  
-  // Clear movement target
-  function clearTarget() {
-    targetX = null;
-    targetY = null;
-    movementPath = [];
-  }
-  
-  // Calculate movement path between start and end points
-  function calculatePath() {
-    if (!tileData || targetX === null || targetY === null) {
-      movementPath = [];
-      return;
-    }
-    
-    const startX = tileData.x;
-    const startY = tileData.y;
-    const endX = targetX;
-    const endY = targetY;
-    
-    // For simple adjacent movement, the path is just two points
-    if (Math.abs(endX - startX) <= 1 && Math.abs(endY - startY) <= 1) {
-      movementPath = [
-        { x: startX, y: startY },
-        { x: endX, y: endY }
-      ];
-      return;
-    }
-    
-    // For longer paths, use a simplified version of Bresenham's line algorithm
-    const path = [];
-    path.push({ x: startX, y: startY });
-    
-    const dx = Math.abs(endX - startX);
-    const dy = Math.abs(endY - startY);
-    const sx = startX < endX ? 1 : -1;
-    const sy = startY < endY ? 1 : -1;
-    
-    let err = dx - dy;
-    let x = startX;
-    let y = startY;
-    
-    while (x !== endX || y !== endY) {
-      const e2 = 2 * err;
-      
-      if (e2 > -dy) {
-        err -= dy;
-        x += sx;
-      }
-      
-      if (e2 < dx) {
-        err += dx;
-        y += sy;
-      }
-      
-      path.push({ x, y });
-    }
-    
-    movementPath = path;
+    return currentTile.groups.filter(group => 
+      group.owner === $currentPlayer.uid && 
+      group.status === 'idle' &&
+      !group.inBattle
+    );
   }
 
-  // New function to generate a complete path with single-coordinate steps between points
-  function interpolateFullPath(points) {
-    if (!points || points.length < 2) return points;
-    
-    const fullPath = [points[0]]; // Start with the first point
-    
-    // For each pair of consecutive points
-    for (let i = 0; i < points.length - 1; i++) {
-      const startPoint = points[i];
-      const endPoint = points[i + 1];
-      
-      // Skip adding intermediate points if they're already adjacent
-      if (Math.abs(endPoint.x - startPoint.x) <= 1 && Math.abs(endPoint.y - startPoint.y) <= 1) {
-        fullPath.push(endPoint);
-        continue;
-      }
-      
-      // Use Bresenham's line algorithm to interpolate between points (same as in move.mjs)
-      const steps = calculatePathBetweenPoints(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
-      
-      // Add all intermediate steps (excluding the first which would duplicate)
-      for (const step of steps) {
-        fullPath.push(step);
-      }
-    }
-    
-    console.log(`Interpolated ${points.length} waypoints into ${fullPath.length} individual steps`);
-    return fullPath;
-  }
-  
-  // Helper function to calculate path between two points using Bresenham's algorithm
-  function calculatePathBetweenPoints(startX, startY, endX, endY) {
-    const path = [];
-    
-    // Calculate steps using Bresenham's line algorithm
-    const dx = Math.abs(endX - startX);
-    const dy = Math.abs(endY - startY);
-    const sx = startX < endX ? 1 : -1;
-    const sy = startY < endY ? 1 : -1;
-    
-    let err = dx - dy;
-    let x = startX;
-    let y = startY;
-    
-    // Generate all steps including the end point
-    while (true) {
-      path.push({ x, y });
-      
-      if (x === endX && y === endY) break;
-      
-      const e2 = 2 * err;
-      
-      if (e2 > -dy) {
-        err -= dy;
-        x += sx;
-      }
-      
-      if (e2 < dx) {
-        err += dx;
-        y += sy;
-      }
-    }
-    
-    return path;
-  }
-  
-  // Function to switch to path drawing mode
-  function enablePathDrawing() {
-    if (!selectedGroup) return;
-    
-    console.log('Enabling path drawing with starting point:', { x: tileData?.x, y: tileData?.y });
-    
-    // First completely close the dialog and prevent any other interactions
-    if (onClose) {
-      onClose(true, true);
-      
-      // Wait for modal animation to complete before starting path drawing
-      setTimeout(() => {
-        if (onPathDrawingStart) {
-          try {
-            // Ensure valid coordinates are passed
-            if (!tileData || tileData.x === undefined || tileData.y === undefined) {
-              console.error('Invalid tile coordinates for path drawing start');
-              return;
-            }
-            
-            onPathDrawingStart({
-              id: selectedGroup.id,
-              groupId: selectedGroup.id,
-              startPoint: { x: tileData.x, y: tileData.y },
-              x: tileData.x,
-              y: tileData.y,
-              name: selectedGroup.name,
-              unitCount: selectedGroup.unitCount,
-              status: selectedGroup.status,
-              persist: true
-            });
-            
-            console.log('Path drawing start event dispatched with group ID:', selectedGroup.id);
-          } catch (error) {
-            console.error('Error starting path drawing:', error);
-          }
-        }
-      }, 300);
-    }
-  }
-  
-  // Function to confirm the custom path with better error handling
-  async function confirmCustomPath(customPath = null) {
-    console.log('Move component: confirmCustomPath called with', 
-      customPath ? customPath.length : 0, 'points');
-    
-    // Use the provided path or fall back to current path
-    let pathToUse = customPath || currentPath;
-    
-    if (!pathToUse || pathToUse.length < 2) {
-      console.warn('Cannot confirm path: Path too short or missing');
-      return;
-    }
-    
-    // Path is already fully interpolated, no need to do it again
-    // But verify the path has single-coordinate moves for safety
-    const isValid = validatePathHasSingleSteps(pathToUse);
-    if (!isValid) {
-      console.warn('Path contains invalid moves (more than one tile at a time)');
-      // Fall back to re-interpolating if needed
-      const interpolatedPath = interpolateFullPath(pathToUse);
-      console.log(`Re-interpolated path from ${pathToUse.length} to ${interpolatedPath.length} points`);
-      pathToUse = interpolatedPath;
-    }
-    
-    // Ensure we have the required data
-    if (!selectedGroup) {
-      console.error('No group selected for movement');
-      alert('Error: No group selected');
-      return;
-    }
-    
-    const startPoint = pathToUse[0];
-    const endPoint = pathToUse[pathToUse.length - 1];
-    
-    // Log validation checks
-    console.log('Path validation:', {
-      selectedGroup: !!selectedGroup,
-      hasStartPoint: !!startPoint,
-      hasEndPoint: !!endPoint,
-      worldId: $game.currentWorld,
-      originalWaypoints: pathToUse.length
-    });
-    
-    try {
-      // Make sure we have a functions instance
-      const functionInstance = getFunctions();
-      console.log('Getting moveGroup function reference');
-      
-      const moveGroupFn = httpsCallable(functionInstance, 'moveGroup');
-      
-      console.log('Calling moveGroup with params:', {
-        groupId: selectedGroup.id,
-        fromX: startPoint.x,
-        fromY: startPoint.y, 
-        toX: endPoint.x,
-        toY: endPoint.y,
-        path: pathToUse, // Send the validated path
-        worldId: $game.currentWorld
-      });
-      
-      const result = await moveGroupFn({
-        groupId: selectedGroup.id,
-        fromX: startPoint.x,
-        fromY: startPoint.y,
-        toX: endPoint.x,
-        toY: endPoint.y,
-        path: pathToUse, // Send the validated path
-        worldId: $game.currentWorld
-      });
-      
-      console.log('Custom path movement started:', result.data);
-      
-      // Use the function prop directly for UI updates
-      if (onMove) {
-        onMove({
-          groupId: selectedGroup.id,
-          from: { x: startPoint.x, y: startPoint.y },
-          to: { x: endPoint.x, y: endPoint.y },
-          path: pathToUse // Pass the validated path
-        });
-      }
-      
-      // Notify parent that path was confirmed
-      if (onConfirmPath) {
-        onConfirmPath(pathToUse); // Pass the validated path
-      }
-      
-      // Properly close the dialog
-      onClose(true);
-      
-    } catch (error) {
-      console.error('Custom path movement error:', error);
-      alert(`Error: ${error.message || 'Failed to start movement'}`);
-    }
-  }
-  
-  // Function to validate that a path only contains single-coordinate steps
-  function validatePathHasSingleSteps(path) {
-    if (!path || path.length < 2) return true;
-    
-    for (let i = 1; i < path.length; i++) {
-      const prev = path[i-1];
-      const current = path[i];
-      
-      // Check if any step moves more than one tile at once
-      if (Math.abs(current.x - prev.x) > 1 || Math.abs(current.y - prev.y) > 1) {
-        return false;
-      }
-    }
-    
-    return true;
-  }
-  
-  // Override the start movement function to handle both modes
-  async function startMovement() {
-    if (!selectedGroup) return;
-    
-    if (isPathDrawingMode) {
-      // Just call the enablePathDrawing function
-      enablePathDrawing();
-    } else if (targetX !== null && targetY !== null) {
-      try {
-        const moveGroupFn = httpsCallable(functions, 'moveGroup');
-        const result = await moveGroupFn({
-          groupId: selectedGroup.id,
-          fromX: tileData.x,
-          fromY: tileData.y,
-          toX: targetX,
-          toY: targetY,
-          path: movementPath,
-          worldId: $game.currentWorld
-        });
-        
-        console.log('Movement started:', result.data);
-        
-        if (onMove) {
-          onMove({
-            groupId: selectedGroup.id,
-            from: { x: tileData.x, y: tileData.y },
-            to: { x: targetX, y: targetY },
-            path: movementPath
-          });
-        }
-        
-        onClose(true);
-      } catch (error) {
-        console.error('Movement error:', error);
-        alert(`Error: ${error.message || 'Failed to start movement'}`);
-      }
-    }
-  }
-  
-  // Close on escape key
   function handleKeyDown(event) {
-    if (event.key === 'Escape') {
+    if (event.key === "Escape") {
       onClose();
     }
   }
-  
-  // Handle keyboard navigation for group selection
-  function handleGroupKeyDown(event, group) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      selectedGroup = group;
+
+  function startPathDrawing() {
+    if (!selectedGroupId) return;
+    
+    const group = eligibleGroups.find(g => g.id === selectedGroupId);
+    if (!group) {
+      error = "Selected group not found";
+      return;
     }
+    
+    // Add the current position as startPoint to the group object
+    const groupWithStartPoint = {
+      ...group,
+      startPoint: {
+        x: currentTile.x,
+        y: currentTile.y
+      }
+    };
+    
+    onPathDrawingStart(groupWithStartPoint);
+    onClose(false, true); // Close this modal, but indicate we're starting path drawing
   }
-  
-  // Calculate if we can start moving
-  const canMove = $derived(
-    selectedGroup !== null && 
-    targetX !== null && 
-    targetY !== null
-  );
 </script>
 
 <svelte:window onkeydown={handleKeyDown} />
 
 <dialog 
-     class="overlay"
-     open
-     aria-modal="true" 
-     aria-labelledby="move-title"
-     transition:fade={{ duration: 150 }}>
-  
-  <section 
-       class="popup"
-       role="document" 
-       transition:scale={{ start: 0.95, duration: 200 }}>
-    <div class="header">
-      <h2 id="move-title">Move Group - {tileData?.x}, {tileData?.y}</h2>
-      <button class="close-btn" onclick={() => onClose(true)} aria-label="Close move dialog">
-        <Close size="1.5em" />
+  bind:this={dialog} 
+  class="move-dialog"
+  transition:fade={{ duration: 200 }}
+>
+  <div class="modal-content" transition:scale={{ duration: 200, start: 0.95 }}>
+    <header class="modal-header">
+      <h3>Move Group</h3>
+      <button class="close-button" onclick={onClose}>
+        <Close size="1.6em" extraClass="close-icon-dark" />
       </button>
-    </div>
-    
-    {#if tileData}
-      <div class="location-info">
-        <div class="terrain">
-          <div class="terrain-color" style="background-color: {tileData.color}"></div>
-          <span>{_fmt(tileData.biome?.name) || "Unknown"}</span>
-          
-          {#if tileData.structure}
-            <span class="structure-tag">
-              {tileData.structure.name || _fmt(tileData.structure.type)}
-            </span>
-          {/if}
+    </header>
+
+    <div class="modal-body">
+      {#if eligibleGroups.length === 0}
+        <div class="message error">
+          You don't have any idle groups on this tile that can move.
         </div>
-      </div>
-      
-      <div class="move-content">
-        {#if availableGroups.length > 0}
-          <div class="group-selection">
-            <h3>Select Group to Move</h3>
-            <div class="groups-list">
-              {#each availableGroups as group}
-                <div 
-                  class="group-item" 
-                  class:selected={selectedGroup === group}
-                  onclick={() => selectedGroup = group}
-                  role="button"
-                  tabindex="0"
-                  aria-pressed={selectedGroup === group}
-                  aria-label={`Select group ${group.name || group.id}`}
-                  onkeydown={(e) => handleGroupKeyDown(e, group)}
-                >
-                  <input 
-                    type="radio" 
-                    name="group-select" 
-                    checked={selectedGroup === group} 
-                    id={`group-${group.id}`}
-                    tabindex="-1"
-                  />
-                  <div class="group-info">
-                    <div class="group-name">{group.name || group.id}</div>
-                    <div class="group-details">
-                      Units: {group.unitCount || group.units?.length || "?"}
-                      {#if group.faction}
-                        <span class="faction-tag">{_fmt(group.faction)}</span>
-                      {/if}
-                    </div>
-                  </div>
+      {:else}
+        <div class="section">
+          <h4>Select Group to Move</h4>
+          <div class="groups-list">
+            {#each eligibleGroups as group}
+              <label class="group-option {selectedGroupId === group.id ? 'selected' : ''}">
+                <input 
+                  type="radio" 
+                  name="groupSelect" 
+                  value={group.id} 
+                  bind:group={selectedGroupId} 
+                />
+                <div class="group-details">
+                  <div class="group-name">{group.name || `Group ${group.id.substring(0, 5)}`}</div>
+                  <div class="group-units">{group.unitCount || 1} units</div>
                 </div>
-              {/each}
-            </div>
+              </label>
+            {/each}
           </div>
-          
-          <div class="movement-options">
-            <h3>Choose Movement Method</h3>
-            <div class="method-buttons">
-              <button 
-                class="path-btn" 
-                class:selected={isPathDrawingMode}
-                disabled={!selectedGroup}
-                onclick={enablePathDrawing}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M3 3L9 9M3 21L21 3M15 15L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-                Draw Path (Starting Here)
-              </button>
-              
-              <div class="divider">OR</div>
-              
-              <div class="direction-section">
-                <h4>Choose Direction</h4>
-                <div class="grid">
-                  {#each moveDirections as dir, i}
-                    <button 
-                      class="direction-btn" 
-                      class:center={dir.x === 0 && dir.y === 0}
-                      class:selected={targetX === tileData.x + dir.x && targetY === tileData.y + dir.y}
-                      disabled={dir.x === 0 && dir.y === 0 || !selectedGroup}
-                      onclick={() => dir.x === 0 && dir.y === 0 ? clearTarget() : setTarget(dir.x, dir.y)}
-                      aria-label={`Move ${dir.name}`}
-                      aria-disabled={dir.x === 0 && dir.y === 0 || !selectedGroup}
-                    >
-                      {dir.label}
-                    </button>
-                  {/each}
-                </div>
-              </div>
-            </div>
-            
-            <div class="target-info">
-              {#if targetX !== null && targetY !== null}
-                <p>Target: {targetX}, {targetY}</p>
-              {:else if isPathDrawingMode}
-                <p>Click on the map to draw your path</p>
-              {:else}
-                <p>Select a direction to move</p>
-              {/if}
-            </div>
-            
-            {#if movementPath.length > 0 && !isPathDrawingMode}
-              <div class="path-info">
-                <h4>Movement Path</h4>
-                <div class="path-steps">
-                  {#each movementPath as point, index}
-                    <div class="path-point">
-                      {index + 1}: ({point.x}, {point.y})
-                    </div>
-                  {/each}
-                </div>
-                <div class="path-summary">
-                  Total steps: {movementPath.length - 1}
-                </div>
-              </div>
-            {/if}
-            
-            <div class="movement-info">
-              <p>
-                Group will move step-by-step along the path.
-                {#if isPathDrawingMode}
-                  Click on the map to create waypoints.
-                {:else}
-                  Movement speed varies based on world speed settings.
-                {/if}
-              </p>
-            </div>
-          </div>
-          
-          <div class="button-row">
-            <button 
-              class="cancel-btn" 
-              onclick={() => onClose(true)}
-            >
-              Cancel
-            </button>
-            <button 
-              class="move-btn" 
-              disabled={!canMove && !isPathDrawingMode}
-              onclick={startMovement}
-            >
-              {isPathDrawingMode ? 'Draw Path on Map' : 'Start Movement'}
-            </button>
-          </div>
-        {:else}
-          <div class="no-groups">
-            <p>You have no groups that can move from this location.</p>
-            <button class="close-btn wide" onclick={() => onClose(true)}>Close</button>
-          </div>
+        </div>
+
+        {#if error}
+          <div class="message error">{error}</div>
         {/if}
-      </div>
-    {:else}
-      <p class="no-tile">No tile selected</p>
-    {/if}
-  </section>
-  
-  <button 
-    class="overlay-dismiss-button"
-    onclick={() => onClose(true)}
-    aria-label="Close dialog">
-  </button>
+
+        <div class="info-box">
+          <p>Select a group to move and draw a path on the map.</p>
+        </div>
+      {/if}
+    </div>
+
+    <footer class="modal-footer">
+      <button 
+        class="cancel-button" 
+        onclick={onClose}
+        disabled={isSubmitting}
+      >
+        Cancel
+      </button>
+      
+      <button 
+        class="action-button" 
+        onclick={startPathDrawing}
+        disabled={!selectedGroupId || isSubmitting}
+      >
+        Draw Path
+      </button>
+    </footer>
+  </div>
 </dialog>
 
 <style>
-  .overlay-dismiss-button {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    background: transparent;
-    border: none;
-    z-index: -1;
-  }
-
-  .overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1200;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-    padding: 0;
-    margin: 0;
-    border: none;
-  }
-  
-  .popup {
-    background: white;
-    border-radius: 0.5em;
-    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
-    width: 90%;
-    max-width: 30em;
-    max-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    font-family: var(--font-body);
-  }
-  
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.8em 1em;
-    background: #f5f5f5;
-    border-bottom: 1px solid #e0e0e0;
-  }
-  
-  h2 {
-    margin: 0;
-    font-size: 1.3em;
-    font-weight: 600;
-    color: #333;
-    font-family: var(--font-heading);
-  }
-  
-  h3 {
-    margin: 0 0 0.8em 0;
-    font-size: 1.1em;
-    font-weight: 500;
-    color: #333;
-  }
-  
-  h4 {
-    margin: 0 0 0.5em 0;
-    font-size: 1em;
-    font-weight: 500;
-  }
-  
-  .close-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.3em;
-    display: flex;
-    border-radius: 50%;
-    transition: background-color 0.2s;
-  }
-  
-  .close-btn:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-  }
-  
-  .close-btn.wide {
-    width: 100%;
-    justify-content: center;
-    padding: 0.7em;
-    background: #f1f3f4;
-    border: 1px solid #dadce0;
-    border-radius: 0.3em;
-    margin-top: 1em;
-  }
-  
-  .close-btn.wide:hover {
-    background-color: #e8eaed;
-  }
-  
-  .location-info {
-    padding: 1em;
-    border-bottom: 1px solid #e0e0e0;
-  }
-  
-  .terrain {
-    display: flex;
-    align-items: center;
-    font-size: 1.1em;
-  }
-  
-  .terrain-color {
-    width: 1em;
-    height: 1em;
-    border-radius: 0.2em;
-    margin-right: 0.5em;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-  }
-  
-  .structure-tag {
-    margin-left: 0.8em;
-    font-size: 0.8em;
-    font-weight: bold;
-    padding: 0.2em 0.5em;
-    border-radius: 0.3em;
-    background: rgba(30, 144, 255, 0.15);
-    border: 1px solid rgba(30, 144, 255, 0.3);
-    color: #1e90ff;
-  }
-  
-  .move-content {
-    padding: 1em;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5em;
-    max-height: 60vh;
-    overflow-y: auto;
-  }
-  
-  .group-selection {
-    padding-bottom: 1em;
-    border-bottom: 1px solid #e0e0e0;
-  }
-  
-  .groups-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5em;
-  }
-  
-  .group-item {
-    display: flex;
-    align-items: center;
-    padding: 0.6em 0.8em;
-    border: 1px solid #e0e0e0;
-    border-radius: 0.3em;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .group-item:hover {
-    background-color: #f9f9f9;
-  }
-  
-  .group-item.selected {
-    background-color: rgba(30, 144, 255, 0.1);
-    border-color: rgba(30, 144, 255, 0.3);
-  }
-  
-  .group-info {
-    flex: 1;
-    margin-left: 0.8em;
-  }
-  
-  .group-name {
-    font-weight: 500;
-    margin-bottom: 0.2em;
-  }
-  
-  .group-details {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    font-size: 0.9em;
-    color: #555;
-  }
-  
-  .faction-tag {
-    padding: 0.1em 0.4em;
-    border-radius: 0.2em;
-    background-color: rgba(0, 0, 0, 0.06);
-    color: rgba(0, 0, 0, 0.7);
-    font-size: 0.9em;
-  }
-  
-  .movement-options {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1em;
-  }
-  
-  .method-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
-    width: 100%;
-    margin-bottom: 1em;
-  }
-  
-  .path-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6em;
-    padding: 0.8em;
-    background-color: rgba(66, 133, 244, 0.1);
-    border: 1px solid rgba(66, 133, 244, 0.3);
-    border-radius: 0.3em;
-    color: rgba(66, 133, 244, 0.9);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-family: var(--font-body);
-  }
-  
-  .path-btn:hover:not(:disabled) {
-    background-color: rgba(66, 133, 244, 0.2);
-    transform: translateY(-0.1em);
-    box-shadow: 0 0.2em 0.4em rgba(66, 133, 244, 0.2);
-  }
-  
-  .path-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  .path-btn.selected {
-    background-color: rgba(66, 133, 244, 0.9);
-    color: white;
-    border-color: rgba(66, 133, 244, 0.9);
-  }
-  
-  .path-btn svg {
-    filter: drop-shadow(0 0 1px rgba(66, 133, 244, 0.3));
-  }
-  
-  .divider {
-    display: flex;
-    align-items: center;
-    text-align: center;
-    color: #666;
-    font-size: 0.9em;
-    margin: 0.5em 0;
-  }
-  
-  .divider::before,
-  .divider::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  .divider::before {
-    margin-right: 0.5em;
-  }
-  
-  .divider::after {
-    margin-left: 0.5em;
-  }
-  
-  .direction-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-  }
-  
-  .direction-section h4 {
-    margin: 0 0 0.5em 0;
-    align-self: flex-start;
-  }
-  
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(3em, 5em));
-    grid-template-rows: repeat(3, minmax(3em, 5em));
-    gap: 0.3em;
-    margin: 0 auto;
-  }
-  
-  .direction-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5em;
-    border: 1px solid #ccc;
-    background: white;
-    border-radius: 0.3em;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    aspect-ratio: 1;
-  }
-  
-  .direction-btn:hover:not(:disabled) {
-    background-color: #f0f7ff;
-    border-color: #4285f4;
-  }
-  
-  .direction-btn.center {
-    background-color: rgba(0, 0, 0, 0.05);
-    font-weight: bold;
-    cursor: default;
-  }
-  
-  .direction-btn.selected {
-    background-color: #4285f4;
-    color: white;
-    border-color: #4285f4;
-  }
-  
-  .direction-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  .target-info {
-    text-align: center;
-    font-weight: 500;
-    margin-top: 0.5em;
-  }
-  
-  .movement-info {
-    padding: 0.8em;
-    background-color: rgba(66, 133, 244, 0.08);
-    border-radius: 0.3em;
-    font-size: 0.9em;
-    color: rgba(0, 0, 0, 0.7);
-    line-height: 1.4;
-    margin: 0.5em 0;
-    border-left: 3px solid rgba(66, 133, 244, 0.5);
-  }
-  
-  .movement-info p {
-    margin: 0;
-  }
-  
-  .path-info {
-    margin-top: 1em;
-    padding: 0.8em;
-    background-color: rgba(66, 133, 244, 0.08);
-    border-radius: 0.3em;
-    font-size: 0.9em;
-  }
-  
-  .path-steps {
-    max-height: 8em;
-    overflow-y: auto;
-    margin: 0.5em 0;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.4em;
-  }
-  
-  .path-point {
-    font-family: var(--font-mono, monospace);
-    font-size: 0.9em;
-    color: #333;
-    padding: 0.2em 0.4em;
-    background: rgba(255, 255, 255, 0.7);
-    border-radius: 0.2em;
-    text-align: center;
-  }
-  
-  .path-summary {
-    margin-top: 0.5em;
-    font-weight: 500;
-    text-align: center;
-  }
-  
-  .button-row {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.8em;
-    margin-top: 1.5em;
-  }
-  
-  .cancel-btn, .move-btn {
-    padding: 0.7em 1.2em;
-    border-radius: 0.3em;
-    border: none;
-    cursor: pointer;
-    font-size: 1em;
-    font-weight: 500;
-    transition: all 0.2s;
-  }
-  
-  .cancel-btn {
-    background-color: #f1f3f4;
-    color: #3c4043;
-    border: 1px solid #dadce0;
-  }
-  
-  .cancel-btn:hover {
-    background-color: #e8eaed;
-  }
-  
-  .move-btn {
-    background-color: #4285f4;
-    color: white;
-  }
-  
-  .move-btn:hover:not(:disabled) {
-    background-color: #3367d6;
-  }
-  
-  .move-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  .no-groups, .no-tile {
-    text-align: center;
-    padding: 2em 0;
-    color: #666;
-    font-style: italic;
-  }
-  
-  @media (max-width: 480px) {
-    .popup {
-      width: 95%;
-      max-height: 80vh;
-    }
-    
-    h2 {
-      font-size: 1.1em;
-    }
-    
-    .grid {
-      grid-template-columns: repeat(3, 3.5em);
-      grid-template-rows: repeat(3, 3.5em);
-    }
-    
-    .button-row {
-      flex-direction: column;
-    }
-    
-    .button-row button {
-      width: 100%;
-    }
-  }
+  /* Styles would go here - similar to Gather.svelte */
 </style>
