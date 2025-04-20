@@ -40,7 +40,7 @@
     import Legend from '../../components/map/Legend.svelte';
     import Details from '../../components/map/Details.svelte';
     import SpawnMenu from '../../components/map/SpawnMenu.svelte';
-    import MapEntities from '../../components/map/MapEntities.svelte';
+    import Overview from '../../components/map/Overview.svelte';
     import Close from '../../components/icons/Close.svelte';
     import Mobilize from '../../components/map/Mobilize.svelte';
     import Move from '../../components/map/Move.svelte';
@@ -510,7 +510,7 @@
                               storedMinimapVisibility === 'true' ? true : 
                               defaultMinimapVisibility;
                 
-                const storedEntitiesVisibility = localStorage.getItem('mapEntities');
+                const storedEntitiesVisibility = localStorage.getItem('overview');
                 showEntities = storedEntitiesVisibility !== 'false';
             }
         }
@@ -553,7 +553,7 @@
                     showEntities = false;
                     entitiesClosing = false;
                     if (browser) {
-                        localStorage.setItem('mapEntities', 'false');
+                        localStorage.setItem('overview', 'false');
                     }
                 }, ANIMATION_DURATION);
             }
@@ -576,7 +576,7 @@
                 showEntities = false;
                 entitiesClosing = false;
                 if (browser) {
-                    localStorage.setItem('mapEntities', 'false');
+                    localStorage.setItem('overview', 'false');
                 }
             }, ANIMATION_DURATION);
         } else {
@@ -594,7 +594,7 @@
             
             showEntities = true;
             if (browser) {
-                localStorage.setItem('mapEntities', 'true');
+                localStorage.setItem('overview', 'true');
             }
         }
     }
@@ -942,7 +942,7 @@
         {/if}
         
         {#if showEntities || entitiesClosing}
-            <MapEntities 
+            <Overview 
               closing={entitiesClosing} 
               onShowStructure={({ structure, x, y }) => {
                 modalState = {

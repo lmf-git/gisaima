@@ -6,14 +6,14 @@
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   
   // Import race icon components
-  import Human from '../../components/icons/Human.svelte';
-  import Elf from '../../components/icons/Elf.svelte';
-  import Dwarf from '../../components/icons/Dwarf.svelte';
-  import Goblin from '../../components/icons/Goblin.svelte';
-  import Fairy from '../../components/icons/Fairy.svelte';
-  import Structure from '../../components/icons/Structure.svelte';
-  import Torch from '../../components/icons/Torch.svelte';
-  import Close from '../../components/icons/Close.svelte'; // Add Close icon import
+  import Human from '../icons/Human.svelte';
+  import Elf from '../icons/Elf.svelte';
+  import Dwarf from '../icons/Dwarf.svelte';
+  import Goblin from '../icons/Goblin.svelte';
+  import Fairy from '../icons/Fairy.svelte';
+  import Structure from '../icons/Structure.svelte';
+  import Torch from '../icons/Torch.svelte';
+  import Close from '../icons/Close.svelte'; // Add Close icon import
   
   // Props
   const { closing = false, onShowStructure = null, onClose = null } = $props();
@@ -607,7 +607,7 @@
               onkeydown={(e) => e.key === 'Enter' && toggleSection('structures')}
             >
               <h4>
-                Structures ({allStructures.length})
+                Structures <span class="section-count filter-count filter-count-structures">{allStructures.length}</span>
               </h4>
               <div class="section-controls">
                 {#if !collapsedSections.structures}
@@ -743,7 +743,7 @@
               onkeydown={(e) => e.key === 'Enter' && toggleSection('players')}
             >
               <h4>
-                Players ({allPlayers.length})
+                Players <span class="section-count filter-count filter-count-players">{allPlayers.length}</span>
               </h4>
               <div class="section-controls">
                 {#if !collapsedSections.players}
@@ -881,7 +881,7 @@
               onkeydown={(e) => e.key === 'Enter' && toggleSection('groups')}
             >
               <h4>
-                Groups ({allGroups.length})
+                Groups <span class="section-count filter-count filter-count-groups">{allGroups.length}</span>
               </h4>
               <div class="section-controls">
                 {#if !collapsedSections.groups}
@@ -1055,7 +1055,7 @@
               onkeydown={(e) => e.key === 'Enter' && toggleSection('items')}
             >
               <h4>
-                Items ({allItems.length})
+                Items <span class="section-count filter-count filter-count-items">{allItems.length}</span>
               </h4>
               <div class="section-controls">
                 {#if !collapsedSections.items}
@@ -1188,7 +1188,7 @@
               onkeydown={(e) => e.key === 'Enter' && toggleSection('battles')}
             >
               <h4>
-                Battles ({allBattles.length})
+                Battles <span class="section-count filter-count filter-count-battles">{allBattles.length}</span>
               </h4>
               <div class="section-controls">
                 {#if !collapsedSections.battles}
@@ -1595,6 +1595,8 @@
     color: rgba(0, 0, 0, 0.6);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    display: flex;
+    align-items: center; /* Center align the badge with the text */
   }
 
   .entity {
@@ -1950,5 +1952,13 @@
       opacity: 1;
       transform: scale(1);
     }
+  }
+
+  .section-count {
+    margin-left: 0.4em;
+    vertical-align: middle;
+    display: inline-flex; /* Use inline-flex for better alignment */
+    align-items: center;
+    justify-content: center;
   }
 </style>

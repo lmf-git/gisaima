@@ -1647,7 +1647,7 @@
     box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);
   }
   
-  /* Entity-specific count styling to match MapEntities and Grid */
+  /* Entity-specific count styling to match Overview and Grid */
   .groups-count {
     background: rgba(255, 100, 100, 0.8);
     border-color: rgba(255, 100, 100, 0.5);
