@@ -1,6 +1,5 @@
 <script>
-  import { fly } from "svelte/transition";
-  import { slide } from "svelte/transition";
+  import { fly, slide } from "svelte/transition";
   import { quintOut } from "svelte/easing";
   import { coordinates, targetStore } from "../../lib/stores/map.js";
   import { game, currentPlayer } from "../../lib/stores/game.js";
@@ -17,18 +16,27 @@
   // Props
   const { x = 0, y = 0, tile = null, onClose = () => {} } = $props();
   
-  // We need to get the structure and its location from the tile data
+  // Get the structure and its location from the tile data
   const targetStructure = $derived(tile?.structure || null);
   const structureLocation = $derived({
     x: tile?.x || x,
     y: tile?.y || y
   });
   
-  // Extract items from the structure (we need to ensure this works)
+  // Extract items from the structure
   const structureItems = $derived(targetStructure?.items || []);
   
-  // Active tab state
-  let activeTab = $state('overview');
+  // Add state to track collapsed sections
+  let collapsedSections = $state({
+    items: false,
+    groups: false,
+    players: false
+  });
+  
+  // Function to toggle section collapse state
+  function toggleSection(sectionId) {
+    collapsedSections[sectionId] = !collapsedSections[sectionId];
+  }
 
   // Helper functions
   function formatCoords(x, y) {
@@ -61,7 +69,7 @@
     return rarity?.toLowerCase() || 'common';
   }
 
-  // Function to handle structure action with better error handling
+  // Function to handle structure action with error handling
   async function handleStructureAction(action) {
     if (!targetStructure) {
       console.error("No structure data available");
@@ -130,136 +138,125 @@
       </button>
     </h3>
     
-    <!-- Tab navigation styled like filter-tabs -->
-    <div class="filter-tabs">
-      <button 
-        class="filter-tab {activeTab === 'overview' ? 'active' : ''} has-content" 
-        onclick={() => activeTab = 'overview'}>
-        Overview
-      </button>
-      
-      <button 
-        class="filter-tab {activeTab === 'items' ? 'active' : ''} {structureItems?.length ? 'has-content' : ''}" 
-        onclick={() => activeTab = 'items'}>
-        Items 
-        {#if structureItems?.length}
-          <span class="filter-count filter-count-items">{structureItems.length}</span>
-        {/if}
-      </button>
-      
-      {#if tile?.groups?.length || tile?.players?.length}
-        <button 
-          class="filter-tab {activeTab === 'entities' ? 'active' : ''} has-content" 
-          onclick={() => activeTab = 'entities'}>
-          Entities
-          {#if (tile?.groups?.length || 0) + (tile?.players?.length || 0) > 0}
-            <span class="filter-count filter-count-groups">{(tile?.groups?.length || 0) + (tile?.players?.length || 0)}</span>
-          {/if}
-        </button>
-      {/if}
-    </div>
-    
     <div class="entities-content">
-      {#if activeTab === 'overview'}
-        <div class="entities-section">
-          <div class="section-content">
-            <div class="structure-details">
-              <div class="attribute">
-                <span class="attribute-label">Type</span>
-                <span class="attribute-value">{formatText(targetStructure?.type) || 'Unknown'}</span>
-              </div>
-              
-              <div class="attribute">
-                <span class="attribute-label">Location</span>
-                <span class="attribute-value">{formatCoords(structureLocation.x, structureLocation.y)}</span>
-              </div>
-              
-              {#if targetStructure?.owner}
-                <div class="attribute">
-                  <span class="attribute-label">Owner</span>
-                  <span class="attribute-value">
-                    {#if isOwnedByCurrentPlayer()}
-                      <span class="entity-badge owner-badge">You</span>
-                    {:else}
-                      {targetStructure.ownerName || 'Unknown player'}
-                    {/if}
-                  </span>
-                </div>
-              {/if}
-              
-              {#if targetStructure?.faction}
-                <div class="attribute">
-                  <span class="attribute-label">Faction</span>
-                  <span class="attribute-value">{formatText(targetStructure.faction)}</span>
-                </div>
-              {/if}
-              
-              {#if targetStructure?.level !== undefined}
-                <div class="attribute">
-                  <span class="attribute-label">Level</span>
-                  <span class="attribute-value">{targetStructure.level}</span>
-                </div>
-              {/if}
-              
-              {#if targetStructure?.capacity !== undefined}
-                <div class="attribute">
-                  <span class="attribute-label">Capacity</span>
-                  <span class="attribute-value">{targetStructure.capacity}</span>
-                </div>
-              {/if}
-              
-              {#if targetStructure?.hp !== undefined && targetStructure?.maxHp !== undefined}
-                <div class="attribute">
-                  <span class="attribute-label">Health</span>
-                  <span class="attribute-value">{targetStructure.hp} / {targetStructure.maxHp}</span>
-                </div>
-              {/if}
-              
-              {#if targetStructure?.durability !== undefined && targetStructure?.maxDurability !== undefined}
-                <div class="attribute">
-                  <span class="attribute-label">Durability</span>
-                  <span class="attribute-value">{targetStructure.durability} / {targetStructure.maxDurability}</span>
-                </div>
-              {/if}
-              
-              {#if targetStructure?.description}
-                <div class="structure-description">
-                  {targetStructure.description}
-                </div>
-              {/if}
+      <!-- Structure Details Section - Always visible -->
+      <div class="entities-section">
+        <div class="section-content">
+          <div class="structure-details">
+            <div class="attribute">
+              <span class="attribute-label">Type</span>
+              <span class="attribute-value">{formatText(targetStructure?.type) || 'Unknown'}</span>
             </div>
             
-            <div class="structure-actions">
-              {#if isOwnedByCurrentPlayer() && targetStructure?.type !== 'spawn'}
-                <button class="action-button" onclick={() => handleStructureAction('manage')}>
-                  Manage Structure
-                </button>
-                
-                {#if targetStructure?.canUpgrade}
-                  <button class="action-button" onclick={() => handleStructureAction('upgrade')}>
-                    Upgrade Structure
-                  </button>
-                {/if}
-                
-                <button class="action-button danger" onclick={() => handleStructureAction('dismantle')}>
-                  Dismantle
-                </button>
-              {/if}
-              
-              {#if targetStructure?.type === 'spawn'}
-                <button class="action-button" onclick={() => handleStructureAction('viewSpawn')}>
-                  View Spawn Area
-                </button>
-              {/if}
+            <div class="attribute">
+              <span class="attribute-label">Location</span>
+              <span class="attribute-value">{formatCoords(structureLocation.x, structureLocation.y)}</span>
             </div>
+            
+            {#if targetStructure?.owner}
+              <div class="attribute">
+                <span class="attribute-label">Owner</span>
+                <span class="attribute-value">
+                  {#if isOwnedByCurrentPlayer()}
+                    <span class="entity-badge owner-badge">You</span>
+                  {:else}
+                    {targetStructure.ownerName || 'Unknown player'}
+                  {/if}
+                </span>
+              </div>
+            {/if}
+            
+            {#if targetStructure?.faction}
+              <div class="attribute">
+                <span class="attribute-label">Faction</span>
+                <span class="attribute-value">{formatText(targetStructure.faction)}</span>
+              </div>
+            {/if}
+            
+            {#if targetStructure?.level !== undefined}
+              <div class="attribute">
+                <span class="attribute-label">Level</span>
+                <span class="attribute-value">{targetStructure.level}</span>
+              </div>
+            {/if}
+            
+            {#if targetStructure?.capacity !== undefined}
+              <div class="attribute">
+                <span class="attribute-label">Capacity</span>
+                <span class="attribute-value">{targetStructure.capacity}</span>
+              </div>
+            {/if}
+            
+            {#if targetStructure?.hp !== undefined && targetStructure?.maxHp !== undefined}
+              <div class="attribute">
+                <span class="attribute-label">Health</span>
+                <span class="attribute-value">{targetStructure.hp} / {targetStructure.maxHp}</span>
+              </div>
+            {/if}
+            
+            {#if targetStructure?.durability !== undefined && targetStructure?.maxDurability !== undefined}
+              <div class="attribute">
+                <span class="attribute-label">Durability</span>
+                <span class="attribute-value">{targetStructure.durability} / {targetStructure.maxDurability}</span>
+              </div>
+            {/if}
+            
+            {#if targetStructure?.description}
+              <div class="structure-description">
+                {targetStructure.description}
+              </div>
+            {/if}
           </div>
         </div>
-      {/if}
+      </div>
       
-      {#if activeTab === 'items'}
+      <!-- Structure Actions Section -->
+      <div class="entities-section">
+        <div class="structure-actions">
+          {#if isOwnedByCurrentPlayer() && targetStructure?.type !== 'spawn'}
+            <button class="action-button" onclick={() => handleStructureAction('manage')}>
+              Manage Structure
+            </button>
+            
+            {#if targetStructure?.canUpgrade}
+              <button class="action-button" onclick={() => handleStructureAction('upgrade')}>
+                Upgrade Structure
+              </button>
+            {/if}
+            
+            <button class="action-button danger" onclick={() => handleStructureAction('dismantle')}>
+              Dismantle
+            </button>
+          {/if}
+          
+          {#if targetStructure?.type === 'spawn'}
+            <button class="action-button" onclick={() => handleStructureAction('viewSpawn')}>
+              View Spawn Area
+            </button>
+          {/if}
+        </div>
+      </div>
+      
+      <!-- Items Section - Collapsible -->
+      {#if structureItems?.length > 0}
         <div class="entities-section">
-          <div class="section-content">
-            {#if structureItems?.length > 0}
+          <div 
+            class="section-header"
+            onclick={() => toggleSection('items')}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.items}
+          >
+            <h4>Items ({structureItems.length})</h4>
+            <div class="section-controls">
+              <button class="collapse-button">
+                {collapsedSections.items ? '▼' : '▲'}
+              </button>
+            </div>
+          </div>
+          
+          {#if !collapsedSections.items}
+            <div class="section-content" transition:slide|local={{ duration: 300 }}>
               {#each structureItems as item}
                 <div class="entity item {getRarityClass(item.rarity)}">
                   <div class="item-icon {item.type}"></div>
@@ -289,22 +286,30 @@
                   </div>
                 </div>
               {/each}
-            {:else}
-              <div class="empty-state">
-                No items in this structure
-              </div>
-            {/if}
-          </div>
+            </div>
+          {/if}
         </div>
       {/if}
       
-      {#if activeTab === 'entities'}
-        {#if tile?.groups && tile.groups.length > 0}
-          <div class="entities-section">
-            <div class="section-header">
-              <h4>Groups ({tile.groups.length})</h4>
+      <!-- Groups Section - Collapsible -->
+      {#if tile?.groups && tile.groups.length > 0}
+        <div class="entities-section">
+          <div 
+            class="section-header"
+            onclick={() => toggleSection('groups')}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.groups}
+          >
+            <h4>Groups ({tile.groups.length})</h4>
+            <div class="section-controls">
+              <button class="collapse-button">
+                {collapsedSections.groups ? '▼' : '▲'}
+              </button>
             </div>
-            
+          </div>
+          
+          {#if !collapsedSections.groups}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
               {#each tile.groups as group}
                 <div class="entity group" class:current-player-owned={group.owner === $currentPlayer?.uid}>
@@ -343,15 +348,29 @@
                 </div>
               {/each}
             </div>
-          </div>
-        {/if}
-        
-        {#if tile?.players && tile.players.length > 0}
-          <div class="entities-section">
-            <div class="section-header">
-              <h4>Players ({tile.players.length})</h4>
+          {/if}
+        </div>
+      {/if}
+      
+      <!-- Players Section - Collapsible -->
+      {#if tile?.players && tile.players.length > 0}
+        <div class="entities-section">
+          <div 
+            class="section-header"
+            onclick={() => toggleSection('players')}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.players}
+          >
+            <h4>Players ({tile.players.length})</h4>
+            <div class="section-controls">
+              <button class="collapse-button">
+                {collapsedSections.players ? '▼' : '▲'}
+              </button>
             </div>
-            
+          </div>
+          
+          {#if !collapsedSections.players}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
               {#each tile.players as player}
                 <div class="entity player" class:current={player.uid === $currentPlayer?.uid}>
@@ -386,14 +405,15 @@
                 </div>
               {/each}
             </div>
-          </div>
-        {/if}
-        
-        {#if (!tile?.groups || tile.groups.length === 0) && (!tile?.players || tile.players.length === 0)}
-          <div class="empty-state">
-            No entities at this structure
-          </div>
-        {/if}
+          {/if}
+        </div>
+      {/if}
+      
+      <!-- Empty State for no Groups or Players -->
+      {#if (!tile?.groups || tile.groups.length === 0) && (!tile?.players || tile.players.length === 0) && (!structureItems || structureItems.length === 0)}
+        <div class="empty-state">
+          No additional entities or items at this structure
+        </div>
       {/if}
     </div>
   </div>
@@ -472,87 +492,9 @@
     color: rgba(0, 0, 0, 0.9);
   }
 
-  .filter-tabs {
-    display: flex;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    background-color: rgba(0, 0, 0, 0.03);
-    padding: 0 0.3em;
-    width: 100%;
-    overflow-x: auto;
-  }
-
-  .filter-tab {
-    padding: 0.6em 0.8em;
-    font-family: var(--font-heading);
-    font-size: 0.8em;
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    color: rgba(0, 0, 0, 0.5);
-    transition: all 0.2s ease;
-    flex: 1;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    white-space: nowrap;
-  }
-
-  .filter-tab:hover:not(:disabled) {
-    background-color: rgba(0, 0, 0, 0.03);
-    color: rgba(0, 0, 0, 0.8);
-  }
-
-  .filter-tab.active {
-    border-bottom: 2px solid #4285f4;
-    color: rgba(0, 0, 0, 0.9);
-    font-weight: 500;
-  }
-
-  .filter-tab:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-
-  .filter-tab.has-content:not(.active) {
-    color: rgba(0, 0, 0, 0.7);
-  }
-
-  .filter-count {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    width: 1.2em;
-    height: 1.2em;
-    font-size: 0.7em;
-    font-weight: bold;
-    margin-left: 0.4em;
-    line-height: 1;
-    background: rgba(0, 0, 0, 0.2);
-    color: white;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);
-  }
-
-  .filter-tab.active .filter-count {
-    background: rgba(64, 158, 255, 0.9);
-    box-shadow: 0 0 0.2em rgba(64, 158, 255, 0.6);
-  }
-
-  .filter-count-items {
-    background-color: rgba(255, 215, 0, 0.7);
-  }
-
-  .filter-count-groups {
-    background-color: rgba(255, 100, 100, 0.7);
-  }
-
   .entities-content {
     padding: 0.8em;
-    max-height: 60vh;
+    max-height: 70vh;
     overflow-y: auto;
   }
 
@@ -569,7 +511,43 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.5em 0;
+    cursor: pointer;
     margin-bottom: 0.5em;
+    user-select: none;
+    position: relative;
+    width: 100%;
+  }
+  
+  .section-header:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+  }
+  
+  .section-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-left: auto;
+  }
+  
+  .collapse-button {
+    background: none;
+    border: none;
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 0.8em;
+    cursor: pointer;
+    padding: 0.2em 0.5em;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5em;
+    min-height: 1.5em;
+  }
+  
+  .collapse-button:hover {
+    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
   }
 
   h4 {
@@ -806,7 +784,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.6em;
-    margin-top: 1.2em;
+    margin-top: 0.8em;
   }
 
   .action-button {
