@@ -1,14 +1,14 @@
 <script>
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game } from '../../lib/stores/game';
-  import { highlightedStore, targetStore } from '../../lib/stores/map';
+  import { targetStore } from '../../lib/stores/map';
   import Close from '../icons/Close.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
   
   const { onClose = () => {}, onGather = () => {} } = $props();
   
-  // Get tile data directly from the highlightedStore
-  let tileData = $derived($highlightedStore || null);
+  // Use targetStore instead of highlightedStore since gathering happens at player's current location
+  let tileData = $derived($targetStore || null);
   
   // Component state
   let loading = $state(false);
@@ -52,14 +52,22 @@
         groupId: selectedGroup.id,
         locationX: tileData.x,
         locationY: tileData.y,
-        worldId: $currentPlayer.world
+        worldId: $game.currentWorld // Use currentWorld from game store
       });
       
       console.log('Gathering started:', result.data);
       success = true;
       
-      // Notify parent component
-      onGather(result.data);
+      // Notify parent component with all relevant data
+      onGather({
+        groupId: selectedGroup.id,
+        location: {
+          x: tileData.x,
+          y: tileData.y
+        },
+        biome: tileData.biome?.name || 'plains',
+        completesAt: result.data.completesAt
+      });
       
       // Close after a delay to show success message
       setTimeout(() => {
@@ -105,7 +113,11 @@
           <p class="info">Your group will gather resources until the next game tick.</p>
         </div>
       {:else}
-        <p class="location">Location: {tileData?.x}, {tileData?.y}</p>
+        <p class="location">Location: {tileData?.x}, {tileData?.y} 
+          {#if tileData?.biome?.name}
+            <span class="biome-info">({tileData.biome.name.replace(/_/g, ' ')})</span>
+          {/if}
+        </p>
         
         {#if availableGroups.length === 0}
           <div class="error-message">
@@ -143,6 +155,9 @@
             <div class="gather-info">
               <p>Groups will gather various materials based on the local environment.</p>
               <p>Gathering takes approximately one minute but can vary based on world speed.</p>
+              {#if tileData?.biome?.name}
+                <p class="biome-tip">This area ({tileData.biome.name.replace(/_/g, ' ')}) may yield unique resources.</p>
+              {/if}
             </div>
             
             <div class="action-buttons">
@@ -222,6 +237,11 @@
     color: var(--color-muted);
   }
   
+  .biome-info {
+    color: var(--color-bright-accent);
+    text-transform: capitalize;
+  }
+  
   .close-button {
     background: transparent;
     border: none;
@@ -253,7 +273,6 @@
     overflow-y: auto;
   }
   
-  /* Update group-option to style the button properly */
   .group-option {
     padding: 0.8em;
     border-radius: 0.3em;
@@ -305,6 +324,11 @@
   
   .gather-info p {
     margin: 0.5em 0;
+  }
+  
+  .biome-tip {
+    color: var(--color-bright-accent);
+    font-style: italic;
   }
   
   .action-buttons {
