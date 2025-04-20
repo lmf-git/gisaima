@@ -156,6 +156,11 @@
     if (event.key === 'Escape') {
       onClose();
     }
+    
+    // Prevent form submission when pressing Enter in the group name input
+    if (event.key === 'Enter' && event.target.tagName === 'INPUT') {
+      event.preventDefault();
+    }
   }
 
   function getRaceIcon(race) {
@@ -218,6 +223,11 @@
                 bind:value={groupName} 
                 placeholder="Enter group name"
                 class="text-input"
+                onkeydown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                  }
+                }}
               />
             </label>
           </div>

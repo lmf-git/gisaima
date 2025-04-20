@@ -26,7 +26,8 @@
     onAddPathPoint = null,
     onClick = null,
     onClose = () => {},
-    customPathPoints = [] // Accept path points directly as a prop instead of using a ref
+    customPathPoints = [], // Accept path points directly as a prop instead of using a ref
+    modalOpen = false // Add new prop to indicate if any modal is open
   } = $props();
   
   let mapElement = null;
@@ -213,12 +214,23 @@
 
   function setupKeyboardNavigation() {
     const keyHandler = event => {
-      if (!introduced) return;
+      // Skip navigation when a modal is open or map isn't introduced
+      if (!introduced || modalOpen) return;
       
       const key = event.key.toLowerCase();
       const isNavigationKey = ["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright"].includes(key);
       
       if (!isNavigationKey) return;
+      
+      // Check if the event target is an input, textarea, or other editable element
+      const target = event.target;
+      if (target && (
+        target.tagName === 'INPUT' || 
+        target.tagName === 'TEXTAREA' || 
+        target.isContentEditable
+      )) {
+        return; // Don't handle navigation keys when typing in input fields
+      }
       
       if (event.type === "keydown") {       
         keysPressed.add(key);

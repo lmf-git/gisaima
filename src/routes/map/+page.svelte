@@ -116,6 +116,14 @@
         visible: false
     });
 
+    // Add a derived value to check if any modal is open
+    const isAnyModalOpen = $derived(
+        modalState.visible || 
+        $needsSpawn || 
+        detailed || 
+        isTutorialVisible
+    );
+
     // Function to show modal content
     function showModal(options) {
         if (!options) return;
@@ -859,6 +867,7 @@
             isPathDrawingMode={isPathDrawingMode}
             onAddPathPoint={handlePathPoint}
             customPathPoints={currentPath}
+            modalOpen={isAnyModalOpen}
             onClose={() => {
                 if (isPathDrawingMode) {
                     handlePathDrawingCancel();
