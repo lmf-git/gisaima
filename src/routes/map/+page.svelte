@@ -272,10 +272,10 @@
     });
 
     $effect(() => {
-        if (!$ready || !$game.playerWorldData?.lastLocation) return;
+        if (!$ready || !$game.playerData?.lastLocation) return;
         
-        if (!urlProcessingComplete && $game.playerWorldData.alive === true) {
-            const location = $game.playerWorldData.lastLocation;
+        if (!urlProcessingComplete && $game.playerData.alive === true) {
+            const location = $game.playerData.lastLocation;
             console.log('Centering map on player location:', location);
             moveTarget(location.x, location.y);
             urlProcessingComplete = true;
@@ -287,9 +287,9 @@
       console.log("Player data status:", {
         ready: $ready,
         currentWorld: $game.currentWorld,
-        playerData: $game.playerWorldData,
-        alive: $game.playerWorldData?.alive,
-        lastLocation: $game.playerWorldData?.lastLocation
+        playerData: $game.playerData,
+        alive: $game.playerData?.alive,
+        lastLocation: $game.playerData?.lastLocation
       });
     });
 

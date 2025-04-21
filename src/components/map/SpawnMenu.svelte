@@ -1,7 +1,7 @@
 <script>
   import { ref, get as dbGet, update } from 'firebase/database';
   import { db } from '../../lib/firebase/database.js';
-  import { game, currentPlayer, needsSpawn, worldSpawnPoints, getWorldSpawnPoints } from '../../lib/stores/game.js';
+  import { game, currentPlayer, needsSpawn } from '../../lib/stores/game.js';
   import { moveTarget } from '../../lib/stores/map.js';
   import Torch from '../icons/Torch.svelte';
 
@@ -14,10 +14,6 @@
   let spawning = $state(false);
   let error = $state(null);
   let movedToSpawn = $state(false);
-  
-  // Add initialization tracking to prevent duplicate initialization
-  let initialized = $state(false);
-  let spawnPointsProcessed = $state(false);
 
   // Function to consistently calculate chunk key
   function getChunkKey(x, y) {
@@ -25,183 +21,62 @@
     return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
   }
 
-  // Directly use the worldSpawnPoints derived store from game.js
-  const availableSpawnPoints = $derived($worldSpawnPoints);
-
-  // Add fallback spawn points only when needed
-  const fallbackSpawns = $derived(() => {
-    // Only create fallbacks if we have no spawn points from the store
-    if (Array.isArray(availableSpawnPoints) && availableSpawnPoints.length > 0) {
-      console.log(`Using ${availableSpawnPoints.length} spawn points from worldSpawnPoints store`);
-      return availableSpawnPoints;
-    }
-    
-    // If no spawns are found in the store but we know the world, provide fallbacks
-    if ($game.currentWorld === 'ancient-lands') {
-      console.log('Using fallback spawns for ancient-lands');
-      return [
-        {
-          id: 'structure_al_human_spawn',
-          name: 'Stoneguard Citadel',
-          description: 'A rugged frontier settlement where hardy humans carve out a living',
-          race: 'human',
-          x: 5,
-          y: 5
-        },
-        {
-          id: 'structure_al_elf_spawn',
-          name: 'Ancient Arborium',
-          description: 'An elven city built around the oldest living trees in the realm',
-          race: 'elf',
-          x: -4,
-          y: 6
-        },
-        {
-          id: 'structure_al_goblin_spawn',
-          name: 'Boneridge Camp',
-          description: 'A resourceful goblin settlement built from the remains of ancient beasts',
-          race: 'goblin',
-          x: 15,
-          y: -3
-        },
-        {
-          id: 'structure_al_dwarf_spawn',
-          name: 'Deepforge Stronghold',
-          description: 'The ancestral mountain home of the dwarf clans',
-          race: 'dwarf',
-          x: 12,
-          y: 4
-        },
-        {
-          id: 'structure_al_fairy_spawn',
-          name: 'Whisperwind Circle',
-          description: 'A fairy settlement where the ancient spirits still speak',
-          race: 'fairy',
-          x: 10,
-          y: 8
-        }
-      ];
-    }
-    
-    return [];
-  });
-
-  // Filter spawn points to match player's race - with type checking
-  function getFilteredSpawns(spawns) {
-    // Ensure we're dealing with an array
-    if (!Array.isArray(spawns)) {
-      console.error("Expected spawns to be an array but got:", typeof spawns);
+  // Get spawn points directly from world info
+  const spawnPoints = $derived(() => {
+    if (!$game.currentWorld || !$game.world[$game.currentWorld]?.info?.spawns) {
       return [];
     }
-    
-    if (!$currentPlayer || !$currentPlayer.race) return spawns;
-    
-    const playerRace = $currentPlayer.race.toLowerCase();
-    const filtered = spawns.filter(spawn => 
-      !spawn.race || spawn.race.toLowerCase() === playerRace
-    );
-    
-    console.log(`Filtering ${spawns.length} spawns for race "${playerRace}":`, filtered);
-    return filtered;
-  }
 
-  // Safely derive filtered spawn points with memoization to prevent unnecessary recalculations
-  let lastPlayerRace = $state(null);
-  let cachedFilteredSpawns = $state([]);
-  
-  const filteredSpawnPoints = $derived(() => {
-    // Use the playerRace as a dependency
-    const playerRace = $currentPlayer?.race;
-    
-    // If we've already processed for this race, use cached results
-    if (playerRace === lastPlayerRace && cachedFilteredSpawns.length > 0) {
-      return cachedFilteredSpawns;
-    }
-    
-    // Get fresh filtered results
-    const filtered = getFilteredSpawns(fallbackSpawns);
-    
-    // Cache the results
-    lastPlayerRace = playerRace;
-    cachedFilteredSpawns = filtered;
-    
-    return filtered;
+    // Simply return the spawn points as array
+    return Object.values($game.world[$game.currentWorld].info.spawns);
   });
   
+  // Get the selected spawn
   const selectedSpawn = $derived(() => {
-    if (!selectedSpawnId || !Array.isArray(filteredSpawnPoints)) return null;
-    return filteredSpawnPoints.find(s => s.id === selectedSpawnId);
+    if (!selectedSpawnId || !Array.isArray(spawnPoints)) return null;
+    return spawnPoints.find(s => s.id === selectedSpawnId);
   });
   
-  // Initialize component with better dependency tracking
+  // Initialize component
   $effect(() => {
-    // Only run initialization once
-    if (initialized) return;
-    
-    // Wait for all required data to be available
-    if (!$game?.currentWorld || !$needsSpawn) return;
-
-    console.log('SpawnMenu component initializing...', {
-      currentWorld: $game.currentWorld,
-      needsSpawn: $needsSpawn,
-      spawnPointsAvailable: Array.isArray(availableSpawnPoints) ? availableSpawnPoints.length : 0,
-      fallbackSpawnsCount: Array.isArray(fallbackSpawns) ? fallbackSpawns.length : 0,
-    });
-    
-    initialized = true;
-    loading = true;
-    error = null;
-    
-    // Get spawn points using the dedicated function from game.js
-    const directSpawnPoints = getWorldSpawnPoints($game.currentWorld);
-    
-    if (directSpawnPoints.length > 0) {
-      console.log(`Found ${directSpawnPoints.length} spawn points directly`);
-      spawnPointsProcessed = true;
-    } 
-    else if (Array.isArray(fallbackSpawns) && fallbackSpawns.length > 0) {
-      console.log(`Using ${fallbackSpawns.length} fallback spawn points`);
-      spawnPointsProcessed = true;
-    } 
-    else {
-      console.error('No spawn points available in this world', {
-        worldId: $game.currentWorld,
-        spawnPointsAvailable: Array.isArray(availableSpawnPoints) ? availableSpawnPoints.length : 0,
-        fallbackSpawnsCount: Array.isArray(fallbackSpawns) ? fallbackSpawns.length : 0
-      });
-      error = "No spawn points available in this world";
+    // Reset loading when data is available
+    if ($game?.currentWorld && Array.isArray(spawnPoints)) {
       loading = false;
-      return;
-    }
-    
-    // Select first matching spawn
-    if (Array.isArray(filteredSpawnPoints) && filteredSpawnPoints.length > 0) {
-      selectedSpawnId = filteredSpawnPoints[0].id;
-      console.log(`Selected spawn: ${selectedSpawnId}`);
       
-      // If there's only one spawn option, automatically move the map there
-      if (filteredSpawnPoints.length === 1) {
-        moveTarget(filteredSpawnPoints[0].x, filteredSpawnPoints[0].y);
-        movedToSpawn = true;
-        console.log(`Automatically moved to spawn: ${filteredSpawnPoints[0].x}, ${filteredSpawnPoints[0].y}`);
+      // Select first spawn point if available
+      if (spawnPoints.length > 0) {
+        selectedSpawnId = spawnPoints[0].id;
+        console.log(`Selected spawn: ${selectedSpawnId}`);
+        
+        // Auto-move to the spawn location
+        if (spawnPoints.length === 1) {
+          moveTarget(spawnPoints[0].position.x, spawnPoints[0].position.y);
+          movedToSpawn = true;
+        }
       }
-    } else {
-      console.warn('No spawn points available for race:', $currentPlayer?.race);
     }
-    
-    loading = false;
   });
-  
-  // Move when selection changes - with type checking
+
+  // Move when selection changes
   $effect(() => {
-    if (selectedSpawnId && !movedToSpawn && Array.isArray(filteredSpawnPoints)) {
-      const spawn = filteredSpawnPoints.find(s => s.id === selectedSpawnId);
-      if (spawn) {
-        moveTarget(spawn.x, spawn.y);
+    if (selectedSpawnId && !movedToSpawn && Array.isArray(spawnPoints)) {
+      const spawn = spawnPoints.find(s => s.id === selectedSpawnId);
+      if (spawn?.position) {
+        moveTarget(spawn.position.x, spawn.position.y);
         movedToSpawn = true;
-        console.log(`Moved to selected spawn: ${spawn.x}, ${spawn.y}`);
+        console.log(`Moved to selected spawn: ${spawn.position.x}, ${spawn.position.y}`);
       }
     }
+  });
+
+  // Add debugging for player race information
+  $effect(() => {
+    console.log('Current player data in SpawnMenu:', {
+      playerExists: !!$currentPlayer,
+      playerRace: $currentPlayer?.race,
+      worldData: $currentPlayer?.worldData,
+      playerData: $game.playerData, // Updated reference
+    });
   });
 
   // Spawn player at the selected location
@@ -215,19 +90,18 @@
       spawning = true;
       error = null;
       
-      // Find the selected spawn point, with type safety
-      if (!Array.isArray(filteredSpawnPoints)) {
-        throw new Error("Spawn points are not available");
+      // Find the selected spawn point
+      const spawn = spawnPoints.find(s => s.id === selectedSpawnId);
+      if (!spawn || !spawn.position) {
+        throw new Error("Selected spawn point not found or invalid");
       }
       
-      const spawn = filteredSpawnPoints.find(s => s.id === selectedSpawnId);
-      if (!spawn) {
-        throw new Error("Selected spawn point not found");
-      }
+      const x = spawn.position.x;
+      const y = spawn.position.y;
       
       // Ensure map is moved to the spawn location
       if (!movedToSpawn) {
-        moveTarget(spawn.x, spawn.y);
+        moveTarget(x, y);
         movedToSpawn = true;
       }
       
@@ -237,15 +111,15 @@
       await update(playerRef, {
         alive: true,
         lastLocation: {
-          x: spawn.x,
-          y: spawn.y,
+          x: x,
+          y: y,
           timestamp: Date.now()
         }
       });
       
       // Add player to the chunk in the world database
-      const chunkKey = getChunkKey(spawn.x, spawn.y);
-      const tileKey = `${spawn.x},${spawn.y}`;
+      const chunkKey = getChunkKey(x, y);
+      const tileKey = `${x},${y}`;
       const worldPlayerRef = ref(db, `worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/players/${$currentPlayer.uid}`);
       
       await update(worldPlayerRef, {
@@ -256,7 +130,7 @@
       });
       
       // Notify parent component of successful spawn
-      onSpawn({ x: spawn.x, y: spawn.y });
+      onSpawn({ x, y });
       
       return true;
     } catch (err) {
@@ -296,15 +170,16 @@
         <p>{error}</p>
         <button class="retry-button" on:click={() => location.reload()}>Retry</button>
       </div>
-    {:else if !Array.isArray(filteredSpawnPoints) || filteredSpawnPoints.length === 0}
+    {:else if !Array.isArray(spawnPoints) || spawnPoints.length === 0}
       <div class="error-message">
-        <p>No spawn points available for your race: {formatText($currentPlayer?.race || 'Unknown')}</p>
+        <p>No spawn points available in this world</p>
         <button class="retry-button" on:click={() => location.reload()}>Retry</button>
       </div>
     {:else}
       <div class="spawn-list">
-        {#each filteredSpawnPoints as spawn (spawn.id)}
-          <div 
+        {#each spawnPoints as spawn (spawn.id)}
+          <button 
+            type="button"
             class="spawn-option" 
             class:selected={selectedSpawnId === spawn.id}
             on:click={() => {
@@ -320,9 +195,9 @@
               {#if spawn.race}
                 <div class="spawn-race">{formatText(spawn.race)} Territory</div>
               {/if}
-              <div class="spawn-coords">({spawn.x}, {spawn.y})</div>
+              <div class="spawn-coords">({spawn.position.x}, {spawn.position.y})</div>
             </div>
-          </div>
+          </button>
         {/each}
       </div>
       
@@ -331,7 +206,7 @@
           <h3>{selectedSpawn.name}</h3>
           <p>{selectedSpawn.description}</p>
           <div class="coordinates">
-            Location: ({selectedSpawn.x}, {selectedSpawn.y})
+            Location: ({selectedSpawn.position.x}, {selectedSpawn.position.y})
           </div>
         </div>
       {/if}
@@ -419,6 +294,12 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    text-align: left;
+    width: 100%;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    box-sizing: border-box;
   }
   
   .spawn-option:hover {

@@ -15,16 +15,14 @@ export const game = writable({
   currentWorld: null,
   joinedWorlds: [],
   world: {},
-  playerWorldData: null, // Add player-specific data for the current world
+  playerData: null, // Renamed from playerWorldData
   loading: true,
   worldLoading: false,
   error: null,
   initialized: false // Add new flag to track initialization status
 });
 
-// Create default empty stores for SSR context
-const defaultUser = writable(null);
-const user = browser ? userStore : defaultUser;
+// Remove redundant user store redirection - use userStore directly
 
 // Create a derived store for the current world's info
 export const currentWorldInfo = derived(
@@ -70,59 +68,39 @@ export const worldSpawnPoints = derived(
   $world => {
     if (!$world) return [];
     
-    // Handle spawns data which might be in different formats
+    // If world has spawns, simply convert to array and return directly
+    if ($world.info?.spawns) {
+      const spawns = Object.values($world.info.spawns);
+      console.log(`Found ${spawns.length} spawn points in world.info.spawns`);
+      return spawns;
+    }
+    
+    // Legacy support for old spawn structure - can be removed later
     if ($world.spawns) {
-      // Detect the format of spawns structure - check if it's using chunk-based keys
-      const isChunkFormat = Object.keys($world.spawns).some(key => key.includes(':'));
-      
-      console.log(`Found spawns in world data, format: ${isChunkFormat ? 'chunk-based' : 'standard'}`);
-      
-      if (Array.isArray($world.spawns)) {
-        // Simple array format
-        console.log(`Found ${$world.spawns.length} spawn points in array format`);
-        return $world.spawns;
-      } else if (isChunkFormat) {
-        // New chunk-based format with keys like "chunkX:chunkY:x:y"
-        const spawnPoints = Object.values($world.spawns).map(spawn => {
-          // Make sure position data is included in the main spawn object for consistency
-          if (spawn.position && typeof spawn.position.x === 'number' && typeof spawn.position.y === 'number') {
-            return {
-              ...spawn,
-              x: spawn.position.x,
-              y: spawn.position.y
-            };
-          }
-          return spawn;
-        });
-        
-        console.log(`Found ${spawnPoints.length} spawn points in chunk-based format`);
-        return spawnPoints;
-      } else {
-        // Regular object format
-        console.log(`Found ${Object.keys($world.spawns).length} spawn points in object format`);
-        return Object.values($world.spawns);
-      }
+      console.log('Using legacy spawns structure');
+      return Object.values($world.spawns);
     }
     
     console.log('No spawns found in world data');
     return [];
-  }
+  }, 
+  [] // Return empty array as default
 );
 
 // Create a derived store that combines user data with player world-specific data
 // Fixed: Use a safer approach for derived stores with proper null checks
 export const currentPlayer = derived(
-  [user, game], 
+  [userStore, game], // Use userStore directly instead of the redundant user variable
   ([$user, $game]) => {
     // Early returns for missing data
     if (!$user) return null;
     if (!$game) return null;
     if (!$game.currentWorld) return null;
-    if (!$game.playerWorldData) return null;
+    if (!$game.playerData) return null;
     
     try {
       // Use the stored display name if available, otherwise fall back to auth
-      let displayName = $game.playerWorldData.displayName;
+      let displayName = $game.playerData.displayName;
       
       // If no stored display name, use fallback logic
       if (!displayName) {
@@ -144,14 +122,14 @@ export const currentPlayer = derived(
         world: $game.currentWorld,
         worldName: $game.world[$game.currentWorld]?.name,
         // Player status in this world
-        alive: $game.playerWorldData.alive || false,
-        lastLocation: $game.playerWorldData.lastLocation || null,
+        alive: $game.playerData.alive || false,
+        lastLocation: $game.playerData.lastLocation || null,
         // Race information
-        race: $game.playerWorldData.race,
+        race: $game.playerData.race,
         // Joined timestamp
-        joinedAt: $game.playerWorldData.joined || null,
+        joinedAt: $game.playerData.joined || null,
         // For convenience, include all world-specific player data
-        worldData: $game.playerWorldData
+        worldData: $game.playerData
       };
     } catch (e) {
       console.error("Error in currentPlayer derived store:", e);
@@ -162,19 +140,19 @@ export const currentPlayer = derived(
 
 // Fix the needsSpawn store to properly check player alive status with cleaner logic
 export const needsSpawn = derived(
-  [game, user], 
+  [game, userStore], // Use userStore directly 
   ([$game, $user]) => {
     // Only show spawn menu when all these conditions are met:
     // 1. User is logged in
     // 2. Current world is selected
-    // 3. Player has joined this world (playerWorldData exists)
+    // 3. Player has joined this world (playerData exists)
     // 4. Player is not alive in this world
     
     return (
       !!$user?.uid && 
       !!$game.currentWorld && 
-      !!$game.playerWorldData && 
-      $game.playerWorldData.alive !== true
+      !!$game.playerData && 
+      $game.playerData.alive !== true
     );
   }
 );
@@ -308,16 +286,16 @@ export function loadPlayerWorldData(userId, worldId) {
   const playerWorldRef = ref(db, `players/${userId}/worlds/${worldId}`);
   activePlayerWorldDataSubscription = onValue(playerWorldRef, async (snapshot) => {
     if (snapshot.exists()) {
-      const playerWorldData = snapshot.val();
+      const playerData = snapshot.val();
       console.log(`Loaded player world data for ${userId}`);
       
       game.update(state => ({ 
         ...state, 
-        playerWorldData
+        playerData
       }));
     
     } else {
-      game.update(state => ({ ...state, playerWorldData: null }));
+      game.update(state => ({ ...state, playerData: null }));
     }
   });
   
@@ -391,7 +369,7 @@ export function setCurrentWorld(worldId, world = null) {
         world: updatedWorldInfo,
         worldLoading: false,
         error: null,
-        playerWorldData: null // Reset player data when changing worlds
+        playerData: null // Reset player data when changing worlds
       };
       
       // Initialize map with the new world data
@@ -405,7 +383,7 @@ export function setCurrentWorld(worldId, world = null) {
       ...state,
       currentWorld: worldId,
       worldLoading: !updatedWorldInfo[worldId], // Only set loading if we don't have the data
-      playerWorldData: null // Reset player data when changing worlds
+      playerData: null // Reset player data when changing worlds
     };
   });
   
@@ -418,7 +396,7 @@ export function setCurrentWorld(worldId, world = null) {
   }
   
   // Also load player data if user is authenticated
-  const currentUser = getStore(user);
+  const currentUser = getStore(userStore);  // Update to use userStore directly
   if (currentUser?.uid) {
     loadPlayerWorldData(currentUser.uid, worldId);
   }
@@ -461,6 +439,16 @@ export function getWorldInfo(worldId, forceRefresh = false) {
     
     if (now - lastFetchTime < 30000) {
       console.log(`Using cached world info for ${worldId} (age: ${now - lastFetchTime}ms)`);
+      
+      // DEBUG: Log spawn points from cache
+      const cachedWorld = currentGameState.world[worldId];
+      console.log(`[DEBUG] Spawn points in cached world ${worldId}:`, {
+        hasInfoSpawns: !!(cachedWorld.info?.spawns),
+        infoSpawnsCount: cachedWorld.info?.spawns ? Object.keys(cachedWorld.info.spawns).length : 0,
+        spawnsFormat: cachedWorld.info?.spawns ? 'Found in world.info.spawns' : 'Not found',
+        spawns: cachedWorld.info?.spawns
+      });
+      
       game.update(state => ({ ...state, worldLoading: false }));
       return Promise.resolve(currentGameState.world[worldId]);
     } else {
@@ -477,6 +465,14 @@ export function getWorldInfo(worldId, forceRefresh = false) {
     if (now - lastFetchTime < 30000) {
       console.log(`Using memory-cached world info for ${worldId}`);
       const cachedInfo = worldInfoCache.get(worldId);
+      
+      // DEBUG: Log spawn points from memory cache
+      console.log(`[DEBUG] Spawn points in memory-cached world ${worldId}:`, {
+        hasInfoSpawns: !!(cachedInfo.info?.spawns),
+        infoSpawnsCount: cachedInfo.info?.spawns ? Object.keys(cachedInfo.info.spawns).length : 0,
+        spawnsFormat: cachedInfo.info?.spawns ? 'Found in world.info.spawns' : 'Not found',
+        spawns: cachedInfo.info?.spawns
+      });
       
       game.update(state => ({
         ...state,
@@ -517,16 +513,21 @@ export function getWorldInfo(worldId, forceRefresh = false) {
           throw new Error(error);
         }
         
-        // Log spawn information for debugging with better format detection
+        // DEBUG: Log spawn information for debugging with better format detection
         if (world.spawns) {
           const isChunkFormat = Object.keys(world.spawns).some(key => key.includes(':'));
           const spawnCount = Array.isArray(world.spawns) 
             ? world.spawns.length 
             : Object.keys(world.spawns).length;
           
-          console.log(`World ${worldId} has ${spawnCount} spawn points (format: ${isChunkFormat ? 'chunk-based' : 'standard'})`);
+          console.log(`[DEBUG] World ${worldId} spawns data:`, {
+            format: isChunkFormat ? 'chunk-based' : 'standard',
+            count: spawnCount,
+            spawnKeys: Object.keys(world.spawns),
+            spawnData: world.spawns
+          });
         } else {
-          console.log(`World ${worldId} has no spawn points defined`);
+          console.log(`[DEBUG] World ${worldId} has no spawns directly defined in world.spawns`);
         }
         
         // Update the last fetch time
@@ -591,7 +592,7 @@ export function getWorldInfo(worldId, forceRefresh = false) {
   return fetchPromise;
 }
 
-// Add a function to get spawn points for a specific world
+// Function to get spawn points for a specific world
 export function getWorldSpawnPoints(worldId) {
   if (!worldId) return [];
   
@@ -603,35 +604,30 @@ export function getWorldSpawnPoints(worldId) {
     return [];
   }
   
-  if (!world.spawns) {
-    console.log(`No spawn points defined for world ${worldId}`);
-    return [];
+  // DEBUG: Log detailed info about available world structure
+  console.log(`[DEBUG] Looking for spawn points in world ${worldId}:`, {
+    worldDataAvailable: !!world,
+    worldInfoAvailable: !!world.info,
+    spawnsInInfoAvailable: !!(world.info?.spawns),
+    legacySpawnsAvailable: !!world.spawns,
+    worldInfoKeys: world.info ? Object.keys(world.info) : [],
+    worldKeys: Object.keys(world)
+  });
+  
+  if (world.info?.spawns) {
+    const spawns = Object.values(world.info.spawns);
+    console.log(`[DEBUG] Found ${spawns.length} spawn points in world.info.spawns:`, spawns);
+    return spawns;
   }
   
-  // Handle different formats of spawn data
-  if (Array.isArray(world.spawns)) {
-    return world.spawns;
-  } else {
-    // Check if using chunk-based format with keys like "chunkX:chunkY:x:y"
-    const isChunkFormat = Object.keys(world.spawns).some(key => key.includes(':'));
-    
-    if (isChunkFormat) {
-      // Map the values and ensure x/y coordinates are available at top level
-      return Object.values(world.spawns).map(spawn => {
-        if (spawn.position && typeof spawn.position.x === 'number' && typeof spawn.position.y === 'number') {
-          return {
-            ...spawn,
-            x: spawn.position.x,
-            y: spawn.position.y
-          };
-        }
-        return spawn;
-      });
-    } else {
-      // Regular object format
-      return Object.values(world.spawns);
-    }
+  if (world.spawns) {
+    const spawns = Object.values(world.spawns);
+    console.log(`[DEBUG] Found ${spawns.length} spawn points in world.spawns:`, spawns);
+    return spawns;
   }
+  
+  console.log(`[DEBUG] No spawn points defined for world ${worldId}`);
+  return [];
 }
 
 // Function to clear world info cache for a specific world or all worlds
@@ -661,43 +657,6 @@ export function clearWorldInfoCache(worldId = null) {
       world: {} 
     }));
   }
-}
-
-// Track if we've already initialized services
-let gameStoreInitialized = false;
-
-// Initialize the store on app start - with improved startup handling
-export function initGameStore() {
-  if (!browser) return () => {};
-  
-  // Prevent duplicate initialization
-  if (gameStoreInitialized) {
-    console.log('Game store already initialized, skipping duplicate initialization');
-    return () => {};
-  }
-  
-  console.log('Initializing game store');
-  gameStoreInitialized = true;
-  
-  try {
-    // Set initial loading state
-    game.update(state => ({ ...state, loading: true, initialized: false }));
-    isAuthReady.set(false);
-    
-    // Load the current world from localStorage if available
-    try {
-      const savedWorldId = localStorage.getItem(CURRENT_WORLD_KEY);
-      if (savedWorldId) {
-        console.log(`Found saved world in localStorage: ${savedWorldId}`);
-        
-        game.update(state => ({ 
-          ...state, 
-          currentWorld: savedWorldId 
-        }));
-        
-        // We'll load the world info when auth is ready instead of here
-      } else {
-        console.log('No saved world found in localStorage');
       }
     } catch (e) {
       console.error('Error loading world from localStorage:', e);
@@ -706,7 +665,7 @@ export function initGameStore() {
     let lastUserId = null;
     
     // Subscribe to auth changes to load joined worlds
-    const unsubscribe = user.subscribe($user => {
+    const unsubscribe = userStore.subscribe($user => {  // Use userStore directly
       console.log('Auth state changed in game store:', $user ? 'User present' : 'No user');
       try {
         // Skip duplicate updates for the same user
@@ -742,7 +701,7 @@ export function initGameStore() {
           game.update(state => ({ 
             ...state, 
             joinedWorlds: [], 
-            playerWorldData: null,
+            playerData: null,
             loading: false,
             worldLoading: false,
             initialized: true // Mark as initialized even without a user
