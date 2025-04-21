@@ -11,7 +11,7 @@ initializeApp();
 
 // Action functions
 export { mobilizeUnits } from './actions/mobilise.mjs';
-export { demobiliseUnits } from './actions/demobilie.mjs';
+export { demobiliseUnits } from './actions/demobilise.mjs';
 export { moveGroup } from './actions/move.mjs';
 export { attackGroups } from './actions/attackGroups.mjs';
 export { startGathering } from './actions/gather.mjs';  // Add this export
