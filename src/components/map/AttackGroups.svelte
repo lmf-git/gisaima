@@ -5,139 +5,94 @@
   import Close from '../icons/Close.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
 
+  // Props
   const { onClose = () => {}, onAttack = () => {} } = $props();
 
-  // Get tile data directly from the highlightedStore
-  let tileData = $derived($highlightedStore || null);
+  // Get tile data directly from the targetStore (same as current player location)
+  let tileData = $derived($targetStore || null);
 
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
-  // Available groups for attack/defense
-  let yourGroups = $state([]);
+  // Get functions instance
+  const functions = getFunctions();
+  
+  // Available groups and enemy groups
+  let playerGroups = $state([]);
   let enemyGroups = $state([]);
   
-  // Selected groups - now arrays for multi-select
-  let selectedAttackers = $state([]);
-  let selectedDefenders = $state([]);
+  // Selected entities
+  let selectedPlayerGroup = $state(null);
+  let selectedEnemyGroup = $state(null);
   
   // Loading state
   let loading = $state(false);
   let errorMessage = $state('');
   
-  // Initialize available groups based on tile content
+  // Effect to detect available groups to attack with and enemy groups
   $effect(() => {
     if (!tileData) return;
     
-    const userGroups = [];
-    const targetGroups = [];
     const playerId = $currentPlayer?.uid;
+    if (!playerId) return;
     
-    // Check for groups on this tile
-    if (tileData.groups && Object.values(tileData.groups).length > 0) {
-      Object.values(tileData.groups).forEach(group => {
-        // Skip groups that are already in battle
-        if (group.inBattle) return;
-        
-        // Skip groups that are moving or mobilizing/demobilising
-        if (['moving', 'mobilizing', 'demobilising'].includes(group.status)) return;
-        
-        if (group.owner === playerId) {
-          userGroups.push({
-            ...group,
-            selected: false
-          });
-        } else {
-          targetGroups.push({
-            ...group,
-            selected: false
-          });
-        }
-      });
-    }
+    // Find player groups that can attack (idle groups)
+    playerGroups = tileData.groups
+      ? tileData.groups.filter(group => 
+          group.owner === playerId && 
+          group.status === 'idle' &&
+          !group.inBattle
+        )
+      : [];
     
-    yourGroups = userGroups;
-    enemyGroups = targetGroups;
-    selectedAttackers = [];
-    selectedDefenders = [];
+    // Find enemy groups that can be attacked (idle groups not owned by player)
+    enemyGroups = tileData.groups
+      ? tileData.groups.filter(group => 
+          group.owner !== playerId && 
+          group.status === 'idle' &&
+          !group.inBattle
+        )
+      : [];
+    
+    console.log('Player groups available for attack:', playerGroups.length);
+    console.log('Enemy groups available to attack:', enemyGroups.length);
   });
   
-  // Toggle attacker selection
-  function toggleAttacker(groupId) {
-    yourGroups = yourGroups.map(group => {
-      if (group.id === groupId) {
-        return { ...group, selected: !group.selected };
-      }
-      return group;
-    });
-    
-    // Update selected attackers
-    selectedAttackers = yourGroups.filter(g => g.selected).map(g => g.id);
-  }
-  
-  // Toggle defender selection
-  function toggleDefender(groupId) {
-    enemyGroups = enemyGroups.map(group => {
-      if (group.id === groupId) {
-        return { ...group, selected: !group.selected };
-      }
-      return group;
-    });
-    
-    // Update selected defenders
-    selectedDefenders = enemyGroups.filter(g => g.selected).map(g => g.id);
-  }
-  
-  // Handle keyboard interactions
-  function handleAttackerKeyDown(event, groupId) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      toggleAttacker(groupId);
-    }
-  }
-  
-  function handleDefenderKeyDown(event, groupId) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      toggleDefender(groupId);
-    }
-  }
-
-  // Function to initiate attack
+  // Start an attack
   async function startAttack() {
-    if (selectedAttackers.length === 0 || selectedDefenders.length === 0) {
-      return;
-    }
+    if (!selectedPlayerGroup || !selectedEnemyGroup) return;
     
     loading = true;
     errorMessage = '';
     
     try {
       console.log('Starting attack with params:', {
-        attackerGroupIds: selectedAttackers, 
-        defenderGroupIds: selectedDefenders,
+        attackerGroupId: selectedPlayerGroup.id,
+        defenderGroupId: selectedEnemyGroup.id,
         locationX: tileData.x,
         locationY: tileData.y,
         worldId: $game.currentWorld
       });
       
-      const functions = getFunctions();
-      const attackGroupsFn = httpsCallable(functions, 'attackGroups');
-      const result = await attackGroupsFn({
-        attackerGroupIds: selectedAttackers, 
-        defenderGroupIds: selectedDefenders,
+      // Call the cloud function
+      const startAttackFn = httpsCallable(functions, 'startAttack');
+      const result = await startAttackFn({
+        attackerGroupId: selectedPlayerGroup.id,
+        defenderGroupId: selectedEnemyGroup.id,
         locationX: tileData.x,
         locationY: tileData.y,
         worldId: $game.currentWorld
       });
       
       if (result.data.success) {
-        console.log('Battle started:', result.data);
+        console.log('Attack started:', result.data);
         
+        // Call the callback function if provided
         if (onAttack) {
           onAttack({
-            attackerGroupIds: selectedAttackers,
-            defenderGroupIds: selectedDefenders,
+            attackerGroupId: selectedPlayerGroup.id,
+            defenderGroupId: selectedEnemyGroup.id,
+            battleId: result.data.battleId,
             tile: tileData
           });
         }
@@ -152,7 +107,7 @@
       if (error.code === 'unauthenticated') {
         errorMessage = 'Authentication error: Please log in again.';
       } else if (error.code === 'not-found') {
-        errorMessage = 'One of the groups was not found. They may have moved or been disbanded.';
+        errorMessage = 'One of the groups was not found. It may have moved.';
       } else {
         errorMessage = error.message || 'Failed to start attack';
       }
@@ -160,417 +115,446 @@
       loading = false;
     }
   }
+
+  // Select a player group
+  function selectPlayerGroup(group) {
+    selectedPlayerGroup = group;
+  }
   
-  // Helper to check if attack is possible
+  // Select an enemy group
+  function selectEnemyGroup(group) {
+    selectedEnemyGroup = group;
+  }
+  
+  // Check if attack is possible
   const canAttack = $derived(
-    selectedAttackers.length > 0 && selectedDefenders.length > 0 && !loading
+    selectedPlayerGroup !== null && 
+    selectedEnemyGroup !== null &&
+    !loading
   );
+  
+  // Handle keyboard events
+  function handleKeyDown(event) {
+    if (event.key === 'Escape') {
+      onClose();
+    }
+  }
+
+  // Format owner name for display
+  function formatOwnerName(group) {
+    return group.ownerName || "Unknown Player";
+  }
 </script>
 
-<dialog class="overlay" open aria-modal="true" aria-labelledby="attack-title">
-  <div class="popup" transition:scale={{ start: 0.95, duration: 200 }}>
-    <div class="header">
-      <h2 id="attack-title">Attack Group - {tileData?.x}, {tileData?.y}</h2>
-      <button class="close-btn" onclick={onClose} aria-label="Close dialog">
-        <Close size="1.5em" />
-      </button>
-    </div>
-    
-    <div class="content">
-      {#if yourGroups.length === 0 || enemyGroups.length === 0}
-        <div class="no-battle">
-          <p>Cannot initiate battle at this location. You need at least one group that can attack and one enemy group to attack.</p>
-          <button class="close-action" onclick={onClose}>Close</button>
-        </div>
-      {:else}
-        {#if errorMessage}
-          <div class="error-message">{errorMessage}</div>
-        {/if}
-        
-        <div class="battle-setup">
-          <div class="selection-section">
-            <h3>Your Forces</h3>
-            <div class="groups-list">
-              {#each yourGroups as group}
-                <div 
-                  class="group-item" 
-                  class:selected={group.selected}
-                  onclick={() => toggleAttacker(group.id)}
-                  onkeydown={(e) => handleAttackerKeyDown(e, group.id)}
-                  role="checkbox"
-                  tabindex="0"
-                  aria-checked={group.selected}
-                >
-                  <div class="selection-indicator">
-                    {#if group.selected}
-                      <div class="checkbox checked">✓</div>
-                    {:else}
-                      <div class="checkbox"></div>
-                    {/if}
-                  </div>
-                  <div class="group-info">
-                    <div class="group-name">{group.name || `Group ${group.id.slice(-5)}`}</div>
-                    <div class="group-details">
-                      <span class="unit-count">Units: {group.unitCount || (group.units?.length || 0)}</span>
-                      {#if group.race}
-                        <span class="race-tag">{_fmt(group.race)}</span>
-                      {/if}
-                    </div>
-                  </div>
-                </div>
-              {/each}
-            </div>
-            <div class="selection-summary">
-              Selected: {selectedAttackers.length} group{selectedAttackers.length !== 1 ? 's' : ''}
-            </div>
-          </div>
-          
-          <div class="vs-indicator">VS</div>
-          
-          <div class="selection-section">
-            <h3>Enemy Forces</h3>
-            <div class="groups-list">
-              {#each enemyGroups as group}
-                <div 
-                  class="group-item" 
-                  class:selected={group.selected}
-                  onclick={() => toggleDefender(group.id)}
-                  onkeydown={(e) => handleDefenderKeyDown(e, group.id)}
-                  role="checkbox"
-                  tabindex="0"
-                  aria-checked={group.selected}
-                >
-                  <div class="selection-indicator">
-                    {#if group.selected}
-                      <div class="checkbox checked">✓</div>
-                    {:else}
-                      <div class="checkbox"></div>
-                    {/if}
-                  </div>
-                  <div class="group-info">
-                    <div class="group-name">{group.name || `Group ${group.id.slice(-5)}`}</div>
-                    <div class="group-details">
-                      <span class="unit-count">Units: {group.unitCount || (group.units?.length || 0)}</span>
-                      {#if group.race}
-                        <span class="race-tag">{_fmt(group.race)}</span>
-                      {/if}
-                      {#if group.owner}
-                        <span class="owner-tag">Owner: {group.ownerName || group.owner.slice(0, 5)}</span>
-                      {/if}
-                    </div>
-                  </div>
-                </div>
-              {/each}
-            </div>
-            <div class="selection-summary">
-              Selected: {selectedDefenders.length} group{selectedDefenders.length !== 1 ? 's' : ''}
-            </div>
-          </div>
-        </div>
-        
-        <div class="battle-preview">
-          {#if selectedAttackers.length > 0 && selectedDefenders.length > 0}
-            <div class="battle-odds">
-              <div class="side attacker">
-                <span class="side-label">Your Force</span>
-                <span class="strength">{selectedAttackers.length} groups</span>
-              </div>
-              <div class="odds-indicator">vs</div>
-              <div class="side defender">
-                <span class="side-label">Enemy</span>
-                <span class="strength">{selectedDefenders.length} groups</span>
-              </div>
-            </div>
+<svelte:window onkeydown={handleKeyDown} />
+
+<div class="attack-modal" transition:scale={{ start: 0.95, duration: 200 }}>
+  <header class="modal-header">
+    <h2>Attack Enemy Groups - {tileData?.x}, {tileData?.y}</h2>
+    <button class="close-btn" onclick={onClose} aria-label="Close dialog">
+      <Close size="1.5em" />
+    </button>
+  </header>
+  
+  <div class="content">
+    {#if playerGroups.length === 0 || enemyGroups.length === 0}
+      <div class="message error">
+        <p>
+          {#if playerGroups.length === 0}
+            You don't have any available groups that can attack.
+          {:else if enemyGroups.length === 0}
+            There are no enemy groups available to attack at this location.
+          {:else}
+            No groups available for combat.
           {/if}
+        </p>
+        <button class="cancel-btn" onclick={onClose}>Close</button>
+      </div>
+    {:else}
+      {#if errorMessage}
+        <div class="error-message">{errorMessage}</div>
+      {/if}
+      
+      <div class="attack-selection">
+        <div class="selection-section">
+          <h3>Select Your Group</h3>
+          <div class="groups-list">
+            {#each playerGroups as group}
+              <button 
+                class="group-item" 
+                class:selected={selectedPlayerGroup?.id === group.id}
+                onclick={() => selectPlayerGroup(group)}
+                onkeydown={(e) => e.key === 'Enter' && selectPlayerGroup(group)}
+                type="button"
+                aria-pressed={selectedPlayerGroup?.id === group.id}
+                aria-label={`Select your group ${group.name || group.id}`}
+              >
+                <div class="group-info">
+                  <div class="group-name">{group.name || `Group ${group.id.slice(-4)}`}</div>
+                  <div class="group-details">
+                    <span class="unit-count">Units: {group.unitCount || group.units?.length || 1}</span>
+                    {#if group.race}
+                      <span class="group-race">{_fmt(group.race)}</span>
+                    {/if}
+                  </div>
+                </div>
+              </button>
+            {/each}
+          </div>
         </div>
         
-        <div class="actions">
-          <button class="cancel-btn" onclick={onClose} disabled={loading}>Cancel</button>
-          <button 
-            class="attack-btn" 
-            onclick={startAttack}
-            disabled={!canAttack}
-          >
-            {loading ? 'Starting Battle...' : 'Begin Attack'}
-          </button>
+        <div class="selection-section">
+          <h3>Select Enemy to Attack</h3>
+          <div class="groups-list">
+            {#each enemyGroups as group}
+              <button 
+                class="group-item enemy-group" 
+                class:selected={selectedEnemyGroup?.id === group.id}
+                onclick={() => selectEnemyGroup(group)}
+                onkeydown={(e) => e.key === 'Enter' && selectEnemyGroup(group)}
+                type="button"
+                aria-pressed={selectedEnemyGroup?.id === group.id}
+                aria-label={`Select enemy group ${group.name || group.id}`}
+              >
+                <div class="group-info">
+                  <div class="group-name">
+                    {group.name || `Group ${group.id.slice(-4)}`}
+                    <span class="owner-name">({formatOwnerName(group)})</span>
+                  </div>
+                  <div class="group-details">
+                    <span class="unit-count">Units: {group.unitCount || group.units?.length || 1}</span>
+                    {#if group.race}
+                      <span class="group-race">{_fmt(group.race)}</span>
+                    {/if}
+                  </div>
+                </div>
+              </button>
+            {/each}
+          </div>
         </div>
-      {/if}
-    </div>
+      </div>
+      
+      <div class="battle-preview">
+        {#if selectedPlayerGroup && selectedEnemyGroup}
+          <h3>Battle Preview</h3>
+          <div class="battle-sides">
+            <div class="battle-side attacker">
+              <div class="side-name">Your Group</div>
+              <div class="side-info">
+                <strong>{selectedPlayerGroup.name || `Group ${selectedPlayerGroup.id.slice(-4)}`}</strong>
+                <div>{selectedPlayerGroup.unitCount || selectedPlayerGroup.units?.length || 1} units</div>
+              </div>
+            </div>
+            
+            <div class="vs-indicator">VS</div>
+            
+            <div class="battle-side defender">
+              <div class="side-name">Enemy Group</div>
+              <div class="side-info">
+                <strong>{selectedEnemyGroup.name || `Group ${selectedEnemyGroup.id.slice(-4)}`}</strong>
+                <div>{selectedEnemyGroup.unitCount || selectedEnemyGroup.units?.length || 1} units</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="battle-note">
+            <p>Starting this attack will create a battle that other players can join.</p>
+          </div>
+        {/if}
+      </div>
+      
+      <div class="actions">
+        <button class="cancel-btn" onclick={onClose} disabled={loading}>Cancel</button>
+        <button 
+          class="attack-btn" 
+          onclick={startAttack}
+          disabled={!canAttack || loading}
+        >
+          {loading ? 'Starting Attack...' : 'Start Attack'}
+        </button>
+      </div>
+    {/if}
   </div>
-</dialog>
+</div>
 
 <style>
-  .overlay {
+  .attack-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    backdrop-filter: blur(2px);
-  }
-
-  .popup {
-    background: var(--color-dark-navy);
-    border: 2px solid var(--color-panel-border);
-    border-radius: 0.5em;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 90%;
-    max-width: 42em;
-    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.5);
+    max-width: 36em;
+    max-height: 90vh;
+    background: white;
+    border-radius: 0.5em;
+    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
-    color: var(--color-text);
+    z-index: 1000;
+    font-family: var(--font-body);
   }
 
-  .header {
+  .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1em;
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid var(--color-panel-border);
+    padding: 0.8em 1em;
+    background: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
   }
 
   h2, h3 {
     margin: 0;
     font-family: var(--font-heading);
-    color: var(--color-bright-accent);
+  }
+  
+  h2 {
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #333;
   }
   
   h3 {
     margin-bottom: 0.8em;
     font-size: 1.1em;
+    font-weight: 500;
+    color: #333;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.3em;
     display: flex;
-    align-items: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+  }
+
+  .close-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
   }
 
   .content {
     padding: 1em;
-    max-height: 70vh;
     overflow-y: auto;
+    max-height: calc(90vh - 4em);
   }
 
-  .battle-setup {
+  .attack-selection {
     display: flex;
     flex-direction: column;
     gap: 1em;
+    margin-bottom: 1.5em;
   }
 
   .selection-section {
     flex: 1;
-    border: 1px solid var(--color-panel-border);
+    border: 1px solid #e0e0e0;
     border-radius: 0.4em;
     padding: 1em;
-    background: rgba(0, 0, 0, 0.2);
   }
 
   .groups-list {
     display: flex;
     flex-direction: column;
     gap: 0.5em;
-    max-height: 20em;
+    max-height: 15em;
     overflow-y: auto;
   }
 
   .group-item {
     padding: 0.8em;
-    border: 1px solid var(--color-panel-border);
+    border: 1px solid #e0e0e0;
     border-radius: 0.3em;
     cursor: pointer;
     transition: all 0.2s;
-    position: relative;
-    overflow: hidden;
-    background: rgba(255, 255, 255, 0.05);
-    display: flex;
-    align-items: center;
+    background: white;
+    text-align: left;
+    display: block;
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 1em;
   }
 
   .group-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    transform: translateY(-1px);
+    background-color: #f9f9f9;
   }
 
-  .group-item:focus {
-    outline: 2px solid var(--color-bright-accent);
-    outline-offset: 2px;
+  .group-item.selected {
+    background-color: rgba(66, 133, 244, 0.1);
+    border-color: rgba(66, 133, 244, 0.3);
+  }
+
+  .group-item.enemy-group {
+    border-color: rgba(220, 20, 60, 0.3);
   }
   
-  .group-item.selected {
-    background-color: rgba(100, 255, 218, 0.1);
-    border-color: var(--color-bright-accent);
+  .group-item.enemy-group:hover {
+    background-color: rgba(220, 20, 60, 0.05);
   }
-
-  .selection-indicator {
-    margin-right: 1em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .checkbox {
-    width: 1.2em;
-    height: 1.2em;
-    border: 1px solid var(--color-muted-teal);
-    border-radius: 0.2em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-  }
-
-  .checkbox.checked {
-    background-color: var(--color-bright-accent);
-    border-color: var(--color-bright-accent);
-  }
-
-  .group-info {
-    flex: 1;
+  
+  .group-item.enemy-group.selected {
+    background-color: rgba(220, 20, 60, 0.1);
+    border-color: rgba(220, 20, 60, 0.3);
   }
 
   .group-name {
-    font-weight: 600;
+    font-weight: 500;
     margin-bottom: 0.3em;
-    color: var(--color-text);
+  }
+
+  .owner-name {
+    font-size: 0.85em;
+    color: #666;
+    font-weight: normal;
+    margin-left: 0.5em;
   }
 
   .group-details {
     font-size: 0.9em;
-    color: var(--color-text-secondary);
+    color: #666;
+    display: flex;
+    justify-content: space-between;
   }
-
-  .vs-indicator {
+  
+  .unit-count {
+    color: rgba(0, 0, 0, 0.7);
+    font-weight: 500;
+  }
+  
+  .group-race {
+    color: #2d8659;
+    font-weight: 500;
+  }
+  
+  .battle-preview {
+    margin-top: 1.5em;
+    margin-bottom: 1.5em;
+  }
+  
+  .battle-sides {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1em;
+    margin-bottom: 1em;
+  }
+  
+  .battle-side {
+    flex: 1;
+    padding: 0.8em;
+    border-radius: 0.3em;
     text-align: center;
+  }
+  
+  .battle-side.attacker {
+    background-color: rgba(0, 0, 255, 0.07);
+    border: 1px solid rgba(0, 0, 255, 0.15);
+    color: #00008B;
+  }
+  
+  .battle-side.defender {
+    background-color: rgba(139, 0, 0, 0.07);
+    border: 1px solid rgba(139, 0, 0, 0.15);
+    color: #8B0000;
+  }
+  
+  .side-name {
+    font-weight: 500;
+    margin-bottom: 0.5em;
+  }
+  
+  .side-info {
+    font-size: 0.9em;
+  }
+  
+  .vs-indicator {
     font-weight: bold;
     font-size: 1.2em;
-    padding: 0.5em;
-    color: var(--color-bright-accent);
+    color: #666;
+  }
+  
+  .battle-note {
+    background-color: rgba(255, 152, 0, 0.1);
+    border-left: 3px solid rgba(255, 152, 0, 0.5);
+    padding: 0.8em;
+    font-size: 0.9em;
+    color: #666;
+  }
+  
+  .battle-note p {
+    margin: 0;
   }
 
   .actions {
     display: flex;
     justify-content: flex-end;
     gap: 1em;
-    margin-top: 1.5em;
+    margin-top: 1em;
   }
 
-  .cancel-btn, .attack-btn, .close-action {
+  .cancel-btn, .attack-btn {
     padding: 0.7em 1.2em;
     border-radius: 0.3em;
     cursor: pointer;
     font-size: 1em;
     font-weight: 500;
-    font-family: var(--font-heading);
     transition: all 0.2s;
   }
 
   .cancel-btn {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--color-text);
-    border: 1px solid var(--color-panel-border);
+    background-color: #f1f3f4;
+    color: #3c4043;
+    border: 1px solid #dadce0;
   }
 
   .cancel-btn:hover:not(:disabled) {
-    background-color: rgba(255, 255, 255, 0.15);
+    background-color: #e8eaed;
   }
 
   .attack-btn {
-    background-color: var(--color-button-primary);
+    background-color: #d32f2f;
     color: white;
-    border: 1px solid var(--color-muted-teal);
+    border: none;
   }
 
   .attack-btn:hover:not(:disabled) {
-    background-color: var(--color-button-primary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 0.2em 0.5em rgba(0, 150, 150, 0.3);
+    background-color: #b71c1c;
   }
 
   .attack-btn:disabled, .cancel-btn:disabled {
-    opacity: 0.6;
+    opacity: 0.7;
     cursor: not-allowed;
-    transform: none;
   }
 
   .error-message {
     padding: 0.8em;
-    background-color: rgba(255, 50, 50, 0.2);
+    background-color: rgba(255, 0, 0, 0.1);
     border-left: 3px solid #ff3232;
     margin-bottom: 1em;
-    color: #ff9090;
+    color: #d32f2f;
   }
 
-  .no-battle {
-    text-align: center;
-    padding: 2em 1em;
-  }
-
-  .close-action {
-    margin-top: 1em;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--color-text);
-    border: 1px solid var(--color-panel-border);
-  }
-
-  .selection-summary {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 0.8em;
-    padding-top: 0.8em;
-    border-top: 1px dashed var(--color-panel-border);
-    color: var(--color-bright-accent);
-    font-size: 0.9em;
-  }
-
-  .battle-preview {
-    margin-top: 1.5em;
-  }
-
-  .battle-odds {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1em;
-    border: 1px solid var(--color-panel-border);
-    border-radius: 0.3em;
-    background: rgba(0, 0, 0, 0.2);
-  }
-
-  .side {
+  .message.error {
+    padding: 0.8em;
+    background-color: rgba(255, 0, 0, 0.1);
+    border-left: 3px solid #ff3232;
+    margin-bottom: 1em;
+    color: #d32f2f;
     display: flex;
     flex-direction: column;
+    gap: 1em;
     align-items: center;
-  }
-
-  .side-label {
-    font-size: 0.9em;
-    opacity: 0.8;
-    margin-bottom: 0.3em;
-  }
-
-  .strength {
-    font-weight: bold;
-    color: var(--color-bright-accent);
-  }
-
-  .odds-indicator {
-    font-size: 1.2em;
-    font-weight: bold;
-  }
-
-  .attacker .strength {
-    color: #64FFDA;
-  }
-
-  .defender .strength {
-    color: #FF6464;
   }
 
   @media (min-width: 768px) {
-    .battle-setup {
-      flex-direction: row;
+    .attack-selection {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-gap: 1em;
     }
   }
 </style>
