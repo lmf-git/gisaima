@@ -293,21 +293,23 @@
       });
     });
 
-    $effect(() => {
-      if ($ready && $game.currentWorld && $user?.uid && !$game.playerWorldData) {
-        console.log("Requesting player data reload for", $user.uid, $game.currentWorld);
-        const userId = $user.uid;
-        const worldId = $game.currentWorld;
-        
-        import("../../lib/stores/game.js").then(module => {
-          module.loadPlayerWorldData(userId, worldId);
-        });
-      }
-    });
-
     function handleSpawnComplete(spawnLocation) {
         if (spawnLocation) {
+            console.log('Spawn complete at:', spawnLocation);
+            
+            // Since the SpawnMenu already moved the map to this location,
+            // we just need to ensure states are updated properly
             moveTarget(spawnLocation.x, spawnLocation.y);
+            
+            // Mark URL coords as processed
+            urlProcessingComplete = true;
+            lastProcessedLocation = { ...spawnLocation };
+            
+            // Ensure highlighted coordinates are cleared
+            setHighlighted(null, null);
+            
+            // Force an instantiation of state variables (helps with Svelte 5 reactivity)
+            structureRenderCount++;
         }
     }
     
