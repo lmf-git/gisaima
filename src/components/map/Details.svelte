@@ -1856,4 +1856,15 @@
     background-color: rgba(0, 0, 0, 0.05);
     border-radius: 50%;
   }
+
+  /* Add missing entities-section styling */
+  .entities-section {
+    margin-bottom: 1.2em;
+    border-radius: 0.3em;
+    overflow: hidden;
+  }
+
+  .entities-section:last-child {
+    margin-bottom: 0;
+  }
 </style>
