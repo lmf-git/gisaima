@@ -941,12 +941,6 @@
               </div>
             {/if}
 
-            <!-- Player position indicator - only show for current player -->
-            {#if isCurrentPlayerHere}
-              <div class="player-position-indicator" 
-                   class:from-world-data={playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y && !hasCurrentPlayerEntity(cell)}></div>
-            {/if}
-            
             <!-- Battle indicator -->
             {#if hasBattle(cell)}
               <div class="battle-indicator" title="Active battle in progress">
@@ -956,6 +950,11 @@
             
             <!-- Entity indicators -->
             <div class="entity-indicators">
+              {#if isCurrentPlayerHere}
+                <div class="entity-indicator player-position-indicator" 
+                     class:from-world-data={playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y && !hasCurrentPlayerEntity(cell)}></div>
+              {/if}
+              
               {#if hasPlayers}
                 <div class="entity-indicator player-indicator" 
                      class:current-player-indicator={isCurrentPlayerHere}>
@@ -1187,99 +1186,125 @@
     border-radius: 50%;
     border: 0.0625em solid rgba(0, 0, 0, 0.3);
     box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.3);
+    position: relative; /* Ensure proper positioning for count */
   }
   
-  .structure-indicator {
-    background: rgba(0, 0, 0, 0.9);
-    border-radius: 0;
-  }
-
-  .structure-indicator {
-    background: rgba(0, 0, 0, 0.9);
-    box-shadow: 0 0 .25em rgba(0, 0, 0, 0.8);
-    border-radius: 50%;
-  }
-  
-  .group-indicator {
-    background: rgba(255, 100, 100, 0.9);
-    box-shadow: 0 0 .15em rgba(255, 100, 100, 0.6);
-  }
-  
-  .player-indicator {
-    background: rgba(100, 100, 255, 0.9);
-    box-shadow: 0 0 .15em rgba(100, 100, 255, 0.6);
-  }
-  
-  .player-position-indicator {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 0.7em;
-    height: 0.7em;
-    background: gold;
-    border: 0.1em solid rgba(0, 0, 0, 0.5);
-    border-radius: 50%;
-    box-shadow: 0 0 0.3em gold;
-    z-index: 10;
-  }
-
-  .player-position-indicator.from-world-data {
-    background: linear-gradient(135deg, gold, #ffd700);
-    width: 0.75em;
-    height: 0.75em;
-    box-shadow: 0 0 0.4em gold, 0 0 0.8em rgba(255, 215, 0, 0.5);
-    z-index: 11;
-  }
-
   .count {
     font-size: 0.6em;
     font-weight: bold;
     color: rgba(0, 0, 0, 0.8);
     line-height: 1;
     font-family: var(--font-heading);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-shadow: 
+      0px 0px 2px white,
+      0px 0px 1px white;
   }
-
+  
+  /* Enhanced indicator styles to match path elements */
+  .player-position-indicator {
+    background: radial-gradient(circle, gold, #e6c200);
+    box-shadow: 
+      0 0 0.2em gold,
+      0 0 0.5em rgba(255, 215, 0, 0.3);
+    border: 0.08em solid rgba(255, 255, 255, 0.8);
+    z-index: 11;
+  }
+  
+  .player-position-indicator.from-world-data {
+    background: radial-gradient(circle, #ffdd33, #cc9900);
+    box-shadow: 
+      0 0 0.3em gold,
+      0 0 0.8em rgba(255, 215, 0, 0.6);
+    border: 0.08em solid rgba(255, 255, 255, 1);
+    animation: pulse-player 3s infinite;
+  }
+  
+  @keyframes pulse-player {
+    0% { box-shadow: 0 0 0.2em gold, 0 0 0.4em rgba(255, 215, 0, 0.3); }
+    50% { box-shadow: 0 0 0.3em gold, 0 0 0.8em rgba(255, 215, 0, 0.6); }
+    100% { box-shadow: 0 0 0.2em gold, 0 0 0.4em rgba(255, 215, 0, 0.3); }
+  }
+  
+  .player-indicator {
+    background: radial-gradient(circle, rgba(130, 130, 255, 0.9), rgba(80, 80, 225, 0.9));
+    box-shadow: 0 0 0.2em rgba(100, 100, 255, 0.6);
+    border: 0.08em solid rgba(180, 180, 255, 0.7);
+  }
+  
+  .group-indicator {
+    background: radial-gradient(circle, rgba(255, 130, 130, 0.9), rgba(225, 80, 80, 0.9));
+    box-shadow: 0 0 0.2em rgba(255, 100, 100, 0.6);
+    border: 0.08em solid rgba(255, 180, 180, 0.7);
+  }
+  
   .item-indicator {
-    background: rgba(255, 215, 0, 0.9);
-    box-shadow: 0 0 .15em rgba(255, 215, 0, 0.6);
-  }
-
-  .tile.has-structure {
-    box-shadow: inset 0 -0.1em 0.3em rgba(255, 255, 255, 0.3);
+    background: radial-gradient(circle, rgba(255, 225, 60, 0.9), rgba(255, 195, 0, 0.9));
+    box-shadow: 0 0 0.2em rgba(255, 215, 0, 0.6);
+    border: 0.08em solid rgba(255, 235, 150, 0.7);
   }
   
-  .tile.has-groups {
-    box-shadow: inset 0 0 0.3em rgba(255, 100, 100, 0.4);
+  .item-indicator.uncommon {
+    background: radial-gradient(circle, rgba(60, 255, 30, 0.9), rgba(30, 205, 0, 0.9));
+    box-shadow: 0 0 0.2em rgba(30, 255, 0, 0.6);
+    border: 0.08em solid rgba(150, 255, 150, 0.7);
   }
   
-  .tile.has-players {
-    box-shadow: inset 0 0 0.3em rgba(100, 100, 255, 0.4);
+  .item-indicator.rare {
+    background: radial-gradient(circle, rgba(30, 150, 255, 0.9), rgba(0, 100, 221, 0.9));
+    box-shadow: 0 0 0.2em rgba(0, 112, 221, 0.6);
+    border: 0.08em solid rgba(150, 200, 255, 0.7);
   }
   
-  .tile.has-items {
-    box-shadow: inset 0 0 0.3em rgba(255, 215, 0, 0.4);
+  .item-indicator.epic {
+    background: radial-gradient(circle, rgba(180, 30, 255, 0.9), rgba(128, 0, 191, 0.9));
+    box-shadow: 0 0 0.2em rgba(148, 0, 211, 0.6);
+    border: 0.08em solid rgba(200, 150, 255, 0.7);
   }
   
-  .tile.has-structure.has-groups,
-  .tile.has-structure.has-players,
-  .tile.has-structure.has-items,
-  .tile.has-groups.has-players,
-  .tile.has-groups.has-items,
-  .tile.has-players.has-items {
-    box-shadow: inset 0 0 0.4em rgba(255, 255, 255, 0.5);
+  .item-indicator.legendary {
+    background: radial-gradient(circle, rgba(255, 195, 60, 0.9), rgba(225, 145, 0, 0.9));
+    box-shadow: 0 0 0.2em rgba(255, 165, 0, 0.6);
+    border: 0.08em solid rgba(255, 215, 150, 0.7);
   }
-
-  @media (hover: none) {
-    .map {
-      cursor: default;
-    }
-    
-    .map.moving {
-      cursor: default;
-    }
+  
+  .item-indicator.mythic {
+    background: radial-gradient(circle, rgba(255, 158, 255, 0.9), rgba(225, 98, 225, 0.9));
+    box-shadow: 0 0 0.2em rgba(255, 128, 255, 0.6);
+    border: 0.08em solid rgba(255, 180, 255, 0.7);
+    animation: pulseItemMythic 2s infinite;
   }
-
+  
+  .current-player-indicator {
+    transform: scale(1.1);
+    animation: pulse 2s infinite;
+    background: radial-gradient(circle, rgba(84, 234, 218, 0.9), rgba(44, 184, 168, 0.9));
+    border-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 0.2em turquoise;
+  }
+  
+  /* Remove the old player position styles that conflict */
+  .player-position {
+    position: relative;
+    box-shadow: inset 0 0 0.6em rgba(255, 215, 0, 0.7);
+    z-index: 2;
+  }
+  
+  .player-position:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 0.15em solid gold;
+    pointer-events: none;
+    z-index: 2;
+  }
+  
   .map-container.touch-active {
     touch-action: none;
     overflow: hidden;
@@ -1416,63 +1441,6 @@
   .tile.has-structure.has-groups.spawn-structure,
   .tile.has-structure.has-players.spawn-structure {
     box-shadow: inset 0 0 0.5em rgba(0, 255, 255, 0.6);
-  }
-
-  .player-position {
-    position: relative;
-    box-shadow: inset 0 0 0.6em rgba(255, 215, 0, 0.7);
-    z-index: 2;
-  }
-  
-  .player-position:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border: 0.15em solid gold;
-    pointer-events: none;
-    z-index: 2;
-  }
-  
-  .player-position-indicator {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 0.7em;
-    height: 0.7em;
-    background: gold;
-    border: 0.1em solid rgba(0, 0, 0, 0.5);
-    border-radius: 50%;
-    box-shadow: 0 0 0.3em gold;
-    z-index: 10;
-    pointer-events: none;
-  }
-  
-  .current-player-tile .player-indicator {
-    background: rgba(64, 224, 208, 0.9);
-    border-color: rgba(255, 255, 255, 0.7);
-    box-shadow: 0 0 0.2em turquoise;
-  }
-  
-  .current-player-indicator {
-    transform: scale(1.1);
-    animation: pulse 2s infinite;
-  }
-  
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(64, 224, 208, 0.7); }
-    70% { box-shadow: 0 0 0 0.4em rgba(64, 224, 208, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(64, 224, 208, 0); }
-  }
-  
-  .tile.player-position.has-structure,
-  .tile.player-position.has-groups,
-  .tile.player-position.has-players,
-  .tile.player-position.spawn-structure {
-    box-shadow: inset 0 0 0.6em rgba(255, 215, 0, 0.7);
   }
 
   .tile.mythic {
