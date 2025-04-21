@@ -239,20 +239,7 @@
             disabled={spawning}
           >
             <div class="option-icon">
-              <div class="faction-icon">
-                {#if playerRace === 'human'}
-                  <Human extraClass="race-icon-option" />
-                {:else if playerRace === 'elf'}
-                  <Elf extraClass="race-icon-option" />
-                {:else if playerRace === 'dwarf'}
-                  <Dwarf extraClass="race-icon-option" />
-                {:else if playerRace === 'goblin'}
-                  <Goblin extraClass="race-icon-option" />
-                {:else if playerRace === 'fairy'}
-                  <Fairy extraClass="race-icon-option" />
-                {/if}
-              </div>
-              <Torch size="1.2em" extraClass="torch-icon" />
+              <Torch size="2em" extraClass="torch-icon" />
             </div>
             <div class="option-content">
               <span class="option-name">{spot.name}</span>
@@ -351,23 +338,15 @@
   }
   
   :global(.race-icon-menu) {
-    width: 2.5em;
-    height: 2.5em;
-    fill: white;
-    filter: drop-shadow(0 0 0.15em rgba(0, 0, 0, 0.5));
-  }
-  
-  :global(.race-icon-option) {
-    width: 1.2em;
-    height: 1.2em;
-    fill: white;
-    margin-right: 0.3em;
-    filter: drop-shadow(0 0 0.15em rgba(0, 0, 0, 0.5));
+    width: 3em;
+    height: 3em;
+    fill: rgba(0, 0, 0, 0.8);
   }
   
   :global(.torch-icon) {
-    fill: white;
-    filter: drop-shadow(0 0 0.2em rgba(255, 160, 0, 0.7));
+    width: 2.2em;
+    height: 2.2em;
+    fill: rgba(0, 0, 0, 0.8);
   }
 
   .spawn-options {
@@ -408,16 +387,7 @@
     align-items: center;
     justify-content: center;
     min-width: 2.5rem;
-    background: rgba(0, 0, 0, 0.3);
     padding: 0.4em;
-    border-radius: 50%;
-    box-shadow: 0 0 0.3em rgba(0, 0, 0, 0.2);
-  }
-
-  .faction-icon {
-    display: flex;
-    align-items: center;
-    margin-right: 0.4rem;
   }
   
   .option-content {
