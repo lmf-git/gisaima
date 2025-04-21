@@ -1,587 +1,568 @@
 <script>
   import { fade, scale } from 'svelte/transition';
-  import { onMount } from 'svelte';
-  import { currentPlayer, game, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
-  import { highlightedStore, targetStore } from '../../lib/stores/map';
-  import { getFunctions, httpsCallable } from 'firebase/functions';
+  import { currentPlayer, game, timeUntilNextTick } from '../../lib/stores/game';
+  import { targetStore } from '../../lib/stores/map';
   import Close from '../icons/Close.svelte';
-  
-  // Props
-  const { onClose = () => {}, onGather = () => {}, data = null } = $props();
+  import { getFunctions, httpsCallable } from 'firebase/functions';
 
-  // States
-  let selectedGroupId = $state(null);
-  let isSubmitting = $state(false);
+  // Props with default empty function to avoid destructuring errors - only need callbacks
+  const { onClose = () => {}, onGather = () => {} } = $props();
+  
+  // Get functions instance
+  const functions = getFunctions();
+  
+  // Track selected entities
+  let selectedGroup = $state(null);
+  let selectedItems = $state([]);
+  
+  // Available groups and items
+  let availableGroups = $state([]);
+  let availableItems = $state([]);
+  
+  // Status messages
   let error = $state(null);
+  let statusMessage = $state('');
+  
+  // Processing flag
+  let processing = $state(false);
 
-  // Derived states - fix how we determine the currentTile
-  const currentTile = $derived(() => {
-    // Start with data passed from parent components
-    if (data) {
-      console.log('Raw data received:', JSON.stringify(data));
-      
-      // Preserve the groups array from data if it exists
-      const groups = data.groups || 
-                    (data.tile?.groups) || 
-                    ($highlightedStore?.groups) || 
-                    ($targetStore?.groups) || 
-                    [];
-                    
-      return {
-        ...$targetStore,
-        ...$highlightedStore,
-        ...data,
-        ...data.tile, // Extract tile data if nested
-        groups  // Ensure we have the groups array
-      };
+  // Process data directly from targetStore when it changes
+  $effect(() => {
+    // Reset if no target data
+    if (!$targetStore) {
+      availableGroups = [];
+      availableItems = [];
+      return;
     }
     
-    // Fallback to highlighted or target store
-    return $highlightedStore || $targetStore || {};
+    // Filter only groups owned by the current player and with idle status
+    const groups = $targetStore.groups;
+    
+    if (groups && $currentPlayer?.uid) {
+      // Handle both array and object formats of groups
+      const groupsArray = Array.isArray(groups) ? groups : Object.values(groups);
+      
+      availableGroups = groupsArray
+        .filter(group => 
+          group.owner === $currentPlayer.uid && 
+          group.status === 'idle' &&
+          !group.inBattle
+        )
+        .map(group => ({
+          ...group,
+          selected: false
+        }));
+    } else {
+      availableGroups = [];
+    }
+    
+    // Process items - even if there are none, we'll handle that case
+    const items = $targetStore.items || [];
+    
+    // Handle both array and object formats of items
+    const itemsArray = Array.isArray(items) ? items : Object.values(items);
+    
+    availableItems = itemsArray.map(item => ({
+      ...item,
+      selected: false
+    }));
+      
+    // Clear selections when available data changes
+    selectedGroup = null;
+    selectedItems = [];
   });
   
-  const eligibleGroups = $derived(getEligibleGroups());
-  const availableItems = $derived(getAvailableItems());
+  // Select a group
+  function selectGroup(group) {
+    if (processing) return;
+    selectedGroup = group;
+  }
   
-  onMount(() => {
-    console.log('Gather component mounted with tile:', currentTile);
-    console.log('Current tile coordinates:', currentTile.x, currentTile.y);
+  // Toggle item selection
+  function toggleItem(item) {
+    if (processing) return;
     
-    if (currentTile.groups) {
-      console.log('All groups on tile:', currentTile.groups.length); 
-      
-      // Log each group's key details for debugging
-      currentTile.groups.forEach(g => {
-        console.log(`Group ${g.id || 'unknown'}: owner=${g.owner}, status=${g.status}, inBattle=${g.inBattle}`);
-      });
-    }
-    
-    console.log('Eligible groups found:', eligibleGroups.length);
-    console.log('Available items:', availableItems.length);
-    
-    // Auto-select the group if provided in data
-    if (data?.group?.id) {
-      selectedGroupId = data.group.id;
-      console.log('Auto-selected group by passed data:', selectedGroupId);
-    }
-    // Auto-select first group if there's only one
-    else if (eligibleGroups.length === 1) {
-      selectedGroupId = eligibleGroups[0].id;
-      console.log('Auto-selected only available group:', selectedGroupId);
-    }
-  });
-
-  function getEligibleGroups() {
-    if (!currentTile) return [];
-    if (!$currentPlayer) return [];
-    
-    // Ensure groups is an array
-    let groups = currentTile.groups || [];
-    
-    // Handle case where groups might be an object
-    if (groups && !Array.isArray(groups) && typeof groups === 'object') {
-      groups = Object.values(groups);
-    }
-    
-    // Simple filtering to match other components
-    return groups.filter(group => 
-      group && 
-      group.owner === $currentPlayer.uid && 
-      group.status === 'idle' && 
-      !group.inBattle
-    );
-  }
-
-  function getAvailableItems() {
-    // Get items on the current tile
-    const items = currentTile?.items || [];
-    console.log('Available items on tile:', items.length);
-    return items;
-  }
-
-  function handleKeyDown(event) {
-    if (event.key === "Escape") {
-      onClose();
+    if (selectedItems.some(i => i.id === item.id)) {
+      selectedItems = selectedItems.filter(i => i.id !== item.id);
+    } else {
+      selectedItems = [...selectedItems, item];
     }
   }
-
-  async function startGathering() {
-    if (!selectedGroupId || isSubmitting) return;
-
+  
+  // Start gathering process
+  async function startGather() {
+    if (!selectedGroup || processing) return;
+    // Note: Removed check for selectedItems.length to allow gathering even without items
+    
+    processing = true;
+    error = null;
+    statusMessage = 'Starting gathering...';
+    
     try {
-      isSubmitting = true;
-      error = null;
-
-      const group = eligibleGroups.find(g => g.id === selectedGroupId);
-      if (!group) {
-        throw new Error("Selected group not found");
-      }
-
-      if (availableItems.length === 0) {
-        throw new Error("No items to gather");
-      }
-
-      // Call the cloud function to start gathering
-      const functions = getFunctions();
-      const gatherFn = httpsCallable(functions, 'gather');
+      // Create the function reference
+      const gatherFn = httpsCallable(functions, 'startGathering');
       
+      // Call with the required parameters
       const result = await gatherFn({
-        groupId: selectedGroupId,
-        tileX: currentTile.x,
-        tileY: currentTile.y,
+        groupId: selectedGroup.id,
+        itemIds: selectedItems.map(item => item.id),
+        locationX: $targetStore.x,
+        locationY: $targetStore.y,
         worldId: $game.currentWorld
       });
-
-      // Call the onGather callback with the result
+      
+      console.log('Gathering started:', result.data);
+      
+      // Show a success message with the next game tick time
+      statusMessage = `Gathering started! Your group will collect items at the next game tick (in approximately ${$timeUntilNextTick}).`;
+      
+      // Notify the parent of the successful gathering
       onGather({
-        group,
-        tile: currentTile,
-        result: result.data
+        group: selectedGroup,
+        items: selectedItems,
+        location: { x: $targetStore.x, y: $targetStore.y }
       });
-
-      // Close the modal
-      onClose();
+      
+      // Wait a bit then close
+      setTimeout(() => {
+        onClose(true);
+      }, 3000);
     } catch (err) {
-      console.error("Error gathering:", err);
-      error = err.message || "Failed to start gathering";
-      isSubmitting = false;
+      console.error('Gathering error:', err);
+      error = err.message || 'An error occurred during gathering.';
+      statusMessage = '';
+    } finally {
+      processing = false;
     }
   }
-
-  function formatItemName(item) {
-    return item.name || 
-      item.type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 
-      "Item";
+  
+  // Close on escape key
+  function handleKeyDown(event) {
+    if (event.key === 'Escape') {
+      onClose();
+    }
   }
-
-  function getRarityClass(rarity) {
-    return rarity?.toLowerCase() || 'common';
+  
+  // Helper function for formatting text
+  function _fmt(t) {
+    if (!t) return '';
+    return t.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
 </script>
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<div class="modal-container">
-  <div class="modal-content">
-    <header class="modal-header">
-      <h3>Gather Items</h3>
-      <button class="close-button" onclick={onClose}>
-        <Close size="1.6em" extraClass="close-icon-dark" />
+<dialog 
+     class="overlay"
+     open
+     aria-modal="true" 
+     aria-labelledby="gather-title"
+     transition:fade={{ duration: 150 }}>
+  
+  <section 
+       class="popup"
+       role="document" 
+       transition:scale={{ start: 0.95, duration: 200 }}>
+    <div class="header">
+      <h2 id="gather-title">Gather Items</h2>
+      <button class="close-btn" onclick={() => onClose()} aria-label="Close gather dialog">
+        <Close size="1.5em" />
       </button>
-    </header>
-
-    <div class="modal-body">
-      {#if eligibleGroups.length === 0}
-        <div class="message error">
-          You don't have any idle groups on this tile that can gather items.
+    </div>
+    
+    <div class="content">
+      <p class="description">
+        Select a group to gather resources from this location. The group will collect items at the next game tick.
+      </p>
+      
+      {#if availableGroups.length > 0}
+        <div class="group-selection">
+          <h3>Step 1: Select Your Group</h3>
+          <div class="groups-list">
+            {#each availableGroups as group}
+              <button 
+                class="group-item" 
+                class:selected={selectedGroup?.id === group.id}
+                disabled={processing}
+                onclick={() => selectGroup(group)}
+                aria-pressed={selectedGroup?.id === group.id}
+              >
+                <div class="group-info">
+                  <div class="group-name">{group.name || `Group ${group.id.slice(-4)}`}</div>
+                  <div class="group-units">{group.unitCount || 'Unknown'} units</div>
+                </div>
+              </button>
+            {/each}
+          </div>
         </div>
-      {:else if availableItems.length === 0}
-        <div class="message error">
-          There are no items to gather on this tile.
+        
+        {#if selectedGroup}
+          {#if availableItems.length > 0}
+            <div class="item-selection">
+              <h3>Step 2: Select Items to Gather (Optional)</h3>
+              <div class="items-list">
+                {#each availableItems as item}
+                  <button 
+                    class="item-entry" 
+                    class:selected={selectedItems.some(i => i.id === item.id)}
+                    disabled={processing}
+                    onclick={() => toggleItem(item)}
+                    aria-pressed={selectedItems.some(i => i.id === item.id)}
+                  >
+                    <div class="item-details">
+                      <div class="item-name">
+                        {item.name || _fmt(item.type) || 'Item'}
+                        {#if item.rarity && item.rarity !== 'common'}
+                          <span class="item-rarity {item.rarity.toLowerCase()}">{_fmt(item.rarity)}</span>
+                        {/if}
+                      </div>
+                      
+                      {#if item.quantity > 1}
+                        <div class="item-quantity">Quantity: {item.quantity}</div>
+                      {/if}
+                    </div>
+                  </button>
+                {/each}
+              </div>
+              
+              <div class="selection-summary">
+                Selected: {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+          {:else}
+            <div class="info-box">
+              <p>No specific items available on this tile, but your group can still gather resources from the surrounding area.</p>
+            </div>
+          {/if}
+        {/if}
+        
+        {#if error}
+          <div class="error">{error}</div>
+        {/if}
+        
+        {#if statusMessage}
+          <div class="status">{statusMessage}</div>
+        {/if}
+        
+        <div class="actions">
+          <button 
+            class="cancel-btn" 
+            onclick={() => onClose()} 
+            disabled={processing}
+          >
+            Cancel
+          </button>
+          
+          <button 
+            class="gather-btn" 
+            onclick={startGather} 
+            disabled={!selectedGroup || processing}
+          >
+            {processing ? 'Processing...' : 'Gather Resources'}
+          </button>
         </div>
       {:else}
-        <div class="section">
-          <h4>Available Items</h4>
-          <div class="items-list">
-            {#each availableItems as item}
-              <div class="item {getRarityClass(item.rarity)}">
-                <div class="item-name">
-                  {formatItemName(item)}
-                  {#if item.quantity > 1}
-                    <span class="item-quantity">×{item.quantity}</span>
-                  {/if}
-                </div>
-                {#if item.rarity && item.rarity !== 'common'}
-                  <div class="item-rarity {item.rarity.toLowerCase()}">{item.rarity}</div>
-                {/if}
-                {#if item.description}
-                  <div class="item-description">{item.description}</div>
-                {/if}
-              </div>
-            {/each}
-          </div>
-        </div>
-
-        <div class="section">
-          <h4>Select Group to Gather</h4>
-          <div class="groups-list">
-            {#each eligibleGroups as group}
-              <label class="group-option {selectedGroupId === group.id ? 'selected' : ''}">
-                <input 
-                  type="radio" 
-                  name="groupSelect" 
-                  value={group.id} 
-                  bind:group={selectedGroupId} 
-                />
-                <div class="group-details">
-                  <div class="group-name">{group.name || `Group ${group.id.substring(0, 5)}`}</div>
-                  <div class="group-units">{group.unitCount || 1} units</div>
-                </div>
-              </label>
-            {/each}
-          </div>
-        </div>
-
-        {#if error}
-          <div class="message error">{error}</div>
-        {/if}
-
-        <div class="info-box">
-          <p>Gathering will complete on the next tick. ({$timeUntilNextTick})</p>
+        <div class="empty-state">
+          <p>No groups available to gather resources at this location.</p>
+          <button class="close-btn-secondary" onclick={() => onClose()}>
+            Close
+          </button>
         </div>
       {/if}
     </div>
-
-    <footer class="modal-footer">
-      <button 
-        class="cancel-button" 
-        onclick={onClose}
-        disabled={isSubmitting}
-      >
-        Cancel
-      </button>
-      
-      <button 
-        class="action-button" 
-        onclick={startGathering}
-        disabled={!selectedGroupId || isSubmitting || availableItems.length === 0}
-      >
-        {isSubmitting ? 'Starting...' : 'Start Gathering'}
-      </button>
-    </footer>
-  </div>
+  </section>
   
-  <div class="overlay-backdrop" onclick={onClose}></div>
-</div>
+  <button 
+    class="overlay-dismiss-button"
+    onclick={() => onClose()}
+    aria-label="Close dialog">
+  </button>
+</dialog>
 
 <style>
-  .modal-container {
+  .overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    padding: 1em;
+    box-sizing: border-box;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
   }
   
-  .overlay-backdrop {
+  .overlay-dismiss-button {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-    z-index: -1;
-    cursor: pointer;
-    pointer-events: auto;
+    background: transparent;
+    border: none;
+    cursor: default;
   }
-
-  .modal-content {
-    pointer-events: auto;
-    width: 90%;
-    max-width: 30em;
-    max-height: 85vh;
-    background-color: rgba(255, 255, 255, 0.85);
-    border: 0.05em solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.3em;
-    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+  
+  .popup {
+    background: #fff;
+    border-radius: 0.5em;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 32em;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    z-index: 1001;
     font-family: var(--font-body);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    animation: modalAppear 0.3s ease-out forwards;
   }
-
-  @keyframes modalAppear {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  .modal-header {
-    padding: 0.8em 1em;
+  
+  .header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    justify-content: space-between;
+    padding: 1em;
+    border-bottom: 1px solid #eee;
+  }
+  
+  h2 {
+    margin: 0;
+    font-size: 1.5em;
+    font-weight: 600;
     font-family: var(--font-heading);
   }
-
+  
   h3 {
-    margin: 0;
-    font-size: 1.2em;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.8);
+    font-size: 1.1em;
+    margin: 0 0 0.8em 0;
+    font-family: var(--font-heading);
   }
-
-  .close-button {
-    background: none;
+  
+  .content {
+    padding: 1em;
+  }
+  
+  .description {
+    margin-bottom: 1.5em;
+    color: #555;
+  }
+  
+  .group-selection, .item-selection {
+    margin-bottom: 1.5em;
+  }
+  
+  .groups-list, .items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    max-height: 12em;
+    overflow-y: auto;
+  }
+  
+  .group-item, .item-entry {
+    display: flex;
+    align-items: center;
+    padding: 0.8em;
+    border: 1px solid #ddd;
+    border-radius: 0.3em;
+    cursor: pointer;
+    background: white;
+    transition: all 0.2s;
+    text-align: left;
+    font-family: inherit;
+    font-size: inherit;
+  }
+  
+  .group-item:hover:not(:disabled), .item-entry:hover:not(:disabled) {
+    background: #f9f9f9;
+    border-color: #ccc;
+  }
+  
+  .group-item.selected, .item-entry.selected {
+    background: rgba(66, 133, 244, 0.1);
+    border-color: rgba(66, 133, 244, 0.4);
+  }
+  
+  .group-item:disabled, .item-entry:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .group-info, .item-details {
+    flex: 1;
+  }
+  
+  .group-name, .item-name {
+    font-weight: 500;
+    margin-bottom: 0.2em;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5em;
+  }
+  
+  .group-units {
+    font-size: 0.8em;
+    color: #666;
+  }
+  
+  .item-quantity {
+    font-size: 0.8em;
+    color: #666;
+  }
+  
+  .item-rarity {
+    font-size: 0.7em;
+    padding: 0.2em 0.4em;
+    border-radius: 0.2em;
+    font-weight: 500;
+  }
+  
+  .item-rarity.uncommon {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+    border: 1px solid rgba(76, 175, 80, 0.3);
+  }
+  
+  .item-rarity.rare {
+    background-color: rgba(33, 150, 243, 0.2);
+    color: #0277bd;
+    border: 1px solid rgba(33, 150, 243, 0.3);
+  }
+  
+  .item-rarity.epic {
+    background-color: rgba(156, 39, 176, 0.2);
+    color: #7b1fa2;
+    border: 1px solid rgba(156, 39, 176, 0.3);
+  }
+  
+  .item-rarity.legendary {
+    background-color: rgba(255, 152, 0, 0.2);
+    color: #ef6c00;
+    border: 1px solid rgba(255, 152, 0, 0.3);
+  }
+  
+  .item-rarity.mythic {
+    background-color: rgba(233, 30, 99, 0.2);
+    color: #c2185b;
+    border: 1px solid rgba(233, 30, 99, 0.3);
+  }
+  
+  .selection-summary {
+    margin-top: 0.5em;
+    font-size: 0.9em;
+    color: #555;
+  }
+  
+  .error {
+    padding: 0.8em;
+    margin-bottom: 1em;
+    background-color: rgba(255, 0, 0, 0.1);
+    border-left: 3px solid #f44336;
+    border-radius: 0.3em;
+    color: #d32f2f;
+  }
+  
+  .status {
+    padding: 0.8em;
+    margin-bottom: 1em;
+    background-color: rgba(33, 150, 243, 0.1);
+    border-left: 3px solid #2196f3;
+    border-radius: 0.3em;
+    color: #0277bd;
+  }
+  
+  .info-box {
+    padding: 0.8em;
+    margin-bottom: 1em;
+    background-color: rgba(33, 150, 243, 0.1);
+    border-radius: 0.3em;
+    color: #0277bd;
+    border-left: 3px solid #2196f3;
+  }
+  
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.8em;
+  }
+  
+  .close-btn {
+    background: transparent;
     border: none;
     cursor: pointer;
-    padding: 0.4em;
+    padding: 0.5em;
+    color: #666;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: background-color 0.2s;
-    color: rgba(0, 0, 0, 0.6);
   }
-
-  .close-button:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-    color: rgba(0, 0, 0, 0.9);
+  
+  .close-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
   }
-
-  .modal-body {
-    padding: 1em;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
-  }
-
-  .section {
-    margin-bottom: 1em;
-  }
-
-  h4 {
-    margin: 0 0 0.5em 0;
-    font-size: 1em;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.7);
-  }
-
-  .items-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5em;
-    margin-bottom: 1em;
-  }
-
-  .item {
-    border-radius: 0.3em;
-    padding: 0.5em;
-    background-color: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-  }
-
-  .item.uncommon {
-    border-color: rgba(76, 175, 80, 0.3);
-    background-color: rgba(76, 175, 80, 0.05);
-  }
-
-  .item.rare {
-    border-color: rgba(33, 150, 243, 0.3);
-    background-color: rgba(33, 150, 243, 0.05);
-  }
-
-  .item.epic {
-    border-color: rgba(156, 39, 176, 0.3);
-    background-color: rgba(156, 39, 176, 0.05);
-  }
-
-  .item.legendary {
-    border-color: rgba(255, 152, 0, 0.3);
-    background-color: rgba(255, 152, 0, 0.05);
-  }
-
-  .item.mythic {
-    border-color: rgba(233, 30, 99, 0.3);
-    background-color: rgba(233, 30, 99, 0.05);
-    animation: pulseMythic 2s infinite alternate;
-  }
-
-  .item-name {
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 0.4em;
-  }
-
-  .item-quantity {
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.6);
-  }
-
-  .item-rarity {
-    font-size: 0.8em;
-    margin-top: 0.3em;
-    padding: 0.1em 0.4em;
-    border-radius: 0.2em;
-    display: inline-block;
-  }
-
-  .item-rarity.uncommon {
-    background-color: rgba(76, 175, 80, 0.2);
-    color: #2e7d32;
-  }
-
-  .item-rarity.rare {
-    background-color: rgba(33, 150, 243, 0.2);
-    color: #0277bd;
-  }
-
-  .item-rarity.epic {
-    background-color: rgba(156, 39, 176, 0.2);
-    color: #7b1fa2;
-  }
-
-  .item-rarity.legendary {
-    background-color: rgba(255, 152, 0, 0.2);
-    color: #ef6c00;
-  }
-
-  .item-rarity.mythic {
-    background-color: rgba(233, 30, 99, 0.2);
-    color: #c2185b;
-    border: 1px solid rgba(233, 30, 99, 0.4);
-  }
-
-  .item-description {
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.6);
-    font-style: italic;
-    margin-top: 0.4em;
-  }
-
-  .groups-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5em;
-  }
-
-  .group-option {
-    display: flex;
-    align-items: center;
-    padding: 0.5em;
+  
+  .close-btn-secondary {
+    padding: 0.6em 1em;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
     border-radius: 0.3em;
     cursor: pointer;
-    background-color: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
-  }
-
-  .group-option:hover {
-    background-color: rgba(255, 255, 255, 0.7);
-  }
-
-  .group-option.selected {
-    background-color: rgba(66, 133, 244, 0.1);
-    border-color: rgba(66, 133, 244, 0.3);
-  }
-
-  .group-option input {
-    margin-right: 0.5em;
-  }
-
-  .group-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2em;
-  }
-
-  .group-name {
-    font-weight: 500;
-  }
-
-  .group-units {
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.7);
-  }
-
-  .info-box {
-    padding: 0.6em;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-radius: 0.3em;
-    font-size: 0.9em;
-    color: rgba(0, 0, 0, 0.7);
-    text-align: center;
-  }
-
-  .message {
-    padding: 0.7em;
-    border-radius: 0.3em;
-    font-size: 0.9em;
-    text-align: center;
-  }
-
-  .message.error {
-    background-color: rgba(244, 67, 54, 0.1);
-    border: 1px solid rgba(244, 67, 54, 0.3);
-    color: #d32f2f;
-  }
-
-  .modal-footer {
-    display: flex;
-    justify-content: space-between;
-    gap: 1em;
-    padding: 0.8em 1em;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-  }
-
-  .cancel-button, .action-button {
-    padding: 0.5em 1em;
-    border-radius: 0.3em;
-    font-size: 1em;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
+    font-family: inherit;
+    font-size: inherit;
     transition: all 0.2s;
   }
-
-  .cancel-button {
-    background-color: #f1f3f4;
-    color: #3c4043;
-    border: 1px solid #dadce0;
+  
+  .close-btn-secondary:hover {
+    background: #eee;
   }
-
-  .cancel-button:hover:not(:disabled) {
-    background-color: #e8eaed;
+  
+  .cancel-btn, .gather-btn {
+    padding: 0.7em 1.2em;
+    border-radius: 0.3em;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    transition: all 0.2s;
   }
-
-  .action-button {
-    background-color: rgba(138, 43, 226, 0.8);
+  
+  .cancel-btn {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+  }
+  
+  .gather-btn {
+    background: #2196f3;
+    border: 1px solid #1e88e5;
     color: white;
-    flex-grow: 1;
   }
-
-  .action-button:hover:not(:disabled) {
-    background-color: rgba(138, 43, 226, 0.9);
-    transform: translateY(-1px);
+  
+  .cancel-btn:hover:not(:disabled) {
+    background: #eee;
   }
-
-  .action-button:disabled, .cancel-button:disabled {
-    opacity: 0.7;
+  
+  .gather-btn:hover:not(:disabled) {
+    background: #1e88e5;
+  }
+  
+  .cancel-btn:disabled,
+  .gather-btn:disabled {
+    opacity: 0.6;
     cursor: not-allowed;
-    transform: none;
   }
-
-  @keyframes pulseMythic {
-    from {
-      box-shadow: 0 0 0 0 rgba(233, 30, 99, 0.1);
-    }
-    to {
-      box-shadow: 0 0 10px 2px rgba(233, 30, 99, 0.3);
-    }
+  
+  .empty-state {
+    text-align: center;
+    padding: 2em 1em;
+    color: #777;
   }
-
-  @media (max-width: 768px) {
-    .modal-content {
-      width: 95%;
-      max-height: 80vh;
-    }
+  
+  .empty-state p {
+    margin-bottom: 1em;
   }
 </style>

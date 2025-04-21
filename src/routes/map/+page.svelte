@@ -141,44 +141,12 @@
             }
         }
         
-        if (options.type === 'inspect' && options.data) {
-            // Increment render count for proper animation
-            structureRenderCount++;
-            
-            // Update modal state for structure inspection
-            modalState = {
-                type: 'inspect',
-                data: options.data,
-                visible: true
-            };
-
-            // Store structure data in state variables
-            selectedStructure = options.data.tile?.structure || null;
-            structureLocation = { 
-                x: options.data.x || 0, 
-                y: options.data.y || 0
-            };
-            selectedTile = options.data.tile || null;
-        } else if (options.type === 'gather') {
-            // Add special handling for gather modal
-            console.log('Setting up gather modal with data:', options.data);
-            
-            modalState = {
-                type: 'gather',
-                data: options.data,
-                visible: true
-            };
-            
-            // Store relevant data for gather action
-            gatherData = options.data;
-        } else if (options.type) {
-            // Handle other modal types
-            modalState = {
-                type: options.type,
-                data: options.data,
-                visible: true
-            };
-        }
+        // Only set the modalState once - remove any redundant calls to onShowModal for gather
+        modalState = {
+            type: options.type,
+            data: options.data,
+            visible: true
+        };
     }
 
     // Function to close modal
@@ -1091,10 +1059,10 @@
               }}
             />
           {:else if modalState.type === 'gather'}
-            <Gather
-              onClose={closeModal}
-              onGather={(data) => {
-                console.log('Gathering started:', data);
+            <Gather 
+              onClose={() => closeModal()} 
+              onGather={(result) => {
+                // Handle gather result
                 closeModal();
               }}
               data={modalState.data}
