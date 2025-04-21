@@ -134,7 +134,7 @@
         console.log('Opening modal:', options.type, options.data);
         
         // Close Details modal when opening structure overview or action modals
-        if (['inspect', 'mobilise', 'move', 'gather', 'demobilise', 'joinBattle'].includes(options.type)) {
+        if (['inspect', 'mobilise', 'move', 'gather', 'demobilise', 'joinBattle', 'attack'].includes(options.type)) {
             // Close details if it's open
             if (detailed) {
                 toggleDetailsModal(false);

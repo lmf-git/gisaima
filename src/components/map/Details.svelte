@@ -248,6 +248,28 @@
     );
   }
   
+  // Add new function to check if attack is possible
+  function canAttack(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Check if there are any player-owned groups that are idle
+    const playerGroups = tile.groups?.filter(g => 
+      g.owner === $currentPlayer.uid && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+    
+    // Check if there are any enemy groups on the tile
+    const enemyGroups = tile.groups?.filter(g => 
+      g.owner !== $currentPlayer.uid && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+    
+    // Can attack if player has at least one group and there's at least one enemy group
+    return playerGroups?.length > 0 && enemyGroups?.length > 0;
+  }
+  
   function canGather(tile) {
     if (!tile || !$currentPlayer) {
       return false;
@@ -527,6 +549,12 @@
                 {#if canMove($highlightedStore)}
                   <button class="action-button" onclick={() => executeAction('move')}>
                     Move
+                  </button>
+                {/if}
+                
+                {#if canAttack($highlightedStore)}
+                  <button class="action-button attack-button" onclick={() => executeAction('attack')}>
+                    Attack
                   </button>
                 {/if}
                 
@@ -1155,6 +1183,15 @@
   
   .inspect-button:hover {
     background-color: rgba(0, 150, 136, 0.2);
+  }
+
+  .attack-button {
+    background-color: rgba(255, 0, 0, 0.1);
+    border-color: rgba(255, 0, 0, 0.3);
+  }
+
+  .attack-button:hover {
+    background-color: rgba(255, 0, 0, 0.2);
   }
 
   :global(.action-icon) {
