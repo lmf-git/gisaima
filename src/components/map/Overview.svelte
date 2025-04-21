@@ -1593,8 +1593,9 @@
   }
 
   .filter-tab.active .filter-count {
-    background: rgba(64, 158, 255, 0.9);
-    box-shadow: 0 0 0.2em rgba(64, 158, 255, 0.6);
+    background: rgba(255, 255, 255, 0.9);
+    color: rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 0.2em rgba(0, 0, 0, 0.2);
   }
 
   .title {
