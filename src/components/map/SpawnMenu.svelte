@@ -1,5 +1,5 @@
 <script>
-  import { ref, get as dbGet, update } from 'firebase/database';
+  import { ref, update } from 'firebase/database';
   import { db } from '../../lib/firebase/database.js';
   import { game, currentPlayer, needsSpawn } from '../../lib/stores/game.js';
   import { moveTarget } from '../../lib/stores/map.js';
@@ -21,32 +21,25 @@
     return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
   }
 
-  // Get spawn points directly from world info.spawns - simplified approach
+  // Get spawn points ONLY from world info.spawns - no fallbacks or alternatives
   const spawnPoints = $derived(() => {
-    if (!$game.currentWorld) return [];
-    
-    const worldData = $game.world[$game.currentWorld];
-    if (!worldData) return [];
-    
-    // Look exclusively at info.spawns as requested
-    if (worldData.info?.spawns) {
-      return Object.values(worldData.info.spawns);
+    if (!$game.currentWorld || !$game.world[$game.currentWorld]?.info?.spawns) {
+      return [];
     }
     
-    return [];
+    return Object.values($game.world[$game.currentWorld].info.spawns);
   });
 
   // Get the selected spawn
   const selectedSpawn = $derived(() => {
-    if (!selectedSpawnId || !Array.isArray(spawnPoints)) return null;
+    if (!selectedSpawnId || !spawnPoints.length) return null;
     return spawnPoints.find(s => s.id === selectedSpawnId);
   });
   
-  // Initialize component - optimized to prevent multiple triggers
+  // Simplified initialization effect - runs once when world data is available
   $effect(() => {
-    // Only runs when world data for current world is available
-    if ($game?.currentWorld && $game.world[$game.currentWorld]) {
-      // Set loading state
+    // Only process when world data becomes available and we're still in loading state
+    if ($game?.currentWorld && $game.world[$game.currentWorld] && loading) {
       loading = false;
       
       // Select first spawn point if available
@@ -58,16 +51,13 @@
           moveTarget(spawnPoints[0].position.x, spawnPoints[0].position.y);
           movedToSpawn = true;
         }
-      } else if (!$game.worldLoading) {
-        // If no spawns and world isn't still loading, try to fetch spawn data directly once
-        fetchSpawnsDirectly();
       }
     }
   });
 
   // Move when selection changes
   $effect(() => {
-    if (selectedSpawnId && !movedToSpawn && Array.isArray(spawnPoints)) {
+    if (selectedSpawnId && !movedToSpawn && spawnPoints.length) {
       const spawn = spawnPoints.find(s => s.id === selectedSpawnId);
       if (spawn?.position) {
         moveTarget(spawn.position.x, spawn.position.y);
@@ -75,40 +65,6 @@
       }
     }
   });
-
-  // Function to fetch spawns directly from Firebase without page reload
-  async function fetchSpawnsDirectly() {
-    if (!$game.currentWorld) return;
-    
-    try {
-      const worldRef = ref(db, `worlds/${$game.currentWorld}/info/spawns`);
-      const snapshot = await dbGet(worldRef);
-      
-      if (snapshot.exists()) {
-        const spawns = snapshot.val();
-        console.log('[SpawnMenu] Direct fetch found spawns:', Object.keys(spawns).length);
-        
-        // Update the game store with these spawns
-        game.update(state => ({
-          ...state,
-          world: {
-            ...state.world,
-            [$game.currentWorld]: {
-              ...state.world[$game.currentWorld],
-              info: {
-                ...(state.world[$game.currentWorld].info || {}),
-                spawns
-              }
-            }
-          }
-        }));
-      } else {
-        console.log('[SpawnMenu] No spawns found in direct fetch');
-      }
-    } catch (err) {
-      console.error('[SpawnMenu] Error in direct fetch:', err);
-    }
-  }
 
   // Spawn player at the selected location
   async function spawnPlayer() {
@@ -199,24 +155,18 @@
     {:else if error}
       <div class="error-message">
         <p>{error}</p>
-        <button class="retry-button" on:click={() => {
-          error = null;
-          fetchSpawnsDirectly();
-        }}>Retry</button>
       </div>
-    {:else if !Array.isArray(spawnPoints) || spawnPoints.length === 0}
+    {:else if !spawnPoints.length}
       <div class="error-message">
         <p>No spawn points available in this world</p>
-        <button class="retry-button" on:click={fetchSpawnsDirectly}>Fetch Spawn Points</button>
         
-        <!-- Add debug information for development -->
+        <!-- Show debug info for development - will help identify missing spawns -->
         <details class="debug-info">
           <summary>Debug Info</summary>
           <pre>
             Current World: {$game.currentWorld || 'None'}
-            World Data: {$game.world[$game.currentWorld] ? 'Available' : 'Missing'}
-            Info Exists: {$game.world[$game.currentWorld]?.info ? 'Yes' : 'No'}
-            Spawns Exists: {$game.world[$game.currentWorld]?.info?.spawns ? 'Yes' : 'No'}
+            World Info Available: {$game.world[$game.currentWorld]?.info ? 'Yes' : 'No'}
+            Spawns Path Available: {$game.world[$game.currentWorld]?.info?.spawns ? 'Yes' : 'No'}
           </pre>
         </details>
       </div>
@@ -452,16 +402,6 @@
   
   .error-message {
     color: #ff6b6b;
-  }
-  
-  .retry-button {
-    margin-top: 10px;
-    padding: 8px 16px;
-    background: #555;
-    border: none;
-    border-radius: 4px;
-    color: white;
-    cursor: pointer;
   }
   
   .spinner {
