@@ -18,6 +18,11 @@
   import { game, currentPlayer } from "../../lib/stores/game.js";
   import Torch from '../icons/Torch.svelte';
   import Structure from '../icons/Structure.svelte';
+  import Human from '../icons/Human.svelte';
+  import Elf from '../icons/Elf.svelte';
+  import Dwarf from '../icons/Dwarf.svelte';
+  import Goblin from '../icons/Goblin.svelte';
+  import Fairy from '../icons/Fairy.svelte';
   
   // Props with defaults using Svelte 5 $props() rune
   const { 
@@ -752,6 +757,46 @@
     
     return 0;
   }
+
+  // Function to determine the dominant race on a tile
+  function getDominantRace(cell) {
+    if (!cell) return null;
+    
+    // Create a map to count each race
+    const raceCounts = {};
+    
+    // Count races in player entities
+    if (cell.players && cell.players.length > 0) {
+      cell.players.forEach(player => {
+        if (player.race) {
+          raceCounts[player.race.toLowerCase()] = (raceCounts[player.race.toLowerCase()] || 0) + 1;
+        }
+      });
+    }
+    
+    // Count races in group entities (groups often have more weight)
+    if (cell.groups && cell.groups.length > 0) {
+      cell.groups.forEach(group => {
+        if (group.race) {
+          // Give groups slightly more weight than individual players
+          raceCounts[group.race.toLowerCase()] = (raceCounts[group.race.toLowerCase()] || 0) + 1.5;
+        }
+      });
+    }
+    
+    // Find the race with the highest count
+    let dominantRace = null;
+    let highestCount = 0;
+    
+    for (const [race, count] of Object.entries(raceCounts)) {
+      if (count > highestCount) {
+        highestCount = count;
+        dominantRace = race;
+      }
+    }
+    
+    return dominantRace;
+  }
 </script>
 
 <svelte:window
@@ -915,6 +960,7 @@
           {@const hasPlayers = cell.players && cell.players.length > 0}
           {@const isCurrentPlayerHere = shouldShowPlayerPosition(cell)}
           {@const playerCount = getPlayerCount(cell)}
+          {@const dominantRace = getDominantRace(cell)}
           <div
             class="tile {getStructureClass(cell.structure)} {cell.terrain?.rarity || 'common'}"
             class:center={cell.isCenter}
@@ -931,6 +977,22 @@
             aria-label={`Coordinates ${cell.x},${cell.y}`}
             role="gridcell"
           >
+            {#if dominantRace}
+              <div class="race-background-icon">
+                {#if dominantRace === 'human'}
+                  <Human extraClass="race-icon-tile" />
+                {:else if dominantRace === 'elf'}
+                  <Elf extraClass="race-icon-tile" />
+                {:else if dominantRace === 'dwarf'}
+                  <Dwarf extraClass="race-icon-tile" />
+                {:else if dominantRace === 'goblin'}
+                  <Goblin extraClass="race-icon-tile" />
+                {:else if dominantRace === 'fairy'}
+                  <Fairy extraClass="race-icon-tile" />
+                {/if}
+              </div>
+            {/if}
+
             {#if cell.structure}
               <div class="structure-icon-container">
                 {#if cell.structure.type === 'spawn'}
@@ -1721,5 +1783,59 @@
     0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4); }
     70% { box-shadow: 0 0 0 0.4em rgba(255, 0, 0, 0); }
     100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+  }
+
+  .race-background-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1; /* Lower than structure icons (z-index: 2) */
+    pointer-events: none;
+    opacity: 0.6; /* Increased from 0.3 to 0.6 for better visibility */
+  }
+
+  :global(.race-icon-tile) {
+    width: 70%; /* Slightly smaller for better proportion */
+    height: 70%; /* Slightly smaller for better proportion */
+    opacity: 0.7; /* Increased from 0.3 to 0.7 for better visibility */
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3)); /* Add subtle glow */
+    fill: rgba(255, 255, 255, 0.7); /* Brighter base fill */
+  }
+  
+  /* Enhanced race-specific styling with more vibrant colors for better contrast */
+  :global(.race-icon-tile.fairy-icon path) {
+    fill: rgba(228, 160, 255, 0.9); /* Much brighter purple for fairy */
+    filter: drop-shadow(0 0 3px rgba(228, 160, 255, 0.5));
+  }
+  
+  :global(.race-icon-tile.goblin-icon path) {
+    fill: rgba(120, 255, 120, 0.9); /* Much brighter green for goblin */
+    filter: drop-shadow(0 0 3px rgba(120, 255, 120, 0.5));
+  }
+  
+  :global(.race-icon-tile.human-icon path) {
+    fill: rgba(255, 220, 180, 0.9); /* Warmer, brighter tone for humans */
+    filter: drop-shadow(0 0 3px rgba(255, 220, 180, 0.5));
+  }
+  
+  :global(.race-icon-tile.elf-icon path) {
+    fill: rgba(180, 255, 180, 0.9); /* Brighter leafy green for elves */
+    filter: drop-shadow(0 0 3px rgba(180, 255, 180, 0.5));
+  }
+  
+  :global(.race-icon-tile.dwarf-icon path) {
+    fill: rgba(255, 200, 140, 0.9); /* Brighter earthy tone for dwarves */
+    filter: drop-shadow(0 0 3px rgba(255, 200, 140, 0.5));
+  }
+  
+  /* Add special animation for center tile with race icon */
+  .tile.center .race-background-icon :global(.race-icon-tile) {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
   }
 </style>
