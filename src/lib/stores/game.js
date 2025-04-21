@@ -64,6 +64,51 @@ export const currentWorldCenter = derived(
   }
 );
 
+// Create a derived store for available spawn points in the current world
+export const worldSpawnPoints = derived(
+  currentWorldInfo,
+  $world => {
+    if (!$world) return [];
+    
+    // Handle spawns data which might be in different formats
+    if ($world.spawns) {
+      // Detect the format of spawns structure - check if it's using chunk-based keys
+      const isChunkFormat = Object.keys($world.spawns).some(key => key.includes(':'));
+      
+      console.log(`Found spawns in world data, format: ${isChunkFormat ? 'chunk-based' : 'standard'}`);
+      
+      if (Array.isArray($world.spawns)) {
+        // Simple array format
+        console.log(`Found ${$world.spawns.length} spawn points in array format`);
+        return $world.spawns;
+      } else if (isChunkFormat) {
+        // New chunk-based format with keys like "chunkX:chunkY:x:y"
+        const spawnPoints = Object.values($world.spawns).map(spawn => {
+          // Make sure position data is included in the main spawn object for consistency
+          if (spawn.position && typeof spawn.position.x === 'number' && typeof spawn.position.y === 'number') {
+            return {
+              ...spawn,
+              x: spawn.position.x,
+              y: spawn.position.y
+            };
+          }
+          return spawn;
+        });
+        
+        console.log(`Found ${spawnPoints.length} spawn points in chunk-based format`);
+        return spawnPoints;
+      } else {
+        // Regular object format
+        console.log(`Found ${Object.keys($world.spawns).length} spawn points in object format`);
+        return Object.values($world.spawns);
+      }
+    }
+    
+    console.log('No spawns found in world data');
+    return [];
+  }
+);
+
 // Create a derived store that combines user data with player world-specific data
 // Fixed: Use a safer approach for derived stores with proper null checks
 export const currentPlayer = derived(
@@ -472,6 +517,18 @@ export function getWorldInfo(worldId, forceRefresh = false) {
           throw new Error(error);
         }
         
+        // Log spawn information for debugging with better format detection
+        if (world.spawns) {
+          const isChunkFormat = Object.keys(world.spawns).some(key => key.includes(':'));
+          const spawnCount = Array.isArray(world.spawns) 
+            ? world.spawns.length 
+            : Object.keys(world.spawns).length;
+          
+          console.log(`World ${worldId} has ${spawnCount} spawn points (format: ${isChunkFormat ? 'chunk-based' : 'standard'})`);
+        } else {
+          console.log(`World ${worldId} has no spawn points defined`);
+        }
+        
         // Update the last fetch time
         worldInfoLastFetchTime.set(worldId, Date.now());
         
@@ -532,6 +589,49 @@ export function getWorldInfo(worldId, forceRefresh = false) {
   pendingWorldInfoRequests.set(worldId, fetchPromise);
   
   return fetchPromise;
+}
+
+// Add a function to get spawn points for a specific world
+export function getWorldSpawnPoints(worldId) {
+  if (!worldId) return [];
+  
+  const currentGameState = getStore(game);
+  const world = currentGameState.world?.[worldId];
+  
+  if (!world) {
+    console.log(`No world data available for ${worldId} to get spawn points`);
+    return [];
+  }
+  
+  if (!world.spawns) {
+    console.log(`No spawn points defined for world ${worldId}`);
+    return [];
+  }
+  
+  // Handle different formats of spawn data
+  if (Array.isArray(world.spawns)) {
+    return world.spawns;
+  } else {
+    // Check if using chunk-based format with keys like "chunkX:chunkY:x:y"
+    const isChunkFormat = Object.keys(world.spawns).some(key => key.includes(':'));
+    
+    if (isChunkFormat) {
+      // Map the values and ensure x/y coordinates are available at top level
+      return Object.values(world.spawns).map(spawn => {
+        if (spawn.position && typeof spawn.position.x === 'number' && typeof spawn.position.y === 'number') {
+          return {
+            ...spawn,
+            x: spawn.position.x,
+            y: spawn.position.y
+          };
+        }
+        return spawn;
+      });
+    } else {
+      // Regular object format
+      return Object.values(world.spawns);
+    }
+  }
 }
 
 // Function to clear world info cache for a specific world or all worlds
