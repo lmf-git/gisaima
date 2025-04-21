@@ -204,13 +204,8 @@ export const timeUntilNextTick = derived(
 let activeJoinedWorldsSubscription = null;
 let activePlayerWorldDataSubscription = null;
 
-// Add a throttle mechanism for world info loading
+// Keep track of pending requests to avoid duplicates
 const pendingWorldInfoRequests = new Map();
-const worldInfoCache = new Map();
-const WORLD_INFO_THROTTLE_MS = 500;
-
-// Add a timestamp to track when world info was last fetched
-const worldInfoLastFetchTime = new Map();
 
 // Load player's joined worlds
 export function loadJoinedWorlds(userId) {
@@ -408,86 +403,25 @@ export function setCurrentWorld(worldId, world = null) {
   return Promise.resolve(world || currentState.world[worldId]);
 }
 
-// Get world information including seed with caching and throttling - improved with force refresh
-export function getWorldInfo(worldId, forceRefresh = false) {
+// Simplified getWorldInfo function that always fetches fresh data
+export function getWorldInfo(worldId) {
   if (!worldId) return Promise.reject(new Error('Missing worldId'));
   
-  console.log(`Getting world info for: ${worldId}, force refresh: ${forceRefresh}`);
+  console.log(`Getting world info for: ${worldId}`);
   
-  // Check for pending request for this world
+  // Check for pending request for this world to avoid duplicates
   if (pendingWorldInfoRequests.has(worldId)) {
     return pendingWorldInfoRequests.get(worldId);
   }
   
-  // Set loading state first to ensure UI responds correctly
+  // Set loading state
   game.update(state => ({ 
     ...state, 
     worldLoading: true,
     error: null
   }));
   
-  // Check if we have valid cached data in the store and aren't forcing a refresh
-  const currentGameState = getStore(game);
-  if (!forceRefresh && 
-      currentGameState.world && 
-      currentGameState.world[worldId] && 
-      currentGameState.world[worldId].seed !== undefined) {
-    
-    // Only use cache if it's not too old (less than 30 seconds)
-    const lastFetchTime = worldInfoLastFetchTime.get(worldId) || 0;
-    const now = Date.now();
-    
-    if (now - lastFetchTime < 30000) {
-      console.log(`Using cached world info for ${worldId} (age: ${now - lastFetchTime}ms)`);
-      
-      // DEBUG: Log spawn points from cache
-      const cachedWorld = currentGameState.world[worldId];
-      console.log(`[DEBUG] Spawn points in cached world ${worldId}:`, {
-        hasInfoSpawns: !!(cachedWorld.info?.spawns),
-        infoSpawnsCount: cachedWorld.info?.spawns ? Object.keys(cachedWorld.info.spawns).length : 0,
-        spawnsFormat: cachedWorld.info?.spawns ? 'Found in world.info.spawns' : 'Not found',
-        spawns: cachedWorld.info?.spawns
-      });
-      
-      game.update(state => ({ ...state, worldLoading: false }));
-      return Promise.resolve(currentGameState.world[worldId]);
-    } else {
-      console.log(`Cached world info for ${worldId} is too old (${now - lastFetchTime}ms), refreshing`);
-      // Continue with refresh below
-    }
-  }
-  
-  // Also check in-memory cache with the same time expiration policy
-  if (!forceRefresh && worldInfoCache.has(worldId)) {
-    const lastFetchTime = worldInfoLastFetchTime.get(worldId) || 0;
-    const now = Date.now();
-    
-    if (now - lastFetchTime < 30000) {
-      console.log(`Using memory-cached world info for ${worldId}`);
-      const cachedInfo = worldInfoCache.get(worldId);
-      
-      // DEBUG: Log spawn points from memory cache
-      console.log(`[DEBUG] Spawn points in memory-cached world ${worldId}:`, {
-        hasInfoSpawns: !!(cachedInfo.info?.spawns),
-        infoSpawnsCount: cachedInfo.info?.spawns ? Object.keys(cachedInfo.info.spawns).length : 0,
-        spawnsFormat: cachedInfo.info?.spawns ? 'Found in world.info.spawns' : 'Not found',
-        spawns: cachedInfo.info?.spawns
-      });
-      
-      game.update(state => ({
-        ...state,
-        worldLoading: false,
-        world: {
-          ...state.world,
-          [worldId]: cachedInfo
-        }
-      }));
-      
-      return Promise.resolve(cachedInfo);
-    }
-  }
-  
-  // No valid cache or cache expired, fetch from database with direct path
+  // Directly fetch from the database without checking cache
   console.log(`Fetching world info from database for ${worldId}`);
   const worldRef = ref(db, `worlds/${worldId}/info`);
   
@@ -513,28 +447,15 @@ export function getWorldInfo(worldId, forceRefresh = false) {
           throw new Error(error);
         }
         
-        // DEBUG: Log spawn information for debugging with better format detection
+        // Log spawn information for debugging
         if (world.spawns) {
           const isChunkFormat = Object.keys(world.spawns).some(key => key.includes(':'));
           const spawnCount = Array.isArray(world.spawns) 
             ? world.spawns.length 
             : Object.keys(world.spawns).length;
           
-          console.log(`[DEBUG] World ${worldId} spawns data:`, {
-            format: isChunkFormat ? 'chunk-based' : 'standard',
-            count: spawnCount,
-            spawnKeys: Object.keys(world.spawns),
-            spawnData: world.spawns
-          });
-        } else {
-          console.log(`[DEBUG] World ${worldId} has no spawns directly defined in world.spawns`);
+          console.log(`World ${worldId} has ${spawnCount} spawn points (format: ${isChunkFormat ? 'chunk-based' : 'standard'})`);
         }
-        
-        // Update the last fetch time
-        worldInfoLastFetchTime.set(worldId, Date.now());
-        
-        // Cache the world info in memory
-        worldInfoCache.set(worldId, world);
         
         // Update store with the world info
         game.update(state => ({
@@ -546,11 +467,9 @@ export function getWorldInfo(worldId, forceRefresh = false) {
           }
         }));
         
-        // Log the center coordinates for debugging with more specific output
+        // Log the center coordinates for debugging
         if (world.center) {
           console.log(`Loaded world center for ${worldId}: ${JSON.stringify(world.center)}`);
-        } else {
-          console.log(`No explicit center coordinates for ${worldId}, will use default (0,0)`);
         }
         
         console.log(`Successfully loaded world info for ${worldId}`);
@@ -580,16 +499,28 @@ export function getWorldInfo(worldId, forceRefresh = false) {
       throw error;
     })
     .finally(() => {
-      // Remove this request from pending after a throttle delay
-      setTimeout(() => {
-        pendingWorldInfoRequests.delete(worldId);
-      }, WORLD_INFO_THROTTLE_MS);
+      // Remove this request from pending
+      pendingWorldInfoRequests.delete(worldId);
     });
   
   // Store the promise for deduplication
   pendingWorldInfoRequests.set(worldId, fetchPromise);
   
   return fetchPromise;
+}
+
+// Simplify this function - it now just gets world info directly
+export async function refreshWorldInfo(worldId) {
+  if (!worldId) return null;
+  
+  console.log(`Getting fresh world info for ${worldId}`);
+  
+  try {
+    return await getWorldInfo(worldId);
+  } catch (err) {
+    console.error(`Failed to get world info for ${worldId}:`, err);
+    return null;
+  }
 }
 
 // Function to get spawn points for a specific world
@@ -630,33 +561,41 @@ export function getWorldSpawnPoints(worldId) {
   return [];
 }
 
-// Function to clear world info cache for a specific world or all worlds
-export function clearWorldInfoCache(worldId = null) {
-  if (worldId) {
-    console.log(`Clearing cache for world ${worldId}`);
-    worldInfoCache.delete(worldId);
-    worldInfoLastFetchTime.delete(worldId);
-    
-    // Also clear from the game store
-    game.update(state => {
-      if (state.world[worldId]) {
-        const newWorldInfo = { ...state.world };
-        delete newWorldInfo[worldId];
-        return { ...state, world: newWorldInfo };
-      }
-      return state;
-    });
-  } else {
-    console.log('Clearing all world info cache');
-    worldInfoCache.clear();
-    worldInfoLastFetchTime.clear();
-    
-    // Also clear from the game store
-    game.update(state => ({ 
-      ...state, 
-      world: {} 
-    }));
+// Track if we've already initialized services
+let gameStoreInitialized = false;
+
+// Initialize the store on app start - with improved startup handling
+export function initGameStore() {
+  if (!browser) return () => {};
+  
+  // Prevent duplicate initialization
+  if (gameStoreInitialized) {
+    console.log('Game store already initialized, skipping duplicate initialization');
+    return () => {};
   }
+  
+  console.log('Initializing game store');
+  gameStoreInitialized = true;
+  
+  try {
+    // Set initial loading state
+    game.update(state => ({ ...state, loading: true, initialized: false }));
+    isAuthReady.set(false);
+    
+    // Load the current world from localStorage if available
+    try {
+      const savedWorldId = localStorage.getItem(CURRENT_WORLD_KEY);
+      if (savedWorldId) {
+        console.log(`Found saved world in localStorage: ${savedWorldId}`);
+        
+        game.update(state => ({ 
+          ...state, 
+          currentWorld: savedWorldId 
+        }));
+        
+        // We'll load the world info when auth is ready instead of here
+      } else {
+        console.log('No saved world found in localStorage');
       }
     } catch (e) {
       console.error('Error loading world from localStorage:', e);
@@ -819,24 +758,6 @@ export async function joinWorld(worldId, userId, race, displayName) {
       error: `Failed to join world: ${error.message}` 
     }));
     throw error;
-  }
-}
-
-// Add a function to specifically refresh world data
-export async function refreshWorldInfo(worldId) {
-  if (!worldId) return null;
-  
-  console.log(`Forcing refresh of world info for ${worldId}`);
-  
-  // Clear cache for this world
-  clearWorldInfoCache(worldId);
-  
-  // Now fetch fresh data
-  try {
-    return await getWorldInfo(worldId, true);
-  } catch (err) {
-    console.error(`Failed to refresh world ${worldId}:`, err);
-    return null;
   }
 }
 
