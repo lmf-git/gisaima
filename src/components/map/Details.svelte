@@ -603,13 +603,15 @@
         <div class="entities-section">
           <div 
             class="section-header"
-            onclick={() => toggleSection('groups')}
-            onkeydown={(e) => handleSectionKeyDown(e, 'groups')}
+            onclick={(e) => toggleSection('groups', e)}
             role="button"
             tabindex="0"
             aria-expanded={!collapsedSections.groups}
+            onkeydown={(e) => e.key === 'Enter' && toggleSection('groups', e)}
           >
-            <h4>Groups <span class="entity-count groups-count">{$highlightedStore.groups.length}</span></h4>
+            <div class="section-title">
+              <h4>Groups <span class="entity-count groups-count">{$highlightedStore.groups.length}</span></h4>
+            </div>
             <div class="section-controls">
               {#if !collapsedSections.groups}
                 <div class="sort-controls">
@@ -635,9 +637,9 @@
                   </button>
                 </div>
               {/if}
-              <div class="collapse-button">
+              <button class="collapse-button">
                 {collapsedSections.groups ? '▼' : '▲'}
-              </div>
+              </button>
             </div>
           </div>
           
@@ -722,13 +724,15 @@
         <div class="entities-section">
           <div 
             class="section-header"
-            onclick={() => toggleSection('players')}
-            onkeydown={(e) => handleSectionKeyDown(e, 'players')}
+            onclick={(e) => toggleSection('players', e)}
             role="button"
             tabindex="0"
             aria-expanded={!collapsedSections.players}
+            onkeydown={(e) => e.key === 'Enter' && toggleSection('players', e)}
           >
-            <h4>Players <span class="entity-count players-count">{$highlightedStore.players.length}</span></h4>
+            <div class="section-title">
+              <h4>Players <span class="entity-count players-count">{$highlightedStore.players.length}</span></h4>
+            </div>
             <div class="section-controls">
               {#if !collapsedSections.players}
                 <div class="sort-controls">
@@ -754,9 +758,9 @@
                   </button>
                 </div>
               {/if}
-              <div class="collapse-button">
+              <button class="collapse-button">
                 {collapsedSections.players ? '▼' : '▲'}
-              </div>
+              </button>
             </div>
           </div>
           
@@ -804,13 +808,15 @@
         <div class="entities-section">
           <div 
             class="section-header"
-            onclick={() => toggleSection('items')}
-            onkeydown={(e) => handleSectionKeyDown(e, 'items')}
+            onclick={(e) => toggleSection('items', e)}
             role="button"
             tabindex="0"
             aria-expanded={!collapsedSections.items}
+            onkeydown={(e) => e.key === 'Enter' && toggleSection('items', e)}
           >
-            <h4>Items <span class="entity-count items-count">{$highlightedStore.items.length}</span></h4>
+            <div class="section-title">
+              <h4>Items <span class="entity-count items-count">{$highlightedStore.items.length}</span></h4>
+            </div>
             <div class="section-controls">
               {#if !collapsedSections.items}
                 <div class="sort-controls">
@@ -836,9 +842,9 @@
                   </button>
                 </div>
               {/if}
-              <div class="collapse-button">
+              <button class="collapse-button">
                 {collapsedSections.items ? '▼' : '▲'}
-              </div>
+              </button>
             </div>
           </div>
           
@@ -877,13 +883,15 @@
         <div class="entities-section battles-section">
           <div 
             class="section-header"
-            onclick={() => toggleSection('battles')}
-            onkeydown={(e) => handleSectionKeyDown(e, 'battles')}
+            onclick={(e) => toggleSection('battles', e)}
             role="button"
             tabindex="0"
             aria-expanded={!collapsedSections.battles}
+            onkeydown={(e) => e.key === 'Enter' && toggleSection('battles', e)}
           >
-            <h4>Battles <span class="entity-count battles-count">{$highlightedStore.battles.length}</span></h4>
+            <div class="section-title">
+              <h4>Battles <span class="entity-count battles-count">{$highlightedStore.battles.length}</span></h4>
+            </div>
             <div class="section-controls">
               {#if !collapsedSections.battles}
                 <div class="sort-controls">
@@ -909,9 +917,9 @@
                   </button>
                 </div>
               {/if}
-              <div class="collapse-button">
+              <button class="collapse-button">
                 {collapsedSections.battles ? '▼' : '▲'}
-              </div>
+              </button>
             </div>
           </div>
           
@@ -1788,5 +1796,64 @@
   
   :global(.race-icon-details.goblin-icon path) {
     fill: rgba(0, 128, 0, 0.8); /* Brighter green for goblin */
+  }
+
+  /* Updated section header and controls to match Overview.svelte */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5em 1em;  /* Add horizontal padding */
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 0.3em 0.3em 0 0;
+    transition: background-color 0.2s ease;
+  }
+  
+  .section-header:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .section-title {
+    margin: 0;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+  }
+  
+  .section-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-left: auto;
+  }
+  
+  .collapse-button {
+    background: none;
+    border: none;
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 0.8em;
+    cursor: pointer;
+    padding: 0.2em 0.5em;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5em;
+    min-height: 1.5em;
+  }
+  
+  .collapse-button:hover {
+    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
   }
 </style>
