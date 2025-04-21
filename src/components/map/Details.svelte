@@ -470,7 +470,7 @@
     <div class="modal-content">
       <!-- Combined terrain and actions in a single core section -->
       <div class="core-section">
-        <div class="section-content">
+        <div class="core-content">
           <!-- Desktop two-column layout container -->
           <div class="tile-info-container">
             <!-- Left column: Structure information (if available) -->
@@ -1030,73 +1030,12 @@
     background-color: rgba(255, 255, 255, 0.5);
   }
 
-  .core-actions {
-    margin-top: 1em;
+  .core-content {
+    padding: 0.8em;
   }
 
-  /* Entities section styling */
-  .entities-section {
-    margin-bottom: 1.2em;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    background-color: rgba(255, 255, 255, 0.5);
-  }
-  
-  .entities-section:last-child {
-    margin-bottom: 0;
-  }
-  
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5em 1em;
-    background-color: rgba(0, 0, 0, 0.03);
-    cursor: pointer;
-    user-select: none;
-    width: 100%;
-    text-align: left;
-    border: none;
-    font-family: inherit;
-    font-size: inherit;
-    color: inherit;
-  }
-  
-  .section-header:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
-  
-  .section-header:focus {
-    outline: 2px solid rgba(66, 133, 244, 0.6);
-    outline-offset: -2px;
-  }
-  
-  .section-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-  }
-  
-  .collapse-button {
-    background: none;
-    border: none;
-    color: rgba(0, 0, 0, 0.5);
-    font-size: 0.8em;
-    cursor: pointer;
-    padding: 0.2em 0.5em;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.5em;
-    min-height: 1.5em;
-  }
-  
-  .collapse-button:hover {
-    color: rgba(0, 0, 0, 0.8);
-    background-color: rgba(0, 0, 0, 0.05);
-    border-radius: 50%;
+  .core-actions {
+    margin-top: 1em;
   }
   
   .section-content {
