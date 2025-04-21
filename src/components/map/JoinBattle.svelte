@@ -197,221 +197,204 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<div class="modal-container">
-  <div class="join-battle-modal" transition:scale={{ start: 0.95, duration: 200 }}>
-    <header class="modal-header">
-      <h3>Join Battle - {tileData?.x}, {tileData?.y}</h3>
-      <button class="close-button" onclick={onClose} aria-label="Close dialog">
-        <Close size="1.6em" extraClass="close-icon-dark" />
-      </button>
-    </header>
-    
-    <div class="modal-body">
-      {#if availableGroups.length === 0 || activeBattles.length === 0}
-        <div class="message error">
-          <p>No battles available to join at this location, or you don't have any groups that can join.</p>
-          <button class="cancel-button" onclick={onClose}>Close</button>
-        </div>
-      {:else}
-        {#if errorMessage}
-          <div class="message error">{errorMessage}</div>
-        {/if}
-        
-        <div class="battle-join">
-          <div class="selection-section">
-            <h4>Select Your Group</h4>
-            <div class="groups-list">
-              {#each availableGroups as group}
-                <button 
-                  class="group-item" 
-                  class:selected={selectedGroup?.id === group.id}
-                  onclick={() => selectGroup(group)}
-                  onkeydown={(e) => e.key === 'Enter' && selectGroup(group)}
-                  type="button"
-                  aria-pressed={selectedGroup?.id === group.id}
-                  aria-label={`Select group ${group.name || group.id}`}
-                >
-                  <div class="group-info">
-                    <div class="group-name">{group.name || group.id}</div>
-                    <div class="group-details">Units: {group.unitCount || group.units?.length || 1}</div>
-                  </div>
-                </button>
-              {/each}
-            </div>
+<div class="join-battle-modal" transition:scale={{ start: 0.95, duration: 200 }}>
+  <header class="modal-header">
+    <h2>Join Battle - {tileData?.x}, {tileData?.y}</h2>
+    <button class="close-btn" onclick={onClose} aria-label="Close dialog">
+      <Close size="1.5em" />
+    </button>
+  </header>
+  
+  <div class="content">
+    {#if availableGroups.length === 0 || activeBattles.length === 0}
+      <div class="message error">
+        <p>No battles available to join at this location, or you don't have any groups that can join.</p>
+        <button class="cancel-btn" onclick={onClose}>Close</button>
+      </div>
+    {:else}
+      {#if errorMessage}
+        <div class="error-message">{errorMessage}</div>
+      {/if}
+      
+      <div class="battle-join">
+        <div class="selection-section">
+          <h3>Select Your Group</h3>
+          <div class="groups-list">
+            {#each availableGroups as group}
+              <button 
+                class="group-item" 
+                class:selected={selectedGroup?.id === group.id}
+                onclick={() => selectGroup(group)}
+                onkeydown={(e) => e.key === 'Enter' && selectGroup(group)}
+                type="button"
+                aria-pressed={selectedGroup?.id === group.id}
+                aria-label={`Select group ${group.name || group.id}`}
+              >
+                <div class="group-info">
+                  <div class="group-name">{group.name || group.id}</div>
+                  <div class="group-details">Units: {group.unitCount || group.units?.length || 1}</div>
+                </div>
+              </button>
+            {/each}
           </div>
-          
-          <div class="selection-section">
-            <h4>Select Battle to Join</h4>
-            <div class="battles-list">
-              {#each activeBattles as battle}
-                <button 
-                  class="battle-item" 
-                  class:selected={selectedBattle?.id === battle.id}
-                  onclick={() => selectBattle(battle)}
-                  onkeydown={(e) => e.key === 'Enter' && selectBattle(battle)}
-                  type="button"
-                  aria-pressed={selectedBattle?.id === battle.id}
-                  aria-label={`Select battle ${battle.id.substring(battle.id.lastIndexOf('_') + 1)}`}
-                >
-                  <div class="battle-info">
-                    <div class="battle-name">Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}</div>
-                    <div class="battle-sides">
-                      <div class="side-info">
-                        Side 1: {battle.sides[1].groups.length} groups ({battle.sides[1].power} strength)
-                      </div>
-                      <div class="side-info">
-                        Side 2: {battle.sides[2].groups.length} groups ({battle.sides[2].power} strength)
-                      </div>
+        </div>
+        
+        <div class="selection-section">
+          <h3>Select Battle to Join</h3>
+          <div class="battles-list">
+            {#each activeBattles as battle}
+              <button 
+                class="battle-item" 
+                class:selected={selectedBattle?.id === battle.id}
+                onclick={() => selectBattle(battle)}
+                onkeydown={(e) => e.key === 'Enter' && selectBattle(battle)}
+                type="button"
+                aria-pressed={selectedBattle?.id === battle.id}
+                aria-label={`Select battle ${battle.id.substring(battle.id.lastIndexOf('_') + 1)}`}
+              >
+                <div class="battle-info">
+                  <div class="battle-name">Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}</div>
+                  <div class="battle-sides">
+                    <div class="side-info">
+                      Side 1: {battle.sides[1].groups.length} groups ({battle.sides[1].power} strength)
+                    </div>
+                    <div class="side-info">
+                      Side 2: {battle.sides[2].groups.length} groups ({battle.sides[2].power} strength)
                     </div>
                   </div>
-                </button>
-              {/each}
+                </div>
+              </button>
+            {/each}
+          </div>
+        </div>
+        
+        {#if selectedBattle}
+          <div class="side-selection">
+            <h3>Choose Side</h3>
+            <div class="sides">
+              <button 
+                class="side-button" 
+                class:selected={selectedSide === "1"}
+                onclick={() => selectSide("1")}
+                onkeydown={(e) => e.key === 'Enter' && selectSide("1")}
+                type="button"
+                aria-pressed={selectedSide === "1"}
+              >
+                <div class="side-content">
+                  <span class="side-name">Side 1</span>
+                  <span class="side-count">({selectedBattle.sides[1].groups.length} groups)</span>
+                </div>
+              </button>
+              <button 
+                class="side-button" 
+                class:selected={selectedSide === "2"}
+                onclick={() => selectSide("2")}
+                onkeydown={(e) => e.key === 'Enter' && selectSide("2")}
+                type="button"
+                aria-pressed={selectedSide === "2"}
+              >
+                <div class="side-content">
+                  <span class="side-name">Side 2</span>
+                  <span class="side-count">({selectedBattle.sides[2].groups.length} groups)</span>
+                </div>
+              </button>
             </div>
           </div>
-          
-          {#if selectedBattle}
-            <div class="side-selection">
-              <h4>Choose Side</h4>
-              <div class="sides">
-                <button 
-                  class="side-button" 
-                  class:selected={selectedSide === "1"}
-                  onclick={() => selectSide("1")}
-                  onkeydown={(e) => e.key === 'Enter' && selectSide("1")}
-                  type="button"
-                  aria-pressed={selectedSide === "1"}
-                >
-                  <div class="side-content">
-                    <span class="side-name">Side 1</span>
-                    <span class="side-count">({selectedBattle.sides[1].groups.length} groups)</span>
-                  </div>
-                </button>
-                <button 
-                  class="side-button" 
-                  class:selected={selectedSide === "2"}
-                  onclick={() => selectSide("2")}
-                  onkeydown={(e) => e.key === 'Enter' && selectSide("2")}
-                  type="button"
-                  aria-pressed={selectedSide === "2"}
-                >
-                  <div class="side-content">
-                    <span class="side-name">Side 2</span>
-                    <span class="side-count">({selectedBattle.sides[2].groups.length} groups)</span>
-                  </div>
-                </button>
-              </div>
-            </div>
-          {/if}
-        </div>
-      {/if}
-    </div>
-
-    <footer class="modal-footer">
-      <button class="cancel-button" onclick={onClose} disabled={loading}>Cancel</button>
-      <button 
-        class="action-button" 
-        onclick={joinBattle}
-        disabled={!canJoin}
-      >
-        {loading ? 'Joining...' : 'Join Battle'}
-      </button>
-    </footer>
+        {/if}
+      </div>
+      
+      <div class="actions">
+        <button class="cancel-btn" onclick={onClose} disabled={loading}>Cancel</button>
+        <button 
+          class="join-btn" 
+          onclick={joinBattle}
+          disabled={!canJoin}
+        >
+          {loading ? 'Joining...' : 'Join Battle'}
+        </button>
+      </div>
+    {/if}
   </div>
 </div>
 
 <style>
-  .modal-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.5);
-  }
-
   .join-battle-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 90%;
     max-width: 36em;
-    max-height: 85vh;
-    background-color: rgba(255, 255, 255, 0.85);
-    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    max-height: 90vh;
+    background: white;
     border-radius: 0.5em;
-    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    font-family: var(--font-body);
+    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    z-index: 1010;
-    color: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    font-family: var(--font-body);
   }
 
   .modal-header {
-    padding: 0.8em 1em;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 0.8em 1em;
+    background: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  h2, h3 {
+    margin: 0;
     font-family: var(--font-heading);
   }
-
+  
+  h2 {
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #333;
+  }
+  
   h3 {
-    margin: 0;
-    font-size: 1.2em;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.8);
+    margin-bottom: 0.8em;
+    font-size: 1.1em;
+    font-weight: 500;
+    color: #333;
   }
 
-  h4 {
-    margin: 0 0 0.5em 0;
-    font-size: 1em;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.7);
-  }
-
-  .close-button {
+  .close-btn {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0.4em;
+    padding: 0.3em;
     display: flex;
-    align-items: center;
-    justify-content: center;
     border-radius: 50%;
     transition: background-color 0.2s;
-    color: rgba(0, 0, 0, 0.6);
   }
 
-  .close-button:hover {
+  .close-btn:hover {
     background-color: rgba(0, 0, 0, 0.1);
-    color: rgba(0, 0, 0, 0.9);
   }
 
-  .modal-body {
+  .content {
     padding: 1em;
     overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 1em;
-    max-height: calc(85vh - 8em);
+    max-height: calc(90vh - 4em);
   }
 
   .battle-join {
     display: flex;
     flex-direction: column;
     gap: 1em;
+    margin-bottom: 1.5em;
   }
 
   .selection-section {
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    flex: 1;
+    border: 1px solid #e0e0e0;
     border-radius: 0.4em;
     padding: 1em;
-    background-color: rgba(255, 255, 255, 0.5);
   }
 
   .groups-list, .battles-list {
@@ -424,21 +407,20 @@
 
   .group-item, .battle-item {
     padding: 0.8em;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
     border-radius: 0.3em;
     cursor: pointer;
     transition: all 0.2s;
-    background-color: rgba(255, 255, 255, 0.5);
+    background: white;
     text-align: left;
     display: block;
     width: 100%;
     font-family: var(--font-body);
     font-size: 1em;
-    color: rgba(0, 0, 0, 0.8);
   }
 
   .group-item:hover, .battle-item:hover {
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: #f9f9f9;
   }
 
   .group-item.selected, .battle-item.selected {
@@ -449,12 +431,11 @@
   .group-name, .battle-name {
     font-weight: 500;
     margin-bottom: 0.3em;
-    color: rgba(0, 0, 0, 0.85);
   }
 
   .group-details, .battle-sides {
     font-size: 0.9em;
-    color: rgba(0, 0, 0, 0.7);
+    color: #666;
   }
   
   .battle-sides {
@@ -478,14 +459,13 @@
   .side-button {
     flex: 1;
     padding: 0.8em;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
     border-radius: 0.3em;
-    background: rgba(255, 255, 255, 0.5);
+    background: white;
     cursor: pointer;
     transition: all 0.2s;
     font-family: var(--font-body);
     font-size: 1em;
-    color: rgba(0, 0, 0, 0.8);
   }
 
   .side-content {
@@ -501,11 +481,11 @@
   
   .side-count {
     font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.7);
+    color: #666;
   }
   
   .side-button:hover {
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: #f9f9f9;
   }
   
   .side-button.selected {
@@ -513,62 +493,59 @@
     border-color: rgba(66, 133, 244, 0.3);
   }
 
-  .modal-footer {
+  .actions {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 1em;
-    padding: 0.8em 1em;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
   }
 
-  .cancel-button, .action-button {
-    padding: 0.5em 1em;
+  .cancel-btn, .join-btn, .close-action {
+    padding: 0.7em 1.2em;
     border-radius: 0.3em;
+    cursor: pointer;
     font-size: 1em;
     font-weight: 500;
-    cursor: pointer;
-    border: none;
     transition: all 0.2s;
   }
 
-  .cancel-button {
+  .cancel-btn {
     background-color: #f1f3f4;
     color: #3c4043;
     border: 1px solid #dadce0;
   }
 
-  .cancel-button:hover:not(:disabled) {
+  .cancel-btn:hover:not(:disabled) {
     background-color: #e8eaed;
   }
 
-  .action-button {
-    background-color: rgba(66, 133, 244, 0.8);
+  .join-btn {
+    background-color: #4285f4;
     color: white;
-    flex-grow: 1;
+    border: none;
   }
 
-  .action-button:hover:not(:disabled) {
-    background-color: rgba(66, 133, 244, 0.9);
-    transform: translateY(-1px);
+  .join-btn:hover:not(:disabled) {
+    background-color: #3367d6;
   }
 
-  .action-button:disabled, .cancel-button:disabled {
+  .join-btn:disabled, .cancel-btn:disabled {
     opacity: 0.7;
     cursor: not-allowed;
-    transform: none;
   }
 
-  .message {
-    padding: 0.7em;
-    border-radius: 0.3em;
-    font-size: 0.9em;
-    text-align: center;
+  .error-message {
+    padding: 0.8em;
+    background-color: rgba(255, 0, 0, 0.1);
+    border-left: 3px solid #ff3232;
+    margin-bottom: 1em;
+    color: #d32f2f;
   }
 
   .message.error {
-    background-color: rgba(244, 67, 54, 0.1);
-    border: 1px solid rgba(244, 67, 54, 0.3);
+    padding: 0.8em;
+    background-color: rgba(255, 0, 0, 0.1);
+    border-left: 3px solid #ff3232;
+    margin-bottom: 1em;
     color: #d32f2f;
     display: flex;
     flex-direction: column;

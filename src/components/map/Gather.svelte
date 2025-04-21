@@ -152,218 +152,212 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<dialog 
-     class="overlay"
-     open
-     aria-modal="true" 
-     aria-labelledby="gather-title"
-     transition:fade={{ duration: 150 }}>
+<div class="gather-modal" transition:scale={{ start: 0.95, duration: 200 }}>
+  <header class="modal-header">
+    <h2>Gather Resources - {$targetStore?.x}, {$targetStore?.y}</h2>
+    <button class="close-btn" onclick={onClose} aria-label="Close dialog">
+      <Close size="1.5em" />
+    </button>
+  </header>
   
-  <section 
-       class="popup"
-       role="document" 
-       transition:scale={{ start: 0.95, duration: 200 }}>
-    <div class="header">
-      <h2 id="gather-title">Gather Items</h2>
-      <button class="close-btn" onclick={() => onClose()} aria-label="Close gather dialog">
-        <Close size="1.5em" />
-      </button>
-    </div>
-    
-    <div class="content">
+  <div class="content">
+    <!-- Modified to show instructions even without items available -->
+    {#if availableGroups.length === 0}
+      <div class="message error">
+        <p>You don't have any idle groups at this location that can gather resources.</p>
+        <button class="cancel-btn" onclick={onClose}>Close</button>
+      </div>
+    {:else}
+      {#if error}
+        <div class="error">{error}</div>
+      {/if}
+      
+      {#if statusMessage}
+        <div class="status">{statusMessage}</div>
+      {/if}
+      
       <p class="description">
-        Select a group to gather resources from this location. The group will collect items at the next game tick.
+        Select a group to gather resources from this location. 
+        {#if availableItems.length > 0}
+          You can pick specific items to collect, or gather general resources from the surrounding area.
+        {:else}
+          Your group will collect resources from the surrounding area.
+        {/if}
+        Gathering will complete at the next game tick.
       </p>
       
-      {#if availableGroups.length > 0}
-        <div class="group-selection">
-          <h3>Step 1: Select Your Group</h3>
-          <div class="groups-list">
-            {#each availableGroups as group}
-              <button 
-                class="group-item" 
-                class:selected={selectedGroup?.id === group.id}
-                disabled={processing}
-                onclick={() => selectGroup(group)}
-                aria-pressed={selectedGroup?.id === group.id}
+      <div class="group-selection">
+        <h3>Select Group</h3>
+        <div class="groups-list">
+          {#each availableGroups as group}
+            <button 
+              class="group-item" 
+              class:selected={selectedGroup?.id === group.id}
+              disabled={processing}
+              onclick={() => selectGroup(group)}
+              aria-pressed={selectedGroup?.id === group.id}
+            >
+              <div class="group-info">
+                <div class="group-name">{group.name || `Group ${group.id.slice(-4)}`}</div>
+                <div class="group-units">{group.unitCount || 'Unknown'} units</div>
+              </div>
+            </button>
+          {/each}
+        </div>
+      </div>
+      
+      {#if availableItems.length > 0}
+        <div class="items-section">
+          <h3>Available Items (Optional)</h3>
+          <div class="items-list">
+            {#each availableItems as item}
+              <div 
+                class="item-selector" 
+                class:selected={selectedItems.includes(item)}
+                onclick={() => toggleItem(item)}
+                role="checkbox"
+                tabindex="0"
+                aria-checked={selectedItems.includes(item)}
               >
-                <div class="group-info">
-                  <div class="group-name">{group.name || `Group ${group.id.slice(-4)}`}</div>
-                  <div class="group-units">{group.unitCount || 'Unknown'} units</div>
+                <input 
+                  type="checkbox" 
+                  checked={selectedItems.includes(item)} 
+                  id={`item-${item.id}`}
+                  tabindex="-1"
+                />
+                <div class="item {item.rarity ? item.rarity.toLowerCase() : 'common'}">
+                  <div class="item-name">{item.name || _fmt(item.type) || "Unknown Item"}</div>
+                  <div class="item-details">
+                    {#if item.type}
+                      <span class="item-type">{_fmt(item.type)}</span>
+                    {/if}
+                    {#if item.rarity && item.rarity !== 'common'}
+                      <span class="item-rarity">{_fmt(item.rarity)}</span>
+                    {/if}
+                    {#if item.quantity > 1}
+                      <span class="item-quantity">×{item.quantity}</span>
+                    {/if}
+                  </div>
                 </div>
-              </button>
+              </div>
             {/each}
           </div>
-        </div>
-        
-        {#if selectedGroup}
-          {#if availableItems.length > 0}
-            <div class="item-selection">
-              <h3>Step 2: Select Items to Gather (Optional)</h3>
-              <div class="items-list">
-                {#each availableItems as item}
-                  <button 
-                    class="item-entry" 
-                    class:selected={selectedItems.some(i => i.id === item.id)}
-                    disabled={processing}
-                    onclick={() => toggleItem(item)}
-                    aria-pressed={selectedItems.some(i => i.id === item.id)}
-                  >
-                    <div class="item-details">
-                      <div class="item-name">
-                        {item.name || _fmt(item.type) || 'Item'}
-                        {#if item.rarity && item.rarity !== 'common'}
-                          <span class="item-rarity {item.rarity.toLowerCase()}">{_fmt(item.rarity)}</span>
-                        {/if}
-                      </div>
-                      
-                      {#if item.quantity > 1}
-                        <div class="item-quantity">Quantity: {item.quantity}</div>
-                      {/if}
-                    </div>
-                  </button>
-                {/each}
-              </div>
-              
-              <div class="selection-summary">
-                Selected: {selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''}
-              </div>
-            </div>
-          {:else}
-            <div class="info-box">
-              <p>No specific items available on this tile, but your group can still gather resources from the surrounding area.</p>
-            </div>
-          {/if}
-        {/if}
-        
-        {#if error}
-          <div class="error">{error}</div>
-        {/if}
-        
-        {#if statusMessage}
-          <div class="status">{statusMessage}</div>
-        {/if}
-        
-        <div class="actions">
-          <button 
-            class="cancel-btn" 
-            onclick={() => onClose()} 
-            disabled={processing}
-          >
-            Cancel
-          </button>
-          
-          <button 
-            class="gather-btn" 
-            onclick={startGather} 
-            disabled={!selectedGroup || processing}
-          >
-            {processing ? 'Processing...' : 'Gather Resources'}
-          </button>
+          <div class="selection-summary">
+            <strong>{selectedItems.length}</strong> item{selectedItems.length !== 1 ? 's' : ''} selected
+          </div>
         </div>
       {:else}
-        <div class="empty-state">
-          <p>No groups available to gather resources at this location.</p>
-          <button class="close-btn-secondary" onclick={() => onClose()}>
-            Close
-          </button>
+        <div class="info-box">
+          <p>No specific items available on this tile, but your group can still gather resources from the surrounding area.</p>
         </div>
       {/if}
-    </div>
-  </section>
-  
-  <button 
-    class="overlay-dismiss-button"
-    onclick={() => onClose()}
-    aria-label="Close dialog">
-  </button>
-</dialog>
+      
+      <div class="actions">
+        <button 
+          class="cancel-btn" 
+          onclick={onClose} 
+          disabled={processing}
+        >
+          Cancel
+        </button>
+        
+        <button 
+          class="gather-btn" 
+          onclick={startGather} 
+          disabled={!selectedGroup || processing}
+        >
+          {processing ? 'Processing...' : 'Gather Resources'}
+        </button>
+      </div>
+    {/if}
+  </div>
+</div>
 
 <style>
-  .overlay {
+  .gather-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    padding: 1em;
-    box-sizing: border-box;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-  }
-  
-  .overlay-dismiss-button {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: transparent;
-    border: none;
-    cursor: default;
-  }
-  
-  .popup {
-    background: #fff;
-    border-radius: 0.5em;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    width: 100%;
-    max-width: 32em;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 36em;
     max-height: 90vh;
-    overflow-y: auto;
-    position: relative;
-    z-index: 1001;
+    background: white;
+    border-radius: 0.5em;
+    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
     font-family: var(--font-body);
   }
-  
-  .header {
+
+  .modal-header {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    padding: 1em;
-    border-bottom: 1px solid #eee;
+    align-items: center;
+    padding: 0.8em 1em;
+    background: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  h2, h3 {
+    margin: 0;
+    font-family: var(--font-heading);
   }
   
   h2 {
-    margin: 0;
-    font-size: 1.5em;
+    font-size: 1.3em;
     font-weight: 600;
-    font-family: var(--font-heading);
+    color: #333;
   }
   
   h3 {
+    margin-bottom: 0.8em;
     font-size: 1.1em;
-    margin: 0 0 0.8em 0;
-    font-family: var(--font-heading);
+    font-weight: 500;
+    color: #333;
   }
-  
+
+  .close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.3em;
+    display: flex;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+  }
+
+  .close-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+
   .content {
     padding: 1em;
+    overflow-y: auto;
+    max-height: calc(90vh - 4em);
   }
-  
+
   .description {
-    margin-bottom: 1.5em;
+    margin-bottom: 1em;
     color: #555;
+    line-height: 1.4;
   }
-  
-  .group-selection, .item-selection {
+
+  .group-selection {
     margin-bottom: 1.5em;
   }
-  
-  .groups-list, .items-list {
+
+  .groups-list {
     display: flex;
     flex-direction: column;
     gap: 0.5em;
     max-height: 12em;
     overflow-y: auto;
   }
-  
-  .group-item, .item-entry {
+
+  .group-item {
     display: flex;
     align-items: center;
     padding: 0.8em;
@@ -373,91 +367,119 @@
     background: white;
     transition: all 0.2s;
     text-align: left;
-    font-family: inherit;
-    font-size: inherit;
+    width: 100%;
   }
-  
-  .group-item:hover:not(:disabled), .item-entry:hover:not(:disabled) {
+
+  .group-item:hover:not(:disabled) {
     background: #f9f9f9;
     border-color: #ccc;
   }
-  
-  .group-item.selected, .item-entry.selected {
+
+  .group-item.selected {
     background: rgba(66, 133, 244, 0.1);
     border-color: rgba(66, 133, 244, 0.4);
   }
-  
-  .group-item:disabled, .item-entry:disabled {
+
+  .group-item:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
-  
-  .group-info, .item-details {
+
+  .group-info {
     flex: 1;
   }
-  
-  .group-name, .item-name {
+
+  .group-name {
     font-weight: 500;
     margin-bottom: 0.2em;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.5em;
   }
-  
+
   .group-units {
     font-size: 0.8em;
     color: #666;
   }
-  
-  .item-quantity {
-    font-size: 0.8em;
-    color: #666;
+
+  .items-section {
+    margin-bottom: 1.5em;
   }
-  
-  .item-rarity {
-    font-size: 0.7em;
-    padding: 0.2em 0.4em;
-    border-radius: 0.2em;
+
+  .items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    max-height: 18em;
+    overflow-y: auto;
+  }
+
+  .item-selector {
+    display: flex;
+    align-items: center;
+    padding: 0.6em 0.8em;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.3em;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+  }
+
+  .item-selector:hover {
+    background: #f9f9f9;
+  }
+
+  .item-selector.selected {
+    background: rgba(66, 133, 244, 0.1);
+    border-color: rgba(66, 133, 244, 0.4);
+  }
+
+  .item-selector input[type="checkbox"] {
+    margin-right: 1em;
+  }
+
+  .item {
+    flex: 1;
+  }
+
+  .item-name {
     font-weight: 500;
+    margin-bottom: 0.3em;
   }
-  
-  .item-rarity.uncommon {
-    background-color: rgba(76, 175, 80, 0.2);
-    color: #2e7d32;
-    border: 1px solid rgba(76, 175, 80, 0.3);
+
+  .item-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    font-size: 0.85em;
   }
-  
-  .item-rarity.rare {
-    background-color: rgba(33, 150, 243, 0.2);
-    color: #0277bd;
-    border: 1px solid rgba(33, 150, 243, 0.3);
-  }
-  
-  .item-rarity.epic {
-    background-color: rgba(156, 39, 176, 0.2);
-    color: #7b1fa2;
-    border: 1px solid rgba(156, 39, 176, 0.3);
-  }
-  
-  .item-rarity.legendary {
-    background-color: rgba(255, 152, 0, 0.2);
-    color: #ef6c00;
-    border: 1px solid rgba(255, 152, 0, 0.3);
-  }
-  
-  .item-rarity.mythic {
-    background-color: rgba(233, 30, 99, 0.2);
-    color: #c2185b;
-    border: 1px solid rgba(233, 30, 99, 0.3);
-  }
-  
-  .selection-summary {
-    margin-top: 0.5em;
-    font-size: 0.9em;
+
+  .item-type {
     color: #555;
   }
-  
+
+  .item-rarity {
+    font-weight: 500;
+  }
+
+  .item.rare .item-rarity {
+    color: #2196f3;
+  }
+
+  .item.epic .item-rarity {
+    color: #9c27b0;
+  }
+
+  .item.legendary .item-rarity {
+    color: #ff9800;
+  }
+
+  .item.mythic .item-rarity {
+    color: #e91e63;
+  }
+
+  .item-quantity {
+    font-weight: 500;
+    color: #555;
+  }
+
   .error {
     padding: 0.8em;
     margin-bottom: 1em;
@@ -466,7 +488,7 @@
     border-radius: 0.3em;
     color: #d32f2f;
   }
-  
+
   .status {
     padding: 0.8em;
     margin-bottom: 1em;
@@ -475,53 +497,44 @@
     border-radius: 0.3em;
     color: #0277bd;
   }
-  
+
+  .message {
+    padding: 1em;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
+  }
+
+  .message.error {
+    background-color: rgba(255, 0, 0, 0.1);
+    border-left: 3px solid #ff3232;
+    color: #d32f2f;
+  }
+
+  .selection-summary {
+    margin-top: 0.5em;
+    font-size: 0.9em;
+    color: #555;
+  }
+
   .info-box {
     padding: 0.8em;
-    margin-bottom: 1em;
+    margin-bottom: 1.5em;
     background-color: rgba(33, 150, 243, 0.1);
+    border-left: 3px solid #2196f3;
     border-radius: 0.3em;
     color: #0277bd;
-    border-left: 3px solid #2196f3;
   }
-  
+
   .actions {
     display: flex;
     justify-content: flex-end;
     gap: 0.8em;
+    margin-top: 1em;
   }
-  
-  .close-btn {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 0.5em;
-    color: #666;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-  }
-  
-  .close-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
-  }
-  
-  .close-btn-secondary {
-    padding: 0.6em 1em;
-    background: #f5f5f5;
-    border: 1px solid #ddd;
-    border-radius: 0.3em;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: inherit;
-    transition: all 0.2s;
-  }
-  
-  .close-btn-secondary:hover {
-    background: #eee;
-  }
-  
+
   .cancel-btn, .gather-btn {
     padding: 0.7em 1.2em;
     border-radius: 0.3em;
@@ -530,39 +543,29 @@
     font-size: inherit;
     transition: all 0.2s;
   }
-  
+
   .cancel-btn {
     background: #f5f5f5;
     border: 1px solid #ddd;
   }
-  
+
   .gather-btn {
     background: #2196f3;
     border: 1px solid #1e88e5;
     color: white;
   }
-  
+
   .cancel-btn:hover:not(:disabled) {
     background: #eee;
   }
-  
+
   .gather-btn:hover:not(:disabled) {
     background: #1e88e5;
   }
-  
+
   .cancel-btn:disabled,
   .gather-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-  }
-  
-  .empty-state {
-    text-align: center;
-    padding: 2em 1em;
-    color: #777;
-  }
-  
-  .empty-state p {
-    margin-bottom: 1em;
   }
 </style>
