@@ -639,8 +639,8 @@
   function getPathColor(group) {
     let baseColor = "rgba(255, 255, 255, 0.6)";
     
-    if (group.faction) {
-      switch(group.faction.toLowerCase()) {
+    if (group.race) {
+      switch(group.race.toLowerCase()) {
         case 'human': 
           baseColor = "rgba(255, 230, 150, 0.7)";
           break;

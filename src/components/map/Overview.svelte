@@ -97,8 +97,8 @@
           valueB = (section === 'structures' ? b.name || _fmt(b.type) : b.name || b.displayName || b.id || '').toLowerCase();
           break;
         case 'type':
-          valueA = (a.type || a.race || a.faction || '').toLowerCase();
-          valueB = (b.type || b.race || b.faction || '').toLowerCase();
+          valueA = (a.type || a.race || a.race || '').toLowerCase();
+          valueB = (b.type || b.race || b.race || '').toLowerCase();
           break;
         case 'rarity':
           // For items

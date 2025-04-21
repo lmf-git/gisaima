@@ -5,7 +5,7 @@
   import Close from '../icons/Close.svelte';
   import Structure from '../icons/Structure.svelte';
   import Torch from '../icons/Torch.svelte';
-  // Import race icons for faction-specific structures
+  // Import race icons for race-specific structures
   import Human from '../icons/Human.svelte';
   import Elf from '../icons/Elf.svelte';
   import Dwarf from '../icons/Dwarf.svelte';
@@ -63,12 +63,12 @@
     return rarity?.toLowerCase() || 'common';
   }
   
-  // Get race icon component based on faction
-  function getRaceIcon(faction) {
-    if (!faction) return null;
+  // Get race icon component based on race
+  function getRaceIcon(race) {
+    if (!race) return null;
     
-    const factionLower = faction.toLowerCase();
-    switch(factionLower) {
+    const raceLower = race.toLowerCase();
+    switch(raceLower) {
       case 'human': return Human;
       case 'elf': return Elf;
       case 'dwarf': return Dwarf;
@@ -138,21 +138,21 @@
               <span class="entity-badge owner-badge">Yours</span>
             {/if}
             
-            {#if tile?.structure?.faction}
-              <span class="entity-badge faction-badge">
-                <!-- Race icon in faction badge is kept -->
-                {#if tile?.structure?.faction.toLowerCase() === 'human'}
+            {#if tile?.structure?.race}
+              <span class="entity-badge race-badge">
+                <!-- Race icon in race badge is kept -->
+                {#if tile?.structure?.race.toLowerCase() === 'human'}
                   <Human extraClass="race-icon-badge" />
-                {:else if tile?.structure?.faction.toLowerCase() === 'elf'}
+                {:else if tile?.structure?.race.toLowerCase() === 'elf'}
                   <Elf extraClass="race-icon-badge" />
-                {:else if tile?.structure?.faction.toLowerCase() === 'dwarf'}
+                {:else if tile?.structure?.race.toLowerCase() === 'dwarf'}
                   <Dwarf extraClass="race-icon-badge" />
-                {:else if tile?.structure?.faction.toLowerCase() === 'goblin'}
+                {:else if tile?.structure?.race.toLowerCase() === 'goblin'}
                   <Goblin extraClass="race-icon-badge" />
-                {:else if tile?.structure?.faction.toLowerCase() === 'fairy'}
+                {:else if tile?.structure?.race.toLowerCase() === 'fairy'}
                   <Fairy extraClass="race-icon-badge" />
                 {/if}
-                <span>{formatText(tile?.structure?.faction)}</span>
+                <span>{formatText(tile?.structure?.race)}</span>
               </span>
             {/if}
           </div>
@@ -405,7 +405,7 @@
     border: 1px solid rgba(76, 175, 80, 0.4);
   }
   
-  .faction-badge {
+  .race-badge {
     background-color: rgba(33, 150, 243, 0.2);
     color: #0277bd;
     border: 1px solid rgba(33, 150, 243, 0.4);
