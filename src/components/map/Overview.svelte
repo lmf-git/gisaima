@@ -1,6 +1,5 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { slide } from 'svelte/transition'; // Add this import to fix the transition error
   import { entities, targetStore, coordinates, moveTarget, setHighlighted } from '../../lib/stores/map';
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   
@@ -693,8 +692,10 @@
             </div>
           {/if}
           
-          {#if activeFilter !== 'all' || !collapsedSections.structures}
-            <div class="section-content" class:with-transition={activeFilter === 'all'} transition:slide|local={{ duration: 300 }}>
+          <div class="section-content" 
+               class:expanded={activeFilter !== 'all' || !collapsedSections.structures} 
+               class:collapsed={activeFilter === 'all' && collapsedSections.structures}>
+            {#if activeFilter !== 'all' || !collapsedSections.structures}
               {#each sortedStructures as structure (structure.type + ':' + structure.x + ':' + structure.y)}
                 <div 
                   class="entity structure {isAtTarget(structure.x, structure.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(structure) ? 'current-player-owned' : ''}"
@@ -731,8 +732,8 @@
                   </div>
                 </div>
               {/each}
-            </div>
-          {/if}
+            {/if}
+          </div>
         </div>
       {/if}
        
@@ -828,8 +829,10 @@
             </div>
           {/if}
           
-          {#if activeFilter !== 'all' || !collapsedSections.players}
-            <div class="section-content" class:with-transition={activeFilter === 'all'} transition:slide|local={{ duration: 300 }}>
+          <div class="section-content"
+               class:expanded={activeFilter !== 'all' || !collapsedSections.players}
+               class:collapsed={activeFilter === 'all' && collapsedSections.players}>
+            {#if activeFilter !== 'all' || !collapsedSections.players}
               {#each sortedPlayers as entity ('player:' + entity.id + ':' + entity.x + ':' + entity.y)}
                 <div 
                   class="entity player {entity.id === $currentPlayer?.uid ? 'current' : ''} {isAtTarget(entity.x, entity.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(entity) ? 'current-player-owned' : ''}"
@@ -869,8 +872,8 @@
                   </div>
                 </div>
               {/each}
-            </div>
-          {/if}
+            {/if}
+          </div>
         </div>
       {/if}
        
@@ -966,8 +969,10 @@
             </div>
           {/if}
           
-          {#if activeFilter !== 'all' || !collapsedSections.groups}
-            <div class="section-content" class:with-transition={activeFilter === 'all'} transition:slide|local={{ duration: 300 }}>
+          <div class="section-content"
+               class:expanded={activeFilter !== 'all' || !collapsedSections.groups}
+               class:collapsed={activeFilter === 'all' && collapsedSections.groups}>
+            {#if activeFilter !== 'all' || !collapsedSections.groups}
               {#each sortedGroups as group ('group:' + group.id)}
                 <div 
                   class="entity {isAtTarget(group.x, group.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(group) ? 'current-player-owned' : ''}"
@@ -1043,8 +1048,8 @@
                   </div>
                 </div>
               {/each}
-            </div>
-          {/if}
+            {/if}
+          </div>
         </div>
       {/if}
 
@@ -1140,8 +1145,10 @@
             </div>
           {/if}
           
-          {#if activeFilter !== 'all' || !collapsedSections.items}
-            <div class="section-content" class:with-transition={activeFilter === 'all'} transition:slide|local={{ duration: 300 }}>
+          <div class="section-content"
+               class:expanded={activeFilter !== 'all' || !collapsedSections.items}
+               class:collapsed={activeFilter === 'all' && collapsedSections.items}>
+            {#if activeFilter !== 'all' || !collapsedSections.items}
               {#each sortedItems as item ('item:' + (item.id || `${item.x}:${item.y}:${item.name || item.type}`).replace(/\s+/g, '-'))}
                 <div 
                   class="entity item {getRarityClass(item.rarity)}" 
@@ -1176,8 +1183,8 @@
                   </div>
                 </div>
               {/each}
-            </div>
-          {/if}
+            {/if}
+          </div>
         </div>
       {/if}
 
@@ -1253,8 +1260,10 @@
             </div>
           {/if}
           
-          {#if activeFilter !== 'all' || !collapsedSections.battles}
-            <div class="section-content" class:with-transition={activeFilter === 'all'} transition:slide|local={{ duration: 300 }}>
+          <div class="section-content"
+               class:expanded={activeFilter !== 'all' || !collapsedSections.battles}
+               class:collapsed={activeFilter === 'all' && collapsedSections.battles}>
+            {#if activeFilter !== 'all' || !collapsedSections.battles}
               {#each sortedBattles as battle (battle.id)}
                 <div 
                   class="entity battle"
@@ -1353,8 +1362,8 @@
                   </div>
                 </div>
               {/each}
-            </div>
-          {/if}
+            {/if}
+          </div>
         </div>
       {/if}
 
@@ -1898,8 +1907,25 @@
   
   /* Update section content padding for consistency */
   .section-content {
-    padding: 0.8em;
+    padding: 0;
+    max-height: 0;
     overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease;
+    opacity: 0;
+  }
+
+  .section-content.expanded {
+    padding: 0.8em;
+    max-height: 1000px; /* Large enough to fit content */
+    opacity: 1;
+    transition: max-height 0.3s ease-in, padding 0.3s ease, opacity 0.2s ease 0.1s;
+  }
+
+  .section-content.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
   }
 
   /* Update tab sort controls for better alignment */
