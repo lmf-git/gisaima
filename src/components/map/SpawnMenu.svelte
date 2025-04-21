@@ -239,11 +239,13 @@
             disabled={spawning}
           >
             <div class="option-icon">
-              <Torch size="2em" extraClass="torch-icon" />
+              <Torch size="2.5em" extraClass="torch-icon" />
             </div>
             <div class="option-content">
-              <span class="option-name">{spot.name}</span>
-              <span class="option-coords">Coordinates: {spot.x},{spot.y}</span>
+              <div class="name-and-coords">
+                <span class="option-name">{spot.name}</span>
+                <span class="option-coords">({spot.x},{spot.y})</span>
+              </div>
               <span class="faction-tag">{playerRace.charAt(0).toUpperCase() + playerRace.slice(1)} Settlement</span>
               {#if spot.description}
                 <span class="option-desc">{spot.description}</span>
@@ -280,7 +282,7 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.7);
-    z-index: 1000;
+    z-index: 1100; /* Increased z-index to be higher than overview button and controls */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -344,8 +346,8 @@
   }
   
   :global(.torch-icon) {
-    width: 2.2em;
-    height: 2.2em;
+    width: 3em;
+    height: 3em;
     fill: rgba(0, 0, 0, 0.8);
   }
 
@@ -396,15 +398,21 @@
     flex-direction: column;
   }
   
+  .name-and-coords {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.25rem;
+  }
+  
   .option-name {
     font-weight: 600;
-    margin-bottom: 0.25rem;
     color: rgba(0, 0, 0, 0.85);
   }
   
   .option-coords {
     font-size: 0.85rem;
     color: rgba(0, 0, 0, 0.6);
+    margin-left: 0.5em;
   }
   
   .action-container {
@@ -497,6 +505,7 @@
     color: rgba(0, 0, 0, 0.5);
     margin-top: 1rem;
     font-style: italic;
+    text-align: center;
   }
   
   .spinner {
