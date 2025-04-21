@@ -14,7 +14,7 @@ export const isAuthReady = writable(false);
 export const game = writable({
   currentWorld: null,
   joinedWorlds: [],
-  worldInfo: {},
+  world: {},
   playerWorldData: null, // Add player-specific data for the current world
   loading: true,
   worldLoading: false,
@@ -31,28 +31,28 @@ export const currentWorldInfo = derived(
   game,
   $game => {
     if (!$game || !$game.currentWorld) return null;
-    return $game.worldInfo[$game.currentWorld] || null;
+    return $game.world[$game.currentWorld] || null;
   }
 );
 
 // Create a derived store for the current world's seed
 export const currentWorldSeed = derived(
   currentWorldInfo,
-  $worldInfo => {
-    if (!$worldInfo) return null;
-    return $worldInfo.seed || null;
+  $world => {
+    if (!$world) return null;
+    return $world.seed || null;
   }
 );
 
 // Create a derived store for the current world's center coordinates
 export const currentWorldCenter = derived(
   [game, currentWorldInfo],
-  ([$game, $worldInfo]) => {
-    if (!$worldInfo) return { x: 0, y: 0 };
+  ([$game, $world]) => {
+    if (!$world) return { x: 0, y: 0 };
     
     // Use center coordinates if explicitly defined
-    if ($worldInfo.center && typeof $worldInfo.center.x === 'number' && typeof $worldInfo.center.y === 'number') {
-      return { x: $worldInfo.center.x, y: $worldInfo.center.y };
+    if ($world.center && typeof $world.center.x === 'number' && typeof $world.center.y === 'number') {
+      return { x: $world.center.x, y: $world.center.y };
     }
     
     // Otherwise check if we have spawn information in the world data
@@ -97,7 +97,7 @@ export const currentPlayer = derived(
         guest: $user.isAnonymous, // Add an explicit guest flag for easier checking
         // Current world context
         world: $game.currentWorld,
-        worldName: $game.worldInfo[$game.currentWorld]?.name,
+        worldName: $game.world[$game.currentWorld]?.name,
         // Player status in this world
         alive: $game.playerWorldData.alive || false,
         lastLocation: $game.playerWorldData.lastLocation || null,
@@ -138,13 +138,13 @@ export const needsSpawn = derived(
 export const nextWorldTick = derived(
   game,
   ($game) => {
-    if (!$game.currentWorld || !$game.worldInfo[$game.currentWorld]) {
+    if (!$game.currentWorld || !$game.world[$game.currentWorld]) {
       return null;
     }
     
-    const worldInfo = $game.worldInfo[$game.currentWorld];
-    const worldSpeed = worldInfo.speed || 1.0;
-    const lastTick = worldInfo.lastTick || Date.now();
+    const world = $game.world[$game.currentWorld];
+    const worldSpeed = world.speed || 1.0;
+    const lastTick = world.lastTick || Date.now();
     
     // Base tick interval is 1 minute (60000ms) for 1x speed worlds
     const baseTickInterval = 60000; // 1 minute
@@ -219,7 +219,7 @@ export function loadJoinedWorlds(userId) {
         
         // If we have a currentWorld but no info for it, load it
         const currentState = getStore(game);
-        if (currentState.currentWorld && !currentState.worldInfo[currentState.currentWorld]) {
+        if (currentState.currentWorld && !currentState.world[currentState.currentWorld]) {
           console.log('Loading info for current world:', currentState.currentWorld);
           getWorldInfo(currentState.currentWorld)
             .then(() => resolve(true))
@@ -287,10 +287,10 @@ function loadCurrentWorldInfo(worldId) {
   game.update(state => ({ ...state, worldLoading: true, error: null }));
   
   return getWorldInfo(worldId)
-    .then(worldInfo => {
-      // Success - worldInfo is already set in the store by getWorldInfo
+    .then(world => {
+      // Success - world is already set in the store by getWorldInfo
       game.update(state => ({ ...state, worldLoading: false }));
-      return worldInfo;
+      return world;
     })
     .catch(error => {
       console.error('Failed to load world info:', error);
@@ -318,7 +318,7 @@ export function setMapInitializer(initFunction) {
 
 // Set the current world with info caching and auto-loading
 // This function ensures the world is saved to localStorage
-export function setCurrentWorld(worldId, worldInfo = null) {
+export function setCurrentWorld(worldId, world = null) {
   if (!worldId) return Promise.resolve(null);
   
   console.log(`Setting current world to: ${worldId}`);
@@ -335,22 +335,22 @@ export function setCurrentWorld(worldId, worldInfo = null) {
   
   // Update the store with the new world ID
   game.update(state => {
-    // If worldInfo was passed, store it
-    const updatedWorldInfo = { ...state.worldInfo };
-    if (worldInfo) {
-      updatedWorldInfo[worldId] = worldInfo;
+    // If world was passed, store it
+    const updatedWorldInfo = { ...state.world };
+    if (world) {
+      updatedWorldInfo[worldId] = world;
       
       const newState = { 
         ...state, 
         currentWorld: worldId,
-        worldInfo: updatedWorldInfo,
+        world: updatedWorldInfo,
         worldLoading: false,
         error: null,
         playerWorldData: null // Reset player data when changing worlds
       };
       
       // Initialize map with the new world data
-      initMapForWorld(worldId, worldInfo);
+      initMapForWorld(worldId, world);
       
       return newState;
     }
@@ -368,7 +368,7 @@ export function setCurrentWorld(worldId, worldInfo = null) {
   const currentState = getStore(game);
   const promises = [];
   
-  if (!worldInfo && !currentState.worldInfo[worldId]) {
+  if (!world && !currentState.world[worldId]) {
     promises.push(loadCurrentWorldInfo(worldId));
   }
   
@@ -379,10 +379,10 @@ export function setCurrentWorld(worldId, worldInfo = null) {
   }
   
   if (promises.length > 0) {
-    return Promise.all(promises).then(() => getStore(game).worldInfo[worldId] || null);
+    return Promise.all(promises).then(() => getStore(game).world[worldId] || null);
   }
   
-  return Promise.resolve(worldInfo || currentState.worldInfo[worldId]);
+  return Promise.resolve(world || currentState.world[worldId]);
 }
 
 // Get world information including seed with caching and throttling - improved with force refresh
@@ -406,9 +406,9 @@ export function getWorldInfo(worldId, forceRefresh = false) {
   // Check if we have valid cached data in the store and aren't forcing a refresh
   const currentGameState = getStore(game);
   if (!forceRefresh && 
-      currentGameState.worldInfo && 
-      currentGameState.worldInfo[worldId] && 
-      currentGameState.worldInfo[worldId].seed !== undefined) {
+      currentGameState.world && 
+      currentGameState.world[worldId] && 
+      currentGameState.world[worldId].seed !== undefined) {
     
     // Only use cache if it's not too old (less than 30 seconds)
     const lastFetchTime = worldInfoLastFetchTime.get(worldId) || 0;
@@ -417,7 +417,7 @@ export function getWorldInfo(worldId, forceRefresh = false) {
     if (now - lastFetchTime < 30000) {
       console.log(`Using cached world info for ${worldId} (age: ${now - lastFetchTime}ms)`);
       game.update(state => ({ ...state, worldLoading: false }));
-      return Promise.resolve(currentGameState.worldInfo[worldId]);
+      return Promise.resolve(currentGameState.world[worldId]);
     } else {
       console.log(`Cached world info for ${worldId} is too old (${now - lastFetchTime}ms), refreshing`);
       // Continue with refresh below
@@ -436,8 +436,8 @@ export function getWorldInfo(worldId, forceRefresh = false) {
       game.update(state => ({
         ...state,
         worldLoading: false,
-        worldInfo: {
-          ...state.worldInfo,
+        world: {
+          ...state.world,
           [worldId]: cachedInfo
         }
       }));
@@ -456,10 +456,10 @@ export function getWorldInfo(worldId, forceRefresh = false) {
       console.log(`World info snapshot for ${worldId}:`, snapshot.exists() ? 'Data exists' : 'No data');
       
       if (snapshot.exists()) {
-        const worldInfo = snapshot.val();
+        const world = snapshot.val();
         
         // Validate seed - it's critical for map generation
-        if (worldInfo.seed === undefined || worldInfo.seed === null) {
+        if (world.seed === undefined || world.seed === null) {
           const error = `World ${worldId} has no seed defined`;
           console.error(error);
           
@@ -476,27 +476,27 @@ export function getWorldInfo(worldId, forceRefresh = false) {
         worldInfoLastFetchTime.set(worldId, Date.now());
         
         // Cache the world info in memory
-        worldInfoCache.set(worldId, worldInfo);
+        worldInfoCache.set(worldId, world);
         
         // Update store with the world info
         game.update(state => ({
           ...state,
           worldLoading: false,
-          worldInfo: {
-            ...state.worldInfo,
-            [worldId]: worldInfo
+          world: {
+            ...state.world,
+            [worldId]: world
           }
         }));
         
         // Log the center coordinates for debugging with more specific output
-        if (worldInfo.center) {
-          console.log(`Loaded world center for ${worldId}: ${JSON.stringify(worldInfo.center)}`);
+        if (world.center) {
+          console.log(`Loaded world center for ${worldId}: ${JSON.stringify(world.center)}`);
         } else {
           console.log(`No explicit center coordinates for ${worldId}, will use default (0,0)`);
         }
         
         console.log(`Successfully loaded world info for ${worldId}`);
-        return worldInfo;
+        return world;
       } else {
         const error = `World ${worldId} not found in database`;
         console.error(error);
@@ -543,10 +543,10 @@ export function clearWorldInfoCache(worldId = null) {
     
     // Also clear from the game store
     game.update(state => {
-      if (state.worldInfo[worldId]) {
-        const newWorldInfo = { ...state.worldInfo };
+      if (state.world[worldId]) {
+        const newWorldInfo = { ...state.world };
         delete newWorldInfo[worldId];
-        return { ...state, worldInfo: newWorldInfo };
+        return { ...state, world: newWorldInfo };
       }
       return state;
     });
@@ -558,29 +558,9 @@ export function clearWorldInfoCache(worldId = null) {
     // Also clear from the game store
     game.update(state => ({ 
       ...state, 
-      worldInfo: {} 
+      world: {} 
     }));
   }
-}
-
-// Function to clear the current world from localStorage
-export function clearCurrentWorld() {
-  console.log('Clearing current world from localStorage');
-  
-  if (browser) {
-    try {
-      localStorage.removeItem(CURRENT_WORLD_KEY);
-      console.log('Current world removed from localStorage');
-    } catch (e) {
-      console.error('Error removing world from localStorage:', e);
-    }
-  }
-  
-  game.update(state => ({
-    ...state,
-    currentWorld: null,
-    playerWorldData: null
-  }));
 }
 
 // Track if we've already initialized services
@@ -755,7 +735,7 @@ export async function joinWorld(worldId, userId, race, displayName) {
     
     // Also load the world info if needed
     const currentState = getStore(game);
-    if (!currentState.worldInfo[worldId]) {
+    if (!currentState.world[worldId]) {
       await getWorldInfo(worldId);
     }
     
@@ -802,11 +782,11 @@ export async function refreshWorldInfo(worldId) {
 }
 
 // Function to get world center coordinates - improved with better debugging
-export function getWorldCenterCoordinates(worldId, worldInfo = null) {
+export function getWorldCenterCoordinates(worldId, world = null) {
   if (!worldId) return { x: 0, y: 0 };
   
-  // Use provided worldInfo or try to get from store
-  const info = worldInfo || (getStore(game).worldInfo?.[worldId]);
+  // Use provided world or try to get from store
+  const info = world || (getStore(game).world?.[worldId]);
   if (!info) {
     console.log(`No world info available for ${worldId}, using default center (0,0)`);
     return { x: 0, y: 0 };
@@ -827,34 +807,13 @@ export function getWorldCenterCoordinates(worldId, worldInfo = null) {
   return { x: 0, y: 0 };
 }
 
-// Calculate the next world tick time based on the last actual tick
-export function getNextWorldTickTime() {
-  const currentWorld = getStore(game).currentWorld;
-  const worldInfo = getStore(game).worldInfo[currentWorld] || {};
-  
-  // Get the world speed and lastTick
-  const worldSpeed = worldInfo.speed || 1.0;
-  const lastTick = worldInfo.lastTick || Date.now();
-  
-  const tickIntervalMs = 60000; // 1 minute in milliseconds (world tick interval)
-  const adjustedInterval = Math.round(tickIntervalMs / worldSpeed);
-  
-  // Calculate next tick based on the last recorded tick time
-  const now = Date.now();
-  const timeSinceLastTick = now - lastTick;
-  const ticksElapsed = Math.floor(timeSinceLastTick / adjustedInterval);
-  const nextTickTime = lastTick + ((ticksElapsed + 1) * adjustedInterval);
-  
-  return nextTickTime;
-}
-
 // Add a function to calculate when the next tick will likely occur
 export function calculateNextTickTime(worldId) {
-  const worldInfo = get(game).worldInfo?.[worldId];
-  if (!worldInfo) return null;
+  const world = get(game).world?.[worldId];
+  if (!world) return null;
   
-  const worldSpeed = worldInfo.speed || 1.0;
-  const lastTick = worldInfo.lastTick || Date.now();
+  const worldSpeed = world.speed || 1.0;
+  const lastTick = world.lastTick || Date.now();
   
   // Base tick interval is 5 minutes (300000ms)
   const baseTickInterval = 300000;
@@ -885,24 +844,4 @@ export function formatTimeUntilNextTick(worldId) {
   }
   
   return `${minutes}m ${seconds}s`;
-}
-
-// If there's a function that handles respawn mechanics, update it
-export async function respawnPlayer(worldId) {
-  if (!user.current || !worldId) return false;
-  
-  try {
-    const playerWorldRef = ref(db, `players/${user.current.uid}/worlds/${worldId}`);
-    
-    // Update player's alive status to false to trigger respawn
-    await update(playerWorldRef, { 
-      alive: false,
-      // Don't reset lastLocation - this will be handled when they spawn again
-    });
-    
-    return true;
-  } catch (err) {
-    console.error('Error respawning player:', err);
-    return false;
-  }
 }

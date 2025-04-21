@@ -21,60 +21,120 @@
     return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
   }
 
-  // Add debug logging to understand game store state
-  let gameWorldState = $state(null);
-
-  // Better derivation directly accessing the structure from backup.json
-  const allSpawnPoints = $derived(() => {
-    // Store the game state in a variable for debugging
-    gameWorldState = $game.worldInfo[$game.currentWorld];
-    
-    // Return early if required data isn't available
-    if (!$game.currentWorld || !$game.worldInfo[$game.currentWorld]) {
-      console.log('No world or world info available yet', {
-        currentWorld: $game.currentWorld,
-        hasWorldInfo: !!$game.worldInfo[$game.currentWorld]
-      });
-      return [];
-    }
-
-    const worldInfo = $game.worldInfo[$game.currentWorld];
-    // Check for the exact path structure as seen in backup.json
-    if (!worldInfo.info || !worldInfo.info.spawns) {
-      console.log('World info lacks spawn data', {
-        hasInfo: !!worldInfo.info,
-        hasSpawns: !!worldInfo.info?.spawns,
-        worldInfo
-      });
-      return [];
-    }
-
-    const spawnsData = worldInfo.info.spawns;
-    console.log('Found spawn data:', spawnsData);
-    
-    // Map the spawns object to an array of spawn points
-    return Object.entries(spawnsData).map(([locationKey, spawnData]) => {
-      if (spawnData && typeof spawnData === 'object' && spawnData.id) {
-        return {
-          id: spawnData.id,
-          name: spawnData.name || `Spawn ${locationKey}`,
-          description: spawnData.description || "A place to enter the world",
-          race: spawnData.race,
-          x: spawnData.position.x,
-          y: spawnData.position.y,
-          locationKey
-        };
-      }
+  // Full direct access to game store world data for debugging
+  const rawWorldData = $derived(() => {
+    if (!$game.currentWorld || !$game.world[$game.currentWorld]) {
       return null;
-    }).filter(spawn => spawn !== null);
+    }
+    
+    // Return the raw world data for inspection
+    return $game.world[$game.currentWorld];
+  });
+
+  // Enhanced spawn point extraction with better debugging and data access
+  const allSpawnPoints = $derived(() => {
+    if (!rawWorldData) {
+      console.log('No raw world data available');
+      return [];
+    }
+
+    // Log complete raw world structure for diagnosis
+    console.log('Complete world data structure:', {
+      worldId: $game.currentWorld,
+      worldDataKeys: Object.keys(rawWorldData),
+      hasInfo: !!rawWorldData.info,
+      infoKeys: rawWorldData.info ? Object.keys(rawWorldData.info) : [],
+      toJSON: typeof rawWorldData.toJSON === 'function' ? 'Has toJSON' : 'No toJSON',
+      rawData: JSON.stringify(rawWorldData).substring(0, 100) + '...'
+    });
+
+    // Check for spawns using multiple access patterns
+    let spawnsObj = null;
+    
+    // Try accessing info.spawns (primary path based on backup.json)
+    if (rawWorldData.info?.spawns) {
+      console.log('Found spawns in info.spawns path');
+      spawnsObj = rawWorldData.info.spawns;
+      console.log('Spawns keys:', Object.keys(spawnsObj));
+    }
+    // Try alternative: direct spawns property
+    else if (rawWorldData.spawns) {
+      console.log('Found spawns directly in world.spawns path');
+      spawnsObj = rawWorldData.spawns;
+    }
+    // Try accessing nested structure
+    else if (rawWorldData.world && rawWorldData.world.info && rawWorldData.world.info.spawns) {
+      console.log('Found spawns in nested world.info.spawns path');
+      spawnsObj = rawWorldData.world.info.spawns;
+    }
+    
+    if (!spawnsObj) {
+      // If we still don't have spawns, look for them manually in the structure
+      console.log('No spawn data found in standard paths, scanning world structure...');
+      
+      for (const key in rawWorldData) {
+        if (typeof rawWorldData[key] === 'object' && rawWorldData[key] !== null) {
+          // Check if this property contains spawns
+          if (rawWorldData[key].spawns) {
+            console.log(`Found spawns in world.${key}.spawns`);
+            spawnsObj = rawWorldData[key].spawns;
+            break;
+          }
+        }
+      }
+    }
+    
+    if (!spawnsObj) {
+      console.log('No spawn data found after scanning world data');
+      return [];
+    }
+
+    console.log('Processing spawn data:', spawnsObj);
+
+    // Transform the spawns object into an array of spawn points
+    return Object.entries(spawnsObj).map(([key, spawnData]) => {
+      console.log(`Processing spawn key "${key}":`, spawnData);
+      
+      // Extract coordinates from position object if available
+      let posX = spawnData.position?.x;
+      let posY = spawnData.position?.y;
+      
+      // If position isn't directly available, parse from the key
+      // The key format is "chunkX:chunkY:x:y" like "-1:0:-4:6"
+      if ((posX === undefined || posY === undefined) && key.includes(':')) {
+        const keyParts = key.split(':');
+        if (keyParts.length === 4) {
+          posX = parseInt(keyParts[2], 10);
+          posY = parseInt(keyParts[3], 10);
+          console.log(`Parsed coordinates from key ${key}: (${posX}, ${posY})`);
+        }
+      }
+      
+      // Create the spawn point object
+      const spawn = {
+        id: spawnData.id || `spawn_${key}`,
+        name: spawnData.name || `Spawn ${key}`,
+        description: spawnData.description || "A place to enter the world",
+        race: spawnData.race,
+        x: posX !== undefined ? posX : 0,
+        y: posY !== undefined ? posY : 0,
+        locationKey: key
+      };
+      
+      console.log('Created spawn point:', spawn);
+      return spawn;
+    }).filter(spawn => spawn.id); // Filter out any invalid entries
   });
 
   // Add a fallback for when no spawns are available from the game store
   const fallbackSpawns = $derived(() => {
-    if (allSpawnPoints.length > 0) return allSpawnPoints;
+    // Make sure we check that allSpawnPoints is an array and has length
+    if (Array.isArray(allSpawnPoints) && allSpawnPoints.length > 0) {
+      console.log(`Using ${allSpawnPoints.length} spawn points from world data`);
+      return allSpawnPoints;
+    }
     
-    // If no spawns are found in the store but we know the world, provide some fallbacks
-    // based on the structure in backup.json
+    // If no spawns are found in the store but we know the world, provide fallbacks
     if ($game.currentWorld === 'ancient-lands') {
       console.log('Using fallback spawns for ancient-lands');
       return [
@@ -124,8 +184,14 @@
     return [];
   });
 
-  // Filter spawn points to match player's race - now using fallback spawns
+  // Filter spawn points to match player's race - with type checking
   function getFilteredSpawns(spawns) {
+    // Ensure we're dealing with an array
+    if (!Array.isArray(spawns)) {
+      console.error("Expected spawns to be an array but got:", typeof spawns);
+      return [];
+    }
+    
     if (!$currentPlayer || !$currentPlayer.race) return spawns;
     
     const playerRace = $currentPlayer.race.toLowerCase();
@@ -137,26 +203,63 @@
     return filtered;
   }
 
-  const filteredSpawnPoints = $derived(getFilteredSpawns(fallbackSpawns));
-  const selectedSpawn = $derived(allSpawnPoints.find(s => s.id === selectedSpawnId));
+  // Safely derive filtered spawn points
+  const filteredSpawnPoints = $derived(() => {
+    // Use a function call to avoid reactivity issues
+    return getFilteredSpawns(fallbackSpawns);
+  });
   
-  // Initialize component
+  const selectedSpawn = $derived(() => {
+    if (!selectedSpawnId || !Array.isArray(filteredSpawnPoints)) return null;
+    return filteredSpawnPoints.find(s => s.id === selectedSpawnId);
+  });
+  
+  // Debug function to directly examine the world data structure
+  function inspectGameWorld() {
+    if (!$game?.world) {
+      console.log('No game world data available');
+      return;
+    }
+
+    console.log('Direct game store inspection:');
+    console.log('Current world:', $game.currentWorld);
+    console.log('Available worlds:', Object.keys($game.world));
+
+    if ($game.currentWorld && $game.world[$game.currentWorld]) {
+      const worldData = $game.world[$game.currentWorld];
+      console.log('Current world data keys:', Object.keys(worldData));
+      
+      if (worldData.info) {
+        console.log('Info keys:', Object.keys(worldData.info));
+        
+        if (worldData.info.spawns) {
+          console.log('Spawn keys:', Object.keys(worldData.info.spawns));
+        }
+      }
+    }
+  }
+  
+  // Initialize component with better debugging
   $effect(() => {
     console.log('SpawnMenu component initializing...', {
-      worldInfo: $game.worldInfo,
       currentWorld: $game.currentWorld,
-      gameStoreState: $game
+      worldData: rawWorldData ? true : false,
+      allSpawnPointsCount: Array.isArray(allSpawnPoints) ? allSpawnPoints.length : 0,
+      fallbackSpawnsCount: Array.isArray(fallbackSpawns) ? fallbackSpawns.length : 0,
     });
+    
+    // Run the direct inspection on initialization
+    inspectGameWorld();
+    
     loading = true;
     error = null;
     
-    // The data loading happens through the reactivity system now, 
-    // just check if we have data available
-    if (fallbackSpawns.length > 0) {
-      console.log(`Found ${fallbackSpawns.length} spawn points:`, fallbackSpawns);
+    // The data loading happens through the reactivity system
+    if (Array.isArray(fallbackSpawns) && fallbackSpawns.length > 0) {
+      console.log(`Found ${fallbackSpawns.length} spawn points`);
       
-      // Filter spawns by race and select the first one
-      if (filteredSpawnPoints.length > 0) {
+      // Select first matching spawn
+      if (Array.isArray(filteredSpawnPoints) && filteredSpawnPoints.length > 0) {
         selectedSpawnId = filteredSpawnPoints[0].id;
         console.log(`Selected spawn: ${selectedSpawnId}`);
         
@@ -171,26 +274,26 @@
       }
       
       loading = false;
-    } else if (!$game.worldInfo[$game.currentWorld]) {
+    } else if (!rawWorldData) {
       // Still waiting for world info to load
       console.log('Waiting for world info to be available...');
-      // The loading state stays true until data is available
+      // Loading state stays true until data is available
     } else {
       // We have world info but no spawn points
       console.error('No spawn points available in this world', {
-        worldInfo: $game.worldInfo[$game.currentWorld],
-        hasInfo: !!$game.worldInfo[$game.currentWorld]?.info,
-        hasSpawns: !!$game.worldInfo[$game.currentWorld]?.info?.spawns
+        worldId: $game.currentWorld,
+        worldData: rawWorldData ? 'Available' : 'Missing',
+        worldDataKeys: rawWorldData ? Object.keys(rawWorldData) : []
       });
       error = "No spawn points available in this world";
       loading = false;
     }
   });
   
-  // Move when selection changes
+  // Move when selection changes - with type checking
   $effect(() => {
-    if (selectedSpawnId && !movedToSpawn) {
-      const spawn = allSpawnPoints.find(s => s.id === selectedSpawnId);
+    if (selectedSpawnId && !movedToSpawn && Array.isArray(filteredSpawnPoints)) {
+      const spawn = filteredSpawnPoints.find(s => s.id === selectedSpawnId);
       if (spawn) {
         moveTarget(spawn.x, spawn.y);
         movedToSpawn = true;
@@ -210,8 +313,12 @@
       spawning = true;
       error = null;
       
-      // Find the selected spawn point
-      const spawn = allSpawnPoints.find(s => s.id === selectedSpawnId);
+      // Find the selected spawn point, with type safety
+      if (!Array.isArray(filteredSpawnPoints)) {
+        throw new Error("Spawn points are not available");
+      }
+      
+      const spawn = filteredSpawnPoints.find(s => s.id === selectedSpawnId);
       if (!spawn) {
         throw new Error("Selected spawn point not found");
       }
@@ -287,7 +394,7 @@
         <p>{error}</p>
         <button class="retry-button" on:click={() => location.reload()}>Retry</button>
       </div>
-    {:else if filteredSpawnPoints.length === 0}
+    {:else if !Array.isArray(filteredSpawnPoints) || filteredSpawnPoints.length === 0}
       <div class="error-message">
         <p>No spawn points available for your race: {formatText($currentPlayer?.race || 'Unknown')}</p>
         <button class="retry-button" on:click={() => location.reload()}>Retry</button>

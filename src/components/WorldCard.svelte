@@ -13,7 +13,7 @@
     summaryFactor = 75,
     delayed = false,
     joined = false, // New prop to track if world is joined
-    worldInfo = null, // Add world info prop to access center coordinates
+    info = null, // Add world info prop to access center coordinates
     worldCenter = null, // Allow passing precomputed world center directly
   } = $props();
   
@@ -46,12 +46,12 @@
       newCenter = { x: worldCenter.x, y: worldCenter.y, source: 'worldCenter prop' };
     }
     // Otherwise compute from world info if available
-    else if (worldInfo?.center && typeof worldInfo.center.x === 'number' && typeof worldInfo.center.y === 'number') {
-      newCenter = { x: worldInfo.center.x, y: worldInfo.center.y, source: 'worldInfo prop' };
+    else if (info?.center && typeof info.center.x === 'number' && typeof info.center.y === 'number') {
+      newCenter = { x: info.center.x, y: info.center.y, source: 'info prop' };
     }
     // Final fallback: get coordinates from game store
     else {
-      const coords = getWorldCenterCoordinates(worldId, worldInfo);
+      const coords = getWorldCenterCoordinates(worldId, info);
       if (coords && typeof coords.x === 'number' && typeof coords.y === 'number') {
         newCenter = { x: coords.x, y: coords.y, source: 'game store' };
       }

@@ -23,11 +23,6 @@
   // Derived state for UI loading conditions 
   const actionsLoading = $derived($userLoading || !$isAuthReady || $game.loading);
   
-  // Derived state for current world state - directly from game store
-  const hasCurrentWorld = $derived(!!$game.currentWorld);
-  const currentWorldId = $derived($game.currentWorld);
-  const currentWorldName = $derived($game.worldInfo[$game.currentWorld]?.name || $game.currentWorld);
-  
   // Background images array
   const backgroundImages = [
     '/banners/1.jpeg',

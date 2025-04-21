@@ -849,17 +849,17 @@ export function initialize(options = {}) {
 
       worldId = gameState.currentWorld;
 
-      if (!gameState.worldInfo || !gameState.worldInfo[worldId]) {
+      if (!gameState.world || !gameState.world[worldId]) {
         console.log(`No world info for world: ${worldId}`);
         map.update(state => ({ ...state, initializing: false }));
         return false;
       }
 
-      seed = gameState.worldInfo[worldId].seed;
-    } else if (options.worldInfo) {
-      // Case 2: Direct worldInfo object provided
+      seed = gameState.world[worldId].seed;
+    } else if (options.world) {
+      // Case 2: Direct world object provided
       worldId = options.worldId || 'default';
-      seed = options.worldInfo.seed;
+      seed = options.world.seed;
     } else {
       // Case 3: Direct seed and world values
       seed = options.seed;
@@ -906,7 +906,7 @@ export function initialize(options = {}) {
         console.log(`Initializing map with saved position: ${targetPosition.x},${targetPosition.y}`);
       } else {
         // 3. Try to use world center coordinates
-        const worldCenter = getWorldCenterCoordinates(worldId, options.worldInfo);
+        const worldCenter = getWorldCenterCoordinates(worldId, options.world);
         if (worldCenter.x !== 0 || worldCenter.y !== 0) {
           targetPosition = worldCenter;
           console.log(`Initializing map with world center: ${targetPosition.x},${targetPosition.y}`);
@@ -964,8 +964,8 @@ export function setup(options = {}) {
   return initialize(options);
 }
 
-export function setupFromWorldInfo(worldId, worldInfo) {
-  return initialize({ worldId, worldInfo });
+export function setupFromWorldInfo(worldId, world) {
+  return initialize({ worldId, world });
 }
 
 export function setupFromGameStore(gameStore) {

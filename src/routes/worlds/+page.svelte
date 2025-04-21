@@ -10,7 +10,6 @@
     initGameStore,
     getWorldInfo,
     getWorldCenterCoordinates,
-    clearWorldInfoCache,
     refreshWorldInfo
   } from '../../lib/stores/game.js';
   import { ref, onValue } from "firebase/database";
@@ -105,10 +104,10 @@
       const validWorlds = Object.keys(data)
         .filter(key => data[key] && data[key].info)
         .map(key => {
-          const worldInfo = data[key].info;
+          const world = data[key].info;
           
           // Extract center coordinates directly from world info
-          const center = worldInfo.center || { x: 0, y: 0 };
+          const center = world.center || { x: 0, y: 0 };
           
           // Log the world center to help debugging
           console.log(`World ${key} center from database:`, center);
@@ -118,12 +117,12 @@
           
           return {
             id: key,
-            name: worldInfo.name || key,
-            description: worldInfo.description || '',
-            playerCount: worldInfo.playerCount || 0,
-            created: worldInfo.created || Date.now(),
+            name: world.name || key,
+            description: world.description || '',
+            playerCount: world.playerCount || 0,
+            created: world.created || Date.now(),
             joined: $game.joinedWorlds.includes(key),
-            seed: worldInfo.seed || 0,
+            seed: world.seed || 0,
             // Include center coordinates directly in the world object
             center: center
           };
@@ -161,7 +160,7 @@
     const promises = [];
     
     for (const worldId of worldIds) {
-      if (!$game.worldInfo[worldId]) {
+      if (!$game.world[worldId]) {
         console.log(`Preloading info for world ${worldId}`);
         promises.push(getWorldInfo(worldId)
           .then(info => {
@@ -208,9 +207,9 @@
     console.log(`Loading world card for: ${nextWorldId}`);
     
     // Ensure world info is loaded
-    const worldInfo = $game.worldInfo[nextWorldId];
+    const world = $game.world[nextWorldId];
     
-    if (worldInfo) {
+    if (world) {
       // World info is already loaded, proceed after a delay
       setTimeout(() => {
         // Only modify state once the card is ready to display
@@ -419,7 +418,7 @@
               tileSize={2}
               delayed={!loadedWorldCards.has(world.id)}
               joined={$game.joinedWorlds.includes(world.id)}
-              worldInfo={$game.worldInfo[world.id]}
+              world={$game.world[world.id]}
               worldCenter={world.center || worldCenters[world.id]}
               debug={true}
             />
@@ -439,7 +438,7 @@
               </div>
               <div class="stat-item">
                 <span class="stat-label">Speed:</span>
-                <span class="stat-value">{(world.speed || $game.worldInfo[world.id]?.speed || 1.0).toFixed(1)}x</span>
+                <span class="stat-value">{(world.speed || $game.world[world.id]?.speed || 1.0).toFixed(1)}x</span>
               </div>
               <div class="stat-item">
                 <span class="stat-label">Created:</span>

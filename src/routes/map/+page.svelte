@@ -343,12 +343,12 @@
             }
             
             await setCurrentWorld(worldId);
-            const worldInfo = await getWorldInfo(worldId);
+            const world = await getWorldInfo(worldId);
             
-            if (!worldInfo) {
+            if (!world) {
                 throw new Error(`World info not found for ${worldId}`);
             }
-            if (worldInfo.seed === undefined) {
+            if (world.seed === undefined) {
                 throw new Error(`World ${worldId} has no seed defined`);
             }
             
@@ -366,14 +366,14 @@
                 initialCoords = { x: location.x, y: location.y };
             } 
             else {
-                const worldCenter = getWorldCenterCoordinates(worldId, worldInfo);
+                const worldCenter = getWorldCenterCoordinates(worldId, world);
                 console.log(`Using world center: ${worldCenter.x},${worldCenter.y}`);
                 initialCoords = worldCenter;
             }
             
             if (!initialize({ 
                 worldId,
-                worldInfo,
+                world,
                 initialX: initialCoords.x,
                 initialY: initialCoords.y
             })) {
@@ -392,7 +392,7 @@
     $effect(() => {
         if (initAttempted || error || !$isAuthReady) return;
         
-        if (!$game.worldLoading && $game.currentWorld && $game.worldInfo[$game.currentWorld]?.seed !== undefined) {
+        if (!$game.worldLoading && $game.currentWorld && $game.world[$game.currentWorld]?.seed !== undefined) {
             initAttempted = true;
             
             try {
@@ -467,12 +467,12 @@
             return;
         }
         
-        if (!$ready && currentWorldId && $game.worldInfo[currentWorldId]?.seed !== undefined) {
+        if (!$ready && currentWorldId && $game.world[currentWorldId]?.seed !== undefined) {
             console.log(`Initializing map from existing world info for ${currentWorldId}`);
             
             initialize({ 
                 worldId: currentWorldId, 
-                worldInfo: $game.worldInfo[currentWorldId],
+                world: $game.world[currentWorldId],
                 initialX: urlCoordinates?.x, 
                 initialY: urlCoordinates?.y
             });
