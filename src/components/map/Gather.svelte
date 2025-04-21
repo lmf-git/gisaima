@@ -88,6 +88,14 @@
       selectedItems = [...selectedItems, item];
     }
   }
+
+  // Add this function to handle keyboard events for items
+  function handleItemKeyDown(event, item) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault(); // Prevent page scroll on space
+      toggleItem(item);
+    }
+  }
   
   // Start gathering process
   async function startGather() {
@@ -215,6 +223,7 @@
                 class="item-selector" 
                 class:selected={selectedItems.includes(item)}
                 onclick={() => toggleItem(item)}
+                onkeydown={(e) => handleItemKeyDown(e, item)}
                 role="checkbox"
                 tabindex="0"
                 aria-checked={selectedItems.includes(item)}
