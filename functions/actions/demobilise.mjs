@@ -28,7 +28,7 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
   try {
     const db = getDatabase();
     
-    // Fix chunk calculation for negative coordinates - Updated to match mobilize.mjs
+    // Fix chunk calculation for negative coordinates - Updated to match mobilise.mjs
     const CHUNK_SIZE = 20;
     function getChunkKey(x, y) {
       // Simple integer division matches the database structure
@@ -66,7 +66,7 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError("failed-precondition", "Group is already demobilising");
     }
     
-    // Check if there's a structure to demobilize into
+    // Check if there's a structure to demobilise into
     const structureRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
     const structureSnapshot = await structureRef.once('value');
     

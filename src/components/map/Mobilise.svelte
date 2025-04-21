@@ -63,7 +63,7 @@
     }
     
     if (!$currentPlayer) {
-      mobilizeError = 'You need to be logged in to mobilize units.';
+      mobilizeError = 'You need to be logged in to mobilise units.';
       return;
     }
     
@@ -136,7 +136,7 @@
       if (error.code === 'unauthenticated') {
          mobilizeError = 'Authentication error: Please log in again.';
       } else {
-         mobilizeError = error.message || "Failed to mobilize forces";
+         mobilizeError = error.message || "Failed to mobilise forces";
       }
     } finally {
       isLoading = false;
@@ -187,7 +187,7 @@
      class="overlay"
      open
      aria-modal="true" 
-     aria-labelledby="mobilize-title"
+     aria-labelledby="mobilise-title"
      transition:fade={{ duration: 200 }}>
   
   <section 
@@ -195,8 +195,8 @@
        role="document" 
        transition:scale={{ start: 0.95, duration: 200 }}>
     <div class="header">
-      <h2 id="mobilize-title">Mobilize Forces - {tileData?.x}, {tileData?.y}</h2>
-      <button class="close-btn" onclick={onClose} aria-label="Close mobilize dialog">
+      <h2 id="mobilise-title">Mobilise Forces - {tileData?.x}, {tileData?.y}</h2>
+      <button class="close-btn" onclick={onClose} aria-label="Close mobilise dialog">
         <Close size="1.5em" />
       </button>
     </div>
@@ -215,7 +215,7 @@
         </div>
       </div>
       
-      <div class="mobilize-content">
+      <div class="mobilise-content">
         <div class="group-details">
           <div class="option-row">
             <label for="group-name" class="full-width">
@@ -266,7 +266,7 @@
         </div>
         
         {#if mobilizeError}
-          <div class="mobilize-error">
+          <div class="mobilise-error">
             {mobilizeError}
           </div>
         {/if}
@@ -349,11 +349,11 @@
             Cancel
           </button>
           <button 
-            class="mobilize-btn" 
+            class="mobilise-btn" 
             disabled={!canMobilize}
             onclick={startMobilization}
           >
-            Mobilize Forces
+            Mobilise Forces
           </button>
         </div>
       </div>
@@ -482,7 +482,7 @@
     color: #1e90ff;
   }
   
-  .mobilize-content {
+  .mobilise-content {
     padding: 1em;
     display: flex;
     flex-direction: column;
@@ -652,7 +652,7 @@
     color: var(--color-bright-accent);
   }
   
-  .mobilize-error {
+  .mobilise-error {
     background-color: rgba(255, 0, 0, 0.1);
     border: 1px solid rgba(255, 0, 0, 0.3);
     color: #ff5757;
@@ -669,7 +669,7 @@
     margin-top: 1.5em;
   }
   
-  .cancel-btn, .mobilize-btn {
+  .cancel-btn, .mobilise-btn {
     padding: 0.7em 1.2em;
     border-radius: 0.3em;
     border: none;
@@ -689,16 +689,16 @@
     background-color: #e8eaed;
   }
   
-  .mobilize-btn {
+  .mobilise-btn {
     background-color: #4285f4;
     color: white;
   }
   
-  .mobilize-btn:hover:not(:disabled) {
+  .mobilise-btn:hover:not(:disabled) {
     background-color: #3367d6;
   }
   
-  .mobilize-btn:disabled {
+  .mobilise-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }

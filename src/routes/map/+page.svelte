@@ -44,11 +44,11 @@
     import SpawnMenu from '../../components/map/SpawnMenu.svelte';
     import Overview from '../../components/map/Overview.svelte';
     import Close from '../../components/icons/Close.svelte';
-    import Mobilize from '../../components/map/Mobilize.svelte';
+    import Mobilise from '../../components/map/Mobilise.svelte';
     import Move from '../../components/map/Move.svelte';
     import AttackGroups from '../../components/map/AttackGroups.svelte';
     import JoinBattle from '../../components/map/JoinBattle.svelte';
-    import Demobilize from '../../components/map/Demobilize.svelte';
+    import Demobilise from '../../components/map/Demobilise.svelte';
     import StructureOverview from '../../components/map/StructureOverview.svelte';
     import Gather from '../../components/map/Gather.svelte';
 
@@ -134,7 +134,7 @@
         console.log('Opening modal:', options.type, options.data);
         
         // Close Details modal when opening structure overview or action modals
-        if (['inspect', 'mobilize', 'move', 'gather', 'demobilize', 'joinBattle'].includes(options.type)) {
+        if (['inspect', 'mobilise', 'move', 'gather', 'demobilise', 'joinBattle'].includes(options.type)) {
             // Close details if it's open
             if (detailed) {
                 toggleDetailsModal(false);
@@ -1027,8 +1027,8 @@
               onClose={closeModal}
               key={structureRenderCount}
             />
-          {:else if modalState.type === 'mobilize'}
-            <Mobilize
+          {:else if modalState.type === 'mobilise'}
+            <Mobilise
               onClose={closeModal}
             />
           {:else if modalState.type === 'move'}
@@ -1067,8 +1067,8 @@
               }}
               data={modalState.data}
             />
-          {:else if modalState.type === 'demobilize'}
-            <Demobilize
+          {:else if modalState.type === 'demobilise'}
+            <Demobilise
               onClose={closeModal}
               onDemobilize={(data) => {
                 console.log('Demobilization started:', data);

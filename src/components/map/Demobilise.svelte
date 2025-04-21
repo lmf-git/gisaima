@@ -11,13 +11,13 @@
   // Get functions instance directly
   const functions = getFunctions();
   
-  // Change to targetStore instead of highlightedStore since players demobilize at their current location
+  // Change to targetStore instead of highlightedStore since players demobilise at their current location
   let tileData = $derived($targetStore || null);
   
   // Available groups for demobilization
   let availableGroups = $state([]);
   
-  // Selected group to demobilize
+  // Selected group to demobilise
   let selectedGroup = $state(null);
   
   // Add storage destination option
@@ -133,7 +133,7 @@
      class="overlay"
      open
      aria-modal="true" 
-     aria-labelledby="demobilize-title"
+     aria-labelledby="demobilise-title"
      transition:fade={{ duration: 150 }}>
   
   <section 
@@ -141,8 +141,8 @@
        role="document" 
        transition:scale={{ start: 0.95, duration: 200 }}>
     <div class="header">
-      <h2 id="demobilize-title">Demobilize Group</h2>
-      <button class="close-btn" onclick={() => onClose()} aria-label="Close demobilize dialog">
+      <h2 id="demobilise-title">Demobilise Group</h2>
+      <button class="close-btn" onclick={() => onClose()} aria-label="Close demobilise dialog">
         <Close size="1.5em" />
       </button>
     </div>
@@ -150,7 +150,7 @@
     {#if tileData && tileData.structure}
       <div class="content">
         <p class="description">
-          Select a group to demobilize at this structure. 
+          Select a group to demobilise at this structure. 
           The group will disband at the next game tick, and all units will join this location.
         </p>
         
@@ -233,16 +233,16 @@
             </button>
             
             <button 
-              class="demobilize-btn" 
+              class="demobilise-btn" 
               onclick={startDemobilize} 
               disabled={!selectedGroup || processing}
             >
-              {processing ? 'Processing...' : 'Demobilize'}
+              {processing ? 'Processing...' : 'Demobilise'}
             </button>
           </div>
         {:else}
           <div class="empty-state">
-            <p>No groups available to demobilize at this location.</p>
+            <p>No groups available to demobilise at this location.</p>
             <button class="close-btn-secondary" onclick={() => onClose()}>
               Close
             </button>
@@ -518,7 +518,7 @@
     background: #eee;
   }
   
-  .cancel-btn, .demobilize-btn {
+  .cancel-btn, .demobilise-btn {
     padding: 0.7em 1.2em;
     border-radius: 0.3em;
     cursor: pointer;
@@ -532,7 +532,7 @@
     border: 1px solid #ddd;
   }
   
-  .demobilize-btn {
+  .demobilise-btn {
     background: #2196f3;
     border: 1px solid #1e88e5;
     color: white;
@@ -542,12 +542,12 @@
     background: #eee;
   }
   
-  .demobilize-btn:hover:not(:disabled) {
+  .demobilise-btn:hover:not(:disabled) {
     background: #1e88e5;
   }
   
   .cancel-btn:disabled,
-  .demobilize-btn:disabled {
+  .demobilise-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }

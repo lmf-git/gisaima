@@ -137,8 +137,8 @@
     if (!tileData) return;
 
     switch (action) {
-      case 'mobilize':
-        onShowModal({ type: 'mobilize', data: tileData });
+      case 'mobilise':
+        onShowModal({ type: 'mobilise', data: tileData });
         break;
         
       case 'move':
@@ -161,8 +161,8 @@
         onShowModal({ type: 'gather', data: gatherData });
         break;
         
-      case 'demobilize':
-        onShowModal({ type: 'demobilize', data: tileData });
+      case 'demobilise':
+        onShowModal({ type: 'demobilise', data: tileData });
         break;
         
       case 'joinBattle':
@@ -519,8 +519,8 @@
                 {/if}
                 
                 {#if canMobilize($highlightedStore)}
-                  <button class="action-button" onclick={() => executeAction('mobilize')}>
-                    Mobilize
+                  <button class="action-button" onclick={() => executeAction('mobilise')}>
+                    Mobilise
                   </button>
                 {/if}
                 
@@ -543,8 +543,8 @@
                 {/if}
                 
                 {#if canDemobilize($highlightedStore)}
-                  <button class="action-button" onclick={() => executeAction('demobilize')}>
-                    Demobilize
+                  <button class="action-button" onclick={() => executeAction('demobilise')}>
+                    Demobilise
                   </button>
                 {/if}
               </div>
