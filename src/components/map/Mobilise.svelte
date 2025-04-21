@@ -117,7 +117,7 @@
         race: $currentPlayer?.race
       });
       
-      const mobilizeFn = httpsCallable(getFunctions(), 'mobilizeUnits');
+      const mobilizeFn = httpsCallable(getFunctions(), 'mobiliseUnits');
       
       const result = await mobilizeFn({
         worldId: $game.currentWorld,

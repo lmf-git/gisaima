@@ -10,7 +10,7 @@ initializeApp();
 // Export all functions
 
 // Action functions
-export { mobilizeUnits } from './actions/mobilise.mjs';
+export { mobiliseUnits } from './actions/mobilise.mjs';
 export { demobiliseUnits } from './actions/demobilise.mjs';
 export { moveGroup } from './actions/move.mjs';
 export { attackGroups } from './actions/attackGroups.mjs';

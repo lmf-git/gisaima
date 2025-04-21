@@ -145,7 +145,7 @@ function getChunkKey(x, y) {
   return `${chunkX},${chunkY}`;
 }
 
-export const mobilizeUnits = onCall({ maxInstances: 10 }, async (request) => {
+export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
   // Check authentication context provided by onCall
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
@@ -193,7 +193,7 @@ export const mobilizeUnits = onCall({ maxInstances: 10 }, async (request) => {
     
     // If still not found, do extra debugging before throwing error
     if (!playerFoundOnTile) {
-      console.warn(`mobilizeUnits: Player ${uid} not found on tile at ${tileKey} in chunk ${chunkKey}`);
+      console.warn(`mobiliseUnits: Player ${uid} not found on tile at ${tileKey} in chunk ${chunkKey}`);
       console.info(`Players data:`, JSON.stringify(tileData.players || {}));
       
       console.log(`Full path checked: worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);

@@ -18,7 +18,7 @@ import { logger } from "firebase-functions";
  * @param {Object} context Auth context
  * @returns {Object} Result of the action
  */
-export async function gather(data, context) {
+export async function startGathering(data, context) {
   // Validate authentication
   if (!context.auth) {
     throw new Error('Unauthorized');
@@ -102,5 +102,3 @@ function getNextTickTime() {
   const TICK_INTERVAL = 10 * 60 * 1000; // 10 minutes in milliseconds
   return now + (TICK_INTERVAL - (now % TICK_INTERVAL));
 }
-
-export default gather;
