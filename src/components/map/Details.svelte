@@ -8,7 +8,14 @@
   import Close from '../icons/Close.svelte';
   import Torch from '../icons/Torch.svelte';
   import Structure from '../icons/Structure.svelte';
-  
+
+  // Import race icon components
+  import Human from '../icons/Human.svelte';
+  import Elf from '../icons/Elf.svelte';
+  import Dwarf from '../icons/Dwarf.svelte';
+  import Goblin from '../icons/Goblin.svelte';
+  import Fairy from '../icons/Fairy.svelte';
+
   // Props
   const { onClose = () => {}, onShowModal = null } = $props();
 
@@ -638,6 +645,21 @@
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
               {#each sortedGroups as group}
                 <div class="entity group {isOwnedByCurrentPlayer(group) ? 'player-owned' : ''}">
+                  <div class="entity-icon">
+                    {#if group.race}
+                      {#if group.race.toLowerCase() === 'human'}
+                        <Human extraClass="race-icon-details" />
+                      {:else if group.race.toLowerCase() === 'elf'}
+                        <Elf extraClass="race-icon-details" />
+                      {:else if group.race.toLowerCase() === 'dwarf'}
+                        <Dwarf extraClass="race-icon-details" />
+                      {:else if group.race.toLowerCase() === 'goblin'}
+                        <Goblin extraClass="race-icon-details" />
+                      {:else if group.race.toLowerCase() === 'fairy'}
+                        <Fairy extraClass="race-icon-details" />
+                      {/if}
+                    {/if}
+                  </div>
                   <div class="entity-info">
                     <div class="entity-name">
                       {formatEntityName(group)}
@@ -742,6 +764,21 @@
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
               {#each sortedPlayers as player}
                 <div class="entity player {player.id === $currentPlayer?.uid ? 'current' : ''} {isOwnedByCurrentPlayer(player) ? 'player-owned' : ''}">
+                  <div class="entity-icon">
+                    {#if player.race}
+                      {#if player.race.toLowerCase() === 'human'}
+                        <Human extraClass="race-icon-details" />
+                      {:else if player.race.toLowerCase() === 'elf'}
+                        <Elf extraClass="race-icon-details" />
+                      {:else if player.race.toLowerCase() === 'dwarf'}
+                        <Dwarf extraClass="race-icon-details" />
+                      {:else if player.race.toLowerCase() === 'goblin'}
+                        <Goblin extraClass="race-icon-details" />
+                      {:else if player.race.toLowerCase() === 'fairy'}
+                        <Fairy extraClass="race-icon-details" />
+                      {/if}
+                    {/if}
+                  </div>
                   <div class="entity-info">
                     <div class="entity-name">
                       {player.displayName || 'Player'}
@@ -1579,12 +1616,16 @@
   }
   
   :global(.structure-type-icon) {
-    opacity: 0.8;
-    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+    opacity: 0.9;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
+  }
+  
+  :global(.entity-race-icon path) {
+    fill: rgba(0, 0, 0, 0.7);
   }
   
   :global(.spawn-icon) {
-    filter: drop-shadow(0 0 2px rgba(0, 255, 255, 0.6));
+    filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.7));
   }
   
   :global(.fortress-icon) {
@@ -1715,5 +1756,37 @@
   /* Remove the old section-count style that we're replacing */
   .section-count {
     display: none;
+  }
+  
+  .entity-race-icon {
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+    flex-shrink: 0;
+  }
+
+  .entity-icon {
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Add global styles for race icons in details view */
+  :global(.race-icon-details) {
+    width: 1.4em;
+    height: 1.4em;
+    opacity: 0.85;
+    fill: rgba(0, 0, 0, 0.7);
+  }
+  
+  /* Race-specific styling */
+  :global(.race-icon-details.fairy-icon path) {
+    fill: rgba(138, 43, 226, 0.8); /* Brighter purple for fairy */
+  }
+  
+  :global(.race-icon-details.goblin-icon path) {
+    fill: rgba(0, 128, 0, 0.8); /* Brighter green for goblin */
   }
 </style>

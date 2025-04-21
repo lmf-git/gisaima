@@ -720,9 +720,9 @@
                 >
                   <div class="entity-structure-icon">
                     {#if structure.type === 'spawn'}
-                      <Torch size="1.4em" extraClass="structure-type-icon" />
+                      <Torch size="1.4em" extraClass="overview-structure-icon overview-spawn-icon" />
                     {:else}
-                      <Structure size="1.4em" extraClass="structure-type-icon {structure.type}-icon" />
+                      <Structure size="1.4em" extraClass={`overview-structure-icon ${structure.type}-icon`} />
                     {/if}
                   </div>
                   <div class="entity-info">
@@ -852,17 +852,19 @@
                   tabindex="0"
                   aria-label="Navigate to player {entity.displayName || 'Player'} at {entity.x},{entity.y}"
                 >
-                  <div class="entity-race-icon">
-                    {#if entity.race?.toLowerCase() === 'human'}
-                      <Human extraClass="race-icon-entity" />
-                    {:else if entity.race?.toLowerCase() === 'elf'}
-                      <Elf extraClass="race-icon-entity" />
-                    {:else if entity.race?.toLowerCase() === 'dwarf'}
-                      <Dwarf extraClass="race-icon-entity" />
-                    {:else if entity.race?.toLowerCase() === 'goblin'}
-                      <Goblin extraClass="race-icon-entity" />
-                    {:else if entity.race?.toLowerCase() === 'fairy'}
-                      <Fairy extraClass="race-icon-entity" />
+                  <div class="entity-icon">
+                    {#if entity.race}
+                      {#if entity.race.toLowerCase() === 'human'}
+                        <Human extraClass="race-icon-overview" />
+                      {:else if entity.race.toLowerCase() === 'elf'}
+                        <Elf extraClass="race-icon-overview" />
+                      {:else if entity.race.toLowerCase() === 'dwarf'}
+                        <Dwarf extraClass="race-icon-overview" />
+                      {:else if entity.race.toLowerCase() === 'goblin'}
+                        <Goblin extraClass="race-icon-overview" />
+                      {:else if entity.race.toLowerCase() === 'fairy'}
+                        <Fairy extraClass="race-icon-overview" />
+                      {/if}
                     {/if}
                   </div>
                   <div class="entity-info">
@@ -992,17 +994,19 @@
                   role="button"
                   aria-label="View group {group.name}"
                 >
-                  <div class="entity-race-icon">
-                    {#if group.race === 'human'}
-                      <Human class="race-icon-entity" />
-                    {:else if group.race === 'elf'}
-                      <Elf class="race-icon-entity" />
-                    {:else if group.race === 'dwarf'}
-                      <Dwarf class="race-icon-entity" />
-                    {:else if group.race === 'goblin'}
-                      <Goblin class="race-icon-entity" />
-                    {:else if group.race === 'fairy'}
-                      <Fairy class="race-icon-entity" />
+                  <div class="entity-icon">
+                    {#if group.race}
+                      {#if group.race.toLowerCase() === 'human'}
+                        <Human extraClass="race-icon-overview" />
+                      {:else if group.race.toLowerCase() === 'elf'}
+                        <Elf extraClass="race-icon-overview" />
+                      {:else if group.race.toLowerCase() === 'dwarf'}
+                        <Dwarf extraClass="race-icon-overview" />
+                      {:else if group.race.toLowerCase() === 'goblin'}
+                        <Goblin extraClass="race-icon-overview" />
+                      {:else if group.race.toLowerCase() === 'fairy'}
+                        <Fairy extraClass="race-icon-overview" />
+                      {/if}
                     {/if}
                   </div>
                   
@@ -1681,9 +1685,13 @@
     border-color: rgba(66, 133, 244, 0.3);
   }
 
-  .entity-race-icon {
+  .entity-icon {
     margin-right: 0.7em;
     margin-top: 0.1em;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .entity-info {
@@ -2062,5 +2070,31 @@
     background-color: rgba(76, 175, 80, 0.2);
     color: #2e7d32;
     border: 1px solid rgba(76, 175, 80, 0.4);
+  }
+
+  :global(.overview-structure-icon) {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
+  }
+  
+  :global(.overview-spawn-icon) {
+    filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.8)) !important;
+    opacity: 1 !important;
+  }
+  
+  :global(.race-icon-overview) {
+    width: 1.4em;
+    height: 1.4em;
+    opacity: 0.85;
+    fill: rgba(0, 0, 0, 0.7);
+  }
+  
+  /* Specific race icon overrides for better contrast */
+  :global(.race-icon-overview.fairy-icon path) {
+    fill: rgba(138, 43, 226, 0.8); /* Brighter purple for fairy */
+  }
+  
+  :global(.race-icon-overview.goblin-icon path) {
+    fill: rgba(0, 128, 0, 0.8); /* Brighter green for goblin */
   }
 </style>
