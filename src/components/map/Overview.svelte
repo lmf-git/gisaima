@@ -1,5 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
+  import { slide } from 'svelte/transition'; // Add this import to fix the transition error
   import { entities, targetStore, coordinates, moveTarget, setHighlighted } from '../../lib/stores/map';
   import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
   
@@ -56,7 +57,13 @@
   });
   
   // Function to toggle section collapse state
-  function toggleSection(sectionId) {
+  function toggleSection(sectionId, event) {
+    // Prevent event from bubbling if provided
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    // Toggle the collapsed state
     collapsedSections[sectionId] = !collapsedSections[sectionId];
   }
 
@@ -304,10 +311,11 @@
   // Always show filter tabs if there are any entities, not just multiple types
   const showFilterTabs = $derived(nonEmptyFilters.length > 0);
   
-  // Auto-select filter if there's only one type with content
+  // Auto-select filter if there's only one type with content and expand that section
   $effect(() => {
     if (nonEmptyFilters.length === 1) {
       setFilter(nonEmptyFilters[0]);
+      collapsedSections[nonEmptyFilters[0]] = false; // Ensure section is expanded
     } else if (nonEmptyFilters.length > 0 && !nonEmptyFilters.includes(activeFilter) && activeFilter !== 'all') {
       setFilter('all');
     }
@@ -598,11 +606,11 @@
           {#if activeFilter === 'all'}
             <div 
               class="section-header"
-              onclick={() => toggleSection('structures')}
+              onclick={(e) => toggleSection('structures', e)}
               role="button"
               tabindex="0"
               aria-expanded={!collapsedSections.structures}
-              onkeydown={(e) => e.key === 'Enter' && toggleSection('structures')}
+              onkeydown={(e) => e.key === 'Enter' && toggleSection('structures', e)}
             >
               <div class="section-title">
                 Structures <span class="section-count filter-count filter-count-structures">{allStructures.length}</span>
@@ -734,11 +742,11 @@
           {#if activeFilter === 'all'}
             <div 
               class="section-header"
-              onclick={() => toggleSection('players')}
+              onclick={(e) => toggleSection('players', e)}
               role="button"
               tabindex="0"
               aria-expanded={!collapsedSections.players}
-              onkeydown={(e) => e.key === 'Enter' && toggleSection('players')}
+              onkeydown={(e) => e.key === 'Enter' && toggleSection('players', e)}
             >
               <div class="section-title">
                 Players <span class="section-count filter-count filter-count-players">{allPlayers.length}</span>
@@ -872,11 +880,11 @@
           {#if activeFilter === 'all'}
             <div 
               class="section-header"
-              onclick={() => toggleSection('groups')}
+              onclick={(e) => toggleSection('groups', e)}
               role="button"
               tabindex="0"
               aria-expanded={!collapsedSections.groups}
-              onkeydown={(e) => e.key === 'Enter' && toggleSection('groups')}
+              onkeydown={(e) => e.key === 'Enter' && toggleSection('groups', e)}
             >
               <div class="section-title">
                 Groups <span class="section-count filter-count filter-count-groups">{allGroups.length}</span>
@@ -1046,11 +1054,11 @@
           {#if activeFilter === 'all'}
             <div 
               class="section-header"
-              onclick={() => toggleSection('items')}
+              onclick={(e) => toggleSection('items', e)}
               role="button"
               tabindex="0"
               aria-expanded={!collapsedSections.items}
-              onkeydown={(e) => e.key === 'Enter' && toggleSection('items')}
+              onkeydown={(e) => e.key === 'Enter' && toggleSection('items', e)}
             >
               <div class="section-title">
                 Items <span class="section-count filter-count filter-count-items">{allItems.length}</span>
@@ -1179,11 +1187,11 @@
           {#if activeFilter === 'all'}
             <div 
               class="section-header"
-              onclick={() => toggleSection('battles')}
+              onclick={(e) => toggleSection('battles', e)}
               role="button"
               tabindex="0"
               aria-expanded={!collapsedSections.battles}
-              onkeydown={(e) => e.key === 'Enter' && toggleSection('battles')}
+              onkeydown={(e) => e.key === 'Enter' && toggleSection('battles', e)}
             >
               <div class="section-title">
                 Battles <span class="section-count filter-count filter-count-battles">{allBattles.length}</span>
@@ -1874,6 +1882,7 @@
     width: 100%;
     background-color: rgba(0, 0, 0, 0.03);
     border-radius: 0.3em 0.3em 0 0;
+    transition: background-color 0.2s ease;
   }
   
   .section-header:hover {
@@ -1896,11 +1905,9 @@
   /* Update tab sort controls for better alignment */
   .tab-sort-controls {
     display: flex;
-    justify-content: flex-end;
-    padding: 0.5em 1em;
-    background-color: rgba(0, 0, 0, 0.03);
-    border-radius: 0.3em 0.3em 0 0;
-    margin-bottom: 0;
+    justify-content: center; /* Change from flex-end to center */
+    margin-bottom: 0.5em;
+    padding: 0.3em 0;
   }
 
   .collapse-button {
