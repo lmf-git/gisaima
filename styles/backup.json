@@ -1626,74 +1626,14 @@
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",
-        "speed": 1,
-        "spawns": {
-          "-1:0:-4:6": {
-            "id": "structure_al_elf_spawn",
-            "name": "Ancient Arborium",
-            "description": "An elven city built around the oldest living trees in the realm",
-            "faction": "elf",
-            "type": "spawn",
-            "position": {
-              "x": -4,
-              "y": 6,
-              "chunkX": -1,
-              "chunkY": 0
-            }
-          },
-          "0:-1:15:-3": {
-            "id": "structure_al_goblin_spawn",
-            "name": "Boneridge Camp",
-            "description": "A resourceful goblin settlement built from the remains of ancient beasts",
-            "faction": "goblin",
-            "type": "spawn",
-            "position": {
-              "x": 15,
-              "y": -3,
-              "chunkX": 0,
-              "chunkY": -1
-            }
-          },
-          "0:0:10:8": {
-            "id": "structure_al_fairy_spawn",
-            "name": "Whisperwind Circle",
-            "description": "A fairy settlement where the ancient spirits still speak",
-            "faction": "fairy",
-            "type": "spawn",
-            "position": {
-              "x": 10,
-              "y": 8,
-              "chunkX": 0,
-              "chunkY": 0
-            }
-          },
-          "0:0:12:4": {
-            "id": "structure_al_dwarf_spawn",
-            "name": "Deepforge Stronghold",
-            "description": "The ancestral mountain home of the dwarf clans",
-            "faction": "dwarf",
-            "type": "spawn",
-            "position": {
-              "x": 12,
-              "y": 4,
-              "chunkX": 0,
-              "chunkY": 0
-            }
-          },
-          "0:0:5:5": {
-            "id": "structure_al_human_spawn",
-            "name": "Stoneguard Citadel",
-            "description": "A rugged frontier settlement where hardy humans carve out a living",
-            "faction": "human",
-            "type": "spawn",
-            "position": {
-              "x": 5,
-              "y": 5,
-              "chunkX": 0,
-              "chunkY": 0
-            }
-          }
-        }
+        "speed": 1
+      },
+      "spawns": {
+        "-1:0:-4:6": "structure_al_elf_spawn",
+        "0:-1:15:-3": "structure_al_goblin_spawn",
+        "0:0:10:8": "structure_al_fairy_spawn",
+        "0:0:12:4": "structure_al_dwarf_spawn",
+        "0:0:5:5": "structure_al_human_spawn"
       }
     }
   }
