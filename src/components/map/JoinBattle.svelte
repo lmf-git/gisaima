@@ -499,7 +499,7 @@
     gap: 1em;
   }
 
-  .cancel-btn, .join-btn, .close-action {
+  .cancel-btn, .join-btn {
     padding: 0.7em 1.2em;
     border-radius: 0.3em;
     cursor: pointer;
