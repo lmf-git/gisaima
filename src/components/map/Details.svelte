@@ -66,6 +66,16 @@
     const option = sortOptions[section];
     
     return [...entities].sort((a, b) => {
+      // First check if either entity is owned by the current player
+      const aOwned = isOwnedByCurrentPlayer(a);
+      const bOwned = isOwnedByCurrentPlayer(b);
+      
+      // If ownership differs, prioritize owned entities
+      if (aOwned !== bOwned) {
+        return aOwned ? -1 : 1;
+      }
+      
+      // Regular sorting logic for entities with the same ownership status
       let valueA, valueB;
       
       switch(option.by) {
