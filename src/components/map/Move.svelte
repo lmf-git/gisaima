@@ -79,120 +79,86 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<div class="modal-container" class:ready={isReady}>
-  <div class="move-modal" key={renderKey}>
-    <header class="modal-header">
-      <h3>Move Group</h3>
-      <button class="close-button" onclick={onClose}>
-        <Close size="1.6em" extraClass="close-icon-dark" />
-      </button>
-    </header>
+<div class="move-modal" transition:scale={{ start: 0.95, duration: 200 }}>
+  <header class="modal-header">
+    <h3>Move Group</h3>
+    <button class="close-button" onclick={onClose}>
+      <Close size="1.6em" extraClass="close-icon-dark" />
+    </button>
+  </header>
 
-    <div class="modal-body">
-      {#if eligibleGroups.length === 0}
-        <div class="message error">
-          You don't have any idle groups on this tile that can move.
+  <div class="modal-body">
+    {#if eligibleGroups.length === 0}
+      <div class="message error">
+        You don't have any idle groups on this tile that can move.
+      </div>
+    {:else}
+      <div class="section">
+        <h4>Select Group to Move</h4>
+        <div class="groups-list">
+          {#each eligibleGroups as group}
+            <label class="group-option {selectedGroupId === group.id ? 'selected' : ''}">
+              <input 
+                type="radio" 
+                name="groupSelect" 
+                value={group.id} 
+                bind:group={selectedGroupId} 
+              />
+              <div class="group-details">
+                <div class="group-name">{group.name || `Group ${group.id.substring(0, 5)}`}</div>
+                <div class="group-units">{group.unitCount || 1} units</div>
+              </div>
+            </label>
+          {/each}
         </div>
-      {:else}
-        <div class="section">
-          <h4>Select Group to Move</h4>
-          <div class="groups-list">
-            {#each eligibleGroups as group}
-              <label class="group-option {selectedGroupId === group.id ? 'selected' : ''}">
-                <input 
-                  type="radio" 
-                  name="groupSelect" 
-                  value={group.id} 
-                  bind:group={selectedGroupId} 
-                />
-                <div class="group-details">
-                  <div class="group-name">{group.name || `Group ${group.id.substring(0, 5)}`}</div>
-                  <div class="group-units">{group.unitCount || 1} units</div>
-                </div>
-              </label>
-            {/each}
-          </div>
-        </div>
+      </div>
 
-        {#if error}
-          <div class="message error">{error}</div>
-        {/if}
-
-        <div class="info-box">
-          <p>Select a group to move and draw a path on the map.</p>
-        </div>
+      {#if error}
+        <div class="message error">{error}</div>
       {/if}
-    </div>
 
-    <footer class="modal-footer">
-      <button 
-        class="cancel-button" 
-        onclick={onClose}
-        disabled={isSubmitting}
-      >
-        Cancel
-      </button>
-      
-      <button 
-        class="action-button" 
-        onclick={startPathDrawing}
-        disabled={!selectedGroupId || isSubmitting}
-      >
-        Draw Path
-      </button>
-    </footer>
+      <div class="info-box">
+        <p>Select a group to move and draw a path on the map.</p>
+      </div>
+    {/if}
   </div>
+
+  <footer class="modal-footer">
+    <button 
+      class="cancel-button" 
+      onclick={onClose}
+      disabled={isSubmitting}
+    >
+      Cancel
+    </button>
+    
+    <button 
+      class="action-button" 
+      onclick={startPathDrawing}
+      disabled={!selectedGroupId || isSubmitting}
+    >
+      Draw Path
+    </button>
+  </footer>
 </div>
 
 <style>
-  .modal-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s ease-out;
-  }
-  
-  .modal-container.ready {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
   .move-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 90%;
     max-width: 30em;
     max-height: 85vh;
-    background-color: rgba(255, 255, 255, 0.85);
-    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    background: white;
     border-radius: 0.5em;
-    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    font-family: var(--font-body);
+    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    z-index: 1010;
-    transform: scale(0.95);
-    opacity: 0;
-    animation: modalAppear 0.3s ease-out forwards;
-  }
-  
-  @keyframes modalAppear {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
+    z-index: 1000;
+    font-family: var(--font-body);
   }
 
   .modal-header {
@@ -200,8 +166,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
     font-family: var(--font-heading);
   }
 
@@ -209,7 +175,7 @@
     margin: 0;
     font-size: 1.2em;
     font-weight: 600;
-    color: rgba(0, 0, 0, 0.8);
+    color: #333;
   }
 
   .close-button {
@@ -246,7 +212,7 @@
     margin: 0 0 0.5em 0;
     font-size: 1em;
     font-weight: 600;
-    color: rgba(0, 0, 0, 0.7);
+    color: rgba(0, 0, 0, 0.8);  /* Improved contrast from rgba(0, 0, 0, 0.7) */
   }
 
   .groups-list {
@@ -287,11 +253,12 @@
 
   .group-name {
     font-weight: 500;
+    color: rgba(0, 0, 0, 0.85);  /* Improved contrast */
   }
 
   .group-units {
     font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.7);
+    color: rgba(0, 0, 0, 0.75);  /* Improved contrast from rgba(0, 0, 0, 0.7) */
   }
 
   .info-box {
@@ -299,7 +266,7 @@
     background-color: rgba(0, 0, 0, 0.05);
     border-radius: 0.3em;
     font-size: 0.9em;
-    color: rgba(0, 0, 0, 0.7);
+    color: rgba(0, 0, 0, 0.8);  /* Improved contrast from rgba(0, 0, 0, 0.7) */
     text-align: center;
   }
 
@@ -308,6 +275,7 @@
     border-radius: 0.3em;
     font-size: 0.9em;
     text-align: center;
+    color: rgba(0, 0, 0, 0.85);  /* Added explicit color with good contrast */
   }
 
   .message.error {
@@ -321,8 +289,8 @@
     justify-content: space-between;
     gap: 1em;
     padding: 0.8em 1em;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: #f5f5f5;
+    border-top: 1px solid #e0e0e0;
   }
 
   .cancel-button, .action-button {
@@ -331,7 +299,6 @@
     font-size: 1em;
     font-weight: 500;
     cursor: pointer;
-    border: none;
     transition: all 0.2s;
   }
 
@@ -346,13 +313,14 @@
   }
 
   .action-button {
-    background-color: rgba(66, 133, 244, 0.8);
+    background-color: #4285f4;
     color: white;
+    border: none;
     flex-grow: 1;
   }
 
   .action-button:hover:not(:disabled) {
-    background-color: rgba(66, 133, 244, 0.9);
+    background-color: #3367d6;
     transform: translateY(-1px);
   }
 

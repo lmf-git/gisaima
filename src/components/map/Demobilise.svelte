@@ -222,34 +222,39 @@
     background: white;
     border-radius: 0.5em;
     box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
     overflow: hidden;
     z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-body);
   }
 
   .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1em;
-    border-bottom: 1px solid #eee;
+    padding: 0.8em 1em;
+    background: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
   }
 
   h2 {
     margin: 0;
-    font-size: 1.5em;
+    font-size: 1.3em;
     font-weight: 600;
+    color: #333;
     font-family: var(--font-heading);
   }
 
   .content {
     padding: 1em;
+    overflow-y: auto;
+    max-height: calc(90vh - 4em);
   }
 
   .description {
     margin-bottom: 1.5em;
-    color: #555;
+    color: rgba(0, 0, 0, 0.8);
   }
 
   .group-selection {
@@ -260,6 +265,7 @@
     font-size: 1.1em;
     margin: 0 0 0.8em 0;
     font-family: var(--font-heading);
+    color: rgba(0, 0, 0, 0.8);
   }
 
   .groups-list {
@@ -304,11 +310,12 @@
   .group-name {
     font-weight: 500;
     margin-bottom: 0.2em;
+    color: rgba(0, 0, 0, 0.85);
   }
 
   .group-units {
     font-size: 0.8em;
-    color: #666;
+    color: rgba(0, 0, 0, 0.75);
   }
 
   .structure-info {
@@ -321,11 +328,12 @@
   .structure-name {
     font-weight: 500;
     margin-bottom: 0.2em;
+    color: rgba(0, 0, 0, 0.85);
   }
 
   .coordinates {
     font-size: 0.9em;
-    color: #555;
+    color: rgba(0, 0, 0, 0.75);
     font-family: var(--font-mono, monospace);
   }
 
@@ -364,11 +372,12 @@
   .radio-text {
     font-weight: 500;
     margin-bottom: 0.3em;
+    color: rgba(0, 0, 0, 0.85);
   }
 
   .radio-description {
     font-size: 0.8em;
-    color: #666;
+    color: rgba(0, 0, 0, 0.75);
   }
 
   .radio-label input:checked + .radio-text {
@@ -409,19 +418,17 @@
   }
 
   .close-btn {
-    background: transparent;
+    background: none;
     border: none;
     cursor: pointer;
-    padding: 0.5em;
-    color: #666;
+    padding: 0.3em;
     display: flex;
-    align-items: center;
-    justify-content: center;
     border-radius: 50%;
+    transition: background-color 0.2s;
   }
 
   .close-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background-color: rgba(0, 0, 0, 0.1);
   }
 
   .close-btn-secondary {
@@ -444,32 +451,33 @@
     border-radius: 0.3em;
     cursor: pointer;
     font-family: inherit;
-    font-size: inherit;
+    font-size: 1em;
     transition: all 0.2s;
   }
 
   .cancel-btn {
-    background: #f5f5f5;
-    border: 1px solid #ddd;
-  }
-
-  .demobilise-btn {
-    background: #2196f3;
-    border: 1px solid #1e88e5;
-    color: white;
+    background-color: #f1f3f4;
+    color: #3c4043;
+    border: 1px solid #dadce0;
   }
 
   .cancel-btn:hover:not(:disabled) {
-    background: #eee;
+    background-color: #e8eaed;
+  }
+
+  .demobilise-btn {
+    background-color: #4285f4;
+    color: white;
+    border: none;
   }
 
   .demobilise-btn:hover:not(:disabled) {
-    background: #1e88e5;
+    background-color: #3367d6;
   }
 
   .cancel-btn:disabled,
   .demobilise-btn:disabled {
-    opacity: 0.6;
+    opacity: 0.7;
     cursor: not-allowed;
   }
 
@@ -481,11 +489,12 @@
 
   .empty-state p {
     margin-bottom: 1em;
+    color: rgba(0, 0, 0, 0.8);
   }
 
   .no-tile {
     padding: 2em 1em;
     text-align: center;
-    color: #777;
+    color: rgba(0, 0, 0, 0.8);
   }
 </style>
