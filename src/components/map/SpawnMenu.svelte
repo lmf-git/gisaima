@@ -1,10 +1,10 @@
 <script>
   import { ref, get as dbGet, update } from 'firebase/database';
   import { db } from '../../lib/firebase/database.js';
-  import { game, currentPlayer } from '../../lib/stores/game.js';
+  import { game, currentPlayer, needsSpawn } from '../../lib/stores/game.js';
   import { moveTarget } from '../../lib/stores/map.js';
 
-  // Using the Svelte 5 $props rune
+  // Using Svelte 5 $props rune
   const { onSpawn = () => {} } = $props();
 
   // Component state using $state rune
@@ -14,15 +14,14 @@
   let spawning = $state(false);
   let error = $state(null);
   let movedToSpawn = $state(false);
+  let unmounting = $state(false); // Add the missing unmounting state variable
 
   // Function to consistently calculate chunk key
   function getChunkKey(x, y) {
     const CHUNK_SIZE = 20;
-    const chunkX = Math.floor(x / CHUNK_SIZE);
-    const chunkY = Math.floor(y / CHUNK_SIZE);
-    return `${chunkX},${chunkY}`;
+    return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
   }
-  
+
   // Parse spawn location string (format: "chunkX:chunkY:tileX:tileY")
   function parseSpawnLocation(locationStr) {
     const parts = locationStr.split(':').map(Number);
@@ -36,7 +35,7 @@
     };
   }
   
-  // Move map to the selected spawn location
+  // Move map to selected spawn location
   function moveToSelectedSpawn() {
     if (!selectedSpawnId) return;
     
@@ -47,9 +46,70 @@
     moveTarget(spawn.x, spawn.y);
     movedToSpawn = true;
   }
+
+  // Get spawn points directly from the game store if possible
+  async function getSpawnPoints() {
+    if (!$game.currentWorld) {
+      error = "No world selected";
+      return [];
+    }
+
+    // Check if spawn information exists in the game store
+    const worldInfo = $game.worldInfo[$game.currentWorld];
+    if (!worldInfo) {
+      error = "World info not available";
+      return [];
+    }
+
+    // Get the spawns data from world info
+    const spawns = worldInfo.spawns || {};
+    if (Object.keys(spawns).length === 0) {
+      console.log("No spawns found in world info, using fallback method");
+      // Use fallback method if spawns aren't in the game store
+      return await loadSpawnPointsFromDatabase();
+    }
+
+    try {
+      const spawnPoints = [];
+      
+      // Process spawns from the game store
+      for (const [locationKey, structureId] of Object.entries(spawns)) {
+        const location = parseSpawnLocation(locationKey);
+        if (!location) continue;
+        
+        // We still need to get the structure details from the database
+        // as these might not be in the game store
+        const chunkKey = `${location.chunkX},${location.chunkY}`;
+        const structureRef = ref(db, `worlds/${$game.currentWorld}/chunks/${chunkKey}/${location.x},${location.y}/structure`);
+        const structureSnapshot = await dbGet(structureRef);
+        
+        if (structureSnapshot.exists()) {
+          const structure = structureSnapshot.val();
+          
+          if (structure.type === 'spawn') {
+            spawnPoints.push({
+              id: structure.id,
+              name: structure.name,
+              description: structure.description,
+              faction: structure.faction,
+              x: location.x,
+              y: location.y,
+              locationKey
+            });
+          }
+        }
+      }
+      
+      return spawnPoints;
+    } catch (err) {
+      console.error("Error processing spawn points:", err);
+      error = "Failed to load spawn points";
+      return [];
+    }
+  }
   
-  // Load spawn points from the database and filter by race
-  async function loadSpawnPoints() {
+  // Fallback method to load spawn points directly from database
+  async function loadSpawnPointsFromDatabase() {
     if (!$game.currentWorld) {
       error = "No world selected";
       return [];
@@ -64,10 +124,12 @@
       if (spawnListSnapshot.exists()) {
         const spawns = spawnListSnapshot.val();
         
+        // Process each spawn location
         for (const [locationKey, structureId] of Object.entries(spawns)) {
           const location = parseSpawnLocation(locationKey);
           if (!location) continue;
           
+          // Look up the structure in the database
           const chunkKey = `${location.chunkX},${location.chunkY}`;
           const structureRef = ref(db, `worlds/${$game.currentWorld}/chunks/${chunkKey}/${location.x},${location.y}/structure`);
           const structureSnapshot = await dbGet(structureRef);
@@ -92,7 +154,7 @@
       
       return spawnPoints;
     } catch (err) {
-      console.error("Error loading spawn points:", err);
+      console.error("Error loading spawn points from database:", err);
       error = "Failed to load spawn points";
       return [];
     }
@@ -120,17 +182,22 @@
       spawning = true;
       error = null;
       
+      // Find the selected spawn point
       const spawn = spawnPoints.find(s => s.id === selectedSpawnId);
       if (!spawn) {
         throw new Error("Selected spawn point not found");
       }
       
+      // Move to spawn location first if needed
       if (!movedToSpawn) {
-        console.log(`Ensuring map is positioned at spawn location: ${spawn.x}, ${spawn.y}`);
+        console.log(`Moving map to spawn location before spawning: ${spawn.x}, ${spawn.y}`);
         moveTarget(spawn.x, spawn.y);
+        movedToSpawn = true;
+        // Give a moment for the map to update
         await new Promise(resolve => setTimeout(resolve, 50));
       }
       
+      // Update player status in the database
       const playerRef = ref(db, `players/${$currentPlayer.uid}/worlds/${$game.currentWorld}`);
       
       await update(playerRef, {
@@ -142,6 +209,7 @@
         }
       });
       
+      // Add player to the chunk in the world database
       const chunkKey = getChunkKey(spawn.x, spawn.y);
       const tileKey = `${spawn.x},${spawn.y}`;
       const worldPlayerRef = ref(db, `worlds/${$game.currentWorld}/chunks/${chunkKey}/${tileKey}/players/${$currentPlayer.uid}`);
@@ -152,27 +220,11 @@
         race: $currentPlayer.race,
         lastActive: Date.now()
       });
-
-      game.update(state => {
-        if (state.playerWorldData) {
-          return {
-            ...state,
-            playerWorldData: {
-              ...state.playerWorldData,
-              alive: true,
-              lastLocation: {
-                x: spawn.x,
-                y: spawn.y,
-                timestamp: Date.now()
-              }
-            }
-          };
-        }
-        return state;
-      });
       
-      onSpawn({ x: spawn.x, y: spawn.y });
+      // Set flag to handle unmounting gracefully
+      unmounting = true;
       
+      // Return success - component will auto-close via effect
       return true;
     } catch (err) {
       console.error("Error spawning player:", err);
@@ -183,13 +235,14 @@
     }
   }
   
-  // Initialize loading of spawn points - simplified without redundant guards
+  // Initialize loading of spawn points
   $effect(async () => {
     loading = true;
     error = null;
     
     try {
-      spawnPoints = await loadSpawnPoints();
+      // Use getSpawnPoints which tries game store first, then falls back to direct database query
+      spawnPoints = await getSpawnPoints();
       
       // Select the first matching spawn point by default
       const filteredSpawns = getFilteredSpawns(spawnPoints);
@@ -210,17 +263,14 @@
     }
   });
   
-  // Using $derived for reactive calculations instead of $:
+  // Using $derived for reactive calculations
   const filteredSpawnPoints = $derived(getFilteredSpawns(spawnPoints));
   const selectedSpawn = $derived(spawnPoints.find(spawn => spawn.id === selectedSpawnId));
   
   // Auto-move to spawn location when there's only one option
   $effect(() => {
     if (filteredSpawnPoints.length === 1 && !movedToSpawn && !loading) {
-      console.log('Single spawn option detected, auto-focusing map');
-      // Auto-select the only spawn point
       selectedSpawnId = filteredSpawnPoints[0].id;
-      // Move map to that location immediately
       moveToSelectedSpawn();
     }
   });
@@ -233,6 +283,7 @@
   });
 </script>
 
+{#if !unmounting && $needsSpawn}
 <div class="spawn-overlay">
   <div class="spawn-container">
     <h2>Choose Your Starting Location</h2>
@@ -297,6 +348,7 @@
     {/if}
   </div>
 </div>
+{/if}
 
 <style>
   .spawn-overlay {
