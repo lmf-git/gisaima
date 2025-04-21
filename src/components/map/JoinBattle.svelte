@@ -195,29 +195,31 @@
   }
 </script>
 
-<div class="overlay" transition:fade={{ duration: 150 }}>
-  <div class="popup" transition:scale={{ start: 0.95, duration: 200 }}>
-    <div class="header">
-      <h2>Join Battle - {tileData?.x}, {tileData?.y}</h2>
-      <button class="close-btn" onclick={onClose} aria-label="Close dialog">
-        <Close size="1.5em" />
+<svelte:window onkeydown={handleKeyDown} />
+
+<div class="modal-container">
+  <div class="join-battle-modal" transition:scale={{ start: 0.95, duration: 200 }}>
+    <header class="modal-header">
+      <h3>Join Battle - {tileData?.x}, {tileData?.y}</h3>
+      <button class="close-button" onclick={onClose} aria-label="Close dialog">
+        <Close size="1.6em" extraClass="close-icon-dark" />
       </button>
-    </div>
+    </header>
     
-    <div class="content">
+    <div class="modal-body">
       {#if availableGroups.length === 0 || activeBattles.length === 0}
-        <div class="no-battle">
+        <div class="message error">
           <p>No battles available to join at this location, or you don't have any groups that can join.</p>
-          <button class="close-action" onclick={onClose}>Close</button>
+          <button class="cancel-button" onclick={onClose}>Close</button>
         </div>
       {:else}
         {#if errorMessage}
-          <div class="error-message">{errorMessage}</div>
+          <div class="message error">{errorMessage}</div>
         {/if}
         
         <div class="battle-join">
           <div class="selection-section">
-            <h3>Select Your Group</h3>
+            <h4>Select Your Group</h4>
             <div class="groups-list">
               {#each availableGroups as group}
                 <button 
@@ -239,7 +241,7 @@
           </div>
           
           <div class="selection-section">
-            <h3>Select Battle to Join</h3>
+            <h4>Select Battle to Join</h4>
             <div class="battles-list">
               {#each activeBattles as battle}
                 <button 
@@ -269,7 +271,7 @@
           
           {#if selectedBattle}
             <div class="side-selection">
-              <h3>Choose Side</h3>
+              <h4>Choose Side</h4>
               <div class="sides">
                 <button 
                   class="side-button" 
@@ -279,7 +281,10 @@
                   type="button"
                   aria-pressed={selectedSide === "1"}
                 >
-                  Side 1 ({selectedBattle.sides[1].groups.length} groups)
+                  <div class="side-content">
+                    <span class="side-name">Side 1</span>
+                    <span class="side-count">({selectedBattle.sides[1].groups.length} groups)</span>
+                  </div>
                 </button>
                 <button 
                   class="side-button" 
@@ -289,74 +294,111 @@
                   type="button"
                   aria-pressed={selectedSide === "2"}
                 >
-                  Side 2 ({selectedBattle.sides[2].groups.length} groups)
+                  <div class="side-content">
+                    <span class="side-name">Side 2</span>
+                    <span class="side-count">({selectedBattle.sides[2].groups.length} groups)</span>
+                  </div>
                 </button>
               </div>
             </div>
           {/if}
         </div>
-        
-        <div class="actions">
-          <button class="cancel-btn" onclick={onClose} disabled={loading}>Cancel</button>
-          <button 
-            class="join-btn" 
-            onclick={joinBattle}
-            disabled={!canJoin}
-          >
-            {loading ? 'Joining...' : 'Join Battle'}
-          </button>
-        </div>
       {/if}
     </div>
+
+    <footer class="modal-footer">
+      <button class="cancel-button" onclick={onClose} disabled={loading}>Cancel</button>
+      <button 
+        class="action-button" 
+        onclick={joinBattle}
+        disabled={!canJoin}
+      >
+        {loading ? 'Joining...' : 'Join Battle'}
+      </button>
+    </footer>
   </div>
 </div>
 
 <style>
-  .overlay {
+  .modal-container {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    background: rgba(0, 0, 0, 0.5);
   }
 
-  .popup {
-    background: white;
-    border-radius: 0.5em;
+  .join-battle-modal {
     width: 90%;
-    max-width: 40em;
-    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
+    max-width: 36em;
+    max-height: 85vh;
+    background-color: rgba(255, 255, 255, 0.85);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.5em;
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    font-family: var(--font-body);
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
+    z-index: 1010;
+    color: rgba(0, 0, 0, 0.8);
   }
 
-  .header {
+  .modal-header {
+    padding: 0.8em 1em;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1em;
-    background: #f5f5f5;
-    border-bottom: 1px solid #e0e0e0;
-  }
-
-  h2, h3 {
-    margin: 0;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     font-family: var(--font-heading);
   }
-  
+
   h3 {
-    margin-bottom: 0.5em;
-    font-size: 1.1em;
+    margin: 0;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.8);
   }
 
-  .content {
+  h4 {
+    margin: 0 0 0.5em 0;
+    font-size: 1em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .close-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.4em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .close-button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.9);
+  }
+
+  .modal-body {
     padding: 1em;
-    max-height: 70vh;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    max-height: calc(85vh - 8em);
   }
 
   .battle-join {
@@ -366,10 +408,10 @@
   }
 
   .selection-section {
-    flex: 1;
-    border: 1px solid #e0e0e0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.4em;
     padding: 1em;
+    background-color: rgba(255, 255, 255, 0.5);
   }
 
   .groups-list, .battles-list {
@@ -382,29 +424,37 @@
 
   .group-item, .battle-item {
     padding: 0.8em;
-    border: 1px solid #e0e0e0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.3em;
     cursor: pointer;
     transition: all 0.2s;
+    background-color: rgba(255, 255, 255, 0.5);
+    text-align: left;
+    display: block;
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 1em;
+    color: rgba(0, 0, 0, 0.8);
   }
 
   .group-item:hover, .battle-item:hover {
-    background-color: #f9f9f9;
+    background-color: rgba(255, 255, 255, 0.7);
   }
 
   .group-item.selected, .battle-item.selected {
-    background-color: rgba(0, 0, 255, 0.05);
-    border-color: rgba(0, 0, 255, 0.2);
+    background-color: rgba(66, 133, 244, 0.1);
+    border-color: rgba(66, 133, 244, 0.3);
   }
 
   .group-name, .battle-name {
-    font-weight: 600;
+    font-weight: 500;
     margin-bottom: 0.3em;
+    color: rgba(0, 0, 0, 0.85);
   }
 
   .group-details, .battle-sides {
     font-size: 0.9em;
-    opacity: 0.8;
+    color: rgba(0, 0, 0, 0.7);
   }
   
   .battle-sides {
@@ -417,7 +467,7 @@
   }
   
   .side-selection {
-    margin-top: 1em;
+    margin-top: 0.5em;
   }
   
   .sides {
@@ -428,73 +478,102 @@
   .side-button {
     flex: 1;
     padding: 0.8em;
-    border: 1px solid #e0e0e0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.3em;
-    background: white;
+    background: rgba(255, 255, 255, 0.5);
     cursor: pointer;
     transition: all 0.2s;
+    font-family: var(--font-body);
+    font-size: 1em;
+    color: rgba(0, 0, 0, 0.8);
+  }
+
+  .side-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3em;
+  }
+  
+  .side-name {
+    font-weight: 500;
+  }
+  
+  .side-count {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.7);
   }
   
   .side-button:hover {
-    background-color: #f9f9f9;
+    background-color: rgba(255, 255, 255, 0.7);
   }
   
   .side-button.selected {
-    background-color: rgba(0, 0, 255, 0.1);
-    border-color: blue;
-    color: blue;
+    background-color: rgba(66, 133, 244, 0.1);
+    border-color: rgba(66, 133, 244, 0.3);
   }
 
-  .actions {
+  .modal-footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     gap: 1em;
-    margin-top: 1.5em;
+    padding: 0.8em 1em;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
   }
 
-  .cancel-btn, .join-btn, .close-action {
-    padding: 0.7em 1.2em;
+  .cancel-button, .action-button {
+    padding: 0.5em 1em;
     border-radius: 0.3em;
-    border: none;
-    cursor: pointer;
     font-size: 1em;
     font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
   }
 
-  .cancel-btn {
+  .cancel-button {
     background-color: #f1f3f4;
     color: #3c4043;
     border: 1px solid #dadce0;
   }
 
-  .join-btn {
-    background-color: #1a73e8;
+  .cancel-button:hover:not(:disabled) {
+    background-color: #e8eaed;
+  }
+
+  .action-button {
+    background-color: rgba(66, 133, 244, 0.8);
     color: white;
+    flex-grow: 1;
   }
 
-  .join-btn:disabled {
-    opacity: 0.6;
+  .action-button:hover:not(:disabled) {
+    background-color: rgba(66, 133, 244, 0.9);
+    transform: translateY(-1px);
+  }
+
+  .action-button:disabled, .cancel-button:disabled {
+    opacity: 0.7;
     cursor: not-allowed;
+    transform: none;
   }
 
-  .error-message {
-    padding: 0.8em;
-    background-color: rgba(255, 0, 0, 0.1);
-    border-left: 3px solid #d32f2f;
-    margin-bottom: 1em;
-    color: #d32f2f;
-  }
-
-  .no-battle {
+  .message {
+    padding: 0.7em;
+    border-radius: 0.3em;
+    font-size: 0.9em;
     text-align: center;
-    padding: 2em 1em;
   }
 
-  .close-action {
-    margin-top: 1em;
-    background-color: #f1f3f4;
-    color: #3c4043;
-    border: 1px solid #dadce0;
+  .message.error {
+    background-color: rgba(244, 67, 54, 0.1);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    color: #d32f2f;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    align-items: center;
   }
 
   @media (min-width: 768px) {
