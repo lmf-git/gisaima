@@ -987,6 +987,12 @@
     color: rgba(0, 0, 0, 0.9);
   }
 
+  .modal-content {
+    padding: 0.8em;
+    overflow-y: auto;
+    max-height: calc(85vh - 4em); /* Account for header space */
+  }
+
   /* Core section styling */
   .core-section {
     margin-bottom: 1.2em;
@@ -1067,7 +1073,8 @@
   
   .section-content {
     padding: 0.8em;
-    overflow: hidden;
+    overflow-y: auto; /* Enable vertical scrolling */
+    max-height: 30vh; /* Create a reasonable height limit for sections */
   }
 
   h4 {
