@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte'
   import { browser } from '$app/environment'
+  import { slide } from 'svelte/transition'
   import Close from '../../components/icons/Close.svelte';
   import { map } from "../../lib/stores/map.js";
 
@@ -70,6 +71,19 @@
       }
     };
   });
+
+  function handleSectionKeyDown(event, sectionId) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      switch (sectionId) {
+        case 'world': toggleWorld(); break;
+        case 'terrain': toggleTerrain(); break;
+        case 'structures': toggleStructures(); break;
+        case 'units': toggleUnits(); break;
+        case 'controls': toggleControls(); break;
+      }
+    }
+  }
 </script>
 
 {#if ready && !closed}
@@ -88,87 +102,142 @@
         
         <div class="features">
           <div class="feature collapsible">
-            <button class="section-header" onclick={toggleWorld} aria-expanded={worldExpanded}>
+            <div 
+              class="section-header"
+              onclick={toggleWorld}
+              onkeydown={(e) => handleSectionKeyDown(e, 'world')}
+              role="button"
+              tabindex="0"
+              aria-expanded={worldExpanded}
+            >
               <h3>Map Exploration</h3>
-              <span class="toggle-icon">{worldExpanded ? '−' : '+'}</span>
-            </button>
-            <div class="section-content" class:expanded={worldExpanded}>
-              <ul>
-                <li>Explore an infinite procedurally generated world</li>
-                <li>Grid-based coordinate system for precise navigation</li>
-                <li>URL updates with coordinates for location sharing</li>
-                <li>Hover over tiles to view detailed information</li>
-              </ul>
+              <div class="collapse-button">
+                {worldExpanded ? '▲' : '▼'}
+              </div>
             </div>
+            {#if worldExpanded}
+              <div class="section-content" transition:slide|local={{ duration: 300 }}>
+                <ul>
+                  <li>Explore an infinite procedurally generated world</li>
+                  <li>Grid-based coordinate system for precise navigation</li>
+                  <li>URL updates with coordinates for location sharing</li>
+                  <li>Hover over tiles to view detailed information</li>
+                </ul>
+              </div>
+            {/if}
           </div>
           
           <div class="feature collapsible">
-            <button class="section-header" onclick={toggleTerrain} aria-expanded={terrainExpanded}>
+            <div 
+              class="section-header"
+              onclick={toggleTerrain}
+              onkeydown={(e) => handleSectionKeyDown(e, 'terrain')}
+              role="button"
+              tabindex="0"
+              aria-expanded={terrainExpanded}
+            >
               <h3>Terrain & Biomes</h3>
-              <span class="toggle-icon">{terrainExpanded ? '−' : '+'}</span>
-            </button>
-            <div class="section-content" class:expanded={terrainExpanded}>
-              <ul>
-                <li>Multiple biomes with unique resource characteristics</li>
-                <li>Terrain rarity system: common to mythic quality</li>
-                <li>Rare terrain provides strategic advantages</li>
-                <li>Special visual effects indicate valuable terrain</li>
-              </ul>
+              <div class="collapse-button">
+                {terrainExpanded ? '▲' : '▼'}
+              </div>
             </div>
+            {#if terrainExpanded}
+              <div class="section-content" transition:slide|local={{ duration: 300 }}>
+                <ul>
+                  <li>Multiple biomes with unique resource characteristics</li>
+                  <li>Terrain rarity system: common to mythic quality</li>
+                  <li>Rare terrain provides strategic advantages</li>
+                  <li>Special visual effects indicate valuable terrain</li>
+                </ul>
+              </div>
+            {/if}
           </div>
           
           <div class="feature collapsible">
-            <button class="section-header" onclick={toggleStructures} aria-expanded={structuresExpanded}>
+            <div 
+              class="section-header"
+              onclick={toggleStructures}
+              onkeydown={(e) => handleSectionKeyDown(e, 'structures')}
+              role="button"
+              tabindex="0"
+              aria-expanded={structuresExpanded}
+            >
               <h3>Structures</h3>
-              <span class="toggle-icon">{structuresExpanded ? '−' : '+'}</span>
-            </button>
-            <div class="section-content" class:expanded={structuresExpanded}>
-              <ul>
-                <li>Build spawn points (🔵), watchtowers (🗼), and fortresses (🏰)</li>
-                <li>Structures provide territorial control and strategic advantages</li>
-                <li>Different structures have unique functions and requirements</li>
-                <li>Strategic placement is key to efficient expansion</li>
-              </ul>
+              <div class="collapse-button">
+                {structuresExpanded ? '▲' : '▼'}
+              </div>
             </div>
+            {#if structuresExpanded}
+              <div class="section-content" transition:slide|local={{ duration: 300 }}>
+                <ul>
+                  <li>Build spawn points (🔵), watchtowers (🗼), and fortresses (🏰)</li>
+                  <li>Structures provide territorial control and strategic advantages</li>
+                  <li>Different structures have unique functions and requirements</li>
+                  <li>Strategic placement is key to efficient expansion</li>
+                </ul>
+              </div>
+            {/if}
           </div>
           
           <div class="feature collapsible">
-            <button class="section-header" onclick={toggleUnits} aria-expanded={unitsExpanded}>
+            <div 
+              class="section-header"
+              onclick={toggleUnits}
+              onkeydown={(e) => handleSectionKeyDown(e, 'units')}
+              role="button"
+              tabindex="0"
+              aria-expanded={unitsExpanded}
+            >
               <h3>Units & Combat</h3>
-              <span class="toggle-icon">{unitsExpanded ? '−' : '+'}</span>
-            </button>
-            <div class="section-content" class:expanded={unitsExpanded}>
-              <ul>
-                <li>Command unit groups for expansion and resource gathering</li>
-                <li>Combat factors: unit strength, terrain, and positioning</li>
-                <li>Form alliances with other players for mutual benefits</li>
-                <li>Balance expansion with defensive capabilities</li>
-              </ul>
+              <div class="collapse-button">
+                {unitsExpanded ? '▲' : '▼'}
+              </div>
             </div>
+            {#if unitsExpanded}
+              <div class="section-content" transition:slide|local={{ duration: 300 }}>
+                <ul>
+                  <li>Command unit groups for expansion and resource gathering</li>
+                  <li>Combat factors: unit strength, terrain, and positioning</li>
+                  <li>Form alliances with other players for mutual benefits</li>
+                  <li>Balance expansion with defensive capabilities</li>
+                </ul>
+              </div>
+            {/if}
           </div>
         </div>
         
         <div class="controls collapsible">
-          <button class="section-header" onclick={toggleControls} aria-expanded={controlsExpanded}>
+          <div 
+            class="section-header"
+            onclick={toggleControls}
+            onkeydown={(e) => handleSectionKeyDown(e, 'controls')}
+            role="button"
+            tabindex="0"
+            aria-expanded={controlsExpanded}
+          >
             <h3>Controls</h3>
-            <span class="toggle-icon">{controlsExpanded ? '−' : '+'}</span>
-          </button>
-          <div class="section-content" class:expanded={controlsExpanded}>
-            <div class="controls-grid">
-              <div class="control-item">
-                <span class="key">WASD</span> or <span class="key">↑←↓→</span> Navigate map
-              </div>
-              <div class="control-item">
-                <span class="key">Click</span> Move to location
-              </div>
-              <div class="control-item">
-                <span class="key">Drag</span> Pan map view
-              </div>
-              <div class="control-item">
-                <span class="key">Hover</span> View tile details
-              </div>
+            <div class="collapse-button">
+              {controlsExpanded ? '▲' : '▼'}
             </div>
           </div>
+          {#if controlsExpanded}
+            <div class="section-content" transition:slide|local={{ duration: 300 }}>
+              <div class="controls-grid">
+                <div class="control-item">
+                  <span class="key">WASD</span> or <span class="key">↑←↓→</span> Navigate map
+                </div>
+                <div class="control-item">
+                  <span class="key">Click</span> Move to location
+                </div>
+                <div class="control-item">
+                  <span class="key">Drag</span> Pan map view
+                </div>
+                <div class="control-item">
+                  <span class="key">Hover</span> View tile details
+                </div>
+              </div>
+            </div>
+          {/if}
         </div>
         
         <div class="guide-link-container">
@@ -335,7 +404,6 @@
   }
   
   .section-header {
-    width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -346,10 +414,17 @@
     text-align: left;
     cursor: pointer;
     transition: background-color 0.2s;
+    width: 100%;
+    user-select: none;
   }
   
   .section-header:hover {
     background: rgba(0, 0, 0, 0.08);
+  }
+  
+  .section-header:focus {
+    outline: 2px solid rgba(66, 133, 244, 0.6);
+    outline-offset: -2px;
   }
   
   .section-header h3 {
@@ -357,136 +432,53 @@
     font-size: 1.1em;
   }
   
-  .toggle-icon {
-    font-size: 1.2em;
-    font-weight: bold;
-    color: var(--color-button-primary, #4285f4);
-    width: 1.5em;
-    height: 1.5em;
+  .collapse-button {
+    background: none;
+    border: none;
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 0.8em;
+    cursor: pointer;
+    padding: 0.2em 0.5em;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: 1.5em;
+    min-height: 1.5em;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.05);
+  }
+  
+  .section-header:hover .collapse-button {
+    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.05);
   }
   
   .section-content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-out;
     background: rgba(255, 255, 255, 0.5);
-  }
-  
-  .section-content.expanded {
-    max-height: 20em;
-  }
-  
-  .controls {
-    text-align: left;
-    margin: 1em 0;
-    padding: 0;
-    background: transparent;
-    border-radius: 0.3em;
+    padding: 1em;
   }
   
   .feature ul {
     margin: 0;
-    padding: 1em 1em 1em 2.5em;
+    padding: 0em 0em 0em 1.5em;
     line-height: 1.4;
     font-weight: 400;
     color: rgba(0, 0, 0, 0.7);
   }
   
-  .key {
-    display: inline-block;
-    background: rgba(0, 0, 0, 0.1);
-    color: rgba(0, 0, 0, 0.8);
-    font-weight: bold;
-    padding: 0.2em 0.5em;
-    border-radius: 0.2em;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    box-shadow: 0 0.1em 0.2em rgba(0, 0, 0, 0.1);
-    font-family: var(--font-heading);
-  }
-
   .controls-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(10em, 1fr));
     gap: 0.8em;
-    padding: 1em;
-    background: rgba(0, 0, 0, 0.05);
-  }
-  
-  .control-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    font-size: 0.9em;
-    color: rgba(0, 0, 0, 0.7);
+    padding: 0;
+    background: transparent;
   }
 
-  .guide-link-container {
-    text-align: center;
-    margin: 1.5em 0;
-    padding: 1em;
-    background: rgba(0, 0, 0, 0.03);
-    border-radius: 0.4em;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-  }
-  
-  .guide-link-container p {
-    margin: 0 0 0.8em 0;
-    font-size: 0.95em;
-    color: rgba(0, 0, 0, 0.7);
-  }
-  
-  .guide-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5em;
-    background-color: rgba(66, 133, 244, 0.1);
-    color: rgba(0, 0, 0, 0.8);
-    text-decoration: none;
-    padding: 0.6em 1.2em;
-    border-radius: 0.3em;
-    border: 1px solid rgba(66, 133, 244, 0.3);
-    transition: all 0.2s ease;
-    font-weight: 500;
-  }
-  
-  .guide-link:hover {
-    background-color: rgba(66, 133, 244, 0.2);
-    transform: translateY(-0.1em);
-  }
-  
-  .external-icon {
-    font-size: 1.1em;
-    line-height: 1;
-  }
-  
   @media (max-width: 768px) {
-    .box {
-      padding: 1.5em;
-      max-height: 80vh;
-      margin: 1em 0;
-    }
-    
     .features {
-      grid-template-columns: 1fr;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8em;
     }
-    
-    h2 {
-      font-size: 1.6em;
-    }
-    
-    .content {
-      padding-bottom: 1.5em;
-    }
-  }
-
-  .features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(20em, 1fr));
-    gap: 2em;
   }
 </style>
