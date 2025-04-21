@@ -68,17 +68,47 @@ export const worldSpawnPoints = derived(
   $world => {
     if (!$world) return [];
     
-    // If world has spawns, simply convert to array and return directly
+    // If world has spawns in info.spawns (as seen in backup.json)
     if ($world.info?.spawns) {
       const spawns = Object.values($world.info.spawns);
       console.log(`Found ${spawns.length} spawn points in world.info.spawns`);
       return spawns;
     }
     
-    // Legacy support for old spawn structure - can be removed later
+    // Legacy support for old spawn structure
     if ($world.spawns) {
       console.log('Using legacy spawns structure');
       return Object.values($world.spawns);
+    }
+    
+    // Extended search for spawns in other locations
+    if ($world.chunks) {
+      // Try to find spawns in chunks (as structures with type=spawn)
+      const spawnsFromChunks = [];
+      
+      try {
+        Object.entries($world.chunks).forEach(([chunkKey, chunk]) => {
+          if (!chunk) return;
+          
+          Object.entries(chunk).forEach(([tileKey, tile]) => {
+            if (tile?.structure?.type === 'spawn') {
+              const [x, y] = tileKey.split(',').map(Number);
+              spawnsFromChunks.push({
+                ...tile.structure,
+                position: { x, y },
+                id: tile.structure.id || `spawn_${x}_${y}`
+              });
+            }
+          });
+        });
+        
+        if (spawnsFromChunks.length > 0) {
+          console.log(`Found ${spawnsFromChunks.length} spawn points in world chunks`);
+          return spawnsFromChunks;
+        }
+      } catch (e) {
+        console.error('Error searching for spawns in chunks:', e);
+      }
     }
     
     console.log('No spawns found in world data');
@@ -509,20 +539,6 @@ export function getWorldInfo(worldId) {
   return fetchPromise;
 }
 
-// Simplify this function - it now just gets world info directly
-export async function refreshWorldInfo(worldId) {
-  if (!worldId) return null;
-  
-  console.log(`Getting fresh world info for ${worldId}`);
-  
-  try {
-    return await getWorldInfo(worldId);
-  } catch (err) {
-    console.error(`Failed to get world info for ${worldId}:`, err);
-    return null;
-  }
-}
-
 // Function to get spawn points for a specific world
 export function getWorldSpawnPoints(worldId) {
   if (!worldId) return [];
@@ -545,20 +561,162 @@ export function getWorldSpawnPoints(worldId) {
     worldKeys: Object.keys(world)
   });
   
+  // Primary location: world.info.spawns (as in backup.json)
   if (world.info?.spawns) {
     const spawns = Object.values(world.info.spawns);
     console.log(`[DEBUG] Found ${spawns.length} spawn points in world.info.spawns:`, spawns);
     return spawns;
   }
   
+  // Legacy location: world.spawns
   if (world.spawns) {
     const spawns = Object.values(world.spawns);
     console.log(`[DEBUG] Found ${spawns.length} spawn points in world.spawns:`, spawns);
     return spawns;
   }
   
+  // Extended search: look in chunks
+  if (world.chunks) {
+    const spawnsFromChunks = [];
+    
+    try {
+      Object.entries(world.chunks).forEach(([chunkKey, chunk]) => {
+        if (!chunk) return;
+        
+        Object.entries(chunk).forEach(([tileKey, tile]) => {
+          if (tile?.structure?.type === 'spawn') {
+            const [x, y] = tileKey.split(',').map(Number);
+            spawnsFromChunks.push({
+              ...tile.structure,
+              position: { x, y },
+              id: tile.structure.id || `spawn_${x}_${y}`
+            });
+          }
+        });
+      });
+      
+      if (spawnsFromChunks.length > 0) {
+        console.log(`[DEBUG] Found ${spawnsFromChunks.length} spawn points in chunks:`, spawnsFromChunks);
+        return spawnsFromChunks;
+      }
+    } catch (e) {
+      console.error('Error searching for spawns in chunks:', e);
+    }
+  }
+  
   console.log(`[DEBUG] No spawn points defined for world ${worldId}`);
   return [];
+}
+
+// Simplify this function - it now just gets world info directly
+export async function refreshWorldInfo(worldId) {
+  if (!worldId) return null;
+  
+  console.log(`Getting fresh world info for ${worldId}`);
+  
+  try {
+    // First try to get the info normally
+    const worldInfo = await getWorldInfo(worldId);
+    
+    // If we didn't get spawns, try to get them separately
+    if (worldInfo && !worldInfo.spawns && !worldInfo.info?.spawns) {
+      console.log(`No spawns found, trying direct fetch for spawns`);
+      
+      // Try to get spawns directly
+      const worldSpawnsRef = ref(db, `worlds/${worldId}/info/spawns`);
+      const spawnsSnapshot = await dbGet(worldSpawnsRef);
+      
+      if (spawnsSnapshot.exists()) {
+        const spawns = spawnsSnapshot.val();
+        console.log(`Found spawns via direct fetch:`, spawns);
+        
+        // Update the world info with these spawns
+        game.update(state => ({
+          ...state,
+          world: {
+            ...state.world,
+            [worldId]: {
+              ...state.world[worldId],
+              info: {
+                ...(state.world[worldId]?.info || {}),
+                spawns
+              }
+            }
+          }
+        }));
+      }
+    }
+    
+    return worldInfo;
+  } catch (err) {
+    console.error(`Failed to get world info for ${worldId}:`, err);
+    return null;
+  }
+}
+
+// Function to get world center coordinates - improved with better debugging
+export function getWorldCenterCoordinates(worldId, world = null) {
+  if (!worldId) return { x: 0, y: 0 };
+  
+  // Use provided world or try to get from store
+  const info = world || (getStore(game).world?.[worldId]);
+  if (!info) {
+    console.log(`No world info available for ${worldId}, using default center (0,0)`);
+    return { x: 0, y: 0 };
+  }
+  
+  // If world has explicit center coordinates, use those
+  if (info.center && typeof info.center.x === 'number' && typeof info.center.y === 'number') {
+    // Log with world ID and exact values to help debugging
+    console.log(`Using explicit center for world ${worldId}: (${info.center.x}, ${info.center.y})`);
+    return { 
+      x: info.center.x, 
+      y: info.center.y 
+    };
+  }
+  
+  // For worlds without explicit center, return 0,0
+  console.log(`No explicit center for world ${worldId}, using default (0,0)`);
+  return { x: 0, y: 0 };
+}
+
+// Add a function to calculate when the next tick will likely occur
+export function calculateNextTickTime(worldId) {
+  const world = get(game).world?.[worldId];
+  if (!world) return null;
+  
+  const worldSpeed = world.speed || 1.0;
+  const lastTick = world.lastTick || Date.now();
+  
+  // Base tick interval is 5 minutes (300000ms)
+  const baseTickInterval = 300000;
+  const adjustedInterval = Math.round(baseTickInterval / worldSpeed);
+  
+  // Calculate the next tick time
+  return lastTick + adjustedInterval;
+}
+
+// Helper function to format time remaining until next tick
+export function formatTimeUntilNextTick(worldId) {
+  const nextTickTime = calculateNextTickTime(worldId);
+  if (!nextTickTime) return "Unknown";
+  
+  const now = Date.now();
+  const remaining = nextTickTime - now;
+  
+  if (remaining <= 0) {
+    return "Any moment now";
+  }
+  
+  // Format as minutes and seconds
+  const minutes = Math.floor(remaining / 60000);
+  const seconds = Math.floor((remaining % 60000) / 1000);
+  
+  if (minutes <= 0) {
+    return `${seconds}s`;
+  }
+  
+  return `${minutes}m ${seconds}s`;
 }
 
 // Track if we've already initialized services
@@ -759,69 +917,4 @@ export async function joinWorld(worldId, userId, race, displayName) {
     }));
     throw error;
   }
-}
-
-// Function to get world center coordinates - improved with better debugging
-export function getWorldCenterCoordinates(worldId, world = null) {
-  if (!worldId) return { x: 0, y: 0 };
-  
-  // Use provided world or try to get from store
-  const info = world || (getStore(game).world?.[worldId]);
-  if (!info) {
-    console.log(`No world info available for ${worldId}, using default center (0,0)`);
-    return { x: 0, y: 0 };
-  }
-  
-  // If world has explicit center coordinates, use those
-  if (info.center && typeof info.center.x === 'number' && typeof info.center.y === 'number') {
-    // Log with world ID and exact values to help debugging
-    console.log(`Using explicit center for world ${worldId}: (${info.center.x}, ${info.center.y})`);
-    return { 
-      x: info.center.x, 
-      y: info.center.y 
-    };
-  }
-  
-  // For worlds without explicit center, return 0,0
-  console.log(`No explicit center for world ${worldId}, using default (0,0)`);
-  return { x: 0, y: 0 };
-}
-
-// Add a function to calculate when the next tick will likely occur
-export function calculateNextTickTime(worldId) {
-  const world = get(game).world?.[worldId];
-  if (!world) return null;
-  
-  const worldSpeed = world.speed || 1.0;
-  const lastTick = world.lastTick || Date.now();
-  
-  // Base tick interval is 5 minutes (300000ms)
-  const baseTickInterval = 300000;
-  const adjustedInterval = Math.round(baseTickInterval / worldSpeed);
-  
-  // Calculate the next tick time
-  return lastTick + adjustedInterval;
-}
-
-// Helper function to format time remaining until next tick
-export function formatTimeUntilNextTick(worldId) {
-  const nextTickTime = calculateNextTickTime(worldId);
-  if (!nextTickTime) return "Unknown";
-  
-  const now = Date.now();
-  const remaining = nextTickTime - now;
-  
-  if (remaining <= 0) {
-    return "Any moment now";
-  }
-  
-  // Format as minutes and seconds
-  const minutes = Math.floor(remaining / 60000);
-  const seconds = Math.floor((remaining % 60000) / 1000);
-  
-  if (minutes <= 0) {
-    return `${seconds}s`;
-  }
-  
-  return `${minutes}m ${seconds}s`;
 }

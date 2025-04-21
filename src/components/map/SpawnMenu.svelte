@@ -14,131 +14,24 @@
   let spawning = $state(false);
   let error = $state(null);
   let movedToSpawn = $state(false);
-  let debugLogged = $state(false);
-
+  
   // Function to consistently calculate chunk key
   function getChunkKey(x, y) {
     const CHUNK_SIZE = 20;
     return `${Math.floor(x / CHUNK_SIZE)},${Math.floor(y / CHUNK_SIZE)}`;
   }
 
-  // Get spawn points directly from world info - FIXED to handle Firebase data structure
+  // Get spawn points directly from world info.spawns - simplified approach
   const spawnPoints = $derived(() => {
     if (!$game.currentWorld) return [];
     
     const worldData = $game.world[$game.currentWorld];
     if (!worldData) return [];
     
-    console.log('[SpawnMenu DEBUG] Full world data:', worldData);
-    
-    // Debug log the complete world structure
-    if (!debugLogged) {
-      console.log('[SpawnMenu DEBUG] Complete world data structure:', worldData);
-      debugLogged = true;
+    // Look exclusively at info.spawns as requested
+    if (worldData.info?.spawns) {
+      return Object.values(worldData.info.spawns);
     }
-    
-    // Try different places where spawns might be located
-    let spawns = null;
-    
-    // Case 1: Directly at world.spawns (most common in real Firebase data)
-    if (worldData.spawns) {
-      console.log('[SpawnMenu] Found spawns directly at world.spawns');
-      spawns = Object.values(worldData.spawns);
-    }
-    // Case 2: Check inside info.spawns (where it should be according to data model)
-    else if (worldData.info?.spawns) {
-      console.log('[SpawnMenu] Found spawns in world.info.spawns');
-      spawns = Object.values(worldData.info.spawns);
-    }
-    // Case 3: Look for spawn objects directly in the world (based on type)
-    else if (Object.values(worldData).some(v => v?.type === 'spawn')) {
-      console.log('[SpawnMenu] Found spawns as objects with type=spawn');
-      spawns = Object.values(worldData).filter(item => item?.type === 'spawn');
-    }
-    // Case 4: Check if the spawns might be in chunks data
-    else if (worldData.chunks) {
-      console.log('[SpawnMenu] Attempting to find spawns in chunks data');
-      
-      // Look through chunks to find structures marked as spawns
-      const foundSpawns = [];
-      
-      try {
-        Object.values(worldData.chunks).forEach(chunk => {
-          if (!chunk) return;
-          
-          Object.values(chunk).forEach(tile => {
-            if (tile?.structure?.type === 'spawn') {
-              // Convert tile structure to spawn format with position
-              const coords = tile.structure.position || 
-                             { x: parseInt(Object.keys(chunk)[0]?.split(',')[0]), 
-                               y: parseInt(Object.keys(chunk)[0]?.split(',')[1]) };
-              
-              foundSpawns.push({
-                ...tile.structure,
-                position: coords,
-                id: tile.structure.id || `spawn_${coords.x}_${coords.y}`
-              });
-            }
-          });
-        });
-        
-        if (foundSpawns.length > 0) {
-          spawns = foundSpawns;
-        }
-      } catch (e) {
-        console.error('[SpawnMenu] Error parsing chunks for spawns:', e);
-      }
-    }
-    
-    if (spawns && spawns.length > 0) {
-      console.log('[SpawnMenu] Found spawns:', {
-        count: spawns.length,
-        firstSpawn: spawns[0],
-      });
-      return spawns;
-    }
-    
-    // Last resort: Check if the world object itself contains the required fields
-    if (worldData.seed && !spawns) {
-      console.log('[SpawnMenu DEBUG] Checking backup.json structure...');
-      
-      // Read from Firebase at a different path as a last resort
-      const worldRef = ref(db, `worlds/${$game.currentWorld}`);
-      dbGet(worldRef).then(snapshot => {
-        if (snapshot.exists()) {
-          const fullWorld = snapshot.val();
-          console.log('[SpawnMenu] Found full world data:', {
-            hasInfo: !!fullWorld.info,
-            hasInfoSpawns: !!fullWorld.info?.spawns,
-            spawnCount: fullWorld.info?.spawns ? Object.keys(fullWorld.info.spawns).length : 0
-          });
-          
-          // If we found spawns in the full data, update the game store
-          if (fullWorld.info?.spawns) {
-            const spawnsArray = Object.values(fullWorld.info.spawns);
-            game.update(state => ({
-              ...state,
-              world: {
-                ...state.world,
-                [$game.currentWorld]: {
-                  ...state.world[$game.currentWorld],
-                  spawns: fullWorld.info.spawns // Add spawns directly to world data
-                }
-              }
-            }));
-            console.log('[SpawnMenu] Updated game store with spawns from Firebase');
-          }
-        }
-      }).catch(err => {
-        console.error('[SpawnMenu] Error fetching full world data:', err);
-      });
-    }
-    
-    console.log('[SpawnMenu DEBUG] No spawns found:', {
-      currentWorld: $game.currentWorld,
-      worldKeys: worldData ? Object.keys(worldData) : [],
-      worldInfoKeys: worldData?.info ? Object.keys(worldData.info) : ['info not found'],
-    });
     
     return [];
   });
@@ -149,49 +42,25 @@
     return spawnPoints.find(s => s.id === selectedSpawnId);
   });
   
-  // Initialize component
+  // Initialize component - optimized to prevent multiple triggers
   $effect(() => {
-    // Reset loading when data is available
+    // Only runs when world data for current world is available
     if ($game?.currentWorld && $game.world[$game.currentWorld]) {
+      // Set loading state
       loading = false;
-      
-      // Log full world data structure once for debugging
-      if (!debugLogged && $game.world[$game.currentWorld]) {
-        const worldData = $game.world[$game.currentWorld];
-        console.log('[SpawnMenu DEBUG] World data structure:', {
-          worldId: $game.currentWorld,
-          hasInfo: !!worldData.info,
-          hasInfoSpawns: !!(worldData.info?.spawns),
-          infoKeys: worldData.info ? Object.keys(worldData.info) : [],
-          worldKeys: Object.keys(worldData),
-        });
-        // Try to access spawns directly for debugging
-        if (worldData.info?.spawns) {
-          console.log('Direct inspection of info.spawns:', Object.values(worldData.info.spawns));
-        }
-        debugLogged = true;
-      }
       
       // Select first spawn point if available
       if (spawnPoints.length > 0) {
         selectedSpawnId = spawnPoints[0].id;
-        console.log(`Selected spawn: ${selectedSpawnId}`);
         
-        // Auto-move to the spawn location
-        if (spawnPoints.length === 1) {
+        // Auto-move to the spawn location if there's only one
+        if (spawnPoints.length === 1 && !movedToSpawn) {
           moveTarget(spawnPoints[0].position.x, spawnPoints[0].position.y);
           movedToSpawn = true;
         }
-      } else {
-        console.warn('[SpawnMenu DEBUG] No spawn points available after loading completed');
-        
-        // Force reload world info to ensure we have fresh data
-        if ($game.refreshWorldInfo) {
-          console.log('Attempting to refresh world info to find spawns');
-          $game.refreshWorldInfo($game.currentWorld).catch(err => 
-            console.error('Failed to refresh world info:', err)
-          );
-        }
+      } else if (!$game.worldLoading) {
+        // If no spawns and world isn't still loading, try to fetch spawn data directly once
+        fetchSpawnsDirectly();
       }
     }
   });
@@ -203,34 +72,43 @@
       if (spawn?.position) {
         moveTarget(spawn.position.x, spawn.position.y);
         movedToSpawn = true;
-        console.log(`Moved to selected spawn: ${spawn.position.x}, ${spawn.position.y}`);
       }
     }
   });
 
-  // Add debugging for player race information
-  $effect(() => {
-    console.log('Current player data in SpawnMenu:', {
-      playerExists: !!$currentPlayer,
-      playerRace: $currentPlayer?.race,
-      worldData: $currentPlayer?.worldData,
-      playerData: $game.playerData, // Updated reference
-    });
-  });
-  
-  // Add debugging for world data changes
-  $effect(() => {
-    if ($game?.currentWorld) {
-      console.log('[SpawnMenu DEBUG] World data updated:', {
-        worldId: $game.currentWorld,
-        hasWorldData: !!$game.world[$game.currentWorld],
-        hasInfo: !!$game.world[$game.currentWorld]?.info,
-        hasSpawns: !!$game.world[$game.currentWorld]?.info?.spawns,
-        spawnCount: $game.world[$game.currentWorld]?.info?.spawns ? 
-          Object.keys($game.world[$game.currentWorld].info.spawns).length : 0
-      });
+  // Function to fetch spawns directly from Firebase without page reload
+  async function fetchSpawnsDirectly() {
+    if (!$game.currentWorld) return;
+    
+    try {
+      const worldRef = ref(db, `worlds/${$game.currentWorld}/info/spawns`);
+      const snapshot = await dbGet(worldRef);
+      
+      if (snapshot.exists()) {
+        const spawns = snapshot.val();
+        console.log('[SpawnMenu] Direct fetch found spawns:', Object.keys(spawns).length);
+        
+        // Update the game store with these spawns
+        game.update(state => ({
+          ...state,
+          world: {
+            ...state.world,
+            [$game.currentWorld]: {
+              ...state.world[$game.currentWorld],
+              info: {
+                ...(state.world[$game.currentWorld].info || {}),
+                spawns
+              }
+            }
+          }
+        }));
+      } else {
+        console.log('[SpawnMenu] No spawns found in direct fetch');
+      }
+    } catch (err) {
+      console.error('[SpawnMenu] Error in direct fetch:', err);
     }
-  });
+  }
 
   // Spawn player at the selected location
   async function spawnPlayer() {
@@ -321,39 +199,15 @@
     {:else if error}
       <div class="error-message">
         <p>{error}</p>
-        <button class="retry-button" on:click={() => location.reload()}>Retry</button>
+        <button class="retry-button" on:click={() => {
+          error = null;
+          fetchSpawnsDirectly();
+        }}>Retry</button>
       </div>
     {:else if !Array.isArray(spawnPoints) || spawnPoints.length === 0}
       <div class="error-message">
         <p>No spawn points available in this world</p>
-        <button class="retry-button" on:click={() => {
-          debugLogged = false;
-          // Force direct fetch from backup.json structure
-          const worldRef = ref(db, `worlds/${$game.currentWorld}/info/spawns`);
-          dbGet(worldRef).then(snapshot => {
-            if (snapshot.exists()) {
-              const spawns = snapshot.val();
-              console.log('[SpawnMenu] Direct fetch found spawns:', spawns);
-              // Update the game store with these spawns
-              game.update(state => ({
-                ...state,
-                world: {
-                  ...state.world,
-                  [$game.currentWorld]: {
-                    ...state.world[$game.currentWorld],
-                    spawns: spawns  // Add spawns directly to world data
-                  }
-                }
-              }));
-            } else {
-              console.log('[SpawnMenu] No spawns found in direct fetch');
-            }
-            location.reload();
-          }).catch(err => {
-            console.error('[SpawnMenu] Error in direct fetch:', err);
-            location.reload();
-          });
-        }}>Retry</button>
+        <button class="retry-button" on:click={fetchSpawnsDirectly}>Fetch Spawn Points</button>
         
         <!-- Add debug information for development -->
         <details class="debug-info">

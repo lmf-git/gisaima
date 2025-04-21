@@ -753,6 +753,51 @@ export function getChunkKey(x, y) {
   return `${chunkX},${chunkY}`;
 }
 
+// Enhanced function to handle spawn data in various formats
+export function getSpawnPointsFromWorld(worldData) {
+  if (!worldData) return [];
+  
+  // Case 1: info.spawns format (as in backup.json)
+  if (worldData.info?.spawns) {
+    return Object.values(worldData.info.spawns);
+  }
+  
+  // Case 2: direct spawns property
+  if (worldData.spawns) {
+    return Object.values(worldData.spawns);
+  }
+  
+  // Case 3: check for structures with type=spawn in chunks
+  if (worldData.chunks) {
+    const spawnsFromChunks = [];
+    
+    try {
+      Object.entries(worldData.chunks).forEach(([chunkKey, chunk]) => {
+        if (!chunk) return;
+        
+        Object.entries(chunk).forEach(([tileKey, tile]) => {
+          if (tile?.structure?.type === 'spawn') {
+            const [x, y] = tileKey.split(',').map(Number);
+            spawnsFromChunks.push({
+              ...tile.structure,
+              position: { x, y },
+              id: tile.structure.id || `spawn_${x}_${y}`
+            });
+          }
+        });
+      });
+      
+      if (spawnsFromChunks.length > 0) {
+        return spawnsFromChunks;
+      }
+    } catch (e) {
+      console.error('Error searching for spawns in chunks:', e);
+    }
+  }
+  
+  return [];
+}
+
 // Modified function to handle drag start to respect path drawing mode
 function handleDragAction(event, sensitivity = 1) {
   const state = $map;
