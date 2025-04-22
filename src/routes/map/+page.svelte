@@ -46,8 +46,6 @@
     const DEBUG_MODE = true;
     const debugLog = (...args) => DEBUG_MODE && console.log(...args);
 
-    const DEBUG_LOADING = true;
-
     let isTutorialVisible = $state(false);
     let detailed = $state(false);
     let loading = $state(true);
@@ -56,10 +54,6 @@
     let urlProcessingComplete = $state(false);
     
     let isPathDrawingMode = $state(false);
-    
-    let authReadyState = $state(false);
-    let gameInitializedState = $state(false);
-    let mapReadyState = $state(false);
 
     const combinedLoading = $derived(loading || $game.worldLoading || !$isAuthReady);
     
@@ -224,23 +218,6 @@
                 window.removeEventListener('beforeunload', cleanup);
             }
         };
-    });
-
-    $effect(() => {
-        authReadyState = $isAuthReady;
-        gameInitializedState = $game.initialized;
-        mapReadyState = $ready;
-
-        if (DEBUG_LOADING) {
-            console.log('Loading state dependencies:', {
-                userAuthReady: $isAuthReady,
-                gameInitialized: $game.initialized,
-                gameWorldLoading: $game.worldLoading,
-                mapReady: $ready,
-                componentLoading: loading,
-                worldDataAvailable: $game.worldKey ? !!$game.worlds[$game.worldKey] : false
-            });
-        }
     });
 
     // Add missing function for tutorial visibility
@@ -724,7 +701,7 @@
     {#if combinedLoading}
         <div class="loading-overlay">
             <div class="loading-spinner"></div>
-            <div>
+            <div class="loading-message">
                 {#if !$isAuthReady}
                     Loading user data...
                 {:else if !$game.initialized}
@@ -734,21 +711,9 @@
                 {:else if !$ready}
                     Initializing map...
                 {:else}
-                    Initializing world...
+                    Preparing world...
                 {/if}
             </div>
-            {#if DEBUG_LOADING && combinedLoading}
-                <div class="debug-info">
-                    <p>Auth Ready: {authReadyState ? 'Yes' : 'No'}</p>
-                    <p>Game Initialized: {gameInitializedState ? 'Yes' : 'No'}</p>
-                    <p>World Loading: {$game.worldLoading ? 'Yes' : 'No'}</p>
-                    <p>Map Ready: {mapReadyState ? 'Yes' : 'No'}</p>
-                    <p>Component Loading: {loading ? 'Yes' : 'No'}</p>
-                    <p>World Key: {$game.worldKey || 'None'}</p>
-                    <p>Has World Data: {$game.worldKey && $game.worlds[$game.worldKey]?.seed !== undefined ? 'Yes' : 'No'}</p>
-                    <p>Initialize Attempted: {initializationRetries} time(s)</p>
-                </div>
-            {/if}
         </div>
     {:else if error || $game.error}
         <div class="error-overlay">
@@ -979,6 +944,11 @@
         animation: spin 1s linear infinite;
         margin-bottom: 1rem;
     }
+
+    .loading-message {
+        font-size: 1.1em;
+        text-align: center;
+    }
     
     @keyframes spin {
         0% { transform: rotate(0deg); }
@@ -1062,19 +1032,5 @@
     .control-button:focus-visible {
         outline: 0.15em solid rgba(0, 0, 0, 0.6);
         outline-offset: 0.1em;
-    }
-
-    .debug-info {
-        margin-top: 1rem;
-        font-size: 0.8rem;
-        opacity: 0.7;
-        text-align: left;
-        background: rgba(0, 0, 0, 0.5);
-        padding: 0.5rem;
-        border-radius: 0.25rem;
-    }
-    
-    .debug-info p {
-        margin: 0.2rem 0;
     }
 </style>
