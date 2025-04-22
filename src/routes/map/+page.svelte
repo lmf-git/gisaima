@@ -154,8 +154,8 @@
     });
 
     $effect(() => {
-        if ($game.worldKey && $game.world[$game.worldKey]) {
-            const worldData = $game.world[$game.worldKey];
+        if ($game.worldKey && $game.worlds[$game.worldKey]) {
+            const worldData = $game.worlds[$game.worldKey];
             console.log(`World data for ${$game.worldKey}:`, {
                 hasSeed: worldData.seed !== undefined,
                 seedType: typeof worldData.seed,
@@ -240,7 +240,7 @@
                 mapReady: $ready,
                 componentLoading: loading,
                 currentWorld: $game.currentWorld,
-                worldDataAvailable: $game.currentWorld ? !!$game.world[$game.currentWorld] : false
+                worldDataAvailable: $game.currentWorld ? !!$game.worlds[$game.currentWorld] : false
             });
         }
     });
@@ -287,7 +287,7 @@
     async function ensureWorldDataLoaded(worldId) {
         if (!worldId) return false;
         
-        if ($game.world[worldId]?.seed !== undefined) {
+        if ($game.worlds[worldId]?.seed !== undefined) {
             debugLog(`World data already available for ${worldId}`);
             return true;
         }
@@ -319,7 +319,7 @@
             return;
         }
         
-        const worldData = $game.world[$game.worldKey];
+        const worldData = $game.worlds[$game.worldKey];
         
         debugLog(`Initializing map for world: ${$game.worldKey}, seed available: ${worldData?.seed !== undefined}`);
         
@@ -753,7 +753,7 @@
                     <p>Map Ready: {mapReadyState ? 'Yes' : 'No'}</p>
                     <p>Component Loading: {loading ? 'Yes' : 'No'}</p>
                     <p>World Key: {$game.worldKey || 'None'}</p>
-                    <p>Has World Data: {$game.worldKey && $game.world[$game.worldKey]?.seed !== undefined ? 'Yes' : 'No'}</p>
+                    <p>Has World Data: {$game.worldKey && $game.worlds[$game.worldKey]?.seed !== undefined ? 'Yes' : 'No'}</p>
                     <p>Initialize Attempted: {initializationRetries} time(s)</p>
                 </div>
             {/if}

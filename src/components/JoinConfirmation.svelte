@@ -5,8 +5,6 @@
   import Dwarf from './icons/Dwarf.svelte';
   import Goblin from './icons/Goblin.svelte';
   import Fairy from './icons/Fairy.svelte';
-  import { getWorldCenterCoordinates } from '../lib/stores/game.js';
-  import { user } from '../lib/stores/user';
 
   // Props for the component
   const { 
@@ -14,7 +12,7 @@
     onClose, 
     onConfirm, 
     animatingOut = false,
-    initialName = '' // Add initial name prop with default
+    initialName = ''
   } = $props();
 
   // Available races with icon components mapping

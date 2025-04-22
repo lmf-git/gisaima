@@ -186,7 +186,7 @@
       return group.nextMoveTime;
     }
     
-    const worldSpeed = $game.world[$game.currentWorld]?.speed || 1.0;
+    const worldSpeed = $game.worlds[$game.currentWorld]?.speed || 1.0;
     const moveStarted = group.moveStarted;
     
     // Basic calculation - 1 minute per movement step adjusted by world speed

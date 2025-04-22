@@ -13,7 +13,7 @@
   // Use $derived correctly following the Features.svelte pattern
   const spawnList = $derived((() => {
     // Get spawns from world data
-    const world = $game.world[$game.worldKey];
+    const world = $game.worlds[$game.worldKey];
     const spawns = world.spawns ? Object.values(world.spawns) : [];
 
     return spawns.filter(spawn => {

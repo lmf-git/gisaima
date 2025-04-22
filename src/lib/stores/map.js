@@ -4,7 +4,7 @@ import { ref, onValue } from "firebase/database";
 import { db } from '../firebase/database.js';
 import { replaceState } from '$app/navigation'; // Import from SvelteKit instead of using history directly
 // Import getWorldCenterCoordinates function from game store
-import { getWorldCenterCoordinates } from './game.js';
+import { getWorldCenterCoordinates, game } from './game.js';
 
 // New constants for controlling debug output
 const DEBUG_MODE = false; // Set to true to enable verbose logging
@@ -412,7 +412,8 @@ export const chunks = derived(
   [map],
   ([$map], set) => {
     // Ensure worldId is a valid string
-    const worldId = $map.world || 'default';
+    const gameStore = get(game);
+    const worldId = gameStore?.worldKey || 'default';
 
     // Skip if map is not ready
     if (!$map.ready) return set(new Set());
@@ -709,7 +710,7 @@ export function moveTarget(newX, newY) {
   if (!isInternalUrlUpdate) updateUrlWithCoordinates(x, y);
 
   // Save target position to localStorage
-  const worldId = currentState.world;
+  const worldId = currentState.worlds;
   if (worldId) saveTargetToLocalStorage(worldId, x, y);
 }
 
@@ -795,9 +796,11 @@ export function initialize(options = {}) {
     const currentMapState = get(map);
     
     // Extract worldId with better validation
-    let worldId = 'default';
+    // First check game store for current worldKey
+    const gameStore = get(game);
+    let worldId = gameStore && gameStore.worldKey ? gameStore.worldKey : 'default';
     
-    // Handle multiple ways worldId might be provided
+    // Handle multiple ways worldId might be provided - only override if explicitly specified
     if (typeof options.worldId === 'string' && options.worldId.length > 0) {
       worldId = options.worldId;
     } else if (options.world && typeof options.world === 'string' && options.world.length > 0) {

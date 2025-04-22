@@ -17,7 +17,7 @@ const CHUNK_SIZE = 20;
 export const game = writable({
   worldKey: null,
   joinedWorlds: [],
-  world: {},
+  worlds: {},
   player: null,
   loading: true,
   worldLoading: false,
@@ -30,7 +30,7 @@ export const currentWorldInfo = derived(
   game,
   $game => {
     if (!$game || !$game.worldKey) return null;
-    return $game.world[$game.worldKey] || null;
+    return $game.worlds[$game.worldKey] || null;
   }
 );
 
@@ -95,7 +95,7 @@ export const currentPlayer = derived(
         guest: $user.isAnonymous,
         // Current world context
         world: $game.worldKey,
-        worldName: $game.world[$game.worldKey]?.name,
+        worldName: $game.worlds[$game.worldKey]?.name,
         // Player status in this world
         alive: $game.player.alive || false,
         lastLocation: $game.player.lastLocation || null,
@@ -117,11 +117,11 @@ export const currentPlayer = derived(
 export const nextWorldTick = derived(
   game,
   ($game) => {
-    if (!$game.worldKey || !$game.world[$game.worldKey]) {
+    if (!$game.worldKey || !$game.worlds[$game.worldKey]) {
       return null;
     }
     
-    const world = $game.world[$game.worldKey];
+    const world = $game.worlds[$game.worldKey];
     const worldSpeed = world.speed || 1.0;
     const lastTick = world.lastTick || Date.now();
     
@@ -191,7 +191,7 @@ export function loadJoinedWorlds(userId) {
         
         // If we have a worldKey but no info for it, load it
         const currentState = get(game);
-        if (currentState.worldKey && !currentState.world[currentState.worldKey]) {
+        if (currentState.worldKey && !currentState.worlds[currentState.worldKey]) {
           getWorldInfo(currentState.worldKey)
             .then(() => resolve(true))
             .catch(err => {
@@ -294,7 +294,7 @@ export function setCurrentWorld(worldId, world = null, callback = null) {
   const promises = [];
   
   // Check store before fetching, remove cache check
-  const worldToUse = world || currentState.world[validWorldId];
+  const worldToUse = world || currentState.worlds[validWorldId];
   
   if (!worldToUse) {
     promises.push(getWorldInfo(validWorldId)
@@ -372,8 +372,8 @@ export function getWorldInfo(worldId) {
           ...state,
           worldLoading: false,
           error: null,
-          world: {
-            ...state.world,
+          worlds: {
+            ...state.worlds,
             [validWorldId]: worldInfo
           }
         }));
@@ -415,7 +415,7 @@ export function getWorldSpawnPoints(worldId) {
   if (!worldId) return [];
   
   const currentGameState = get(game);
-  const world = currentGameState.world?.[worldId];
+  const world = currentGameState.worlds?.[worldId];
   
   if (!world) {
     return [];
@@ -510,7 +510,7 @@ export function getWorldCenterCoordinates(worldId, world = null) {
   const validWorldId = String(worldId);
   
   // Use provided world or try to get from store
-  const info = world || (get(game).world?.[validWorldId]);
+  const info = world || (get(game).worlds?.[validWorldId]);
   if (!info) {
     return { x: 0, y: 0 };
   }
@@ -529,7 +529,7 @@ export function getWorldCenterCoordinates(worldId, world = null) {
 
 // Add a function to calculate when the next tick will likely occur
 export function calculateNextTickTime(worldId) {
-  const world = get(game).world?.[worldId];
+  const world = get(game).worlds?.[worldId];
   if (!world) return null;
   
   const worldSpeed = world.speed || 1.0;

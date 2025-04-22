@@ -209,7 +209,7 @@
     const promises = [];
     
     for (const worldId of worldIds) {
-      if (!$game.world[worldId]) {
+      if (!$game.worlds[worldId]) {
         console.log(`Preloading info for world ${worldId}`);
         promises.push(getWorldInfo(worldId)
           .then(info => {
@@ -252,7 +252,7 @@
     const nextWorldId = loadingQueue[0];
     console.log(`Loading world card for: ${nextWorldId}`);
     
-    const world = $game.world[nextWorldId];
+    const world = $game.worlds[nextWorldId];
     
     if (world) {
       setTimeout(() => {
@@ -342,7 +342,7 @@
               tileSize={2}
               delayed={!loadedWorldCards.has(world.id)}
               joined={isWorldJoined(world.id)}
-              world={$game.world[world.id]}
+              world={$game.worlds[world.id]}
               worldCenter={world.center || worldCenters[world.id]}
               debug={true}
             />
@@ -362,7 +362,7 @@
               </div>
               <div class="stat-item">
                 <span class="stat-label">Speed:</span>
-                <span class="stat-value">{(world.speed || $game.world[world.id]?.speed || 1.0).toFixed(1)}x</span>
+                <span class="stat-value">{(world.speed || $game.worlds[world.id]?.speed || 1.0).toFixed(1)}x</span>
               </div>
               <div class="stat-item">
                 <span class="stat-label">Created:</span>

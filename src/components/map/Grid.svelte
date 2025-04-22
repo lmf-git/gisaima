@@ -1,6 +1,6 @@
 <script>
   import { onMount, onDestroy } from "svelte";
-  import { derived } from "svelte/store";
+  import { derived, get } from "svelte/store";  // Add get import
   import { browser } from '$app/environment';
   import { 
     map, 
@@ -385,8 +385,9 @@
   
   // Simplified player position logic
   const playerPosition = $derived(() => {
+    const gameState = get(game);  // Get current game state
     // Only use lastLocation when needed
-    return $game.playerWorldData?.alive ? $game.playerWorldData?.lastLocation : null;
+    return gameState.player?.alive ? gameState.player?.lastLocation : null;
   });
   
   function isCurrentPlayer(playerEntity) {
