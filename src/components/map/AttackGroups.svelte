@@ -29,33 +29,68 @@
   let loading = $state(false);
   let errorMessage = $state('');
   
-  // Effect to detect available groups to attack with and enemy groups
-  $effect(() => {
-    if (!tileData) return;
+  // Memoize player ID to reduce calculations
+  let currentPlayerId = $derived($currentPlayer?.id);
+  
+  // Helper function to normalize groups data - handles both array and object formats
+  function normalizeGroupsData(groupsData) {
+    if (!groupsData) return [];
     
-    const playerId = $currentPlayer?.id;
-    if (!playerId) return;
+    // If it's already an array, return it
+    if (Array.isArray(groupsData)) return groupsData;
+    
+    // If it's an object with keys, convert to array
+    if (typeof groupsData === 'object') {
+      return Object.keys(groupsData).map(key => {
+        const data = groupsData[key];
+        return {
+          ...data,
+          id: data.id || key
+        };
+      });
+    }
+    
+    return [];
+  }
+  
+  // Calculate available groups just once when tile data changes
+  $effect(() => {
+    if (!tileData || !currentPlayerId || !tileData.groups) return;
+    
+    // Only recalculate when tile data or player ID changes
+    const groups = normalizeGroupsData(tileData.groups);
     
     // Find player groups that can attack (idle groups)
-    playerGroups = tileData.groups
-      ? tileData.groups.filter(group => 
-          group.owner === playerId && 
-          group.status === 'idle' &&
-          !group.inBattle
-        )
-      : [];
+    const myGroups = groups.filter(group => 
+      group.owner === currentPlayerId && 
+      group.status === 'idle' &&
+      !group.inBattle
+    );
     
     // Find enemy groups that can be attacked (idle groups not owned by player)
-    enemyGroups = tileData.groups
-      ? tileData.groups.filter(group => 
-          group.owner !== playerId && 
-          group.status === 'idle' &&
-          !group.inBattle
-        )
-      : [];
+    const enemies = groups.filter(group => 
+      group.owner !== currentPlayerId && 
+      group.status === 'idle' &&
+      !group.inBattle
+    );
+
+    // Update only if changes detected (length check is faster than deep comparison)
+    if (playerGroups.length !== myGroups.length || !playerGroups.every((g, i) => g.id === myGroups[i]?.id)) {
+      playerGroups = myGroups;
+    }
     
-    console.log('Player groups available for attack:', playerGroups.length);
-    console.log('Enemy groups available to attack:', enemyGroups.length);
+    if (enemyGroups.length !== enemies.length || !enemyGroups.every((g, i) => g.id === enemies[i]?.id)) {
+      enemyGroups = enemies;
+    }
+    
+    // Reset selections if the selected groups are no longer available
+    if (selectedPlayerGroup && !myGroups.some(g => g.id === selectedPlayerGroup.id)) {
+      selectedPlayerGroup = null;
+    }
+    
+    if (selectedEnemyGroup && !enemies.some(g => g.id === selectedEnemyGroup.id)) {
+      selectedEnemyGroup = null;
+    }
   });
   
   // Start an attack
@@ -67,35 +102,33 @@
     
     try {
       console.log('Starting attack with params:', {
-        attackerGroupId: selectedPlayerGroup.id,
-        defenderGroupId: selectedEnemyGroup.id,
+        worldId: $game.worldKey,
+        attackerGroupIds: [selectedPlayerGroup.id],
+        defenderGroupIds: [selectedEnemyGroup.id],
         locationX: tileData.x,
         locationY: tileData.y,
-        worldId: $game.worldKey
       });
       
-      // Call the cloud function
-      const startAttackFn = httpsCallable(functions, 'startAttack');
-      const result = await startAttackFn({
-        attackerGroupId: selectedPlayerGroup.id,
-        defenderGroupId: selectedEnemyGroup.id,
+      // Call the cloud function with the updated parameter names
+      const attackFunction = httpsCallable(functions, 'attackGroups');
+      const result = await attackFunction({
+        worldId: $game.worldKey,
+        attackerGroupIds: [selectedPlayerGroup.id],
+        defenderGroupIds: [selectedEnemyGroup.id],
         locationX: tileData.x,
-        locationY: tileData.y,
-        worldId: $game.worldKey
+        locationY: tileData.y
       });
       
       if (result.data.success) {
         console.log('Attack started:', result.data);
         
         // Call the callback function if provided
-        if (onAttack) {
-          onAttack({
-            attackerGroupId: selectedPlayerGroup.id,
-            defenderGroupId: selectedEnemyGroup.id,
-            battleId: result.data.battleId,
-            tile: tileData
-          });
-        }
+        onAttack({
+          attackerGroupId: selectedPlayerGroup.id,
+          defenderGroupId: selectedEnemyGroup.id,
+          battleId: result.data.battleId,
+          tile: tileData
+        });
         
         onClose(true);
       } else {
@@ -127,7 +160,7 @@
   }
   
   // Check if attack is possible
-  const canAttack = $derived(
+  let canAttack = $derived(
     selectedPlayerGroup !== null && 
     selectedEnemyGroup !== null &&
     !loading
