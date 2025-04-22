@@ -54,7 +54,6 @@
     let loading = $state(true);
     let error = $state(null);
     
-    let urlCoordinates = $state(null);
     let urlProcessingComplete = $state(false);
     
     let isPathDrawingMode = $state(false);
@@ -72,9 +71,6 @@
     let isTransitioningToPathDrawing = $state(false);
 
     let structureRenderCount = $state(0);
-
-    let coordinateProcessingDebounce = null;
-    const COORDINATE_DEBOUNCE_TIME = 300;
 
     let pathDrawingGroup = $state(null);
     let currentPath = $state([]);
@@ -105,13 +101,9 @@
     
     let ignoreNextUrlChange = $state(false);
     let lastProcessedLocation = $state(null);
-    
-    let coordinateProcessingState = $state({
-        processing: false,
-        processed: new Set(),
-        lastProcessedTime: 0
-    });
 
+    // Simplified URL coordinate handling
+    // Simple function to get coordinates from URL
     function parseUrlCoordinates() {
         if (!browser || !page) return null;
         
@@ -124,15 +116,7 @@
             const parsedY = parseInt(y, 10);
             
             if (!isNaN(parsedX) && !isNaN(parsedY)) {
-                const coordKey = `${parsedX},${parsedY}`;
-                
-                const now = Date.now();
-                if (coordinateProcessingState.processed.has(coordKey) && 
-                    now - coordinateProcessingState.lastProcessedTime < 2000) {
-                    return null;
-                }
-                
-                return { x: parsedX, y: parsedY, key: coordKey };
+                return { x: parsedX, y: parsedY };
             }
         }
         
@@ -141,50 +125,34 @@
     
     if (browser) {
         window.addEventListener('popstate', () => {
-            if (isInternalUrlChange()) {
-                ignoreNextUrlChange = true;
-                return;
-            }
-            
+            if (isInternalUrlChange()) return;
             urlProcessingComplete = false;
         });
     }
     
+    // Simplified URL coordinate processing effect
     $effect(() => {
-        if (coordinateProcessingState.processing || !browser || !page) return;
+        if (!browser || !$ready || urlProcessingComplete) return;
         
-        if (coordinateProcessingDebounce) {
-            clearTimeout(coordinateProcessingDebounce);
+        const coords = parseUrlCoordinates();
+        if (coords) {
+            debugLog(`Applying URL coordinates: ${coords.x},${coords.y}`);
+            moveTarget(coords.x, coords.y);
+            urlProcessingComplete = true;
+            return;
+        }
+            
+        if ($game.playerData?.lastLocation) {
+            const location = $game.playerData.lastLocation;
+            moveTarget(location.x, location.y);
+        } else if ($game.worldKey) {
+            const worldCenter = getWorldCenterCoordinates($game.worldKey);
+            moveTarget(worldCenter.x, worldCenter.y);
         }
         
-        coordinateProcessingDebounce = setTimeout(() => {
-            const url = get(page).url;
-            const newCoords = parseUrlCoordinates();
-            
-            if (newCoords && !isInternalUrlChange()) {
-                debugLog(`Found URL coordinates: ${newCoords.x},${newCoords.y}`);
-                
-                coordinateProcessingState.processing = true;
-                
-                if ($ready) {
-                    console.log(`Applying URL coordinates: ${newCoords.x},${newCoords.y}`);
-                    moveTarget(newCoords.x, newCoords.y);
-                    
-                    coordinateProcessingState.processed.add(newCoords.key);
-                    coordinateProcessingState.lastProcessedTime = Date.now();
-                    urlProcessingComplete = true;
-                } else {
-                    urlCoordinates = { x: newCoords.x, y: newCoords.y };
-                }
-                
-                setTimeout(() => {
-                    coordinateProcessingState.processing = false;
-                }, 100);
-            }
-            coordinateProcessingDebounce = null;
-        }, COORDINATE_DEBOUNCE_TIME);
+        urlProcessingComplete = true;
     });
-    
+
     $effect(() => {
         if ($game.worldKey && $game.world[$game.worldKey]) {
             const worldData = $game.world[$game.worldKey];
@@ -247,11 +215,6 @@
                 loading = false;
             }
         });
-        
-        const coords = parseUrlCoordinates();
-        if (coords) {
-            urlCoordinates = { x: coords.x, y: coords.y };
-        }
 
         window.addEventListener('beforeunload', cleanup);
         
@@ -264,27 +227,6 @@
         };
     });
 
-    $effect(() => {
-        if (!$ready || urlProcessingComplete) return;
-        
-        if (urlCoordinates) {
-            debugLog(`Applying URL coordinates: ${urlCoordinates.x},${urlCoordinates.y}`);
-            moveTarget(urlCoordinates.x, urlCoordinates.y);
-            urlProcessingComplete = true;
-            lastProcessedLocation = { ...urlCoordinates };
-        } else if ($game.playerData?.lastLocation) {
-            const location = $game.playerData.lastLocation;
-            moveTarget(location.x, location.y);
-            urlProcessingComplete = true;
-            lastProcessedLocation = { ...location };
-        } else if ($game.worldKey) {
-            const worldCenter = getWorldCenterCoordinates($game.worldKey);
-            moveTarget(worldCenter.x, worldCenter.y);
-            urlProcessingComplete = true;
-            lastProcessedLocation = { ...worldCenter };
-        }
-    });
-    
     $effect(() => {
         authReadyState = $isAuthReady;
         gameInitializedState = $game.initialized;

@@ -100,31 +100,21 @@ export const targetPosition = derived(map, ($map) => {
   };
 }, { x: 0, y: 0 });
 
-// Debounce URL updates to prevent performance issues
-let urlUpdateTimeout = null;
-const URL_UPDATE_DEBOUNCE = 750; // Increase from 500ms to 750ms for better performance
-
-// Flag to track if the URL is being updated by us or externally
+// Simplified URL update tracking
 let isInternalUrlUpdate = false;
-let lastUrlUpdate = { x: null, y: null };
+let urlUpdateTimeout = null;
+const URL_UPDATE_DEBOUNCE = 300; // Reduced from 750ms for better responsiveness
 
-// Improved function to update URL with current coordinates
+// Simplified function to update URL with current coordinates
 function updateUrlWithCoordinates(x, y) {
   if (typeof window === 'undefined') return;
-
-  // Skip if coordinates match the last ones we updated (prevent redundancy)
-  const roundedX = Math.round(x);
-  const roundedY = Math.round(y);
-  if (lastUrlUpdate.x === roundedX && lastUrlUpdate.y === roundedY) {
-    return;
-  }
 
   // Cancel any pending updates
   if (urlUpdateTimeout) {
     clearTimeout(urlUpdateTimeout);
   }
 
-  // Debounce URL updates to prevent performance issues
+  // Debounce URL updates
   urlUpdateTimeout = setTimeout(() => {
     try {
       // Mark this as an internal update
@@ -132,16 +122,13 @@ function updateUrlWithCoordinates(x, y) {
 
       // Create updated URL
       const url = new URL(window.location);
-      url.searchParams.set('x', roundedX.toString());
-      url.searchParams.set('y', roundedY.toString());
+      url.searchParams.set('x', Math.round(x).toString());
+      url.searchParams.set('y', Math.round(y).toString());
 
-      // Store the coordinates we're updating to
-      lastUrlUpdate = { x: roundedX, y: roundedY };
-
-      // Use SvelteKit's replaceState instead of history.replaceState
+      // Use SvelteKit's replaceState
       replaceState(url, {});
 
-      // Reset flag after a short delay to allow for popstate event to be processed
+      // Reset flag after a short delay
       setTimeout(() => {
         isInternalUrlUpdate = false;
       }, 50);
@@ -149,7 +136,6 @@ function updateUrlWithCoordinates(x, y) {
       console.error('Error updating URL:', err);
       isInternalUrlUpdate = false;
     }
-    urlUpdateTimeout = null;
   }, URL_UPDATE_DEBOUNCE);
 }
 
@@ -697,11 +683,7 @@ export const highlightedStore = derived(
   }
 );
 
-// Enhance the moveTarget function with better debouncing
-let moveTargetTimeout = null;
-const MOVE_TARGET_DEBOUNCE = 50; // Increase from 30ms to 50ms for better performance
-
-// Simplified moveTarget function with enhanced debouncing
+// Simplified moveTarget function with improved debouncing
 export function moveTarget(newX, newY) {
   if (newX === undefined || newY === undefined) {
     console.warn('Invalid coordinates passed to moveTarget:', { newX, newY });
@@ -717,27 +699,18 @@ export function moveTarget(newX, newY) {
     return; // No change needed
   }
 
-  // Clear any pending timeout
-  if (moveTargetTimeout) clearTimeout(moveTargetTimeout);
+  // Update map position immediately for responsive UI
+  map.update(prev => ({
+    ...prev,
+    target: { x, y },
+  }));
 
-  // Debounce rapid updates
-  moveTargetTimeout = setTimeout(() => {
-    // Update map position immediately for responsive UI
-    map.update(prev => ({
-      ...prev,
-      target: { x, y },
-    }));
+  // Update URL to reflect the new position
+  if (!isInternalUrlUpdate) updateUrlWithCoordinates(x, y);
 
-    // Update URL to reflect the new position - with a lower priority
-    // Only update URL for significant moves (more than 3 tiles) or after longer pauses
-    if (!isInternalUrlUpdate) updateUrlWithCoordinates(x, y);
-
-    // Save target position to localStorage (less frequently)
-    const worldId = currentState.world;
-    if (worldId) saveTargetToLocalStorage(worldId, x, y);
-
-    moveTargetTimeout = null;
-  }, MOVE_TARGET_DEBOUNCE);
+  // Save target position to localStorage
+  const worldId = currentState.world;
+  if (worldId) saveTargetToLocalStorage(worldId, x, y);
 }
 
 // Set highlighted coordinates
