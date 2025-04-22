@@ -60,37 +60,6 @@ function loadTargetFromLocalStorage(worldId) {
 
 const chunkSubscriptions = new Map();
 
-// Enhanced validateWorldId function with better error handling
-function validateWorldId(worldId) {
-  if (!worldId) {
-    console.warn('Empty worldId received, using default');
-    return 'default';
-  }
-  
-  // Handle case where worldId is an object - more detailed logging
-  if (typeof worldId === 'object') {
-    console.error('Invalid worldId object received:', worldId);
-    
-    // Try to extract ID from common patterns
-    if (worldId.id) {
-      console.warn('Extracted ID from object:', worldId.id);
-      return String(worldId.id);
-    }
-    
-    // Try name as fallback if available
-    if (worldId.name) {
-      const sanitizedName = String(worldId.name).toLowerCase().replace(/[^a-z0-9-]/g, '-');
-      console.warn('Using sanitized name as fallback ID:', sanitizedName);
-      return sanitizedName;
-    }
-    
-    console.warn('Falling back to default world ID');
-    return 'default';
-  }
-  
-  return String(worldId);
-}
-
 // Initialize map without accessing game store initially
 export const map = writable({
   ready: false,
@@ -457,7 +426,7 @@ export const chunks = derived(
   [map],
   ([$map], set) => {
     // Ensure worldId is a valid string
-    const worldId = validateWorldId($map.world);
+    const worldId = $map.world || 'default';
 
     // Skip if map is not ready
     if (!$map.ready) return set(new Set());
@@ -524,7 +493,7 @@ export const chunks = derived(
     // Process chunks in order of priority
     for (const chunk of chunksToLoad) {
       try {
-        // Use validated worldId when creating Firebase reference
+        // Use worldId directly when creating Firebase reference
         const chunkRef = ref(db, `worlds/${worldId}/chunks/${chunk.chunkKey}`);
         const unsubscribe = onValue(chunkRef, snapshot => {
           if (snapshot.exists()) {
@@ -896,8 +865,8 @@ export function initialize(options = {}) {
     // Don't reinitialize if already ready with the same world
     const currentMapState = get(map);
     
-    // Extract worldId with better validation - fix the issue with worldId handling
-    let worldId = null;
+    // Extract worldId with better validation
+    let worldId = 'default';
     
     // Handle multiple ways worldId might be provided
     if (typeof options.worldId === 'string' && options.worldId.length > 0) {
@@ -908,13 +877,7 @@ export function initialize(options = {}) {
       worldId = options.world.id;
     }
     
-    // Validate worldId is a non-empty string - add detailed logging
-    if (!worldId || typeof worldId !== 'string' || worldId.length === 0) {
-      console.warn('No valid worldId in options, using "default":', options);
-      worldId = 'default';
-    } else {
-      debugLog(`Using worldId: ${worldId}`);
-    }
+    debugLog(`Using worldId: ${worldId}`);
     
     // Validate world object to ensure it has required properties
     if (options.world && typeof options.world === 'object') {
@@ -1133,11 +1096,12 @@ export function cleanup() {
 
 // Initialize map for world with localStorage support
 export function initializeMapForWorld(worldId, worldData = null) {
-  if (!worldId || typeof worldId !== 'string' || worldId.length === 0) {
+  if (!worldId) {
     console.warn('Empty worldId received, using default');
     worldId = 'default';
   }
-
+  
+  worldId = String(worldId);
   console.log(`Initializing map for world: ${worldId}`);
 
   // Get current map state
@@ -1168,7 +1132,7 @@ export function initializeMapForWorld(worldId, worldData = null) {
     if (savedPosition) {
       setup({
         seed: worldData.seed,
-        worldId: worldId,  // Use the validated worldId
+        worldId: worldId,
         initialX: savedPosition.x,
         initialY: savedPosition.y
       });
@@ -1176,7 +1140,7 @@ export function initializeMapForWorld(worldId, worldData = null) {
       // Use world center if no saved position
       setup({
         seed: worldData.seed,
-        worldId: worldId,  // Use the validated worldId
+        worldId: worldId,
         initialX: worldCenter.x,
         initialY: worldCenter.y
       });

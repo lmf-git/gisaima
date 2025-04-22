@@ -252,19 +252,6 @@ const CACHE_TTL = 30000; // 30 seconds cache TTL
 // Add new tracking for world data readiness
 const worldDataReadyCallbacks = new Map();
 
-// Helper function to validate world IDs
-function validateWorldId(worldId) {
-  if (!worldId) return null;
-  
-  // Handle case where worldId is an object
-  if (typeof worldId === 'object') {
-    console.error('Invalid worldId object received in game store:', worldId);
-    return null;
-  }
-  
-  return String(worldId); // Ensure it's a string
-}
-
 // Load player's joined worlds
 export function loadJoinedWorlds(userId) {
   if (!userId) {
@@ -402,14 +389,21 @@ export function setMapInitializer(initFunction) {
 
 // Enhanced set current world with loading completion callback
 export function setCurrentWorld(worldId, world = null, callback = null) {
-  // Validate the world ID
-  const validWorldId = validateWorldId(worldId);
-  
-  if (!validWorldId) {
+  // Validate the world ID directly
+  if (!worldId) {
     debugLog('Cannot set current world: No valid world ID provided');
     if (callback) callback(null);
     return Promise.resolve(null);
   }
+  
+  // Handle case where worldId is an object
+  if (typeof worldId === 'object') {
+    console.error('Invalid worldId object received in game store:', worldId);
+    if (callback) callback(null);
+    return Promise.resolve(null);
+  }
+  
+  const validWorldId = String(worldId);
   
   debugLog(`Setting current world to: ${validWorldId}`);
   
@@ -475,13 +469,19 @@ export function setCurrentWorld(worldId, world = null, callback = null) {
 
 // Improved getWorldInfo function with better validation
 export function getWorldInfo(worldId) {
-  // Validate the world ID
-  const validWorldId = validateWorldId(worldId);
-  
-  if (!validWorldId) {
+  // Validate the world ID directly
+  if (!worldId) {
     debugLog('Cannot get world info: No valid world ID provided');
     return Promise.resolve(null);
   }
+  
+  // Handle case where worldId is an object
+  if (typeof worldId === 'object') {
+    console.error('Invalid worldId object received in game store:', worldId);
+    return Promise.resolve(null);
+  }
+  
+  const validWorldId = String(worldId);
   
   debugLog(`Getting world info for: ${validWorldId}`);
   
@@ -723,13 +723,19 @@ export async function refreshWorldInfo(worldId) {
 
 // Function to get world center coordinates - improved with better validation
 export function getWorldCenterCoordinates(worldId, world = null) {
-  // Validate the world ID
-  const validWorldId = validateWorldId(worldId);
-  
-  if (!validWorldId) {
+  // Validate the world ID directly
+  if (!worldId) {
     debugLog('Cannot get world center: No valid world ID provided');
     return { x: 0, y: 0 };
   }
+  
+  // Handle case where worldId is an object
+  if (typeof worldId === 'object') {
+    console.error('Invalid worldId object received in game store:', worldId);
+    return { x: 0, y: 0 };
+  }
+  
+  const validWorldId = String(worldId);
   
   // Use provided world or try to get from store
   const info = world || (getStore(game).world?.[validWorldId]);
