@@ -16,8 +16,11 @@
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
 
-  // Import Compass icon
+  // Import action icon components
   import Compass from '../icons/Compass.svelte';
+  import Eye from '../icons/Eye.svelte';
+  import Crop from '../icons/Crop.svelte';
+  import Rally from '../icons/Rally.svelte';
 
   // Props
   const { 
@@ -573,12 +576,14 @@
               <div class="actions-grid">
                 {#if $highlightedStore.structure}
                   <button class="action-button inspect-button" onclick={() => executeAction('inspect')}>
+                    <Eye extraClass="action-icon eye-icon" />
                     Inspect
                   </button>
                 {/if}
                 
                 {#if canMobilize($highlightedStore)}
                   <button class="action-button" onclick={() => executeAction('mobilise')}>
+                    <Rally extraClass="action-icon rally-icon" />
                     Mobilise
                   </button>
                 {/if}
@@ -598,6 +603,7 @@
                 
                 {#if canGather($highlightedStore)}
                   <button class="action-button" onclick={() => executeAction('gather', { source: 'details' })}>
+                    <Crop extraClass="action-icon crop-icon" />
                     Gather
                   </button>
                 {/if}
@@ -724,10 +730,12 @@
                   {#if isOwnedByCurrentPlayer(group) && group.status === 'idle' && !group.inBattle}
                     <div class="entity-actions">
                       <button class="entity-action" onclick={() => executeAction('move', { group })}>
+                        <Compass extraClass="action-icon-small compass-icon" />
                         Move
                       </button>
                       {#if $highlightedStore.items?.length > 0}
                         <button class="entity-action" onclick={() => executeAction('gather', { group })}>
+                          <Crop extraClass="action-icon-small crop-icon" />
                           Gather
                         </button>
                       {/if}
@@ -1232,6 +1240,29 @@
   
   :global(.spawn-icon) {
     filter: drop-shadow(0 0 2px rgba(0, 255, 255, 0.4));
+  }
+
+  :global(.eye-icon) {
+    width: 1.1em;
+    height: 1.1em;
+  }
+  
+  :global(.crop-icon) {
+    width: 1.1em;
+    height: 1.1em;
+  }
+  
+  :global(.rally-icon) {
+    width: 1.1em;
+    height: 1.1em;
+  }
+  
+  :global(.action-icon-small) {
+    width: 0.9em;
+    height: 0.9em;
+    margin-right: 0.2em;
+    vertical-align: middle;
+    opacity: 0.8;
   }
 
   .entity {
