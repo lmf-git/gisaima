@@ -64,7 +64,7 @@
     } : null
   );
   
-  // 4. Process spawn points - use direct expression form where possible
+  // 4. Process spawn points - filter to only show player's race
   const spawnPoints = $derived(
     !spawnData || !spawnData.data ? [] :
     (() => {
@@ -76,15 +76,14 @@
           spawn && spawn.id && spawn.name && spawn.position
         );
         
-        // Sort spawns: player's race first, then alphabetically
+        // Get player race
         const playerRace = $currentPlayer?.race || 'unknown';
-        return validSpawns.sort((a, b) => {
-          // Player race spawns first
-          if (a.race === playerRace && b.race !== playerRace) return -1;
-          if (a.race !== playerRace && b.race === playerRace) return 1;
-          // Then sort by name
-          return a.name.localeCompare(b.name);
-        });
+        
+        // Filter to only show spawns matching player race
+        const raceSpawns = validSpawns.filter(spawn => spawn.race === playerRace);
+        
+        // Sort alphabetically by name
+        return raceSpawns.sort((a, b) => a.name.localeCompare(b.name));
       } catch (err) {
         console.error('Error processing spawn points:', err);
         return [];
@@ -97,13 +96,9 @@
     spawnPoints.length === 0 ? null : {
       totalSpawns: spawnPoints.length,
       playerRace: $currentPlayer?.race || 'unknown',
-      matchingRaceSpawns: spawnPoints.filter(s => s.race === $currentPlayer?.race).length,
-      spawnsWithoutRace: spawnPoints.filter(s => !s.race).length,
-      spawnsByRace: spawnPoints.reduce((acc, s) => {
-        acc[s.race || 'unknown'] = (acc[s.race || 'unknown'] || 0) + 1;
-        return acc;
-      }, {}),
-      firstSpawn: spawnPoints[0] || null
+      firstSpawn: spawnPoints[0] || null,
+      // Track total available spawns for debugging
+      totalAvailableSpawns: spawnData ? Object.values(spawnData.data).length : 0
     }
   );
 
@@ -171,25 +166,13 @@
     if (worldData && loading) {
       loading = false;
       
-      // Select first spawn point matching player's race if available
+      // Select first spawn point if available
       if (spawnPoints.length > 0) {
-        const playerRace = $currentPlayer?.race || 'unknown';
-        const matchingRaceSpawn = spawnPoints.find(s => s.race === playerRace);
+        selectedSpawnId = spawnPoints[0].id;
         
-        if (matchingRaceSpawn) {
-          debugLog('Found spawn matching player race:', matchingRaceSpawn);
-          selectedSpawnId = matchingRaceSpawn.id;
-        } else {
-          // Fall back to first spawn
-          selectedSpawnId = spawnPoints[0].id;
-        }
-        
-        // Auto-move to the spawn location if there's only one or we selected a race match
-        if (spawnPoints.length === 1 || matchingRaceSpawn) {
-          const targetSpawn = matchingRaceSpawn || spawnPoints[0];
-          moveTarget(targetSpawn.position.x, targetSpawn.position.y);
-          movedToSpawn = true;
-        }
+        // Auto-move to the spawn location
+        moveTarget(spawnPoints[0].position.x, spawnPoints[0].position.y);
+        movedToSpawn = true;
       }
     }
   });
@@ -286,11 +269,6 @@
     if (!text) return '';
     return text.toString().replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
-  
-  // Check if spawn matches player's race
-  function isPlayerRaceSpawn(spawn) {
-    return spawn.race === $currentPlayer?.race;
-  }
 </script>
 
 {#if $needsSpawn}
@@ -315,7 +293,7 @@
       </div>
     {:else if !spawnPoints.length}
       <div class="error-message">
-        <p>No spawn points available in this world</p>
+        <p>No spawn points available for your race in this world</p>
         
         <!-- Enhanced debug info with properly serialized data -->
         <details class="debug-info" open>
@@ -354,7 +332,6 @@ Keys Count: {debugData.spawnKeys.length}
             type="button"
             class="spawn-option" 
             class:selected={selectedSpawnId === spawn.id}
-            class:race-match={isPlayerRaceSpawn(spawn)}
             onclick={() => {
               selectedSpawnId = spawn.id;
               movedToSpawn = false;
@@ -366,9 +343,6 @@ Keys Count: {debugData.spawnKeys.length}
             <div class="spawn-info">
               <div class="spawn-name">
                 {spawn.name}
-                {#if isPlayerRaceSpawn(spawn)}
-                  <span class="recommended-tag">Recommended</span>
-                {/if}
               </div>
               <div class="spawn-race">{formatText(spawn.race)} Territory</div>
               <div class="spawn-coords">({spawn.position.x}, {spawn.position.y})</div>
@@ -383,13 +357,6 @@ Keys Count: {debugData.spawnKeys.length}
           <p>{selectedSpawn.description}</p>
           <div class="coordinates">
             Location: ({selectedSpawn.position.x}, {selectedSpawn.position.y})
-          </div>
-          <div class="spawn-race-note">
-            {#if isPlayerRaceSpawn(selectedSpawn)}
-              <span class="race-match-note">✓ This is your race's territory</span>
-            {:else}
-              <span class="race-mismatch-note">⚠ This is {formatText(selectedSpawn.race)} territory, not your race's homeland</span>
-            {/if}
           </div>
         </div>
       {/if}
@@ -413,7 +380,10 @@ Keys Count: {debugData.spawnKeys.length}
       
       {#if showDebugView}
         <div class="detailed-debug">
-          <h4>Spawn Points Found: {spawnPoints.length}</h4>
+          <h4>Race Spawn Points Found: {spawnPoints.length}</h4>
+          {#if spawnData}
+            <p>Total spawns in world: {spawnStats?.totalAvailableSpawns}</p>
+          {/if}
           <div class="spawn-data-table">
             <table>
               <thead>
@@ -426,7 +396,7 @@ Keys Count: {debugData.spawnKeys.length}
               </thead>
               <tbody>
                 {#each spawnPoints as spawn}
-                  <tr class:race-match={isPlayerRaceSpawn(spawn)}>
+                  <tr>
                     <td>{spawn.id}</td>
                     <td>{spawn.name}</td>
                     <td>{formatText(spawn.race || 'unknown')}</td>
@@ -543,22 +513,6 @@ Keys Count: {debugData.spawnKeys.length}
     box-shadow: 0 0 8px rgba(0, 100, 255, 0.5);
   }
   
-  .spawn-option.race-match {
-    background: rgba(0, 128, 0, 0.2);
-    border-color: rgba(0, 255, 0, 0.3);
-  }
-  
-  .spawn-option.race-match:hover {
-    background: rgba(0, 128, 0, 0.3);
-    border-color: rgba(0, 255, 0, 0.5);
-  }
-  
-  .spawn-option.race-match.selected {
-    background: rgba(0, 128, 0, 0.35);
-    border-color: rgba(0, 255, 0, 0.7);
-    box-shadow: 0 0 8px rgba(0, 255, 128, 0.5);
-  }
-  
   .spawn-icon {
     display: flex;
     align-items: center;
@@ -579,16 +533,6 @@ Keys Count: {debugData.spawnKeys.length}
     font-size: 1.1em;
     margin-bottom: 3px;
     color: var(--color-blue-light, #66a6ff);
-  }
-  
-  .recommended-tag {
-    font-size: 0.7em;
-    background: rgba(0, 255, 0, 0.3);
-    color: white;
-    padding: 2px 6px;
-    border-radius: 10px;
-    margin-left: 8px;
-    vertical-align: middle;
   }
   
   .spawn-race {
@@ -619,20 +563,6 @@ Keys Count: {debugData.spawnKeys.length}
     margin-top: 10px;
     font-family: monospace;
     color: rgba(255, 255, 255, 0.8);
-  }
-  
-  .spawn-race-note {
-    margin-top: 10px;
-  }
-  
-  .race-match-note {
-    color: #7cfc00;
-    display: block;
-  }
-  
-  .race-mismatch-note {
-    color: #ffcc00;
-    display: block;
   }
   
   .spawn-button {
@@ -743,21 +673,6 @@ Keys Count: {debugData.spawnKeys.length}
   .spawn-data-table th {
     background: rgba(0, 50, 100, 0.5);
     text-align: left;
-  }
-  
-  .spawn-data-table tr.race-match {
-    background: rgba(0, 128, 0, 0.2);
-  }
-  
-  .spawn-data-debug {
-    margin-top: 1rem;
-  }
-  
-  .spawn-debug-entry {
-    margin-bottom: 1rem;
-    padding: 0.5rem;
-    background: rgba(0, 0, 0, 0.2);
-    border-left: 3px solid #4a90e2;
   }
   
   .raw-data pre {
