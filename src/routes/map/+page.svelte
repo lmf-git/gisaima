@@ -21,8 +21,7 @@
         isInternalUrlChange,
         setHighlighted,
         coordinates,
-        handleKeyboardEvent,
-        initializeMapForWorld
+        handleKeyboardEvent
     } from "../../lib/stores/map.js";
     
     import { getFunctions, httpsCallable } from 'firebase/functions'; 
@@ -363,18 +362,12 @@
             const initialX = parseInt($page.url.searchParams.get('x')) || undefined;
             const initialY = parseInt($page.url.searchParams.get('y')) || undefined;
             
-            if (initialX !== undefined && initialY !== undefined) {
-                debugLog(`Initializing map with URL position: ${initialX},${initialY}`);
-                initialize({
-                    seed: worldData.seed,
-                    worldId: $game.worldKey, // Make sure to use worldId instead of world property
-                    initialX,
-                    initialY
-                });
-            } else {
-                debugLog(`Initializing map with world data`);
-                initializeMapForWorld($game.worldKey, worldData);
-            }
+            initialize({
+                seed: worldData.seed,
+                worldId: $game.worldKey, // Make sure to use worldId instead of world property
+                initialX,
+                initialY
+            });
             
             loading = false;
         } catch (err) {

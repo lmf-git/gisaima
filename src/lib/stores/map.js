@@ -936,14 +936,6 @@ export function setup(options = {}) {
   return initialize(options);
 }
 
-export function setupFromWorldInfo(worldId, world) {
-  return initialize({ worldId, world });
-}
-
-export function setupFromGameStore(gameStore) {
-  return initialize({ gameStore });
-}
-
 // Get current world ID
 export function getCurrentWorld() {
   return get(map).world || 'default';
@@ -1019,61 +1011,4 @@ export function cleanup() {
     items: {},
     battles: {}  // Include battles in the reset
   });
-}
-
-// Initialize map for world with localStorage support
-export function initializeMapForWorld(worldId, worldData = null) {
-  if (!worldId) {
-    console.warn('Empty worldId received, using default');
-    worldId = 'default';
-  }
-  
-  worldId = String(worldId);
-  console.log(`Initializing map for world: ${worldId}`);
-
-  // Get current map state
-  const currentMapState = get(map);
-
-  // Don't reinitialize if already set up
-  if (currentMapState.ready && currentMapState.world === worldId) {
-    console.log(`Map already initialized for world ${worldId}`);
-    return;
-  }
-
-  // Clean up existing map if needed
-  if (currentMapState.ready) {
-    cleanup();
-  }
-
-  // Try to load saved position for this world
-  const savedPosition = loadTargetFromLocalStorage(worldId);
-
-  // Get world center coordinates
-  const worldCenter = getWorldCenterCoordinates(worldId, worldData);
-
-  // Initialize with world data if available - with validation
-  if (worldData && worldData.seed !== undefined) {
-    console.log(`Initializing map with provided worldData, seed: ${worldData.seed}`);
-
-    // If we have saved coordinates, include them in setup
-    if (savedPosition) {
-      setup({
-        seed: worldData.seed,
-        worldId: worldId,
-        initialX: savedPosition.x,
-        initialY: savedPosition.y
-      });
-    } else {
-      // Use world center if no saved position
-      setup({
-        seed: worldData.seed,
-        worldId: worldId,
-        initialX: worldCenter.x,
-        initialY: worldCenter.y
-      });
-    }
-    return;
-  }
-
-  console.log(`Cannot initialize map for world ${worldId} - no seed data available`);
 }
