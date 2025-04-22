@@ -26,6 +26,7 @@
   let worldData = $state(null);
   let spawnPoints = $state([]);
   let filteredSpawnPoints = $state([]);
+  let currentPlayerRace = $state(null);
   
   // Function to calculate chunk key
   function getChunkKey(x, y) {
@@ -36,7 +37,7 @@
 
   const CHUNK_SIZE = 20;
 
-  // Create derived values with proper separation from side effects
+  // First effect: Handle world data changes and extract spawn points 
   $effect(() => {
     // Initialize with current game world data when it changes
     const currentWorldId = $game.worldKey || $game.currentWorld;
@@ -44,13 +45,9 @@
     
     if (currentWorldData) {
       worldData = currentWorldData;
-    }
-  });
-  
-  // Separate effect for spawn points
-  $effect(() => {
-    // Find available spawn points when world data changes
-    if (worldData) {
+      loading = true; // Reset loading state when world data changes
+      
+      // Extract spawn points
       let foundSpawns = [];
       
       // Case 1: Check info.spawns (as in backup.json)
@@ -68,56 +65,55 @@
         }));
       }
       
-      if (foundSpawns.length > 0) {
-        // Update all spawns
-        spawnPoints = foundSpawns;
-        
-        // Filter by race if applicable
-        filterSpawnPointsByRace();
-        
-        loading = false;
-      } else {
-        loading = false;
-        error = 'No spawn points found in this world';
-      }
+      // Update all spawns
+      spawnPoints = foundSpawns;
+      loading = foundSpawns.length > 0 ? false : false;
+      error = foundSpawns.length > 0 ? null : 'No spawn points found in this world';
     }
   });
-  
-  // Function to filter spawn points by race
-  function filterSpawnPointsByRace() {
+
+  // Second effect: Track player race changes independently to avoid circular dependencies
+  $effect(() => {
+    if ($currentPlayer?.race) {
+      currentPlayerRace = $currentPlayer.race.toLowerCase();
+    } else {
+      currentPlayerRace = null;
+    }
+  });
+
+  // Third effect: Filter spawn points when source data changes
+  $effect(() => {
+    // Don't attempt to filter if no spawn points or world data isn't loaded yet
     if (!spawnPoints.length) {
       filteredSpawnPoints = [];
       return;
     }
     
-    if (!$currentPlayer?.race) {
-      filteredSpawnPoints = spawnPoints;
+    // If no player race, show all spawn points
+    if (!currentPlayerRace) {
+      filteredSpawnPoints = [...spawnPoints];
       return;
     }
     
     // Filter by race if specified in spawn data
     const raceFiltered = spawnPoints.filter(spawn => 
-      !spawn.race || spawn.race.toLowerCase() === $currentPlayer.race.toLowerCase()
+      !spawn.race || spawn.race.toLowerCase() === currentPlayerRace
     );
     
     // Only use race filtering if we found matches
     if (raceFiltered.length > 0) {
       filteredSpawnPoints = raceFiltered;
     } else {
-      filteredSpawnPoints = spawnPoints; // Fall back to all spawns if no race matches
+      // Fall back to all spawns if no race matches
+      filteredSpawnPoints = [...spawnPoints];
     }
-    
-    // Auto-select if only one spawn point is available
-    if (filteredSpawnPoints.length === 1) {
+  });
+
+  // Fourth effect: Auto-select if only one spawn point is available
+  $effect(() => {
+    if (filteredSpawnPoints.length === 1 && !selectedSpawnId) {
       selectedSpawnId = filteredSpawnPoints[0].id || filteredSpawnPoints[0].key;
       moveToSpawnLocation(filteredSpawnPoints[0]);
-    }
-  }
-  
-  // Re-filter whenever player race changes
-  $effect(() => {
-    if ($currentPlayer?.race) {
-      filterSpawnPointsByRace();
     }
   });
   
