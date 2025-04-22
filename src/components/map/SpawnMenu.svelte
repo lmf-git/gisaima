@@ -5,6 +5,14 @@
   import { moveTarget } from '../../lib/stores/map';
   import { user } from '../../lib/stores/user';
 
+  // Import torch and race icons
+  import Torch from '../icons/Torch.svelte';
+  import Human from '../icons/Human.svelte';
+  import Elf from '../icons/Elf.svelte';
+  import Dwarf from '../icons/Dwarf.svelte';
+  import Goblin from '../icons/Goblin.svelte';
+  import Fairy from '../icons/Fairy.svelte';
+
   // Component state using Svelte 5 runes
   let selectedSpawn = $state(null);
   let loading = $state(false);
@@ -21,6 +29,27 @@
       return spawn.race?.toLowerCase() === $game.player.race.toLowerCase();
     });
   })());
+
+  // Add a helper function to format text with proper capitalization
+  function formatRace(text) {
+    if (!text) return '';
+    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+  }
+
+  // Auto-select the only spawn if there's just one option
+  $effect(() => {
+    if (spawnList.length === 1 && !selectedSpawn) {
+      // If there's only one spawn, select it automatically
+      selectSpawn(spawnList[0]);
+      
+      // Get the correct coordinates from the spawn
+      const spawnX = spawnList[0].x ?? spawnList[0].position?.x ?? 0;
+      const spawnY = spawnList[0].y ?? spawnList[0].position?.y ?? 0;
+      
+      // Move the map target to the spawn location
+      moveTarget(spawnX, spawnY);
+    }
+  });
 
   // Log game store state when open
   console.log('🎮 Game store in SpawnMenu:', $game);
@@ -125,7 +154,27 @@
 
 <div class="spawn-menu-wrapper" class:loading={loading}>
   <div class="spawn-menu">
-    <h2>Choose Your Spawn Point</h2>
+    <h2>
+      {#if $game.player?.race}
+        <div class="race-icon">
+          {#if $game.player.race.toLowerCase() === 'human'}
+            <Human extraClass="header-race-icon" />
+          {:else if $game.player.race.toLowerCase() === 'elf'}
+            <Elf extraClass="header-race-icon" />
+          {:else if $game.player.race.toLowerCase() === 'dwarf'}
+            <Dwarf extraClass="header-race-icon" />
+          {:else if $game.player.race.toLowerCase() === 'goblin'}
+            <Goblin extraClass="header-race-icon" />
+          {:else if $game.player.race.toLowerCase() === 'fairy'}
+            <Fairy extraClass="header-race-icon" />
+          {/if}
+        </div>
+      {/if}
+      <span class="welcome-text">
+        Welcome {$game.player?.race ? formatRace($game.player.race) : ''} 
+        <br>Choose a Spawn Point
+      </span>
+    </h2>
     
     {#if error}
       <div class="error-message">{error}</div>
@@ -141,19 +190,22 @@
             aria-pressed={selectedSpawn?.id === spawn.id}
             type="button"
           >
-            <h3>{spawn.name || 'Unnamed Spawn'}</h3>
-            {#if spawn.description}
-              <p class="spawn-description">{spawn.description}</p>
-            {/if}
-            <div class="spawn-meta">
-              <span class="spawn-race">{spawn.race || 'any'}</span>
-              <span class="spawn-coords">
-                {#if spawn.x !== undefined && spawn.y !== undefined}
-                  ({spawn.x}, {spawn.y})
-                {:else if spawn.position}
-                  ({spawn.position.x}, {spawn.position.y})
-                {/if}
-              </span>
+            <Torch size="1.8em" extraClass="spawn-icon" />
+            <div class="spawn-item-content">
+              <h3>{spawn.name || 'Unnamed Spawn'}</h3>
+              {#if spawn.description}
+                <p class="spawn-description">{spawn.description}</p>
+              {/if}
+              <div class="spawn-meta">
+                <span class="spawn-race">{spawn.race || 'any'}</span>
+                <span class="spawn-coords">
+                  {#if spawn.x !== undefined && spawn.y !== undefined}
+                    ({spawn.x}, {spawn.y})
+                  {:else if spawn.position}
+                    ({spawn.position.x}, {spawn.position.y})
+                  {/if}
+                </span>
+              </div>
             </div>
           </button>
         {/each}
@@ -202,9 +254,33 @@
 
   h2 {
     margin: 0 0 20px;
-    text-align: center;
     color: #222;
     font-size: 1.5em;
+    display: flex;
+    align-items: flex-start;
+    position: relative;
+    padding-left: 50px;
+  }
+
+  .race-icon {
+    position: absolute;
+    left: 0;
+    top: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .welcome-text {
+    text-align: center;
+    width: 100%;
+    line-height: 1.3;
+  }
+
+  :global(.header-race-icon) {
+    width: 1.8em;
+    height: 1.8em;
+    opacity: 0.85;
   }
 
   .error-message {
@@ -236,8 +312,20 @@
     transition: all 0.2s;
     text-align: left;
     width: 100%;
-    display: block;
+    display: flex;
+    align-items: center;
     font-family: inherit;
+    gap: 15px;
+  }
+
+  .spawn-item-content {
+    flex: 1;
+  }
+
+  :global(.spawn-icon) {
+    filter: drop-shadow(0 0 4px rgba(255, 165, 0, 0.7));
+    color: #f57c00;
+    margin-left: 5px;
   }
 
   .spawn-item:hover {
