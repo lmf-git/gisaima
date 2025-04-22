@@ -74,37 +74,12 @@
         }
     }
 
-    // Track gameStore unsubscribe function from +layout.js load function
-    let gameUnsubscribe = null; // Initialize to null
-    
     onMount(() => {       
-        // Properly handle the potential Promise in data.gameCleanup
-        if (data?.gameCleanup) {
-            if (typeof data.gameCleanup.then === 'function') {
-                // It's a Promise, wait for it to resolve to get the actual cleanup function
-                data.gameCleanup.then(cleanupFunc => {
-                    gameUnsubscribe = cleanupFunc;
-                });
-            } else {
-                // It's already a function
-                gameUnsubscribe = data.gameCleanup;
-            }
-        }
-        
         if (browser) {
             hasShownGuestWarning = localStorage.getItem('guest-warning-shown') === 'true';
         }
     });
     
-    onDestroy(() => {
-        // Only call if it's a function (not a Promise)
-        if (typeof gameUnsubscribe === 'function') {
-            gameUnsubscribe();
-        }
-        if (playerUnsubscribe) {
-            playerUnsubscribe();
-        }
-    });
 
     // Derived state for UI loading conditions
     const headerLoading = $derived($userLoading || !$isAuthReady);
