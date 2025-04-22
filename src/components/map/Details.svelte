@@ -21,6 +21,7 @@
   import Eye from '../icons/Eye.svelte';
   import Crop from '../icons/Crop.svelte';
   import Rally from '../icons/Rally.svelte';
+  import Attack from '../icons/Attack.svelte';
 
   // Props
   const { 
@@ -331,6 +332,19 @@
            );
   }
 
+  // Add function to check if player can be mobilized
+  function canMobilizePlayer(player) {
+    if (!player || !$currentPlayer || player.id !== $currentPlayer.id) return false;
+    
+    // Check if player is not already in a mobilizing/demobilising group
+    const inProcessGroup = $highlightedStore?.groups?.some(g => 
+      (g.status === 'mobilizing' || g.status === 'demobilising') && 
+      g.owner === $currentPlayer.id
+    );
+    
+    return !inProcessGroup;
+  }
+
   // Get status class from status
   function getStatusClass(status) {
     return status || 'idle';
@@ -597,6 +611,7 @@
                 
                 {#if canAttack($highlightedStore)}
                   <button class="action-button attack-button" onclick={() => executeAction('attack')}>
+                    <Attack extraClass="action-icon attack-icon" />
                     Attack
                   </button>
                 {/if}
@@ -829,6 +844,16 @@
                         <div class="entity-race">{_fmt(player.race)}</div>
                       {/if}
                     </div>
+                    
+                    <!-- Add mobilise action for idle current player -->
+                    {#if canMobilizePlayer(player)}
+                      <div class="entity-actions">
+                        <button class="entity-action" onclick={() => executeAction('mobilise')}>
+                          <Rally extraClass="action-icon-small rally-icon" />
+                          Mobilise
+                        </button>
+                      </div>
+                    {/if}
                   </div>
                 </div>
               {/each}
@@ -1257,6 +1282,11 @@
     height: 1.1em;
   }
   
+  :global(.attack-icon) {
+    width: 1.1em;
+    height: 1.1em;
+  }
+  
   :global(.action-icon-small) {
     width: 0.9em;
     height: 0.9em;
@@ -1412,10 +1442,14 @@
     border-radius: 0.3em;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
   }
 
   .entity-action:hover {
     background-color: rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
   }
 
   .player-owned {
