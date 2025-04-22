@@ -10,7 +10,6 @@
     initGameStore,
     getWorldInfo,
     getWorldCenterCoordinates,
-    refreshWorldInfo,
     loadJoinedWorlds
   } from '../../lib/stores/game.js';
   import { ref, onValue } from "firebase/database";

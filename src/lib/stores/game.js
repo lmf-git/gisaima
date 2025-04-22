@@ -173,9 +173,6 @@ let activePlayerWorldDataSubscription = null;  // Add tracking for the player wo
 
 // Keep track of pending requests to avoid duplicates
 const pendingWorldInfoRequests = new Map();
-// Add cache for world info to reduce redundant fetches
-const worldInfoCache = new Map();
-const CACHE_TTL = 30000; // 30 seconds cache TTL
 
 // Load player's joined worlds
 export function loadJoinedWorlds(userId) {
@@ -316,30 +313,17 @@ export function setCurrentWorld(worldId, world = null, callback = null) {
   const currentState = getStore(game);
   const promises = [];
   
-  // Check both cache and store before fetching
-  const cachedWorld = worldInfoCache.get(validWorldId);
-  let worldToUse = world || currentState.world[validWorldId] || cachedWorld;
+  // Check store before fetching, remove cache check
+  const worldToUse = world || currentState.world[validWorldId];
   
   if (!worldToUse) {
     debugLog(`Loading info for current world: ${validWorldId}`);
     promises.push(getWorldInfo(validWorldId)
       .then(info => {
-        worldToUse = info;
         return info;
       })
     );
-  } else if (cachedWorld && !currentState.world[validWorldId]) {
-    // Use cached world info if available but not in store
-    debugLog(`Using cached world info for ${validWorldId}`);
-    game.update(state => ({
-      ...state,
-      world: {
-        ...state.world,
-        [validWorldId]: cachedWorld
-      }
-    }));
   }
-  
   
   if (promises.length > 0) {
     return Promise.all(promises).then(() => {
@@ -371,14 +355,6 @@ export function getWorldInfo(worldId) {
   const validWorldId = String(worldId);
   
   debugLog(`Getting world info for: ${validWorldId}`);
-  
-  // Check cache first
-  const now = Date.now();
-  const cachedInfo = worldInfoCache.get(validWorldId);
-  if (cachedInfo && cachedInfo._timestamp && (now - cachedInfo._timestamp < CACHE_TTL)) {
-    debugLog(`Using cached world info for ${validWorldId} (age: ${now - cachedInfo._timestamp}ms)`);
-    return Promise.resolve(cachedInfo);
-  }
   
   // Check for pending request for this world to avoid duplicates
   if (pendingWorldInfoRequests.has(validWorldId)) {
@@ -418,12 +394,6 @@ export function getWorldInfo(worldId) {
             return acc;
           }, {});
         }
-        
-        // Add timestamp for cache validation
-        worldInfo._timestamp = Date.now();
-        
-        // Cache the world info
-        worldInfoCache.set(validWorldId, worldInfo);
         
         // Update the game store with world info
         game.update(state => ({
