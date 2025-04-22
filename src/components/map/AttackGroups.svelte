@@ -21,9 +21,9 @@
   let playerGroups = $state([]);
   let enemyGroups = $state([]);
   
-  // Selected entities
-  let selectedPlayerGroup = $state(null);
-  let selectedEnemyGroup = $state(null);
+  // Use arrays for selected groups instead of single selections
+  let selectedPlayerGroups = $state([]);
+  let selectedEnemyGroups = $state([]);
   
   // Loading state
   let loading = $state(false);
@@ -77,34 +77,64 @@
     // Update only if changes detected (length check is faster than deep comparison)
     if (playerGroups.length !== myGroups.length || !playerGroups.every((g, i) => g.id === myGroups[i]?.id)) {
       playerGroups = myGroups;
+      // Reset selections when groups change
+      selectedPlayerGroups = [];
     }
     
     if (enemyGroups.length !== enemies.length || !enemyGroups.every((g, i) => g.id === enemies[i]?.id)) {
       enemyGroups = enemies;
-    }
-    
-    // Reset selections if the selected groups are no longer available
-    if (selectedPlayerGroup && !myGroups.some(g => g.id === selectedPlayerGroup.id)) {
-      selectedPlayerGroup = null;
-    }
-    
-    if (selectedEnemyGroup && !enemies.some(g => g.id === selectedEnemyGroup.id)) {
-      selectedEnemyGroup = null;
+      // Reset selections when groups change
+      selectedEnemyGroups = [];
     }
   });
   
+  // Toggle selection of a player group
+  function togglePlayerGroup(group) {
+    const index = selectedPlayerGroups.findIndex(g => g.id === group.id);
+    if (index >= 0) {
+      // Remove from selection
+      selectedPlayerGroups = [...selectedPlayerGroups.slice(0, index), ...selectedPlayerGroups.slice(index + 1)];
+    } else {
+      // Add to selection
+      selectedPlayerGroups = [...selectedPlayerGroups, group];
+    }
+  }
+  
+  // Toggle selection of an enemy group
+  function toggleEnemyGroup(group) {
+    const index = selectedEnemyGroups.findIndex(g => g.id === group.id);
+    if (index >= 0) {
+      // Remove from selection
+      selectedEnemyGroups = [...selectedEnemyGroups.slice(0, index), ...selectedEnemyGroups.slice(index + 1)];
+    } else {
+      // Add to selection
+      selectedEnemyGroups = [...selectedEnemyGroups, group];
+    }
+  }
+  
+  // Calculate total power for selected groups
+  function calculateTotalPower(groups) {
+    return groups.reduce((total, group) => {
+      return total + (group.unitCount || group.units?.length || 1);
+    }, 0);
+  }
+  
   // Start an attack
   async function startAttack() {
-    if (!selectedPlayerGroup || !selectedEnemyGroup) return;
+    if (selectedPlayerGroups.length === 0 || selectedEnemyGroups.length === 0) return;
     
     loading = true;
     errorMessage = '';
     
     try {
+      // Get arrays of IDs for both sides
+      const attackerGroupIds = selectedPlayerGroups.map(g => g.id);
+      const defenderGroupIds = selectedEnemyGroups.map(g => g.id);
+      
       console.log('Starting attack with params:', {
         worldId: $game.worldKey,
-        attackerGroupIds: [selectedPlayerGroup.id],
-        defenderGroupIds: [selectedEnemyGroup.id],
+        attackerGroupIds,
+        defenderGroupIds,
         locationX: tileData.x,
         locationY: tileData.y,
       });
@@ -113,8 +143,8 @@
       const attackFunction = httpsCallable(functions, 'attackGroups');
       const result = await attackFunction({
         worldId: $game.worldKey,
-        attackerGroupIds: [selectedPlayerGroup.id],
-        defenderGroupIds: [selectedEnemyGroup.id],
+        attackerGroupIds,
+        defenderGroupIds,
         locationX: tileData.x,
         locationY: tileData.y
       });
@@ -124,8 +154,8 @@
         
         // Call the callback function if provided
         onAttack({
-          attackerGroupId: selectedPlayerGroup.id,
-          defenderGroupId: selectedEnemyGroup.id,
+          attackerGroupIds,
+          defenderGroupIds,
           battleId: result.data.battleId,
           tile: tileData
         });
@@ -148,21 +178,21 @@
       loading = false;
     }
   }
-
-  // Select a player group
-  function selectPlayerGroup(group) {
-    selectedPlayerGroup = group;
+  
+  // Check if a player group is selected
+  function isPlayerGroupSelected(groupId) {
+    return selectedPlayerGroups.some(g => g.id === groupId);
   }
   
-  // Select an enemy group
-  function selectEnemyGroup(group) {
-    selectedEnemyGroup = group;
+  // Check if an enemy group is selected
+  function isEnemyGroupSelected(groupId) {
+    return selectedEnemyGroups.some(g => g.id === groupId);
   }
   
-  // Check if attack is possible
+  // Check if attack is possible - need at least one group on each side
   let canAttack = $derived(
-    selectedPlayerGroup !== null && 
-    selectedEnemyGroup !== null &&
+    selectedPlayerGroups.length > 0 && 
+    selectedEnemyGroups.length > 0 &&
     !loading
   );
   
@@ -210,18 +240,21 @@
       
       <div class="attack-selection">
         <div class="selection-section">
-          <h3>Select Your Group</h3>
+          <h3>Select Your Groups <span class="selection-count">({selectedPlayerGroups.length} selected)</span></h3>
           <div class="groups-list">
             {#each playerGroups as group}
-              <button 
+              <label 
                 class="group-item" 
-                class:selected={selectedPlayerGroup?.id === group.id}
-                onclick={() => selectPlayerGroup(group)}
-                onkeydown={(e) => e.key === 'Enter' && selectPlayerGroup(group)}
-                type="button"
-                aria-pressed={selectedPlayerGroup?.id === group.id}
-                aria-label={`Select your group ${group.name || group.id}`}
+                class:selected={isPlayerGroupSelected(group.id)}
               >
+                <div class="group-checkbox">
+                  <input 
+                    type="checkbox" 
+                    checked={isPlayerGroupSelected(group.id)} 
+                    onchange={() => togglePlayerGroup(group)}
+                    aria-label={`Select your group ${group.name || group.id}`}
+                  />
+                </div>
                 <div class="group-info">
                   <div class="group-name">{group.name || `Group ${group.id.slice(-4)}`}</div>
                   <div class="group-details">
@@ -231,24 +264,27 @@
                     {/if}
                   </div>
                 </div>
-              </button>
+              </label>
             {/each}
           </div>
         </div>
         
         <div class="selection-section">
-          <h3>Select Enemy to Attack</h3>
+          <h3>Select Enemies to Attack <span class="selection-count">({selectedEnemyGroups.length} selected)</span></h3>
           <div class="groups-list">
             {#each enemyGroups as group}
-              <button 
+              <label 
                 class="group-item enemy-group" 
-                class:selected={selectedEnemyGroup?.id === group.id}
-                onclick={() => selectEnemyGroup(group)}
-                onkeydown={(e) => e.key === 'Enter' && selectEnemyGroup(group)}
-                type="button"
-                aria-pressed={selectedEnemyGroup?.id === group.id}
-                aria-label={`Select enemy group ${group.name || group.id}`}
+                class:selected={isEnemyGroupSelected(group.id)}
               >
+                <div class="group-checkbox">
+                  <input 
+                    type="checkbox" 
+                    checked={isEnemyGroupSelected(group.id)} 
+                    onchange={() => toggleEnemyGroup(group)}
+                    aria-label={`Select enemy group ${group.name || group.id}`}
+                  />
+                </div>
                 <div class="group-info">
                   <div class="group-name">
                     {group.name || `Group ${group.id.slice(-4)}`}
@@ -261,31 +297,39 @@
                     {/if}
                   </div>
                 </div>
-              </button>
+              </label>
             {/each}
           </div>
         </div>
       </div>
       
       <div class="battle-preview">
-        {#if selectedPlayerGroup && selectedEnemyGroup}
+        {#if selectedPlayerGroups.length > 0 && selectedEnemyGroups.length > 0}
           <h3>Battle Preview</h3>
           <div class="battle-sides">
             <div class="battle-side attacker">
-              <div class="side-name">Your Group</div>
+              <div class="side-name">Your Forces ({selectedPlayerGroups.length} groups)</div>
               <div class="side-info">
-                <strong>{selectedPlayerGroup.name || `Group ${selectedPlayerGroup.id.slice(-4)}`}</strong>
-                <div>{selectedPlayerGroup.unitCount || selectedPlayerGroup.units?.length || 1} units</div>
+                <div class="group-list">
+                  {#each selectedPlayerGroups as group}
+                    <div class="preview-group">{group.name || `Group ${group.id.slice(-4)}`} ({group.unitCount || group.units?.length || 1})</div>
+                  {/each}
+                </div>
+                <div class="total-strength">Total: {calculateTotalPower(selectedPlayerGroups)} units</div>
               </div>
             </div>
             
             <div class="vs-indicator">VS</div>
             
             <div class="battle-side defender">
-              <div class="side-name">Enemy Group</div>
+              <div class="side-name">Enemy Forces ({selectedEnemyGroups.length} groups)</div>
               <div class="side-info">
-                <strong>{selectedEnemyGroup.name || `Group ${selectedEnemyGroup.id.slice(-4)}`}</strong>
-                <div>{selectedEnemyGroup.unitCount || selectedEnemyGroup.units?.length || 1} units</div>
+                <div class="group-list">
+                  {#each selectedEnemyGroups as group}
+                    <div class="preview-group">{group.name || `Group ${group.id.slice(-4)}`} ({group.unitCount || group.units?.length || 1})</div>
+                  {/each}
+                </div>
+                <div class="total-strength">Total: {calculateTotalPower(selectedEnemyGroups)} units</div>
               </div>
             </div>
           </div>
@@ -390,6 +434,12 @@
     padding: 1em;
   }
 
+  .selection-count {
+    font-size: 0.8em;
+    color: #666;
+    font-weight: normal;
+  }
+
   .groups-list {
     display: flex;
     flex-direction: column;
@@ -406,10 +456,22 @@
     transition: all 0.2s;
     background: white;
     text-align: left;
-    display: block;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8em;
     width: 100%;
     font-family: var(--font-body);
     font-size: 1em;
+  }
+
+  .group-checkbox {
+    display: flex;
+    align-items: center;
+    padding-top: 0.2em;
+  }
+
+  .group-info {
+    flex: 1;
   }
 
   .group-item:hover {
@@ -502,6 +564,21 @@
   
   .side-info {
     font-size: 0.9em;
+  }
+
+  .group-list {
+    margin-bottom: 0.5em;
+  }
+
+  .preview-group {
+    padding: 0.2em 0;
+  }
+
+  .total-strength {
+    font-weight: bold;
+    margin-top: 0.5em;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding-top: 0.3em;
   }
   
   .vs-indicator {
