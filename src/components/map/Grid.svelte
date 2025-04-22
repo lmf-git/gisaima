@@ -391,27 +391,7 @@
   
   function isCurrentPlayer(playerEntity) {
     if (!playerEntity || !$currentPlayer) return false;
-    
-    const playerIds = [
-      $currentPlayer.id,
-      $currentPlayer.id,
-      $currentPlayer.userId,
-      $currentPlayer.playerId
-    ].filter(Boolean);
-    
-    const entityIds = [
-      playerEntity.id,
-      playerEntity.id,
-      playerEntity.playerId,
-      playerEntity.userId
-    ].filter(Boolean);
-    
-    return playerIds.some(playerId => 
-      entityIds.some(entityId => 
-        entityId === playerId || 
-        entityId?.toString() === playerId?.toString()
-      )
-    );
+    return $currentPlayer?.id === playerEntity.id;
   }
 
   function hasCurrentPlayerEntity(cell) {

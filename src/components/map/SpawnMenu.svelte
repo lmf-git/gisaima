@@ -224,7 +224,7 @@
       console.log(`Player spawned at ${tileKey} in chunk ${chunkKey} with uid ${$user.uid}`);
 
       // Move the map to the spawn location
-      moveTarget(spawnPosition.x, spawnPosition.y);
+      // moveTarget(spawnPosition.x, spawnPosition.y);
       
       // Execute callback
       onSpawn(spawnPosition);

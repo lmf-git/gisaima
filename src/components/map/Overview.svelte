@@ -429,7 +429,7 @@
   // Function to check if entity belongs to current player
   function isOwnedByCurrentPlayer(entity) {
     if (!$currentPlayer || !entity) return false;    
-    return entityId?.toString() === playerId?.toString();
+    return entity.owner?.toString() === $currentPlayer.id?.toString();
   }
 
   // Enhance formatBattleTimeRemaining function to handle more states

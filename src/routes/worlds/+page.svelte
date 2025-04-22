@@ -421,31 +421,6 @@
       closeConfirmation();
     }
   }
-
-  // Add function to refresh specific world data
-  async function refreshWorld(worldId, event) {
-    // Stop event propagation to prevent card click
-    if (event) event.stopPropagation();
-    
-    try {
-      // Show loading state for this card
-      loadedWorldCards = new Set([...loadedWorldCards].filter(id => id !== worldId));
-      
-      // Force refresh of world info
-      const updatedInfo = await refreshWorldInfo(worldId);
-      
-      if (updatedInfo) {
-        // Update the center coordinates in our cache
-        worldCenters[worldId] = getWorldCenterCoordinates(worldId, updatedInfo);
-        console.log(`Updated center for ${worldId}:`, worldCenters[worldId]);
-        
-        // Mark card as loaded again
-        loadedWorldCards = new Set([...loadedWorldCards, worldId]);
-      }
-    } catch (err) {
-      console.error(`Error refreshing world ${worldId}:`, err);
-    }
-  }
 </script>
 
 <div class="worlds-page">
