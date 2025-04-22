@@ -337,43 +337,8 @@
       
       await setCurrentWorld(selectedWorld.id);
       
-      console.log('Waiting for world data to be fully loaded...');
-      
-      await new Promise((resolve) => {
-        const checkDataReady = () => {
-          if ($game.playerData && 
-              $game.worldKey === selectedWorld.id && 
-              $game.world[selectedWorld.id]?.seed !== undefined) {
-            console.log('Player and world data fully loaded, proceeding to map');
-            return true;
-          }
-          return false;
-        };
-        
-        if (checkDataReady()) {
-          resolve();
-          return;
-        }
-        
-        const unsubscribe = game.subscribe((state) => {
-          if (checkDataReady()) {
-            unsubscribe();
-            resolve();
-          }
-        });
-        
-        getWorldInfo(selectedWorld.id).catch(err => 
-          console.warn(`Error getting world info: ${err}`)
-        );
-        
-        setTimeout(() => {
-          console.log('Navigation timeout reached, proceeding anyway');
-          unsubscribe();
-          resolve();
-        }, 5000);
-      });
-
       console.log(`Navigating to map page for world ${selectedWorld.id}`);
+
       goto(`/map?world=${selectedWorld.id}${coordParams}`);
     } catch (error) {
       console.error('Failed to join world:', error);
