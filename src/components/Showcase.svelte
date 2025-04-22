@@ -160,11 +160,6 @@
       class:initial-load={!initialLoadStarted || currentImageLoading}>
       <!-- Always set the background image to allow progressive loading -->
       <div class="bg-image" style={`background-image: url('${backgroundImages[bgIndex]}');`}></div>
-      
-      <!-- Loading indicator only for first image -->
-      {#if !initialLoadStarted || currentImageLoading}
-        <div class="loading-indicator"></div>
-      {/if}
     </div>
     
     <div 
@@ -427,28 +422,9 @@
     background: var(--color-bg);
   }
   
-  /* Initial loading state - subtle pulse animation */
+  /* Initial loading state - subtle fade in with no pulse animation */
   .bg-layer.initial-load .bg-image {
     opacity: 0.05;
-  }
-  
-  /* Loading indicator for first image */
-  .loading-indicator {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 3px solid rgba(226, 65, 68, 0.2);
-    border-top-color: rgba(226, 65, 68, 0.8);
-    animation: spin 1.5s linear infinite;
-    opacity: 0.5;
-  }
-  
-  @keyframes spin {
-    to { transform: translate(-50%, -50%) rotate(360deg); }
   }
 
   /* Responsive styles */
