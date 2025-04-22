@@ -4,6 +4,7 @@
  */
 
 import { logger } from "firebase-functions";
+import { mergeItems } from "./utils.mjs";
 
 /**
  * Process gathering for a group
@@ -31,16 +32,13 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
   const biome = group.gatheringBiome || tile.biome?.name || 'plains';
   const gatheredItems = generateGatheredItems(group, biome);
   
-  // Add items to group
+  // Add items to group, using mergeItems to combine identical items
   if (!group.items) {
     updates[`${groupPath}/items`] = gatheredItems;
   } else {
-    // Combine existing items with new gathered items
-    const updatedItems = [
-      ...(Array.isArray(group.items) ? group.items : []), 
-      ...gatheredItems
-    ];
-    updates[`${groupPath}/items`] = updatedItems;
+    // Use mergeItems utility to combine identical items
+    const existingItems = Array.isArray(group.items) ? group.items : [];
+    updates[`${groupPath}/items`] = mergeItems(existingItems, gatheredItems);
   }
   
   // Reset group status to idle

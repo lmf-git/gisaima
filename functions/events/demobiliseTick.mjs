@@ -4,41 +4,7 @@
  */
 
 import { logger } from "firebase-functions";
-
-/**
- * Helper function to merge items by combining quantities of identical items
- * @param {Array} existingItems Array of existing items
- * @param {Array} newItems Array of new items to merge
- * @returns {Array} Merged array with combined quantities for identical items
- */
-function mergeItems(existingItems, newItems) {
-  // Create a map to track items by their unique properties
-  const itemMap = new Map();
-  
-  // First, add all existing items to the map
-  existingItems.forEach(item => {
-    const key = `${item.name}|${item.type || 'generic'}|${item.rarity || 'common'}`;
-    itemMap.set(key, { ...item, quantity: item.quantity || 1 });
-  });
-  
-  // Then merge in new items, combining quantities for identical items
-  newItems.forEach(item => {
-    const key = `${item.name}|${item.type || 'generic'}|${item.rarity || 'common'}`;
-    if (itemMap.has(key)) {
-      // Item exists, combine quantities
-      const existingItem = itemMap.get(key);
-      existingItem.quantity = (existingItem.quantity || 1) + (item.quantity || 1);
-      // Preserve the original ID
-      itemMap.set(key, existingItem);
-    } else {
-      // New item, add to map
-      itemMap.set(key, { ...item });
-    }
-  });
-  
-  // Convert map back to array
-  return Array.from(itemMap.values());
-}
+import { mergeItems } from "./utils.mjs";
 
 /**
  * Process demobilizing groups for a given world
