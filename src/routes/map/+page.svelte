@@ -840,17 +840,6 @@
                     <Map extraClass="button-icon" />
                 {/if}
             </button>
-            <button 
-                class="control-button chat-button" 
-                onclick={toggleChat}
-                aria-label={showChat ? "Hide chat" : "Show chat"}
-                disabled={!$game?.player?.alive || isTutorialVisible}>
-                {#if showChat || chatClosing}
-                    <Close size="1.2em" extraClass="close-icon-dark" />
-                {:else}
-                    <Map extraClass="button-icon" />
-                {/if}
-            </button>
         </div>
         
         {#if !(showEntities || entitiesClosing)}
