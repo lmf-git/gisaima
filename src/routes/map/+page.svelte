@@ -44,6 +44,7 @@
     import Gather from '../../components/map/Gather.svelte';
     import Map from '../../components/icons/Map.svelte';
     import Spyglass from '../../components/icons/Spyglass.svelte';
+    import Recenter from '../../components/map/Recenter.svelte';
 
     const DEBUG_MODE = true;
     const debugLog = (...args) => DEBUG_MODE && console.log(...args);
@@ -848,6 +849,7 @@
                 hideToggleButton={true}
                 onToggle={handleTutorialToggle}
             />
+            <Recenter />
         {/if}
         
         {#if ($user && !$game.player?.alive)}
