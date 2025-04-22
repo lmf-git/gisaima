@@ -161,6 +161,8 @@
   // Handle spawn selection
   function selectSpawn(spawn) {
     selectedSpawn = spawn;
+    // Preview the spawn location on the map
+    moveTarget(spawn.x, spawn.y);
   }
 
   // Core function for handling spawn confirmation - fully updated to ensure consistent player identity
