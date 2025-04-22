@@ -1,5 +1,21 @@
 {
   "players": {
+    "4HSSsNeBiDcYJO9xIdK8jJchw3q2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": false,
+          "displayName": "gaewegweg",
+          "id": "4HSSsNeBiDcYJO9xIdK8jJchw3q2",
+          "joined": 1745316922485,
+          "lastLocation": {
+            "timestamp": 1745316922485,
+            "x": 0,
+            "y": 0
+          },
+          "race": "elf"
+        }
+      }
+    },
     "76jIQSb9UcgvPbvU3SallQxhLyo2": {
       "worlds": {
         "ancient-lands": {
@@ -9,6 +25,64 @@
           "joined": 1745312383826,
           "lastLocation": {
             "timestamp": 1745312383826,
+            "x": 0,
+            "y": 0
+          },
+          "race": "elf"
+        }
+      }
+    },
+    "7Ek2hMsFW4bhPGxojdZ4yFVh3mc2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "afewafewaf",
+          "groups": {
+            "-OOSQpXeWeiF-PtfDaRG": {
+              "at": "-4,6",
+              "id": "-OOSQpXeWeiF-PtfDaRG",
+              "readyAt": 1745324345446,
+              "status": "mobilizing"
+            }
+          },
+          "id": "7Ek2hMsFW4bhPGxojdZ4yFVh3mc2",
+          "inGroup": "-OOSQpXeWeiF-PtfDaRG",
+          "joined": 1745323321757,
+          "lastLocation": {
+            "x": -4,
+            "y": 6
+          },
+          "race": "elf",
+          "spawnId": "structure_al_elf_spawn"
+        }
+      }
+    },
+    "Agg8gNsebYY6PxVrogD7icMGHiu2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "gwegewg",
+          "id": "Agg8gNsebYY6PxVrogD7icMGHiu2",
+          "joined": 1745314581524,
+          "lastLocation": {
+            "timestamp": 1745314588012,
+            "x": 5,
+            "y": 5
+          },
+          "race": "human",
+          "spawnId": "structure_al_human_spawn"
+        }
+      }
+    },
+    "BYJycyR4pvaFZNhJGcumwJy2HUC2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": false,
+          "displayName": "egwgewag",
+          "id": "BYJycyR4pvaFZNhJGcumwJy2HUC2",
+          "joined": 1745320992544,
+          "lastLocation": {
+            "timestamp": 1745320992544,
             "x": 0,
             "y": 0
           },
@@ -30,6 +104,23 @@
           },
           "race": "elf",
           "spawnId": "structure_al_elf_spawn"
+        }
+      }
+    },
+    "Cj4DOTIVLBceQjiJOBv2zFJzywt1": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "gwaegegwa",
+          "id": "Cj4DOTIVLBceQjiJOBv2zFJzywt1",
+          "joined": 1745315098725,
+          "lastLocation": {
+            "timestamp": 1745315143566,
+            "x": 5,
+            "y": 5
+          },
+          "race": "human",
+          "spawnId": "structure_al_human_spawn"
         }
       }
     },
@@ -75,6 +166,40 @@
         }
       }
     },
+    "Gzk1OH0WthfRKj2DZDL5mg5zcJP2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "test",
+          "id": "Gzk1OH0WthfRKj2DZDL5mg5zcJP2",
+          "joined": 1745324675965,
+          "lastLocation": {
+            "timestamp": 1745324684302,
+            "x": 5,
+            "y": 5
+          },
+          "race": "human",
+          "spawnId": "structure_al_human_spawn"
+        }
+      }
+    },
+    "K3HO42e6J2SLJGHNvdOmhFvP4c12": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "wgeageawg",
+          "id": "K3HO42e6J2SLJGHNvdOmhFvP4c12",
+          "joined": 1745324950485,
+          "lastLocation": {
+            "timestamp": 1745324971588,
+            "x": -4,
+            "y": 6
+          },
+          "race": "elf",
+          "spawnId": "structure_al_elf_spawn"
+        }
+      }
+    },
     "KspAz7qlxLhiPgKKD4kiPICDmEn1": {
       "worlds": {
         "ancient-lands": {
@@ -84,6 +209,23 @@
           "joined": 1745311045250,
           "lastLocation": {
             "timestamp": 1745311121374,
+            "x": -4,
+            "y": 6
+          },
+          "race": "elf",
+          "spawnId": "structure_al_elf_spawn"
+        }
+      }
+    },
+    "LlgsPBUu25MAQqOX1Xlrt9aLYpG2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "dsgdsgds",
+          "id": "LlgsPBUu25MAQqOX1Xlrt9aLYpG2",
+          "joined": 1745325293652,
+          "lastLocation": {
+            "timestamp": 1745325722363,
             "x": -4,
             "y": 6
           },
@@ -109,6 +251,22 @@
         }
       }
     },
+    "OWaZWRdlFUNlnEJ5GPA4hQ0ZUKO2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": false,
+          "displayName": "gwegewgeggw",
+          "id": "OWaZWRdlFUNlnEJ5GPA4hQ0ZUKO2",
+          "joined": 1745322875181,
+          "lastLocation": {
+            "timestamp": 1745322875181,
+            "x": 0,
+            "y": 0
+          },
+          "race": "human"
+        }
+      }
+    },
     "PpNiuaZMPVPa0xFHAP4GE4MPpsw1": {
       "worlds": {
         "ancient-lands": {
@@ -126,6 +284,55 @@
         }
       }
     },
+    "PvEq7GMY6rT5HPCGLFJXpEUnr4c2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": false,
+          "displayName": "agssdddgs",
+          "id": "PvEq7GMY6rT5HPCGLFJXpEUnr4c2",
+          "joined": 1745317653780,
+          "lastLocation": {
+            "timestamp": 1745317653780,
+            "x": 0,
+            "y": 0
+          },
+          "race": "elf"
+        }
+      }
+    },
+    "TLMsHcAP9dXL7rZD4sNarseISOc2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "gewagewgew",
+          "id": "TLMsHcAP9dXL7rZD4sNarseISOc2",
+          "joined": 1745315394384,
+          "lastLocation": {
+            "timestamp": 1745315397558,
+            "x": 5,
+            "y": 5
+          },
+          "race": "human",
+          "spawnId": "structure_al_human_spawn"
+        }
+      }
+    },
+    "WIhjkzpc6iTDe6c6M7mYoD8CKAo2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": false,
+          "displayName": "fewagdawew",
+          "id": "WIhjkzpc6iTDe6c6M7mYoD8CKAo2",
+          "joined": 1745325112347,
+          "lastLocation": {
+            "timestamp": 1745325112347,
+            "x": 0,
+            "y": 0
+          },
+          "race": "elf"
+        }
+      }
+    },
     "WTgcygpaRuNJNT3r4cUKZtlYKlU2": {
       "worlds": {
         "ancient-lands": {
@@ -135,6 +342,55 @@
           "joined": 1745312862657,
           "lastLocation": {
             "timestamp": 1745313056252,
+            "x": -4,
+            "y": 6
+          },
+          "race": "elf",
+          "spawnId": "structure_al_elf_spawn"
+        }
+      }
+    },
+    "WaCI5kYr92RNQIlTpEGUrshaYNl2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": false,
+          "displayName": "gewgewgew",
+          "id": "WaCI5kYr92RNQIlTpEGUrshaYNl2",
+          "joined": 1745317356047,
+          "lastLocation": {
+            "timestamp": 1745317356047,
+            "x": 0,
+            "y": 0
+          },
+          "race": "elf"
+        }
+      }
+    },
+    "erOCiF81JTXLqXu46kXBe5NeSuG2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": false,
+          "displayName": "egged",
+          "id": "erOCiF81JTXLqXu46kXBe5NeSuG2",
+          "joined": 1745320837343,
+          "lastLocation": {
+            "timestamp": 1745320837343,
+            "x": 0,
+            "y": 0
+          },
+          "race": "elf"
+        }
+      }
+    },
+    "g7RZozrkCdcBLfQXvROmw4Xdovv2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "egagewge",
+          "id": "g7RZozrkCdcBLfQXvROmw4Xdovv2",
+          "joined": 1745314918171,
+          "lastLocation": {
+            "timestamp": 1745314921062,
             "x": -4,
             "y": 6
           },
@@ -194,6 +450,64 @@
         }
       }
     },
+    "tcNkGfVXQWRBW7wLQVbcT5ZLZ8z1": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": false,
+          "displayName": "hhlll",
+          "id": "tcNkGfVXQWRBW7wLQVbcT5ZLZ8z1",
+          "joined": 1745315937984,
+          "lastLocation": {
+            "timestamp": 1745315937984,
+            "x": 0,
+            "y": 0
+          },
+          "race": "elf"
+        }
+      }
+    },
+    "w3Y64PCIVPXfAi7BrqWonieFGZx1": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "vasdfdsfd",
+          "id": "w3Y64PCIVPXfAi7BrqWonieFGZx1",
+          "joined": 1745315463316,
+          "lastLocation": {
+            "timestamp": 1745315469592,
+            "x": -4,
+            "y": 6
+          },
+          "race": "elf",
+          "spawnId": "structure_al_elf_spawn"
+        }
+      }
+    },
+    "wWClyghKyadCYaWwZBr0bOhJrYQ2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "ohohiio",
+          "groups": {
+            "-OOSXGltAStGq9cB2t7o": {
+              "at": "-4,6",
+              "id": "-OOSXGltAStGq9cB2t7o",
+              "readyAt": 1745326021551,
+              "status": "mobilizing"
+            }
+          },
+          "id": "wWClyghKyadCYaWwZBr0bOhJrYQ2",
+          "joined": 1745325931764,
+          "lastLocation": {
+            "timestamp": 1745327221144,
+            "x": -4,
+            "y": 6
+          },
+          "race": "elf",
+          "spawnId": "structure_al_elf_spawn"
+        }
+      }
+    },
     "xzVv7cSwD6hlQdRddgjLNsiE4ev1": {
       "worlds": {
         "ancient-lands": {
@@ -208,6 +522,22 @@
           },
           "race": "elf",
           "spawnId": "structure_al_elf_spawn"
+        }
+      }
+    },
+    "yC3i9NoXsqZPATE4ckx8TqDujir2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": false,
+          "displayName": "sfasffsfas",
+          "id": "yC3i9NoXsqZPATE4ckx8TqDujir2",
+          "joined": 1745317099858,
+          "lastLocation": {
+            "timestamp": 1745317099858,
+            "x": 0,
+            "y": 0
+          },
+          "race": "elf"
         }
       }
     },
@@ -234,6 +564,29 @@
       "chunks": {
         "-1,0": {
           "-4,6": {
+            "groups": {
+              "-OOSQpXeWeiF-PtfDaRG": {
+                "createdAt": 1745324300520,
+                "id": "-OOSQpXeWeiF-PtfDaRG",
+                "lastUpdated": 1745324341957,
+                "name": "New Force",
+                "owner": "7Ek2hMsFW4bhPGxojdZ4yFVh3mc2",
+                "race": "elf",
+                "status": "idle",
+                "unitCount": 1,
+                "units": {
+                  "7Ek2hMsFW4bhPGxojdZ4yFVh3mc2": {
+                    "displayName": "afewafewaf",
+                    "id": "7Ek2hMsFW4bhPGxojdZ4yFVh3mc2",
+                    "lastActive": 1745323719274,
+                    "race": "elf",
+                    "type": "player"
+                  }
+                },
+                "x": -4,
+                "y": 6
+              }
+            },
             "players": {
               "CdOVBNT2fIZwcFpVK1aq87LJA2O2": {
                 "displayName": "gsadgds",
@@ -241,10 +594,22 @@
                 "lastActive": 1745311375836,
                 "race": "elf"
               },
+              "K3HO42e6J2SLJGHNvdOmhFvP4c12": {
+                "displayName": "wgeageawg",
+                "id": "K3HO42e6J2SLJGHNvdOmhFvP4c12",
+                "lastActive": 1745324971930,
+                "race": "elf"
+              },
               "KspAz7qlxLhiPgKKD4kiPICDmEn1": {
                 "displayName": "test",
                 "id": "KspAz7qlxLhiPgKKD4kiPICDmEn1",
                 "lastActive": 1745311121674,
+                "race": "elf"
+              },
+              "LlgsPBUu25MAQqOX1Xlrt9aLYpG2": {
+                "displayName": "dsgdsgds",
+                "id": "LlgsPBUu25MAQqOX1Xlrt9aLYpG2",
+                "lastActive": 1745325722740,
                 "race": "elf"
               },
               "OHePuX4YTZT97hSjy69g9lxJSD03": {
@@ -265,11 +630,29 @@
                 "lastActive": 1745313056505,
                 "race": "elf"
               },
+              "g7RZozrkCdcBLfQXvROmw4Xdovv2": {
+                "displayName": "egagewge",
+                "id": "g7RZozrkCdcBLfQXvROmw4Xdovv2",
+                "lastActive": 1745314921377,
+                "race": "elf"
+              },
               "paMV5qGt0rWPTyVOspNrwf2PzB93": {
                 "displayName": "eagegewg",
                 "id": "paMV5qGt0rWPTyVOspNrwf2PzB93",
                 "lastActive": 1745312262858,
                 "race": "elf"
+              },
+              "w3Y64PCIVPXfAi7BrqWonieFGZx1": {
+                "displayName": "vasdfdsfd",
+                "id": "w3Y64PCIVPXfAi7BrqWonieFGZx1",
+                "lastActive": 1745315469934,
+                "race": "elf"
+              },
+              "wWClyghKyadCYaWwZBr0bOhJrYQ2": {
+                "displayName": "ohohiio",
+                "lastActive": 1745327221144,
+                "race": "elf",
+                "uid": "wWClyghKyadCYaWwZBr0bOhJrYQ2"
               },
               "xzVv7cSwD6hlQdRddgjLNsiE4ev1": {
                 "displayName": "ahfdhf",
@@ -279,6 +662,24 @@
               }
             },
             "structure": {
+              "banks": {
+                "wWClyghKyadCYaWwZBr0bOhJrYQ2": [
+                  {
+                    "id": "item_1745327162364_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1745327162364_2",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ]
+              },
               "description": "An elven city built around the oldest living trees in the realm",
               "id": "structure_al_elf_spawn",
               "items": [
@@ -514,6 +915,30 @@
           },
           "5,5": {
             "players": {
+              "Agg8gNsebYY6PxVrogD7icMGHiu2": {
+                "displayName": "gwegewg",
+                "id": "Agg8gNsebYY6PxVrogD7icMGHiu2",
+                "lastActive": 1745314588265,
+                "race": "human"
+              },
+              "Cj4DOTIVLBceQjiJOBv2zFJzywt1": {
+                "displayName": "gwaegegwa",
+                "id": "Cj4DOTIVLBceQjiJOBv2zFJzywt1",
+                "lastActive": 1745315143884,
+                "race": "human"
+              },
+              "Gzk1OH0WthfRKj2DZDL5mg5zcJP2": {
+                "displayName": "test",
+                "id": "Gzk1OH0WthfRKj2DZDL5mg5zcJP2",
+                "lastActive": 1745324684596,
+                "race": "human"
+              },
+              "TLMsHcAP9dXL7rZD4sNarseISOc2": {
+                "displayName": "gewagewgew",
+                "id": "TLMsHcAP9dXL7rZD4sNarseISOc2",
+                "lastActive": 1745315397845,
+                "race": "human"
+              },
               "i4SIm6RTxPfQgOWlBRFcxhXfcNa2": {
                 "displayName": "ageaweg",
                 "id": "i4SIm6RTxPfQgOWlBRFcxhXfcNa2",
@@ -583,7 +1008,7 @@
       },
       "info": {
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745314441532,
+        "lastTick": 1745329141442,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",

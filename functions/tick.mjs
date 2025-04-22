@@ -429,43 +429,24 @@ async function processBattles(worldId) {
       // Check if battle should end
       if (battle.endTime && battle.endTime <= now) {
         try {
-          // Process battle outcome
-          const side1Power = battle.side1.power || 0;
-          const side2Power = battle.side2.power || 0;
+          // SIMPLIFIED: Randomly determine a winner instead of using power calculations
+          // 50% chance for either side to win
+          const randomWinner = Math.random() < 0.5 ? 1 : 2;
           
-          // Determine winner (simple power comparison for now)
-          let winner, loser;
-          if (side1Power >= side2Power) {
-            winner = battle.side1;
-            loser = battle.side2;
-            battle.result = {
-              winningSide: 1,
-              winnerPower: side1Power,
-              loserPower: side2Power
-            };
-          } else {
-            winner = battle.side2;
-            loser = battle.side1;
-            battle.result = {
-              winningSide: 2,
-              winnerPower: side2Power,
-              loserPower: side1Power
-            };
-          }
+          // Set winner and loser based on random selection
+          const winningSide = randomWinner === 1 ? battle.side1 : battle.side2;
+          const losingSide = randomWinner === 1 ? battle.side2 : battle.side1;
           
-          // Calculate casualties (simplified version)
-          const casualtyRate = Math.min(0.8, (loser.power / winner.power) * 0.5);
-          const winnerCasualties = Math.round(winner.power * casualtyRate * 0.5);
-          const loserCasualties = Math.round(loser.power * casualtyRate);
-          
-          battle.result.winnerCasualties = winnerCasualties;
-          battle.result.loserCasualties = loserCasualties;
+          battle.result = {
+            winningSide: randomWinner,
+            randomlyDetermined: true  // Flag to indicate this was random
+          };
           
           // Update battle status
           battle.status = 'completed';
           battle.completedAt = now;
           
-          // Get the chunk key - UPDATED to use consistent function
+          // Get the chunk key
           const chunkKey = getChunkKey(battle.locationX, battle.locationY);
           const tileKey = `${battle.locationX},${battle.locationY}`;
           
@@ -495,71 +476,42 @@ async function processBattles(worldId) {
             
             // Process all groups on both sides
             if (tileData.groups) {
-              // Process all side 1 groups (winners)
-              const side1GroupIds = Object.keys(battle.side1.groups || {});
-              for (const groupId of side1GroupIds) {
+              // Process winning groups - just set them back to idle
+              const winningGroupIds = Object.keys(winningSide.groups || {});
+              for (const groupId of winningGroupIds) {
                 if (tileData.groups[groupId]) {
                   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/inBattle`] = false;
                   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleId`] = null;
                   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
                   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleRole`] = null;
                   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
-                  
-                  // Apply casualties to winning groups
-                  const group = tileData.groups[groupId];
-                  if (group && group.unitCount) {
-                    const groupCasualties = Math.ceil((group.unitCount / side1Power) * winnerCasualties);
-                    const newUnitCount = Math.max(1, group.unitCount - groupCasualties);
-                    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
-                    
-                    // Check for player deaths in winning groups
-                    if (group.units) {
-                      for (const unit of group.units) {
-                        if (unit.type === 'player' && unit.id) {
-                          // Small chance for player death on winning side (20% of casualty rate)
-                          if (Math.random() < (groupCasualties / group.unitCount) * 0.2) {
-                            logger.info(`Player ${unit.id} died in battle (winner side)`);
-                            // Mark player as not alive, triggering respawn
-                            updates[`players/${unit.id}/worlds/${worldId}/alive`] = false;
-                          }
-                        }
-                      }
-                    }
-                  }
                 }
               }
               
-              // Process all side 2 groups (losers)
-              const side2GroupIds = Object.keys(battle.side2.groups || {});
-              for (const groupId of side2GroupIds) {
+              // Process losing groups - remove them and mark players as dead
+              const losingGroupIds = Object.keys(losingSide.groups || {});
+              for (const groupId of losingGroupIds) {
                 if (tileData.groups[groupId]) {
-                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/inBattle`] = false;
-                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleId`] = null;
-                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
-                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleRole`] = null;
-                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
-                  
-                  // Apply casualties to losing groups
                   const group = tileData.groups[groupId];
-                  if (group && group.unitCount) {
-                    const groupCasualties = Math.ceil((group.unitCount / side2Power) * loserCasualties);
-                    const newUnitCount = Math.max(1, group.unitCount - groupCasualties);
-                    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
+                  
+                  // Find any player in this group and mark them as dead
+                  if (group.units) {
+                    // Handle both array and object structure for units
+                    const units = Array.isArray(group.units) ? 
+                      group.units : Object.values(group.units);
                     
-                    // Check for player deaths in losing groups (higher chance)
-                    if (group.units) {
-                      for (const unit of group.units) {
-                        if (unit.type === 'player' && unit.id) {
-                          // Higher chance for player death on losing side (50% of casualty rate)
-                          if (Math.random() < (groupCasualties / group.unitCount) * 0.5) {
-                            logger.info(`Player ${unit.id} died in battle (loser side)`);
-                            // Mark player as not alive, triggering respawn
-                            updates[`players/${unit.id}/worlds/${worldId}/alive`] = false;
-                          }
-                        }
+                    for (const unit of units) {
+                      if (unit.type === 'player' && unit.id) {
+                        // Mark player as dead (not alive)
+                        logger.info(`Player ${unit.id} died in battle (losing side ${randomWinner === 1 ? 2 : 1})`);
+                        updates[`players/${unit.id}/worlds/${worldId}/alive`] = false;
+                        updates[`players/${unit.id}/worlds/${worldId}/inGroup`] = null;
                       }
                     }
                   }
+                  
+                  // Remove the entire losing group
+                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`] = null;
                 }
               }
             }
@@ -568,7 +520,7 @@ async function processBattles(worldId) {
           // Apply all updates
           await db.ref().update(updates);
           battleProcessCount++;
-          logger.info(`Completed battle ${battle.id} in world ${worldId}`);
+          logger.info(`Completed battle ${battle.id} in world ${worldId} - Side ${randomWinner} won (randomly decided)`);
         } catch (error) {
           logger.error(`Error processing battle ${battle.id}:`, error);
         }
