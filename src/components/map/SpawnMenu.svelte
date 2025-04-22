@@ -36,41 +36,38 @@
     return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
   }
 
-  // Add a function to find the preferred spawn based on player race
-  function getPreferredSpawn() {
-    if (spawnList.length === 0) return null;
-    if (spawnList.length === 1) return spawnList[0];
-    
-    // If player has a race selected, prioritize matching race spawns
-    if ($game.player?.race) {
-      const matchingSpawns = spawnList.filter(spawn => 
-        spawn.race?.toLowerCase() === $game.player.race.toLowerCase()
-      );
-      if (matchingSpawns.length === 1) return matchingSpawns[0];
-    }
-    
-    return null; // No single preferred spawn
-  }
-
   // Enhanced effect to handle spawn selection and map movement
   $effect(() => {
-    // Find the preferred spawn (single option or race match)
-    const preferredSpawn = getPreferredSpawn();
+    // Skip if no spawns available
+    if (spawnList.length === 0 || selectedSpawn) return;
     
-    if (preferredSpawn && !selectedSpawn) {
+    // Auto-select spawn if it's the only option or single match for player race
+    let preferredSpawn = null;
+    
+    if (spawnList.length === 1) {
+      // Single spawn case
+      preferredSpawn = spawnList[0];
+    } else if ($game.player?.race) {
+      // Multiple spawns - check for single race match
+      const raceMatches = spawnList.filter(spawn => 
+        spawn.race?.toLowerCase() === $game.player.race.toLowerCase()
+      );
+      
+      if (raceMatches.length === 1) {
+        preferredSpawn = raceMatches[0];
+      }
+    }
+    
+    if (preferredSpawn) {
       // Auto-select the preferred spawn
       selectSpawn(preferredSpawn);
       
-      // Get the correct coordinates from the spawn
+      // Get the correct coordinates and move map
       const spawnX = preferredSpawn.x ?? preferredSpawn.position?.x ?? 0;
       const spawnY = preferredSpawn.y ?? preferredSpawn.position?.y ?? 0;
       
-      // Get current target coordinates from the targetStore
-      const currentX = $targetStore.x;
-      const currentY = $targetStore.y;
-      
       // Check if we need to move the map view
-      if (currentX !== spawnX || currentY !== spawnY) {
+      if ($targetStore.x !== spawnX || $targetStore.y !== spawnY) {
         console.log(`Moving map view to spawn point: ${spawnX},${spawnY}`);
         moveTarget(spawnX, spawnY);
       }
