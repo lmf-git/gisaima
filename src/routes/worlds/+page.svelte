@@ -351,41 +351,60 @@
     
     try {
       // Join the world with race information and display name
-      // Wait for the join operation to fully complete before navigating
       await joinWorld(
         selectedWorld.id, 
         $user.uid, 
         raceData.id.toLowerCase(),
-        raceData.displayName  // Pass the display name
+        raceData.displayName
       );
 
-      // Important: Add a proper waiting period that ensures data is fully loaded
-      console.log('World joined, waiting for data synchronization...');
+      console.log(`Successfully joined world ${selectedWorld.id}, preparing navigation...`);
       
-      // Create a promise that resolves when game data is ready
+      // Use setCurrentWorld to ensure localStorage is updated and trigger data loading
+      await setCurrentWorld(selectedWorld.id);
+      
+      // Wait for world data to be ready - particularly the seed which is needed for map rendering
+      console.log('Waiting for world data to be fully loaded...');
+      
+      // Create a more comprehensive promise that resolves when all required data is ready
       await new Promise((resolve) => {
-        // Check if player data is already loaded
-        if ($game.playerData && $game.currentWorld === selectedWorld.id) {
-          console.log('Player data already loaded, proceeding to map');
+        // Create a check function that verifies all necessary data
+        const checkDataReady = () => {
+          // Need to verify both player data and world seed
+          if ($game.playerData && 
+              $game.currentWorld === selectedWorld.id && 
+              $game.world[selectedWorld.id]?.seed !== undefined) {
+            console.log('Player and world data fully loaded, proceeding to map');
+            return true;
+          }
+          return false;
+        };
+        
+        // If already ready, resolve immediately
+        if (checkDataReady()) {
           resolve();
           return;
         }
         
         // Set up a subscription to wait for player data
         const unsubscribe = game.subscribe((state) => {
-          if (state.playerData && state.currentWorld === selectedWorld.id) {
-            console.log('Player data loaded, proceeding to map');
+          if (checkDataReady()) {
             unsubscribe();
             resolve();
           }
         });
         
-        // Set a maximum timeout of 3 seconds as fallback
+        // Proactively trigger a world info refresh
+        getWorldInfo(selectedWorld.id).catch(err => 
+          console.warn(`Error getting world info: ${err}`)
+        );
+        
+        // Set a maximum timeout of 5 seconds as fallback
         setTimeout(() => {
           console.log('Navigation timeout reached, proceeding anyway');
           unsubscribe();
           resolve();
-        }, 3000);
+        }, 5000);
       });
 
       // Now it's safe to navigate
