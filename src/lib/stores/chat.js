@@ -1,4 +1,4 @@
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
 import { db } from '../firebase/firebase.js';
 import { ref, onValue, push, serverTimestamp, query, orderByChild, limitToLast } from "firebase/database";
@@ -119,8 +119,8 @@ export async function sendMessage(text, messageType = 'user') {
   }
   
   try {
-    const currentUser = user.get();
-    const currentWorld = game.get().worldKey;
+    const currentUser = get(user);
+    const currentWorld = get(game).worldKey;
     
     if (!currentUser || !currentWorld) {
       console.error('Cannot send message: user or world not available');
@@ -137,7 +137,7 @@ export async function sendMessage(text, messageType = 'user') {
       userId: currentUser.uid,
       userName: currentUser.displayName || 'Anonymous',
       // Include location if available
-      location: game.get().player?.lastLocation || null
+      location: get(game).player?.lastLocation || null
     };
     
     // Push to Firebase
