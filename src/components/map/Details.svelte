@@ -73,7 +73,13 @@
     const option = sortOptions[section];
     
     return [...entities].sort((a, b) => {
-      // First check if either entity is owned by the current player
+      // First check if either entity is the current player (highest priority)
+      if (section === 'players') {
+        if (a.id === $currentPlayer?.id) return -1;
+        if (b.id === $currentPlayer?.id) return 1;
+      }
+      
+      // Then check if either entity is owned by the current player
       const aOwned = isOwnedByCurrentPlayer(a);
       const bOwned = isOwnedByCurrentPlayer(b);
       
