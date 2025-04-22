@@ -2,7 +2,7 @@
   import { ref, set, update } from 'firebase/database';
   import { db } from '../../lib/firebase/firebase.js';
   import { game, currentPlayer } from '../../lib/stores/game';
-  import { moveTarget } from '../../lib/stores/map';
+  import { moveTarget, map } from '../../lib/stores/map';
   import { user } from '../../lib/stores/user';
 
   // Import torch and race icons
@@ -41,13 +41,17 @@
     if (spawnList.length === 1 && !selectedSpawn) {
       // If there's only one spawn, select it automatically
       selectSpawn(spawnList[0]);
+
+      console.log(spawnList)
       
       // Get the correct coordinates from the spawn
       const spawnX = spawnList[0].x ?? spawnList[0].position?.x ?? 0;
       const spawnY = spawnList[0].y ?? spawnList[0].position?.y ?? 0;
       
-      // Move the map target to the spawn location
-      moveTarget(spawnX, spawnY);
+      // Only move the map target if not already at these coordinates
+      if ($map.target.x !== spawnX || $map.target.y !== spawnY) {
+        moveTarget(spawnX, spawnY);
+      }
     }
   });
 
@@ -78,11 +82,21 @@
   // Handle spawn selection
   function selectSpawn(spawn) {
     selectedSpawn = spawn;
-    // Preview the spawn location on the map
+    
+    // Get coordinates from spawn
+    let spawnX, spawnY;
     if (spawn.x !== undefined && spawn.y !== undefined) {
-      moveTarget(spawn.x, spawn.y);
+      spawnX = spawn.x;
+      spawnY = spawn.y;
     } else if (spawn.position) {
-      moveTarget(spawn.position.x, spawn.position.y);
+      spawnX = spawn.position.x;
+      spawnY = spawn.position.y;
+    }
+    
+    // Only move if coordinates exist and we're not already at these coordinates
+    if (spawnX !== undefined && spawnY !== undefined && 
+        ($map.target.x !== spawnX || $map.target.y !== spawnY)) {
+      moveTarget(spawnX, spawnY);
     }
   }
 
@@ -158,15 +172,15 @@
       {#if $game.player?.race}
         <div class="race-icon">
           {#if $game.player.race.toLowerCase() === 'human'}
-            <Human extraClass="header-race-icon" />
+            <Human size="2em" fill="rgba(0, 0, 0, 0.85)" extraClass="header-race-icon spawn-header-icon" />
           {:else if $game.player.race.toLowerCase() === 'elf'}
-            <Elf extraClass="header-race-icon" />
+            <Elf size="2em" fill="rgba(0, 0, 0, 0.85)" extraClass="header-race-icon spawn-header-icon" />
           {:else if $game.player.race.toLowerCase() === 'dwarf'}
-            <Dwarf extraClass="header-race-icon" />
+            <Dwarf size="2em" fill="rgba(0, 0, 0, 0.85)" extraClass="header-race-icon spawn-header-icon" />
           {:else if $game.player.race.toLowerCase() === 'goblin'}
-            <Goblin extraClass="header-race-icon" />
+            <Goblin size="2em" fill="rgba(0, 0, 0, 0.85)" extraClass="header-race-icon spawn-header-icon" />
           {:else if $game.player.race.toLowerCase() === 'fairy'}
-            <Fairy extraClass="header-race-icon" />
+            <Fairy size="2em" fill="rgba(0, 0, 0, 0.85)" extraClass="header-race-icon spawn-header-icon" />
           {/if}
         </div>
       {/if}
@@ -282,7 +296,7 @@
     line-height: 1.3;
   }
 
-  :global(.header-race-icon) {
+  :global(.header-race-icon.spawn-header-icon) {
     width: 2em;
     height: 2em;
     opacity: 0.85;

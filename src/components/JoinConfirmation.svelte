@@ -181,15 +181,15 @@
         >
           <div class="race-icon-container">
             {#if race.id === 'human'}
-              <Human extraClass={`race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+              <Human size="4em" fill="#64FFDA" extraClass={`race-icon join-race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
             {:else if race.id === 'elf'}
-              <Elf extraClass={`race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+              <Elf size="4em" fill="#64FFDA" extraClass={`race-icon join-race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
             {:else if race.id === 'dwarf'}
-              <Dwarf extraClass={`race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+              <Dwarf size="4em" fill="#64FFDA" extraClass={`race-icon join-race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
             {:else if race.id === 'goblin'}
-              <Goblin extraClass={`race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+              <Goblin size="4em" fill="#64FFDA" extraClass={`race-icon join-race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
             {:else if race.id === 'fairy'}
-              <Fairy extraClass={`race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+              <Fairy size="4em" fill="#64FFDA" extraClass={`race-icon join-race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
             {/if}
           </div>
           
@@ -361,20 +361,20 @@
     margin-bottom: 0.8em;
   }
   
-  :global(.race-icon) {
+  :global(.join-race-icon.race-icon) {
     width: 4em;
     height: 4em;
-    fill: #64FFDA; /* Changed from var(--color-muted-teal) to a brighter color */
+    fill: #64FFDA;
     transition: all 0.2s ease;
   }
   
-  :global(.race-icon-selected) {
-    fill: #9EFFEA; /* Lighten the selected state for even better contrast */
+  :global(.join-race-icon.race-icon.race-icon-selected) {
+    fill: #9EFFEA;
     transform: scale(1.05);
   }
   
-  .race-option:hover :global(.race-icon) {
-    fill: #9EFFEA; /* Changed from var(--color-pale-green) to a brighter color */
+  .race-option:hover :global(.join-race-icon.race-icon) {
+    fill: #9EFFEA;
   }
   
   .race-name-container {
@@ -584,7 +584,7 @@
       padding: 0.8em;
     }
     
-    :global(.race-icon) {
+    :global(.join-race-icon.race-icon) {
       width: 3.5em;
       height: 3.5em;
     }

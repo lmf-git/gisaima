@@ -1,6 +1,8 @@
 <script>
   import { onMount } from 'svelte';
-  import { TerrainGenerator } from '../../functions/shared/map/noise.js';
+  
+
+  import { TerrainGenerator } from '$lib/shared/map/noise.js';
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
   import { getWorldCenterCoordinates } from '../lib/stores/game.js';
