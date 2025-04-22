@@ -1,7 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
 import { ref, onValue, get as dbGet, set, update } from "firebase/database";
-import { db } from '../firebase/database.js';
+import { db } from '../firebase/firebase.js';
 import { user, isAuthReady as userAuthReady } from './user'; 
 
 // Constants for localStorage

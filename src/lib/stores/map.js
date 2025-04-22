@@ -1,7 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import { TerrainGenerator } from '../map/noise.js';
 import { ref, onValue } from "firebase/database";
-import { db } from '../firebase/database.js';
+import { db } from '../firebase/firebase.js';
 import { replaceState } from '$app/navigation'; // Import from SvelteKit instead of using history directly
 // Import getWorldCenterCoordinates function from game store
 import { getWorldCenterCoordinates, game } from './game.js';

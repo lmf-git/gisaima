@@ -11,7 +11,7 @@
     loadJoinedWorlds
   } from '../../lib/stores/game.js';
   import { ref, onValue } from "firebase/database";
-  import { db } from '../../lib/firebase/database.js';
+  import { db } from '../../lib/firebase/firebase.js'
   import { browser } from '$app/environment';
   import JoinConfirmation from '../../components/JoinConfirmation.svelte';
   import WorldCard from '../../components/WorldCard.svelte';

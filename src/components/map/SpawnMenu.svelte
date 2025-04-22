@@ -1,6 +1,6 @@
 <script>
   import { ref, set, update } from 'firebase/database';
-  import { db } from '../../lib/firebase/database';
+  import { db } from '../../lib/firebase/firebase.js';
   import { game, currentPlayer } from '../../lib/stores/game';
   import { moveTarget } from '../../lib/stores/map';
   import { user } from '../../lib/stores/user';
