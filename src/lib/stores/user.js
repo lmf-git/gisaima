@@ -26,7 +26,6 @@ export const loading = writable(true);
 export const isAuthReady = writable(false); // Add explicit isAuthReady store
 
 // Track initialization to prevent duplicate listeners
-let authListenerInitialized = false;
 let authUnsubscribe = null;
 
 // Initialize auth state listener with better state tracking
@@ -37,15 +36,7 @@ export const initAuthListener = () => {
     return null;
   }
   
-  // Don't set up duplicate listeners
-  if (authListenerInitialized && authUnsubscribe) {
-    debugLog('Auth listener already initialized, returning existing unsubscribe');
-    return authUnsubscribe;
-  }
-  
   try {
-    authListenerInitialized = true;
-    
     // Store previous auth state to avoid redundant logging
     let previousAuthState = null;
     
@@ -68,7 +59,6 @@ export const initAuthListener = () => {
       if (authUnsubscribe) {
         authUnsubscribe();
         authUnsubscribe = null;
-        authListenerInitialized = false;
         isAuthReady.set(false); // Reset on unsubscribe
       }
     };

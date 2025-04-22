@@ -14,7 +14,6 @@
     import { db } from '../lib/firebase/database.js';
     import HamburgerIcon from '../components/icons/HamburgerIcon.svelte';
     import GuestWarning from '../components/GuestWarning.svelte';
-    import { initializeMapForWorld } from '$lib/stores/map.js';
 
     const { children, data } = $props();
 
@@ -142,9 +141,7 @@
         if (browser && !$userLoading && $user?.isAnonymous && !hasShownGuestWarning && 
             !isMapPage && !isLoginPage && !isSignupPage) {
             // Wait a bit before showing the warning to avoid overwhelming new users
-            setTimeout(() => {
-                showGuestWarning = true;
-            }, 3000);
+            setTimeout(() => showGuestWarning = true, 3000);
         }
     });
     
