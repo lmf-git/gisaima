@@ -3,6 +3,7 @@
   import { currentPlayer } from '../../lib/stores/game';
   import { targetStore } from '../../lib/stores/map';
   import Close from '../icons/Close.svelte';
+  import Compass from '../icons/Compass.svelte';
   
   // Props using $props() rune
   const { 
@@ -19,7 +20,6 @@
   let isSubmitting = $state(false);
   let error = $state(null);
   let isReady = $state(false);
-  let renderKey = $state(Date.now());
   
   // Derived states
   const currentTile = $derived($targetStore);
@@ -137,7 +137,8 @@
       onclick={startPathDrawing}
       disabled={!selectedGroupId || isSubmitting}
     >
-      Draw Path
+      <Compass extraClass="compass-icon" />
+      PLOT YOUR JOURNEY
     </button>
   </footer>
 </div>
@@ -317,6 +318,10 @@
     color: white;
     border: none;
     flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
   }
 
   .action-button:hover:not(:disabled) {
@@ -328,6 +333,11 @@
     opacity: 0.7;
     cursor: not-allowed;
     transform: none;
+  }
+
+  :global(.compass-icon) {
+    width: 1.2em;
+    fill: currentColor;
   }
 
   @media (max-width: 768px) {

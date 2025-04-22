@@ -16,6 +16,9 @@
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
 
+  // Import Compass icon
+  import Compass from '../icons/Compass.svelte';
+
   // Props
   const { onClose = () => {}, onShowModal = null } = $props();
 
@@ -572,6 +575,7 @@
                 
                 {#if canMove($highlightedStore)}
                   <button class="action-button" onclick={() => executeAction('move')}>
+                    <Compass extraClass="action-icon compass-icon" />
                     Move
                   </button>
                 {/if}
@@ -1198,6 +1202,12 @@
   :global(.action-icon) {
     opacity: 0.8;
     vertical-align: middle;
+  }
+  
+  :global(.compass-icon) {
+    width: 1.1em;
+    height: 1.1em;
+    fill: currentColor;
   }
   
   :global(.spawn-icon) {

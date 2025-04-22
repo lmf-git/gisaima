@@ -22,6 +22,7 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
+  import Compass from '../icons/Compass.svelte';
   
   // Props with defaults using Svelte 5 $props() rune
   const { 
@@ -1061,7 +1062,7 @@
   {#if isPathDrawingMode}
     <div class="path-controls">
       <div class="path-point-counter">
-        <span class="group-name">{customPathPoints?.length > 0 ? 'Path: ' : ''}{customPathPoints?.length || 0} points</span>
+        <span class="group-name">{customPathPoints?.length > 0 ? 'Plotting path: ' : ''}{customPathPoints?.length || 0} points</span>
       </div>
       <div class="path-buttons">
         <button class="path-control-btn cancel-btn" onclick={() => onClose()} aria-label="Cancel path drawing">
@@ -1077,7 +1078,8 @@
             }} 
             aria-label="Confirm path"
           >
-            Confirm Path
+            <Compass extraClass="compass-icon-path" />
+            Confirm
           </button>
         {/if}
       </div>
@@ -1665,7 +1667,7 @@
   }
   
   .path-point-counter::before {
-    content: "✏️";
+    content: ""; /* Completely removed emoji */
     font-size: 1.1em;
   }
   
@@ -1706,6 +1708,10 @@
     background-color: rgba(66, 133, 244, 0.9);
     color: white;
     border: 1px solid rgba(66, 133, 244, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
   }
   
   .path-control-btn.confirm-btn:hover {
@@ -1845,5 +1851,10 @@
   .tile.center .race-background-icon :global(.race-icon-tile) {
     opacity: 0.8;
     filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+  }
+
+  :global(.compass-icon-path) {
+    width: 1.2em;
+    fill: currentColor;
   }
 </style>
