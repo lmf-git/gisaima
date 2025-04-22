@@ -13,9 +13,11 @@
     targetStore,
     highlightedStore,
     setHighlighted,
-    getChunkKey
+    getChunkKey,
+    isTileWithCurrentPlayer
   } from "../../lib/stores/map.js";
-  import { game, currentPlayer } from "../../lib/stores/game.js";
+  import { game, currentPlayer, isCurrentPlayerEntity } from "../../lib/stores/game.js";
+  import { user } from '../../lib/stores/user';
   import Torch from '../icons/Torch.svelte';
   import Structure from '../icons/Structure.svelte';
   import Human from '../icons/Human.svelte';
@@ -394,14 +396,14 @@
     if (!playerEntity || !$currentPlayer) return false;
     
     const playerIds = [
-      $currentPlayer.uid,
+      $currentPlayer.id,
       $currentPlayer.id,
       $currentPlayer.userId,
       $currentPlayer.playerId
     ].filter(Boolean);
     
     const entityIds = [
-      playerEntity.uid,
+      playerEntity.id,
       playerEntity.id,
       playerEntity.playerId,
       playerEntity.userId
@@ -429,6 +431,12 @@
   
   function getPlayerCount(cell) {
     return cell.players ? cell.players.length : 0;
+  }
+
+  // Enhanced function to identify if a tile contains the current player
+  function containsCurrentPlayer(tile) {
+    if (!tile?.players || !$user?.uid) return false;
+    return id?.toString() === $user.uid?.toString();
   }
 
   function handleGridClick(event) {
@@ -992,6 +1000,7 @@
             class:has-players={hasPlayers}
             class:has-items={cell.items?.length > 0}
             class:player-position={isCurrentPlayerHere}
+            class:current-player={containsCurrentPlayer(cell)}
             class:from-world-data={playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y && !hasCurrentPlayerEntity(cell)}
             style="background-color: {cell.color || 'var(--terrain-color)'}"
             onmouseenter={() => handleTileHover(cell)}

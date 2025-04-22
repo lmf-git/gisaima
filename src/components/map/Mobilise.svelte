@@ -30,9 +30,9 @@
     if (!tile || !tile.players) return false;
     
     if (Array.isArray(tile.players)) {
-      return tile.players.some(p => p.uid === playerId);
+      return tile.players.some(p => p.id === playerId);
     } else if (typeof tile.players === 'object') {
-      return Object.values(tile.players).some(p => p.uid === playerId);
+      return Object.values(tile.players).some(p => p.id === playerId);
     }
     
     return false;
@@ -42,7 +42,7 @@
     if (!tileData) return;
     
     const units = [];
-    const playerId = $currentPlayer?.uid;
+    const playerId = $currentPlayer?.id;
     
     if (tileData.groups && tileData.groups.length > 0) {
       tileData.groups.forEach(group => {
@@ -67,7 +67,7 @@
       return;
     }
     
-    if (!isPlayerOnTile(tileData, $currentPlayer.uid)) {
+    if (!isPlayerOnTile(tileData, $currentPlayer.id)) {
       console.warn('Player not found on tile. Players data:', tileData.players);
       mobilizeError = 'Player not found on this tile.';
       return;
@@ -147,10 +147,10 @@
     (selectedUnits.length > 0) || 
     (includePlayer && (
       Array.isArray(tileData?.players)
-        ? tileData.players.some(p => p.uid === $currentPlayer?.uid || p.id === $currentPlayer?.uid)
+        ? tileData.players.some(p => p.id === $currentPlayer?.id || p.id === $currentPlayer?.id)
         : tileData?.players && (
-            tileData.players[$currentPlayer?.uid] !== undefined || 
-            Object.values(tileData.players).some(p => p.uid === $currentPlayer?.uid || p.id === $currentPlayer?.uid)
+            tileData.players[$currentPlayer?.id] !== undefined || 
+            Object.values(tileData.players).some(p => p.id === $currentPlayer?.id || p.id === $currentPlayer?.id)
           )
     ))
   );
@@ -238,10 +238,10 @@
         
         <div class="options">
           {#if Array.isArray(tileData?.players)
-              ? tileData.players.some(p => p.id === $currentPlayer?.uid || p.uid === $currentPlayer?.uid)
+              ? tileData.players.some(p => p.id === $currentPlayer?.id || p.id === $currentPlayer?.id)
               : tileData?.players && (
-                  tileData.players[$currentPlayer?.uid] !== undefined || 
-                  Object.values(tileData.players).some(p => p.uid === $currentPlayer?.uid || p.id === $currentPlayer?.uid)
+                  tileData.players[$currentPlayer?.id] !== undefined || 
+                  Object.values(tileData.players).some(p => p.id === $currentPlayer?.id || p.id === $currentPlayer?.id)
                 )}
             <div class="option-row">
               <label for="include-player">
@@ -335,7 +335,7 @@
           <h3>Summary</h3>
           <p>
             Units selected: {selectedUnits.length}
-            {#if includePlayer && tileData?.players?.some(p => p.id === $currentPlayer?.uid)}
+            {#if includePlayer && tileData?.players?.some(p => p.id === $currentPlayer?.id)}
               + You
             {/if}
           </p>

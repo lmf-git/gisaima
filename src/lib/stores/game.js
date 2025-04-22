@@ -151,11 +151,7 @@ export const currentPlayer = derived(
       
       // Base player info from user auth data
       return {
-        uid: $user.uid,
         id: $user.uid,         // Add explicit id field for component checks
-        playerId: $user.uid,   // Add explicit playerId for component checks
-        userId: $user.uid,     // Add explicit userId for component checks
-        owner: $user.uid,      // Add explicit owner field for component checks
         displayName: displayName,
         email: $user.email,
         isAnonymous: $user.isAnonymous,
@@ -338,11 +334,7 @@ export function loadPlayerWorldData(userId, worldId) {
       debugLog(`Loaded player world data for ${userId}`);
       
       // Ensure player data has consistent identity fields
-      if (playerData) {
-        playerData.id = userId;
-        playerData.uid = userId;
-        playerData.playerId = userId;
-      }
+      if (playerData) playerData.id = userId;
       
       game.update(state => ({ 
         ...state, 
@@ -378,11 +370,7 @@ export function loadPlayerWorldData(userId, worldId) {
             await set(playerEntityRef, {
               displayName,
               lastActive: Date.now(),
-              uid: userId,
               id: userId,
-              playerId: userId,
-              userId: userId,
-              owner: userId,
               race: playerData.race || 'human'
             });
             

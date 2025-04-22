@@ -38,13 +38,13 @@
     // Filter only groups owned by the current player and with idle status
     const groups = $targetStore.groups;
     
-    if (groups && $currentPlayer?.uid) {
+    if (groups && $currentPlayer?.id) {
       // Handle both array and object formats of groups
       const groupsArray = Array.isArray(groups) ? groups : Object.values(groups);
       
       availableGroups = groupsArray
         .filter(group => 
-          group.owner === $currentPlayer.uid && 
+          group.owner === $currentPlayer.id && 
           group.status === 'idle' &&
           !group.inBattle
         )

@@ -181,7 +181,7 @@ export const processGameTicks = onSchedule({
                     // For each player unit, make sure they remain on the tile 
                     // but are no longer in the group
                     for (const playerUnit of playerUnits) {
-                      if (playerUnit.uid || playerUnit.id) {
+                      if (playerUnit.id) {
                         // Use the exact location data from demobilizationData if available
                         // This ensures consistent chunk calculation
                         let exactLocationData;
@@ -199,7 +199,7 @@ export const processGameTicks = onSchedule({
                         // Use the exact chunk key from demobilization data to ensure proper placement
                         const playerChunkKey = exactLocationData.chunkKey || chunkKey;
                         const playerTileKey = `${exactLocationData.x},${exactLocationData.y}`;
-                        const playerId = playerUnit.uid || playerUnit.id;
+                        const playerId = playerUnit.id;
                         
                         // Create or update a standalone player entry on this tile
                         // IMPORTANT: Match the exact structure created by SpawnMenu.svelte

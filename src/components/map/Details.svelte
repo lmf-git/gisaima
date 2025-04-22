@@ -225,68 +225,20 @@
   function isOwnedByCurrentPlayer(entity) {
     if (!entity || !$currentPlayer) return false;
 
-    // Check all possible ID variations
-    const playerIds = [
-      $currentPlayer.uid,
-      $currentPlayer.id,
-      $currentPlayer.userId,
-      $currentPlayer.playerId
-    ].filter(Boolean);
-    
-    // Check all possible entity ID fields
-    const entityIds = [
-      entity.owner,
-      entity.uid,
-      entity.id,
-      entity.playerId,
-      entity.userId
-    ].filter(Boolean);
-    
     // Check if any ID matches between the two sets
-    return playerIds.some(playerId => 
-      entityIds.some(entityId => 
-        entityId === playerId || 
-        entityId?.toString() === playerId?.toString()
-      )
-    );
-  }
-
-  // Functions to check what actions are available
-  function isCurrentPlayer(playerEntity) {
-    if (!playerEntity || !$currentPlayer) return false;
-    
-    const playerIds = [
-      $currentPlayer.uid,
-      $currentPlayer.id,
-      $currentPlayer.userId,
-      $currentPlayer.playerId
-    ].filter(Boolean);
-    
-    const entityIds = [
-      playerEntity.uid,
-      playerEntity.id,
-      playerEntity.playerId,
-      playerEntity.userId
-    ].filter(Boolean);
-    
-    return playerIds.some(playerId => 
-      entityIds.some(entityId => 
-        entityId === playerId || 
-        entityId?.toString() === playerId?.toString()
-      )
-    );
+    return entityId === playerId;
   }
   
   function canMobilize(tile) {
     if (!tile || !$currentPlayer) return false;
     
     // Check if player is on the tile
-    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.uid || p.uid === $currentPlayer.uid);
+    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
     
     // Check if player is not already in a mobilizing/demobilising group
     const inProcessGroup = tile.groups?.some(g => 
       (g.status === 'mobilizing' || g.status === 'demobilising') && 
-      g.owner === $currentPlayer.uid
+      g.owner === $currentPlayer.id
     );
     
     return playerOnTile && !inProcessGroup;
@@ -297,7 +249,7 @@
     
     // Check if there are any player-owned groups that are idle
     return tile.groups?.some(g => 
-      g.owner === $currentPlayer.uid && 
+      g.owner === $currentPlayer.id && 
       g.status === 'idle' &&
       !g.inBattle
     );
@@ -308,7 +260,7 @@
     
     // Check if there are any player-owned groups that are idle
     return tile.groups?.some(g => 
-      g.owner === $currentPlayer.uid && 
+      g.owner === $currentPlayer.id && 
       g.status === 'idle' &&
       !g.inBattle
     );
@@ -320,14 +272,14 @@
     
     // Check if there are any player-owned groups that are idle
     const playerGroups = tile.groups?.filter(g => 
-      g.owner === $currentPlayer.uid && 
+      g.owner === $currentPlayer.id && 
       g.status === 'idle' &&
       !g.inBattle
     );
     
     // Check if there are any enemy groups on the tile
     const enemyGroups = tile.groups?.filter(g => 
-      g.owner !== $currentPlayer.uid && 
+      g.owner !== $currentPlayer.id && 
       g.status === 'idle' &&
       !g.inBattle
     );
@@ -344,7 +296,7 @@
     // Only check if there are any player-owned groups that are idle and not in battle
     // (Similar to canDemobilize, but don't check for items)
     return tile.groups?.some(g => 
-      g.owner === $currentPlayer.uid && 
+      g.owner === $currentPlayer.id && 
       g.status === 'idle' &&
       !g.inBattle
     );
@@ -356,7 +308,7 @@
     // Check if there's an active battle and player has idle groups
     return tile.battles?.some(b => b.status === 'active') &&
            tile.groups?.some(g => 
-             g.owner === $currentPlayer.uid && 
+             g.owner === $currentPlayer.id && 
              g.status === 'idle' &&
              !g.inBattle
            );
@@ -816,7 +768,7 @@
           {#if !collapsedSections.players}
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
               {#each sortedPlayers as player}
-                <div class="entity player {player.id === $currentPlayer?.uid ? 'current' : ''} {isOwnedByCurrentPlayer(player) ? 'player-owned' : ''}">
+                <div class="entity player {player.id === $currentPlayer?.id ? 'current' : ''} {isOwnedByCurrentPlayer(player) ? 'player-owned' : ''}">
                   <div class="entity-icon">
                     {#if player.race}
                       {#if player.race.toLowerCase() === 'human'}
@@ -835,7 +787,7 @@
                   <div class="entity-info">
                     <div class="entity-name">
                       {player.displayName || 'Player'}
-                      {#if player.id === $currentPlayer?.uid}
+                      {#if player.id === $currentPlayer?.id}
                         <span class="entity-badge owner-badge">You</span>
                       {/if}
                     </div>

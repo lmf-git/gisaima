@@ -428,32 +428,8 @@
 
   // Function to check if entity belongs to current player
   function isOwnedByCurrentPlayer(entity) {
-    if (!$currentPlayer || !entity) return false;
-
-    // Check all possible ID variations
-    const playerIds = [
-      $currentPlayer.uid,
-      $currentPlayer.id,
-      $currentPlayer.userId,
-      $currentPlayer.playerId
-    ].filter(Boolean);
-    
-    // Check all possible entity ID fields
-    const entityIds = [
-      entity.owner,
-      entity.uid,
-      entity.id,
-      entity.playerId,
-      entity.userId
-    ].filter(Boolean);
-    
-    // Check if any ID matches between the two sets
-    return playerIds.some(playerId => 
-      entityIds.some(entityId => 
-        entityId === playerId || 
-        entityId?.toString() === playerId?.toString()
-      )
-    );
+    if (!$currentPlayer || !entity) return false;    
+    return entityId?.toString() === playerId?.toString();
   }
 
   // Enhance formatBattleTimeRemaining function to handle more states
@@ -533,13 +509,13 @@
     
     // Check if player ID is in participants list
     return battle.participants.some(p => 
-      p.id === $currentPlayer.uid || p.uid === $currentPlayer.uid
+      p.id === $currentPlayer.id || p.id === $currentPlayer.id
     );
   }
 
   // Add the missing function - isPlayerAvailableOnTile
   function isPlayerAvailableOnTile(tile, playerId) {
-    if (!tile || !tile.players || !tile.players.some(p => p.id === playerId || p.uid === playerId)) {
+    if (!tile || !tile.players || !tile.players.some(p => p.id === playerId || p.id === playerId)) {
       return false;
     }
     
@@ -561,12 +537,12 @@
     
     if (Array.isArray(group.units)) {
       return group.units.some(unit => 
-        (unit.id === playerId || unit.uid === playerId) && unit.type === 'player'
+        (unit.id === playerId || unit.id === playerId) && unit.type === 'player'
       );
     } 
     
     return Object.values(group.units).some(unit => 
-      (unit.id === playerId || unit.uid === playerId) && unit.type === 'player'
+      (unit.id === playerId || unit.id === playerId) && unit.type === 'player'
     );
   }
   
@@ -869,7 +845,7 @@
             {#if activeFilter !== 'all' || !collapsedSections.players}
               {#each sortedPlayers as entity ('player:' + entity.id + ':' + entity.x + ':' + entity.y)}
                 <div 
-                  class="entity player {entity.id === $currentPlayer?.uid ? 'current' : ''} {isAtTarget(entity.x, entity.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(entity) ? 'current-player-owned' : ''}"
+                  class="entity player {entity.id === $currentPlayer?.id ? 'current' : ''} {isAtTarget(entity.x, entity.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(entity) ? 'current-player-owned' : ''}"
                   onclick={(e) => handleEntityAction(entity.x, entity.y, e)}
                   onkeydown={(e) => handleEntityAction(entity.x, entity.y, e)}
                   role="button"
@@ -1384,7 +1360,7 @@
                       </div>
                     {/if}
                     
-                    {#if battle.status === 'active' && isPlayerAvailableOnTile($coordinates.find(c => c.x === battle.x && c.y === battle.y), $currentPlayer?.uid) && hasIdlePlayerGroups($coordinates.find(c => c.x === battle.x && c.y === battle.y), $currentPlayer?.uid)}
+                    {#if battle.status === 'active' && isPlayerAvailableOnTile($coordinates.find(c => c.x === battle.x && c.y === battle.y), $currentPlayer?.id) && hasIdlePlayerGroups($coordinates.find(c => c.x === battle.x && c.y === battle.y), $currentPlayer?.id)}
                       <div class="battle-actions">
                         <button 
                           class="join-battle-btn"

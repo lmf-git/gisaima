@@ -193,10 +193,6 @@
         },
         spawnId: spawn.id || null,
         id: $user.uid, // Explicitly store the user ID
-        uid: $user.uid,  // Ensure UID is explicitly stored
-        playerId: $user.uid, // Add consistent playerId field
-        userId: $user.uid, // Add consistent userId field
-        owner: $user.uid // Add consistent owner field
       });
 
       // 2. Calculate chunk coordinates for the player entity
@@ -221,11 +217,7 @@
       await set(playerEntityRef, {
         displayName,
         lastActive: Date.now(),
-        uid: $user.uid,
         id: $user.uid, // Add explicit id field matching uid
-        playerId: $user.uid, // Add explicit playerId field
-        userId: $user.uid, // Add explicit userId field
-        owner: $user.uid, // Add explicit owner field
         race: $game.playerData?.race || 'human'
       });
       
@@ -298,12 +290,8 @@
       await set(chunkRef, {
         displayName: playerData.displayName || ($user.isAnonymous ? `Guest ${$user.uid.substring(0, 4)}` : ($user.displayName || $user.email.split('@')[0])),
         lastActive: Date.now(),
-        race: playerData.race || 'human',
-        uid: $user.uid,
-        id: $user.uid,
-        playerId: $user.uid,
-        userId: $user.uid,
-        owner: $user.uid
+        race: playerData.race,
+        id: $user.uid
       });
     } catch (error) {
       console.error('Error spawning at location:', error);

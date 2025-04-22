@@ -22,7 +22,7 @@
     }
     availableGroups = tileData.groups
       .filter(group => {
-        return group.owner === $currentPlayer?.uid && group.status === 'idle';
+        return group.owner === $currentPlayer?.id && group.status === 'idle';
       })
       .map(group => ({
         ...group,

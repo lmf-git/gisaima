@@ -39,7 +39,7 @@ function isPlayerOnTile(tileData, playerId) {
       console.log('Players stored as array with length:', tileData.players.length);
       console.log('Players array contents:', JSON.stringify(tileData.players));
       
-      const found = tileData.players.some(p => p.uid === playerId || p.id === playerId);
+      const found = tileData.players.some(p => p.id === playerId);
       if (found) {
         console.log(`Found player ${playerId} in players array`);
         return true;
@@ -62,7 +62,7 @@ function isPlayerOnTile(tileData, playerId) {
       
       for (const player of playerValues) {
         console.log(`Checking player:`, JSON.stringify(player));
-        if (player && (player.uid === playerId || player.id === playerId)) {
+        if (player && (player.id === playerId)) {
           console.log(`Found matching player: ${JSON.stringify(player)}`);
           return true;
         }
@@ -93,7 +93,7 @@ function isPlayerOnTile(tileData, playerId) {
           
           for (const unit of group.units) {
             console.log(`Checking unit:`, JSON.stringify(unit));
-            if (unit.type === 'player' && (unit.uid === playerId || unit.id === playerId)) {
+            if (unit.type === 'player' && (unit.id === playerId)) {
               console.log(`Found player ${playerId} in group ${groupId} units array`);
               return true;
             }
@@ -107,7 +107,7 @@ function isPlayerOnTile(tileData, playerId) {
             const unit = group.units[unitId];
             console.log(`Checking unit ${unitId}:`, JSON.stringify(unit));
             
-            if (unit.type === 'player' && (unit.uid === playerId || unit.id === playerId)) {
+            if (unit.type === 'player' && (unit.id === playerId)) {
               console.log(`Found player ${playerId} in group ${groupId} units object`);
               return true;
             }
@@ -231,7 +231,7 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
           if (tileLoc === 'lastUpdated') continue;
           
           if (tileContent.players && (tileContent.players[uid] || 
-             Object.values(tileContent.players).some(p => p.uid === uid))) {
+             Object.values(tileContent.players).some(p => p.id === uid))) {
             playerFoundInChunk = true;
             console.log(`Found player ${uid} in chunk ${chunkKey} but at tile ${tileLoc} instead of requested ${tileKey}`);
             
@@ -339,11 +339,11 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
         
         if (Array.isArray(currentTile.players)) {
           // Handle array format
-          const playerIndex = currentTile.players.findIndex(p => p.uid === uid || p.id === uid);
+          const playerIndex = currentTile.players.findIndex(p => p.id === uid);
           if (playerIndex !== -1) {
             const player = currentTile.players[playerIndex];
             // Generate a consistent key for the player
-            const playerKey = player.uid || player.id;
+            const playerKey = player.id;
             
             newGroup.units[playerKey] = {
               ...player,
@@ -365,7 +365,7 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
           for (const playerKey of playerKeys) {
             const player = currentTile.players[playerKey];
             
-            if (player.uid === uid || player.id === uid) {
+            if (player.id === uid) {
               newGroup.units[playerKey] = {
                 ...player,
                 type: 'player'

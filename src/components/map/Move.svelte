@@ -42,7 +42,7 @@
     if (!currentTile?.groups || !$currentPlayer) return [];
     
     return currentTile.groups.filter(group => 
-      group.owner === $currentPlayer.uid && 
+      group.owner === $currentPlayer.id && 
       group.status === 'idle' &&
       !group.inBattle
     );

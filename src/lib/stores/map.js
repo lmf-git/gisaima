@@ -238,7 +238,7 @@ function processChunkData(data = {}, chunkKey) {
       updates.players[fullTileKey] = Object.entries(tileData.players)
         .map(([id, data]) => ({
           ...data,
-          id: data.uid || id,  // Prioritize existing uid if available
+          id: id,
           x, y
         }));
       validPlayerKeys.add(fullTileKey);
@@ -802,42 +802,6 @@ export function getSpawnPointsFromWorld(worldData) {
   
   return [];
 }
-
-// Modified function to handle drag start to respect path drawing mode
-function handleDragAction(event, sensitivity = 1) {
-  const state = $map;
-  
-  // If the store is configured to ignore drag events, exit early
-  if (state.ignoreDrag) {
-    return false;
-  }
-  
-  if (event.type === 'dragstart' || event.type === 'touchstart') {
-    const clientX = event.clientX || event.touches?.[0]?.clientX || 0;
-    const clientY = event.clientY || event.touches?.[0]?.clientY || 0;
-    
-    dist = 0;
-    wasDrag = false;
-    
-    setHighlighted(null, null);
-    
-    map.update(state => ({
-      ...state,
-      isDragging: true,
-      dragStartX: clientX,
-      dragStartY: clientY,
-      dragAccumX: 0,
-      dragAccumY: 0,
-      dragSource: 'map'
-    }));
-    
-    return true;
-  }
-}
-
-// Track state of initialization attempts
-let initializationAttempted = false;
-let currentInitializationPromise = null;
 
 // Improved initialize function with better validation
 export function initialize(options = {}) {

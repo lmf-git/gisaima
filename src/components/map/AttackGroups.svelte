@@ -33,7 +33,7 @@
   $effect(() => {
     if (!tileData) return;
     
-    const playerId = $currentPlayer?.uid;
+    const playerId = $currentPlayer?.id;
     if (!playerId) return;
     
     // Find player groups that can attack (idle groups)

@@ -55,7 +55,7 @@
   
   function isOwnedByCurrentPlayer(entity) {
     if (!entity || !$currentPlayer) return false;
-    return entity.owner === $currentPlayer.uid;
+    return entity.owner === $currentPlayer.id;
   }
   
   // Get rarity class from item rarity for consistent styling with grid
@@ -80,16 +80,16 @@
   
   // Reactive declarations using $derived
   let hasPersonalBank = $derived(
-    $currentPlayer?.uid && 
+    $currentPlayer?.id && 
     tile?.structure?.banks && 
-    tile?.structure?.banks[$currentPlayer.uid] && 
-    tile?.structure?.banks[$currentPlayer.uid].length > 0
+    tile?.structure?.banks[$currentPlayer.id] && 
+    tile?.structure?.banks[$currentPlayer.id].length > 0
   );
   
   let displayItems = $derived(
     activeTab === 'shared' 
       ? (tile?.structure?.items || [])
-      : (hasPersonalBank ? tile?.structure?.banks[$currentPlayer.uid] : [])
+      : (hasPersonalBank ? tile?.structure?.banks[$currentPlayer.id] : [])
   );
   
   let showStorageTabs = $derived(
@@ -207,7 +207,7 @@
                       onclick={() => activeTab = 'personal'}
                     >
                       Your Bank
-                      <span class="tab-count">{tile?.structure?.banks[$currentPlayer.uid].length}</span>
+                      <span class="tab-count">{tile?.structure?.banks[$currentPlayer.id].length}</span>
                     </button>
                   {/if}
                 </div>
