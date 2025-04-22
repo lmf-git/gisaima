@@ -1,11 +1,11 @@
-import { writable, derived, get as getStore, get } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
 import { ref, onValue, get as dbGet, set, update } from "firebase/database";
 import { db } from '../firebase/database.js';
 import { userStore, isAuthReady as userAuthReady } from './user'; 
 
 // Constants for localStorage
-const CURRENT_WORLD_KEY = 'gisaima-current-world';
+const CURRENT_WORLD_KEY = 'gisaima-current-world'; // Keeping this for backward compatibility with localStorage
 
 // New constants for controlling debug output
 const DEBUG_MODE = false; // Set to true to enable verbose logging
@@ -19,8 +19,7 @@ const CHUNK_SIZE = 20;
 
 // Store for game state with more detailed loading states
 export const game = writable({
-  currentWorld: null, // Legacy property - will be deprecated
-  worldKey: null,     // New property - semantically clearer
+  worldKey: null,     // Standardized to use only worldKey
   joinedWorlds: [],
   world: {},
   playerData: null,
@@ -29,12 +28,6 @@ export const game = writable({
   error: null,
   initialized: false
 });
-
-// Create derived stores for backward compatibility
-export const currentWorldKey = derived(
-  game,
-  $game => $game.worldKey || $game.currentWorld
-);
 
 // Create a derived store for the current world's info
 export const currentWorldInfo = derived(
@@ -204,7 +197,7 @@ export function loadJoinedWorlds(userId) {
         game.update(state => ({ ...state, joinedWorlds, loading: false }));
         
         // If we have a worldKey but no info for it, load it
-        const currentState = getStore(game);
+        const currentState = get(game);
         if (currentState.worldKey && !currentState.world[currentState.worldKey]) {
           debugLog('Loading info for current world:', currentState.worldKey);
           getWorldInfo(currentState.worldKey)
@@ -296,21 +289,20 @@ export function setCurrentWorld(worldId, world = null, callback = null) {
     localStorage.setItem(CURRENT_WORLD_KEY, validWorldId);
   }
   
-  // Update the store with the new world ID (using both properties for compatibility)
+  // Update the store with the new world ID
   game.update(state => ({
     ...state,
-    currentWorld: validWorldId, // Legacy property
-    worldKey: validWorldId      // New property
+    worldKey: validWorldId
   }));
   
   // Set up a listener for player data in this world
-  const user = getStore(userStore);
+  const user = get(userStore);
   if (user?.uid) {
     listenToPlayerWorldData(user.uid, validWorldId);
   }
 
   // If we don't have the world info, load it
-  const currentState = getStore(game);
+  const currentState = get(game);
   const promises = [];
   
   // Check store before fetching, remove cache check
@@ -444,7 +436,7 @@ export function getWorldInfo(worldId) {
 export function getWorldSpawnPoints(worldId) {
   if (!worldId) return [];
   
-  const currentGameState = getStore(game);
+  const currentGameState = get(game);
   const world = currentGameState.world?.[worldId];
   
   if (!world) {
@@ -529,52 +521,6 @@ export function getWorldSpawnPoints(worldId) {
   return [];
 }
 
-// Simplify this function - it now just gets world info directly
-export async function refreshWorldInfo(worldId) {
-  if (!worldId) return null;
-  
-  debugLog(`Getting fresh world info for ${worldId}`);
-  
-  try {
-    // First try to get the info normally
-    const worldInfo = await getWorldInfo(worldId);
-    
-    // If we didn't get spawns, try to get them separately
-    if (worldInfo && !worldInfo.spawns && !worldInfo.info?.spawns) {
-      debugLog(`No spawns found, trying direct fetch for spawns`);
-      
-      // Try to get spawns directly
-      const worldSpawnsRef = ref(db, `worlds/${worldId}/info/spawns`);
-      const spawnsSnapshot = await dbGet(worldSpawnsRef);
-      
-      if (spawnsSnapshot.exists()) {
-        const spawns = spawnsSnapshot.val();
-        debugLog(`Found spawns via direct fetch:`, spawns);
-        
-        // Update the world info with these spawns
-        game.update(state => ({
-          ...state,
-          world: {
-            ...state.world,
-            [worldId]: {
-              ...state.world[worldId],
-              info: {
-                ...(state.world[worldId]?.info || {}),
-                spawns
-              }
-            }
-          }
-        }));
-      }
-    }
-    
-    return worldInfo;
-  } catch (err) {
-    console.error(`Failed to get world info for ${worldId}:`, err);
-    return null;
-  }
-}
-
 // Function to get world center coordinates - improved with better validation
 export function getWorldCenterCoordinates(worldId, world = null) {
   // Validate the world ID directly
@@ -592,7 +538,7 @@ export function getWorldCenterCoordinates(worldId, world = null) {
   const validWorldId = String(worldId);
   
   // Use provided world or try to get from store
-  const info = world || (getStore(game).world?.[validWorldId]);
+  const info = world || (get(game).world?.[validWorldId]);
   if (!info) {
     debugLog(`No world info available for ${validWorldId}, using default center (0,0)`);
     return { x: 0, y: 0 };
@@ -716,7 +662,7 @@ export function initGameStore() {
           console.log('Auth is ready, initializing game data');
           
           // Get current user
-          const currentUser = getStore(userStore);
+          const currentUser = get(userStore);
           
           if (currentUser?.uid) {
             console.log(`User authenticated: ${currentUser.uid}`);
@@ -736,7 +682,6 @@ export function initGameStore() {
                   // Update store with saved world ID
                   game.update(state => ({
                     ...state,
-                    currentWorld: savedWorldId,
                     worldKey: savedWorldId
                   }));
                   
@@ -770,7 +715,7 @@ export function initGameStore() {
         if (gameStoreInitialized) {
           if (newUser?.uid) {
             // User logged in - set up world listeners
-            const currentState = getStore(game);
+            const currentState = get(game);
             
             // Set up listener for joined worlds if not already active
             if (!activeJoinedWorldsSubscription) {
@@ -868,8 +813,7 @@ export async function joinWorld(worldId, userId, race, displayName) {
       return {
         ...state,
         joinedWorlds,
-        currentWorld: worldId,
-        worldKey: worldId,
+        worldKey: worldId, // Use consistent worldKey property
         loading: false,
       };
     });
@@ -880,7 +824,7 @@ export async function joinWorld(worldId, userId, race, displayName) {
     if (!worldInfo) {
       // If getWorldInfo didn't return world info, try one more time
       console.log(`No world info returned for ${worldId}, retrying...`);
-      worldInfo = await refreshWorldInfo(worldId);
+      worldInfo = await getWorldInfo(worldId);
     }
     
     // Save to localStorage
@@ -895,7 +839,7 @@ export async function joinWorld(worldId, userId, race, displayName) {
     // Load player data for this world and wait for it to complete
     await new Promise(resolve => {
       // Check if player data is already available
-      const currentState = getStore(game);
+      const currentState = get(game);
       if (currentState.playerData) {
         resolve();
         return;
@@ -931,7 +875,7 @@ export async function joinWorld(worldId, userId, race, displayName) {
 
 // Add a function to check if player data is ready for a specific world
 export function isPlayerWorldDataReady(worldId) {
-  const state = getStore(game);
+  const state = get(game);
   return !!(
     state.playerData && 
     state.worldKey === worldId && 

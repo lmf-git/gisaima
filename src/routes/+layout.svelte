@@ -77,33 +77,6 @@
     // Track gameStore unsubscribe function from +layout.js load function
     let gameUnsubscribe = null; // Initialize to null
     
-    // Subscribe to player data when auth changes
-    $effect(() => {
-        if ($user?.uid) {
-            playerLoading = true;
-            
-            if (playerUnsubscribe) {
-                playerUnsubscribe();
-                playerUnsubscribe = null;
-            }
-            
-            const playerRef = ref(db, `players/${$user.uid}/profile`);
-            playerUnsubscribe = onValue(playerRef, (snapshot) => {
-                playerData = snapshot.exists() ? snapshot.val() : null;
-                playerLoading = false;
-            }, (error) => {
-                console.error("Error fetching player data:", error);
-                playerLoading = false;
-            });
-        } else {
-            playerData = null;
-            if (playerUnsubscribe) {
-                playerUnsubscribe();
-                playerUnsubscribe = null;
-            }
-        }
-    });
-    
     onMount(() => {       
         // Properly handle the potential Promise in data.gameCleanup
         if (data?.gameCleanup) {
