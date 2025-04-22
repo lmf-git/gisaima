@@ -76,7 +76,7 @@
     }
 
     // Track gameStore unsubscribe function from +layout.js load function
-    let gameUnsubscribe = data?.unsubscribe;
+    let gameUnsubscribe = null; // Initialize to null
     
     // Subscribe to player data when auth changes
     $effect(() => {
@@ -109,12 +109,26 @@
         // Only connect map and game stores - initialization is handled by +layout.js
         setMapInitializer(initializeMapForWorld);
         
+        // Properly handle the potential Promise in data.gameCleanup
+        if (data?.gameCleanup) {
+            if (typeof data.gameCleanup.then === 'function') {
+                // It's a Promise, wait for it to resolve to get the actual cleanup function
+                data.gameCleanup.then(cleanupFunc => {
+                    gameUnsubscribe = cleanupFunc;
+                });
+            } else {
+                // It's already a function
+                gameUnsubscribe = data.gameCleanup;
+            }
+        }
+        
         if (browser) {
             hasShownGuestWarning = localStorage.getItem('guest-warning-shown') === 'true';
         }
     });
     
     onDestroy(() => {
+        // Only call if it's a function (not a Promise)
         if (typeof gameUnsubscribe === 'function') {
             gameUnsubscribe();
         }

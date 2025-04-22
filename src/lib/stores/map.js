@@ -895,7 +895,26 @@ export function initialize(options = {}) {
     
     // Don't reinitialize if already ready with the same world
     const currentMapState = get(map);
-    let worldId = options.world?.id || options.worldId || 'default';
+    
+    // Extract worldId with better validation - fix the issue with worldId handling
+    let worldId = null;
+    
+    // Handle multiple ways worldId might be provided
+    if (typeof options.worldId === 'string' && options.worldId.length > 0) {
+      worldId = options.worldId;
+    } else if (options.world && typeof options.world === 'string' && options.world.length > 0) {
+      worldId = options.world;
+    } else if (options.world && options.world.id && typeof options.world.id === 'string') {
+      worldId = options.world.id;
+    }
+    
+    // Validate worldId is a non-empty string - add detailed logging
+    if (!worldId || typeof worldId !== 'string' || worldId.length === 0) {
+      console.warn('No valid worldId in options, using "default":', options);
+      worldId = 'default';
+    } else {
+      debugLog(`Using worldId: ${worldId}`);
+    }
     
     // Validate world object to ensure it has required properties
     if (options.world && typeof options.world === 'object') {
@@ -904,11 +923,6 @@ export function initialize(options = {}) {
         return false;
       }
     }
-    
-    // Ensure worldId is a valid string
-    worldId = validateWorldId(worldId);
-
-    // Rest of initialize function...
     
     // Mark that we're starting initialization
     map.update(state => ({ 
@@ -992,13 +1006,13 @@ export function initialize(options = {}) {
     // Initialize the terrain generator
     terrain = new TerrainGenerator(seedNumber, initialCacheSize);
 
-    // Update the map store
+    // Update the map store - explicitly use the validated worldId
     map.update(state => {
       return {
         ...state,
         ready: true,
         initializing: false,
-        world: worldId,
+        world: worldId,  // Make sure to set this to the validated worldId
         cols: initialCols,
         rows: initialRows,
         target: targetPosition
@@ -1119,22 +1133,19 @@ export function cleanup() {
 
 // Initialize map for world with localStorage support
 export function initializeMapForWorld(worldId, worldData = null) {
-  if (!worldId) {
-    console.error('Cannot initialize map: No world ID provided');
-    return;
+  if (!worldId || typeof worldId !== 'string' || worldId.length === 0) {
+    console.warn('Empty worldId received, using default');
+    worldId = 'default';
   }
 
-  // Ensure worldId is a valid string
-  const validWorldId = validateWorldId(worldId);
-  
-  console.log(`Initializing map for world: ${validWorldId}`);
+  console.log(`Initializing map for world: ${worldId}`);
 
   // Get current map state
   const currentMapState = get(map);
 
   // Don't reinitialize if already set up
-  if (currentMapState.ready && currentMapState.world === validWorldId) {
-    console.log(`Map already initialized for world ${validWorldId}`);
+  if (currentMapState.ready && currentMapState.world === worldId) {
+    console.log(`Map already initialized for world ${worldId}`);
     return;
   }
 
@@ -1144,10 +1155,10 @@ export function initializeMapForWorld(worldId, worldData = null) {
   }
 
   // Try to load saved position for this world
-  const savedPosition = loadTargetFromLocalStorage(validWorldId);
+  const savedPosition = loadTargetFromLocalStorage(worldId);
 
   // Get world center coordinates
-  const worldCenter = getWorldCenterCoordinates(validWorldId, worldData);
+  const worldCenter = getWorldCenterCoordinates(worldId, worldData);
 
   // Initialize with world data if available - with validation
   if (worldData && worldData.seed !== undefined) {
@@ -1157,7 +1168,7 @@ export function initializeMapForWorld(worldId, worldData = null) {
     if (savedPosition) {
       setup({
         seed: worldData.seed,
-        world: validWorldId,  // Use validated ID
+        worldId: worldId,  // Use the validated worldId
         initialX: savedPosition.x,
         initialY: savedPosition.y
       });
@@ -1165,7 +1176,7 @@ export function initializeMapForWorld(worldId, worldData = null) {
       // Use world center if no saved position
       setup({
         seed: worldData.seed,
-        world: validWorldId,  // Use validated ID
+        worldId: worldId,  // Use the validated worldId
         initialX: worldCenter.x,
         initialY: worldCenter.y
       });
@@ -1173,5 +1184,5 @@ export function initializeMapForWorld(worldId, worldData = null) {
     return;
   }
 
-  console.log(`Cannot initialize map for world ${validWorldId} - no seed data available`);
+  console.log(`Cannot initialize map for world ${worldId} - no seed data available`);
 }

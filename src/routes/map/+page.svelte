@@ -11,7 +11,8 @@
       setCurrentWorld,
       needsSpawn,
       currentPlayer,
-      refreshWorldInfo
+      refreshWorldInfo,
+      currentWorldKey
     } from "../../lib/stores/game.js";
     
     import { 
@@ -53,11 +54,9 @@
     import StructureOverview from '../../components/map/StructureOverview.svelte';
     import Gather from '../../components/map/Gather.svelte';
 
-    // Add a debug flag for verbose logging
-    const DEBUG_MODE = false;
+    const DEBUG_MODE = true;
     const debugLog = (...args) => DEBUG_MODE && console.log(...args);
 
-    // Add more detailed diagnostic info to debug loading issues
     const DEBUG_LOADING = true;
 
     let isTutorialVisible = $state(false);
@@ -70,10 +69,8 @@
     
     let initAttempted = $state(false);
     
-    // Fix: Ensure isPathDrawingMode is properly defined as a state variable
     let isPathDrawingMode = $state(false);
     
-    // More granular loading state tracking
     let authReadyState = $state(false);
     let gameInitializedState = $state(false);
     let mapReadyState = $state(false);
@@ -82,30 +79,24 @@
     
     const isDragging = $derived($map.isDragging);
     
-    // Add a flag to prevent multiple click handling and debounce
     let isProcessingClick = false;
 
-    // Add flag to track path drawing transition
     let isTransitioningToPathDrawing = $state(false);
 
-    // Add a counter to ensure proper re-rendering
     let structureRenderCount = $state(0);
 
-    // Prevent duplicate URL processing with improved tracking
     let processedCoordinates = $state(new Set());
     let coordinateProcessingDebounce = null;
     const COORDINATE_DEBOUNCE_TIME = 300;
 
-    // Modal visibility state variables - consolidated to avoid redeclarations
     let showAttack = $state(false);
     let showJoinBattle = $state(false);
     let showMobilize = $state(false);
     let showMove = $state(false);
     let showDemobilize = $state(false);
     let showGather = $state(false);
-    let isReady = $state(true); // Add missing isReady state
+    let isReady = $state(true);
 
-    // Modal data state
     let mobilizeData = $state(null);
     let moveData = $state(null);
     let attackData = $state(null);
@@ -118,14 +109,12 @@
     let pathDrawingGroup = $state(null);
     let currentPath = $state([]);
 
-    // Modal management state - single source of truth
     let modalState = $state({
         type: null,
         data: null,
         visible: false
     });
 
-    // Add a derived value to check if any modal is open
     const isAnyModalOpen = $derived(
         modalState.visible || 
         $needsSpawn || 
@@ -133,21 +122,17 @@
         isTutorialVisible
     );
 
-    // Function to show modal content
     function showModal(options) {
         if (!options) return;
         
         console.log('Opening modal:', options.type, options.data);
         
-        // Close Details modal when opening structure overview or action modals
         if (['inspect', 'mobilise', 'move', 'gather', 'demobilise', 'joinBattle', 'attack'].includes(options.type)) {
-            // Close details if it's open
             if (detailed) {
                 toggleDetailsModal(false);
             }
         }
         
-        // Only set the modalState once - remove any redundant calls to onShowModal for gather
         modalState = {
             type: options.type,
             data: options.data,
@@ -155,12 +140,9 @@
         };
     }
 
-    // Function to close modal
     function closeModal() {
-        // Reset modal state
         modalState.visible = false;
         
-        // Reset modal data after animation completes
         setTimeout(() => {
             modalState.type = null;
             modalState.data = null;
@@ -174,14 +156,12 @@
     let ignoreNextUrlChange = $state(false);
     let lastProcessedLocation = $state(null);
     
-    // Use a single object to track coordinate processing state
     let coordinateProcessingState = $state({
         processing: false,
         processed: new Set(),
         lastProcessedTime: 0
     });
 
-    // Improved URL coordinate parsing with filtering
     function parseUrlCoordinates() {
         if (!browser || !page) return null;
         
@@ -196,7 +176,6 @@
             if (!isNaN(parsedX) && !isNaN(parsedY)) {
                 const coordKey = `${parsedX},${parsedY}`;
                 
-                // Skip if we've already processed these coordinates recently
                 const now = Date.now();
                 if (coordinateProcessingState.processed.has(coordKey) && 
                     now - coordinateProcessingState.lastProcessedTime < 2000) {
@@ -221,11 +200,9 @@
         });
     }
     
-    // Optimized URL coordinate processing with better debouncing
     $effect(() => {
         if (coordinateProcessingState.processing || !browser || !page) return;
         
-        // Debounce URL coordinate processing
         if (coordinateProcessingDebounce) {
             clearTimeout(coordinateProcessingDebounce);
         }
@@ -258,19 +235,18 @@
         }, COORDINATE_DEBOUNCE_TIME);
     });
     
-    // More efficient initialization tracking
     let initialized = $state(false);
     let initializationRetries = $state(0);
     const MAX_INIT_RETRIES = 3;
 
-    // Variable for managing progressive retry delays
     let retryDelays = $state([1000, 1500, 2000, 3000, 5000]);
+
+    let lastRefreshTime = $state(0);
     
-    // Better diagnosis of world data
     $effect(() => {
-        if (worldId && $game.world[worldId]) {
-            const worldData = $game.world[worldId];
-            console.log(`World data for ${worldId}:`, {
+        if ($game.worldKey && $game.world[$game.worldKey]) {
+            const worldData = $game.world[$game.worldKey];
+            console.log(`World data for ${$game.worldKey}:`, {
                 hasSeed: worldData.seed !== undefined,
                 seedType: typeof worldData.seed,
                 seedValue: worldData.seed,
@@ -279,216 +255,93 @@
         }
     });
 
-    // Function to check all dependencies and initialize map when ready
-    function checkAndInitializeMap() {
-        // Only proceed if we have a world ID and the user is authenticated
-        if (!browser || !worldId || !$user) {
-            console.log('Cannot initialize map yet: missing browser context, worldId or user');
-            return;
+    async function ensureWorldDataLoaded(worldId) {
+        if (!worldId) return false;
+        
+        if ($game.world[worldId]?.seed !== undefined) {
+            debugLog(`World data already available for ${worldId}`);
+            return true;
         }
         
-        // Get world data from game store
-        const worldData = $game.world[worldId];
-        
-        // If we've tried too many times, show an error
-        if (initializationRetries >= MAX_INIT_RETRIES) {
-            console.error(`Failed to initialize map after ${MAX_INIT_RETRIES} attempts`);
-            loading = false;
-            return;
-        }
-        
-        // If this is our first attempt, log it
-        if (initializationRetries === 0) {
-            console.log(`First map initialization attempt for world: ${worldId}`);
-        }
-        
-        // Mark that we've tried
-        initializationRetries++;
-        
-        // If user isn't authenticated yet, wait
-        if (!$isAuthReady) {
-            console.log('Waiting for auth to be ready...');
-            return;
-        }
-        
-        // We have world data, check if we already have an initialized map
-        if ($ready && $map.world === worldId) {
-            console.log('Map already initialized with correct world');
-            loading = false;
-            return;
-        }
-        
-        // If world data isn't loaded yet or doesn't have a seed, load it
-        if (!worldData || worldData.seed === undefined) {
-            // Check if we need to refresh world info (avoid spamming)
-            const now = Date.now();
-            if (now - lastRefreshTime < COORDINATE_DEBOUNCE_TIME) {
-                console.log('Throttling world refresh attempts');
-                
-                // Use progressive retry delay based on attempt count
-                const delayIndex = Math.min(initializationRetries - 1, retryDelays.length - 1);
-                const delay = retryDelays[delayIndex];
-                console.log(`Retry attempt ${initializationRetries} scheduled in ${delay}ms`);
-                setTimeout(checkAndInitializeMap, delay);
-                return;
-            }
-            
-            // Set current world first to trigger loading in game store
-            if ($game.currentWorld !== worldId) {
-                console.log(`Setting current world to ${worldId}`);
-                setCurrentWorld(worldId);
-            }
-            
-            // If we're not already loading world data, refresh it
-            if (!$game.worldLoading) {
-                console.log(`Refreshing world info for ${worldId}`);
-                lastRefreshTime = now;
-                
-                // Use direct API call to ensure we get fresh data
-                refreshWorldInfo(worldId).then(info => {
-                    if (info && info.seed !== undefined) {
-                        console.log(`Successfully loaded world info with seed: ${info.seed}`);
-                        // After refresh, try initialization again after a short delay
-                        setTimeout(checkAndInitializeMap, 500);
-                    } else {
-                        console.warn('Loaded world info but seed is missing, trying a direct get');
-                        // If refresh didn't work, try a direct get
-                        getWorldInfo(worldId).then(directInfo => {
-                            console.log(`Direct get result for ${worldId}:`, directInfo ? 
-                                `seed: ${directInfo.seed}` : 'no data');
-                            // Try again with a longer delay
-                            setTimeout(checkAndInitializeMap, 1000);
-                        }).catch(err => console.error('Error in direct get:', err));
-                    }
-                }).catch(err => {
-                    console.error('Error refreshing world info:', err);
-                    // Try again with an even longer delay
-                    setTimeout(checkAndInitializeMap, 2000);
-                });
-            } else {
-                // If already loading, wait and try again
-                console.log('World data is already loading, waiting...');
-                setTimeout(checkAndInitializeMap, 1000);
-            }
-            return;
-        }
-        
-        // We have world data with a seed, try to initialize map
+        debugLog(`World data not available for ${worldId}, actively loading it...`);
         try {
-            // Extra validation on world data
-            if (typeof worldData.seed !== 'number' && typeof worldData.seed !== 'string') {
-                console.error(`Invalid seed type for world ${worldId}:`, typeof worldData.seed);
-                // Try to refresh the world data again
-                refreshWorldInfo(worldId).then(() => setTimeout(checkAndInitializeMap, 1000));
-                return;
-            }
-            
-            console.log('Initializing map with world data:', {
-                worldId,
-                seed: worldData.seed,
-                seedType: typeof worldData.seed,
-                hasCenter: !!worldData.center
-            });
-            
-            // Get map target coordinates from URL if available
-            const initialX = parseInt($page.url.searchParams.get('x')) || undefined;
-            const initialY = parseInt($page.url.searchParams.get('y')) || undefined;
-            
-            if (!$ready || $map.world !== worldId) {
-                // Try to initialize with explicit coordinates if provided
-                if (initialX !== undefined && initialY !== undefined) {
-                    console.log(`Initializing map with URL position: ${initialX},${initialY}`);
-                    initialize({
-                        seed: worldData.seed,
-                        world: worldId,
-                        initialX,
-                        initialY
-                    });
-                }
-                // Otherwise initialize with world data
-                else {
-                    console.log(`Initializing map with world data`);
-                    initializeMapForWorld(worldId, worldData);
-                }
+            loading = true;
+            const worldData = await getWorldInfo(worldId);
+            if (worldData?.seed !== undefined) {
+                debugLog(`Successfully loaded world data for ${worldId}, seed: ${worldData.seed}`);
+                return true;
+            } else {
+                console.error(`Failed to load required world data for ${worldId}`);
+                error = "Failed to load world data - seed missing";
+                return false;
             }
         } catch (err) {
-            console.error('Error initializing map:', err);
+            console.error(`Error loading world data for ${worldId}:`, err);
+            error = `Error loading world: ${err.message || err}`;
+            return false;
+        } finally {
             loading = false;
         }
     }
 
     $effect(() => {
-        // Skip if already initialized or not in browser
         if (initialized || !browser) return;
         
-        // Set initialized flag immediately to prevent duplicate execution
-        initialized = true;
+        debugLog("Map initialization starting, checking dependencies...");
         
         document.body.classList.add('map-page-active');
         
+        if (!$isAuthReady || !$game.initialized) {
+            debugLog("Auth or game store not ready yet, waiting...");
+            return;
+        }
+        
+        debugLog("Auth and game store are ready, proceeding with map initialization");
+        
         const url = get(page).url;
-        let worldId = url.searchParams.get('world') || $game.currentWorld;
+        const worldIdFromUrl = url.searchParams.get('world');
+        const currentWorldId = $game.worldKey || $game.currentWorld;
         
-        // Validate worldId to ensure it's a proper string
-        if (!worldId || typeof worldId === 'object') {
-            console.error('Invalid world ID from URL or game store:', worldId);
-            worldId = 'default'; // Fall back to default world
+        let worldToUse;
+        
+        if (worldIdFromUrl) {
+            worldToUse = worldIdFromUrl;
+            debugLog(`Using world ID from URL: ${worldToUse}`);
+            
+            if (worldToUse !== currentWorldId) {
+                debugLog(`Setting current world from URL: ${worldToUse} (was: ${currentWorldId})`);
+                setCurrentWorld(worldToUse);
+            }
+        } else if (currentWorldId) {
+            worldToUse = currentWorldId;
+            debugLog(`Using current world from store: ${worldToUse}`);
         } else {
-            worldId = String(worldId);
-        }
-        
-        const coords = parseUrlCoordinates();
-        
-        if (coords) {
-            urlCoordinates = { x: coords.x, y: coords.y };
-        }
-        
-        if (!worldId) {
+            console.error('No world ID available from URL or game store');
             goto('/worlds');
             return;
         }
         
-        console.log(`Initializing map for world: ${worldId}, world store ready: ${$game.initialized}, authReady: ${$isAuthReady}`);
+        // Mark as initialized early to prevent multiple initialization attempts
+        initialized = true;
         
-        // Fix the initialization logic to properly handle game.currentWorld
-        // when $game.currentWorld is available and has valid world data
-        if (!$ready && $game.currentWorld && 
-            typeof $game.currentWorld === 'string' && 
-            $game.world[$game.currentWorld]?.seed !== undefined) {
-                
-            debugLog(`Initializing map from existing world info for ${$game.currentWorld}`);
-            
-            // Extract world data properly - don't pass the object itself
-            const worldData = $game.world[$game.currentWorld];
-            
-            // Pass worldId as string and separate worldData object
-            initialize({ 
-                worldId: $game.currentWorld,  // Pass the ID as string 
-                world: {                      // Pass seed and relevant data separately
-                    seed: worldData.seed,
-                    center: worldData.center || null,
-                    spawns: worldData.spawns || null
-                },
-                initialX: urlCoordinates?.x, 
-                initialY: urlCoordinates?.y
-            });
-            
-            if (urlCoordinates) {
-                urlProcessingComplete = true;
-                
-                const coordKey = `${urlCoordinates.x},${urlCoordinates.y}`;
-                coordinateProcessingState.processed.add(coordKey);
-                coordinateProcessingState.lastProcessedTime = Date.now();
+        ensureWorldDataLoaded(worldToUse).then(success => {
+            if (success) {
+                debugLog("World data loaded successfully, proceeding with map initialization");
+                checkAndInitializeMap();
+            } else {
+                console.error("Failed to load world data, cannot initialize map");
+                error = "Failed to load world data";
+                loading = false;
             }
-        } else {
-            // Use our revised initializeMap function with proper error handling and retry logic
-            checkAndInitializeMap();
-        }
+        });
         
-        // Set up cleanup function for component destruction
+        const coords = parseUrlCoordinates();
+        if (coords) {
+            urlCoordinates = { x: coords.x, y: coords.y };
+        }
+
         window.addEventListener('beforeunload', cleanup);
         
-        // Return cleanup function (will be called when effect is re-run, which doesn't happen in this case)
         return () => {
             if (browser) {
                 document.body.classList.remove('map-page-active');
@@ -498,37 +351,77 @@
         };
     });
 
-    // Prevent redundant map initializations
-    let mapInitializationComplete = $state(false);
-    let mapInitializationAttempted = $state(false);
-    
-    // This effect only runs when map becomes ready and we have unprocessed URL coordinates
-    $effect(() => {
-        if (!$ready || !urlCoordinates || coordinateProcessingState.processing) return;
-        
-        const coordKey = `${urlCoordinates.x},${urlCoordinates.y}`;
-        
-        if (coordinateProcessingState.processed.has(coordKey)) {
-            urlCoordinates = null;
+    function checkAndInitializeMap() {
+        if (!browser || !$game.worldKey || !$user) {
+            console.error('Cannot initialize map yet: missing browser context, worldId or user');
             return;
         }
         
-        coordinateProcessingState.processing = true;
+        const worldData = $game.world[$game.worldKey];
         
-        debugLog(`Applying URL coordinates after map ready: ${urlCoordinates.x},${urlCoordinates.y}`);
-        moveTarget(urlCoordinates.x, urlCoordinates.y);
+        debugLog(`Initializing map for world: ${$game.worldKey}, seed available: ${worldData?.seed !== undefined}`);
         
-        coordinateProcessingState.processed.add(coordKey);
-        coordinateProcessingState.lastProcessedTime = Date.now();
-        urlProcessingComplete = true;
-        urlCoordinates = null;
+        if (initializationRetries >= MAX_INIT_RETRIES) {
+            console.error(`Failed to initialize map after ${MAX_INIT_RETRIES} attempts`);
+            loading = false;
+            error = `Failed to initialize map after ${MAX_INIT_RETRIES} attempts`;
+            return;
+        }
         
-        setTimeout(() => {
-            coordinateProcessingState.processing = false;
-        }, 100);
-    });
+        initializationRetries++;
+        
+        if ($ready && $map.world === $game.worldKey) {
+            console.log('Map already initialized with correct world');
+            loading = false;
+            return;
+        }
+        
+        if (!worldData || worldData.seed === undefined) {
+            console.error(`Required world data missing for ${$game.worldKey}, can't initialize map`);
+            error = "Missing required world data (seed)";
+            loading = false;
+            return;
+        }
+        
+        try {
+            if (typeof worldData.seed !== 'number' && typeof worldData.seed !== 'string') {
+                console.error(`Invalid seed type for world ${$game.worldKey}:`, typeof worldData.seed);
+                error = `Invalid seed data: ${typeof worldData.seed}`;
+                loading = false;
+                return;
+            }
+            
+            debugLog('Initializing map with world data:', {
+                worldId: $game.worldKey,
+                seed: worldData.seed,
+                seedType: typeof worldData.seed,
+                hasCenter: !!worldData.center
+            });
+            
+            const initialX = parseInt($page.url.searchParams.get('x')) || undefined;
+            const initialY = parseInt($page.url.searchParams.get('y')) || undefined;
+            
+            if (initialX !== undefined && initialY !== undefined) {
+                debugLog(`Initializing map with URL position: ${initialX},${initialY}`);
+                initialize({
+                    seed: worldData.seed,
+                    worldId: $game.worldKey, // Make sure to use worldId instead of world property
+                    initialX,
+                    initialY
+                });
+            } else {
+                debugLog(`Initializing map with world data`);
+                initializeMapForWorld($game.worldKey, worldData);
+            }
+            
+            loading = false;
+        } catch (err) {
+            console.error('Error initializing map:', err);
+            loading = false;
+            error = `Error initializing map: ${err.message}`;
+        }
+    }
 
-    // Simplified effect that handles either URL coordinates or player position
     $effect(() => {
         if (!$ready || urlProcessingComplete) return;
         
@@ -542,40 +435,14 @@
             moveTarget(location.x, location.y);
             urlProcessingComplete = true;
             lastProcessedLocation = { ...location };
-        } else if ($game.currentWorld) {
-            const worldCenter = getWorldCenterCoordinates($game.currentWorld);
+        } else if ($game.worldKey) {
+            const worldCenter = getWorldCenterCoordinates($game.worldKey);
             moveTarget(worldCenter.x, worldCenter.y);
             urlProcessingComplete = true;
             lastProcessedLocation = { ...worldCenter };
         }
     });
     
-    // Log player data only when it actually changes
-    let lastPlayerDataStatus = null;
-    $effect(() => {
-      // Create a summary object of the relevant state
-      const playerStatus = {
-        ready: $ready,
-        currentWorld: $game.currentWorld,
-        playerData: !!$game.playerData, // Just track if it exists
-        alive: $game.playerData?.alive,
-        hasLocation: !!$game.playerData?.lastLocation
-      };
-      
-      // Only log if something meaningful changed
-      const statusKey = JSON.stringify(playerStatus);
-      if (lastPlayerDataStatus !== statusKey && DEBUG_MODE) {
-        debugLog("Player data status:", {
-          ready: playerStatus.ready,
-          currentWorld: playerStatus.currentWorld,
-          playerData: $game.playerData,
-          alive: playerStatus.alive,
-          lastLocation: $game.playerData?.lastLocation
-        });
-        lastPlayerDataStatus = statusKey;
-      }
-    });
-
     $effect(() => {
         authReadyState = $isAuthReady;
         gameInitializedState = $game.initialized;
@@ -587,11 +454,166 @@
                 gameInitialized: $game.initialized,
                 gameWorldLoading: $game.worldLoading,
                 mapReady: $ready,
-                componentLoading: loading
+                componentLoading: loading,
+                currentWorld: $game.currentWorld,
+                worldDataAvailable: $game.currentWorld ? !!$game.world[$game.currentWorld] : false
             });
         }
     });
 
+    // Enhanced keyboard event handler for the page 
+    function handleMapKeyDown(event) {
+      if (event.key !== 'Escape') return;
+      
+      // Update the global modal hierarchy state
+      const componentState = {
+        structureOverview: modalState.type === 'inspect' && modalState.visible,
+        details: detailed,
+        pathDrawing: isPathDrawingMode,
+        anyOtherModal: modalState.visible && modalState.type !== 'inspect',
+        minimap: showMinimap && !minimapClosing,
+        overview: showEntities && !entitiesClosing
+      };
+      
+      // Process the keyboard event based on component hierarchy
+      const actionTarget = handleKeyboardEvent(event, componentState);
+      
+      // Handle closing components in order of priority
+      if (actionTarget === 'minimap') {
+        toggleMinimap();
+        event.preventDefault();
+        event.stopPropagation();
+      } else if (actionTarget === 'overview') {
+        toggleEntities();
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }
+
+    // Missing variables that handleMapKeyDown references
+    let showMinimap = $state(true);
+    let showEntities = $state(true);
+    let minimapClosing = $state(false);
+    let entitiesClosing = $state(false);
+    const ANIMATION_DURATION = 800;
+    
+    function toggleMinimap() {
+      if ($needsSpawn || isTutorialVisible) {
+        return;
+      }
+      
+      if (showMinimap) {
+        minimapClosing = true;
+        setTimeout(() => {
+          showMinimap = false;
+          minimapClosing = false;
+          if (browser) {
+            localStorage.setItem('minimap', 'false');
+          }
+        }, ANIMATION_DURATION);
+      } else {
+        showMinimap = true;
+        if (browser) {
+          localStorage.setItem('minimap', 'true');
+        }
+      }
+    }
+
+    function toggleEntities() {
+      if ($needsSpawn || isTutorialVisible) {
+        return;
+      }
+      
+      if (showEntities) {
+        entitiesClosing = true;
+        setTimeout(() => {
+          showEntities = false;
+          entitiesClosing = false;
+          if (browser) {
+            localStorage.setItem('overview', 'false');
+          }
+        }, ANIMATION_DURATION);
+      } else {
+        showEntities = true;
+        if (browser) {
+          localStorage.setItem('overview', 'true');
+        }
+      }
+    }
+
+    function handleTutorialToggle() {
+      console.log('Tutorial visibility toggled');
+    }
+    
+    function toggleTutorial() {
+      // Dispatch the custom event to toggle tutorial
+      window.dispatchEvent(new CustomEvent('tutorial:toggle'));
+    }
+
+    // Add missing function for grid clicking
+    function handleGridClick(coords) {
+        // Check if this is a path confirmation action
+        if (coords && coords.confirmPath === true) {
+            confirmPathDrawing(currentPath);
+            return;
+        }
+
+        // Simple debounce
+        if (isProcessingClick) return;
+        isProcessingClick = true;
+
+        // If we're in path drawing mode and have coordinates, add them to the path
+        if (isPathDrawingMode && coords && coords.x !== undefined && coords.y !== undefined) {
+            // Add the point to the path
+            handlePathPoint(coords);
+            
+            // Reset debounce flag with short timeout for responsiveness in drawing mode
+            setTimeout(() => {
+                isProcessingClick = false;
+            }, 100);
+            return;
+        }
+
+        // Regular grid click handling (not in path drawing mode)
+        if (coords) {
+            // First move the target to the clicked location
+            moveTarget(coords.x, coords.y);
+
+            // Get the tile data after moving
+            const clickedTile = $coordinates.find(c => c.x === coords.x && c.y === coords.y);
+            
+            // Only highlight and open details if there's meaningful content and not in path drawing mode
+            if (clickedTile && hasTileContent(clickedTile) && !isPathDrawingMode) {
+                setHighlighted(coords.x, coords.y);
+                toggleDetailsModal(true);
+            } else if (!isPathDrawingMode) {
+                // If there's no content and not in path drawing mode, just ensure nothing is highlighted
+                setHighlighted(null, null);
+                toggleDetailsModal(false);
+            }
+        }
+
+        // Reset debounce flag
+        setTimeout(() => {
+            isProcessingClick = false;
+        }, 300);
+    }
+
+    // Function to check if a tile has meaningful content
+    function hasTileContent(tile) {
+        if (!tile) return false;
+        
+        return (
+            // Check for any meaningful content on the tile
+            (tile.structure && Object.keys(tile.structure).length > 0) ||
+            (tile.groups && tile.groups.length > 0) ||
+            (tile.players && tile.players.length > 0) ||
+            (tile.items && tile.items.length > 0) ||
+            (tile.battles && tile.battles.length > 0)
+        );
+    }
+
+    // Add function for handling path points
     function handlePathPoint(point) {
         if (!isPathDrawingMode) return;
         
@@ -633,6 +655,7 @@
         }
     }
 
+    // Function for path drawing mode
     function handlePathDrawingStart(group) {
         if (!group) return;
         
@@ -683,12 +706,14 @@
         }, 500);
     }
 
+    // Function to handle path drawing cancellation
     function handlePathDrawingCancel() {
         isPathDrawingMode = false;
         pathDrawingGroup = null;
         currentPath = [];
     }
-
+    
+    // Function to confirm a drawn path
     function confirmPathDrawing(path) {
         if (!path || path.length < 2 || !pathDrawingGroup) {
             console.error('Cannot confirm path: Invalid path or missing group');
@@ -711,7 +736,7 @@
             toX: endPoint.x,
             toY: endPoint.y,
             path: path,
-            worldId: $game.currentWorld
+            worldId: $game.worldKey
         })
         .then((result) => {
             console.log('Path movement started:', result.data);
@@ -725,87 +750,29 @@
             alert(`Error: ${error.message || 'Failed to start movement'}`);
         });
     }
-
-    // Enhanced keyboard event handler for the page 
-    function handleMapKeyDown(event) {
-        if (event.key !== 'Escape') return;
-        
-        // Update the global modal hierarchy state
-        const componentState = {
-            structureOverview: modalState.type === 'inspect' && modalState.visible,
-            details: detailed,
-            pathDrawing: isPathDrawingMode,
-            anyOtherModal: modalState.visible && modalState.type !== 'inspect',
-            minimap: showMinimap && !minimapClosing,
-            overview: showEntities && !entitiesClosing
-        };
-        
-        // Process the keyboard event based on component hierarchy
-        const actionTarget = handleKeyboardEvent(event, componentState);
-        
-        // Handle closing components in order of priority
-        if (actionTarget === 'minimap') {
-            toggleMinimap();
-            event.preventDefault();
-            event.stopPropagation();
-        } else if (actionTarget === 'overview') {
-            toggleEntities();
-            event.preventDefault();
-            event.stopPropagation();
+    
+    // Function to handle spawn completion from SpawnMenu
+    function handleSpawnComplete(spawnLocation) {
+        if (spawnLocation) {
+            console.log('Spawn complete at:', spawnLocation);
+            
+            // Since the SpawnMenu already moved the map to this location,
+            // we just need to ensure states are updated properly
+            moveTarget(spawnLocation.x, spawnLocation.y);
+            
+            // Mark URL coords as processed
+            urlProcessingComplete = true;
+            lastProcessedLocation = { ...spawnLocation };
+            
+            // Ensure highlighted coordinates are cleared
+            setHighlighted(null, null);
+            
+            // Force an instantiation of state variables (helps with Svelte 5 reactivity)
+            structureRenderCount++;
         }
     }
     
-    // Add missing functions for minimap and entities toggling
-    let showMinimap = $state(true);
-    let showEntities = $state(true);
-    let minimapClosing = $state(false);
-    let entitiesClosing = $state(false);
-    const ANIMATION_DURATION = 800;
-    
-    function toggleMinimap() {
-        if ($needsSpawn || isTutorialVisible) {
-            return;
-        }
-        
-        if (showMinimap) {
-            minimapClosing = true;
-            setTimeout(() => {
-                showMinimap = false;
-                minimapClosing = false;
-                if (browser) {
-                    localStorage.setItem('minimap', 'false');
-                }
-            }, ANIMATION_DURATION);
-        } else {
-            showMinimap = true;
-            if (browser) {
-                localStorage.setItem('minimap', 'true');
-            }
-        }
-    }
-
-    function toggleEntities() {
-        if ($needsSpawn || isTutorialVisible) {
-            return;
-        }
-        
-        if (showEntities) {
-            entitiesClosing = true;
-            setTimeout(() => {
-                showEntities = false;
-                entitiesClosing = false;
-                if (browser) {
-                    localStorage.setItem('overview', 'false');
-                }
-            }, ANIMATION_DURATION);
-        } else {
-            showEntities = true;
-            if (browser) {
-                localStorage.setItem('overview', 'true');
-            }
-        }
-    }
-    
+    // Add missing function for tutorial visibility
     function handleTutorialVisibility(isVisible) {
         isTutorialVisible = isVisible;
         
@@ -813,17 +780,6 @@
             showMinimap = false;
             showEntities = false;
         }
-    }
-    
-    // Add the missing function that was referenced in the Tutorial component
-    function handleTutorialToggle(isVisible) {
-        console.log('Tutorial visibility toggled:', isVisible);
-        // This function is called when the tutorial is opened or closed manually
-    }
-    
-    function toggleTutorial() {
-        // Dispatch the custom event to toggle tutorial
-        window.dispatchEvent(new CustomEvent('tutorial:toggle'));
     }
     
     // Add the missing function for calculating path between points
@@ -869,93 +825,8 @@
         
         return path;
     }
-    
-    // Add missing function for grid clicking
-    function handleGridClick(coords) {
-        // Check if this is a path confirmation action
-        if (coords && coords.confirmPath === true) {
-            confirmPathDrawing(currentPath);
-            return;
-        }
-
-        // Simple debounce
-        if (isProcessingClick) return;
-        isProcessingClick = true;
-
-        // If we're in path drawing mode and have coordinates, add them to the path
-        if (isPathDrawingMode && coords && coords.x !== undefined && coords.y !== undefined) {
-            // Add the point to the path
-            handlePathPoint(coords);
-            
-            // Reset debounce flag with short timeout for responsiveness in drawing mode
-            setTimeout(() => {
-                isProcessingClick = false;
-            }, 100);
-            return;
-        }
-
-        // Regular grid click handling (not in path drawing mode)
-        if (coords) {
-            // First move the target to the clicked location
-            moveTarget(coords.x, coords.y);
-
-            // Get the tile data after moving
-            const clickedTile = $coordinates.find(c => c.x === coords.x && c.y === coords.y);
-            
-            // Only highlight and open details if there's meaningful content and not in path drawing mode
-            if (clickedTile && hasTileContent(clickedTile) && !isPathDrawingMode) {
-                setHighlighted(coords.x, coords.y);
-                toggleDetailsModal(true);
-            } else if (!isPathDrawingMode) {
-                // If there's no content and not in path drawing mode, just ensure nothing is highlighted
-                setHighlighted(null, null);
-                toggleDetailsModal(false);
-            }
-        }
-
-        // Reset debounce flag
-        setTimeout(() => {
-            isProcessingClick = false;
-        }, 300);
-    }
-
-    // Improved function to check if a tile has meaningful content
-    function hasTileContent(tile) {
-        if (!tile) return false;
-        
-        return (
-            // Check for any meaningful content on the tile
-            (tile.structure && Object.keys(tile.structure).length > 0) ||
-            (tile.groups && tile.groups.length > 0) ||
-            (tile.players && tile.players.length > 0) ||
-            (tile.items && tile.items.length > 0) ||
-            (tile.battles && tile.battles.length > 0)
-        );
-    }
-
-    // Add missing spawn completion handler
-    function handleSpawnComplete(spawnLocation) {
-        if (spawnLocation) {
-            console.log('Spawn complete at:', spawnLocation);
-            
-            // Since the SpawnMenu already moved the map to this location,
-            // we just need to ensure states are updated properly
-            moveTarget(spawnLocation.x, spawnLocation.y);
-            
-            // Mark URL coords as processed
-            urlProcessingComplete = true;
-            lastProcessedLocation = { ...spawnLocation };
-            
-            // Ensure highlighted coordinates are cleared
-            setHighlighted(null, null);
-            
-            // Force an instantiation of state variables (helps with Svelte 5 reactivity)
-            structureRenderCount++;
-        }
-    }
 </script>
 
-<!-- Add global keyboard event handler -->
 <svelte:window on:keydown={handleMapKeyDown} />
 
 <div class="map" class:dragging={isDragging} class:path-drawing={isPathDrawingMode}>
@@ -965,6 +836,8 @@
             <div>
                 {#if !$isAuthReady}
                     Loading user data...
+                {:else if !$game.initialized}
+                    Initializing game data...
                 {:else if $game.worldLoading}
                     Loading world data...
                 {:else if !$ready}
@@ -980,6 +853,9 @@
                     <p>World Loading: {$game.worldLoading ? 'Yes' : 'No'}</p>
                     <p>Map Ready: {mapReadyState ? 'Yes' : 'No'}</p>
                     <p>Component Loading: {loading ? 'Yes' : 'No'}</p>
+                    <p>World Key: {$game.worldKey || 'None'}</p>
+                    <p>Has World Data: {$game.worldKey && $game.world[$game.worldKey]?.seed !== undefined ? 'Yes' : 'No'}</p>
+                    <p>Initialize Attempted: {initializationRetries} time(s)</p>
                 </div>
             {/if}
         </div>
@@ -1001,7 +877,6 @@
                 if (isPathDrawingMode) {
                     handlePathDrawingCancel();
                 } else {
-                    // Handle regular close if needed
                 }
             }}
         />
@@ -1142,7 +1017,6 @@
             <Gather 
               onClose={() => closeModal()} 
               onGather={(result) => {
-                // Handle gather result
                 closeModal();
               }}
               data={modalState.data}
@@ -1239,7 +1113,7 @@
     
     .entity-controls {
         position: absolute;
-        bottom: 1em; /* Changed from 2em to 1em to reduce the gap at the bottom */
+        bottom: 1em;
         left: 1em;
         z-index: 1001;
     }
@@ -1250,7 +1124,7 @@
         border: 0.05em solid rgba(255, 255, 255, 0.2);
         border-radius: 0.3em;
         color: rgba(0, 0, 0, 0.8);
-        padding: 0.3em 0.8em; /* Increased horizontal padding to fit text */
+        padding: 0.3em 0.8em;
         font-size: 1em;
         font-weight: bold;
         cursor: pointer;

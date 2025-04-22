@@ -261,16 +261,19 @@
   }
   
   // Initialize game store on component mount - cleaned up logic
-  let unsubGameStore;
+  let unsubGameStoreFunction = null; // Change to store the resolved function, not the Promise
   let worldsUnsubscribe;
   
   onMount(() => {
     console.log('Worlds page mounted');
     
     // Make sure game store is initialized before attempting to load worlds
-    if (!unsubGameStore) {
-      unsubGameStore = initGameStore();
-      console.log('Game store initialized on mount');
+    if (!unsubGameStoreFunction) {
+      // Fix Promise handling - store the resolved function not the Promise
+      initGameStore().then(cleanupFunction => {
+        unsubGameStoreFunction = cleanupFunction;
+        console.log('Game store initialized on mount');
+      });
     }
     
     // Immediately check if we're ready to load worlds
@@ -280,8 +283,10 @@
     }
     
     return () => {
-      // Clean up subscriptions
-      if (unsubGameStore) unsubGameStore();
+      // Clean up subscriptions - use the resolved function 
+      if (typeof unsubGameStoreFunction === 'function') {
+        unsubGameStoreFunction(); // Now we call the actual function, not the Promise
+      }
       if (worldsUnsubscribe) worldsUnsubscribe();
     };
   });
@@ -371,8 +376,9 @@
         // Create a check function that verifies all necessary data
         const checkDataReady = () => {
           // Need to verify both player data and world seed
+          // Use worldKey for consistency instead of currentWorld
           if ($game.playerData && 
-              $game.currentWorld === selectedWorld.id && 
+              $game.worldKey === selectedWorld.id && 
               $game.world[selectedWorld.id]?.seed !== undefined) {
             console.log('Player and world data fully loaded, proceeding to map');
             return true;

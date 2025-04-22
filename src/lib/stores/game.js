@@ -16,22 +16,29 @@ export { userAuthReady as isAuthReady };
 
 // Store for game state with more detailed loading states
 export const game = writable({
-  currentWorld: null,
+  currentWorld: null, // Legacy property - will be deprecated
+  worldKey: null,     // New property - semantically clearer
   joinedWorlds: [],
   world: {},
-  playerData: null, // Renamed from playerWorldData
+  playerData: null,
   loading: true,
   worldLoading: false,
   error: null,
-  initialized: false // Add new flag to track initialization status
+  initialized: false
 });
+
+// Create derived stores for backward compatibility
+export const currentWorldKey = derived(
+  game,
+  $game => $game.worldKey || $game.currentWorld
+);
 
 // Create a derived store for the current world's info
 export const currentWorldInfo = derived(
   game,
   $game => {
-    if (!$game || !$game.currentWorld) return null;
-    return $game.world[$game.currentWorld] || null;
+    if (!$game || !$game.worldKey) return null;
+    return $game.world[$game.worldKey] || null;
   }
 );
 
@@ -56,7 +63,7 @@ export const currentWorldCenter = derived(
     }
     
     // Otherwise check if we have spawn information in the world data
-    const worldId = $game.currentWorld;
+    const worldId = $game.worldKey;
     if (!worldId) return { x: 0, y: 0 };
     
     // Default center
@@ -127,7 +134,7 @@ export const currentPlayer = derived(
     // Early returns for missing data
     if (!$user) return null;
     if (!$game) return null;
-    if (!$game.currentWorld) return null;
+    if (!$game.worldKey) return null;
     if (!$game.playerData) return null;
     
     try {
@@ -151,8 +158,8 @@ export const currentPlayer = derived(
         isAnonymous: $user.isAnonymous,
         guest: $user.isAnonymous, // Add an explicit guest flag for easier checking
         // Current world context
-        world: $game.currentWorld,
-        worldName: $game.world[$game.currentWorld]?.name,
+        world: $game.worldKey,
+        worldName: $game.world[$game.worldKey]?.name,
         // Player status in this world
         alive: $game.playerData.alive || false,
         lastLocation: $game.playerData.lastLocation || null,
@@ -182,7 +189,7 @@ export const needsSpawn = derived(
     
     return (
       !!$user?.uid && 
-      !!$game.currentWorld && 
+      !!$game.worldKey && 
       !!$game.playerData && 
       $game.playerData.alive !== true
     );
@@ -193,11 +200,11 @@ export const needsSpawn = derived(
 export const nextWorldTick = derived(
   game,
   ($game) => {
-    if (!$game.currentWorld || !$game.world[$game.currentWorld]) {
+    if (!$game.worldKey || !$game.world[$game.worldKey]) {
       return null;
     }
     
-    const world = $game.world[$game.currentWorld];
+    const world = $game.world[$game.worldKey];
     const worldSpeed = world.speed || 1.0;
     const lastTick = world.lastTick || Date.now();
     
@@ -287,11 +294,11 @@ export function loadJoinedWorlds(userId) {
         
         game.update(state => ({ ...state, joinedWorlds, loading: false }));
         
-        // If we have a currentWorld but no info for it, load it
+        // If we have a worldKey but no info for it, load it
         const currentState = getStore(game);
-        if (currentState.currentWorld && !currentState.world[currentState.currentWorld]) {
-          debugLog('Loading info for current world:', currentState.currentWorld);
-          getWorldInfo(currentState.currentWorld)
+        if (currentState.worldKey && !currentState.world[currentState.worldKey]) {
+          debugLog('Loading info for current world:', currentState.worldKey);
+          getWorldInfo(currentState.worldKey)
             .then(() => resolve(true))
             .catch(err => {
               console.error('Error loading current world info:', err);
@@ -302,8 +309,8 @@ export function loadJoinedWorlds(userId) {
         }
         
         // Also load the player data for the current world if it exists
-        if (currentState.currentWorld) {
-          loadPlayerWorldData(userId, currentState.currentWorld);
+        if (currentState.worldKey) {
+          loadPlayerWorldData(userId, currentState.worldKey);
         }
       } else {
         debugLog('No joined worlds found for user');
@@ -412,10 +419,11 @@ export function setCurrentWorld(worldId, world = null, callback = null) {
     localStorage.setItem(CURRENT_WORLD_KEY, validWorldId);
   }
   
-  // Update the store with the new world ID
+  // Update the store with the new world ID (using both properties for compatibility)
   game.update(state => ({
     ...state,
-    currentWorld: validWorldId
+    currentWorld: validWorldId, // Legacy property
+    worldKey: validWorldId      // New property
   }));
   
   // If we don't have the world info, load it
@@ -765,26 +773,22 @@ export function formatTimeUntilNextTick(worldId) {
 let gameInitializationPromise = null;
 let gameStoreInitialized = false;
 
-// Initialize the store on app start - with improved startup handling and deduplication
+// Make initGameStore return a proper promise for proper sequencing
 export function initGameStore() {
   if (!browser) {
-    return () => {}; // Return empty cleanup function for SSR
+    return Promise.resolve(() => {});
   }
   
   // Return existing initialization promise if it exists
   if (gameInitializationPromise) {
-    return () => {
-      // Return the existing cleanup function - no need to reinitialize
-      console.log('Game store initialization already in progress, reusing');
-    };
+    return gameInitializationPromise;
   }
   
   // Prevent duplicate initialization
   if (gameStoreInitialized) {
-    return () => {
-      // Return a no-op cleanup function since everything is already initialized
+    return Promise.resolve(() => {
       console.log('Game store already initialized, skipping');
-    };
+    });
   }
   
   debugLog('Initializing game store');
@@ -806,68 +810,69 @@ export function initGameStore() {
   };
   
   // Initialize with safe defaults and proper promise handling
-  try {
-    // Subscribe to auth ready state changes
-    authReadyUnsubscribe = userAuthReady.subscribe(isReady => {
-      if (isReady) {
-        console.log('Auth is ready, initializing game data');
-        
-        // Initialize with safe defaults first
-        game.update(state => ({
-          ...state,
-          loading: true,
-          error: null,
-          initialized: false
-        }));
-        
-        // Load saved world ID from localStorage
-        let savedWorldId = null;
-        if (browser) {
-          try {
-            savedWorldId = localStorage.getItem(CURRENT_WORLD_KEY);
-            if (savedWorldId) {
-              debugLog(`Found saved world: ${savedWorldId}`);
-              
-              // Update store with saved world ID
-              game.update(state => ({
-                ...state,
-                currentWorld: savedWorldId
-              }));
+  gameInitializationPromise = new Promise((resolve) => {
+    try {
+      // Initialize with safe defaults first
+      game.update(state => ({
+        ...state,
+        loading: true,
+        error: null,
+        initialized: false
+      }));
+      
+      // Subscribe to auth ready state changes
+      authReadyUnsubscribe = userAuthReady.subscribe(isReady => {
+        if (isReady) {
+          console.log('Auth is ready, initializing game data');
+          
+          // Load saved world ID from localStorage
+          let savedWorldId = null;
+          if (browser) {
+            try {
+              savedWorldId = localStorage.getItem(CURRENT_WORLD_KEY);
+              if (savedWorldId) {
+                debugLog(`Found saved world: ${savedWorldId}`);
+                
+                // Update store with saved world ID
+                game.update(state => ({
+                  ...state,
+                  currentWorld: savedWorldId,
+                  worldKey: savedWorldId
+                }));
+              }
+            } catch (e) {
+              console.warn('Failed to read saved world from localStorage:', e);
             }
-          } catch (e) {
-            console.warn('Failed to read saved world from localStorage:', e);
           }
+          
+          // Mark initialization as complete
+          game.update(state => ({
+            ...state,
+            loading: false,
+            initialized: true
+          }));
+          
+          // Resolve the promise after a short delay to ensure subscribers have processed
+          setTimeout(() => {
+            resolve(cleanup);
+          }, 100);
         }
-        
-        // At this point, we have either a saved world ID or null
-        // We can proceed with any other initialization steps safely
-        
-        // Mark initialization as complete
-        game.update(state => ({
-          ...state,
-          loading: false,
-          initialized: true
-        }));
-      }
-    });
-    
-    // Initialize gameInitializationPromise here if needed for other parts of your code
-    gameInitializationPromise = Promise.resolve();
-    
-  } catch (err) {
-    console.error('Game store initialization failed:', err);
-    game.update(state => ({
-      ...state,
-      loading: false,
-      error: err.message || 'Initialization failed',
-      initialized: false
-    }));
-    
-    // Clean up on error
-    cleanup();
-  }
-
-  return cleanup;
+      });
+    } catch (err) {
+      console.error('Game store initialization failed:', err);
+      game.update(state => ({
+        ...state,
+        loading: false,
+        error: err.message || 'Initialization failed',
+        initialized: false
+      }));
+      
+      // Clean up on error, but still resolve
+      resolve(cleanup);
+    }
+  });
+  
+  return gameInitializationPromise;
 }
 
 // Function to join a world with race selection - improved with better data loading
@@ -915,6 +920,7 @@ export async function joinWorld(worldId, userId, race, displayName) {
         ...state,
         joinedWorlds,
         currentWorld: worldId,
+        worldKey: worldId,
         loading: false,
       };
     });
@@ -981,7 +987,7 @@ export function isPlayerWorldDataReady(worldId) {
   const state = getStore(game);
   return !!(
     state.playerData && 
-    state.currentWorld === worldId && 
+    state.worldKey === worldId && 
     !state.loading && 
     !state.worldLoading
   );

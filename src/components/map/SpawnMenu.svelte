@@ -42,7 +42,7 @@
   // Create derived values with proper separation from side effects
   $effect(() => {
     // Initialize with current game world data when it changes
-    const currentWorldId = $game.currentWorld;
+    const currentWorldId = $game.worldKey || $game.currentWorld;
     const currentWorldData = currentWorldId ? $game.world[currentWorldId] : null;
     
     if (currentWorldData) {
@@ -166,7 +166,7 @@
   
   // Function to spawn player at selected location
   async function spawnAtLocation(spawnPoint) {
-    if (!spawnPoint || !$game.currentWorld || !$currentPlayer?.uid) {
+    if (!spawnPoint || !$game.worldKey || !$currentPlayer?.uid) {
       error = 'Missing required data for spawning';
       return;
     }
@@ -185,7 +185,7 @@
       movedToSpawn = true;
       
       // Reference to player's world data
-      const playerWorldRef = ref(db, `players/${$currentPlayer.uid}/worlds/${$game.currentWorld}`);
+      const playerWorldRef = ref(db, `players/${$currentPlayer.uid}/worlds/${$game.worldKey}`);
       
       // Update the player data to include position and mark as alive
       await update(playerWorldRef, {
@@ -284,7 +284,7 @@
         <div class="debug-content">
           <div class="debug-row">
             <span class="debug-label">Current World:</span>
-            <span class="debug-value">{$game.currentWorld || 'None'}</span>
+            <span class="debug-value">{$game.worldKey || 'None'}</span>
           </div>
           <div class="debug-row">
             <span class="debug-label">World Info Available:</span>
