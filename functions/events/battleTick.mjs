@@ -49,10 +49,24 @@ export async function processBattles(worldId) {
     let battleProcessCount = 0;
     
     for (const battle of battles) {
-      // Check if battle should end
-      if (battle.endTime && battle.endTime <= now) {
-        await processBattleResolution(db, worldId, battle);
-        battleProcessCount++;
+      try {
+        // First check if the battle is one-sided (one side has no participants)
+        const isOneSided = await checkForOneSidedBattle(db, worldId, battle);
+        
+        if (isOneSided) {
+          // Immediately resolve one-sided battles
+          await processBattleResolution(db, worldId, battle, isOneSided);
+          battleProcessCount++;
+          logger.info(`Battle ${battle.id} resolved early: one side has no participants`);
+        }
+        // If not one-sided but time has expired, resolve normally
+        else if (battle.endTime && battle.endTime <= now) {
+          await processBattleResolution(db, worldId, battle);
+          battleProcessCount++;
+        }
+      } catch (error) {
+        logger.error(`Error processing battle ${battle.id}:`, error);
+        // Continue with other battles even if one fails
       }
     }
     
@@ -64,29 +78,102 @@ export async function processBattles(worldId) {
 }
 
 /**
+ * Check if a battle has become one-sided (one side has no participants)
+ * 
+ * @param {Object} db Database reference
+ * @param {string} worldId World ID
+ * @param {Object} battle Battle data
+ * @returns {Promise<number|false>} The winning side number if one-sided, false otherwise
+ */
+async function checkForOneSidedBattle(db, worldId, battle) {
+  // Get the tile reference to check current groups
+  const chunkKey = getChunkKey(battle.locationX, battle.locationY);
+  const tileKey = `${battle.locationX},${battle.locationY}`;
+  const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
+  
+  const tileSnapshot = await tileRef.once('value');
+  if (!tileSnapshot.exists()) {
+    // If tile doesn't exist, consider battle invalid
+    return 1; // Default to side 1 winning if tile is gone
+  }
+  
+  const tileData = tileSnapshot.val();
+  const groupsData = tileData.groups || {};
+  
+  // Count active groups on each side
+  let side1Count = 0;
+  let side2Count = 0;
+  
+  // Check each group mentioned in the battle
+  if (battle.side1 && battle.side1.groups) {
+    for (const groupId of Object.keys(battle.side1.groups)) {
+      // Group must still exist in tile data and be in this battle
+      if (groupsData[groupId] && 
+          groupsData[groupId].inBattle && 
+          groupsData[groupId].battleId === battle.id) {
+        side1Count++;
+      }
+    }
+  }
+  
+  if (battle.side2 && battle.side2.groups) {
+    for (const groupId of Object.keys(battle.side2.groups)) {
+      // Group must still exist in tile data and be in this battle
+      if (groupsData[groupId] && 
+          groupsData[groupId].inBattle && 
+          groupsData[groupId].battleId === battle.id) {
+        side2Count++;
+      }
+    }
+  }
+  
+  // If one side has no participants, the other side wins
+  if (side1Count > 0 && side2Count === 0) {
+    return 1; // Side 1 wins
+  } else if (side1Count === 0 && side2Count > 0) {
+    return 2; // Side 2 wins
+  }
+  
+  // If both sides have participants, or neither side has participants, it's not one-sided
+  return false;
+}
+
+/**
  * Process the resolution of a specific battle
  * 
  * @param {Object} db Database reference
  * @param {string} worldId World ID
  * @param {Object} battle Battle data
+ * @param {number|null} forcedWinner If provided, forces this side to be the winner
  * @returns {Promise<void>}
  */
-async function processBattleResolution(db, worldId, battle) {
+async function processBattleResolution(db, worldId, battle, forcedWinner = null) {
   try {
     const now = Date.now();
     
-    // SIMPLIFIED: Randomly determine a winner instead of using power calculations
-    // 50% chance for either side to win
-    const randomWinner = Math.random() < 0.5 ? 1 : 2;
+    let winnerSide;
     
-    // Set winner and loser based on random selection
-    const winningSide = randomWinner === 1 ? battle.side1 : battle.side2;
-    const losingSide = randomWinner === 1 ? battle.side2 : battle.side1;
+    // If a forced winner is provided, use it
+    if (forcedWinner === 1 || forcedWinner === 2) {
+      winnerSide = forcedWinner;
+      battle.result = {
+        winningSide: winnerSide,
+        earlyResolution: true,
+        reason: "opposing_side_eliminated"
+      };
+    } else {
+      // SIMPLIFIED: Randomly determine a winner instead of using power calculations
+      // 50% chance for either side to win
+      winnerSide = Math.random() < 0.5 ? 1 : 2;
+      battle.result = {
+        winningSide: winnerSide,
+        randomlyDetermined: true
+      };
+    }
     
-    battle.result = {
-      winningSide: randomWinner,
-      randomlyDetermined: true  // Flag to indicate this was random
-    };
+    // Set winner and loser based on selection
+    const winningSide = winnerSide === 1 ? battle.side1 : battle.side2;
+    const losingSide = winnerSide === 1 ? battle.side2 : battle.side1;
     
     // Update battle status
     battle.status = 'completed';
@@ -106,12 +193,16 @@ async function processBattleResolution(db, worldId, battle) {
 
     // Update battle status in tile data as well
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/status`] = battle.status;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/winner`] = randomWinner;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/winner`] = winnerSide;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/completedAt`] = now;
     
     // Schedule removal of the battle reference after a delay to allow clients to see the result
     setTimeout(async () => {
-      await db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}`).remove();
+      try {
+        await db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}`).remove();
+      } catch (err) {
+        logger.warn(`Failed to remove battle reference: ${err.message}`);
+      }
     }, 60000); // Keep completed battle visible for 1 minute
     
     // Get groups from this tile to update them
@@ -130,7 +221,10 @@ async function processBattleResolution(db, worldId, battle) {
     
     // Apply all updates
     await db.ref().update(updates);
-    logger.info(`Completed battle ${battle.id} in world ${worldId} - Side ${randomWinner} won (randomly decided)`);
+    
+    const resolutionReason = forcedWinner ? "one-sided battle" : "time expiration";
+    logger.info(`Completed battle ${battle.id} in world ${worldId} - Side ${winnerSide} won (${resolutionReason})`);
+    
   } catch (error) {
     logger.error(`Error processing battle ${battle.id}:`, error);
     throw error; // Re-throw to be handled by caller
