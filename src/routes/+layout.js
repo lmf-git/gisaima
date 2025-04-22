@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 import { setup as setupUAuth } from '$lib/stores/user.js';
-import { initGameStore } from '$lib/stores/game.js';
+import { setup as setupGame } from '$lib/stores/game.js';
 
 
 export async function load() {
@@ -8,7 +8,7 @@ export async function load() {
     console.log('Layout load: Initializing core services');
     
     setupUAuth()
-    initGameStore()
+    setupGame()
   }
   return {};
 };

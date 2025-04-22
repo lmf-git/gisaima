@@ -571,7 +571,7 @@ let gameInitializationPromise = null;
 let gameStoreInitialized = false;
 
 // Make initGameStore return a proper promise for proper sequencing
-export function initGameStore() {
+export function setup() {
   if (!browser) {
     return Promise.resolve(() => {});
   }
