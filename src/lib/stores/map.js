@@ -970,11 +970,6 @@ export function cleanup() {
   isInternalUrlUpdate = false;
 
   // Clear any pending timeouts
-  if (moveTargetTimeout) {
-    clearTimeout(moveTargetTimeout);
-    moveTargetTimeout = null;
-  }
-
   if (urlUpdateTimeout) {
     clearTimeout(urlUpdateTimeout);
     urlUpdateTimeout = null;

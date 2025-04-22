@@ -2,10 +2,6 @@
   import Showcase from '../components/Showcase.svelte';
   import Features from '../components/Features.svelte';
   import Media from '../components/Media.svelte';
-  // Keep these imports for use in other places if needed
-  import { user } from '../lib/stores/user.js'; 
-  import { game } from '../lib/stores/game.js';
-  import { browser } from '$app/environment';
 </script>
 
 <svelte:head>

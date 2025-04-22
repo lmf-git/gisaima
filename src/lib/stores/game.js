@@ -284,9 +284,9 @@ export function setCurrentWorld(worldId, world = null, callback = null) {
   }));
   
   // Set up a listener for player data in this world
-  const user = get(user);
-  if (user?.uid) {
-    listenToPlayerWorldData(user.uid, validWorldId);
+  const currentUser = get(user);  // Change from 'const user = get(user)' to avoid variable shadowing
+  if (currentUser?.uid) {
+    listenToPlayerWorldData(currentUser.uid, validWorldId);
   }
 
   // If we don't have the world info, load it
