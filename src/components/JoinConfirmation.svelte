@@ -181,15 +181,15 @@
         >
           <div class="race-icon-container">
             {#if race.id === 'human'}
-              <Human size="4em" fill="#64FFDA" extraClass={`race-icon join-race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+              <Human extraClass="confirmation-race-icon" />
             {:else if race.id === 'elf'}
-              <Elf size="4em" fill="#64FFDA" extraClass={`race-icon join-race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+              <Elf extraClass="confirmation-race-icon" />
             {:else if race.id === 'dwarf'}
-              <Dwarf size="4em" fill="#64FFDA" extraClass={`race-icon join-race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+              <Dwarf extraClass="confirmation-race-icon" />
             {:else if race.id === 'goblin'}
-              <Goblin size="4em" fill="#64FFDA" extraClass={`race-icon join-race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+              <Goblin extraClass="confirmation-race-icon" />
             {:else if race.id === 'fairy'}
-              <Fairy size="4em" fill="#64FFDA" extraClass={`race-icon join-race-icon ${selectedRace?.id === race.id ? 'race-icon-selected' : ''}`} />
+              <Fairy extraClass="confirmation-race-icon" />
             {/if}
           </div>
           
@@ -361,19 +361,19 @@
     margin-bottom: 0.8em;
   }
   
-  :global(.join-race-icon.race-icon) {
+  :global(.confirmation-race-icon) {
     width: 4em;
     height: 4em;
     fill: #64FFDA;
     transition: all 0.2s ease;
   }
   
-  :global(.join-race-icon.race-icon.race-icon-selected) {
+  .race-option.selected :global(.confirmation-race-icon) {
     fill: #9EFFEA;
     transform: scale(1.05);
   }
   
-  .race-option:hover :global(.join-race-icon.race-icon) {
+  .race-option:hover :global(.confirmation-race-icon) {
     fill: #9EFFEA;
   }
   
@@ -584,7 +584,7 @@
       padding: 0.8em;
     }
     
-    :global(.join-race-icon.race-icon) {
+    :global(.confirmation-race-icon) {
       width: 3.5em;
       height: 3.5em;
     }

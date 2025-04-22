@@ -172,15 +172,15 @@
       {#if $game.player?.race}
         <div class="race-icon">
           {#if $game.player.race.toLowerCase() === 'human'}
-            <Human size="2em" fill="rgba(0, 0, 0, 0.85)" extraClass="header-race-icon spawn-header-icon" />
+            <Human extraClass="spawn-race-icon" />
           {:else if $game.player.race.toLowerCase() === 'elf'}
-            <Elf size="2em" fill="rgba(0, 0, 0, 0.85)" extraClass="header-race-icon spawn-header-icon" />
+            <Elf extraClass="spawn-race-icon" />
           {:else if $game.player.race.toLowerCase() === 'dwarf'}
-            <Dwarf size="2em" fill="rgba(0, 0, 0, 0.85)" extraClass="header-race-icon spawn-header-icon" />
+            <Dwarf extraClass="spawn-race-icon" />
           {:else if $game.player.race.toLowerCase() === 'goblin'}
-            <Goblin size="2em" fill="rgba(0, 0, 0, 0.85)" extraClass="header-race-icon spawn-header-icon" />
+            <Goblin extraClass="spawn-race-icon" />
           {:else if $game.player.race.toLowerCase() === 'fairy'}
-            <Fairy size="2em" fill="rgba(0, 0, 0, 0.85)" extraClass="header-race-icon spawn-header-icon" />
+            <Fairy extraClass="spawn-race-icon" />
           {/if}
         </div>
       {/if}
@@ -471,5 +471,13 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  /* Single specific class selector for spawn menu race icons */
+  :global(.spawn-race-icon) {
+    width: 2em;
+    height: 2em;
+    fill: rgba(0, 0, 0, 0.85);
+    opacity: 0.85;
   }
 </style>

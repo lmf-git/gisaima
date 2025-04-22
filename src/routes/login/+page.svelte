@@ -119,7 +119,7 @@
         border-radius: 0.5em;
         box-shadow: 0 0.3em 1em var(--color-shadow);
         color: var(--color-text);
-        margin: 0 1em; /* Added horizontal margin instead of padding */
+        margin: 0 1em;
     }
     
     h1 {
@@ -217,6 +217,8 @@
             width: 100%;
             padding: 1.25em;
             margin: 0 0.5em; /* Reduced margin on smaller screens */
+            max-width: calc(100% - 1em); /* Ensure it doesn't overflow */
+            box-sizing: border-box; /* Include padding in width calculation */
         }
         
         h1 {
@@ -283,5 +285,6 @@
         text-align: center;
         color: var(--color-text);
         margin: 0 1em;
+        box-sizing: border-box; /* Add this to ensure padding is included in width */
     }
 </style>
