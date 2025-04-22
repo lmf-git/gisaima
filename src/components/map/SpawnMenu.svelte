@@ -19,6 +19,12 @@
   let error = $state(null);
   let movedToSpawn = $state(false);
   let showDebugView = $state(DEBUG_MODE);
+  let spawnCheckComplete = $state(false);
+  
+  // Add tracking for player data initialization
+  let playerDataInitialized = $state(false);
+  let initializationAttempts = $state(0);
+  const MAX_INIT_ATTEMPTS = 5;
   
   // Function to calculate chunk key
   function getChunkKey(x, y) {
@@ -108,6 +114,46 @@
     spawnPoints.find(s => s.id === selectedSpawnId)
   );
   
+  // Add special effect for handling initial player data check
+  $effect(() => {
+    if (initializationAttempts >= MAX_INIT_ATTEMPTS) {
+      debugLog('Max initialization attempts reached, stopping attempts');
+      spawnCheckComplete = true;
+      loading = false;
+      return;
+    }
+    
+    if (!playerDataInitialized && $currentPlayer) {
+      playerDataInitialized = true;
+      debugLog('Player data initialized:', {
+        uid: $currentPlayer.uid,
+        world: $currentPlayer.world,
+        race: $currentPlayer.race,
+        alive: $currentPlayer.alive,
+        hasLocation: !!$currentPlayer.lastLocation
+      });
+      
+      // If player exists and needs spawn, initialize spawn menu
+      if ($currentPlayer && $needsSpawn) {
+        spawnCheckComplete = true;
+        loading = worldData ? false : true;
+      } else {
+        // Player doesn't need spawn, mark as complete
+        spawnCheckComplete = true;
+        loading = false;
+      }
+    } else if (!playerDataInitialized && initializationAttempts < MAX_INIT_ATTEMPTS) {
+      // Player data not ready yet, schedule another check
+      initializationAttempts++;
+      debugLog(`Player data not initialized yet, attempt ${initializationAttempts}/${MAX_INIT_ATTEMPTS}`);
+      
+      setTimeout(() => {
+        // Trigger effect to re-run
+        initializationAttempts = initializationAttempts;
+      }, 500);
+    }
+  });
+  
   // For debug view, create serializable versions of our data
   // This avoids trying to stringify functions from derived values
   const debugData = $derived({
@@ -119,7 +165,18 @@
     } : null,
     spawnSource: spawnData?.source || null,
     spawnCount: spawnPoints.length,
-    spawnKeys: spawnData?.keys || []
+    spawnKeys: spawnData?.keys || [],
+    needsSpawn: $needsSpawn,
+    playerData: $currentPlayer ? {
+      uid: $currentPlayer.uid,
+      race: $currentPlayer.race,
+      alive: $currentPlayer.alive
+    } : null,
+    initState: {
+      attempts: initializationAttempts,
+      playerDataInitialized,
+      spawnCheckComplete
+    }
   });
   
   // Now add effects for side effects (logging, loading status, etc)
@@ -163,7 +220,7 @@
   // Handle initialization and auto-selection
   $effect(() => {
     // Only process when world data becomes available and we're still in loading state
-    if (worldData && loading) {
+    if (worldData && loading && spawnCheckComplete) {
       loading = false;
       
       // Select first spawn point if available
@@ -307,6 +364,12 @@ Player Race: {$currentPlayer?.race || 'Unknown'}
 World Keys: {JSON.stringify(spawnDataSource.worldKeys)}
 Info Keys: {JSON.stringify(spawnDataSource.infoKeys)}
 
+Player Data:
+{JSON.stringify(debugData.playerData, null, 2)}
+
+Initialization:
+{JSON.stringify(debugData.initState, null, 2)}
+
 Spawn Data:
 Source: {debugData.spawnSource}
 Keys Count: {debugData.spawnKeys.length}
@@ -415,7 +478,9 @@ Keys Count: {debugData.spawnKeys.length}
               keys: spawnData?.keys || [],
               data: spawnData?.data ? Object.fromEntries(
                 Object.entries(spawnData.data).slice(0, 3) // Only show first 3 entries to avoid overflow
-              ) : null
+              ) : null,
+              playerData: debugData.playerData,
+              initialization: debugData.initState
             }, null, 2)}</pre>
           </div>
         </div>

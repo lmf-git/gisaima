@@ -242,6 +242,9 @@ const pendingWorldInfoRequests = new Map();
 const worldInfoCache = new Map();
 const CACHE_TTL = 30000; // 30 seconds cache TTL
 
+// Add new tracking for world data readiness
+const worldDataReadyCallbacks = new Map();
+
 // Helper function to validate world IDs
 function validateWorldId(worldId) {
   if (!worldId) return null;
@@ -390,14 +393,14 @@ export function setMapInitializer(initFunction) {
   }
 }
 
-// Set the current world with info caching and auto-loading
-// This function ensures the world is saved to localStorage
-export function setCurrentWorld(worldId, world = null) {
+// Enhanced set current world with loading completion callback
+export function setCurrentWorld(worldId, world = null, callback = null) {
   // Validate the world ID
   const validWorldId = validateWorldId(worldId);
   
   if (!validWorldId) {
     debugLog('Cannot set current world: No valid world ID provided');
+    if (callback) callback(null);
     return Promise.resolve(null);
   }
   
@@ -421,9 +424,16 @@ export function setCurrentWorld(worldId, world = null) {
   
   // Check both cache and store before fetching
   const cachedWorld = worldInfoCache.get(validWorldId);
-  if (!world && !currentState.world[validWorldId] && !cachedWorld) {
+  let worldToUse = world || currentState.world[validWorldId] || cachedWorld;
+  
+  if (!worldToUse) {
     debugLog(`Loading info for current world: ${validWorldId}`);
-    promises.push(getWorldInfo(validWorldId));
+    promises.push(getWorldInfo(validWorldId)
+      .then(info => {
+        worldToUse = info;
+        return info;
+      })
+    );
   } else if (cachedWorld && !currentState.world[validWorldId]) {
     // Use cached world info if available but not in store
     debugLog(`Using cached world info for ${validWorldId}`);
@@ -444,11 +454,15 @@ export function setCurrentWorld(worldId, world = null) {
   
   if (promises.length > 0) {
     return Promise.all(promises).then(() => {
-      return currentState.world[validWorldId] || cachedWorld;
+      // All data loaded, invoke callback if provided
+      if (callback) callback(worldToUse);
+      return worldToUse;
     });
   }
   
-  return Promise.resolve(world || currentState.world[validWorldId] || cachedWorld);
+  // If no promises were needed, invoke callback immediately
+  if (callback) callback(worldToUse);
+  return Promise.resolve(worldToUse);
 }
 
 // Improved getWorldInfo function with better validation
@@ -856,7 +870,7 @@ export function initGameStore() {
   return cleanup;
 }
 
-// Function to join a world with race selection
+// Function to join a world with race selection - improved with better data loading
 export async function joinWorld(worldId, userId, race, displayName) {
   if (!worldId || !userId) {
     throw new Error('Missing required parameters for joining world');
@@ -905,10 +919,13 @@ export async function joinWorld(worldId, userId, race, displayName) {
       };
     });
     
-    // Also load the world info if needed
-    const currentState = getStore(game);
-    if (!currentState.world[worldId]) {
-      await getWorldInfo(worldId);
+    // Wait for the world info to be fully loaded
+    let worldInfo = await getWorldInfo(worldId);
+    
+    if (!worldInfo) {
+      // If getWorldInfo didn't return world info, try one more time
+      console.log(`No world info returned for ${worldId}, retrying...`);
+      worldInfo = await refreshWorldInfo(worldId);
     }
     
     // Save to localStorage
@@ -920,9 +937,33 @@ export async function joinWorld(worldId, userId, race, displayName) {
       }
     }
     
-    // Load player data for this world
-    loadPlayerWorldData(userId, worldId);
+    // Load player data for this world and wait for it to complete
+    await new Promise(resolve => {
+      loadPlayerWorldData(userId, worldId);
+      
+      // Check if player data is already available
+      const currentState = getStore(game);
+      if (currentState.playerData) {
+        resolve();
+        return;
+      }
+      
+      // Set up a one-time listener for player data
+      const unsubscribe = game.subscribe(state => {
+        if (state.playerData) {
+          unsubscribe();
+          resolve();
+        }
+      });
+      
+      // Set a timeout in case player data doesn't arrive
+      setTimeout(() => {
+        unsubscribe();
+        resolve();
+      }, 2000);
+    });
     
+    // Return worldId when everything is ready
     return worldId;
   } catch (error) {
     console.error('Error joining world:', error);
@@ -933,4 +974,15 @@ export async function joinWorld(worldId, userId, race, displayName) {
     }));
     throw error;
   }
+}
+
+// Add a function to check if player data is ready for a specific world
+export function isPlayerWorldDataReady(worldId) {
+  const state = getStore(game);
+  return !!(
+    state.playerData && 
+    state.currentWorld === worldId && 
+    !state.loading && 
+    !state.worldLoading
+  );
 }

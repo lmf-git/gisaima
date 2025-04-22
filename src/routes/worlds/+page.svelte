@@ -351,6 +351,7 @@
     
     try {
       // Join the world with race information and display name
+      // Wait for the join operation to fully complete before navigating
       await joinWorld(
         selectedWorld.id, 
         $user.uid, 
@@ -358,8 +359,11 @@
         raceData.displayName  // Pass the display name
       );
 
-      // joinWorld already saves to localStorage, so we don't need to call setCurrentWorld
-      goto(`/map?world=${selectedWorld.id}${coordParams}`);
+      // Add a short delay to ensure data is synced before navigation
+      // This helps prevent race conditions where the map page loads before player data is ready
+      setTimeout(() => {
+        goto(`/map?world=${selectedWorld.id}${coordParams}`);
+      }, 500);
     } catch (error) {
       console.error('Failed to join world:', error);
       closeConfirmation();

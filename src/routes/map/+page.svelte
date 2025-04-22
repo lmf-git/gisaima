@@ -257,6 +257,261 @@
         }, COORDINATE_DEBOUNCE_TIME);
     });
     
+    // More efficient initialization tracking
+    let initialized = $state(false);
+    let initializationRetries = $state(0);
+    const MAX_INIT_RETRIES = 3;
+    
+    $effect(() => {
+        // Skip if already initialized or not in browser
+        if (initialized || !browser) return;
+        
+        // Set initialized flag immediately to prevent duplicate execution
+        initialized = true;
+        
+        document.body.classList.add('map-page-active');
+        
+        const url = get(page).url;
+        let worldId = url.searchParams.get('world') || $game.currentWorld;
+        
+        // Validate worldId to ensure it's a proper string
+        if (!worldId || typeof worldId === 'object') {
+            console.error('Invalid world ID from URL or game store:', worldId);
+            worldId = 'default'; // Fall back to default world
+        } else {
+            worldId = String(worldId);
+        }
+        
+        const coords = parseUrlCoordinates();
+        
+        if (coords) {
+            urlCoordinates = { x: coords.x, y: coords.y };
+        }
+        
+        if (!worldId) {
+            goto('/worlds');
+            return;
+        }
+        
+        console.log(`Initializing map for world: ${worldId}, world store ready: ${$game.initialized}, authReady: ${$isAuthReady}`);
+        
+        // Fix the initialization logic to properly handle game.currentWorld
+        // when $game.currentWorld is available and has valid world data
+        if (!$ready && $game.currentWorld && 
+            typeof $game.currentWorld === 'string' && 
+            $game.world[$game.currentWorld]?.seed !== undefined) {
+                
+            debugLog(`Initializing map from existing world info for ${$game.currentWorld}`);
+            
+            // Extract world data properly - don't pass the object itself
+            const worldData = $game.world[$game.currentWorld];
+            
+            // Pass worldId as string and separate worldData object
+            initialize({ 
+                worldId: $game.currentWorld,  // Pass the ID as string 
+                world: {                      // Pass seed and relevant data separately
+                    seed: worldData.seed,
+                    center: worldData.center || null,
+                    spawns: worldData.spawns || null
+                },
+                initialX: urlCoordinates?.x, 
+                initialY: urlCoordinates?.y
+            });
+            
+            if (urlCoordinates) {
+                urlProcessingComplete = true;
+                
+                const coordKey = `${urlCoordinates.x},${urlCoordinates.y}`;
+                coordinateProcessingState.processed.add(coordKey);
+                coordinateProcessingState.lastProcessedTime = Date.now();
+            }
+        } else {
+            // Use our revised initializeMap function with proper error handling and retry logic
+            initializeMap(worldId).catch(err => {
+                console.error(`Failed to initialize map:`, err);
+                initializationRetries++;
+                
+                // Create retry logic for initialization
+                if (initializationRetries < MAX_INIT_RETRIES) {
+                    console.log(`Retry attempt ${initializationRetries} for map initialization`);
+                    setTimeout(() => {
+                        initialized = false; // Allow re-initialization
+                    }, 1000);
+                } else {
+                    error = err.message || `Failed to load world`;
+                    loading = false;
+                }
+            });
+        }
+        
+        // Set up cleanup function for component destruction
+        window.addEventListener('beforeunload', cleanup);
+        
+        // Return cleanup function (will be called when effect is re-run, which doesn't happen in this case)
+        return () => {
+            if (browser) {
+                document.body.classList.remove('map-page-active');
+                cleanup();
+                window.removeEventListener('beforeunload', cleanup);
+            }
+        };
+    });
+
+    // Prevent redundant map initializations
+    let mapInitializationComplete = $state(false);
+    let mapInitializationAttempted = $state(false);
+    
+    async function initializeMap(worldId) {
+        // Add logging for initialization attempts
+        if (!mapInitializationAttempted) {
+            console.log(`First map initialization attempt for world: ${worldId}`);
+            mapInitializationAttempted = true;
+        } else {
+            console.log(`Repeated map initialization attempt for world: ${worldId}`);
+        }
+
+        // Validate worldId first to catch issues early
+        if (!worldId) {
+            throw new Error('No world ID specified');
+        }
+        
+        // Ensure worldId is a string
+        if (typeof worldId === 'object') {
+            console.error('Object passed as worldId:', worldId);
+            if (worldId.id) {
+                worldId = worldId.id; // Try to extract ID if available
+            } else {
+                throw new Error('Invalid world ID (object)');
+            }
+        } else {
+            worldId = String(worldId);
+        }
+        
+        if (mapInitializationComplete) {
+            debugLog(`Map initialization already completed for ${worldId}, skipping`);
+            return;
+        }
+      
+        if ($ready && $map.world === worldId) {
+            debugLog(`Map already initialized for world ${worldId}, skipping redundant initialization`);
+            mapInitializationComplete = true;
+            
+            const startingCoords = parseUrlCoordinates();
+            if (startingCoords && !urlProcessingComplete) {
+                debugLog(`Applying URL coordinates to existing map: ${startingCoords.x},${startingCoords.y}`);
+                moveTarget(startingCoords.x, startingCoords.y);
+                urlProcessingComplete = true;
+            }
+            
+            return;
+        }
+        
+        try {
+            loading = true;
+            error = null;
+            
+            // Wait for auth to be ready with timeout
+            if (!$isAuthReady) {
+                console.log('Waiting for auth to be ready...');
+                await new Promise((resolve) => {
+                    const timeout = setTimeout(() => {
+                        console.warn('Auth ready timeout - continuing anyway');
+                        resolve();
+                    }, 3000); // 3 second timeout
+                    
+                    const unsubscribe = isAuthReady.subscribe(ready => {
+                        if (ready) {
+                            clearTimeout(timeout);
+                            unsubscribe();
+                            resolve();
+                        }
+                    });
+                });
+            }
+            
+            // Wait for game store to be initialized
+            if (!$game.initialized) {
+                console.log('Waiting for game store to be initialized...');
+                await new Promise((resolve) => {
+                    const timeout = setTimeout(() => {
+                        console.warn('Game initialization timeout - continuing anyway');
+                        resolve();
+                    }, 3000); // 3 second timeout
+                    
+                    const unsubscribe = game.subscribe(state => {
+                        if (state.initialized) {
+                            clearTimeout(timeout);
+                            unsubscribe();
+                            resolve();
+                        }
+                    });
+                });
+            }
+            
+            // Make sure we have a valid world ID before proceeding
+            // Use setCurrentWorld instead of directly calling getWorldInfo to ensure all data is loaded
+            let world = await new Promise(resolve => {
+                setCurrentWorld(worldId, null, (worldData) => {
+                    resolve(worldData);
+                });
+            });
+            
+            if (!world) {
+                // If setCurrentWorld didn't return world data, try getWorldInfo directly
+                world = await getWorldInfo(worldId);
+            }
+            
+            if (!world) {
+                throw new Error(`World info not found for ${worldId}`);
+            }
+            if (world.seed === undefined) {
+                throw new Error(`World ${worldId} has no seed defined`);
+            }
+            
+            let initialCoords = null;
+            
+            const urlCoords = parseUrlCoordinates();
+            if (urlCoords) {
+                debugLog(`Using URL coordinates: ${urlCoords.x},${urlCoords.y}`);
+                initialCoords = urlCoords;
+                urlProcessingComplete = true;
+            } 
+            else if ($game.playerData?.lastLocation) {
+                const location = $game.playerData.lastLocation;
+                debugLog(`Using player's last location: ${location.x},${location.y}`);
+                initialCoords = { x: location.x, y: location.y };
+            } 
+            else {
+                const worldCenter = getWorldCenterCoordinates(worldId, world);
+                debugLog(`Using world center: ${worldCenter.x},${worldCenter.y}`);
+                initialCoords = worldCenter;
+            }
+            
+            // Make sure to pass the world data properly
+            if (!initialize({ 
+                worldId,                      // Pass string ID
+                world: {                      // Pass seed and key data as a minimal object
+                    seed: world.seed,
+                    center: world.center || null,
+                    spawns: world.spawns || world.info?.spawns || null
+                },
+                initialX: initialCoords.x,
+                initialY: initialCoords.y
+            })) {
+                throw new Error('Failed to initialize map with world data');
+            }
+            
+            loading = false;
+            mapInitializationComplete = true;
+            
+        } catch (err) {
+            error = err.message || 'Failed to load world';
+            loading = false;
+            console.error('Error initializing map:', err);
+            throw err; // Re-throw to allow upstream error handling
+        }
+    }
+    
     // This effect only runs when map becomes ready and we have unprocessed URL coordinates
     $effect(() => {
         if (!$ready || !urlCoordinates || coordinateProcessingState.processing) return;
@@ -329,225 +584,6 @@
         });
         lastPlayerDataStatus = statusKey;
       }
-    });
-
-    // Prevent redundant map initializations
-    let mapInitializationComplete = $state(false);
-    let mapInitializationAttempted = $state(false);
-    
-    async function initializeMap(worldId) {
-        // Add logging for initialization attempts
-        if (!mapInitializationAttempted) {
-            console.log(`First map initialization attempt for world: ${worldId}`);
-            mapInitializationAttempted = true;
-        } else {
-            console.log(`Repeated map initialization attempt for world: ${worldId}`);
-        }
-
-        // Validate worldId first to catch issues early
-        if (!worldId) {
-            throw new Error('No world ID specified');
-        }
-        
-        // Ensure worldId is a string
-        if (typeof worldId === 'object') {
-            console.error('Object passed as worldId:', worldId);
-            if (worldId.id) {
-                worldId = worldId.id; // Try to extract ID if available
-            } else {
-                throw new Error('Invalid world ID (object)');
-            }
-        } else {
-            worldId = String(worldId);
-        }
-        
-        if (mapInitializationComplete) {
-            debugLog(`Map initialization already completed for ${worldId}, skipping`);
-            return;
-        }
-      
-        if ($ready && $map.world === worldId) {
-            debugLog(`Map already initialized for world ${worldId}, skipping redundant initialization`);
-            mapInitializationComplete = true;
-            
-            const startingCoords = parseUrlCoordinates();
-            if (startingCoords && !urlProcessingComplete) {
-                debugLog(`Applying URL coordinates to existing map: ${startingCoords.x},${startingCoords.y}`);
-                moveTarget(startingCoords.x, startingCoords.y);
-                urlProcessingComplete = true;
-            }
-            
-            return;
-        }
-        
-        try {
-            loading = true;
-            error = null;
-            
-            // Add timeout to prevent infinite waiting
-            if (!$isAuthReady) {
-                console.log('Waiting for auth to be ready...');
-                const authPromise = new Promise((resolve, reject) => {
-                    const timeout = setTimeout(() => {
-                        reject(new Error('Auth ready timeout - forcing continuation'));
-                    }, 5000); // 5 second timeout
-                    
-                    const unsubscribe = isAuthReady.subscribe(ready => {
-                        if (ready) {
-                            clearTimeout(timeout);
-                            unsubscribe();
-                            resolve();
-                        }
-                    });
-                });
-                
-                try {
-                    await authPromise;
-                } catch (err) {
-                    console.warn('Auth ready wait timed out, continuing anyway:', err);
-                    // Continue anyway after timeout
-                }
-            }
-            
-            // Make sure we have a valid world ID before proceeding
-            await setCurrentWorld(worldId);
-            const world = await getWorldInfo(worldId);
-            
-            if (!world) {
-                throw new Error(`World info not found for ${worldId}`);
-            }
-            if (world.seed === undefined) {
-                throw new Error(`World ${worldId} has no seed defined`);
-            }
-            
-            let initialCoords = null;
-            
-            const urlCoords = parseUrlCoordinates();
-            if (urlCoords) {
-                debugLog(`Using URL coordinates: ${urlCoords.x},${urlCoords.y}`);
-                initialCoords = urlCoords;
-                urlProcessingComplete = true;
-            } 
-            else if ($game.playerData?.lastLocation) {
-                const location = $game.playerData.lastLocation;
-                debugLog(`Using player's last location: ${location.x},${location.y}`);
-                initialCoords = { x: location.x, y: location.y };
-            } 
-            else {
-                const worldCenter = getWorldCenterCoordinates(worldId, world);
-                debugLog(`Using world center: ${worldCenter.x},${worldCenter.y}`);
-                initialCoords = worldCenter;
-            }
-            
-            // Make sure to pass the world data properly
-            if (!initialize({ 
-                worldId,                      // Pass string ID
-                world: {                      // Pass seed and key data as a minimal object
-                    seed: world.seed,
-                    center: world.center || null,
-                    spawns: world.spawns || world.info?.spawns || null
-                },
-                initialX: initialCoords.x,
-                initialY: initialCoords.y
-            })) {
-                throw new Error('Failed to initialize map with world data');
-            }
-            
-            loading = false;
-            mapInitializationComplete = true;
-            
-        } catch (err) {
-            error = err.message || 'Failed to load world';
-            loading = false;
-            console.error('Error initializing map:', err);
-            throw err; // Re-throw to allow upstream error handling
-        }
-    }
-    
-    // More efficient initialization tracking
-    let initialized = $state(false);
-    
-    $effect(() => {
-        // Skip if already initialized or not in browser
-        if (initialized || !browser) return;
-        
-        // Set initialized flag immediately to prevent duplicate execution
-        initialized = true;
-        
-        document.body.classList.add('map-page-active');
-        
-        const url = get(page).url;
-        let worldId = url.searchParams.get('world') || $game.currentWorld;
-        
-        // Validate worldId to ensure it's a proper string
-        if (!worldId || typeof worldId === 'object') {
-            console.error('Invalid world ID from URL or game store:', worldId);
-            worldId = 'default'; // Fall back to default world
-        } else {
-            worldId = String(worldId);
-        }
-        
-        const coords = parseUrlCoordinates();
-        
-        if (coords) {
-            urlCoordinates = { x: coords.x, y: coords.y };
-        }
-        
-        if (!worldId) {
-            goto('/worlds');
-            return;
-        }
-        
-        // Fix the initialization logic to properly handle game.currentWorld
-        // when $game.currentWorld is available and has valid world data
-        if (!$ready && $game.currentWorld && 
-            typeof $game.currentWorld === 'string' && 
-            $game.world[$game.currentWorld]?.seed !== undefined) {
-                
-            debugLog(`Initializing map from existing world info for ${$game.currentWorld}`);
-            
-            // Extract world data properly - don't pass the object itself
-            const worldData = $game.world[$game.currentWorld];
-            
-            // Pass worldId as string and separate worldData object
-            initialize({ 
-                worldId: $game.currentWorld,  // Pass the ID as string 
-                world: {                      // Pass seed and relevant data separately
-                    seed: worldData.seed,
-                    center: worldData.center || null,
-                    spawns: worldData.spawns || null
-                },
-                initialX: urlCoordinates?.x, 
-                initialY: urlCoordinates?.y
-            });
-            
-            if (urlCoordinates) {
-                urlProcessingComplete = true;
-                
-                const coordKey = `${urlCoordinates.x},${urlCoordinates.y}`;
-                coordinateProcessingState.processed.add(coordKey);
-                coordinateProcessingState.lastProcessedTime = Date.now();
-            }
-        } else {
-            // Use our revised initializeMap function with proper error handling
-            initializeMap(worldId).catch(err => {
-                console.error(`Failed to initialize map:`, err);
-                error = err.message || `Failed to load world`;
-                loading = false;
-            });
-        }
-        
-        // Set up cleanup function for component destruction
-        window.addEventListener('beforeunload', cleanup);
-        
-        // Return cleanup function (will be called when effect is re-run, which doesn't happen in this case)
-        return () => {
-            if (browser) {
-                document.body.classList.remove('map-page-active');
-                cleanup();
-                window.removeEventListener('beforeunload', cleanup);
-            }
-        };
     });
 
     $effect(() => {
