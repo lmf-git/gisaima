@@ -59,6 +59,24 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
       text: `Journey completed`,
       timestamp: now
     };
+
+    // Add chat message for journey completion
+    const startPoint = group.movementPath[0];
+    const endPoint = group.movementPath[group.movementPath.length - 1];
+    const groupName = group.name || "Unnamed force";
+    const chatMessageText = `${groupName} completed their journey from (${startPoint.x},${startPoint.y}) to (${endPoint.x},${endPoint.y})`;
+    
+    // Add to world chat
+    const chatMessageId = `move_${now}_${groupId}`;
+    updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+      text: chatMessageText,
+      type: 'event',
+      timestamp: now,
+      location: {
+        x: endPoint.x,
+        y: endPoint.y
+      }
+    };
     
     return true;
   }
@@ -99,6 +117,25 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
     
     // Remove the group from the current position
     updates[`${groupPath}`] = null;
+    
+    // Add chat message for significant movement (every 3 steps or final destination)
+    const isSignificantMove = nextIndex % 3 === 0 || nextIndex === group.movementPath.length - 1;
+    if (isSignificantMove) {
+      const groupName = group.name || "Unnamed force";
+      const chatMessageText = `${groupName} has arrived at (${nextPoint.x},${nextPoint.y})${nextIndex < group.movementPath.length - 1 ? " and continues their journey" : ""}`;
+      
+      // Add to world chat
+      const chatMessageId = `move_${now}_${groupId}_${nextIndex}`;
+      updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+        text: chatMessageText,
+        type: 'event',
+        timestamp: now,
+        location: {
+          x: nextPoint.x,
+          y: nextPoint.y
+        }
+      };
+    }
     
     // Update player position if they're in this group
     if (group.units) {

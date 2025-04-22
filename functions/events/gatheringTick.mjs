@@ -55,6 +55,48 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
     timestamp: now
   };
   
+  // Create detailed chat message about gathering
+  const groupName = group.name || "Unnamed group";
+  const locationStr = tileKey.replace(',', ', ');
+  
+  // Format the gathered items for chat display
+  let itemsText = '';
+  if (gatheredItems.length > 0) {
+    const itemSummary = gatheredItems.map(item => 
+      `${item.quantity} ${item.name}${item.rarity === 'rare' ? ' (Rare)' : ''}`
+    ).join(', ');
+    
+    itemsText = `: ${itemSummary}`;
+  }
+  
+  // Create chat message
+  const chatMessageId = `gather_${now}_${groupId}`;
+  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+    text: `${groupName} gathered resources in ${biome} biome at (${locationStr})${itemsText}`,
+    type: 'event',
+    timestamp: now,
+    location: {
+      x: parseInt(tileKey.split(',')[0]),
+      y: parseInt(tileKey.split(',')[1])
+    }
+  };
+  
+  // Add special announcement for rare items
+  const rareItems = gatheredItems.filter(item => item.rarity === 'rare');
+  if (rareItems.length > 0) {
+    const rareItemsText = rareItems.map(item => item.name).join(', ');
+    const rareChatMessageId = `rare_${now}_${groupId}`;
+    updates[`worlds/${worldId}/chat/${rareChatMessageId}`] = {
+      text: `${groupName} found something special: ${rareItemsText}!`,
+      type: 'event',
+      timestamp: now + 1, // Add 1ms to ensure correct ordering
+      location: {
+        x: parseInt(tileKey.split(',')[0]),
+        y: parseInt(tileKey.split(',')[1])
+      }
+    };
+  }
+  
   logger.info(`Group ${groupId} completed gathering and found ${itemCount} items at ${tileKey} in chunk ${chunkKey}`);
   return true;
 }

@@ -209,15 +209,65 @@ async function processBattleResolution(db, worldId, battle, forcedWinner = null)
     const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
     const tileSnapshot = await tileRef.once('value');
     
+    // Prepare data for chat message
+    let winningGroups = [];
+    let losingGroups = [];
+    
     if (tileSnapshot.exists()) {
       const tileData = tileSnapshot.val();
       
       // Process all groups on both sides
       if (tileData.groups) {
+        // Get groups for chat message before processing
+        const allGroups = tileData.groups;
+        
+        // Collect winning group names
+        if (winningSide && winningSide.groups) {
+          winningGroups = Object.keys(winningSide.groups)
+            .map(groupId => {
+              const group = allGroups[groupId];
+              return group ? (group.name || `Group ${groupId}`) : `Unknown group`;
+            });
+        }
+        
+        // Collect losing group names
+        if (losingSide && losingSide.groups) {
+          losingGroups = Object.keys(losingSide.groups)
+            .map(groupId => {
+              const group = allGroups[groupId];
+              return group ? (group.name || `Group ${groupId}`) : `Unknown group`;
+            });
+        }
+        
         await processWinningGroups(updates, worldId, chunkKey, tileKey, tileData.groups, winningSide);
         await processLosingGroups(updates, worldId, chunkKey, tileKey, tileData.groups, losingSide);
       }
     }
+    
+    // Create battle outcome chat message
+    const winSideText = winnerSide === 1 ? "Attackers" : "Defenders";
+    const battleChatText = `Battle at (${battle.locationX},${battle.locationY}) has ended. ${winSideText} emerged victorious!`;
+    
+    // Add details about groups
+    let detailedMessage = battleChatText;
+    if (winningGroups.length > 0) {
+      detailedMessage += ` Victorious: ${winningGroups.join(', ')}. `;
+    }
+    if (losingGroups.length > 0) {
+      detailedMessage += ` Defeated: ${losingGroups.join(', ')}.`;
+    }
+    
+    // Add to world chat
+    const chatMessageId = `battle_${now}_${battle.id}`;
+    updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+      text: detailedMessage,
+      type: 'event',
+      timestamp: now,
+      location: {
+        x: battle.locationX,
+        y: battle.locationY
+      }
+    };
     
     // Apply all updates
     await db.ref().update(updates);
@@ -260,6 +310,7 @@ async function processWinningGroups(updates, worldId, chunkKey, tileKey, groups,
  */
 async function processLosingGroups(updates, worldId, chunkKey, tileKey, groups, losingSide) {
   const losingGroupIds = Object.keys(losingSide.groups || {});
+  const now = Date.now();
   
   for (const groupId of losingGroupIds) {
     if (groups[groupId]) {
@@ -279,7 +330,20 @@ async function processLosingGroups(updates, worldId, chunkKey, tileKey, groups, 
             updates[`players/${unit.id}/worlds/${worldId}/inGroup`] = null;
             updates[`players/${unit.id}/worlds/${worldId}/lastMessage`] = {
               text: `You were defeated in battle.`,
-              timestamp: Date.now()
+              timestamp: now
+            };
+            
+            // Add player death announcement to chat
+            const playerName = unit.name || "Unknown player";
+            const chatMessageId = `death_${now}_${unit.id}`;
+            updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+              text: `${playerName} was defeated in battle at (${tileKey.replace(',', ', ')})`,
+              type: 'event',
+              timestamp: now,
+              location: {
+                x: parseInt(tileKey.split(',')[0]),
+                y: parseInt(tileKey.split(',')[1])
+              }
             };
           }
         }
