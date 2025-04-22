@@ -25,6 +25,7 @@
   // Add a state variable to track world data
   let worldData = $state(null);
   let spawnPoints = $state([]);
+  let filteredSpawnPoints = $state([]);
   
   // Function to calculate chunk key
   function getChunkKey(x, y) {
@@ -68,8 +69,12 @@
       }
       
       if (foundSpawns.length > 0) {
-        // Update component state
+        // Update all spawns
         spawnPoints = foundSpawns;
+        
+        // Filter by race if applicable
+        filterSpawnPointsByRace();
+        
         loading = false;
       } else {
         loading = false;
@@ -78,6 +83,67 @@
     }
   });
   
+  // Function to filter spawn points by race
+  function filterSpawnPointsByRace() {
+    if (!spawnPoints.length) {
+      filteredSpawnPoints = [];
+      return;
+    }
+    
+    if (!$currentPlayer?.race) {
+      filteredSpawnPoints = spawnPoints;
+      return;
+    }
+    
+    // Filter by race if specified in spawn data
+    const raceFiltered = spawnPoints.filter(spawn => 
+      !spawn.race || spawn.race.toLowerCase() === $currentPlayer.race.toLowerCase()
+    );
+    
+    // Only use race filtering if we found matches
+    if (raceFiltered.length > 0) {
+      filteredSpawnPoints = raceFiltered;
+    } else {
+      filteredSpawnPoints = spawnPoints; // Fall back to all spawns if no race matches
+    }
+    
+    // Auto-select if only one spawn point is available
+    if (filteredSpawnPoints.length === 1) {
+      selectedSpawnId = filteredSpawnPoints[0].id || filteredSpawnPoints[0].key;
+      moveToSpawnLocation(filteredSpawnPoints[0]);
+    }
+  }
+  
+  // Re-filter whenever player race changes
+  $effect(() => {
+    if ($currentPlayer?.race) {
+      filterSpawnPointsByRace();
+    }
+  });
+  
+  // Function to move map to spawn location
+  function moveToSpawnLocation(spawnPoint) {
+    if (!spawnPoint) return;
+    
+    // Get position from spawn point - handle different formats
+    let position = { x: 0, y: 0 };
+    
+    if (spawnPoint.x !== undefined && spawnPoint.y !== undefined) {
+      position = { x: spawnPoint.x, y: spawnPoint.y };
+    } else if (spawnPoint.position?.x !== undefined && spawnPoint.position?.y !== undefined) {
+      position = { x: spawnPoint.position.x, y: spawnPoint.position.y };
+    } else if (spawnPoint.position?.chunkX !== undefined) {
+      position = { 
+        x: (spawnPoint.position.chunkX * CHUNK_SIZE) + (spawnPoint.position.x || 0),
+        y: (spawnPoint.position.chunkY * CHUNK_SIZE) + (spawnPoint.position.y || 0)
+      };
+    }
+    
+    // Move the map target to this position
+    moveTarget(position.x, position.y);
+    movedToSpawn = true;
+  }
+
   // Function to spawn player at selected location
   async function spawnAtLocation(spawnPoint) {
     if (!spawnPoint || !$game.worldKey || !$currentPlayer?.uid) {
@@ -168,13 +234,19 @@
     if (!text) return '';
     return text.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
+  
+  // Get selected spawn point
+  function getSelectedSpawn() {
+    if (!selectedSpawnId) return null;
+    return filteredSpawnPoints.find(s => (s.id || s.key) === selectedSpawnId);
+  }
 </script>
 
 {#if $needsSpawn}
 <div class="modal-container">
   <div class="spawn-modal">
     <header class="modal-header">
-      <h3>
+      <div class="header-content">
         <div class="race-icon">
           {#if $currentPlayer?.race}
             {#if $currentPlayer.race.toLowerCase() === 'human'}
@@ -190,12 +262,15 @@
             {/if}
           {/if}
         </div>
-        Select Spawn Location
-      </h3>
-      <div class="race-display">
-        {#if $currentPlayer?.race}
-          {_fmt($currentPlayer.race)}
-        {/if}
+        <div class="header-text">
+          <h3>Select Spawn Location</h3>
+          <div class="race-display">
+            Playing as <span class="race-name">{_fmt($currentPlayer?.race || '')}</span>
+            {#if filteredSpawnPoints.length < spawnPoints.length}
+              <span class="race-info">(showing {filteredSpawnPoints.length} race-specific locations)</span>
+            {/if}
+          </div>
+        </div>
       </div>
     </header>
     
@@ -217,17 +292,20 @@
           <div class="loading-spinner"></div>
           <p>Spawning your character...</p>
         </div>
-      {:else if spawnPoints.length === 0}
+      {:else if filteredSpawnPoints.length === 0}
         <div class="no-spawns-state">
           <p>No spawn points available in this world.</p>
         </div>
       {:else}
         <div class="spawn-points">
-          {#each spawnPoints as spawn}
+          {#each filteredSpawnPoints as spawn}
             <div 
               class="spawn-point entity" 
               class:selected={selectedSpawnId === (spawn.id || spawn.key)}
-              onclick={() => selectedSpawnId = spawn.id || spawn.key}
+              onclick={() => {
+                selectedSpawnId = spawn.id || spawn.key;
+                moveToSpawnLocation(spawn);
+              }}
             >
               <div class="entity-icon">
                 <Torch size="1.4em" extraClass="spawn-icon-detail" />
@@ -235,6 +313,9 @@
               <div class="entity-info">
                 <div class="entity-name">
                   {spawn.name || `Spawn ${spawn.id || spawn.key}`}
+                  {#if spawn.race && spawn.race.toLowerCase() === $currentPlayer?.race?.toLowerCase()}
+                    <span class="entity-badge race-match-badge">{_fmt(spawn.race)}</span>
+                  {/if}
                 </div>
                 <div class="entity-details">
                   <span class="entity-location">
@@ -257,19 +338,27 @@
                   <p class="spawn-description">{spawn.description}</p>
                 {/if}
               </div>
-              <button 
-                class="spawn-button"
-                disabled={spawning}
-                onclick={(e) => {
-                  e.stopPropagation();
-                  spawnAtLocation(spawn);
-                }}
-              >
-                Spawn Here
-              </button>
             </div>
           {/each}
         </div>
+        
+        <!-- Add central spawn confirmation button -->
+        {#if selectedSpawnId}
+          <div class="confirm-spawn-container">
+            <button 
+              class="confirm-spawn-button"
+              disabled={spawning}
+              onclick={() => {
+                const selectedSpawn = getSelectedSpawn();
+                if (selectedSpawn) {
+                  spawnAtLocation(selectedSpawn);
+                }
+              }}
+            >
+              {spawning ? 'Spawning...' : 'Confirm Spawn Location'}
+            </button>
+          </div>
+        {/if}
       {/if}
     </div>
   </div>
@@ -325,26 +414,48 @@
 
   .modal-header {
     padding: 0.8em 1em;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     background-color: rgba(0, 0, 0, 0.05);
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     font-family: var(--font-heading);
   }
   
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 0.8em;
+  }
+  
+  .header-text {
+    flex: 1;
+  }
+  
   .race-icon {
     display: flex;
     align-items: center;
-    margin-right: 0.5em;
+    justify-content: center;
+    width: 2.5em;
+    height: 2.5em;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    box-shadow: 0 0 0.5em rgba(0, 0, 0, 0.1);
   }
   
   .race-display {
     font-size: 0.8em;
-    color: rgba(0, 0, 0, 0.6);
-    padding: 0.2em 0.5em;
-    border-radius: 0.3em;
-    background-color: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.7);
+    margin-top: 0.2em;
+  }
+  
+  .race-name {
+    font-weight: 600;
+    color: var(--color-bright-accent, #3a8eff);
+  }
+  
+  .race-info {
+    opacity: 0.7;
+    font-style: italic;
+    font-size: 0.9em;
+    margin-left: 0.5em;
   }
 
   h3 {
@@ -352,8 +463,6 @@
     font-size: 1.1em;
     font-weight: 600;
     color: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
   }
 
   .modal-content {
@@ -475,6 +584,10 @@
     color: rgba(0, 0, 0, 0.85);
     line-height: 1.2;
     margin-bottom: 0.2em;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5em;
   }
   
   .entity-details {
@@ -528,8 +641,8 @@
   
   /* Race icon styling with global selectors */
   :global(.spawn-race-icon) {
-    width: 1.4em;
-    height: 1.4em;
+    width: 2em;
+    height: 2em;
     opacity: 0.85;
     fill: rgba(0, 0, 0, 0.7);
   }
@@ -547,6 +660,46 @@
     filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.8));
   }
   
+  /* New styles for confirm button */
+  .confirm-spawn-container {
+    margin-top: 1.2em;
+    text-align: center;
+  }
+
+  .confirm-spawn-button {
+    background-color: rgba(76, 175, 80, 0.8);
+    color: white;
+    padding: 0.6em 1.2em;
+    border: none;
+    border-radius: 0.3em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1em;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .confirm-spawn-button:hover:not([disabled]) {
+    background-color: rgba(76, 175, 80, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .confirm-spawn-button[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* Race match badge */
+  .race-match-badge {
+    font-size: 0.7em;
+    padding: 0.2em 0.4em;
+    border-radius: 0.3em;
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+    border: 1px solid rgba(76, 175, 80, 0.4);
+  }
+  
   /* Responsive styles */
   @media (max-width: 640px) {
     .spawn-point {
@@ -559,9 +712,7 @@
       margin-bottom: 0.7em;
     }
     
-    .spawn-button {
-      margin-left: 0;
-      margin-top: 0.8em;
+    .confirm-spawn-button {
       width: 100%;
     }
   }
