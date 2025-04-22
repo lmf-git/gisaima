@@ -27,6 +27,7 @@
   // Helper state variables
   let wasLoading = $state(false);
   let hasSpawnsData = $state(false);
+  let autoTargeted = $state(false);
 
   // Helper function for setting/clearing errors
   function setError(message) {
@@ -49,7 +50,7 @@
     }
   }
 
-  // Helper function to get spawn location in world coordinates
+  // Function to get spawn location in world coordinates
   function getSpawnLocation(spawn) {
     if (!spawn) return { x: 0, y: 0 };
     
@@ -85,6 +86,25 @@
         x: spawn.x,
         y: spawn.y
       };
+    }
+    
+    // Raw spawn data access - if position is stored differently
+    if (spawn.raw?.position) {
+      if (spawn.raw.position.x !== undefined && spawn.raw.position.y !== undefined) {
+        return {
+          x: spawn.raw.position.x,
+          y: spawn.raw.position.y
+        };
+      } else if (spawn.raw.position.chunkX !== undefined && 
+                spawn.raw.position.chunkY !== undefined &&
+                spawn.raw.position.x !== undefined &&
+                spawn.raw.position.y !== undefined) {
+        const CHUNK_SIZE = 20;
+        return {
+          x: (spawn.raw.position.chunkX * CHUNK_SIZE) + spawn.raw.position.x,
+          y: (spawn.raw.position.chunkY * CHUNK_SIZE) + spawn.raw.position.y
+        };
+      }
     }
     
     // Fallback: Use world center coordinates if no valid position found
@@ -138,6 +158,9 @@
     // Set the first spawn as selected if none is selected yet and we have spawns
     if (!selectedSpawn && spawnList.length > 0) {
       selectedSpawn = spawnList[0];
+      
+      // REMOVED: Auto-targeting for single spawn option that was causing incorrect coordinates
+      // Now the user must explicitly click "Spawn Here" regardless of spawn count
     }
   }
 
@@ -146,7 +169,7 @@
     selectedSpawn = spawn;
   }
 
-  // Core function for handling spawn confirmation - fully updated
+  // Core function for handling spawn confirmation - fully updated to ensure consistent player identity
   async function handleSpawnSelect(spawn) {
     if (!spawn || !$user || !$game.worldKey) {
       setError('Missing required data for spawn selection');
@@ -158,12 +181,13 @@
 
       // Get the spawn location, ensuring valid coordinates
       const spawnPosition = getSpawnLocation(spawn);
-      console.log(`Spawning player at ${spawnPosition.x},${spawnPosition.y}`);
+      console.log(`Spawning player at ${spawnPosition.x},${spawnPosition.y} for spawn ID: ${spawn.id}`);
       
       // 1. Update the player data in the database (players/[uid]/worlds/[worldId])
       const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.worldKey}`);
       
       // Update player data according to the correct structure
+      // Store both user ID and spawn ID consistently
       await update(playerWorldRef, {
         alive: true,  // Mark player as alive after spawn
         lastLocation: {
@@ -171,7 +195,9 @@
           y: spawnPosition.y,
           timestamp: Date.now()
         },
-        spawnId: spawn.id || null
+        spawnId: spawn.id || null,
+        id: $user.uid, // Explicitly store the user ID
+        uid: $user.uid  // Ensure UID is explicitly stored
       });
 
       // 2. Calculate chunk coordinates for the player entity
@@ -192,15 +218,18 @@
         $user.displayName || 
         ($user.email ? $user.email.split('@')[0] : `Player ${$user.uid.substring(0, 4)}`);
       
-      // Create player entity data based on database structure
+      // Create player entity data with consistent ID fields
       await set(playerEntityRef, {
         displayName,
         lastActive: Date.now(),
         uid: $user.uid,
-        race: $game.playerData?.race || 'human'
+        id: $user.uid, // Add explicit id field matching uid
+        playerId: $user.uid, // Add explicit playerId field
+        race: $game.playerData?.race || 'human',
+        isCurrentPlayer: true // Add explicit flag for identifying current player
       });
       
-      console.log(`Player spawned at ${tileKey} in chunk ${chunkKey}`);
+      console.log(`Player spawned at ${tileKey} in chunk ${chunkKey} with uid ${$user.uid}`);
 
       // Move the map to the spawn location
       moveTarget(spawnPosition.x, spawnPosition.y);
@@ -259,21 +288,21 @@
             </div>
           {/each}
         </div>
-        
-        <div class="spawn-actions">
-          <button 
-            class="spawn-button" 
-            disabled={loading || !selectedSpawn} 
-            onclick={() => handleSpawnSelect(selectedSpawn)}
-          >
-            {#if loading}
-              <span class="spinner"></span> Spawning...
-            {:else}
-              Spawn Here
-            {/if}
-          </button>
-        </div>
       {/if}
+        
+      <div class="spawn-actions">
+        <button 
+          class="spawn-button" 
+          disabled={loading || !selectedSpawn} 
+          onclick={() => handleSpawnSelect(selectedSpawn)}
+        >
+          {#if loading}
+            <span class="spinner"></span> Spawning...
+          {:else}
+            Spawn Here
+          {/if}
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -430,5 +459,17 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  /* Add styles for auto-target indicator */
+  .auto-targeted {
+    margin-top: 8px;
+    font-size: 0.85em;
+    color: #4285F4;
+    font-style: italic;
+    background: rgba(66, 133, 244, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-align: center;
   }
 </style>

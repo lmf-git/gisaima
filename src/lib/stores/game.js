@@ -337,11 +337,70 @@ export function loadPlayerWorldData(userId, worldId) {
       const playerData = snapshot.val();
       debugLog(`Loaded player world data for ${userId}`);
       
+      // Ensure player data has consistent identity fields
+      if (playerData) {
+        playerData.id = userId;
+        playerData.uid = userId;
+        playerData.playerId = userId;
+      }
+      
       game.update(state => ({ 
         ...state, 
         playerData
       }));
-    
+
+      // Fix: When loading player data after refresh, ensure player entity is created
+      // if the player is alive and has a valid location
+      if (playerData && playerData.alive && playerData.lastLocation) {
+        try {
+          const { x, y } = playerData.lastLocation;
+          
+          // Calculate chunk coordinates
+          const CHUNK_SIZE = 20;
+          const chunkX = Math.floor(x / CHUNK_SIZE);
+          const chunkY = Math.floor(y / CHUNK_SIZE);
+          const chunkKey = `${chunkX},${chunkY}`;
+          const tileKey = `${x},${y}`;
+          
+          // Check if the player entity exists at the location
+          const playerEntityRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/players/${userId}`);
+          const playerEntitySnapshot = await dbGet(playerEntityRef);
+          
+          // If player entity doesn't exist at expected location, recreate it
+          if (!playerEntitySnapshot.exists()) {
+            debugLog(`Player entity not found after refresh, recreating at ${x},${y}`);
+            
+            // Create player entity using player data with consistent identity fields
+            await set(playerEntityRef, {
+              displayName: playerData.displayName || `Player ${userId.substring(0, 4)}`,
+              lastActive: Date.now(),
+              uid: userId,
+              id: userId, // Add explicit id field matching uid
+              playerId: userId, // Add explicit playerId field
+              race: playerData.race || 'human',
+              isCurrentPlayer: true // Add explicit flag for identifying current player
+            });
+            
+            debugLog(`Recreated player entity at ${x},${y}`);
+          } 
+          // If entity exists but might be missing identity fields, update it
+          else {
+            const entityData = playerEntitySnapshot.val();
+            // Check if any key identity fields are missing
+            if (!entityData.id || !entityData.playerId || !entityData.isCurrentPlayer) {
+              await update(playerEntityRef, {
+                id: userId,
+                playerId: userId,
+                isCurrentPlayer: true,
+                lastActive: Date.now()
+              });
+              debugLog(`Updated player entity with identity fields at ${x},${y}`);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to ensure player entity exists:", error);
+        }
+      }
     } else {
       game.update(state => ({ ...state, playerData: null }));
     }
