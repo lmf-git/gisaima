@@ -12,7 +12,7 @@
     import HamburgerIcon from '../components/icons/HamburgerIcon.svelte';
     import GuestWarning from '../components/GuestWarning.svelte';
 
-    const { children, data } = $props();
+    const { children } = $props();
 
     // State
     let mobileMenuOpen = $state(false);

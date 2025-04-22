@@ -236,37 +236,32 @@
   function isWorldJoined(worldId) {
     return joinedWorldIds.includes(worldId) || $game.joinedWorlds?.includes(worldId) || false;
   }
-
-  let unsubGameStoreFunction = null;
-  let worldsUnsubscribe;
-  
-  onMount(() => {
-    console.log('Worlds page mounted');
+  //   console.log('Worlds page mounted');
     
-    if (!unsubGameStoreFunction) {
-      initGameStore().then(cleanupFunction => {
-        unsubGameStoreFunction = cleanupFunction;
-        console.log('Game store initialized on mount');
+  //   // if (!unsubGameStoreFunction) {
+  //   //   initGameStore().then(cleanupFunction => {
+  //   //     unsubGameStoreFunction = cleanupFunction;
+  //   //     console.log('Game store initialized on mount');
         
-        if ($user?.uid) {
-          console.log('Loading joined worlds after game store init');
-          loadJoinedWorlds($user.uid);
-        }
-      });
-    }
+  //   //     if ($user?.uid) {
+  //   //       console.log('Loading joined worlds after game store init');
+  //   //       loadJoinedWorlds($user.uid);
+  //   //     }
+  //   //   });
+  //   // }
     
-    if (browser && !$userLoading && $user) {
-      console.log('Auth ready on mount, loading worlds');
-      worldsUnsubscribe = loadWorlds();
-    }
+  //   // if (browser && !$userLoading && $user) {
+  //   //   console.log('Auth ready on mount, loading worlds');
+  //   //   worldsUnsubscribe = loadWorlds();
+  //   // }
     
-    return () => {
-      if (typeof unsubGameStoreFunction === 'function') {
-        unsubGameStoreFunction();
-      }
-      if (worldsUnsubscribe) worldsUnsubscribe();
-    };
-  });
+  //   return () => {
+  //     if (typeof unsubGameStoreFunction === 'function') {
+  //       unsubGameStoreFunction();
+  //     }
+  //     if (worldsUnsubscribe) worldsUnsubscribe();
+  //   };
+  // });
   
   $effect(() => {
     if (!browser) return;
@@ -332,10 +327,9 @@
         name
       );
 
-      console.log(`Successfully joined world ${selectedWorld.id}, preparing navigation...`);
-      
       await setCurrentWorld(selectedWorld.id);
       
+      console.log(`Successfully joined world ${selectedWorld.id}, preparing navigation...`);
       console.log(`Navigating to map page for world ${selectedWorld.id}`);
 
       goto(`/map?world=${selectedWorld.id}${coordParams}`);

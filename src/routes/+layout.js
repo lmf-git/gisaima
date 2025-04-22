@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 import { initAuthListener } from '$lib/stores/user.js';
 import { initGameStore } from '$lib/stores/game.js';
 
-// Improve initialization to make it more reliable
+
 export async function load() {
   if (browser) {
     console.log('Layout load: Initializing core services');
