@@ -226,7 +226,7 @@
     if (!entity || !$currentPlayer) return false;
 
     // Check if any ID matches between the two sets
-    return entityId === playerId;
+    return entity.owner === $currentPlayer.id;
   }
   
   function canMobilize(tile) {

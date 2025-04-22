@@ -127,30 +127,10 @@
     if (!validateDisplayName()) return;
     
     submitting = true;
-    try {
-      // Convert race ID to lowercase before passing it to onConfirm
-      const raceCode = selectedRace.id.toLowerCase();
-      
-      // Get world center coordinates to pass along with the confirmation
-      const worldCenter = getWorldCenterCoordinates(world?.id);
-      
+    try {     
       // Include spawn information if available
-      await onConfirm({ 
-        ...selectedRace, 
-        race: raceCode,
-        // Include world center coordinates
-        worldCenter,
-        alive: false,  // Explicitly set alive status to false
-        displayName: displayName.trim(),
-        // Add spawn to help with later processing
-        spawnId: null, // This will be selected later in SpawnMenu
-        lastLocation: {  // Add lastLocation structure to match backup.json
-          x: worldCenter.x,
-          y: worldCenter.y,
-          timestamp: Date.now()
-        },
-        id: $user?.uid // Use user.uid as the ID parameter
-      });
+      await onConfirm(world.id, selectedRace.id, displayName.trim());
+
     } catch (error) {
       console.error('Error joining world:', error);
       submitting = false;

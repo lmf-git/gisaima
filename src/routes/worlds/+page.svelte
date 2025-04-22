@@ -346,7 +346,7 @@
     }, 300); // Match animation duration
   }
 
-  async function handleJoinWorld(raceData) {
+  async function handleJoinWorld(world, race, name) {
     if (!$user || !selectedWorld) {
       return;
     }
@@ -355,12 +355,13 @@
     const coordParams = getCoordinateParams();
     
     try {
+
       // Join the world with race information and display name
       await joinWorld(
-        selectedWorld.id, 
+        world, 
         $user.uid, 
-        raceData.id.toLowerCase(),
-        raceData.displayName
+        race,
+        name
       );
 
       console.log(`Successfully joined world ${selectedWorld.id}, preparing navigation...`);

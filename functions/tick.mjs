@@ -207,7 +207,7 @@ export const processGameTicks = onSchedule({
                         updates[playerPath] = {
                           displayName: playerUnit.displayName || playerUnit.name || `Player ${playerId}`,
                           lastActive: now,
-                          uid: playerId,
+                          id: playerId,
                           race: playerUnit.race || 'human'
                         };
                         

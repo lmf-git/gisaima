@@ -240,7 +240,6 @@ export const timeUntilNextTick = derived(
 
 // Track active subscriptions for proper cleanup
 let activeJoinedWorldsSubscription = null;
-let activePlayerWorldDataSubscription = null;
 
 // Keep track of pending requests to avoid duplicates
 const pendingWorldInfoRequests = new Map();
@@ -248,8 +247,6 @@ const pendingWorldInfoRequests = new Map();
 const worldInfoCache = new Map();
 const CACHE_TTL = 30000; // 30 seconds cache TTL
 
-// Add new tracking for world data readiness
-const worldDataReadyCallbacks = new Map();
 
 // Load player's joined worlds
 export function loadJoinedWorlds(userId) {
@@ -294,10 +291,6 @@ export function loadJoinedWorlds(userId) {
           resolve(true);
         }
         
-        // Also load the player data for the current world if it exists
-        if (currentState.worldKey) {
-          loadPlayerWorldData(userId, currentState.worldKey);
-        }
       } else {
         debugLog('No joined worlds found for user');
         game.update(state => ({ ...state, joinedWorlds: [], loading: false }));
@@ -309,137 +302,6 @@ export function loadJoinedWorlds(userId) {
       resolve(false);
     });
   });
-}
-
-// Enhanced loadPlayerWorldData to also update the player entity if needed
-export function loadPlayerWorldData(userId, worldId) {
-  if (!userId || !worldId) {
-    debugLog('Cannot load player world data: Missing user ID or world ID');
-    return null;
-  }
-
-  // Clean up existing subscription to prevent multiple listeners
-  if (activePlayerWorldDataSubscription) {
-    debugLog('Clearing previous player world data subscription');
-    activePlayerWorldDataSubscription();
-    activePlayerWorldDataSubscription = null;
-  }
-  
-  debugLog(`Loading player world data for ${userId} in world ${worldId}`);
-  
-  const playerWorldRef = ref(db, `players/${userId}/worlds/${worldId}`);
-  activePlayerWorldDataSubscription = onValue(playerWorldRef, async (snapshot) => {
-    if (snapshot.exists()) {
-      const playerData = snapshot.val();
-      debugLog(`Loaded player world data for ${userId}`);
-      
-      // Ensure player data has consistent identity fields
-      if (playerData) playerData.id = userId;
-      
-      game.update(state => ({ 
-        ...state, 
-        playerData
-      }));
-
-      // Fix: When loading player data after refresh, ensure player entity is created
-      // if the player is alive and has a valid location
-      if (playerData && playerData.alive && playerData.lastLocation) {
-        try {
-          const { x, y } = playerData.lastLocation;
-          
-          // Calculate chunk coordinates
-          const CHUNK_SIZE = 20;
-          const chunkX = Math.floor(x / CHUNK_SIZE);
-          const chunkY = Math.floor(y / CHUNK_SIZE);
-          const chunkKey = `${chunkX},${chunkY}`;
-          const tileKey = `${x},${y}`;
-          
-          // Check if the player entity exists at the location
-          const playerEntityRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/players/${userId}`);
-          const playerEntitySnapshot = await dbGet(playerEntityRef);
-          
-          // If player entity doesn't exist at expected location, recreate it
-          if (!playerEntitySnapshot.exists()) {
-            debugLog(`Player entity not found after refresh, recreating at ${x},${y}`);
-            
-            // Get display name from player data or generate one
-            const displayName = playerData.displayName || 
-              (playerData.email ? playerData.email.split('@')[0] : `Player ${userId.substring(0, 4)}`);
-            
-            // Create player entity with consistent identity fields
-            await set(playerEntityRef, {
-              displayName,
-              lastActive: Date.now(),
-              id: userId,
-              race: playerData.race || 'human'
-            });
-            
-            debugLog(`Player entity recreated at ${tileKey} in chunk ${chunkKey}`);
-          } 
-          else {
-            // If entity exists but might not have all identity fields, update it with correct fields
-            const playerEntity = playerEntitySnapshot.val();
-            
-            // Check if the entity is missing any important identity fields
-            const needsUpdate = 
-              !playerEntity.id || 
-              !playerEntity.playerId;
-              
-            if (needsUpdate) {
-              debugLog('Updating player entity with missing identity fields');
-              
-              // Update with correct identity fields while preserving other data
-              await update(playerEntityRef, {
-                id: userId,
-                uid: userId,
-                playerId: userId,
-                owner: userId,
-                lastActive: Date.now()
-              });
-            } else {
-              // Just update the lastActive timestamp
-              await update(playerEntityRef, {
-                lastActive: Date.now()
-              });
-            }
-          }
-        } catch (error) {
-          console.error("Failed to ensure player entity exists:", error);
-        }
-      }
-    } else {
-      game.update(state => ({ ...state, playerData: null }));
-    }
-  });
-  
-  return activePlayerWorldDataSubscription;
-}
-
-// Function to load the current world's info automatically with caching
-function loadCurrentWorldInfo(worldId) {
-  if (!worldId) {
-    debugLog('Cannot load current world info: No world ID provided');
-    return Promise.resolve(null);
-  }
-  
-  // Set loading state
-  game.update(state => ({ ...state, worldLoading: true, error: null }));
-  
-  return getWorldInfo(worldId)
-    .then(world => {
-      // Success - world is already set in the store by getWorldInfo
-      game.update(state => ({ ...state, worldLoading: false }));
-      return world;
-    })
-    .catch(error => {
-      console.error('Failed to load world info:', error);
-      game.update(state => ({ 
-        ...state, 
-        worldLoading: false, 
-        error: error.message || 'Failed to load world information'
-      }));
-      return null;
-    });
 }
 
 // Placeholder function that will be replaced when map.js loads
@@ -516,11 +378,6 @@ export function setCurrentWorld(worldId, world = null, callback = null) {
     }));
   }
   
-  // Also load player data if user is authenticated
-  const currentUser = getStore(userStore);
-  if (currentUser?.uid) {
-    promises.push(loadPlayerWorldData(currentUser.uid, validWorldId));
-  }
   
   if (promises.length > 0) {
     return Promise.all(promises).then(() => {
@@ -977,6 +834,8 @@ export async function joinWorld(worldId, userId, race, displayName) {
   if (!worldId || !userId) {
     throw new Error('Missing required parameters for joining world');
   }
+
+  console.log(arguments);
   
   debugLog(`User ${userId} joining world ${worldId} as ${race} with name "${displayName}"`);
   
@@ -989,19 +848,17 @@ export async function joinWorld(worldId, userId, race, displayName) {
     
     // Get world center coordinates
     const centerCoords = getWorldCenterCoordinates(worldId);
+
+    console.log('race', race);
     
     // Record the join with timestamp, race, and target position
     // Ensure all identity fields are consistently set
     await set(playerWorldRef, {
       joined: Date.now(),
-      race: race || 'human', // Default to human if race not specified
+      race: race,
       alive: false,
       displayName: displayName || '',
-      uid: userId,           // Add the uid field
       id: userId,            // Add the id field
-      playerId: userId,      // Add the playerId field
-      userId: userId,        // Add the userId field
-      owner: userId,         // Add the owner field
       // Set initial target to world center
       lastLocation: {
         x: centerCoords.x,
@@ -1048,8 +905,6 @@ export async function joinWorld(worldId, userId, race, displayName) {
     
     // Load player data for this world and wait for it to complete
     await new Promise(resolve => {
-      loadPlayerWorldData(userId, worldId);
-      
       // Check if player data is already available
       const currentState = getStore(game);
       if (currentState.playerData) {
