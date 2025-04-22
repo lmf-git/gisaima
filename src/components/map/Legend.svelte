@@ -40,7 +40,8 @@
   .legend {
     position: absolute;
     bottom: 1.5em;
-    right: 1em;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 1001;
     cursor: pointer;
     border-radius: 0.3em;
@@ -55,7 +56,7 @@
     -webkit-backdrop-filter: blur(0.5em);
     transition: all 0.2s ease;
     opacity: 0;
-    transform: translateY(1em);
+    transform: translate(-50%, 1em);
     min-width: 8em;
     text-align: center;
     font-family: var(--font-body); /* Add body font */
@@ -125,11 +126,11 @@
   @keyframes reveal {
     0% {
       opacity: 0;
-      transform: translateY(1em);
+      transform: translate(-50%, 1em);
     }
     100% {
       opacity: 1;
-      transform: translateY(0);
+      transform: translate(-50%, 0);
     }
   }
 </style>
