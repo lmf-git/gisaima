@@ -80,7 +80,7 @@
 {#if nearestSpawn && distance > DISTANCE_THRESHOLD && $game?.player?.alive}
   <button 
     class="recenter-button" 
-    on:click={recenter}
+    onclick={recenter}
     aria-label="Return to spawn point">
     <Torch extraClass="torch-icon-button" size="1.2em" />
     <span>Return to spawn</span>
