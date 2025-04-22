@@ -183,24 +183,18 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<dialog 
-     class="overlay"
-     open
-     aria-modal="true" 
-     aria-labelledby="mobilise-title"
-     transition:fade={{ duration: 200 }}>
+<div 
+  class="mobilise-modal" 
+  transition:scale={{ start: 0.95, duration: 200 }}>
   
-  <section 
-       class="popup"
-       role="document" 
-       transition:scale={{ start: 0.95, duration: 200 }}>
-    <div class="header">
-      <h2 id="mobilise-title">Mobilise Forces - {tileData?.x}, {tileData?.y}</h2>
-      <button class="close-btn" onclick={onClose} aria-label="Close mobilise dialog">
-        <Close size="1.5em" />
-      </button>
-    </div>
-    
+  <header class="modal-header">
+    <h2 id="mobilise-title">Mobilise Forces - {tileData?.x}, {tileData?.y}</h2>
+    <button class="close-btn" onclick={onClose} aria-label="Close mobilise dialog">
+      <Close size="1.5em" />
+    </button>
+  </header>
+  
+  <div class="content">
     {#if tileData}
       <div class="location-info">
         <div class="terrain">
@@ -217,22 +211,20 @@
       
       <div class="mobilise-content">
         <div class="group-details">
-          <div class="option-row">
-            <label for="group-name" class="full-width">
-              <span>Group Name:</span>
-              <input 
-                type="text" 
-                id="group-name" 
-                bind:value={groupName} 
-                placeholder="Enter group name"
-                class="text-input"
-                onkeydown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                  }
-                }}
-              />
-            </label>
+          <div class="group-name-row">
+            <label for="group-name">Group Name:</label>
+            <input 
+              type="text" 
+              id="group-name" 
+              bind:value={groupName} 
+              placeholder="Enter group name"
+              class="text-input"
+              onkeydown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                }
+              }}
+            />
           </div>
         </div>
         
@@ -360,64 +352,32 @@
     {:else}
       <p class="no-tile">No tile selected</p>
     {/if}
-  </section>
-  
-  <button 
-    class="overlay-dismiss-button"
-    onclick={onClose}
-    aria-label="Close dialog">
-  </button>
-</dialog>
+  </div>
+</div>
 
 <style>
-  .overlay-dismiss-button {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    background: transparent;
-    border: none;
-    z-index: -1; /* Behind the popup but above the overlay backdrop */
-  }
-
-  .overlay {
+  .mobilise-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1200;
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
-    padding: 0;
-    margin: 0;
-    border: none;
-  }
-  
-  .popup {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 36em;
+    max-height: 90vh;
     background: white;
     border-radius: 0.5em;
     box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
-    width: 90%;
-    max-width: 30em;
-    max-height: 90vh;
+    overflow: hidden;
+    z-index: 1000;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
     font-family: var(--font-body);
   }
   
-  .header {
+  .modal-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     padding: 0.8em 1em;
     background: #f5f5f5;
     border-bottom: 1px solid #e0e0e0;
@@ -431,11 +391,10 @@
     font-family: var(--font-heading);
   }
   
-  h3 {
-    margin: 0 0 0.8em 0;
-    font-size: 1.1em;
-    font-weight: 500;
-    color: #333;
+  .content {
+    padding: 1em;
+    overflow-y: auto;
+    max-height: calc(90vh - 4em);
   }
   
   .close-btn {
@@ -453,8 +412,9 @@
   }
   
   .location-info {
-    padding: 1em;
+    padding-bottom: 1em;
     border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 1em;
   }
   
   .terrain {
@@ -483,12 +443,9 @@
   }
   
   .mobilise-content {
-    padding: 1em;
     display: flex;
     flex-direction: column;
     gap: 1em;
-    max-height: 60vh;
-    overflow-y: auto;
   }
   
   .group-details {
@@ -496,19 +453,36 @@
     border-bottom: 1px solid #e0e0e0;
   }
   
+  .group-name-row {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    width: 100%;
+  }
+
+  .group-name-row label {
+    font-weight: 500;
+    min-width: 6em;
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
   .text-input {
     flex: 1;
-    padding: 0.5em;
+    padding: 0.7em;
     border: 1px solid #ccc;
     border-radius: 0.3em;
     font-family: var(--font-body);
+    font-size: 0.95em;
+    background-color: #f9f9f9;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
   }
   
-  .full-width {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5em;
+  .text-input:focus {
+    outline: none;
+    border-color: #4285f4;
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+    background-color: #fff;
   }
   
   .units-section {
@@ -672,7 +646,6 @@
   .cancel-btn, .mobilise-btn {
     padding: 0.7em 1.2em;
     border-radius: 0.3em;
-    border: none;
     cursor: pointer;
     font-size: 1em;
     font-weight: 500;
@@ -692,6 +665,7 @@
   .mobilise-btn {
     background-color: #4285f4;
     color: white;
+    border: none;
   }
   
   .mobilise-btn:hover:not(:disabled) {
@@ -710,14 +684,27 @@
     font-style: italic;
   }
   
+  h3 {
+    margin: 0 0 0.8em 0;
+    font-size: 1.1em;
+    font-weight: 500;
+    color: #333;
+  }
+  
   @media (max-width: 480px) {
-    .popup {
+    .mobilise-modal {
       width: 95%;
       max-height: 80vh;
     }
     
     h2 {
       font-size: 1.1em;
+    }
+    
+    .group-name-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5em;
     }
     
     .button-row {
