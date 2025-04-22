@@ -73,43 +73,10 @@ export const currentPlayer = derived(
     if (!$game.worldKey) return null;
     if (!$game.player) return null;
     
-    try {
-      // Use the stored display name if available, otherwise fall back to auth
-      let displayName = $game.player.displayName;
-      
-      // If no stored display name, use fallback logic
-      if (!displayName) {
-        if ($user.isAnonymous) {
-          displayName = `Guest ${$user.uid.substring(0, 4)}`;
-        } else {
-          displayName = $user.displayName || ($user.email ? $user.email.split('@')[0] : `Player ${$user.uid.substring(0, 4)}`);
-        }
-      }
-      
-      // Base player info from user auth data
-      return {
-        id: $user.uid,         // Add explicit id field for component checks
-        displayName: displayName,
-        email: $user.email,
-        isAnonymous: $user.isAnonymous,
-        guest: $user.isAnonymous,
-        // Current world context
-        world: $game.worldKey,
-        worldName: $game.worlds[$game.worldKey]?.name,
-        // Player status in this world
-        alive: $game.player.alive || false,
-        lastLocation: $game.player.lastLocation || null,
-        // Race information
-        race: $game.player.race,
-        // Joined timestamp
-        joinedAt: $game.player.joined || null,
-        // For convenience, include all world-specific player data
-        worldData: $game.player
-      };
-    } catch (e) {
-      console.error("Error in currentPlayer derived store:", e);
-      return null;
-    }
+    return {
+      id: $user.uid,
+      ...$game.player
+    };
   }
 );
 
