@@ -155,13 +155,7 @@
         };
       });
 
-    // Set the first spawn as selected if none is selected yet and we have spawns
-    if (!selectedSpawn && spawnList.length > 0) {
-      selectedSpawn = spawnList[0];
-      
-      // REMOVED: Auto-targeting for single spawn option that was causing incorrect coordinates
-      // Now the user must explicitly click "Spawn Here" regardless of spawn count
-    }
+    // Removed auto-selection of first spawn - user must explicitly select a spawn
   }
 
   // Handle spawn selection

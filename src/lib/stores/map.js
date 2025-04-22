@@ -718,9 +718,7 @@ export function moveTarget(newX, newY) {
   }
 
   // Clear any pending timeout
-  if (moveTargetTimeout) {
-    clearTimeout(moveTargetTimeout);
-  }
+  if (moveTargetTimeout) clearTimeout(moveTargetTimeout);
 
   // Debounce rapid updates
   moveTargetTimeout = setTimeout(() => {
@@ -730,19 +728,13 @@ export function moveTarget(newX, newY) {
       target: { x, y },
     }));
 
-    // Don't clear highlightedCoords here - let components manage that
-
     // Update URL to reflect the new position - with a lower priority
     // Only update URL for significant moves (more than 3 tiles) or after longer pauses
-    if (!isInternalUrlUpdate) {
-      updateUrlWithCoordinates(x, y);
-    }
+    if (!isInternalUrlUpdate) updateUrlWithCoordinates(x, y);
 
     // Save target position to localStorage (less frequently)
     const worldId = currentState.world;
-    if (worldId) {
-      saveTargetToLocalStorage(worldId, x, y);
-    }
+    if (worldId) saveTargetToLocalStorage(worldId, x, y);
 
     moveTargetTimeout = null;
   }, MOVE_TARGET_DEBOUNCE);
