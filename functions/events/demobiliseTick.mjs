@@ -6,6 +6,41 @@
 import { logger } from "firebase-functions";
 
 /**
+ * Helper function to merge items by combining quantities of identical items
+ * @param {Array} existingItems Array of existing items
+ * @param {Array} newItems Array of new items to merge
+ * @returns {Array} Merged array with combined quantities for identical items
+ */
+function mergeItems(existingItems, newItems) {
+  // Create a map to track items by their unique properties
+  const itemMap = new Map();
+  
+  // First, add all existing items to the map
+  existingItems.forEach(item => {
+    const key = `${item.name}|${item.type || 'generic'}|${item.rarity || 'common'}`;
+    itemMap.set(key, { ...item, quantity: item.quantity || 1 });
+  });
+  
+  // Then merge in new items, combining quantities for identical items
+  newItems.forEach(item => {
+    const key = `${item.name}|${item.type || 'generic'}|${item.rarity || 'common'}`;
+    if (itemMap.has(key)) {
+      // Item exists, combine quantities
+      const existingItem = itemMap.get(key);
+      existingItem.quantity = (existingItem.quantity || 1) + (item.quantity || 1);
+      // Preserve the original ID
+      itemMap.set(key, existingItem);
+    } else {
+      // New item, add to map
+      itemMap.set(key, { ...item });
+    }
+  });
+  
+  // Convert map back to array
+  return Array.from(itemMap.values());
+}
+
+/**
  * Process demobilizing groups for a given world
  * 
  * @param {string} worldId The ID of the world to process
@@ -49,8 +84,8 @@ export function processDemobilization(worldId, updates, group, chunkKey, tileKey
           tile.structure.banks[group.owner] : [];
       }
     
-      // Combine existing bank items with new items from group
-      updates[bankPath] = [...existingBankItems, ...group.items];
+      // Combine existing bank items with new items from group, merging identical items
+      updates[bankPath] = mergeItems(existingBankItems, group.items);
     } else {
       // Store in shared storage (default behavior)
       const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/items`;
@@ -59,9 +94,9 @@ export function processDemobilization(worldId, updates, group, chunkKey, tileKey
       if (!tile.structure.items) {
         updates[structurePath] = group.items;
       } else {
-        // Append group items to structure items
-        const updatedItems = [...(Array.isArray(tile.structure.items) ? tile.structure.items : []), ...group.items];
-        updates[structurePath] = updatedItems;
+        // Merge group items with structure items, combining identical items
+        const existingItems = Array.isArray(tile.structure.items) ? tile.structure.items : [];
+        updates[structurePath] = mergeItems(existingItems, group.items);
       }
     }
     
