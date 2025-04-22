@@ -101,14 +101,6 @@
     }
 </script>
 
-<!-- Global loading indicator for core systems -->
-{#if browser && (!$isAuthReady || !$game.initialized)}
-  <div class="initializing-overlay">
-    <div class="loading-spinner"></div>
-    <div class="loading-text">Loading...</div>
-  </div>
-{/if}
-
 <div class={`app ${isMapPage ? 'map' : ''}`}>
     <header class="header">
         <!-- Simplified logo visibility - never show on home page -->
@@ -887,38 +879,5 @@
             flex-direction: row; /* Change to horizontal layout on desktop */
             align-items: flex-start; /* Align items to the top in the row */
         }
-    }
-
-    .initializing-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(10, 25, 47, 0.9);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-    }
-    
-    .loading-spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        border-top-color: var(--color-pale-green);
-        animation: spin 1s linear infinite;
-    }
-    
-    .loading-text {
-        margin-top: 1rem;
-        font-size: 1.2rem;
-        color: var(--color-pale-green);
-    }
-    
-    @keyframes spin {
-        to { transform: rotate(360deg); }
     }
 </style>
