@@ -32,12 +32,11 @@
     };
   });
 
-  // Import race icons
-  import Human from '$components/icons/Human.svelte';
-  import Elf from '$components/icons/Elf.svelte';
-  import Dwarf from '$components/icons/Dwarf.svelte';
-  import Goblin from '$components/icons/Goblin.svelte';
-  import Fairy from '$components/icons/Fairy.svelte';
+  import Elf from '../../components/icons/Elf.svelte';
+  import Dwarf from '../../components/icons/Dwarf.svelte';
+  import Goblin from '../../components/icons/Goblin.svelte';
+  import Fairy from '../../components/icons/Fairy.svelte';
+  import Human from '../../components/icons/Human.svelte';
 </script>
 
 <svelte:head>
