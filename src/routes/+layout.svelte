@@ -8,10 +8,7 @@
     import DiscordIcon from '../components/icons/DiscordIcon.svelte';
     import GitHubIcon from '../components/icons/GitHubIcon.svelte'; 
     import MobileMenu from '../components/MobileMenu.svelte';
-    import { onMount, onDestroy } from 'svelte';
     import { game, isAuthReady } from '../lib/stores/game.js';
-    import { ref, onValue } from "firebase/database";
-    import { db } from '../lib/firebase/database.js';
     import HamburgerIcon from '../components/icons/HamburgerIcon.svelte';
     import GuestWarning from '../components/GuestWarning.svelte';
 
@@ -21,9 +18,6 @@
     let mobileMenuOpen = $state(false);
     let menuAnimatingOut = $state(false);
     let logoAnimatingOut = $state(false);
-    let playerData = $state(null);
-    let playerLoading = $state(false);
-    let playerUnsubscribe = null;
     let showGuestWarning = $state(false);
     let guestWarningAnimatingOut = $state(false);
     let hasShownGuestWarning = $state(false);
@@ -74,20 +68,18 @@
         }
     }
 
-    onMount(() => {       
-        if (browser) {
-            hasShownGuestWarning = localStorage.getItem('guest-warning-shown') === 'true';
-        }
-    });
-    
-
     // Derived state for UI loading conditions
     const headerLoading = $derived($userLoading || !$isAuthReady);
 
     // Show guest warning for anonymous users who haven't seen it yet
     $effect(() => {
-        if (browser && !$userLoading && $user?.isAnonymous && !hasShownGuestWarning && 
-            !isMapPage && !isLoginPage && !isSignupPage) {
+        if (!browser) return;
+        const seen = localStorage.getItem('guest-warning-shown') === 'true';
+         if (
+            $user && 
+            $user?.isAnonymous && !seen && 
+            !isMapPage && !isLoginPage && !isSignupPage
+        ) {
             // Wait a bit before showing the warning to avoid overwhelming new users
             setTimeout(() => showGuestWarning = true, 3000);
         }
