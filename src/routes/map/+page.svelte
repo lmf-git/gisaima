@@ -870,7 +870,7 @@
             />
         {/if}
         
-        {#if ($user && $game.player?.alive)}
+        {#if ($user && !$game.player?.alive)}
             <SpawnMenu />
         {/if}
 
