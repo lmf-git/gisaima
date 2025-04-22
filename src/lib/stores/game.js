@@ -7,10 +7,6 @@ import { userStore, isAuthReady as userAuthReady } from './user';
 // Constants for localStorage
 const CURRENT_WORLD_KEY = 'gisaima-current-world'; // Keeping this for backward compatibility with localStorage
 
-// New constants for controlling debug output
-const DEBUG_MODE = false; // Set to true to enable verbose logging
-const debugLog = (...args) => DEBUG_MODE && console.log(...args);
-
 // Use the imported auth ready store instead of creating a new one
 export { userAuthReady as isAuthReady };
 
@@ -170,13 +166,11 @@ const pendingWorldInfoRequests = new Map();
 // Load player's joined worlds
 export function loadJoinedWorlds(userId) {
   if (!userId) {
-    debugLog('Cannot load joined worlds: No user ID provided');
     return Promise.resolve([]);
   }
   
   // Clean up existing subscription to prevent multiple listeners
   if (activeJoinedWorldsSubscription) {
-    debugLog('Clearing previous joined worlds subscription');
     activeJoinedWorldsSubscription();
     activeJoinedWorldsSubscription = null;
   }
@@ -185,7 +179,6 @@ export function loadJoinedWorlds(userId) {
   
   return new Promise((resolve) => {
     const userWorldsRef = ref(db, `players/${userId}/worlds`);
-    debugLog('User worlds path:', `players/${userId}/worlds`);
     
     activeJoinedWorldsSubscription = onValue(userWorldsRef, (snapshot) => {
       console.log('🌍 User joined worlds snapshot received:', snapshot.exists() ? `Found ${Object.keys(snapshot.val()).length} worlds` : 'No worlds joined');
@@ -199,7 +192,6 @@ export function loadJoinedWorlds(userId) {
         // If we have a worldKey but no info for it, load it
         const currentState = get(game);
         if (currentState.worldKey && !currentState.world[currentState.worldKey]) {
-          debugLog('Loading info for current world:', currentState.worldKey);
           getWorldInfo(currentState.worldKey)
             .then(() => resolve(true))
             .catch(err => {
@@ -267,7 +259,6 @@ export function listenToPlayerWorldData(userId, worldKey) {
 export function setCurrentWorld(worldId, world = null, callback = null) {
   // Validate the world ID directly
   if (!worldId) {
-    debugLog('Cannot set current world: No valid world ID provided');
     if (callback) callback(null);
     return Promise.resolve(null);
   }
@@ -281,11 +272,8 @@ export function setCurrentWorld(worldId, world = null, callback = null) {
   
   const validWorldId = String(worldId);
   
-  debugLog(`Setting current world to: ${validWorldId}`);
-  
   // Save to localStorage if in browser
   if (browser) {
-    debugLog(`Saved world ${validWorldId} to localStorage`);
     localStorage.setItem(CURRENT_WORLD_KEY, validWorldId);
   }
   
@@ -309,7 +297,6 @@ export function setCurrentWorld(worldId, world = null, callback = null) {
   const worldToUse = world || currentState.world[validWorldId];
   
   if (!worldToUse) {
-    debugLog(`Loading info for current world: ${validWorldId}`);
     promises.push(getWorldInfo(validWorldId)
       .then(info => {
         return info;
@@ -334,7 +321,6 @@ export function setCurrentWorld(worldId, world = null, callback = null) {
 export function getWorldInfo(worldId) {
   // Validate the world ID directly
   if (!worldId) {
-    debugLog('Cannot get world info: No valid world ID provided');
     return Promise.resolve(null);
   }
   
@@ -346,11 +332,8 @@ export function getWorldInfo(worldId) {
   
   const validWorldId = String(worldId);
   
-  debugLog(`Getting world info for: ${validWorldId}`);
-  
   // Check for pending request for this world to avoid duplicates
   if (pendingWorldInfoRequests.has(validWorldId)) {
-    debugLog(`Using pending request for world ${validWorldId}`);
     return pendingWorldInfoRequests.get(validWorldId);
   }
   
@@ -362,7 +345,6 @@ export function getWorldInfo(worldId) {
   }));
   
   // Directly fetch from the database
-  debugLog(`Fetching world info from database for ${validWorldId}`);
   const worldRef = ref(db, `worlds/${validWorldId}/info`);
   
   // Create a promise for this request and store it
@@ -371,13 +353,11 @@ export function getWorldInfo(worldId) {
       let worldInfo = null;
       
       if (snapshot.exists()) {
-        debugLog(`World info snapshot for ${validWorldId}: Data exists`);
         worldInfo = snapshot.val();
         
         // Enrich with spawn data - standardize format
         const spawns = getWorldSpawnPoints(validWorldId, worldInfo);
         if (spawns.length > 0) {
-          debugLog(`World ${validWorldId} has ${spawns.length} spawn points (format: chunk-based)`);
           worldInfo.spawns = spawns.reduce((acc, spawn) => {
             const key = spawn.position ? 
               `${spawn.position.chunkX || 0}:${spawn.position.chunkY || 0}:${spawn.position.x || 0}:${spawn.position.y || 0}` : 
@@ -398,9 +378,7 @@ export function getWorldInfo(worldId) {
           }
         }));
         
-        debugLog(`Successfully loaded world info for ${validWorldId}`);
       } else {
-        debugLog(`No world info found for ${validWorldId}`);
         game.update(state => ({
           ...state,
           worldLoading: false,
@@ -440,7 +418,6 @@ export function getWorldSpawnPoints(worldId) {
   const world = currentGameState.world?.[worldId];
   
   if (!world) {
-    debugLog(`No world data available for ${worldId} to get spawn points`);
     return [];
   }
   
@@ -477,14 +454,12 @@ export function getWorldSpawnPoints(worldId) {
       return { ...spawn, id: spawn.id || key, key };
     });
     
-    debugLog(`Found ${spawns.length} spawn points in world.info.spawns:`, spawns);
     return spawns;
   }
   
   // Legacy location: world.spawns
   if (world.spawns) {
     const spawns = Object.values(world.spawns);
-    debugLog(`[DEBUG] Found ${spawns.length} spawn points in world.spawns:`, spawns);
     return spawns;
   }
   
@@ -509,7 +484,6 @@ export function getWorldSpawnPoints(worldId) {
       });
       
       if (spawnsFromChunks.length > 0) {
-        debugLog(`[DEBUG] Found ${spawnsFromChunks.length} spawn points in chunks:`, spawnsFromChunks);
         return spawnsFromChunks;
       }
     } catch (e) {
@@ -517,7 +491,6 @@ export function getWorldSpawnPoints(worldId) {
     }
   }
   
-  debugLog(`[DEBUG] No spawn points defined for world ${worldId}`);
   return [];
 }
 
@@ -525,7 +498,6 @@ export function getWorldSpawnPoints(worldId) {
 export function getWorldCenterCoordinates(worldId, world = null) {
   // Validate the world ID directly
   if (!worldId) {
-    debugLog('Cannot get world center: No valid world ID provided');
     return { x: 0, y: 0 };
   }
   
@@ -540,14 +512,11 @@ export function getWorldCenterCoordinates(worldId, world = null) {
   // Use provided world or try to get from store
   const info = world || (get(game).world?.[validWorldId]);
   if (!info) {
-    debugLog(`No world info available for ${validWorldId}, using default center (0,0)`);
     return { x: 0, y: 0 };
   }
   
   // If world has explicit center coordinates, use those
   if (info.center && typeof info.center.x === 'number' && typeof info.center.y === 'number') {
-    // Log with world ID and exact values to help debugging
-    debugLog(`Using explicit center for world ${validWorldId}: (${info.center.x}, ${info.center.y})`);
     return { 
       x: info.center.x, 
       y: info.center.y 
@@ -555,7 +524,6 @@ export function getWorldCenterCoordinates(worldId, world = null) {
   }
   
   // For worlds without explicit center, return 0,0
-  debugLog(`No explicit center for world ${validWorldId}, using default (0,0)`);
   return { x: 0, y: 0 };
 }
 
@@ -620,7 +588,6 @@ export function initGameStore() {
     });
   }
   
-  debugLog('Initializing game store');
   gameStoreInitialized = true;
   
   // Create a new initialization promise with proper variable initialization
@@ -677,8 +644,6 @@ export function initGameStore() {
                 savedWorldId = localStorage.getItem(CURRENT_WORLD_KEY);
                 console.log('🌎 World key from localStorage:', savedWorldId);
                 if (savedWorldId) {
-                  debugLog(`Found saved world: ${savedWorldId}`);
-                  
                   // Update store with saved world ID
                   game.update(state => ({
                     ...state,
@@ -770,8 +735,6 @@ export async function joinWorld(worldId, userId, race, displayName) {
   }
 
   console.log(arguments);
-  
-  debugLog(`User ${userId} joining world ${worldId} as ${race} with name "${displayName}"`);
   
   try {
     // Set loading state

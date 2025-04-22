@@ -29,7 +29,7 @@ export const isAuthReady = writable(false); // Add explicit isAuthReady store
 let authUnsubscribe = null;
 
 // Initialize auth state listener with better state tracking
-export const initAuthListener = () => {
+export const setup = () => {
   if (!browser) {
     loading.set(false);
     isAuthReady.set(true); // Mark as ready even in SSR

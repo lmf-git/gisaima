@@ -1,5 +1,4 @@
 <script>
-  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import { user, loading as userLoading } from '../../lib/stores/user.js';
@@ -7,7 +6,6 @@
     game, 
     joinWorld, 
     setCurrentWorld, 
-    initGameStore,
     getWorldInfo,
     getWorldCenterCoordinates,
     loadJoinedWorlds
@@ -37,6 +35,74 @@
       joinedWorldIds = [...$game.joinedWorlds];
     }
   });
+
+
+  $effect(() => {
+    if (!browser) return;
+    
+    if (!$userLoading) {
+      if ($user === null) {
+        console.log('No user, redirecting to login');
+        goto('/login?redirect=/worlds');
+      } else if ($user && !loadingInitiated) {
+        console.log('User authenticated, loading worlds');
+        loadWorlds();
+      }
+    }
+  });
+
+  function getCoordinateParams() {
+    if (!browser) return '';
+    const url = $page?.url;
+    if (!url) return '';
+    
+    const x = url.searchParams.get('x');
+    const y = url.searchParams.get('y');
+    
+    if (x !== null && y !== null) {
+      return `&x=${x}&y=${y}`;
+    }
+    return '';
+  }
+
+  function selectWorld(world) {
+    const coordParams = getCoordinateParams();
+    
+    if (isWorldJoined(world.id)) {
+      setCurrentWorld(world.id, world);
+      goto(`/map?world=${world.id}${coordParams}`);
+      return;
+    }
+    selectedWorld = world;
+    showConfirmation = true;
+  }
+  
+  async function handleJoinWorld(world, race, name) {
+    if (!$user || !selectedWorld) {
+      return;
+    }
+    
+    const coordParams = getCoordinateParams();
+    
+    try {
+      await joinWorld(
+        world, 
+        $user.uid, 
+        race,
+        name
+      );
+
+      await setCurrentWorld(selectedWorld.id);
+      
+      console.log(`Successfully joined world ${selectedWorld.id}, preparing navigation...`);
+      console.log(`Navigating to map page for world ${selectedWorld.id}`);
+
+      goto(`/map?world=${selectedWorld.id}${coordParams}`);
+    } catch (error) {
+      console.error('Failed to join world:', error);
+      closeConfirmation();
+    }
+  }
 
   function loadWorlds() {
     if (!browser || !$user) {
@@ -236,73 +302,8 @@
   function isWorldJoined(worldId) {
     return joinedWorldIds.includes(worldId) || $game.joinedWorlds?.includes(worldId) || false;
   }
-  //   console.log('Worlds page mounted');
-    
-  //   // if (!unsubGameStoreFunction) {
-  //   //   initGameStore().then(cleanupFunction => {
-  //   //     unsubGameStoreFunction = cleanupFunction;
-  //   //     console.log('Game store initialized on mount');
-        
-  //   //     if ($user?.uid) {
-  //   //       console.log('Loading joined worlds after game store init');
-  //   //       loadJoinedWorlds($user.uid);
-  //   //     }
-  //   //   });
-  //   // }
-    
-  //   // if (browser && !$userLoading && $user) {
-  //   //   console.log('Auth ready on mount, loading worlds');
-  //   //   worldsUnsubscribe = loadWorlds();
-  //   // }
-    
-  //   return () => {
-  //     if (typeof unsubGameStoreFunction === 'function') {
-  //       unsubGameStoreFunction();
-  //     }
-  //     if (worldsUnsubscribe) worldsUnsubscribe();
-  //   };
-  // });
   
-  $effect(() => {
-    if (!browser) return;
-    
-    if (!$userLoading) {
-      if ($user === null) {
-        console.log('No user, redirecting to login');
-        goto('/login?redirect=/worlds');
-      } else if ($user && !loadingInitiated) {
-        console.log('User authenticated, loading worlds');
-        loadWorlds();
-      }
-    }
-  });
 
-  function getCoordinateParams() {
-    if (!browser) return '';
-    const url = $page?.url;
-    if (!url) return '';
-    
-    const x = url.searchParams.get('x');
-    const y = url.searchParams.get('y');
-    
-    if (x !== null && y !== null) {
-      return `&x=${x}&y=${y}`;
-    }
-    return '';
-  }
-
-  function selectWorld(world) {
-    const coordParams = getCoordinateParams();
-    
-    if (isWorldJoined(world.id)) {
-      setCurrentWorld(world.id, world);
-      goto(`/map?world=${world.id}${coordParams}`);
-      return;
-    }
-    selectedWorld = world;
-    showConfirmation = true;
-  }
-  
   function closeConfirmation() {
     animatingOut = true;
     setTimeout(() => {
@@ -312,32 +313,7 @@
     }, 300);
   }
 
-  async function handleJoinWorld(world, race, name) {
-    if (!$user || !selectedWorld) {
-      return;
-    }
-    
-    const coordParams = getCoordinateParams();
-    
-    try {
-      await joinWorld(
-        world, 
-        $user.uid, 
-        race,
-        name
-      );
 
-      await setCurrentWorld(selectedWorld.id);
-      
-      console.log(`Successfully joined world ${selectedWorld.id}, preparing navigation...`);
-      console.log(`Navigating to map page for world ${selectedWorld.id}`);
-
-      goto(`/map?world=${selectedWorld.id}${coordParams}`);
-    } catch (error) {
-      console.error('Failed to join world:', error);
-      closeConfirmation();
-    }
-  }
 </script>
 
 <div class="worlds-page">
