@@ -107,6 +107,14 @@
             FAQ
           </button>
         </li>
+        <li>
+          <button 
+            class:active={activeSection === 'game-mechanics'}
+            onclick={() => scrollToSection('game-mechanics')}
+          >
+            Game Mechanics
+          </button>
+        </li>
       </ul>
     </nav>
   </aside>
@@ -379,6 +387,111 @@
           Yes, you can update your display name in your account settings.
         </p>
       </div>
+    </section>
+
+    <section id="game-mechanics" class="guide-section">
+      <h2>Game Mechanics</h2>
+      <p>
+        Gisaima uses several core mechanics that drive gameplay. Understanding these systems 
+        is essential for effective strategy.
+      </p>
+      
+      <h3>Tick-Based Gameplay</h3>
+      <p>
+        The game world operates on a "tick" system - regular time intervals when various actions 
+        are processed. World speeds can vary, affecting how frequently ticks occur:
+      </p>
+      <ul>
+        <li>Standard worlds: 1x speed (ticks every minute)</li>
+        <li>Fast worlds: Higher speeds mean more frequent ticks</li>
+        <li>The time until the next tick is displayed in the interface</li>
+      </ul>
+      
+      <h3>Group Management</h3>
+      <p>
+        Managing your units through the group system is essential for effective gameplay:
+      </p>
+      
+      <h4>Mobilization & Demobilization</h4>
+      <p>
+        <strong>Mobilization</strong> allows a player to form their individual units into an organized group:
+      </p>
+      <ul>
+        <li>Creating a group takes one tick cycle to complete</li>
+        <li>Mobilized groups can move, gather resources, and engage in battles</li>
+        <li>Groups have greater strategic flexibility than individual units</li>
+      </ul>
+      <p>
+        <strong>Demobilization</strong> is the opposite process, disbanding a group back into individual units:
+      </p>
+      <ul>
+        <li>Useful when you want to separate from your group</li>
+        <li>Takes one tick cycle to complete</li>
+        <li>Allows units to act independently again</li>
+      </ul>
+      
+      <h4>Movement System</h4>
+      <p>
+        Groups can be directed to move across the map:
+      </p>
+      <ul>
+        <li>Movement occurs in steps, with each step taking one tick</li>
+        <li>You can plot complex paths with multiple waypoints</li>
+        <li>Different terrain types may affect movement speed</li>
+      </ul>
+      
+      <h3>Resource Gathering</h3>
+      <p>
+        Gathering resources is crucial for building and upgrading:
+      </p>
+      <ul>
+        <li>Groups can gather resources from terrain and special resource nodes</li>
+        <li>Gathering takes time, with progress tracked across ticks</li>
+        <li>Different terrain types yield different resources</li>
+        <li>Rarer terrain produces more valuable resources</li>
+        <li>Gathered resources can be stored in your inventory or at structures</li>
+      </ul>
+      
+      <h3>Battle System</h3>
+      <p>
+        Battles in Gisaima occur when hostile groups encounter each other:
+      </p>
+      <ul>
+        <li>Battles are divided into sides (typically two opposing forces)</li>
+        <li>Each side's power is calculated based on unit quantity and quality</li>
+        <li>Battles progress over time, with resolution occurring on a tick</li>
+        <li>Players can join ongoing battles with their groups</li>
+        <li>Victory is determined by many factors including total power, terrain advantages, and tactics</li>
+        <li>Winners may claim resources, territory, or other rewards</li>
+      </ul>
+      
+      <h3>Items and Inventory</h3>
+      <p>
+        Items come in various types and rarity levels:
+      </p>
+      <ul class="rarity-list">
+        <li><span class="rarity-tag common">Common</span> Basic resources and items</li>
+        <li><span class="rarity-tag uncommon">Uncommon</span> Enhanced items with slight advantages</li>
+        <li><span class="rarity-tag rare">Rare</span> Valuable items with significant benefits</li>
+        <li><span class="rarity-tag epic">Epic</span> Powerful items that can change gameplay</li>
+        <li><span class="rarity-tag legendary">Legendary</span> Extremely rare items with major advantages</li>
+        <li><span class="rarity-tag mythic">Mythic</span> The rarest and most powerful items</li>
+      </ul>
+      <p>
+        Items can be carried by groups, stored at structures, or used for various purposes including
+        crafting, building, and enhancing abilities.
+      </p>
+      
+      <h3>Advanced Structure Features</h3>
+      <p>
+        Structures can have special features that provide unique advantages:
+      </p>
+      <ul>
+        <li><strong>Banks:</strong> Store items safely at some structures</li>
+        <li><strong>Specialized Facilities:</strong> Some structures contain facilities like forges or breweries</li>
+        <li><strong>Resource Production:</strong> Certain structures may produce resources over time</li>
+        <li><strong>Strategic Bonuses:</strong> Structures can provide defensive or offensive bonuses</li>
+      </ul>
     </section>
   </main>
 </div>
