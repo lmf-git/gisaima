@@ -25,9 +25,7 @@
   let spawnList = $state([]);
 
   // Helper state variables
-  let wasLoading = $state(false);
   let hasSpawnsData = $state(false);
-  let autoTargeted = $state(false);
 
   // Log game store state when open
   console.log('🎮 Game store in SpawnMenu:', $game);
@@ -51,127 +49,43 @@
   // Helper function for setting loading state
   function setLoading(isLoading) {
     loading = isLoading;
-    if (isLoading) {
-      wasLoading = true;
-    }
   }
 
-  // Function to get spawn location in world coordinates
-  function getSpawnLocation(spawn) {
-    if (!spawn) return { x: 0, y: 0 };
-    
-    // Check for spawn with position info in various formats
-    if (spawn.position) {
-      // Format 1: position with chunkX,chunkY,x,y (from info.spawns)
-      const CHUNK_SIZE = 20; // Make sure this matches your chunk size
-      
-      // If position has chunkX/Y and x/y, calculate global coordinates
-      if (spawn.position.chunkX !== undefined && 
-          spawn.position.chunkY !== undefined && 
-          spawn.position.x !== undefined && 
-          spawn.position.y !== undefined) {
-        
-        return {
-          x: (spawn.position.chunkX * CHUNK_SIZE) + spawn.position.x,
-          y: (spawn.position.chunkY * CHUNK_SIZE) + spawn.position.y
-        };
-      }
-      
-      // Format 2: position with direct x,y (from directly stored position)
-      if (spawn.position.x !== undefined && spawn.position.y !== undefined) {
-        return {
-          x: spawn.position.x,
-          y: spawn.position.y
-        };
-      }
-    }
-    
-    // Format 3: direct x,y properties
-    if (spawn.x !== undefined && spawn.y !== undefined) {
-      return {
-        x: spawn.x,
-        y: spawn.y
-      };
-    }
-    
-    // Raw spawn data access - if position is stored differently
-    if (spawn.raw?.position) {
-      if (spawn.raw.position.x !== undefined && spawn.raw.position.y !== undefined) {
-        return {
-          x: spawn.raw.position.x,
-          y: spawn.raw.position.y
-        };
-      } else if (spawn.raw.position.chunkX !== undefined && 
-                spawn.raw.position.chunkY !== undefined &&
-                spawn.raw.position.x !== undefined &&
-                spawn.raw.position.y !== undefined) {
-        const CHUNK_SIZE = 20;
-        return {
-          x: (spawn.raw.position.chunkX * CHUNK_SIZE) + spawn.raw.position.x,
-          y: (spawn.raw.position.chunkY * CHUNK_SIZE) + spawn.raw.position.y
-        };
-      }
-    }
-    
-    // Fallback: Use world center coordinates if no valid position found
-    console.warn('No valid position found for spawn', spawn);
-    return getWorldCenterCoordinates($game.worldKey);
-  }
-
-  // Process spawn data into a consistent format for display
+  // Process spawn data for display
   function processSpawnData() {
-    if (!$game.worldKey || !$game.world[$game.worldKey]) {
-      spawnList = [];
-      hasSpawnsData = false;
-      return;
-    }
-
-    const spawns = $worldSpawnPoints || [];
-    if (!spawns || spawns.length === 0) {
+    // Use the worldSpawnPoints derived store directly
+    if (!$worldSpawnPoints || $worldSpawnPoints.length === 0) {
       console.log('No spawns found in world data');
       spawnList = [];
       hasSpawnsData = false;
       return;
     }
 
-    console.log(`Found ${spawns.length} spawns in world data`);
+    console.log(`Found ${$worldSpawnPoints.length} spawns in world data`);
     hasSpawnsData = true;
     
-    // Process each spawn with race filtering
-    spawnList = spawns
-      .filter(spawn => {
-        // If player has a race, only show spawns for that race
-        if ($game.playerData?.race) {
-          return spawn.race?.toLowerCase() === $game.playerData.race.toLowerCase();
-        }
-        return true;
-      })
-      .map(spawn => {
-        const pos = getSpawnLocation(spawn);
-        return {
-          id: spawn.id,
-          name: spawn.name || `Spawn at ${pos.x},${pos.y}`,
-          description: spawn.description || '',
-          race: spawn.race || 'any',
-          position: pos,
-          x: pos.x,
-          y: pos.y,
-          // Keep original raw data for reference
-          raw: spawn
-        };
-      });
-
-    // Removed auto-selection of first spawn - user must explicitly select a spawn
+    // Only apply race filtering - use spawn data directly without transformations
+    spawnList = $worldSpawnPoints.filter(spawn => {
+      // If player has a race, only show spawns for that race
+      if ($game.playerData?.race) {
+        return spawn.race?.toLowerCase() === $game.playerData.race.toLowerCase();
+      }
+      return true;
+    });
   }
 
   // Handle spawn selection
   function selectSpawn(spawn) {
     selectedSpawn = spawn;
     // Preview the spawn location on the map
-    moveTarget(spawn.x, spawn.y);
+    if (spawn.x !== undefined && spawn.y !== undefined) {
+      moveTarget(spawn.x, spawn.y);
+    } else if (spawn.position) {
+      moveTarget(spawn.position.x, spawn.position.y);
+    }
   }
 
-  // Core function for handling spawn confirmation - fully updated to ensure consistent player identity
+  // Core function for handling spawn confirmation
   async function handleSpawnSelect(spawn) {
     if (!spawn || !$user || !$game.worldKey) {
       setError('Missing required data for spawn selection');
@@ -180,21 +94,21 @@
 
     try {
       setLoading(true);
-
-      // Get the spawn location, ensuring valid coordinates
-      const spawnPosition = getSpawnLocation(spawn);
-      console.log(`Spawning player at ${spawnPosition.x},${spawnPosition.y} for spawn ID: ${spawn.id}`);
       
-      // 1. Update the player data in the database (players/[uid]/worlds/[worldId])
+      // Get the correct coordinates from the spawn data
+      const spawnX = spawn.x ?? spawn.position?.x ?? 0;
+      const spawnY = spawn.y ?? spawn.position?.y ?? 0;
+
+      console.log(`Spawning player at ${spawnX},${spawnY} for spawn ID: ${spawn.id}`);
+      
+      // 1. Update the player data in the database
       const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.worldKey}`);
       
-      // Update player data according to the correct structure
-      // Store both user ID and spawn ID consistently
       await update(playerWorldRef, {
         alive: true,  // Mark player as alive after spawn
         lastLocation: {
-          x: spawnPosition.x,
-          y: spawnPosition.y,
+          x: spawnX,
+          y: spawnY,
           timestamp: Date.now()
         },
         spawnId: spawn.id || null,
@@ -203,13 +117,12 @@
 
       // 2. Calculate chunk coordinates for the player entity
       const CHUNK_SIZE = 20;
-      const chunkX = Math.floor(spawnPosition.x / CHUNK_SIZE);
-      const chunkY = Math.floor(spawnPosition.y / CHUNK_SIZE);
+      const chunkX = Math.floor(spawnX / CHUNK_SIZE);
+      const chunkY = Math.floor(spawnY / CHUNK_SIZE);
       const chunkKey = `${chunkX},${chunkY}`;
-      const tileKey = `${spawnPosition.x},${spawnPosition.y}`;
+      const tileKey = `${spawnX},${spawnY}`;
       
       // 3. Create a player entity in the world at the spawn location
-      // This ensures the player is visible on the map
       const playerEntityRef = ref(db, 
         `worlds/${$game.worldKey}/chunks/${chunkKey}/${tileKey}/players/${$user.uid}`
       );
@@ -219,21 +132,18 @@
         $user.displayName || 
         ($user.email ? $user.email.split('@')[0] : `Player ${$user.uid.substring(0, 4)}`);
       
-      // Create player entity data with consistent ID fields but WITHOUT isCurrentPlayer
+      // Create player entity data with consistent ID fields
       await set(playerEntityRef, {
         displayName,
         lastActive: Date.now(),
-        id: $user.uid, // Add explicit id field matching uid
+        id: $user.uid,
         race: $game.playerData?.race || 'human'
       });
       
       console.log(`Player spawned at ${tileKey} in chunk ${chunkKey} with uid ${$user.uid}`);
-
-      // Move the map to the spawn location
-      // moveTarget(spawnPosition.x, spawnPosition.y);
       
       // Execute callback
-      onSpawn(spawnPosition);
+      onSpawn({x: spawnX, y: spawnY});
     } catch (error) {
       console.error('Error selecting spawn point:', error);
       setError(`Failed to select spawn: ${error.message}`);
@@ -242,77 +152,13 @@
     }
   }
 
-  async function spawnAtLocation(spawnPoint) {
-    try {
-      // Get the player data from the game store
-      const playerData = $game.playerData;
-      
-      if (!playerData) {
-        console.error('No player data available');
-        setError('No player data available');
-        return;
-      }
-      
-      // Determine target location - either spawn point or specified coordinates
-      let targetCoords;
-      if (spawnPoint && spawnPoint.position) {
-        // Use spawn point coordinates if available
-        targetCoords = {
-          x: spawnPoint.position.x !== undefined ? spawnPoint.position.x : spawnPoint.x,
-          y: spawnPoint.position.y !== undefined ? spawnPoint.position.y : spawnPoint.y,
-        };
-      } else if (spawnPoint && (spawnPoint.x !== undefined && spawnPoint.y !== undefined)) {
-        // Use x,y directly from spawn point
-        targetCoords = { x: spawnPoint.x, y: spawnPoint.y };
-      } else {
-        // Fall back to center coordinates
-        targetCoords = { x: 0, y: 0 };
-      }
-      
-      console.log('Spawning at coordinates:', targetCoords);
-      
-      // Calculate chunk coordinates
-      const chunkSize = 20;
-      const chunkX = Math.floor(targetCoords.x / chunkSize);
-      const chunkY = Math.floor(targetCoords.y / chunkSize);
-      
-      // Set the player as alive in their data first
-      const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.worldKey}`);
-      
-      // Update the player's last location and alive status
-      await update(playerWorldRef, {
-        lastLocation: {
-          x: targetCoords.x,
-          y: targetCoords.y,
-          timestamp: Date.now()
-        },
-        alive: true
-      });
-      
-      // Add player to the map at the target location
-      const chunkRef = ref(db, `worlds/${$game.worldKey}/chunks/${chunkX},${chunkY}/${targetCoords.x},${targetCoords.y}/players/${$user.uid}`);
-      
-      // Ensure complete player data with identification fields but WITHOUT isCurrentPlayer
-      await set(chunkRef, {
-        displayName: playerData.displayName || ($user.isAnonymous ? `Guest ${$user.uid.substring(0, 4)}` : ($user.displayName || $user.email.split('@')[0])),
-        lastActive: Date.now(),
-        race: playerData.race,
-        id: $user.uid
-      });
-    } catch (error) {
-      console.error('Error spawning at location:', error);
-      setError(`Failed to spawn: ${error.message}`);
-    }
-  }
-
-  // Process spawn data when game state changes
+  // Process spawn data when worldSpawnPoints changes
   $effect(() => {
     processSpawnData();
   });
 
   // Component lifecycle hook
   onMount(() => {
-    // Process spawn data on mount
     processSpawnData();
   });
 </script>
@@ -338,13 +184,19 @@
               class:selected={selectedSpawn?.id === spawn.id}
               onclick={() => selectSpawn(spawn)}
             >
-              <h3>{spawn.name}</h3>
+              <h3>{spawn.name || 'Unnamed Spawn'}</h3>
               {#if spawn.description}
                 <p class="spawn-description">{spawn.description}</p>
               {/if}
               <div class="spawn-meta">
-                <span class="spawn-race">{spawn.race}</span>
-                <span class="spawn-coords">({spawn.x}, {spawn.y})</span>
+                <span class="spawn-race">{spawn.race || 'any'}</span>
+                <span class="spawn-coords">
+                  {#if spawn.x !== undefined && spawn.y !== undefined}
+                    ({spawn.x}, {spawn.y})
+                  {:else if spawn.position}
+                    ({spawn.position.x}, {spawn.position.y})
+                  {/if}
+                </span>
               </div>
             </div>
           {/each}
@@ -464,6 +316,19 @@
     padding: 2px 8px;
     border-radius: 10px;
     text-transform: capitalize;
+  }
+
+  .spawn-coords {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 0.85em;
+  }
+
+  .chunk-coords {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 3px;
   }
 
   .spawn-actions {
