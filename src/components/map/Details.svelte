@@ -1215,8 +1215,8 @@
 
   .action-button {
     padding: 0.6em;
-    background-color: rgba(66, 133, 244, 0.1);
-    border: 1px solid rgba(66, 133, 244, 0.3);
+    background-color: rgba(200, 200, 200, 0.1); /* Neutral light gray as default */
+    border: 1px solid rgba(200, 200, 200, 0.3);
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.9em;
@@ -1230,19 +1230,53 @@
   }
 
   .action-button:hover {
-    background-color: rgba(66, 133, 244, 0.2);
+    background-color: rgba(200, 200, 200, 0.2);
     transform: translateY(-1px);
   }
   
+  /* Gray background for inspect */
   .inspect-button {
-    background-color: rgba(0, 150, 136, 0.1);
-    border-color: rgba(0, 150, 136, 0.3);
+    background-color: rgba(120, 120, 120, 0.1);
+    border-color: rgba(120, 120, 120, 0.3);
   }
   
   .inspect-button:hover {
-    background-color: rgba(0, 150, 136, 0.2);
+    background-color: rgba(120, 120, 120, 0.2);
   }
 
+  /* Green background for move */
+  .action-button:has(.compass-icon) {
+    background-color: rgba(0, 128, 0, 0.1);
+    border-color: rgba(0, 128, 0, 0.3);
+  }
+  
+  .action-button:has(.compass-icon):hover {
+    background-color: rgba(0, 128, 0, 0.2);
+  }
+
+  /* Lime/crop background for gather */
+  .action-button:has(.crop-icon) {
+    background-color: rgba(144, 238, 144, 0.1);
+    border-color: rgba(144, 238, 144, 0.3);
+  }
+  
+  .action-button:has(.crop-icon):hover {
+    background-color: rgba(144, 238, 144, 0.2);
+  }
+
+  /* Purplish background for demobilise */
+  .action-button:has(.structure-icon),
+  .action-button:has(.torch-icon) {
+    background-color: rgba(138, 43, 226, 0.1);
+    border-color: rgba(138, 43, 226, 0.3);
+  }
+  
+  .action-button:has(.structure-icon):hover,
+  .action-button:has(.torch-icon):hover {
+    background-color: rgba(138, 43, 226, 0.2);
+  }
+
+  /* Red background for attack */
   .attack-button {
     background-color: rgba(255, 0, 0, 0.1);
     border-color: rgba(255, 0, 0, 0.3);
@@ -1250,6 +1284,26 @@
 
   .attack-button:hover {
     background-color: rgba(255, 0, 0, 0.2);
+  }
+
+  /* Orange background for mobilise/rally */
+  .action-button:has(.rally-icon) {
+    background-color: rgba(255, 140, 0, 0.1);
+    border-color: rgba(255, 140, 0, 0.3);
+  }
+  
+  .action-button:has(.rally-icon):hover {
+    background-color: rgba(255, 140, 0, 0.2);
+  }
+
+  /* Style for join battle button */
+  .action-button:has(:not(.action-icon)) {
+    background-color: rgba(139, 0, 0, 0.1);
+    border-color: rgba(139, 0, 0, 0.3);
+  }
+  
+  .action-button:has(:not(.action-icon)):hover {
+    background-color: rgba(139, 0, 0, 0.2);
   }
 
   :global(.action-icon) {
@@ -1437,8 +1491,8 @@
   .entity-action {
     padding: 0.3em 0.6em;
     font-size: 0.8em;
-    background-color: rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: rgba(200, 200, 200, 0.1);
+    border: 1px solid rgba(200, 200, 200, 0.3);
     border-radius: 0.3em;
     cursor: pointer;
     transition: all 0.2s;
@@ -1448,8 +1502,38 @@
   }
 
   .entity-action:hover {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(200, 200, 200, 0.2);
     transform: translateY(-1px);
+  }
+  
+  /* Green for move actions */
+  .entity-action:has(.compass-icon) {
+    background-color: rgba(0, 128, 0, 0.1);
+    border-color: rgba(0, 128, 0, 0.3);
+  }
+  
+  .entity-action:has(.compass-icon):hover {
+    background-color: rgba(0, 128, 0, 0.2);
+  }
+  
+  /* Lime for gather actions */
+  .entity-action:has(.crop-icon) {
+    background-color: rgba(144, 238, 144, 0.1);
+    border-color: rgba(144, 238, 144, 0.3);
+  }
+  
+  .entity-action:has(.crop-icon):hover {
+    background-color: rgba(144, 238, 144, 0.2);
+  }
+  
+  /* Orange for mobilise actions */
+  .entity-action:has(.rally-icon) {
+    background-color: rgba(255, 140, 0, 0.1);
+    border-color: rgba(255, 140, 0, 0.3);
+  }
+  
+  .entity-action:has(.rally-icon):hover {
+    background-color: rgba(255, 140, 0, 0.2);
   }
 
   .player-owned {
