@@ -7,7 +7,12 @@
   // Media items array with state for potential future dynamic updates
   const mediaItems = $state([
     { type: 'video', src: '/media/1.mp4', alt: 'Gameplay Video' },
-    { type: 'image', src: '/media/2.png', alt: 'Game Board Screenshot' }
+    { type: 'image', src: '/media/2.png', alt: 'Game Board Screenshot' },
+    { type: 'image', src: '/media/3.png', alt: 'Game Board Screenshot' },
+    { type: 'image', src: '/media/4.png', alt: 'Game Board Screenshot' },
+    { type: 'image', src: '/media/5.png', alt: 'Game Board Screenshot' },
+    { type: 'image', src: '/media/6.png', alt: 'Game Board Screenshot' },
+    { type: 'image', src: '/media/7.png', alt: 'Game Board Screenshot' }
   ]);
   
   // Media gallery state
@@ -346,8 +351,13 @@
   <div class="media-container">
     <div class="media-intro">
       <p class="media-desc">
-        Journey into the realm of Gisaima through our immersive media gallery. As an open source project, Gisaima offers infinite procedurally generated worlds with a fair and balanced gaming environment - no pay-to-win mechanics ever. Watch as territories fall and empires rise in real-time strategic gameplay that synchronizes instantly across all your devices. These visuals showcase the dynamic worlds where resource management, tactical combat, and territorial conquest blend together in a unique gaming experience inspired by ancient board game principles.
+        Journey into the realm of Gisaima through our immersive media gallery. As an open source project, Gisaima offers infinite procedurally generated worlds with a fair and balanced gaming environment - no pay-to-win mechanics ever. Every coordinate is unique, every biome holds secrets, and every decision shapes your journey. These visuals showcase the dynamic worlds where resource management, tactical combat, and territorial conquest blend together in a unique gaming experience inspired by ancient board game principles.
       </p>
+      
+      <div class="cta-container">
+        <a href="/play" class="cta-button">Start Your Journey</a>
+        <a href="/guide" class="cta-button secondary">Read the Guide</a>
+      </div>
     </div>
     
     <div class="gallery">
@@ -456,6 +466,47 @@
     font-family: var(--font-body);
     text-align: left;
     font-weight: 300;
+  }
+
+  /* CTA button styles */
+  .cta-container {
+    margin-top: 2em;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 1em;
+    justify-content: flex-start;
+  }
+  
+  .cta-button {
+    display: inline-block;
+    padding: 0.8em 2em;
+    background-color: var(--color-button-primary);
+    color: var(--color-text);
+    border-radius: 0.3em;
+    font-size: 1.1em;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: 0.05em solid transparent;
+    font-family: var(--font-heading);
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  
+  .cta-button:hover {
+    transform: translateY(-0.2em);
+    box-shadow: 0 0.4em 0.6em var(--color-shadow);
+  }
+  
+  .cta-button.secondary {
+    background-color: transparent;
+    border-color: var(--color-muted-teal);
+    color: var(--color-muted-teal);
+  }
+  
+  .cta-button.secondary:hover {
+    background-color: rgba(100, 255, 218, 0.1);
   }
 
   /* Gallery styles */
@@ -677,6 +728,23 @@
     
     .media-desc {
       font-size: 1.4em;
+    }
+
+    /* Adjusted for CTA buttons in media-intro */
+    .cta-container {
+      justify-content: flex-start;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .cta-container {
+      justify-content: center;
+    }
+    
+    /* Remove width: 100% to allow buttons to sit next to each other */
+    .cta-button {
+      font-size: 1em;
+      padding: 0.7em 1.5em;
     }
   }
   
