@@ -83,7 +83,7 @@
 
     const isAnyModalOpen = $derived(
         modalState.visible || 
-        !$game?.playerData?.alive || 
+        !$game?.player?.alive || 
         detailed || 
         isTutorialVisible
     );
@@ -142,8 +142,8 @@
             return;
         }
             
-        if ($game.playerData?.lastLocation) {
-            const location = $game.playerData.lastLocation;
+        if ($game.player?.lastLocation) {
+            const location = $game.player.lastLocation;
             moveTarget(location.x, location.y);
         } else if ($game.worldKey) {
             const worldCenter = getWorldCenterCoordinates($game.worldKey);
@@ -248,7 +248,7 @@
     // Add missing function for tutorial visibility
     $effect(() => {
         // If spawn menu appears, ensure tutorial is hidden
-        if (!$game?.playerData?.alive && isTutorialVisible) {
+        if (!$game?.player?.alive && isTutorialVisible) {
             isTutorialVisible = false;
         }
     });
@@ -414,7 +414,7 @@
     }
     
     function toggleMinimap() {
-      if (!$game?.playerData?.alive || isTutorialVisible) {
+      if (!$game?.player?.alive || isTutorialVisible) {
         return;
       }
       
@@ -436,7 +436,7 @@
     }
 
     function toggleEntities() {
-      if (!$game?.playerData?.alive || isTutorialVisible) {
+      if (!$game?.player?.alive || isTutorialVisible) {
         return;
       }
       
@@ -669,7 +669,7 @@
 
     function handleTutorialVisibility(isVisible) {
         // Don't show tutorial if spawn menu is active
-        if (!$game?.playerData?.alive && isVisible) {
+        if (!$game?.player?.alive && isVisible) {
             return;
         }
         
@@ -785,14 +785,14 @@
                 class="control-button help-button" 
                 onclick={toggleTutorial}
                 aria-label="Show tutorial"
-                disabled={!$game?.playerData?.alive}>
+                disabled={!$game?.player?.alive}>
                 ?
             </button>
             <button 
                 class="control-button minimap-button" 
                 onclick={toggleMinimap}
                 aria-label={showMinimap ? "Hide minimap" : "Show minimap"}
-                disabled={!$game?.playerData?.alive || isTutorialVisible}>
+                disabled={!$game?.player?.alive || isTutorialVisible}>
                 {#if showMinimap || minimapClosing}
                     <Close size="1.2em" extraClass="close-icon-dark" />
                 {:else}
@@ -807,7 +807,7 @@
                     class="control-button entity-button" 
                     onclick={toggleEntities}
                     aria-label="Show entities"
-                    disabled={!$game?.playerData?.alive || isTutorialVisible}>
+                    disabled={!$game?.player?.alive || isTutorialVisible}>
                     <span class="button-text">OVERVIEW</span>
                 </button>
             </div>
@@ -862,7 +862,7 @@
             <Axes />
         {/if}
 
-        {#if $ready && $game?.playerData?.alive}
+        {#if $ready && $game?.player?.alive}
             <Tutorial 
                 onVisibilityChange={handleTutorialVisibility}
                 hideToggleButton={true}
@@ -870,7 +870,7 @@
             />
         {/if}
         
-        {#if ($user && $game.playerData?.alive)}
+        {#if ($user && $game.player?.alive)}
             <SpawnMenu />
         {/if}
 

@@ -15,10 +15,10 @@ const CHUNK_SIZE = 20;
 
 // Store for game state with more detailed loading states
 export const game = writable({
-  worldKey: null,     // Standardized to use only worldKey
+  worldKey: null,
   joinedWorlds: [],
   world: {},
-  playerData: null,
+  player: null,
   loading: true,
   worldLoading: false,
   error: null,
@@ -71,11 +71,11 @@ export const currentPlayer = derived(
     if (!$user) return null;
     if (!$game) return null;
     if (!$game.worldKey) return null;
-    if (!$game.playerData) return null;
+    if (!$game.player) return null;
     
     try {
       // Use the stored display name if available, otherwise fall back to auth
-      let displayName = $game.playerData.displayName;
+      let displayName = $game.player.displayName;
       
       // If no stored display name, use fallback logic
       if (!displayName) {
@@ -97,14 +97,14 @@ export const currentPlayer = derived(
         world: $game.worldKey,
         worldName: $game.world[$game.worldKey]?.name,
         // Player status in this world
-        alive: $game.playerData.alive || false,
-        lastLocation: $game.playerData.lastLocation || null,
+        alive: $game.player.alive || false,
+        lastLocation: $game.player.lastLocation || null,
         // Race information
-        race: $game.playerData.race,
+        race: $game.player.race,
         // Joined timestamp
-        joinedAt: $game.playerData.joined || null,
+        joinedAt: $game.player.joined || null,
         // For convenience, include all world-specific player data
-        worldData: $game.playerData
+        worldData: $game.player
       };
     } catch (e) {
       console.error("Error in currentPlayer derived store:", e);
@@ -239,13 +239,13 @@ export function listenToPlayerWorldData(userId, worldKey) {
     if (snapshot.exists()) {
       game.update(state => ({
         ...state,
-        playerData: data
+        player: data
       }));
     } else {
       console.log(`No player data found for world ${worldKey}`);
       game.update(state => ({
         ...state,
-        playerData: null
+        player: null
       }));
     }
   }, error => {
@@ -665,7 +665,7 @@ export function setup() {
             // Clear player data
             game.update(state => ({
               ...state,
-              playerData: null,
+              player: null,
               joinedWorlds: []
             }));
           }
@@ -760,14 +760,14 @@ export async function joinWorld(worldId, userId, race, displayName) {
     await new Promise(resolve => {
       // Check if player data is already available
       const currentState = get(game);
-      if (currentState.playerData) {
+      if (currentState.player) {
         resolve();
         return;
       }
       
       // Set up a one-time listener for player data
       const unsubscribe = game.subscribe(state => {
-        if (state.playerData) {
+        if (state.player) {
           unsubscribe();
           resolve();
         }
@@ -797,7 +797,7 @@ export async function joinWorld(worldId, userId, race, displayName) {
 export function isPlayerWorldDataReady(worldId) {
   const state = get(game);
   return !!(
-    state.playerData && 
+    state.player && 
     state.worldKey === worldId && 
     !state.loading && 
     !state.worldLoading

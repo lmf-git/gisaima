@@ -185,8 +185,8 @@
       <div class="actions" class:loaded={!actionsLoading}>
         {#if !actionsLoading}
           {#if $user}
-            {#if $game.currentWorld}
-              <a href={`/map?world=${$game.currentWorld}`} class="button primary">Resume</a>
+            {#if $game.worldKey}
+              <a href={`/map?world=${$game.worldKey}`} class="button primary">Resume</a>
             {/if}
             <a href="/worlds" class="button secondary">See Worlds</a>
           {:else}

@@ -17,8 +17,8 @@
     const spawns = world.spawns ? Object.values(world.spawns) : [];
 
     return spawns.filter(spawn => {
-      if (!$game.playerData?.race) return true;
-      return spawn.race?.toLowerCase() === $game.playerData.race.toLowerCase();
+      if (!$game.player?.race) return true;
+      return spawn.race?.toLowerCase() === $game.player.race.toLowerCase();
     });
   })());
 
@@ -26,7 +26,7 @@
   console.log('🎮 Game store in SpawnMenu:', $game);
   console.log('👤 Current player in SpawnMenu:', $currentPlayer);
   console.log('🌍 Current world key in SpawnMenu:', $game.worldKey);
-  console.log('📊 Player data in SpawnMenu:', $game.playerData);
+  console.log('📊 Player data in SpawnMenu:', $game.player);
 
   // Helper function for setting/clearing errors
   function setError(message) {
@@ -100,7 +100,7 @@
       );
       
       // Get display name from player data or user
-      const displayName = $game.playerData?.displayName || 
+      const displayName = $game.player?.displayName || 
         $user.displayName || 
         ($user.email ? $user.email.split('@')[0] : `Player ${$user.uid.substring(0, 4)}`);
       
@@ -109,7 +109,7 @@
         displayName,
         lastActive: Date.now(),
         id: $user.uid,
-        race: $game.playerData?.race || 'human'
+        race: $game.player?.race || 'human'
       });
       
       console.log(`Player spawned at ${tileKey} in chunk ${chunkKey} with uid ${$user.uid}`);
