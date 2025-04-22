@@ -127,7 +127,6 @@ export const worldSpawnPoints = derived(
 );
 
 // Create a derived store that combines user data with player world-specific data
-// Fixed: Use a safer approach for derived stores with proper null checks
 export const currentPlayer = derived(
   [userStore, game], // Use userStore directly instead of the redundant user variable
   ([$user, $game]) => {
@@ -153,10 +152,14 @@ export const currentPlayer = derived(
       // Base player info from user auth data
       return {
         uid: $user.uid,
+        id: $user.uid,         // Add explicit id field for component checks
+        playerId: $user.uid,   // Add explicit playerId for component checks
+        userId: $user.uid,     // Add explicit userId for component checks
+        owner: $user.uid,      // Add explicit owner field for component checks
         displayName: displayName,
         email: $user.email,
         isAnonymous: $user.isAnonymous,
-        guest: $user.isAnonymous, // Add an explicit guest flag for easier checking
+        guest: $user.isAnonymous,
         // Current world context
         world: $game.worldKey,
         worldName: $game.world[$game.worldKey]?.name,
@@ -927,7 +930,7 @@ export async function joinWorld(worldId, userId, race, displayName) {
       joined: Date.now(),
       race: race || 'human', // Default to human if race not specified
       alive: false,
-      displayName: displayName || '',  // Store the display name
+      displayName: displayName || '',
       // Set initial target to world center
       lastLocation: {
         x: centerCoords.x,

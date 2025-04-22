@@ -139,10 +139,15 @@
         id: raceCode,
         // Include world center coordinates
         worldCenter,
-        alive: false,
+        alive: false,  // Explicitly set alive status to false
         displayName: displayName.trim(),
         // Add spawn to help with later processing
-        spawnId: null // This will be selected later in SpawnMenu
+        spawnId: null, // This will be selected later in SpawnMenu
+        lastLocation: {  // Add lastLocation structure to match backup.json
+          x: worldCenter.x,
+          y: worldCenter.y,
+          timestamp: Date.now()
+        }
       });
     } catch (error) {
       console.error('Error joining world:', error);

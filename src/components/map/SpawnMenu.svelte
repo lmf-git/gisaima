@@ -1,715 +1,434 @@
 <script>
-  import { ref, update } from 'firebase/database';
-  import { db } from '../../lib/firebase/database.js';
-  import { game, currentPlayer, needsSpawn } from '../../lib/stores/game.js';
-  import { moveTarget } from '../../lib/stores/map.js';
-  import Torch from '../icons/Torch.svelte';
-  
-  // Import race icon components
-  import Human from '../icons/Human.svelte';
-  import Elf from '../icons/Elf.svelte';
-  import Dwarf from '../icons/Dwarf.svelte';
-  import Goblin from '../icons/Goblin.svelte';
-  import Fairy from '../icons/Fairy.svelte';
+  import { onMount } from 'svelte';
+  import { ref, set, update } from 'firebase/database';
+  import { db } from '../../lib/firebase/database';
+  import { 
+    game, 
+    currentPlayer,
+    worldSpawnPoints,
+    getWorldCenterCoordinates 
+  } from '../../lib/stores/game';
+  import { 
+    moveTarget,
+    map,
+    getChunkKey
+  } from '../../lib/stores/map';
+  import { user } from '../../lib/stores/user';
 
-  // Using Svelte 5 $props rune
+  // Get component props
   const { onSpawn = () => {} } = $props();
 
-  // Component state using $state rune
-  let selectedSpawnId = $state(null);
-  let loading = $state(true);
-  let spawning = $state(false);
+  // Component state using Svelte 5 runes
+  let selectedSpawn = $state(null);
+  let loading = $state(false);
   let error = $state(null);
-  let movedToSpawn = $state(false);
-  
-  // Add a state variable to track world data
-  let worldData = $state(null);
-  let spawnPoints = $state([]);
-  let filteredSpawnPoints = $state([]);
-  let currentPlayerRace = $state(null);
-  
-  // Function to calculate chunk key
-  function getChunkKey(x, y) {
-    const chunkX = Math.floor(x / 20);
-    const chunkY = Math.floor(y / 20);
-    return `${chunkX},${chunkY}`;
+  let spawnList = $state([]);
+
+  // Helper state variables
+  let wasLoading = $state(false);
+  let hasSpawnsData = $state(false);
+
+  // Helper function for setting/clearing errors
+  function setError(message) {
+    error = message;
+    console.error(message);
+    
+    // Auto-clear error after 5 seconds
+    setTimeout(() => {
+      if (error === message) {
+        error = null;
+      }
+    }, 5000);
   }
 
-  const CHUNK_SIZE = 20;
+  // Helper function for setting loading state
+  function setLoading(isLoading) {
+    loading = isLoading;
+    if (isLoading) {
+      wasLoading = true;
+    }
+  }
 
-  // First effect: Handle world data changes and extract spawn points 
-  $effect(() => {
-    // Initialize with current game world data when it changes
-    const currentWorldId = $game.worldKey || $game.currentWorld;
-    const currentWorldData = currentWorldId ? $game.world[currentWorldId] : null;
+  // Helper function to get spawn location in world coordinates
+  function getSpawnLocation(spawn) {
+    if (!spawn) return { x: 0, y: 0 };
     
-    if (currentWorldData) {
-      worldData = currentWorldData;
-      loading = true; // Reset loading state when world data changes
+    // Check for spawn with position info in various formats
+    if (spawn.position) {
+      // Format 1: position with chunkX,chunkY,x,y (from info.spawns)
+      const CHUNK_SIZE = 20; // Make sure this matches your chunk size
       
-      // Extract spawn points
-      let foundSpawns = [];
-      
-      // Case 1: Check info.spawns (as in backup.json)
-      if (worldData.info?.spawns) {
-        foundSpawns = Object.entries(worldData.info.spawns).map(([key, spawn]) => ({
-          key,
-          ...spawn
-        }));
+      // If position has chunkX/Y and x/y, calculate global coordinates
+      if (spawn.position.chunkX !== undefined && 
+          spawn.position.chunkY !== undefined && 
+          spawn.position.x !== undefined && 
+          spawn.position.y !== undefined) {
+        
+        return {
+          x: (spawn.position.chunkX * CHUNK_SIZE) + spawn.position.x,
+          y: (spawn.position.chunkY * CHUNK_SIZE) + spawn.position.y
+        };
       }
-      // Case 2: Check direct spawns property
-      else if (worldData.spawns) {
-        foundSpawns = Object.entries(worldData.spawns).map(([key, spawn]) => ({
-          key,
-          ...spawn
-        }));
-      }
       
-      // Update all spawns
-      spawnPoints = foundSpawns;
-      loading = foundSpawns.length > 0 ? false : false;
-      error = foundSpawns.length > 0 ? null : 'No spawn points found in this world';
-    }
-  });
-
-  // Second effect: Track player race changes independently to avoid circular dependencies
-  $effect(() => {
-    if ($currentPlayer?.race) {
-      currentPlayerRace = $currentPlayer.race.toLowerCase();
-    } else {
-      currentPlayerRace = null;
-    }
-  });
-
-  // Third effect: Filter spawn points when source data changes
-  $effect(() => {
-    // Don't attempt to filter if no spawn points or world data isn't loaded yet
-    if (!spawnPoints.length) {
-      filteredSpawnPoints = [];
-      return;
+      // Format 2: position with direct x,y (from directly stored position)
+      if (spawn.position.x !== undefined && spawn.position.y !== undefined) {
+        return {
+          x: spawn.position.x,
+          y: spawn.position.y
+        };
+      }
     }
     
-    // If no player race, show all spawn points
-    if (!currentPlayerRace) {
-      filteredSpawnPoints = [...spawnPoints];
-      return;
-    }
-    
-    // Filter by race if specified in spawn data
-    const raceFiltered = spawnPoints.filter(spawn => 
-      !spawn.race || spawn.race.toLowerCase() === currentPlayerRace
-    );
-    
-    // Only use race filtering if we found matches
-    if (raceFiltered.length > 0) {
-      filteredSpawnPoints = raceFiltered;
-    } else {
-      // Fall back to all spawns if no race matches
-      filteredSpawnPoints = [...spawnPoints];
-    }
-  });
-
-  // Fourth effect: Auto-select if only one spawn point is available
-  $effect(() => {
-    if (filteredSpawnPoints.length === 1 && !selectedSpawnId) {
-      selectedSpawnId = filteredSpawnPoints[0].id || filteredSpawnPoints[0].key;
-      moveToSpawnLocation(filteredSpawnPoints[0]);
-    }
-  });
-  
-  // Function to move map to spawn location
-  function moveToSpawnLocation(spawnPoint) {
-    if (!spawnPoint) return;
-    
-    // Get position from spawn point - handle different formats
-    let position = { x: 0, y: 0 };
-    
-    if (spawnPoint.x !== undefined && spawnPoint.y !== undefined) {
-      position = { x: spawnPoint.x, y: spawnPoint.y };
-    } else if (spawnPoint.position?.x !== undefined && spawnPoint.position?.y !== undefined) {
-      position = { x: spawnPoint.position.x, y: spawnPoint.position.y };
-    } else if (spawnPoint.position?.chunkX !== undefined) {
-      position = { 
-        x: (spawnPoint.position.chunkX * CHUNK_SIZE) + (spawnPoint.position.x || 0),
-        y: (spawnPoint.position.chunkY * CHUNK_SIZE) + (spawnPoint.position.y || 0)
+    // Format 3: direct x,y properties
+    if (spawn.x !== undefined && spawn.y !== undefined) {
+      return {
+        x: spawn.x,
+        y: spawn.y
       };
     }
     
-    // Move the map target to this position
-    moveTarget(position.x, position.y);
-    movedToSpawn = true;
+    // Fallback: Use world center coordinates if no valid position found
+    console.warn('No valid position found for spawn', spawn);
+    return getWorldCenterCoordinates($game.worldKey);
   }
 
-  // Function to spawn player at selected location
-  async function spawnAtLocation(spawnPoint) {
-    if (!spawnPoint || !$game.worldKey || !$currentPlayer?.uid) {
-      error = 'Missing required data for spawning';
+  // Process spawn data into a consistent format for display
+  function processSpawnData() {
+    if (!$game.worldKey || !$game.world[$game.worldKey]) {
+      spawnList = [];
+      hasSpawnsData = false;
       return;
     }
+
+    const spawns = $worldSpawnPoints || [];
+    if (!spawns || spawns.length === 0) {
+      console.log('No spawns found in world data');
+      spawnList = [];
+      hasSpawnsData = false;
+      return;
+    }
+
+    console.log(`Found ${spawns.length} spawns in world data`);
+    hasSpawnsData = true;
     
-    try {
-      spawning = true;
-      
-      // Get position from spawn point - handle different formats
-      let position = { x: 0, y: 0 };
-      
-      if (spawnPoint.x !== undefined && spawnPoint.y !== undefined) {
-        // Use direct x,y properties if available
-        position = { x: spawnPoint.x, y: spawnPoint.y };
-      } else if (spawnPoint.position) {
-        // Handle position object with direct x,y coordinates
-        if (spawnPoint.position.x !== undefined && spawnPoint.position.y !== undefined) {
-          position = { x: spawnPoint.position.x, y: spawnPoint.position.y };
-        } 
-        // Handle chunk-based coordinates (from "chunkX:chunkY:tileX:tileY" format)
-        else if (
-          spawnPoint.position.chunkX !== undefined && 
-          spawnPoint.position.chunkY !== undefined &&
-          spawnPoint.position.x !== undefined &&
-          spawnPoint.position.y !== undefined
-        ) {
-          // Calculate global position from chunk coordinates
-          position = { 
-            x: (spawnPoint.position.chunkX * CHUNK_SIZE) + spawnPoint.position.x,
-            y: (spawnPoint.position.chunkY * CHUNK_SIZE) + spawnPoint.position.y
-          };
+    // Process each spawn with race filtering
+    spawnList = spawns
+      .filter(spawn => {
+        // If player has a race, only show spawns for that race
+        if ($game.playerData?.race) {
+          return spawn.race?.toLowerCase() === $game.playerData.race.toLowerCase();
         }
-      }
-      
-      // Move map to spawn position first for better UX
-      moveTarget(position.x, position.y);
-      movedToSpawn = true;
-      
-      // Reference to player's world data
-      const playerWorldRef = ref(db, `players/${$currentPlayer.uid}/worlds/${$game.worldKey}`);
-      
-      // Update the player data to include position and mark as alive
-      await update(playerWorldRef, {
-        alive: true,
-        lastLocation: {
-          x: position.x,
-          y: position.y,
-          timestamp: Date.now()
-        },
-        // Include any other spawn-related data here
-        spawnId: spawnPoint.id || spawnPoint.key
+        return true;
+      })
+      .map(spawn => {
+        const pos = getSpawnLocation(spawn);
+        return {
+          id: spawn.id,
+          name: spawn.name || `Spawn at ${pos.x},${pos.y}`,
+          description: spawn.description || '',
+          race: spawn.race || 'any',
+          position: pos,
+          x: pos.x,
+          y: pos.y,
+          // Keep original raw data for reference
+          raw: spawn
+        };
       });
-      
-      // Also create the player entity in the world - this is the missing step
-      const tileRef = ref(db, `worlds/${$game.worldKey}/chunks/${getChunkKey(position.x, position.y)}/${position.x % CHUNK_SIZE},${position.y % CHUNK_SIZE}/players/${$currentPlayer.uid}`);
-      
-      await update(tileRef, {
-        uid: $currentPlayer.uid,
-        race: $currentPlayer.race,
-        displayName: $currentPlayer.displayName || '',
-        timestamp: Date.now()
-      });
-      
-      // Wait a moment for the data to propagate
-      setTimeout(() => {
-        spawning = false;
-        
-        // Call the onSpawn callback to notify parent components
-        if (typeof onSpawn === 'function') {
-          onSpawn({
-            position,
-            spawnId: spawnPoint.id || spawnPoint.key
-          });
-        }
-      }, 1000);
-      
-    } catch (err) {
-      console.error('Error spawning player:', err);
-      error = `Failed to spawn: ${err.message}`;
-      spawning = false;
+
+    // Set the first spawn as selected if none is selected yet and we have spawns
+    if (!selectedSpawn && spawnList.length > 0) {
+      selectedSpawn = spawnList[0];
     }
   }
-  
-  // Format text with proper capitalization
-  function _fmt(text) {
-    if (!text) return '';
-    return text.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  // Handle spawn selection
+  function selectSpawn(spawn) {
+    selectedSpawn = spawn;
   }
-  
-  // Get selected spawn point
-  function getSelectedSpawn() {
-    if (!selectedSpawnId) return null;
-    return filteredSpawnPoints.find(s => (s.id || s.key) === selectedSpawnId);
+
+  // Core function for handling spawn confirmation - fully updated
+  async function handleSpawnSelect(spawn) {
+    if (!spawn || !$user || !$game.worldKey) {
+      setError('Missing required data for spawn selection');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Get the spawn location, ensuring valid coordinates
+      const spawnPosition = getSpawnLocation(spawn);
+      console.log(`Spawning player at ${spawnPosition.x},${spawnPosition.y}`);
+      
+      // 1. Update the player data in the database (players/[uid]/worlds/[worldId])
+      const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.worldKey}`);
+      
+      // Update player data according to the correct structure
+      await update(playerWorldRef, {
+        alive: true,  // Mark player as alive after spawn
+        lastLocation: {
+          x: spawnPosition.x,
+          y: spawnPosition.y,
+          timestamp: Date.now()
+        },
+        spawnId: spawn.id || null
+      });
+
+      // 2. Calculate chunk coordinates for the player entity
+      const CHUNK_SIZE = 20;
+      const chunkX = Math.floor(spawnPosition.x / CHUNK_SIZE);
+      const chunkY = Math.floor(spawnPosition.y / CHUNK_SIZE);
+      const chunkKey = `${chunkX},${chunkY}`;
+      const tileKey = `${spawnPosition.x},${spawnPosition.y}`;
+      
+      // 3. Create a player entity in the world at the spawn location
+      // This ensures the player is visible on the map
+      const playerEntityRef = ref(db, 
+        `worlds/${$game.worldKey}/chunks/${chunkKey}/${tileKey}/players/${$user.uid}`
+      );
+      
+      // Get display name from player data or user
+      const displayName = $game.playerData?.displayName || 
+        $user.displayName || 
+        ($user.email ? $user.email.split('@')[0] : `Player ${$user.uid.substring(0, 4)}`);
+      
+      // Create player entity data based on database structure
+      await set(playerEntityRef, {
+        displayName,
+        lastActive: Date.now(),
+        uid: $user.uid,
+        race: $game.playerData?.race || 'human'
+      });
+      
+      console.log(`Player spawned at ${tileKey} in chunk ${chunkKey}`);
+
+      // Move the map to the spawn location
+      moveTarget(spawnPosition.x, spawnPosition.y);
+      
+      // Execute callback
+      onSpawn(spawnPosition);
+    } catch (error) {
+      console.error('Error selecting spawn point:', error);
+      setError(`Failed to select spawn: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   }
+
+  // Process spawn data when game state changes
+  $effect(() => {
+    processSpawnData();
+  });
+
+  // Component lifecycle hook
+  onMount(() => {
+    // Process spawn data on mount
+    processSpawnData();
+  });
 </script>
 
-{#if $needsSpawn}
-<div class="modal-container">
-  <div class="spawn-modal">
-    <header class="modal-header">
-      <div class="header-content">
-        <div class="race-icon">
-          {#if $currentPlayer?.race}
-            {#if $currentPlayer.race.toLowerCase() === 'human'}
-              <Human extraClass="spawn-race-icon" />
-            {:else if $currentPlayer.race.toLowerCase() === 'elf'}
-              <Elf extraClass="spawn-race-icon" />
-            {:else if $currentPlayer.race.toLowerCase() === 'dwarf'}
-              <Dwarf extraClass="spawn-race-icon" />
-            {:else if $currentPlayer.race.toLowerCase() === 'goblin'}
-              <Goblin extraClass="spawn-race-icon" />
-            {:else if $currentPlayer.race.toLowerCase() === 'fairy'}
-              <Fairy extraClass="spawn-race-icon" />
-            {/if}
-          {/if}
-        </div>
-        <div class="header-text">
-          <h3>Select Spawn Location</h3>
-          <div class="race-display">
-            Playing as <span class="race-name">{_fmt($currentPlayer?.race || '')}</span>
-            {#if filteredSpawnPoints.length < spawnPoints.length}
-              <span class="race-info">(showing {filteredSpawnPoints.length} race-specific locations)</span>
-            {/if}
-          </div>
-        </div>
-      </div>
-    </header>
+<div class="spawn-menu-wrapper" class:loading={loading}>
+  <div class="spawn-menu">
+    <h2>Choose Your Spawn Point</h2>
     
-    <div class="modal-content">
-      {#if loading}
-        <div class="loading-state">
-          <div class="loading-spinner"></div>
-          <p>Loading spawn points...</p>
-        </div>
-      {:else if error}
-        <div class="error-state">
-          <p class="error-message">{error}</p>
-          <button class="action-button retry-button" onclick={() => { error = null; loading = true; }}>
-            Retry
-          </button>
-        </div>
-      {:else if spawning}
-        <div class="spawning-state">
-          <div class="loading-spinner"></div>
-          <p>Spawning your character...</p>
-        </div>
-      {:else if filteredSpawnPoints.length === 0}
-        <div class="no-spawns-state">
-          <p>No spawn points available in this world.</p>
+    {#if error}
+      <div class="error-message">{error}</div>
+    {/if}
+    
+    <div class="spawn-container">
+      {#if spawnList.length === 0}
+        <div class="loading-message">
+          {hasSpawnsData ? 'No spawn points available for your race' : 'Loading spawn points...'}
         </div>
       {:else}
-        <div class="spawn-points">
-          {#each filteredSpawnPoints as spawn}
+        <div class="spawn-list">
+          {#each spawnList as spawn (spawn.id)}
             <div 
-              class="spawn-point entity" 
-              class:selected={selectedSpawnId === (spawn.id || spawn.key)}
-              onclick={() => {
-                selectedSpawnId = spawn.id || spawn.key;
-                moveToSpawnLocation(spawn);
-              }}
+              class="spawn-item" 
+              class:selected={selectedSpawn?.id === spawn.id}
+              onclick={() => selectSpawn(spawn)}
             >
-              <div class="entity-icon">
-                <Torch size="1.4em" extraClass="spawn-icon-detail" />
-              </div>
-              <div class="entity-info">
-                <div class="entity-name">
-                  {spawn.name || `Spawn ${spawn.id || spawn.key}`}
-                  {#if spawn.race && spawn.race.toLowerCase() === $currentPlayer?.race?.toLowerCase()}
-                    <span class="entity-badge race-match-badge">{_fmt(spawn.race)}</span>
-                  {/if}
-                </div>
-                <div class="entity-details">
-                  <span class="entity-location">
-                    {#if spawn.x !== undefined && spawn.y !== undefined}
-                      {spawn.x},{spawn.y}
-                    {:else if spawn.position?.x !== undefined && spawn.position?.y !== undefined}
-                      {spawn.position.x},{spawn.position.y}
-                    {:else if spawn.position?.chunkX !== undefined}
-                      {(spawn.position.chunkX * CHUNK_SIZE) + (spawn.position.x || 0)},
-                      {(spawn.position.chunkY * CHUNK_SIZE) + (spawn.position.y || 0)}
-                    {:else}
-                      Unknown
-                    {/if}
-                  </span>
-                  {#if spawn.type}
-                    <span class="entity-type">{_fmt(spawn.type)}</span>
-                  {/if}
-                </div>
-                {#if spawn.description}
-                  <p class="spawn-description">{spawn.description}</p>
-                {/if}
+              <h3>{spawn.name}</h3>
+              {#if spawn.description}
+                <p class="spawn-description">{spawn.description}</p>
+              {/if}
+              <div class="spawn-meta">
+                <span class="spawn-race">{spawn.race}</span>
+                <span class="spawn-coords">({spawn.x}, {spawn.y})</span>
               </div>
             </div>
           {/each}
         </div>
         
-        <!-- Add central spawn confirmation button -->
-        {#if selectedSpawnId}
-          <div class="confirm-spawn-container">
-            <button 
-              class="confirm-spawn-button"
-              disabled={spawning}
-              onclick={() => {
-                const selectedSpawn = getSelectedSpawn();
-                if (selectedSpawn) {
-                  spawnAtLocation(selectedSpawn);
-                }
-              }}
-            >
-              {spawning ? 'Spawning...' : 'Confirm Spawn Location'}
-            </button>
-          </div>
-        {/if}
+        <div class="spawn-actions">
+          <button 
+            class="spawn-button" 
+            disabled={loading || !selectedSpawn} 
+            onclick={() => handleSpawnSelect(selectedSpawn)}
+          >
+            {#if loading}
+              <span class="spinner"></span> Spawning...
+            {:else}
+              Spawn Here
+            {/if}
+          </button>
+        </div>
       {/if}
     </div>
   </div>
 </div>
-{/if}
 
 <style>
-  .modal-container {
+  .spawn-menu-wrapper {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    background: rgba(0, 0, 0, 0.8);
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999; /* Increased from 1000 to 9999 to be above all other components */
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 1rem;
+    z-index: 1000;
   }
-  
-  .spawn-modal {
+
+  .spawn-menu {
     width: 90%;
-    max-width: 34em;
-    max-height: 85vh;
-    background-color: rgba(255, 255, 255, 0.85);
-    border: 0.05em solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.3em;
-    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    font-size: 1.4em;
-    font-family: var(--font-body);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    transform: scale(0.95);
-    opacity: 0;
-    animation: modalAppear 0.3s ease-out forwards;
-    backdrop-filter: blur(0.5em);
-    -webkit-backdrop-filter: blur(0.5em);
+    max-width: 500px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    color: #333;
   }
 
-  @keyframes modalAppear {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  .modal-header {
-    padding: 0.8em 1em;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    font-family: var(--font-heading);
-  }
-  
-  .header-content {
-    display: flex;
-    align-items: center;
-    gap: 0.8em;
-  }
-  
-  .header-text {
-    flex: 1;
-  }
-  
-  .race-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5em;
-    height: 2.5em;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 50%;
-    box-shadow: 0 0 0.5em rgba(0, 0, 0, 0.1);
-  }
-  
-  .race-display {
-    font-size: 0.8em;
-    color: rgba(0, 0, 0, 0.7);
-    margin-top: 0.2em;
-  }
-  
-  .race-name {
-    font-weight: 600;
-    color: var(--color-bright-accent, #3a8eff);
-  }
-  
-  .race-info {
-    opacity: 0.7;
-    font-style: italic;
-    font-size: 0.9em;
-    margin-left: 0.5em;
-  }
-
-  h3 {
-    margin: 0;
-    font-size: 1.1em;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.8);
-  }
-
-  .modal-content {
-    padding: 0.8em;
-    overflow-y: auto;
-    max-height: calc(85vh - 4em); /* Account for header space */
-  }
-  
-  /* Loading state */
-  .loading-state,
-  .error-state,
-  .spawning-state,
-  .no-spawns-state {
+  h2 {
+    margin: 0 0 20px;
     text-align: center;
-    padding: 2rem;
-    color: rgba(0, 0, 0, 0.7);
+    color: #222;
+    font-size: 1.5em;
   }
-  
-  .loading-spinner {
-    display: inline-block;
-    width: 2rem;
-    height: 2rem;
-    border: 0.25rem solid rgba(0, 0, 0, 0.1);
-    border-top-color: rgba(0, 0, 0, 0.5);
-    border-radius: 50%;
-    animation: spinner 1s linear infinite;
-    margin-bottom: 1rem;
-  }
-  
-  @keyframes spinner {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-  
+
   .error-message {
-    color: #e74c3c;
-    margin-bottom: 1rem;
-  }
-  
-  .action-button {
-    padding: 0.6em;
-    background-color: rgba(66, 133, 244, 0.1);
-    border: 1px solid rgba(66, 133, 244, 0.3);
+    background: rgba(255, 0, 0, 0.1);
+    color: darkred;
+    padding: 10px;
+    margin: 10px 0;
     border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9em;
-    color: rgba(0, 0, 0, 0.8);
-    font-family: var(--font-body);
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5em;
-  }
-  
-  .action-button:hover {
-    background-color: rgba(66, 133, 244, 0.2);
-    transform: translateY(-1px);
-  }
-  
-  .retry-button {
-    margin: 0 auto;
-    display: inline-flex;
-  }
-  
-  /* Spawn points list */
-  .spawn-points {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6em;
-  }
-  
-  .entity {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 0.6em;
-    padding: 0.5em 0.7em;
-    border-radius: 0.3em;
-    background-color: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    transition: background-color 0.2s ease;
-  }
-
-  .entity:last-child {
-    margin-bottom: 0;
-  }
-
-  .entity:hover {
-    background-color: rgba(255, 255, 255, 0.8);
-  }
-
-  .spawn-point {
-    cursor: pointer;
-    position: relative;
-  }
-  
-  .spawn-point.selected {
-    background-color: rgba(66, 133, 244, 0.05);
-    border-color: rgba(66, 133, 244, 0.3);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-  
-  .entity-icon {
-    margin-right: 0.7em;
-    margin-top: 0.1em;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .entity-info {
-    flex: 1;
-  }
-  
-  .entity-name {
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.85);
-    line-height: 1.2;
-    margin-bottom: 0.2em;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5em;
-  }
-  
-  .entity-details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6em;
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.7);
-    width: 100%;
-    justify-content: space-between;
-  }
-  
-  .entity-location {
-    font-family: var(--font-mono, monospace);
-  }
-  
-  .entity-type {
-    color: rgba(0, 0, 0, 0.6);
-  }
-  
-  .spawn-description {
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.6);
-    font-style: italic;
-    margin: 0.4em 0 0;
-  }
-  
-  .spawn-button {
-    background-color: rgba(76, 175, 80, 0.1);
-    border: 1px solid rgba(76, 175, 80, 0.3);
-    color: rgba(76, 175, 80, 0.9);
-    padding: 0.3em 0.8em;
-    border-radius: 0.3em;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-weight: 500;
-    white-space: nowrap;
-    margin-left: 0.5em;
-    align-self: center;
-  }
-  
-  .spawn-button:hover:not([disabled]) {
-    background-color: rgba(76, 175, 80, 0.2);
-    transform: translateY(-1px);
-  }
-  
-  .spawn-button[disabled] {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  /* Race icon styling with global selectors */
-  :global(.spawn-race-icon) {
-    width: 2em;
-    height: 2em;
-    opacity: 0.85;
-    fill: rgba(0, 0, 0, 0.7);
-  }
-  
-  :global(.spawn-race-icon.fairy-icon path) {
-    fill: rgba(138, 43, 226, 0.8); /* Brighter purple for fairy */
-  }
-  
-  :global(.spawn-race-icon.goblin-icon path) {
-    fill: rgba(0, 128, 0, 0.8); /* Brighter green for goblin */
-  }
-  
-  :global(.spawn-icon-detail) {
-    opacity: 0.9;
-    filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.8));
-  }
-  
-  /* New styles for confirm button */
-  .confirm-spawn-container {
-    margin-top: 1.2em;
+    border: 1px solid rgba(255, 0, 0, 0.3);
     text-align: center;
   }
 
-  .confirm-spawn-button {
-    background-color: rgba(76, 175, 80, 0.8);
-    color: white;
-    padding: 0.6em 1.2em;
-    border: none;
-    border-radius: 0.3em;
-    font-weight: 500;
+  .spawn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 5px;
+    margin-bottom: 15px;
+  }
+
+  .spawn-item {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 1em;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
 
-  .confirm-spawn-button:hover:not([disabled]) {
-    background-color: rgba(76, 175, 80, 1);
+  .spawn-item:hover {
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }
 
-  .confirm-spawn-button[disabled] {
-    opacity: 0.6;
+  .spawn-item.selected {
+    background: rgba(66, 133, 244, 0.1);
+    border-color: #4285F4;
+    box-shadow: 0 0 0 1px #4285F4;
+  }
+
+  .spawn-item h3 {
+    margin: 0 0 8px;
+    font-size: 1.1em;
+    color: #333;
+  }
+
+  .spawn-description {
+    font-size: 0.9em;
+    margin: 0 0 10px;
+    color: #555;
+  }
+
+  .spawn-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85em;
+    color: #777;
+  }
+
+  .spawn-race {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: capitalize;
+  }
+
+  .spawn-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .spawn-button {
+    background: #4285F4;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 4px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .spawn-button:hover:not(:disabled) {
+    background: #3367D6;
+  }
+
+  .spawn-button:disabled {
+    background: #999;
     cursor: not-allowed;
+    opacity: 0.7;
   }
 
-  /* Race match badge */
-  .race-match-badge {
-    font-size: 0.7em;
-    padding: 0.2em 0.4em;
-    border-radius: 0.3em;
-    background-color: rgba(76, 175, 80, 0.2);
-    color: #2e7d32;
-    border: 1px solid rgba(76, 175, 80, 0.4);
+  .loading-message {
+    text-align: center;
+    padding: 20px;
+    color: #555;
+    font-style: italic;
   }
-  
-  /* Responsive styles */
-  @media (max-width: 640px) {
-    .spawn-point {
-      flex-direction: column;
-      align-items: stretch;
-    }
-    
-    .entity-icon {
-      margin-right: 0;
-      margin-bottom: 0.7em;
-    }
-    
-    .confirm-spawn-button {
-      width: 100%;
-    }
+
+  .spawn-menu-wrapper.loading {
+    cursor: wait;
+  }
+
+  /* Spinner animation for loading state */
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 </style>

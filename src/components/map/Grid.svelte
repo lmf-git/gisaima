@@ -391,9 +391,30 @@
   });
   
   function isCurrentPlayer(playerEntity) {
-    return playerEntity && $currentPlayer && playerEntity.uid === $currentPlayer.uid;
+    if (!playerEntity || !$currentPlayer) return false;
+    
+    const playerIds = [
+      $currentPlayer.uid,
+      $currentPlayer.id,
+      $currentPlayer.userId,
+      $currentPlayer.playerId
+    ].filter(Boolean);
+    
+    const entityIds = [
+      playerEntity.uid,
+      playerEntity.id,
+      playerEntity.playerId,
+      playerEntity.userId
+    ].filter(Boolean);
+    
+    return playerIds.some(playerId => 
+      entityIds.some(entityId => 
+        entityId === playerId || 
+        entityId?.toString() === playerId?.toString()
+      )
+    );
   }
-  
+
   function hasCurrentPlayerEntity(cell) {
     return cell.players && cell.players.some(p => isCurrentPlayer(p));
   }

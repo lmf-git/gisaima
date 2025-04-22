@@ -429,7 +429,31 @@
   // Function to check if entity belongs to current player
   function isOwnedByCurrentPlayer(entity) {
     if (!$currentPlayer || !entity) return false;
-    return entity.owner === $currentPlayer.uid || entity.uid === $currentPlayer.uid;
+
+    // Check all possible ID variations
+    const playerIds = [
+      $currentPlayer.uid,
+      $currentPlayer.id,
+      $currentPlayer.userId,
+      $currentPlayer.playerId
+    ].filter(Boolean);
+    
+    // Check all possible entity ID fields
+    const entityIds = [
+      entity.owner,
+      entity.uid,
+      entity.id,
+      entity.playerId,
+      entity.userId
+    ].filter(Boolean);
+    
+    // Check if any ID matches between the two sets
+    return playerIds.some(playerId => 
+      entityIds.some(entityId => 
+        entityId === playerId || 
+        entityId?.toString() === playerId?.toString()
+      )
+    );
   }
 
   // Enhance formatBattleTimeRemaining function to handle more states
