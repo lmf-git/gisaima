@@ -45,6 +45,7 @@
     import Map from '../../components/icons/Map.svelte';
     import Spyglass from '../../components/icons/Spyglass.svelte';
     import Recenter from '../../components/map/Recenter.svelte';
+    import Chat from '../../components/map/Chat.svelte';
 
     const DEBUG_MODE = true;
     const debugLog = (...args) => DEBUG_MODE && console.log(...args);
@@ -89,6 +90,8 @@
     let showEntities = $state(true);
     let minimapClosing = $state(false);
     let entitiesClosing = $state(false);
+    let showChat = $state(true);
+    let chatClosing = $state(false);
     const ANIMATION_DURATION = 800;
 
     let initialized = $state(false);
@@ -239,6 +242,34 @@
         // If spawn menu appears, ensure tutorial is hidden
         if (!$game?.player?.alive && isTutorialVisible) {
             isTutorialVisible = false;
+        }
+    });
+
+    // Add event handler for chat location clicks
+    $effect(() => {
+        if (browser) {
+            const handleChatLocationClick = (event) => {
+                const { x, y } = event.detail;
+                if (typeof x === 'number' && typeof y === 'number') {
+                    console.log(`Navigating to chat location: ${x},${y}`);
+                    moveTarget(x, y);
+                    
+                    // Get the tile data after moving
+                    const clickedTile = $coordinates.find(c => c.x === x && c.y === y);
+                    
+                    // Only highlight and open details if there's meaningful content
+                    if (clickedTile && hasTileContent(clickedTile)) {
+                        setHighlighted(x, y);
+                        toggleDetailsModal(true);
+                    }
+                }
+            };
+            
+            window.addEventListener('goto-location', handleChatLocationClick);
+            
+            return () => {
+                window.removeEventListener('goto-location', handleChatLocationClick);
+            };
         }
     });
 
@@ -443,6 +474,39 @@
         }
       }
     }
+
+    function toggleChat() {
+      if (!$game?.player?.alive || isTutorialVisible) {
+        return;
+      }
+      
+      if (showChat) {
+        chatClosing = true;
+        setTimeout(() => {
+          showChat = false;
+          chatClosing = false;
+          if (browser) {
+            localStorage.setItem('chat', 'false');
+          }
+        }, ANIMATION_DURATION);
+      } else {
+        showChat = true;
+        if (browser) {
+          localStorage.setItem('chat', 'true');
+        }
+      }
+    }
+
+    $effect(() => {
+      if (browser && initialized) {
+        const savedChatState = localStorage.getItem('chat');
+        if (savedChatState === 'false') {
+          showChat = false;
+        } else {
+          showChat = true;
+        }
+      }
+    });
 
     function handleTutorialToggle() {
       console.log('Tutorial visibility toggled');
@@ -776,6 +840,17 @@
                     <Map extraClass="button-icon" />
                 {/if}
             </button>
+            <button 
+                class="control-button chat-button" 
+                onclick={toggleChat}
+                aria-label={showChat ? "Hide chat" : "Show chat"}
+                disabled={!$game?.player?.alive || isTutorialVisible}>
+                {#if showChat || chatClosing}
+                    <Close size="1.2em" extraClass="close-icon-dark" />
+                {:else}
+                    <Map extraClass="button-icon" />
+                {/if}
+            </button>
         </div>
         
         {#if !(showEntities || entitiesClosing)}
@@ -854,6 +929,10 @@
         
         {#if ($user && !$game.player?.alive)}
             <SpawnMenu />
+        {/if}
+
+        {#if $ready && $game?.player?.alive && (showChat || chatClosing)}
+            <Chat closing={chatClosing} />
         {/if}
 
         {#if modalState.visible}

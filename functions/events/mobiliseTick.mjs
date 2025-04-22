@@ -4,6 +4,8 @@
  */
 
 import { logger } from "firebase-functions";
+import { getDatabase } from 'firebase-admin/database';
+import { ref, push } from "firebase/database";
 
 /**
  * Process mobilizing groups for a given world
@@ -38,9 +40,55 @@ export function processMobilizations(worldId, updates, groups, chunkKey, tileKey
       timestamp: now
     };
     
+    // Create a chat message for the world
+    const chatMessageText = createMobilizationMessage(group, tileKey);
+    updates[`worlds/${worldId}/chat/${now}_${groupId}`] = {
+      text: chatMessageText,
+      type: 'event',
+      timestamp: now,
+      location: {
+        x: parseInt(tileKey.split(',')[0]),
+        y: parseInt(tileKey.split(',')[1])
+      }
+    };
+    
+    // Update player records if the owner is a player
+    if (group.owner) {
+      updates[`players/${group.owner}/worlds/${worldId}/groups/${groupId}/status`] = 'idle';
+      updates[`players/${group.owner}/worlds/${worldId}/groups/${groupId}/readyAt`] = null;
+    }
+    
     mobilizationsProcessed++;
     logger.info(`Group ${groupId} completed mobilization at ${tileKey} in chunk ${chunkKey}`);
   }
   
   return mobilizationsProcessed;
+}
+
+/**
+ * Create a descriptive message for the mobilization chat announcement
+ * @param {Object} group The group that completed mobilization
+ * @param {string} tileKey The location of the mobilization
+ * @returns {string} Formatted message for chat
+ */
+function createMobilizationMessage(group, tileKey) {
+  const groupName = group.name || "Unnamed force";
+  const groupSize = group.unitCount || "unknown size";
+  const groupRace = group.race ? `${group.race}` : "";
+  const location = tileKey.replace(',', ', ');
+  
+  // Construct a more interesting message based on race and size
+  let message = "";
+  
+  if (groupSize === 1) {
+    message = `A lone ${groupRace} warrior has mobilized`;
+  } else if (groupSize <= 5) {
+    message = `A small band of ${groupRace} fighters has mobilized`;
+  } else if (groupSize <= 20) {
+    message = `A company of ${groupRace} troops has mobilized`;
+  } else {
+    message = `A large army of ${groupRace} forces has mobilized`;
+  }
+  
+  return `${message} at (${location}) - "${groupName}"`;
 }

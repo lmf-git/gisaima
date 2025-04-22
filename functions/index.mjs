@@ -19,3 +19,4 @@ export { joinBattle } from './actions/joinBattle.mjs';
 
 // Scheduled tasks
 export { processGameTicks } from './tick.mjs';
+export { cleanup } from './cleanup.mjs';
