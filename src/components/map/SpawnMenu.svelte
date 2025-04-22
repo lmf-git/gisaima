@@ -4,10 +4,13 @@
   import { game, currentPlayer, needsSpawn } from '../../lib/stores/game.js';
   import { moveTarget } from '../../lib/stores/map.js';
   import Torch from '../icons/Torch.svelte';
-
-  // Add debug logging flag first to avoid initialization issues
-  const DEBUG_MODE = true;
-  const debugLog = (...args) => DEBUG_MODE && console.log(...args);
+  
+  // Import race icon components
+  import Human from '../icons/Human.svelte';
+  import Elf from '../icons/Elf.svelte';
+  import Dwarf from '../icons/Dwarf.svelte';
+  import Goblin from '../icons/Goblin.svelte';
+  import Fairy from '../icons/Fairy.svelte';
 
   // Using Svelte 5 $props rune
   const { onSpawn = () => {} } = $props();
@@ -18,19 +21,10 @@
   let spawning = $state(false);
   let error = $state(null);
   let movedToSpawn = $state(false);
-  let showDebugView = $state(DEBUG_MODE);
-  let spawnCheckComplete = $state(false);
-  
-  // Add tracking for player data initialization
-  let playerDataInitialized = $state(false);
-  let initializationAttempts = $state(0);
-  const MAX_INIT_ATTEMPTS = 5;
   
   // Add a state variable to track world data
   let worldData = $state(null);
-  let spawnDataSource = $state({ source: 'none', keys: [], worldKeys: [], infoKeys: [] });
   let spawnPoints = $state([]);
-  let debugData = $state({ playerData: {}, spawnSource: '', spawnKeys: [], initState: {} });
   
   // Function to calculate chunk key
   function getChunkKey(x, y) {
@@ -49,51 +43,6 @@
     
     if (currentWorldData) {
       worldData = currentWorldData;
-      debugLog('World data loaded:', {
-        worldId: currentWorldId,
-        hasSpawns: !!currentWorldData.spawns,
-        hasInfoProperty: !!currentWorldData.info,
-        hasSpawnsProperty: !!currentWorldData.spawns,
-        hasInfoSpawnsProperty: !!currentWorldData.info?.spawns,
-      });
-    } else {
-      debugLog('No world data available yet');
-    }
-  });
-
-  // Separate effect for player data initialization
-  $effect(() => {
-    // Check if player data is available when currentPlayer changes
-    if ($currentPlayer && $game.currentWorld) {
-      const initialized = !!$currentPlayer.uid && 
-                          !!$currentPlayer.race && 
-                          $currentPlayer.world === $game.currentWorld;
-      
-      if (initialized && !playerDataInitialized) {
-        debugLog('Player data initialized:', {
-          uid: $currentPlayer.uid,
-          world: $currentPlayer.world,
-          race: $currentPlayer.race,
-          alive: $currentPlayer.alive,
-          hasLocation: !!$currentPlayer.lastLocation
-        });
-        playerDataInitialized = true;
-      }
-      
-      // Update debug data
-      debugData.playerData = {
-        uid: $currentPlayer.uid,
-        world: $currentPlayer.world,
-        race: $currentPlayer.race,
-        alive: $currentPlayer.alive || false,
-        hasLastLocation: !!$currentPlayer.lastLocation
-      };
-      
-      debugData.initState = {
-        playerDataInitialized,
-        attemptsLeft: MAX_INIT_ATTEMPTS - initializationAttempts,
-        needsSpawn: $needsSpawn
-      };
     }
   });
   
@@ -102,8 +51,6 @@
     // Find available spawn points when world data changes
     if (worldData) {
       let foundSpawns = [];
-      let source = 'none';
-      let spawnKeys = [];
       
       // Case 1: Check info.spawns (as in backup.json)
       if (worldData.info?.spawns) {
@@ -111,8 +58,6 @@
           key,
           ...spawn
         }));
-        source = 'info.spawns';
-        spawnKeys = Object.keys(worldData.info.spawns);
       }
       // Case 2: Check direct spawns property
       else if (worldData.spawns) {
@@ -120,46 +65,13 @@
           key,
           ...spawn
         }));
-        source = 'direct';
-        spawnKeys = Object.keys(worldData.spawns);
-      }
-      // Case 3: Look in chunks (early exit if found elsewhere)
-      else if (worldData.chunks && foundSpawns.length === 0) {
-        // This would be more complex - omitting for brevity
-        source = 'chunks';
       }
       
       if (foundSpawns.length > 0) {
-        debugLog('SpawnMenu - Spawn data source:', {
-          source,
-          keysCount: spawnKeys.length,
-          keys: spawnKeys
-        });
-        
-        if (foundSpawns.length > 0) {
-          debugLog('SpawnMenu - Example spawn entry:', {
-            key: spawnKeys[0],
-            data: foundSpawns[0]
-          });
-        }
-        
         // Update component state
         spawnPoints = foundSpawns;
-        spawnDataSource = { 
-          source, 
-          keys: spawnKeys,
-          worldKeys: worldData ? Object.keys(worldData) : [],
-          infoKeys: worldData?.info ? Object.keys(worldData.info) : []
-        };
-        
-        // Update debug tracking
-        debugData.spawnSource = source;
-        debugData.spawnKeys = spawnKeys;
-        
-        // We found spawn points, we're done loading
         loading = false;
       } else {
-        debugLog('No spawn points found in world data');
         loading = false;
         error = 'No spawn points found in this world';
       }
@@ -250,176 +162,225 @@
       spawning = false;
     }
   }
+  
+  // Format text with proper capitalization
+  function _fmt(text) {
+    if (!text) return '';
+    return text.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
 </script>
 
 {#if $needsSpawn}
-<div class="spawn-overlay">
-  <div class="spawn-container">
-    <h2>Select Spawn Location</h2>
-    
-    {#if loading}
-      <div class="loading-state">
-        <div class="loading-spinner"></div>
-        <p>Loading spawn points...</p>
-      </div>
-    {:else if error}
-      <div class="error-state">
-        <p class="error-message">{error}</p>
-        <button class="retry-button" onclick={() => { error = null; loading = true; }}>
-          Retry
-        </button>
-      </div>
-    {:else if spawning}
-      <div class="spawning-state">
-        <div class="loading-spinner"></div>
-        <p>Spawning your character...</p>
-      </div>
-    {:else if spawnPoints.length === 0}
-      <div class="no-spawns-state">
-        <p>No spawn points available in this world.</p>
-      </div>
-    {:else}
-      <div class="spawn-points">
-        {#each spawnPoints as spawn}
-          <div 
-            class="spawn-point" 
-            class:selected={selectedSpawnId === (spawn.id || spawn.key)}
-            onclick={() => selectedSpawnId = spawn.id || spawn.key}
-          >
-            <div class="spawn-icon">
-              <Torch />
-            </div>
-            <div class="spawn-details">
-              <h3>{spawn.name || `Spawn ${spawn.id || spawn.key}`}</h3>
-              <p class="spawn-location">
-                Location: 
-                {#if spawn.x !== undefined && spawn.y !== undefined}
-                  {spawn.x},{spawn.y}
-                {:else if spawn.position?.x !== undefined && spawn.position?.y !== undefined}
-                  {spawn.position.x},{spawn.position.y}
-                {:else if spawn.position?.chunkX !== undefined}
-                  {(spawn.position.chunkX * CHUNK_SIZE) + (spawn.position.x || 0)},
-                  {(spawn.position.chunkY * CHUNK_SIZE) + (spawn.position.y || 0)}
-                {:else}
-                  Unknown
-                {/if}
-              </p>
-              {#if spawn.description}
-                <p class="spawn-description">{spawn.description}</p>
-              {/if}
-            </div>
-            <button 
-              class="spawn-button"
-              disabled={spawning}
-              onclick={() => spawnAtLocation(spawn)}
-            >
-              Spawn Here
-            </button>
-          </div>
-        {/each}
-      </div>
-    {/if}
-    
-    {#if showDebugView}
-      <div class="debug-section">
-        <h3>Debug Info</h3>
-        <div class="debug-content">
-          <div class="debug-row">
-            <span class="debug-label">Current World:</span>
-            <span class="debug-value">{$game.worldKey || 'None'}</span>
-          </div>
-          <div class="debug-row">
-            <span class="debug-label">World Info Available:</span>
-            <span class="debug-value">{worldData?.info ? 'Yes' : 'No'}</span>
-          </div>
-          <div class="debug-row">
-            <span class="debug-label">Spawns in info.spawns:</span>
-            <span class="debug-value">{worldData?.info?.spawns ? 'Yes' : 'No'}</span>
-          </div>
-          <div class="debug-row">
-            <span class="debug-label">Spawns at root level:</span>
-            <span class="debug-value">{worldData?.spawns ? 'Yes' : 'No'}</span>
-          </div>
-          <div class="debug-row">
-            <span class="debug-label">Player Race:</span>
-            <span class="debug-value">{$currentPlayer?.race || 'Unknown'}</span>
-          </div>
-          
-          <h4>World Keys:</h4>
-          <pre>{JSON.stringify(spawnDataSource.worldKeys, null, 2)}</pre>
-          
-          <h4>Info Keys:</h4>
-          <pre>{JSON.stringify(spawnDataSource.infoKeys, null, 2)}</pre>
-          
-          <h4>Player Data:</h4>
-          <pre>{JSON.stringify(debugData.playerData, null, 2)}</pre>
-          
-          <h4>Initialization:</h4>
-          <pre>{JSON.stringify(debugData.initState, null, 2)}</pre>
-          
-          <h4>Spawn Data:</h4>
-          <div class="debug-row">
-            <span class="debug-label">Source:</span>
-            <span class="debug-value">{debugData.spawnSource}</span>
-          </div>
-          <div class="debug-row">
-            <span class="debug-label">Keys Count:</span>
-            <span class="debug-value">{debugData.spawnKeys.length}</span>
-          </div>
+<div class="modal-container">
+  <div class="spawn-modal">
+    <header class="modal-header">
+      <h3>
+        <div class="race-icon">
+          {#if $currentPlayer?.race}
+            {#if $currentPlayer.race.toLowerCase() === 'human'}
+              <Human extraClass="spawn-race-icon" />
+            {:else if $currentPlayer.race.toLowerCase() === 'elf'}
+              <Elf extraClass="spawn-race-icon" />
+            {:else if $currentPlayer.race.toLowerCase() === 'dwarf'}
+              <Dwarf extraClass="spawn-race-icon" />
+            {:else if $currentPlayer.race.toLowerCase() === 'goblin'}
+              <Goblin extraClass="spawn-race-icon" />
+            {:else if $currentPlayer.race.toLowerCase() === 'fairy'}
+              <Fairy extraClass="spawn-race-icon" />
+            {/if}
+          {/if}
         </div>
+        Select Spawn Location
+      </h3>
+      <div class="race-display">
+        {#if $currentPlayer?.race}
+          {_fmt($currentPlayer.race)}
+        {/if}
       </div>
-    {/if}
+    </header>
+    
+    <div class="modal-content">
+      {#if loading}
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading spawn points...</p>
+        </div>
+      {:else if error}
+        <div class="error-state">
+          <p class="error-message">{error}</p>
+          <button class="action-button retry-button" onclick={() => { error = null; loading = true; }}>
+            Retry
+          </button>
+        </div>
+      {:else if spawning}
+        <div class="spawning-state">
+          <div class="loading-spinner"></div>
+          <p>Spawning your character...</p>
+        </div>
+      {:else if spawnPoints.length === 0}
+        <div class="no-spawns-state">
+          <p>No spawn points available in this world.</p>
+        </div>
+      {:else}
+        <div class="spawn-points">
+          {#each spawnPoints as spawn}
+            <div 
+              class="spawn-point entity" 
+              class:selected={selectedSpawnId === (spawn.id || spawn.key)}
+              onclick={() => selectedSpawnId = spawn.id || spawn.key}
+            >
+              <div class="entity-icon">
+                <Torch size="1.4em" extraClass="spawn-icon-detail" />
+              </div>
+              <div class="entity-info">
+                <div class="entity-name">
+                  {spawn.name || `Spawn ${spawn.id || spawn.key}`}
+                </div>
+                <div class="entity-details">
+                  <span class="entity-location">
+                    {#if spawn.x !== undefined && spawn.y !== undefined}
+                      {spawn.x},{spawn.y}
+                    {:else if spawn.position?.x !== undefined && spawn.position?.y !== undefined}
+                      {spawn.position.x},{spawn.position.y}
+                    {:else if spawn.position?.chunkX !== undefined}
+                      {(spawn.position.chunkX * CHUNK_SIZE) + (spawn.position.x || 0)},
+                      {(spawn.position.chunkY * CHUNK_SIZE) + (spawn.position.y || 0)}
+                    {:else}
+                      Unknown
+                    {/if}
+                  </span>
+                  {#if spawn.type}
+                    <span class="entity-type">{_fmt(spawn.type)}</span>
+                  {/if}
+                </div>
+                {#if spawn.description}
+                  <p class="spawn-description">{spawn.description}</p>
+                {/if}
+              </div>
+              <button 
+                class="spawn-button"
+                disabled={spawning}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  spawnAtLocation(spawn);
+                }}
+              >
+                Spawn Here
+              </button>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
   </div>
 </div>
 {/if}
 
 <style>
-  .spawn-overlay {
+  .modal-container {
     position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.7);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.5);
     padding: 1rem;
   }
   
-  .spawn-container {
-    background-color: var(--color-dark-blue);
-    border: 1px solid var(--color-panel-border);
-    border-radius: 0.5rem;
-    padding: 2rem;
-    width: 100%;
-    max-width: 40rem;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.5);
+  .spawn-modal {
+    width: 90%;
+    max-width: 34em;
+    max-height: 85vh;
+    background-color: rgba(255, 255, 255, 0.85);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.3em;
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    font-size: 1.4em;
+    font-family: var(--font-body);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transform: scale(0.95);
+    opacity: 0;
+    animation: modalAppear 0.3s ease-out forwards;
+    backdrop-filter: blur(0.5em);
+    -webkit-backdrop-filter: blur(0.5em);
   }
-  
-  h2 {
-    color: var(--color-pale-green);
-    margin: 0 0 1.5rem;
-    text-align: center;
+
+  @keyframes modalAppear {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .modal-header {
+    padding: 0.8em 1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     font-family: var(--font-heading);
   }
   
+  .race-icon {
+    display: flex;
+    align-items: center;
+    margin-right: 0.5em;
+  }
+  
+  .race-display {
+    font-size: 0.8em;
+    color: rgba(0, 0, 0, 0.6);
+    padding: 0.2em 0.5em;
+    border-radius: 0.3em;
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+  }
+
+  .modal-content {
+    padding: 0.8em;
+    overflow-y: auto;
+    max-height: calc(85vh - 4em); /* Account for header space */
+  }
+  
+  /* Loading state */
   .loading-state,
   .error-state,
   .spawning-state,
   .no-spawns-state {
     text-align: center;
     padding: 2rem;
+    color: rgba(0, 0, 0, 0.7);
   }
   
   .loading-spinner {
     display: inline-block;
-    width: 2.5rem;
-    height: 2.5rem;
-    border: 0.25rem solid rgba(100, 255, 218, 0.3);
-    border-top-color: var(--color-pale-green);
+    width: 2rem;
+    height: 2rem;
+    border: 0.25rem solid rgba(0, 0, 0, 0.1);
+    border-top-color: rgba(0, 0, 0, 0.5);
     border-radius: 50%;
     animation: spinner 1s linear infinite;
+    margin-bottom: 1rem;
   }
   
   @keyframes spinner {
@@ -433,87 +394,131 @@
     margin-bottom: 1rem;
   }
   
-  .retry-button {
-    background-color: var(--color-button-primary);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.25rem;
+  .action-button {
+    padding: 0.6em;
+    background-color: rgba(66, 133, 244, 0.1);
+    border: 1px solid rgba(66, 133, 244, 0.3);
+    border-radius: 4px;
     cursor: pointer;
+    font-size: 0.9em;
+    color: rgba(0, 0, 0, 0.8);
+    font-family: var(--font-body);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
   }
   
+  .action-button:hover {
+    background-color: rgba(66, 133, 244, 0.2);
+    transform: translateY(-1px);
+  }
+  
+  .retry-button {
+    margin: 0 auto;
+    display: inline-flex;
+  }
+  
+  /* Spawn points list */
   .spawn-points {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.6em;
   }
   
-  .spawn-point {
+  .entity {
     display: flex;
-    gap: 1rem;
-    padding: 1rem;
-    border: 1px solid var(--color-panel-border);
-    border-radius: 0.5rem;
-    background-color: rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    align-items: center;
+    align-items: flex-start;
+    margin-bottom: 0.6em;
+    padding: 0.5em 0.7em;
+    border-radius: 0.3em;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s ease;
   }
-  
-  .spawn-point:hover {
-    background-color: rgba(100, 255, 218, 0.05);
+
+  .entity:last-child {
+    margin-bottom: 0;
+  }
+
+  .entity:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+  }
+
+  .spawn-point {
+    cursor: pointer;
+    position: relative;
   }
   
   .spawn-point.selected {
-    background-color: rgba(100, 255, 218, 0.1);
-    border-color: var(--color-bright-accent);
+    background-color: rgba(66, 133, 244, 0.05);
+    border-color: rgba(66, 133, 244, 0.3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
   
-  .spawn-icon {
-    width: 3rem;
-    height: 3rem;
+  .entity-icon {
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
   }
   
-  .spawn-details {
+  .entity-info {
     flex: 1;
   }
   
-  .spawn-details h3 {
-    color: var(--color-pale-green);
-    margin: 0 0 0.5rem;
-    font-size: 1.2rem;
-    font-family: var(--font-heading);
+  .entity-name {
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.85);
+    line-height: 1.2;
+    margin-bottom: 0.2em;
   }
   
-  .spawn-location {
-    color: var(--color-muted-teal);
-    font-family: monospace;
-    margin: 0.25rem 0;
-    font-size: 0.9rem;
+  .entity-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6em;
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.7);
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .entity-location {
+    font-family: var(--font-mono, monospace);
+  }
+  
+  .entity-type {
+    color: rgba(0, 0, 0, 0.6);
   }
   
   .spawn-description {
-    color: var(--color-text-secondary);
-    font-size: 0.9rem;
-    margin: 0.5rem 0 0;
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.6);
+    font-style: italic;
+    margin: 0.4em 0 0;
   }
   
   .spawn-button {
-    background-color: var(--color-button-primary);
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 0.25rem;
+    background-color: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: rgba(76, 175, 80, 0.9);
+    padding: 0.3em 0.8em;
+    border-radius: 0.3em;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
+    font-weight: 500;
     white-space: nowrap;
+    margin-left: 0.5em;
+    align-self: center;
   }
   
   .spawn-button:hover:not([disabled]) {
-    background-color: var(--color-button-primary-hover);
+    background-color: rgba(76, 175, 80, 0.2);
+    transform: translateY(-1px);
   }
   
   .spawn-button[disabled] {
@@ -521,65 +526,42 @@
     cursor: not-allowed;
   }
   
-  .debug-section {
-    margin-top: 2rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--color-panel-border);
+  /* Race icon styling with global selectors */
+  :global(.spawn-race-icon) {
+    width: 1.4em;
+    height: 1.4em;
+    opacity: 0.85;
+    fill: rgba(0, 0, 0, 0.7);
   }
   
-  .debug-section h3 {
-    color: var(--color-pale-green);
-    margin: 0 0 1rem;
+  :global(.spawn-race-icon.fairy-icon path) {
+    fill: rgba(138, 43, 226, 0.8); /* Brighter purple for fairy */
   }
   
-  .debug-content {
-    background-color: rgba(0, 0, 0, 0.3);
-    padding: 1rem;
-    border-radius: 0.25rem;
-    font-family: monospace;
-    overflow: auto;
-    max-height: 30rem;
-    font-size: 0.8rem;
+  :global(.spawn-race-icon.goblin-icon path) {
+    fill: rgba(0, 128, 0, 0.8); /* Brighter green for goblin */
   }
   
-  .debug-row {
-    display: flex;
-    margin-bottom: 0.5rem;
-  }
-  
-  .debug-label {
-    color: var(--color-pale-green);
-    width: 12rem;
-    flex-shrink: 0;
-  }
-  
-  pre {
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.2);
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-    margin: 0.5rem 0 1rem;
-  }
-  
-  h4 {
-    color: var(--color-muted-teal);
-    margin: 1rem 0 0.5rem;
-    font-size: 0.9rem;
+  :global(.spawn-icon-detail) {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.8));
   }
   
   /* Responsive styles */
-  @media (max-width: 768px) {
-    .spawn-container {
-      padding: 1.5rem;
-    }
-    
+  @media (max-width: 640px) {
     .spawn-point {
       flex-direction: column;
-      align-items: flex-start;
+      align-items: stretch;
+    }
+    
+    .entity-icon {
+      margin-right: 0;
+      margin-bottom: 0.7em;
     }
     
     .spawn-button {
-      margin-top: 1rem;
+      margin-left: 0;
+      margin-top: 0.8em;
       width: 100%;
     }
   }
