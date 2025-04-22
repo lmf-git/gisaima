@@ -428,7 +428,14 @@
 
   // Function to check if entity belongs to current player
   function isOwnedByCurrentPlayer(entity) {
-    if (!$currentPlayer || !entity) return false;    
+    if (!$currentPlayer || !entity) return false;
+    
+    // For player entities, compare the ID directly 
+    if (entity.displayName !== undefined && entity.id !== undefined && !entity.owner) {
+      return entity.id === $currentPlayer.id;
+    }
+    
+    // For other entities like groups or structures, check the owner property
     return entity.owner?.toString() === $currentPlayer.id?.toString();
   }
 
