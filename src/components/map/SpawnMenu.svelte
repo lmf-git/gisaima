@@ -5,9 +5,6 @@
   import { moveTarget } from '../../lib/stores/map';
   import { user } from '../../lib/stores/user';
 
-  // Get component props
-  const { onSpawn = () => {} } = $props();
-
   // Component state using Svelte 5 runes
   let selectedSpawn = $state(null);
   let loading = $state(false);
@@ -80,7 +77,7 @@
       const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.worldKey}`);
       
       await update(playerWorldRef, {
-        alive: true,  // Mark player as alive after spawn
+        alive: true,
         lastLocation: {
           x: spawnX,
           y: spawnY,
@@ -116,9 +113,7 @@
       });
       
       console.log(`Player spawned at ${tileKey} in chunk ${chunkKey} with uid ${$user.uid}`);
-      
-      // Execute callback
-      onSpawn({x: spawnX, y: spawnY});
+    
     } catch (error) {
       console.error('Error selecting spawn point:', error);
       setError(`Failed to select spawn: ${error.message}`);

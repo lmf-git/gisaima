@@ -9,13 +9,12 @@
     import GitHubIcon from '../components/icons/GitHubIcon.svelte'; 
     import MobileMenu from '../components/MobileMenu.svelte';
     import { onMount, onDestroy } from 'svelte';
-    import { initGameStore, game, isAuthReady, setMapInitializer } from '../lib/stores/game.js';
+    import { game, isAuthReady } from '../lib/stores/game.js';
     import { ref, onValue } from "firebase/database";
     import { db } from '../lib/firebase/database.js';
     import HamburgerIcon from '../components/icons/HamburgerIcon.svelte';
     import GuestWarning from '../components/GuestWarning.svelte';
-    import { initAuthListener } from '$lib/stores/user';
-    import { initialize, initializeMapForWorld } from '$lib/stores/map.js';
+    import { initializeMapForWorld } from '$lib/stores/map.js';
 
     const { children, data } = $props();
 
@@ -106,10 +105,7 @@
         }
     });
     
-    onMount(() => {
-        // Only connect map and game stores - initialization is handled by +layout.js
-        setMapInitializer(initializeMapForWorld);
-        
+    onMount(() => {       
         // Properly handle the potential Promise in data.gameCleanup
         if (data?.gameCleanup) {
             if (typeof data.gameCleanup.then === 'function') {

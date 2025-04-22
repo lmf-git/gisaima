@@ -14,6 +14,9 @@ const debugLog = (...args) => DEBUG_MODE && console.log(...args);
 // Use the imported auth ready store instead of creating a new one
 export { userAuthReady as isAuthReady };
 
+// Add CHUNK_SIZE constant to match the one in tick.mjs
+const CHUNK_SIZE = 20;
+
 // Store for game state with more detailed loading states
 export const game = writable({
   currentWorld: null, // Legacy property - will be deprecated
@@ -287,19 +290,6 @@ export function listenToPlayerWorldData(userId, worldKey) {
   });
   
   return activePlayerWorldDataSubscription;
-}
-
-// Placeholder function that will be replaced when map.js loads
-let initMapForWorld = (worldId, worldData) => {
-  debugLog(`Map module not yet loaded. Will initialize world ${worldId} later.`);
-  return false;
-};
-
-// Function to set the map initialization function from outside
-export function setMapInitializer(initFunction) {
-  if (typeof initFunction === 'function') {
-    initMapForWorld = initFunction;
-  }
 }
 
 // Enhanced set current world with loading completion callback
@@ -587,9 +577,6 @@ export function getWorldSpawnPoints(worldId) {
   debugLog(`[DEBUG] No spawn points defined for world ${worldId}`);
   return [];
 }
-
-// Add CHUNK_SIZE constant to match the one in tick.mjs
-const CHUNK_SIZE = 20;
 
 // Simplify this function - it now just gets world info directly
 export async function refreshWorldInfo(worldId) {

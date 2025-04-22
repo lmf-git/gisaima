@@ -16,19 +16,13 @@
         map, 
         ready,
         targetStore,
-        targetPosition,
         initialize,
-        setup,
         moveTarget,
-        setupFromWorldInfo,
-        setupFromGameStore,
         cleanup,
         isInternalUrlChange,
         setHighlighted,
-        highlightedStore,
         coordinates,
         handleKeyboardEvent,
-        updateModalState,
         initializeMapForWorld
     } from "../../lib/stores/map.js";
     
@@ -748,26 +742,7 @@
         });
     }
     
-    // Function to handle spawn completion from SpawnMenu
-    function handleSpawnComplete(spawnLocation) {
-        if (spawnLocation) {
-            console.log('Spawn complete at:', spawnLocation);
-            
-            // Since the SpawnMenu already moved the map to this location,
-            // we just need to ensure states are updated properly
-            moveTarget(spawnLocation.x, spawnLocation.y);
-            
-            // Mark URL coords as processed
-            urlProcessingComplete = true;
-            lastProcessedLocation = { ...spawnLocation };
-            
-            // Ensure highlighted coordinates are cleared
-            setHighlighted(null, null);
-            
-            // Force an instantiation of state variables (helps with Svelte 5 reactivity)
-            structureRenderCount++;
-        }
-    }
+
     
     // Add missing function for tutorial visibility
     $effect(() => {
@@ -981,7 +956,7 @@
         {/if}
         
         {#if $needsSpawn && $user}
-            <SpawnMenu onSpawn={handleSpawnComplete} />
+            <SpawnMenu />
         {/if}
 
         {#if modalState.visible}
