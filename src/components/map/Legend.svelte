@@ -39,7 +39,7 @@
 <style>
   .legend {
     position: absolute;
-    bottom: 1em; /* Changed from 2.5em to 1em to move it closer to the bottom */
+    bottom: 1.5em;
     right: 1em;
     z-index: 1001;
     cursor: pointer;

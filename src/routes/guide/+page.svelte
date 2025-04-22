@@ -415,7 +415,7 @@
         <div class="race-card">
           <div class="race-header">
             <div class="race-icon">
-              <Human size="2.5em" extraClass="race-icon-guide" />
+              <Human size="2.5em" extraClass="race-icon-guide human-icon" />
             </div>
             <h3>Humans</h3>
           </div>
@@ -434,7 +434,7 @@
         <div class="race-card">
           <div class="race-header">
             <div class="race-icon">
-              <Elf size="2.5em" extraClass="race-icon-guide" />
+              <Elf size="2.5em" extraClass="race-icon-guide elf-icon" />
             </div>
             <h3>Elves</h3>
           </div>
@@ -453,7 +453,7 @@
         <div class="race-card">
           <div class="race-header">
             <div class="race-icon">
-              <Dwarf size="2.5em" extraClass="race-icon-guide" />
+              <Dwarf size="2.5em" extraClass="race-icon-guide dwarf-icon" />
             </div>
             <h3>Dwarves</h3>
           </div>
@@ -472,7 +472,7 @@
         <div class="race-card">
           <div class="race-header">
             <div class="race-icon">
-              <Goblin size="2.5em" extraClass="race-icon-guide" />
+              <Goblin size="2.5em" extraClass="race-icon-guide goblin-icon" />
             </div>
             <h3>Goblins</h3>
           </div>
@@ -491,7 +491,7 @@
         <div class="race-card">
           <div class="race-header">
             <div class="race-icon">
-              <Fairy size="2.5em" extraClass="race-icon-guide" />
+              <Fairy size="2.5em" extraClass="race-icon-guide fairy-icon" />
             </div>
             <h3>Fairies</h3>
           </div>
@@ -671,6 +671,7 @@
 </div>
 
 <style>
+  /* Base container styling similar to Overview and Details */
   .guide-container {
     display: flex;
     flex-direction: column;
@@ -680,6 +681,7 @@
     color: var(--color-text);
   }
   
+  /* Sidebar styling - make it match Details panel */
   .sidebar {
     width: 100%;
     margin-bottom: 2em;
@@ -687,18 +689,19 @@
   }
   
   .toc {
-    background-color: var(--color-panel-bg);
+    background-color: rgba(255, 255, 255, 0.85);
     padding: 1.5em;
     border-radius: 0.5em;
-    border: 1px solid var(--color-panel-border);
-    box-shadow: 0 0.25em 0.5em var(--color-shadow);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
   }
   
   .toc h2 {
-    color: var(--color-pale-green);
+    color: rgba(0, 0, 0, 0.8);
     margin-bottom: 1em;
     font-family: var(--font-heading);
-    font-weight: 400;
+    font-weight: 600;
     font-size: 1.5em;
   }
   
@@ -715,7 +718,7 @@
   .toc button {
     background: none;
     border: none;
-    color: var(--color-text-secondary);
+    color: rgba(0, 0, 0, 0.7);
     font-size: 1em;
     cursor: pointer;
     padding: 0.5em;
@@ -727,70 +730,75 @@
   }
   
   .toc button:hover {
-    color: var(--color-pale-green);
-    background-color: rgba(100, 255, 218, 0.05);
+    background-color: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.9);
   }
   
   .toc button.active {
-    color: var(--color-pale-green);
-    background-color: rgba(100, 255, 218, 0.1);
+    background-color: rgba(66, 133, 244, 0.1);
+    color: rgba(66, 133, 244, 0.9);
   }
   
+  /* Guide content styling - match Details panel */
   .guide-content {
     flex: 1;
   }
   
   .guide-content h1 {
     font-size: 2.5em;
-    color: var(--color-pale-green);
+    color: rgba(0, 0, 0, 0.8);
     margin-bottom: 1em;
     text-align: center;
     font-family: var(--font-heading);
-    font-weight: 400;
+    font-weight: 600;
   }
   
+  /* Section styling similar to Details panel */
   .guide-section {
     margin-bottom: 3em;
     padding: 1em;
-    background-color: var(--color-panel-bg);
+    background-color: rgba(255, 255, 255, 0.85);
     border-radius: 0.5em;
-    border: 1px solid var(--color-panel-border);
-    color: var(--color-text);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    color: rgba(0, 0, 0, 0.8);
   }
   
   .guide-section h2 {
     font-size: 1.8em;
-    color: var(--color-pale-green);
+    color: rgba(0, 0, 0, 0.8);
     margin-bottom: 0.8em;
     font-family: var(--font-heading);
-    font-weight: 400;
+    font-weight: 600;
   }
   
   .guide-section h3 {
     font-size: 1.4em;
-    color: var(--color-muted-teal);
+    color: rgba(0, 0, 0, 0.7);
     margin-top: 1.5em;
     margin-bottom: 0.8em;
     font-family: var(--font-heading);
-    font-weight: 400;
+    font-weight: 600;
   }
 
   .guide-section h4 {
     font-size: 1.2em;
-    color: var(--color-pale-green);
+    color: rgba(0, 0, 0, 0.7);
     margin-top: 1.2em;
     margin-bottom: 0.6em;
     font-family: var(--font-heading);
-    font-weight: 400;
+    font-weight: 500;
   }
   
   .guide-section p {
     margin-bottom: 1.2em;
     line-height: 1.6;
     font-family: var(--font-body);
-    color: var(--color-text);
+    color: rgba(0, 0, 0, 0.8);
   }
   
+  /* List styling to match Details */
   .guide-section ul {
     list-style-position: inside;
     padding-left: 0;
@@ -800,7 +808,7 @@
   .guide-section li {
     margin-bottom: 0.5em;
     line-height: 1.6;
-    color: var(--color-text);
+    color: rgba(0, 0, 0, 0.8);
   }
 
   .strategy-list, .controls-list {
@@ -819,30 +827,22 @@
     line-height: 1.6;
   }
   
-  .strategy-list, .controls-list {
-    padding-left: 1.5em;
-    line-height: 1.6;
-  }
-  
-  .strategy-list li, .controls-list li {
-    margin-bottom: 1em;
-  }
-  
-  .controls-list {
-    list-style-type: none;
-    padding-left: 0.5em;
-  }
-  
+  /* FAQ section styling */
   .faq-item {
-    background: var(--color-panel-bg);
-    border: 1px solid var(--color-panel-border);
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.5em;
     padding: 1em;
     margin-bottom: 1em;
+    transition: background-color 0.2s ease;
+  }
+  
+  .faq-item:hover {
+    background-color: rgba(255, 255, 255, 0.8);
   }
   
   .faq-item h3 {
-    color: var(--color-pale-green);
+    color: rgba(0, 0, 0, 0.85);
     margin-top: 0;
     font-size: 1.2em;
   }
@@ -851,7 +851,103 @@
     margin: 0.5em 0 0;
   }
   
-  /* Rarity tags styling */
+  /* Race icon styling with :global selector */
+  :global(.race-icon-guide) {
+    width: 2.5em;
+    height: 2.5em;
+    opacity: 0.9;
+    fill: rgba(0, 0, 0, 0.7);
+  }
+  
+  :global(.race-icon-guide.human-icon) {
+    fill: #8B4513; /* Brown for humans */
+  }
+  
+  :global(.race-icon-guide.elf-icon) {
+    fill: #228B22; /* Forest green for elves */
+  }
+  
+  :global(.race-icon-guide.dwarf-icon) {
+    fill: #696969; /* Stone gray for dwarves */
+  }
+  
+  :global(.race-icon-guide.goblin-icon) {
+    fill: #6B8E23; /* Olive green for goblins */
+  }
+  
+  :global(.race-icon-guide.fairy-icon) {
+    fill: #9370DB; /* Medium purple for fairies */
+  }
+  
+  /* Race section styles */
+  .race-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5em;
+    margin: 2em 0;
+  }
+  
+  .race-card {
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5em;
+    padding: 1.2em;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .race-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .race-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.8em;
+  }
+  
+  .race-icon {
+    margin-right: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .race-card h3 {
+    margin: 0;
+    color: rgba(0, 0, 0, 0.8);
+    font-weight: 600;
+  }
+  
+  .race-desc {
+    margin: 0.5em 0 1em;
+    line-height: 1.4;
+  }
+  
+  .race-traits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-bottom: 1em;
+  }
+  
+  .race-trait {
+    background: rgba(66, 133, 244, 0.1);
+    color: rgba(66, 133, 244, 0.9);
+    padding: 0.3em 0.8em;
+    border-radius: 1em;
+    font-size: 0.9em;
+    border: 1px solid rgba(66, 133, 244, 0.3);
+  }
+  
+  .race-tip {
+    font-size: 0.95em;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding-top: 0.8em;
+    margin: 0;
+  }
+  
+  /* Rarity tags styling - use specific colors from Details */
   .rarity-list {
     list-style-type: none !important;
     padding-left: 0 !important;
@@ -873,132 +969,68 @@
   }
   
   .common {
-    color: #AAAAAA;
-    background: rgba(170, 170, 170, 0.1);
-    border: 1px solid rgba(170, 170, 170, 0.3);
+    background-color: rgba(158, 158, 158, 0.2);
+    color: #616161;
+    border: 1px solid rgba(158, 158, 158, 0.4);
   }
   
   .uncommon {
-    color: #228B22;
-    background: rgba(30, 255, 0, 0.15);
-    border: 1px solid rgba(30, 255, 0, 0.3);
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+    border: 1px solid rgba(76, 175, 80, 0.4);
   }
   
   .rare {
-    color: #0070DD;
-    background: rgba(0, 112, 221, 0.15);
-    border: 1px solid rgba(0, 112, 221, 0.3);
+    background-color: rgba(33, 150, 243, 0.2);
+    color: #0277bd;
+    border: 1px solid rgba(33, 150, 243, 0.4);
   }
   
   .epic {
-    color: #9400D3;
-    background: rgba(148, 0, 211, 0.15);
-    border: 1px solid rgba(148, 0, 211, 0.3);
+    background-color: rgba(156, 39, 176, 0.2);
+    color: #7b1fa2;
+    border: 1px solid rgba(156, 39, 176, 0.4);
   }
   
   .legendary {
-    color: #FF8C00;
-    background: rgba(255, 165, 0, 0.15);
-    border: 1px solid rgba(255, 165, 0, 0.3);
+    background-color: rgba(255, 152, 0, 0.2);
+    color: #ef6c00;
+    border: 1px solid rgba(255, 152, 0, 0.4);
   }
   
   .mythic {
-    color: #FF1493;
-    background: rgba(255, 128, 255, 0.15);
-    border: 1px solid rgba(255, 128, 255, 0.3);
+    background-color: rgba(233, 30, 99, 0.2);
+    color: #c2185b;
+    border: 1px solid rgba(233, 30, 99, 0.4);
   }
   
-  /* Race section styles */
-  .race-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5em;
-    margin: 2em 0;
-  }
-  
-  .race-card {
-    background: var(--color-panel-bg);
-    border: 1px solid var(--color-panel-border);
-    border-radius: 0.5em;
-    padding: 1.2em;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  
-  .race-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px var(--color-shadow);
-  }
-  
-  .race-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.8em;
-  }
-  
-  .race-icon {
-    margin-right: 1em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  /* Styling for the SVG race icons */
-  :global(.race-icon-guide) {
-    opacity: 0.9;
-    filter: brightness(0) invert(0.9) sepia(1) hue-rotate(140deg) saturate(3);
-  }
-  
-  .race-card h3 {
-    margin: 0;
-    color: var(--color-pale-green);
-  }
-  
-  .race-desc {
-    margin: 0.5em 0 1em;
-    line-height: 1.4;
-  }
-  
-  .race-traits {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5em;
-    margin-bottom: 1em;
-  }
-  
-  .race-trait {
-    background: rgba(100, 255, 218, 0.1);
-    color: var(--color-pale-green);
-    padding: 0.3em 0.8em;
-    border-radius: 1em;
-    font-size: 0.9em;
-  }
-  
-  .race-tip {
-    font-size: 0.95em;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 0.8em;
-    margin: 0;
-  }
-  
-  /* Battle tip box */
+  /* Tip box styling similar to Details panel */
   .tip-box {
-    background: var(--color-panel-bg);
-    border-left: 3px solid var(--color-pale-green);
+    background: rgba(66, 133, 244, 0.05);
+    border-left: 3px solid rgba(66, 133, 244, 0.5);
     padding: 1em 1.5em;
     margin: 1.5em 0;
+    border-radius: 0 0.3em 0.3em 0;
   }
   
   .tip-box h4 {
-    color: var(--color-pale-green);
+    color: rgba(66, 133, 244, 0.9);
     margin-top: 0;
     margin-bottom: 0.5em;
   }
   
   .tip-box p {
     margin: 0;
-    color: var(--color-text);
+    color: rgba(0, 0, 0, 0.8);
+  }
+
+  /* Strong tag styling */
+  .guide-section strong {
+    color: rgba(0, 0, 0, 0.85);
+    font-weight: 600;
   }
   
+  /* Responsive layout */
   @media (min-width: 768px) {
     .guide-container {
       flex-direction: row;
