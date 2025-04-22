@@ -58,8 +58,6 @@
     let urlCoordinates = $state(null);
     let urlProcessingComplete = $state(false);
     
-    let initAttempted = $state(false);
-    
     let isPathDrawingMode = $state(false);
     
     let authReadyState = $state(false);
@@ -76,27 +74,9 @@
 
     let structureRenderCount = $state(0);
 
-    let processedCoordinates = $state(new Set());
     let coordinateProcessingDebounce = null;
     const COORDINATE_DEBOUNCE_TIME = 300;
 
-    let showAttack = $state(false);
-    let showJoinBattle = $state(false);
-    let showMobilize = $state(false);
-    let showMove = $state(false);
-    let showDemobilize = $state(false);
-    let showGather = $state(false);
-    let isReady = $state(true);
-
-    let mobilizeData = $state(null);
-    let moveData = $state(null);
-    let attackData = $state(null);
-    let joinBattleData = $state(null);
-    let demobilizeData = $state(null);
-    let gatherData = $state(null);
-    let selectedStructure = $state(null);
-    let structureLocation = $state({ x: 0, y: 0 });
-    let selectedTile = $state(null);
     let pathDrawingGroup = $state(null);
     let currentPath = $state([]);
 
@@ -113,36 +93,16 @@
         isTutorialVisible
     );
 
-    function showModal(options) {
-        if (!options) return;
-        
-        console.log('Opening modal:', options.type, options.data);
-        
-        if (['inspect', 'mobilise', 'move', 'gather', 'demobilise', 'joinBattle', 'attack'].includes(options.type)) {
-            if (detailed) {
-                toggleDetailsModal(false);
-            }
-        }
-        
-        modalState = {
-            type: options.type,
-            data: options.data,
-            visible: true
-        };
-    }
+    // Missing variables that handleMapKeyDown references
+    let showMinimap = $state(true);
+    let showEntities = $state(true);
+    let minimapClosing = $state(false);
+    let entitiesClosing = $state(false);
+    const ANIMATION_DURATION = 800;
 
-    function closeModal() {
-        modalState.visible = false;
-        
-        setTimeout(() => {
-            modalState.type = null;
-            modalState.data = null;
-        }, 300);
-    }
-
-    function toggleDetailsModal(show) {
-        detailed = show === undefined ? !detailed : show;
-    }
+    let initialized = $state(false);
+    let initializationRetries = $state(0);
+    const MAX_INIT_RETRIES = 3;
     
     let ignoreNextUrlChange = $state(false);
     let lastProcessedLocation = $state(null);
@@ -226,14 +186,6 @@
         }, COORDINATE_DEBOUNCE_TIME);
     });
     
-    let initialized = $state(false);
-    let initializationRetries = $state(0);
-    const MAX_INIT_RETRIES = 3;
-
-    let retryDelays = $state([1000, 1500, 2000, 3000, 5000]);
-
-    let lastRefreshTime = $state(0);
-    
     $effect(() => {
         if ($game.worldKey && $game.world[$game.worldKey]) {
             const worldData = $game.world[$game.worldKey];
@@ -245,35 +197,6 @@
             });
         }
     });
-
-    async function ensureWorldDataLoaded(worldId) {
-        if (!worldId) return false;
-        
-        if ($game.world[worldId]?.seed !== undefined) {
-            debugLog(`World data already available for ${worldId}`);
-            return true;
-        }
-        
-        debugLog(`World data not available for ${worldId}, actively loading it...`);
-        try {
-            loading = true;
-            const worldData = await getWorldInfo(worldId);
-            if (worldData?.seed !== undefined) {
-                debugLog(`Successfully loaded world data for ${worldId}, seed: ${worldData.seed}`);
-                return true;
-            } else {
-                console.error(`Failed to load required world data for ${worldId}`);
-                error = "Failed to load world data - seed missing";
-                return false;
-            }
-        } catch (err) {
-            console.error(`Error loading world data for ${worldId}:`, err);
-            error = `Error loading world: ${err.message || err}`;
-            return false;
-        } finally {
-            loading = false;
-        }
-    }
 
     $effect(() => {
         if (initialized || !browser) return;
@@ -341,6 +264,113 @@
             }
         };
     });
+
+    $effect(() => {
+        if (!$ready || urlProcessingComplete) return;
+        
+        if (urlCoordinates) {
+            debugLog(`Applying URL coordinates: ${urlCoordinates.x},${urlCoordinates.y}`);
+            moveTarget(urlCoordinates.x, urlCoordinates.y);
+            urlProcessingComplete = true;
+            lastProcessedLocation = { ...urlCoordinates };
+        } else if ($game.playerData?.lastLocation && !$needsSpawn) {
+            const location = $game.playerData.lastLocation;
+            moveTarget(location.x, location.y);
+            urlProcessingComplete = true;
+            lastProcessedLocation = { ...location };
+        } else if ($game.worldKey) {
+            const worldCenter = getWorldCenterCoordinates($game.worldKey);
+            moveTarget(worldCenter.x, worldCenter.y);
+            urlProcessingComplete = true;
+            lastProcessedLocation = { ...worldCenter };
+        }
+    });
+    
+    $effect(() => {
+        authReadyState = $isAuthReady;
+        gameInitializedState = $game.initialized;
+        mapReadyState = $ready;
+
+        if (DEBUG_LOADING) {
+            console.log('Loading state dependencies:', {
+                userAuthReady: $isAuthReady,
+                gameInitialized: $game.initialized,
+                gameWorldLoading: $game.worldLoading,
+                mapReady: $ready,
+                componentLoading: loading,
+                currentWorld: $game.currentWorld,
+                worldDataAvailable: $game.currentWorld ? !!$game.world[$game.currentWorld] : false
+            });
+        }
+    });
+
+    // Add missing function for tutorial visibility
+    $effect(() => {
+        // If spawn menu appears, ensure tutorial is hidden
+        if ($needsSpawn && isTutorialVisible) {
+            isTutorialVisible = false;
+        }
+    });
+
+    function showModal(options) {
+        if (!options) return;
+        
+        console.log('Opening modal:', options.type, options.data);
+        
+        if (['inspect', 'mobilise', 'move', 'gather', 'demobilise', 'joinBattle', 'attack'].includes(options.type)) {
+            if (detailed) {
+                toggleDetailsModal(false);
+            }
+        }
+        
+        modalState = {
+            type: options.type,
+            data: options.data,
+            visible: true
+        };
+    }
+
+    function closeModal() {
+        modalState.visible = false;
+        
+        setTimeout(() => {
+            modalState.type = null;
+            modalState.data = null;
+        }, 300);
+    }
+
+    function toggleDetailsModal(show) {
+        detailed = show === undefined ? !detailed : show;
+    }
+
+    async function ensureWorldDataLoaded(worldId) {
+        if (!worldId) return false;
+        
+        if ($game.world[worldId]?.seed !== undefined) {
+            debugLog(`World data already available for ${worldId}`);
+            return true;
+        }
+        
+        debugLog(`World data not available for ${worldId}, actively loading it...`);
+        try {
+            loading = true;
+            const worldData = await getWorldInfo(worldId);
+            if (worldData?.seed !== undefined) {
+                debugLog(`Successfully loaded world data for ${worldId}, seed: ${worldData.seed}`);
+                return true;
+            } else {
+                console.error(`Failed to load required world data for ${worldId}`);
+                error = "Failed to load world data - seed missing";
+                return false;
+            }
+        } catch (err) {
+            console.error(`Error loading world data for ${worldId}:`, err);
+            error = `Error loading world: ${err.message || err}`;
+            return false;
+        } finally {
+            loading = false;
+        }
+    }
 
     function checkAndInitializeMap() {
         if (!browser || !$game.worldKey || !$user) {
@@ -413,45 +443,6 @@
         }
     }
 
-    $effect(() => {
-        if (!$ready || urlProcessingComplete) return;
-        
-        if (urlCoordinates) {
-            debugLog(`Applying URL coordinates: ${urlCoordinates.x},${urlCoordinates.y}`);
-            moveTarget(urlCoordinates.x, urlCoordinates.y);
-            urlProcessingComplete = true;
-            lastProcessedLocation = { ...urlCoordinates };
-        } else if ($game.playerData?.lastLocation && !$needsSpawn) {
-            const location = $game.playerData.lastLocation;
-            moveTarget(location.x, location.y);
-            urlProcessingComplete = true;
-            lastProcessedLocation = { ...location };
-        } else if ($game.worldKey) {
-            const worldCenter = getWorldCenterCoordinates($game.worldKey);
-            moveTarget(worldCenter.x, worldCenter.y);
-            urlProcessingComplete = true;
-            lastProcessedLocation = { ...worldCenter };
-        }
-    });
-    
-    $effect(() => {
-        authReadyState = $isAuthReady;
-        gameInitializedState = $game.initialized;
-        mapReadyState = $ready;
-
-        if (DEBUG_LOADING) {
-            console.log('Loading state dependencies:', {
-                userAuthReady: $isAuthReady,
-                gameInitialized: $game.initialized,
-                gameWorldLoading: $game.worldLoading,
-                mapReady: $ready,
-                componentLoading: loading,
-                currentWorld: $game.currentWorld,
-                worldDataAvailable: $game.currentWorld ? !!$game.world[$game.currentWorld] : false
-            });
-        }
-    });
-
     // Enhanced keyboard event handler for the page 
     function handleMapKeyDown(event) {
       if (event.key !== 'Escape') return;
@@ -480,13 +471,6 @@
         event.stopPropagation();
       }
     }
-
-    // Missing variables that handleMapKeyDown references
-    let showMinimap = $state(true);
-    let showEntities = $state(true);
-    let minimapClosing = $state(false);
-    let entitiesClosing = $state(false);
-    const ANIMATION_DURATION = 800;
     
     function toggleMinimap() {
       if ($needsSpawn || isTutorialVisible) {
@@ -741,16 +725,6 @@
             alert(`Error: ${error.message || 'Failed to start movement'}`);
         });
     }
-    
-
-    
-    // Add missing function for tutorial visibility
-    $effect(() => {
-        // If spawn menu appears, ensure tutorial is hidden
-        if ($needsSpawn && isTutorialVisible) {
-            isTutorialVisible = false;
-        }
-    });
 
     function handleTutorialVisibility(isVisible) {
         // Don't show tutorial if spawn menu is active
