@@ -10,7 +10,8 @@
     initGameStore,
     getWorldInfo,
     getWorldCenterCoordinates,
-    refreshWorldInfo
+    refreshWorldInfo,
+    loadJoinedWorlds
   } from '../../lib/stores/game.js';
   import { ref, onValue } from "firebase/database";
   import { db } from '../../lib/firebase/database.js';
@@ -18,31 +19,32 @@
   import JoinConfirmation from '../../components/JoinConfirmation.svelte';
   import WorldCard from '../../components/WorldCard.svelte';
   
-  // Add state variables - more accurate naming
   let selectedWorld = $state(null);
   let showConfirmation = $state(false);
   let animatingOut = $state(false);
   let worlds = $state([]);
   let loading = $state(true);
   let loadError = $state(null);
-  let loadingInitiated = $state(false); // Track if loading was initiated
-  
-  // Track which world cards have been loaded - simplified approach
+  let loadingInitiated = $state(false);
   let loadedWorldCards = $state(new Set());
-  let loadingQueue = $state([]); // Make loading queue reactive
+  let loadingQueue = $state([]);
   let currentlyLoading = $state(false);
-  
-  // Cache for world centers to avoid redundant calculations
   const worldCenters = $state({});
-  
-  // Function to load worlds data - improved with better real-time reactivity
+  let joinedWorldIds = $state([]);
+
+  $effect(() => {
+    if ($game && $game.joinedWorlds) {
+      console.log('📊 Worlds page received updated joined worlds:', $game.joinedWorlds);
+      joinedWorldIds = [...$game.joinedWorlds];
+    }
+  });
+
   function loadWorlds() {
     if (!browser || !$user) {
       console.log('Cannot load worlds: browser or user not available');
       return;
     }
     
-    // Avoid duplicate loading
     if (loadingInitiated) {
       console.log('Worlds loading already initiated, skipping duplicate call');
       return;
@@ -54,10 +56,13 @@
     loadError = null;
     
     try {
+      if ($user?.uid) {
+        loadJoinedWorlds($user.uid);
+      }
+      
       const worldsRef = ref(db, 'worlds');
       console.log('Database reference created for:', worldsRef.toString());
       
-      // Check if database is initialized
       if (!db) {
         console.error('Firebase database not initialized');
         loadError = 'Firebase database not initialized';
@@ -65,7 +70,6 @@
         return;
       }
       
-      // Use a real-time listener for worlds data
       const worldsListener = onValue(worldsRef, 
         (snapshot) => {
           console.log('Worlds data updated:', 
@@ -73,7 +77,6 @@
           
           if (snapshot.exists()) {
             const data = snapshot.val();
-            // Process the data - remove the call to preloadWorldInfo as it's now handled inside processWorldsData
             processWorldsData(data);
           } else {
             console.log('No worlds data found in database');
@@ -88,7 +91,7 @@
         }
       );
       
-      return worldsListener; // Return unsubscribe function
+      return worldsListener;
     } catch (error) {
       console.error('Exception during worlds loading:', error);
       loadError = `Exception: ${error.message}`;
@@ -97,50 +100,32 @@
     }
   }
   
-  // Simplified function to process worlds data - now includes preloading world info
   function processWorldsData(data) {
     try {
-      // Filter out worlds without info and map to our format
       const validWorlds = Object.keys(data)
         .filter(key => data[key] && data[key].info)
         .map(key => {
           const world = data[key].info;
-          
-          // Extract center coordinates directly from world info
           const center = world.center || { x: 0, y: 0 };
-          
-          // Log the world center to help debugging
           console.log(`World ${key} center from database:`, center);
-          
-          // Cache the center coordinates for this world
           worldCenters[key] = center;
-          
           return {
             id: key,
             name: world.name || key,
             description: world.description || '',
             playerCount: world.playerCount || 0,
             created: world.created || Date.now(),
-            joined: $game.joinedWorlds.includes(key),
+            joined: isWorldJoined(key),
             seed: world.seed || 0,
-            // Include center coordinates directly in the world object
             center: center
           };
         });
       
       console.log(`Processed ${validWorlds.length} valid worlds`);
       worlds = validWorlds;
-      
-      // Reset loaded cards
       loadedWorldCards = new Set();
-      
-      // Setup the loading queue with all worlds
       loadingQueue = [...validWorlds.map(world => world.id)];
-      
-      // Start loading world info for all worlds to ensure it's in the store
       preloadWorldInfoForWorlds(data);
-      
-      // Start loading after a short delay
       setTimeout(startLoadingQueue, 500);
       
     } catch (err) {
@@ -151,7 +136,6 @@
     }
   }
 
-  // Add the missing preloadWorldInfoForWorlds function
   async function preloadWorldInfoForWorlds(worldsData) {
     if (!worldsData || typeof worldsData !== 'object') return;
     
@@ -165,7 +149,6 @@
         promises.push(getWorldInfo(worldId)
           .then(info => {
             if (info && info.center) {
-              // Update our local cache after fetching
               worldCenters[worldId] = info.center;
               console.log(`Updated center for ${worldId}:`, info.center);
             }
@@ -188,7 +171,6 @@
     }
   }
   
-  // Simplified function to start the card loading queue
   function startLoadingQueue() {
     if (loadingQueue.length > 0 && !currentlyLoading) {
       console.log(`Starting world card loading queue with ${loadingQueue.length} cards`);
@@ -196,44 +178,37 @@
     }
   }
   
-  // Simplified function to load world cards one by one
   function loadNextWorldCard() {
     if (loadingQueue.length === 0 || currentlyLoading) {
       return;
     }
     
     currentlyLoading = true;
-    const nextWorldId = loadingQueue[0]; // Don't remove it yet
+    const nextWorldId = loadingQueue[0];
     console.log(`Loading world card for: ${nextWorldId}`);
     
-    // Ensure world info is loaded
     const world = $game.world[nextWorldId];
     
     if (world) {
-      // World info is already loaded, proceed after a delay
       setTimeout(() => {
-        // Only modify state once the card is ready to display
         loadedWorldCards = new Set([...loadedWorldCards, nextWorldId]);
         loadingQueue = loadingQueue.filter(id => id !== nextWorldId);
         currentlyLoading = false;
         
-        // Continue with next card after a delay
         if (loadingQueue.length > 0) {
           const delay = 300 + Math.random() * 200;
           setTimeout(() => loadNextWorldCard(), delay);
         } else {
           console.log('All world cards loaded successfully');
         }
-      }, 400); // Consistent delay for better UX
+      }, 400);
     } else {
-      // Need to load world info first
       getWorldInfo(nextWorldId)
         .then(info => {
           if (info) {
             worldCenters[nextWorldId] = getWorldCenterCoordinates(nextWorldId, info);
           }
           
-          // Add a delay to show the loading animation
           setTimeout(() => {
             loadedWorldCards = new Set([...loadedWorldCards, nextWorldId]);
             loadingQueue = loadingQueue.filter(id => id !== nextWorldId);
@@ -249,7 +224,6 @@
         })
         .catch(err => {
           console.error(`Error loading info for ${nextWorldId}:`, err);
-          // Skip this card and continue
           loadingQueue = loadingQueue.filter(id => id !== nextWorldId);
           currentlyLoading = false;
           
@@ -260,38 +234,41 @@
     }
   }
   
-  // Initialize game store on component mount - cleaned up logic
-  let unsubGameStoreFunction = null; // Change to store the resolved function, not the Promise
+  function isWorldJoined(worldId) {
+    return joinedWorldIds.includes(worldId) || $game.joinedWorlds?.includes(worldId) || false;
+  }
+
+  let unsubGameStoreFunction = null;
   let worldsUnsubscribe;
   
   onMount(() => {
     console.log('Worlds page mounted');
     
-    // Make sure game store is initialized before attempting to load worlds
     if (!unsubGameStoreFunction) {
-      // Fix Promise handling - store the resolved function not the Promise
       initGameStore().then(cleanupFunction => {
         unsubGameStoreFunction = cleanupFunction;
         console.log('Game store initialized on mount');
+        
+        if ($user?.uid) {
+          console.log('Loading joined worlds after game store init');
+          loadJoinedWorlds($user.uid);
+        }
       });
     }
     
-    // Immediately check if we're ready to load worlds
     if (browser && !$userLoading && $user) {
       console.log('Auth ready on mount, loading worlds');
       worldsUnsubscribe = loadWorlds();
     }
     
     return () => {
-      // Clean up subscriptions - use the resolved function 
       if (typeof unsubGameStoreFunction === 'function') {
-        unsubGameStoreFunction(); // Now we call the actual function, not the Promise
+        unsubGameStoreFunction();
       }
       if (worldsUnsubscribe) worldsUnsubscribe();
     };
   });
   
-  // Effect for auth state changes - simplified
   $effect(() => {
     if (!browser) return;
     
@@ -306,7 +283,6 @@
     }
   });
 
-  // Add these functions to handle URL parameters for coordinates
   function getCoordinateParams() {
     if (!browser) return '';
     const url = $page?.url;
@@ -322,17 +298,13 @@
   }
 
   function selectWorld(world) {
-    // Get any coordinate parameters that should be passed through
     const coordParams = getCoordinateParams();
     
-    // If already joined, just go to the world
-    if ($game.joinedWorlds.includes(world.id)) {
-      // Use setCurrentWorld to ensure it's saved to localStorage
+    if (isWorldJoined(world.id)) {
       setCurrentWorld(world.id, world);
       goto(`/map?world=${world.id}${coordParams}`);
       return;
     }
-    // Otherwise, show the confirmation dialog
     selectedWorld = world;
     showConfirmation = true;
   }
@@ -343,7 +315,7 @@
       showConfirmation = false;
       selectedWorld = null;
       animatingOut = false;
-    }, 300); // Match animation duration
+    }, 300);
   }
 
   async function handleJoinWorld(world, race, name) {
@@ -351,12 +323,9 @@
       return;
     }
     
-    // Get coordinate parameters
     const coordParams = getCoordinateParams();
     
     try {
-
-      // Join the world with race information and display name
       await joinWorld(
         world, 
         $user.uid, 
@@ -366,18 +335,12 @@
 
       console.log(`Successfully joined world ${selectedWorld.id}, preparing navigation...`);
       
-      // Use setCurrentWorld to ensure localStorage is updated and trigger data loading
       await setCurrentWorld(selectedWorld.id);
       
-      // Wait for world data to be ready - particularly the seed which is needed for map rendering
       console.log('Waiting for world data to be fully loaded...');
       
-      // Create a more comprehensive promise that resolves when all required data is ready
       await new Promise((resolve) => {
-        // Create a check function that verifies all necessary data
         const checkDataReady = () => {
-          // Need to verify both player data and world seed
-          // Use worldKey for consistency instead of currentWorld
           if ($game.playerData && 
               $game.worldKey === selectedWorld.id && 
               $game.world[selectedWorld.id]?.seed !== undefined) {
@@ -387,13 +350,11 @@
           return false;
         };
         
-        // If already ready, resolve immediately
         if (checkDataReady()) {
           resolve();
           return;
         }
         
-        // Set up a subscription to wait for player data
         const unsubscribe = game.subscribe((state) => {
           if (checkDataReady()) {
             unsubscribe();
@@ -401,12 +362,10 @@
           }
         });
         
-        // Proactively trigger a world info refresh
         getWorldInfo(selectedWorld.id).catch(err => 
           console.warn(`Error getting world info: ${err}`)
         );
         
-        // Set a maximum timeout of 5 seconds as fallback
         setTimeout(() => {
           console.log('Navigation timeout reached, proceeding anyway');
           unsubscribe();
@@ -414,7 +373,6 @@
         }, 5000);
       });
 
-      // Now it's safe to navigate
       console.log(`Navigating to map page for world ${selectedWorld.id}`);
       goto(`/map?world=${selectedWorld.id}${coordParams}`);
     } catch (error) {
@@ -449,7 +407,7 @@
               seed={world.seed}
               tileSize={2}
               delayed={!loadedWorldCards.has(world.id)}
-              joined={$game.joinedWorlds.includes(world.id)}
+              joined={isWorldJoined(world.id)}
               world={$game.world[world.id]}
               worldCenter={world.center || worldCenters[world.id]}
               debug={true}
@@ -480,10 +438,10 @@
             
             <button 
               class="world-action-button" 
-              class:joined={$game.joinedWorlds.includes(world.id)}
+              class:joined={isWorldJoined(world.id)}
               onclick={() => selectWorld(world)}
             >
-              {$game.joinedWorlds.includes(world.id) ? "Enter World" : "Join World"}
+              {isWorldJoined(world.id) ? "Enter World" : "Join World"}
             </button>
           </div>
         </div>
@@ -527,7 +485,7 @@
     flex-direction: column;
     gap: 1.5rem;
     width: 100%;
-    align-items: center; /* Center single cards */
+    align-items: center;
   }
   
   .world-card {
@@ -538,7 +496,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     background-color: var(--color-dark-blue);
     width: 100%;
-    will-change: transform; /* Hint for hardware acceleration */
+    will-change: transform;
   }
 
   .world-preview {
@@ -618,9 +576,9 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     font-family: var(--font-heading);
-    will-change: transform, background-color; /* Hardware acceleration hint */
-    position: relative; /* Ensure z-index works */
-    z-index: 10; /* Keep button above overlay */
+    will-change: transform, background-color;
+    position: relative;
+    z-index: 10;
   }
 
   .world-action-button:hover {
@@ -696,7 +654,6 @@
     to { transform: rotate(360deg); }
   }
 
-  /* Mobile-first responsive breakpoints */
   @media (min-width: 640px) {
     .worlds-page {
       padding: 1.5rem;

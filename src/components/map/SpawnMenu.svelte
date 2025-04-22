@@ -29,6 +29,12 @@
   let hasSpawnsData = $state(false);
   let autoTargeted = $state(false);
 
+  // Log game store state when open
+  console.log('🎮 Game store in SpawnMenu:', $game);
+  console.log('👤 Current player in SpawnMenu:', $currentPlayer);
+  console.log('🌍 Current world key in SpawnMenu:', $game.worldKey);
+  console.log('📊 Player data in SpawnMenu:', $game.playerData);
+
   // Helper function for setting/clearing errors
   function setError(message) {
     error = message;

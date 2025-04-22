@@ -240,13 +240,13 @@ export const timeUntilNextTick = derived(
 
 // Track active subscriptions for proper cleanup
 let activeJoinedWorldsSubscription = null;
+let activePlayerWorldDataSubscription = null;  // Add tracking for the player world data subscription
 
 // Keep track of pending requests to avoid duplicates
 const pendingWorldInfoRequests = new Map();
 // Add cache for world info to reduce redundant fetches
 const worldInfoCache = new Map();
 const CACHE_TTL = 30000; // 30 seconds cache TTL
-
 
 // Load player's joined worlds
 export function loadJoinedWorlds(userId) {
@@ -262,18 +262,18 @@ export function loadJoinedWorlds(userId) {
     activeJoinedWorldsSubscription = null;
   }
   
-  debugLog(`Loading joined worlds for user: ${userId}`);
+  console.log(`⭐ Setting up listener for joined worlds: players/${userId}/worlds`);
   
   return new Promise((resolve) => {
     const userWorldsRef = ref(db, `players/${userId}/worlds`);
     debugLog('User worlds path:', `players/${userId}/worlds`);
     
     activeJoinedWorldsSubscription = onValue(userWorldsRef, (snapshot) => {
-      debugLog('User worlds snapshot received:', snapshot.exists() ? 'Data exists' : 'No data');
+      console.log('🌍 User joined worlds snapshot received:', snapshot.exists() ? `Found ${Object.keys(snapshot.val()).length} worlds` : 'No worlds joined');
       
       if (snapshot.exists()) {
         const joinedWorlds = Object.keys(snapshot.val());
-        debugLog('User joined worlds:', joinedWorlds);
+        console.log('🌍 User joined worlds:', joinedWorlds);
         
         game.update(state => ({ ...state, joinedWorlds, loading: false }));
         
@@ -292,7 +292,7 @@ export function loadJoinedWorlds(userId) {
         }
         
       } else {
-        debugLog('No joined worlds found for user');
+        console.log('🌍 No joined worlds found for user');
         game.update(state => ({ ...state, joinedWorlds: [], loading: false }));
         resolve(true);
       }
@@ -302,6 +302,46 @@ export function loadJoinedWorlds(userId) {
       resolve(false);
     });
   });
+}
+
+// Add a function to set up a listener for player data in a specific world
+export function listenToPlayerWorldData(userId, worldKey) {
+  if (!userId || !worldKey) {
+    console.log('Cannot listen to player world data: Missing userId or worldKey');
+    return null;
+  }
+  
+  // Clean up existing subscription to prevent multiple listeners
+  if (activePlayerWorldDataSubscription) {
+    console.log('Clearing previous player world data subscription');
+    activePlayerWorldDataSubscription();
+    activePlayerWorldDataSubscription = null;
+  }
+  
+  console.log(`👤 Setting up listener for player world data: players/${userId}/worlds/${worldKey}`);
+  
+  const playerWorldRef = ref(db, `players/${userId}/worlds/${worldKey}`);
+  activePlayerWorldDataSubscription = onValue(playerWorldRef, snapshot => {
+    const data = snapshot.val();
+    console.log(`👤 Player data for world [${worldKey}]:`, data);
+    
+    if (snapshot.exists()) {
+      game.update(state => ({
+        ...state,
+        playerData: data
+      }));
+    } else {
+      console.log(`No player data found for world ${worldKey}`);
+      game.update(state => ({
+        ...state,
+        playerData: null
+      }));
+    }
+  }, error => {
+    console.error(`Error getting player data for world ${worldKey}:`, error);
+  });
+  
+  return activePlayerWorldDataSubscription;
 }
 
 // Placeholder function that will be replaced when map.js loads
@@ -350,6 +390,12 @@ export function setCurrentWorld(worldId, world = null, callback = null) {
     worldKey: validWorldId      // New property
   }));
   
+  // Set up a listener for player data in this world
+  const user = getStore(userStore);
+  if (user?.uid) {
+    listenToPlayerWorldData(user.uid, validWorldId);
+  }
+
   // If we don't have the world info, load it
   const currentState = getStore(game);
   const promises = [];
@@ -751,16 +797,23 @@ export function initGameStore() {
   // Create a new initialization promise with proper variable initialization
   let unsubscribeUser = null;
   let unsubscribeWorlds = null;
+  let unsubscribePlayerData = null;
   let authReadyUnsubscribe = null;
   
   // Define cleanup function outside promise to ensure it's always available
   const cleanup = () => {
     if (typeof unsubscribeUser === 'function') unsubscribeUser();
     if (typeof unsubscribeWorlds === 'function') unsubscribeWorlds();
+    if (typeof unsubscribePlayerData === 'function') unsubscribePlayerData();
     if (typeof authReadyUnsubscribe === 'function') authReadyUnsubscribe();
+    if (activeJoinedWorldsSubscription) activeJoinedWorldsSubscription();
+    if (activePlayerWorldDataSubscription) activePlayerWorldDataSubscription();
+    
+    activeJoinedWorldsSubscription = null;
+    activePlayerWorldDataSubscription = null;
     gameStoreInitialized = false;
     gameInitializationPromise = null;
-    console.log('Game store cleanup complete');
+    console.log('Game store cleanup complete - all listeners removed');
   };
   
   // Initialize with safe defaults and proper promise handling
@@ -779,24 +832,40 @@ export function initGameStore() {
         if (isReady) {
           console.log('Auth is ready, initializing game data');
           
-          // Load saved world ID from localStorage
-          let savedWorldId = null;
-          if (browser) {
-            try {
-              savedWorldId = localStorage.getItem(CURRENT_WORLD_KEY);
-              if (savedWorldId) {
-                debugLog(`Found saved world: ${savedWorldId}`);
-                
-                // Update store with saved world ID
-                game.update(state => ({
-                  ...state,
-                  currentWorld: savedWorldId,
-                  worldKey: savedWorldId
-                }));
+          // Get current user
+          const currentUser = getStore(userStore);
+          
+          if (currentUser?.uid) {
+            console.log(`User authenticated: ${currentUser.uid}`);
+            
+            // Set up listener for all player's joined worlds (account-level)
+            unsubscribeWorlds = loadJoinedWorlds(currentUser.uid);
+            
+            // Load saved world ID from localStorage
+            let savedWorldId = null;
+            if (browser) {
+              try {
+                savedWorldId = localStorage.getItem(CURRENT_WORLD_KEY);
+                console.log('🌎 World key from localStorage:', savedWorldId);
+                if (savedWorldId) {
+                  debugLog(`Found saved world: ${savedWorldId}`);
+                  
+                  // Update store with saved world ID
+                  game.update(state => ({
+                    ...state,
+                    currentWorld: savedWorldId,
+                    worldKey: savedWorldId
+                  }));
+                  
+                  // Set up listener for player data in this world
+                  unsubscribePlayerData = listenToPlayerWorldData(currentUser.uid, savedWorldId);
+                }
+              } catch (e) {
+                console.warn('Failed to read saved world from localStorage:', e);
               }
-            } catch (e) {
-              console.warn('Failed to read saved world from localStorage:', e);
             }
+          } else {
+            console.log('No authenticated user yet');
           }
           
           // Mark initialization as complete
@@ -810,6 +879,43 @@ export function initGameStore() {
           setTimeout(() => {
             resolve(cleanup);
           }, 100);
+        }
+      });
+      
+      // Add a listener for user changes to handle login/logout
+      userStore.subscribe(newUser => {
+        if (gameStoreInitialized) {
+          if (newUser?.uid) {
+            // User logged in - set up world listeners
+            const currentState = getStore(game);
+            
+            // Set up listener for joined worlds if not already active
+            if (!activeJoinedWorldsSubscription) {
+              unsubscribeWorlds = loadJoinedWorlds(newUser.uid);
+            }
+            
+            // Set up listener for current world if one is selected and no listener is active
+            if (currentState.worldKey && !activePlayerWorldDataSubscription) {
+              unsubscribePlayerData = listenToPlayerWorldData(newUser.uid, currentState.worldKey);
+            }
+          } else {
+            // User logged out - clean up listeners
+            if (activeJoinedWorldsSubscription) {
+              activeJoinedWorldsSubscription();
+              activeJoinedWorldsSubscription = null;
+            }
+            if (activePlayerWorldDataSubscription) {
+              activePlayerWorldDataSubscription();
+              activePlayerWorldDataSubscription = null;
+            }
+            
+            // Clear player data
+            game.update(state => ({
+              ...state,
+              playerData: null,
+              joinedWorlds: []
+            }));
+          }
         }
       });
     } catch (err) {
