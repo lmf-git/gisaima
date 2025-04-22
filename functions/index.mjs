@@ -14,8 +14,8 @@ export { mobiliseUnits } from './actions/mobilise.mjs';
 export { demobiliseUnits } from './actions/demobilise.mjs';
 export { moveGroup } from './actions/move.mjs';
 export { attackGroups } from './actions/attackGroups.mjs';
-export { startGathering } from './actions/gather.mjs';  // Add this export
-export { joinBattle } from './actions/joinBattle.mjs';  // Add missing export for joinBattle
+export { startGathering } from './actions/gather.mjs';
+export { joinBattle } from './actions/joinBattle.mjs';
 
 // Scheduled tasks
 export { processGameTicks } from './tick.mjs';
