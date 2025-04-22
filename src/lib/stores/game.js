@@ -2,7 +2,7 @@ import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
 import { ref, onValue, get as dbGet, set, update } from "firebase/database";
 import { db } from '../firebase/database.js';
-import { userStore, isAuthReady as userAuthReady } from './user'; 
+import { user, isAuthReady as userAuthReady } from './user'; 
 
 // Constants for localStorage
 const CURRENT_WORLD_KEY = 'gisaima-current-world'; // Keeping this for backward compatibility with localStorage
@@ -65,7 +65,7 @@ export const currentWorldCenter = derived(
 
 // Create a derived store that combines user data with player world-specific data
 export const currentPlayer = derived(
-  [userStore, game], // Use userStore directly instead of the redundant user variable
+  [user, game], // Use user directly instead of the redundant user variable
   ([$user, $game]) => {
     // Early returns for missing data
     if (!$user) return null;
@@ -156,9 +156,9 @@ export const timeUntilNextTick = derived(
   }
 );
 
-// Track active subscriptions for proper cleanup
+// Track active subscriptions
 let activeJoinedWorldsSubscription = null;
-let activePlayerWorldDataSubscription = null;  // Add tracking for the player world data subscription
+let activePlayerWorldDataSubscription = null;
 
 // Keep track of pending requests to avoid duplicates
 const pendingWorldInfoRequests = new Map();
@@ -284,7 +284,7 @@ export function setCurrentWorld(worldId, world = null, callback = null) {
   }));
   
   // Set up a listener for player data in this world
-  const user = get(userStore);
+  const user = get(user);
   if (user?.uid) {
     listenToPlayerWorldData(user.uid, validWorldId);
   }
@@ -566,56 +566,20 @@ export function formatTimeUntilNextTick(worldId) {
   return `${minutes}m ${seconds}s`;
 }
 
-// Initialization state tracking improved
-let gameInitializationPromise = null;
-let gameStoreInitialized = false;
+// Simplified setup function - no need to track initialization or return cleanup
+let initialized = false;
 
-// Make initGameStore return a proper promise for proper sequencing
 export function setup() {
-  if (!browser) {
-    return Promise.resolve(() => {});
+  // Skip if not in browser or already initialized
+  if (!browser || initialized) {
+    return Promise.resolve();
   }
   
-  // Return existing initialization promise if it exists
-  if (gameInitializationPromise) {
-    return gameInitializationPromise;
-  }
+  initialized = true;
   
-  // Prevent duplicate initialization
-  if (gameStoreInitialized) {
-    return Promise.resolve(() => {
-      console.log('Game store already initialized, skipping');
-    });
-  }
-  
-  gameStoreInitialized = true;
-  
-  // Create a new initialization promise with proper variable initialization
-  let unsubscribeUser = null;
-  let unsubscribeWorlds = null;
-  let unsubscribePlayerData = null;
-  let authReadyUnsubscribe = null;
-  
-  // Define cleanup function outside promise to ensure it's always available
-  const cleanup = () => {
-    if (typeof unsubscribeUser === 'function') unsubscribeUser();
-    if (typeof unsubscribeWorlds === 'function') unsubscribeWorlds();
-    if (typeof unsubscribePlayerData === 'function') unsubscribePlayerData();
-    if (typeof authReadyUnsubscribe === 'function') authReadyUnsubscribe();
-    if (activeJoinedWorldsSubscription) activeJoinedWorldsSubscription();
-    if (activePlayerWorldDataSubscription) activePlayerWorldDataSubscription();
-    
-    activeJoinedWorldsSubscription = null;
-    activePlayerWorldDataSubscription = null;
-    gameStoreInitialized = false;
-    gameInitializationPromise = null;
-    console.log('Game store cleanup complete - all listeners removed');
-  };
-  
-  // Initialize with safe defaults and proper promise handling
-  gameInitializationPromise = new Promise((resolve) => {
+  return new Promise((resolve) => {
     try {
-      // Initialize with safe defaults first
+      // Initialize with safe defaults
       game.update(state => ({
         ...state,
         loading: true,
@@ -624,24 +588,23 @@ export function setup() {
       }));
       
       // Subscribe to auth ready state changes
-      authReadyUnsubscribe = userAuthReady.subscribe(isReady => {
+      userAuthReady.subscribe(isReady => {
         if (isReady) {
           console.log('Auth is ready, initializing game data');
           
           // Get current user
-          const currentUser = get(userStore);
+          const currentUser = get(user);
           
           if (currentUser?.uid) {
             console.log(`User authenticated: ${currentUser.uid}`);
             
             // Set up listener for all player's joined worlds (account-level)
-            unsubscribeWorlds = loadJoinedWorlds(currentUser.uid);
+            loadJoinedWorlds(currentUser.uid);
             
             // Load saved world ID from localStorage
-            let savedWorldId = null;
             if (browser) {
               try {
-                savedWorldId = localStorage.getItem(CURRENT_WORLD_KEY);
+                const savedWorldId = localStorage.getItem(CURRENT_WORLD_KEY);
                 console.log('🌎 World key from localStorage:', savedWorldId);
                 if (savedWorldId) {
                   // Update store with saved world ID
@@ -651,7 +614,7 @@ export function setup() {
                   }));
                   
                   // Set up listener for player data in this world
-                  unsubscribePlayerData = listenToPlayerWorldData(currentUser.uid, savedWorldId);
+                  listenToPlayerWorldData(currentUser.uid, savedWorldId);
                 }
               } catch (e) {
                 console.warn('Failed to read saved world from localStorage:', e);
@@ -668,28 +631,25 @@ export function setup() {
             initialized: true
           }));
           
-          // Resolve the promise after a short delay to ensure subscribers have processed
-          setTimeout(() => {
-            resolve(cleanup);
-          }, 100);
+          resolve();
         }
       });
       
       // Add a listener for user changes to handle login/logout
-      userStore.subscribe(newUser => {
-        if (gameStoreInitialized) {
+      user.subscribe(newUser => {
+        if (initialized) {
           if (newUser?.uid) {
             // User logged in - set up world listeners
             const currentState = get(game);
             
             // Set up listener for joined worlds if not already active
             if (!activeJoinedWorldsSubscription) {
-              unsubscribeWorlds = loadJoinedWorlds(newUser.uid);
+              loadJoinedWorlds(newUser.uid);
             }
             
             // Set up listener for current world if one is selected and no listener is active
             if (currentState.worldKey && !activePlayerWorldDataSubscription) {
-              unsubscribePlayerData = listenToPlayerWorldData(newUser.uid, currentState.worldKey);
+              listenToPlayerWorldData(newUser.uid, currentState.worldKey);
             }
           } else {
             // User logged out - clean up listeners
@@ -720,12 +680,9 @@ export function setup() {
         initialized: false
       }));
       
-      // Clean up on error, but still resolve
-      resolve(cleanup);
+      resolve();
     }
   });
-  
-  return gameInitializationPromise;
 }
 
 // Function to join a world with race selection - improved with better data loading

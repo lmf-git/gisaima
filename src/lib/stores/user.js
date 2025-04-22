@@ -20,8 +20,7 @@ const DEBUG_MODE = false; // Set to true to enable verbose logging
 const debugLog = (...args) => DEBUG_MODE && console.log(...args);
 
 // Create the user store
-export const userStore = writable(null); // Initialize with null instead of undefined
-export const user = userStore; // Export an alias for backward compatibility
+export const user = writable(null); // Initialize with null instead of undefined
 export const loading = writable(true);
 export const isAuthReady = writable(false); // Add explicit isAuthReady store
 
@@ -36,38 +35,11 @@ export const setup = () => {
     return null;
   }
   
-  try {
-    // Store previous auth state to avoid redundant logging
-    let previousAuthState = null;
-    
-    authUnsubscribe = onAuthStateChanged(auth, firebaseUser => {
-      const newAuthState = firebaseUser ? 'logged-in' : 'logged-out';
-      
-      // Only log if auth state has changed
-      if (previousAuthState !== newAuthState) {
-        console.log('Auth state changed:', firebaseUser ? 'User logged in' : 'No user');
-        previousAuthState = newAuthState;
-      }
-      
-      userStore.set(firebaseUser);
-      loading.set(false);
-      isAuthReady.set(true); // Always set auth ready once we know the state
-    });
-    
-    // Return unsubscribe function to clean up listener
-    return () => {
-      if (authUnsubscribe) {
-        authUnsubscribe();
-        authUnsubscribe = null;
-        isAuthReady.set(false); // Reset on unsubscribe
-      }
-    };
-  } catch (error) {
-    console.error('Error initializing auth listener:', error);
+  onAuthStateChanged(auth, firebaseUser => {
+    user.set(firebaseUser);
     loading.set(false);
-    isAuthReady.set(true); // Mark as ready even on error to avoid UI hanging
-    return null;
-  }
+    isAuthReady.set(true);
+  });
 };
 
 // Auth helper functions
