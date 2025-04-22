@@ -12,8 +12,7 @@
     world, 
     onClose, 
     onConfirm, 
-    animatingOut = false, 
-    class: className = '',
+    animatingOut = false,
     initialName = '' // Add initial name prop with default
   } = $props();
 
@@ -156,7 +155,7 @@
 <div class={`confirmation-backdrop ${animatingOut ? 'animate-out' : 'animate-in'}`}>
 </div>
 
-<div class={`join-confirmation ${className} ${animatingOut ? 'animate-out' : 'animate-in'}`}>
+<div class={`join-confirmation ${animatingOut ? 'animate-out' : 'animate-in'}`}>
   <div class="confirmation-header">
     <h2>Join {world?.name || 'World'}</h2>
     <button class="close-btn" aria-label="Close dialog" onclick={onClose}>
