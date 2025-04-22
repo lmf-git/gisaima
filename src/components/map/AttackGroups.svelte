@@ -5,6 +5,13 @@
   import Close from '../icons/Close.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
 
+  // Import race icon components
+  import Human from '../icons/Human.svelte';
+  import Elf from '../icons/Elf.svelte';
+  import Dwarf from '../icons/Dwarf.svelte';
+  import Goblin from '../icons/Goblin.svelte';
+  import Fairy from '../icons/Fairy.svelte';
+
   // Props
   const { onClose = () => {}, onAttack = () => {} } = $props();
 
@@ -240,7 +247,8 @@
       
       <div class="attack-selection">
         <div class="selection-section">
-          <h3>Select Your Groups <span class="selection-count">({selectedPlayerGroups.length} selected)</span></h3>
+          <h3>Select Your Groups</h3>
+          <div class="selection-count">({selectedPlayerGroups.length} selected)</div>
           <div class="groups-list">
             {#each playerGroups as group}
               <label 
@@ -254,6 +262,21 @@
                     onchange={() => togglePlayerGroup(group)}
                     aria-label={`Select your group ${group.name || group.id}`}
                   />
+                </div>
+                <div class="entity-icon">
+                  {#if group.race}
+                    {#if group.race.toLowerCase() === 'human'}
+                      <Human extraClass="race-icon-attack" />
+                    {:else if group.race.toLowerCase() === 'elf'}
+                      <Elf extraClass="race-icon-attack" />
+                    {:else if group.race.toLowerCase() === 'dwarf'}
+                      <Dwarf extraClass="race-icon-attack" />
+                    {:else if group.race.toLowerCase() === 'goblin'}
+                      <Goblin extraClass="race-icon-attack" />
+                    {:else if group.race.toLowerCase() === 'fairy'}
+                      <Fairy extraClass="race-icon-attack" />
+                    {/if}
+                  {/if}
                 </div>
                 <div class="group-info">
                   <div class="group-name">{group.name || `Group ${group.id.slice(-4)}`}</div>
@@ -270,7 +293,8 @@
         </div>
         
         <div class="selection-section">
-          <h3>Select Enemies to Attack <span class="selection-count">({selectedEnemyGroups.length} selected)</span></h3>
+          <h3>Select Enemies to Attack</h3>
+          <div class="selection-count">({selectedEnemyGroups.length} selected)</div>
           <div class="groups-list">
             {#each enemyGroups as group}
               <label 
@@ -284,6 +308,21 @@
                     onchange={() => toggleEnemyGroup(group)}
                     aria-label={`Select enemy group ${group.name || group.id}`}
                   />
+                </div>
+                <div class="entity-icon">
+                  {#if group.race}
+                    {#if group.race.toLowerCase() === 'human'}
+                      <Human extraClass="race-icon-attack" />
+                    {:else if group.race.toLowerCase() === 'elf'}
+                      <Elf extraClass="race-icon-attack" />
+                    {:else if group.race.toLowerCase() === 'dwarf'}
+                      <Dwarf extraClass="race-icon-attack" />
+                    {:else if group.race.toLowerCase() === 'goblin'}
+                      <Goblin extraClass="race-icon-attack" />
+                    {:else if group.race.toLowerCase() === 'fairy'}
+                      <Fairy extraClass="race-icon-attack" />
+                    {/if}
+                  {/if}
                 </div>
                 <div class="group-info">
                   <div class="group-name">
@@ -301,43 +340,6 @@
             {/each}
           </div>
         </div>
-      </div>
-      
-      <div class="battle-preview">
-        {#if selectedPlayerGroups.length > 0 && selectedEnemyGroups.length > 0}
-          <h3>Battle Preview</h3>
-          <div class="battle-sides">
-            <div class="battle-side attacker">
-              <div class="side-name">Your Forces ({selectedPlayerGroups.length} groups)</div>
-              <div class="side-info">
-                <div class="group-list">
-                  {#each selectedPlayerGroups as group}
-                    <div class="preview-group">{group.name || `Group ${group.id.slice(-4)}`} ({group.unitCount || group.units?.length || 1})</div>
-                  {/each}
-                </div>
-                <div class="total-strength">Total: {calculateTotalPower(selectedPlayerGroups)} units</div>
-              </div>
-            </div>
-            
-            <div class="vs-indicator">VS</div>
-            
-            <div class="battle-side defender">
-              <div class="side-name">Enemy Forces ({selectedEnemyGroups.length} groups)</div>
-              <div class="side-info">
-                <div class="group-list">
-                  {#each selectedEnemyGroups as group}
-                    <div class="preview-group">{group.name || `Group ${group.id.slice(-4)}`} ({group.unitCount || group.units?.length || 1})</div>
-                  {/each}
-                </div>
-                <div class="total-strength">Total: {calculateTotalPower(selectedEnemyGroups)} units</div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="battle-note">
-            <p>Starting this attack will create a battle that other players can join.</p>
-          </div>
-        {/if}
       </div>
       
       <div class="actions">
@@ -438,6 +440,8 @@
     font-size: 0.8em;
     color: #666;
     font-weight: normal;
+    margin-bottom: 0.8em;
+    margin-top: -0.5em;
   }
 
   .groups-list {
@@ -457,7 +461,7 @@
     background: white;
     text-align: left;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.8em;
     width: 100%;
     font-family: var(--font-body);
@@ -467,7 +471,6 @@
   .group-checkbox {
     display: flex;
     align-items: center;
-    padding-top: 0.2em;
   }
 
   .group-info {
@@ -497,106 +500,33 @@
   }
 
   .group-name {
-    font-weight: 500;
+    font-weight: 600; /* Increased font weight for better contrast */
     margin-bottom: 0.3em;
+    color: rgba(0, 0, 0, 0.87); /* Darker text for better contrast */
   }
 
   .owner-name {
     font-size: 0.85em;
-    color: #666;
-    font-weight: normal;
+    color: #555; /* Darker color for better contrast */
+    font-weight: 500; /* Slightly bolder */
     margin-left: 0.5em;
   }
 
   .group-details {
     font-size: 0.9em;
-    color: #666;
+    color: #555; /* Darker for better contrast */
     display: flex;
     justify-content: space-between;
   }
   
   .unit-count {
-    color: rgba(0, 0, 0, 0.7);
+    color: rgba(0, 0, 0, 0.75); /* Darker for better contrast */
     font-weight: 500;
   }
   
   .group-race {
     color: #2d8659;
     font-weight: 500;
-  }
-  
-  .battle-preview {
-    margin-top: 1.5em;
-    margin-bottom: 1.5em;
-  }
-  
-  .battle-sides {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1em;
-    margin-bottom: 1em;
-  }
-  
-  .battle-side {
-    flex: 1;
-    padding: 0.8em;
-    border-radius: 0.3em;
-    text-align: center;
-  }
-  
-  .battle-side.attacker {
-    background-color: rgba(0, 0, 255, 0.07);
-    border: 1px solid rgba(0, 0, 255, 0.15);
-    color: #00008B;
-  }
-  
-  .battle-side.defender {
-    background-color: rgba(139, 0, 0, 0.07);
-    border: 1px solid rgba(139, 0, 0, 0.15);
-    color: #8B0000;
-  }
-  
-  .side-name {
-    font-weight: 500;
-    margin-bottom: 0.5em;
-  }
-  
-  .side-info {
-    font-size: 0.9em;
-  }
-
-  .group-list {
-    margin-bottom: 0.5em;
-  }
-
-  .preview-group {
-    padding: 0.2em 0;
-  }
-
-  .total-strength {
-    font-weight: bold;
-    margin-top: 0.5em;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-    padding-top: 0.3em;
-  }
-  
-  .vs-indicator {
-    font-weight: bold;
-    font-size: 1.2em;
-    color: #666;
-  }
-  
-  .battle-note {
-    background-color: rgba(255, 152, 0, 0.1);
-    border-left: 3px solid rgba(255, 152, 0, 0.5);
-    padding: 0.8em;
-    font-size: 0.9em;
-    color: #666;
-  }
-  
-  .battle-note p {
-    margin: 0;
   }
 
   .actions {
@@ -658,6 +588,41 @@
     flex-direction: column;
     gap: 1em;
     align-items: center;
+  }
+
+  /* Entity icon styling */
+  .entity-icon {
+    margin-right: 0.4em;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Global styles for race icons */
+  :global(.race-icon-attack) {
+    width: 1.4em;
+    height: 1.4em;
+    opacity: 0.85;
+    fill: rgba(0, 0, 0, 0.7);
+  }
+  
+  :global(.race-icon-attack-small) {
+    width: 1.1em;
+    height: 1.1em;
+    opacity: 0.85;
+    fill: currentColor;
+  }
+  
+  /* Race-specific styling */
+  :global(.race-icon-attack.fairy-icon path),
+  :global(.race-icon-attack-small.fairy-icon path) {
+    fill: rgba(138, 43, 226, 0.8);
+  }
+  
+  :global(.race-icon-attack.goblin-icon path),
+  :global(.race-icon-attack-small.goblin-icon path) {
+    fill: rgba(0, 128, 0, 0.8);
   }
 
   @media (min-width: 768px) {
