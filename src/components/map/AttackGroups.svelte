@@ -251,18 +251,12 @@
           <div class="selection-count">({selectedPlayerGroups.length} selected)</div>
           <div class="groups-list">
             {#each playerGroups as group}
-              <label 
+              <div 
                 class="group-item" 
                 class:selected={isPlayerGroupSelected(group.id)}
+                onclick={() => togglePlayerGroup(group)}
               >
-                <div class="group-checkbox">
-                  <input 
-                    type="checkbox" 
-                    checked={isPlayerGroupSelected(group.id)} 
-                    onchange={() => togglePlayerGroup(group)}
-                    aria-label={`Select your group ${group.name || group.id}`}
-                  />
-                </div>
+                <div class="custom-checkbox" class:checked={isPlayerGroupSelected(group.id)} />
                 <div class="entity-icon">
                   {#if group.race}
                     {#if group.race.toLowerCase() === 'human'}
@@ -287,7 +281,7 @@
                     {/if}
                   </div>
                 </div>
-              </label>
+              </div>
             {/each}
           </div>
         </div>
@@ -297,18 +291,12 @@
           <div class="selection-count">({selectedEnemyGroups.length} selected)</div>
           <div class="groups-list">
             {#each enemyGroups as group}
-              <label 
+              <div 
                 class="group-item enemy-group" 
                 class:selected={isEnemyGroupSelected(group.id)}
+                onclick={() => toggleEnemyGroup(group)}
               >
-                <div class="group-checkbox">
-                  <input 
-                    type="checkbox" 
-                    checked={isEnemyGroupSelected(group.id)} 
-                    onchange={() => toggleEnemyGroup(group)}
-                    aria-label={`Select enemy group ${group.name || group.id}`}
-                  />
-                </div>
+                <div class="custom-checkbox" class:checked={isEnemyGroupSelected(group.id)} />
                 <div class="entity-icon">
                   {#if group.race}
                     {#if group.race.toLowerCase() === 'human'}
@@ -327,7 +315,6 @@
                 <div class="group-info">
                   <div class="group-name">
                     {group.name || `Group ${group.id.slice(-4)}`}
-                    <span class="owner-name">({formatOwnerName(group)})</span>
                   </div>
                   <div class="group-details">
                     <span class="unit-count">Units: {group.unitCount || group.units?.length || 1}</span>
@@ -336,7 +323,7 @@
                     {/if}
                   </div>
                 </div>
-              </label>
+              </div>
             {/each}
           </div>
         </div>
@@ -459,7 +446,6 @@
     cursor: pointer;
     transition: all 0.2s;
     background: white;
-    text-align: left;
     display: flex;
     align-items: center;
     gap: 0.8em;
@@ -468,9 +454,36 @@
     font-size: 1em;
   }
 
-  .group-checkbox {
+  /* Custom checkbox styling */
+  .custom-checkbox {
+    width: 1.2em;
+    height: 1.2em;
+    border: 2px solid #ccc;
+    border-radius: 0.3em;
     display: flex;
     align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .custom-checkbox.checked {
+    background-color: #4285F4;
+    border-color: #4285F4;
+  }
+
+  .custom-checkbox.checked::after {
+    content: "✓";
+    color: white;
+    font-size: 0.9em;
+    font-weight: bold;
+  }
+
+  /* Enemy group checkbox styling */
+  .enemy-group .custom-checkbox.checked {
+    background-color: #d32f2f;
+    border-color: #d32f2f;
   }
 
   .group-info {
@@ -500,32 +513,25 @@
   }
 
   .group-name {
-    font-weight: 600; /* Increased font weight for better contrast */
+    font-weight: 600;
     margin-bottom: 0.3em;
-    color: rgba(0, 0, 0, 0.87); /* Darker text for better contrast */
-  }
-
-  .owner-name {
-    font-size: 0.85em;
-    color: #555; /* Darker color for better contrast */
-    font-weight: 500; /* Slightly bolder */
-    margin-left: 0.5em;
+    color: rgba(0, 0, 0, 0.87);
   }
 
   .group-details {
     font-size: 0.9em;
-    color: #555; /* Darker for better contrast */
+    color: #555;
     display: flex;
     justify-content: space-between;
   }
   
   .unit-count {
-    color: rgba(0, 0, 0, 0.75); /* Darker for better contrast */
+    color: rgba(0, 0, 0, 0.75);
     font-weight: 500;
   }
   
   .group-race {
-    color: #2d8659;
+    color: #3e6bbf;
     font-weight: 500;
   }
 
@@ -599,30 +605,33 @@
     justify-content: center;
   }
 
-  /* Global styles for race icons */
+  /* Global styles for race icons - improved colors */
   :global(.race-icon-attack) {
     width: 1.4em;
     height: 1.4em;
     opacity: 0.85;
-    fill: rgba(0, 0, 0, 0.7);
+    fill: #3e6bbf; /* Default blue color for all race icons */
   }
   
-  :global(.race-icon-attack-small) {
-    width: 1.1em;
-    height: 1.1em;
-    opacity: 0.85;
-    fill: currentColor;
+  /* Race-specific styling with better colors */
+  :global(.race-icon-attack.human-icon path) {
+    fill: #3e6bbf; /* Blue for humans */
   }
   
-  /* Race-specific styling */
-  :global(.race-icon-attack.fairy-icon path),
-  :global(.race-icon-attack-small.fairy-icon path) {
-    fill: rgba(138, 43, 226, 0.8);
+  :global(.race-icon-attack.elf-icon path) {
+    fill: #2d8659; /* Teal for elves */
   }
   
-  :global(.race-icon-attack.goblin-icon path),
-  :global(.race-icon-attack-small.goblin-icon path) {
-    fill: rgba(0, 128, 0, 0.8);
+  :global(.race-icon-attack.dwarf-icon path) {
+    fill: #8B4513; /* Brown for dwarves */
+  }
+  
+  :global(.race-icon-attack.fairy-icon path) {
+    fill: #9c27b0; /* Purple for fairy */
+  }
+  
+  :global(.race-icon-attack.goblin-icon path) {
+    fill: #7D5D3B; /* Earthy tone for goblin instead of bright green */
   }
 
   @media (min-width: 768px) {
