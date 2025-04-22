@@ -716,7 +716,7 @@
               {#each sortedStructures as structure (structure.type + ':' + structure.x + ':' + structure.y)}
                 <div 
                   class="entity structure {isAtTarget(structure.x, structure.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(structure) ? 'current-player-owned' : ''}"
-                  data-distance={structure.distance === 0 ? "0" : ""}
+                  class:is-here={structure.distance === 0}
                   onkeydown={(e) => handleEntityAction(structure.x, structure.y, e)}
                   role="button"
                   tabindex="0"
@@ -854,7 +854,7 @@
               {#each sortedPlayers as entity ('player:' + entity.id + ':' + entity.x + ':' + entity.y)}
                 <div 
                   class="entity player {entity.id === $currentPlayer?.id ? 'current' : ''} {isAtTarget(entity.x, entity.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(entity) ? 'current-player-owned' : ''}"
-                  data-distance={entity.distance === 0 ? "0" : ""}
+                  class:is-here={entity.distance === 0}
                   onclick={(e) => handleEntityAction(entity.x, entity.y, e)}
                   onkeydown={(e) => handleEntityAction(entity.x, entity.y, e)}
                   role="button"
@@ -997,7 +997,7 @@
               {#each sortedGroups as group ('group:' + group.id)}
                 <div 
                   class="entity {isAtTarget(group.x, group.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(group) ? 'current-player-owned' : ''}"
-                  data-distance={group.distance === 0 ? "0" : ""}
+                  class:is-here={group.distance === 0}
                   onclick={(e) => handleEntityAction(group.x, group.y, e)}
                   onkeydown={(e) => handleEntityAction(group.x, group.y, e)}
                   tabindex="0"
@@ -1177,7 +1177,7 @@
                 <div 
                   class="entity item {getRarityClass(item.rarity)}" 
                   class:at-target={isAtTarget(item.x, item.y)}
-                  data-distance={item.distance === 0 ? "0" : ""}
+                  class:is-here={item.distance === 0}
                   onclick={(e) => handleEntityAction(item.x, item.y, e)}
                   onkeydown={(e) => handleEntityAction(item.x, item.y, e)}
                   role="button"
@@ -1293,7 +1293,7 @@
                 <div 
                   class="entity battle"
                   class:at-target={isAtTarget(battle.x, battle.y)}
-                  data-distance={battle.distance === 0 ? "0" : ""}
+                  class:is-here={battle.distance === 0}
                   class:resolved={battle.status === 'resolved'}
                   class:active={battle.status === 'active'}
                   class:player-participating={isPlayerInBattle(battle)}
@@ -1486,23 +1486,24 @@
     position: relative;
   }
 
-  /* Add new style for items that are "Here" (distance = 0) */
-  .entity[data-distance="0"] {
-    background-color: rgba(0, 200, 83, 0.1);
-    border-color: rgba(0, 200, 83, 0.3);
+  /* Style for items that are "Here" (distance = 0) - replace data attribute with class */
+  .is-here {
+    background-color: rgba(64, 158, 255, 0.1);
+    border-color: rgba(64, 158, 255, 0.3);
     position: relative;
   }
   
   /* Style the distance text when it's "Here" */
-  .entity[data-distance="0"] .entity-distance {
-    color: rgba(0, 200, 83, 0.9);
+  .is-here .entity-distance {
+    color: rgba(64, 158, 255, 0.9);
     font-weight: 500;
     font-size: 0.9em;
   }
 
-  /* If both at-target and distance=0, prioritize at-target styling */
-  .at-target[data-distance="0"] .entity-distance {
-    color: rgba(64, 158, 255, 0.9);
+  /* If both at-target and is-here, prioritize at-target styling */
+  .at-target.is-here .entity-distance {
+    color: rgba(64, 158, 255, 1.0);
+    font-weight: 600;
   }
 
   .entity-distance {
@@ -1515,11 +1516,12 @@
   }
   
   /* Make the dot character in "• Here" slightly larger */
-  .entity[data-distance="0"] .entity-distance::first-letter {
-    font-size: 1.5em;
+  .is-here .entity-distance::first-letter {
+    font-size: 1.8em;
     line-height: 0;
     margin-right: 0.1em;
     vertical-align: middle;
+    color: rgba(64, 158, 255, 1.0);
   }
 
   .map-entities {
