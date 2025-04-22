@@ -107,4 +107,4 @@ async function cleanupChatMessages(db, worldId) {
   }
 }
 
-export default cleanupChats;
+export default cleanup;
