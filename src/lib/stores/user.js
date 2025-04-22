@@ -15,27 +15,68 @@ import {
   updateProfile
 } from 'firebase/auth';
 
+// New constants for controlling debug output
+const DEBUG_MODE = false; // Set to true to enable verbose logging
+const debugLog = (...args) => DEBUG_MODE && console.log(...args);
+
 // Create the user store
 export const userStore = writable(null); // Initialize with null instead of undefined
 export const user = userStore; // Export an alias for backward compatibility
 export const loading = writable(true);
+export const isAuthReady = writable(false); // Add explicit isAuthReady store
 
-// Initialize auth state listener
+// Track initialization to prevent duplicate listeners
+let authListenerInitialized = false;
+let authUnsubscribe = null;
+
+// Initialize auth state listener with better state tracking
 export const initAuthListener = () => {
-  if (!browser) return loading.set(false);
+  if (!browser) {
+    loading.set(false);
+    isAuthReady.set(true); // Mark as ready even in SSR
+    return null;
+  }
+  
+  // Don't set up duplicate listeners
+  if (authListenerInitialized && authUnsubscribe) {
+    debugLog('Auth listener already initialized, returning existing unsubscribe');
+    return authUnsubscribe;
+  }
   
   try {
-    const unsubscribe = onAuthStateChanged(auth, firebaseUser => {
-      console.log('Auth state changed:', firebaseUser ? 'User logged in' : 'No user');
+    authListenerInitialized = true;
+    
+    // Store previous auth state to avoid redundant logging
+    let previousAuthState = null;
+    
+    authUnsubscribe = onAuthStateChanged(auth, firebaseUser => {
+      const newAuthState = firebaseUser ? 'logged-in' : 'logged-out';
+      
+      // Only log if auth state has changed
+      if (previousAuthState !== newAuthState) {
+        console.log('Auth state changed:', firebaseUser ? 'User logged in' : 'No user');
+        previousAuthState = newAuthState;
+      }
+      
       userStore.set(firebaseUser);
       loading.set(false);
+      isAuthReady.set(true); // Always set auth ready once we know the state
     });
     
     // Return unsubscribe function to clean up listener
-    return unsubscribe;
+    return () => {
+      if (authUnsubscribe) {
+        authUnsubscribe();
+        authUnsubscribe = null;
+        authListenerInitialized = false;
+        isAuthReady.set(false); // Reset on unsubscribe
+      }
+    };
   } catch (error) {
     console.error('Error initializing auth listener:', error);
     loading.set(false);
+    isAuthReady.set(true); // Mark as ready even on error to avoid UI hanging
+    return null;
   }
 };
 
@@ -44,9 +85,9 @@ export const signIn = async (email, password) => {
   if (!browser) return { success: false, error: 'Cannot sign in on server' };
   
   try {
-    console.log('Attempting sign in for:', email);
+    debugLog('Attempting sign in for:', email);
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    console.log('Sign in successful:', userCredential.user.uid);
+    debugLog('Sign in successful:', userCredential.user.uid);
     return { success: true };
   } catch (error) {
     console.error('Sign in error:', error.code, error.message);

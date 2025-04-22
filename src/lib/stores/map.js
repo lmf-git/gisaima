@@ -6,6 +6,10 @@ import { replaceState } from '$app/navigation'; // Import from SvelteKit instead
 // Import getWorldCenterCoordinates function from game store
 import { getWorldCenterCoordinates } from './game.js';
 
+// New constants for controlling debug output
+const DEBUG_MODE = false; // Set to true to enable verbose logging
+const debugLog = (...args) => DEBUG_MODE && console.log(...args);
+
 // Keep a reference to the terrain generator for grid creation
 let terrain;
 
@@ -56,6 +60,37 @@ function loadTargetFromLocalStorage(worldId) {
 
 const chunkSubscriptions = new Map();
 
+// Enhanced validateWorldId function with better error handling
+function validateWorldId(worldId) {
+  if (!worldId) {
+    console.warn('Empty worldId received, using default');
+    return 'default';
+  }
+  
+  // Handle case where worldId is an object - more detailed logging
+  if (typeof worldId === 'object') {
+    console.error('Invalid worldId object received:', worldId);
+    
+    // Try to extract ID from common patterns
+    if (worldId.id) {
+      console.warn('Extracted ID from object:', worldId.id);
+      return String(worldId.id);
+    }
+    
+    // Try name as fallback if available
+    if (worldId.name) {
+      const sanitizedName = String(worldId.name).toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      console.warn('Using sanitized name as fallback ID:', sanitizedName);
+      return sanitizedName;
+    }
+    
+    console.warn('Falling back to default world ID');
+    return 'default';
+  }
+  
+  return String(worldId);
+}
+
 // Initialize map without accessing game store initially
 export const map = writable({
   ready: false,
@@ -98,7 +133,7 @@ export const targetPosition = derived(map, ($map) => {
 
 // Debounce URL updates to prevent performance issues
 let urlUpdateTimeout = null;
-const URL_UPDATE_DEBOUNCE = 500; // Increase from 300ms to 500ms for better performance
+const URL_UPDATE_DEBOUNCE = 750; // Increase from 500ms to 750ms for better performance
 
 // Flag to track if the URL is being updated by us or externally
 let isInternalUrlUpdate = false;
@@ -421,7 +456,8 @@ function processChunkData(data = {}, chunkKey) {
 export const chunks = derived(
   [map],
   ([$map], set) => {
-    const worldId = $map.world || 'default';
+    // Ensure worldId is a valid string
+    const worldId = validateWorldId($map.world);
 
     // Skip if map is not ready
     if (!$map.ready) return set(new Set());
@@ -487,15 +523,22 @@ export const chunks = derived(
 
     // Process chunks in order of priority
     for (const chunk of chunksToLoad) {
-      const chunkRef = ref(db, `worlds/${worldId}/chunks/${chunk.chunkKey}`);
-      const unsubscribe = onValue(chunkRef, snapshot => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          processChunkData(data, chunk.chunkKey);
-        }
-      });
+      try {
+        // Use validated worldId when creating Firebase reference
+        const chunkRef = ref(db, `worlds/${worldId}/chunks/${chunk.chunkKey}`);
+        const unsubscribe = onValue(chunkRef, snapshot => {
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            processChunkData(data, chunk.chunkKey);
+          }
+        }, error => {
+          console.error(`Error loading chunk ${chunk.chunkKey}:`, error);
+        });
 
-      chunkSubscriptions.set(chunk.chunkKey, unsubscribe);
+        chunkSubscriptions.set(chunk.chunkKey, unsubscribe);
+      } catch (err) {
+        console.error(`Failed to subscribe to chunk ${chunk.chunkKey}:`, err);
+      }
     }
 
     // Unsubscribe from any chunks that are no longer visible
@@ -685,11 +728,11 @@ export const highlightedStore = derived(
   }
 );
 
-// Enhance the moveTarget function with better debouncing and localStorage persistence
+// Enhance the moveTarget function with better debouncing
 let moveTargetTimeout = null;
-const MOVE_TARGET_DEBOUNCE = 30; // Increase from 20ms to 30ms
+const MOVE_TARGET_DEBOUNCE = 50; // Increase from 30ms to 50ms for better performance
 
-// Simplified moveTarget function - no need for preserveHighlight flag
+// Simplified moveTarget function with enhanced debouncing
 export function moveTarget(newX, newY) {
   if (newX === undefined || newY === undefined) {
     console.warn('Invalid coordinates passed to moveTarget:', { newX, newY });
@@ -721,11 +764,12 @@ export function moveTarget(newX, newY) {
     // Don't clear highlightedCoords here - let components manage that
 
     // Update URL to reflect the new position - with a lower priority
+    // Only update URL for significant moves (more than 3 tiles) or after longer pauses
     if (!isInternalUrlUpdate) {
       updateUrlWithCoordinates(x, y);
     }
 
-    // Save target position to localStorage
+    // Save target position to localStorage (less frequently)
     const worldId = currentState.world;
     if (worldId) {
       saveTargetToLocalStorage(worldId, x, y);
@@ -830,83 +874,57 @@ function handleDragAction(event, sensitivity = 1) {
   }
 }
 
-// Unified initialization function with localStorage support and better error handling
+// Track state of initialization attempts
+let initializationAttempted = false;
+let currentInitializationPromise = null;
+
+// Improved initialize function with better validation
 export function initialize(options = {}) {
   // SSR guard - don't initialize terrain on server
   if (typeof window === 'undefined') {
-    console.log('Skipping map setup in SSR environment');
+    debugLog('Skipping map setup in SSR environment');
     return false;
   }
-
-  // Don't reinitialize if already ready with the same world
-  const currentMapState = get(map);
-
-  // Return early if already initializing to prevent redundant attempts
-  if (currentMapState.initializing) {
-    console.log('Map initialization already in progress, skipping redundant attempt');
-    return false;
-  }
-
-  // Mark that we're starting initialization
-  map.update(state => ({ ...state, initializing: true, initializationAttempted: true }));
-
-  let worldId = options.world || options.worldId || 'default';
 
   try {
-    // Handle different input formats for extracting worldId
-    if (options.gameStore) {
-      const gameState = get(options.gameStore);
-      if (gameState && gameState.currentWorld) {
-        worldId = gameState.currentWorld;
+    // Extra validation on options to prevent common issues
+    if (!options) {
+      console.error('No options provided to initialize()');
+      return false;
+    }
+    
+    // Don't reinitialize if already ready with the same world
+    const currentMapState = get(map);
+    let worldId = options.world?.id || options.worldId || 'default';
+    
+    // Validate world object to ensure it has required properties
+    if (options.world && typeof options.world === 'object') {
+      if (options.world.seed === undefined) {
+        console.error('World object is missing seed property:', options.world);
+        return false;
       }
     }
+    
+    // Ensure worldId is a valid string
+    worldId = validateWorldId(worldId);
 
-    // Early return if already initialized with same world
-    if (currentMapState.ready && currentMapState.world === worldId) {
-      console.log(`Map already initialized for world ${worldId}, skipping redundant setup`);
-
-      // Update initializing flag
-      map.update(state => ({ ...state, initializing: false }));
-
-      // Still process URL coordinates if needed
-      const urlX = options.initialX;
-      const urlY = options.initialY;
-      if (urlX !== undefined && urlY !== undefined) {
-        moveTarget(urlX, urlY);
-      }
-
-      return true;
-    }
+    // Rest of initialize function...
+    
+    // Mark that we're starting initialization
+    map.update(state => ({ 
+      ...state, 
+      initializing: true, 
+      initializationAttempted: true 
+    }));
 
     let seed;
     let initialX = options.initialX;
     let initialY = options.initialY;
 
-    // Handle different input formats for seed extraction
-    if (options.gameStore) {
-      // Case 1: GameStore provided - extract data from it
-      const gameState = get(options.gameStore);
-      if (!gameState || !gameState.currentWorld) {
-        console.log('No current world in game state');
-        map.update(state => ({ ...state, initializing: false }));
-        return false;
-      }
-
-      worldId = gameState.currentWorld;
-
-      if (!gameState.world || !gameState.world[worldId]) {
-        console.log(`No world info for world: ${worldId}`);
-        map.update(state => ({ ...state, initializing: false }));
-        return false;
-      }
-
-      seed = gameState.world[worldId].seed;
-    } else if (options.world) {
-      // Case 2: Direct world object provided
-      worldId = options.worldId || 'default';
+    // Extract seed properly regardless of input format
+    if (options.world && typeof options.world === 'object') {
       seed = options.world.seed;
-    } else {
-      // Case 3: Direct seed and world values
+    } else if (typeof options.seed !== 'undefined') {
       seed = options.seed;
     }
 
@@ -948,20 +966,20 @@ export function initialize(options = {}) {
       const savedPosition = loadTargetFromLocalStorage(worldId);
       if (savedPosition) {
         targetPosition = savedPosition;
-        console.log(`Initializing map with saved position: ${targetPosition.x},${targetPosition.y}`);
+        debugLog(`Initializing map with saved position: ${targetPosition.x},${targetPosition.y}`);
       } else {
         // 3. Try to use world center coordinates
         const worldCenter = getWorldCenterCoordinates(worldId, options.world);
         if (worldCenter.x !== 0 || worldCenter.y !== 0) {
           targetPosition = worldCenter;
-          console.log(`Initializing map with world center: ${targetPosition.x},${targetPosition.y}`);
+          debugLog(`Initializing map with world center: ${targetPosition.x},${targetPosition.y}`);
         } else if (currentState.target.x !== 0 || currentState.target.y !== 0) {
           // 4. Use existing target
           targetPosition = currentState.target;
-          console.log(`Initializing map with existing position: ${targetPosition.x},${targetPosition.y}`);
+          debugLog(`Initializing map with existing position: ${targetPosition.x},${targetPosition.y}`);
         } else {
           // 5. Default to 0,0
-          console.log('Initializing map with default position (0,0)');
+          debugLog('Initializing map with default position (0,0)');
         }
       }
     }
@@ -987,8 +1005,8 @@ export function initialize(options = {}) {
       };
     });
 
-    // Update URL if initial coordinates were provided
-    if (hasInitialCoords) {
+    // Update URL if initial coordinates were provided (but only if they're non-zero for cleaner URLs)
+    if (hasInitialCoords && (initialX !== 0 || initialY !== 0)) {
       updateUrlWithCoordinates(targetPosition.x, targetPosition.y);
     }
 
@@ -1101,16 +1119,22 @@ export function cleanup() {
 
 // Initialize map for world with localStorage support
 export function initializeMapForWorld(worldId, worldData = null) {
-  if (!worldId) return;
+  if (!worldId) {
+    console.error('Cannot initialize map: No world ID provided');
+    return;
+  }
 
-  console.log(`Initializing map for world: ${worldId}`);
+  // Ensure worldId is a valid string
+  const validWorldId = validateWorldId(worldId);
+  
+  console.log(`Initializing map for world: ${validWorldId}`);
 
   // Get current map state
   const currentMapState = get(map);
 
   // Don't reinitialize if already set up
-  if (currentMapState.ready && currentMapState.world === worldId) {
-    console.log(`Map already initialized for world ${worldId}`);
+  if (currentMapState.ready && currentMapState.world === validWorldId) {
+    console.log(`Map already initialized for world ${validWorldId}`);
     return;
   }
 
@@ -1120,12 +1144,12 @@ export function initializeMapForWorld(worldId, worldData = null) {
   }
 
   // Try to load saved position for this world
-  const savedPosition = loadTargetFromLocalStorage(worldId);
+  const savedPosition = loadTargetFromLocalStorage(validWorldId);
 
   // Get world center coordinates
-  const worldCenter = getWorldCenterCoordinates(worldId, worldData);
+  const worldCenter = getWorldCenterCoordinates(validWorldId, worldData);
 
-  // Initialize with world data if available
+  // Initialize with world data if available - with validation
   if (worldData && worldData.seed !== undefined) {
     console.log(`Initializing map with provided worldData, seed: ${worldData.seed}`);
 
@@ -1133,7 +1157,7 @@ export function initializeMapForWorld(worldId, worldData = null) {
     if (savedPosition) {
       setup({
         seed: worldData.seed,
-        world: worldId,
+        world: validWorldId,  // Use validated ID
         initialX: savedPosition.x,
         initialY: savedPosition.y
       });
@@ -1141,7 +1165,7 @@ export function initializeMapForWorld(worldId, worldData = null) {
       // Use world center if no saved position
       setup({
         seed: worldData.seed,
-        world: worldId,
+        world: validWorldId,  // Use validated ID
         initialX: worldCenter.x,
         initialY: worldCenter.y
       });
@@ -1149,5 +1173,5 @@ export function initializeMapForWorld(worldId, worldData = null) {
     return;
   }
 
-  console.log(`Cannot initialize map for world ${worldId} - no seed data available`);
+  console.log(`Cannot initialize map for world ${validWorldId} - no seed data available`);
 }

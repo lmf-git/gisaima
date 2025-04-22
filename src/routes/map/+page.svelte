@@ -52,8 +52,14 @@
     import StructureOverview from '../../components/map/StructureOverview.svelte';
     import Gather from '../../components/map/Gather.svelte';
 
-    let isTutorialVisible = $state(false);
+    // Add a debug flag for verbose logging
+    const DEBUG_MODE = false;
+    const debugLog = (...args) => DEBUG_MODE && console.log(...args);
 
+    // Add more detailed diagnostic info to debug loading issues
+    const DEBUG_LOADING = true;
+
+    let isTutorialVisible = $state(false);
     let detailed = $state(false);
     let loading = $state(true);
     let error = $state(null);
@@ -63,6 +69,14 @@
     
     let initAttempted = $state(false);
     
+    // Fix: Ensure isPathDrawingMode is properly defined as a state variable
+    let isPathDrawingMode = $state(false);
+    
+    // More granular loading state tracking
+    let authReadyState = $state(false);
+    let gameInitializedState = $state(false);
+    let mapReadyState = $state(false);
+
     const combinedLoading = $derived(loading || $game.worldLoading || !$isAuthReady);
     
     const isDragging = $derived($map.isDragging);
@@ -76,19 +90,11 @@
     // Add a counter to ensure proper re-rendering
     let structureRenderCount = $state(0);
 
-    function toggleDetailsModal(show) {
-        detailed = show === undefined ? !detailed : show;
-    }
-    
-    let ignoreNextUrlChange = $state(false);
-    let lastProcessedLocation = $state(null);
-    
-    let coordinateProcessingState = $state({
-        processing: false,
-        processed: new Set(),
-        lastProcessedTime: 0
-    });
-    
+    // Prevent duplicate URL processing with improved tracking
+    let processedCoordinates = $state(new Set());
+    let coordinateProcessingDebounce = null;
+    const COORDINATE_DEBOUNCE_TIME = 300;
+
     // Modal visibility state variables - consolidated to avoid redeclarations
     let showAttack = $state(false);
     let showJoinBattle = $state(false);
@@ -96,7 +102,6 @@
     let showMove = $state(false);
     let showDemobilize = $state(false);
     let showGather = $state(false);
-    let isPathDrawingMode = $state(false);
     let isReady = $state(true); // Add missing isReady state
 
     // Modal data state
@@ -161,6 +166,21 @@
         }, 300);
     }
 
+    function toggleDetailsModal(show) {
+        detailed = show === undefined ? !detailed : show;
+    }
+    
+    let ignoreNextUrlChange = $state(false);
+    let lastProcessedLocation = $state(null);
+    
+    // Use a single object to track coordinate processing state
+    let coordinateProcessingState = $state({
+        processing: false,
+        processed: new Set(),
+        lastProcessedTime: 0
+    });
+
+    // Improved URL coordinate parsing with filtering
     function parseUrlCoordinates() {
         if (!browser || !page) return null;
         
@@ -175,6 +195,7 @@
             if (!isNaN(parsedX) && !isNaN(parsedY)) {
                 const coordKey = `${parsedX},${parsedY}`;
                 
+                // Skip if we've already processed these coordinates recently
                 const now = Date.now();
                 if (coordinateProcessingState.processed.has(coordKey) && 
                     now - coordinateProcessingState.lastProcessedTime < 2000) {
@@ -199,33 +220,44 @@
         });
     }
     
+    // Optimized URL coordinate processing with better debouncing
     $effect(() => {
         if (coordinateProcessingState.processing || !browser || !page) return;
         
-        const url = get(page).url;
-        const newCoords = parseUrlCoordinates();
-        
-        if (newCoords && !isInternalUrlChange()) {
-            console.log(`Found URL coordinates: ${newCoords.x},${newCoords.y}`);
-            
-            coordinateProcessingState.processing = true;
-            
-            if ($ready) {
-                console.log(`Applying URL coordinates: ${newCoords.x},${newCoords.y}`);
-                moveTarget(newCoords.x, newCoords.y);
-                
-                coordinateProcessingState.processed.add(newCoords.key);
-                coordinateProcessingState.lastProcessedTime = Date.now();
-            } else {
-                urlCoordinates = { x: newCoords.x, y: newCoords.y };
-            }
-            
-            setTimeout(() => {
-                coordinateProcessingState.processing = false;
-            }, 100);
+        // Debounce URL coordinate processing
+        if (coordinateProcessingDebounce) {
+            clearTimeout(coordinateProcessingDebounce);
         }
+        
+        coordinateProcessingDebounce = setTimeout(() => {
+            const url = get(page).url;
+            const newCoords = parseUrlCoordinates();
+            
+            if (newCoords && !isInternalUrlChange()) {
+                debugLog(`Found URL coordinates: ${newCoords.x},${newCoords.y}`);
+                
+                coordinateProcessingState.processing = true;
+                
+                if ($ready) {
+                    console.log(`Applying URL coordinates: ${newCoords.x},${newCoords.y}`);
+                    moveTarget(newCoords.x, newCoords.y);
+                    
+                    coordinateProcessingState.processed.add(newCoords.key);
+                    coordinateProcessingState.lastProcessedTime = Date.now();
+                    urlProcessingComplete = true;
+                } else {
+                    urlCoordinates = { x: newCoords.x, y: newCoords.y };
+                }
+                
+                setTimeout(() => {
+                    coordinateProcessingState.processing = false;
+                }, 100);
+            }
+            coordinateProcessingDebounce = null;
+        }, COORDINATE_DEBOUNCE_TIME);
     });
     
+    // This effect only runs when map becomes ready and we have unprocessed URL coordinates
     $effect(() => {
         if (!$ready || !urlCoordinates || coordinateProcessingState.processing) return;
         
@@ -238,28 +270,30 @@
         
         coordinateProcessingState.processing = true;
         
-        console.log(`Applying URL coordinates after map ready: ${urlCoordinates.x},${urlCoordinates.y}`);
+        debugLog(`Applying URL coordinates after map ready: ${urlCoordinates.x},${urlCoordinates.y}`);
         moveTarget(urlCoordinates.x, urlCoordinates.y);
         
         coordinateProcessingState.processed.add(coordKey);
         coordinateProcessingState.lastProcessedTime = Date.now();
+        urlProcessingComplete = true;
         urlCoordinates = null;
         
         setTimeout(() => {
             coordinateProcessingState.processing = false;
         }, 100);
     });
-    
+
+    // Simplified effect that handles either URL coordinates or player position
     $effect(() => {
         if (!$ready || urlProcessingComplete) return;
         
         if (urlCoordinates) {
-            console.log(`Applying URL coordinates: ${urlCoordinates.x},${urlCoordinates.y}`);
+            debugLog(`Applying URL coordinates: ${urlCoordinates.x},${urlCoordinates.y}`);
             moveTarget(urlCoordinates.x, urlCoordinates.y);
             urlProcessingComplete = true;
             lastProcessedLocation = { ...urlCoordinates };
-        } else if ($game.playerWorldData?.lastLocation && !$needsSpawn) {
-            const location = $game.playerWorldData.lastLocation;
+        } else if ($game.playerData?.lastLocation && !$needsSpawn) {
+            const location = $game.playerData.lastLocation;
             moveTarget(location.x, location.y);
             urlProcessingComplete = true;
             lastProcessedLocation = { ...location };
@@ -270,56 +304,75 @@
             lastProcessedLocation = { ...worldCenter };
         }
     });
-
+    
+    // Log player data only when it actually changes
+    let lastPlayerDataStatus = null;
     $effect(() => {
-        if (!$ready || !$game.playerData?.lastLocation) return;
-        
-        if (!urlProcessingComplete && $game.playerData.alive === true) {
-            const location = $game.playerData.lastLocation;
-            console.log('Centering map on player location:', location);
-            moveTarget(location.x, location.y);
-            urlProcessingComplete = true;
-            lastProcessedLocation = { ...location };
-        }
-    });
-
-    $effect(() => {
-      console.log("Player data status:", {
+      // Create a summary object of the relevant state
+      const playerStatus = {
         ready: $ready,
         currentWorld: $game.currentWorld,
-        playerData: $game.playerData,
+        playerData: !!$game.playerData, // Just track if it exists
         alive: $game.playerData?.alive,
-        lastLocation: $game.playerData?.lastLocation
-      });
+        hasLocation: !!$game.playerData?.lastLocation
+      };
+      
+      // Only log if something meaningful changed
+      const statusKey = JSON.stringify(playerStatus);
+      if (lastPlayerDataStatus !== statusKey && DEBUG_MODE) {
+        debugLog("Player data status:", {
+          ready: playerStatus.ready,
+          currentWorld: playerStatus.currentWorld,
+          playerData: $game.playerData,
+          alive: playerStatus.alive,
+          lastLocation: $game.playerData?.lastLocation
+        });
+        lastPlayerDataStatus = statusKey;
+      }
     });
 
-    function handleSpawnComplete(spawnLocation) {
-        if (spawnLocation) {
-            console.log('Spawn complete at:', spawnLocation);
-            
-            // Since the SpawnMenu already moved the map to this location,
-            // we just need to ensure states are updated properly
-            moveTarget(spawnLocation.x, spawnLocation.y);
-            
-            // Mark URL coords as processed
-            urlProcessingComplete = true;
-            lastProcessedLocation = { ...spawnLocation };
-            
-            // Ensure highlighted coordinates are cleared
-            setHighlighted(null, null);
-            
-            // Force an instantiation of state variables (helps with Svelte 5 reactivity)
-            structureRenderCount++;
-        }
-    }
+    // Prevent redundant map initializations
+    let mapInitializationComplete = $state(false);
+    let mapInitializationAttempted = $state(false);
     
     async function initializeMap(worldId) {
+        // Add logging for initialization attempts
+        if (!mapInitializationAttempted) {
+            console.log(`First map initialization attempt for world: ${worldId}`);
+            mapInitializationAttempted = true;
+        } else {
+            console.log(`Repeated map initialization attempt for world: ${worldId}`);
+        }
+
+        // Validate worldId first to catch issues early
+        if (!worldId) {
+            throw new Error('No world ID specified');
+        }
+        
+        // Ensure worldId is a string
+        if (typeof worldId === 'object') {
+            console.error('Object passed as worldId:', worldId);
+            if (worldId.id) {
+                worldId = worldId.id; // Try to extract ID if available
+            } else {
+                throw new Error('Invalid world ID (object)');
+            }
+        } else {
+            worldId = String(worldId);
+        }
+        
+        if (mapInitializationComplete) {
+            debugLog(`Map initialization already completed for ${worldId}, skipping`);
+            return;
+        }
+      
         if ($ready && $map.world === worldId) {
-            console.log(`Map already initialized for world ${worldId}, skipping redundant initialization`);
+            debugLog(`Map already initialized for world ${worldId}, skipping redundant initialization`);
+            mapInitializationComplete = true;
             
             const startingCoords = parseUrlCoordinates();
             if (startingCoords && !urlProcessingComplete) {
-                console.log(`Applying URL coordinates to existing map: ${startingCoords.x},${startingCoords.y}`);
+                debugLog(`Applying URL coordinates to existing map: ${startingCoords.x},${startingCoords.y}`);
                 moveTarget(startingCoords.x, startingCoords.y);
                 urlProcessingComplete = true;
             }
@@ -331,17 +384,32 @@
             loading = true;
             error = null;
             
+            // Add timeout to prevent infinite waiting
             if (!$isAuthReady) {
-                await new Promise(resolve => {
+                console.log('Waiting for auth to be ready...');
+                const authPromise = new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('Auth ready timeout - forcing continuation'));
+                    }, 5000); // 5 second timeout
+                    
                     const unsubscribe = isAuthReady.subscribe(ready => {
                         if (ready) {
+                            clearTimeout(timeout);
                             unsubscribe();
                             resolve();
                         }
                     });
                 });
+                
+                try {
+                    await authPromise;
+                } catch (err) {
+                    console.warn('Auth ready wait timed out, continuing anyway:', err);
+                    // Continue anyway after timeout
+                }
             }
             
+            // Make sure we have a valid world ID before proceeding
             await setCurrentWorld(worldId);
             const world = await getWorldInfo(worldId);
             
@@ -356,24 +424,29 @@
             
             const urlCoords = parseUrlCoordinates();
             if (urlCoords) {
-                console.log(`Using URL coordinates: ${urlCoords.x},${urlCoords.y}`);
+                debugLog(`Using URL coordinates: ${urlCoords.x},${urlCoords.y}`);
                 initialCoords = urlCoords;
                 urlProcessingComplete = true;
             } 
-            else if ($game.playerWorldData?.lastLocation) {
-                const location = $game.playerWorldData.lastLocation;
-                console.log(`Using player's last location: ${location.x},${location.y}`);
+            else if ($game.playerData?.lastLocation) {
+                const location = $game.playerData.lastLocation;
+                debugLog(`Using player's last location: ${location.x},${location.y}`);
                 initialCoords = { x: location.x, y: location.y };
             } 
             else {
                 const worldCenter = getWorldCenterCoordinates(worldId, world);
-                console.log(`Using world center: ${worldCenter.x},${worldCenter.y}`);
+                debugLog(`Using world center: ${worldCenter.x},${worldCenter.y}`);
                 initialCoords = worldCenter;
             }
             
+            // Make sure to pass the world data properly
             if (!initialize({ 
-                worldId,
-                world,
+                worldId,                      // Pass string ID
+                world: {                      // Pass seed and key data as a minimal object
+                    seed: world.seed,
+                    center: world.center || null,
+                    spawns: world.spawns || world.info?.spawns || null
+                },
                 initialX: initialCoords.x,
                 initialY: initialCoords.y
             })) {
@@ -381,70 +454,19 @@
             }
             
             loading = false;
+            mapInitializationComplete = true;
             
         } catch (err) {
             error = err.message || 'Failed to load world';
             loading = false;
             console.error('Error initializing map:', err);
+            throw err; // Re-throw to allow upstream error handling
         }
     }
     
-    $effect(() => {
-        if (initAttempted || error || !$isAuthReady) return;
-        
-        if (!$game.worldLoading && $game.currentWorld && $game.world[$game.currentWorld]?.seed !== undefined) {
-            initAttempted = true;
-            
-            try {
-                const startingCoords = urlCoordinates;
-                
-                if (initialize({ 
-                    gameStore: game,
-                    initialX: startingCoords?.x,
-                    initialY: startingCoords?.y
-                })) {
-                    loading = false;
-                    error = null;
-                    
-                    if (startingCoords) {
-                        urlProcessingComplete = true;
-                    }
-                } else {
-                    error = 'Failed to initialize map with world data';
-                    loading = false;
-                }
-            } catch (err) {
-                console.error('Error initializing map:', err);
-                error = err.message || 'Failed to initialize map';
-            }
-        }
-    });
-    
-    $effect(() => {
-      if (browser && !$userLoading && $user === null) {
-        const url = get(page).url;
-        const worldId = url.searchParams.get('world') || $game.currentWorld;
-        const redirectPath = worldId ? `/map?world=${worldId}` : '/map';
-        goto(`/login?redirect=${encodeURIComponent(redirectPath)}`);
-      }
-    });
-    
-    let currentWorldId = $state(null);
-    
-    $effect(() => {
-        if (!browser) return;
-        
-        const url = get(page).url;
-        const worldFromUrl = url.searchParams.get('world');
-        const worldFromStore = $game?.currentWorld;
-        
-        currentWorldId = worldFromUrl || worldFromStore || null;
-    });
-
-    // Add a flag to track initialization
+    // More efficient initialization tracking
     let initialized = $state(false);
     
-    // Use $effect correctly with only one argument
     $effect(() => {
         // Skip if already initialized or not in browser
         if (initialized || !browser) return;
@@ -455,7 +477,16 @@
         document.body.classList.add('map-page-active');
         
         const url = get(page).url;
-        const worldId = url.searchParams.get('world') || $game.currentWorld;
+        let worldId = url.searchParams.get('world') || $game.currentWorld;
+        
+        // Validate worldId to ensure it's a proper string
+        if (!worldId || typeof worldId === 'object') {
+            console.error('Invalid world ID from URL or game store:', worldId);
+            worldId = 'default'; // Fall back to default world
+        } else {
+            worldId = String(worldId);
+        }
+        
         const coords = parseUrlCoordinates();
         
         if (coords) {
@@ -467,12 +498,25 @@
             return;
         }
         
-        if (!$ready && currentWorldId && $game.world[currentWorldId]?.seed !== undefined) {
-            console.log(`Initializing map from existing world info for ${currentWorldId}`);
+        // Fix the initialization logic to properly handle game.currentWorld
+        // when $game.currentWorld is available and has valid world data
+        if (!$ready && $game.currentWorld && 
+            typeof $game.currentWorld === 'string' && 
+            $game.world[$game.currentWorld]?.seed !== undefined) {
+                
+            debugLog(`Initializing map from existing world info for ${$game.currentWorld}`);
             
+            // Extract world data properly - don't pass the object itself
+            const worldData = $game.world[$game.currentWorld];
+            
+            // Pass worldId as string and separate worldData object
             initialize({ 
-                worldId: currentWorldId, 
-                world: $game.world[currentWorldId],
+                worldId: $game.currentWorld,  // Pass the ID as string 
+                world: {                      // Pass seed and relevant data separately
+                    seed: worldData.seed,
+                    center: worldData.center || null,
+                    spawns: worldData.spawns || null
+                },
                 initialX: urlCoordinates?.x, 
                 initialY: urlCoordinates?.y
             });
@@ -485,6 +529,7 @@
                 coordinateProcessingState.lastProcessedTime = Date.now();
             }
         } else {
+            // Use our revised initializeMap function with proper error handling
             initializeMap(worldId).catch(err => {
                 console.error(`Failed to initialize map:`, err);
                 error = err.message || `Failed to load world`;
@@ -505,166 +550,21 @@
         };
     });
 
-    let showMinimap = $state(true);
-    let showEntities = $state(true);
-    let minimapClosing = $state(false);
-    let entitiesClosing = $state(false);
-    
-    const ANIMATION_DURATION = 800;
-
-    function toggleTutorial() {
-        // Dispatch the custom event to toggle tutorial
-        window.dispatchEvent(new CustomEvent('tutorial:toggle'));
-    }
-    
-    // Function to handle tutorial state changes
-    function handleTutorialVisibility(isVisible) {
-        isTutorialVisible = isVisible;
-        
-        if (isTutorialVisible && (showMinimap || showEntities)) {
-            showMinimap = false;
-            showEntities = false;
-        }
-    }
-    
-    // Add the missing function that was referenced in the Tutorial component
-    function handleTutorialToggle(isVisible) {
-        console.log('Tutorial visibility toggled:', isVisible);
-        // This function is called when the tutorial is opened or closed manually
-        // You can add any additional logic needed when tutorial state changes
-    }
-    
     $effect(() => {
-        if (browser) {
-            if ($needsSpawn || isTutorialVisible) {
-                showMinimap = false;
-                showEntities = false;
-            } else {
-                const storedMinimapVisibility = localStorage.getItem('minimap');
-                const defaultMinimapVisibility = window.innerWidth >= 768;
-                
-                showMinimap = storedMinimapVisibility === 'false' ? false : 
-                              storedMinimapVisibility === 'true' ? true : 
-                              defaultMinimapVisibility;
-                
-                const storedEntitiesVisibility = localStorage.getItem('overview');
-                showEntities = storedEntitiesVisibility !== 'false';
-            }
+        authReadyState = $isAuthReady;
+        gameInitializedState = $game.initialized;
+        mapReadyState = $ready;
+
+        if (DEBUG_LOADING) {
+            console.log('Loading state dependencies:', {
+                userAuthReady: $isAuthReady,
+                gameInitialized: $game.initialized,
+                gameWorldLoading: $game.worldLoading,
+                mapReady: $ready,
+                componentLoading: loading
+            });
         }
     });
-    
-    $effect(() => {
-        if ($needsSpawn && (showMinimap || showEntities)) {
-            showMinimap = false;
-            showEntities = false;
-        }
-    });
-    
-    function toggleMinimap() {
-        if ($needsSpawn || isTutorialVisible) {
-            return;
-        }
-        
-        if (showMinimap) {
-            minimapClosing = true;
-            setTimeout(() => {
-                showMinimap = false;
-                minimapClosing = false;
-                if (browser) {
-                    localStorage.setItem('minimap', 'false');
-                }
-            }, ANIMATION_DURATION);
-        } else {
-            showMinimap = true;
-            if (browser) {
-                localStorage.setItem('minimap', 'true');
-            }
-        }
-    }
-
-    function toggleEntities() {
-        if ($needsSpawn || isTutorialVisible) {
-            return;
-        }
-        
-        if (showEntities) {
-            entitiesClosing = true;
-            setTimeout(() => {
-                showEntities = false;
-                entitiesClosing = false;
-                if (browser) {
-                    localStorage.setItem('overview', 'false');
-                }
-            }, ANIMATION_DURATION);
-        } else {
-            showEntities = true;
-            if (browser) {
-                localStorage.setItem('overview', 'true');
-            }
-        }
-    }
-
-    function handleGridClick(coords) {
-        // Check if this is a path confirmation action
-        if (coords && coords.confirmPath === true) {
-            confirmPathDrawing(currentPath);
-            return;
-        }
-
-        // Simple debounce
-        if (isProcessingClick) return;
-        isProcessingClick = true;
-
-        // If we're in path drawing mode and have coordinates, add them to the path
-        if (isPathDrawingMode && coords && coords.x !== undefined && coords.y !== undefined) {
-            // Add the point to the path
-            handlePathPoint(coords);
-            
-            // Reset debounce flag with short timeout for responsiveness in drawing mode
-            setTimeout(() => {
-                isProcessingClick = false;
-            }, 100);
-            return;
-        }
-
-        // Regular grid click handling (not in path drawing mode)
-        if (coords) {
-            // First move the target to the clicked location
-            moveTarget(coords.x, coords.y);
-
-            // Get the tile data after moving
-            const clickedTile = $coordinates.find(c => c.x === coords.x && c.y === coords.y);
-            
-            // Only highlight and open details if there's meaningful content and not in path drawing mode
-            if (clickedTile && hasTileContent(clickedTile) && !isPathDrawingMode) {
-                setHighlighted(coords.x, coords.y);
-                toggleDetailsModal(true);
-            } else if (!isPathDrawingMode) {
-                // If there's no content and not in path drawing mode, just ensure nothing is highlighted
-                setHighlighted(null, null);
-                toggleDetailsModal(false);
-            }
-        }
-
-        // Reset debounce flag
-        setTimeout(() => {
-            isProcessingClick = false;
-        }, 300);
-    }
-
-    // Improved function to check if a tile has meaningful content
-    function hasTileContent(tile) {
-        if (!tile) return false;
-        
-        return (
-            // Check for any meaningful content on the tile
-            (tile.structure && Object.keys(tile.structure).length > 0) ||
-            (tile.groups && tile.groups.length > 0) ||
-            (tile.players && tile.players.length > 0) ||
-            (tile.items && tile.items.length > 0) ||
-            (tile.battles && tile.battles.length > 0)
-        );
-    }
 
     function handlePathPoint(point) {
         if (!isPathDrawingMode) return;
@@ -705,50 +605,6 @@
             // First point in the path
             currentPath = [{ x: point.x, y: point.y }];
         }
-    }
-
-    // Add the path calculation function that matches what's in Move.svelte and Grid.svelte
-    function calculatePathBetweenPoints(startX, startY, endX, endY) {
-        const path = [];
-        
-        // Calculate steps using Bresenham's line algorithm
-        const dx = Math.abs(endX - startX);
-        const dy = Math.abs(endY - startY);
-        const sx = startX < endX ? 1 : -1;
-        const sy = startY < endY ? 1 : -1;
-        
-        let err = dx - dy;
-        let x = startX;
-        let y = startY;
-        
-        // Add start point
-        path.push({ x, y });
-        
-        // Generate steps
-        while (!(x === endX && y === endY)) {
-            const e2 = 2 * err;
-            
-            if (e2 > -dy) {
-                err -= dy;
-                x += sx;
-            }
-            
-            if (e2 < dx) {
-                err += dx;
-                y += sy;
-            }
-            
-            // Add intermediate point
-            path.push({ x, y });
-            
-            // Safety check
-            if (path.length > 1000) {
-                console.warn('Path too long, truncating');
-                break;
-            }
-        }
-        
-        return path;
     }
 
     function handlePathDrawingStart(group) {
@@ -844,7 +700,7 @@
         });
     }
 
-    // Enhanced keyboard event handler for the page
+    // Enhanced keyboard event handler for the page 
     function handleMapKeyDown(event) {
         if (event.key !== 'Escape') return;
         
@@ -873,19 +729,204 @@
         }
     }
     
-    // Update modal state when components change visibility
-    $effect(() => {
-        if (browser) {
-            updateModalState({
-                structureOverview: modalState.type === 'inspect' && modalState.visible,
-                details: detailed,
-                pathDrawing: isPathDrawingMode,
-                anyOtherModal: modalState.visible && modalState.type !== 'inspect',
-                minimap: showMinimap && !minimapClosing,
-                overview: showEntities && !entitiesClosing
-            });
+    // Add missing functions for minimap and entities toggling
+    let showMinimap = $state(true);
+    let showEntities = $state(true);
+    let minimapClosing = $state(false);
+    let entitiesClosing = $state(false);
+    const ANIMATION_DURATION = 800;
+    
+    function toggleMinimap() {
+        if ($needsSpawn || isTutorialVisible) {
+            return;
         }
-    });
+        
+        if (showMinimap) {
+            minimapClosing = true;
+            setTimeout(() => {
+                showMinimap = false;
+                minimapClosing = false;
+                if (browser) {
+                    localStorage.setItem('minimap', 'false');
+                }
+            }, ANIMATION_DURATION);
+        } else {
+            showMinimap = true;
+            if (browser) {
+                localStorage.setItem('minimap', 'true');
+            }
+        }
+    }
+
+    function toggleEntities() {
+        if ($needsSpawn || isTutorialVisible) {
+            return;
+        }
+        
+        if (showEntities) {
+            entitiesClosing = true;
+            setTimeout(() => {
+                showEntities = false;
+                entitiesClosing = false;
+                if (browser) {
+                    localStorage.setItem('overview', 'false');
+                }
+            }, ANIMATION_DURATION);
+        } else {
+            showEntities = true;
+            if (browser) {
+                localStorage.setItem('overview', 'true');
+            }
+        }
+    }
+    
+    function handleTutorialVisibility(isVisible) {
+        isTutorialVisible = isVisible;
+        
+        if (isTutorialVisible && (showMinimap || showEntities)) {
+            showMinimap = false;
+            showEntities = false;
+        }
+    }
+    
+    // Add the missing function that was referenced in the Tutorial component
+    function handleTutorialToggle(isVisible) {
+        console.log('Tutorial visibility toggled:', isVisible);
+        // This function is called when the tutorial is opened or closed manually
+    }
+    
+    function toggleTutorial() {
+        // Dispatch the custom event to toggle tutorial
+        window.dispatchEvent(new CustomEvent('tutorial:toggle'));
+    }
+    
+    // Add the missing function for calculating path between points
+    function calculatePathBetweenPoints(startX, startY, endX, endY) {
+        const path = [];
+        
+        // Calculate steps using Bresenham's line algorithm
+        const dx = Math.abs(endX - startX);
+        const dy = Math.abs(endY - startY);
+        const sx = startX < endX ? 1 : -1;
+        const sy = startY < endY ? 1 : -1;
+        
+        let err = dx - dy;
+        let x = startX;
+        let y = startY;
+        
+        // Add start point
+        path.push({ x, y });
+        
+        // Generate steps
+        while (!(x === endX && y === endY)) {
+            const e2 = 2 * err;
+            
+            if (e2 > -dy) {
+                err -= dy;
+                x += sx;
+            }
+            
+            if (e2 < dx) {
+                err += dx;
+                y += sy;
+            }
+            
+            // Add intermediate point
+            path.push({ x, y });
+            
+            // Safety check
+            if (path.length > 1000) {
+                console.warn('Path too long, truncating');
+                break;
+            }
+        }
+        
+        return path;
+    }
+    
+    // Add missing function for grid clicking
+    function handleGridClick(coords) {
+        // Check if this is a path confirmation action
+        if (coords && coords.confirmPath === true) {
+            confirmPathDrawing(currentPath);
+            return;
+        }
+
+        // Simple debounce
+        if (isProcessingClick) return;
+        isProcessingClick = true;
+
+        // If we're in path drawing mode and have coordinates, add them to the path
+        if (isPathDrawingMode && coords && coords.x !== undefined && coords.y !== undefined) {
+            // Add the point to the path
+            handlePathPoint(coords);
+            
+            // Reset debounce flag with short timeout for responsiveness in drawing mode
+            setTimeout(() => {
+                isProcessingClick = false;
+            }, 100);
+            return;
+        }
+
+        // Regular grid click handling (not in path drawing mode)
+        if (coords) {
+            // First move the target to the clicked location
+            moveTarget(coords.x, coords.y);
+
+            // Get the tile data after moving
+            const clickedTile = $coordinates.find(c => c.x === coords.x && c.y === coords.y);
+            
+            // Only highlight and open details if there's meaningful content and not in path drawing mode
+            if (clickedTile && hasTileContent(clickedTile) && !isPathDrawingMode) {
+                setHighlighted(coords.x, coords.y);
+                toggleDetailsModal(true);
+            } else if (!isPathDrawingMode) {
+                // If there's no content and not in path drawing mode, just ensure nothing is highlighted
+                setHighlighted(null, null);
+                toggleDetailsModal(false);
+            }
+        }
+
+        // Reset debounce flag
+        setTimeout(() => {
+            isProcessingClick = false;
+        }, 300);
+    }
+
+    // Improved function to check if a tile has meaningful content
+    function hasTileContent(tile) {
+        if (!tile) return false;
+        
+        return (
+            // Check for any meaningful content on the tile
+            (tile.structure && Object.keys(tile.structure).length > 0) ||
+            (tile.groups && tile.groups.length > 0) ||
+            (tile.players && tile.players.length > 0) ||
+            (tile.items && tile.items.length > 0) ||
+            (tile.battles && tile.battles.length > 0)
+        );
+    }
+
+    // Add missing spawn completion handler
+    function handleSpawnComplete(spawnLocation) {
+        if (spawnLocation) {
+            console.log('Spawn complete at:', spawnLocation);
+            
+            // Since the SpawnMenu already moved the map to this location,
+            // we just need to ensure states are updated properly
+            moveTarget(spawnLocation.x, spawnLocation.y);
+            
+            // Mark URL coords as processed
+            urlProcessingComplete = true;
+            lastProcessedLocation = { ...spawnLocation };
+            
+            // Ensure highlighted coordinates are cleared
+            setHighlighted(null, null);
+            
+            // Force an instantiation of state variables (helps with Svelte 5 reactivity)
+            structureRenderCount++;
+        }
+    }
 </script>
 
 <!-- Add global keyboard event handler -->
@@ -900,10 +941,21 @@
                     Loading user data...
                 {:else if $game.worldLoading}
                     Loading world data...
+                {:else if !$ready}
+                    Initializing map...
                 {:else}
                     Initializing world...
                 {/if}
             </div>
+            {#if DEBUG_LOADING && combinedLoading}
+                <div class="debug-info">
+                    <p>Auth Ready: {authReadyState ? 'Yes' : 'No'}</p>
+                    <p>Game Initialized: {gameInitializedState ? 'Yes' : 'No'}</p>
+                    <p>World Loading: {$game.worldLoading ? 'Yes' : 'No'}</p>
+                    <p>Map Ready: {mapReadyState ? 'Yes' : 'No'}</p>
+                    <p>Component Loading: {loading ? 'Yes' : 'No'}</p>
+                </div>
+            {/if}
         </div>
     {:else if error || $game.error}
         <div class="error-overlay">
@@ -1219,4 +1271,17 @@
         outline-offset: 0.1em;
     }
 
+    .debug-info {
+        margin-top: 1rem;
+        font-size: 0.8rem;
+        opacity: 0.7;
+        text-align: left;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+    }
+    
+    .debug-info p {
+        margin: 0.2rem 0;
+    }
 </style>
