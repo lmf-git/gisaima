@@ -108,7 +108,7 @@
 
       
       console.log("Preparing mobilization request with:", {
-        worldId: $game.currentWorld,
+        worldId: $game.worldKey,
         tileX: tileData.x,
         tileY: tileData.y,
         units: selectedUnits.map(u => u.id),
@@ -120,7 +120,7 @@
       const mobilizeFn = httpsCallable(getFunctions(), 'mobiliseUnits');
       
       const result = await mobilizeFn({
-        worldId: $game.currentWorld,
+        worldId: $game.worldKey,
         tileX: tileData.x,
         tileY: tileData.y,
         units: selectedUnits.map(u => u.id),

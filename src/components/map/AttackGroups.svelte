@@ -71,7 +71,7 @@
         defenderGroupId: selectedEnemyGroup.id,
         locationX: tileData.x,
         locationY: tileData.y,
-        worldId: $game.currentWorld
+        worldId: $game.worldKey
       });
       
       // Call the cloud function
@@ -81,7 +81,7 @@
         defenderGroupId: selectedEnemyGroup.id,
         locationX: tileData.x,
         locationY: tileData.y,
-        worldId: $game.currentWorld
+        worldId: $game.worldKey
       });
       
       if (result.data.success) {

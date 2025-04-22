@@ -180,7 +180,7 @@
         
         const url = get(page).url;
         const worldIdFromUrl = url.searchParams.get('world');
-        const currentWorldId = $game.worldKey || $game.currentWorld;
+        const currentWorldId = $game.worldKey;
         
         let worldToUse;
         
@@ -238,8 +238,7 @@
                 gameWorldLoading: $game.worldLoading,
                 mapReady: $ready,
                 componentLoading: loading,
-                currentWorld: $game.currentWorld,
-                worldDataAvailable: $game.currentWorld ? !!$game.worlds[$game.currentWorld] : false
+                worldDataAvailable: $game.worldKey ? !!$game.worlds[$game.worldKey] : false
             });
         }
     });

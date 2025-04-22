@@ -51,7 +51,7 @@
         structureId: tileData.structure.id,
         locationX: tileData.x,
         locationY: tileData.y,
-        worldId: $game.currentWorld,
+        worldId: $game.worldKey,
         storageDestination: storageDestination
       });
 

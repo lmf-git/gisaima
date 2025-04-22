@@ -117,7 +117,7 @@
         side: parseInt(selectedSide),
         locationX: tileData.x,
         locationY: tileData.y,
-        worldId: $game.currentWorld
+        worldId: $game.worldKey
       });
       
       // Use the functions instance from above
@@ -128,7 +128,7 @@
         side: parseInt(selectedSide),
         locationX: tileData.x,
         locationY: tileData.y,
-        worldId: $game.currentWorld
+        worldId: $game.worldKey
       });
       
       if (result.data.success) {

@@ -116,7 +116,7 @@
         itemIds: selectedItems.map(item => item.id),
         locationX: $targetStore.x,
         locationY: $targetStore.y,
-        worldId: $game.currentWorld
+        worldId: $game.worldKey
       });
       
       console.log('Gathering started:', result.data);
