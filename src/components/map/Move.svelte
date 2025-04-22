@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { currentPlayer } from '../../lib/stores/game';
-  import { highlightedStore, targetStore } from '../../lib/stores/map';
+  import { targetStore } from '../../lib/stores/map';
   import Close from '../icons/Close.svelte';
   
   // Props using $props() rune
@@ -22,7 +22,7 @@
   let renderKey = $state(Date.now());
   
   // Derived states
-  const currentTile = $derived($highlightedStore || $targetStore);
+  const currentTile = $derived($targetStore);
   const eligibleGroups = $derived(getEligibleGroups());
   
   onMount(() => {
