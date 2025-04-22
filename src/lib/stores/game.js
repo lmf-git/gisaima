@@ -124,25 +124,6 @@ export const currentPlayer = derived(
   }
 );
 
-// Fix the needsSpawn store to properly check player alive status with cleaner logic
-export const needsSpawn = derived(
-  [game, userStore], // Use userStore directly 
-  ([$game, $user]) => {
-    // Only show spawn menu when all these conditions are met:
-    // 1. User is logged in
-    // 2. Current world is selected
-    // 3. Player has joined this world (playerData exists)
-    // 4. Player is not alive in this world
-    
-    return (
-      !!$user?.uid && 
-      !!$game.worldKey && 
-      !!$game.playerData && 
-      !$game?.playerData?.alive
-    );
-  }
-);
-
 // Create a derived store for the next world tick time
 export const nextWorldTick = derived(
   game,
