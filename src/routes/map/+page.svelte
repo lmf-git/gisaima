@@ -42,6 +42,8 @@
     import Demobilise from '../../components/map/Demobilise.svelte';
     import StructureOverview from '../../components/map/StructureOverview.svelte';
     import Gather from '../../components/map/Gather.svelte';
+    import Map from '../../components/icons/Map.svelte';
+    import Spyglass from '../../components/icons/Spyglass.svelte';
 
     const DEBUG_MODE = true;
     const debugLog = (...args) => DEBUG_MODE && console.log(...args);
@@ -753,7 +755,7 @@
                 {#if showMinimap || minimapClosing}
                     <Close size="1.2em" extraClass="close-icon-dark" />
                 {:else}
-                    <span class="button-text">MINIMAP</span>
+                    <Map extraClass="button-icon" />
                 {/if}
             </button>
         </div>
@@ -765,7 +767,7 @@
                     onclick={toggleEntities}
                     aria-label="Show entities"
                     disabled={!$game?.player?.alive || isTutorialVisible}>
-                    <span class="button-text">OVERVIEW</span>
+                    <Spyglass extraClass="button-icon" />
                 </button>
             </div>
         {/if}
@@ -982,6 +984,7 @@
     }
     
     .control-button {
+        min-width: 2em;
         height: 2em;
         background-color: rgba(255, 255, 255, 0.85);
         border: 0.05em solid rgba(255, 255, 255, 0.2);
@@ -1032,5 +1035,31 @@
     .control-button:focus-visible {
         outline: 0.15em solid rgba(0, 0, 0, 0.6);
         outline-offset: 0.1em;
+    }
+
+    :global(.button-icon) {
+        height: 1.2em;
+        width: 1.2em;
+        fill: rgba(0, 0, 0, 0.8);
+    }
+
+    .minimap-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.3em;
+        min-width: 2em;
+        width: 2em;
+    }
+
+    .minimap-button :global(.close-icon-dark) {
+        height: 1.2em;
+        width: 1.2em;
+    }
+
+    .entity-button {
+        padding: 0.3em;
+        min-width: 2em;
+        width: 2em;
     }
 </style>
