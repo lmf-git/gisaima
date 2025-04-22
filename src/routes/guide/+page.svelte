@@ -31,6 +31,13 @@
       sections.forEach(section => observer.unobserve(section));
     };
   });
+
+  // Import race icons
+  import Human from '$components/icons/Human.svelte';
+  import Elf from '$components/icons/Elf.svelte';
+  import Dwarf from '$components/icons/Dwarf.svelte';
+  import Goblin from '$components/icons/Goblin.svelte';
+  import Fairy from '$components/icons/Fairy.svelte';
 </script>
 
 <svelte:head>
@@ -113,6 +120,14 @@
             onclick={() => scrollToSection('game-mechanics')}
           >
             Game Mechanics
+          </button>
+        </li>
+        <li>
+          <button 
+            class:active={activeSection === 'races'}
+            onclick={() => scrollToSection('races')}
+          >
+            Races
           </button>
         </li>
       </ul>
@@ -389,6 +404,116 @@
       </div>
     </section>
 
+    <section id="races" class="guide-section">
+      <h2>Races</h2>
+      <p>
+        When joining a world in Gisaima, you'll choose one of five distinct races. 
+        Each race has unique traits and advantages that influence your gameplay strategy.
+      </p>
+      
+      <div class="race-grid">
+        <div class="race-card">
+          <div class="race-header">
+            <div class="race-icon">
+              <Human size="2.5em" extraClass="race-icon-guide" />
+            </div>
+            <h3>Humans</h3>
+          </div>
+          <p class="race-desc">Versatile and adaptable, humans excel at diplomacy and trade.</p>
+          <div class="race-traits">
+            <span class="race-trait">Diplomatic</span>
+            <span class="race-trait">Fast Learners</span>
+            <span class="race-trait">Resource Efficient</span>
+          </div>
+          <p class="race-tip">
+            <strong>Best For:</strong> New players and those who prefer balanced gameplay with 
+            flexibility to adapt to different situations.
+          </p>
+        </div>
+
+        <div class="race-card">
+          <div class="race-header">
+            <div class="race-icon">
+              <Elf size="2.5em" extraClass="race-icon-guide" />
+            </div>
+            <h3>Elves</h3>
+          </div>
+          <p class="race-desc">Ancient forest dwellers with deep connections to nature and magic.</p>
+          <div class="race-traits">
+            <span class="race-trait">Magical Affinity</span>
+            <span class="race-trait">Forest Advantage</span>
+            <span class="race-trait">Long-range Combat</span>
+          </div>
+          <p class="race-tip">
+            <strong>Best For:</strong> Players who prefer ranged combat and excel in 
+            forest environments with magical advantage.
+          </p>
+        </div>
+
+        <div class="race-card">
+          <div class="race-header">
+            <div class="race-icon">
+              <Dwarf size="2.5em" extraClass="race-icon-guide" />
+            </div>
+            <h3>Dwarves</h3>
+          </div>
+          <p class="race-desc">Sturdy mountain folk, master craftsmen and miners.</p>
+          <div class="race-traits">
+            <span class="race-trait">Mining Bonus</span>
+            <span class="race-trait">Strong Defense</span>
+            <span class="race-trait">Mountain Advantage</span>
+          </div>
+          <p class="race-tip">
+            <strong>Best For:</strong> Players focused on resource gathering and 
+            defensive strategies in mountainous regions.
+          </p>
+        </div>
+
+        <div class="race-card">
+          <div class="race-header">
+            <div class="race-icon">
+              <Goblin size="2.5em" extraClass="race-icon-guide" />
+            </div>
+            <h3>Goblins</h3>
+          </div>
+          <p class="race-desc">Cunning and numerous, goblins thrive in harsh environments.</p>
+          <div class="race-traits">
+            <span class="race-trait">Fast Production</span>
+            <span class="race-trait">Night Advantage</span>
+            <span class="race-trait">Scavenging Bonus</span>
+          </div>
+          <p class="race-tip">
+            <strong>Best For:</strong> Players who enjoy aggressive expansion and 
+            quick production with night operations.
+          </p>
+        </div>
+
+        <div class="race-card">
+          <div class="race-header">
+            <div class="race-icon">
+              <Fairy size="2.5em" extraClass="race-icon-guide" />
+            </div>
+            <h3>Fairies</h3>
+          </div>
+          <p class="race-desc">Magical beings with flight capabilities and illusion powers.</p>
+          <div class="race-traits">
+            <span class="race-trait">Flight</span>
+            <span class="race-trait">Illusion Magic</span>
+            <span class="race-trait">Small Size Advantage</span>
+          </div>
+          <p class="race-tip">
+            <strong>Best For:</strong> Players who prefer stealth, mobility, and 
+            deception over direct confrontation.
+          </p>
+        </div>
+      </div>
+      
+      <p>
+        Once you've chosen a race, you'll start at your race's specific spawn point in the world. 
+        Each race's spawn is located in a biome that complements their natural advantages.
+      </p>
+    </section>
+
     <section id="game-mechanics" class="guide-section">
       <h2>Game Mechanics</h2>
       <p>
@@ -456,14 +581,63 @@
       <p>
         Battles in Gisaima occur when hostile groups encounter each other:
       </p>
+      
+      <h4>Starting an Attack</h4>
+      <p>
+        You can initiate battles with enemy groups at your current location:
+      </p>
+      <ol>
+        <li>Select one or more of your groups to participate in the attack</li>
+        <li>Select one or more enemy groups as your targets</li>
+        <li>Review the battle preview showing the relative strength of both sides</li>
+        <li>Confirm the attack, which creates a battle at that location</li>
+      </ol>
+      <p>
+        When a battle is initiated, it becomes accessible to other players who can choose to
+        join either side with their own groups.
+      </p>
+      
+      <h4>Joining a Battle</h4>
+      <p>
+        You can join ongoing battles in your current location:
+      </p>
+      <ol>
+        <li>Select one of your groups to join the battle</li>
+        <li>Choose which battle to join if multiple are occurring</li>
+        <li>Select which side you want to support (Side 1 or Side 2)</li>
+        <li>Your group will join the selected side, adding its strength to that faction</li>
+      </ol>
+      
+      <p>
+        Battles involve two opposing sides:
+      </p>
       <ul>
-        <li>Battles are divided into sides (typically two opposing forces)</li>
-        <li>Each side's power is calculated based on unit quantity and quality</li>
+        <li>Each side can contain multiple groups from different players</li>
+        <li>The total power of each side is calculated based on unit quantity and quality</li>
         <li>Battles progress over time, with resolution occurring on a tick</li>
-        <li>Players can join ongoing battles with their groups</li>
         <li>Victory is determined by many factors including total power, terrain advantages, and tactics</li>
         <li>Winners may claim resources, territory, or other rewards</li>
       </ul>
+      
+      <h4>Battle Outcomes</h4>
+      <p>
+        When a battle concludes:
+      </p>
+      <ul>
+        <li>Victorious units may capture items from defeated enemies</li>
+        <li>Defeated units may be lost or reduced in number</li>
+        <li>Territory control may shift based on battle outcome</li>
+        <li>Strategic resources or structures may change ownership</li>
+      </ul>
+      
+      <div class="tip-box">
+        <h4>Strategic Tip</h4>
+        <p>
+          Use battles strategically by considering terrain advantages and forming 
+          alliances with other players. Sometimes joining an ongoing battle on the
+          winning side is more advantageous than starting your own!
+        </p>
+      </div>
       
       <h3>Items and Inventory</h3>
       <p>
@@ -581,12 +755,13 @@
     background-color: var(--color-panel-bg);
     border-radius: 0.5em;
     border: 1px solid var(--color-panel-border);
+    color: var(--color-text);
   }
   
   .guide-section h2 {
     font-size: 1.8em;
     color: var(--color-pale-green);
-    margin-bottom: 0.5em;
+    margin-bottom: 0.8em;
     font-family: var(--font-heading);
     font-weight: 400;
   }
@@ -595,7 +770,16 @@
     font-size: 1.4em;
     color: var(--color-muted-teal);
     margin-top: 1.5em;
-    margin-bottom: 0.5em;
+    margin-bottom: 0.8em;
+    font-family: var(--font-heading);
+    font-weight: 400;
+  }
+
+  .guide-section h4 {
+    font-size: 1.2em;
+    color: var(--color-pale-green);
+    margin-top: 1.2em;
+    margin-bottom: 0.6em;
     font-family: var(--font-heading);
     font-weight: 400;
   }
@@ -604,6 +788,35 @@
     margin-bottom: 1.2em;
     line-height: 1.6;
     font-family: var(--font-body);
+    color: var(--color-text);
+  }
+  
+  .guide-section ul {
+    list-style-position: inside;
+    padding-left: 0;
+    margin: 1em 0;
+  }
+
+  .guide-section li {
+    margin-bottom: 0.5em;
+    line-height: 1.6;
+    color: var(--color-text);
+  }
+
+  .strategy-list, .controls-list {
+    padding-left: 0;
+    list-style-type: none;
+  }
+
+  .guide-section ol {
+    list-style-position: inside;
+    padding-left: 0;
+    margin: 1em 0;
+  }
+
+  .guide-section ol li {
+    margin-bottom: 0.5em;
+    line-height: 1.6;
   }
   
   .strategy-list, .controls-list {
@@ -621,18 +834,27 @@
   }
   
   .faq-item {
-    margin-bottom: 1.5em;
+    background: var(--color-panel-bg);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 0.5em;
+    padding: 1em;
+    margin-bottom: 1em;
   }
   
   .faq-item h3 {
-    font-size: 1.2em;
     color: var(--color-pale-green);
+    margin-top: 0;
+    font-size: 1.2em;
+  }
+  
+  .faq-item p {
+    margin: 0.5em 0 0;
   }
   
   /* Rarity tags styling */
   .rarity-list {
-    list-style-type: none;
-    padding-left: 0.5em;
+    list-style-type: none !important;
+    padding-left: 0 !important;
   }
   
   .rarity-list li {
@@ -686,6 +908,97 @@
     border: 1px solid rgba(255, 128, 255, 0.3);
   }
   
+  /* Race section styles */
+  .race-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5em;
+    margin: 2em 0;
+  }
+  
+  .race-card {
+    background: var(--color-panel-bg);
+    border: 1px solid var(--color-panel-border);
+    border-radius: 0.5em;
+    padding: 1.2em;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .race-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px var(--color-shadow);
+  }
+  
+  .race-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.8em;
+  }
+  
+  .race-icon {
+    margin-right: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Styling for the SVG race icons */
+  :global(.race-icon-guide) {
+    opacity: 0.9;
+    filter: brightness(0) invert(0.9) sepia(1) hue-rotate(140deg) saturate(3);
+  }
+  
+  .race-card h3 {
+    margin: 0;
+    color: var(--color-pale-green);
+  }
+  
+  .race-desc {
+    margin: 0.5em 0 1em;
+    line-height: 1.4;
+  }
+  
+  .race-traits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-bottom: 1em;
+  }
+  
+  .race-trait {
+    background: rgba(100, 255, 218, 0.1);
+    color: var(--color-pale-green);
+    padding: 0.3em 0.8em;
+    border-radius: 1em;
+    font-size: 0.9em;
+  }
+  
+  .race-tip {
+    font-size: 0.95em;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 0.8em;
+    margin: 0;
+  }
+  
+  /* Battle tip box */
+  .tip-box {
+    background: var(--color-panel-bg);
+    border-left: 3px solid var(--color-pale-green);
+    padding: 1em 1.5em;
+    margin: 1.5em 0;
+  }
+  
+  .tip-box h4 {
+    color: var(--color-pale-green);
+    margin-top: 0;
+    margin-bottom: 0.5em;
+  }
+  
+  .tip-box p {
+    margin: 0;
+    color: var(--color-text);
+  }
+  
   @media (min-width: 768px) {
     .guide-container {
       flex-direction: row;
@@ -706,6 +1019,10 @@
     .guide-content {
       flex: 0 0 75%;
     }
+    
+    .race-grid {
+      grid-template-columns: 1fr 1fr;
+    }
   }
   
   @media (min-width: 1024px) {
@@ -719,6 +1036,12 @@
     
     .guide-content {
       flex: 0 0 80%;
+    }
+  }
+  
+  @media (min-width: 1200px) {
+    .race-grid {
+      grid-template-columns: 1fr 1fr 1fr;
     }
   }
 </style>
