@@ -104,7 +104,7 @@
   {#if isExpanded}
     <div class="chat-header" transition:fade={{ duration: 200 }}>
       <h3>Chat</h3>
-      <button class="close-button" on:click={toggleChat} aria-label="Close chat">
+      <button class="close-button" onclick={toggleChat} aria-label="Close chat">
         <Close extraClass="close-icon" />
       </button>
     </div>
@@ -139,7 +139,7 @@
             {#if message.location}
               <button 
                 class="location-button"
-                on:click={() => {
+                onclick={() => {
                   // Dispatch a custom event that can be listened for in the parent
                   const event = new CustomEvent('goto-location', { 
                     detail: { x: message.location.x, y: message.location.y }
@@ -155,7 +155,7 @@
       {/if}
     </div>
     
-    <form class="chat-input-form" on:submit|preventDefault={handleSubmit} transition:fade={{ duration: 200 }}>
+    <form class="chat-input-form" onsubmit={handleSubmit} transition:fade={{ duration: 200 }}>
       <input
         type="text"
         id="chat-input"
@@ -169,7 +169,7 @@
   {:else}
     <button 
       class="chat-toggle-button" 
-      on:click={toggleChat}
+      onclick={toggleChat}
       aria-label="Open chat"
     >
       <Message extraClass="message-icon" />
