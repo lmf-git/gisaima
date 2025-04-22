@@ -740,13 +740,15 @@
         />
         
         <div class="map-controls">
-            <button 
-                class="control-button help-button" 
-                onclick={toggleTutorial}
-                aria-label="Show tutorial"
-                disabled={!$game?.player?.alive}>
-                ?
-            </button>
+            {#if !isTutorialVisible}
+                <button 
+                    class="control-button help-button" 
+                    onclick={toggleTutorial}
+                    aria-label="Show tutorial"
+                    disabled={!$game?.player?.alive}>
+                    ?
+                </button>
+            {/if}
             <button 
                 class="control-button minimap-button" 
                 onclick={toggleMinimap}
@@ -1016,11 +1018,6 @@
         cursor: not-allowed;
     }
     
-    .button-text {
-        font-weight: bold;
-        color: rgba(0, 0, 0, 0.8);
-    }
-    
     @keyframes fadeInButton {
         0% {
             opacity: 0;
@@ -1038,8 +1035,8 @@
     }
 
     :global(.button-icon) {
-        height: 1.44em;  /* Increased from 1.2em */
-        width: 1.44em;   /* Increased from 1.2em */
+        height: 1.2em;
+        width: 1.2em;
         fill: rgba(0, 0, 0, 0.8);
     }
 
@@ -1047,19 +1044,19 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 0.36em;  /* Increased from 0.3em */
-        min-width: 2.4em; /* Increased from 2em */
-        width: 2.4em;     /* Increased from 2em */
+        padding: 0.3em;
+        min-width: 2em;
+        width: 2em;
     }
 
     .minimap-button :global(.close-icon-dark) {
-        height: 1.44em;  /* Increased from 1.2em */
-        width: 1.44em;   /* Increased from 1.2em */
+        height: 1.2em;
+        width: 1.2em;
     }
 
     .entity-button {
-        padding: 0.36em;  /* Increased from 0.3em */
-        min-width: 2.4em; /* Increased from 2em */
-        width: 2.4em;     /* Increased from 2em */
+        padding: 0.3em;
+        min-width: 2em;
+        width: 2em;
     }
 </style>
