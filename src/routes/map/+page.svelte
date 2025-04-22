@@ -2,16 +2,16 @@
     import { browser } from '$app/environment';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
-    import { get } from 'svelte/store'; // Get the 'get' function from svelte/store instead
-    import { user, loading as userLoading } from '../../lib/stores/user.js'; 
+    import { get } from 'svelte/store';
+    import { user, loading as userLoading, isAuthReady } from '../../lib/stores/user.js'; 
     import { 
       game, 
       getWorldInfo,
       getWorldCenterCoordinates,
       setCurrentWorld,
-      isAuthReady,
       needsSpawn,
-      currentPlayer
+      currentPlayer,
+      refreshWorldInfo
     } from "../../lib/stores/game.js";
     
     import { 
@@ -30,7 +30,8 @@
         highlightedStore,
         coordinates,
         handleKeyboardEvent,
-        updateModalState 
+        updateModalState,
+        initializeMapForWorld
     } from "../../lib/stores/map.js";
     
     import { getFunctions, httpsCallable } from 'firebase/functions'; 

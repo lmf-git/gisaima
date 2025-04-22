@@ -359,11 +359,38 @@
         raceData.displayName  // Pass the display name
       );
 
-      // Add a short delay to ensure data is synced before navigation
-      // This helps prevent race conditions where the map page loads before player data is ready
-      setTimeout(() => {
-        goto(`/map?world=${selectedWorld.id}${coordParams}`);
-      }, 500);
+      // Important: Add a proper waiting period that ensures data is fully loaded
+      console.log('World joined, waiting for data synchronization...');
+      
+      // Create a promise that resolves when game data is ready
+      await new Promise((resolve) => {
+        // Check if player data is already loaded
+        if ($game.playerData && $game.currentWorld === selectedWorld.id) {
+          console.log('Player data already loaded, proceeding to map');
+          resolve();
+          return;
+        }
+        
+        // Set up a subscription to wait for player data
+        const unsubscribe = game.subscribe((state) => {
+          if (state.playerData && state.currentWorld === selectedWorld.id) {
+            console.log('Player data loaded, proceeding to map');
+            unsubscribe();
+            resolve();
+          }
+        });
+        
+        // Set a maximum timeout of 3 seconds as fallback
+        setTimeout(() => {
+          console.log('Navigation timeout reached, proceeding anyway');
+          unsubscribe();
+          resolve();
+        }, 3000);
+      });
+
+      // Now it's safe to navigate
+      console.log(`Navigating to map page for world ${selectedWorld.id}`);
+      goto(`/map?world=${selectedWorld.id}${coordParams}`);
     } catch (error) {
       console.error('Failed to join world:', error);
       closeConfirmation();
