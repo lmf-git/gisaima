@@ -1640,7 +1640,7 @@
 
   .entities-content {
     padding: 0.8em;
-    max-height: 60vh;
+    max-height: 70vh;
     overflow-y: auto;
   }
 
@@ -1648,22 +1648,24 @@
     margin-bottom: 1.2em;
     border-radius: 0.3em;
     overflow: hidden;
+    max-height: unset;
   }
 
-  .entities-section:last-child {
-    margin-bottom: 0;
+  .section-content.expanded {
+    max-height: 13em;
+    overflow: auto;
+    padding: 0;
+    transition: max-height 0.3s ease-in, padding 0.3s ease, opacity 0.2s ease 0.1s;
+    opacity: 1;
   }
 
-  .section-title {
-    margin: 0;
-    font-size: 0.9em;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    display: flex;
-    align-items: center;
-    gap: 0.3em;
+  .section-content.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease;
   }
 
   .entity {
@@ -1702,6 +1704,15 @@
     justify-content: center;
   }
 
+  .entity-structure-icon {
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .entity-info {
     flex: 1;
   }
@@ -1730,6 +1741,35 @@
     white-space: nowrap;
   }
 
+  /* Properly style the race icons using :global */
+  :global(.race-icon-overview) {
+    width: 1.4em;
+    height: 1.4em;
+    opacity: 0.85;
+    fill: rgba(0, 0, 0, 0.7);
+  }
+  
+  /* Race-specific styling */
+  :global(.race-icon-overview.fairy-icon path) {
+    fill: rgba(138, 43, 226, 0.8);
+  }
+  
+  :global(.race-icon-overview.goblin-icon path) {
+    fill: rgba(0, 128, 0, 0.8);
+  }
+
+  /* Structure icon styling */
+  :global(.overview-structure-icon) {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
+  }
+  
+  :global(.overview-spawn-icon) {
+    filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.8)) !important;
+    opacity: 1 !important;
+  }
+
+  /* Battle entity styling */
   .entity.battle {
     background-color: rgba(139, 0, 0, 0.05);
     border: 1px solid rgba(139, 0, 0, 0.2);
@@ -1746,7 +1786,7 @@
     font-size: 1.2em;
   }
 
-  /* Updated status badge colors with improved contrast */
+  /* Status badge styling */
   .entity-status-badge {
     display: inline-block;
     font-size: 0.8em;
@@ -1815,6 +1855,122 @@
     content: '↻';
     margin-left: 0.3em;
     font-weight: bold;
+  }
+
+  /* Section header styling */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5em 1em;  /* Add horizontal padding */
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 0.3em 0.3em 0 0;
+    transition: background-color 0.2s ease;
+  }
+  
+  .section-header:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .section-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    margin-left: auto;
+  }
+
+  .section-title {
+    margin: 0;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+  }
+
+  .collapse-button {
+    background: none;
+    border: none;
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 0.8em;
+    cursor: pointer;
+    padding: 0.2em 0.5em;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5em;
+    min-height: 1.5em;
+  }
+  
+  .collapse-button:hover {
+    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
+  }
+
+  /* Sort controls */
+  .sort-controls {
+    display: flex;
+    gap: 0.2em;
+    margin-right: 0.5em;
+  }
+  
+  .sort-option {
+    background: none;
+    border: none;
+    font-size: 0.7em;
+    color: rgba(0, 0, 0, 0.5);
+    padding: 0.2em 0.4em;
+    border-radius: 0.3em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.2em;
+    transition: all 0.2s ease;
+  }
+  
+  .sort-option:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .sort-option.active {
+    background-color: rgba(66, 133, 244, 0.1);
+    color: rgba(66, 133, 244, 0.9);
+  }
+  
+  .sort-direction {
+    font-size: 0.9em;
+    font-weight: bold;
+  }
+
+  .tab-sort-controls {
+    display: flex;
+    justify-content: center; /* Center the sort controls */
+    margin-bottom: 0.5em;
+    padding: 0.3em 0;
+  }
+
+  /* Entity badge styling */
+  .entity-badge {
+    font-size: 0.7em;
+    padding: 0.2em 0.4em;
+    border-radius: 0.3em;
+    font-weight: 500;
+  }
+
+  .owner-badge {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+    border: 1px solid rgba(76, 175, 80, 0.4);
   }
 
   .current-player-owned {
@@ -1895,6 +2051,7 @@
     transition: width 1s ease;
   }
 
+  /* Group and item styles */
   .unit-count {
     color: rgba(0, 0, 0, 0.7);
     font-weight: 500;
@@ -1905,136 +2062,7 @@
     font-weight: 500;
   }
 
-  /* Section header and controls */
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5em 1em;  /* Add horizontal padding */
-    cursor: pointer;
-    user-select: none;
-    position: relative;
-    width: 100%;
-    background-color: rgba(0, 0, 0, 0.03);
-    border-radius: 0.3em 0.3em 0 0;
-    transition: background-color 0.2s ease;
-  }
-  
-  .section-header:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
-  
-  .section-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    margin-left: auto;
-  }
-  
-  /* Update section content padding for consistency */
-  .section-content {
-    padding: 0;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-out, padding 0.3s ease;
-    opacity: 0;
-  }
-
-  .section-content.expanded {
-    padding: 0.8em;
-    max-height: 1000px; /* Large enough to fit content */
-    opacity: 1;
-    transition: max-height 0.3s ease-in, padding 0.3s ease, opacity 0.2s ease 0.1s;
-  }
-
-  .section-content.collapsed {
-    max-height: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    opacity: 0;
-  }
-
-  /* Update tab sort controls for better alignment */
-  .tab-sort-controls {
-    display: flex;
-    justify-content: center; /* Change from flex-end to center */
-    margin-bottom: 0.5em;
-    padding: 0.3em 0;
-  }
-
-  .collapse-button {
-    background: none;
-    border: none;
-    color: rgba(0, 0, 0, 0.5);
-    font-size: 0.8em;
-    cursor: pointer;
-    padding: 0.2em 0.5em;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.5em;
-    min-height: 1.5em;
-  }
-  
-  .collapse-button:hover {
-    color: rgba(0, 0, 0, 0.8);
-    background-color: rgba(0, 0, 0, 0.05);
-    border-radius: 50%;
-  }
-  
-  .sort-controls {
-    display: flex;
-    gap: 0.2em;
-    margin-right: 0.5em;
-  }
-  
-  .sort-option {
-    background: none;
-    border: none;
-    font-size: 0.7em;
-    color: rgba(0, 0, 0, 0.5);
-    padding: 0.2em 0.4em;
-    border-radius: 0.3em;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.2em;
-    transition: all 0.2s ease;
-  }
-  
-  .sort-option:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: rgba(0, 0, 0, 0.8);
-  }
-  
-  .sort-option.active {
-    background-color: rgba(66, 133, 244, 0.1);
-    color: rgba(66, 133, 244, 0.9);
-  }
-  
-  .sort-direction {
-    font-size: 0.9em;
-    font-weight: bold;
-  }
-
-  /* Tab-specific sort controls */
-  .tab-sort-controls {
-    display: flex;
-    justify-content: center; /* Change from flex-end to center */
-    margin-bottom: 0.5em;
-    padding: 0.3em 0;
-  }
-
-  /* Animation and transitions */
-  .section-content.with-transition {
-    overflow: hidden;
-  }
-
-  .section-content:not(.with-transition) {
-    transition: none !important;
-  }
-  
+  /* Empty state */
   .empty-state {
     padding: 2em;
     text-align: center;
@@ -2042,67 +2070,9 @@
     font-style: italic;
   }
 
+  /* Animations */
   @keyframes pulse {
     from { opacity: 0.8; }
     to { opacity: 1; }
-  }
-
-  @keyframes reveal {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  .section-count {
-    margin-left: 0.4em;
-    vertical-align: middle;
-    display: inline-flex; /* Use inline-flex for better alignment */
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* Add entity badge styling */
-  .entity-badge {
-    font-size: 0.7em;
-    padding: 0.2em 0.4em;
-    border-radius: 0.3em;
-    font-weight: 500;
-  }
-
-  .owner-badge {
-    background-color: rgba(76, 175, 80, 0.2);
-    color: #2e7d32;
-    border: 1px solid rgba(76, 175, 80, 0.4);
-  }
-
-  :global(.overview-structure-icon) {
-    opacity: 0.9;
-    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
-  }
-  
-  :global(.overview-spawn-icon) {
-    filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.8)) !important;
-    opacity: 1 !important;
-  }
-  
-  :global(.race-icon-overview) {
-    width: 1.4em;
-    height: 1.4em;
-    opacity: 0.85;
-    fill: rgba(0, 0, 0, 0.7);
-  }
-  
-  /* Specific race icon overrides for better contrast */
-  :global(.race-icon-overview.fairy-icon path) {
-    fill: rgba(138, 43, 226, 0.8); /* Brighter purple for fairy */
-  }
-  
-  :global(.race-icon-overview.goblin-icon path) {
-    fill: rgba(0, 128, 0, 0.8); /* Brighter green for goblin */
   }
 </style>
