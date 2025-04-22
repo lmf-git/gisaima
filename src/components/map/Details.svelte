@@ -610,6 +610,11 @@
                 
                 {#if canDemobilize($highlightedStore)}
                   <button class="action-button" onclick={() => executeAction('demobilise')}>
+                    {#if $highlightedStore.structure?.type === 'spawn'}
+                      <Torch extraClass="action-icon torch-icon" />
+                    {:else}
+                      <Structure extraClass="action-icon structure-icon" />
+                    {/if}
                     Demobilise
                   </button>
                 {/if}
