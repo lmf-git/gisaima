@@ -134,10 +134,12 @@
     <div class="spawn-container">
       <div class="spawn-list">
         {#each spawnList as spawn (spawn.id)}
-          <div 
+          <button 
             class="spawn-item" 
             class:selected={selectedSpawn?.id === spawn.id}
             onclick={() => selectSpawn(spawn)}
+            aria-pressed={selectedSpawn?.id === spawn.id}
+            type="button"
           >
             <h3>{spawn.name || 'Unnamed Spawn'}</h3>
             {#if spawn.description}
@@ -153,7 +155,7 @@
                 {/if}
               </span>
             </div>
-          </div>
+          </button>
         {/each}
       </div>
         
@@ -232,12 +234,21 @@
     padding: 12px;
     cursor: pointer;
     transition: all 0.2s;
+    text-align: left;
+    width: 100%;
+    display: block;
+    font-family: inherit;
   }
 
   .spawn-item:hover {
     background: rgba(255, 255, 255, 0.9);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
+  }
+
+  .spawn-item:focus {
+    outline: 2px solid #4285F4;
+    outline-offset: 2px;
   }
 
   .spawn-item.selected {
@@ -279,12 +290,6 @@
     font-size: 0.85em;
   }
 
-  .chunk-coords {
-    font-size: 0.9em;
-    color: #666;
-    margin-top: 3px;
-  }
-
   .spawn-actions {
     display: flex;
     justify-content: center;
@@ -292,6 +297,7 @@
   }
 
   .spawn-button {
+    position: relative;
     background: #4285F4;
     color: white;
     border: none;
@@ -304,23 +310,39 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    overflow: hidden;
   }
 
   .spawn-button:hover:not(:disabled) {
     background: #3367D6;
+  }
+  
+  /* Sheen effect on hover */
+  .spawn-button:hover:not(:disabled)::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 20%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(30deg);
+    animation: sheen 1.5s forwards;
+  }
+
+  @keyframes sheen {
+    0% {
+      left: -60%;
+    }
+    100% {
+      left: 160%;
+    }
   }
 
   .spawn-button:disabled {
     background: #999;
     cursor: not-allowed;
     opacity: 0.7;
-  }
-
-  .loading-message {
-    text-align: center;
-    padding: 20px;
-    color: #555;
-    font-style: italic;
   }
 
   .spawn-menu-wrapper.loading {
@@ -339,17 +361,5 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
-  }
-
-  /* Add styles for auto-target indicator */
-  .auto-targeted {
-    margin-top: 8px;
-    font-size: 0.85em;
-    color: #4285F4;
-    font-style: italic;
-    background: rgba(66, 133, 244, 0.1);
-    padding: 4px 8px;
-    border-radius: 4px;
-    text-align: center;
   }
 </style>
