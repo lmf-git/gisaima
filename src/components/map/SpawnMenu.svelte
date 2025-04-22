@@ -286,7 +286,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 9999; /* Increased from 1000 to 9999 to be above all other components */
     background-color: rgba(0, 0, 0, 0.5);
     padding: 1rem;
   }

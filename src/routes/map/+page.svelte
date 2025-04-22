@@ -773,7 +773,19 @@
     }
     
     // Add missing function for tutorial visibility
+    $effect(() => {
+        // If spawn menu appears, ensure tutorial is hidden
+        if ($needsSpawn && isTutorialVisible) {
+            isTutorialVisible = false;
+        }
+    });
+
     function handleTutorialVisibility(isVisible) {
+        // Don't show tutorial if spawn menu is active
+        if ($needsSpawn && isVisible) {
+            return;
+        }
+        
         isTutorialVisible = isVisible;
         
         if (isTutorialVisible && (showMinimap || showEntities)) {
@@ -963,11 +975,13 @@
             <Axes />
         {/if}
 
-        <Tutorial 
-            onVisibilityChange={handleTutorialVisibility}
-            hideToggleButton={true}
-            onToggle={handleTutorialToggle}
-        />
+        {#if $ready && !$needsSpawn}
+            <Tutorial 
+                onVisibilityChange={handleTutorialVisibility}
+                hideToggleButton={true}
+                onToggle={handleTutorialToggle}
+            />
+        {/if}
         
         {#if $needsSpawn && $user}
             <SpawnMenu onSpawn={handleSpawnComplete} />
