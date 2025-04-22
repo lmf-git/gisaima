@@ -7,16 +7,13 @@
     ready,
     coordinates,
     TILE_SIZE,
-    EXPANDED_COLS_FACTOR,
-    EXPANDED_ROWS_FACTOR,
     moveTarget,
     targetStore,
     highlightedStore,
     setHighlighted,
-    getChunkKey,
-    isTileWithCurrentPlayer
+    getChunkKey
   } from "../../lib/stores/map.js";
-  import { game, currentPlayer, isCurrentPlayerEntity } from "../../lib/stores/game.js";
+  import { game, currentPlayer } from "../../lib/stores/game.js";
   import { user } from '../../lib/stores/user';
   import Torch from '../icons/Torch.svelte';
   import Structure from '../icons/Structure.svelte';
@@ -436,7 +433,7 @@
   // Enhanced function to identify if a tile contains the current player
   function containsCurrentPlayer(tile) {
     if (!tile?.players || !$user?.uid) return false;
-    return id?.toString() === $user.uid?.toString();
+    return tile.players.some(p => p.id?.toString() === $user.uid?.toString());
   }
 
   function handleGridClick(event) {

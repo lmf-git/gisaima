@@ -6,6 +6,7 @@
   import Goblin from './icons/Goblin.svelte';
   import Fairy from './icons/Fairy.svelte';
   import { getWorldCenterCoordinates } from '../lib/stores/game.js';
+  import { user } from '../lib/stores/user';
 
   // Props for the component
   const { 
@@ -147,7 +148,8 @@
           x: worldCenter.x,
           y: worldCenter.y,
           timestamp: Date.now()
-        }
+        },
+        id: $user?.uid // Use user.uid as the ID parameter
       });
     } catch (error) {
       console.error('Error joining world:', error);
