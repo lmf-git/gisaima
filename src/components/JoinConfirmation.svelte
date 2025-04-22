@@ -136,7 +136,7 @@
       // Include spawn information if available
       await onConfirm({ 
         ...selectedRace, 
-        id: raceCode,
+        race: raceCode,
         // Include world center coordinates
         worldCenter,
         alive: false,  // Explicitly set alive status to false

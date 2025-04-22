@@ -193,7 +193,10 @@
         },
         spawnId: spawn.id || null,
         id: $user.uid, // Explicitly store the user ID
-        uid: $user.uid  // Ensure UID is explicitly stored
+        uid: $user.uid,  // Ensure UID is explicitly stored
+        playerId: $user.uid, // Add consistent playerId field
+        userId: $user.uid, // Add consistent userId field
+        owner: $user.uid // Add consistent owner field
       });
 
       // 2. Calculate chunk coordinates for the player entity
@@ -214,15 +217,16 @@
         $user.displayName || 
         ($user.email ? $user.email.split('@')[0] : `Player ${$user.uid.substring(0, 4)}`);
       
-      // Create player entity data with consistent ID fields
+      // Create player entity data with consistent ID fields but WITHOUT isCurrentPlayer
       await set(playerEntityRef, {
         displayName,
         lastActive: Date.now(),
         uid: $user.uid,
         id: $user.uid, // Add explicit id field matching uid
         playerId: $user.uid, // Add explicit playerId field
-        race: $game.playerData?.race || 'human',
-        isCurrentPlayer: true // Add explicit flag for identifying current player
+        userId: $user.uid, // Add explicit userId field
+        owner: $user.uid, // Add explicit owner field
+        race: $game.playerData?.race || 'human'
       });
       
       console.log(`Player spawned at ${tileKey} in chunk ${chunkKey} with uid ${$user.uid}`);
@@ -237,6 +241,73 @@
       setError(`Failed to select spawn: ${error.message}`);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function spawnAtLocation(spawnPoint) {
+    try {
+      // Get the player data from the game store
+      const playerData = $game.playerData;
+      
+      if (!playerData) {
+        console.error('No player data available');
+        setError('No player data available');
+        return;
+      }
+      
+      // Determine target location - either spawn point or specified coordinates
+      let targetCoords;
+      if (spawnPoint && spawnPoint.position) {
+        // Use spawn point coordinates if available
+        targetCoords = {
+          x: spawnPoint.position.x !== undefined ? spawnPoint.position.x : spawnPoint.x,
+          y: spawnPoint.position.y !== undefined ? spawnPoint.position.y : spawnPoint.y,
+        };
+      } else if (spawnPoint && (spawnPoint.x !== undefined && spawnPoint.y !== undefined)) {
+        // Use x,y directly from spawn point
+        targetCoords = { x: spawnPoint.x, y: spawnPoint.y };
+      } else {
+        // Fall back to center coordinates
+        targetCoords = { x: 0, y: 0 };
+      }
+      
+      console.log('Spawning at coordinates:', targetCoords);
+      
+      // Calculate chunk coordinates
+      const chunkSize = 20;
+      const chunkX = Math.floor(targetCoords.x / chunkSize);
+      const chunkY = Math.floor(targetCoords.y / chunkSize);
+      
+      // Set the player as alive in their data first
+      const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.worldKey}`);
+      
+      // Update the player's last location and alive status
+      await update(playerWorldRef, {
+        lastLocation: {
+          x: targetCoords.x,
+          y: targetCoords.y,
+          timestamp: Date.now()
+        },
+        alive: true
+      });
+      
+      // Add player to the map at the target location
+      const chunkRef = ref(db, `worlds/${$game.worldKey}/chunks/${chunkX},${chunkY}/${targetCoords.x},${targetCoords.y}/players/${$user.uid}`);
+      
+      // Ensure complete player data with identification fields but WITHOUT isCurrentPlayer
+      await set(chunkRef, {
+        displayName: playerData.displayName || ($user.isAnonymous ? `Guest ${$user.uid.substring(0, 4)}` : ($user.displayName || $user.email.split('@')[0])),
+        lastActive: Date.now(),
+        race: playerData.race || 'human',
+        uid: $user.uid,
+        id: $user.uid,
+        playerId: $user.uid,
+        userId: $user.uid,
+        owner: $user.uid
+      });
+    } catch (error) {
+      console.error('Error spawning at location:', error);
+      setError(`Failed to spawn: ${error.message}`);
     }
   }
 

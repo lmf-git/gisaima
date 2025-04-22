@@ -370,31 +370,49 @@ export function loadPlayerWorldData(userId, worldId) {
           if (!playerEntitySnapshot.exists()) {
             debugLog(`Player entity not found after refresh, recreating at ${x},${y}`);
             
-            // Create player entity using player data with consistent identity fields
+            // Get display name from player data or generate one
+            const displayName = playerData.displayName || 
+              (playerData.email ? playerData.email.split('@')[0] : `Player ${userId.substring(0, 4)}`);
+            
+            // Create player entity with consistent identity fields
             await set(playerEntityRef, {
-              displayName: playerData.displayName || `Player ${userId.substring(0, 4)}`,
+              displayName,
               lastActive: Date.now(),
               uid: userId,
-              id: userId, // Add explicit id field matching uid
-              playerId: userId, // Add explicit playerId field
-              race: playerData.race || 'human',
-              isCurrentPlayer: true // Add explicit flag for identifying current player
+              id: userId,
+              playerId: userId,
+              userId: userId,
+              owner: userId,
+              race: playerData.race || 'human'
             });
             
-            debugLog(`Recreated player entity at ${x},${y}`);
+            debugLog(`Player entity recreated at ${tileKey} in chunk ${chunkKey}`);
           } 
-          // If entity exists but might be missing identity fields, update it
           else {
-            const entityData = playerEntitySnapshot.val();
-            // Check if any key identity fields are missing
-            if (!entityData.id || !entityData.playerId || !entityData.isCurrentPlayer) {
+            // If entity exists but might not have all identity fields, update it with correct fields
+            const playerEntity = playerEntitySnapshot.val();
+            
+            // Check if the entity is missing any important identity fields
+            const needsUpdate = 
+              !playerEntity.id || 
+              !playerEntity.playerId;
+              
+            if (needsUpdate) {
+              debugLog('Updating player entity with missing identity fields');
+              
+              // Update with correct identity fields while preserving other data
               await update(playerEntityRef, {
                 id: userId,
+                uid: userId,
                 playerId: userId,
-                isCurrentPlayer: true,
+                owner: userId,
                 lastActive: Date.now()
               });
-              debugLog(`Updated player entity with identity fields at ${x},${y}`);
+            } else {
+              // Just update the lastActive timestamp
+              await update(playerEntityRef, {
+                lastActive: Date.now()
+              });
             }
           }
         } catch (error) {
@@ -985,11 +1003,17 @@ export async function joinWorld(worldId, userId, race, displayName) {
     const centerCoords = getWorldCenterCoordinates(worldId);
     
     // Record the join with timestamp, race, and target position
+    // Ensure all identity fields are consistently set
     await set(playerWorldRef, {
       joined: Date.now(),
       race: race || 'human', // Default to human if race not specified
       alive: false,
       displayName: displayName || '',
+      uid: userId,           // Add the uid field
+      id: userId,            // Add the id field
+      playerId: userId,      // Add the playerId field
+      userId: userId,        // Add the userId field
+      owner: userId,         // Add the owner field
       // Set initial target to world center
       lastLocation: {
         x: centerCoords.x,
