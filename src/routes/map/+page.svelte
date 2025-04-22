@@ -97,6 +97,17 @@
     let ignoreNextUrlChange = $state(false);
     let lastProcessedLocation = $state(null);
 
+    // Add state to track last active panel for z-index ordering
+    let lastActivePanel = $state('none'); // 'none', 'details', or 'overview'
+
+    // Function to handle panel hover events
+    function handlePanelHover(panelType) {
+        // Only change if both panels are visible
+        if (detailed && (showEntities && !entitiesClosing)) {
+            lastActivePanel = panelType;
+        }
+    }
+
     // Simplified URL coordinate handling
     // Simple function to get coordinates from URL
     function parseUrlCoordinates() {
@@ -259,6 +270,9 @@
 
     function toggleDetailsModal(show) {
         detailed = show === undefined ? !detailed : show;
+        if (detailed) {
+            lastActivePanel = 'details';
+        }
     }
 
     async function ensureWorldDataLoaded(worldId) {
@@ -422,6 +436,7 @@
         }, ANIMATION_DURATION);
       } else {
         showEntities = true;
+        lastActivePanel = 'overview';
         if (browser) {
           localStorage.setItem('overview', 'true');
         }
@@ -781,6 +796,7 @@
         {#if showEntities || entitiesClosing}
             <Overview 
               closing={entitiesClosing} 
+              isActive={lastActivePanel === 'overview'}
               onShowStructure={({ structure, x, y }) => {
                 modalState = {
                   type: 'inspect',
@@ -800,6 +816,7 @@
                 }
               }}
               onClose={() => toggleEntities()}
+              onMouseEnter={() => handlePanelHover('overview')}
             />
         {/if}
 
@@ -807,6 +824,8 @@
             <Details 
                 onClose={() => toggleDetailsModal(false)} 
                 onShowModal={showModal} 
+                isActive={lastActivePanel === 'details'}
+                onMouseEnter={() => handlePanelHover('details')}
             />
         {:else if $ready}
             <Legend 

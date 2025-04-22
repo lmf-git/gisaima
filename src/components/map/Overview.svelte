@@ -14,7 +14,13 @@
   import Close from '../icons/Close.svelte'; // Add Close icon import
   
   // Props
-  const { closing = false, onShowStructure = null, onClose = null } = $props();
+  const { 
+    closing = false, 
+    onShowStructure = null, 
+    onClose = null,
+    isActive = false, // New prop to determine z-index priority
+    onMouseEnter = () => {} // Add prop for mouse enter event
+  } = $props();
   
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -582,7 +588,12 @@
   }
 </script>
 
-<div class="entities-wrapper" class:closing>
+<div 
+  class="entities-wrapper" 
+  class:closing 
+  class:active={isActive}
+  onmouseenter={onMouseEnter}
+>
   <div class="entities-panel">
     <h3 class="title">
       Map Entities
@@ -1411,11 +1422,16 @@
     position: absolute;
     bottom: 0.5em;
     left: 0.5em;
-    z-index: 998;
-    transition: opacity 0.2s ease;
+    z-index: 998; /* Base z-index */
+    transition: opacity 0.2s ease, z-index 0s;
     font-size: 1.4em;
     font-family: var(--font-body);
     max-width: 95%;
+  }
+
+  /* Add active state styling to increase z-index when active */
+  .entities-wrapper.active {
+    z-index: 1001; /* Higher than both base values to ensure it's on top */
   }
 
   .entities-wrapper.closing {

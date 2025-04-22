@@ -20,7 +20,12 @@
   import Compass from '../icons/Compass.svelte';
 
   // Props
-  const { onClose = () => {}, onShowModal = null } = $props();
+  const { 
+    onClose = () => {}, 
+    onShowModal = null,
+    isActive = false, // New prop to determine z-index priority
+    onMouseEnter = () => {} // Add prop for mouse enter event
+  } = $props();
 
   // Add state to track collapsed sections
   let collapsedSections = $state({
@@ -483,7 +488,12 @@
 <!-- Add global keyboard event listener -->
 <svelte:window on:keydown={handleKeyDown} />
 
-<div class="modal-container" class:ready={isReady}>
+<div 
+  class="modal-container" 
+  class:ready={isReady} 
+  class:active={isActive}
+  onmouseenter={onMouseEnter}
+>
   <div class="details-modal" key={renderKey}>
     <header class="modal-header">
       <h3>
@@ -1005,10 +1015,15 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 1000; /* Base z-index */
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.2s ease-out;
+    transition: opacity 0.2s ease-out, z-index 0s;
+  }
+  
+  /* Add active state styling to increase z-index when active */
+  .modal-container.active {
+    z-index: 1001; /* Higher than both base values to ensure it's on top */
   }
   
   .modal-container.ready {
