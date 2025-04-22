@@ -595,20 +595,40 @@ export function getWorldSpawnPoints(worldId) {
     return [];
   }
   
-  // DEBUG: Log detailed info about available world structure
-  debugLog(`[DEBUG] Looking for spawn points in world ${worldId}:`, {
-    worldDataAvailable: !!world,
-    worldInfoAvailable: !!world.info,
-    spawnsInInfoAvailable: !!(world.info?.spawns),
-    legacySpawnsAvailable: !!world.spawns,
-    worldInfoKeys: world.info ? Object.keys(world.info) : [],
-    worldKeys: Object.keys(world)
-  });
-  
   // Primary location: world.info.spawns (as in backup.json)
   if (world.info?.spawns) {
-    const spawns = Object.values(world.info.spawns);
-    debugLog(`[DEBUG] Found ${spawns.length} spawn points in world.info.spawns:`, spawns);
+    const spawns = Object.entries(world.info.spawns).map(([key, spawn]) => {
+      // If spawn doesn't have position data, try to parse from key
+      if (!spawn.position) {
+        // Parse from key format "chunkX:chunkY:tileX:tileY"
+        const parts = key.split(':').map(Number);
+        if (parts.length === 4) {
+          const [chunkX, chunkY, tileX, tileY] = parts;
+          // Calculate global coordinates (chunkX * CHUNK_SIZE + tileX)
+          const globalX = (chunkX * CHUNK_SIZE) + tileX;
+          const globalY = (chunkY * CHUNK_SIZE) + tileY;
+          
+          return {
+            ...spawn,
+            id: spawn.id || key,
+            key,
+            // Store the original chunk coordinates
+            position: {
+              chunkX,
+              chunkY,
+              x: tileX,
+              y: tileY
+            },
+            // Add calculated global coordinates for easier use
+            x: globalX,
+            y: globalY
+          };
+        }
+      }
+      return { ...spawn, id: spawn.id || key, key };
+    });
+    
+    debugLog(`Found ${spawns.length} spawn points in world.info.spawns:`, spawns);
     return spawns;
   }
   
@@ -651,6 +671,9 @@ export function getWorldSpawnPoints(worldId) {
   debugLog(`[DEBUG] No spawn points defined for world ${worldId}`);
   return [];
 }
+
+// Add CHUNK_SIZE constant to match the one in tick.mjs
+const CHUNK_SIZE = 20;
 
 // Simplify this function - it now just gets world info directly
 export async function refreshWorldInfo(worldId) {

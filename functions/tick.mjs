@@ -17,6 +17,31 @@ function getChunkKey(x, y) {
   return `${chunkX},${chunkY}`;
 }
 
+// Function to get local coordinates within a chunk
+function getLocalCoordinates(x, y) {
+  // Use modulo arithmetic for both positive and negative coordinates
+  // Add CHUNK_SIZE before modulo to handle negative coordinates correctly
+  const localX = ((x % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+  const localY = ((y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+  return { x: localX, y: localY };
+}
+
+// Function to parse spawn location in "chunkX:chunkY:tileX:tileY" format
+function parseSpawnCoordinates(key) {
+  if (!key || typeof key !== 'string') return null;
+  
+  const parts = key.split(':').map(Number);
+  if (parts.length !== 4) return null;
+  
+  const [chunkX, chunkY, tileX, tileY] = parts;
+  return {
+    chunkX, chunkY, tileX, tileY,
+    // Convert to global coordinates
+    globalX: (chunkX * CHUNK_SIZE) + tileX,
+    globalY: (chunkY * CHUNK_SIZE) + tileY
+  };
+}
+
 // Process world ticks to handle mobilizations and other time-based events
 export const processGameTicks = onSchedule({
   schedule: "every 1 minutes",

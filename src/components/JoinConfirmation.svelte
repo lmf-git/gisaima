@@ -134,13 +134,16 @@
       // Get world center coordinates to pass along with the confirmation
       const worldCenter = getWorldCenterCoordinates(world?.id);
       
+      // Include spawn information if available
       await onConfirm({ 
         ...selectedRace, 
         id: raceCode,
         // Include world center coordinates
         worldCenter,
-        alive: false, // Changed from 'spawned: false' to 'alive: false'
-        displayName: displayName.trim() // Add display name
+        alive: false,
+        displayName: displayName.trim(),
+        // Add spawn to help with later processing
+        spawnId: null // This will be selected later in SpawnMenu
       });
     } catch (error) {
       console.error('Error joining world:', error);

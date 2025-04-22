@@ -39,6 +39,8 @@
     return `${chunkX},${chunkY}`;
   }
 
+  const CHUNK_SIZE = 20;
+
   // Create derived values with proper separation from side effects
   $effect(() => {
     // Initialize with current game world data when it changes
@@ -174,11 +176,31 @@
     try {
       spawning = true;
       
-      // Get position from spawn point
-      const position = spawnPoint.position || {
-        x: spawnPoint.x || 0,
-        y: spawnPoint.y || 0
-      };
+      // Get position from spawn point - handle different formats
+      let position = { x: 0, y: 0 };
+      
+      if (spawnPoint.x !== undefined && spawnPoint.y !== undefined) {
+        // Use direct x,y properties if available
+        position = { x: spawnPoint.x, y: spawnPoint.y };
+      } else if (spawnPoint.position) {
+        // Handle position object with direct x,y coordinates
+        if (spawnPoint.position.x !== undefined && spawnPoint.position.y !== undefined) {
+          position = { x: spawnPoint.position.x, y: spawnPoint.position.y };
+        } 
+        // Handle chunk-based coordinates (from "chunkX:chunkY:tileX:tileY" format)
+        else if (
+          spawnPoint.position.chunkX !== undefined && 
+          spawnPoint.position.chunkY !== undefined &&
+          spawnPoint.position.x !== undefined &&
+          spawnPoint.position.y !== undefined
+        ) {
+          // Calculate global position from chunk coordinates
+          position = { 
+            x: (spawnPoint.position.chunkX * CHUNK_SIZE) + spawnPoint.position.x,
+            y: (spawnPoint.position.chunkY * CHUNK_SIZE) + spawnPoint.position.y
+          };
+        }
+      }
       
       // Move map to spawn position first for better UX
       moveTarget(position.x, position.y);
@@ -197,6 +219,16 @@
         },
         // Include any other spawn-related data here
         spawnId: spawnPoint.id || spawnPoint.key
+      });
+      
+      // Also create the player entity in the world - this is the missing step
+      const tileRef = ref(db, `worlds/${$game.worldKey}/chunks/${getChunkKey(position.x, position.y)}/${position.x % CHUNK_SIZE},${position.y % CHUNK_SIZE}/players/${$currentPlayer.uid}`);
+      
+      await update(tileRef, {
+        uid: $currentPlayer.uid,
+        race: $currentPlayer.race,
+        displayName: $currentPlayer.displayName || '',
+        timestamp: Date.now()
       });
       
       // Wait a moment for the data to propagate
@@ -260,7 +292,17 @@
             <div class="spawn-details">
               <h3>{spawn.name || `Spawn ${spawn.id || spawn.key}`}</h3>
               <p class="spawn-location">
-                Location: {spawn.position?.x || spawn.x || 0},{spawn.position?.y || spawn.y || 0}
+                Location: 
+                {#if spawn.x !== undefined && spawn.y !== undefined}
+                  {spawn.x},{spawn.y}
+                {:else if spawn.position?.x !== undefined && spawn.position?.y !== undefined}
+                  {spawn.position.x},{spawn.position.y}
+                {:else if spawn.position?.chunkX !== undefined}
+                  {(spawn.position.chunkX * CHUNK_SIZE) + (spawn.position.x || 0)},
+                  {(spawn.position.chunkY * CHUNK_SIZE) + (spawn.position.y || 0)}
+                {:else}
+                  Unknown
+                {/if}
               </p>
               {#if spawn.description}
                 <p class="spawn-description">{spawn.description}</p>
