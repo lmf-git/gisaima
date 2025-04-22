@@ -921,7 +921,7 @@
             <Axes />
         {/if}
 
-        {#if $ready && !$needsSpawn}
+        {#if $ready && !($game.playerData?.alive === true)}
             <Tutorial 
                 onVisibilityChange={handleTutorialVisibility}
                 hideToggleButton={true}
@@ -929,7 +929,7 @@
             />
         {/if}
         
-        {#if $needsSpawn && $user}
+        {#if ($user && $game.playerData && $game.playerData.alive !== true)}
             <SpawnMenu />
         {/if}
 

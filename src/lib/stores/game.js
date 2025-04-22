@@ -138,7 +138,7 @@ export const needsSpawn = derived(
       !!$user?.uid && 
       !!$game.worldKey && 
       !!$game.playerData && 
-      $game.playerData.alive !== true
+      !$game?.playerData?.alive
     );
   }
 );
