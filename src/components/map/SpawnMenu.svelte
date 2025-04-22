@@ -190,7 +190,7 @@
             aria-pressed={selectedSpawn?.id === spawn.id}
             type="button"
           >
-            <Torch size="1.8em" extraClass="spawn-icon" />
+            <Torch size="2.4em" extraClass="spawn-icon" />
             <div class="spawn-item-content">
               <h3>{spawn.name || 'Unnamed Spawn'}</h3>
               {#if spawn.description}
@@ -245,27 +245,32 @@
   .spawn-menu {
     width: 90%;
     max-width: 500px;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    color: #333;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 0.3em;
+    padding: 1.5em;
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    color: rgba(0, 0, 0, 0.8);
+    font-family: var(--font-body);
+    font-size: 1em;
   }
 
   h2 {
-    margin: 0 0 20px;
-    color: #222;
-    font-size: 1.5em;
+    margin: 0 0 1.2em;
+    color: rgba(0, 0, 0, 0.8);
+    font-size: 1.3em;
+    font-weight: 600;
     display: flex;
     align-items: flex-start;
     position: relative;
-    padding-left: 50px;
+    padding-left: 2.8em;
+    font-family: var(--font-heading);
   }
 
   .race-icon {
     position: absolute;
     left: 0;
-    top: 5px;
+    top: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -278,36 +283,37 @@
   }
 
   :global(.header-race-icon) {
-    width: 1.8em;
-    height: 1.8em;
+    width: 2em;
+    height: 2em;
     opacity: 0.85;
   }
 
   .error-message {
     background: rgba(255, 0, 0, 0.1);
     color: darkred;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 4px;
+    padding: 0.6em;
+    margin: 0.6em 0;
+    border-radius: 0.3em;
     border: 1px solid rgba(255, 0, 0, 0.3);
     text-align: center;
+    font-size: 0.9em;
   }
 
   .spawn-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    max-height: 300px;
+    gap: 0.6em;
+    max-height: 18em;
     overflow-y: auto;
-    padding: 5px;
-    margin-bottom: 15px;
+    padding: 0.3em;
+    margin-bottom: 1em;
   }
 
   .spawn-item {
     background: rgba(255, 255, 255, 0.6);
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.3em;
+    padding: 0.8em;
     cursor: pointer;
     transition: all 0.2s;
     text-align: left;
@@ -315,7 +321,7 @@
     display: flex;
     align-items: center;
     font-family: inherit;
-    gap: 15px;
+    gap: 0.8em;
   }
 
   .spawn-item-content {
@@ -323,15 +329,15 @@
   }
 
   :global(.spawn-icon) {
-    filter: drop-shadow(0 0 4px rgba(255, 165, 0, 0.7));
-    color: #f57c00;
-    margin-left: 5px;
+    color: rgba(0, 0, 0, 0.8);
+    margin-left: 0.3em;
+    margin-right: 0.3em;
   }
 
   .spawn-item:hover {
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0.1em 0.4em rgba(0, 0, 0, 0.1);
+    transform: translateY(-0.1em);
   }
 
   .spawn-item:focus {
@@ -346,28 +352,30 @@
   }
 
   .spawn-item h3 {
-    margin: 0 0 8px;
+    margin: 0 0 0.4em;
     font-size: 1.1em;
-    color: #333;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.85);
+    line-height: 1.2;
   }
 
   .spawn-description {
     font-size: 0.9em;
-    margin: 0 0 10px;
-    color: #555;
+    margin: 0 0 0.5em;
+    color: rgba(0, 0, 0, 0.7);
   }
 
   .spawn-meta {
     display: flex;
     justify-content: space-between;
     font-size: 0.85em;
-    color: #777;
+    color: rgba(0, 0, 0, 0.7);
   }
 
   .spawn-race {
     background: rgba(0, 0, 0, 0.05);
-    padding: 2px 8px;
-    border-radius: 10px;
+    padding: 0.2em 0.5em;
+    border-radius: 1em;
     text-transform: capitalize;
   }
 
@@ -381,7 +389,7 @@
   .spawn-actions {
     display: flex;
     justify-content: center;
-    margin-top: 20px;
+    margin-top: 1.2em;
   }
 
   .spawn-button {
@@ -389,15 +397,15 @@
     background: #4285F4;
     color: white;
     border: none;
-    padding: 12px 25px;
-    border-radius: 4px;
+    padding: 0.7em 1.5em;
+    border-radius: 0.3em;
     font-size: 1em;
-    font-weight: bold;
+    font-weight: 500;
     cursor: pointer;
     transition: background 0.2s;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5em;
     overflow: hidden;
   }
 
@@ -439,9 +447,9 @@
 
   /* Spinner animation for loading state */
   .spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    width: 1em;
+    height: 1em;
+    border: 0.12em solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
     border-top-color: white;
     animation: spin 1s linear infinite;
