@@ -1,18 +1,8 @@
 <script>
-  import { onMount } from 'svelte';
   import { ref, set, update } from 'firebase/database';
   import { db } from '../../lib/firebase/database';
-  import { 
-    game, 
-    currentPlayer,
-    worldSpawnPoints,
-    getWorldCenterCoordinates 
-  } from '../../lib/stores/game';
-  import { 
-    moveTarget,
-    map,
-    getChunkKey
-  } from '../../lib/stores/map';
+  import { game, currentPlayer } from '../../lib/stores/game';
+  import { moveTarget } from '../../lib/stores/map';
   import { user } from '../../lib/stores/user';
 
   // Get component props
@@ -22,10 +12,18 @@
   let selectedSpawn = $state(null);
   let loading = $state(false);
   let error = $state(null);
-  let spawnList = $state([]);
 
-  // Helper state variables
-  let hasSpawnsData = $state(false);
+  // Use $derived correctly following the Features.svelte pattern
+  const spawnList = $derived((() => {
+    // Get spawns from world data
+    const world = $game.world[$game.worldKey];
+    const spawns = world.spawns ? Object.values(world.spawns) : [];
+
+    return spawns.filter(spawn => {
+      if (!$game.playerData?.race) return true;
+      return spawn.race?.toLowerCase() === $game.playerData.race.toLowerCase();
+    });
+  })());
 
   // Log game store state when open
   console.log('🎮 Game store in SpawnMenu:', $game);
@@ -51,29 +49,6 @@
     loading = isLoading;
   }
 
-  // Process spawn data for display
-  function processSpawnData() {
-    // Use the worldSpawnPoints derived store directly
-    if (!$worldSpawnPoints || $worldSpawnPoints.length === 0) {
-      console.log('No spawns found in world data');
-      spawnList = [];
-      hasSpawnsData = false;
-      return;
-    }
-
-    console.log(`Found ${$worldSpawnPoints.length} spawns in world data`);
-    hasSpawnsData = true;
-    
-    // Only apply race filtering - use spawn data directly without transformations
-    spawnList = $worldSpawnPoints.filter(spawn => {
-      // If player has a race, only show spawns for that race
-      if ($game.playerData?.race) {
-        return spawn.race?.toLowerCase() === $game.playerData.race.toLowerCase();
-      }
-      return true;
-    });
-  }
-
   // Handle spawn selection
   function selectSpawn(spawn) {
     selectedSpawn = spawn;
@@ -86,7 +61,7 @@
   }
 
   // Core function for handling spawn confirmation
-  async function handleSpawnSelect(spawn) {
+  async function confirm(spawn) {
     if (!spawn || !$user || !$game.worldKey) {
       setError('Missing required data for spawn selection');
       return;
@@ -151,16 +126,6 @@
       setLoading(false);
     }
   }
-
-  // Process spawn data when worldSpawnPoints changes
-  $effect(() => {
-    processSpawnData();
-  });
-
-  // Component lifecycle hook
-  onMount(() => {
-    processSpawnData();
-  });
 </script>
 
 <div class="spawn-menu-wrapper" class:loading={loading}>
@@ -172,42 +137,36 @@
     {/if}
     
     <div class="spawn-container">
-      {#if spawnList.length === 0}
-        <div class="loading-message">
-          {hasSpawnsData ? 'No spawn points available for your race' : 'Loading spawn points...'}
-        </div>
-      {:else}
-        <div class="spawn-list">
-          {#each spawnList as spawn (spawn.id)}
-            <div 
-              class="spawn-item" 
-              class:selected={selectedSpawn?.id === spawn.id}
-              onclick={() => selectSpawn(spawn)}
-            >
-              <h3>{spawn.name || 'Unnamed Spawn'}</h3>
-              {#if spawn.description}
-                <p class="spawn-description">{spawn.description}</p>
-              {/if}
-              <div class="spawn-meta">
-                <span class="spawn-race">{spawn.race || 'any'}</span>
-                <span class="spawn-coords">
-                  {#if spawn.x !== undefined && spawn.y !== undefined}
-                    ({spawn.x}, {spawn.y})
-                  {:else if spawn.position}
-                    ({spawn.position.x}, {spawn.position.y})
-                  {/if}
-                </span>
-              </div>
+      <div class="spawn-list">
+        {#each spawnList as spawn (spawn.id)}
+          <div 
+            class="spawn-item" 
+            class:selected={selectedSpawn?.id === spawn.id}
+            onclick={() => selectSpawn(spawn)}
+          >
+            <h3>{spawn.name || 'Unnamed Spawn'}</h3>
+            {#if spawn.description}
+              <p class="spawn-description">{spawn.description}</p>
+            {/if}
+            <div class="spawn-meta">
+              <span class="spawn-race">{spawn.race || 'any'}</span>
+              <span class="spawn-coords">
+                {#if spawn.x !== undefined && spawn.y !== undefined}
+                  ({spawn.x}, {spawn.y})
+                {:else if spawn.position}
+                  ({spawn.position.x}, {spawn.position.y})
+                {/if}
+              </span>
             </div>
-          {/each}
-        </div>
-      {/if}
+          </div>
+        {/each}
+      </div>
         
       <div class="spawn-actions">
         <button 
           class="spawn-button" 
           disabled={loading || !selectedSpawn} 
-          onclick={() => handleSpawnSelect(selectedSpawn)}
+          onclick={() => confirm(selectedSpawn)}
         >
           {#if loading}
             <span class="spinner"></span> Spawning...

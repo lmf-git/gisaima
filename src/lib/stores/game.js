@@ -71,61 +71,6 @@ export const currentWorldCenter = derived(
   }
 );
 
-// Create a derived store for available spawn points in the current world
-export const worldSpawnPoints = derived(
-  currentWorldInfo,
-  $world => {
-    if (!$world) return [];
-    
-    // If world has spawns in info.spawns (as seen in backup.json)
-    if ($world.info?.spawns) {
-      const spawns = Object.values($world.info.spawns);
-      debugLog(`Found ${spawns.length} spawn points in world.info.spawns`);
-      return spawns;
-    }
-    
-    // Legacy support for old spawn structure
-    if ($world.spawns) {
-      debugLog('Using legacy spawns structure');
-      return Object.values($world.spawns);
-    }
-    
-    // Extended search for spawns in other locations
-    if ($world.chunks) {
-      // Try to find spawns in chunks (as structures with type=spawn)
-      const spawnsFromChunks = [];
-      
-      try {
-        Object.entries($world.chunks).forEach(([chunkKey, chunk]) => {
-          if (!chunk) return;
-          
-          Object.entries(chunk).forEach(([tileKey, tile]) => {
-            if (tile?.structure?.type === 'spawn') {
-              const [x, y] = tileKey.split(',').map(Number);
-              spawnsFromChunks.push({
-                ...tile.structure,
-                position: { x, y },
-                id: tile.structure.id || `spawn_${x}_${y}`
-              });
-            }
-          });
-        });
-        
-        if (spawnsFromChunks.length > 0) {
-          debugLog(`Found ${spawnsFromChunks.length} spawn points in world chunks`);
-          return spawnsFromChunks;
-        }
-      } catch (e) {
-        console.error('Error searching for spawns in chunks:', e);
-      }
-    }
-    
-    debugLog('No spawns found in world data');
-    return [];
-  }, 
-  [] // Return empty array as default
-);
-
 // Create a derived store that combines user data with player world-specific data
 export const currentPlayer = derived(
   [userStore, game], // Use userStore directly instead of the redundant user variable

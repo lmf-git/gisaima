@@ -68,10 +68,11 @@
                 logoAnimatingOut = false;
             }, 150);
             
+            // Match the delay in toggleMobileMenu
             setTimeout(() => {
                 mobileMenuOpen = false;
                 menuAnimatingOut = false;
-            }, 500); // Match the delay in toggleMobileMenu
+            }, 500); 
         }
     }
 
