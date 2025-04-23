@@ -450,14 +450,11 @@
         return;
       }
       
-      if (showChat) {
-        showChat = false;
-      } else {
-        showChat = true;
-        
-        if (showAchievements) {
-          showAchievements = false;
-        }
+      showChat = !showChat;
+      
+      // Always ensure achievements is closed when opening chat
+      if (showChat && showAchievements) {
+        showAchievements = false;
       }
       
       if (browser) {
@@ -470,14 +467,11 @@
         return;
       }
       
-      if (showAchievements) {
-        showAchievements = false;
-      } else {
-        showAchievements = true;
-        
-        if (showChat) {
-          showChat = false;
-        }
+      showAchievements = !showAchievements;
+      
+      // Always ensure chat is closed when opening achievements
+      if (showAchievements && showChat) {
+        showChat = false;
       }
       
       if (browser) {
@@ -872,7 +866,7 @@
         {/if}
         
         <div class="controls-right">
-            {#if !showChat}
+            {#if !showChat && $game?.player?.alive && !isTutorialVisible}
                 <button 
                     class="control-button chat-button" 
                     onclick={toggleChat}
@@ -886,7 +880,7 @@
                 </button>
             {/if}
 
-            {#if !showAchievements}
+            {#if !showAchievements && $game?.player?.alive && !isTutorialVisible}
                 <button 
                     class="control-button achievements-button" 
                     onclick={toggleAchievements}
@@ -896,13 +890,29 @@
             {/if}
         </div>
 
-        {#if showChat && !showAchievements}
+        {#if showChat && !showAchievements && $game?.player?.alive && !isTutorialVisible}
             <div class="controls-middle-right">
                 <button 
                     class="control-button achievements-button" 
                     onclick={toggleAchievements}
                     aria-label="Show achievements">
                     <AchievementIcon extraClass="button-icon" />
+                </button>
+            </div>
+        {/if}
+
+        {#if showAchievements && !showChat && $game?.player?.alive && !isTutorialVisible}
+            <div class="controls-middle-right">
+                <button 
+                    class="control-button chat-button" 
+                    onclick={toggleChat}
+                    aria-label="Show chat">
+                    {#if unreadCount > 0}
+                        <BirdActive extraClass="button-icon" />
+                        <span class="message-badge">{unreadCount}</span>
+                    {:else}
+                        <Bird extraClass="button-icon" />
+                    {/if}
                 </button>
             </div>
         {/if}
