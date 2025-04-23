@@ -178,12 +178,17 @@
     $effect(() => {
         // Check if player just spawned (alive changed from false to true)
         if ($game?.player?.alive && shouldShowAchievementsAfterSpawn) {
-            console.log('Player spawned, showing achievements panel');
+            console.log('Player spawned, checking if achievements should show');
             // Check if achievements aren't manually closed in localStorage
             const achievementsClosed = localStorage.getItem('achievements_closed') === 'true';
             if (!achievementsClosed) {
+                // Ensure chat is closed before showing achievements
+                showChat = false;
                 showAchievements = true;
                 lastActivePanel = 'achievements';
+                console.log('Showing achievements after spawn');
+            } else {
+                console.log('Achievements closed by user preference, not showing after spawn');
             }
             shouldShowAchievementsAfterSpawn = false; // Reset for next time
         }
@@ -373,17 +378,22 @@
     $effect(() => {
         if (browser && initialized) {
             const savedChatState = localStorage.getItem('chat');
-            if (savedChatState === 'false') {
-                showChat = false;
-            } else {
-                showChat = true;
-            }
-
             const savedAchievementsState = localStorage.getItem('achievements');
-            if (savedAchievementsState !== null) {
-                showAchievements = savedAchievementsState === 'true';
-            } else {
+            const achievementsClosed = localStorage.getItem('achievements_closed') === 'true';
+
+            // First handle achievements since it has higher priority
+            if (savedAchievementsState === 'true' && !achievementsClosed) {
                 showAchievements = true;
+                showChat = false; // Ensure chat is closed if achievements is open
+                return; // Exit early to avoid further changes
+            }
+            
+            // If achievements isn't open, then handle chat
+            if (savedChatState !== 'false') { // Default to true unless explicitly set to false
+                showChat = true;
+                showAchievements = false; // Ensure achievements is closed if chat is open
+            } else {
+                showChat = false;
             }
         }
     });
@@ -571,11 +581,14 @@
         return;
       }
       
-      showChat = !showChat;
-      
-      // Always ensure achievements is closed when opening chat
-      if (showChat && showAchievements) {
+      // If chat is currently closed and we're about to open it
+      if (!showChat) {
+        // Always close achievements when opening chat
         showAchievements = false;
+        showChat = true;
+      } else {
+        // Simply close chat if it's already open
+        showChat = false;
       }
       
       // Set as active panel when opened
@@ -593,11 +606,14 @@
         return;
       }
       
-      showAchievements = !showAchievements;
-      
-      // Always ensure chat is closed when opening achievements
-      if (showAchievements && showChat) {
+      // If achievements is currently closed and we're about to open it
+      if (!showAchievements) {
+        // Always close chat when opening achievements
         showChat = false;
+        showAchievements = true;
+      } else {
+        // Simply close achievements if it's already open
+        showAchievements = false;
       }
       
       // Set as active panel when opened
@@ -609,22 +625,6 @@
         localStorage.setItem('achievements', showAchievements.toString());
       }
     }
-
-    $effect(() => {
-      if (browser && initialized) {
-        const savedChatState = localStorage.getItem('chat');
-        if (savedChatState === 'false') {
-          showChat = false;
-        } else {
-          showChat = true;
-        }
-
-        const savedAchievementsState = localStorage.getItem('achievements');
-        if (savedAchievementsState === 'true') {
-          showAchievements = true;
-        }
-      }
-    });
 
     function handleTutorialToggle() {
       console.log('Tutorial visibility toggled');
