@@ -105,14 +105,14 @@
     let ignoreNextUrlChange = $state(false);
     let lastProcessedLocation = $state(null);
 
-    let lastActivePanel = $state('none'); // 'none', 'details', or 'overview'
+    let lastActivePanel = $state('none'); // 'none', 'details', 'overview', 'chat', 'achievements'
 
     const unreadCount = $derived($unreadMessages);
 
     let worldMembershipChecked = $state(false);
 
     function handlePanelHover(panelType) {
-        if (detailed && (showEntities)) {
+        if (detailed && (showEntities || showChat || showAchievements)) {
             lastActivePanel = panelType;
         }
     }
@@ -476,6 +476,11 @@
         showAchievements = false;
       }
       
+      // Set as active panel when opened
+      if (showChat) {
+        lastActivePanel = 'chat';
+      }
+      
       if (browser) {
         localStorage.setItem('chat', showChat.toString());
       }
@@ -491,6 +496,11 @@
       // Always ensure chat is closed when opening achievements
       if (showAchievements && showChat) {
         showChat = false;
+      }
+      
+      // Set as active panel when opened
+      if (showAchievements) {
+        lastActivePanel = 'achievements';
       }
       
       if (browser) {
@@ -943,11 +953,19 @@
         {/if}
 
         {#if $ready && $game?.player?.alive}
-            <div class="chat-wrapper" class:visible={showChat}>
+            <div class="chat-wrapper" 
+                class:visible={showChat} 
+                class:active={lastActivePanel === 'chat'}
+                onmouseenter={() => handlePanelHover('chat')}
+            >
                 <Chat onClose={toggleChat} />
             </div>
 
-            <div class="achievements-wrapper" class:visible={showAchievements}>
+            <div class="achievements-wrapper" 
+                class:visible={showAchievements}
+                class:active={lastActivePanel === 'achievements'}
+                onmouseenter={() => handlePanelHover('achievements')}
+            >
                 <Achievements onClose={toggleAchievements} />
             </div>
         {/if}
@@ -1290,16 +1308,21 @@
     .chat-wrapper,
     .achievements-wrapper {
         position: fixed;
-        z-index: 1010;
+        z-index: 998; /* Lower base z-index to match other panels */
         pointer-events: none;
         opacity: 0;
-        transition: opacity 300ms ease;
+        transition: opacity 300ms ease, z-index 0s;
     }
     
     .chat-wrapper.visible,
     .achievements-wrapper.visible {
         opacity: 1;
         pointer-events: all;
+    }
+    
+    .chat-wrapper.active,
+    .achievements-wrapper.active {
+        z-index: 1001; /* Higher z-index when active, same as other active panels */
     }
     
     .chat-wrapper {
