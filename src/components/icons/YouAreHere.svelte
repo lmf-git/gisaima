@@ -19,13 +19,13 @@
     align-items: center;
     justify-content: center;
     animation: appear 1s ease-out forwards;
-    /* Default size for regular tiles */
-    --indicator-size: 3.5em;
+    /* Increase default size for regular tiles */
+    --indicator-size: 4.2em; /* Increased from 3.5em */
   }
 
-  /* Larger size for structure tiles */
+  /* Make structure indicator even larger */
   .you-are-here-wrapper.has-structure {
-    --indicator-size: 9em;
+    --indicator-size: 11em; /* Increased from 9em */
   }
 
   .indicator-ring {
@@ -60,31 +60,36 @@
 
   .location-text {
     position: absolute;
-    bottom: -2.2em;
+    bottom: -3.1em; /* Changed from -2.6em to -3.1em for even lower placement */
     left: 50%;
     transform: translateX(-50%);
     color: white;
     font-weight: bold;
-    /* Make text larger when there's no structure (default case) */
-    font-size: calc(var(--indicator-size) / 10);
-    padding: 0.15em 0.5em;
+    /* Make text larger */
+    font-size: calc(var(--indicator-size) / 8);
+    padding: 0.2em 0.6em;
     background: rgba(0, 0, 0, 0.7);
     border-radius: 0.3em;
     white-space: nowrap;
-    text-shadow: 0 0 3px black;
+    text-shadow: 0 0 4px black;
     font-family: var(--font-heading, sans-serif);
     letter-spacing: 0.05em;
     animation: bounce 2s infinite;
-    border: 1px solid rgba(255, 215, 0, 0.4);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    /* Distinct style from structure names but keeping general shape */
+    border: 1px solid rgba(255, 215, 0, 0.6); /* Golden border to distinguish */
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.6), 0 0 5px rgba(255, 215, 0, 0.3);
     z-index: 1101;
   }
 
-  /* Make text for structures smaller (reversed from before) */
+  /* Make text for structures smaller and with distinct style */
   .has-structure .location-text {
-    font-size: calc(var(--indicator-size) / 15);
-    bottom: -1.8em;
-    padding: 0.2em 0.6em;
+    font-size: calc(var(--indicator-size) / 16); /* Smaller - changed from /13 to /16 */
+    bottom: -2.7em; /* Changed from -2.2em to -2.7em to be lower */
+    padding: 0.25em 0.7em;
+    background: rgba(0, 0, 0, 0.75); /* Slightly darker background */
+    border: 1px solid rgba(255, 215, 0, 0.5); /* Golden border */
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.7), 0 0 4px rgba(255, 215, 0, 0.25);
+    font-weight: 600; /* Slightly less bold than regular */
   }
 
   @keyframes pulse {

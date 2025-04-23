@@ -1882,12 +1882,12 @@
 
   .structure-name-label {
     position: absolute;
-    top: -1.285em; /* Updated from 0.15em to -1.285em as requested */
+    top: -1.6em; /* Changed from -1.285em to -1.6em to position it higher */
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
-    font-size: 0.7em;
-    font-weight: 600;
+    font-size: 0.85em; /* Increased from 0.7em to 0.85em */
+    font-weight: 700; /* Increased from 600 to 700 for better visibility */
     color: rgba(255, 255, 255, 0.95);
     text-shadow: 
       0 0 0.2em rgba(0, 0, 0, 0.8),
@@ -1896,23 +1896,23 @@
     z-index: 1100;
     white-space: nowrap;
     font-family: var(--font-heading);
-    padding: 0.2em 0.5em;
+    padding: 0.25em 0.6em; /* Slightly larger padding */
     line-height: 1.1;
     letter-spacing: 0.02em;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6); /* Slightly darker background for better contrast */
     border-radius: 0.3em;
     backdrop-filter: blur(2px);
     width: auto;
     overflow: visible;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 0.3em rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.3); /* Slightly more visible border */
+    box-shadow: 0 0 0.4em rgba(0, 0, 0, 0.8); /* Enhanced shadow */
   }
 
   /* Make structure name more prominent on hover */
   .tile:hover .structure-name-label {
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.75); /* Darker background on hover */
     z-index: 1200;
-    transform: translateX(-50%) scale(1.05);
+    transform: translateX(-50%) scale(1.1); /* Larger scale on hover */
     transition: all 0.2s ease;
   }
 
