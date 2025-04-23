@@ -3,9 +3,10 @@
  * Handles completing group mobilization during tick cycles
  */
 
+// Use the same import pattern as other files
 import { logger } from "firebase-functions";
 import { getDatabase } from 'firebase-admin/database';
-import { ref, push } from "firebase/database";
+
 
 /**
  * Process mobilizing groups for a given world
@@ -21,10 +22,19 @@ import { ref, push } from "firebase/database";
 export function processMobilizations(worldId, updates, groups, chunkKey, tileKey, now) {
   let mobilizationsProcessed = 0;
   
+  // Debug: Log if groups exist in this tile
+  console.log(`Checking for mobilizing groups at ${tileKey} in chunk ${chunkKey}: ${Object.keys(groups).length} groups found`);
+  
   // Iterate through all groups in the given tile
   for (const [groupId, group] of Object.entries(groups)) {
+    // Debug: Log group status
+    console.log(`Group ${groupId} status: ${group.status}`);
+    
     // Skip groups that aren't in mobilizing state
     if (group.status !== 'mobilizing') continue;
+    
+    // Debug: Log when mobilizing group found
+    console.log(`Found mobilizing group ${groupId} at ${tileKey} in chunk ${chunkKey}`);
     
     // Full database path to this group
     const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
@@ -68,7 +78,13 @@ export function processMobilizations(worldId, updates, groups, chunkKey, tileKey
     
     mobilizationsProcessed++;
     logger.info(`Group ${groupId} completed mobilization at ${tileKey} in chunk ${chunkKey}`);
+    
+    // Debug: Log updates keys added for this group
+    console.log(`Added updates for mobilized group ${groupId}: ${Object.keys(updates).filter(key => key.includes(groupId)).join(', ')}`);
   }
+  
+  // Debug: Log number of mobilizations processed in this tile
+  console.log(`Processed ${mobilizationsProcessed} mobilizations at ${tileKey} in chunk ${chunkKey}`);
   
   return mobilizationsProcessed;
 }

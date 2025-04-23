@@ -122,8 +122,15 @@ export const processGameTicks = onSchedule({
       
       // Apply all updates in a single batch
       if (Object.keys(updates).length > 0) {
-        await db.ref().update(updates);
-        console.log(`Applied ${Object.keys(updates).length} updates to world ${worldId}`);
+        console.log(`Attempting to apply ${Object.keys(updates).length} updates to world ${worldId}`);
+        console.log(`Update keys: ${Object.keys(updates).slice(0, 5).join(', ')}${Object.keys(updates).length > 5 ? '...' : ''}`);
+        
+        try {
+          await db.ref().update(updates);
+          console.log(`Successfully applied ${Object.keys(updates).length} updates to world ${worldId}`);
+        } catch (updateError) {
+          console.error(`Failed to apply updates to world ${worldId}:`, updateError);
+        }
       }
 
       // Process battles for the world using the imported function
@@ -131,9 +138,7 @@ export const processGameTicks = onSchedule({
       console.log(`Processed ${battlesProcessed} battles in world ${worldId}`);
     }
     
-    console.log(`Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, ${movementsProcessed} movement steps, and ${gatheringsProcessed} gatherings`);
-    return null;
-  } catch (error) {
+    console.log(`Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, ${movementsProcessed} movement steps, and ${gatheringsProcessed} gatherings`);    return null;  } catch (error) {
     console.error("Error processing game ticks:", error);
     return null;
   }
