@@ -49,6 +49,8 @@
     import BirdActive from '../../components/icons/BirdActive.svelte';
     import { unreadMessages } from "../../lib/stores/chat.js";
     import Bird from '../../components/icons/Bird.svelte';
+    import Achievements from '../../components/map/Achievements.svelte';
+    import AchievementIcon from '../../components/icons/Trophy.svelte';
 
     const DEBUG_MODE = true;
     const debugLog = (...args) => DEBUG_MODE && console.log(...args);
@@ -71,6 +73,8 @@
     let isTransitioningToPathDrawing = $state(false);
 
     let structureRenderCount = $state(0);
+
+    let achievementsRef = $state(null);
 
     let pathDrawingGroup = $state(null);
     let currentPath = $state([]);
@@ -109,6 +113,10 @@
 
     // Add derived value for unread count
     const unreadCount = $derived($unreadMessages);
+
+    // Add state for achievements panel
+    let showAchievements = $state(false);
+    let achievementsClosing = $state(false);
 
     // Function to handle panel hover events
     function handlePanelHover(panelType) {
@@ -504,6 +512,28 @@
       }
     }
 
+    function toggleAchievements() {
+      if (!$game?.player?.alive || isTutorialVisible) {
+        return;
+      }
+      
+      if (showAchievements) {
+        achievementsClosing = true;
+        setTimeout(() => {
+          showAchievements = false;
+          achievementsClosing = false;
+          if (browser) {
+            localStorage.setItem('achievements', 'false');
+          }
+        }, ANIMATION_DURATION);
+      } else {
+        showAchievements = true;
+        if (browser) {
+          localStorage.setItem('achievements', 'true');
+        }
+      }
+    }
+
     $effect(() => {
       if (browser && initialized) {
         const savedChatState = localStorage.getItem('chat');
@@ -511,6 +541,11 @@
           showChat = false;
         } else {
           showChat = true;
+        }
+
+        const savedAchievementsState = localStorage.getItem('achievements');
+        if (savedAchievementsState === 'true') {
+          showAchievements = true;
         }
       }
     });
@@ -782,6 +817,45 @@
         
         return path;
     }
+
+    function triggerAchievement(achievementId) {
+        if (achievementsRef) {
+            achievementsRef.unlockAchievement(achievementId);
+        }
+    }
+
+    function handleMobilise() {
+        triggerAchievement('mobilised');
+        closeModal();
+    }
+
+    function handleAttack(data) {
+        triggerAchievement('first_attack');
+        console.log('Attack started:', data);
+        closeModal();
+    }
+
+    function handleJoinBattle(data) {
+        triggerAchievement('battle_joiner');
+        console.log('Joined battle:', data);
+        closeModal();
+    }
+
+    function handleGather(result) {
+        triggerAchievement('first_gather');
+        closeModal();
+    }
+
+    function handleDemobilize(data) {
+        triggerAchievement('demobilizer');
+        console.log('Demobilization started:', data);
+        closeModal();
+    }
+
+    function handlePathConfirm(path) {
+        triggerAchievement('strategist');
+        confirmPathDrawing(path);
+    }
 </script>
 
 <svelte:window on:keydown={handleMapKeyDown} />
@@ -877,6 +951,16 @@
                 </button>
             </div>
         {/if}
+
+        <div class="achievements-controls">
+            <button 
+                class="control-button achievements-button" 
+                onclick={toggleAchievements}
+                aria-label={showAchievements ? "Hide achievements" : "Show achievements"}
+                disabled={!$game?.player?.alive || isTutorialVisible}>
+                <AchievementIcon extraClass="button-icon" />
+            </button>
+        </div>
         
         {#if showMinimap || minimapClosing}
             <Minimap closing={minimapClosing} />
@@ -948,6 +1032,14 @@
             <Chat closing={chatClosing} />
         {/if}
 
+        {#if $ready && $game?.player?.alive && (showAchievements || achievementsClosing)}
+            <Achievements 
+              closing={achievementsClosing} 
+              onClose={() => toggleAchievements()} 
+              bind:this={achievementsRef} 
+            />
+        {/if}
+
         {#if modalState.visible}
           {#if modalState.type === 'inspect' && modalState.data}
             <StructureOverview 
@@ -960,6 +1052,7 @@
           {:else if modalState.type === 'mobilise'}
             <Mobilise
               onClose={closeModal}
+              onMobilize={handleMobilise}
             />
           {:else if modalState.type === 'move'}
             <Move
@@ -968,41 +1061,30 @@
               }}
               onPathDrawingStart={handlePathDrawingStart}
               onPathDrawingCancel={handlePathDrawingCancel}
-              onConfirmPath={confirmPathDrawing}
+              onConfirmPath={handlePathConfirm}
               {pathDrawingGroup}
               {currentPath}
             />
           {:else if modalState.type === 'attack'}
             <AttackGroups
               onClose={closeModal}
-              onAttack={(data) => {
-                console.log('Attack started:', data);
-                closeModal();
-              }}
+              onAttack={handleAttack}
             />
           {:else if modalState.type === 'joinBattle'}
             <JoinBattle
               onClose={closeModal}
-              onJoinBattle={(data) => {
-                console.log('Joined battle:', data);
-                closeModal();
-              }}
+              onJoinBattle={handleJoinBattle}
             />
           {:else if modalState.type === 'gather'}
             <Gather 
               onClose={() => closeModal()} 
-              onGather={(result) => {
-                closeModal();
-              }}
+              onGather={handleGather}
               data={modalState.data}
             />
           {:else if modalState.type === 'demobilise'}
             <Demobilise
               onClose={closeModal}
-              onDemobilize={(data) => {
-                console.log('Demobilization started:', data);
-                closeModal();
-              }}
+              onDemobilize={handleDemobilize}
             />
           {/if}
         {/if}
@@ -1104,6 +1186,14 @@
         right: 1em;
         z-index: 1001;
         /* Add a transition to the chat controls for smoother appearance/disappearance */
+        transition: opacity 300ms ease;
+    }
+
+    .achievements-controls {
+        position: absolute;
+        bottom: 1em;
+        right: 5em; /* Position to the left of the chat button */
+        z-index: 1001;
         transition: opacity 300ms ease;
     }
     

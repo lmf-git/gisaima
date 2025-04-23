@@ -10,12 +10,11 @@
   import Fairy from '../icons/Fairy.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
 
-  // Remove isTutorialVisible prop - not needed in this component
   const { 
-    onClose = () => {}
+    onClose = () => {},
+    onMobilize = () => {} // Add this new callback prop
   } = $props();
 
-  // Get tile data directly from the targetStore
   let tileData = $derived($targetStore || null);
 
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -128,6 +127,7 @@
       });
       
       console.log('Mobilization result:', result.data);
+      onMobilize(); // Call this new callback to trigger achievement
       onClose();
     } catch (error) {
       console.error('Error during mobilization:', error);

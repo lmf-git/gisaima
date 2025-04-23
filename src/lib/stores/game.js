@@ -770,3 +770,48 @@ export function isPlayerWorldDataReady(worldId) {
     !state.worldLoading
   );
 }
+
+// Function to save a player achievement for a specific world
+export async function savePlayerAchievement(worldId, achievementId, value = true) {
+  if (!browser || !worldId || !achievementId) {
+    return Promise.reject(new Error('Missing required parameters'));
+  }
+  
+  const currentUser = get(user);
+  if (!currentUser?.uid) {
+    return Promise.reject(new Error('User not authenticated'));
+  }
+  
+  try {
+    // Reference to this achievement
+    const achievementRef = ref(db, `players/${currentUser.uid}/worlds/${worldId}/achievements/${achievementId}`);
+    
+    // Save achievement with value (typically true)
+    await set(achievementRef, value);
+    
+    // Also save the timestamp when this achievement was unlocked
+    if (value === true) {
+      const achievementDateRef = ref(db, `players/${currentUser.uid}/worlds/${worldId}/achievements/${achievementId}_date`);
+      await set(achievementDateRef, Date.now());
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error saving achievement:', error);
+    return Promise.reject(error);
+  }
+}
+
+// Function to check if player has a specific achievement
+export function hasAchievement(worldId, achievementId) {
+  if (!browser || !worldId || !achievementId) {
+    return false;
+  }
+  
+  const state = get(game);
+  if (!state.player?.achievements) {
+    return false;
+  }
+  
+  return state.player.achievements[achievementId] === true;
+}

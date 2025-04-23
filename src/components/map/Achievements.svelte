@@ -1,0 +1,578 @@
+<script>
+  import { fade, fly } from 'svelte/transition';
+  import { currentPlayer, game, savePlayerAchievement } from '../../lib/stores/game.js';
+  import Close from '../icons/Close.svelte';
+  import Trophy from '../icons/Trophy.svelte';
+
+  // Define props properly in Svelte 5 style
+  const { closing = false, onClose = () => {}, onVisibilityChange = () => {} } = $props();
+
+  // State variables using $state rune
+  let visible = $state(true);
+  let selectedCategory = $state('all');
+  let recentUnlock = $state(null);
+  let showAll = $state(false);
+  
+  // Animation constants
+  const animationDuration = 300;
+
+  // Achievement definitions directly in component
+  const achievementDefinitions = $state({
+    // Exploration Achievements
+    'first_steps': {
+      title: 'First Steps',
+      description: 'Spawn into the world for the first time',
+      category: 'exploration',
+    },
+    'explorer': {
+      title: 'Explorer',
+      description: 'Visit 10 different tiles',
+      category: 'exploration',
+    },
+    'world_traveler': {
+      title: 'World Traveler',
+      description: 'Visit 50 different tiles',
+      category: 'exploration',
+      hidden: true,
+    },
+    'structure_finder': {
+      title: 'Structure Finder',
+      description: 'Discover your first structure',
+      category: 'exploration',
+    },
+    
+    // Combat Achievements
+    'first_attack': {
+      title: 'First Blood',
+      description: 'Start your first attack',
+      category: 'combat',
+    },
+    'first_battle': {
+      title: 'Battle Hardened',
+      description: 'Win your first battle',
+      category: 'combat',
+    },
+    'battle_joiner': {
+      title: 'Opportunist',
+      description: 'Join an in-progress battle',
+      category: 'combat',
+    },
+    'survivor': {
+      title: 'Survivor',
+      description: 'Survive 5 battles',
+      category: 'combat',
+      hidden: true,
+    },
+    
+    // Resource Achievements
+    'first_gather': {
+      title: 'Gatherer',
+      description: 'Gather resources for the first time',
+      category: 'resources',
+    },
+    'resource_master': {
+      title: 'Resource Master',
+      description: 'Gather resources 10 times',
+      category: 'resources',
+    },
+    'treasure_finder': {
+      title: 'Treasure Finder',
+      description: 'Find a rare resource',
+      category: 'resources',
+      hidden: true,
+    },
+    
+    // Group Management Achievements
+    'mobilised': {
+      title: 'Leader',
+      description: 'Mobilize your first group',
+      category: 'social',
+    },
+    'strategist': {
+      title: 'Strategist',
+      description: 'Move a group to another location',
+      category: 'social',
+    },
+    'demobilizer': {
+      title: 'Demobilizer',
+      description: 'Demobilize a group at a structure',
+      category: 'social',
+    },
+    'army_builder': {
+      title: 'Army Builder',
+      description: 'Create 5 groups simultaneously',
+      category: 'social',
+      hidden: true,
+    },
+  });
+
+  // Get player achievements for current world
+  const playerAchievements = $derived($currentPlayer?.achievements || {});
+
+  // Categories for filtering - constant data
+  const categories = [
+    { id: 'all', label: 'All' },
+    { id: 'exploration', label: 'Exploration' },
+    { id: 'combat', label: 'Combat' },
+    { id: 'resources', label: 'Resources' },
+    { id: 'social', label: 'Social' }
+  ];
+
+  // Process achievements with player data using $derived
+  const processedAchievements = $derived(() => {
+    return Object.entries(achievementDefinitions).map(([id, achievement]) => {
+      const isUnlocked = playerAchievements[id] === true;
+      const isFiltered = selectedCategory === 'all' || achievement.category === selectedCategory;
+      const shouldShow = showAll || isUnlocked || achievement.hidden !== true;
+      
+      return {
+        ...achievement,
+        id,
+        unlocked: isUnlocked,
+        visible: isFiltered && shouldShow,
+        date: playerAchievements[id + '_date'] || null
+      };
+    });
+  });
+
+  // Count unlocked achievements using $derived
+  const unlockedCount = $derived(
+    Object.keys(playerAchievements).filter(key => !key.endsWith('_date')).length
+  );
+
+  // Calculate total count of non-hidden achievements using $derived
+  const totalCount = $derived(
+    Object.values(achievementDefinitions).filter(a => !a.hidden).length
+  );
+
+  // Filter achievements based on selected category and locked/unlocked status
+  // Fix: Use function form to properly access processedAchievements
+  const filteredAchievements = $derived(() => {
+    return processedAchievements.filter(a => a.visible);
+  });
+
+  // Use $effect for side effects based on closing prop
+  $effect(() => {
+    if (closing) {
+      visible = false;
+      onVisibilityChange(false);
+    } else {
+      visible = true;
+      onVisibilityChange(true);
+    }
+  });
+
+  // Handle achievement unlock notification
+  function showUnlockNotification(achievementId) {
+    const achievement = achievementDefinitions[achievementId];
+    if (!achievement) return;
+    
+    recentUnlock = {
+      id: achievementId,
+      ...achievement
+    };
+    
+    // Clear notification after a delay
+    setTimeout(() => {
+      recentUnlock = null;
+    }, 5000);
+  }
+
+  // Export function for other components to trigger achievement unlocks
+  export function unlockAchievement(id) {
+    if (!$currentPlayer || !$game.worldKey || playerAchievements[id] === true) {
+      return false;
+    }
+    
+    savePlayerAchievement($game.worldKey, id, true)
+      .then(() => {
+        showUnlockNotification(id);
+        return true;
+      })
+      .catch(error => {
+        console.error('Failed to save achievement:', error);
+        return false;
+      });
+  }
+
+  function toggleShowAll() {
+    showAll = !showAll;
+  }
+
+  function selectCategory(categoryId) {
+    selectedCategory = categoryId;
+  }
+
+  function close() {
+    onClose();
+  }
+
+  // Function to format date in a user-friendly way
+  function formatDate(timestamp) {
+    if (!timestamp) return '';
+    
+    const date = new Date(timestamp);
+    return new Intl.DateTimeFormat('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    }).format(date);
+  }
+</script>
+
+<div 
+  class="achievements-container"
+  class:closing
+  in:fade={{ duration: animationDuration }}
+  out:fade={{ duration: animationDuration }}
+>
+  <div class="achievements-panel" class:closing>
+    <header class="achievements-header">
+      <h2>
+        <Trophy extraClass="trophy-icon" />
+        Achievements
+        <span class="achievement-count">
+          {unlockedCount} / {totalCount}
+        </span>
+      </h2>
+      <button class="close-btn" onclick={close} aria-label="Close achievements">
+        <Close size="1.5em" />
+      </button>
+    </header>
+    
+    <div class="categories">
+      {#each categories as category}
+        <button 
+          class="category-btn"
+          class:active={selectedCategory === category.id}
+          onclick={() => selectCategory(category.id)}
+        >
+          {category.label}
+        </button>
+      {/each}
+      
+      <button class="toggle-btn" onclick={toggleShowAll}>
+        {showAll ? 'Hide Locked' : 'Show All'}
+      </button>
+    </div>
+    
+    <div class="achievements-content">
+      {#if filteredAchievements.length === 0}
+        <div class="empty-state">
+          No achievements to display in this category.
+        </div>
+      {:else}
+        <div class="achievements-list">
+          {#each filteredAchievements as achievement}
+            <div
+              class="achievement-item"
+              class:unlocked={achievement.unlocked}
+              class:locked={!achievement.unlocked}
+            >
+              <div class="achievement-icon">
+                {#if achievement.unlocked}
+                  <Trophy extraClass="achievement-trophy" />
+                {:else}
+                  <div class="lock-icon">?</div>
+                {/if}
+              </div>
+              <div class="achievement-details">
+                <h3 class="achievement-name">
+                  {achievement.unlocked || !achievement.hiddenTitle ? achievement.title : 'Hidden Achievement'}
+                </h3>
+                <p class="achievement-description">
+                  {achievement.unlocked || !achievement.hiddenDesc ? achievement.description : 'Complete this hidden achievement to reveal its details.'}
+                </p>
+                {#if achievement.unlocked && achievement.date}
+                  <div class="achievement-date">
+                    Unlocked: {formatDate(achievement.date)}
+                  </div>
+                {/if}
+              </div>
+            </div>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  </div>
+</div>
+
+{#if recentUnlock}
+  <div class="achievement-notification" in:fly={{ y: 50, duration: 500 }} out:fade>
+    <Trophy extraClass="notification-trophy" />
+    <div class="notification-content">
+      <h3>Achievement Unlocked!</h3>
+      <p>{recentUnlock.title}</p>
+    </div>
+  </div>
+{/if}
+
+<style>
+  .achievements-container {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 24em;
+    max-width: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1010;
+    display: flex;
+    flex-direction: column;
+    pointer-events: all;
+  }
+  
+  .achievements-container.closing {
+    pointer-events: none;
+  }
+  
+  .achievements-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+    transform: translateX(0);
+    transition: transform 300ms ease;
+  }
+  
+  .achievements-panel.closing {
+    transform: translateX(100%);
+  }
+  
+  .achievements-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1em;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-family: var(--font-heading);
+    font-size: 1.4em;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .achievement-count {
+    font-size: 0.7em;
+    background-color: rgba(66, 133, 244, 0.15);
+    color: #4285f4;
+    padding: 0.2em 0.6em;
+    border-radius: 1em;
+    margin-left: 0.5em;
+  }
+  
+  .close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.3em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #666;
+    transition: background-color 0.2s;
+  }
+  
+  .close-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #333;
+  }
+  
+  .categories {
+    display: flex;
+    gap: 0.5em;
+    padding: 0.8em;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    flex-wrap: wrap;
+  }
+  
+  .category-btn {
+    padding: 0.5em 1em;
+    background-color: #f1f3f4;
+    border: none;
+    border-radius: 1.5em;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .category-btn.active {
+    background-color: #4285f4;
+    color: white;
+  }
+  
+  .category-btn:hover:not(.active) {
+    background-color: #e8eaed;
+  }
+  
+  .toggle-btn {
+    padding: 0.5em 1em;
+    background-color: transparent;
+    border: 1px solid #dadce0;
+    border-radius: 1.5em;
+    font-size: 0.9em;
+    margin-left: auto;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .toggle-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .achievements-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1em;
+  }
+  
+  .achievements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+  }
+  
+  .achievement-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 1em;
+    border-radius: 0.5em;
+    background-color: #f5f5f5;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .achievement-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .achievement-item.unlocked {
+    background-color: rgba(66, 133, 244, 0.1);
+    border-left: 3px solid #4285f4;
+  }
+  
+  .achievement-item.locked {
+    opacity: 0.8;
+    filter: grayscale(50%);
+  }
+  
+  .achievement-icon {
+    width: 2.5em;
+    height: 2.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1em;
+    flex-shrink: 0;
+  }
+  
+  .lock-icon {
+    width: 2em;
+    height: 2em;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(0, 0, 0, 0.5);
+    font-weight: bold;
+  }
+  
+  .achievement-details {
+    flex: 1;
+  }
+  
+  .achievement-name {
+    margin: 0 0 0.3em 0;
+    font-family: var(--font-heading);
+    font-size: 1.1em;
+    font-weight: 600;
+  }
+  
+  .achievement-description {
+    margin: 0;
+    font-size: 0.9em;
+    color: #555;
+    line-height: 1.4;
+  }
+  
+  .achievement-date {
+    margin-top: 0.5em;
+    font-size: 0.8em;
+    color: #777;
+  }
+  
+  .empty-state {
+    padding: 2em 0;
+    text-align: center;
+    color: #777;
+    font-style: italic;
+  }
+  
+  .achievement-notification {
+    position: fixed;
+    bottom: 2em;
+    right: 2em;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-left: 4px solid #4285f4;
+    border-radius: 0.5em;
+    padding: 1em;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    z-index: 1050;
+    max-width: 24em;
+  }
+  
+  .notification-content {
+    flex: 1;
+  }
+  
+  .notification-content h3 {
+    margin: 0;
+    font-family: var(--font-heading);
+    color: #4285f4;
+    font-size: 1.1em;
+  }
+  
+  .notification-content p {
+    margin: 0.3em 0 0 0;
+    font-size: 1em;
+  }
+  
+  :global(.trophy-icon) {
+    width: 1.5em;
+    height: 1.5em;
+    fill: #ffa000;
+  }
+  
+  :global(.achievement-trophy) {
+    width: 2em;
+    height: 2em;
+    fill: #ffa000;
+  }
+  
+  :global(.notification-trophy) {
+    width: 2.5em;
+    height: 2.5em;
+    fill: #ffa000;
+    filter: drop-shadow(0 0 4px rgba(255, 160, 0, 0.5));
+  }
+  
+  @media (max-width: 768px) {
+    .achievements-container {
+      width: 100%;
+    }
+  }
+</style>
