@@ -392,6 +392,16 @@
         flex: 1;
         display: flex;
         flex-direction: column;
+        /* Add styles to prevent stretching of child login/signup forms */
+        align-items: stretch;
+        justify-content: flex-start;
+        min-height: calc(100vh - 6em); /* Account for header and footer */
+    }
+    
+    /* Special handling for login/signup pages */
+    :global(.login-container),
+    :global(.signup-container) {
+        align-self: center;
     }
 
     /* Position header as absolute for all pages */

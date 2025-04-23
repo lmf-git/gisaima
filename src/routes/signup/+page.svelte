@@ -70,119 +70,108 @@
     };
 </script>
 
-<div class="signup-page">
-    <!-- Only show signup UI if user is not authenticated or authentication is still loading -->
-    {#if $userLoading || $user === null}
-        <div class="signup-container">
-            <h1>Join Gisaima</h1>
-            
-            {#if error}
-                <div class="error">{ error }</div>
-            {/if}
-            
-            {#if success}
-                <div class="success">
-                    <p>{ successMessage }</p>
-                    <p class="sub-message">Check your inbox and spam folder for the sign-in link.</p>
+{#if $userLoading || $user === null}
+    <div class="signup-container">
+        <h1>Join Gisaima</h1>
+        
+        {#if error}
+            <div class="error">{ error }</div>
+        {/if}
+        
+        {#if success}
+            <div class="success">
+                <p>{ successMessage }</p>
+                <p class="sub-message">Check your inbox and spam folder for the sign-in link.</p>
+            </div>
+        {:else}
+            <form onsubmit={handleSubmit}>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        bind:value={email} 
+                        required
+                        placeholder="your.email@example.com"
+                    />
                 </div>
-            {:else}
-                <form onsubmit={handleSubmit}>
+                
+                <div class="auth-toggle">
+                    <div class="toggle-buttons">
+                        <button 
+                            type="button"
+                            class="toggle-button" 
+                            class:active={!passwordMode}
+                            onclick={() => togglePasswordMode()}
+                            disabled={loading}
+                        >
+                            Passwordless
+                        </button>
+                        <button 
+                            type="button"
+                            class="toggle-button" 
+                            class:active={passwordMode}
+                            onclick={() => togglePasswordMode()}
+                            disabled={loading}
+                        >
+                            With Password
+                        </button>
+                    </div>
+                    <small class="help-text">
+                        {passwordMode
+                            ? 'You will sign in with email and password.'
+                            : 'You will receive a secure login link via email when signing in.'}
+                    </small>
+                </div>
+                
+                {#if passwordMode}
                     <div class="form-group">
-                        <label for="email">Email</label>
+                        <label for="password">Password</label>
                         <input 
-                            type="email" 
-                            id="email" 
-                            bind:value={email} 
-                            required
-                            placeholder="your.email@example.com"
+                            type="password" 
+                            id="password" 
+                            bind:value={password} 
+                            required={passwordMode}
+                            minlength="6"
+                            placeholder="Minimum 6 characters"
                         />
                     </div>
                     
-                    <div class="auth-toggle">
-                        <div class="toggle-buttons">
-                            <button 
-                                type="button"
-                                class="toggle-button" 
-                                class:active={!passwordMode}
-                                onclick={() => togglePasswordMode()}
-                                disabled={loading}
-                            >
-                                Passwordless
-                            </button>
-                            <button 
-                                type="button"
-                                class="toggle-button" 
-                                class:active={passwordMode}
-                                onclick={() => togglePasswordMode()}
-                                disabled={loading}
-                            >
-                                With Password
-                            </button>
-                        </div>
-                        <small class="help-text">
-                            {passwordMode
-                                ? 'You will sign in with email and password.'
-                                : 'You will receive a secure login link via email when signing in.'}
-                        </small>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input 
+                            type="password" 
+                            id="confirmPassword" 
+                            bind:value={confirmPassword} 
+                            required={passwordMode}
+                            placeholder="Re-enter your password"
+                        />
                     </div>
-                    
-                    {#if passwordMode}
-                        <div class="form-group">
-                            <label for="password">Password</label>
-                            <input 
-                                type="password" 
-                                id="password" 
-                                bind:value={password} 
-                                required={passwordMode}
-                                minlength="6"
-                                placeholder="Minimum 6 characters"
-                            />
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="confirmPassword">Confirm Password</label>
-                            <input 
-                                type="password" 
-                                id="confirmPassword" 
-                                bind:value={confirmPassword} 
-                                required={passwordMode}
-                                placeholder="Re-enter your password"
-                            />
-                        </div>
-                    {/if}
-                    
-                    <button type="submit" class="primary" disabled={loading || !email || (passwordMode && (!password || password.length < 6 || password !== confirmPassword))}>
-                        {loading ? 'Creating Account...' : 'Create Account'}
-                    </button>
-                </form>
+                {/if}
                 
-                <div class="separator">
-                    <span>or</span>
-                </div>
-                
-                <button type="button" class="secondary" onclick={handleAnonymousLogin} disabled={loading}>
-                    {loading ? 'Logging in...' : 'Continue as Guest'}
+                <button type="submit" class="primary" disabled={loading || !email || (passwordMode && (!password || password.length < 6 || password !== confirmPassword))}>
+                    {loading ? 'Creating Account...' : 'Create Account'}
                 </button>
-            {/if}
+            </form>
             
-            <p class="login-link">Already have an account? <a href="/login">Login</a></p>
-        </div>
-    {:else}
-        <div class="loading-container">
-            <p>You are already logged in. Redirecting...</p>
-        </div>
-    {/if}
-</div>
+            <div class="separator">
+                <span>or</span>
+            </div>
+            
+            <button type="button" class="secondary" onclick={handleAnonymousLogin} disabled={loading}>
+                {loading ? 'Logging in...' : 'Continue as Guest'}
+            </button>
+        {/if}
+        
+        <p class="login-link">Already have an account? <a href="/login">Login</a></p>
+    </div>
+{:else}
+    <div class="redirecting-message">
+        <p>You are already logged in. Redirecting...</p>
+    </div>
+{/if}
 
 <style>
-    .signup-page {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        padding: 2em 0;
-    }
-    
     .signup-container {
         max-width: 26em;
         width: 100%;
@@ -192,7 +181,7 @@
         border-radius: 0.5em;
         box-shadow: 0 0.3em 1em var(--color-shadow);
         color: var(--color-text);
-        margin: 0 1em; /* Added horizontal margin instead of padding */
+        margin: 6em auto 2em; /* Add top margin to account for header */
     }
     
     h1 {
@@ -289,15 +278,11 @@
     }
 
     @media (max-width: 480px) {
-        .signup-page {
-            padding: 1em 0;
-            align-items: flex-start;
-        }
-        
         .signup-container {
-            width: 100%;
+            width: calc(100% - 2em);
             padding: 1.25em;
-            margin: 0 0.5em; /* Reduced margin on smaller screens */
+            margin: 5em 1em 1em; /* Adjusted margin for mobile */
+            box-sizing: border-box;
         }
         
         h1 {
@@ -420,12 +405,12 @@
         opacity: 0.8;
     }
     
-    .loading-container {
+    .redirecting-message {
         max-width: 26em;
         width: 100%;
         padding: 2.5em;
         text-align: center;
         color: var(--color-text);
-        margin: 0 1em;
+        margin: 8em auto 0;
     }
 </style>

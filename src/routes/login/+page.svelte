@@ -59,77 +59,64 @@
     };
 </script>
 
-<div class="login-page">
-    <!-- Only show login UI if user is not authenticated or authentication is still loading -->
-    {#if $userLoading || $user === null}
-        <div class="login-container">
-            <h1>Login to Gisaima</h1>
-            
-            {#if error}
-                <div class="error">{error}</div>
-            {/if}
-            
-            <form onsubmit={handleSubmit}>
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        bind:value={email} 
-                        required
-                    />
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        bind:value={password} 
-                        required
-                    />
-                </div>
-                
-                <button type="submit" class="primary" disabled={loading}>
-                    {loading ? 'Logging in...' : 'Login'}
-                </button>
-            </form>
-            
-            <div class="separator">
-                <span>or</span>
+{#if $userLoading || $user === null}
+    <div class="login-container">
+        <h1>Login to Gisaima</h1>
+        
+        {#if error}
+            <div class="error">{error}</div>
+        {/if}
+        
+        <form onsubmit={handleSubmit}>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    bind:value={email} 
+                    required
+                />
             </div>
             
-            <!-- Add container for alternative auth buttons -->
-            <div class="auth-alternatives">
-                <!-- Google Auth button placeholder -->
-                <button type="button" class="auth-provider" onclick={handleGoogleSignIn} disabled={googleLoading || loading}>
-                    <span class="provider-icon">G</span>
-                    {googleLoading ? 'Connecting...' : 'Continue with Google'}
-                </button>
-                
-                <button type="button" class="secondary" onclick={handleAnonymousLogin} disabled={loading || googleLoading}>
-                    {loading ? 'Logging in...' : 'Continue as Guest'}
-                </button>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    bind:value={password} 
+                    required
+                />
             </div>
             
-            <p class="signup-link">Don't have an account? <a href="/signup">Sign Up</a></p>
+            <button type="submit" class="primary" disabled={loading}>
+                {loading ? 'Logging in...' : 'Login'}
+            </button>
+        </form>
+        
+        <div class="separator">
+            <span>or</span>
         </div>
-    {:else}
-        <div class="loading-container">
-            <p>You are already logged in. Redirecting...</p>
+        
+        <div class="auth-alternatives">
+            <button type="button" class="auth-provider" onclick={handleGoogleSignIn} disabled={googleLoading || loading}>
+                <span class="provider-icon">G</span>
+                {googleLoading ? 'Connecting...' : 'Continue with Google'}
+            </button>
+            
+            <button type="button" class="secondary" onclick={handleAnonymousLogin} disabled={loading || googleLoading}>
+                {loading ? 'Logging in...' : 'Continue as Guest'}
+            </button>
         </div>
-    {/if}
-</div>
+        
+        <p class="signup-link">Don't have an account? <a href="/signup">Sign Up</a></p>
+    </div>
+{:else}
+    <div class="redirecting-message">
+        <p>You are already logged in. Redirecting...</p>
+    </div>
+{/if}
 
 <style>
-    .login-page {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        padding: 2em 0;
-    }
-
     .login-container {
         max-width: 26em;
         width: 100%;
@@ -139,7 +126,7 @@
         border-radius: 0.5em;
         box-shadow: 0 0.3em 1em var(--color-shadow);
         color: var(--color-text);
-        margin: 0 1em;
+        margin: 6em auto 2em; /* Add top margin to account for header */
     }
     
     h1 {
@@ -227,18 +214,21 @@
         border: 1px solid rgba(198, 40, 40, 0.4);
     }
 
+    .redirecting-message {
+        max-width: 26em;
+        width: 100%;
+        padding: 2.5em;
+        text-align: center;
+        color: var(--color-text);
+        margin: 8em auto 0;
+    }
+
     @media (max-width: 480px) {
-        .login-page {
-            padding: 1em 0;
-            align-items: flex-start;
-        }
-        
         .login-container {
-            width: 100%;
+            width: calc(100% - 2em);
             padding: 1.25em;
-            margin: 0 0.5em; /* Reduced margin on smaller screens */
-            max-width: calc(100% - 1em); /* Ensure it doesn't overflow */
-            box-sizing: border-box; /* Include padding in width calculation */
+            margin: 5em 1em 1em; /* Adjusted margin for mobile */
+            box-sizing: border-box;
         }
         
         h1 {
