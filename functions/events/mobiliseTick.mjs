@@ -42,13 +42,21 @@ export function processMobilizations(worldId, updates, groups, chunkKey, tileKey
     
     // Create a chat message for the world
     const chatMessageText = createMobilizationMessage(group, tileKey);
-    updates[`worlds/${worldId}/chat/${now}_${groupId}`] = {
+    
+    // Generate a unique key for the chat message
+    const chatMessageKey = `chat_${now}_${Math.floor(Math.random() * 1000)}`;
+    
+    // Create a proper chat message with all required fields
+    updates[`worlds/${worldId}/chat/${chatMessageKey}`] = {
       text: chatMessageText,
       type: 'event',
       timestamp: now,
+      userId: group.owner || "system", // Include userId (owner or system)
+      userName: group.name || "System", // Use group name as userName
       location: {
         x: parseInt(tileKey.split(',')[0]),
-        y: parseInt(tileKey.split(',')[1])
+        y: parseInt(tileKey.split(',')[1]),
+        timestamp: now
       }
     };
     

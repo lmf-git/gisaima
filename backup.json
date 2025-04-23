@@ -113,185 +113,24 @@
     }
   },
   "players": {
-    "6TK2bvKA3kNc08lwsPg15FOVAIJ3": {
+    "oBMqLQtce0fhljRFJKFl9B2e1Xl1": {
       "worlds": {
         "ancient-lands": {
           "alive": true,
-          "displayName": "test",
-          "id": "6TK2bvKA3kNc08lwsPg15FOVAIJ3",
-          "joined": 1745333292661,
-          "lastLocation": {
-            "timestamp": 1745333351225,
-            "x": -4,
-            "y": 6
-          },
-          "race": "elf",
-          "spawnId": "structure_al_elf_spawn"
-        }
-      }
-    },
-    "E9ycnxzgvDVGlhaKJx2K0O6kIBm2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": false,
-          "displayName": "iso",
           "groups": {
-            "-OOTXDmEIfqc-8x9l7gh": {
-              "at": "5,5",
-              "id": "-OOTXDmEIfqc-8x9l7gh",
-              "readyAt": 1745342762013,
-              "status": "mobilizing"
-            },
-            "-OOTXDp0vuK2jbMX6Z9R": {
-              "at": "5,5",
-              "id": "-OOTXDp0vuK2jbMX6Z9R",
-              "readyAt": 1745342762013,
+            "-OOVso0NiEE5ExcwkHWt": {
+              "at": "-4,6",
+              "id": "-OOVso0NiEE5ExcwkHWt",
+              "readyAt": 1745382241885,
               "status": "mobilizing"
             }
           },
-          "id": "E9ycnxzgvDVGlhaKJx2K0O6kIBm2",
-          "joined": 1745342175088,
-          "lastLocation": {
-            "x": 5,
-            "y": 5
-          },
-          "lastMessage": {
-            "text": "You were defeated in battle.",
-            "timestamp": 1745347982267
-          },
-          "race": "human",
-          "spawnId": "structure_al_human_spawn"
-        }
-      }
-    },
-    "LCyDeW5pbWZYTZ64JyI3ET1FDA02": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "displayName": "iso",
-          "id": "LCyDeW5pbWZYTZ64JyI3ET1FDA02",
-          "joined": 1745342397908,
-          "lastLocation": {
-            "timestamp": 1745342402797,
-            "x": -4,
-            "y": 6
-          },
-          "race": "elf",
-          "spawnId": "structure_al_elf_spawn"
-        }
-      }
-    },
-    "M65gM7mNI7PLhXpFej81Fn9v5ik2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "displayName": "test",
-          "id": "M65gM7mNI7PLhXpFej81Fn9v5ik2",
-          "joined": 1745332688719,
-          "lastLocation": {
-            "timestamp": 1745332696622,
-            "x": -4,
-            "y": 6
-          },
-          "race": "elf",
-          "spawnId": "structure_al_elf_spawn"
-        }
-      }
-    },
-    "P8KZncmwAgNktCf59mzZyI5v5Q03": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "displayName": "test",
-          "groups": {
-            "-OOT5mXsX77qukNx5tqR": {
-              "at": "-4,6",
-              "id": "-OOT5mXsX77qukNx5tqR",
-              "readyAt": 1745335565813,
-              "status": "mobilizing"
-            },
-            "-OOTdyxF11nmjVBi5gi_": {
-              "at": "-4,6",
-              "id": "-OOTdyxF11nmjVBi5gi_",
-              "readyAt": 1745344801400,
-              "status": "mobilizing"
-            },
-            "-OOTfyTkMc0mXL8XkTxP": {
-              "at": "-4,6",
-              "id": "-OOTfyTkMc0mXL8XkTxP",
-              "readyAt": 1745345341467,
-              "status": "mobilizing"
-            }
-          },
-          "id": "P8KZncmwAgNktCf59mzZyI5v5Q03",
-          "inGroup": "-OOTfyTkMc0mXL8XkTxP",
-          "joined": 1745333480561,
-          "lastLocation": {
-            "timestamp": 1745348526193,
-            "x": 0,
-            "y": 0
-          },
-          "lastMessage": {
-            "text": "You were defeated in battle.",
-            "timestamp": 1745345041710
-          },
-          "race": "elf",
-          "spawnId": "structure_al_elf_spawn"
-        }
-      }
-    },
-    "hVKFvMvgtRfpPxlVksPQtIh8Hmh2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": false,
-          "displayName": "Test",
-          "groups": {
-            "-OOTXcLzj8lwlWEPDM3k": {
-              "at": "-4,6",
-              "id": "-OOTXcLzj8lwlWEPDM3k",
-              "readyAt": 1745342885168,
-              "status": "mobilizing"
-            }
-          },
-          "id": "hVKFvMvgtRfpPxlVksPQtIh8Hmh2",
-          "joined": 1745331993146,
+          "id": "oBMqLQtce0fhljRFJKFl9B2e1Xl1",
+          "inGroup": "-OOVso0NiEE5ExcwkHWt",
           "lastLocation": {
             "x": -4,
             "y": 6
           },
-          "lastMessage": {
-            "text": "You were defeated in battle.",
-            "timestamp": 1745345581764
-          },
-          "race": "elf",
-          "spawnId": "structure_al_elf_spawn"
-        }
-      }
-    },
-    "yqnsUMxadLfhbFBfxr7k6MrAyrp1": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": false,
-          "displayName": "test",
-          "groups": {
-            "-OOSxn231Z3KZzIMyYbe": {
-              "at": "-4,6",
-              "id": "-OOSxn231Z3KZzIMyYbe",
-              "readyAt": 1745333221852,
-              "status": "mobilizing"
-            }
-          },
-          "id": "yqnsUMxadLfhbFBfxr7k6MrAyrp1",
-          "joined": 1745333134216,
-          "lastLocation": {
-            "x": -4,
-            "y": 6
-          },
-          "lastMessage": {
-            "text": "You were defeated in battle.",
-            "timestamp": 1745345581764
-          },
-          "race": "elf",
           "spawnId": "structure_al_elf_spawn"
         }
       }
@@ -347,29 +186,71 @@
           "type": "user",
           "userId": "P8KZncmwAgNktCf59mzZyI5v5Q03",
           "userName": "Anonymous"
+        },
+        "-OOVnrIMam921auIuL5C": {
+          "location": {
+            "timestamp": 1745380916709,
+            "x": 5,
+            "y": 5
+          },
+          "text": "gewage",
+          "timestamp": 1745380930798,
+          "type": "user",
+          "userId": "oBMqLQtce0fhljRFJKFl9B2e1Xl1",
+          "userName": "Anonymous"
+        },
+        "-OOVnt_UB1kTjqlGSEkA": {
+          "location": {
+            "timestamp": 1745380916709,
+            "x": 5,
+            "y": 5
+          },
+          "text": "geweegegewggew",
+          "timestamp": 1745380940149,
+          "type": "user",
+          "userId": "oBMqLQtce0fhljRFJKFl9B2e1Xl1",
+          "userName": "Anonymous"
+        },
+        "-OOVnuDZd9vfIiNS4e0w": {
+          "location": {
+            "timestamp": 1745380916709,
+            "x": 5,
+            "y": 5
+          },
+          "text": "egwagwegweg",
+          "timestamp": 1745380942779,
+          "type": "user",
+          "userId": "oBMqLQtce0fhljRFJKFl9B2e1Xl1",
+          "userName": "Anonymous"
         }
       },
       "chunks": {
         "-1,0": {
           "-4,6": {
-            "players": {
-              "6TK2bvKA3kNc08lwsPg15FOVAIJ3": {
-                "displayName": "test",
-                "id": "6TK2bvKA3kNc08lwsPg15FOVAIJ3",
-                "lastActive": 1745333351481,
-                "race": "elf"
-              },
-              "LCyDeW5pbWZYTZ64JyI3ET1FDA02": {
-                "displayName": "iso",
-                "id": "LCyDeW5pbWZYTZ64JyI3ET1FDA02",
-                "lastActive": 1745342402824,
-                "race": "elf"
-              },
-              "M65gM7mNI7PLhXpFej81Fn9v5ik2": {
-                "displayName": "test",
-                "id": "M65gM7mNI7PLhXpFej81Fn9v5ik2",
-                "lastActive": 1745332696949,
-                "race": "elf"
+            "groups": {
+              "-OOVso0NiEE5ExcwkHWt": {
+                "createdAt": 1745382228116,
+                "id": "-OOVso0NiEE5ExcwkHWt",
+                "lastMessage": {
+                  "text": "Group is fully mobilized and ready",
+                  "timestamp": 1745382245382
+                },
+                "lastUpdated": 1745382245382,
+                "name": "New Force",
+                "owner": "oBMqLQtce0fhljRFJKFl9B2e1Xl1",
+                "status": "idle",
+                "unitCount": 1,
+                "units": {
+                  "oBMqLQtce0fhljRFJKFl9B2e1Xl1": {
+                    "displayName": "Player oBMq",
+                    "id": "oBMqLQtce0fhljRFJKFl9B2e1Xl1",
+                    "lastActive": 1745382176117,
+                    "race": "human",
+                    "type": "player"
+                  }
+                },
+                "x": -4,
+                "y": 6
               }
             },
             "structure": {
@@ -430,118 +311,6 @@
         },
         "0,0": {
           "0,0": {
-            "groups": {
-              "-OOTXDp0vuK2jbMX6Z9R": {
-                "createdAt": 1745342754171,
-                "id": "-OOTXDp0vuK2jbMX6Z9R",
-                "lastMessage": {
-                  "text": "Moving to next location (0,0)",
-                  "timestamp": 1745343601361
-                },
-                "lastUpdated": 1745343601361,
-                "moveSpeed": 1,
-                "moveStarted": 1745342987902,
-                "movementPath": [
-                  {
-                    "x": 5,
-                    "y": 5
-                  },
-                  {
-                    "x": 4,
-                    "y": 4
-                  },
-                  {
-                    "x": 3,
-                    "y": 3
-                  },
-                  {
-                    "x": 3,
-                    "y": 2
-                  },
-                  {
-                    "x": 2,
-                    "y": 1
-                  },
-                  {
-                    "x": 1,
-                    "y": 0
-                  },
-                  {
-                    "x": 0,
-                    "y": 0
-                  }
-                ],
-                "name": "New Force",
-                "nextMoveTime": 1745343661361,
-                "owner": "E9ycnxzgvDVGlhaKJx2K0O6kIBm2",
-                "pathIndex": 6,
-                "race": "human",
-                "status": "idle",
-                "targetX": 0,
-                "targetY": 0,
-                "unitCount": 0,
-                "x": 0,
-                "y": 0
-              },
-              "-OOTfyTkMc0mXL8XkTxP": {
-                "createdAt": 1745345308651,
-                "id": "-OOTfyTkMc0mXL8XkTxP",
-                "inBattle": false,
-                "lastMessage": {
-                  "text": "Moving to next location (0,0)",
-                  "timestamp": 1745348526193
-                },
-                "lastUpdated": 1745348526193,
-                "moveSpeed": 1,
-                "moveStarted": 1745348078582,
-                "movementPath": [
-                  {
-                    "x": 5,
-                    "y": 5
-                  },
-                  {
-                    "x": 4,
-                    "y": 4
-                  },
-                  {
-                    "x": 3,
-                    "y": 3
-                  },
-                  {
-                    "x": 2,
-                    "y": 2
-                  },
-                  {
-                    "x": 1,
-                    "y": 1
-                  },
-                  {
-                    "x": 0,
-                    "y": 0
-                  }
-                ],
-                "name": "New Force",
-                "nextMoveTime": 1745348586193,
-                "owner": "P8KZncmwAgNktCf59mzZyI5v5Q03",
-                "pathIndex": 5,
-                "race": "elf",
-                "status": "idle",
-                "targetX": 0,
-                "targetY": 0,
-                "unitCount": 1,
-                "units": {
-                  "P8KZncmwAgNktCf59mzZyI5v5Q03": {
-                    "displayName": "test",
-                    "id": "P8KZncmwAgNktCf59mzZyI5v5Q03",
-                    "lastActive": 1745345051995,
-                    "race": "elf",
-                    "type": "player"
-                  }
-                },
-                "x": 0,
-                "y": 0
-              }
-            },
             "structure": {
               "capacity": 60,
               "features": [
@@ -710,7 +479,7 @@
       },
       "info": {
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745379601241,
+        "lastTick": 1745382245382,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",
