@@ -1065,22 +1065,6 @@
             </div>
         {/if}
 
-        {#if showAchievements && !showChat && $game?.player?.alive && !isTutorialVisible && !spawnMenuVisible}
-            <div class="controls-middle-right">
-                <button 
-                    class="control-button chat-button" 
-                    onclick={toggleChat}
-                    aria-label="Show chat">
-                    {#if unreadCount > 0}
-                        <BirdActive extraClass="button-icon" />
-                        <span class="message-badge">{unreadCount}</span>
-                    {:else}
-                        <Bird extraClass="button-icon" />
-                    {/if}
-                </button>
-            </div>
-        {/if}
-
         {#if $ready && $game?.player?.alive}
             <div class="chat-wrapper" 
                 class:visible={showChat} 
