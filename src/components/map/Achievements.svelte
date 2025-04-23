@@ -242,10 +242,12 @@
   onmouseenter={handleMouseEnter}
   in:fade={{ duration: animationDuration }}
   out:fade={{ duration: animationDuration }}
+  role="dialog"
+  aria-labelledby="achievements-heading"
 >
   <div class="achievements-panel" class:closing>
     <header class="achievements-header">
-      <h2>
+      <h2 id="achievements-heading">
         <Trophy extraClass="trophy-icon" />
         Achievements
         <span class="achievement-count">

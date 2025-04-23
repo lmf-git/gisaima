@@ -961,6 +961,8 @@
                 class:visible={showChat} 
                 class:active={lastActivePanel === 'chat'}
                 onmouseenter={() => handlePanelHover('chat')}
+                role="region"
+                aria-label="Chat panel container"
             >
                 <Chat 
                   onClose={toggleChat} 
@@ -972,6 +974,8 @@
                 class:visible={showAchievements}
                 class:active={lastActivePanel === 'achievements'}
                 onmouseenter={() => handlePanelHover('achievements')}
+                role="region"
+                aria-label="Achievements panel container"
             >
                 <Achievements 
                   onClose={toggleAchievements} 

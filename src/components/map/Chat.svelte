@@ -123,9 +123,11 @@
   bind:this={chatContainer}
   onmouseenter={handleMouseEnter}
   transition:fade={{ duration: 200 }}
+  role="region"
+  aria-labelledby="chat-heading"
 >
   <div class="chat-header">
-    <h3>Chat</h3>
+    <h3 id="chat-heading">Chat</h3>
     <button class="close-button" onclick={closeChat} aria-label="Close chat">
       <Close extraClass="close-icon" />
     </button>
