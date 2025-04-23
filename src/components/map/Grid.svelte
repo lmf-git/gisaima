@@ -1223,6 +1223,10 @@
     transition: background-color 0.3s ease; /* Add explicit transition property */
   }
 
+  .tile.has-structure {
+    z-index: 10;
+  }
+
   .tile.center {
     z-index: 3;
     position: relative;
