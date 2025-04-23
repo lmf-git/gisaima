@@ -9,6 +9,7 @@
     let password = $state('');
     let error = $state(null);
     let loading = $state(false);
+    let googleLoading = $state(false);
     
     // Add effect to redirect authenticated users
     $effect(() => {
@@ -45,6 +46,16 @@
         } else {
             error = result.error;
         }
+    };
+
+    const handleGoogleSignIn = async () => {
+        googleLoading = true;
+        error = null;
+        
+        // Your Google Auth implementation would go here
+        // For now we're just improving the layout
+        
+        googleLoading = false;
     };
 </script>
 
@@ -88,9 +99,18 @@
                 <span>or</span>
             </div>
             
-            <button type="button" class="secondary" onclick={handleAnonymousLogin} disabled={loading}>
-                {loading ? 'Logging in...' : 'Continue as Guest'}
-            </button>
+            <!-- Add container for alternative auth buttons -->
+            <div class="auth-alternatives">
+                <!-- Google Auth button placeholder -->
+                <button type="button" class="auth-provider" onclick={handleGoogleSignIn} disabled={googleLoading || loading}>
+                    <span class="provider-icon">G</span>
+                    {googleLoading ? 'Connecting...' : 'Continue with Google'}
+                </button>
+                
+                <button type="button" class="secondary" onclick={handleAnonymousLogin} disabled={loading || googleLoading}>
+                    {loading ? 'Logging in...' : 'Continue as Guest'}
+                </button>
+            </div>
             
             <p class="signup-link">Don't have an account? <a href="/signup">Sign Up</a></p>
         </div>
@@ -238,6 +258,15 @@
         .separator {
             margin: 1em 0;
         }
+
+        .auth-alternatives {
+            gap: 0.6em;
+        }
+        
+        .auth-provider {
+            font-size: 0.9em;
+            padding: 0.6em;
+        }
     }
 
     .separator {
@@ -245,6 +274,7 @@
         align-items: center;
         text-align: center;
         margin: 1.5em 0;
+        width: 100%; /* Ensure full width */
     }
     
     .separator::before,
@@ -260,15 +290,50 @@
         font-size: 0.9em;
     }
     
+    .auth-alternatives {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8em;
+        width: 100%;
+    }
+    
+    .auth-provider {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.8em;
+        background-color: transparent;
+        border: 1px solid var(--color-panel-border);
+        color: var(--color-text);
+        padding: 0.75em;
+        cursor: pointer;
+        font-size: 1em;
+        border-radius: 0.25em;
+        transition: all 0.2s ease;
+    }
+    
+    .auth-provider:hover:not(:disabled) {
+        background-color: rgba(255, 255, 255, 0.05);
+        transform: translateY(-0.1em);
+    }
+    
+    .provider-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.2em;
+        height: 1.2em;
+        border-radius: 50%;
+        background: #fff;
+        color: #444;
+        font-weight: 600;
+        font-size: 1em;
+    }
+    
     button.secondary {
         background-color: transparent;
         border: 1px solid var(--color-muted-teal);
         color: var(--color-text);
-        margin-top: 0;
-    }
-    
-    button.secondary:hover {
-        background-color: rgba(255, 255, 255, 0.05);
     }
     
     button:disabled {
@@ -276,15 +341,5 @@
         cursor: not-allowed;
         transform: none;
         box-shadow: none;
-    }
-
-    .loading-container {
-        max-width: 26em;
-        width: 100%;
-        padding: 2.5em;
-        text-align: center;
-        color: var(--color-text);
-        margin: 0 1em;
-        box-sizing: border-box; /* Add this to ensure padding is included in width */
     }
 </style>
