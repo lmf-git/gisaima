@@ -981,7 +981,10 @@
             class:player-position={isCurrentPlayerHere}
             class:current-player={containsCurrentPlayer(cell)}
             class:from-world-data={playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y && !hasCurrentPlayerEntity(cell)}
-            style="background-color: {cell.color || 'var(--terrain-color)'}"
+            style="
+              background-color: {cell.color || 'var(--terrain-color)'};
+              transition-delay: {cell.isCenter ? '0s' : Math.min(0.5, cell.distance * 0.03) + 's'};
+            "
             onmouseenter={() => handleTileHover(cell)}
             aria-label={`Coordinates ${cell.x},${cell.y}`}
             role="gridcell"
@@ -1201,6 +1204,7 @@
     z-index: 1;
     font-family: var(--font-body);
     position: relative; /* Ensure this is set for absolute positioning */
+    transition: background-color 0.5s ease; /* Add explicit transition property */
   }
 
   .tile.center {
