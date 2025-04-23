@@ -16,7 +16,7 @@
   let visible = $state(true);
   let selectedCategory = $state('all');
   let recentUnlock = $state(null);
-  let showAll = $state(false);
+  let showAll = $state(true); // Changed default to true so achievements show by default
   
   // Animation constants
   const animationDuration = 300;
@@ -129,11 +129,9 @@
       const isUnlocked = playerAchievements[id] === true;
       const isFiltered = selectedCategory === 'all' || achievement.category === selectedCategory;
       
-      // Fixed logic: Show achievement if:
-      // 1. showAll is true (show everything) OR
-      // 2. achievement is unlocked OR
-      // 3. achievement is not hidden (regardless of unlock status)
-      const shouldShow = showAll || isUnlocked || !achievement.hidden;
+      // Simplified logic: when showAll is true, show all achievements in the selected category
+      // When showAll is false, only show unlocked achievements
+      const shouldShow = showAll || isUnlocked;
       
       return {
         ...achievement,
@@ -205,8 +203,10 @@
       });
   }
 
+  // Updated toggle function to more clearly describe its behavior
   function toggleShowAll() {
     showAll = !showAll;
+    console.log(`Show all achievements: ${showAll}`); // Add logging for debugging
   }
 
   function selectCategory(categoryId) {
@@ -270,6 +270,12 @@
   onDestroy(() => {
     document.removeEventListener('keydown', handleKeyDown);
   });
+
+  // Add debugging to check what achievements are processed
+  $effect(() => {
+    console.log(`Achievements visible: ${filteredAchievements.length}`, 
+      showAll ? 'Showing all' : 'Showing unlocked only');
+  });
 </script>
 
 <div 
@@ -307,7 +313,7 @@
       {/each}
       
       <button class="toggle-btn" onclick={toggleShowAll}>
-        {showAll ? 'Hide Locked' : 'Show All'}
+        {showAll ? 'Hide Locked' : 'Show Locked'}
       </button>
     </div>
     
