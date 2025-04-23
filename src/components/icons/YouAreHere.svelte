@@ -19,7 +19,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: fadeInOut 30s ease-in-out forwards;
+    animation: appear 1s ease-out forwards;
   }
 
   .indicator-ring {
@@ -31,16 +31,22 @@
     box-shadow: 
       0 0 15px rgba(255, 215, 0, 0.6),
       0 0 30px rgba(255, 215, 0, 0.3);
-    animation: pulse 2s infinite, rotate 12s linear infinite;
+    animation: 
+      pulse 2s infinite, 
+      rotate 12s linear infinite,
+      growIn 1s ease-out forwards;
     opacity: 0.9;
   }
 
   .text-container {
-    background: rgba(0, 0, 0, 0.6);
-    padding: 0.2em 0.4em;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 0.3em 0.5em;
     border-radius: 0.3em;
     transform: translateY(calc(var(--indicator-size) / 2 + 0.2em));
     white-space: nowrap;
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    animation: fadeIn 1.2s ease-out forwards;
   }
 
   .text-content {
@@ -48,7 +54,9 @@
     font-weight: bold;
     font-size: calc(var(--indicator-size) / 7);
     white-space: nowrap;
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+    text-shadow: 
+      0 0 5px rgba(0, 0, 0, 0.8),
+      0 0 10px rgba(0, 0, 0, 0.5);
     font-family: var(--font-heading, sans-serif);
     letter-spacing: 0.05em;
     animation: textPulse 2s ease-in-out infinite;
@@ -71,10 +79,22 @@
     100% { opacity: 0.8; }
   }
 
-  @keyframes fadeInOut {
-    0% { opacity: 0; transform: scale(0.5); }
-    5% { opacity: 1; transform: scale(1); }
-    85% { opacity: 1; transform: scale(1); }
-    100% { opacity: 0; transform: scale(0.8); }
+  @keyframes appear {
+    0% { transform: scale(0.2); opacity: 0; }
+    40% { opacity: 0.4; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes growIn {
+    0% { transform: scale(0.2); opacity: 0; }
+    50% { transform: scale(1.1); opacity: 0.7; }
+    70% { transform: scale(0.95); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 0.9; }
+  }
+
+  @keyframes fadeIn {
+    0% { opacity: 0; transform: translateY(calc(var(--indicator-size) / 2 + 0.8em)) scale(0.8); }
+    50% { opacity: 0; }
+    100% { opacity: 1; transform: translateY(calc(var(--indicator-size) / 2 + 0.2em)) scale(1); }
   }
 </style>

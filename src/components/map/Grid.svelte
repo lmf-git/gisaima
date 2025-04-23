@@ -993,7 +993,7 @@
             <!-- Add YouAreHere component for player's position -->
             {#if isCurrentPlayerHere && $ready}
               <div class="you-are-here-container">
-                <YouAreHere size="2.5em" />
+                <YouAreHere size="7em" />
               </div>
             {/if}
 
@@ -1881,39 +1881,27 @@
       0 0 0.2em rgba(0, 0, 0, 0.8),
       0 0 0.4em rgba(0, 0, 0, 0.5);
     pointer-events: none;
-    z-index: 6;
+    z-index: 1100; /* Increased z-index to be higher than YouAreHere */
     white-space: nowrap;
     font-family: var(--font-heading);
-    padding: 0.1em 0.3em;
+    padding: 0.2em 0.5em;
     line-height: 1.1;
     letter-spacing: 0.02em;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.5); /* Darker background for better contrast */
     border-radius: 0.3em;
     backdrop-filter: blur(2px);
     width: auto;
     overflow: visible;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0.3em rgba(0, 0, 0, 0.8);
   }
 
   /* Make structure name more prominent on hover */
   .tile:hover .structure-name-label {
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 20;
-  }
-
-  /* Specific styling for different structure types */
-  .spawn-structure .structure-name-label {
-    color: rgba(200, 255, 255, 1);
-    text-shadow: 
-      0 0 0.2em rgba(0, 0, 0, 0.8),
-      0 0 0.4em rgba(0, 128, 128, 0.6);
-  }
-
-  .watchtower-structure .structure-name-label {
-    color: rgba(200, 255, 200, 1);
-  }
-
-  .fortress-structure .structure-name-label {
-    color: rgba(255, 230, 200, 1);
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1200; /* Even higher z-index on hover */
+    transform: translateX(-50%) scale(1.05);
+    transition: all 0.2s ease;
   }
 
   /* Add styling for YouAreHere component container */
