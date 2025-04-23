@@ -3,7 +3,7 @@
   import { currentPlayer, game, savePlayerAchievement } from '../../lib/stores/game.js';
   import Close from '../icons/Close.svelte';
   import Trophy from '../icons/Trophy.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
 
   // Add onMouseEnter to props
   const { 
@@ -248,6 +248,22 @@
       // If never closed before, remove any stored closed state
       localStorage.removeItem('achievements_closed');
     }
+  });
+
+  // Handle escape key for Achievements component
+  function handleKeyDown(event) {
+    if (event.key === 'Escape' && visible) {
+      event.preventDefault();
+      close();
+    }
+  }
+
+  onMount(() => {
+    document.addEventListener('keydown', handleKeyDown);
+  });
+
+  onDestroy(() => {
+    document.removeEventListener('keydown', handleKeyDown);
   });
 </script>
 

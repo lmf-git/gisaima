@@ -124,6 +124,42 @@
         }
     }
 
+    // Handle keyboard events for all panels
+    function handleKeyDown(event) {
+        if (event.key === 'Escape') {
+            // Close panels in order of last activity
+            if (lastActivePanel === 'chat' && showChat) {
+                showChat = false;
+                event.preventDefault();
+            } else if (lastActivePanel === 'achievements' && showAchievements) {
+                showAchievements = false;
+                event.preventDefault();
+            } else if (lastActivePanel === 'details' && detailed) {
+                detailed = false;
+                event.preventDefault();
+            } else if (lastActivePanel === 'overview' && showEntities) {
+                showEntities = false;
+                event.preventDefault();
+            } else {
+                // If no specific panel is active or the last active is closed,
+                // close any open panel in a consistent order
+                if (showChat) {
+                    showChat = false;
+                    event.preventDefault();
+                } else if (showAchievements) {
+                    showAchievements = false;
+                    event.preventDefault();
+                } else if (detailed) {
+                    detailed = false;
+                    event.preventDefault();
+                } else if (showEntities) {
+                    showEntities = false;
+                    event.preventDefault();
+                }
+            }
+        }
+    }
+
     // Add new effect to handle showing achievements after spawn
     $effect(() => {
         // Check if player just spawned (alive changed from false to true)
@@ -875,7 +911,7 @@
     }
 </script>
 
-<svelte:window on:keydown={handleMapKeyDown} />
+<svelte:window on:keydown={handleKeyDown} />
 
 <div class="map" class:dragging={isDragging} class:path-drawing={isPathDrawingMode} class:spawn-menu-open={!$game?.player?.alive}>
     {#if combinedLoading}
@@ -1012,10 +1048,14 @@
                 role="region"
                 aria-label="Chat panel container"
             >
-                <Chat 
-                  onClose={toggleChat} 
-                  onMouseEnter={() => handlePanelHover('chat')}
-                />
+                {#if showChat}
+                    <Chat 
+                        isActive={lastActivePanel === 'chat'} 
+                        closing={!showChat}
+                        onClose={toggleChat} 
+                        onMouseEnter={() => handlePanelHover('chat')}
+                    />
+                {/if}
             </div>
 
             <div class="achievements-wrapper" 
@@ -1381,6 +1421,17 @@
     .achievements-wrapper.visible {
         opacity: 1;
         pointer-events: all;
+        /* Add display property to ensure the wrapper is visible */
+        display: block;
+    }
+
+    /* When not visible, hide completely after transition */
+    .chat-wrapper:not(.visible),
+    .achievements-wrapper:not(.visible) {
+        opacity: 0;
+        pointer-events: none;
+        /* Add a small delay before hiding completely to allow animations to complete */
+        transition: opacity 300ms ease, z-index 0s linear 300ms;
     }
     
     /* Active state for any panel will raise it to top */
@@ -1400,15 +1451,10 @@
     .chat-wrapper {
         bottom: 1em;
         right: 1em;
-        pointer-events: none;
         opacity: 0;
+        /* Remove pointer-events: none so the component can be interacted with */
+        /* pointer-events: none; */
     }
     
-    .achievements-wrapper {
-        top: 50%;
-        right: 1em;
-        transform: translateY(-50%);
-        pointer-events: none;
-        opacity: 0;
-    }
+    /* ...existing code... */
 </style>

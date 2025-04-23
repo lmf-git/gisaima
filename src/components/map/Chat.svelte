@@ -10,41 +10,59 @@
   const { 
     closing = false, 
     onClose = () => {},
-    onMouseEnter = () => {} // Add onMouseEnter prop
+    onMouseEnter = () => {} 
   } = $props();
 
-  // We don't need internal isOpen state - the chat is already open if rendered
+  // State variables using runes
   let chatInput = $state('');
-  
-  // DOM References
   let chatContainer = $state(null);
   let messagesContainer = $state(null);
   
   // Constants
   const MAX_MESSAGE_LENGTH = 200;
-  
-  // Add this tracker to prevent infinite scrolling effect
-  let lastScrolledMessageId = $state(null);
+  const VISIBLE_MESSAGES_LIMIT = 50; // Limit visible messages for better performance
   
   // Cleanup function
-  let cleanup = () => {};
+  let cleanup = $state(() => {});
+  
+  // Memoized messages array with limit for better performance
+  const memoizedMessages = $derived(() => {
+    const allMessages = $messages || [];
+    // Only show the last N messages to avoid performance issues
+    return allMessages.length > VISIBLE_MESSAGES_LIMIT 
+      ? allMessages.slice(allMessages.length - VISIBLE_MESSAGES_LIMIT) 
+      : allMessages;
+  });
+  
+  // Derived values using runes
+  const isLoading = $derived($chatStore.loading);
+  const hasError = $derived($chatStore.error);
+  const worldKey = $derived($game.worldKey);
+  
+  // Track message updates for scroll behavior
+  let messageCount = $state(0);
+  let shouldScrollToBottom = $state(true);
+  let lastProcessedCount = $state(0);
   
   // Effect to initialize chat when world changes
   $effect(() => {
-    if ($game.worldKey) {
-      console.log(`Initializing chat for world: ${$game.worldKey}`);
-      cleanup = initializeChat($game.worldKey);
+    if (worldKey) {
+      console.log(`Initializing chat for world: ${worldKey}`);
+      cleanup = initializeChat(worldKey);
     }
-  });
-  
-  // Clean up subscription when component is destroyed
-  onDestroy(() => {
-    cleanup();
+    
+    // Auto-cleanup when component is destroyed
+    return () => cleanup();
   });
   
   // Handle form submission
-  function handleSubmit() {
+  function handleSubmit(event) {
+    event.preventDefault();
+    
     if (!chatInput.trim()) return;
+    
+    // Set flag to scroll to bottom after sending
+    shouldScrollToBottom = true;
     
     sendMessage(chatInput);
     chatInput = '';
@@ -54,33 +72,47 @@
     onClose();
   }
 
-  // Add function to handle mouse enter
   function handleMouseEnter() {
     onMouseEnter();
   }
   
-  // Modified effect to prevent infinite loops
+  // Detect scroll position to decide if we should auto-scroll
+  function handleScroll() {
+    if (!messagesContainer) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainer;
+    const scrollBottom = scrollHeight - scrollTop - clientHeight;
+    
+    // If we're close to the bottom, auto-scroll on new messages
+    shouldScrollToBottom = scrollBottom < 50;
+  }
+  
+  // Effect to track message count changes
   $effect(() => {
-    if (!messagesContainer || $messages.length === 0) return;
+    const newCount = memoizedMessages.length;
+    if (newCount !== messageCount) {
+      messageCount = newCount;
+    }
+  });
+  
+  // Separate effect for scrolling - only runs when message count changes
+  $effect(() => {
+    if (!messagesContainer) return;
     
-    // Get the most recent message
-    const latestMessage = $messages[$messages.length - 1];
-    
-    // Only scroll if we have a new message
-    if (latestMessage && latestMessage.id !== lastScrolledMessageId) {
-      // Update the tracker first
-      lastScrolledMessageId = latestMessage.id;
-      
+    if (messageCount > lastProcessedCount && shouldScrollToBottom) {
       // Use requestAnimationFrame for smoother scrolling
       requestAnimationFrame(() => {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        if (messagesContainer) {
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          lastProcessedCount = messageCount;
+        }
       });
     }
   });
   
-  // Separate effect just for marking messages as read
+  // Mark messages as read when visible and not loading
   $effect(() => {
-    if ($messages.length > 0) {
+    if (memoizedMessages.length > 0 && !isLoading && messagesContainer) {
       markAllAsRead();
     }
   });
@@ -94,7 +126,8 @@
     }
   }
   
-  onMount(() => {
+  // Setup on mount
+  $effect(() => {
     window.addEventListener('resize', handleResize);
     handleResize();
     
@@ -106,15 +139,11 @@
       }
     }, 100);
     
+    // Cleanup on destroy
     return () => {
       window.removeEventListener('resize', handleResize);
     };
   });
-  
-  // Derived values
-  const chatMessages = $derived($messages);
-  const isLoading = $derived($chatStore.loading);
-  const hasError = $derived($chatStore.error);
 </script>
 
 <div 
@@ -133,7 +162,11 @@
     </button>
   </div>
   
-  <div class="chat-messages" bind:this={messagesContainer}>
+  <div 
+    class="chat-messages" 
+    bind:this={messagesContainer} 
+    onscroll={handleScroll}
+  >
     {#if isLoading}
       <div class="chat-message system-message">
         <span class="message-text">Loading messages...</span>
@@ -142,19 +175,30 @@
       <div class="chat-message system-message error">
         <span class="message-text">Error: {$chatStore.error}</span>
       </div>
-    {:else if chatMessages.length === 0}
+    {:else if memoizedMessages.length === 0}
       <div class="chat-message system-message">
         <span class="message-text">No messages yet.</span>
       </div>
     {:else}
-      {#each chatMessages as message (message.id)}
+      <!-- Add a message when we're showing limited history -->
+      {#if $messages.length > VISIBLE_MESSAGES_LIMIT}
+        <div class="chat-message system-message history-notice">
+          <span class="message-text">Showing most recent {VISIBLE_MESSAGES_LIMIT} messages</span>
+        </div>
+      {/if}
+      
+      {#each memoizedMessages as message (message.id)}
+        {@const isUser = message.type === 'user'}
+        {@const isSystem = message.type === 'system'}
+        {@const isEvent = message.type === 'event'}
+        
         <div 
-          class="chat-message" 
-          class:system-message={message.type === 'system'} 
-          class:event-message={message.type === 'event'}
-          class:player-message={message.type === 'user'}
+          class="chat-message"
+          class:system-message={isSystem}
+          class:event-message={isEvent}
+          class:player-message={isUser}
         >
-          {#if message.type === 'user'}
+          {#if isUser}
             <span class="message-user">{message.userName || 'Anonymous'}:</span>
           {/if}
           <span class="message-text">{message.text}</span>
@@ -164,7 +208,6 @@
             <button 
               class="location-button"
               onclick={() => {
-                // Dispatch a custom event that can be listened for in the parent
                 const event = new CustomEvent('goto-location', { 
                   detail: { x: message.location.x, y: message.location.y }
                 });
@@ -370,6 +413,16 @@
   :global(.close-icon) {
     width: 1.2rem;
     height: 1.2rem;
+  }
+  
+  /* Add style for history notice */
+  .history-notice {
+    font-style: italic;
+    font-size: 0.8rem;
+    color: rgba(0, 0, 0, 0.5);
+    text-align: center;
+    padding: 0.25rem;
+    background-color: rgba(255, 255, 0, 0.1);
   }
   
   /* Responsive design */
