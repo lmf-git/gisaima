@@ -144,15 +144,18 @@
     });
   }
 
-  // Create sorted entity lists 
+  // Use targetStore instead of highlightedStore for details data
+  // This ensures hovering over the minimap doesn't change the displayed information
+  const detailsData = $derived($targetStore || null);
+
+  // Create sorted entity lists based on detailsData instead of $highlightedStore
   $effect(() => {
-    // These will be recalculated whenever highlightedStore or sortOptions changes
-    if (!$highlightedStore) return;
+    if (!detailsData) return;
     
-    sortedGroups = sortEntities($highlightedStore.groups || [], 'groups');
-    sortedPlayers = sortEntities($highlightedStore.players || [], 'players');
-    sortedItems = sortEntities($highlightedStore.items || [], 'items');
-    sortedBattles = sortEntities($highlightedStore.battles || [], 'battles');
+    sortedGroups = sortEntities(detailsData.groups || [], 'groups');
+    sortedPlayers = sortEntities(detailsData.players || [], 'players');
+    sortedItems = sortEntities(detailsData.items || [], 'items');
+    sortedBattles = sortEntities(detailsData.battles || [], 'battles');
   });
 
   // Define the sorted arrays
@@ -163,10 +166,10 @@
 
   // Function to execute action
   function executeAction(action, data = null) {
-    if (!onShowModal || !$highlightedStore) return;
+    if (!onShowModal || !detailsData) return;
 
     const tileData = get(coordinates).find(c => 
-      c.x === $highlightedStore.x && c.y === $highlightedStore.y
+      c.x === detailsData.x && c.y === detailsData.y
     );
 
     if (!tileData) return;
@@ -337,7 +340,7 @@
     if (!player || !$currentPlayer || player.id !== $currentPlayer.id) return false;
     
     // Check if player is not already in a mobilizing/demobilising group
-    const inProcessGroup = $highlightedStore?.groups?.some(g => 
+    const inProcessGroup = detailsData?.groups?.some(g => 
       (g.status === 'mobilizing' || g.status === 'demobilising') && 
       g.owner === $currentPlayer.id
     );
@@ -517,7 +520,7 @@
   <div class="details-modal" key={renderKey}>
     <header class="modal-header">
       <h3>
-        Tile Details {$highlightedStore ? `(${$highlightedStore.x},${$highlightedStore.y})` : ''}
+        Tile Details {detailsData ? `(${detailsData.x},${detailsData.y})` : ''}
       </h3>
       <button class="close-button" onclick={onClose}>
         <Close size="1.6em" extraClass="close-icon-dark" />
@@ -531,13 +534,13 @@
           <!-- Desktop two-column layout container -->
           <div class="tile-info-container">
             <!-- Left column: Structure information (if available) -->
-            {#if $highlightedStore?.structure}
+            {#if detailsData?.structure}
               <div class="structure-column">
                 <div class="attribute">
                   <span class="attribute-label">Name</span>
                   <span class="attribute-value structure-name">
-                    {$highlightedStore.structure.name || _fmt($highlightedStore.structure.type) || 'Unnamed Structure'}
-                    {#if isOwnedByCurrentPlayer($highlightedStore.structure)}
+                    {detailsData.structure.name || _fmt(detailsData.structure.type) || 'Unnamed Structure'}
+                    {#if isOwnedByCurrentPlayer(detailsData.structure)}
                       <span class="entity-badge owner-badge">Yours</span>
                     {/if}
                   </span>
@@ -547,13 +550,13 @@
                   <span class="attribute-label">Type</span>
                   <span class="attribute-value structure-type">
                     <span class="structure-type-icon-container">
-                      {#if $highlightedStore.structure.type === 'spawn'}
+                      {#if detailsData.structure.type === 'spawn'}
                         <Torch size="1.2em" extraClass="structure-type-icon" />
                       {:else}
-                        <Structure size="1.2em" extraClass="structure-type-icon {$highlightedStore.structure.type}-icon" />
+                        <Structure size="1.2em" extraClass="structure-type-icon {detailsData.structure.type}-icon" />
                       {/if}
                     </span>
-                    {_fmt($highlightedStore.structure.type)}
+                    {_fmt(detailsData.structure.type)}
                   </span>
                 </div>
               </div>
@@ -564,17 +567,17 @@
               <div class="attribute">
                 <span class="attribute-label">Type</span>
                 <span class="attribute-value">
-                  <span class="terrain-color" style="background-color: {$highlightedStore?.terrain?.color || $highlightedStore?.color || '#cccccc'}"></span>
-                  {_fmt($highlightedStore?.terrain?.biome?.name || 'Unknown')}
+                  <span class="terrain-color" style="background-color: {detailsData?.terrain?.color || detailsData?.color || '#cccccc'}"></span>
+                  {_fmt(detailsData?.terrain?.biome?.name || 'Unknown')}
                 </span>
               </div>
               
-              {#if $highlightedStore?.terrain?.rarity || $highlightedStore?.rarity}
+              {#if detailsData?.terrain?.rarity || detailsData?.rarity}
                 <div class="attribute">
                   <span class="attribute-label">Rarity</span>
                   <span class="attribute-value">
-                    <span class="rarity-badge {($highlightedStore?.terrain?.rarity || $highlightedStore?.rarity)?.toLowerCase()}">
-                      {_fmt($highlightedStore?.terrain?.rarity || $highlightedStore?.rarity)}
+                    <span class="rarity-badge {(detailsData?.terrain?.rarity || detailsData?.rarity)?.toLowerCase()}">
+                      {_fmt(detailsData?.terrain?.rarity || detailsData?.rarity)}
                     </span>
                   </span>
                 </div>
@@ -582,59 +585,59 @@
               
               <div class="attribute">
                 <span class="attribute-label">Coordinates</span>
-                <span class="attribute-value">{$highlightedStore ? formatCoords($highlightedStore.x, $highlightedStore.y) : ''}</span>
+                <span class="attribute-value">{detailsData ? formatCoords(detailsData.x, detailsData.y) : ''}</span>
               </div>
             </div>
           </div>
           
           <!-- Available actions section in same container -->
-          {#if $highlightedStore}
+          {#if detailsData}
             <div class="core-actions">
               <div class="actions-grid">
-                {#if $highlightedStore.structure}
+                {#if detailsData.structure}
                   <button class="action-button inspect-button" onclick={() => executeAction('inspect')}>
                     <Eye extraClass="action-icon eye-icon" />
                     Inspect
                   </button>
                 {/if}
                 
-                {#if canMobilize($highlightedStore)}
+                {#if canMobilize(detailsData)}
                   <button class="action-button" onclick={() => executeAction('mobilise')}>
                     <Rally extraClass="action-icon rally-icon" />
                     Mobilise
                   </button>
                 {/if}
                 
-                {#if canMove($highlightedStore)}
+                {#if canMove(detailsData)}
                   <button class="action-button" onclick={() => executeAction('move')}>
                     <Compass extraClass="action-icon compass-icon" />
                     Move
                   </button>
                 {/if}
                 
-                {#if canAttack($highlightedStore)}
+                {#if canAttack(detailsData)}
                   <button class="action-button attack-button" onclick={() => executeAction('attack')}>
                     <Attack extraClass="action-icon attack-icon" />
                     Attack
                   </button>
                 {/if}
                 
-                {#if canGather($highlightedStore)}
+                {#if canGather(detailsData)}
                   <button class="action-button" onclick={() => executeAction('gather', { source: 'details' })}>
                     <Crop extraClass="action-icon crop-icon" />
                     Gather
                   </button>
                 {/if}
                 
-                {#if canJoinBattle($highlightedStore)}
+                {#if canJoinBattle(detailsData)}
                   <button class="action-button" onclick={() => executeAction('joinBattle')}>
                     Join Battle
                   </button>
                 {/if}
                 
-                {#if canDemobilize($highlightedStore)}
+                {#if canDemobilize(detailsData)}
                   <button class="action-button" onclick={() => executeAction('demobilise')}>
-                    {#if $highlightedStore.structure?.type === 'spawn'}
+                    {#if detailsData.structure?.type === 'spawn'}
                       <Torch extraClass="action-icon torch-icon" />
                     {:else}
                       <Structure extraClass="action-icon structure-icon" />
@@ -649,7 +652,7 @@
       </div>
       
       <!-- Groups section with styled count -->
-      {#if $highlightedStore.groups?.length > 0}
+      {#if detailsData.groups?.length > 0}
         <div class="entities-section">
           <div 
             class="section-header"
@@ -660,7 +663,7 @@
             onkeydown={(e) => e.key === 'Enter' && toggleSection('groups', e)}
           >
             <div class="section-title">
-              <h4>Groups <span class="entity-count groups-count">{$highlightedStore.groups.length}</span></h4>
+              <h4>Groups <span class="entity-count groups-count">{detailsData.groups.length}</span></h4>
             </div>
             <div class="section-controls">
               {#if !collapsedSections.groups}
@@ -751,13 +754,13 @@
                         <Compass extraClass="action-icon-small compass-icon" />
                         Move
                       </button>
-                      {#if $highlightedStore.items?.length > 0}
+                      {#if detailsData.items?.length > 0}
                         <button class="entity-action" onclick={() => executeAction('gather', { group })}>
                           <Crop extraClass="action-icon-small crop-icon" />
                           Gather
                         </button>
                       {/if}
-                      {#if $highlightedStore.battles?.some(b => b.status === 'active')}
+                      {#if detailsData.battles?.some(b => b.status === 'active')}
                         <button class="entity-action" onclick={() => executeAction('joinBattle', { group })}>
                           Join Battle
                         </button>
@@ -772,7 +775,7 @@
       {/if}
       
       <!-- Players section with styled count -->
-      {#if $highlightedStore.players?.length > 0}
+      {#if detailsData.players?.length > 0}
         <div class="entities-section">
           <div 
             class="section-header"
@@ -783,7 +786,7 @@
             onkeydown={(e) => e.key === 'Enter' && toggleSection('players', e)}
           >
             <div class="section-title">
-              <h4>Players <span class="entity-count players-count">{$highlightedStore.players.length}</span></h4>
+              <h4>Players <span class="entity-count players-count">{detailsData.players.length}</span></h4>
             </div>
             <div class="section-controls">
               {#if !collapsedSections.players}
@@ -866,7 +869,7 @@
       {/if}
       
       <!-- Items section with styled count -->
-      {#if $highlightedStore.items?.length > 0}
+      {#if detailsData.items?.length > 0}
         <div class="entities-section">
           <div 
             class="section-header"
@@ -877,7 +880,7 @@
             onkeydown={(e) => e.key === 'Enter' && toggleSection('items', e)}
           >
             <div class="section-title">
-              <h4>Items <span class="entity-count items-count">{$highlightedStore.items.length}</span></h4>
+              <h4>Items <span class="entity-count items-count">{detailsData.items.length}</span></h4>
             </div>
             <div class="section-controls">
               {#if !collapsedSections.items}
@@ -941,7 +944,7 @@
       {/if}
       
       <!-- Battles section with styled count -->
-      {#if $highlightedStore.battles?.length > 0}
+      {#if detailsData.battles?.length > 0}
         <div class="entities-section battles-section">
           <div 
             class="section-header"
@@ -952,7 +955,7 @@
             onkeydown={(e) => e.key === 'Enter' && toggleSection('battles', e)}
           >
             <div class="section-title">
-              <h4>Battles <span class="entity-count battles-count">{$highlightedStore.battles.length}</span></h4>
+              <h4>Battles <span class="entity-count battles-count">{detailsData.battles.length}</span></h4>
             </div>
             <div class="section-controls">
               {#if !collapsedSections.battles}
@@ -1031,7 +1034,7 @@
                     </div>
                   </div>
                   
-                  {#if battle.status === 'active' && canJoinBattle($highlightedStore)}
+                  {#if battle.status === 'active' && canJoinBattle(detailsData)}
                     <button class="join-battle-btn" onclick={() => executeAction('joinBattle')}>
                       Join Battle
                     </button>
