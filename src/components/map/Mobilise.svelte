@@ -12,7 +12,7 @@
 
   const { 
     onClose = () => {},
-    onMobilize = () => {} // Add this new callback prop
+    onMobilize = () => {}
   } = $props();
 
   let tileData = $derived($targetStore || null);
@@ -24,7 +24,7 @@
   let includePlayer = $state(true);
   let groupName = $state("New Force");
   let mobilizeError = $state(null);
-  let processing = $state(false); // Add processing state variable
+  let processing = $state(false);
 
   function isPlayerOnTile(tile, playerId) {
     if (!tile || !tile.players) return false;
@@ -101,7 +101,7 @@
     }
 
     mobilizeError = null;
-    processing = true; // Set processing state
+    processing = true;
     
     try {
       console.log("Preparing mobilization request with:", {
@@ -127,7 +127,7 @@
       });
       
       console.log('Mobilization result:', result.data);
-      onMobilize(); // Call this new callback to trigger achievement
+      onMobilize();
       onClose();
     } catch (error) {
       console.error('Error during mobilization:', error);
@@ -137,7 +137,7 @@
          mobilizeError = error.message || "Failed to mobilise forces";
       }
     } finally {
-      processing = false; // Reset processing state
+      processing = false;
     }
   }
   
@@ -158,7 +158,6 @@
       onClose();
     }
     
-    // Prevent form submission when pressing Enter in the group name input
     if (event.key === 'Enter' && event.target.tagName === 'INPUT') {
       event.preventDefault();
     }
@@ -176,6 +175,10 @@
       case 'fairy': return Fairy;
       default: return null;
     }
+  }
+  
+  function toggleCheckbox() {
+    includePlayer = !includePlayer;
   }
 </script>
 
@@ -234,13 +237,29 @@
                   Object.values(tileData.players).some(p => p.id === $currentPlayer?.id || p.id === $currentPlayer?.id)
                 )}
             <div class="option-row">
-              <label for="include-player">
+              <label class="custom-checkbox-label" for="include-player">
+                <div 
+                  class="custom-checkbox" 
+                  class:checked={includePlayer}
+                  onclick={toggleCheckbox}
+                  tabindex="0"
+                  role="checkbox"
+                  aria-checked={includePlayer}
+                  onkeydown={(e) => e.key === 'Enter' || e.key === ' ' ? toggleCheckbox() : null}
+                >
+                  {#if includePlayer}
+                    <svg viewBox="0 0 24 24" class="checkbox-icon">
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                    </svg>
+                  {/if}
+                </div>
                 <input 
                   type="checkbox" 
                   id="include-player" 
                   bind:checked={includePlayer} 
+                  class="visually-hidden"
                 />
-                Include yourself in mobilization
+                <span class="checkbox-text">Include yourself in mobilization</span>
               </label>
             </div>
           {/if}
@@ -276,11 +295,19 @@
                   aria-pressed={unit.selected}
                   aria-label={`Select ${unit.name || unit.id}`}
                 >
+                  <div class="custom-checkbox" class:checked={unit.selected}>
+                    {#if unit.selected}
+                      <svg viewBox="0 0 24 24" class="checkbox-icon">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                      </svg>
+                    {/if}
+                  </div>
                   <input 
                     type="checkbox" 
                     checked={unit.selected} 
                     id={`unit-${unit.id}`}
                     tabindex="-1"
+                    class="visually-hidden"
                   />
                   <div class="unit-icon">
                     {#if unit.race}
@@ -363,7 +390,7 @@
     width: 90%;
     max-width: 36em;
     max-height: 90vh;
-    background: white;
+    background: rgba(255, 255, 255, 0.85);
     border-radius: 0.5em;
     box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
     overflow: hidden;
@@ -371,6 +398,8 @@
     display: flex;
     flex-direction: column;
     font-family: var(--font-body);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
   }
   
   .modal-header {
@@ -378,15 +407,15 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.8em 1em;
-    background: #f5f5f5;
-    border-bottom: 1px solid #e0e0e0;
+    background: rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   }
   
   h2 {
     margin: 0;
     font-size: 1.3em;
     font-weight: 600;
-    color: #333;
+    color: rgba(0, 0, 0, 0.8);
     font-family: var(--font-heading);
   }
   
@@ -394,6 +423,7 @@
     padding: 1em;
     overflow-y: auto;
     max-height: calc(90vh - 4em);
+    color: rgba(0, 0, 0, 0.8);
   }
   
   .close-btn {
@@ -412,7 +442,7 @@
   
   .location-info {
     padding-bottom: 1em;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     margin-bottom: 1em;
   }
   
@@ -449,7 +479,7 @@
   
   .group-details {
     padding-bottom: 1em;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   }
   
   .group-name-row {
@@ -472,9 +502,10 @@
     border-radius: 0.3em;
     font-family: var(--font-body);
     font-size: 0.95em;
-    background-color: #f9f9f9;
+    background-color: rgba(255, 255, 255, 0.7);
     transition: all 0.2s ease;
     box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    color: rgba(0, 0, 0, 0.8);
   }
   
   .text-input:focus {
@@ -484,6 +515,61 @@
     background-color: #fff;
   }
   
+  .visually-hidden {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+  }
+  
+  .custom-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .custom-checkbox {
+    width: 1.2em;
+    height: 1.2em;
+    border: 2px solid rgba(0, 0, 0, 0.5);
+    border-radius: 0.2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    background-color: rgba(255, 255, 255, 0.5);
+    position: relative;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  
+  .custom-checkbox:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.4);
+  }
+  
+  .custom-checkbox.checked {
+    background-color: #4285f4;
+    border-color: #4285f4;
+  }
+  
+  .checkbox-icon {
+    width: 100%;
+    height: 100%;
+    fill: white;
+  }
+  
+  .checkbox-text {
+    color: rgba(0, 0, 0, 0.85);
+    font-weight: 500;
+  }
+  
   .units-section {
     display: flex;
     flex-direction: column;
@@ -491,7 +577,7 @@
     max-height: 30vh;
     overflow-y: auto;
     padding: 0.5em 0;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   }
   
   .units-list {
@@ -504,19 +590,20 @@
     display: flex;
     align-items: center;
     padding: 0.6em 0.8em;
-    border: 1px solid #e0e0e0;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.3em;
     cursor: pointer;
     transition: all 0.2s;
+    background-color: rgba(255, 255, 255, 0.5);
   }
   
   .unit-item:hover {
-    background-color: #f9f9f9;
+    background-color: rgba(255, 255, 255, 0.8);
   }
   
   .unit-item.selected {
-    background-color: rgba(30, 144, 255, 0.1);
-    border-color: rgba(30, 144, 255, 0.3);
+    background-color: rgba(66, 133, 244, 0.1);
+    border-color: rgba(66, 133, 244, 0.3);
   }
   
   .unit-icon {
@@ -533,6 +620,7 @@
   .unit-name {
     font-weight: 500;
     margin-bottom: 0.2em;
+    color: rgba(0, 0, 0, 0.85);
   }
   
   .unit-details {
@@ -564,11 +652,13 @@
     padding: 1em;
     background-color: rgba(0, 0, 0, 0.03);
     border-radius: 0.3em;
+    color: rgba(0, 0, 0, 0.85);
   }
   
   .summary h3 {
     margin: 0 0 0.5em 0;
     font-size: 1em;
+    color: rgba(0, 0, 0, 0.7);
   }
   
   .summary p {
@@ -581,7 +671,7 @@
     flex-direction: column;
     gap: 0.8em;
     padding-top: 1em;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
   }
   
   .option-row {
@@ -589,19 +679,6 @@
     align-items: center;
     gap: 0.5em;
     margin-bottom: 0.6em;
-  }
-  
-  .option-row label {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    cursor: pointer;
-    flex: 1;
-  }
-  
-  input[type="checkbox"] {
-    width: 1.2em;
-    height: 1.2em;
   }
   
   .mobilization-info {
@@ -679,7 +756,7 @@
   .no-units, .no-tile {
     text-align: center;
     padding: 2em 0;
-    color: #666;
+    color: rgba(0, 0, 0, 0.6);
     font-style: italic;
   }
   
@@ -687,7 +764,7 @@
     margin: 0 0 0.8em 0;
     font-size: 1.1em;
     font-weight: 500;
-    color: #333;
+    color: rgba(0, 0, 0, 0.7);
   }
   
   @media (max-width: 480px) {
