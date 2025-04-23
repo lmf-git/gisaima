@@ -22,24 +22,49 @@
   const MAX_MESSAGE_LENGTH = 200;
   const VISIBLE_MESSAGES_LIMIT = 50; // Limit visible messages for better performance
   
+  // Use Set for tracking processed message IDs - much more efficient lookups
+  let processedMessageIds = $state(new Set());
+  
   // Cleanup function
   let cleanup = $state(() => {});
   
-  // Memoized messages array with limit for better performance
-  const memoizedMessages = $derived(() => {
+  // Memoized messages using Set for efficient processing
+  const messageSet = $derived(() => {
     const allMessages = $messages || [];
+    const currentIds = new Set(allMessages.map(m => m.id));
+    
+    // For debugging - log added/removed messages
+    if (allMessages.length > 0) {
+      const newIds = [...currentIds].filter(id => !processedMessageIds.has(id));
+      if (newIds.length > 0) {
+        console.log(`${newIds.length} new messages received`);
+      }
+    }
+    
+    // Update processed IDs set
+    processedMessageIds = currentIds;
+    
+    return allMessages;
+  });
+  
+  // Create a sliced view of messages for rendering
+  const memoizedMessages = $derived(() => {
+    const allMessages = messageSet;
+    
     // Only show the last N messages to avoid performance issues
-    return allMessages.length > VISIBLE_MESSAGES_LIMIT 
-      ? allMessages.slice(allMessages.length - VISIBLE_MESSAGES_LIMIT) 
-      : allMessages;
+    if (allMessages.length > VISIBLE_MESSAGES_LIMIT) {
+      return allMessages.slice(-VISIBLE_MESSAGES_LIMIT);
+    }
+    return allMessages;
   });
   
   // Derived values using runes
   const isLoading = $derived($chatStore.loading);
   const hasError = $derived($chatStore.error);
   const worldKey = $derived($game.worldKey);
+  const messagesVisible = $derived(memoizedMessages.length > 0);
   
-  // Track message updates for scroll behavior
+  // Track state for scroll behavior
   let messageCount = $state(0);
   let shouldScrollToBottom = $state(true);
   let lastProcessedCount = $state(0);
@@ -48,6 +73,7 @@
   $effect(() => {
     if (worldKey) {
       console.log(`Initializing chat for world: ${worldKey}`);
+      processedMessageIds = new Set(); // Clear processed IDs on world change
       cleanup = initializeChat(worldKey);
     }
     
@@ -87,7 +113,7 @@
     shouldScrollToBottom = scrollBottom < 50;
   }
   
-  // Effect to track message count changes
+  // Track message count changes efficiently
   $effect(() => {
     const newCount = memoizedMessages.length;
     if (newCount !== messageCount) {
@@ -95,7 +121,7 @@
     }
   });
   
-  // Separate effect for scrolling - only runs when message count changes
+  // Optimize scroll behavior
   $effect(() => {
     if (!messagesContainer) return;
     
@@ -112,7 +138,7 @@
   
   // Mark messages as read when visible and not loading
   $effect(() => {
-    if (memoizedMessages.length > 0 && !isLoading && messagesContainer) {
+    if (messagesVisible && !isLoading && messagesContainer) {
       markAllAsRead();
     }
   });
@@ -121,7 +147,7 @@
   function handleResize() {
     if (chatContainer) {
       const windowHeight = window.innerHeight;
-      const maxHeight = windowHeight * 0.5;  // Max 50% of viewport
+      const maxHeight = windowHeight * 0.5;
       chatContainer.style.maxHeight = `${maxHeight}px`;
     }
   }
@@ -131,7 +157,6 @@
     window.addEventListener('resize', handleResize);
     handleResize();
     
-    // Focus the input field when opening
     setTimeout(() => {
       const inputElement = document.getElementById('chat-input');
       if (inputElement) {
@@ -175,13 +200,13 @@
       <div class="chat-message system-message error">
         <span class="message-text">Error: {$chatStore.error}</span>
       </div>
-    {:else if memoizedMessages.length === 0}
+    {:else if !messagesVisible}
       <div class="chat-message system-message">
         <span class="message-text">No messages yet.</span>
       </div>
     {:else}
-      <!-- Add a message when we're showing limited history -->
-      {#if $messages.length > VISIBLE_MESSAGES_LIMIT}
+      <!-- Show message when we're limiting history -->
+      {#if messageSet.length > VISIBLE_MESSAGES_LIMIT}
         <div class="chat-message system-message history-notice">
           <span class="message-text">Showing most recent {VISIBLE_MESSAGES_LIMIT} messages</span>
         </div>

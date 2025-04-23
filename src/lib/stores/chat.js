@@ -70,25 +70,46 @@ export function initializeChat(worldId) {
   }));
   
   try {
-    // Reference to the world's chat messages, ordered by timestamp and limited to last 100
+    console.log(`Setting up chat subscription for world: ${worldId}`);
+    
+    // Reference to the world's chat messages, ordered by timestamp and limited to last messages
+    // Note: Add ".indexOn": "timestamp" rule to Firebase database rules for this path
     const chatRef = query(
       ref(db, `worlds/${worldId}/chat`),
       orderByChild('timestamp'),
       limitToLast(MAX_MESSAGES)
     );
     
-    // Subscribe to chat messages
+    // Subscribe to chat messages with additional logging
     activeChatSubscription = onValue(chatRef, (snapshot) => {
       const messages = [];
       
       if (snapshot.exists()) {
+        // Process Firebase object format into array format with proper ID
         snapshot.forEach((childSnapshot) => {
+          const messageData = childSnapshot.val();
+          const messageId = childSnapshot.key; // This is the Firebase-generated unique ID
+          
+          // Ensure all required fields exist with defaults
           const message = {
-            id: childSnapshot.key,
-            ...childSnapshot.val()
+            id: messageId, // Preserve the Firebase ID
+            text: messageData.text || '',
+            type: messageData.type || 'system',
+            timestamp: messageData.timestamp || Date.now(),
+            userName: messageData.userName || 'System',
+            userId: messageData.userId || 'system',
+            location: messageData.location || null
           };
+          
           messages.push(message);
         });
+        
+        console.log(`Loaded ${messages.length} chat messages for world ${worldId}`);
+        if (messages.length > 0) {
+          console.log(`Sample message ID: ${messages[0].id}, type: ${messages[0].type}`);
+        }
+      } else {
+        console.log(`No messages found for world ${worldId}`);
       }
       
       // Update the store with messages
@@ -109,6 +130,7 @@ export function initializeChat(worldId) {
     // Return cleanup function
     return () => {
       if (activeChatSubscription) {
+        console.log(`Cleaning up chat subscription for world: ${worldId}`);
         activeChatSubscription();
         activeChatSubscription = null;
       }
@@ -146,7 +168,7 @@ export async function sendMessage(text, messageType = 'user') {
     
     const chatRef = ref(db, `worlds/${currentWorld}/chat`);
     
-    // Create message object
+    // Create message object (Firebase will generate the unique ID)
     const message = {
       text: text.trim(),
       type: messageType,
@@ -157,8 +179,9 @@ export async function sendMessage(text, messageType = 'user') {
       location: get(game).player?.lastLocation || null
     };
     
-    // Push to Firebase
-    await push(chatRef, message);
+    // Push to Firebase - this will generate a unique ID automatically
+    const newMessageRef = await push(chatRef, message);
+    console.log(`Message sent with ID: ${newMessageRef.key}`);
     return true;
   } catch (error) {
     console.error('Error sending message:', error);
