@@ -1283,17 +1283,17 @@
     background-color: rgba(0, 128, 0, 0.2);
   }
 
-  /* Lime/crop background for gather */
+  /* Gold/amber background for gather */
   .action-button:has(.crop-icon) {
-    background-color: rgba(144, 238, 144, 0.1);
-    border-color: rgba(144, 238, 144, 0.3);
+    background-color: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.3);
   }
   
   .action-button:has(.crop-icon):hover {
-    background-color: rgba(144, 238, 144, 0.2);
+    background-color: rgba(255, 193, 7, 0.2);
   }
 
-  /* Purplish background for demobilise */
+  /* Purple background for demobilise */
   .action-button:has(.structure-icon),
   .action-button:has(.torch-icon) {
     background-color: rgba(138, 43, 226, 0.1);
@@ -1307,15 +1307,15 @@
 
   /* Red background for attack */
   .attack-button {
-    background-color: rgba(255, 0, 0, 0.1);
-    border-color: rgba(255, 0, 0, 0.3);
+    background-color: rgba(220, 20, 60, 0.1);
+    border-color: rgba(220, 20, 60, 0.3);
   }
 
   .attack-button:hover {
-    background-color: rgba(255, 0, 0, 0.2);
+    background-color: rgba(220, 20, 60, 0.2);
   }
 
-  /* Orange background for mobilise/rally */
+  /* Orange background for mobilise */
   .action-button:has(.rally-icon) {
     background-color: rgba(255, 140, 0, 0.1);
     border-color: rgba(255, 140, 0, 0.3);
@@ -1483,9 +1483,9 @@
   
   .entity-status-badge.gathering, 
   .entity-status-badge.starting_to_gather {
-    background: rgba(138, 43, 226, 0.15);
-    border: 1px solid rgba(138, 43, 226, 0.3);
-    color: #8a2be2;
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    color: #b27800;
   }
   
   .entity-status-badge.fighting {
@@ -1495,8 +1495,8 @@
   }
   
   .entity-status-badge.active {
-    background: rgba(255, 0, 0, 0.15);
-    border: 1px solid rgba(255, 0, 0, 0.3);
+    background: rgba(139, 0, 0, 0.15);
+    border: 1px solid rgba(139, 0, 0, 0.3);
     color: #d32f2f;
   }
   
@@ -1552,14 +1552,14 @@
     background-color: rgba(0, 128, 0, 0.2);
   }
   
-  /* Lime for gather actions */
+  /* Gold/amber for gather actions */
   .entity-action:has(.crop-icon) {
-    background-color: rgba(144, 238, 144, 0.1);
-    border-color: rgba(144, 238, 144, 0.3);
+    background-color: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.3);
   }
   
   .entity-action:has(.crop-icon):hover {
-    background-color: rgba(144, 238, 144, 0.2);
+    background-color: rgba(255, 193, 7, 0.2);
   }
   
   /* Orange for mobilise actions */
