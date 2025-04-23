@@ -123,6 +123,21 @@
     }
   }
   
+  // Add keyboard handlers to support accessibility
+  function handlePlayerGroupKeyDown(event, group) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      togglePlayerGroup(group);
+    }
+  }
+  
+  function handleEnemyGroupKeyDown(event, group) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      toggleEnemyGroup(group);
+    }
+  }
+  
   // Calculate total power for selected groups
   function calculateTotalPower(groups) {
     return groups.reduce((total, group) => {
@@ -259,9 +274,13 @@
                 class="group-item" 
                 class:selected={isPlayerGroupSelected(group.id)}
                 onclick={() => togglePlayerGroup(group)}
+                onkeydown={(e) => handlePlayerGroupKeyDown(e, group)}
                 aria-disabled={loading}
+                role="checkbox"
+                aria-checked={isPlayerGroupSelected(group.id)}
+                tabindex="0"
               >
-                <div class="custom-checkbox" class:checked={isPlayerGroupSelected(group.id)} />
+                <div class="custom-checkbox" class:checked={isPlayerGroupSelected(group.id)}></div>
                 <div class="entity-icon">
                   {#if group.race}
                     {#if group.race.toLowerCase() === 'human'}
@@ -300,9 +319,13 @@
                 class="group-item enemy-group" 
                 class:selected={isEnemyGroupSelected(group.id)}
                 onclick={() => toggleEnemyGroup(group)}
+                onkeydown={(e) => handleEnemyGroupKeyDown(e, group)}
                 aria-disabled={loading}
+                role="checkbox"
+                aria-checked={isEnemyGroupSelected(group.id)}
+                tabindex="0"
               >
-                <div class="custom-checkbox" class:checked={isEnemyGroupSelected(group.id)} />
+                <div class="custom-checkbox" class:checked={isEnemyGroupSelected(group.id)}></div>
                 <div class="entity-icon">
                   {#if group.race}
                     {#if group.race.toLowerCase() === 'human'}
