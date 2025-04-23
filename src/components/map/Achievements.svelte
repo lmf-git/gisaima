@@ -16,39 +16,38 @@
   let visible = $state(true);
   let selectedCategory = $state('all');
   let recentUnlock = $state(null);
-  let showAll = $state(true); // Changed default to true so achievements show by default
   
   // Animation constants
   const animationDuration = 300;
 
-  // Achievement definitions directly in component
+  // Achievement definitions directly in component - updated category names
   const achievementDefinitions = $state({
-    // Exploration Achievements
+    // Exploration Achievements - renamed to "explore"
     'first_steps': {
       title: 'First Steps',
       description: 'Spawn into the world for the first time',
-      category: 'exploration',
+      category: 'explore',
     },
     'explorer': {
       title: 'Explorer',
       description: 'Visit 10 different tiles',
-      category: 'exploration',
+      category: 'explore',
     },
     'world_traveler': {
       title: 'World Traveler',
       description: 'Visit 50 different tiles',
-      category: 'exploration',
+      category: 'explore',
       hidden: true,
     },
     'structure_finder': {
       title: 'Structure Finder',
       description: 'Discover your first structure',
-      category: 'exploration',
+      category: 'explore',
     },
     'inspector': {
       title: 'Inspector',
       description: 'Inspect your first structure',
-      category: 'exploration',
+      category: 'explore',
     },
     
     // Combat Achievements
@@ -74,21 +73,21 @@
       hidden: true,
     },
     
-    // Resource Achievements
+    // Resource Achievements - renamed to "items"
     'first_gather': {
       title: 'Gatherer',
       description: 'Gather resources for the first time',
-      category: 'resources',
+      category: 'items',
     },
     'resource_master': {
       title: 'Resource Master',
       description: 'Gather resources 10 times',
-      category: 'resources',
+      category: 'items',
     },
     'treasure_finder': {
       title: 'Treasure Finder',
       description: 'Find a rare resource',
-      category: 'resources',
+      category: 'items',
       hidden: true,
     },
     
@@ -119,21 +118,22 @@
   // Get player achievements for current world
   const playerAchievements = $derived($currentPlayer?.achievements || {});
 
-  // Categories for filtering - constant data
+  // Categories for filtering - updated labels
   const categories = [
     { id: 'all', label: 'All' },
-    { id: 'exploration', label: 'Exploration' },
+    { id: 'explore', label: 'Explore' },
     { id: 'combat', label: 'Combat' },
-    { id: 'resources', label: 'Resources' },
+    { id: 'items', label: 'Items' },
     { id: 'social', label: 'Social' }
   ];
 
-  // Process achievements with player data using $derived
+  // Process achievements with player data - updated to show all non-hidden achievements
   const processedAchievements = $derived(
     Object.entries(achievementDefinitions).map(([id, achievement]) => {
       const isUnlocked = playerAchievements[id] === true;
       const isFiltered = selectedCategory === 'all' || achievement.category === selectedCategory;
-      const shouldShow = isUnlocked || (showAll && !achievement.hidden);
+      // Show all achievements that are either unlocked or not hidden
+      const shouldShow = isUnlocked || !achievement.hidden;
       
       return {
         ...achievement,
@@ -202,11 +202,6 @@
         console.error('Failed to save achievement:', error);
         return false;
       });
-  }
-
-  // Updated toggle function to more clearly describe its behavior
-  function toggleShowAll() {
-    showAll = !showAll;
   }
 
   function selectCategory(categoryId) {
@@ -305,10 +300,6 @@
           {category.label}
         </button>
       {/each}
-      
-      <button class="toggle-btn" onclick={toggleShowAll}>
-        {showAll ? 'Hide Locked' : 'Show Locked'}
-      </button>
     </div>
     
     <div class="achievements-content">
@@ -365,12 +356,11 @@
 <style>
   .achievements-container {
     position: fixed;
-    top: 50%;
+    bottom: -8em; /* Changed from top: 50% to bottom: -8em */
     right: 1em;
-    transform: translateY(-50%);
-    width: 22em;
+    width: 25em; /* Increased from 22em to 25em for wider container */
     height: 30em;
-    z-index: 1010; /* This will be overridden by the active class in the parent */
+    z-index: 1010;
     display: flex;
     flex-direction: column;
   }
@@ -466,21 +456,6 @@
     background-color: #e8eaed;
   }
   
-  .toggle-btn {
-    padding: 0.5em 1em;
-    background-color: transparent;
-    border: 1px solid #dadce0;
-    border-radius: 1.5em;
-    font-size: 0.9em;
-    margin-left: auto;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .toggle-btn:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
-  
   .achievements-content {
     flex: 1;
     overflow-y: auto;
@@ -513,8 +488,8 @@
   }
   
   .achievement-item.locked {
-    opacity: 0.8;
-    filter: grayscale(50%);
+    opacity: 0.85; /* Slightly increased opacity for better contrast */
+    filter: grayscale(40%); /* Reduced grayscale for better readability */
   }
   
   .achievement-icon {
@@ -548,12 +523,13 @@
     font-family: var(--font-heading);
     font-size: 1.1em;
     font-weight: 600;
+    color: #222; /* Darker text color for better contrast */
   }
   
   .achievement-description {
     margin: 0;
     font-size: 0.9em;
-    color: #555;
+    color: #333; /* Darker text color for better contrast */
     line-height: 1.4;
   }
   
@@ -624,7 +600,7 @@
   @media (max-width: 768px) {
     .achievements-container {
       right: 0;
-      width: 22em;
+      width: 25em; /* Keep consistent with the larger width */
     }
   }
 </style>
