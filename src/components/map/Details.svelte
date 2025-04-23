@@ -266,7 +266,7 @@
   }
   
   function canDemobilize(tile) {
-    if (!tile || !$currentPlayer) return false;
+    if (!tile || !$currentPlayer || !tile.structure) return false;
     
     // Check if there are any player-owned groups that are idle
     return tile.groups?.some(g => 
