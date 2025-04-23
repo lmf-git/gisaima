@@ -129,14 +129,11 @@
   ];
 
   // Process achievements with player data using $derived
-  const processedAchievements = $derived(() => {
-    return Object.entries(achievementDefinitions).map(([id, achievement]) => {
+  const processedAchievements = $derived(
+    Object.entries(achievementDefinitions).map(([id, achievement]) => {
       const isUnlocked = playerAchievements[id] === true;
       const isFiltered = selectedCategory === 'all' || achievement.category === selectedCategory;
-      
-      // Simplified logic: when showAll is true, show all achievements in the selected category
-      // When showAll is false, only show unlocked achievements
-      const shouldShow = showAll || isUnlocked;
+      const shouldShow = isUnlocked || (showAll && !achievement.hidden);
       
       return {
         ...achievement,
@@ -145,24 +142,23 @@
         visible: isFiltered && shouldShow,
         date: playerAchievements[id + '_date'] || null
       };
-    });
-  });
+    })
+  );
 
-  // Count unlocked achievements using $derived
+  // Filtered achievements for display
+  const filteredAchievements = $derived(
+    processedAchievements.filter(a => a.visible)
+  );
+
+  // Count unlocked achievements
   const unlockedCount = $derived(
     Object.keys(playerAchievements).filter(key => !key.endsWith('_date')).length
   );
 
-  // Calculate total count of non-hidden achievements using $derived
+  // Calculate total count of non-hidden achievements
   const totalCount = $derived(
     Object.values(achievementDefinitions).filter(a => !a.hidden).length
   );
-
-  // Filter achievements based on selected category and locked/unlocked status
-  // Fix: Use function form to properly access processedAchievements
-  const filteredAchievements = $derived(() => {
-    return processedAchievements.filter(a => a.visible);
-  });
 
   // Use $effect for side effects based on closing prop
   $effect(() => {
@@ -211,7 +207,6 @@
   // Updated toggle function to more clearly describe its behavior
   function toggleShowAll() {
     showAll = !showAll;
-    console.log(`Show all achievements: ${showAll}`); // Add logging for debugging
   }
 
   function selectCategory(categoryId) {
@@ -274,12 +269,6 @@
 
   onDestroy(() => {
     document.removeEventListener('keydown', handleKeyDown);
-  });
-
-  // Add debugging to check what achievements are processed
-  $effect(() => {
-    console.log(`Achievements visible: ${filteredAchievements.length}`, 
-      showAll ? 'Showing all' : 'Showing unlocked only');
   });
 </script>
 
