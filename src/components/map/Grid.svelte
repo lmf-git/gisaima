@@ -955,20 +955,6 @@
                   stroke-width="0.3"
                   opacity="{i === 0 || i === path.points.length - 1 ? '0.9' : '0.7'}"
                 />
-                
-                <!-- Add direction indicator at the end point -->
-                {#if i === path.points.length - 1 && path.points.length > 1}
-                  {@const prevPos = coordToPosition(path.points[path.points.length - 2].x, path.points[path.points.length - 2].y)}
-                  {@const angle = Math.atan2(pos.posY - prevPos.posY, pos.posX - prevPos.posX) * 180 / Math.PI}
-                  <polygon 
-                    points="0,-0.5 0.5,0.4 -0.5,0.4" 
-                    transform="translate({pos.posX * 100}, {pos.posY * 100}) rotate({angle + 90})" 
-                    fill={path.color}
-                    opacity="0.9"
-                    stroke="rgba(0,0,0,0.2)"
-                    stroke-width="0.1"
-                  />
-                {/if}
               {/each}
             </g>
           {/each}
