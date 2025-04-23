@@ -38,6 +38,9 @@
     });
   })());
 
+  // Extract player display name from game store
+  const playerDisplayName = $derived($game.player?.displayName || '');
+
   // Add a helper function to format text with proper capitalization
   function formatRace(text) {
     if (!text) return '';
@@ -173,6 +176,11 @@
       // 1. Update the player data in the database
       const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.worldKey}`);
       
+      // Use the display name from the player data in the game store (fallback to uid-based name if not available)
+      const displayName = $game.player?.displayName || 
+        $user.displayName || 
+        ($user.email ? $user.email.split('@')[0] : `Player ${$user.uid.substring(0, 4)}`);
+        
       await update(playerWorldRef, {
         alive: true,
         lastLocation: {
@@ -194,13 +202,8 @@
       const playerEntityRef = ref(db, 
         `worlds/${$game.worldKey}/chunks/${chunkKey}/${tileKey}/players/${$user.uid}`
       );
-
-      // Get display name from player data or user
-      const displayName = $game.player?.displayName || 
-        $user.displayName || 
-        ($user.email ? $user.email.split('@')[0] : `Player ${$user.uid.substring(0, 4)}`);
       
-      // Create player entity data with consistent ID fields
+      // Create player entity data with consistent ID fields and use the display name
       await set(playerEntityRef, {
         displayName,
         lastActive: Date.now(),
@@ -208,7 +211,7 @@
         race: $game.player?.race || 'human'
       });
       
-      console.log(`Player spawned at ${tileKey} in chunk ${chunkKey} with uid ${$user.uid}`);
+      console.log(`Player spawned at ${tileKey} in chunk ${chunkKey} with uid ${$user.uid} and name ${displayName}`);
       
       // Ensure map is still focused on spawn location before closing
       if ($map.target.x !== spawnX || $map.target.y !== spawnY) {
@@ -266,7 +269,10 @@
             {/if}
           </div>
           <span class="welcome-text">
-            Welcome {formatRace($game.player.race)}
+            Welcome {formatRace($game.player.race)} 
+            {#if playerDisplayName}
+              <strong>{playerDisplayName}</strong>
+            {/if}
           </span>
         {/if}
       </div>

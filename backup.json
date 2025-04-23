@@ -1,5 +1,160 @@
 {
   "players": {
+    "C5p47DD4s3Sqc4TTdstgfdn0iE62": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": false,
+          "displayName": "test",
+          "id": "C5p47DD4s3Sqc4TTdstgfdn0iE62",
+          "joined": 1745397432972,
+          "lastLocation": {
+            "timestamp": 1745397432972,
+            "x": -23,
+            "y": -8
+          },
+          "race": "elf"
+        }
+      }
+    },
+    "DH5grsODnvgGVxDQhgUZEBJqOE22": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "test",
+          "id": "DH5grsODnvgGVxDQhgUZEBJqOE22",
+          "joined": 1745400281751,
+          "lastLocation": {
+            "timestamp": 1745400298811,
+            "x": -32,
+            "y": -10
+          },
+          "race": "dwarf"
+        }
+      }
+    },
+    "Kc3vUTL6QvgHNNvfBcC2wNudXXf2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "test",
+          "id": "Kc3vUTL6QvgHNNvfBcC2wNudXXf2",
+          "joined": 1745397191118,
+          "lastLocation": {
+            "timestamp": 1745397201643,
+            "x": -30,
+            "y": -12
+          },
+          "race": "elf"
+        }
+      }
+    },
+    "O4FQawu48jYEAUeF2v6jaglup7G3": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "tester",
+          "id": "O4FQawu48jYEAUeF2v6jaglup7G3",
+          "joined": 1745402377196,
+          "lastLocation": {
+            "timestamp": 1745402386648,
+            "x": -30,
+            "y": -12
+          },
+          "race": "elf"
+        }
+      }
+    },
+    "a9iCghLVxlhM736Rbi0Zif13wGl2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": false,
+          "displayName": "Austin",
+          "id": "a9iCghLVxlhM736Rbi0Zif13wGl2",
+          "joined": 1745409346174,
+          "lastLocation": {
+            "timestamp": 1745409346174,
+            "x": -23,
+            "y": -8
+          },
+          "race": "human"
+        }
+      }
+    },
+    "gGXQeCM9WePrCqb5sjEilK5kei92": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "inspector": true,
+            "inspector_date": 1745411352671
+          },
+          "alive": true,
+          "displayName": "test",
+          "id": "gGXQeCM9WePrCqb5sjEilK5kei92",
+          "joined": 1745406576846,
+          "lastLocation": {
+            "timestamp": 1745406581755,
+            "x": -32,
+            "y": -10
+          },
+          "race": "dwarf"
+        }
+      }
+    },
+    "iC6y4DVEDpb7CzeceRIx1HNcKsB3": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": false,
+          "displayName": "testgewgag",
+          "id": "iC6y4DVEDpb7CzeceRIx1HNcKsB3",
+          "joined": 1745412727801,
+          "lastLocation": {
+            "timestamp": 1745412727801,
+            "x": -23,
+            "y": -8
+          },
+          "race": "elf"
+        }
+      }
+    },
+    "o9pyvI3gWaTkQFzh15fFGCkrKno2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": false,
+          "displayName": "gewgaw",
+          "id": "o9pyvI3gWaTkQFzh15fFGCkrKno2",
+          "joined": 1745396516000,
+          "lastLocation": {
+            "timestamp": 1745396516000,
+            "x": -23,
+            "y": -8
+          },
+          "race": "elf"
+        }
+      }
+    },
+    "qFzZvwQpVUYfwWMxuEQj2aO0IH52": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "set",
+          "groups": {
+            "-OOWq8czk5gXKECBdz1Q": {
+              "at": "-30,-12",
+              "id": "-OOWq8czk5gXKECBdz1Q",
+              "status": "idle"
+            }
+          },
+          "id": "qFzZvwQpVUYfwWMxuEQj2aO0IH52",
+          "inGroup": "-OOWq8czk5gXKECBdz1Q",
+          "joined": 1745397580635,
+          "lastLocation": {
+            "x": -30,
+            "y": -12
+          },
+          "race": "elf"
+        }
+      }
+    }
   },
   "worlds": {
     "ancient-lands": {
@@ -15,101 +170,54 @@
           "type": "user",
           "userId": "oBMqLQtce0fhljRFJKFl9B2e1Xl1",
           "userName": "Anonymous"
+        },
+        "-OOWq8euz50JSpAVvyzJ": {
+          "location": {
+            "x": -30,
+            "y": -12
+          },
+          "text": "New Force is being mobilized at (-30,-12)",
+          "timestamp": 1745398307449,
+          "type": "system"
+        },
+        "-OOX5ATCplp3pNDKZV5U": {
+          "location": {
+            "timestamp": 1745402386648,
+            "x": -30,
+            "y": -12
+          },
+          "text": "test",
+          "timestamp": 1745402509223,
+          "type": "user",
+          "userId": "O4FQawu48jYEAUeF2v6jaglup7G3",
+          "userName": "Anonymous"
+        },
+        "-OOXKk4KyPmh_hpGy93d": {
+          "location": {
+            "timestamp": 1745406581755,
+            "x": -32,
+            "y": -10
+          },
+          "text": "test",
+          "timestamp": 1745406591256,
+          "type": "user",
+          "userId": "gGXQeCM9WePrCqb5sjEilK5kei92",
+          "userName": "Anonymous"
+        },
+        "chat_1745398321372_302": {
+          "location": {
+            "timestamp": 1745398321372,
+            "x": -30,
+            "y": -12
+          },
+          "text": "A lone elf warrior has mobilized at (-30, -12) - \"New Force\"",
+          "timestamp": 1745398321372,
+          "type": "event",
+          "userId": "qFzZvwQpVUYfwWMxuEQj2aO0IH52",
+          "userName": "New Force"
         }
       },
       "chunks": {
-        "-2,-1": {
-          "-30,-12": {
-            "structure": {
-              "description": "An elven city built around the oldest living trees in the realm",
-              "id": "structure_al_elf_spawn",
-              "name": "Ancient Arborium",
-              "race": "elf",
-              "type": "spawn"
-            }
-          },
-          "-32,-10": {
-            "structure": {
-              "description": "The ancestral mountain home of the dwarf clans",
-              "id": "structure_al_dwarf_spawn",
-              "items": [
-                {
-                  "id": "item_1745066642078_1",
-                  "name": "Wooden Sticks",
-                  "quantity": 5,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "description": "A strange object of unknown origin",
-                  "id": "item_1745066642078_special",
-                  "name": "Mysterious Artifact",
-                  "quantity": 1,
-                  "rarity": "rare",
-                  "type": "artifact"
-                },
-                {
-                  "id": "item_1745067425452_1",
-                  "name": "Wooden Sticks",
-                  "quantity": 2,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "id": "item_1745068081699_1",
-                  "name": "Wooden Sticks",
-                  "quantity": 1,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "id": "item_1745068081699_2",
-                  "name": "Stone Pieces",
-                  "quantity": 2,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "id": "item_1745068202061_1",
-                  "name": "Wooden Sticks",
-                  "quantity": 1,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "id": "item_1745068202061_2",
-                  "name": "Stone Pieces",
-                  "quantity": 1,
-                  "rarity": "common",
-                  "type": "resource"
-                }
-              ],
-              "name": "Deepforge Stronghold",
-              "race": "dwarf",
-              "type": "spawn"
-            }
-          }
-        },
-        "-1,0": {
-          "-15,2": {
-            "structure": {
-              "description": "A resourceful goblin settlement built from the remains of ancient beasts",
-              "id": "structure_al_goblin_spawn",
-              "items": [
-                {
-                  "id": "item_1745060101976_1",
-                  "name": "Wooden Sticks",
-                  "quantity": 1,
-                  "rarity": "common",
-                  "type": "resource"
-                }
-              ],
-              "name": "Boneridge Camp",
-              "race": "goblin",
-              "type": "spawn"
-            }
-          }
-        },
         "-1,-1": {
           "-23,-8": {
             "structure": {
@@ -171,6 +279,153 @@
             }
           }
         },
+        "-1,0": {
+          "-15,2": {
+            "structure": {
+              "description": "A resourceful goblin settlement built from the remains of ancient beasts",
+              "id": "structure_al_goblin_spawn",
+              "items": [
+                {
+                  "id": "item_1745060101976_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 1,
+                  "rarity": "common",
+                  "type": "resource"
+                }
+              ],
+              "name": "Boneridge Camp",
+              "race": "goblin",
+              "type": "spawn"
+            }
+          }
+        },
+        "-2,-1": {
+          "-30,-12": {
+            "groups": {
+              "-OOWq8czk5gXKECBdz1Q": {
+                "createdAt": 1745398307449,
+                "id": "-OOWq8czk5gXKECBdz1Q",
+                "lastMessage": {
+                  "text": "Group is fully mobilized and ready",
+                  "timestamp": 1745398321372
+                },
+                "lastUpdated": 1745398321372,
+                "name": "New Force",
+                "owner": "qFzZvwQpVUYfwWMxuEQj2aO0IH52",
+                "race": "elf",
+                "status": "idle",
+                "unitCount": 1,
+                "units": {
+                  "qFzZvwQpVUYfwWMxuEQj2aO0IH52": {
+                    "displayName": "set",
+                    "id": "qFzZvwQpVUYfwWMxuEQj2aO0IH52",
+                    "lastActive": 1745398286886,
+                    "race": "elf",
+                    "type": "player"
+                  }
+                },
+                "x": -30,
+                "y": -12
+              }
+            },
+            "players": {
+              "Kc3vUTL6QvgHNNvfBcC2wNudXXf2": {
+                "displayName": "test",
+                "id": "Kc3vUTL6QvgHNNvfBcC2wNudXXf2",
+                "lastActive": 1745397202001,
+                "race": "elf"
+              },
+              "O4FQawu48jYEAUeF2v6jaglup7G3": {
+                "displayName": "tester",
+                "id": "O4FQawu48jYEAUeF2v6jaglup7G3",
+                "lastActive": 1745402386965,
+                "race": "elf"
+              }
+            },
+            "structure": {
+              "description": "An elven city built around the oldest living trees in the realm",
+              "id": "structure_al_elf_spawn",
+              "name": "Ancient Arborium",
+              "race": "elf",
+              "type": "spawn"
+            }
+          },
+          "-32,-10": {
+            "players": {
+              "DH5grsODnvgGVxDQhgUZEBJqOE22": {
+                "displayName": "test",
+                "id": "DH5grsODnvgGVxDQhgUZEBJqOE22",
+                "lastActive": 1745400299186,
+                "race": "dwarf"
+              },
+              "gGXQeCM9WePrCqb5sjEilK5kei92": {
+                "displayName": "test",
+                "id": "gGXQeCM9WePrCqb5sjEilK5kei92",
+                "lastActive": 1745406582021,
+                "race": "dwarf"
+              }
+            },
+            "structure": {
+              "description": "The ancestral mountain home of the dwarf clans",
+              "id": "structure_al_dwarf_spawn",
+              "items": [
+                {
+                  "id": "item_1745066642078_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 5,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "description": "A strange object of unknown origin",
+                  "id": "item_1745066642078_special",
+                  "name": "Mysterious Artifact",
+                  "quantity": 1,
+                  "rarity": "rare",
+                  "type": "artifact"
+                },
+                {
+                  "id": "item_1745067425452_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 2,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745068081699_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 1,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745068081699_2",
+                  "name": "Stone Pieces",
+                  "quantity": 2,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745068202061_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 1,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745068202061_2",
+                  "name": "Stone Pieces",
+                  "quantity": 1,
+                  "rarity": "common",
+                  "type": "resource"
+                }
+              ],
+              "name": "Deepforge Stronghold",
+              "race": "dwarf",
+              "type": "spawn"
+            }
+          }
+        },
         "-2,0": {
           "-23,5": {
             "structure": {
@@ -222,27 +477,27 @@
         }
       },
       "info": {
-        "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745382245382,
-        "name": "Ancient Lands",
-        "seed": 13579,
-        "size": "large",
         "center": {
           "x": -23,
           "y": -8
         },
+        "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
+        "lastTick": 1745412901868,
+        "name": "Ancient Lands",
+        "seed": 13579,
+        "size": "large",
         "spawns": {
-          "-2:-1:-30:-12": {
-            "description": "An elven city built around the oldest living trees in the realm",
-            "id": "structure_al_elf_spawn",
-            "name": "Ancient Arborium",
+          "-1:-2:-18:-22": {
+            "description": "A fairy settlement where the ancient spirits still speak",
+            "id": "structure_al_fairy_spawn",
+            "name": "Whisperwind Circle",
             "position": {
-              "chunkX": -2,
-              "chunkY": -1,
-              "x": -30,
-              "y": -12
+              "chunkX": -1,
+              "chunkY": -2,
+              "x": -18,
+              "y": -22
             },
-            "race": "elf",
+            "race": "fairy",
             "type": "spawn"
           },
           "-1:0:-15:2": {
@@ -258,17 +513,17 @@
             "race": "goblin",
             "type": "spawn"
           },
-          "-1:-2:-18:-22": {
-            "description": "A fairy settlement where the ancient spirits still speak",
-            "id": "structure_al_fairy_spawn",
-            "name": "Whisperwind Circle",
+          "-2:-1:-30:-12": {
+            "description": "An elven city built around the oldest living trees in the realm",
+            "id": "structure_al_elf_spawn",
+            "name": "Ancient Arborium",
             "position": {
-              "chunkX": -1,
-              "chunkY": -2,
-              "x": -18,
-              "y": -22
+              "chunkX": -2,
+              "chunkY": -1,
+              "x": -30,
+              "y": -12
             },
-            "race": "fairy",
+            "race": "elf",
             "type": "spawn"
           },
           "-2:-1:-32:-10": {
