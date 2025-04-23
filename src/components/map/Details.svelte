@@ -510,6 +510,9 @@
   class:ready={isReady} 
   class:active={isActive}
   onmouseenter={onMouseEnter}
+  role="dialog"
+  aria-label="Tile details"
+  aria-modal="true"
 >
   <div class="details-modal" key={renderKey}>
     <header class="modal-header">
