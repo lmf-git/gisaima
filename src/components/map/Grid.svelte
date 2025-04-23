@@ -1009,7 +1009,7 @@
             <!-- Add YouAreHere component for player's position -->
             {#if isCurrentPlayerHere && $ready}
               <div class="you-are-here-container">
-                <YouAreHere size={cell.structure ? "7.5em" : "3.5em"} />
+                <YouAreHere hasStructure={!!cell.structure} />
               </div>
             {/if}
 
