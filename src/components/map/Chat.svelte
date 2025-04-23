@@ -19,6 +19,9 @@
   // Constants
   const MAX_MESSAGE_LENGTH = 200;
   
+  // Add this tracker to prevent infinite scrolling effect
+  let lastScrolledMessageId = $state(null);
+  
   // Cleanup function
   let cleanup = () => {};
   
@@ -47,12 +50,28 @@
     onClose();
   }
   
-  // Scroll to bottom when messages change and mark as read
+  // Modified effect to prevent infinite loops
   $effect(() => {
-    if ($messages.length > 0 && messagesContainer) {
-      setTimeout(() => {
+    if (!messagesContainer || $messages.length === 0) return;
+    
+    // Get the most recent message
+    const latestMessage = $messages[$messages.length - 1];
+    
+    // Only scroll if we have a new message
+    if (latestMessage && latestMessage.id !== lastScrolledMessageId) {
+      // Update the tracker first
+      lastScrolledMessageId = latestMessage.id;
+      
+      // Use requestAnimationFrame for smoother scrolling
+      requestAnimationFrame(() => {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      }, 50);
+      });
+    }
+  });
+  
+  // Separate effect just for marking messages as read
+  $effect(() => {
+    if ($messages.length > 0) {
       markAllAsRead();
     }
   });
