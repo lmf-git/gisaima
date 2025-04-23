@@ -91,8 +91,8 @@
         isTutorialVisible
     );
 
-    let showMinimap = $state(true);
-    let showEntities = $state(false); // Changed from true to false - default closed
+    let showMinimap = $state(false); // Changed from true to false - default closed
+    let showEntities = $state(false);
     let showChat = $state(true);
     let showAchievements = $state(false);
     const ANIMATION_DURATION = 800;
@@ -385,8 +385,8 @@
             const savedMinimapState = localStorage.getItem('minimap');
             const savedOverviewState = localStorage.getItem('overview');
             
-            // Set minimap state based on localStorage (default to true if not set)
-            showMinimap = savedMinimapState !== 'false';
+            // Set minimap state based on localStorage (default to false if not set)
+            showMinimap = savedMinimapState === 'true';
             
             // Set overview/entities state based on localStorage (default to false if not set)
             showEntities = savedOverviewState === 'true'; // Changed to only show if explicitly true
