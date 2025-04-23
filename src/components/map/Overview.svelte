@@ -586,6 +586,15 @@
       }
     }
   }
+
+  // Add function to handle keyboard events
+  function handleKeyDown(event) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      handleClose();
+    }
+  }
 </script>
 
 <div 
@@ -595,6 +604,8 @@
   onmouseenter={onMouseEnter}
   role="region"
   aria-label="Map entities overview"
+  onkeydown={handleKeyDown} 
+  tabindex="0"
 >
   <div class="entities-panel">
     <h3 class="title">
@@ -1429,6 +1440,7 @@
     font-size: 1.4em;
     font-family: var(--font-body);
     max-width: 95%;
+    outline: none; /* Remove outline when focused via tabindex */
   }
 
   /* Add active state styling to increase z-index when active */

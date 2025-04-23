@@ -127,34 +127,47 @@
     // Handle keyboard events for all panels
     function handleKeyDown(event) {
         if (event.key === 'Escape') {
-            // Close panels in order of last activity
-            if (lastActivePanel === 'chat' && showChat) {
+            // Handle only one panel at a time, in order of priority
+            if (modalState.visible) {
+                closeModal();
+                event.preventDefault();
+                event.stopPropagation();
+                return; // Exit after handling one panel
+            } else if (lastActivePanel === 'chat' && showChat) {
                 showChat = false;
                 event.preventDefault();
+                event.stopPropagation();
             } else if (lastActivePanel === 'achievements' && showAchievements) {
                 showAchievements = false;
                 event.preventDefault();
+                event.stopPropagation();
             } else if (lastActivePanel === 'details' && detailed) {
                 detailed = false;
                 event.preventDefault();
+                event.stopPropagation();
             } else if (lastActivePanel === 'overview' && showEntities) {
-                showEntities = false;
+                toggleEntities();
                 event.preventDefault();
+                event.stopPropagation();
             } else {
                 // If no specific panel is active or the last active is closed,
-                // close any open panel in a consistent order
+                // close any open panel in a consistent order (only one)
                 if (showChat) {
                     showChat = false;
                     event.preventDefault();
+                    event.stopPropagation();
                 } else if (showAchievements) {
                     showAchievements = false;
                     event.preventDefault();
+                    event.stopPropagation();
                 } else if (detailed) {
                     detailed = false;
                     event.preventDefault();
+                    event.stopPropagation();
                 } else if (showEntities) {
-                    showEntities = false;
+                    toggleEntities();
                     event.preventDefault();
+                    event.stopPropagation();
                 }
             }
         }
