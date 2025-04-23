@@ -8,7 +8,8 @@
       game, 
       getWorldInfo,
       getWorldCenterCoordinates,
-      setCurrentWorld
+      setCurrentWorld,
+      savePlayerAchievement
     } from "../../lib/stores/game.js";
     
     import { 
@@ -73,8 +74,6 @@
     let isTransitioningToPathDrawing = $state(false);
 
     let structureRenderCount = $state(0);
-
-    let achievementsRef = $state(null);
 
     let pathDrawingGroup = $state(null);
     let currentPath = $state([]);
@@ -905,44 +904,51 @@
         });
     }
 
-    // Achievement trigger handlers
+    // Replace the wrapper function with a direct implementation
+    function unlockAchievement(achievementId) {
+        if ($game?.worldKey) {
+            savePlayerAchievement($game.worldKey, achievementId, true)
+                .then(() => {
+                    console.log(`Achievement unlocked: ${achievementId}`);
+                })
+                .catch(error => {
+                    console.error('Failed to save achievement:', error);
+                });
+        }
+    }
+
+    // Achievement trigger handlers - use the direct function
     function handleMobilise() {
-        triggerAchievement('mobilised');
+        unlockAchievement('mobilised');
         closeModal();
     }
 
     function handleAttack(data) {
-        triggerAchievement('first_attack');
+        unlockAchievement('first_attack');
         console.log('Attack started:', data);
         closeModal();
     }
 
     function handleJoinBattle(data) {
-        triggerAchievement('battle_joiner');
+        unlockAchievement('battle_joiner');
         console.log('Joined battle:', data);
         closeModal();
     }
 
     function handleGather(result) {
-        triggerAchievement('first_gather');
+        unlockAchievement('first_gather');
         closeModal();
     }
 
     function handleDemobilize(data) {
-        triggerAchievement('demobilizer');
+        unlockAchievement('demobilizer');
         console.log('Demobilization started:', data);
         closeModal();
     }
 
     function handlePathConfirm(path) {
-        triggerAchievement('strategist');
+        unlockAchievement('strategist');
         confirmPathDrawing(path);
-    }
-
-    function triggerAchievement(achievementId) {
-        if (achievementsRef) {
-            achievementsRef.unlockAchievement(achievementId);
-        }
     }
 </script>
 
@@ -1182,12 +1188,16 @@
               y={modalState.data.y}
               tile={modalState.data.tile}
               onClose={closeModal}
+              onAchievement={unlockAchievement}
               key={structureRenderCount}
             />
           {:else if modalState.type === 'mobilise'}
             <Mobilise
               onClose={closeModal}
-              onMobilize={handleMobilise}
+              onMobilize={() => {
+                unlockAchievement('mobilised');
+                closeModal();
+              }}
             />
           {:else if modalState.type === 'move'}
             <Move
@@ -1196,30 +1206,45 @@
               }}
               onPathDrawingStart={handlePathDrawingStart}
               onPathDrawingCancel={handlePathDrawingCancel}
-              onConfirmPath={handlePathConfirm}
-              {pathDrawingGroup}
-              {currentPath}
+              onConfirmPath={(path) => {
+                unlockAchievement('strategist');
+                handlePathConfirm(path);
+              }}
+              pathDrawingGroup={pathDrawingGroup}
+              currentPath={currentPath}
             />
           {:else if modalState.type === 'attack'}
             <AttackGroups
               onClose={closeModal}
-              onAttack={handleAttack}
+              onAttack={(data) => {
+                unlockAchievement('first_attack');
+                handleAttack(data);
+              }}
             />
           {:else if modalState.type === 'joinBattle'}
             <JoinBattle
               onClose={closeModal}
-              onJoinBattle={handleJoinBattle}
+              onJoinBattle={(data) => {
+                unlockAchievement('battle_joiner');
+                handleJoinBattle(data);
+              }}
             />
           {:else if modalState.type === 'gather'}
             <Gather 
               onClose={() => closeModal()} 
-              onGather={handleGather}
+              onGather={(result) => {
+                unlockAchievement('first_gather');
+                handleGather(result);
+              }}
               data={modalState.data}
             />
           {:else if modalState.type === 'demobilise'}
             <Demobilise
               onClose={closeModal}
-              onDemobilize={handleDemobilize}
+              onDemobilize={(data) => {
+                unlockAchievement('demobilizer');
+                handleDemobilize(data);
+              }}
             />
           {/if}
         {/if}

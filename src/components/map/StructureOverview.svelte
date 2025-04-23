@@ -13,7 +13,13 @@
   import Fairy from '../icons/Fairy.svelte';
 
   // Props - using correct Svelte 5 runes syntax
-  const { x = 0, y = 0, tile = null, onClose = () => {} } = $props();
+  const { 
+    x = 0, 
+    y = 0, 
+    tile = null, 
+    onClose = () => {},
+    onAchievement = () => {} // Add this to handle achievements
+  } = $props();
   
   // Add state to track collapsed sections
   let collapsedSections = $state({
@@ -29,9 +35,15 @@
   // Simplify animation control
   let isReady = $state(false);
   
+  // Add a function to trigger the inspector achievement when component mounts
   onMount(() => {
     // Short timeout to ensure DOM is ready
     setTimeout(() => isReady = true, 10);
+    
+    // Trigger the inspector achievement when viewing structure details
+    if (onAchievement && typeof onAchievement === 'function') {
+      onAchievement('inspector');
+    }
   });
   
   onDestroy(() => {

@@ -45,6 +45,11 @@
       description: 'Discover your first structure',
       category: 'exploration',
     },
+    'inspector': {
+      title: 'Inspector',
+      description: 'Inspect your first structure',
+      category: 'exploration',
+    },
     
     // Combat Achievements
     'first_attack': {

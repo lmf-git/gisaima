@@ -10,7 +10,7 @@
     onClose = () => {}, 
     onPathDrawingStart = () => {},
     onPathDrawingCancel = () => {},
-    onConfirmPath = () => {},
+    onConfirmPath = () => {}, // This will be used to trigger the strategist achievement
     pathDrawingGroup = null,
     currentPath = []
   } = $props();
