@@ -288,20 +288,29 @@ async function processWinningGroups(updates, worldId, chunkKey, tileKey, groups,
   const winningGroupIds = Object.keys(winningSide.groups || {});
   
   for (const groupId of winningGroupIds) {
-    if (groups[groupId]) {
-      // Set winning groups back to idle state
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/inBattle`] = false;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleId`] = null;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleRole`] = null;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
-      
-      // Add victory message
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastMessage`] = {
-        text: `Victory in battle!`,
-        timestamp: Date.now()
-      };
+    const group = groups[groupId];
+    if (!group) continue;
+    
+    // Check if group has any units left
+    const unitCount = group.unitCount || (group.units ? Object.keys(group.units).length : 0);
+    if (unitCount <= 0) {
+      // Remove empty groups
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`] = null;
+      continue;
     }
+
+    // Only update status for groups that still have units
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/inBattle`] = false;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleId`] = null;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleRole`] = null;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
+    
+    // Only add victory message for groups with units
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastMessage`] = {
+      text: `Victory in battle!`,
+      timestamp: Date.now()
+    };
   }
 }
 
