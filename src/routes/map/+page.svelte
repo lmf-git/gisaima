@@ -92,7 +92,7 @@
     );
 
     let showMinimap = $state(true);
-    let showEntities = $state(true);
+    let showEntities = $state(false); // Changed from true to false - default closed
     let showChat = $state(true);
     let showAchievements = $state(false);
     const ANIMATION_DURATION = 800;
@@ -388,8 +388,8 @@
             // Set minimap state based on localStorage (default to true if not set)
             showMinimap = savedMinimapState !== 'false';
             
-            // Set overview/entities state based on localStorage (default to true if not set)
-            showEntities = savedOverviewState !== 'false';
+            // Set overview/entities state based on localStorage (default to false if not set)
+            showEntities = savedOverviewState === 'true'; // Changed to only show if explicitly true
 
             // First handle achievements since it has higher priority
             if (savedAchievementsState === 'true' && !achievementsClosed) {
