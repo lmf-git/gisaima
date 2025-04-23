@@ -77,14 +77,14 @@ function createMobilizationMessage(group, tileKey) {
   const groupRace = group.race ? `${group.race}` : "";
   const location = tileKey.replace(',', ', ');
   
-  // Construct a more interesting message based on race and size
+  // Create more descriptive messages based on force composition
   let message = "";
   
   if (groupSize === 1) {
     message = `A lone ${groupRace} warrior has mobilized`;
-  } else if (groupSize <= 5) {
+  } else if (groupSize <= 3) {
     message = `A small band of ${groupRace} fighters has mobilized`;
-  } else if (groupSize <= 20) {
+  } else if (groupSize <= 10) {
     message = `A company of ${groupRace} troops has mobilized`;
   } else {
     message = `A large army of ${groupRace} forces has mobilized`;

@@ -408,6 +408,19 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
         currentData.players[uid].worlds[worldId].inGroup = newGroupId;
       }
 
+      // Add chat message for mobilization
+      if (!currentData.worlds[worldId].chat) {
+        currentData.worlds[worldId].chat = {};
+      }
+      
+      const chatMessageId = db.ref().push().key;
+      currentData.worlds[worldId].chat[chatMessageId] = {
+        type: 'system',
+        text: `${name} is being mobilized at (${tileX},${tileY})`,
+        timestamp: now,
+        location: { x: tileX, y: tileY }
+      };
+
       return currentData;
     });
 

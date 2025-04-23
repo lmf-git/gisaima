@@ -102,7 +102,21 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleSide`] = side;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleRole`] = 'supporter';
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/status`] = 'fighting';
-    
+
+    // Add chat message for joining battle
+    const groupName = joiningGroup.name || "Unnamed force";
+    const now = Date.now();
+    const chatMessageId = `battle_join_${now}_${groupId}`;
+    updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+      text: `${groupName} has joined the battle at (${locationX}, ${locationY}) on side ${side}!`,
+      type: 'event',
+      timestamp: now,
+      location: {
+        x: locationX,
+        y: locationY
+      }
+    };
+
     // Execute the updates
     await db.ref().update(updates);
     

@@ -81,13 +81,27 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
     }
   };
   
-  // Add special announcement for rare items
-  const rareItems = gatheredItems.filter(item => item.rarity === 'rare');
-  if (rareItems.length > 0) {
-    const rareItemsText = rareItems.map(item => item.name).join(', ');
+  // Add special announcement for rare or better items
+  const specialItems = gatheredItems.filter(item => 
+    ['rare', 'epic', 'legendary', 'mythic'].includes(item.rarity?.toLowerCase())
+  );
+  
+  if (specialItems.length > 0) {
+    const itemDescriptions = specialItems.map(item => {
+      const rarity = item.rarity.toLowerCase();
+      const stars = {
+        'rare': '★★★',
+        'epic': '★★★★',
+        'legendary': '★★★★★',
+        'mythic': '✦✦✦✦✦'
+      }[rarity] || '★★★';
+      
+      return `${stars} ${item.name} ${stars}`;
+    }).join('\n');
+    
     const rareChatMessageId = `rare_${now}_${groupId}`;
     updates[`worlds/${worldId}/chat/${rareChatMessageId}`] = {
-      text: `${groupName} found something special: ${rareItemsText}!`,
+      text: `${groupName} has discovered something extraordinary!\n${itemDescriptions}`,
       type: 'event',
       timestamp: now + 1, // Add 1ms to ensure correct ordering
       location: {

@@ -244,19 +244,24 @@ async function processBattleResolution(db, worldId, battle, forcedWinner = null)
       }
     }
     
-    // Create battle outcome chat message
+    // Create battle outcome chat message with more detail
     const winSideText = winnerSide === 1 ? "Attackers" : "Defenders";
-    const battleChatText = `Battle at (${battle.locationX},${battle.locationY}) has ended. ${winSideText} emerged victorious!`;
+    const battleChatText = `Battle at (${battle.locationX}, ${battle.locationY}) has ended!`;
     
     // Add details about groups
     let detailedMessage = battleChatText;
     if (winningGroups.length > 0) {
-      detailedMessage += ` Victorious: ${winningGroups.join(', ')}. `;
+      detailedMessage += ` Victorious: ${winningGroups.join(', ')}`;
     }
     if (losingGroups.length > 0) {
-      detailedMessage += ` Defeated: ${losingGroups.join(', ')}.`;
+      detailedMessage += ` Defeated: ${losingGroups.join(', ')}`;
     }
     
+    // Add special message if it was a one-sided victory
+    if (forcedWinner) {
+      detailedMessage += ` (Decisive Victory)`;
+    }
+
     // Add to world chat
     const chatMessageId = `battle_${now}_${battle.id}`;
     updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
