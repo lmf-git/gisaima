@@ -1,12 +1,10 @@
 <script>
-  const { size = '6em' } = $props();
+  const { size = '5em' } = $props();
 </script>
 
 <div class="you-are-here-wrapper" style="--indicator-size: {size};">
   <div class="indicator-ring"></div>
-  <div class="text-container">
-    <span class="text-content">You are here</span>
-  </div>
+  <span class="location-text">You are here</span>
 </div>
 
 <style>
@@ -24,9 +22,9 @@
 
   .indicator-ring {
     position: absolute;
-    width: 100%;
-    height: 100%;
-    border: 3px solid rgba(255, 215, 0, 0.8);
+    width: 90%;
+    height: 90%;
+    border: 2px solid rgba(255, 215, 0, 0.8);
     border-radius: 50%;
     box-shadow: 
       0 0 15px rgba(255, 215, 0, 0.6),
@@ -38,28 +36,25 @@
     opacity: 0.9;
   }
 
-  .text-container {
-    background: rgba(0, 0, 0, 0.7);
-    padding: 0.3em 0.5em;
-    border-radius: 0.3em;
-    transform: translateY(calc(var(--indicator-size) / 2 + 0.2em));
-    white-space: nowrap;
-    border: 1px solid rgba(255, 215, 0, 0.4);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    animation: fadeIn 1.2s ease-out forwards;
-  }
-
-  .text-content {
+  .location-text {
+    position: absolute;
+    bottom: -1.8em;
+    left: 50%;
+    transform: translateX(-50%);
     color: white;
     font-weight: bold;
-    font-size: calc(var(--indicator-size) / 7);
+    font-size: calc(var(--indicator-size) / 8.5);
+    padding: 0.15em 0.5em;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 0.3em;
     white-space: nowrap;
-    text-shadow: 
-      0 0 5px rgba(0, 0, 0, 0.8),
-      0 0 10px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 0 3px black;
     font-family: var(--font-heading, sans-serif);
     letter-spacing: 0.05em;
-    animation: textPulse 2s ease-in-out infinite;
+    animation: fadeInBottom 1.2s ease-out forwards;
+    border: 1px solid rgba(255, 215, 0, 0.4);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    z-index: 1101; /* Higher than structure label */
   }
 
   @keyframes pulse {
@@ -71,12 +66,6 @@
   @keyframes rotate {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
-  }
-
-  @keyframes textPulse {
-    0% { opacity: 0.8; }
-    50% { opacity: 1; }
-    100% { opacity: 0.8; }
   }
 
   @keyframes appear {
@@ -92,9 +81,9 @@
     100% { transform: scale(1); opacity: 0.9; }
   }
 
-  @keyframes fadeIn {
-    0% { opacity: 0; transform: translateY(calc(var(--indicator-size) / 2 + 0.8em)) scale(0.8); }
+  @keyframes fadeInBottom {
+    0% { opacity: 0; transform: translate(-50%, 0.5em); }
     50% { opacity: 0; }
-    100% { opacity: 1; transform: translateY(calc(var(--indicator-size) / 2 + 0.2em)) scale(1); }
+    100% { opacity: 1; transform: translateX(-50%); }
   }
 </style>
