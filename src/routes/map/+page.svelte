@@ -109,6 +109,8 @@
 
     const unreadCount = $derived($unreadMessages);
 
+    let worldMembershipChecked = $state(false);
+
     function handlePanelHover(panelType) {
         if (detailed && (showEntities)) {
             lastActivePanel = panelType;
@@ -182,8 +184,21 @@
         
         document.body.classList.add('map-page-active');
         
-        if (!$isAuthReady || !$game.initialized) {
-            debugLog("Auth or game store not ready yet, waiting...");
+        if (!$isAuthReady) {
+            debugLog("Auth not ready yet, waiting...");
+            return;
+        }
+        
+        // First check: user must be logged in - KEEP THIS CHECK
+        if (!$user) {
+            debugLog("User not authenticated, redirecting to login page");
+            const currentUrl = get(page).url.pathname + get(page).url.search;
+            goto(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+            return;
+        }
+        
+        if (!$game.initialized) {
+            debugLog("Game store not ready yet, waiting...");
             return;
         }
         
@@ -199,6 +214,8 @@
             worldToUse = worldIdFromUrl;
             debugLog(`Using world ID from URL: ${worldToUse}`);
             
+            // REMOVED world membership check - now handled in SpawnMenu
+
             if (worldToUse !== currentWorldId) {
                 debugLog(`Setting current world from URL: ${worldToUse} (was: ${currentWorldId})`);
                 setCurrentWorld(worldToUse);
@@ -206,6 +223,8 @@
         } else if (currentWorldId) {
             worldToUse = currentWorldId;
             debugLog(`Using current world from store: ${worldToUse}`);
+            
+            // REMOVED world membership check - now handled in SpawnMenu
         } else {
             console.error('No world ID available from URL or game store');
             goto('/worlds');

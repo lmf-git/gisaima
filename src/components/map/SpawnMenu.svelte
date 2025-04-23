@@ -5,6 +5,7 @@
   import { game, currentPlayer } from '../../lib/stores/game';
   import { moveTarget, map, targetStore, clearSavedTargetPosition } from '../../lib/stores/map';
   import { user } from '../../lib/stores/user';
+  import { goto } from '$app/navigation';
 
   // Import torch and race icons
   import Torch from '../icons/Torch.svelte';
@@ -82,6 +83,29 @@
         moveTarget(spawnX, spawnY);
       } else {
         console.log(`Keeping current map view at ${currentX},${currentY} (spawn is nearby at ${spawnX},${spawnY})`);
+      }
+    }
+  });
+
+  // Enhanced effect to handle unauthorized world access with better timing
+  $effect(() => {
+    // Wait until we have enough information to make a decision
+    if (!$user || !$game.worldKey) return;
+    
+    // Check if joinedWorlds data is available - this means game store is ready
+    if (Array.isArray($game.joinedWorlds)) {
+      if (!$game.joinedWorlds.includes($game.worldKey)) {
+        console.log(`SpawnMenu detected user is not a member of world ${$game.worldKey}, redirecting to worlds page`);
+        goto('/worlds');
+        return;
+      }
+      
+      // If we have player data but no spawns available for the player's race,
+      // it means they can't spawn in this world
+      if (spawnList.length === 0 && $game.player?.race) {
+        console.log(`No available spawns for player race: ${$game.player.race}, redirecting to worlds page`);
+        goto('/worlds');
+        return;
       }
     }
   });
