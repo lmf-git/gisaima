@@ -993,7 +993,7 @@
             <!-- Add YouAreHere component for player's position -->
             {#if isCurrentPlayerHere && $ready}
               <div class="you-are-here-container">
-                <YouAreHere size="7em" />
+                <YouAreHere size={cell.structure ? "7em" : "5em"} />
               </div>
             {/if}
 
