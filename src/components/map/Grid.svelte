@@ -1493,7 +1493,8 @@
   }
 
   .tile.spawn-structure:hover .spawn-icon-container :global(svg) {
-    filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.8));
+    filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.8));
+    /* Changed from cyan drop shadow to dark shadow */
     opacity: 0.9;
   }
   
@@ -1517,7 +1518,16 @@
   
   :global(.spawn-icon) {
     opacity: 0.8;
-    filter: drop-shadow(0 0 4px rgba(0, 255, 255, 0.6));
+    filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.7));
+    /* Changed from light cyan drop shadow to dark shadow */
+    fill: rgba(40, 40, 40, 0.9); /* Added dark fill color */
+  }
+  
+  :global(.structure-icon) {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.6));
+    /* Changed from white drop shadow to dark shadow */
+    fill: rgba(40, 40, 40, 0.9); /* Added dark fill color */
   }
 
   .tile.spawn-structure:before {
@@ -1787,14 +1797,11 @@
     opacity: 0.6;
   }
   
-  :global(.spawn-icon) {
-    opacity: 0.8;
-    filter: drop-shadow(0 0 4px rgba(0, 255, 255, 0.6));
-  }
-  
   :global(.structure-icon) {
     opacity: 0.8;
-    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.6));
+    /* Changed from white drop shadow to dark shadow */
+    fill: rgba(40, 40, 40, 0.9); /* Added dark fill color */
   }
   
   .battle-indicator {
