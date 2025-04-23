@@ -983,7 +983,7 @@
             class:from-world-data={playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y && !hasCurrentPlayerEntity(cell)}
             style="
               background-color: {cell.color || 'var(--terrain-color)'};
-              transition-delay: {cell.isCenter ? '0s' : Math.min(0.5, cell.distance * 0.03) + 's'};
+              transition-delay: {cell.isCenter ? 0 : Math.min(0.5, cell.distance * 0.03) + 's'};
             "
             onmouseenter={() => handleTileHover(cell)}
             aria-label={`Coordinates ${cell.x},${cell.y}`}
