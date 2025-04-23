@@ -506,6 +506,10 @@
         }, 300); // Match with the transition duration in Chat.svelte
       } else {
         showChat = true;
+        // Close achievements if it's open when opening chat
+        if (showAchievements) {
+          toggleAchievements();
+        }
         if (browser) {
           localStorage.setItem('chat', 'true');
         }
@@ -528,6 +532,10 @@
         }, ANIMATION_DURATION);
       } else {
         showAchievements = true;
+        // Close chat if it's open when opening achievements
+        if (showChat) {
+          toggleChat();
+        }
         if (browser) {
           localStorage.setItem('achievements', 'true');
         }
@@ -936,7 +944,7 @@
         {/if}
         
         {#if !(showChat || chatClosing)}
-            <div class="chat-controls">
+            <div class="controls-right">
                 <button 
                     class="control-button chat-button" 
                     onclick={toggleChat}
@@ -949,19 +957,33 @@
                         <Bird extraClass="button-icon" />
                     {/if}
                 </button>
+
+                {#if !(showAchievements || achievementsClosing)}
+                    <button 
+                        class="control-button achievements-button" 
+                        onclick={toggleAchievements}
+                        aria-label="Show achievements"
+                        disabled={!$game?.player?.alive || isTutorialVisible}>
+                        <AchievementIcon extraClass="button-icon" />
+                    </button>
+                {/if}
+            </div>
+        {:else if !(showAchievements || achievementsClosing)}
+            <div class="controls-middle-right">
+                <button 
+                    class="control-button achievements-button" 
+                    onclick={toggleAchievements}
+                    aria-label="Show achievements"
+                    disabled={!$game?.player?.alive || isTutorialVisible}>
+                    <AchievementIcon extraClass="button-icon" />
+                </button>
             </div>
         {/if}
 
-        <div class="achievements-controls">
-            <button 
-                class="control-button achievements-button" 
-                onclick={toggleAchievements}
-                aria-label={showAchievements ? "Hide achievements" : "Show achievements"}
-                disabled={!$game?.player?.alive || isTutorialVisible}>
-                <AchievementIcon extraClass="button-icon" />
-            </button>
-        </div>
-        
+        {#if $ready && $game?.player?.alive && (showChat || chatClosing)}
+            <Chat closing={chatClosing} />
+        {/if}
+
         {#if showMinimap || minimapClosing}
             <Minimap closing={minimapClosing} />
         {/if}
@@ -1026,10 +1048,6 @@
         
         {#if ($user && !$game.player?.alive)}
             <SpawnMenu />
-        {/if}
-
-        {#if $ready && $game?.player?.alive && (showChat || chatClosing)}
-            <Chat closing={chatClosing} />
         {/if}
 
         {#if $ready && $game?.player?.alive && (showAchievements || achievementsClosing)}
@@ -1179,24 +1197,28 @@
         left: 1em;
         z-index: 1001;
     }
-    
-    .chat-controls {
-        position: absolute;
+
+    .controls-right {
+        position: fixed;
         bottom: 1em;
         right: 1em;
         z-index: 1001;
-        /* Add a transition to the chat controls for smoother appearance/disappearance */
-        transition: opacity 300ms ease;
-    }
-
-    .achievements-controls {
-        position: absolute;
-        bottom: 1em;
-        right: 5em; /* Position to the left of the chat button */
-        z-index: 1001;
-        transition: opacity 300ms ease;
+        display: flex;
+        gap: 0.5em;
     }
     
+    /* New style for middle-right positioned controls */
+    .controls-middle-right {
+        position: fixed;
+        top: 50%;
+        right: 1em;
+        transform: translateY(-50%);
+        z-index: 1001;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5em;
+    }
+
     .control-button {
         min-width: 2em;
         height: 2em;
@@ -1272,11 +1294,17 @@
         width: 2em;
     }
 
-    .chat-button {
+    .chat-button,
+    .achievements-button {
         position: relative;
         padding: 0.3em;
         min-width: 2em;
         width: 2em;
+        height: 2em;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .message-badge {

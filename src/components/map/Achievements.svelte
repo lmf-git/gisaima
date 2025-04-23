@@ -310,19 +310,15 @@
 <style>
   .achievements-container {
     position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 24em;
-    max-width: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    top: 50%;
+    right: 1em;
+    transform: translateY(-50%);
+    width: 22em;  /* Changed from 15em to 22em */
+    height: 30em;
+    background: none;
     z-index: 1010;
     display: flex;
     flex-direction: column;
-    pointer-events: all;
-  }
-  
-  .achievements-container.closing {
     pointer-events: none;
   }
   
@@ -330,15 +326,19 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    width: 100%;
     background-color: rgba(255, 255, 255, 0.95);
     border-left: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
     transform: translateX(0);
-    transition: transform 300ms ease;
+    transition: all 300ms ease;
+    pointer-events: all;
   }
   
   .achievements-panel.closing {
     transform: translateX(100%);
+    opacity: 0; /* Fade out panel */
+    box-shadow: none; /* Remove shadow during exit */
   }
   
   .achievements-header {
@@ -572,7 +572,8 @@
   
   @media (max-width: 768px) {
     .achievements-container {
-      width: 100%;
+      right: 0;
+      width: 22em;  /* Changed from 15em to 22em for consistency */
     }
   }
 </style>
