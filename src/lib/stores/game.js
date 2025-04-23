@@ -652,13 +652,13 @@ export function setup() {
   });
 }
 
-// Function to join a world with race selection - improved with better data loading
-export async function joinWorld(worldId, userId, race, displayName) {
+// Function to join a world with race selection - improved with direct spawn coordinates
+export async function joinWorld(worldId, userId, race, displayName, spawnPosition) {
   if (!worldId || !userId) {
     throw new Error('Missing required parameters for joining world');
   }
 
-  console.log(arguments);
+  console.log('Join world args:', { worldId, userId, race, displayName, spawnPosition });
   
   try {
     // Set loading state
@@ -667,23 +667,34 @@ export async function joinWorld(worldId, userId, race, displayName) {
     // Create a reference to the player's world data
     const playerWorldRef = ref(db, `players/${userId}/worlds/${worldId}`);
     
-    // Get world center coordinates
-    const centerCoords = getWorldCenterCoordinates(worldId);
+    // Use provided spawn coordinates or fall back to world center
+    let coordinates = { x: 0, y: 0 };
+    
+    // If specific spawn coordinates are provided, use those
+    if (spawnPosition && typeof spawnPosition.x === 'number' && typeof spawnPosition.y === 'number') {
+      coordinates = { 
+        x: spawnPosition.x, 
+        y: spawnPosition.y 
+      };
+      console.log(`Using provided spawn coordinates: ${coordinates.x},${coordinates.y}`);
+    } else {
+      // Fall back to world center if no specific spawn was selected
+      coordinates = getWorldCenterCoordinates(worldId);
+      console.log(`No spawn coordinates provided, using center: ${coordinates.x},${coordinates.y}`);
+    }
 
     console.log('race', race);
     
-    // Record the join with timestamp, race, and target position
-    // Ensure all identity fields are consistently set
+    // Record the join with timestamp, race, and spawn position
     await set(playerWorldRef, {
       joined: Date.now(),
       race: race,
       alive: false,
       displayName: displayName || '',
-      id: userId,            // Add the id field
-      // Set initial target to world center
+      id: userId,
       lastLocation: {
-        x: centerCoords.x,
-        y: centerCoords.y,
+        x: coordinates.x,
+        y: coordinates.y,
         timestamp: Date.now()
       }
     });

@@ -130,9 +130,6 @@
 
     try {
       setLoading(true);
-
-      console.log(spawn, spawn.position);
-
       
       // Get the correct coordinates from the spawn data
       const spawnX = spawn.x ?? spawn.position?.x ?? 0;
@@ -150,7 +147,6 @@
           y: spawnY,
           timestamp: Date.now()
         },
-        spawnId: spawn.id || null,
         id: $user.uid, // Explicitly store the user ID
       });
 
@@ -165,7 +161,7 @@
       const playerEntityRef = ref(db, 
         `worlds/${$game.worldKey}/chunks/${chunkKey}/${tileKey}/players/${$user.uid}`
       );
-      
+
       // Get display name from player data or user
       const displayName = $game.player?.displayName || 
         $user.displayName || 
