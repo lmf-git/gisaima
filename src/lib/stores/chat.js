@@ -17,13 +17,30 @@ export const chatStore = writable({
   loading: false,
   error: null,
   unreadCount: 0,
-  currentWorldId: null
+  currentWorldId: null,
+  lastReadTime: Date.now() // Add this line
 });
 
 // Derived store to get messages sorted by timestamp
 export const messages = derived(
   chatStore,
   $chat => $chat.messages.slice().sort((a, b) => a.timestamp - b.timestamp)
+);
+
+// Add a derived store for unread messages that considers time
+export const unreadMessages = derived(
+  chatStore,
+  $chat => {
+    const now = Date.now();
+    const UNREAD_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+    
+    // Only count messages from last 5 minutes that haven't been read
+    return $chat.messages.filter(msg => {
+      const isRecent = (now - msg.timestamp) < UNREAD_THRESHOLD;
+      const isUnread = msg.timestamp > $chat.lastReadTime;
+      return isRecent && isUnread;
+    }).length;
+  }
 );
 
 // Track active subscriptions
@@ -155,7 +172,8 @@ export async function sendMessage(text, messageType = 'user') {
 export function markAllAsRead() {
   chatStore.update(state => ({
     ...state,
-    unreadCount: 0
+    unreadCount: 0,
+    lastReadTime: Date.now()
   }));
 }
 

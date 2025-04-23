@@ -46,6 +46,9 @@
     import Spyglass from '../../components/icons/Spyglass.svelte';
     import Recenter from '../../components/map/Recenter.svelte';
     import Chat from '../../components/map/Chat.svelte';
+    import BirdActive from '../../components/icons/BirdActive.svelte';
+    import { unreadMessages } from "../../lib/stores/chat.js";
+    import Bird from '../../components/icons/Bird.svelte';
 
     const DEBUG_MODE = true;
     const debugLog = (...args) => DEBUG_MODE && console.log(...args);
@@ -103,6 +106,9 @@
 
     // Add state to track last active panel for z-index ordering
     let lastActivePanel = $state('none'); // 'none', 'details', or 'overview'
+
+    // Add derived value for unread count
+    const unreadCount = $derived($unreadMessages);
 
     // Function to handle panel hover events
     function handlePanelHover(panelType) {
@@ -854,6 +860,23 @@
             </div>
         {/if}
         
+        {#if !(showChat || chatClosing)}
+            <div class="chat-controls">
+                <button 
+                    class="control-button chat-button" 
+                    onclick={toggleChat}
+                    aria-label="Show chat"
+                    disabled={!$game?.player?.alive || isTutorialVisible}>
+                    {#if unreadCount > 0}
+                        <BirdActive extraClass="button-icon" />
+                        <span class="message-badge">{unreadCount}</span>
+                    {:else}
+                        <Bird extraClass="button-icon" />
+                    {/if}
+                </button>
+            </div>
+        {/if}
+        
         {#if showMinimap || minimapClosing}
             <Minimap closing={minimapClosing} />
         {/if}
@@ -1074,6 +1097,13 @@
         z-index: 1001;
     }
     
+    .chat-controls {
+        position: absolute;
+        bottom: 1em;
+        right: 1em;
+        z-index: 1001;
+    }
+    
     .control-button {
         min-width: 2em;
         height: 2em;
@@ -1147,5 +1177,26 @@
         padding: 0.3em;
         min-width: 2em;
         width: 2em;
+    }
+
+    .chat-button {
+        position: relative;
+        padding: 0.3em;
+        min-width: 2em;
+        width: 2em;
+    }
+    
+    .message-badge {
+        position: absolute;
+        top: -0.5em;
+        right: -0.5em;
+        background-color: #e74c3c;
+        color: white;
+        border-radius: 1em;
+        padding: 0.2em 0.5em;
+        font-size: 0.7em;
+        min-width: 1.4em;
+        text-align: center;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
     }
 </style>

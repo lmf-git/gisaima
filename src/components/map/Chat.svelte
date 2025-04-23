@@ -70,6 +70,13 @@
       }, 50);
     }
   });
+
+  // Call markAllAsRead when chat is opened
+  $effect(() => {
+    if (isExpanded) {
+      markAllAsRead();
+    }
+  });
   
   // Handle window resizing
   function handleResize() {
