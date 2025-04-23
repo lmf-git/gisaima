@@ -55,7 +55,8 @@
   let displayNameError = $state('');
   let submitting = $state(false);
   let currentStep = $state(1); // Added step tracker: 1 = race selection, 2 = name input
-  
+  let displayNameTouched = $state(false);
+
   // Track expanded state for each race on mobile
   let expandedRaces = $state({});
   
@@ -103,6 +104,8 @@
 
   // Add validation for display name
   function validateDisplayName() {
+    if (!displayNameTouched) return true;
+    
     if (!displayName || displayName.trim().length < 2) {
       displayNameError = 'Display name must be at least 2 characters';
       return false;
@@ -113,6 +116,23 @@
     }
     displayNameError = '';
     return true;
+  }
+
+  // Separate handlers for input and blur
+  function handleInput() {
+    if (displayName?.length > 0) {
+      displayNameTouched = true;
+      validateDisplayName();
+    }
+  }
+  
+  function handleBlur() {
+    // Only mark as touched on blur if the user entered something and then left
+    // or if they tabbed into the field and then out without entering anything
+    if (displayName?.length > 0) {
+      displayNameTouched = true;
+      validateDisplayName();
+    }
   }
 
   // Move to next step (name input)
@@ -256,11 +276,12 @@
           id="display-name" 
           placeholder="Enter your display name" 
           bind:value={displayName} 
-          onblur={validateDisplayName}
-          class:error={displayNameError}
+          onblur={handleBlur}
+          oninput={handleInput}
+          class:error={displayNameError && displayNameTouched}
           disabled={submitting}
         />
-        {#if displayNameError}
+        {#if displayNameError && displayNameTouched}
           <div class="input-error">{displayNameError}</div>
         {/if}
       </div>
@@ -272,7 +293,7 @@
         <button 
           class="confirm-button" 
           onclick={handleConfirm} 
-          disabled={!displayName || submitting || displayNameError}
+          disabled={!displayName?.trim() || submitting}
         >
           {#if submitting}
             <div class="spinner"></div>
