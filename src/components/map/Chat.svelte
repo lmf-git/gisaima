@@ -221,48 +221,29 @@
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
     color: rgba(0, 0, 0, 0.8);
     border: 0.05em solid rgba(255, 255, 255, 0.2);
+    transition: opacity 300ms ease, transform 300ms ease;
+    
+    /* Fixed dimensions and positioning */
     width: min(400px, 90vw);
     max-height: 50vh;
-    transition: opacity 300ms ease, transform 300ms ease;
-    opacity: 0;
-    transform: translateY(10px);
-    pointer-events: none;
     position: absolute;
     bottom: 0;
     right: 0;
+    
+    /* Initial state - invisible and shifted down */
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
   }
   
   .chat-content.visible {
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
-  }
-  
-  .chat-toggle-button {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    border: 0.05em solid rgba(255, 255, 255, 0.2);
-    background-color: rgba(255, 255, 255, 0.85);
-    color: rgba(0, 0, 0, 0.8);
-    cursor: pointer;
+    /* Give the content a definite height */
+    height: auto;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: opacity 200ms ease;
-  }
-  
-  .chat-toggle-button.hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
-  
-  .chat-toggle-button:hover {
-    background-color: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 0.3em 1.2em rgba(0, 0, 0, 0.15);
+    flex-direction: column;
   }
   
   .chat-header {
@@ -273,6 +254,7 @@
     background-color: rgba(0, 0, 0, 0.05);
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     font-family: var(--font-heading);
+    flex-shrink: 0;
   }
   
   .chat-header h3 {
@@ -307,6 +289,128 @@
     gap: 0.5rem;
   }
   
+  .chat-input-form {
+    display: flex;
+    padding: 0.5rem;
+    gap: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+  }
+  
+  .chat-input-form input {
+    flex: 1;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.8);
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .chat-input-form button {
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    border: none;
+    background-color: #4a7dca;
+    color: white;
+    cursor: pointer;
+  }
+  
+  .chat-input-form button:hover:not(:disabled) {
+    background-color: #5a8dda;
+  }
+  
+  .chat-input-form button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .chat-toggle-button {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.85);
+    color: rgba(0, 0, 0, 0.8);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: opacity 200ms ease;
+  }
+  
+  .chat-toggle-button.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  .chat-toggle-button:hover {
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0.3em 1.2em rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Messages styling */
+  .chat-message {
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    background-color: rgba(255, 255, 255, 0.5);
+    word-break: break-word;
+    position: relative;
+    animation: fadeIn 0.2s ease;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .system-message {
+    background-color: rgba(200, 200, 255, 0.5);
+    font-style: italic;
+    border: 1px solid rgba(100, 100, 255, 0.3);
+  }
+  
+  .event-message {
+    background-color: rgba(255, 200, 200, 0.5);
+    border: 1px solid rgba(255, 100, 100, 0.3);
+  }
+  
+  .player-message {
+    background-color: rgba(200, 255, 200, 0.5);
+    border: 1px solid rgba(100, 255, 100, 0.3);
+  }
+  
+  .error {
+    background-color: rgba(255, 200, 200, 0.5);
+    border: 1px solid rgba(255, 100, 100, 0.3);
+    color: #c62828;
+  }
+  
+  .message-user {
+    font-weight: bold;
+    margin-right: 0.5rem;
+    color: rgba(0, 0, 0, 0.85);
+  }
+  
+  .message-text {
+    display: inline;
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .message-time {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.5);
+    margin-left: 0.5rem;
+    white-space: nowrap;
+  }
+  
   .unread-badge {
     position: absolute;
     top: -5px;
@@ -323,7 +427,8 @@
     font-weight: bold;
     box-shadow: 0 0 0.3em rgba(0, 0, 0, 0.2);
   }
-
+  
+  /* Global styles */
   :global(.bird-icon) {
     width: 1.2rem;
     height: 1.2rem;
