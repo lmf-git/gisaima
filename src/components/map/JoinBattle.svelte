@@ -49,6 +49,13 @@
         }))
       : [];
     
+    // Auto-select first group if there's only one
+    if (availableGroups.length === 1) {
+      selectedGroup = availableGroups[0];
+    } else {
+      selectedGroup = null;
+    }
+    
     // Find active battles with improved detection
     const battles = new Map();
     

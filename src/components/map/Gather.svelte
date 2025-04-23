@@ -52,8 +52,16 @@
           ...group,
           selected: false
         }));
+      
+      // Auto-select first group if there's only one
+      if (availableGroups.length === 1) {
+        selectedGroup = availableGroups[0];
+      } else {
+        selectedGroup = null;
+      }
     } else {
       availableGroups = [];
+      selectedGroup = null;
     }
     
     // Process items - even if there are none, we'll handle that case
@@ -67,8 +75,7 @@
       selected: false
     }));
       
-    // Clear selections when available data changes
-    selectedGroup = null;
+    // Clear item selections when available data changes
     selectedItems = [];
   });
   

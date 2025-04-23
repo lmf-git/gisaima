@@ -84,8 +84,14 @@
     // Update only if changes detected (length check is faster than deep comparison)
     if (playerGroups.length !== myGroups.length || !playerGroups.every((g, i) => g.id === myGroups[i]?.id)) {
       playerGroups = myGroups;
-      // Reset selections when groups change
-      selectedPlayerGroups = [];
+      
+      // Auto-select first group if there's only one player group
+      if (myGroups.length === 1) {
+        selectedPlayerGroups = [myGroups[0]];
+      } else {
+        // Reset selections when groups change
+        selectedPlayerGroups = [];
+      }
     }
     
     if (enemyGroups.length !== enemies.length || !enemyGroups.every((g, i) => g.id === enemies[i]?.id)) {

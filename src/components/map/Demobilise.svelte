@@ -28,7 +28,13 @@
         ...group,
         selected: false
       }));
-    selectedGroup = null;
+    
+    // Auto-select first group if there's only one
+    if (availableGroups.length === 1) {
+      selectedGroup = availableGroups[0];
+    } else {
+      selectedGroup = null;
+    }
   });
 
   function selectGroup(group) {
