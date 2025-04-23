@@ -5,7 +5,8 @@
   import { game } from '../../lib/stores/game.js';
   import { user } from '../../lib/stores/user.js';
   import Close from '../icons/Close.svelte';
-  import Message from '../icons/Message.svelte';
+  import Bird from '../icons/Bird.svelte';
+  import BirdActive from '../icons/BirdActive.svelte';
   
   // Props using Svelte 5 runes syntax
   const { closing = false } = $props();
@@ -179,9 +180,11 @@
       onclick={toggleChat}
       aria-label="Open chat"
     >
-      <Message extraClass="message-icon" />
       {#if unreadCount > 0}
+        <BirdActive extraClass="bird-icon" />
         <span class="unread-badge">{unreadCount}</span>
+      {:else}
+        <Bird extraClass="bird-icon" />
       {/if}
     </button>
   {/if}
@@ -195,14 +198,16 @@
     z-index: 100;
     display: flex;
     flex-direction: column;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(255, 255, 255, 0.85);
     border-radius: 0.5rem;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     overflow: hidden;
     transition: all 0.3s ease;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-    color: white;
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    color: rgba(0, 0, 0, 0.8);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
   }
   
   .chat-container.expanded {
@@ -225,20 +230,23 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 1rem;
-    background-color: rgba(40, 40, 40, 0.8);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    font-family: var(--font-heading);
   }
   
   .chat-header h3 {
     margin: 0;
     font-size: 1.1rem;
     font-weight: 500;
+    color: rgba(0, 0, 0, 0.8);
   }
   
   .close-button {
     background: none;
     border: none;
     cursor: pointer;
-    color: white;
+    color: rgba(0, 0, 0, 0.6);
     padding: 0.25rem;
     display: flex;
     align-items: center;
@@ -246,7 +254,7 @@
   }
   
   .close-button:hover {
-    color: #ddd;
+    color: rgba(0, 0, 0, 0.9);
   }
   
   .chat-messages {
@@ -262,10 +270,11 @@
   .chat-message {
     padding: 0.5rem;
     border-radius: 0.25rem;
-    background-color: rgba(50, 50, 60, 0.5);
+    background-color: rgba(255, 255, 255, 0.5);
     word-break: break-word;
     position: relative;
     animation: fadeIn 0.2s ease;
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
   
   @keyframes fadeIn {
@@ -274,34 +283,41 @@
   }
   
   .system-message {
-    background-color: rgba(40, 40, 100, 0.5);
+    background-color: rgba(200, 200, 255, 0.5);
     font-style: italic;
+    border: 1px solid rgba(100, 100, 255, 0.3);
   }
   
   .event-message {
-    background-color: rgba(100, 40, 40, 0.5);
+    background-color: rgba(255, 200, 200, 0.5);
+    border: 1px solid rgba(255, 100, 100, 0.3);
   }
   
   .player-message {
-    background-color: rgba(40, 100, 60, 0.5);
+    background-color: rgba(200, 255, 200, 0.5);
+    border: 1px solid rgba(100, 255, 100, 0.3);
   }
   
   .error {
-    background-color: rgba(140, 40, 40, 0.5);
+    background-color: rgba(255, 200, 200, 0.5);
+    border: 1px solid rgba(255, 100, 100, 0.3);
+    color: #c62828;
   }
   
   .message-user {
     font-weight: bold;
     margin-right: 0.5rem;
+    color: rgba(0, 0, 0, 0.85);
   }
   
   .message-text {
     display: inline;
+    color: rgba(0, 0, 0, 0.8);
   }
   
   .message-time {
     font-size: 0.75rem;
-    color: #aaa;
+    color: rgba(0, 0, 0, 0.5);
     margin-left: 0.5rem;
     white-space: nowrap;
   }
@@ -309,32 +325,33 @@
   .location-button {
     margin-left: 0.5rem;
     font-size: 0.75rem;
-    background: rgba(70, 130, 180, 0.5);
-    border: none;
+    background: rgba(70, 130, 180, 0.15);
+    border: 1px solid rgba(70, 130, 180, 0.3);
     border-radius: 0.25rem;
     padding: 0.1rem 0.3rem;
-    color: white;
+    color: #0277bd;
     cursor: pointer;
   }
   
   .location-button:hover {
-    background: rgba(70, 130, 180, 0.8);
+    background: rgba(70, 130, 180, 0.3);
   }
   
   .chat-input-form {
     display: flex;
     padding: 0.5rem;
     gap: 0.5rem;
-    background-color: rgba(30, 30, 30, 0.8);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
   }
   
   .chat-input-form input {
     flex: 1;
     padding: 0.5rem;
     border-radius: 0.25rem;
-    border: 1px solid #444;
-    background-color: rgba(60, 60, 60, 0.8);
-    color: white;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.8);
+    color: rgba(0, 0, 0, 0.8);
   }
   
   .chat-input-form button {
@@ -359,19 +376,22 @@
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 50%;
-    border: none;
-    background-color: rgba(50, 50, 60, 0.8);
-    color: white;
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.85);
+    color: rgba(0, 0, 0, 0.8);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
   
   .chat-toggle-button:hover {
-    background-color: rgba(60, 60, 70, 0.9);
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0.3em 1.2em rgba(0, 0, 0, 0.15);
   }
   
   .unread-badge {
@@ -388,12 +408,13 @@
     align-items: center;
     justify-content: center;
     font-weight: bold;
+    box-shadow: 0 0 0.3em rgba(0, 0, 0, 0.2);
   }
 
-  :global(.message-icon) {
+  :global(.bird-icon) {
     width: 1.2rem;
     height: 1.2rem;
-    fill: white;
+    fill: rgba(0, 0, 0, 0.8);
   }
   
   :global(.close-icon) {
