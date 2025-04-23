@@ -152,6 +152,7 @@
             } else {
                 // If no specific panel is active or the last active is closed,
                 // close any open panel in a consistent order (only one)
+                // Only check panels that are actually open
                 if (showChat) {
                     showChat = false;
                     event.preventDefault();
@@ -169,6 +170,7 @@
                     event.preventDefault();
                     event.stopPropagation();
                 }
+                // Don't do anything if no panels are open
             }
         }
     }
@@ -1071,18 +1073,20 @@
                 {/if}
             </div>
 
-            <div class="achievements-wrapper" 
-                class:visible={showAchievements}
-                class:active={lastActivePanel === 'achievements'}
-                onmouseenter={() => handlePanelHover('achievements')}
-                role="region"
-                aria-label="Achievements panel container"
-            >
-                <Achievements 
-                  onClose={toggleAchievements} 
-                  onMouseEnter={() => handlePanelHover('achievements')}
-                />
-            </div>
+            {#if showAchievements}
+                <div class="achievements-wrapper" 
+                    class:visible={true}
+                    class:active={lastActivePanel === 'achievements'}
+                    onmouseenter={() => handlePanelHover('achievements')}
+                    role="region"
+                    aria-label="Achievements panel container"
+                >
+                    <Achievements 
+                      onClose={toggleAchievements} 
+                      onMouseEnter={() => handlePanelHover('achievements')}
+                    />
+                </div>
+            {/if}
         {/if}
 
         {#if showMinimap}

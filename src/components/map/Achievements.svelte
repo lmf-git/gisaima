@@ -252,7 +252,7 @@
 
   // Handle escape key for Achievements component
   function handleKeyDown(event) {
-    if (event.key === 'Escape' && visible) {
+    if (event.key === 'Escape' && visible && !closing) {
       event.preventDefault();
       close();
     }
