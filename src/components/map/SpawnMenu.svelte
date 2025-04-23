@@ -101,6 +101,8 @@
   // Handle spawn selection
   function selectSpawn(spawn) {
     selectedSpawn = spawn;
+
+    console.log(spawn);
     
     // Get coordinates from spawn
     let spawnX, spawnY;
@@ -128,6 +130,9 @@
 
     try {
       setLoading(true);
+
+      console.log(spawn, spawn.position);
+
       
       // Get the correct coordinates from the spawn data
       const spawnX = spawn.x ?? spawn.position?.x ?? 0;

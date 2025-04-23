@@ -876,8 +876,7 @@
                 <button 
                     class="control-button chat-button" 
                     onclick={toggleChat}
-                    aria-label="Show chat"
-                    disabled={!$game?.player?.alive || isTutorialVisible}>
+                    aria-label="Show chat">
                     {#if unreadCount > 0}
                         <BirdActive extraClass="button-icon" />
                         <span class="message-badge">{unreadCount}</span>
@@ -891,8 +890,7 @@
                 <button 
                     class="control-button achievements-button" 
                     onclick={toggleAchievements}
-                    aria-label="Show achievements"
-                    disabled={!$game?.player?.alive || isTutorialVisible}>
+                    aria-label="Show achievements">
                     <AchievementIcon extraClass="button-icon" />
                 </button>
             {/if}
@@ -903,8 +901,7 @@
                 <button 
                     class="control-button achievements-button" 
                     onclick={toggleAchievements}
-                    aria-label="Show achievements"
-                    disabled={!$game?.player?.alive || isTutorialVisible}>
+                    aria-label="Show achievements">
                     <AchievementIcon extraClass="button-icon" />
                 </button>
             </div>
