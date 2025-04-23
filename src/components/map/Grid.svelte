@@ -23,6 +23,7 @@
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
   import Compass from '../icons/Compass.svelte';
+  import YouAreHere from '../icons/YouAreHere.svelte'; // Add YouAreHere import
   
   // Props with defaults using Svelte 5 $props() rune
   const { 
@@ -989,6 +990,13 @@
             aria-label={`Coordinates ${cell.x},${cell.y}`}
             role="gridcell"
           >
+            <!-- Add YouAreHere component for player's position -->
+            {#if isCurrentPlayerHere && $ready}
+              <div class="you-are-here-container">
+                <YouAreHere size="2.5em" />
+              </div>
+            {/if}
+
             <!-- Add structure name display -->
             {#if cell.structure && cell.structure.name}
               <div class="structure-name-label">
@@ -1906,5 +1914,19 @@
 
   .fortress-structure .structure-name-label {
     color: rgba(255, 230, 200, 1);
+  }
+
+  /* Add styling for YouAreHere component container */
+  .you-are-here-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
   }
 </style>

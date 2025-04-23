@@ -234,6 +234,8 @@
         if ($game.player?.lastLocation) {
             const location = $game.player.lastLocation;
             moveTarget(location.x, location.y);
+
+        // Try removing this
         } else if ($game.worldKey) {
             const worldCenter = getWorldCenterCoordinates($game.worldKey);
             moveTarget(worldCenter.x, worldCenter.y);
