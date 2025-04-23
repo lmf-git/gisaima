@@ -101,16 +101,14 @@
   // Handle spawn selection
   function selectSpawn(spawn) {
     selectedSpawn = spawn;
-
     console.log(spawn);
     
-    // Get coordinates directly from spawn.position
-    const spawnX = spawn.position?.x ?? 0;
-    const spawnY = spawn.position?.y ?? 0;
+    // Get coordinates directly from spawn.position - no null checks needed
+    const spawnX = spawn.position.x;
+    const spawnY = spawn.position.y;
     
-    // Only move if coordinates exist and we're not already at these coordinates
-    if (spawnX !== 0 && spawnY !== 0 && 
-        ($map.target.x !== spawnX || $map.target.y !== spawnY)) {
+    // Only move if we're not already at these coordinates
+    if ($map.target.x !== spawnX || $map.target.y !== spawnY) {
       moveTarget(spawnX, spawnY);
     }
   }
@@ -125,9 +123,9 @@
     try {
       setLoading(true);
       
-      // Get coordinates directly from spawn.position
-      const spawnX = spawn.position?.x ?? 0;
-      const spawnY = spawn.position?.y ?? 0;
+      // Get coordinates directly from spawn.position - no null checks needed
+      const spawnX = spawn.position.x;
+      const spawnY = spawn.position.y;
 
       console.log(`Spawning player at ${spawnX},${spawnY} for spawn ID: ${spawn.id}`);
       
