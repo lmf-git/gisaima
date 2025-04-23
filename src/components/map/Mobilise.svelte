@@ -22,9 +22,19 @@
   let availableUnits = $state([]);
   let selectedUnits = $state([]);
   let includePlayer = $state(true);
-  let groupName = $state("New Force");
+  // Initialize with empty string and will set later in effect
+  let groupName = $state("");
   let mobilizeError = $state(null);
   let processing = $state(false);
+
+  // Set default group name when component loads, based on player's name
+  $effect(() => {
+    if ($currentPlayer?.displayName) {
+      groupName = `${$currentPlayer.displayName}'s Force`;
+    } else {
+      groupName = "New Force";
+    }
+  });
 
   function isPlayerOnTile(tile, playerId) {
     if (!tile || !tile.players) return false;
