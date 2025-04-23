@@ -272,7 +272,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 1010; /* Increased from 1000 to 1010 to be above Legend's z-index of 1001 */
   }
 
   .spawn-menu {
