@@ -22,47 +22,44 @@
   const MAX_MESSAGE_LENGTH = 200;
   const VISIBLE_MESSAGES_LIMIT = 50; // Limit visible messages for better performance
   
-  // Use Set for tracking processed message IDs - much more efficient lookups
-  let processedMessageIds = $state(new Set());
-  
   // Cleanup function
   let cleanup = $state(() => {});
   
-  // Memoized messages using Set for efficient processing
-  const messageSet = $derived(() => {
-    const allMessages = $messages || [];
-    const currentIds = new Set(allMessages.map(m => m.id));
+  // Add extensive debugging for raw messages
+  $effect(() => {
+    const rawMessages = $messages;
+    console.log(`Raw messages from store: ${rawMessages.length} messages`);
     
-    // For debugging - log added/removed messages
-    if (allMessages.length > 0) {
-      const newIds = [...currentIds].filter(id => !processedMessageIds.has(id));
-      if (newIds.length > 0) {
-        console.log(`${newIds.length} new messages received`);
-      }
+    if (rawMessages.length > 0) {
+      // Force display the first message to verify data
+      console.log(`First message: ${JSON.stringify(rawMessages[0])}`);
     }
-    
-    // Update processed IDs set
-    processedMessageIds = currentIds;
-    
-    return allMessages;
   });
   
-  // Create a sliced view of messages for rendering
-  const memoizedMessages = $derived(() => {
-    const allMessages = messageSet;
+  // Skip the derived value and use the store directly for simplicity
+  let displayMessages = $derived($messages || []);
+  
+  // Create limited view for display
+  let limitedMessages = $derived(() => {
+    const msgs = displayMessages;
+    console.log(`Creating limited view of ${msgs.length} messages`);
     
-    // Only show the last N messages to avoid performance issues
-    if (allMessages.length > VISIBLE_MESSAGES_LIMIT) {
-      return allMessages.slice(-VISIBLE_MESSAGES_LIMIT);
+    if (msgs.length > VISIBLE_MESSAGES_LIMIT) {
+      return msgs.slice(-VISIBLE_MESSAGES_LIMIT);
     }
-    return allMessages;
+    return msgs;
   });
   
   // Derived values using runes
   const isLoading = $derived($chatStore.loading);
   const hasError = $derived($chatStore.error);
   const worldKey = $derived($game.worldKey);
-  const messagesVisible = $derived(memoizedMessages.length > 0);
+  const messagesVisible = $derived(displayMessages.length > 0);
+  
+  // Log derived state conditions that affect display
+  $effect(() => {
+    console.log(`Display conditions: loading=${isLoading}, error=${hasError}, messages=${displayMessages.length}, visible=${messagesVisible}`);
+  });
   
   // Track state for scroll behavior
   let messageCount = $state(0);
@@ -73,7 +70,6 @@
   $effect(() => {
     if (worldKey) {
       console.log(`Initializing chat for world: ${worldKey}`);
-      processedMessageIds = new Set(); // Clear processed IDs on world change
       cleanup = initializeChat(worldKey);
     }
     
@@ -115,8 +111,9 @@
   
   // Track message count changes efficiently
   $effect(() => {
-    const newCount = memoizedMessages.length;
+    const newCount = displayMessages.length;
     if (newCount !== messageCount) {
+      console.log(`Message count updated: ${messageCount} -> ${newCount}`);
       messageCount = newCount;
     }
   });
@@ -202,17 +199,23 @@
       </div>
     {:else if !messagesVisible}
       <div class="chat-message system-message">
-        <span class="message-text">No messages yet.</span>
+        <span class="message-text">No messages yet. (Debug: Raw count: {$messages?.length})</span>
       </div>
     {:else}
+      <!-- Direct debug of what's in the displayMessages array -->
+      <div class="chat-message system-message">
+        <span class="message-text">Debug: Found {displayMessages.length} messages to display</span>
+      </div>
+      
       <!-- Show message when we're limiting history -->
-      {#if messageSet.length > VISIBLE_MESSAGES_LIMIT}
+      {#if displayMessages.length > VISIBLE_MESSAGES_LIMIT}
         <div class="chat-message system-message history-notice">
           <span class="message-text">Showing most recent {VISIBLE_MESSAGES_LIMIT} messages</span>
         </div>
       {/if}
       
-      {#each memoizedMessages as message (message.id)}
+      <!-- USE $messages DIRECTLY in the #each loop rather than displayMessages -->
+      {#each $messages as message (message.id)}
         {@const isUser = message.type === 'user'}
         {@const isSystem = message.type === 'system'}
         {@const isEvent = message.type === 'event'}
