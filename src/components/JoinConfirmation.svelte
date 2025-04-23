@@ -158,10 +158,23 @@
     
     return singularForms[race.id] || race.id.charAt(0).toUpperCase() + race.id.slice(1);
   }
+
+  // Add keyboard handler for backdrop
+  function handleBackdropKeyDown(event) {
+    if (event.key === 'Escape' || event.key === 'Enter') {
+      onClose();
+    }
+  }
 </script>
 
 <!-- Add backdrop that covers the full screen -->
-<div class={`confirmation-backdrop ${animatingOut ? 'animate-out' : 'animate-in'}`} onclick={onClose}>
+<div 
+  class={`confirmation-backdrop ${animatingOut ? 'animate-out' : 'animate-in'}`} 
+  onclick={onClose}
+  onkeydown={handleBackdropKeyDown}
+  role="button"
+  tabindex="0"
+>
 </div>
 
 <div class={`join-confirmation ${animatingOut ? 'animate-out' : 'animate-in'}`}>
@@ -246,7 +259,6 @@
           onblur={validateDisplayName}
           class:error={displayNameError}
           disabled={submitting}
-          autofocus
         />
         {#if displayNameError}
           <div class="input-error">{displayNameError}</div>
@@ -432,6 +444,7 @@
     text-overflow: ellipsis;
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
   }
   
