@@ -408,6 +408,21 @@
         }
     });
 
+    $effect(() => {
+        if ($game.player?.alive && isTutorialVisible) {
+            // Close achievements and details when tutorial becomes visible
+            showAchievements = false;
+            detailed = false;
+        }
+    });
+
+    $effect(() => {
+        // Close chat if tutorial becomes visible
+        if (isTutorialVisible && showChat) {
+            showChat = false;
+        }
+    });
+
     function showModal(options) {
         if (!options) return;
         
@@ -651,9 +666,13 @@
         
         isTutorialVisible = isVisible;
         
-        if (isTutorialVisible && (showMinimap || showEntities)) {
+        if (isTutorialVisible) {
+            // Close other panels when tutorial opens
             showMinimap = false;
             showEntities = false;
+            showAchievements = false; // Also close achievements
+            detailed = false; // Close details panel
+            showChat = false; // Close chat panel
         }
     }
 
@@ -1077,13 +1096,13 @@
 
         {#if $ready && $game?.player?.alive}
             <div class="chat-wrapper" 
-                class:visible={showChat} 
+                class:visible={showChat && !isTutorialVisible} 
                 class:active={lastActivePanel === 'chat'}
                 onmouseenter={() => handlePanelHover('chat')}
                 role="region"
                 aria-label="Chat panel container"
             >
-                {#if showChat}
+                {#if showChat && !isTutorialVisible}
                     <Chat 
                         isActive={lastActivePanel === 'chat'} 
                         closing={!showChat}
@@ -1093,7 +1112,7 @@
                 {/if}
             </div>
 
-            {#if showAchievements}
+            {#if showAchievements && !isTutorialVisible}
                 <div class="achievements-wrapper" 
                     class:visible={true}
                     class:active={lastActivePanel === 'achievements'}
@@ -1139,14 +1158,14 @@
             />
         {/if}
 
-        {#if detailed}
+        {#if detailed && !isTutorialVisible}
             <Details 
                 onClose={() => toggleDetailsModal(false)} 
                 onShowModal={showModal} 
                 isActive={lastActivePanel === 'details'}
                 onMouseEnter={() => handlePanelHover('details')}
             />
-        {:else if $ready && !isPathDrawingMode}
+        {:else if $ready && !isPathDrawingMode && !isTutorialVisible && !(modalState.visible && modalState.type === 'inspect')}
             <Legend 
                 x={$targetStore.x}  
                 y={$targetStore.y}  
