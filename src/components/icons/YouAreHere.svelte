@@ -63,32 +63,38 @@
     bottom: -3.1em; /* Changed from -2.6em to -3.1em for even lower placement */
     left: 50%;
     transform: translateX(-50%);
-    color: white;
+    /* Change to dark text on gold background */
+    color: rgba(50, 30, 0, 0.95); /* Dark text color */
     font-weight: bold;
-    /* Make text larger */
     font-size: calc(var(--indicator-size) / 8);
     padding: 0.2em 0.6em;
-    background: rgba(0, 0, 0, 0.7);
+    /* Gold background matching ring color scheme */
+    background: linear-gradient(to bottom, rgba(255, 215, 0, 0.9), rgba(218, 165, 32, 0.85));
     border-radius: 0.3em;
     white-space: nowrap;
-    text-shadow: 0 0 4px black;
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.7); /* Light text shadow for readability */
     font-family: var(--font-heading, sans-serif);
     letter-spacing: 0.05em;
     animation: bounce 2s infinite;
-    /* Distinct style from structure names but keeping general shape */
-    border: 1px solid rgba(255, 215, 0, 0.6); /* Golden border to distinguish */
-    box-shadow: 0 0 12px rgba(0, 0, 0, 0.6), 0 0 5px rgba(255, 215, 0, 0.3);
+    border: 1px solid rgba(255, 215, 0, 0.9);
+    box-shadow: 
+      0 0 4px rgba(0, 0, 0, 0.5), 
+      0 0 8px rgba(255, 215, 0, 0.4), 
+      inset 0 0 2px rgba(255, 255, 255, 0.8);
     z-index: 1101;
   }
 
-  /* Make text for structures smaller and with distinct style */
+  /* Make text for structures smaller with matching style */
   .has-structure .location-text {
     font-size: calc(var(--indicator-size) / 16); /* Smaller - changed from /13 to /16 */
     bottom: -2.7em; /* Changed from -2.2em to -2.7em to be lower */
     padding: 0.25em 0.7em;
-    background: rgba(0, 0, 0, 0.75); /* Slightly darker background */
-    border: 1px solid rgba(255, 215, 0, 0.5); /* Golden border */
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.7), 0 0 4px rgba(255, 215, 0, 0.25);
+    background: linear-gradient(to bottom, rgba(255, 215, 0, 0.85), rgba(218, 165, 32, 0.8));
+    border: 1px solid rgba(255, 215, 0, 0.7);
+    box-shadow: 
+      0 0 3px rgba(0, 0, 0, 0.5), 
+      0 0 6px rgba(255, 215, 0, 0.3), 
+      inset 0 0 2px rgba(255, 255, 255, 0.7);
     font-weight: 600; /* Slightly less bold than regular */
   }
 
@@ -114,11 +120,11 @@
   @keyframes bounce {
     0%, 100% { 
       transform: translateX(-50%) translateY(0); 
-      text-shadow: 0 0 3px black;
+      text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
     }
     50% { 
       transform: translateX(-50%) translateY(-0.3em); 
-      text-shadow: 0 0 5px black;
+      text-shadow: 0 0 3px rgba(255, 255, 255, 0.9);
     }
   }
 </style>
