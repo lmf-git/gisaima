@@ -1055,11 +1055,6 @@
             
             <!-- Entity indicators -->
             <div class="entity-indicators">
-              {#if isCurrentPlayerHere}
-                <div class="entity-indicator player-position-indicator" 
-                     class:from-world-data={playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y && !hasCurrentPlayerEntity(cell)}></div>
-              {/if}
-              
               {#if hasPlayers}
                 <div class="entity-indicator player-indicator" 
                      class:current-player-indicator={isCurrentPlayerHere}>
@@ -1411,18 +1406,19 @@
   /* Remove the old player position styles that conflict */
   .player-position {
     position: relative;
-    box-shadow: inset 0 0 0.6em rgba(255, 215, 0, 0.7);
+    /* Removed the box-shadow with gold color */
     z-index: 2;
   }
   
   .player-position:before {
-    content: '';
+    /* Remove the content and border completely */
+    content: none;
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    border: 0.15em solid gold;
+    /* Removed the gold border */
     pointer-events: none;
     z-index: 2;
   }
