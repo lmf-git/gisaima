@@ -29,16 +29,19 @@ export const messages = derived(
 
 // Add a derived store for unread messages that considers time
 export const unreadMessages = derived(
-  chatStore,
-  $chat => {
+  [chatStore, user],  // Include user store to check message ownership
+  ([$chat, $user]) => {
     const now = Date.now();
     const UNREAD_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+    const currentUserId = $user?.uid;
     
     // Only count messages from last 5 minutes that haven't been read
+    // AND were not sent by the current user
     return $chat.messages.filter(msg => {
       const isRecent = (now - msg.timestamp) < UNREAD_THRESHOLD;
       const isUnread = msg.timestamp > $chat.lastReadTime;
-      return isRecent && isUnread;
+      const isNotOwnMessage = msg.userId !== currentUserId; // Exclude own messages
+      return isRecent && isUnread && isNotOwnMessage;
     }).length;
   }
 );

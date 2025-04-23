@@ -95,23 +95,17 @@
     let showEntities = $state(false);
     let showChat = $state(true);
     let showAchievements = $state(false);
-    const ANIMATION_DURATION = 800;
 
     let initialized = $state(false);
     let initializationRetries = $state(0);
     const MAX_INIT_RETRIES = 3;
     
-    let ignoreNextUrlChange = $state(false);
-    let lastProcessedLocation = $state(null);
-
     let lastActivePanel = $state('none'); // 'none', 'details', 'overview', 'chat', 'achievements'
     let shouldShowAchievementsAfterSpawn = $state(true); // New state to track if achievements should show after spawn
 
     const unreadCount = $derived($unreadMessages);
 
     const spawnMenuVisible = $derived(!$game?.player?.alive);
-
-    let worldMembershipChecked = $state(false);
 
     function handlePanelHover(panelType) {
         if (panelType && ((panelType === 'chat' && showChat) || 
