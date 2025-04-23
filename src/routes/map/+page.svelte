@@ -380,6 +380,16 @@
             const savedChatState = localStorage.getItem('chat');
             const savedAchievementsState = localStorage.getItem('achievements');
             const achievementsClosed = localStorage.getItem('achievements_closed') === 'true';
+            
+            // Add handling for minimap and overview states
+            const savedMinimapState = localStorage.getItem('minimap');
+            const savedOverviewState = localStorage.getItem('overview');
+            
+            // Set minimap state based on localStorage (default to true if not set)
+            showMinimap = savedMinimapState !== 'false';
+            
+            // Set overview/entities state based on localStorage (default to true if not set)
+            showEntities = savedOverviewState !== 'false';
 
             // First handle achievements since it has higher priority
             if (savedAchievementsState === 'true' && !achievementsClosed) {
@@ -1502,6 +1512,6 @@
         /* Remove pointer-events: none so the component can be interacted with */
         /* pointer-events: none; */
     }
-    
+
     /* ...existing code... */
 </style>
