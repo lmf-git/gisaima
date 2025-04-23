@@ -1,6 +1,195 @@
 {
+  "players": {
+    "mLmp0dddWsUA7o1QdvCJKgOwbUC2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "mobilised": true,
+            "mobilised_date": 1745427066555
+          },
+          "alive": true,
+          "displayName": "Adam",
+          "groups": {
+            "-OOYYqlRYtmEGOhZa69Q": {
+              "at": "-23,5",
+              "id": "-OOYYqlRYtmEGOhZa69Q",
+              "status": "idle"
+            }
+          },
+          "id": "mLmp0dddWsUA7o1QdvCJKgOwbUC2",
+          "inGroup": "-OOYYqlRYtmEGOhZa69Q",
+          "joined": 1745425977592,
+          "lastLocation": {
+            "x": -23,
+            "y": 5
+          },
+          "race": "human"
+        }
+      }
+    }
+  },
   "worlds": {
     "ancient-lands": {
+      "chat": {
+        "-OOY7HZdDi3rMuC3P-X5": {
+          "location": {
+            "x": -30,
+            "y": -12
+          },
+          "text": "New Force is being mobilized at (-30,-12)",
+          "timestamp": 1745419839714,
+          "type": "system"
+        },
+        "-OOYFIz1S2Y09KIyBlCX": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "New Force is being mobilized at (-23,5)",
+          "timestamp": 1745421942646,
+          "type": "system"
+        },
+        "-OOYFW3jtUqhz9jzRta4": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Heya",
+          "timestamp": 1745421996301,
+          "type": "user",
+          "userId": "A9V9Sx3yqSQjzDvrme0gcfn5oZl2",
+          "userName": "Anonymous"
+        },
+        "-OOYSc5aGWJ_Wxl2Xn5z": {
+          "location": {
+            "x": -32,
+            "y": -10
+          },
+          "text": "New Force is being mobilized at (-32,-10)",
+          "timestamp": 1745425432912,
+          "type": "system"
+        },
+        "-OOYYqnWoj7zlv4slzL1": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "New Force is being mobilized at (-23,5)",
+          "timestamp": 1745427066013,
+          "type": "system"
+        },
+        "chat_1745419861345_726": {
+          "location": {
+            "timestamp": 1745419861345,
+            "x": -30,
+            "y": -12
+          },
+          "text": "A lone elf warrior has mobilized at (-30, -12) - \"New Force\"",
+          "timestamp": 1745419861345,
+          "type": "event",
+          "userId": "O2XpFdiBXsRPLZsRzyFUsFu7UXd2",
+          "userName": "New Force"
+        },
+        "chat_1745421961809_652": {
+          "location": {
+            "timestamp": 1745421961809,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"New Force\"",
+          "timestamp": 1745421961809,
+          "type": "event",
+          "userId": "A9V9Sx3yqSQjzDvrme0gcfn5oZl2",
+          "userName": "New Force"
+        },
+        "chat_1745425445855_983": {
+          "location": {
+            "timestamp": 1745425445855,
+            "x": -32,
+            "y": -10
+          },
+          "text": "A lone dwarf warrior has mobilized at (-32, -10) - \"New Force\"",
+          "timestamp": 1745425445855,
+          "type": "event",
+          "userId": "UFyD3h741RXZlbiDT91PGZJ8BJ92",
+          "userName": "New Force"
+        },
+        "chat_1745427121890_811": {
+          "location": {
+            "timestamp": 1745427121890,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"New Force\"",
+          "timestamp": 1745427121890,
+          "type": "event",
+          "userId": "mLmp0dddWsUA7o1QdvCJKgOwbUC2",
+          "userName": "New Force"
+        },
+        "move_1745422561121_-OOYFIwvzIX5uvZsfCR0_3": {
+          "location": {
+            "x": -25,
+            "y": 8
+          },
+          "text": "New Force has arrived at (-25,8) and continues their journey",
+          "timestamp": 1745422561121,
+          "type": "event"
+        },
+        "move_1745422801959_-OOYFIwvzIX5uvZsfCR0_6": {
+          "location": {
+            "x": -27,
+            "y": 5
+          },
+          "text": "New Force has arrived at (-27,5) and continues their journey",
+          "timestamp": 1745422801959,
+          "type": "event"
+        },
+        "move_1745423101306_-OOYFIwvzIX5uvZsfCR0_9": {
+          "location": {
+            "x": -26,
+            "y": 2
+          },
+          "text": "New Force has arrived at (-26,2) and continues their journey",
+          "timestamp": 1745423101306,
+          "type": "event"
+        },
+        "move_1745423401603_-OOYFIwvzIX5uvZsfCR0_12": {
+          "location": {
+            "x": -25,
+            "y": -1
+          },
+          "text": "New Force has arrived at (-25,-1) and continues their journey",
+          "timestamp": 1745423401603,
+          "type": "event"
+        },
+        "move_1745423645845_-OOYFIwvzIX5uvZsfCR0_15": {
+          "location": {
+            "x": -24,
+            "y": -4
+          },
+          "text": "New Force has arrived at (-24,-4) and continues their journey",
+          "timestamp": 1745423645845,
+          "type": "event"
+        },
+        "move_1745423881616_-OOYFIwvzIX5uvZsfCR0_18": {
+          "location": {
+            "x": -23,
+            "y": -7
+          },
+          "text": "New Force has arrived at (-23,-7) and continues their journey",
+          "timestamp": 1745423881616,
+          "type": "event"
+        },
+        "move_1745424001901_-OOYFIwvzIX5uvZsfCR0_19": {
+          "location": {
+            "x": -23,
+            "y": -8
+          },
+          "text": "New Force has arrived at (-23,-8)",
+          "timestamp": 1745424001901,
+          "type": "event"
+        }
+      },
       "chunks": {
         "-1,-1": {
           "-23,-8": {
@@ -92,71 +281,37 @@
               "race": "elf",
               "type": "spawn"
             }
-          },
-          "-32,-10": {
-            "structure": {
-              "description": "The ancestral mountain home of the dwarf clans",
-              "id": "structure_al_dwarf_spawn",
-              "items": [
-                {
-                  "id": "item_1745066642078_1",
-                  "name": "Wooden Sticks",
-                  "quantity": 5,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "description": "A strange object of unknown origin",
-                  "id": "item_1745066642078_special",
-                  "name": "Mysterious Artifact",
-                  "quantity": 1,
-                  "rarity": "rare",
-                  "type": "artifact"
-                },
-                {
-                  "id": "item_1745067425452_1",
-                  "name": "Wooden Sticks",
-                  "quantity": 2,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "id": "item_1745068081699_1",
-                  "name": "Wooden Sticks",
-                  "quantity": 1,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "id": "item_1745068081699_2",
-                  "name": "Stone Pieces",
-                  "quantity": 2,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "id": "item_1745068202061_1",
-                  "name": "Wooden Sticks",
-                  "quantity": 1,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "id": "item_1745068202061_2",
-                  "name": "Stone Pieces",
-                  "quantity": 1,
-                  "rarity": "common",
-                  "type": "resource"
-                }
-              ],
-              "name": "Deepforge Stronghold",
-              "race": "dwarf",
-              "type": "spawn"
-            }
           }
         },
         "-2,0": {
           "-23,5": {
+            "groups": {
+              "-OOYYqlRYtmEGOhZa69Q": {
+                "createdAt": 1745427066013,
+                "id": "-OOYYqlRYtmEGOhZa69Q",
+                "lastMessage": {
+                  "text": "Group is fully mobilized and ready",
+                  "timestamp": 1745427121890
+                },
+                "lastUpdated": 1745427121890,
+                "name": "New Force",
+                "owner": "mLmp0dddWsUA7o1QdvCJKgOwbUC2",
+                "race": "human",
+                "status": "idle",
+                "unitCount": 1,
+                "units": {
+                  "mLmp0dddWsUA7o1QdvCJKgOwbUC2": {
+                    "displayName": "Adam",
+                    "id": "mLmp0dddWsUA7o1QdvCJKgOwbUC2",
+                    "lastActive": 1745425980517,
+                    "race": "human",
+                    "type": "player"
+                  }
+                },
+                "x": -23,
+                "y": 5
+              }
+            },
             "structure": {
               "description": "A rugged frontier settlement where hardy humans carve out a living",
               "id": "structure_al_human_spawn",
@@ -211,7 +366,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745412901868,
+        "lastTick": 1745427785068,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",

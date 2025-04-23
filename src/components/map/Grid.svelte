@@ -401,12 +401,28 @@
     return cell.players && cell.players.some(p => isCurrentPlayer(p));
   }
   
+  // New function to check if player's group is on this tile
+  function hasCurrentPlayerGroupOnTile(cell) {
+    if (!cell.groups || !$currentPlayer?.groups) return false;
+    
+    // Get the player's group IDs
+    const playerGroupIds = Object.keys($currentPlayer.groups || {});
+    
+    // Check if any group on this tile belongs to the player
+    return cell.groups.some(group => 
+      playerGroupIds.includes(group.id) && 
+      group.owner === $currentPlayer.id
+    );
+  }
+  
   function shouldShowPlayerPosition(cell) {
     // Show player marker if either:
     // 1. This cell contains the current player entity
     // 2. This is where lastLocation says the player should be (as fallback)
+    // 3. This cell contains a group that the player is in
     return hasCurrentPlayerEntity(cell) || 
-           (playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y);
+           (playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y) ||
+           hasCurrentPlayerGroupOnTile(cell);
   }
   
   function getPlayerCount(cell) {
