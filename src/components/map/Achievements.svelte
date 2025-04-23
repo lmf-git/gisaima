@@ -128,7 +128,12 @@
     return Object.entries(achievementDefinitions).map(([id, achievement]) => {
       const isUnlocked = playerAchievements[id] === true;
       const isFiltered = selectedCategory === 'all' || achievement.category === selectedCategory;
-      const shouldShow = showAll || isUnlocked || achievement.hidden !== true;
+      
+      // Fixed logic: Show achievement if:
+      // 1. showAll is true (show everything) OR
+      // 2. achievement is unlocked OR
+      // 3. achievement is not hidden (regardless of unlock status)
+      const shouldShow = showAll || isUnlocked || !achievement.hidden;
       
       return {
         ...achievement,

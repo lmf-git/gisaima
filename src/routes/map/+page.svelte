@@ -648,6 +648,26 @@
         }
     }
 
+    // Add a function to directly open the achievements panel from tutorial
+    function openAchievementsFromTutorial() {
+        if (!$game?.player?.alive) return;
+        
+        // Close tutorial if open
+        if (isTutorialVisible) {
+            isTutorialVisible = false;
+        }
+        
+        // Short delay to allow tutorial to close
+        setTimeout(() => {
+            // Show achievements panel
+            showAchievements = true;
+            lastActivePanel = 'achievements';
+            
+            // Save state to localStorage
+            localStorage.removeItem('achievements_closed');
+        }, 300);
+    }
+
     // Updated to check if spawn menu is open
     function handleGridClick(coords) {
         // Skip processing if spawn menu is open (player not alive)
@@ -1146,6 +1166,7 @@
                 onVisibilityChange={handleTutorialVisibility}
                 hideToggleButton={true}
                 onToggle={handleTutorialToggle}
+                onOpenAchievements={openAchievementsFromTutorial}
             />
             <Recenter />
         {/if}

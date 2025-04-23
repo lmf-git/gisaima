@@ -4,11 +4,13 @@
   import { slide } from 'svelte/transition'
   import Close from '../../components/icons/Close.svelte';
   import { map } from "../../lib/stores/map.js";
+  import Trophy from '../icons/Trophy.svelte'; // Import the Trophy icon
 
   const { 
     onVisibilityChange = () => {},
     hideToggleButton = false,
-    onToggle = () => {}
+    onToggle = () => {},
+    onOpenAchievements = () => {} // New prop for opening achievements
   } = $props();
   
   let closed = $state(false);
@@ -83,6 +85,13 @@
         case 'controls': toggleControls(); break;
       }
     }
+  }
+
+  function openAchievements() {
+    // Close the tutorial first
+    close();
+    // Then open achievements panel via callback
+    onOpenAchievements();
   }
 </script>
 
@@ -238,6 +247,15 @@
               </div>
             </div>
           {/if}
+        </div>
+        
+        <div class="achievements-section">
+          <h3>Track Your Progress</h3>
+          <p>Check your achievements to see your progress in the game and discover challenges to complete.</p>
+          <button class="achievements-button" onclick={openAchievements}>
+            <Trophy extraClass="button-icon" />
+            View Achievements
+          </button>
         </div>
         
         <div class="guide-link-container">
@@ -472,6 +490,43 @@
     gap: 0.8em;
     padding: 0;
     background: transparent;
+  }
+
+  .achievements-section {
+    margin-top: 1em;
+    padding: 1em;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 0.5em;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .achievements-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    background-color: rgba(255, 213, 79, 0.2);
+    color: #d4a017;
+    border: 1px solid rgba(255, 213, 79, 0.5);
+    border-radius: 0.3em;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    padding: 0.6em 1em;
+    margin-top: 0.8em;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+  }
+  
+  .achievements-button:hover {
+    background-color: rgba(255, 213, 79, 0.3);
+    transform: translateY(-2px);
+  }
+  
+  :global(.achievements-button .button-icon) {
+    width: 1.2em;
+    height: 1.2em;
+    fill: #d4a017;
   }
 
   @media (max-width: 768px) {
