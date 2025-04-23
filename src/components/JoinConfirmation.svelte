@@ -21,44 +21,40 @@
       id: 'human',
       name: 'Humans',
       description: 'Versatile and adaptable, humans excel at diplomacy and trade.',
-      traits: ['Diplomatic', 'Fast Learners', 'Resource Efficient'],
       icon: Human
     },
     {
       id: 'elf',
       name: 'Elves',
       description: 'Ancient forest dwellers with deep connections to nature and magic.',
-      traits: ['Magical Affinity', 'Forest Advantage', 'Long-range Combat'],
       icon: Elf
     },
     {
       id: 'dwarf',
       name: 'Dwarves',
       description: 'Sturdy mountain folk, master craftsmen and miners.',
-      traits: ['Mining Bonus', 'Strong Defense', 'Mountain Advantage'],
       icon: Dwarf
     },
     {
       id: 'goblin',
       name: 'Goblins',
       description: 'Cunning and numerous, goblins thrive in harsh environments.',
-      traits: ['Fast Production', 'Night Advantage', 'Scavenging Bonus'],
       icon: Goblin
     },
     {
       id: 'fairy',
       name: 'Fairies',
       description: 'Magical beings with flight capabilities and illusion powers.',
-      traits: ['Flight', 'Illusion Magic', 'Small Size Advantage'],
       icon: Fairy
     }
   ];
 
-  // Selected race
+  // Component state
   let selectedRace = $state(null);
-  let displayName = $state(initialName); // Add display name state
-  let displayNameError = $state(''); // Add validation error state
+  let displayName = $state(initialName);
+  let displayNameError = $state('');
   let submitting = $state(false);
+  let currentStep = $state(1); // Added step tracker: 1 = race selection, 2 = name input
   
   // Track expanded state for each race on mobile
   let expandedRaces = $state({});
@@ -119,6 +115,18 @@
     return true;
   }
 
+  // Move to next step (name input)
+  function goToNameInput() {
+    if (selectedRace) {
+      currentStep = 2;
+    }
+  }
+
+  // Go back to race selection
+  function goBackToRaceSelection() {
+    currentStep = 1;
+  }
+
   // Handle confirmation
   async function handleConfirm() {
     if (!selectedRace) return;
@@ -137,107 +145,115 @@
 </script>
 
 <!-- Add backdrop that covers the full screen -->
-<div class={`confirmation-backdrop ${animatingOut ? 'animate-out' : 'animate-in'}`}>
+<div class={`confirmation-backdrop ${animatingOut ? 'animate-out' : 'animate-in'}`} onclick={onClose}>
 </div>
 
 <div class={`join-confirmation ${animatingOut ? 'animate-out' : 'animate-in'}`}>
-  <div class="confirmation-header">
-    <h2>Join {world?.name || 'World'}</h2>
-    <button class="close-btn" aria-label="Close dialog" onclick={onClose}>
-      <Close size="2.2em" extraClass="close-icon-light" />
-    </button>
-  </div>
-  
   <div class="confirmation-content">
-    <!-- Add display name input field -->
-    <div class="name-input-container">
-      <label for="display-name">Choose your Display Name:</label>
-      <input 
-        type="text" 
-        id="display-name" 
-        placeholder="Enter your name" 
-        bind:value={displayName} 
-        onblur={validateDisplayName}
-        class:error={displayNameError}
-        disabled={submitting}
-      />
-      {#if displayNameError}
-        <div class="input-error">{displayNameError}</div>
-      {/if}
-    </div>
-
-    <p>Before joining this world, select your race:</p>
-    
-    <div class="race-selection">
-      {#each races as race}
-        <div 
-          class="race-option" 
-          class:selected={selectedRace?.id === race.id}
-          onclick={() => selectRace(race)}
-          onkeydown={(e) => handleRaceKeydown(race, e)}
-          tabindex="0"
-          role="button"
-          aria-pressed={selectedRace?.id === race.id}
-        >
-          <div class="race-icon-container">
-            {#if race.id === 'human'}
-              <Human extraClass="confirmation-race-icon" />
-            {:else if race.id === 'elf'}
-              <Elf extraClass="confirmation-race-icon" />
-            {:else if race.id === 'dwarf'}
-              <Dwarf extraClass="confirmation-race-icon" />
-            {:else if race.id === 'goblin'}
-              <Goblin extraClass="confirmation-race-icon" />
-            {:else if race.id === 'fairy'}
-              <Fairy extraClass="confirmation-race-icon" />
-            {/if}
-          </div>
-          
-          <div class="race-name-container">
+    <!-- Step 1: Race Selection -->
+    {#if currentStep === 1}
+      <h2 class="step-title">Select Your Race</h2>
+      
+      <div class="race-selection">
+        {#each races as race (race.id)}
+          <div 
+            class="race-option" 
+            class:selected={selectedRace?.id === race.id}
+            onclick={() => selectRace(race)}
+            onkeydown={(e) => handleRaceKeydown(race, e)}
+            tabindex="0"
+            role="button"
+            aria-pressed={selectedRace?.id === race.id}
+          >
+            <div class="race-icon-container">
+              {#if race.id === 'human'}
+                <Human extraClass="confirmation-race-icon" />
+              {:else if race.id === 'elf'}
+                <Elf extraClass="confirmation-race-icon" />
+              {:else if race.id === 'dwarf'}
+                <Dwarf extraClass="confirmation-race-icon" />
+              {:else if race.id === 'goblin'}
+                <Goblin extraClass="confirmation-race-icon" />
+              {:else if race.id === 'fairy'}
+                <Fairy extraClass="confirmation-race-icon" />
+              {/if}
+            </div>
             <h3>{race.name}</h3>
-            {#if isMobile}
-              <div 
-                class="toggle-icon" 
-                aria-label="Toggle race details"
-                role="button"
-                tabindex="0" 
-                onclick={(e) => toggleRaceDetails(race.id, e)}
-                onkeydown={(e) => e.key === 'Enter' && toggleRaceDetails(race.id, e)}
-              >
-                {expandedRaces[race.id] ? '−' : '+'}
-              </div>
-            {/if}
-          </div>
-          
-          <div class="race-details" class:expanded={!isMobile || expandedRaces[race.id]}>
-            <p>{race.description}</p>
-            <div class="traits">
-              {#each race.traits as trait}
-                <span class="trait">{trait}</span>
-              {/each}
+            <div class="race-description">
+              <p>{race.description}</p>
             </div>
           </div>
+        {/each}
+      </div>
+      
+      <div class="confirmation-actions">
+        <button class="cancel-button" onclick={onClose}>
+          Cancel
+        </button>
+        <button 
+          class="next-button" 
+          disabled={!selectedRace} 
+          onclick={goToNameInput}
+        >
+          Next
+        </button>
+      </div>
+      
+    <!-- Step 2: Name Input -->
+    {:else if currentStep === 2}
+      <h2 class="step-title">Choose Your Name</h2>
+      
+      <div class="selected-race-display">
+        <div class="race-icon-container large">
+          {#if selectedRace?.id === 'human'}
+            <Human extraClass="confirmation-race-icon large" />
+          {:else if selectedRace?.id === 'elf'}
+            <Elf extraClass="confirmation-race-icon large" />
+          {:else if selectedRace?.id === 'dwarf'}
+            <Dwarf extraClass="confirmation-race-icon large" />
+          {:else if selectedRace?.id === 'goblin'}
+            <Goblin extraClass="confirmation-race-icon large" />
+          {:else if selectedRace?.id === 'fairy'}
+            <Fairy extraClass="confirmation-race-icon large" />
+          {/if}
         </div>
-      {/each}
-    </div>
-    
-    <div class="confirmation-actions">
-      <button class="cancel-button" onclick={onClose} disabled={submitting}>
-        Cancel
-      </button>
-      <button 
-        class="confirm-button" 
-        onclick={handleConfirm} 
-        disabled={!selectedRace || submitting || displayNameError}
-      >
-        {#if submitting}
-          <div class="spinner"></div>
-          Joining...
-        {:else}
-          Join as {selectedRace?.name || 'Selected Race'}
+        <h3>Join as {selectedRace?.name}</h3>
+      </div>
+      
+      <div class="name-input-container">
+        <input 
+          type="text" 
+          id="display-name" 
+          placeholder="Enter your display name" 
+          bind:value={displayName} 
+          onblur={validateDisplayName}
+          class:error={displayNameError}
+          disabled={submitting}
+          autofocus
+        />
+        {#if displayNameError}
+          <div class="input-error">{displayNameError}</div>
         {/if}
-      </button>
-    </div>
+      </div>
+      
+      <div class="confirmation-actions">
+        <button class="back-button" onclick={goBackToRaceSelection} disabled={submitting}>
+          Back
+        </button>
+        <button 
+          class="confirm-button" 
+          onclick={handleConfirm} 
+          disabled={!displayName || submitting || displayNameError}
+        >
+          {#if submitting}
+            <div class="spinner"></div>
+            Joining...
+          {:else}
+            Join World
+          {/if}
+        </button>
+      </div>
+    {/if}
   </div>
 </div>
 
@@ -259,87 +275,53 @@
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90%;
-    max-width: 50em;
+    max-width: 40em;
     max-height: 90vh;
     background: rgba(21, 38, 60, 0.95);
     border: 2px solid var(--color-muted-teal);
     border-radius: 0.5em;
     box-shadow: 0 0.3em 1em rgba(0, 0, 0, 0.5);
-    padding: 2em;
+    padding: 1.5em;
     overflow-y: auto;
     z-index: 1000;
     color: var(--color-text);
     font-family: var(--font-body);
   }
   
-  .confirmation-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5em;
-    padding-bottom: 1em;
-    border-bottom: 0.0625em solid var(--color-panel-border);
-  }
-  
-  .confirmation-header h2 {
+  .step-title {
     color: var(--color-pale-green);
-    margin: 0;
+    margin: 0 0 1em 0;
     font-family: var(--font-heading);
     font-weight: 400;
-    letter-spacing: 0.1em;
-    font-size: 2em;
-  }
-  
-  .close-btn {
-    height: 3em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-    padding: 0;
-  }
-  
-  .close-btn:hover {
-    opacity: 1;
-  }
-  
-  .close-btn > :global(.close-icon-light) {
-    color: var(--color-text);
-    stroke: var(--color-text);
+    letter-spacing: 0.05em;
+    font-size: 1.6em;
+    text-align: center;
   }
   
   .confirmation-content {
     display: flex;
     flex-direction: column;
-    gap: 1.5em;
-  }
-  
-  .confirmation-content p {
-    font-size: 1.1em;
-    text-align: center;
+    gap: 1em;
   }
   
   .race-selection {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(18em, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(9em, 1fr));
     gap: 1em;
-    margin: 1em 0;
+    margin: 0.5em 0 1em 0;
   }
   
   .race-option {
     background-color: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--color-panel-border);
     border-radius: 0.5em;
-    padding: 1em;
+    padding: 1em 0.8em;
     cursor: pointer;
     text-align: center;
     transition: all 0.2s ease;
     display: flex;
     flex-direction: column;
+    align-items: center;
     height: 100%;
     color: var(--color-text);
   }
@@ -358,14 +340,23 @@
   .race-icon-container {
     display: flex;
     justify-content: center;
-    margin-bottom: 0.8em;
+    margin-bottom: 0.5em;
+  }
+
+  .race-icon-container.large {
+    margin: 0.5em auto;
   }
   
   :global(.confirmation-race-icon) {
-    width: 4em;
-    height: 4em;
+    width: 2.5em;
+    height: 2.5em;
     fill: #64FFDA;
     transition: all 0.2s ease;
+  }
+
+  :global(.confirmation-race-icon.large) {
+    width: 4em;
+    height: 4em;
   }
   
   .race-option.selected :global(.confirmation-race-icon) {
@@ -377,73 +368,35 @@
     fill: #9EFFEA;
   }
   
-  .race-name-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 0.7em;
-  }
-  
   .race-option h3 {
     font-family: var(--font-heading);
     font-weight: 600;
-    margin: 0;
+    margin: 0 0 0.5em 0;
     color: var(--color-muted-teal);
-    font-size: 1.3em;
+    font-size: 1em;
   }
   
   .race-option.selected h3 {
     color: var(--color-pale-green);
   }
   
-  .race-details {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+  .race-description {
+    font-size: 0.8em;
+    max-height: 5em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
   }
   
   .race-option p {
-    font-size: 0.95em;
-    margin: 0 0 1em 0;
-    text-align: left;
+    margin: 0;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
   }
   
-  .traits {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5em;
-    margin-top: auto;
-  }
-  
-  .trait {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 0.25em 0.5em;
-    border-radius: 0.25em;
-    font-size: 0.8em;
-    color: var(--color-bright-accent);
-  }
-  
-  .race-option.selected .trait {
-    background: rgba(100, 255, 218, 0.1);
-  }
-  
-  .toggle-icon {
-    font-size: 1.2em;
-    font-weight: bold;
-    color: var(--color-pale-green);
-    width: 1.5em;
-    height: 1.5em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-  }
-  
-  /* Add focus styles for accessibility */
-  .race-option:focus,
-  .toggle-icon:focus {
+  .race-option:focus {
     outline: 2px solid var(--color-bright-accent);
     outline-offset: 2px;
   }
@@ -457,7 +410,26 @@
   }
   
   .cancel-button,
+  .back-button {
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-panel-border);
+    padding: 0.8em 1.5em;
+    border-radius: 0.25em;
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1em;
+    transition: all 0.2s ease;
+  }
+  
+  .next-button,
   .confirm-button {
+    background-color: #64FFDA;
+    color: #0A192F;
+    border: none;
+    min-width: 10em;
+    font-weight: 500;
     padding: 0.8em 1.5em;
     border-radius: 0.25em;
     cursor: pointer;
@@ -470,30 +442,22 @@
     justify-content: center;
   }
   
-  .cancel-button {
-    background: transparent;
-    color: var(--color-text-secondary);
-    border: 1px solid var(--color-panel-border);
-  }
-  
-  .confirm-button {
-    background-color: var(--color-button-primary);
-    color: var(--color-text);
-    border: 1px solid var(--color-muted-teal);
-  }
-  
-  .cancel-button:hover:not(:disabled) {
+  .cancel-button:hover:not(:disabled),
+  .back-button:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.05);
   }
   
+  .next-button:hover:not(:disabled),
   .confirm-button:hover:not(:disabled) {
-    background-color: var(--color-button-primary-hover);
+    background-color: #9EFFEA;
     transform: translateY(-0.125em);
-    box-shadow: 0 0.2em 0.5em var(--color-shadow);
+    box-shadow: 0 0.2em 0.5em rgba(100, 255, 218, 0.3);
   }
   
+  .next-button:disabled,
   .confirm-button:disabled,
-  .cancel-button:disabled {
+  .cancel-button:disabled,
+  .back-button:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
@@ -514,99 +478,21 @@
     to { transform: rotate(360deg); }
   }
   
-  /* Animation classes */
-  .animate-in {
-    animation: fadeIn 0.3s ease forwards;
-  }
-  
-  .animate-out {
-    animation: fadeOut 0.3s ease forwards;
-  }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-  
-  @keyframes fadeOut {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0;
-    }
-  }
-  
-  /* Mobile adjustments */
-  @media (max-width: 768px) {
-    .join-confirmation {
-      padding: 1.5em;
-      width: 95%;
-    }
-    
-    .confirmation-header h2 {
-      font-size: 1.5em;
-    }
-    
-    .race-selection {
-      grid-template-columns: 1fr;
-    }
-    
-    .confirmation-actions {
-      flex-direction: column;
-      width: 100%;
-    }
-    
-    .cancel-button,
-    .confirm-button {
-      width: 100%;
-    }
-    
-    .race-option h3 {
-      font-size: 1.5em;  /* Even bigger on mobile */
-    }
-    
-    .race-details {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease-out;
-    }
-    
-    .race-details.expanded {
-      max-height: 20em; /* Adjust based on content needs */
-    }
-    
-    .race-option {
-      padding: 0.8em;
-    }
-    
-    :global(.confirmation-race-icon) {
-      width: 3.5em;
-      height: 3.5em;
-    }
-    
-    .race-name-container {
-      justify-content: space-between; /* Restore space-between on mobile for toggle button */
-      align-items: center;
-    }
-  }
-
-  /* Add styles for the display name input */
-  .name-input-container {
-    margin-bottom: 1.5em;
+  .selected-race-display {
     text-align: center;
+    margin-bottom: 1em;
   }
   
-  .name-input-container label {
-    display: block;
-    margin-bottom: 0.5em;
+  .selected-race-display h3 {
     color: var(--color-pale-green);
     font-family: var(--font-heading);
-    font-size: 1.1em;
+    font-size: 1.4em;
+    margin: 0.2em 0 0 0;
+  }
+  
+  .name-input-container {
+    margin: 1em 0;
+    text-align: center;
   }
   
   .name-input-container input {
@@ -637,5 +523,56 @@
     color: #e24144;
     font-size: 0.8em;
     margin-top: 0.5em;
+  }
+  
+  @media (max-width: 768px) {
+    .join-confirmation {
+      padding: 1.2em;
+      width: 95%;
+    }
+    
+    .step-title {
+      font-size: 1.3em;
+      margin-bottom: 0.8em;
+    }
+    
+    .race-selection {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.8em;
+    }
+    
+    .confirmation-actions {
+      flex-direction: column;
+      width: 100%;
+    }
+    
+    .cancel-button,
+    .back-button,
+    .next-button,
+    .confirm-button {
+      width: 100%;
+    }
+    
+    .race-option h3 {
+      font-size: 0.9em;
+    }
+    
+    .race-description {
+      display: none;
+    }
+    
+    .race-option {
+      padding: 0.6em;
+    }
+    
+    :global(.confirmation-race-icon) {
+      width: 2.2em;
+      height: 2.2em;
+    }
+
+    :global(.confirmation-race-icon.large) {
+      width: 3.5em;
+      height: 3.5em;
+    }
   }
 </style>
