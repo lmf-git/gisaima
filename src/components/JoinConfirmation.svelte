@@ -142,6 +142,22 @@
       submitting = false;
     }
   }
+
+  // Helper function to convert race name to singular form
+  function getSingularRaceName(race) {
+    if (!race) return '';
+    
+    // Map race IDs to their singular forms
+    const singularForms = {
+      'human': 'Human',
+      'elf': 'Elf',
+      'dwarf': 'Dwarf',
+      'goblin': 'Goblin',
+      'fairy': 'Fairy'
+    };
+    
+    return singularForms[race.id] || race.id.charAt(0).toUpperCase() + race.id.slice(1);
+  }
 </script>
 
 <!-- Add backdrop that covers the full screen -->
@@ -201,24 +217,25 @@
       
     <!-- Step 2: Name Input -->
     {:else if currentStep === 2}
-      <h2 class="step-title">Choose Your Name</h2>
-      
-      <div class="selected-race-display">
-        <div class="race-icon-container large">
-          {#if selectedRace?.id === 'human'}
-            <Human extraClass="confirmation-race-icon large" />
-          {:else if selectedRace?.id === 'elf'}
-            <Elf extraClass="confirmation-race-icon large" />
-          {:else if selectedRace?.id === 'dwarf'}
-            <Dwarf extraClass="confirmation-race-icon large" />
-          {:else if selectedRace?.id === 'goblin'}
-            <Goblin extraClass="confirmation-race-icon large" />
-          {:else if selectedRace?.id === 'fairy'}
-            <Fairy extraClass="confirmation-race-icon large" />
-          {/if}
-        </div>
-        <h3>Join as {selectedRace?.name}</h3>
-      </div>
+      <h2 class="step-title">
+        Choose Your Name
+        <span class="race-header-info">
+          <span class="race-name">{getSingularRaceName(selectedRace)}</span>
+          <div class="race-icon-container inline">
+            {#if selectedRace?.id === 'human'}
+              <Human extraClass="confirmation-race-icon header" />
+            {:else if selectedRace?.id === 'elf'}
+              <Elf extraClass="confirmation-race-icon header" />
+            {:else if selectedRace?.id === 'dwarf'}
+              <Dwarf extraClass="confirmation-race-icon header" />
+            {:else if selectedRace?.id === 'goblin'}
+              <Goblin extraClass="confirmation-race-icon header" />
+            {:else if selectedRace?.id === 'fairy'}
+              <Fairy extraClass="confirmation-race-icon header" />
+            {/if}
+          </div>
+        </span>
+      </h2>
       
       <div class="name-input-container">
         <input 
@@ -296,6 +313,34 @@
     letter-spacing: 0.05em;
     font-size: 1.6em;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.4em;
+  }
+  
+  .race-header-info {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    margin-left: 0.3em;
+  }
+  
+  .race-name {
+    font-weight: 500;
+    color: var(--color-bright-accent);
+  }
+  
+  .race-icon-container.inline {
+    margin: 0;
+    display: inline-flex;
+  }
+  
+  :global(.confirmation-race-icon.header) {
+    width: 1.5em;
+    height: 1.5em;
+    margin-top: 0.15em;
   }
   
   .confirmation-content {
@@ -493,6 +538,7 @@
   .name-input-container {
     margin: 1em 0;
     text-align: center;
+    padding: 0 1em;
   }
   
   .name-input-container input {
@@ -532,8 +578,19 @@
     }
     
     .step-title {
-      font-size: 1.3em;
+      font-size: 1.2em;
       margin-bottom: 0.8em;
+      flex-direction: column;
+      gap: 0.2em;
+    }
+    
+    .race-header-info {
+      margin-left: 0;
+    }
+    
+    :global(.confirmation-race-icon.header) {
+      width: 1.3em;
+      height: 1.3em;
     }
     
     .race-selection {
