@@ -451,7 +451,14 @@
     }
 
     function toggleDetailsModal(show) {
+        const wasDetailed = detailed;
         detailed = show === undefined ? !detailed : show;
+        
+        // If we're opening the details panel, close any open modals
+        if (detailed && !wasDetailed && modalState.visible) {
+            closeModal();
+        }
+        
         if (detailed) {
             lastActivePanel = 'details';
         }
