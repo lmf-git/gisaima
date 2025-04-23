@@ -989,6 +989,13 @@
             aria-label={`Coordinates ${cell.x},${cell.y}`}
             role="gridcell"
           >
+            <!-- Add structure name display -->
+            {#if cell.structure && cell.structure.name}
+              <div class="structure-name-label">
+                { cell.structure.name.length > 20 ? cell.structure.name.substring(0, 20) + '...' : cell.structure.name }
+              </div>
+            {/if}
+            
             {#if dominantRace}
               <div class="race-background-icon">
                 {#if dominantRace === 'human'}
@@ -1847,5 +1854,53 @@
   :global(.compass-icon-path) {
     width: 1.2em;
     fill: currentColor;
+  }
+
+  .structure-name-label {
+    position: absolute;
+    top: 0.15em;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    font-size: 0.7em;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 
+      0 0 0.2em rgba(0, 0, 0, 0.8),
+      0 0 0.4em rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 6;
+    white-space: nowrap;
+    font-family: var(--font-heading);
+    padding: 0.1em 0.3em;
+    line-height: 1.1;
+    letter-spacing: 0.02em;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 0.3em;
+    backdrop-filter: blur(2px);
+    width: auto;
+    overflow: visible;
+  }
+
+  /* Make structure name more prominent on hover */
+  .tile:hover .structure-name-label {
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 20;
+  }
+
+  /* Specific styling for different structure types */
+  .spawn-structure .structure-name-label {
+    color: rgba(200, 255, 255, 1);
+    text-shadow: 
+      0 0 0.2em rgba(0, 0, 0, 0.8),
+      0 0 0.4em rgba(0, 128, 128, 0.6);
+  }
+
+  .watchtower-structure .structure-name-label {
+    color: rgba(200, 255, 200, 1);
+  }
+
+  .fortress-structure .structure-name-label {
+    color: rgba(255, 230, 200, 1);
   }
 </style>
