@@ -106,19 +106,43 @@
     let lastProcessedLocation = $state(null);
 
     let lastActivePanel = $state('none'); // 'none', 'details', 'overview', 'chat', 'achievements'
+    let shouldShowAchievementsAfterSpawn = $state(true); // New state to track if achievements should show after spawn
 
     const unreadCount = $derived($unreadMessages);
+
+    const spawnMenuVisible = $derived(!$game?.player?.alive);
 
     let worldMembershipChecked = $state(false);
 
     function handlePanelHover(panelType) {
-        if (panelType && (panelType === 'chat' && showChat) || 
+        if (panelType && ((panelType === 'chat' && showChat) || 
                         (panelType === 'achievements' && showAchievements) || 
                         (panelType === 'details' && detailed) || 
-                        (panelType === 'overview' && showEntities)) {
+                        (panelType === 'overview' && showEntities))) {
             console.log(`Setting active panel to: ${panelType}`);
             lastActivePanel = panelType;
         }
+    }
+
+    // Add new effect to handle showing achievements after spawn
+    $effect(() => {
+        // Check if player just spawned (alive changed from false to true)
+        if ($game?.player?.alive && shouldShowAchievementsAfterSpawn) {
+            console.log('Player spawned, showing achievements panel');
+            // Check if achievements aren't manually closed in localStorage
+            const achievementsClosed = localStorage.getItem('achievements_closed') === 'true';
+            if (!achievementsClosed) {
+                showAchievements = true;
+                lastActivePanel = 'achievements';
+            }
+            shouldShowAchievementsAfterSpawn = false; // Reset for next time
+        }
+    });
+
+    // Add function to handle spawn completion
+    function handleSpawnComplete() {
+        console.log('Spawn complete, flagging achievements to show');
+        shouldShowAchievementsAfterSpawn = true;
     }
 
     function parseUrlCoordinates() {
@@ -287,6 +311,30 @@
             return () => {
                 window.removeEventListener('goto-location', handleChatLocationClick);
             };
+        }
+    });
+
+    $effect(() => {
+        if (spawnMenuVisible && showAchievements) {
+            showAchievements = false;
+        }
+    });
+
+    $effect(() => {
+        if (browser && initialized) {
+            const savedChatState = localStorage.getItem('chat');
+            if (savedChatState === 'false') {
+                showChat = false;
+            } else {
+                showChat = true;
+            }
+
+            const savedAchievementsState = localStorage.getItem('achievements');
+            if (savedAchievementsState !== null) {
+                showAchievements = savedAchievementsState === 'true';
+            } else {
+                showAchievements = true;
+            }
         }
     });
 
@@ -491,7 +539,7 @@
     }
 
     function toggleAchievements() {
-      if (!$game?.player?.alive || isTutorialVisible) {
+      if (!$game?.player?.alive || isTutorialVisible || spawnMenuVisible) {
         return;
       }
       
@@ -919,7 +967,7 @@
                 </button>
             {/if}
 
-            {#if !showAchievements && $game?.player?.alive && !isTutorialVisible}
+            {#if !showAchievements && $game?.player?.alive && !isTutorialVisible && !spawnMenuVisible}
                 <button 
                     class="control-button achievements-button" 
                     onclick={toggleAchievements}
@@ -940,7 +988,7 @@
             </div>
         {/if}
 
-        {#if showAchievements && !showChat && $game?.player?.alive && !isTutorialVisible}
+        {#if showAchievements && !showChat && $game?.player?.alive && !isTutorialVisible && !spawnMenuVisible}
             <div class="controls-middle-right">
                 <button 
                     class="control-button chat-button" 
@@ -1046,7 +1094,7 @@
         {/if}
         
         {#if ($user && !$game.player?.alive)}
-            <SpawnMenu />
+            <SpawnMenu onSpawnComplete={handleSpawnComplete} />
         {/if}
 
         {#if modalState.visible}

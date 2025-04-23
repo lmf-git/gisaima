@@ -3,6 +3,7 @@
   import { currentPlayer, game, savePlayerAchievement } from '../../lib/stores/game.js';
   import Close from '../icons/Close.svelte';
   import Trophy from '../icons/Trophy.svelte';
+  import { onMount } from 'svelte';
 
   // Add onMouseEnter to props
   const { 
@@ -207,15 +208,19 @@
     selectedCategory = categoryId;
   }
 
-  // Simplify close function
+  // Simplify close function - add localStorage tracking
   function close() {
+    // Save the closed state in localStorage
+    localStorage.setItem('achievements_closed', 'true');
     onClose();
   }
 
   // Add missing onVisibilityChange function
   function onVisibilityChange(isVisible) {
-    // This function handles visibility changes
-    // It's empty because we're using onClose to communicate with parent
+    if (isVisible) {
+      // If panel is becoming visible, clear the closed state
+      localStorage.removeItem('achievements_closed');
+    }
   }
 
   // Function to format date in a user-friendly way
@@ -234,6 +239,16 @@
   function handleMouseEnter() {
     onMouseEnter();
   }
+
+  // Initialize localStorage state on mount
+  onMount(() => {
+    // Check if this is the first time we're showing achievements
+    const achievementsClosed = localStorage.getItem('achievements_closed') === 'true';
+    if (!achievementsClosed) {
+      // If never closed before, remove any stored closed state
+      localStorage.removeItem('achievements_closed');
+    }
+  });
 </script>
 
 <div 

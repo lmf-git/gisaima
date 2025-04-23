@@ -15,9 +15,10 @@
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
 
-  // Accept onClose prop to match Mobilise pattern
+  // Accept onClose and add onSpawnComplete prop
   const {
-    onClose = () => {}
+    onClose = () => {},
+    onSpawnComplete = () => {} // New prop to notify when spawn is complete
   } = $props();
 
   // Component state using Svelte 5 runes
@@ -214,6 +215,9 @@
         console.log(`Re-centering map on spawn location before closing: ${spawnX},${spawnY}`);
         moveTarget(spawnX, spawnY);
       }
+      
+      // Notify about spawn completion first
+      onSpawnComplete();
       
       setTimeout(() => onClose(), 300); // Small delay before closing to ensure map update completes
     
