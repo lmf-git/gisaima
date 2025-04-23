@@ -816,7 +816,7 @@
 />
 
 <div class="map-container" 
-    style="--tile-size: {TILE_SIZE}em;" 
+    style="--tile-size: {TILE_SIZE}em; --center-tile-color: {backgroundColor};" 
     class:modal-open={detailed} 
     class:touch-active={$map.isDragging && $map.dragSource === 'map'}
     class:path-drawing-mode={!!isPathDrawingMode}>
@@ -982,7 +982,7 @@
             class:current-player={containsCurrentPlayer(cell)}
             class:from-world-data={playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y && !hasCurrentPlayerEntity(cell)}
             style="
-              background-color: {cell.color || 'var(--terrain-color)'};
+              background-color: {cell.isCenter ? 'var(--center-tile-color)' : cell.color || 'var(--terrain-color)'};
               transition-delay: {cell.isCenter ? 0 : Math.min(0.5, cell.distance * 0.03) + 's'};
             "
             onmouseenter={() => handleTileHover(cell)}
@@ -1172,12 +1172,19 @@
     transform: scale(1);
   }
   
+  /* Remove animation from center tile completely */
   .main-grid.animated .tile.center {
     z-index: 3;
     position: relative;
-    animation: revealCenterTile 0.6s ease-out forwards;
-    animation-delay: 0s;
-    animation-fill-mode: both;
+    /* Remove animation and replace with direct styles */
+    animation: none;
+    opacity: 1;
+    transform: scale(1.05);
+    box-shadow: 
+      inset 0 0 0.5em rgba(255, 255, 255, 0.3),
+      0 0 1em rgba(255, 255, 255, 0.2);
+    /* Keep the transition for background-color */
+    transition: background-color 0.3s ease;
   }
   
   .main-grid:not(.animated) .tile.center {
@@ -1188,8 +1195,10 @@
       inset 0 0 0.5em rgba(255, 255, 255, 0.3),
       0 0 1em rgba(255, 255, 255, 0.2);
     z-index: 3;
+    /* Keep the transition for background-color */
+    transition: background-color 0.3s ease;
   }
-  
+
   .tile {
     display: flex;
     align-items: center;
@@ -1204,7 +1213,7 @@
     z-index: 1;
     font-family: var(--font-body);
     position: relative; /* Ensure this is set for absolute positioning */
-    transition: background-color 0.5s ease; /* Add explicit transition property */
+    transition: background-color 0.3s ease; /* Add explicit transition property */
   }
 
   .tile.center {
@@ -1212,6 +1221,8 @@
     position: relative;
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
     border: 0.12em solid rgba(255, 255, 255, 0.5);
+    /* Ensure color transition works */
+    transition: background-color 0.3s ease; 
   }
   
   .map:not(.moving) .tile:hover::after,
@@ -1431,30 +1442,6 @@
     100% {
       opacity: 1;
       transform: scale(1);
-    }
-  }
-
-  @keyframes revealCenterTile {
-    0% {
-      opacity: 0;
-      transform: scale(0.8);
-      box-shadow: 
-        inset 0 0 1em rgba(255, 255, 255, 0.6),
-        0 0 2em rgba(255, 255, 255, 0.4);
-    }
-    30% {
-      opacity: 1;
-      transform: scale(1.1);
-      box-shadow: 
-        inset 0 0 1em rgba(255, 255, 255, 0.6),
-        0 0 2em rgba(255, 255, 255, 0.4);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1.05);
-      box-shadow: 
-        inset 0 0 0.5em rgba(255, 255, 255, 0.3),
-        0 0 1em rgba(255, 255, 255, 0.2);
     }
   }
 
