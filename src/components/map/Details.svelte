@@ -724,27 +724,42 @@
                     </div>
                     
                     <div class="entity-details">
-                      <span class="unit-count">
-                        {group.unitCount || (group.units ? group.units.length : 0)} units
-                        {#if getGroupItemCount(group) > 0}
-                          • <span class="item-count">{getGroupItemCount(group)} items</span>
-                        {/if}
-                      </span>
-                      
-                      <span class="entity-status-badge {getStatusClass(group.status)}"
-                        class:pending-tick={isPendingTick(
-                          group.status === 'moving' 
-                            ? group.nextMoveTime 
-                            : (group.status === 'gathering' || group.status === 'starting_to_gather' 
-                                ? group.gatheringUntil 
-                                : group.readyAt)
-                        )}
-                      >
-                        {_fmt(group.status)}
-                        {#if (group.status === 'mobilizing' || group.status === 'demobilising') && group.readyAt}
-                          ({formatTimeRemaining(group.readyAt, group.status)})
-                        {/if}
-                      </span>
+                      <div class="entity-details-left">
+                        <span class="unit-count">
+                          {group.unitCount || (group.units ? group.units.length : 0)} units
+                          {#if getGroupItemCount(group) > 0}
+                            • <span class="item-count">{getGroupItemCount(group)} items</span>
+                          {/if}
+                        </span>
+                        
+                        <span class="entity-status-badge {getStatusClass(group.status)}"
+                          class:pending-tick={isPendingTick(
+                            group.status === 'moving' 
+                              ? group.nextMoveTime 
+                              : (group.status === 'gathering' || group.status === 'starting_to_gather' 
+                                  ? group.gatheringUntil 
+                                  : group.readyAt)
+                          )}
+                        >
+                          {#if group.status === 'starting_to_gather'}
+                            Preparing to gather
+                          {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
+                            {_fmt(group.status)} {formatTimeRemaining(group.readyAt, group.status)}
+                          {:else if group.status === 'moving'}
+                            {_fmt(group.status)} 
+                            {#if group.nextMoveTime && !isPendingTick(group.nextMoveTime)}
+                              ({formatTimeRemaining(group.nextMoveTime)})
+                            {/if}
+                          {:else if group.status === 'gathering'}
+                            {_fmt(group.status)} 
+                            {#if group.gatheringUntil && !isPendingTick(group.gatheringUntil)}
+                              ({formatTimeRemaining(group.gatheringUntil)})
+                            {/if}
+                          {:else}
+                            {_fmt(group.status)}
+                          {/if}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   
@@ -846,9 +861,17 @@
                       {/if}
                     </div>
                     <div class="entity-details">
-                      {#if player.race}
-                        <div class="entity-race">{_fmt(player.race)}</div>
-                      {/if}
+                      <div class="entity-details-left">
+                        {#if player.race}
+                          <div class="entity-race">{_fmt(player.race)}</div>
+                        {/if}
+                        
+                        {#if player.status}
+                          <span class="entity-status-badge {getStatusClass(player.status)}">
+                            {_fmt(player.status)}
+                          </span>
+                        {/if}
+                      </div>
                     </div>
                     
                     <!-- Add mobilise action for idle current player -->
@@ -1396,12 +1419,16 @@
 
   .entity-details {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.6em;
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.7);
     width: 100%;
     justify-content: space-between;
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .entity-details-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
   }
 
   .entity-badge {
@@ -1418,13 +1445,16 @@
   }
 
   .entity-status-badge {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     font-size: 0.8em;
     font-weight: 500;
     padding: 0.1em 0.5em;
     border-radius: 0.3em;
     white-space: nowrap;
     text-transform: capitalize;
+    margin-top: 0.2em;
+    width: fit-content;
   }
   
   .entity-status-badge.idle {
