@@ -22,12 +22,7 @@
 
   // Achievement definitions directly in component - updated category names
   const achievementDefinitions = $state({
-    // Exploration Achievements - renamed to "explore"
-    'first_steps': {
-      title: 'First Steps',
-      description: 'Spawn into the world for the first time',
-      category: 'explore',
-    },
+    // Exploration Achievements - removed first_steps
     'explorer': {
       title: 'Explorer',
       description: 'Visit 10 different tiles',
@@ -112,6 +107,12 @@
       description: 'Create 5 groups simultaneously',
       category: 'social',
       hidden: true,
+    },
+    // New Chat Achievement
+    'first_message': {
+      title: 'Communicator',
+      description: 'Send your first chat message',
+      category: 'social',
     },
   });
 

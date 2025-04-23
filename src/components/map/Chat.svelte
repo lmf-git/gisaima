@@ -2,7 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { fly, fade } from 'svelte/transition';
   import { chatStore, messages, initializeChat, sendMessage, markAllAsRead, getMessageTime } from '../../lib/stores/chat.js';
-  import { game } from '../../lib/stores/game.js';
+  import { game, hasAchievement, savePlayerAchievement } from '../../lib/stores/game.js';
   import { user } from '../../lib/stores/user.js';
   import Close from '../icons/Close.svelte';
   
@@ -77,7 +77,7 @@
     return () => cleanup();
   });
   
-  // Handle form submission
+  // Handle form submission with achievement tracking
   function handleSubmit(event) {
     event.preventDefault();
     
@@ -87,7 +87,30 @@
     shouldScrollToBottom = true;
     
     sendMessage(chatInput);
+    
+    // Check and unlock the first message achievement
+    unlockFirstMessageAchievement();
+    
     chatInput = '';
+  }
+
+  // Function to unlock the first message achievement
+  async function unlockFirstMessageAchievement() {
+    const worldId = $game.worldKey;
+    if (!worldId || !$user) return;
+
+    // Check if the user already has the achievement
+    const hasFirstMessageAchievement = hasAchievement(worldId, 'first_message');
+    
+    // If not, unlock it
+    if (!hasFirstMessageAchievement) {
+      console.log('Unlocking first_message achievement');
+      try {
+        await savePlayerAchievement(worldId, 'first_message', true);
+      } catch (error) {
+        console.error('Error saving first_message achievement:', error);
+      }
+    }
   }
   
   function closeChat() {
