@@ -521,6 +521,277 @@
             showEntities = false;
         }
     }
+
+    function handleGridClick(coords) {
+        // Check if this is a path confirmation action
+        if (coords && coords.confirmPath === true) {
+            confirmPathDrawing(currentPath);
+            return;
+        }
+
+        // Simple debounce
+        if (isProcessingClick) return;
+        isProcessingClick = true;
+
+        // If we're in path drawing mode and have coordinates, add them to the path
+        if (isPathDrawingMode && coords && coords.x !== undefined && coords.y !== undefined) {
+            // Add the point to the path
+            handlePathPoint(coords);
+            
+            // Reset debounce flag with short timeout for responsiveness in drawing mode
+            setTimeout(() => {
+                isProcessingClick = false;
+            }, 100);
+            return;
+        }
+
+        // Regular grid click handling (not in path drawing mode)
+        if (coords) {
+            // First move the target to the clicked location
+            moveTarget(coords.x, coords.y);
+
+            // Get the tile data after moving
+            const clickedTile = $coordinates.find(c => c.x === coords.x && c.y === coords.y);
+            
+            // Only highlight and open details if there's meaningful content and not in path drawing mode
+            if (clickedTile && hasTileContent(clickedTile) && !isPathDrawingMode) {
+                setHighlighted(coords.x, coords.y);
+                toggleDetailsModal(true);
+            } else if (!isPathDrawingMode) {
+                // If there's no content and not in path drawing mode, just ensure nothing is highlighted
+                setHighlighted(null, null);
+                toggleDetailsModal(false);
+            }
+        }
+
+        // Reset debounce flag
+        setTimeout(() => {
+            isProcessingClick = false;
+        }, 300);
+    }
+
+    // Add function for handling path points
+    function handlePathPoint(point) {
+        if (!isPathDrawingMode) return;
+        
+        // Validate that point has valid coordinates
+        if (!point || point.x === undefined || point.y === undefined) {
+            console.error('Invalid point in handlePathPoint:', point);
+            return;
+        }
+        
+        console.log('Adding path point:', point);
+        
+        if (currentPath.length > 0) {
+            // Get the last point in the path
+            const lastPoint = currentPath[currentPath.length - 1];
+            
+            // Check if this is a duplicate point (avoid adding same point twice)
+            if (lastPoint.x === point.x && lastPoint.y === point.y) {
+                return;
+            }
+            
+            // Calculate all intermediate steps between the last point and new point
+            const intermediatePoints = calculatePathBetweenPoints(
+                lastPoint.x, 
+                lastPoint.y, 
+                point.x, 
+                point.y
+            );
+            
+            // Add all intermediate points (except the first which would duplicate the last point)
+            if (intermediatePoints.length > 1) {
+                // Skip the first point as it duplicates the last point in currentPath
+                const pathAddition = intermediatePoints.slice(1);
+                currentPath = [...currentPath, ...pathAddition];
+                console.log(`Path extended with ${pathAddition.length} interpolated points`);
+            }
+        } else {
+            // First point in the path
+            currentPath = [{ x: point.x, y: point.y }];
+        }
+    }
+
+    // Function to check if a tile has meaningful content
+    function hasTileContent(tile) {
+        if (!tile) return false;
+        
+        return (
+            // Check for any meaningful content on the tile
+            (tile.structure && Object.keys(tile.structure).length > 0) ||
+            (tile.groups && tile.groups.length > 0) ||
+            (tile.players && tile.players.length > 0) ||
+            (tile.items && tile.items.length > 0) ||
+            (tile.battles && tile.battles.length > 0)
+        );
+    }
+
+    // Function to calculate path between points for path drawing
+    function calculatePathBetweenPoints(startX, startY, endX, endY) {
+        const path = [];
+        
+        // Calculate steps using Bresenham's line algorithm
+        const dx = Math.abs(endX - startX);
+        const dy = Math.abs(endY - startY);
+        const sx = startX < endX ? 1 : -1;
+        const sy = startY < endY ? 1 : -1;
+        
+        let err = dx - dy;
+        let x = startX;
+        let y = startY;
+        
+        // Add start point
+        path.push({ x, y });
+        
+        // Generate steps
+        while (!(x === endX && y === endY)) {
+            const e2 = 2 * err;
+            
+            if (e2 > -dy) {
+                err -= dy;
+                x += sx;
+            }
+            
+            if (e2 < dx) {
+                err += dx;
+                y += sy;
+            }
+            
+            // Add intermediate point
+            path.push({ x, y });
+            
+            // Safety check
+            if (path.length > 1000) {
+                console.warn('Path too long, truncating');
+                break;
+            }
+        }
+        
+        return path;
+    }
+
+    // Missing methods for path drawing and achievements
+    function handlePathDrawingStart(group) {
+        if (!group) return;
+        
+        console.log('Starting path drawing for group:', group.id || group.groupId);
+        
+        // Close any open modals or details that might interfere
+        toggleDetailsModal(false);
+        setHighlighted(null, null);
+        
+        // Set flag to prevent details panel from opening
+        isTransitioningToPathDrawing = true;
+        
+        // Store the group information for later use
+        pathDrawingGroup = {
+            id: group.id || group.groupId,
+            name: group.name,
+            unitCount: group.unitCount,
+            status: group.status
+        };
+        
+        // Set path drawing mode ON
+        isPathDrawingMode = true;
+        
+        // Initialize with starting point if available
+        if (group.startPoint && group.startPoint.x !== undefined && group.startPoint.y !== undefined) {
+            currentPath = [{ x: group.startPoint.x, y: group.startPoint.y }];
+        } else if (group.x !== undefined && group.y !== undefined) {
+            currentPath = [{ x: group.x, y: group.y }];
+        } else {
+            const target = $map.target;
+            if (target && target.x !== undefined && target.y !== undefined) {
+                currentPath = [{ x: target.x, y: target.y }];
+            } else {
+                currentPath = [];
+                console.warn('No valid starting coordinates for path drawing');
+            }
+        }
+        
+        setTimeout(() => {
+            isTransitioningToPathDrawing = false;
+        }, 500);
+    }
+
+    function handlePathDrawingCancel() {
+        isPathDrawingMode = false;
+        pathDrawingGroup = null;
+        currentPath = [];
+    }
+
+    function confirmPathDrawing(path) {
+        if (!path || path.length < 2 || !pathDrawingGroup) {
+            console.error('Cannot confirm path: Invalid path or missing group');
+            return;
+        }
+        
+        const functions = getFunctions();
+        const moveGroupFn = httpsCallable(functions, 'moveGroup');
+        
+        const startPoint = path[0];
+        const endPoint = path[path.length - 1];
+        
+        moveGroupFn({
+            groupId: pathDrawingGroup.id,
+            fromX: startPoint.x,
+            fromY: startPoint.y,
+            toX: endPoint.x,
+            toY: endPoint.y,
+            path: path,
+            worldId: $game.worldKey
+        })
+        .then((result) => {
+            console.log('Path movement started:', result.data);
+            isPathDrawingMode = false;
+            pathDrawingGroup = null;
+            currentPath = [];
+        })
+        .catch((error) => {
+            console.error('Error starting path movement:', error);
+            alert(`Error: ${error.message || 'Failed to start movement'}`);
+        });
+    }
+
+    // Achievement trigger handlers
+    function handleMobilise() {
+        triggerAchievement('mobilised');
+        closeModal();
+    }
+
+    function handleAttack(data) {
+        triggerAchievement('first_attack');
+        console.log('Attack started:', data);
+        closeModal();
+    }
+
+    function handleJoinBattle(data) {
+        triggerAchievement('battle_joiner');
+        console.log('Joined battle:', data);
+        closeModal();
+    }
+
+    function handleGather(result) {
+        triggerAchievement('first_gather');
+        closeModal();
+    }
+
+    function handleDemobilize(data) {
+        triggerAchievement('demobilizer');
+        console.log('Demobilization started:', data);
+        closeModal();
+    }
+
+    function handlePathConfirm(path) {
+        triggerAchievement('strategist');
+        confirmPathDrawing(path);
+    }
+
+    function triggerAchievement(achievementId) {
+        if (achievementsRef) {
+            achievementsRef.unlockAchievement(achievementId);
+        }
+    }
 </script>
 
 <svelte:window on:keydown={handleMapKeyDown} />

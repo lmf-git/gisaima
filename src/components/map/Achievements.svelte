@@ -5,7 +5,7 @@
   import Trophy from '../icons/Trophy.svelte';
 
   // Simplify props to just use onClose
-  const { onClose = () => {} } = $props();
+  const { onClose = () => {}, closing = false } = $props();
 
   // State variables using $state rune
   let visible = $state(true);
@@ -206,6 +206,12 @@
   // Simplify close function
   function close() {
     onClose();
+  }
+
+  // Add missing onVisibilityChange function
+  function onVisibilityChange(isVisible) {
+    // This function handles visibility changes
+    // It's empty because we're using onClose to communicate with parent
   }
 
   // Function to format date in a user-friendly way
