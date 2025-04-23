@@ -593,6 +593,8 @@
   class:closing 
   class:active={isActive}
   onmouseenter={onMouseEnter}
+  role="region"
+  aria-label="Map entities overview"
 >
   <div class="entities-panel">
     <h3 class="title">
