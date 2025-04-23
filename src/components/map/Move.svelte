@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { currentPlayer } from '../../lib/stores/game';
+  import { currentPlayer, game, hasAchievement, savePlayerAchievement } from '../../lib/stores/game';
   import { targetStore } from '../../lib/stores/map';
   import Close from '../icons/Close.svelte';
   import Compass from '../icons/Compass.svelte';
@@ -77,11 +77,33 @@
         }
       };
       
+      // Check and unlock the first_steps achievement
+      unlockFirstStepsAchievement();
+      
       onPathDrawingStart(groupWithStartPoint);
       onClose(false, true); // Close this modal, but indicate we're starting path drawing
     } catch (e) {
       error = e.message || "An error occurred";
       processing = false;
+    }
+  }
+
+  // New function to unlock first_steps achievement
+  async function unlockFirstStepsAchievement() {
+    const worldId = $game.worldKey;
+    if (!worldId || !$currentPlayer) return;
+
+    // Check if the user already has the achievement
+    const hasFirstStepsAchievement = hasAchievement(worldId, 'first_steps');
+    
+    // If not, unlock it
+    if (!hasFirstStepsAchievement) {
+      console.log('Unlocking first_steps achievement for path drawing');
+      try {
+        await savePlayerAchievement(worldId, 'first_steps', true);
+      } catch (error) {
+        console.error('Error saving first_steps achievement:', error);
+      }
     }
   }
 </script>

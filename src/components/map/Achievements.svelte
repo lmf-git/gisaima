@@ -22,7 +22,12 @@
 
   // Achievement definitions directly in component - updated category names
   const achievementDefinitions = $state({
-    // Exploration Achievements - removed first_steps
+    // Exploration Achievements - repurposed first_steps
+    'first_steps': {
+      title: 'First Steps',
+      description: 'Draw your first movement path',
+      category: 'explore',
+    },
     'explorer': {
       title: 'Explorer',
       description: 'Visit 10 different tiles',
@@ -43,6 +48,22 @@
       title: 'Inspector',
       description: 'Inspect your first structure',
       category: 'explore',
+    },
+    // Group Movement Achievements - moved from social to explore
+    'mobilised': {
+      title: 'Leader',
+      description: 'Mobilize your first group',
+      category: 'explore', // Changed from 'social' to 'explore'
+    },
+    'strategist': {
+      title: 'Strategist',
+      description: 'Move a group to another location',
+      category: 'explore', // Changed from 'social' to 'explore'
+    },
+    'demobilizer': {
+      title: 'Demobilizer',
+      description: 'Demobilize a group at a structure',
+      category: 'explore', // Changed from 'social' to 'explore'
     },
     
     // Combat Achievements
@@ -86,22 +107,7 @@
       hidden: true,
     },
     
-    // Group Management Achievements
-    'mobilised': {
-      title: 'Leader',
-      description: 'Mobilize your first group',
-      category: 'social',
-    },
-    'strategist': {
-      title: 'Strategist',
-      description: 'Move a group to another location',
-      category: 'social',
-    },
-    'demobilizer': {
-      title: 'Demobilizer',
-      description: 'Demobilize a group at a structure',
-      category: 'social',
-    },
+    // Social Achievements - now only includes social interactions
     'army_builder': {
       title: 'Army Builder',
       description: 'Create 5 groups simultaneously',
