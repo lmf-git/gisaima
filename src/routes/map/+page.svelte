@@ -112,7 +112,11 @@
     let worldMembershipChecked = $state(false);
 
     function handlePanelHover(panelType) {
-        if (detailed && (showEntities || showChat || showAchievements)) {
+        if (panelType && (panelType === 'chat' && showChat) || 
+                        (panelType === 'achievements' && showAchievements) || 
+                        (panelType === 'details' && detailed) || 
+                        (panelType === 'overview' && showEntities)) {
+            console.log(`Setting active panel to: ${panelType}`);
             lastActivePanel = panelType;
         }
     }
@@ -958,7 +962,10 @@
                 class:active={lastActivePanel === 'chat'}
                 onmouseenter={() => handlePanelHover('chat')}
             >
-                <Chat onClose={toggleChat} />
+                <Chat 
+                  onClose={toggleChat} 
+                  onMouseEnter={() => handlePanelHover('chat')}
+                />
             </div>
 
             <div class="achievements-wrapper" 
@@ -966,7 +973,10 @@
                 class:active={lastActivePanel === 'achievements'}
                 onmouseenter={() => handlePanelHover('achievements')}
             >
-                <Achievements onClose={toggleAchievements} />
+                <Achievements 
+                  onClose={toggleAchievements} 
+                  onMouseEnter={() => handlePanelHover('achievements')}
+                />
             </div>
         {/if}
 
@@ -1305,13 +1315,14 @@
         box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
     }
 
+    /* Create a unified z-index system for all panels */
     .chat-wrapper,
-    .achievements-wrapper {
+    .achievements-wrapper,
+    :global(.modal-container),
+    :global(.overview-container) {
         position: fixed;
-        z-index: 998; /* Lower base z-index to match other panels */
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 300ms ease, z-index 0s;
+        z-index: 1500; /* Base z-index for all panels above minimap */
+        transition: opacity 300ms ease, z-index 0s linear;
     }
     
     .chat-wrapper.visible,
@@ -1320,19 +1331,32 @@
         pointer-events: all;
     }
     
+    /* Active state for any panel will raise it to top */
     .chat-wrapper.active,
-    .achievements-wrapper.active {
-        z-index: 1001; /* Higher z-index when active, same as other active panels */
+    .achievements-wrapper.active,
+    :global(.modal-container.active),
+    :global(.overview-container.active) {
+        z-index: 1600 !important; /* Force highest z-index when active */
     }
     
+    /* Minimap should be below all panels */
+    :global(.minimap-container) {
+        z-index: 1000 !important; /* Always below panels */
+    }
+    
+    /* Original positioning for each panel */
     .chat-wrapper {
         bottom: 1em;
         right: 1em;
+        pointer-events: none;
+        opacity: 0;
     }
     
     .achievements-wrapper {
         top: 50%;
         right: 1em;
         transform: translateY(-50%);
+        pointer-events: none;
+        opacity: 0;
     }
 </style>

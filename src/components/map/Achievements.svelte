@@ -4,8 +4,12 @@
   import Close from '../icons/Close.svelte';
   import Trophy from '../icons/Trophy.svelte';
 
-  // Simplify props to just use onClose
-  const { onClose = () => {}, closing = false } = $props();
+  // Add onMouseEnter to props
+  const { 
+    onClose = () => {}, 
+    closing = false,
+    onMouseEnter = () => {}
+  } = $props();
 
   // State variables using $state rune
   let visible = $state(true);
@@ -225,11 +229,17 @@
       year: 'numeric'
     }).format(date);
   }
+
+  // Handle mouse enter event
+  function handleMouseEnter() {
+    onMouseEnter();
+  }
 </script>
 
 <div 
   class="achievements-container"
   class:closing
+  onmouseenter={handleMouseEnter}
   in:fade={{ duration: animationDuration }}
   out:fade={{ duration: animationDuration }}
 >
@@ -322,7 +332,7 @@
     transform: translateY(-50%);
     width: 22em;
     height: 30em;
-    z-index: 1010;
+    z-index: 1010; /* This will be overridden by the active class in the parent */
     display: flex;
     flex-direction: column;
   }

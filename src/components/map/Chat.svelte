@@ -7,7 +7,11 @@
   import Close from '../icons/Close.svelte';
   
   // Props using Svelte 5 runes syntax
-  const { closing = false, onClose = () => {} } = $props();
+  const { 
+    closing = false, 
+    onClose = () => {},
+    onMouseEnter = () => {} // Add onMouseEnter prop
+  } = $props();
 
   // We don't need internal isOpen state - the chat is already open if rendered
   let chatInput = $state('');
@@ -48,6 +52,11 @@
   
   function closeChat() {
     onClose();
+  }
+
+  // Add function to handle mouse enter
+  function handleMouseEnter() {
+    onMouseEnter();
   }
   
   // Modified effect to prevent infinite loops
@@ -112,6 +121,7 @@
   class="chat-container"
   class:closing={closing}
   bind:this={chatContainer}
+  onmouseenter={handleMouseEnter}
   transition:fade={{ duration: 200 }}
 >
   <div class="chat-header">
