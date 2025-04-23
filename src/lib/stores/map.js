@@ -699,7 +699,7 @@ export const highlightedStore = derived(
 );
 
 // Simplified moveTarget function with improved debouncing
-export function moveTarget(newX, newY) {
+export function moveTarget(newX, newY, updateUrl = false) {
   if (newX === undefined || newY === undefined) {
     console.warn('Invalid coordinates passed to moveTarget:', { newX, newY });
     return;
@@ -720,8 +720,8 @@ export function moveTarget(newX, newY) {
     target: { x, y },
   }));
 
-  // Update URL to reflect the new position
-  if (!isInternalUrlUpdate) updateUrlWithCoordinates(x, y);
+  // Only update URL if explicitly requested
+  if (updateUrl && !isInternalUrlUpdate) updateUrlWithCoordinates(x, y);
 
   // Save target position to localStorage
   const worldId = currentState.worlds;

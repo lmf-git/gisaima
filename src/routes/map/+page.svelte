@@ -222,6 +222,7 @@
     
     $effect(() => {
         if (!browser || !$ready || urlProcessingComplete) return;
+
         
         const coords = parseUrlCoordinates();
         if (coords) {
@@ -234,11 +235,6 @@
         if ($game.player?.lastLocation) {
             const location = $game.player.lastLocation;
             moveTarget(location.x, location.y);
-
-        // Try removing this
-        } else if ($game.worldKey) {
-            const worldCenter = getWorldCenterCoordinates($game.worldKey);
-            moveTarget(worldCenter.x, worldCenter.y);
         }
         
         urlProcessingComplete = true;
@@ -346,7 +342,7 @@
                 const { x, y } = event.detail;
                 if (typeof x === 'number' && typeof y === 'number') {
                     console.log(`Navigating to chat location: ${x},${y}`);
-                    moveTarget(x, y);
+                    moveTarget(x, y, true); // Pass true to update URL for shared locations
                     
                     const clickedTile = $coordinates.find(c => c.x === x && c.y === y);
                     
@@ -730,8 +726,8 @@
 
         // Regular grid click handling (not in path drawing mode)
         if (coords) {
-            // First move the target to the clicked location
-            moveTarget(coords.x, coords.y);
+            // First move the target to the clicked location - don't update URL
+            moveTarget(coords.x, coords.y, false);
 
             // Get the tile data after moving
             const clickedTile = $coordinates.find(c => c.x === coords.x && c.y === coords.y);
