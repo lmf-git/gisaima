@@ -106,5 +106,3 @@ async function cleanupChatMessages(db, worldId) {
     return 0;
   }
 }
-
-export default cleanup;
