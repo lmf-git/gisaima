@@ -104,18 +104,12 @@
 
     console.log(spawn);
     
-    // Get coordinates from spawn
-    let spawnX, spawnY;
-    if (spawn.x !== undefined && spawn.y !== undefined) {
-      spawnX = spawn.x;
-      spawnY = spawn.y;
-    } else if (spawn.position) {
-      spawnX = spawn.position.x;
-      spawnY = spawn.position.y;
-    }
+    // Get coordinates directly from spawn.position
+    const spawnX = spawn.position?.x ?? 0;
+    const spawnY = spawn.position?.y ?? 0;
     
     // Only move if coordinates exist and we're not already at these coordinates
-    if (spawnX !== undefined && spawnY !== undefined && 
+    if (spawnX !== 0 && spawnY !== 0 && 
         ($map.target.x !== spawnX || $map.target.y !== spawnY)) {
       moveTarget(spawnX, spawnY);
     }
@@ -131,9 +125,9 @@
     try {
       setLoading(true);
       
-      // Get the correct coordinates from the spawn data
-      const spawnX = spawn.x ?? spawn.position?.x ?? 0;
-      const spawnY = spawn.y ?? spawn.position?.y ?? 0;
+      // Get coordinates directly from spawn.position
+      const spawnX = spawn.position?.x ?? 0;
+      const spawnY = spawn.position?.y ?? 0;
 
       console.log(`Spawning player at ${spawnX},${spawnY} for spawn ID: ${spawn.id}`);
       
