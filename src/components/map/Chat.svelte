@@ -11,8 +11,8 @@
   // Props using Svelte 5 runes syntax
   const { closing = false } = $props();
 
-  // Using Svelte 5 runes
-  let isExpanded = $state(false);
+  // Simplified state - just one boolean instead of two
+  let isOpen = $state(false);
   let chatInput = $state('');
   
   // DOM References
@@ -21,6 +21,7 @@
   
   // Constants
   const MAX_MESSAGE_LENGTH = 200;
+  const ANIMATION_DURATION = 300; // ms
   
   // Cleanup function
   let cleanup = () => {};
@@ -46,14 +47,14 @@
     chatInput = '';
   }
   
-  // Toggle chat expanded/collapsed state
+  // Simple toggle function
   function toggleChat() {
-    isExpanded = !isExpanded;
+    isOpen = !isOpen;
     
-    if (isExpanded) {
+    if (isOpen) {
       markAllAsRead();
       
-      // Focus the input field when expanding
+      // Focus the input field when opening
       setTimeout(() => {
         const inputElement = document.getElementById('chat-input');
         if (inputElement) {
@@ -65,7 +66,7 @@
   
   // Scroll to bottom when messages change
   $effect(() => {
-    if ($messages.length > 0 && isExpanded && messagesContainer) {
+    if ($messages.length > 0 && isOpen && messagesContainer) {
       setTimeout(() => {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
       }, 50);
@@ -74,14 +75,14 @@
 
   // Call markAllAsRead when chat is opened
   $effect(() => {
-    if (isExpanded) {
+    if (isOpen) {
       markAllAsRead();
     }
   });
   
   // Handle window resizing
   function handleResize() {
-    if (chatContainer && isExpanded) {
+    if (chatContainer && isOpen) {
       const windowHeight = window.innerHeight;
       const maxHeight = windowHeight * 0.5;  // Max 50% of viewport
       chatContainer.style.maxHeight = `${maxHeight}px`;
@@ -105,11 +106,11 @@
 
 <div 
   class="chat-container"
-  class:expanded={isExpanded}
   class:closing={closing}
   bind:this={chatContainer}
 >
-  {#if isExpanded}
+  <!-- Chat panel content -->
+  <div class="chat-content" class:visible={isOpen}>
     <div class="chat-header" transition:fade={{ duration: 200 }}>
       <h3>Chat</h3>
       <button class="close-button" onclick={toggleChat} aria-label="Close chat">
@@ -174,20 +175,22 @@
       />
       <button type="submit" disabled={!chatInput.trim()}>Send</button>
     </form>
-  {:else}
-    <button 
-      class="chat-toggle-button" 
-      onclick={toggleChat}
-      aria-label="Open chat"
-    >
-      {#if unreadCount > 0}
-        <BirdActive extraClass="bird-icon" />
-        <span class="unread-badge">{unreadCount}</span>
-      {:else}
-        <Bird extraClass="bird-icon" />
-      {/if}
-    </button>
-  {/if}
+  </div>
+  
+  <!-- Toggle button - always in DOM, controlled by CSS -->
+  <button 
+    class="chat-toggle-button" 
+    class:hidden={isOpen}
+    onclick={toggleChat}
+    aria-label="Open chat"
+  >
+    {#if unreadCount > 0}
+      <BirdActive extraClass="bird-icon" />
+      <span class="unread-badge">{unreadCount}</span>
+    {:else}
+      <Bird extraClass="bird-icon" />
+    {/if}
+  </button>
 </div>
 
 <style>
@@ -196,6 +199,17 @@
     bottom: 1rem;
     right: 1rem;
     z-index: 100;
+    border-radius: 0.5rem;
+  }
+  
+  .chat-container.closing {
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+    transition: opacity 300ms ease, transform 300ms ease;
+  }
+  
+  .chat-content {
     display: flex;
     flex-direction: column;
     background-color: rgba(255, 255, 255, 0.85);
@@ -203,26 +217,52 @@
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     overflow: hidden;
-    transition: all 0.3s ease;
     box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
     color: rgba(0, 0, 0, 0.8);
     border: 0.05em solid rgba(255, 255, 255, 0.2);
-  }
-  
-  .chat-container.expanded {
     width: min(400px, 90vw);
-    height: auto;
     max-height: 50vh;
+    transition: opacity 300ms ease, transform 300ms ease;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    position: absolute;
+    bottom: 0;
+    right: 0;
   }
   
-  .chat-container.closing {
-    animation: slideOut 0.5s ease forwards;
+  .chat-content.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
   }
   
-  @keyframes slideOut {
-    0% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(100%); }
+  .chat-toggle-button {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.85);
+    color: rgba(0, 0, 0, 0.8);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: opacity 200ms ease;
+  }
+  
+  .chat-toggle-button.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  .chat-toggle-button:hover {
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0.3em 1.2em rgba(0, 0, 0, 0.15);
   }
   
   .chat-header {
@@ -267,133 +307,6 @@
     gap: 0.5rem;
   }
   
-  .chat-message {
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-    background-color: rgba(255, 255, 255, 0.5);
-    word-break: break-word;
-    position: relative;
-    animation: fadeIn 0.2s ease;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  .system-message {
-    background-color: rgba(200, 200, 255, 0.5);
-    font-style: italic;
-    border: 1px solid rgba(100, 100, 255, 0.3);
-  }
-  
-  .event-message {
-    background-color: rgba(255, 200, 200, 0.5);
-    border: 1px solid rgba(255, 100, 100, 0.3);
-  }
-  
-  .player-message {
-    background-color: rgba(200, 255, 200, 0.5);
-    border: 1px solid rgba(100, 255, 100, 0.3);
-  }
-  
-  .error {
-    background-color: rgba(255, 200, 200, 0.5);
-    border: 1px solid rgba(255, 100, 100, 0.3);
-    color: #c62828;
-  }
-  
-  .message-user {
-    font-weight: bold;
-    margin-right: 0.5rem;
-    color: rgba(0, 0, 0, 0.85);
-  }
-  
-  .message-text {
-    display: inline;
-    color: rgba(0, 0, 0, 0.8);
-  }
-  
-  .message-time {
-    font-size: 0.75rem;
-    color: rgba(0, 0, 0, 0.5);
-    margin-left: 0.5rem;
-    white-space: nowrap;
-  }
-  
-  .location-button {
-    margin-left: 0.5rem;
-    font-size: 0.75rem;
-    background: rgba(70, 130, 180, 0.15);
-    border: 1px solid rgba(70, 130, 180, 0.3);
-    border-radius: 0.25rem;
-    padding: 0.1rem 0.3rem;
-    color: #0277bd;
-    cursor: pointer;
-  }
-  
-  .location-button:hover {
-    background: rgba(70, 130, 180, 0.3);
-  }
-  
-  .chat-input-form {
-    display: flex;
-    padding: 0.5rem;
-    gap: 0.5rem;
-    background-color: rgba(0, 0, 0, 0.05);
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-  }
-  
-  .chat-input-form input {
-    flex: 1;
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    background-color: rgba(255, 255, 255, 0.8);
-    color: rgba(0, 0, 0, 0.8);
-  }
-  
-  .chat-input-form button {
-    padding: 0.5rem 1rem;
-    border-radius: 0.25rem;
-    border: none;
-    background-color: #4a7dca;
-    color: white;
-    cursor: pointer;
-  }
-  
-  .chat-input-form button:hover:not(:disabled) {
-    background-color: #5a8dda;
-  }
-  
-  .chat-input-form button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  .chat-toggle-button {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    border: 0.05em solid rgba(255, 255, 255, 0.2);
-    background-color: rgba(255, 255, 255, 0.85);
-    color: rgba(0, 0, 0, 0.8);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-  
-  .chat-toggle-button:hover {
-    background-color: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 0.3em 1.2em rgba(0, 0, 0, 0.15);
-  }
-  
   .unread-badge {
     position: absolute;
     top: -5px;
@@ -424,7 +337,7 @@
   
   /* Responsive design */
   @media (max-width: 600px) {
-    .chat-container.expanded {
+    .chat-content {
       width: 85vw;
       max-height: 40vh;
     }

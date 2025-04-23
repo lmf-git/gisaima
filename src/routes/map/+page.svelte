@@ -488,13 +488,14 @@
       
       if (showChat) {
         chatClosing = true;
+        // Increased animation duration for a smoother transition
         setTimeout(() => {
           showChat = false;
           chatClosing = false;
           if (browser) {
             localStorage.setItem('chat', 'false');
           }
-        }, ANIMATION_DURATION);
+        }, 300); // Match with the transition duration in Chat.svelte
       } else {
         showChat = true;
         if (browser) {
@@ -1102,6 +1103,8 @@
         bottom: 1em;
         right: 1em;
         z-index: 1001;
+        /* Add a transition to the chat controls for smoother appearance/disappearance */
+        transition: opacity 300ms ease;
     }
     
     .control-button {
