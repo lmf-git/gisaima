@@ -78,7 +78,7 @@
     selectedGroup = group;
   }
   
-  // Toggle item selection
+  // Toggle item selection - prevent during processing
   function toggleItem(item) {
     if (processing) return;
     

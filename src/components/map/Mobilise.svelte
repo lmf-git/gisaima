@@ -25,6 +25,7 @@
   let includePlayer = $state(true);
   let groupName = $state("New Force");
   let mobilizeError = $state(null);
+  let processing = $state(false); // Add processing state variable
 
   function isPlayerOnTile(tile, playerId) {
     if (!tile || !tile.players) return false;
@@ -101,12 +102,9 @@
     }
 
     mobilizeError = null;
-    let isLoading = false;
+    processing = true; // Set processing state
     
     try {
-      
-
-      
       console.log("Preparing mobilization request with:", {
         worldId: $game.worldKey,
         tileX: tileData.x,
@@ -139,7 +137,7 @@
          mobilizeError = error.message || "Failed to mobilise forces";
       }
     } finally {
-      isLoading = false;
+      processing = false; // Reset processing state
     }
   }
   
@@ -337,15 +335,16 @@
           <button 
             class="cancel-btn" 
             onclick={onClose}
+            disabled={processing}
           >
             Cancel
           </button>
           <button 
             class="mobilise-btn" 
-            disabled={!canMobilize}
+            disabled={!canMobilize || processing}
             onclick={startMobilization}
           >
-            Mobilise Forces
+            {processing ? 'Processing...' : 'Mobilise Forces'}
           </button>
         </div>
       </div>

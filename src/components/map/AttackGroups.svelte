@@ -97,6 +97,8 @@
   
   // Toggle selection of a player group
   function togglePlayerGroup(group) {
+    if (loading) return; // Prevent selection during loading
+    
     const index = selectedPlayerGroups.findIndex(g => g.id === group.id);
     if (index >= 0) {
       // Remove from selection
@@ -109,6 +111,8 @@
   
   // Toggle selection of an enemy group
   function toggleEnemyGroup(group) {
+    if (loading) return; // Prevent selection during loading
+    
     const index = selectedEnemyGroups.findIndex(g => g.id === group.id);
     if (index >= 0) {
       // Remove from selection
@@ -255,6 +259,7 @@
                 class="group-item" 
                 class:selected={isPlayerGroupSelected(group.id)}
                 onclick={() => togglePlayerGroup(group)}
+                aria-disabled={loading}
               >
                 <div class="custom-checkbox" class:checked={isPlayerGroupSelected(group.id)} />
                 <div class="entity-icon">
@@ -295,6 +300,7 @@
                 class="group-item enemy-group" 
                 class:selected={isEnemyGroupSelected(group.id)}
                 onclick={() => toggleEnemyGroup(group)}
+                aria-disabled={loading}
               >
                 <div class="custom-checkbox" class:checked={isEnemyGroupSelected(group.id)} />
                 <div class="entity-icon">
@@ -336,7 +342,7 @@
           onclick={startAttack}
           disabled={!canAttack || loading}
         >
-          {loading ? 'Starting Attack...' : 'Start Attack'}
+          {loading ? 'Processing...' : 'Start Attack'}
         </button>
       </div>
     {/if}

@@ -165,17 +165,20 @@
 
   // Select a group
   function selectGroup(group) {
+    if (loading) return; // Prevent selection during loading
     selectedGroup = group;
   }
   
   // Select a battle
   function selectBattle(battle) {
+    if (loading) return; // Prevent selection during loading
     selectedBattle = battle;
     selectedSide = null;  // Reset side selection
   }
   
   // Select a side
   function selectSide(side) {
+    if (loading) return; // Prevent selection during loading
     selectedSide = side;
   }
   
@@ -308,9 +311,9 @@
         <button 
           class="join-btn" 
           onclick={joinBattle}
-          disabled={!canJoin}
+          disabled={!canJoin || loading}
         >
-          {loading ? 'Joining...' : 'Join Battle'}
+          {loading ? 'Processing...' : 'Join Battle'}
         </button>
       </div>
     {/if}

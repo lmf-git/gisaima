@@ -17,6 +17,7 @@
 
   // States
   let selectedGroupId = $state(null);
+  let processing = $state(false); // Add processing state
   let isSubmitting = $state(false);
   let error = $state(null);
   let isReady = $state(false);
@@ -55,25 +56,33 @@
   }
 
   function startPathDrawing() {
-    if (!selectedGroupId) return;
+    if (!selectedGroupId || processing) return;
     
-    const group = eligibleGroups.find(g => g.id === selectedGroupId);
-    if (!group) {
-      error = "Selected group not found";
-      return;
-    }
+    processing = true; // Set processing state
     
-    // Add the current position as startPoint to the group object
-    const groupWithStartPoint = {
-      ...group,
-      startPoint: {
-        x: currentTile.x,
-        y: currentTile.y
+    try {
+      const group = eligibleGroups.find(g => g.id === selectedGroupId);
+      if (!group) {
+        error = "Selected group not found";
+        processing = false;
+        return;
       }
-    };
-    
-    onPathDrawingStart(groupWithStartPoint);
-    onClose(false, true); // Close this modal, but indicate we're starting path drawing
+      
+      // Add the current position as startPoint to the group object
+      const groupWithStartPoint = {
+        ...group,
+        startPoint: {
+          x: currentTile.x,
+          y: currentTile.y
+        }
+      };
+      
+      onPathDrawingStart(groupWithStartPoint);
+      onClose(false, true); // Close this modal, but indicate we're starting path drawing
+    } catch (e) {
+      error = e.message || "An error occurred";
+      processing = false;
+    }
   }
 </script>
 
@@ -127,7 +136,7 @@
     <button 
       class="cancel-button" 
       onclick={onClose}
-      disabled={isSubmitting}
+      disabled={processing}
     >
       Cancel
     </button>
@@ -135,10 +144,10 @@
     <button 
       class="action-button" 
       onclick={startPathDrawing}
-      disabled={!selectedGroupId || isSubmitting}
+      disabled={!selectedGroupId || processing || isSubmitting}
     >
       <Compass extraClass="compass-icon" />
-      PLOT YOUR JOURNEY
+      {processing ? 'PROCESSING...' : 'PLOT YOUR JOURNEY'}
     </button>
   </footer>
 </div>
