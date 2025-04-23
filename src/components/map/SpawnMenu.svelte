@@ -77,16 +77,16 @@
       const spawnX = preferredSpawn.x ?? preferredSpawn.position?.x ?? 0;
       const spawnY = preferredSpawn.y ?? preferredSpawn.position?.y ?? 0;
       
-      // Check if we need to move the map view - only if significantly different
+      // Always move to exact spawn coordinates when there's only one spawn
+      // No distance check needed - we want exact positioning
       const currentX = $targetStore.x;
       const currentY = $targetStore.y;
-      const distance = Math.sqrt(Math.pow(currentX - spawnX, 2) + Math.pow(currentY - spawnY, 2));
       
-      if (distance > 5) { // Only move if more than 5 tiles away
+      if (currentX !== spawnX || currentY !== spawnY) {
         console.log(`Moving map view to spawn point: ${spawnX},${spawnY} (from ${currentX},${currentY})`);
         moveTarget(spawnX, spawnY);
       } else {
-        console.log(`Keeping current map view at ${currentX},${currentY} (spawn is nearby at ${spawnX},${spawnY})`);
+        console.log(`Map already centered at spawn coordinates: ${spawnX},${spawnY}`);
       }
     }
   });
