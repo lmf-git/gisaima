@@ -1009,7 +1009,7 @@
             <!-- Add YouAreHere component for player's position -->
             {#if isCurrentPlayerHere && $ready}
               <div class="you-are-here-container">
-                <YouAreHere size={cell.structure ? "6em" : "3.5em"} />
+                <YouAreHere size={cell.structure ? "7.5em" : "3.5em"} />
               </div>
             {/if}
 
@@ -1882,7 +1882,7 @@
 
   .structure-name-label {
     position: absolute;
-    top: 0.15em;
+    top: -1.285em; /* Updated from 0.15em to -1.285em as requested */
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
@@ -1893,13 +1893,13 @@
       0 0 0.2em rgba(0, 0, 0, 0.8),
       0 0 0.4em rgba(0, 0, 0, 0.5);
     pointer-events: none;
-    z-index: 1100; /* Increased z-index to be higher than YouAreHere */
+    z-index: 1100;
     white-space: nowrap;
     font-family: var(--font-heading);
     padding: 0.2em 0.5em;
     line-height: 1.1;
     letter-spacing: 0.02em;
-    background: rgba(0, 0, 0, 0.5); /* Darker background for better contrast */
+    background: rgba(0, 0, 0, 0.5);
     border-radius: 0.3em;
     backdrop-filter: blur(2px);
     width: auto;
@@ -1911,12 +1911,11 @@
   /* Make structure name more prominent on hover */
   .tile:hover .structure-name-label {
     background: rgba(0, 0, 0, 0.7);
-    z-index: 1200; /* Even higher z-index on hover */
+    z-index: 1200;
     transform: translateX(-50%) scale(1.05);
     transition: all 0.2s ease;
   }
 
-  /* Add styling for YouAreHere component container */
   .you-are-here-container {
     position: absolute;
     top: 0;

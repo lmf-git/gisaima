@@ -10,8 +10,8 @@
 <style>
   .you-are-here-wrapper {
     position: relative;
-    width: var(--indicator-size);
-    height: var(--indicator-size);
+    width: 100%; /* Change from fixed size to 100% width */
+    height: 100%; /* Change to 100% height to fill container */
     pointer-events: none;
     z-index: 1000;
     display: flex;
@@ -22,8 +22,11 @@
 
   .indicator-ring {
     position: absolute;
-    width: 90%;
-    height: 90%;
+    /* Size based on parent dimensions rather than percentages */
+    width: min(calc(var(--indicator-size) * 0.9), 90%);
+    height: 0;
+    padding-bottom: min(calc(var(--indicator-size) * 0.9), 90%);
+    aspect-ratio: 1/1;
     border: 2px solid rgba(255, 215, 0, 0.8);
     border-radius: 50%;
     box-shadow: 
@@ -31,19 +34,21 @@
       0 0 30px rgba(255, 215, 0, 0.3);
     animation: 
       pulse 2s infinite, 
-      rotate 12s linear infinite,
       growIn 1s ease-out forwards;
     opacity: 0.9;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
   }
 
   .location-text {
     position: absolute;
-    bottom: -1.8em;
+    bottom: -2.2em; /* Changed from -1.4em to -2.2em as requested */
     left: 50%;
     transform: translateX(-50%);
     color: white;
     font-weight: bold;
-    font-size: calc(var(--indicator-size) / 8.5);
+    font-size: calc(var(--indicator-size) / 13);
     padding: 0.15em 0.5em;
     background: rgba(0, 0, 0, 0.7);
     border-radius: 0.3em;
@@ -51,21 +56,16 @@
     text-shadow: 0 0 3px black;
     font-family: var(--font-heading, sans-serif);
     letter-spacing: 0.05em;
-    animation: fadeInBottom 1.2s ease-out forwards;
+    animation: bounce 2s infinite;
     border: 1px solid rgba(255, 215, 0, 0.4);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    z-index: 1101; /* Higher than structure label */
+    z-index: 1101;
   }
 
   @keyframes pulse {
-    0% { transform: scale(0.95); opacity: 0.8; }
-    50% { transform: scale(1.05); opacity: 1; }
-    100% { transform: scale(0.95); opacity: 0.8; }
-  }
-
-  @keyframes rotate {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.8; }
+    50% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.8; }
   }
 
   @keyframes appear {
@@ -75,15 +75,20 @@
   }
 
   @keyframes growIn {
-    0% { transform: scale(0.2); opacity: 0; }
-    50% { transform: scale(1.1); opacity: 0.7; }
-    70% { transform: scale(0.95); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 0.9; }
+    0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+    50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.7; }
+    70% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
   }
 
-  @keyframes fadeInBottom {
-    0% { opacity: 0; transform: translate(-50%, 0.5em); }
-    50% { opacity: 0; }
-    100% { opacity: 1; transform: translateX(-50%); }
+  @keyframes bounce {
+    0%, 100% { 
+      transform: translateX(-50%) translateY(0); 
+      text-shadow: 0 0 3px black;
+    }
+    50% { 
+      transform: translateX(-50%) translateY(-0.3em); 
+      text-shadow: 0 0 5px black;
+    }
   }
 </style>
