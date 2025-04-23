@@ -363,9 +363,9 @@
 <style>
   .achievements-container {
     position: fixed;
-    bottom: -8em; /* Changed from top: 50% to bottom: -8em */
+    bottom: 6em; /* Changed from bottom: -8em to bottom: 6em */
     right: 1em;
-    width: 25em; /* Increased from 22em to 25em for wider container */
+    width: 25em;
     height: 30em;
     z-index: 1010;
     display: flex;
