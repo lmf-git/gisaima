@@ -92,13 +92,10 @@
         isTutorialVisible
     );
 
-    // Missing variables that handleMapKeyDown references
     let showMinimap = $state(true);
     let showEntities = $state(true);
-    let minimapClosing = $state(false);
-    let entitiesClosing = $state(false);
     let showChat = $state(true);
-    let chatClosing = $state(false);
+    let showAchievements = $state(false);
     const ANIMATION_DURATION = 800;
 
     let initialized = $state(false);
@@ -108,26 +105,16 @@
     let ignoreNextUrlChange = $state(false);
     let lastProcessedLocation = $state(null);
 
-    // Add state to track last active panel for z-index ordering
     let lastActivePanel = $state('none'); // 'none', 'details', or 'overview'
 
-    // Add derived value for unread count
     const unreadCount = $derived($unreadMessages);
 
-    // Add state for achievements panel
-    let showAchievements = $state(false);
-    let achievementsClosing = $state(false);
-
-    // Function to handle panel hover events
     function handlePanelHover(panelType) {
-        // Only change if both panels are visible
-        if (detailed && (showEntities && !entitiesClosing)) {
+        if (detailed && (showEntities)) {
             lastActivePanel = panelType;
         }
     }
 
-    // Simplified URL coordinate handling
-    // Simple function to get coordinates from URL
     function parseUrlCoordinates() {
         if (!browser || !page) return null;
         
@@ -154,7 +141,6 @@
         });
     }
     
-    // Simplified URL coordinate processing effect
     $effect(() => {
         if (!browser || !$ready || urlProcessingComplete) return;
         
@@ -226,7 +212,6 @@
             return;
         }
         
-        // Mark as initialized early to prevent multiple initialization attempts
         initialized = true;
         
         ensureWorldDataLoaded(worldToUse).then(success => {
@@ -251,15 +236,12 @@
         };
     });
 
-    // Add missing function for tutorial visibility
     $effect(() => {
-        // If spawn menu appears, ensure tutorial is hidden
         if (!$game?.player?.alive && isTutorialVisible) {
             isTutorialVisible = false;
         }
     });
 
-    // Add event handler for chat location clicks
     $effect(() => {
         if (browser) {
             const handleChatLocationClick = (event) => {
@@ -268,10 +250,8 @@
                     console.log(`Navigating to chat location: ${x},${y}`);
                     moveTarget(x, y);
                     
-                    // Get the tile data after moving
                     const clickedTile = $coordinates.find(c => c.x === x && c.y === y);
                     
-                    // Only highlight and open details if there's meaningful content
                     if (clickedTile && hasTileContent(clickedTile)) {
                         setHighlighted(x, y);
                         toggleDetailsModal(true);
@@ -402,7 +382,7 @@
             
             initialize({
                 seed: worldData.seed,
-                worldId: $game.worldKey, // Make sure to use worldId instead of world property
+                worldId: $game.worldKey,
                 initialX,
                 initialY
             });
@@ -415,24 +395,20 @@
         }
     }
 
-    // Enhanced keyboard event handler for the page 
     function handleMapKeyDown(event) {
       if (event.key !== 'Escape') return;
       
-      // Update the global modal hierarchy state
       const componentState = {
         structureOverview: modalState.type === 'inspect' && modalState.visible,
         details: detailed,
         pathDrawing: isPathDrawingMode,
         anyOtherModal: modalState.visible && modalState.type !== 'inspect',
-        minimap: showMinimap && !minimapClosing,
-        overview: showEntities && !entitiesClosing
+        minimap: showMinimap,
+        overview: showEntities
       };
       
-      // Process the keyboard event based on component hierarchy
       const actionTarget = handleKeyboardEvent(event, componentState);
       
-      // Handle closing components in order of priority
       if (actionTarget === 'minimap') {
         toggleMinimap();
         event.preventDefault();
@@ -449,20 +425,9 @@
         return;
       }
       
-      if (showMinimap) {
-        minimapClosing = true;
-        setTimeout(() => {
-          showMinimap = false;
-          minimapClosing = false;
-          if (browser) {
-            localStorage.setItem('minimap', 'false');
-          }
-        }, ANIMATION_DURATION);
-      } else {
-        showMinimap = true;
-        if (browser) {
-          localStorage.setItem('minimap', 'true');
-        }
+      showMinimap = !showMinimap;
+      if (browser) {
+        localStorage.setItem('minimap', showMinimap.toString());
       }
     }
 
@@ -471,21 +436,12 @@
         return;
       }
       
+      showEntities = !showEntities;
       if (showEntities) {
-        entitiesClosing = true;
-        setTimeout(() => {
-          showEntities = false;
-          entitiesClosing = false;
-          if (browser) {
-            localStorage.setItem('overview', 'false');
-          }
-        }, ANIMATION_DURATION);
-      } else {
-        showEntities = true;
         lastActivePanel = 'overview';
-        if (browser) {
-          localStorage.setItem('overview', 'true');
-        }
+      }
+      if (browser) {
+        localStorage.setItem('overview', showEntities.toString());
       }
     }
 
@@ -495,24 +451,17 @@
       }
       
       if (showChat) {
-        chatClosing = true;
-        // Increased animation duration for a smoother transition
-        setTimeout(() => {
-          showChat = false;
-          chatClosing = false;
-          if (browser) {
-            localStorage.setItem('chat', 'false');
-          }
-        }, 300); // Match with the transition duration in Chat.svelte
+        showChat = false;
       } else {
         showChat = true;
-        // Close achievements if it's open when opening chat
+        
         if (showAchievements) {
-          toggleAchievements();
+          showAchievements = false;
         }
-        if (browser) {
-          localStorage.setItem('chat', 'true');
-        }
+      }
+      
+      if (browser) {
+        localStorage.setItem('chat', showChat.toString());
       }
     }
 
@@ -522,23 +471,17 @@
       }
       
       if (showAchievements) {
-        achievementsClosing = true;
-        setTimeout(() => {
-          showAchievements = false;
-          achievementsClosing = false;
-          if (browser) {
-            localStorage.setItem('achievements', 'false');
-          }
-        }, ANIMATION_DURATION);
+        showAchievements = false;
       } else {
         showAchievements = true;
-        // Close chat if it's open when opening achievements
+        
         if (showChat) {
-          toggleChat();
+          showChat = false;
         }
-        if (browser) {
-          localStorage.setItem('achievements', 'true');
-        }
+      }
+      
+      if (browser) {
+        localStorage.setItem('achievements', showAchievements.toString());
       }
     }
 
@@ -563,213 +506,10 @@
     }
     
     function toggleTutorial() {
-      // Dispatch the custom event to toggle tutorial
       window.dispatchEvent(new CustomEvent('tutorial:toggle'));
     }
 
-    // Add missing function for grid clicking
-    function handleGridClick(coords) {
-        // Check if this is a path confirmation action
-        if (coords && coords.confirmPath === true) {
-            confirmPathDrawing(currentPath);
-            return;
-        }
-
-        // Simple debounce
-        if (isProcessingClick) return;
-        isProcessingClick = true;
-
-        // If we're in path drawing mode and have coordinates, add them to the path
-        if (isPathDrawingMode && coords && coords.x !== undefined && coords.y !== undefined) {
-            // Add the point to the path
-            handlePathPoint(coords);
-            
-            // Reset debounce flag with short timeout for responsiveness in drawing mode
-            setTimeout(() => {
-                isProcessingClick = false;
-            }, 100);
-            return;
-        }
-
-        // Regular grid click handling (not in path drawing mode)
-        if (coords) {
-            // First move the target to the clicked location
-            moveTarget(coords.x, coords.y);
-
-            // Get the tile data after moving
-            const clickedTile = $coordinates.find(c => c.x === coords.x && c.y === coords.y);
-            
-            // Only highlight and open details if there's meaningful content and not in path drawing mode
-            if (clickedTile && hasTileContent(clickedTile) && !isPathDrawingMode) {
-                setHighlighted(coords.x, coords.y);
-                toggleDetailsModal(true);
-            } else if (!isPathDrawingMode) {
-                // If there's no content and not in path drawing mode, just ensure nothing is highlighted
-                setHighlighted(null, null);
-                toggleDetailsModal(false);
-            }
-        }
-
-        // Reset debounce flag
-        setTimeout(() => {
-            isProcessingClick = false;
-        }, 300);
-    }
-
-    // Function to check if a tile has meaningful content
-    function hasTileContent(tile) {
-        if (!tile) return false;
-        
-        return (
-            // Check for any meaningful content on the tile
-            (tile.structure && Object.keys(tile.structure).length > 0) ||
-            (tile.groups && tile.groups.length > 0) ||
-            (tile.players && tile.players.length > 0) ||
-            (tile.items && tile.items.length > 0) ||
-            (tile.battles && tile.battles.length > 0)
-        );
-    }
-
-    // Add function for handling path points
-    function handlePathPoint(point) {
-        if (!isPathDrawingMode) return;
-        
-        // Validate that point has valid coordinates
-        if (!point || point.x === undefined || point.y === undefined) {
-            console.error('Invalid point in handlePathPoint:', point);
-            return;
-        }
-        
-        console.log('Adding path point:', point);
-        
-        if (currentPath.length > 0) {
-            // Get the last point in the path
-            const lastPoint = currentPath[currentPath.length - 1];
-            
-            // Check if this is a duplicate point (avoid adding same point twice)
-            if (lastPoint.x === point.x && lastPoint.y === point.y) {
-                return;
-            }
-            
-            // Calculate all intermediate steps between the last point and new point
-            const intermediatePoints = calculatePathBetweenPoints(
-                lastPoint.x, 
-                lastPoint.y, 
-                point.x, 
-                point.y
-            );
-            
-            // Add all intermediate points (except the first which would duplicate the last point)
-            if (intermediatePoints.length > 1) {
-                // Skip the first point as it duplicates the last point in currentPath
-                const pathAddition = intermediatePoints.slice(1);
-                currentPath = [...currentPath, ...pathAddition];
-                console.log(`Path extended with ${pathAddition.length} interpolated points`);
-            }
-        } else {
-            // First point in the path
-            currentPath = [{ x: point.x, y: point.y }];
-        }
-    }
-
-    // Function for path drawing mode
-    function handlePathDrawingStart(group) {
-        if (!group) return;
-        
-        console.log('Starting path drawing for group:', group.id || group.groupId);
-        
-        // Close any open modals or details that might interfere
-        toggleDetailsModal(false);
-        setHighlighted(null, null);
-        
-        // Set flag to prevent details panel from opening
-        isTransitioningToPathDrawing = true;
-        
-        // Store the group information for later use
-        pathDrawingGroup = {
-            id: group.id || group.groupId,
-            name: group.name,
-            unitCount: group.unitCount,
-            status: group.status
-        };
-        
-        // Set path drawing mode ON
-        isPathDrawingMode = true;
-        
-        // Initialize with starting point if available, with proper coordinate validation
-        if (group.startPoint && group.startPoint.x !== undefined && group.startPoint.y !== undefined) {
-            currentPath = [{ x: group.startPoint.x, y: group.startPoint.y }];
-        } else if (group.x !== undefined && group.y !== undefined) {
-            currentPath = [{ x: group.x, y: group.y }];
-        } else {
-            // Default to current target if no starting point is provided, with validation
-            const target = $map.target;
-            if (target && target.x !== undefined && target.y !== undefined) {
-                currentPath = [{ x: target.x, y: target.y }];
-            } else {
-                currentPath = [];
-                console.warn('No valid starting coordinates for path drawing');
-            }
-        }
-        
-        // Log the initial path point for debugging
-        if (currentPath.length > 0) {
-            console.log('Initial path point:', currentPath[0]);
-        }
-        
-        // Reset the transition flag after a delay to allow state to settle
-        setTimeout(() => {
-            isTransitioningToPathDrawing = false;
-        }, 500);
-    }
-
-    // Function to handle path drawing cancellation
-    function handlePathDrawingCancel() {
-        isPathDrawingMode = false;
-        pathDrawingGroup = null;
-        currentPath = [];
-    }
-    
-    // Function to confirm a drawn path
-    function confirmPathDrawing(path) {
-        if (!path || path.length < 2 || !pathDrawingGroup) {
-            console.error('Cannot confirm path: Invalid path or missing group');
-            return;
-        }
-        
-        console.log('Confirming path for group:', pathDrawingGroup.id);
-        
-        // Execute the move with the path
-        const functions = getFunctions();
-        const moveGroupFn = httpsCallable(functions, 'moveGroup');
-        
-        const startPoint = path[0];
-        const endPoint = path[path.length - 1];
-        
-        moveGroupFn({
-            groupId: pathDrawingGroup.id,
-            fromX: startPoint.x,
-            fromY: startPoint.y,
-            toX: endPoint.x,
-            toY: endPoint.y,
-            path: path,
-            worldId: $game.worldKey
-        })
-        .then((result) => {
-            console.log('Path movement started:', result.data);
-            // Reset path drawing mode
-            isPathDrawingMode = false;
-            pathDrawingGroup = null;
-            currentPath = [];
-        })
-        .catch((error) => {
-            console.error('Error starting path movement:', error);
-            alert(`Error: ${error.message || 'Failed to start movement'}`);
-        });
-    }
-
     function handleTutorialVisibility(isVisible) {
-        // Don't show tutorial if spawn menu is active
         if (!$game?.player?.alive && isVisible) {
             return;
         }
@@ -780,89 +520,6 @@
             showMinimap = false;
             showEntities = false;
         }
-    }
-    
-    // Add the missing function for calculating path between points
-    function calculatePathBetweenPoints(startX, startY, endX, endY) {
-        const path = [];
-        
-        // Calculate steps using Bresenham's line algorithm
-        const dx = Math.abs(endX - startX);
-        const dy = Math.abs(endY - startY);
-        const sx = startX < endX ? 1 : -1;
-        const sy = startY < endY ? 1 : -1;
-        
-        let err = dx - dy;
-        let x = startX;
-        let y = startY;
-        
-        // Add start point
-        path.push({ x, y });
-        
-        // Generate steps
-        while (!(x === endX && y === endY)) {
-            const e2 = 2 * err;
-            
-            if (e2 > -dy) {
-                err -= dy;
-                x += sx;
-            }
-            
-            if (e2 < dx) {
-                err += dx;
-                y += sy;
-            }
-            
-            // Add intermediate point
-            path.push({ x, y });
-            
-            // Safety check
-            if (path.length > 1000) {
-                console.warn('Path too long, truncating');
-                break;
-            }
-        }
-        
-        return path;
-    }
-
-    function triggerAchievement(achievementId) {
-        if (achievementsRef) {
-            achievementsRef.unlockAchievement(achievementId);
-        }
-    }
-
-    function handleMobilise() {
-        triggerAchievement('mobilised');
-        closeModal();
-    }
-
-    function handleAttack(data) {
-        triggerAchievement('first_attack');
-        console.log('Attack started:', data);
-        closeModal();
-    }
-
-    function handleJoinBattle(data) {
-        triggerAchievement('battle_joiner');
-        console.log('Joined battle:', data);
-        closeModal();
-    }
-
-    function handleGather(result) {
-        triggerAchievement('first_gather');
-        closeModal();
-    }
-
-    function handleDemobilize(data) {
-        triggerAchievement('demobilizer');
-        console.log('Demobilization started:', data);
-        closeModal();
-    }
-
-    function handlePathConfirm(path) {
-        triggerAchievement('strategist');
-        confirmPathDrawing(path);
     }
 </script>
 
@@ -923,7 +580,7 @@
                 onclick={toggleMinimap}
                 aria-label={showMinimap ? "Hide minimap" : "Show minimap"}
                 disabled={!$game?.player?.alive || isTutorialVisible}>
-                {#if showMinimap || minimapClosing}
+                {#if showMinimap}
                     <Close size="1.2em" extraClass="close-icon-dark" />
                 {:else}
                     <Map extraClass="button-icon" />
@@ -931,7 +588,7 @@
             </button>
         </div>
         
-        {#if !(showEntities || entitiesClosing)}
+        {#if !showEntities}
             <div class="entity-controls">
                 <button 
                     class="control-button entity-button" 
@@ -943,8 +600,8 @@
             </div>
         {/if}
         
-        {#if !(showChat || chatClosing)}
-            <div class="controls-right">
+        <div class="controls-right">
+            {#if !showChat}
                 <button 
                     class="control-button chat-button" 
                     onclick={toggleChat}
@@ -957,18 +614,20 @@
                         <Bird extraClass="button-icon" />
                     {/if}
                 </button>
+            {/if}
 
-                {#if !(showAchievements || achievementsClosing)}
-                    <button 
-                        class="control-button achievements-button" 
-                        onclick={toggleAchievements}
-                        aria-label="Show achievements"
-                        disabled={!$game?.player?.alive || isTutorialVisible}>
-                        <AchievementIcon extraClass="button-icon" />
-                    </button>
-                {/if}
-            </div>
-        {:else if !(showAchievements || achievementsClosing)}
+            {#if !showAchievements}
+                <button 
+                    class="control-button achievements-button" 
+                    onclick={toggleAchievements}
+                    aria-label="Show achievements"
+                    disabled={!$game?.player?.alive || isTutorialVisible}>
+                    <AchievementIcon extraClass="button-icon" />
+                </button>
+            {/if}
+        </div>
+
+        {#if showChat && !showAchievements}
             <div class="controls-middle-right">
                 <button 
                     class="control-button achievements-button" 
@@ -980,17 +639,22 @@
             </div>
         {/if}
 
-        {#if $ready && $game?.player?.alive && (showChat || chatClosing)}
-            <Chat closing={chatClosing} />
+        {#if $ready && $game?.player?.alive}
+            <div class="chat-wrapper" class:visible={showChat}>
+                <Chat onClose={toggleChat} />
+            </div>
+
+            <div class="achievements-wrapper" class:visible={showAchievements}>
+                <Achievements onClose={toggleAchievements} />
+            </div>
         {/if}
 
-        {#if showMinimap || minimapClosing}
-            <Minimap closing={minimapClosing} />
+        {#if showMinimap}
+            <Minimap />
         {/if}
         
-        {#if showEntities || entitiesClosing}
+        {#if showEntities}
             <Overview 
-              closing={entitiesClosing} 
               isActive={lastActivePanel === 'overview'}
               onShowStructure={({ structure, x, y }) => {
                 modalState = {
@@ -1048,14 +712,6 @@
         
         {#if ($user && !$game.player?.alive)}
             <SpawnMenu />
-        {/if}
-
-        {#if $ready && $game?.player?.alive && (showAchievements || achievementsClosing)}
-            <Achievements 
-              closing={achievementsClosing} 
-              onClose={() => toggleAchievements()} 
-              bind:this={achievementsRef} 
-            />
         {/if}
 
         {#if modalState.visible}
@@ -1207,7 +863,6 @@
         gap: 0.5em;
     }
     
-    /* New style for middle-right positioned controls */
     .controls-middle-right {
         position: fixed;
         top: 50%;
@@ -1319,5 +974,31 @@
         min-width: 1.4em;
         text-align: center;
         box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
+    }
+
+    .chat-wrapper,
+    .achievements-wrapper {
+        position: fixed;
+        z-index: 1010;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 300ms ease;
+    }
+    
+    .chat-wrapper.visible,
+    .achievements-wrapper.visible {
+        opacity: 1;
+        pointer-events: all;
+    }
+    
+    .chat-wrapper {
+        bottom: 1em;
+        right: 1em;
+    }
+    
+    .achievements-wrapper {
+        top: 50%;
+        right: 1em;
+        transform: translateY(-50%);
     }
 </style>

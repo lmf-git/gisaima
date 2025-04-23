@@ -9,7 +9,7 @@
   import BirdActive from '../icons/BirdActive.svelte';
   
   // Props using Svelte 5 runes syntax
-  const { closing = false } = $props();
+  const { closing = false, onClose = () => {} } = $props();
 
   // Simplified state - just one boolean instead of two
   let isOpen = $state(false);
@@ -47,7 +47,7 @@
     chatInput = '';
   }
   
-  // Simple toggle function
+  // Simplified toggle function
   function toggleChat() {
     isOpen = !isOpen;
     
@@ -62,6 +62,10 @@
         }
       }, 100);
     }
+  }
+
+  function closeChat() {
+    onClose();
   }
   
   // Scroll to bottom when messages change
@@ -113,7 +117,7 @@
   <div class="chat-content" class:visible={isOpen}>
     <div class="chat-header" transition:fade={{ duration: 200 }}>
       <h3>Chat</h3>
-      <button class="close-button" onclick={toggleChat} aria-label="Close chat">
+      <button class="close-button" onclick={closeChat} aria-label="Close chat">
         <Close extraClass="close-icon" />
       </button>
     </div>
@@ -195,11 +199,12 @@
 
 <style>
   .chat-container {
-    position: absolute;
+    position: fixed;
     bottom: 1rem;
     right: 1rem;
     z-index: 100;
     border-radius: 0.5rem;
+    width: min(400px, 90vw);
   }
   
   .chat-container.closing {
@@ -221,19 +226,10 @@
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
     color: rgba(0, 0, 0, 0.8);
     border: 0.05em solid rgba(255, 255, 255, 0.2);
-    transition: opacity 300ms ease, transform 300ms ease;
     
     /* Fixed dimensions and positioning */
-    width: min(400px, 90vw);
+    width: 100%;
     max-height: 50vh;
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    
-    /* Initial state - invisible and shifted down */
-    opacity: 0;
-    transform: translateY(10px);
-    pointer-events: none;
   }
   
   .chat-content.visible {

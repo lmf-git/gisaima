@@ -4,8 +4,8 @@
   import Close from '../icons/Close.svelte';
   import Trophy from '../icons/Trophy.svelte';
 
-  // Define props properly in Svelte 5 style
-  const { closing = false, onClose = () => {}, onVisibilityChange = () => {} } = $props();
+  // Simplify props to just use onClose
+  const { onClose = () => {} } = $props();
 
   // State variables using $state rune
   let visible = $state(true);
@@ -203,6 +203,7 @@
     selectedCategory = categoryId;
   }
 
+  // Simplify close function
   function close() {
     onClose();
   }
@@ -313,13 +314,11 @@
     top: 50%;
     right: 1em;
     transform: translateY(-50%);
-    width: 22em;  /* Changed from 15em to 22em */
+    width: 22em;
     height: 30em;
-    background: none;
     z-index: 1010;
     display: flex;
     flex-direction: column;
-    pointer-events: none;
   }
   
   .achievements-panel {
@@ -329,10 +328,8 @@
     width: 100%;
     background-color: rgba(255, 255, 255, 0.95);
     border-left: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
     box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
-    transform: translateX(0);
-    transition: all 300ms ease;
-    pointer-events: all;
   }
   
   .achievements-panel.closing {
@@ -573,7 +570,7 @@
   @media (max-width: 768px) {
     .achievements-container {
       right: 0;
-      width: 22em;  /* Changed from 15em to 22em for consistency */
+      width: 22em;
     }
   }
 </style>
