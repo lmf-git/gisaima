@@ -59,6 +59,19 @@ function loadTargetFromLocalStorage(worldId) {
   return null;
 }
 
+// Add this new function to clear saved target position
+export function clearSavedTargetPosition(worldId) {
+  if (typeof window === 'undefined' || !worldId) return;
+  
+  try {
+    localStorage.removeItem(`${worldId}${TARGET_X_PREFIX}`);
+    localStorage.removeItem(`${worldId}${TARGET_Y_PREFIX}`);
+    console.log(`Cleared saved position for world ${worldId}`);
+  } catch (err) {
+    console.warn('Failed to clear target coordinates from localStorage:', err);
+  }
+}
+
 const chunkSubscriptions = new Map();
 
 // Initialize map without accessing game store initially

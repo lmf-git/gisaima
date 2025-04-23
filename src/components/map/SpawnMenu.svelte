@@ -1,8 +1,9 @@
 <script>
+  import { scale } from 'svelte/transition';
   import { ref, set, update } from 'firebase/database';
   import { db } from '../../lib/firebase/firebase.js';
   import { game, currentPlayer } from '../../lib/stores/game';
-  import { moveTarget, map, targetStore } from '../../lib/stores/map';
+  import { moveTarget, map, targetStore, clearSavedTargetPosition } from '../../lib/stores/map';
   import { user } from '../../lib/stores/user';
 
   // Import torch and race icons
@@ -12,6 +13,11 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
+
+  // Accept onClose prop to match Mobilise pattern
+  const {
+    onClose = () => {}
+  } = $props();
 
   // Component state using Svelte 5 runes
   let selectedSpawn = $state(null);
@@ -60,25 +66,25 @@
     
     if (preferredSpawn) {
       // Auto-select the preferred spawn
-      selectSpawn(preferredSpawn);
+      selectSpawn(preferredSpawn, false); // Pass false to avoid auto-moving the map
       
-      // Get the correct coordinates and move map
+      // Get the correct coordinates
       const spawnX = preferredSpawn.x ?? preferredSpawn.position?.x ?? 0;
       const spawnY = preferredSpawn.y ?? preferredSpawn.position?.y ?? 0;
       
-      // Check if we need to move the map view
-      if ($targetStore.x !== spawnX || $targetStore.y !== spawnY) {
-        console.log(`Moving map view to spawn point: ${spawnX},${spawnY}`);
+      // Check if we need to move the map view - only if significantly different
+      const currentX = $targetStore.x;
+      const currentY = $targetStore.y;
+      const distance = Math.sqrt(Math.pow(currentX - spawnX, 2) + Math.pow(currentY - spawnY, 2));
+      
+      if (distance > 5) { // Only move if more than 5 tiles away
+        console.log(`Moving map view to spawn point: ${spawnX},${spawnY} (from ${currentX},${currentY})`);
         moveTarget(spawnX, spawnY);
+      } else {
+        console.log(`Keeping current map view at ${currentX},${currentY} (spawn is nearby at ${spawnX},${spawnY})`);
       }
     }
   });
-
-  // Log game store state when open
-  console.log('🎮 Game store in SpawnMenu:', $game);
-  console.log('👤 Current player in SpawnMenu:', $currentPlayer);
-  console.log('🌍 Current world key in SpawnMenu:', $game.worldKey);
-  console.log('📊 Player data in SpawnMenu:', $game.player);
 
   // Helper function for setting/clearing errors
   function setError(message) {
@@ -99,16 +105,23 @@
   }
 
   // Handle spawn selection
-  function selectSpawn(spawn) {
+  function selectSpawn(spawn, shouldMoveMap = true) {
     selectedSpawn = spawn;
-    console.log(spawn);
+    console.log(`Selected spawn: ${spawn.name || spawn.id} at ${spawn.position?.x},${spawn.position?.y}`);
     
-    // Get coordinates directly from spawn.position - no null checks needed
-    const spawnX = spawn.position.x;
-    const spawnY = spawn.position.y;
+    if (!shouldMoveMap) return;
+    
+    // Get coordinates safely with null coalescing
+    const spawnX = spawn.x ?? spawn.position?.x ?? 0;
+    const spawnY = spawn.y ?? spawn.position?.y ?? 0;
+    
+    // Store original coordinates before moving
+    const originalX = $map.target.x;
+    const originalY = $map.target.y;
     
     // Only move if we're not already at these coordinates
-    if ($map.target.x !== spawnX || $map.target.y !== spawnY) {
+    if (originalX !== spawnX || originalY !== spawnY) {
+      console.log(`Moving map view from ${originalX},${originalY} to spawn at ${spawnX},${spawnY}`);
       moveTarget(spawnX, spawnY);
     }
   }
@@ -123,11 +136,14 @@
     try {
       setLoading(true);
       
-      // Get coordinates directly from spawn.position - no null checks needed
-      const spawnX = spawn.position.x;
-      const spawnY = spawn.position.y;
+      // Store the spawn coordinates to ensure we use consistent values throughout
+      const spawnX = spawn.x ?? spawn.position?.x ?? 0;
+      const spawnY = spawn.y ?? spawn.position?.y ?? 0;
 
-      console.log(`Spawning player at ${spawnX},${spawnY} for spawn ID: ${spawn.id}`);
+      // Clear any saved target position to prevent it overriding spawn location
+      clearSavedTargetPosition($game.worldKey);
+
+      console.log(`Spawning player at ${spawnX},${spawnY} for spawn ID: ${spawn.id || 'unknown'}`);
       
       // 1. Update the player data in the database
       const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.worldKey}`);
@@ -168,6 +184,14 @@
       });
       
       console.log(`Player spawned at ${tileKey} in chunk ${chunkKey} with uid ${$user.uid}`);
+      
+      // Ensure map is still focused on spawn location before closing
+      if ($map.target.x !== spawnX || $map.target.y !== spawnY) {
+        console.log(`Re-centering map on spawn location before closing: ${spawnX},${spawnY}`);
+        moveTarget(spawnX, spawnY);
+      }
+      
+      setTimeout(() => onClose(), 300); // Small delay before closing to ensure map update completes
     
     } catch (error) {
       console.error('Error selecting spawn point:', error);
@@ -176,79 +200,97 @@
       setLoading(false);
     }
   }
+
+  function handleKeyDown(event) {
+    if (event.key === 'Escape') {
+      // Do nothing for Escape key as we don't want to close the spawn menu
+      // Only proceed once player has chosen a spawn point
+    }
+  }
 </script>
 
-<div class="spawn-menu-wrapper" class:loading={loading}>
+<svelte:window onkeydown={handleKeyDown} />
+
+<div 
+  class="spawn-menu-wrapper" 
+  class:loading={loading} 
+  transition:scale={{ start: 0.95, duration: 200 }}
+>
   <div class="spawn-menu">
-    <h2>
-      {#if $game.player?.race}
-        <div class="race-icon">
-          {#if $game.player.race.toLowerCase() === 'human'}
-            <Human extraClass="spawn-race-icon" />
-          {:else if $game.player.race.toLowerCase() === 'elf'}
-            <Elf extraClass="spawn-race-icon" />
-          {:else if $game.player.race.toLowerCase() === 'dwarf'}
-            <Dwarf extraClass="spawn-race-icon" />
-          {:else if $game.player.race.toLowerCase() === 'goblin'}
-            <Goblin extraClass="spawn-race-icon" />
-          {:else if $game.player.race.toLowerCase() === 'fairy'}
-            <Fairy extraClass="spawn-race-icon" />
-          {/if}
-        </div>
-      {/if}
-      <span class="welcome-text">
-        Welcome {$game.player?.race ? formatRace($game.player.race) : ''} 
-        <br>Choose a Spawn Point
-      </span>
-    </h2>
+    <header class="modal-header">
+      <h2 id="spawn-title">Choose Spawn Point</h2>
+    </header>
     
-    {#if error}
-      <div class="error-message">{error}</div>
-    {/if}
-    
-    <div class="spawn-container">
-      <div class="spawn-list">
-        {#each spawnList as spawn (spawn.id)}
-          <button 
-            class="spawn-item" 
-            class:selected={selectedSpawn?.id === spawn.id}
-            onclick={() => selectSpawn(spawn)}
-            aria-pressed={selectedSpawn?.id === spawn.id}
-            type="button"
-          >
-            <Torch size="2.4em" extraClass="spawn-icon" />
-            <div class="spawn-item-content">
-              <h3>{spawn.name || 'Unnamed Spawn'}</h3>
-              {#if spawn.description}
-                <p class="spawn-description">{spawn.description}</p>
-              {/if}
-              <div class="spawn-meta">
-                <span class="spawn-race">{spawn.race || 'any'}</span>
-                <span class="spawn-coords">
-                  {#if spawn.x !== undefined && spawn.y !== undefined}
-                    ({spawn.x}, {spawn.y})
-                  {:else if spawn.position}
-                    ({spawn.position.x}, {spawn.position.y})
-                  {/if}
-                </span>
-              </div>
-            </div>
-          </button>
-        {/each}
+    <div class="content">
+      <div class="race-header">
+        {#if $game.player?.race}
+          <div class="race-icon">
+            {#if $game.player.race.toLowerCase() === 'human'}
+              <Human extraClass="spawn-race-icon" />
+            {:else if $game.player.race.toLowerCase() === 'elf'}
+              <Elf extraClass="spawn-race-icon" />
+            {:else if $game.player.race.toLowerCase() === 'dwarf'}
+              <Dwarf extraClass="spawn-race-icon" />
+            {:else if $game.player.race.toLowerCase() === 'goblin'}
+              <Goblin extraClass="spawn-race-icon" />
+            {:else if $game.player.race.toLowerCase() === 'fairy'}
+              <Fairy extraClass="spawn-race-icon" />
+            {/if}
+          </div>
+          <span class="welcome-text">
+            Welcome {formatRace($game.player.race)}
+          </span>
+        {/if}
       </div>
-        
-      <div class="spawn-actions">
-        <button 
-          class="spawn-button" 
-          disabled={loading || !selectedSpawn} 
-          onclick={() => confirm(selectedSpawn)}
-        >
-          {#if loading}
-            <span class="spinner"></span> Spawning...
-          {:else}
-            Spawn Here
-          {/if}
-        </button>
+      
+      {#if error}
+        <div class="error-message">{error}</div>
+      {/if}
+      
+      <div class="spawn-container">
+        <div class="spawn-list">
+          {#each spawnList as spawn (spawn.id)}
+            <button 
+              class="spawn-item" 
+              class:selected={selectedSpawn?.id === spawn.id}
+              onclick={() => selectSpawn(spawn)}
+              aria-pressed={selectedSpawn?.id === spawn.id}
+              type="button"
+            >
+              <Torch size="2.4em" extraClass="spawn-icon" />
+              <div class="spawn-item-content">
+                <h3>{spawn.name || 'Unnamed Spawn'}</h3>
+                {#if spawn.description}
+                  <p class="spawn-description">{spawn.description}</p>
+                {/if}
+                <div class="spawn-meta">
+                  <span class="spawn-race">{spawn.race || 'any'}</span>
+                  <span class="spawn-coords">
+                    {#if spawn.x !== undefined && spawn.y !== undefined}
+                      ({spawn.x}, {spawn.y})
+                    {:else if spawn.position}
+                      ({spawn.position.x}, {spawn.position.y})
+                    {/if}
+                  </span>
+                </div>
+              </div>
+            </button>
+          {/each}
+        </div>
+          
+        <div class="spawn-actions">
+          <button 
+            class="spawn-button" 
+            disabled={loading || !selectedSpawn} 
+            onclick={() => confirm(selectedSpawn)}
+          >
+            {#if loading}
+              <span class="spinner"></span> Spawning...
+            {:else}
+              Spawn Here
+            {/if}
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -266,51 +308,75 @@
     justify-content: center;
     align-items: center;
     z-index: 1010; /* Increased from 1000 to 1010 to be above Legend's z-index of 1001 */
+    pointer-events: all; /* Ensure clicks are captured by this element */
   }
 
   .spawn-menu {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 90%;
     max-width: 500px;
-    background: rgba(255, 255, 255, 0.85);
-    border-radius: 0.3em;
-    padding: 1.5em;
-    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    color: rgba(0, 0, 0, 0.8);
+    max-height: 90vh;
+    background: white;
+    border-radius: 0.5em;
+    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
     font-family: var(--font-body);
-    font-size: 1em;
   }
 
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center the header text since there's no close button */
+    padding: 0.8em 1em;
+    background: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
   h2 {
-    margin: 0 0 1.2em;
-    color: rgba(0, 0, 0, 0.8);
+    margin: 0;
     font-size: 1.3em;
     font-weight: 600;
-    display: flex;
-    align-items: flex-start;
-    position: relative;
-    padding-left: 2.8em;
+    color: #333;
     font-family: var(--font-heading);
+  }
+  
+  .content {
+    padding: 1em;
+    overflow-y: auto;
+    max-height: calc(90vh - 4em);
+  }
+
+  .race-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.2em;
+    padding-bottom: 0.8em;
+    border-bottom: 1px solid #e0e0e0;
   }
 
   .race-icon {
-    position: absolute;
-    left: 0;
-    top: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-right: 0.8em;
   }
 
   .welcome-text {
-    text-align: center;
-    width: 100%;
-    line-height: 1.3;
+    font-size: 1.1em;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.8);
   }
 
-  :global(.header-race-icon.spawn-header-icon) {
+  :global(.spawn-race-icon) {
     width: 2em;
     height: 2em;
+    fill: rgba(0, 0, 0, 0.85);
     opacity: 0.85;
   }
 
@@ -414,57 +480,31 @@
 
   .spawn-actions {
     display: flex;
-    justify-content: center;
-    margin-top: 1.2em;
+    justify-content: center; /* Center the spawn button without cancel button */
+    margin-top: 1.5em;
   }
 
   .spawn-button {
     position: relative;
-    background: #4285F4;
+    background-color: #4285f4;
     color: white;
     border: none;
-    padding: 0.7em 1.5em;
+    padding: 0.7em 1.2em;
     border-radius: 0.3em;
     font-size: 1em;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    overflow: hidden;
+    transition: all 0.2s;
+    min-width: 10em; /* Give the button a minimum width for better appearance when centered */
   }
 
   .spawn-button:hover:not(:disabled) {
-    background: #3367D6;
-  }
-  
-  /* Sheen effect on hover */
-  .spawn-button:hover:not(:disabled)::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -60%;
-    width: 20%;
-    height: 200%;
-    background: rgba(255, 255, 255, 0.2);
-    transform: rotate(30deg);
-    animation: sheen 1.5s forwards;
-  }
-
-  @keyframes sheen {
-    0% {
-      left: -60%;
-    }
-    100% {
-      left: 160%;
-    }
+    background-color: #3367d6;
   }
 
   .spawn-button:disabled {
-    background: #999;
+    opacity: 0.5;
     cursor: not-allowed;
-    opacity: 0.7;
   }
 
   .spawn-menu-wrapper.loading {
@@ -479,17 +519,22 @@
     border-radius: 50%;
     border-top-color: white;
     animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-right: 0.5em;
   }
 
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
-
-  /* Single specific class selector for spawn menu race icons */
-  :global(.spawn-race-icon) {
-    width: 2em;
-    height: 2em;
-    fill: rgba(0, 0, 0, 0.85);
-    opacity: 0.85;
+  
+  @media (max-width: 480px) {
+    .spawn-menu {
+      width: 95%;
+      max-height: 80vh;
+    }
+    
+    h2 {
+      font-size: 1.1em;
+    }
   }
 </style>

@@ -3,6 +3,7 @@ import { browser } from '$app/environment';
 import { ref, onValue, get as dbGet, set, update } from "firebase/database";
 import { db } from '../firebase/firebase.js';
 import { user, isAuthReady as userAuthReady } from './user'; 
+import { clearSavedTargetPosition } from './map.js'; // Import clearSavedTargetPosition from map.js
 
 // Constants for localStorage
 const CURRENT_WORLD_KEY = 'gisaima-current-world'; // Keeping this for backward compatibility with localStorage
@@ -242,6 +243,11 @@ export function setCurrentWorld(worldId, world = null, callback = null) {
   // Save to localStorage if in browser
   if (browser) {
     localStorage.setItem(CURRENT_WORLD_KEY, validWorldId);
+  }
+
+  // Clear any saved target position when changing worlds
+  if (browser && validWorldId) {
+    clearSavedTargetPosition(validWorldId);
   }
   
   // Update the store with the new world ID
@@ -663,6 +669,11 @@ export async function joinWorld(worldId, userId, race, displayName, spawnPositio
   try {
     // Set loading state
     game.update(state => ({ ...state, loading: true, error: null }));
+    
+    // Clear any saved target position when joining a world
+    if (browser) {
+      clearSavedTargetPosition(worldId);
+    }
     
     // Create a reference to the player's world data
     const playerWorldRef = ref(db, `players/${userId}/worlds/${worldId}`);

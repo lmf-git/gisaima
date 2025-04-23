@@ -516,7 +516,13 @@
         }
     }
 
+    // Updated to check if spawn menu is open
     function handleGridClick(coords) {
+        // Skip processing if spawn menu is open (player not alive)
+        if (!$game?.player?.alive) {
+            return;
+        }
+        
         // Check if this is a path confirmation action
         if (coords && coords.confirmPath === true) {
             confirmPathDrawing(currentPath);
@@ -790,7 +796,7 @@
 
 <svelte:window on:keydown={handleMapKeyDown} />
 
-<div class="map" class:dragging={isDragging} class:path-drawing={isPathDrawingMode}>
+<div class="map" class:dragging={isDragging} class:path-drawing={isPathDrawingMode} class:spawn-menu-open={!$game?.player?.alive}>
     {#if combinedLoading}
         <div class="loading-overlay">
             <div class="loading-spinner"></div>
@@ -1060,6 +1066,14 @@
     .map.path-drawing {
         cursor: crosshair !important;
         box-shadow: inset 0 0 0 4px rgba(255, 255, 0, 0.5);
+    }
+    
+    .map.spawn-menu-open {
+        pointer-events: none; /* Disable pointer events on the map when spawn menu is open */
+    }
+    
+    .map.spawn-menu-open :global(.spawn-menu-wrapper) {
+        pointer-events: all; /* Allow pointer events on the spawn menu itself */
     }
     
     :global(body.map-page-active) {
