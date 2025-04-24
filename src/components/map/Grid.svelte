@@ -1358,12 +1358,20 @@
     z-index: 10;
   }
 
-  .map:not(.moving) .tile:hover::after,
-  .tile.highlighted::after {
+  /* .map:not(.moving) .tile:hover::after {
     content: "";
     position: absolute;
     inset: 0;
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.9);
+    pointer-events: none;
+    z-index: 10;
+  } */
+  
+  /* Highlighted tiles no longer have the white border */
+  .tile.highlighted::after {
+    content: "";
+    position: absolute;
+    inset: 0;
     pointer-events: none;
     z-index: 10;
   }
