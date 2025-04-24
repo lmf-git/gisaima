@@ -21,21 +21,11 @@ const ACHIEVEMENT_DEFINITIONS = {
     description: 'Draw your first movement path',
     category: 'explore',
   },
-  'explorer': {
-    title: 'Explorer',
-    description: 'Visit 10 different tiles',
-    category: 'explore',
-  },
   'world_traveler': {
     title: 'World Traveler',
     description: 'Visit 50 different tiles',
     category: 'explore',
     hidden: true,
-  },
-  'structure_finder': {
-    title: 'Structure Finder',
-    description: 'Discover your first structure',
-    category: 'explore',
   },
   'inspector': {
     title: 'Inspector',
@@ -81,11 +71,6 @@ const ACHIEVEMENT_DEFINITIONS = {
   'first_gather': {
     title: 'Gatherer',
     description: 'Gather resources for the first time',
-    category: 'items',
-  },
-  'resource_master': {
-    title: 'Resource Master',
-    description: 'Gather resources 10 times',
     category: 'items',
   },
   'treasure_finder': {
