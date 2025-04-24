@@ -52,6 +52,7 @@
     import Achievements from '../../components/map/Achievements.svelte';
     import AchievementIcon from '../../components/icons/Trophy.svelte';
     import AchievementUnlocked from '../../components/map/AchievementUnlocked.svelte';
+    import NextWorldTick from '../../components/map/NextWorldTick.svelte';
 
     const DEBUG_MODE = true;
     const debugLog = (...args) => DEBUG_MODE && console.log(...args);
@@ -1059,6 +1060,12 @@
                     ?
                 </button>
             {/if}
+            
+            <!-- Show NextWorldTick in map-controls when Overview is open -->
+            {#if showEntities && $game?.player?.alive && !isTutorialVisible}
+                <NextWorldTick extraClass="control-button-like" compact={window.innerWidth < 768} />
+            {/if}
+            
             <button 
                 class="control-button minimap-button" 
                 onclick={toggleMinimap}
@@ -1072,8 +1079,26 @@
             </button>
         </div>
         
-        {#if !showEntities}
-            <div class="entity-controls">
+        <!-- Move NextWorldTick to left-controls only when Overview is not open -->
+        {#if $game?.player?.alive && !isTutorialVisible}
+            <div class="left-controls">
+                <!-- Show NextWorldTick in left-controls when Overview is not open -->
+                {#if !showEntities}
+                    <NextWorldTick extraClass="control-button-like" compact={window.innerWidth < 768} />
+                {/if}
+                
+                {#if !showEntities}
+                    <button 
+                        class="control-button entity-button" 
+                        onclick={toggleEntities}
+                        aria-label="Show entities"
+                        disabled={!$game?.player?.alive || isTutorialVisible}>
+                        <Spyglass extraClass="button-icon" />
+                    </button>
+                {/if}
+            </div>
+        {:else if !showEntities}
+            <div class="left-controls">
                 <button 
                     class="control-button entity-button" 
                     onclick={toggleEntities}
@@ -1083,7 +1108,7 @@
                 </button>
             </div>
         {/if}
-        
+
         <div class="controls-right">
             {#if !showChat && $game?.player?.alive && !isTutorialVisible}
                 <button 
@@ -1383,11 +1408,15 @@
         z-index: 999;
     }
     
-    .entity-controls {
+    .left-controls {
         position: absolute;
         bottom: 1em;
         left: 1em;
         z-index: 1001;
+        display: flex;
+        flex-direction: row; /* Change from column to row */
+        gap: 0.5em;
+        align-items: center;
     }
 
     .controls-right {
@@ -1562,4 +1591,12 @@
     }
 
     /* ...existing code... */
+
+    .help-button {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        padding: 0;
+        width: 2em;
+        height: 2em;
+    }
 </style>
