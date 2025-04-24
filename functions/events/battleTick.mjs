@@ -45,6 +45,126 @@ function isEmptyGroup(group) {
 }
 
 /**
+ * Collect all items from the losing groups
+ * 
+ * @param {Object} groups All groups on the tile
+ * @param {Object} losingSide The side that lost the battle
+ * @returns {Array} Array of collected items
+ */
+function collectLootFromLosingGroups(groups, losingSide) {
+  const losingGroupIds = Object.keys(losingSide.groups || {});
+  const allLoot = [];
+  
+  for (const groupId of losingGroupIds) {
+    const group = groups[groupId];
+    if (!group) continue;
+    
+    // Check if group has items
+    if (group.items) {
+      // Handle both array and object structure for items
+      const items = Array.isArray(group.items) ? 
+        group.items : Object.values(group.items);
+      
+      // Add all items to the loot pile
+      allLoot.push(...items);
+    }
+  }
+  
+  return allLoot;
+}
+
+/**
+ * Distribute collected loot among winning groups
+ * 
+ * @param {Object} updates Database updates object
+ * @param {string} worldId The world ID
+ * @param {string} chunkKey Chunk key for the location
+ * @param {string} tileKey Tile key for the location
+ * @param {Object} groups All groups on the tile
+ * @param {Object} winningSide The side that won the battle
+ * @param {Array} loot The items collected from losing groups
+ */
+function distributeLootToWinningGroups(updates, worldId, chunkKey, tileKey, groups, winningSide, loot) {
+  if (!loot || loot.length === 0) return; // No loot to distribute
+  
+  const winningGroupIds = Object.keys(winningSide.groups || {});
+  // Filter out any winning groups that don't actually exist in the groups data
+  const activeWinningGroups = winningGroupIds.filter(groupId => groups[groupId]);
+  
+  if (activeWinningGroups.length === 0) return; // No groups to receive loot
+  
+  // If only one winning group, give them all the loot
+  if (activeWinningGroups.length === 1) {
+    const groupId = activeWinningGroups[0];
+    const group = groups[groupId];
+    
+    // Get existing items (if any)
+    let existingItems = [];
+    if (group.items) {
+      existingItems = Array.isArray(group.items) ? 
+        [...group.items] : [...Object.values(group.items)];
+    }
+    
+    // Add all loot to this group
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/items`] = [
+      ...existingItems,
+      ...loot
+    ];
+    
+    // Add message about looting
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastMessage`] = {
+      text: `Looted ${loot.length} items from battle!`,
+      timestamp: Date.now()
+    };
+    
+    return;
+  }
+  
+  // Distribute items randomly among winning groups
+  // Create a counter to track how many items each group receives
+  const lootCounts = {};
+  activeWinningGroups.forEach(groupId => lootCounts[groupId] = 0);
+  
+  // For each item, pick a random winning group
+  for (const item of loot) {
+    const randomIndex = Math.floor(Math.random() * activeWinningGroups.length);
+    const groupId = activeWinningGroups[randomIndex];
+    const group = groups[groupId];
+    
+    // Get existing items (if any) for this group
+    let existingItems = [];
+    if (group.items) {
+      existingItems = Array.isArray(group.items) ? 
+        [...group.items] : [...Object.values(group.items)];
+    }
+    
+    // The path to this group's items
+    const itemsPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/items`;
+    
+    // Add this item to the existing items array
+    if (!updates[itemsPath]) {
+      updates[itemsPath] = [...existingItems];
+    }
+    
+    // Add the item
+    updates[itemsPath].push(item);
+    
+    // Increment the counter for this group
+    lootCounts[groupId] = (lootCounts[groupId] || 0) + 1;
+  }
+  
+  // Add looting messages for each group that received items
+  for (const [groupId, count] of Object.entries(lootCounts)) {
+    if (count > 0) {
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastMessage`] = {
+        text: `Looted ${count} items from battle!`,
+        timestamp: Date.now()
+      };
+    }
+  }
+}
+
+/**
  * Process all active battles for a given world
  * 
  * @param {string} worldId The ID of the world to process battles for
@@ -239,6 +359,7 @@ async function processBattleResolution(db, worldId, battle, forcedWinner = null)
     // Prepare data for chat message
     let winningGroups = [];
     let losingGroups = [];
+    let battleLoot = []; // Track looted items
     
     if (tileSnapshot.exists()) {
       const tileData = tileSnapshot.val();
@@ -266,6 +387,23 @@ async function processBattleResolution(db, worldId, battle, forcedWinner = null)
             });
         }
         
+        // NEW: Collect loot from losing groups before processing them
+        battleLoot = collectLootFromLosingGroups(tileData.groups, losingSide);
+        
+        // NEW: Distribute loot to winning groups if there's any loot
+        if (battleLoot.length > 0) {
+          distributeLootToWinningGroups(
+            updates, 
+            worldId, 
+            chunkKey, 
+            tileKey, 
+            tileData.groups, 
+            winningSide, 
+            battleLoot
+          );
+        }
+        
+        // Process winning and losing groups as normal
         await processWinningGroups(updates, worldId, chunkKey, tileKey, tileData.groups, winningSide);
         await processLosingGroups(updates, worldId, chunkKey, tileKey, tileData.groups, losingSide);
       }
@@ -287,6 +425,11 @@ async function processBattleResolution(db, worldId, battle, forcedWinner = null)
     // Add special message if it was a one-sided victory
     if (forcedWinner) {
       detailedMessage += ` (Decisive Victory)`;
+    }
+    
+    // NEW: Add information about items looted
+    if (battleLoot.length > 0) {
+      detailedMessage += ` (${battleLoot.length} items seized)`;
     }
 
     // Add to world chat
