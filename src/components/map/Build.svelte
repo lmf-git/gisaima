@@ -237,33 +237,27 @@
   );
 </script>
 
-<svelte:window onkeydown={handleKeyDown} />
-
-<div 
-  class="build-modal" 
-  transition:scale={{ start: 0.95, duration: 200 }}>
-  
+<div class="build-modal" transition:scale={{ start: 0.95, duration: 200 }}>
   <header class="modal-header">
     <h2 id="build-title">Build Structure - {tileData?.x}, {tileData?.y}</h2>
     <button class="close-btn" onclick={onClose} aria-label="Close build dialog">
-      <Close size="1.2em" extraClass="close-icon" />
+      <Close size="1.5em" />
     </button>
   </header>
-  
+
   <div class="content">
     {#if tileData}
       <div class="location-info">
         <div class="terrain">
-          <span class="terrain-color" style="background-color: {tileData.color || tileData.terrain?.color || '#555'}"></span>
-          Terrain: {_fmt(tileData.biome || tileData.terrain?.biome?.name || 'Unknown')}
+          <div class="terrain-color" style="background-color: {tileData.color || tileData.terrain?.color || '#555'}"></div>
+          <span>{_fmt(tileData.biome.name)}</span>
+          
+          {#if tileData.structure}
+            <span class="structure-tag">
+              {tileData.structure.name || _fmt(tileData.structure.type)}
+            </span>
+          {/if}
         </div>
-        
-        {#if tileData.structure}
-          <div class="structure-tag">
-            <Structure extraClass="structure-icon" />
-            {tileData.structure.name || 'Structure Present'}
-          </div>
-        {/if}
       </div>
       
       <div class="build-content">
@@ -421,7 +415,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.8em 1em;
-    background: #f5f5f5;
+    background: rgba(0, 0, 0, 0.05);
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   }
   
@@ -429,44 +423,34 @@
     margin: 0;
     font-size: 1.3em;
     font-weight: 600;
-  }
-  
-  .content {
-    padding: 1em;
-    overflow-y: auto;
-    max-height: calc(90vh - 4em);
+    color: rgba(0, 0, 0, 0.8);
+    font-family: var(--font-heading);
   }
   
   .close-btn {
     background: none;
     border: none;
     cursor: pointer;
-    color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     padding: 0.3em;
+    display: flex;
+    border-radius: 50%;
+    transition: background-color 0.2s;
   }
   
   .close-btn:hover {
-    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.1);
   }
-  
+
   .location-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding-bottom: 1em;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     margin-bottom: 1em;
-    padding: 0.8em;
-    background: white;
-    border-radius: 0.3em;
-    border: 1px solid rgba(0, 0, 0, 0.1);
   }
   
   .terrain {
     display: flex;
     align-items: center;
-    color: #333;
+    font-size: 1.1em;
   }
   
   .terrain-color {
@@ -474,19 +458,20 @@
     height: 1em;
     border-radius: 0.2em;
     margin-right: 0.5em;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.2);
   }
   
   .structure-tag {
-    display: flex;
-    align-items: center;
-    padding: 0.3em 0.6em;
-    background: rgba(255, 87, 51, 0.15);
-    color: #cc3300;
+    margin-left: 0.8em;
+    font-size: 0.8em;
+    font-weight: bold;
+    padding: 0.2em 0.5em;
     border-radius: 0.3em;
-    font-size: 0.9em;
+    background: rgba(30, 144, 255, 0.15);
+    border: 1px solid rgba(30, 144, 255, 0.3);
+    color: #1e90ff;
   }
-  
+
   .build-content {
     margin-bottom: 1.5em;
   }
