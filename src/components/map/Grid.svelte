@@ -32,15 +32,13 @@
     onAddPathPoint = null,
     onClick = null,
     onClose = () => {},
-    customPathPoints = [],
-    modalOpen = false,
-    // isLoading prop removed
+    customPathPoints = [], // Accept path points directly as a prop instead of using a ref
+    modalOpen = false // Add new prop to indicate if any modal is open
   } = $props();
   
   let mapElement = null;
   let resizeObserver = null;
-  // Simplify isIntroduced to only depend on $ready
-  const isIntroduced = $derived($ready);
+  let introduced = $state(false);
   let keysPressed = $state(new Set());
   let keyboardNavigationInterval = $state(null);
   let wasDrag = $state(false);
@@ -60,7 +58,7 @@
       console.log('Path drawing mode activated in Grid component');
       console.log('Current customPathPoints:', customPathPoints.length > 0 ? customPathPoints : 'empty');
       
-      // Only draw if empty and we have a target position
+      // Only initialize if empty and we have a target position
       if (customPathPoints.length === 0 && $map.target) {
         console.log('Initializing path with starting point:', $map.target);
         if (onAddPathPoint) {
@@ -223,7 +221,7 @@
   function setupKeyboardNavigation() {
     const keyHandler = event => {
       // Skip navigation when a modal is open or map isn't introduced
-      if (!isIntroduced || modalOpen) return;
+      if (!introduced || modalOpen) return;
       
       const key = event.key.toLowerCase();
       const isNavigationKey = ["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright"].includes(key);
@@ -269,7 +267,7 @@
   }
   
   function handleMouseDown(event) {
-    if (!isIntroduced || event.button !== 0) return;
+    if (!introduced || event.button !== 0) return;
     
     // Don't initiate dragging in path drawing mode
     if (isPathDrawingMode) {
@@ -317,7 +315,7 @@
   }
   
   function handleTouchStart(event) {
-    if (!isIntroduced || !$map.ready) return;
+    if (!introduced || !$map.ready) return;
     
     // Don't initiate dragging in path drawing mode
     if (isPathDrawingMode) {
@@ -575,6 +573,8 @@
     
     const keyboardCleanup = setupKeyboardNavigation();
     
+    setTimeout(() => introduced = true, 1000);
+
     return () => {
       if (resizeObserver) resizeObserver.disconnect();
       if (keyboardCleanup) keyboardCleanup();
@@ -828,12 +828,19 @@
   }
 </script>
 
+<svelte:window
+  onmouseup={handleMouseUp}
+  onmousemove={handleMouseMove}
+  onmouseleave={handleMouseUp}
+  onblur={() => $map.isDragging && handleMouseUp()}
+  onvisibilitychange={() => document.visibilityState === 'hidden' && handleMouseUp()}
+/>
+
 <div class="map-container" 
     style="--tile-size: {TILE_SIZE}em; --center-tile-color: {backgroundColor};" 
     class:modal-open={detailed} 
     class:touch-active={$map.isDragging && $map.dragSource === 'map'}
-    class:path-drawing-mode={!!isPathDrawingMode}
-    class:loading={!isIntroduced}>
+    class:path-drawing-mode={!!isPathDrawingMode}>
   <div
     class="map"
     bind:this={mapElement}
@@ -961,7 +968,7 @@
       <div class="grid main-grid" 
         style="--cols: {$map.cols}; --rows: {$map.rows};" 
         role="grid"
-        class:animated={!isIntroduced}
+        class:animated={!introduced}
       >
         {#each $gridArray as cell (cell.x + ':' + cell.y)}
           {@const highestRarityItem = getHighestRarityItem(cell.items)}
@@ -1170,7 +1177,7 @@
     overflow: hidden;
   }
 
-  /* Simplify the tile animation approach */
+  /* Clean up the tile animation approach to use transitions consistently */
   .tile {
     display: flex;
     align-items: center;
@@ -1193,7 +1200,7 @@
       background-color 0.3s ease;
   }
 
-  /* Initial state for animated tiles - simplified to depend only on .animated class */
+  /* Initial state for animated tiles */
   .main-grid.animated .tile {
     opacity: 0;
     transform: scale(0.8);
