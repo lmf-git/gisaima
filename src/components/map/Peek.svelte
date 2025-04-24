@@ -24,25 +24,109 @@
   // Access current tile data for action display
   const currentTileData = $derived($targetStore);
 
-  // Fixed set of actions - always show these core actions
-  const availableActions = [
-    { id: 'details', label: 'Details', icon: Info },
-    { id: 'build', label: 'Build', icon: Hammer },
-    { id: 'move', label: 'Move', icon: Compass },
-    { id: 'mobilise', label: 'Mobilise', icon: Rally },
-    { id: 'gather', label: 'Gather', icon: Crop },
-    { id: 'attack', label: 'Attack', icon: Attack }
+  // Check functions for action availability - similar to Details.svelte
+  function canMobilize(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Check if player is on the tile
+    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
+    
+    // Check if player is not already in a mobilizing/demobilising group
+    const inProcessGroup = tile.groups?.some(g => 
+      (g.status === 'mobilizing' || g.status === 'demobilising') && 
+      g.owner === $currentPlayer.id
+    );
+    
+    return playerOnTile && !inProcessGroup;
+  }
+  
+  function canDemobilize(tile) {
+    if (!tile || !$currentPlayer || !tile.structure) return false;
+    
+    // Check if there are any player-owned groups that are idle
+    return tile.groups?.some(g => 
+      g.owner === $currentPlayer.id && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+  }
+  
+  function canMove(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Check if there are any player-owned groups that are idle
+    return tile.groups?.some(g => 
+      g.owner === $currentPlayer.id && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+  }
+  
+  function canAttack(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Check if there are any player-owned groups that are idle
+    const playerGroups = tile.groups?.filter(g => 
+      g.owner === $currentPlayer.id && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+    
+    // Check if there are any enemy groups on the tile
+    const enemyGroups = tile.groups?.filter(g => 
+      g.owner !== $currentPlayer.id && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+    
+    // Can attack if player has at least one group and there's at least one enemy group
+    return playerGroups?.length > 0 && enemyGroups?.length > 0;
+  }
+  
+  function canGather(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Only check if there are any player-owned groups that are idle and not in battle
+    return tile.groups?.some(g => 
+      g.owner === $currentPlayer.id && 
+      g.status === 'idle' &&
+      !g.inBattle
+    ) && 
+    // And there are items to gather
+    tile.items?.length > 0;
+  }
+  
+  function canJoinBattle(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Check if there's battle and player has idle groups
+    return tile.battles?.length > 0 &&
+           tile.groups?.some(g => 
+             g.owner === $currentPlayer.id && 
+             g.status === 'idle' &&
+             !g.inBattle
+           );
+  }
+
+  // Define all possible actions
+  const allActions = [
+    { id: 'details', label: 'Details', icon: Info, condition: () => true }, // Always show details
+    { id: 'inspect', label: 'Inspect', icon: Eye, condition: (tile) => tile?.structure },
+    { id: 'build', label: 'Build', icon: Hammer, condition: () => true }, // Always allow build option
+    { id: 'move', label: 'Move', icon: Compass, condition: canMove },
+    { id: 'mobilise', label: 'Mobilise', icon: Rally, condition: canMobilize },
+    { id: 'gather', label: 'Gather', icon: Crop, condition: canGather },
+    { id: 'attack', label: 'Attack', icon: Attack, condition: canAttack },
+    { id: 'demobilise', label: 'Demobilise', icon: Structure, condition: canDemobilize },
+    { id: 'joinBattle', label: 'Join Battle', icon: Attack, condition: canJoinBattle }
   ];
 
-  // Add inspect action if there's a structure
-  $effect(() => {
-    if (isOpen && currentTileData?.structure) {
-      // Add inspect action at the beginning if there's a structure
-      if (!availableActions.some(a => a.id === 'inspect')) {
-        availableActions.unshift({ id: 'inspect', label: 'Inspect', icon: Eye });
-      }
-    }
-  });
+  // Filter actions based on conditions
+  const availableActions = $derived(
+    currentTileData 
+      ? allActions.filter(action => action.condition(currentTileData))
+      : [allActions[0]] // Always show at least the details button
+  );
 
   // Include close button as part of the circle
   const totalItems = $derived(availableActions.length + 1); // +1 for close button
