@@ -62,7 +62,7 @@
             class:active={activeSection === 'map-exploration'}
             onclick={() => scrollToSection('map-exploration')}
           >
-            Map Exploration
+            Map & Exploration
           </button>
         </li>
         <li>
@@ -75,14 +75,6 @@
         </li>
         <li>
           <button 
-            class:active={activeSection === 'structures'}
-            onclick={() => scrollToSection('structures')}
-          >
-            Structures
-          </button>
-        </li>
-        <li>
-          <button 
             class:active={activeSection === 'units-groups'}
             onclick={() => scrollToSection('units-groups')}
           >
@@ -91,10 +83,90 @@
         </li>
         <li>
           <button 
-            class:active={activeSection === 'player-interaction'}
-            onclick={() => scrollToSection('player-interaction')}
+            class:active={activeSection === 'structures'}
+            onclick={() => scrollToSection('structures')}
           >
-            Player Interaction
+            Structures & Building
+          </button>
+        </li>
+        <li>
+          <button 
+            class:active={activeSection === 'activities'}
+            onclick={() => scrollToSection('activities')}
+          >
+            Activities
+          </button>
+        </li>
+        <li>
+          <button 
+            class:active={activeSection === 'battles'}
+            onclick={() => scrollToSection('battles')}
+          >
+            Battles & Combat
+          </button>
+        </li>
+        <li>
+          <button 
+            class:active={activeSection === 'trade-economy'}
+            onclick={() => scrollToSection('trade-economy')}
+          >
+            Trade & Economy
+          </button>
+        </li>
+        <li>
+          <button 
+            class:active={activeSection === 'character-development'}
+            onclick={() => scrollToSection('character-development')}
+          >
+            Character Development
+          </button>
+        </li>
+        <li>
+          <button 
+            class:active={activeSection === 'community-politics'}
+            onclick={() => scrollToSection('community-politics')}
+          >
+            Community & Politics
+          </button>
+        </li>
+        <li>
+          <button 
+            class:active={activeSection === 'races'}
+            onclick={() => scrollToSection('races')}
+          >
+            Races
+          </button>
+        </li>
+        <li>
+          <button 
+            class:active={activeSection === 'items-inventory'}
+            onclick={() => scrollToSection('items-inventory')}
+          >
+            Items & Inventory
+          </button>
+        </li>
+        <li>
+          <button 
+            class:active={activeSection === 'morality-system'}
+            onclick={() => scrollToSection('morality-system')}
+          >
+            Morality System
+          </button>
+        </li>
+        <li>
+          <button 
+            class:active={activeSection === 'reports-rankings'}
+            onclick={() => scrollToSection('reports-rankings')}
+          >
+            Reports & Rankings
+          </button>
+        </li>
+        <li>
+          <button 
+            class:active={activeSection === 'game-mechanics'}
+            onclick={() => scrollToSection('game-mechanics')}
+          >
+            Game Mechanics
           </button>
         </li>
         <li>
@@ -113,22 +185,6 @@
             FAQ
           </button>
         </li>
-        <li>
-          <button 
-            class:active={activeSection === 'game-mechanics'}
-            onclick={() => scrollToSection('game-mechanics')}
-          >
-            Game Mechanics
-          </button>
-        </li>
-        <li>
-          <button 
-            class:active={activeSection === 'races'}
-            onclick={() => scrollToSection('races')}
-          >
-            Races
-          </button>
-        </li>
       </ul>
     </nav>
   </aside>
@@ -136,6 +192,7 @@
   <main class="guide-content">
     <h1>Gisaima Game Guide</h1>
     
+    <!-- Keep existing sections -->
     <section id="getting-started" class="guide-section">
       <h2>Getting Started</h2>
       <p>
@@ -187,11 +244,27 @@
           <li><strong>Map Entities Panel</strong>: View a list of all structures, players, and unit groups in the vicinity</li>
         </ul>
 
-      <h3>Highlighted Tiles</h3>
+      <h3>Map Interface & Features</h3>
       <p>
-        When you hover over a tile, it becomes highlighted and the Details panel shows information 
-        about that specific location. This allows you to scout areas before committing to move there.
+        The map is one of the core mechanics of Gisaima. Understanding how to effectively use it is crucial.
       </p>
+      <ul>
+        <li>Move via map by clicking or using controls</li>
+        <li>When reloading the map, you'll return to your last viewed location</li>
+        <li>Information buttons provide details about locations and entities</li>
+        <li>Minimap helps you maintain overall positional awareness</li>
+      </ul>
+      
+      <h3>Visibility & Knowledge</h3>
+      <p>
+        Vision and knowledge of the map changes based on distance:
+      </p>
+      <ul>
+        <li>At longer distances, scouts only know something is present</li>
+        <li>At medium distances, scouts can identify what is present</li>
+        <li>At close distances, scouts can determine where entities are moving</li>
+        <li>Actions that draw attention (especially negative ones) increase your visibility to others</li>
+      </ul>
     </section>
 
     <section id="terrain-biomes" class="guide-section">
@@ -212,6 +285,17 @@
         <li><strong>Water</strong>: Provides naval advantages but limits construction</li>
         <li><strong>Desert</strong>: Harsh conditions with unique resources</li>
       </ul>
+      <h3>Geography & Terrain Effects</h3>
+      <p>
+        Different biomes affect gameplay in various ways:
+      </p>
+      <ul>
+        <li><strong>Plains:</strong> Offer faster movement but less cover</li>
+        <li><strong>Mountains:</strong> Slow movement but provide defensive advantages and valuable resources</li>
+        <li><strong>Forests:</strong> Moderate movement with good resource gathering and some concealment</li>
+        <li><strong>Water:</strong> Requires ships or special abilities to cross, but enables naval advantages</li>
+        <li><strong>Desert:</strong> Challenging environment with unique but sparse resources</li>
+      </ul>
       <h3>Terrain Rarity</h3>
       <p>
         Terrain is classified by rarity levels which indicate its value and resource potential:
@@ -226,27 +310,6 @@
         </ul>
       <p>
         Rare terrain types are highlighted on the map with a special glow effect proportional to their rarity.
-      </p>
-    </section>
-
-    <section id="structures" class="guide-section">
-      <h2>Structures</h2>
-      <p>
-        Structures form the backbone of your territorial presence, providing resources, defensive capabilities, 
-        and other strategic advantages.
-      </p>
-      <h3>Types of Structures</h3>
-        <ul>
-          <li><strong>Spawn Points</strong> (🔵): Your starting location and respawn point if defeated</li>
-          <li><strong>Watchtowers</strong> (🗼): Provide visibility over surrounding areas</li>
-          <li><strong>Fortresses</strong> (🏰): Strong defensive positions that protect territory</li>
-          <li><strong>Other Structures</strong> (🏛️): Various specialized buildings with unique functions</li>
-        </ul>
-      <h3>Building and Maintenance</h3>
-      <p>
-        Structures require resources to build and maintain. The structure details panel shows 
-        health, level, resource requirements, and other critical information. Strategic placement 
-        of structures is essential for efficient territory control.
       </p>
     </section>
 
@@ -276,131 +339,336 @@
         <p>
         The effectiveness of these actions depends on terrain, unit types, and other factors.
       </p>
-      <h3>Combat</h3>
+      <h3>Advanced Unit Management</h3>
       <p>
-        When unit groups engage in combat, multiple factors influence the outcome:
+        Units can be organized in different ways to enhance their effectiveness:
       </p>
-        <ul>
-          <li>Unit quantity and quality</li>
-          <li>Terrain advantages</li>
-          <li>Strategic positioning</li>
-          <li>Support from nearby structures</li>
-        </ul>
-    </section>
+      <ul>
+        <li><strong>Activity Unit Groups:</strong> Join another group for protection while maintaining control</li>
+        <li><strong>Merging:</strong> Combine unit groups for better organization, transferring control but maintaining ownership</li>
+        <li><strong>Battle Joining:</strong> Participate in ongoing battles alongside other groups</li>
+      </ul>
 
-    <section id="player-interaction" class="guide-section">
-      <h2>Player Interaction</h2>
+      <h3>Unit Status & Capabilities</h3>
       <p>
-        Gisaima is an MMO where player interaction forms a core part of the experience.
-        Understanding how to interact with other players is crucial for success.
+        Units have different statuses that indicate their current actions:
       </p>
-      <h3>Players on the Map</h3>
-      <p>
-        Other players are represented on the map with blue circular indicators. Your own
-        position is marked with a gold highlight. The map entities panel shows all players
-        in the vicinity and their distance from your current location.
-      </p>
-      <h3>Alliances and Diplomacy</h3>
-      <p>
-        Forming alliances with other players can provide mutual benefits through:
-      </p>
-        <ul>
-          <li>Shared defense of territories</li>
-          <li>Coordinated attacks against common enemies</li>
-          <li>Resource trading and economic cooperation</li>
-          <li>Knowledge sharing about valuable terrain locations</li>
-        </ul>
-      <h3>Territory Control</h3>
-      <p>
-        Competition for territory is a central aspect of player interaction. Control valuable
-        areas by establishing structures, maintaining unit presence, and defending against
-        rival players seeking to expand their influence.
-      </p>
-    </section>
+      <ul>
+        <li><strong>Idle:</strong> Available for new orders</li>
+        <li><strong>Combat:</strong> Engaged in battle</li>
+        <li><strong>Gathering/Crafting:</strong> Performing resource collection or creation activities</li>
+      </ul>
 
-    <section id="strategy-tips" class="guide-section">
-      <h2>Strategy Tips</h2>
+      <h3>Unit Organization</h3>
       <p>
-        Here are some key strategies to help you dominate in Gisaima:
+        Units can be organized in different structures:
       </p>
-      <ul class="strategy-list">
-        <li>
-          <strong>Focus on Rare Terrain:</strong> Prioritize locating and controlling rare and mythic 
-          terrain tiles as they provide the most valuable resources.
-        </li>
-        <li>
-          <strong>Secure Resources Early:</strong> Focus on capturing resource-rich territories
-          early in the game to fuel your expansion.
-        </li>
-        <li>
-          <strong>Defensive Network:</strong> Place watchtowers and fortresses strategically to create
-          a defensive network that protects your key resource areas.
-        </li>
-        <li>
-          <strong>Alliance Building:</strong> Form strategic alliances with other players to
-          counter dominant forces on the map.
-        </li>
-        <li>
-          <strong>Balance Expansion:</strong> Don't overextend your territory beyond what you
-          can effectively defend with your available units.
-        </li>
-        <li>
-          <strong>Map Awareness:</strong> Use the map entities panel to track nearby structures, 
-          players, and unit groups for better strategic planning.
-        </li>
+      <ul>
+        <li><strong>Unorganized:</strong> Independent units with maximum flexibility but less coordination</li>
+        <li><strong>Unit Group:</strong> Organized formation under a single command</li>
+        <li><strong>Activity Group:</strong> Specialized for specific tasks like gathering or crafting</li>
+        <li><strong>Army:</strong> Large formal group with enhanced combat capabilities</li>
+      </ul>
+      
+      <h3>Carrying Capacity</h3>
+      <p>
+        Units have varying carrying capacities for transporting items:
+      </p>
+      <ul>
+        <li>Specialized transport units (like wagons) can carry more items but are defenseless</li>
+        <li>Combat units have limited carrying capacity</li>
+        <li>Unprotected transport units create strategic vulnerabilities</li>
       </ul>
     </section>
 
-    <section id="faq" class="guide-section">
-      <h2>Frequently Asked Questions</h2>
-      <div class="faq-item">
-        <h3>How do I identify my current position on the map?</h3>
-        <p>
-          Your current position is marked with a gold highlight and centered in the view.
-          The coordinates are displayed in the details panel and in the URL.
-        </p>
-      </div>
-      <div class="faq-item">
-        <h3>What happens if I lose all my territory?</h3>
-        <p>
-          If you lose all your territory, you'll need to restart your empire from your spawn point.
-          The game offers "rebirth" mechanics to help players who have been eliminated.
-        </p>
-      </div>
-      <div class="faq-item">
-        <h3>How do I find rare terrain types?</h3>
-        <p>
-          Rare terrain is visually distinct with a special glow effect. The color and intensity of the
-          glow indicates the rarity level. Extensive exploration is the key to finding the most valuable terrain.
-        </p>
-      </div>
-      <div class="faq-item">
-        <h3>How does the chunk loading system work?</h3>
-        <p>
-          The world is divided into "chunks" that are loaded dynamically as you explore. This system
-          ensures efficient performance while exploring an effectively infinite world.
-        </p>
-      </div>
-      <div class="faq-item">
-        <h3>Can I bookmark specific locations?</h3>
-        <p>
-          Yes! The URL automatically updates with your current coordinates. Simply bookmark the page
-          to save important locations for later reference.
-        </p>
-      </div>
-      <div class="faq-item">
-        <h3>How often are new worlds created?</h3>
-        <p>
-          New worlds are generated regularly to provide fresh experiences. Check the Worlds page
-          for announcements of new world openings.
-        </p>
-      </div>
-      <div class="faq-item">
-        <h3>Is there a way to change my player name?</h3>
-        <p>
-          Yes, you can update your display name in your account settings.
-        </p>
-      </div>
+    <section id="structures" class="guide-section">
+      <h2>Structures</h2>
+      <p>
+        Structures form the backbone of your territorial presence, providing resources, defensive capabilities, 
+        and other strategic advantages.
+      </p>
+      <h3>Types of Structures</h3>
+        <ul>
+          <li><strong>Spawn Points</strong> (🔵): Your starting location and respawn point if defeated</li>
+          <li><strong>Watchtowers</strong> (🗼): Provide visibility over surrounding areas</li>
+          <li><strong>Fortresses</strong> (🏰): Strong defensive positions that protect territory</li>
+          <li><strong>Other Structures</strong> (🏛️): Various specialized buildings with unique functions</li>
+        </ul>
+      <h3>Building Types</h3>
+      <p>
+        Structures range from simple camps to complex cities, each with unique benefits:
+      </p>
+      <ul>
+        <li><strong>Camps:</strong> Basic temporary structures with minimal benefits</li>
+        <li><strong>Villages:</strong> Permanent settlements with basic infrastructure</li>
+        <li><strong>Towns:</strong> Larger settlements with expanded capabilities</li>
+        <li><strong>Cities:</strong> Major urban centers with full infrastructure and services</li>
+        <li><strong>Ports:</strong> Coastal structures enabling naval activities</li>
+        <li><strong>Specialized Structures:</strong> Quarries, lumberyards, and other production facilities</li>
+      </ul>
+
+      <h3>Buildings</h3>
+      <p>
+        Within settlements, various buildings can be constructed to provide specific benefits:
+      </p>
+      <ul>
+        <li><strong>Banks:</strong> Store wealth and offer financial services including loans and interest</li>
+        <li><strong>Warehouses:</strong> Increase storage capacity for resources and items</li>
+        <li><strong>Barracks:</strong> Improve military unit training and recruitment</li>
+        <li><strong>Smithy:</strong> Enable metal crafting and equipment production</li>
+        <li><strong>Workshop:</strong> Support general crafting activities</li>
+        <li><strong>Harbor:</strong> Provide naval construction and trade capabilities</li>
+        <li><strong>Stables:</strong> Support mounted units and animal husbandry</li>
+      </ul>
+
+      <h3>Structure Capacity</h3>
+      <p>
+        Structures have limited capacity for units and resources:
+      </p>
+      <ul>
+        <li>Capacity can be increased through upgrades</li>
+        <li>Capacity limits apply to all units regardless of owner</li>
+        <li>Strategic planning is required to maximize limited space</li>
+      </ul>
+    </section>
+
+    <section id="activities" class="guide-section">
+      <h2>Activities</h2>
+      <p>
+        Beyond combat and construction, Gisaima offers various activities that enhance gameplay and resource acquisition.
+      </p>
+
+      <h3>Gathering</h3>
+      <p>
+        Gathering resources from the environment is essential for building and crafting:
+      </p>
+      <ul>
+        <li><strong>Woodcutting:</strong> Harvesting wood using hatchets</li>
+        <li><strong>Farming:</strong> Growing food from seeds in suitable terrain</li>
+        <li><strong>Mining:</strong> Extracting ores and gems using pickaxes</li>
+      </ul>
+      <p>
+        Gathering affects the abundance of resources in an area. Lower abundance reduces gathering effectiveness, 
+        but areas refresh over time.
+      </p>
+
+      <h3>Crafting</h3>
+      <p>
+        Converting raw materials into useful items through specialized processes:
+      </p>
+      <ul>
+        <li><strong>Alchemy:</strong> Creating potions, elixirs, and magical items</li>
+        <li><strong>Smithing:</strong> Forging metal goods from ores and wood</li>
+        <li><strong>Crafting:</strong> Creating finished goods from fabrics, gems, pelts, and other materials</li>
+      </ul>
+
+      <h3>Special Activities</h3>
+      <p>
+        Beyond basic resource gathering, other activities offer unique opportunities:
+      </p>
+      <ul>
+        <li><strong>Treasure Trails:</strong> Follow clues and maps to discover hidden treasures</li>
+        <li><strong>Bounty Hunting:</strong> Track down and capture other players with bounties on their heads</li>
+      </ul>
+    </section>
+
+    <section id="battles" class="guide-section">
+      <h2>Battles & Combat</h2>
+      <p>
+        Combat in Gisaima is strategic and consequential, with multiple ways to engage enemies.
+      </p>
+
+      <h3>Attacking Units</h3>
+      <p>
+        When encountering enemy unit groups, you have several combat options:
+      </p>
+      <ul>
+        <li>Direct attacks against enemy unit groups</li>
+        <li>Joining ongoing battles to support allies</li>
+        <li>Setting retreat conditions based on percentage of losses</li>
+      </ul>
+      <p>
+        Combat factors include unit sizes, types, and environmental conditions. Smaller groups may 
+        flee from larger forces, while sufficiently large groups may be forced into battle.
+      </p>
+
+      <h3>Attacking Structures</h3>
+      <p>
+        Structures can be attacked, besieged, or captured:
+      </p>
+      <ul>
+        <li>Destroy enemy structures through direct attacks</li>
+        <li>Capture structures after defeating defenders</li>
+        <li>Siege structures to weaken them over time</li>
+        <li>Structures under siege for 15 game days may be destroyed</li>
+        <li>Continuous trebuchet attacks for 3 days can turn structures to ruins</li>
+      </ul>
+
+      <h3>Battle Outcomes</h3>
+      <p>
+        After battles, the victors have several options:
+      </p>
+      <ul>
+        <li><strong>Scavenging:</strong> Collect equipment from defeated enemies</li>
+        <li><strong>Capture:</strong> Take defeated enemies prisoner</li>
+        <li><strong>Ransom:</strong> Negotiate the release of captives for payment</li>
+      </ul>
+      <p>
+        A player's morality affects these options - low morality players may have their units turned against them, 
+        while good morality players' units must be captured or ransomed.
+      </p>
+    </section>
+
+    <section id="trade-economy" class="guide-section">
+      <h2>Trade & Economy</h2>
+      <p>
+        Gisaima features a robust economic system that allows players to trade, create wealth, and establish financial institutions.
+      </p>
+
+      <h3>Basic Trade</h3>
+      <p>
+        Trade begins with simple exchanges:
+      </p>
+      <ul>
+        <li>Trade directly with other players in the same location</li>
+        <li>Exchange goods stored in the same property or warehouse</li>
+        <li>Set up trade offers that others can accept</li>
+      </ul>
+
+      <h3>Advanced Economic Systems</h3>
+      <p>
+        As cities develop, more complex economic activities become available:
+      </p>
+      <ul>
+        <li>Establish official currencies for cities or regions</li>
+        <li>Create your own currency backed by resources</li>
+        <li>Set trade taxes within controlled territories</li>
+        <li>Implement building taxes where a percentage of produced items go to the ruler</li>
+      </ul>
+
+      <h3>Transportation & Logistics</h3>
+      <p>
+        Moving goods across the map creates additional economic opportunities:
+      </p>
+      <ul>
+        <li>Transport goods between distant markets for profit</li>
+        <li>Rent caravans to other players with different risk/reward options</li>
+        <li>Secure valuable goods during transport for higher fees</li>
+        <li>Specialize in different goods based on their transport properties (e.g., beef moves slowly, processed goods move quickly)</li>
+      </ul>
+
+      <h3>Banking</h3>
+      <p>
+        Establish or use banking services:
+      </p>
+      <ul>
+        <li>Offer interest rates to attract deposits</li>
+        <li>Request loans with negotiable terms</li>
+        <li>Build bank credibility through consistent performance</li>
+        <li>View public debt information to make informed decisions</li>
+      </ul>
+    </section>
+
+    <section id="character-development" class="guide-section">
+      <h2>Character Development</h2>
+      <p>
+        Your character in Gisaima can develop in various ways, gaining experience, skills, and reputation.
+      </p>
+
+      <h3>Lives & Reproduction</h3>
+      <p>
+        Characters in Gisaima have limited lives:
+      </p>
+      <ul>
+        <li>Characters can die permanently under certain conditions</li>
+        <li>Reproduction mechanics allow for new generations</li>
+        <li>Various factors influence offspring characteristics</li>
+        <li>Spawn points provide safe havens for new characters</li>
+      </ul>
+
+      <h3>Development & Progression</h3>
+      <p>
+        Characters can advance through several systems:
+      </p>
+      <ul>
+        <li>Experience points earned through activities</li>
+        <li>Levels that unlock new capabilities</li>
+        <li>Skills and abilities that improve performance</li>
+        <li>Specialized knowledge that provides advantages</li>
+      </ul>
+
+      <h3>Profile & Finances</h3>
+      <p>
+        Your character maintains a public and private profile:
+      </p>
+      <ul>
+        <li>Public information includes reputation, achievements, and publicly disclosed wealth</li>
+        <li>Financial records track assets by location</li>
+        <li>Debt information is typically public</li>
+        <li>Players can choose to display or hide wealth measurements</li>
+      </ul>
+
+      <h3>Character Metrics</h3>
+      <p>
+        Various metrics track your character's accomplishments:
+      </p>
+      <ul>
+        <li>Distance traveled across the world</li>
+        <li>Combat statistics including wins, losses, and kills</li>
+        <li>Wealth accumulation and management</li>
+        <li>Resource gathering and crafting achievements</li>
+      </ul>
+    </section>
+
+    <section id="community-politics" class="guide-section">
+      <h2>Community & Politics</h2>
+      <p>
+        Gisaima features complex social systems that allow players to form communities and engage in political activities.
+      </p>
+
+      <h3>Leadership & Governance</h3>
+      <p>
+        Communities need leadership and governance structures:
+      </p>
+      <ul>
+        <li>Control of cities and regions through various means</li>
+        <li>Tax systems to generate revenue</li>
+        <li>Management of community coffers</li>
+        <li>Decision-making powers over community policies</li>
+      </ul>
+
+      <h3>Alliances & Groups</h3>
+      <p>
+        Players can form various types of associations:
+      </p>
+      <ul>
+        <li>Structures and locations can be owned by individuals, alliances, or groups</li>
+        <li>Communication forums for community interaction</li>
+        <li>Reputation systems similar to StackExchange with visible actions and contributions</li>
+      </ul>
+
+      <h3>Political Systems</h3>
+      <p>
+        Communities can implement various political mechanisms:
+      </p>
+      <ul>
+        <li><strong>Voting:</strong> Electoral systems for leadership positions</li>
+        <li><strong>Arbitration:</strong> Decision-making for community issues like naming regions</li>
+        <li><strong>Citizenship:</strong> Systems to determine who belongs to the community</li>
+        <li><strong>Laws:</strong> Community rules including speech regulations, customs, and taxes</li>
+      </ul>
+
+      <h3>Political Transitions</h3>
+      <p>
+        Power can change hands through several mechanisms:
+      </p>
+      <ul>
+        <li><strong>Seizing Power:</strong> Forceful takeover that takes time and carries risks</li>
+        <li><strong>Elections:</strong> Formal voting process for leadership positions</li>
+        <li><strong>Votes of No Confidence:</strong> Community mechanisms to remove leaders</li>
+        <li><strong>Revolution:</strong> Organized opposition to existing leadership</li>
+        <li><strong>Resignation/Exile:</strong> Voluntary or forced removal from power</li>
+      </ul>
     </section>
 
     <section id="races" class="guide-section">
@@ -511,6 +779,159 @@
         Once you've chosen a race, you'll start at your race's specific spawn point in the world. 
         Each race's spawn is located in a biome that complements their natural advantages.
       </p>
+    </section>
+
+    <section id="items-inventory" class="guide-section">
+      <h2>Items & Inventory</h2>
+      <p>
+        Items in Gisaima range from common resources to mythical artifacts, each with unique properties and values.
+      </p>
+
+      <h3>Item Rarity</h3>
+      <p>
+        Items are classified by rarity, which indicates their value and power:
+      </p>
+      <ul class="rarity-list">
+        <li><span class="rarity-tag common">Common</span> Basic resources and everyday items</li>
+        <li><span class="rarity-tag uncommon">Uncommon</span> Better than average items with slight advantages</li>
+        <li><span class="rarity-tag rare">Rare</span> Valuable items with significant benefits</li>
+        <li><span class="rarity-tag precious">Precious</span> Highly sought-after items with considerable power</li>
+        <li><span class="rarity-tag legendary">Legendary</span> Extremely rare items with major advantages</li>
+        <li><span class="rarity-tag mythic">Mythic</span> The rarest and most powerful items</li>
+      </ul>
+
+      <h3>Special Items</h3>
+      <p>
+        Some items have unique properties or are awarded for special achievements:
+      </p>
+      <ul>
+        <li><strong>Achievement Items:</strong> Awarded for milestones, firsts, or special accomplishments</li>
+        <li><strong>Inspired Items:</strong> Rare items based on real players, with unique properties (0.1% per capita)</li>
+        <li><strong>Magical Items:</strong> Artifacts with supernatural capabilities and sometimes consequences</li>
+      </ul>
+
+      <h3>Item Management</h3>
+      <p>
+        Managing your inventory is an important aspect of gameplay:
+      </p>
+      <ul>
+        <li>Drop or pick up items in the world</li>
+        <li>Store items in structures with limited capacity</li>
+        <li>Spawn points typically offer storage for up to 200 items</li>
+        <li>Transfer items between units and locations</li>
+      </ul>
+
+      <h3>Item Rankings</h3>
+      <p>
+        The game tracks ownership of various item types:
+      </p>
+      <ul>
+        <li>Rankings show who owns the most of certain item types</li>
+        <li>Players can choose to hide from these rankings for privacy</li>
+        <li>Collecting rare item sets can provide special bonuses</li>
+      </ul>
+    </section>
+
+    <section id="morality-system" class="guide-section">
+      <h2>Morality System</h2>
+      <p>
+        Gisaima features a morality system that tracks player actions and influences gameplay.
+      </p>
+
+      <h3>Morality Points</h3>
+      <p>
+        Players earn morality points through their actions:
+      </p>
+      <ul>
+        <li>Daily allocation of morality points that can be assigned</li>
+        <li>Ability to accuse others of good or evil actions</li>
+        <li>Justifications required through events, reports, or comments</li>
+        <li>Evidence used in community trials</li>
+      </ul>
+
+      <h3>Consequences of Morality</h3>
+      <p>
+        Your morality rating affects gameplay in several ways:
+      </p>
+      <ul>
+        <li>Low morality players' units can be captured and turned against them</li>
+        <li>High morality players' units must be captured or ransomed but remain loyal</li>
+        <li>Visibility on the map is affected by morality - evil actions make you more visible</li>
+        <li>Community standing and access to certain areas may be influenced by morality</li>
+      </ul>
+
+      <h3>Actions and Their Effects</h3>
+      <p>
+        Certain actions have defined moral consequences:
+      </p>
+      <ul>
+        <li>Killing someone in your own city is considered evil</li>
+        <li>Killing innocents is evil</li>
+        <li>Killing evil characters is considered good</li>
+        <li>Breaking promises or agreements may affect morality</li>
+      </ul>
+
+      <h3>Morale</h3>
+      <p>
+        Separate from individual morality, group morale affects unit performance:
+      </p>
+      <ul>
+        <li>Friendly units passing by increases citizen happiness and provides temporary morale boosts</li>
+        <li>Good and evil alignments influence group interactions and performances</li>
+        <li>Treatment of captured enemies affects morale of your own forces</li>
+      </ul>
+    </section>
+
+    <section id="reports-rankings" class="guide-section">
+      <h2>Reports & Rankings</h2>
+      <p>
+        Gisaima tracks and displays information about the world and players through various systems.
+      </p>
+
+      <h3>Battle Reports</h3>
+      <p>
+        Detailed information about combat encounters:
+      </p>
+      <ul>
+        <li>Number of kills in battles</li>
+        <li>Win/loss records</li>
+        <li>Strategic analysis of successful tactics</li>
+        <li>Resource gains and losses from combat</li>
+      </ul>
+
+      <h3>Travel & Activity Records</h3>
+      <p>
+        The game tracks player movement and actions:
+      </p>
+      <ul>
+        <li>Distance traveled across the world</li>
+        <li>Experience gained from various activities</li>
+        <li>Resources gathered and items crafted</li>
+        <li>Territories discovered and explored</li>
+      </ul>
+
+      <h3>Historical Records</h3>
+      <p>
+        The world maintains a rich historical record:
+      </p>
+      <ul>
+        <li>World history updated in a clear timeline format</li>
+        <li>Major events and their consequences</li>
+        <li>Ages and epochs of world development</li>
+        <li>Notable player achievements and contributions</li>
+      </ul>
+
+      <h3>Player Rankings</h3>
+      <p>
+        Compare yourself to other players through various rankings:
+      </p>
+      <ul>
+        <li>Wealth rankings (optional participation)</li>
+        <li>Score-based leaderboards</li>
+        <li>Distance traveled rankings</li>
+        <li>Resource gathering achievements</li>
+        <li>Combat effectiveness metrics</li>
+      </ul>
     </section>
 
     <section id="game-mechanics" class="guide-section">
@@ -665,6 +1086,156 @@
         <li><strong>Resource Production:</strong> Certain structures may produce resources over time</li>
         <li><strong>Strategic Bonuses:</strong> Structures can provide defensive or offensive bonuses</li>
       </ul>
+    </section>
+
+    <section id="trade-economy" class="guide-section">
+      <h2>Trade & Economy</h2>
+      <p>
+        Gisaima features a robust economic system that allows players to trade, create wealth, and establish financial institutions.
+      </p>
+
+      <h3>Basic Trade</h3>
+      <p>
+        Trade begins with simple exchanges:
+      </p>
+      <ul>
+        <li>Trade directly with other players in the same location</li>
+        <li>Exchange goods stored in the same property or warehouse</li>
+        <li>Set up trade offers that others can accept</li>
+      </ul>
+
+      <h3>Advanced Economic Systems</h3>
+      <p>
+        As cities develop, more complex economic activities become available:
+      </p>
+      <ul>
+        <li>Establish official currencies for cities or regions</li>
+        <li>Create your own currency backed by resources</li>
+        <li>Set trade taxes within controlled territories</li>
+        <li>Implement building taxes where a percentage of produced items go to the ruler</li>
+      </ul>
+
+      <h3>Transportation & Logistics</h3>
+      <p>
+        Moving goods across the map creates additional economic opportunities:
+      </p>
+      <ul>
+        <li>Transport goods between distant markets for profit</li>
+        <li>Rent caravans to other players with different risk/reward options</li>
+        <li>Secure valuable goods during transport for higher fees</li>
+        <li>Specialize in different goods based on their transport properties (e.g., beef moves slowly, processed goods move quickly)</li>
+      </ul>
+
+      <h3>Banking</h3>
+      <p>
+        Establish or use banking services:
+      </p>
+      <ul>
+        <li>Offer interest rates to attract deposits</li>
+        <li>Request loans with negotiable terms</li>
+        <li>Build bank credibility through consistent performance</li>
+        <li>View public debt information to make informed decisions</li>
+      </ul>
+    </section>
+
+    <section id="strategy-tips" class="guide-section">
+      <h2>Strategy Tips</h2>
+      <p>
+        Here are some key strategies to help you dominate in Gisaima:
+      </p>
+      <ul class="strategy-list">
+        <li>
+          <strong>Focus on Rare Terrain:</strong> Prioritize locating and controlling rare and mythic 
+          terrain tiles as they provide the most valuable resources.
+        </li>
+        <li>
+          <strong>Secure Resources Early:</strong> Focus on capturing resource-rich territories
+          early in the game to fuel your expansion.
+        </li>
+        <li>
+          <strong>Defensive Network:</strong> Place watchtowers and fortresses strategically to create
+          a defensive network that protects your key resource areas.
+        </li>
+        <li>
+          <strong>Alliance Building:</strong> Form strategic alliances with other players to
+          counter dominant forces on the map.
+        </li>
+        <li>
+          <strong>Balance Expansion:</strong> Don't overextend your territory beyond what you
+          can effectively defend with your available units.
+        </li>
+        <li>
+          <strong>Map Awareness:</strong> Use the map entities panel to track nearby structures, 
+          players, and unit groups for better strategic planning.
+        </li>
+      </ul>
+    </section>
+
+    <section id="faq" class="guide-section">
+      <h2>Frequently Asked Questions</h2>
+      <div class="faq-item">
+        <h3>How do I identify my current position on the map?</h3>
+        <p>
+          Your current position is marked with a gold highlight and centered in the view.
+          The coordinates are displayed in the details panel and in the URL.
+        </p>
+      </div>
+      <div class="faq-item">
+        <h3>What happens if I lose all my territory?</h3>
+        <p>
+          If you lose all your territory, you'll need to restart your empire from your spawn point.
+          The game offers "rebirth" mechanics to help players who have been eliminated.
+        </p>
+      </div>
+      <div class="faq-item">
+        <h3>How do I find rare terrain types?</h3>
+        <p>
+          Rare terrain is visually distinct with a special glow effect. The color and intensity of the
+          glow indicates the rarity level. Extensive exploration is the key to finding the most valuable terrain.
+        </p>
+      </div>
+      <div class="faq-item">
+        <h3>How does the chunk loading system work?</h3>
+        <p>
+          The world is divided into "chunks" that are loaded dynamically as you explore. This system
+          ensures efficient performance while exploring an effectively infinite world.
+        </p>
+      </div>
+      <div class="faq-item">
+        <h3>Can I bookmark specific locations?</h3>
+        <p>
+          Yes! The URL automatically updates with your current coordinates. Simply bookmark the page
+          to save important locations for later reference.
+        </p>
+      </div>
+      <div class="faq-item">
+        <h3>How often are new worlds created?</h3>
+        <p>
+          New worlds are generated regularly to provide fresh experiences. Check the Worlds page
+          for announcements of new world openings.
+        </p>
+      </div>
+      <div class="faq-item">
+        <h3>Is there a way to change my player name?</h3>
+        <p>
+          Yes, you can update your display name in your account settings.
+        </p>
+      </div>
+
+      <div class="faq-item">
+        <h3>What are the next steps in development?</h3>
+        <p>
+          The development team is currently working on several features including:
+        </p>
+        <ul>
+          <li>Map page loader improvements</li>
+          <li>Enhanced unit group details and actions</li>
+          <li>UI improvements for game mode</li>
+          <li>Map zoom functionality</li>
+          <li>Improved handling of pending events and activities</li>
+          <li>Ship capacity calculations for water movement</li>
+        </ul>
+      </div>
     </section>
   </main>
 </div>
