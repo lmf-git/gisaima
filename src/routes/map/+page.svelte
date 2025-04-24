@@ -1203,7 +1203,7 @@
                 isActive={lastActivePanel === 'details'}
                 onMouseEnter={() => handlePanelHover('details')}
             />
-        {:else if $ready && !isPathDrawingMode && !isTutorialVisible && !(modalState.visible && modalState.type === 'inspect')}
+        {:else if $ready && !isPathDrawingMode && !isTutorialVisible && !modalState.visible}
             <Legend 
                 x={$targetStore.x}  
                 y={$targetStore.y}  
