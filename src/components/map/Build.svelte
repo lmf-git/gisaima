@@ -404,7 +404,8 @@
     width: 90%;
     max-width: 36em;
     max-height: 90vh;
-    background: rgba(255, 255, 255, 0.85);
+    background: white;
+    text-shadow: none;
     border-radius: 0.5em;
     box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
     overflow: hidden;
@@ -413,7 +414,6 @@
     flex-direction: column;
     font-family: var(--font-body);
     border: 0.05em solid rgba(255, 255, 255, 0.2);
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
   }
   
   .modal-header {
@@ -421,7 +421,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.8em 1em;
-    background: rgba(0, 0, 0, 0.05);
+    background: #f5f5f5;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   }
   
@@ -458,7 +458,7 @@
     align-items: center;
     margin-bottom: 1em;
     padding: 0.8em;
-    background: rgba(255, 255, 255, 0.5);
+    background: white;
     border-radius: 0.3em;
     border: 1px solid rgba(0, 0, 0, 0.1);
   }
@@ -466,6 +466,7 @@
   .terrain {
     display: flex;
     align-items: center;
+    color: #333;
   }
   
   .terrain-color {
@@ -480,11 +481,10 @@
     display: flex;
     align-items: center;
     padding: 0.3em 0.6em;
-    background: rgba(255, 87, 51, 0.1);
-    border: 1px solid rgba(255, 87, 51, 0.2);
+    background: rgba(255, 87, 51, 0.15);
+    color: #cc3300;
     border-radius: 0.3em;
     font-size: 0.9em;
-    color: rgb(204, 51, 0);
   }
   
   .build-content {
@@ -503,7 +503,7 @@
   .structure-details-section {
     margin-bottom: 1.5em;
     padding: 1em;
-    background: rgba(255, 255, 255, 0.5);
+    background: white;
     border-radius: 0.3em;
     border: 1px solid rgba(0, 0, 0, 0.1);
   }
@@ -518,11 +518,12 @@
     display: flex;
     align-items: center;
     padding: 0.7em;
-    background: rgba(255, 255, 255, 0.6);
+    background: white;
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.3em;
     cursor: pointer;
     transition: all 0.2s;
+    color: rgba(0, 0, 0, 0.87); /* Base text color for better contrast */
   }
   
   .group-item:hover {
@@ -551,6 +552,7 @@
     display: flex;
     gap: 0.8em;
     font-size: 0.9em;
+    color: #666;
   }
   
   .race-tag,
@@ -562,8 +564,8 @@
   }
   
   .race-tag {
-    background: rgba(107, 114, 128, 0.1);
-    border: 1px solid rgba(107, 114, 128, 0.2);
+    background: rgba(107, 114, 128, 0.15);
+    color: #4b5563;
   }
   
   .strength-tag {
@@ -586,7 +588,7 @@
   
   .structure-item {
     padding: 0.8em;
-    background: rgba(255, 255, 255, 0.6);
+    background: white;
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.3em;
     cursor: pointer;
@@ -615,14 +617,16 @@
     font-weight: 600;
     font-size: 1.1em;
     margin-bottom: 0.4em;
+    color: rgba(0, 0, 0, 0.87); /* Improved contrast */
   }
   
   .structure-description {
     font-size: 0.9em;
     margin-bottom: 0.8em;
-    color: rgba(0, 0, 0, 0.7);
+    color: rgba(0, 0, 0, 0.75); /* Improved contrast from #555 */
+    line-height: 1.4;
   }
-  
+
   .structure-features {
     display: flex;
     flex-wrap: wrap;
@@ -634,11 +638,10 @@
     display: flex;
     align-items: center;
     padding: 0.3em 0.6em;
-    background: rgba(79, 70, 229, 0.1);
-    border: 1px solid rgba(79, 70, 229, 0.2);
+    background: rgba(79, 70, 229, 0.15);
+    color: #4338ca;
     border-radius: 0.3em;
     font-size: 0.9em;
-    color: rgb(67, 56, 202);
   }
   
   .feature-icon {
@@ -654,7 +657,7 @@
     font-weight: 600;
     font-size: 0.9em;
     margin-bottom: 0.4em;
-    color: rgba(0, 0, 0, 0.7);
+    color: #333;
   }
   
   .resource-requirement {
@@ -681,7 +684,7 @@
   .build-time {
     font-size: 0.9em;
     padding: 0.4em 0;
-    color: rgba(0, 0, 0, 0.7);
+    color: #555;
   }
   
   .group-name-row {
@@ -694,7 +697,7 @@
   .group-name-row label {
     font-size: 0.9em;
     font-weight: 500;
-    color: rgba(0, 0, 0, 0.7);
+    color: #333;
   }
   
   .text-input {
@@ -703,7 +706,7 @@
     border-radius: 0.3em;
     font-size: 1em;
     width: 100%;
-    background: rgba(255, 255, 255, 0.7);
+    background: white;
   }
   
   .text-input:focus {
@@ -715,19 +718,19 @@
   .next-tick-info {
     margin-top: 1em;
     padding: 0.8em;
-    background: rgba(0, 0, 0, 0.05);
+    background: #f5f5f5;
     border-radius: 0.3em;
   }
   
   .next-tick-time {
     font-size: 0.9em;
     margin-bottom: 0.3em;
-    color: rgba(0, 0, 0, 0.7);
+    color: #555;
   }
   
   .completion-time {
     font-weight: 500;
-    color: #1e40af;
+    color: #3367d6;
     font-size: 0.9em;
   }
   
@@ -744,73 +747,49 @@
   .button-row {
     display: flex;
     justify-content: flex-end;
-    gap: 1em;
-    margin-top: 1em;
+    gap: 0.8em;
+    margin-top: 1.5em;
   }
   
-  .cancel-btn,
-  .build-btn {
-    padding: 0.6em 1.2em;
+  .cancel-btn, .build-btn {
+    padding: 0.7em 1.2em;
     border-radius: 0.3em;
+    cursor: pointer;
     font-size: 1em;
     font-weight: 500;
-    cursor: pointer;
     transition: all 0.2s;
   }
   
   .cancel-btn {
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    color: rgba(0, 0, 0, 0.7);
+    background-color: #f1f3f4;
+    color: #3c4043;
+    border: 1px solid #dadce0;
   }
   
   .cancel-btn:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background-color: #e8eaed;
   }
   
   .build-btn {
-    background: #4285f4;
-    border: none;
+    background-color: #4285f4;
     color: white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: none;
   }
   
   .build-btn:hover:not(:disabled) {
-    background: #3367d6;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    background-color: #3367d6;
   }
   
   .build-btn:disabled {
-    background: #a0c4ff;
+    opacity: 0.5;
     cursor: not-allowed;
-    opacity: 0.7;
   }
-  
+
   .no-groups,
   .no-tile {
     text-align: center;
-    color: rgba(0, 0, 0, 0.6);
+    color: #666;
     font-size: 0.9em;
     padding: 1em;
-  }
-  
-  @media (max-width: 480px) {
-    .group-details {
-      flex-direction: column;
-      gap: 0.4em;
-      margin-top: 0.5em;
-    }
-    
-    .button-row {
-      flex-direction: column-reverse;
-      gap: 0.5em;
-    }
-    
-    .cancel-btn,
-    .build-btn {
-      width: 100%;
-      padding: 0.8em;
-    }
   }
 </style>
