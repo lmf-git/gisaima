@@ -49,9 +49,17 @@
   // Calculate close button position
   const closePosition = $derived(calculatePosition(availableActions.length, totalItems));
 
-  function handleActionClick(actionId) {
+  function handleActionClick(actionId, event) {
+    // Prevent event from bubbling to parent elements (especially center tile)
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    
+    console.log('Peek action clicked:', actionId);
     onAction(actionId);
-    onClose();
+    
+    // Don't call onClose() here - let the parent component control this
   }
 </script>
 
@@ -66,10 +74,11 @@
       <!-- Actions in a circle -->
       {#each availableActions as action, index}
         {@const position = calculatePosition(index, totalItems)}
+        <!-- Update the button onclick handler to pass the event -->
         <button 
           class="action-button {action.id}-button" 
           style="transform: translate({position.x}em, {position.y}em);"
-          onclick={() => handleActionClick(action.id)}
+          onclick={(event) => handleActionClick(action.id, event)}
           aria-label={action.label}
           transition:fly|local={{ delay: 50 * index, duration: 300, y: 20, opacity: 0 }}
         >

@@ -752,27 +752,14 @@
 
         // Regular grid click handling (not in path drawing mode)
         if (coords) {
-            // Store current peek state before changing anything
-            const currentPeekTile = peekTile;
-            
-            // Always close peek first
+            // Always close peek if it's open
             if (peekOpen) {
                 console.log('Closing previously open Peek');
                 peekOpen = false;
                 peekTile = null;
-                peekLastClosed = Date.now(); // Record when peek was closed
             }
             
-            // If we just closed peek, don't immediately process the click
-            if (shouldSkipClickDueToPeek) {
-                console.log('Skipping click processing because we just closed Peek');
-                setTimeout(() => {
-                    isProcessingClick = false;
-                }, 100);
-                return;
-            }
-            
-            // Move the target to the clicked location
+            // Always move to the clicked location, regardless of peek state
             moveTarget(coords.x, coords.y, false);
             
             // Find the clicked tile
@@ -781,17 +768,16 @@
             );
             
             // Only show peek if:
-            // 1. The tile has content
+            // 1. The tile has content 
             // 2. We're not in path drawing mode
             // 3. It's not the same tile we just closed peek for
+            // 4. It's not the center tile
             if (clickedTile && 
                 hasTileContent(clickedTile) && 
-                !isPathDrawingMode && 
-                (!currentPeekTile || 
-                 currentPeekTile.x !== clickedTile.x || 
-                 currentPeekTile.y !== clickedTile.y)) {
+                !isPathDrawingMode &&
+                (!peekTile || peekTile.x !== clickedTile.x || peekTile.y !== clickedTile.y) &&
+                !(clickedTile.x === $map.target.x && clickedTile.y === $map.target.y)) {
                 
-                // Set a short timeout to prevent peek from instantly reopening
                 setTimeout(() => {
                     peekTile = clickedTile;
                     peekOpen = true;
@@ -801,8 +787,8 @@
 
         // Reset debounce flag
         setTimeout(() => {
-          isProcessingClick = false;
-        }, 300);
+            isProcessingClick = false;
+        }, 200); // Reduced from 300ms to 200ms for better responsiveness
     }
 
     // Add function for handling path points
@@ -1342,19 +1328,6 @@
               onDemobilize={handleDemobilize}
             />
           {/if}
-        {/if}
-
-        {#if peekOpen && !isTutorialVisible && $game?.player?.alive}
-          <Peek 
-            bind:isOpen={peekOpen}
-            tileData={peekTile}
-            onClose={() => {
-              console.log('Map: Peek closed from onClose');
-              peekOpen = false;
-              peekTile = null;
-              peekLastClosed = Date.now(); // Record when peek was closed
-            }}
-          />
         {/if}
     {/if}
 </div>

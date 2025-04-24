@@ -65,19 +65,30 @@
   
   // Add a function to handle actions from Peek
   function handlePeekAction(actionId) {
+    console.log('Handling Peek action:', actionId);
+    
     if (onClick) {
       const centerTile = $coordinates.find(cell => cell.isCenter);
       if (centerTile) {
+        // Process the action first
         onClick({ 
           x: centerTile.x, 
           y: centerTile.y,
           action: actionId,
           tileData: centerTile
         });
+        
+        // Short delay before closing Peek to ensure action is processed
+        setTimeout(() => {
+          lastCenterClickTime = 0; // Reset the click time to close Peek
+        }, 50);
+        
+        return; // Exit early to prevent immediate closing
       }
     }
-    // No need to set isPeekVisible = false because it's derived
-    lastCenterClickTime = 0; // Reset the click time to close Peek
+    
+    // Only close Peek if no action was processed
+    lastCenterClickTime = 0;
   }
   
   // Function to toggle Peek visibility when center tile is clicked
@@ -94,13 +105,14 @@
       return;
     }
     
-    // Toggle Peek based on timing - if it was recently opened, close it
-    if (Date.now() - lastCenterClickTime < 300) {
-      // If clicking again quickly, close Peek
-      console.log('Quick second click, closing Peek');
+    // Simple toggle behavior - if Peek is open, close it; if closed, open it
+    if (isPeekVisible) {
+      // If Peek is already open, close it
+      console.log('Peek is open, closing it');
       lastCenterClickTime = 0;
+      peekOpenedAtPosition = null;
     } else {
-      // First click or after delay, open Peek
+      // Pedoek is closed, open it
       console.log('Opening Peek');
       lastCenterClickTime = Date.now();
       
@@ -548,14 +560,7 @@
     clickCount++;
     lastClickTime = Date.now();
     
-    // First check if Peek is open and we're not clicking on center tile
-    // Close it immediately to allow click to be processed in same action
-    if (isPeekVisible && !isCenterTileActive) {
-      console.log('Closing Peek since we clicked on a non-center tile');
-      lastCenterClickTime = 0; // Reset to close Peek
-      // Continue processing the click - don't return
-    }
-    
+    // Skip processing if we're dragging
     if (wasDrag) {
       console.log('Click ignored: drag detected');
       wasDrag = false; // Reset drag state for next click
@@ -566,15 +571,25 @@
       console.log('Click ignored: map not ready');
       return;
     }
-    
-    // Ignore clicks on the center tile since it's handled separately
+
+    // Handle Peek separately:
+    // 1. If we're clicking on center tile, let handleCenterTileClick handle it
+    // 2. If we're clicking elsewhere, close Peek if open, and CONTINUE processing the click
     if (isCenterTileActive) {
-      console.log('Click ignored: center tile already handling this click');
-      return;
+      console.log('Center tile click handling delegated to specific handler');
+      // We don't return here - let the center tile handler process it
+      // But do prevent duplicate handling later in this function
+    } else if (isPeekVisible) {
+      // If peek is open and we're not clicking on center tile, close it immediately
+      console.log('Closing Peek since we clicked on a non-center tile');
+      lastCenterClickTime = 0; // Fixed: Changed from lastCenterTileActive to lastCenterClickTime
+      
+      // We deliberately DON'T return here - we want to process this click
+      // for movement even though we just closed the Peek
     }
     
+    // Get the clicked coordinates
     let tileX, tileY;
-    
     let tileElement = event.target.closest('.tile');
     
     if (!tileElement) {
@@ -584,6 +599,7 @@
         return;
       }
       
+      // Calculate click position from grid coordinates
       const rect = gridElement.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
@@ -604,7 +620,6 @@
       
       tileX = $map.target.x - centerCol + col;
       tileY = $map.target.y - centerRow + row;
-      
     } 
     else {
       const ariaLabel = tileElement.getAttribute('aria-label');
@@ -617,6 +632,12 @@
       
       tileX = parseInt(coordsMatch[1], 10);
       tileY = parseInt(coordsMatch[2], 10);
+      
+      // If this is the center tile and we already called its handler, don't duplicate
+      if (isCenterTileActive && tileX === $map.target.x && tileY === $map.target.y) {
+        console.log('Center tile click already handled');
+        return;
+      }
     }
     
     if (tileX !== undefined && tileY !== undefined) {
@@ -628,7 +649,7 @@
         return; // Exit early to prevent other click behaviors
       }
       
-      // For regular mode, handle as before
+      // For regular mode, handle as before - always move to the clicked position
       if (onClick) {
         const tileData = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
         onClick({ 
