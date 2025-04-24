@@ -1316,11 +1316,12 @@
   
   .guide-content h1 {
     font-size: 2.5em;
-    color: rgba(0, 0, 0, 0.8);
+    color: #fffc;
     margin-bottom: 1em;
     text-align: center;
     font-family: var(--font-heading);
     font-weight: 600;
+    text-shadow: 0 0 0.1em rgba(255, 255, 255, 0.8); /* Added shadow for better legibility */
   }
   
   /* Section styling similar to Details panel */
