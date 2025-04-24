@@ -509,7 +509,10 @@
         After battles, the victors have several options:
       </p>
       <ul>
-        <li><strong>Scavenging:</strong> Collect equipment from defeated enemies</li>
+        <li><strong>Automatic Looting:</strong> All items carried by defeated groups are automatically collected</li>
+        <li><strong>Loot Distribution:</strong> If multiple groups are on the winning side, items are randomly distributed among them</li>
+        <li><strong>Loot Notification:</strong> Groups receive messages indicating how many items they looted from battle</li>
+        <li><strong>Scavenging:</strong> Beyond automatic looting, additional equipment may be salvageable from the battlefield</li>
         <li><strong>Capture:</strong> Take defeated enemies prisoner</li>
         <li><strong>Ransom:</strong> Negotiate the release of captives for payment</li>
       </ul>
@@ -517,6 +520,15 @@
         A player's morality affects these options - low morality players may have their units turned against them, 
         while good morality players' units must be captured or ransomed.
       </p>
+      
+      <div class="tip-box">
+        <h4>Strategic Tip: Item Management</h4>
+        <p>
+          Consider what items your groups carry into battle. Valuable items might be lost if your group is defeated,
+          so leave precious cargo behind when heading into dangerous situations. Conversely, be aware that defeating
+          enemy groups with valuable items can be quite profitable!
+        </p>
+      </div>
     </section>
 
     <section id="trade-economy" class="guide-section">
@@ -1044,7 +1056,9 @@
         When a battle concludes:
       </p>
       <ul>
-        <li>Victorious units may capture items from defeated enemies</li>
+        <li>Victorious units automatically collect all items from defeated enemies</li>
+        <li>When multiple groups are on the winning side, items are distributed randomly among them</li>
+        <li>Each group receives notification about how many items they looted from battle</li>
         <li>Defeated units may be lost or reduced in number</li>
         <li>Territory control may shift based on battle outcome</li>
         <li>Strategic resources or structures may change ownership</li>
