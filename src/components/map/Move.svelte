@@ -8,11 +8,7 @@
   // Props using $props() rune
   const { 
     onClose = () => {}, 
-    onPathDrawingStart = () => {},
-    onPathDrawingCancel = () => {},
-    onConfirmPath = () => {}, // This will be used to trigger the strategist achievement
-    pathDrawingGroup = null,
-    currentPath = []
+    onDrawPath = () => {}
   } = $props();
 
   // States
@@ -80,7 +76,7 @@
       // Check and unlock the first_steps achievement
       unlockFirstStepsAchievement();
       
-      onPathDrawingStart(groupWithStartPoint);
+      onDrawPath(groupWithStartPoint); // Changed from onPathDrawingStart to onDrawPath
       onClose(false, true); // Close this modal, but indicate we're starting path drawing
     } catch (e) {
       error = e.message || "An error occurred";
