@@ -249,6 +249,25 @@ export async function processBattles(worldId) {
           await processBattleResolution(db, worldId, battle, tileData, winningSide);
           battleProcessCount++;
           logger.info(`Battle ${battle.id} resolved: side ${winningSide} victorious`);
+          continue;
+        }
+        
+        // Calculate total units involved in battle
+        const totalUnits = calculateTotalUnitsInBattle(battle, tileData);
+        
+        // For ongoing battles, determine if they should be resolved this tick based on size
+        const battleAge = now - (battle.startTime || battle.started || now);
+        const shouldResolveNow = shouldResolveBattle(totalUnits, battleAge);
+        
+        if (shouldResolveNow) {
+          // Determine winner normally since it's not one-sided
+          const calculatedWinner = calculateBattleWinner(battle, tileData);
+          
+          await processBattleResolution(db, worldId, battle, tileData, calculatedWinner);
+          battleProcessCount++;
+          logger.info(`Battle ${battle.id} resolved after duration: stronger side ${calculatedWinner} victorious`);
+        } else {
+          logger.debug(`Battle ${battle.id} continues - ${totalUnits} units involved, age: ${Math.round(battleAge/1000)}s`);
         }
       } catch (error) {
         logger.error(`Error processing battle ${battle.id}:`, error);
@@ -261,6 +280,92 @@ export async function processBattles(worldId) {
     logger.error(`Error processing battles for world ${worldId}:`, error);
     return 0;
   }
+}
+
+/**
+ * Calculate the total number of units involved in a battle
+ * 
+ * @param {Object} battle Battle data
+ * @param {Object} tileData Tile data
+ * @returns {number} Total units
+ */
+function calculateTotalUnitsInBattle(battle, tileData) {
+  const groupsData = tileData.groups || {};
+  let totalUnits = 0;
+  
+  // Add up all units from groups involved in this battle
+  for (const [groupId, group] of Object.entries(groupsData)) {
+    if (group.inBattle && group.battleId === battle.id) {
+      totalUnits += group.unitCount || 1;
+    }
+  }
+  
+  return totalUnits;
+}
+
+/**
+ * Determine if a battle should be resolved this tick based on size and age
+ * 
+ * @param {number} totalUnits Total units involved
+ * @param {number} battleAge Age of battle in milliseconds
+ * @returns {boolean} Whether the battle should be resolved
+ */
+function shouldResolveBattle(totalUnits, battleAge) {
+  // Base probability of resolution each tick
+  let baseChance = 0.4; // 40% chance for small battles
+  
+  // If battle has fewer than 5 units, use base chance
+  if (totalUnits <= 5) {
+    return Math.random() < baseChance;
+  }
+  
+  // For larger battles, reduce the chance based on unit count
+  const unitFactor = Math.log10(totalUnits) * 0.5; // Logarithmic scaling
+  const chance = baseChance / (1 + unitFactor);
+  
+  // Increase chance based on battle age (battles shouldn't last forever)
+  const ageInMinutes = battleAge / (60 * 1000);
+  const ageBonus = Math.min(0.3, ageInMinutes * 0.05); // Max +30% after 6 minutes
+  
+  // Calculate final resolution probability
+  const finalChance = chance + ageBonus;
+  
+  // Add some debug logging
+  logger.debug(`Battle resolution chance: ${(finalChance * 100).toFixed(1)}% (${totalUnits} units, ${ageInMinutes.toFixed(1)} minutes)`);
+  
+  return Math.random() < finalChance;
+}
+
+/**
+ * Calculate the winner based on relative strength when battle is not one-sided
+ * 
+ * @param {Object} battle Battle data
+ * @param {Object} tileData Tile data
+ * @returns {number} Winning side (1 or 2)
+ */
+function calculateBattleWinner(battle, tileData) {
+  const groupsData = tileData.groups || {};
+  let side1Power = 0;
+  let side2Power = 0;
+  
+  // Calculate power for each side
+  for (const [groupId, group] of Object.entries(groupsData)) {
+    if (group.inBattle && group.battleId === battle.id) {
+      if (group.battleSide === 1) {
+        side1Power += group.unitCount || 1;
+      } else if (group.battleSide === 2) {
+        side2Power += group.unitCount || 1;
+      }
+    }
+  }
+  
+  // Calculate power ratio
+  const powerRatio = side1Power / Math.max(side2Power, 1);
+  
+  // Use power ratio to determine winner with some randomness
+  // Stronger side has better odds but upsets are possible
+  const threshold = 1 / (1 + powerRatio); // Converts ratio to probability
+  return Math.random() > threshold ? 1 : 2;
 }
 
 /**
