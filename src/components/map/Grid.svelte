@@ -10,8 +10,7 @@
     moveTarget,
     targetStore,
     highlightedStore,
-    setHighlighted,
-    getChunkKey
+    setHighlighted
   } from "../../lib/stores/map.js";
   import { game, currentPlayer } from "../../lib/stores/game.js";
   import { user } from '../../lib/stores/user';
@@ -34,7 +33,8 @@
     onClick = null,
     onClose = () => {},
     customPathPoints = [],
-    modalOpen = false
+    modalOpen = false,
+    peekOpen = false
   } = $props();
   
   // Track last click time for the center tile to handle debouncing
@@ -51,6 +51,13 @@
     lastCenterClickTime > 0    // Has been clicked at least once
   );
   
+  // Function to close the Peek UI
+  function closePeek() {
+    console.log('Closing Peek UI');
+    lastCenterClickTime = 0; // Setting this to 0 will make isPeekVisible false
+    peekOpenedAtPosition = null;
+  }
+  
   // Replace clickedCenterTile flag with a derived value
   const isCenterTileActive = $derived(Date.now() - lastCenterClickTime < 300);
   
@@ -61,18 +68,19 @@
   const peekActions = [];
   
   // Add a function to handle actions from Peek
-  function handlePeekAction(actionId, tile) {
-    if (!tile) return;
+  function handlePeekAction(actionId) {
+    // Use targetStore directly instead of a passed tile parameter
+    if (!$targetStore) return;
     
-    console.log(`Grid handling peek action: ${actionId} at ${tile.x},${tile.y}`);
+    console.log(`Grid handling peek action: ${actionId} at ${$targetStore.x},${$targetStore.y}`);
     
     // Close the peek UI
     closePeek();
     
     // Forward the action to the parent component
     onClick({
-      x: tile.x,
-      y: tile.y,
+      x: $targetStore.x,
+      y: $targetStore.y,
       action: actionId
     });
   }
@@ -95,10 +103,9 @@
     if (isPeekVisible) {
       // If Peek is already open, close it
       console.log('Peek is open, closing it');
-      lastCenterClickTime = 0;
-      peekOpenedAtPosition = null;
+      closePeek();
     } else {
-      // Pedoek is closed, open it
+      // Peek is closed, open it
       console.log('Opening Peek');
       lastCenterClickTime = Date.now();
       
@@ -960,7 +967,6 @@
     ontouchend={handleTouchEnd}
     ontouchcancel={handleTouchEnd}
     onclick={handleGridClick}
-    onkeydown={handleKeyDown}
     class:moving={isMoving}
     class:path-drawing={!!isPathDrawingMode}
     style="--terrain-color: {backgroundColor};"
@@ -1199,16 +1205,16 @@
     {/if}
   </div>
   
-  <!-- Add the Peek component with updated handling -->
+  <!-- Modify the Peek component to use isPeekVisible instead of peekOpen -->
   <Peek 
-    isOpen={peekOpen}
+    isOpen={isPeekVisible}
     onClose={closePeek}
-    tileData={peekTile}
+    tileData={$targetStore}
     actions={peekActions}
-    onAction={(actionId) => handlePeekAction(actionId, peekTile)}
+    onAction={(actionId) => handlePeekAction(actionId)}
     onShowDetails={() => {
-      setHighlighted(peekTile.x, peekTile.y);
-      onClick({ x: peekTile.x, y: peekTile.y, action: 'details' });
+      setHighlighted($targetStore.x, $targetStore.y);
+      onClick({ x: $targetStore.x, y: $targetStore.y, action: 'details' });
       closePeek();
     }}
   />

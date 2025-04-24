@@ -787,6 +787,71 @@
         }, 200); // Reduced from 300ms to 200ms for better responsiveness
     }
 
+    // Add the missing function to handle path points
+    function handlePathPoint(point) {
+      if (!isPathDrawingMode) {
+        console.log('Not in path drawing mode, ignoring point');
+        return;
+      }
+      
+      console.log('Page: Adding path point:', point);
+      
+      // If this is the first point, just add it
+      if (currentPath.length === 0) {
+        currentPath = [...currentPath, point];
+        return;
+      }
+      
+      const lastPoint = currentPath[currentPath.length - 1];
+      const dx = Math.abs(point.x - lastPoint.x);
+      const dy = Math.abs(point.y - lastPoint.y);
+      
+      // If points are adjacent, just add the new point
+      if (dx <= 1 && dy <= 1) {
+        currentPath = [...currentPath, point];
+        return;
+      }
+      
+      // For distant points, use Bresenham's line algorithm to interpolate
+      console.log('Interpolating path between', lastPoint, 'and', point);
+      
+      const interpolatedPoints = interpolatePath(lastPoint, point);
+      currentPath = [...currentPath, ...interpolatedPoints];
+    }
+
+    // Helper function to interpolate points using Bresenham's line algorithm
+    function interpolatePath(start, end) {
+      const points = [];
+      let x = start.x;
+      let y = start.y;
+      
+      const dx = Math.abs(end.x - start.x);
+      const dy = Math.abs(end.y - start.y);
+      const sx = start.x < end.x ? 1 : -1;
+      const sy = start.y < end.y ? 1 : -1;
+      let err = dx - dy;
+      
+      // Skip the first point as it's already in the path
+      while (x !== end.x || y !== end.y) {
+        const e2 = err * 2;
+        
+        if (e2 > -dy) {
+          err -= dy;
+          x += sx;
+        }
+        
+        if (e2 < dx) {
+          err += dx;
+          y += sy;
+        }
+        
+        // Add intermediate point to the result
+        points.push({ x, y });
+      }
+      
+      return points;
+    }
+
     // Add a new function to handle Peek actions
     function handlePeekAction(actionId, x, y) {
       console.log(`Handling peek action: ${actionId} at ${x},${y}`);
