@@ -191,13 +191,13 @@
   let isExiting = false;
   let exitTimeout;
 
-  // Handle close with animation
+  // Handle close with animation - improved timing
   function handleClose() {
     isExiting = true;
     exitTimeout = setTimeout(() => {
       onClose();
       isExiting = false;
-    }, 400);
+    }, 800); // Increased to 800ms to ensure all staggered animations complete
   }
 
   // Clean up on component destroy
@@ -256,6 +256,8 @@
   
   .peek-container.exiting {
     animation: container-out 300ms cubic-bezier(0.5, 0, 0.25, 1.5) forwards;
+    animation-delay: 350ms; /* Delay container fade-out until buttons have started exiting */
+    pointer-events: none; /* Ensure no interactions during exit */
   }
   
   @keyframes container-in {
@@ -312,11 +314,14 @@
     transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em) + 20px));
     animation: action-in 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     animation-delay: calc(var(--index) * 100ms);
+    /* Reset will-change to improve rendering performance */
+    will-change: transform, opacity;
   }
   
   .peek-container.exiting .action-button {
-    animation: action-out 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    animation-delay: calc((var(--total) - var(--index) - 1) * 50ms);
+    animation: action-out 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation-delay: calc((var(--total) - var(--index) - 1) * 100ms); /* Increased from 80ms to 100ms */
+    pointer-events: none; /* Disable interactions during exit */
   }
   
   @keyframes action-in {
@@ -335,10 +340,12 @@
       opacity: 1;
       transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em)));
     }
+    70% {
+      opacity: 0.3;
+    }
     100% {
       opacity: 0;
-      transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em) + 20px));
-      pointer-events: none; /* Disable pointer events while fading out */
+      transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em) + 25px)); /* Increased from 20px to 25px */
     }
   }
   
