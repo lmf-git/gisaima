@@ -1,3 +1,4 @@
+```svelte
 <script>
     import { browser } from '$app/environment';
     import { goto } from '$app/navigation';
@@ -62,6 +63,7 @@
     let error = $state(null);
     
     let urlProcessingComplete = $state(false);
+    let playerPositionSet = $state(false); // New flag to track if player position has been set
     
     let isPathDrawingMode = $state(false);
 
@@ -235,9 +237,28 @@
         if ($game.player?.lastLocation) {
             const location = $game.player.lastLocation;
             moveTarget(location.x, location.y);
+            playerPositionSet = true; // Mark that we've set the player position
         }
         
         urlProcessingComplete = true;
+    });
+    
+    // New effect to handle player position updates
+    $effect(() => {
+        // Skip if not ready or if position already set from URL
+        if (!browser || !$ready) return;
+        
+        // If URL had coordinates, don't override with player position
+        const coords = parseUrlCoordinates();
+        if (coords) return;
+        
+        // If player data becomes available and position not already set from URL
+        if ($game.player?.lastLocation && !playerPositionSet) {
+            debugLog(`Setting position from player data: ${$game.player.lastLocation.x},${$game.player.lastLocation.y}`);
+            const location = $game.player.lastLocation;
+            moveTarget(location.x, location.y);
+            playerPositionSet = true;
+        }
     });
 
     $effect(() => {
@@ -535,11 +556,18 @@
             const initialX = parseInt($page.url.searchParams.get('x')) || undefined;
             const initialY = parseInt($page.url.searchParams.get('y')) || undefined;
             
+            // Get player's last location if available
+            const playerLocation = $game.player?.lastLocation || null;
+            if (playerLocation) {
+                debugLog(`Player's last location: ${playerLocation.x},${playerLocation.y}`);
+            }
+            
             initialize({
                 seed: worldData.seed,
                 worldId: $game.worldKey,
                 initialX,
-                initialY
+                initialY,
+                playerLocation  // Pass player location to initialize function
             });
             
             loading = false;

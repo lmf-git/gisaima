@@ -58,7 +58,7 @@
       console.log('Path drawing mode activated in Grid component');
       console.log('Current customPathPoints:', customPathPoints.length > 0 ? customPathPoints : 'empty');
       
-      // Only initialize if empty and we have a target position
+      // Only draw if empty and we have a target position
       if (customPathPoints.length === 0 && $map.target) {
         console.log('Initializing path with starting point:', $map.target);
         if (onAddPathPoint) {

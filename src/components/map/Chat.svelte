@@ -66,7 +66,7 @@
   let shouldScrollToBottom = $state(true);
   let lastProcessedCount = $state(0);
   
-  // Effect to initialize chat when world changes
+  // Effect to setup chat when world changes
   $effect(() => {
     if (worldKey) {
       console.log(`Initializing chat for world: ${worldKey}`);

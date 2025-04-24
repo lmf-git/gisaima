@@ -838,6 +838,7 @@ export function initialize(options = {}) {
     let seed;
     let initialX = options.initialX;
     let initialY = options.initialY;
+    let playerLocation = options.playerLocation || null;
 
     // Extract seed properly regardless of input format
     if (options.world && typeof options.world === 'object') {
@@ -866,37 +867,44 @@ export function initialize(options = {}) {
     const initialCols = currentState.cols || 20;
     const initialRows = currentState.rows || 15;
 
-    // Set initial target position - priority order:
+    // Set initial target position - updated priority order:
     // 1. URL parameters (initialX/Y)
-    // 2. localStorage saved position
-    // 3. World center coordinates
-    // 4. Current target position in store
-    // 5. Default (0,0)
+    // 2. Player's last location from game store
+    // 3. localStorage saved position
+    // 4. World center coordinates
+    // 5. Current target position in store
+    // 6. Default (0,0)
     let targetPosition = { x: 0, y: 0 };
     const hasInitialCoords = initialX !== undefined && initialY !== undefined;
 
     if (hasInitialCoords) {
       // 1. URL parameters take highest priority
       targetPosition = { x: Math.round(initialX), y: Math.round(initialY) };
-      console.log(`Initializing map with URL position: ${targetPosition.x},${targetPosition.y}`);
-    } else {
-      // 2. Try to load from localStorage
+      debugLog(`Initializing map with URL position: ${targetPosition.x},${targetPosition.y}`);
+    } 
+    // 2. Player's last known position has higher priority than localStorage
+    else if (playerLocation && typeof playerLocation.x === 'number' && typeof playerLocation.y === 'number') {
+      targetPosition = { x: Math.round(playerLocation.x), y: Math.round(playerLocation.y) };
+      debugLog(`Initializing map with player's last position: ${targetPosition.x},${targetPosition.y}`);
+    }
+    else {
+      // 3. Try to load from localStorage
       const savedPosition = loadTargetFromLocalStorage(worldId);
       if (savedPosition) {
         targetPosition = savedPosition;
         debugLog(`Initializing map with saved position: ${targetPosition.x},${targetPosition.y}`);
       } else {
-        // 3. Try to use world center coordinates
+        // 4. Try to use world center coordinates
         const worldCenter = getWorldCenterCoordinates(worldId, options.world);
         if (worldCenter.x !== 0 || worldCenter.y !== 0) {
           targetPosition = worldCenter;
           debugLog(`Initializing map with world center: ${targetPosition.x},${targetPosition.y}`);
         } else if (currentState.target.x !== 0 || currentState.target.y !== 0) {
-          // 4. Use existing target
+          // 5. Use existing target
           targetPosition = currentState.target;
           debugLog(`Initializing map with existing position: ${targetPosition.x},${targetPosition.y}`);
         } else {
-          // 5. Default to 0,0
+          // 6. Default to 0,0
           debugLog('Initializing map with default position (0,0)');
         }
       }
