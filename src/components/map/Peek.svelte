@@ -113,7 +113,7 @@
     exitTimeout = setTimeout(() => {
       onClose();
       isExiting = false;
-    }, totalItems * 100 + 300); // Allow time for all animations to complete
+    }, 400);
   }
 
   // Clean up on component destroy
@@ -232,7 +232,7 @@
   
   .peek-container.exiting .action-button {
     animation: action-out 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    animation-delay: calc((var(--total) - var(--index) - 1) * 100ms);
+    animation-delay: calc((var(--total) - var(--index) - 1) * 50ms);
   }
   
   @keyframes action-in {
@@ -254,6 +254,7 @@
     100% {
       opacity: 0;
       transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em) + 20px));
+      pointer-events: none; /* Disable pointer events while fading out */
     }
   }
   
