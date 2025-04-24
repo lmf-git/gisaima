@@ -1280,7 +1280,6 @@
             <Move 
               onClose={closeModal}
               groupData={modalState.data?.group || null}
-              onStartMoving={handleMove}
               onDrawPath={handlePathDrawingStart}
             />
           {:else if modalState.type === 'attack'}
