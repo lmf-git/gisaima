@@ -583,31 +583,6 @@
             error = `Error initializing map: ${err.message}`;
         }
     }
-
-    function handleMapKeyDown(event) {
-      if (event.key !== 'Escape') return;
-      
-      const componentState = {
-        structureOverview: modalState.type === 'inspect' && modalState.visible,
-        details: detailed,
-        pathDrawing: isPathDrawingMode,
-        anyOtherModal: modalState.visible && modalState.type !== 'inspect',
-        minimap: showMinimap,
-        overview: showEntities
-      };
-      
-      const actionTarget = handleKeyboardEvent(event, componentState);
-      
-      if (actionTarget === 'minimap') {
-        toggleMinimap();
-        event.preventDefault();
-        event.stopPropagation();
-      } else if (actionTarget === 'overview') {
-        toggleEntities();
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    }
     
     function toggleMinimap() {
       if (!$game?.player?.alive || isTutorialVisible) {

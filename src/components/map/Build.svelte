@@ -249,13 +249,23 @@
     {#if tileData}
       <div class="location-info">
         <div class="terrain">
-          <div class="terrain-color" style="background-color: {tileData.color || tileData.terrain?.color || '#555'}"></div>
-          <span>{_fmt(tileData.biome.name)}</span>
+          <div class="attribute">
+            <span class="attribute-label">Type</span>
+            <span class="attribute-value">
+              <span class="terrain-color" style="background-color: {tileData.color || tileData.terrain?.color || '#555'}"></span>
+              {_fmt(tileData.biome.name)}
+            </span>
+          </div>
           
           {#if tileData.structure}
-            <span class="structure-tag">
-              {tileData.structure.name || _fmt(tileData.structure.type)}
-            </span>
+            <div class="attribute">
+              <span class="attribute-label">Structure</span>
+              <span class="attribute-value">
+                <span class="structure-tag">
+                  {tileData.structure.name || _fmt(tileData.structure.type)}
+                </span>
+              </span>
+            </div>
           {/if}
         </div>
       </div>
@@ -445,26 +455,48 @@
     padding-bottom: 1em;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     margin-bottom: 1em;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 0.3em;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 0.8em;
   }
-  
-  .terrain {
+
+  .attribute {
+    display: flex;
+    margin-bottom: 0.6em;
+    font-size: 0.9em;
+    gap: 0.8em;
+    align-items: flex-start;
+  }
+
+  .attribute-label {
+    color: rgba(0, 0, 0, 0.6);
+    font-weight: 500;
+    min-width: 40px;
+    flex-shrink: 0;
+  }
+
+  .attribute-value {
+    flex-grow: 1;
+    color: rgba(0, 0, 0, 0.8);
     display: flex;
     align-items: center;
-    font-size: 1.1em;
   }
   
   .terrain-color {
+    display: inline-block;
     width: 1em;
     height: 1em;
     border-radius: 0.2em;
     margin-right: 0.5em;
+    vertical-align: middle;
     border: 1px solid rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
   }
   
   .structure-tag {
-    margin-left: 0.8em;
-    font-size: 0.8em;
-    font-weight: bold;
+    display: inline-block;
+    font-size: 0.9em;
     padding: 0.2em 0.5em;
     border-radius: 0.3em;
     background: rgba(30, 144, 255, 0.15);
