@@ -58,37 +58,23 @@
   let peekOpenedAtPosition = $state(null);
   
   // Define default actions for Peek
-  const peekActions = [
-    { id: 'inspect', label: 'Inspect', icon: null },
-    { id: 'move', label: 'Move', icon: Compass }
-  ];
+  const peekActions = [];
   
   // Add a function to handle actions from Peek
-  function handlePeekAction(actionId) {
-    console.log('Handling Peek action:', actionId);
+  function handlePeekAction(actionId, tile) {
+    if (!tile) return;
     
-    if (onClick) {
-      const centerTile = $coordinates.find(cell => cell.isCenter);
-      if (centerTile) {
-        // Process the action first
-        onClick({ 
-          x: centerTile.x, 
-          y: centerTile.y,
-          action: actionId,
-          tileData: centerTile
-        });
-        
-        // Short delay before closing Peek to ensure action is processed
-        setTimeout(() => {
-          lastCenterClickTime = 0; // Reset the click time to close Peek
-        }, 50);
-        
-        return; // Exit early to prevent immediate closing
-      }
-    }
+    console.log(`Grid handling peek action: ${actionId} at ${tile.x},${tile.y}`);
     
-    // Only close Peek if no action was processed
-    lastCenterClickTime = 0;
+    // Close the peek UI
+    closePeek();
+    
+    // Forward the action to the parent component
+    onClick({
+      x: tile.x,
+      y: tile.y,
+      action: actionId
+    });
   }
   
   // Function to toggle Peek visibility when center tile is clicked
@@ -645,7 +631,16 @@
       
       // First handle path drawing if in that mode
       if (isPathDrawingMode) {
-        handlePathPoint({ x: tileX, y: tileY });
+        // Directly call the prop function with validation
+        if (onAddPathPoint) {
+          if (!isPathDrawingMode) {
+            console.log('Not in path drawing mode, ignoring point');
+            return;
+          }
+          
+          console.log('Grid: Adding path point:', { x: tileX, y: tileY });
+          onAddPathPoint({ x: tileX, y: tileY });
+        }
         return; // Exit early to prevent other click behaviors
       }
       
@@ -658,35 +653,6 @@
           tileData: tileData || null
         });
       }
-    }
-  }
-
-  function handlePathPoint(point) {
-    if (!isPathDrawingMode) {
-      console.log('Not in path drawing mode, ignoring point');
-      return;
-    }
-    
-    console.log('Grid: Adding path point:', point);
-    
-    // Simply call the parent function with the new point
-    if (onAddPathPoint) {
-      onAddPathPoint(point);
-    }
-  }
-
-  function handleKeyDown(event) {
-    // Handle clicking with keyboard (Enter or Space)
-    if ((event.key === 'Enter' || event.key === ' ') && !isMoving) {
-      if (typeof event.preventDefault === 'function') {
-        event.preventDefault();
-      }
-      handleGridClick(event);
-    }
-    
-    // Original keyboard handler for Escape key
-    if (event.key === 'Escape') {
-      onClose();
     }
   }
 
@@ -1235,13 +1201,16 @@
   
   <!-- Add the Peek component with updated handling -->
   <Peek 
-    isOpen={isPeekVisible}
-    onClose={() => {
-      console.log('Closing Peek from onClose handler');
-      lastCenterClickTime = 0; // Reset to close Peek
-    }}
-    onAction={handlePeekAction}
+    isOpen={peekOpen}
+    onClose={closePeek}
+    tileData={peekTile}
     actions={peekActions}
+    onAction={(actionId) => handlePeekAction(actionId, peekTile)}
+    onShowDetails={() => {
+      setHighlighted(peekTile.x, peekTile.y);
+      onClick({ x: peekTile.x, y: peekTile.y, action: 'details' });
+      closePeek();
+    }}
   />
   
   {#if isPathDrawingMode}

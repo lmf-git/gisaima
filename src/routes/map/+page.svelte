@@ -725,12 +725,8 @@
 
         // Check if this is a Peek action
         if (coords && coords.action) {
-            // Get the tile data
-            const clickedTile = $coordinates.find(c => c.x === coords.x && c.y === coords.y);
-            if (clickedTile) {
-                setHighlighted(coords.x, coords.y);
-                toggleDetailsModal(true);
-            }
+            // Handle the action based on its type
+            handlePeekAction(coords.action, coords.x, coords.y);
             return;
         }
 
@@ -791,256 +787,89 @@
         }, 200); // Reduced from 300ms to 200ms for better responsiveness
     }
 
-    // Add function for handling path points
-    function handlePathPoint(point) {
-        if (!isPathDrawingMode) return;
-        
-        // Validate that point has valid coordinates
-        if (!point || point.x === undefined || point.y === undefined) {
-            console.error('Invalid point in handlePathPoint:', point);
-            return;
-        }
-        
-        console.log('Adding path point:', point);
-        
-        if (currentPath.length > 0) {
-            // Get the last point in the path
-            const lastPoint = currentPath[currentPath.length - 1];
-            
-            // Check if this is a duplicate point (avoid adding same point twice)
-            if (lastPoint.x === point.x && lastPoint.y === point.y) {
-                return;
-            }
-            
-            // Calculate all intermediate steps between the last point and new point
-            const intermediatePoints = calculatePathBetweenPoints(
-                lastPoint.x, 
-                lastPoint.y, 
-                point.x, 
-                point.y
-            );
-            
-            // Add all intermediate points (except the first which would duplicate the last point)
-            if (intermediatePoints.length > 1) {
-                // Skip the first point as it duplicates the last point in currentPath
-                const pathAddition = intermediatePoints.slice(1);
-                currentPath = [...currentPath, ...pathAddition];
-                console.log(`Path extended with ${pathAddition.length} interpolated points`);
-            }
-        } else {
-            // First point in the path
-            currentPath = [{ x: point.x, y: point.y }];
-        }
+    // Add a new function to handle Peek actions
+    function handlePeekAction(actionId, x, y) {
+      console.log(`Handling peek action: ${actionId} at ${x},${y}`);
+      
+      // Get the tile data for the action
+      const actionTile = $coordinates.find(c => c.x === x && c.y === y);
+      if (!actionTile) {
+        console.error("No tile data found for peek action");
+        return;
+      }
+
+      // Set highlighted to the correct tile
+      setHighlighted(x, y);
+      
+      // Handle each action type
+      switch(actionId) {
+        case 'details':
+          toggleDetailsModal(true);
+          break;
+          
+        case 'inspect':
+          showModal({
+            type: 'inspect',
+            data: { x, y, tile: actionTile }
+          });
+          break;
+          
+        case 'mobilise':
+          showModal({
+            type: 'mobilise',
+            data: actionTile
+          });
+          break;
+          
+        case 'move':
+          showModal({
+            type: 'move',
+            data: actionTile
+          });
+          break;
+          
+        case 'attack':
+          showModal({
+            type: 'attack',
+            data: actionTile
+          });
+          break;
+          
+        case 'build':
+          showModal({
+            type: 'build',
+            data: actionTile
+          });
+          break;
+          
+        case 'gather':
+          showModal({
+            type: 'gather',
+            data: actionTile
+          });
+          break;
+          
+        case 'joinBattle':
+          showModal({
+            type: 'joinBattle',
+            data: actionTile
+          });
+          break;
+          
+        case 'demobilise':
+          showModal({
+            type: 'demobilise',
+            data: actionTile
+          });
+          break;
+          
+        default:
+          console.warn(`Unknown action type: ${actionId}`);
+          break;
+      }
     }
 
-    // Function to check if a tile has meaningful content
-    function hasTileContent(tile) {
-        if (!tile) return false;
-        
-        return (
-            // Check for any meaningful content on the tile
-            (tile.structure && Object.keys(tile.structure).length > 0) ||
-            (tile.groups && tile.groups.length > 0) ||
-            (tile.players && tile.players.length > 0) ||
-            (tile.items && tile.items.length > 0) ||
-            (tile.battles && tile.battles.length > 0)
-        );
-    }
-
-    // Function to calculate path between points for path drawing
-    function calculatePathBetweenPoints(startX, startY, endX, endY) {
-        const path = [];
-        
-        // Calculate steps using Bresenham's line algorithm
-        const dx = Math.abs(endX - startX);
-        const dy = Math.abs(endY - startY);
-        const sx = startX < endX ? 1 : -1;
-        const sy = startY < endY ? 1 : -1;
-        
-        let err = dx - dy;
-        let x = startX;
-        let y = startY;
-        
-        // Add start point
-        path.push({ x, y });
-        
-        // Generate steps
-        while (!(x === endX && y === endY)) {
-            const e2 = 2 * err;
-            
-            if (e2 > -dy) {
-                err -= dy;
-                x += sx;
-            }
-            
-            if (e2 < dx) {
-                err += dx;
-                y += sy;
-            }
-            
-            // Add intermediate point
-            path.push({ x, y });
-            
-            // Safety check
-            if (path.length > 1000) {
-                console.warn('Path too long, truncating');
-                break;
-            }
-        }
-        
-        return path;
-    }
-
-    // Missing methods for path drawing and achievements
-    function handlePathDrawingStart(group) {
-        if (!group) return;
-        
-        console.log('Starting path drawing for group:', group.id || group.groupId);
-        
-        // Close any open modals or details that might interfere
-        toggleDetailsModal(false);
-        setHighlighted(null, null);
-        
-        // Set flag to prevent details panel from opening
-        isTransitioningToPathDrawing = true;
-        
-        // Store the group information for later use
-        pathDrawingGroup = {
-            id: group.id || group.groupId,
-            name: group.name,
-            unitCount: group.unitCount,
-            status: group.status
-        };
-        
-        // Set path drawing mode ON
-        isPathDrawingMode = true;
-        
-        // Initialize with starting point if available
-        if (group.startPoint && group.startPoint.x !== undefined && group.startPoint.y !== undefined) {
-            currentPath = [{ x: group.startPoint.x, y: group.startPoint.y }];
-        } else if (group.x !== undefined && group.y !== undefined) {
-            currentPath = [{ x: group.x, y: group.y }];
-        } else {
-            const target = $map.target;
-            if (target && target.x !== undefined && target.y !== undefined) {
-                currentPath = [{ x: target.x, y: target.y }];
-            } else {
-                currentPath = [];
-                console.warn('No valid starting coordinates for path drawing');
-            }
-        }
-        
-        setTimeout(() => {
-            isTransitioningToPathDrawing = false;
-        }, 500);
-    }
-
-    function handlePathDrawingCancel() {
-        isPathDrawingMode = false;
-        pathDrawingGroup = null;
-        currentPath = [];
-    }
-
-    function confirmPathDrawing(path) {
-        if (!path || path.length < 2 || !pathDrawingGroup) {
-            console.error('Cannot confirm path: Invalid path or missing group');
-            return;
-        }
-        
-        const functions = getFunctions();
-        const moveGroupFn = httpsCallable(functions, 'moveGroup');
-        
-        const startPoint = path[0];
-        const endPoint = path[path.length - 1];
-        
-        moveGroupFn({
-            groupId: pathDrawingGroup.id,
-            fromX: startPoint.x,
-            fromY: startPoint.y,
-            toX: endPoint.x,
-            toY: endPoint.y,
-            path: path,
-            worldId: $game.worldKey
-        })
-        .then((result) => {
-            console.log('Path movement started:', result.data);
-            isPathDrawingMode = false;
-            pathDrawingGroup = null;
-            currentPath = [];
-        })
-        .catch((error) => {
-            console.error('Error starting path movement:', error);
-            alert(`Error: ${error.message || 'Failed to start movement'}`);
-        });
-    }
-
-    // Replace the wrapper function with a direct implementation
-    function unlockAchievement(achievementId) {
-        if ($game?.worldKey) {
-            savePlayerAchievement($game.worldKey, achievementId, true)
-                .then(() => {
-                    console.log(`Achievement unlocked: ${achievementId}`);
-                })
-                .catch(error => {
-                    console.error('Failed to save achievement:', error);
-                });
-        }
-    }
-
-    // Achievement trigger handlers - use the direct function
-    function handleMobilise() {
-        unlockAchievement('mobilised');
-        closeModal();
-    }
-
-    function handleAttack(data) {
-        unlockAchievement('first_attack');
-        console.log('Attack started:', data);
-        closeModal();
-    }
-
-    function handleJoinBattle(data) {
-        unlockAchievement('battle_joiner');
-        console.log('Joined battle:', data);
-        closeModal();
-    }
-
-    function handleGather(result) {
-        unlockAchievement('first_gather');
-        closeModal();
-    }
-
-    function handleDemobilize(data) {
-        unlockAchievement('demobilizer');
-        console.log('Demobilization started:', data);
-        closeModal();
-    }
-
-    function handleBuild(data) {
-        unlockAchievement('first_build');
-        console.log('Building started:', data);
-        closeModal();
-    }
-
-    function handlePathConfirm(path) {
-        unlockAchievement('strategist');
-        confirmPathDrawing(path);
-    }
-
-    // Simplify the effect to only handle map dragging cases
-    $effect(() => {
-        // Only operate if peek is open and we have a tile
-        if (!peekOpen || !peekTile) return;
-        
-        // Only handle map dragging - clicks are handled in handleGridClick
-        if ($map.isDragging) {
-          const currentTarget = $map.target;
-          // Close peek if target changed during drag
-          if (currentTarget && (currentTarget.x !== peekTile.x || currentTarget.y !== peekTile.y)) {
-            peekOpen = false;
-          }
-        }
-    });
+    // ...existing code...
 </script>
 
 <svelte:window on:keydown={handleKeyDown} />

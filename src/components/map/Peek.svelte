@@ -183,10 +183,11 @@
 
   // Filter actions based on provided actions or the conditions applied to tileData
   const availableActions = $derived(() => {
-    // If explicit actions are provided, use those
-    if (actions.length > 0) return actions;
+    // CHANGE: Remove this check to always use our own filtering based on conditions
+    // instead of using pre-defined actions passed from parent
+    // if (actions.length > 0) return actions;
     
-    // Otherwise filter based on conditions
+    // Always filter based on conditions
     if (!currentTileData) return [];
     
     console.log("Filtering actions with currentTileData:", currentTileData);
@@ -194,16 +195,9 @@
     const filtered = allPossibleActions.filter(action => {
       try {
         const conditionMet = action.condition(currentTileData);
-        console.log(`Action ${action.id}: condition met = ${conditionMet}`);
-        
-        // Handle dynamic icon (for demobilise action)
-        if (conditionMet && typeof action.icon === 'function') {
-          action.iconComponent = action.icon(currentTileData);
-        }
-        
         return conditionMet;
       } catch (error) {
-        console.error(`Error evaluating condition for ${action.id}:`, error);
+        console.error(`Error checking condition for action ${action.id}:`, error);
         return false;
       }
     });
@@ -273,16 +267,15 @@
         {@const position = calculatePosition(index, totalItems)}
         <button 
           class="action-button {action.id}-button" 
-          style="--x: {position.x}em; --y: {position.y}em;"
-          onclick={(event) => handleActionClick(action.id, event)}
-          aria-label={action.label}
+          style="--x:{position.x}em; --y:{position.y}em"
+          onclick={(e) => handleActionClick(action.id, e)}
           transition:fly|local={{ delay: 50 * index, duration: 300, y: 20, opacity: 0 }}
         >
-        {#if action.iconComponent}
-          <action.iconComponent class="action-icon" />
-        {:else if action.icon}
-          <action.icon class="action-icon" />
-        {/if}
+          {#if typeof action.icon === 'function'}
+            <svelte:component this={action.icon(currentTileData)} extraClass="action-icon" />
+          {:else}
+            <svelte:component this={action.icon} extraClass="action-icon" />
+          {/if}
           <span class="action-label">{action.label}</span>
         </button>
       {/each}
@@ -290,13 +283,11 @@
       <!-- Close button -->
       <button 
         class="action-button close-button" 
-        style="--x: {closePosition.x}em; --y: {closePosition.y}em;"
+        style="--x:{closePosition.x}em; --y:{closePosition.y}em"
         onclick={onClose}
-        aria-label="Close menu"
         transition:fly|local={{ delay: 50 * availableActions.length, duration: 300, y: 20, opacity: 0 }}
       >
-        <Close extraClass="action-icon close-icon" />
-        <span class="action-label">Close</span>
+        <Close extraClass="close-icon" />
       </button>
     </div>
   </div>
