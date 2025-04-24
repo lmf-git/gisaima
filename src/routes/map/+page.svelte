@@ -1032,6 +1032,22 @@
         unlockAchievement('strategist');
         confirmPathDrawing(path);
     }
+
+    // Replace the existing effect with a more robust version
+    $effect(() => {
+        // Check if peek is open
+        if (!peekOpen || !peekTile) return;
+        
+        // Use map.target directly which is more reliable than the derived store
+        const currentTarget = $map.target;
+        
+        // Compare the target coordinates with peek tile coordinates
+        if (currentTarget && (currentTarget.x !== peekTile.x || currentTarget.y !== peekTile.y)) {
+            console.log('Target moved from', [peekTile.x, peekTile.y], 'to', [currentTarget.x, currentTarget.y]);
+            console.log('Closing peek actions');
+            peekOpen = false;
+        }
+    });
 </script>
 
 <svelte:window on:keydown={handleKeyDown} />

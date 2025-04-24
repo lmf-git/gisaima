@@ -40,6 +40,8 @@
   // Add state for Peek component visibility
   let isPeekVisible = $state(false);
   let clickedCenterTile = $state(false);
+  // Add state to track the position where Peek was opened
+  let peekOpenedAtPosition = $state(null);
   
   // Define default actions for Peek
   const peekActions = [
@@ -93,6 +95,17 @@
     isPeekVisible = !isPeekVisible;
     clickedCenterTile = true;
     
+    // Store the current center position when Peek is opened
+    if (isPeekVisible) {
+      const centerTile = $gridArray.find(cell => cell.isCenter);
+      if (centerTile) {
+        peekOpenedAtPosition = { x: centerTile.x, y: centerTile.y };
+        console.log('Peek opened at position:', peekOpenedAtPosition);
+      }
+    } else {
+      peekOpenedAtPosition = null;
+    }
+    
     console.log('Set Peek visibility to:', isPeekVisible);
   }
 
@@ -101,6 +114,21 @@
     if (modalOpen && isPeekVisible) {
       console.log('Modal opened, closing Peek');
       isPeekVisible = false;
+      peekOpenedAtPosition = null;
+    }
+  });
+  
+  // Add an effect to close Peek when the target tile position changes
+  $effect(() => {
+    if (!isPeekVisible || !peekOpenedAtPosition) return;
+    
+    const centerTile = $gridArray.find(cell => cell.isCenter);
+    
+    if (centerTile && (centerTile.x !== peekOpenedAtPosition.x || centerTile.y !== peekOpenedAtPosition.y)) {
+      console.log('Target position changed from', peekOpenedAtPosition, 'to', { x: centerTile.x, y: centerTile.y });
+      console.log('Closing Peek due to position change');
+      isPeekVisible = false;
+      peekOpenedAtPosition = null;
     }
   });
   

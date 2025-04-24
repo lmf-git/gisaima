@@ -86,8 +86,7 @@
         aria-label="Close menu"
         transition:fly|local={{ delay: 50 * availableActions.length, duration: 300, y: 20, opacity: 0 }}
       >
-        <Close extraClass="action-icon" />
-        <span class="action-label">Close</span>
+        <Close extraClass="action-icon close-icon" />
       </button>
       
       <!-- Center indicator -->
@@ -141,74 +140,79 @@
     justify-content: center;
     padding: 0.6em;
     border-radius: 50%;
-    width: 4em;
-    height: 4em;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    width: 4.5em;  /* Increased from 4em */
+    height: 4.5em; /* Increased from 4em */
+    background-color: rgba(255, 255, 255, 0.95); /* Increased opacity */
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35); /* Enhanced shadow */
     cursor: pointer;
     transition: all 0.2s ease;
-    border: 2px solid rgba(255, 255, 255, 0.6);
+    border: 3px solid rgba(255, 255, 255, 0.8); /* Thicker more visible border */
     pointer-events: auto;
     font-family: var(--font-body);
   }
   
   .action-button:hover {
     transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em))) scale(1.1);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* Enhanced hover shadow */
   }
   
   .action-label {
-    font-size: 0.7em;
+    font-size: 0.75em; /* Slightly larger */
     margin-top: 0.3em;
-    color: rgba(0, 0, 0, 0.8);
-    font-weight: 500;
+    color: rgba(0, 0, 0, 0.9); /* Darker text for better contrast */
+    font-weight: 600; /* Bolder */
     white-space: nowrap;
   }
   
   :global(.action-icon) {
-    width: 1.2em;
-    height: 1.2em;
-    fill: rgba(0, 0, 0, 0.8);
+    width: 1.4em; /* Larger icons */
+    height: 1.4em;
+    fill: rgba(0, 0, 0, 0.9); /* Darker for better visibility */
+  }
+
+  :global(.close-icon) {
+    width: 1.8em; /* Even larger close icon since it has no label */
+    height: 1.8em;
   }
   
-  /* Style different action types */
+  /* Style different action types with more vibrant colors */
   .inspect-button {
-    background-color: rgba(33, 150, 243, 0.15);
-    border-color: rgba(33, 150, 243, 0.5);
+    background-color: rgba(33, 150, 243, 0.25); /* More visible */
+    border-color: rgba(33, 150, 243, 0.7);
   }
   
   .mobilise-button {
-    background-color: rgba(63, 81, 181, 0.15);
-    border-color: rgba(63, 81, 181, 0.5);
+    background-color: rgba(63, 81, 181, 0.25);
+    border-color: rgba(63, 81, 181, 0.7);
   }
   
   .move-button {
-    background-color: rgba(76, 175, 80, 0.15);
-    border-color: rgba(76, 175, 80, 0.5);
+    background-color: rgba(76, 175, 80, 0.25);
+    border-color: rgba(76, 175, 80, 0.7);
   }
   
   .attack-button {
-    background-color: rgba(244, 67, 54, 0.15);
-    border-color: rgba(244, 67, 54, 0.5);
+    background-color: rgba(244, 67, 54, 0.25);
+    border-color: rgba(244, 67, 54, 0.7);
   }
   
   .build-button {
-    background-color: rgba(121, 85, 72, 0.15);
-    border-color: rgba(121, 85, 72, 0.5);
+    background-color: rgba(121, 85, 72, 0.25);
+    border-color: rgba(121, 85, 72, 0.7);
   }
   
   .gather-button {
-    background-color: rgba(255, 193, 7, 0.15);
-    border-color: rgba(255, 193, 7, 0.5);
+    background-color: rgba(255, 193, 7, 0.25);
+    border-color: rgba(255, 193, 7, 0.7);
   }
   
   .demobilise-button {
-    background-color: rgba(0, 150, 136, 0.15);
-    border-color: rgba(0, 150, 136, 0.5);
+    background-color: rgba(0, 150, 136, 0.25);
+    border-color: rgba(0, 150, 136, 0.7);
   }
   
   .close-button {
-    background-color: rgba(158, 158, 158, 0.15);
-    border-color: rgba(158, 158, 158, 0.5);
+    background-color: rgba(158, 158, 158, 0.25);
+    border-color: rgba(158, 158, 158, 0.7);
   }
 </style>
