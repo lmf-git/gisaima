@@ -51,6 +51,7 @@
     import Bird from '../../components/icons/Bird.svelte';
     import Achievements from '../../components/map/Achievements.svelte';
     import AchievementIcon from '../../components/icons/Trophy.svelte';
+    import AchievementUnlocked from '../../components/map/AchievementUnlocked.svelte';
 
     const DEBUG_MODE = true;
     const debugLog = (...args) => DEBUG_MODE && console.log(...args);
@@ -1219,6 +1220,9 @@
             <SpawnMenu onSpawnComplete={handleSpawnComplete} />
         {/if}
 
+        <!-- Add the achievement unlock notification component -->
+        <AchievementUnlocked />
+
         {#if modalState.visible}
           {#if modalState.type === 'inspect' && modalState.data}
             <StructureOverview 
@@ -1559,4 +1563,3 @@
 
     /* ...existing code... */
 </style>
-```

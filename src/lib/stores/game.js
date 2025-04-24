@@ -14,6 +14,105 @@ export { userAuthReady as isAuthReady };
 // Add CHUNK_SIZE constant to match the one in tick.mjs
 const CHUNK_SIZE = 20;
 
+// Achievement definitions moved to top level constant
+const ACHIEVEMENT_DEFINITIONS = {
+  'first_steps': {
+    title: 'First Steps',
+    description: 'Draw your first movement path',
+    category: 'explore',
+  },
+  'explorer': {
+    title: 'Explorer',
+    description: 'Visit 10 different tiles',
+    category: 'explore',
+  },
+  'world_traveler': {
+    title: 'World Traveler',
+    description: 'Visit 50 different tiles',
+    category: 'explore',
+    hidden: true,
+  },
+  'structure_finder': {
+    title: 'Structure Finder',
+    description: 'Discover your first structure',
+    category: 'explore',
+  },
+  'inspector': {
+    title: 'Inspector',
+    description: 'Inspect your first structure',
+    category: 'explore',
+  },
+  'mobilised': {
+    title: 'Leader',
+    description: 'Mobilize your first group',
+    category: 'explore',
+  },
+  'strategist': {
+    title: 'Strategist',
+    description: 'Move a group to another location',
+    category: 'explore',
+  },
+  'demobilizer': {
+    title: 'Demobilizer',
+    description: 'Demobilize a group at a structure',
+    category: 'explore',
+  },
+  'first_attack': {
+    title: 'First Blood',
+    description: 'Start your first attack',
+    category: 'combat',
+  },
+  'first_battle': {
+    title: 'Battle Hardened',
+    description: 'Win your first battle',
+    category: 'combat',
+  },
+  'battle_joiner': {
+    title: 'Opportunist',
+    description: 'Join an in-progress battle',
+    category: 'combat',
+  },
+  'survivor': {
+    title: 'Survivor',
+    description: 'Survive 5 battles',
+    category: 'combat',
+    hidden: true,
+  },
+  'first_gather': {
+    title: 'Gatherer',
+    description: 'Gather resources for the first time',
+    category: 'items',
+  },
+  'resource_master': {
+    title: 'Resource Master',
+    description: 'Gather resources 10 times',
+    category: 'items',
+  },
+  'treasure_finder': {
+    title: 'Treasure Finder',
+    description: 'Find a rare resource',
+    category: 'items',
+    hidden: true,
+  },
+  'army_builder': {
+    title: 'Army Builder',
+    description: 'Create 5 groups simultaneously',
+    category: 'social',
+    hidden: true,
+  },
+  'first_message': {
+    title: 'Communicator',
+    description: 'Send your first chat message',
+    category: 'social',
+  },
+};
+
+// Make the achievement definitions available to other modules
+export { ACHIEVEMENT_DEFINITIONS };
+
+// Store for recent achievement unlocks
+export const recentUnlock = writable(null);
+
 // Store for game state with more detailed loading states
 export const game = writable({
   worldKey: null,
@@ -808,6 +907,10 @@ export async function savePlayerAchievement(worldId, achievementId, value = true
     // Reference to this achievement
     const achievementRef = ref(db, `players/${currentUser.uid}/worlds/${worldId}/achievements/${achievementId}`);
     
+    // Check if achievement is already unlocked
+    const snapshot = await dbGet(achievementRef);
+    const alreadyUnlocked = snapshot.exists() && snapshot.val() === true;
+    
     // Save achievement with value (typically true)
     await set(achievementRef, value);
     
@@ -815,6 +918,31 @@ export async function savePlayerAchievement(worldId, achievementId, value = true
     if (value === true) {
       const achievementDateRef = ref(db, `players/${currentUser.uid}/worlds/${worldId}/achievements/${achievementId}_date`);
       await set(achievementDateRef, Date.now());
+      
+      // Only update recentUnlock if this is a new achievement
+      if (!alreadyUnlocked) {
+        // Use the top-level ACHIEVEMENT_DEFINITIONS constant
+        const achievementInfo = ACHIEVEMENT_DEFINITIONS[achievementId] || { 
+          title: achievementId, 
+          description: 'Achievement unlocked!' 
+        };
+        
+        recentUnlock.set({
+          id: achievementId,
+          ...achievementInfo,
+          date: Date.now()
+        });
+        
+        // Auto-clear recentUnlock after some time
+        setTimeout(() => {
+          recentUnlock.update(current => {
+            if (current?.id === achievementId) {
+              return null;
+            }
+            return current;
+          });
+        }, 8000);
+      }
     }
     
     return true;

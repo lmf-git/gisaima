@@ -1,6 +1,6 @@
 <script>
-  import { fade, fly } from 'svelte/transition';
-  import { currentPlayer, game, savePlayerAchievement } from '../../lib/stores/game.js';
+  import { fade } from 'svelte/transition';
+  import { currentPlayer, game, savePlayerAchievement, ACHIEVEMENT_DEFINITIONS } from '../../lib/stores/game.js';
   import Close from '../icons/Close.svelte';
   import Trophy from '../icons/Trophy.svelte';
   import { onMount, onDestroy } from 'svelte';
@@ -15,112 +15,12 @@
   // State variables using $state rune
   let visible = $state(true);
   let selectedCategory = $state('all');
-  let recentUnlock = $state(null);
   
   // Animation constants
   const animationDuration = 300;
 
-  // Achievement definitions directly in component - updated category names
-  const achievementDefinitions = $state({
-    // Exploration Achievements - repurposed first_steps
-    'first_steps': {
-      title: 'First Steps',
-      description: 'Draw your first movement path',
-      category: 'explore',
-    },
-    'explorer': {
-      title: 'Explorer',
-      description: 'Visit 10 different tiles',
-      category: 'explore',
-    },
-    'world_traveler': {
-      title: 'World Traveler',
-      description: 'Visit 50 different tiles',
-      category: 'explore',
-      hidden: true,
-    },
-    'structure_finder': {
-      title: 'Structure Finder',
-      description: 'Discover your first structure',
-      category: 'explore',
-    },
-    'inspector': {
-      title: 'Inspector',
-      description: 'Inspect your first structure',
-      category: 'explore',
-    },
-    // Group Movement Achievements - moved from social to explore
-    'mobilised': {
-      title: 'Leader',
-      description: 'Mobilize your first group',
-      category: 'explore', // Changed from 'social' to 'explore'
-    },
-    'strategist': {
-      title: 'Strategist',
-      description: 'Move a group to another location',
-      category: 'explore', // Changed from 'social' to 'explore'
-    },
-    'demobilizer': {
-      title: 'Demobilizer',
-      description: 'Demobilize a group at a structure',
-      category: 'explore', // Changed from 'social' to 'explore'
-    },
-    
-    // Combat Achievements
-    'first_attack': {
-      title: 'First Blood',
-      description: 'Start your first attack',
-      category: 'combat',
-    },
-    'first_battle': {
-      title: 'Battle Hardened',
-      description: 'Win your first battle',
-      category: 'combat',
-    },
-    'battle_joiner': {
-      title: 'Opportunist',
-      description: 'Join an in-progress battle',
-      category: 'combat',
-    },
-    'survivor': {
-      title: 'Survivor',
-      description: 'Survive 5 battles',
-      category: 'combat',
-      hidden: true,
-    },
-    
-    // Resource Achievements - renamed to "items"
-    'first_gather': {
-      title: 'Gatherer',
-      description: 'Gather resources for the first time',
-      category: 'items',
-    },
-    'resource_master': {
-      title: 'Resource Master',
-      description: 'Gather resources 10 times',
-      category: 'items',
-    },
-    'treasure_finder': {
-      title: 'Treasure Finder',
-      description: 'Find a rare resource',
-      category: 'items',
-      hidden: true,
-    },
-    
-    // Social Achievements - now only includes social interactions
-    'army_builder': {
-      title: 'Army Builder',
-      description: 'Create 5 groups simultaneously',
-      category: 'social',
-      hidden: true,
-    },
-    // New Chat Achievement
-    'first_message': {
-      title: 'Communicator',
-      description: 'Send your first chat message',
-      category: 'social',
-    },
-  });
+  // Use the imported ACHIEVEMENT_DEFINITIONS instead of defining locally
+  const achievementDefinitions = $state(ACHIEVEMENT_DEFINITIONS);
 
   // Get player achievements for current world
   const playerAchievements = $derived($currentPlayer?.achievements || {});
@@ -178,22 +78,6 @@
     }
   });
 
-  // Handle achievement unlock notification
-  function showUnlockNotification(achievementId) {
-    const achievement = achievementDefinitions[achievementId];
-    if (!achievement) return;
-    
-    recentUnlock = {
-      id: achievementId,
-      ...achievement
-    };
-    
-    // Clear notification after a delay
-    setTimeout(() => {
-      recentUnlock = null;
-    }, 5000);
-  }
-
   // Export function for other components to trigger achievement unlocks
   export function unlockAchievement(id) {
     if (!$currentPlayer || !$game.worldKey || playerAchievements[id] === true) {
@@ -202,7 +86,7 @@
     
     savePlayerAchievement($game.worldKey, id, true)
       .then(() => {
-        showUnlockNotification(id);
+        // No need to manually show notification; store will handle it
         return true;
       })
       .catch(error => {
@@ -349,16 +233,6 @@
     </div>
   </div>
 </div>
-
-{#if recentUnlock}
-  <div class="achievement-notification" in:fly={{ y: 50, duration: 500 }} out:fade>
-    <Trophy extraClass="notification-trophy" />
-    <div class="notification-content">
-      <h3>Achievement Unlocked!</h3>
-      <p>{recentUnlock.title}</p>
-    </div>
-  </div>
-{/if}
 
 <style>
   .achievements-container {
@@ -551,57 +425,6 @@
     text-align: center;
     color: #777;
     font-style: italic;
-  }
-  
-  .achievement-notification {
-    position: fixed;
-    bottom: 2em;
-    right: 2em;
-    background-color: rgba(255, 255, 255, 0.95);
-    border-left: 4px solid #4285f4;
-    border-radius: 0.5em;
-    padding: 1em;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    display: flex;
-    align-items: center;
-    gap: 1em;
-    z-index: 1050;
-    max-width: 24em;
-  }
-  
-  .notification-content {
-    flex: 1;
-  }
-  
-  .notification-content h3 {
-    margin: 0;
-    font-family: var(--font-heading);
-    color: #4285f4;
-    font-size: 1.1em;
-  }
-  
-  .notification-content p {
-    margin: 0.3em 0 0 0;
-    font-size: 1em;
-  }
-  
-  :global(.trophy-icon) {
-    width: 1.5em;
-    height: 1.5em;
-    fill: #ffa000;
-  }
-  
-  :global(.achievement-trophy) {
-    width: 2em;
-    height: 2em;
-    fill: #ffa000;
-  }
-  
-  :global(.notification-trophy) {
-    width: 2.5em;
-    height: 2.5em;
-    fill: #ffa000;
-    filter: drop-shadow(0 0 4px rgba(255, 160, 0, 0.5));
   }
   
   @media (max-width: 768px) {
