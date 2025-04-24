@@ -1,5 +1,5 @@
 <script>
-  import { fly, scale } from 'svelte/transition';
+  import { scale } from 'svelte/transition';
   import { elasticOut } from 'svelte/easing';
   import { currentPlayer } from '../../lib/stores/game.js';
   import { targetStore } from '../../lib/stores/map.js';
@@ -92,8 +92,7 @@
 
 {#if isOpen}
   <div 
-    class="peek-container" 
-    transition:scale|local={{ duration: 300, start: 0.5, opacity: 0, easing: elasticOut }}
+    class="peek-container animated-container"
     role="dialog"
     aria-label="Quick actions menu"
   >
@@ -102,13 +101,12 @@
       {#each availableActions as action, index}
         {@const position = calculatePosition(index, totalItems)}
         <button 
-          class="action-button {action.id}-button" 
-          style="--x:{position.x}em; --y:{position.y}em"
+          class="action-button {action.id}-button animated-action" 
+          style="--x:{position.x}em; --y:{position.y}em; --delay: {50 * index}ms;"
           onclick={(e) => handleActionClick(action.id, e)}
-          transition:fly|local={{ delay: 50 * index, duration: 300, y: 20, opacity: 0 }}
         >
           {#if action.icon}
-            @html <action.icon />
+            <action.icon />
           {/if}
           <span class="action-label">{action.label}</span>
         </button>
@@ -116,10 +114,9 @@
       
       <!-- Close button -->
       <button 
-        class="action-button close-button" 
-        style="--x:{closePosition.x}em; --y:{closePosition.y}em"
+        class="action-button close-button animated-action" 
+        style="--x:{closePosition.x}em; --y:{closePosition.y}em; --delay: {50 * availableActions.length}ms;"
         onclick={onClose}
-        transition:fly|local={{ delay: 50 * availableActions.length, duration: 300, y: 20, opacity: 0 }}
       >
         <Close extraClass="close-icon" />
       </button>
@@ -147,6 +144,40 @@
     pointer-events: none;
   }
   
+  .animated-container {
+    animation: scale-in 300ms forwards cubic-bezier(0.5, 0, 0.25, 1.5); /* elasticOut-like easing */
+    transform-origin: center;
+  }
+  
+  .animated-action {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em) + 20px)); /* Initial position with y offset */
+    animation: action-appear 300ms forwards;
+    animation-delay: var(--delay, 0ms); /* Dynamic delay based on index */
+  }
+  
+  @keyframes scale-in {
+    0% {
+      transform: translate(-50%, -50%) scale(0.5);
+      opacity: 0;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes action-appear {
+    0% {
+      opacity: 0;
+      transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em) + 20px));
+    }
+    100% {
+      opacity: 1;
+      transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em)));
+    }
+  }
+  
   .action-button {
     position: absolute;
     top: 50%;
@@ -155,19 +186,18 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 0.4em; /* Reduced padding */
+    padding: 0.4em;
     border-radius: 50%;
     width: 4.6em;
     height: 4.6em;
     background-color: rgba(255, 255, 255, 0.97);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Improved easing */
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border: 3px solid rgba(255, 255, 255, 0.9);
     pointer-events: auto;
     font-family: var(--font-body);
-    /* Position transform only, no scale */
-    transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em)));
+    /* Transform is now handled by the animation */
   }
   
   .action-button:hover {
