@@ -187,18 +187,75 @@
     onClose(); // Also close the peek view
   }
 
-  // Fixed: Make isExiting properly reactive with $state
+  // VISIBILITY MANAGEMENT
   let isExiting = $state(false);
+  let isVisible = $state(false);
   let exitTimeout;
-
-  // Simplified close handler - just set the reactive state
+  
+  // Track which buttons are currently visible
+  let visibleButtons = $state([]);
+  
+  // Simple handler for the close button - calls parent's onClose
   function handleClose() {
-    isExiting = true;
-    exitTimeout = setTimeout(() => {
-      onClose();
-      isExiting = false;
-    }, 650); // Shorter timeout is sufficient with fixed reactivity
+    // Simply call the parent's onClose handler
+    // This will set isOpen to false, which will trigger our effect
+    onClose();
   }
+  
+  // Watch isOpen prop changes to trigger animations
+  $effect(() => {
+    if (isOpen && !isVisible && !isExiting) {
+      // Set component as visible immediately but start with no buttons
+      isVisible = true;
+      visibleButtons = [];
+      
+      // Add buttons one by one with staggered animation
+      const showInterval = 80; // Same interval as removal for consistency
+      
+      // First add all action buttons in sequence
+      for (let i = 0; i < totalItems - 1; i++) {
+        setTimeout(() => {
+          visibleButtons = [...visibleButtons, i];
+        }, i * showInterval);
+      }
+      
+      // Add the close button last
+      setTimeout(() => {
+        visibleButtons = [...Array(totalItems).keys()];
+      }, (totalItems - 1) * showInterval);
+      
+    } else if (!isOpen && isVisible && !isExiting) {
+      // Start closing animation
+      isExiting = true;
+      
+      // Remove buttons in REVERSE sequence (last to first)
+      let currentButtons = [...visibleButtons];
+      const removeInterval = 80; // Time between button removals (ms)
+      
+      // Schedule removal of each action button in REVERSE order
+      // Start from highest index (totalItems - 2) down to 0
+      // We exclude the close button (totalItems - 1) which is removed separately
+      for (let i = totalItems - 2; i >= 0; i--) {
+        setTimeout(() => {
+          if (currentButtons.includes(i)) {
+            currentButtons = currentButtons.filter(btn => btn !== i);
+            visibleButtons = currentButtons;
+          }
+        }, (totalItems - 2 - i) * removeInterval);
+      }
+      
+      // Remove the close button last
+      setTimeout(() => {
+        visibleButtons = [];
+        
+        // Finally, hide the entire component
+        setTimeout(() => {
+          isVisible = false;
+          isExiting = false;
+        }, 100);
+      }, (totalItems - 1) * removeInterval);
+    }
+  });
 
   // Clean up on component destroy
   onDestroy(() => {
@@ -206,35 +263,36 @@
   });
 </script>
 
-{#if isOpen}
+{#if isVisible}
   <div 
     class="peek-container"
-    class:exiting={isExiting}
     role="dialog"
     aria-label="Quick actions menu"
   >
     <div class="action-circle">
-      <!-- Render all items in sequence for consistent animation -->
+      <!-- Render only visible buttons -->
       {#each allItems as item}
-        {#if item.type === 'action'}
-          <button 
-            class="action-button {item.action.id}-button" 
-            style="--x:{item.position.x}em; --y:{item.position.y}em; --index:{item.index}; --total:{totalItems};"
-            on:click={(e) => handleActionClick(item.action.id, e)}
-          >
-            {#if item.action.icon}
-              <item.action.icon extraClass="action-icon" />
-            {/if}
-            <span class="action-label">{item.action.label}</span>
-          </button>
-        {:else if item.type === 'close'}
-          <button 
-            class="action-button close-button" 
-            style="--x:{item.position.x}em; --y:{item.position.y}em; --index:{item.index}; --total:{totalItems};"
-            on:click={handleClose}
-          >
-            <Close extraClass="close-icon" />
-          </button>
+        {#if visibleButtons.includes(item.index)}
+          {#if item.type === 'action'}
+            <button 
+              class="action-button {item.action.id}-button" 
+              style="--x:{item.position.x}em; --y:{item.position.y}em; --index:{item.index}; --total:{totalItems};"
+              on:click={(e) => handleActionClick(item.action.id, e)}
+            >
+              {#if item.action.icon}
+                <item.action.icon extraClass="action-icon" />
+              {/if}
+              <span class="action-label">{item.action.label}</span>
+            </button>
+          {:else if item.type === 'close'}
+            <button 
+              class="action-button close-button" 
+              style="--x:{item.position.x}em; --y:{item.position.y}em; --index:{item.index}; --total:{totalItems};"
+              on:click={handleClose}
+            >
+              <Close extraClass="close-icon" />
+            </button>
+          {/if}
         {/if}
       {/each}
     </div>
@@ -251,35 +309,6 @@
     height: 20em;
     z-index: 800;
     pointer-events: none;
-    animation: container-in 300ms cubic-bezier(0.5, 0, 0.25, 1.5) forwards;
-  }
-  
-  .peek-container.exiting {
-    animation: container-out 300ms cubic-bezier(0.5, 0, 0.25, 1.5) forwards;
-    animation-delay: 350ms; /* Delay container fade-out until buttons have started exiting */
-    pointer-events: none; /* Ensure no interactions during exit */
-  }
-  
-  @keyframes container-in {
-    0% {
-      transform: translate(-50%, -50%) scale(0.5);
-      opacity: 0;
-    }
-    100% {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
-  }
-  
-  @keyframes container-out {
-    0% {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
-    100% {
-      transform: translate(-50%, -50%) scale(0.5);
-      opacity: 0;
-    }
   }
   
   .action-circle {
@@ -308,46 +337,9 @@
     border: 3px solid rgba(255, 255, 255, 0.9);
     pointer-events: auto;
     font-family: var(--font-body);
-    
-    /* CSS animation for staggered entry */
-    opacity: 0;
-    transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em) + 20px));
-    animation: action-in 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    animation-delay: calc(var(--index) * 100ms);
-    /* Reset will-change to improve rendering performance */
-    will-change: transform, opacity;
-  }
-  
-  .peek-container.exiting .action-button {
-    /* Use more pronounced animation */
-    animation: action-out 350ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    animation-delay: calc((var(--total) - var(--index) - 1) * 50ms); /* Shorter delay for quicker feedback */
-    pointer-events: none; /* Disable interactions during exit */
-  }
-  
-  @keyframes action-in {
-    0% {
-      opacity: 0;
-      transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em) + 20px));
-    }
-    100% {
-      opacity: 1;
-      transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em)));
-    }
-  }
-  
-  @keyframes action-out {
-    0% {
-      opacity: 1;
-      transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em)));
-    }
-    70% {
-      opacity: 0.3;
-    }
-    100% {
-      opacity: 0;
-      transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em) + 25px)); /* Increased from 20px to 25px */
-    }
+    transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em)));
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    will-change: transform;
   }
   
   .action-button:hover {
