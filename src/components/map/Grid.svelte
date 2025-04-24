@@ -1124,7 +1124,7 @@
             {/if}
 
             <!-- Change target indicator to highlight indicator that shows on highlighted tiles -->
-            {#if cell.highlighted && $ready}
+            {#if cell.highlighted && $ready && !isPeekVisible}
               <div class="highlight-indicator"></div>
             {/if}
 

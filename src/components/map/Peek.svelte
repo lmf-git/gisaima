@@ -88,9 +88,6 @@
       >
         <Close extraClass="action-icon close-icon" />
       </button>
-      
-      <!-- Center indicator -->
-      <div class="center-indicator"></div>
     </div>
   </div>
 {/if}
@@ -112,21 +109,6 @@
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    pointer-events: none;
-  }
-  
-  .center-indicator {
-    position: absolute;
-    width: 1.5em;
-    height: 1.5em;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.8);
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 
-                0 0 20px rgba(255, 255, 255, 0.5);
-    z-index: 2;
     pointer-events: none;
   }
   
