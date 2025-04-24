@@ -32,13 +32,15 @@
     onAddPathPoint = null,
     onClick = null,
     onClose = () => {},
-    customPathPoints = [], // Accept path points directly as a prop instead of using a ref
-    modalOpen = false // Add new prop to indicate if any modal is open
+    customPathPoints = [],
+    modalOpen = false,
+    // isLoading prop removed
   } = $props();
   
   let mapElement = null;
   let resizeObserver = null;
-  let introduced = $state(false);
+  // Simplify isIntroduced to only depend on $ready
+  const isIntroduced = $derived($ready);
   let keysPressed = $state(new Set());
   let keyboardNavigationInterval = $state(null);
   let wasDrag = $state(false);
@@ -221,7 +223,7 @@
   function setupKeyboardNavigation() {
     const keyHandler = event => {
       // Skip navigation when a modal is open or map isn't introduced
-      if (!introduced || modalOpen) return;
+      if (!isIntroduced || modalOpen) return;
       
       const key = event.key.toLowerCase();
       const isNavigationKey = ["w", "a", "s", "d", "arrowup", "arrowleft", "arrowdown", "arrowright"].includes(key);
@@ -267,7 +269,7 @@
   }
   
   function handleMouseDown(event) {
-    if (!introduced || event.button !== 0) return;
+    if (!isIntroduced || event.button !== 0) return;
     
     // Don't initiate dragging in path drawing mode
     if (isPathDrawingMode) {
@@ -315,7 +317,7 @@
   }
   
   function handleTouchStart(event) {
-    if (!introduced || !$map.ready) return;
+    if (!isIntroduced || !$map.ready) return;
     
     // Don't initiate dragging in path drawing mode
     if (isPathDrawingMode) {
@@ -573,8 +575,6 @@
     
     const keyboardCleanup = setupKeyboardNavigation();
     
-    setTimeout(() => introduced = true, 1000);
-
     return () => {
       if (resizeObserver) resizeObserver.disconnect();
       if (keyboardCleanup) keyboardCleanup();
@@ -828,19 +828,12 @@
   }
 </script>
 
-<svelte:window
-  onmouseup={handleMouseUp}
-  onmousemove={handleMouseMove}
-  onmouseleave={handleMouseUp}
-  onblur={() => $map.isDragging && handleMouseUp()}
-  onvisibilitychange={() => document.visibilityState === 'hidden' && handleMouseUp()}
-/>
-
 <div class="map-container" 
     style="--tile-size: {TILE_SIZE}em; --center-tile-color: {backgroundColor};" 
     class:modal-open={detailed} 
     class:touch-active={$map.isDragging && $map.dragSource === 'map'}
-    class:path-drawing-mode={!!isPathDrawingMode}>
+    class:path-drawing-mode={!!isPathDrawingMode}
+    class:loading={!isIntroduced}>
   <div
     class="map"
     bind:this={mapElement}
@@ -968,7 +961,7 @@
       <div class="grid main-grid" 
         style="--cols: {$map.cols}; --rows: {$map.rows};" 
         role="grid"
-        class:animated={!introduced}
+        class:animated={!isIntroduced}
       >
         {#each $gridArray as cell (cell.x + ':' + cell.y)}
           {@const highestRarityItem = getHighestRarityItem(cell.items)}
@@ -1177,7 +1170,7 @@
     overflow: hidden;
   }
 
-  /* Clean up the tile animation approach to use transitions consistently */
+  /* Simplify the tile animation approach */
   .tile {
     display: flex;
     align-items: center;
@@ -1200,7 +1193,7 @@
       background-color 0.3s ease;
   }
 
-  /* Initial state for animated tiles */
+  /* Initial state for animated tiles - simplified to depend only on .animated class */
   .main-grid.animated .tile {
     opacity: 0;
     transform: scale(0.8);

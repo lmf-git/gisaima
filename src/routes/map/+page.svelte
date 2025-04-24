@@ -1,4 +1,3 @@
-```svelte
 <script>
     import { browser } from '$app/environment';
     import { goto } from '$app/navigation';
@@ -8,7 +7,6 @@
     import { 
       game, 
       getWorldInfo,
-      getWorldCenterCoordinates,
       setCurrentWorld,
       savePlayerAchievement
     } from "../../lib/stores/game.js";
@@ -1561,3 +1559,4 @@
 
     /* ...existing code... */
 </style>
+```
