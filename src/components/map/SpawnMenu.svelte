@@ -25,6 +25,11 @@
   let selectedSpawn = $state(null);
   let loading = $state(false);
   let error = $state(null);
+  
+  // Add state for tracking player death
+  let playerDied = $state(false);
+  let deathMessage = $state('');
+  let deathTimestamp = $state(null);
 
   // Use $derived correctly following the Features.svelte pattern
   const spawnList = $derived((() => {
@@ -40,6 +45,19 @@
 
   // Extract player display name from game store
   const playerDisplayName = $derived($game.player?.displayName || '');
+  
+  // Check for player death message
+  $effect(() => {
+    if ($game.player?.lastMessage) {
+      playerDied = !$game.player.alive;
+      deathMessage = $game.player.lastMessage.text;
+      deathTimestamp = $game.player.lastMessage.timestamp;
+    } else {
+      playerDied = false;
+      deathMessage = '';
+      deathTimestamp = null;
+    }
+  });
 
   // Add a helper function to format text with proper capitalization
   function formatRace(text) {
@@ -249,33 +267,51 @@
 >
   <div class="spawn-menu">
     <header class="modal-header">
-      <h2 id="spawn-title">Choose Spawn Point</h2>
+      <h2 id="spawn-title">
+        {#if playerDied}
+          You have fallen
+        {:else}
+          Choose Spawn Point
+        {/if}
+      </h2>
     </header>
     
     <div class="content">
-      <div class="race-header">
-        {#if $game.player?.race}
-          <div class="race-icon">
-            {#if $game.player.race.toLowerCase() === 'human'}
-              <Human extraClass="spawn-race-icon" />
-            {:else if $game.player.race.toLowerCase() === 'elf'}
-              <Elf extraClass="spawn-race-icon" />
-            {:else if $game.player.race.toLowerCase() === 'dwarf'}
-              <Dwarf extraClass="spawn-race-icon" />
-            {:else if $game.player.race.toLowerCase() === 'goblin'}
-              <Goblin extraClass="spawn-race-icon" />
-            {:else if $game.player.race.toLowerCase() === 'fairy'}
-              <Fairy extraClass="spawn-race-icon" />
-            {/if}
-          </div>
-          <span class="welcome-text">
-            Welcome {formatRace($game.player.race)} 
-            {#if playerDisplayName}
-              <strong>{playerDisplayName}</strong>
-            {/if}
-          </span>
-        {/if}
-      </div>
+      <!-- Death message or race header -->
+      {#if playerDied}
+        <div class="death-message-container">
+          <p class="death-message">{deathMessage}</p>
+          {#if deathTimestamp}
+            <p class="death-time">
+              {new Date(deathTimestamp).toLocaleString()}
+            </p>
+          {/if}
+        </div>
+      {:else}
+        <div class="race-header">
+          {#if $game.player?.race}
+            <div class="race-icon">
+              {#if $game.player.race.toLowerCase() === 'human'}
+                <Human extraClass="spawn-race-icon" />
+              {:else if $game.player.race.toLowerCase() === 'elf'}
+                <Elf extraClass="spawn-race-icon" />
+              {:else if $game.player.race.toLowerCase() === 'dwarf'}
+                <Dwarf extraClass="spawn-race-icon" />
+              {:else if $game.player.race.toLowerCase() === 'goblin'}
+                <Goblin extraClass="spawn-race-icon" />
+              {:else if $game.player.race.toLowerCase() === 'fairy'}
+                <Fairy extraClass="spawn-race-icon" />
+              {/if}
+            </div>
+            <span class="welcome-text">
+              Welcome {formatRace($game.player.race)} 
+              {#if playerDisplayName}
+                <strong>{playerDisplayName}</strong>
+              {/if}
+            </span>
+          {/if}
+        </div>
+      {/if}
       
       {#if error}
         <div class="error-message">{error}</div>
@@ -320,6 +356,8 @@
           >
             {#if loading}
               <span class="spinner"></span> Spawning...
+            {:else if playerDied}
+              Respawn
             {:else}
               Spawn Here
             {/if}
@@ -368,7 +406,7 @@
     align-items: center;
     justify-content: center; /* Center the header text since there's no close button */
     padding: 0.8em 1em;
-    background: #f5f5f5;
+    background-color: rgba(0, 0, 0, 0.05);
     border-bottom: 1px solid #e0e0e0;
   }
   
@@ -392,6 +430,34 @@
     margin-bottom: 1.2em;
     padding-bottom: 0.8em;
     border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .death-message-container {
+    margin-bottom: 1.2em;
+    padding: 1em;
+    background-color: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.2);
+    border-radius: 0.5em;
+    text-align: center;
+    animation: pulse 2s infinite alternate;
+  }
+  
+  @keyframes pulse {
+    from { background-color: rgba(220, 53, 69, 0.05); }
+    to { background-color: rgba(220, 53, 69, 0.15); }
+  }
+  
+  .death-message {
+    font-size: 1.1em;
+    margin: 0 0 0.5em 0;
+    font-style: italic;
+    color: #dc3545;
+  }
+  
+  .death-time {
+    font-size: 0.8em;
+    margin: 0;
+    color: rgba(0, 0, 0, 0.6);
   }
 
   .race-icon {
