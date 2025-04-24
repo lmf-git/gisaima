@@ -504,8 +504,15 @@
     color: #1e90ff;
   }
 
+  .content {
+    padding: 1em 1.5em 1.5em;
+    overflow-y: auto;
+    max-height: calc(90vh - 4em);
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
   .build-content {
-    margin-bottom: 1.5em;
+    margin-bottom: 1em;
   }
   
   h3 {
@@ -518,7 +525,7 @@
   .group-selection-section,
   .structure-selection-section,
   .structure-details-section {
-    margin-bottom: 1.5em;
+    margin-bottom: 1.2em;
     padding: 1em;
     background: white;
     border-radius: 0.3em;
@@ -765,16 +772,18 @@
     display: flex;
     justify-content: flex-end;
     gap: 0.8em;
-    margin-top: 1.5em;
+    margin-top: 1em;
+    padding: 0.5em 0;
   }
   
   .cancel-btn, .build-btn {
-    padding: 0.7em 1.2em;
+    padding: 0.7em 1.5em;
     border-radius: 0.3em;
     cursor: pointer;
     font-size: 1em;
     font-weight: 500;
     transition: all 0.2s;
+    min-width: 8em;
   }
   
   .cancel-btn {
