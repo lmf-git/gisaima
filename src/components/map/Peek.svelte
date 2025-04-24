@@ -131,84 +131,147 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 0.6em;
+    padding: 0.4em; /* Reduced padding */
     border-radius: 50%;
-    width: 4.5em;
-    height: 4.5em;
-    background-color: rgba(255, 255, 255, 0.95);
+    width: 4.6em;
+    height: 4.6em;
+    background-color: rgba(255, 255, 255, 0.97);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
     cursor: pointer;
-    transition: all 0.2s ease;
-    border: 3px solid rgba(255, 255, 255, 0.8);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Improved easing */
+    border: 3px solid rgba(255, 255, 255, 0.9);
     pointer-events: auto;
     font-family: var(--font-body);
-    /* Apply consistent transform for proper centering */
+    /* Position transform only, no scale */
     transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em)));
   }
   
   .action-button:hover {
-    /* Keep the centering transform and just add scale */
-    transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em))) scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    /* No scale transform, just enhanced shadow */
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.45);
+    border-color: currentColor; /* Uses the color of the button */
+  }
+  
+  .action-button:active {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
   }
   
   .action-label {
-    font-size: 0.75em; /* Slightly larger */
-    margin-top: 0.3em;
-    color: rgba(0, 0, 0, 0.9); /* Darker text for better contrast */
-    font-weight: 600; /* Bolder */
+    font-size: 0.9em; /* Base size */
+    margin-top: 0.25em;
+    color: white; /* Changed to white */
+    font-weight: 700;
     white-space: nowrap;
+    transition: font-size 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  
+  .action-button:hover .action-label {
+    font-size: 1.05em; /* Grow text on hover */
   }
   
   :global(.action-icon) {
-    width: 1.4em; /* Larger icons */
-    height: 1.4em;
-    fill: rgba(0, 0, 0, 0.9); /* Darker for better visibility */
+    width: 1.8em;
+    height: 1.8em;
+    fill: white; /* Changed to white */
+    stroke: white; /* For outlined icons */
+    transition: width 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                height 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .action-button:hover :global(.action-icon) {
+    width: 2.2em; /* Grow icon width on hover */
+    height: 2.2em; /* Grow icon height on hover */
   }
 
   :global(.close-icon) {
-    width: 1.8em; /* Even larger close icon since it has no label */
-    height: 1.8em;
+    width: 2em;
+    height: 2em;
   }
   
-  /* Style different action types with more vibrant colors */
+  .action-button:hover :global(.close-icon) {
+    width: 2.4em;
+    height: 2.4em;
+  }
+  
+  /* Style different action types with better contrast colors */
   .inspect-button {
-    background-color: rgba(33, 150, 243, 0.25); /* More visible */
-    border-color: rgba(33, 150, 243, 0.7);
+    background-color: rgba(33, 150, 243, 0.65); /* Higher opacity for better contrast with white */
+    border-color: rgba(33, 150, 243, 0.85);
+    color: white;
   }
   
   .mobilise-button {
-    background-color: rgba(63, 81, 181, 0.25);
-    border-color: rgba(63, 81, 181, 0.7);
+    background-color: rgba(63, 81, 181, 0.65);
+    border-color: rgba(63, 81, 181, 0.85);
+    color: white;
   }
   
   .move-button {
-    background-color: rgba(76, 175, 80, 0.25);
-    border-color: rgba(76, 175, 80, 0.7);
+    background-color: rgba(76, 175, 80, 0.65);
+    border-color: rgba(76, 175, 80, 0.85);
+    color: white;
   }
   
   .attack-button {
-    background-color: rgba(244, 67, 54, 0.25);
-    border-color: rgba(244, 67, 54, 0.7);
+    background-color: rgba(244, 67, 54, 0.65);
+    border-color: rgba(244, 67, 54, 0.85);
+    color: white;
   }
   
   .build-button {
-    background-color: rgba(121, 85, 72, 0.25);
-    border-color: rgba(121, 85, 72, 0.7);
+    background-color: rgba(121, 85, 72, 0.65);
+    border-color: rgba(121, 85, 72, 0.85);
+    color: white;
   }
   
   .gather-button {
-    background-color: rgba(255, 193, 7, 0.25);
-    border-color: rgba(255, 193, 7, 0.7);
+    background-color: rgba(255, 193, 7, 0.65);
+    border-color: rgba(255, 193, 7, 0.85);
+    color: white;
   }
   
   .demobilise-button {
-    background-color: rgba(0, 150, 136, 0.25);
-    border-color: rgba(0, 150, 136, 0.7);
+    background-color: rgba(0, 150, 136, 0.65);
+    border-color: rgba(0, 150, 136, 0.85);
+    color: white;
   }
   
   .close-button {
-    background-color: rgba(158, 158, 158, 0.25);
-    border-color: rgba(158, 158, 158, 0.7);
+    background-color: rgba(117, 117, 117, 0.65);
+    border-color: rgba(117, 117, 117, 0.85);
+    color: white;
+  }
+  
+  /* Specific hover effects for each button type */
+  .inspect-button:hover {
+    background-color: rgba(33, 150, 243, 0.8);
+  }
+  
+  .mobilise-button:hover {
+    background-color: rgba(63, 81, 181, 0.8);
+  }
+  
+  .move-button:hover {
+    background-color: rgba(76, 175, 80, 0.8);
+  }
+  
+  .attack-button:hover {
+    background-color: rgba(244, 67, 54, 0.8);
+  }
+  
+  .build-button:hover {
+    background-color: rgba(121, 85, 72, 0.8);
+  }
+  
+  .gather-button:hover {
+    background-color: rgba(255, 193, 7, 0.8);
+  }
+  
+  .demobilise-button:hover {
+    background-color: rgba(0, 150, 136, 0.8);
+  }
+  
+  .close-button:hover {
+    background-color: rgba(117, 117, 117, 0.8);
   }
 </style>
