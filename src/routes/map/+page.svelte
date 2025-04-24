@@ -8,7 +8,8 @@
       game, 
       getWorldInfo,
       setCurrentWorld,
-      savePlayerAchievement
+      savePlayerAchievement,
+      subscribeToWorldInfo // Add import for the subscription function
     } from "../../lib/stores/game.js";
     
     import { 
@@ -332,6 +333,10 @@
         ensureWorldDataLoaded(worldToUse).then(success => {
             if (success) {
                 debugLog("World data loaded successfully, proceeding with map initialization");
+                // After loading world data, explicitly subscribe to world info updates
+                if (worldToUse) {
+                    subscribeToWorldInfo(worldToUse);
+                }
                 checkAndInitializeMap();
             } else {
                 console.error("Failed to load world data, cannot initialize map");
@@ -352,7 +357,7 @@
     });
 
     $effect(() => {
-        if (!$game?.player?.alive && isTutorialVisible) {
+        if ($game?.player?.alive && isTutorialVisible) {
             isTutorialVisible = false;
         }
     });
@@ -1589,8 +1594,6 @@
         /* Remove pointer-events: none so the component can be interacted with */
         /* pointer-events: none; */
     }
-
-    /* ...existing code... */
 
     .help-button {
         font-family: var(--font-heading);

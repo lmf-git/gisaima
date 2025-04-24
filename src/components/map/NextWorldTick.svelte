@@ -1,6 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { nextWorldTick, timeUntilNextTick, game } from '../../lib/stores/game.js';
+  import {  timeUntilNextTick, worldInfo } from '../../lib/stores/game.js';
   
   // Optional props with defaults
   const { 
@@ -20,12 +20,11 @@
   
   // Calculate if tick is pending
   function updateTickState() {
-    if (!$game.worldKey || !$game.worlds[$game.worldKey]) return;
+    if (!$worldInfo || !$worldInfo.lastTick) return;
     
     const now = Date.now();
-    const world = $game.worlds[$game.worldKey];
-    const lastTick = world.lastTick || now;
-    const worldSpeed = world.speed || 1;
+    const lastTick = $worldInfo.lastTick || now;
+    const worldSpeed = $worldInfo.speed || 1;
     
     // Check if lastTick has changed - if so, reset pending state and record timestamp
     if (previousLastTick !== lastTick) {
@@ -59,14 +58,13 @@
   
   // Format time for display
   function formatTimeDisplay() {
-    if (!$game.worldKey || !$game.worlds[$game.worldKey]) return "Unknown";
+    if (!$worldInfo || !$worldInfo.lastTick) return "Unknown";
     
     updateCounter; // Keep reactive dependency on the counter
     
-    const world = $game.worlds[$game.worldKey];
     const now = Date.now();
-    const lastTick = world.lastTick || now;
-    const worldSpeed = world.speed || 1;
+    const lastTick = $worldInfo.lastTick || now;
+    const worldSpeed = $worldInfo.speed || 1;
     
     // Check if we're in pending state
     if (isPending) return "Processing";
@@ -88,8 +86,8 @@
   // Set up interval timer to update every second
   onMount(() => {
     // Initialize previousLastTick and tickChangeTimestamp
-    if ($game.worldKey && $game.worlds[$game.worldKey]) {
-      previousLastTick = $game.worlds[$game.worldKey].lastTick || Date.now();
+    if ($worldInfo && $worldInfo.lastTick) {
+      previousLastTick = $worldInfo.lastTick || Date.now();
       tickChangeTimestamp = Date.now();
     }
 
@@ -107,8 +105,8 @@
   
   // Add effect to track changes in lastTick
   $effect(() => {
-    if ($game.worldKey && $game.worlds[$game.worldKey]?.lastTick) {
-      const currentLastTick = $game.worlds[$game.worldKey].lastTick;
+    if ($worldInfo && $worldInfo.lastTick) {
+      const currentLastTick = $worldInfo.lastTick;
       const now = Date.now();
       
       // If lastTick has changed, we've received a new tick
@@ -136,9 +134,9 @@
     {/if}
   </span>
   
-  {#if !compact && $game.worlds[$game.worldKey]?.speed && $game.worlds[$game.worldKey].speed !== 1.0}
+  {#if !compact && $worldInfo?.speed && $worldInfo.speed !== 1.0}
     <span class="speed-indicator">
-      {$game.worlds[$game.worldKey].speed}x
+      {$worldInfo.speed}x
     </span>
   {/if}
 </div>

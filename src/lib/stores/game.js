@@ -165,19 +165,29 @@ export const currentPlayer = derived(
   }
 );
 
+// New writable store for current world info from database
+export const worldInfo = writable({
+  loading: false,
+  name: null,
+  description: null,
+  seed: null,
+  lastTick: null,
+  speed: 1,
+  size: null,
+  center: { x: 0, y: 0 },
+  spawns: {}
+});
+
 // Create a derived store for the next world tick time
 export const nextWorldTick = derived(
-  game,
-  ($game) => {
-    if (!$game.worldKey || !$game.worlds[$game.worldKey]) {
+  worldInfo,
+  ($worldInfo) => {
+    if (!$worldInfo || !$worldInfo.lastTick) {
       return null;
     }
     
-    const world = $game.worlds[$game.worldKey];
-    console.log('next tick world', world);
-
-    const worldSpeed = world.speed || 1.0;
-    const lastTick = world.lastTick || Date.now();
+    const worldSpeed = $worldInfo.speed || 1.0;
+    const lastTick = $worldInfo.lastTick || Date.now();
     
     // Base tick interval is 1 minute (60000ms) for 1x speed worlds
     const baseTickInterval = 60000; // 1 minute
@@ -213,6 +223,7 @@ export const timeUntilNextTick = derived(
 // Track active subscriptions
 let activeJoinedWorldsSubscription = null;
 let activePlayerWorldDataSubscription = null;
+let activeWorldInfoSubscription = null;
 
 // Keep track of pending requests to avoid duplicates
 const pendingWorldInfoRequests = new Map();
@@ -309,7 +320,69 @@ export function listenToPlayerWorldData(userId, worldKey) {
   return activePlayerWorldDataSubscription;
 }
 
-// Enhanced set current world with loading completion callback
+// Function to subscribe to world info updates
+export function subscribeToWorldInfo(worldId) {
+  // Clean up existing subscription
+  if (activeWorldInfoSubscription) {
+    activeWorldInfoSubscription();
+    activeWorldInfoSubscription = null;
+  }
+  
+  // Return early if no worldId
+  if (!worldId) {
+    worldInfo.set({
+      loading: false,
+      name: null,
+      description: null,
+      seed: null,
+      lastTick: null,
+      speed: 1,
+      size: null,
+      center: { x: 0, y: 0 },
+      spawns: {}
+    });
+    return null;
+  }
+  
+  // Set loading state
+  worldInfo.update(state => ({ ...state, loading: true }));
+  
+  console.log(`🌎 Setting up listener for world info: worlds/${worldId}/info`);
+  
+  // Create reference to the world info node
+  const worldInfoRef = ref(db, `worlds/${worldId}/info`);
+  
+  // Subscribe to changes
+  activeWorldInfoSubscription = onValue(worldInfoRef, snapshot => {
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      console.log(`🌎 World info updated for [${worldId}]:`, data);
+      
+      // Update the store with the data
+      worldInfo.set({
+        ...data,
+        loading: false
+      });
+    } else {
+      console.log(`No world info found for world ${worldId}`);
+      worldInfo.update(state => ({
+        ...state,
+        loading: false
+      }));
+    }
+  }, error => {
+    console.error(`Error getting world info for ${worldId}:`, error);
+    worldInfo.update(state => ({
+      ...state,
+      loading: false,
+      error: error.message
+    }));
+  });
+  
+  return activeWorldInfoSubscription;
+}
+
+// Enhanced set current world with addition of worldInfo subscription
 export function setCurrentWorld(worldId, world = null, callback = null) {
   // Validate the world ID directly
   if (!worldId) {
@@ -341,6 +414,9 @@ export function setCurrentWorld(worldId, world = null, callback = null) {
     ...state,
     worldKey: validWorldId
   }));
+  
+  // Subscribe to world info for this world
+  subscribeToWorldInfo(validWorldId);
   
   // Set up a listener for player data in this world
   const currentUser = get(user);  // Change from 'const user = get(user)' to avoid variable shadowing
@@ -720,6 +796,10 @@ export function setup() {
               activePlayerWorldDataSubscription();
               activePlayerWorldDataSubscription = null;
             }
+            if (activeWorldInfoSubscription) {
+              activeWorldInfoSubscription();
+              activeWorldInfoSubscription = null;
+            }
             
             // Clear player data
             game.update(state => ({
@@ -951,4 +1031,22 @@ export function hasAchievement(worldId, achievementId) {
   }
   
   return state.player.achievements[achievementId] === true;
+}
+
+// Add cleanup function for active subscriptions
+export function cleanup() {
+  if (activeJoinedWorldsSubscription) {
+    activeJoinedWorldsSubscription();
+    activeJoinedWorldsSubscription = null;
+  }
+
+  if (activePlayerWorldDataSubscription) {
+    activePlayerWorldDataSubscription();
+    activePlayerWorldDataSubscription = null;
+  }
+
+  if (activeWorldInfoSubscription) {
+    activeWorldInfoSubscription();
+    activeWorldInfoSubscription = null;
+  }
 }
