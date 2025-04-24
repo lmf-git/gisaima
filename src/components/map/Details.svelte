@@ -588,7 +588,7 @@
                 {/if}
 
                 {#if canBuild(detailsData)}
-                  <button class="action-button attack-button" onclick={() => executeAction('build')}>
+                  <button class="action-button" onclick={() => executeAction('build')}>
                     <Hammer extraClass="action-icon hammer-icon" />
                     Build
                   </button>
@@ -1200,6 +1200,7 @@
     gap: 0.5em;
   }
 
+  /* Basic action button styling */
   .action-button {
     padding: 0.6em;
     background-color: rgba(200, 200, 200, 0.1); /* Neutral light gray as default */
@@ -1221,27 +1222,28 @@
     transform: translateY(-1px);
   }
   
-  /* Gray background for inspect */
+  /* Blue for inspect - information action */
   .inspect-button {
-    background-color: rgba(120, 120, 120, 0.1);
-    border-color: rgba(120, 120, 120, 0.3);
+    background-color: rgba(33, 150, 243, 0.1);
+    border-color: rgba(33, 150, 243, 0.3);
   }
   
   .inspect-button:hover {
-    background-color: rgba(120, 120, 120, 0.2);
+    background-color: rgba(33, 150, 243, 0.2);
   }
 
-  /* Green background for move */
+  /* Fix 1: Ensure move actions have proper green background */
   .action-button:has(.compass-icon) {
-    background-color: rgba(0, 128, 0, 0.1);
-    border-color: rgba(0, 128, 0, 0.3);
+    background-color: rgba(76, 175, 80, 0.1);
+    border-color: rgba(76, 175, 80, 0.3);
+    color: rgba(0, 0, 0, 0.8); /* Ensure text is visible */
   }
   
   .action-button:has(.compass-icon):hover {
-    background-color: rgba(0, 128, 0, 0.2);
+    background-color: rgba(76, 175, 80, 0.2);
   }
-
-  /* Gold/amber background for gather */
+  
+  /* Gold/amber for gather - represents resources */
   .action-button:has(.crop-icon) {
     background-color: rgba(255, 193, 7, 0.1);
     border-color: rgba(255, 193, 7, 0.3);
@@ -1251,266 +1253,68 @@
     background-color: rgba(255, 193, 7, 0.2);
   }
 
-  /* Purple background for demobilise */
+  /* Teal for demobilise - represents entering structures */
   .action-button:has(.structure-icon),
   .action-button:has(.torch-icon) {
-    background-color: rgba(138, 43, 226, 0.1);
-    border-color: rgba(138, 43, 226, 0.3);
+    background-color: rgba(0, 150, 136, 0.1);
+    border-color: rgba(0, 150, 136, 0.3);
   }
   
   .action-button:has(.structure-icon):hover,
   .action-button:has(.torch-icon):hover {
-    background-color: rgba(138, 43, 226, 0.2);
+    background-color: rgba(0, 150, 136, 0.2);
   }
 
-  /* Red background for attack */
+  /* Red for attack - represents combat */
   .attack-button {
-    background-color: rgba(220, 20, 60, 0.1);
-    border-color: rgba(220, 20, 60, 0.3);
+    background-color: rgba(244, 67, 54, 0.1);
+    border-color: rgba(244, 67, 54, 0.3);
   }
 
   .attack-button:hover {
-    background-color: rgba(220, 20, 60, 0.2);
+    background-color: rgba(244, 67, 54, 0.2);
   }
 
-  /* Orange background for mobilise */
+  /* Blue for mobilise - represents forming/creating */
   .action-button:has(.rally-icon) {
-    background-color: rgba(255, 140, 0, 0.1);
-    border-color: rgba(255, 140, 0, 0.3);
+    background-color: rgba(63, 81, 181, 0.1);
+    border-color: rgba(63, 81, 181, 0.3);
   }
   
   .action-button:has(.rally-icon):hover {
-    background-color: rgba(255, 140, 0, 0.2);
+    background-color: rgba(63, 81, 181, 0.2);
   }
 
-  /* Style for join battle button */
-  .action-button:has(:not(.action-icon)) {
-    background-color: rgba(139, 0, 0, 0.1);
-    border-color: rgba(139, 0, 0, 0.3);
+  /* Brown for build action */
+  .action-button:has(.hammer-icon) {
+    background-color: rgba(121, 85, 72, 0.1);
+    border-color: rgba(121, 85, 72, 0.3);
   }
   
-  .action-button:has(:not(.action-icon)):hover {
-    background-color: rgba(139, 0, 0, 0.2);
+  .action-button:has(.hammer-icon):hover {
+    background-color: rgba(121, 85, 72, 0.2);
+  }
+  
+  /* Dark red for join battle - similar to attack but darker */
+  .action-button:not(:has(.action-icon)) {
+    background-color: rgba(183, 28, 28, 0.1);
+    border-color: rgba(183, 28, 28, 0.3);
+  }
+  
+  .action-button:not(:has(.action-icon)):hover {
+    background-color: rgba(183, 28, 28, 0.2);
   }
 
-  :global(.action-icon) {
-    opacity: 0.8;
-    vertical-align: middle;
-  }
-  
-  :global(.compass-icon) {
-    width: 1.1em;
-    height: 1.1em;
-    fill: currentColor;
-  }
-  
-  :global(.spawn-icon) {
-    filter: drop-shadow(0 0 2px rgba(0, 255, 255, 0.4));
-  }
-
-  :global(.eye-icon) {
-    width: 1.1em;
-    height: 1.1em;
-  }
-  
-  :global(.crop-icon) {
-    width: 1.1em;
-    height: 1.1em;
-  }
-  
-  :global(.rally-icon) {
-    width: 1.1em;
-    height: 1.1em;
-  }
-  
-  :global(.attack-icon) {
-    width: 1.1em;
-    height: 1.1em;
-  }
-  
-  :global(.action-icon-small) {
-    width: 0.9em;
-    height: 0.9em;
-    margin-right: 0.2em;
-    vertical-align: middle;
-    opacity: 0.8;
-  }
-
-  .entity {
-    display: flex;
-    align-items: flex-start;
-    margin-bottom: 0.6em;
-    padding: 0.5em 0.7em;
-    border-radius: 0.3em;
-    background-color: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    transition: background-color 0.2s ease;
-  }
-
-  .entity:last-child {
-    margin-bottom: 0;
-  }
-
-  .entity:hover {
-    background-color: rgba(255, 255, 255, 0.8);
-  }
-
-  .entity.player.current {
-    background-color: rgba(66, 133, 244, 0.05);
-    border-color: rgba(66, 133, 244, 0.3);
-  }
-
-  .entity-info {
-    flex: 1;
-  }
-
-  .entity-name {
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.85);
-    line-height: 1.2;
-    margin-bottom: 0.2em;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5em;
-  }
-
-  .entity-details {
-    display: flex;
-    width: 100%;
-    justify-content: space-between;
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.7);
-  }
-
-  .entity-details-left {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4em;
-  }
-
-  .entity-badge {
-    font-size: 0.7em;
-    padding: 0.2em 0.4em;
-    border-radius: 0.3em;
-    font-weight: 500;
-  }
-
-  .owner-badge {
-    background-color: rgba(76, 175, 80, 0.2);
-    color: #2e7d32;
-    border: 1px solid rgba(76, 175, 80, 0.4);
-  }
-
-  .entity-status-badge {
-    display: inline-flex;
-    align-items: center;
-    font-size: 0.8em;
-    font-weight: 500;
-    padding: 0.1em 0.5em;
-    border-radius: 0.3em;
-    white-space: nowrap;
-    text-transform: capitalize;
-    margin-top: 0.2em;
-    width: fit-content;
-  }
-  
-  .entity-status-badge.idle {
-    background: rgba(128, 128, 128, 0.15);
-    border: 1px solid rgba(128, 128, 128, 0.3);
-    color: rgba(0, 0, 0, 0.7);
-  }
-  
-  .entity-status-badge.moving {
-    background: rgba(0, 128, 0, 0.15);
-    border: 1px solid rgba(0, 128, 0, 0.3);
-    color: #006400;
-  }
-  
-  .entity-status-badge.mobilizing {
-    background: rgba(255, 140, 0, 0.15);
-    border: 1px solid rgba(255, 140, 0, 0.3);
-    color: #d06000;
-  }
-  
-  .entity-status-badge.demobilising {
-    background: rgba(138, 43, 226, 0.15);
-    border: 1px solid rgba(138, 43, 226, 0.3);
-    color: #6a1b9a;
-  }
-  
-  .entity-status-badge.gathering, 
-  .entity-status-badge.starting_to_gather {
-    background: rgba(255, 193, 7, 0.15);
-    border: 1px solid rgba(255, 193, 7, 0.3);
-    color: #b27800;
-  }
-  
-  .entity-status-badge.fighting {
-    background: rgba(220, 20, 60, 0.15);
-    border: 1px solid rgba(220, 20, 60, 0.3);
-    color: #c62828;
-  }
-  
-  .entity-status-badge.active {
-    background: rgba(139, 0, 0, 0.15);
-    border: 1px solid rgba(139, 0, 0, 0.3);
-    color: #d32f2f;
-  }
-  
-  .entity-status-badge.resolved {
-    background: rgba(0, 128, 0, 0.15);
-    border: 1px solid rgba(0, 128, 0, 0.3);
-    color: #2e7d32;
-  }
-  
-  .entity-status-badge.pending-tick {
-    position: relative;
-    animation: pulse 1s infinite alternate;
-  }
-  
-  .entity-status-badge.pending-tick::after {
-    content: '↻';
-    margin-left: 0.3em;
-    font-weight: bold;
-  }
-
-  .entity-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5em;
-    margin-top: 0.5em;
-  }
-
-  .entity-action {
-    padding: 0.3em 0.6em;
-    font-size: 0.8em;
-    background-color: rgba(200, 200, 200, 0.1);
-    border: 1px solid rgba(200, 200, 200, 0.3);
-    border-radius: 0.3em;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 0.3em;
-  }
-
-  .entity-action:hover {
-    background-color: rgba(200, 200, 200, 0.2);
-    transform: translateY(-1px);
-  }
-  
-  /* Green for move actions */
+  /* Small entity action buttons - use same color scheme as main buttons */
   .entity-action:has(.compass-icon) {
-    background-color: rgba(0, 128, 0, 0.1);
-    border-color: rgba(0, 128, 0, 0.3);
+    background-color: rgba(76, 175, 80, 0.1);
+    border-color: rgba(76, 175, 80, 0.3);
   }
   
   .entity-action:has(.compass-icon):hover {
-    background-color: rgba(0, 128, 0, 0.2);
+    background-color: rgba(76, 175, 80, 0.2);
   }
   
-  /* Gold/amber for gather actions */
   .entity-action:has(.crop-icon) {
     background-color: rgba(255, 193, 7, 0.1);
     border-color: rgba(255, 193, 7, 0.3);
@@ -1520,14 +1324,13 @@
     background-color: rgba(255, 193, 7, 0.2);
   }
   
-  /* Orange for mobilise actions */
   .entity-action:has(.rally-icon) {
-    background-color: rgba(255, 140, 0, 0.1);
-    border-color: rgba(255, 140, 0, 0.3);
+    background-color: rgba(63, 81, 181, 0.1);
+    border-color: rgba(63, 81, 181, 0.3);
   }
   
   .entity-action:has(.rally-icon):hover {
-    background-color: rgba(255, 140, 0, 0.2);
+    background-color: rgba(63, 81, 181, 0.2);
   }
 
   .player-owned {
@@ -1591,7 +1394,7 @@
     padding: 0.1em 0.4em;
     border-radius: 0.2em;
   }
-
+  
   .item-rarity.uncommon {
     background-color: rgba(76, 175, 80, 0.2);
     color: #2e7d32;
@@ -1741,25 +1544,21 @@
   .rarity-badge.uncommon {
     background-color: rgba(76, 175, 80, 0.2);
     color: #2e7d32;
-    border: 1px solid rgba(76, 175, 80, 0.4);
   }
   
   .rarity-badge.rare {
     background-color: rgba(33, 150, 243, 0.2);
     color: #0277bd;
-    border: 1px solid rgba(33, 150, 243, 0.4);
   }
   
   .rarity-badge.epic {
     background-color: rgba(156, 39, 176, 0.2);
     color: #7b1fa2;
-    border: 1px solid rgba(156, 39, 176, 0.4);
   }
   
   .rarity-badge.legendary {
     background-color: rgba(255, 152, 0, 0.2);
     color: #ef6c00;
-    border: 1px solid rgba(255, 152, 0, 0.4);
   }
   
   .rarity-badge.mythic {
@@ -1954,97 +1753,62 @@
 
   .entity-icon {
     margin-right: 0.7em;
-    margin-top: 0.1em;
+    margin-top: 0.2em; /* Adjust vertical alignment */
     flex-shrink: 0;
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* Align to top of entity */
     justify-content: center;
+    width: 1.8em; /* Give fixed width for consistency */
+    height: 1.8em; /* Give fixed height for consistency */
   }
   
-  /* Add global styles for race icons in details view */
   :global(.race-icon-details) {
-    width: 1.4em;
-    height: 1.4em;
+    width: 1.5em; /* Slightly larger */
+    height: 1.5em;
     opacity: 0.85;
     fill: rgba(0, 0, 0, 0.7);
   }
   
-  /* Race-specific styling */
-  :global(.race-icon-details.fairy-icon path) {
-    fill: rgba(138, 43, 226, 0.8); /* Brighter purple for fairy */
+  /* Fix 2: Improve contrast for demobilising status badge */
+  .entity-status-badge.demobilising {
+    background: rgba(0, 150, 136, 0.2); /* Changed to teal to match button */
+    border: 1px solid rgba(0, 150, 136, 0.4);
+    color: rgba(0, 0, 0, 0.7); /* Darker text for better contrast */
+    font-weight: 600; /* Make text bolder */
   }
   
-  :global(.race-icon-details.goblin-icon path) {
-    fill: rgba(0, 128, 0, 0.8); /* Brighter green for goblin */
+  /* Fix 3: Improve race icon positioning in entity items */
+  .entity-icon {
+    margin-right: 0.7em;
+    margin-top: 0.2em; /* Adjust vertical alignment */
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-start; /* Align to top of entity */
+    justify-content: center;
+    width: 1.8em; /* Give fixed width for consistency */
+    height: 1.8em; /* Give fixed height for consistency */
+  }
+  
+  /* Fix 4: Improve styling for actions in collapsible entity items */
+  .entity-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-top: 0.7em;
+    width: 100%; /* Ensure proper width */
   }
 
-  /* Updated section header and controls to match Overview.svelte */
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5em 1em;  /* Add horizontal padding */
+  .entity-action {
+    padding: 0.4em 0.6em;
+    font-size: 0.8em;
+    background-color: rgba(200, 200, 200, 0.1);
+    border: 1px solid rgba(200, 200, 200, 0.3);
+    border-radius: 0.3em;
     cursor: pointer;
-    user-select: none;
-    position: relative;
-    width: 100%;
-    background-color: rgba(0, 0, 0, 0.03);
-    border-radius: 0.3em 0.3em 0 0;
-    transition: background-color 0.2s ease;
-  }
-  
-  .section-header:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
-  
-  .section-title {
-    margin: 0;
-    font-size: 0.9em;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    display: flex;
+    transition: all 0.2s;
+    display: inline-flex; /* Changed to inline-flex */
     align-items: center;
     gap: 0.3em;
-  }
-  
-  .section-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    margin-left: auto;
-  }
-  
-  .collapse-button {
-    background: none;
-    border: none;
-    color: rgba(0, 0, 0, 0.5);
-    font-size: 0.8em;
-    cursor: pointer;
-    padding: 0.2em 0.5em;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.5em;
-    min-height: 1.5em;
-  }
-  
-  .collapse-button:hover {
-    color: rgba(0, 0, 0, 0.8);
-    background-color: rgba(0, 0, 0, 0.05);
-    border-radius: 50%;
-  }
-
-  /* Add missing entities-section styling */
-  .entities-section {
-    margin-bottom: 1.2em;
-    border-radius: 0.3em;
-    overflow: hidden;
-  }
-
-  .entities-section:last-child {
-    margin-bottom: 0;
+    white-space: nowrap; /* Prevent text wrapping within button */
   }
 </style>
