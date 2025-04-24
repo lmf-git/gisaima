@@ -183,27 +183,31 @@
 
   // Filter actions based on provided actions or the conditions applied to tileData
   const availableActions = $derived(() => {
-    // CHANGE: Remove this check to always use our own filtering based on conditions
+    // CRITICAL: Remove this check to always use our own filtering based on conditions
     // instead of using pre-defined actions passed from parent
     // if (actions.length > 0) return actions;
     
     // Always filter based on conditions
-    if (!currentTileData) return [];
+    if (!currentTileData) {
+      console.log("No currentTileData available for action filtering");
+      return [{id: 'details', label: 'Details', icon: Info}]; // Always allow Details action
+    }
     
     console.log("Filtering actions with currentTileData:", currentTileData);
     
     const filtered = allPossibleActions.filter(action => {
       try {
         const conditionMet = action.condition(currentTileData);
+        console.log(`Action ${action.id} condition result: ${conditionMet}`);
         return conditionMet;
       } catch (error) {
         console.error(`Error checking condition for action ${action.id}:`, error);
-        return false;
+        return action.id === 'details'; // Always include details action even on error
       }
     });
     
     console.log("Final filtered actions:", filtered.map(a => a.id));
-    return filtered;
+    return filtered.length > 0 ? filtered : [{id: 'details', label: 'Details', icon: Info}];
   });
 
   // Include close button as part of the circle
