@@ -1157,7 +1157,7 @@
             />
         {/if}
 
-        {#if detailed && !isTutorialVisible}
+        {#if detailed && !isTutorialVisible && $game?.player?.alive}
             <Details 
                 onClose={() => toggleDetailsModal(false)} 
                 onShowModal={showModal} 
