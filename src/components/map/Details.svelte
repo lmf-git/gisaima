@@ -1046,15 +1046,14 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000; /* Base z-index */
+    z-index: 1000;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.2s ease-out, z-index 0s;
   }
-  
-  /* Add active state styling to increase z-index when active */
+
   .modal-container.active {
-    z-index: 1001; /* Higher than both base values to ensure it's on top */
+    z-index: 1001;
   }
   
   .modal-container.ready {
@@ -1092,7 +1091,6 @@
     }
   }
 
-  /* Updated modal-header to match Build component */
   .modal-header {
     display: flex;
     align-items: center;
@@ -1102,7 +1100,6 @@
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   }
 
-  /* Updated h3 styling to match h2 in Build component */
   h3 {
     margin: 0;
     font-size: 1.3em;
@@ -1136,7 +1133,6 @@
     color: rgba(0, 0, 0, 0.8);
   }
 
-  /* Updated core section styling to match location-info in Build component */
   .core-section {
     padding-bottom: 1em;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
@@ -1151,7 +1147,6 @@
     padding: 0;
   }
 
-  /* Updated attribute styling to match Build component */
   .attribute {
     display: flex;
     margin-bottom: 0.6em;
@@ -1185,17 +1180,15 @@
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
   }
 
-  /* Rest of the styling remains the same */
   .core-actions {
     margin-top: 1em;
   }
   
-  /* Fix section header styling to match Overview component */
   .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5em 1em;  /* Add horizontal padding */
+    padding: 0.5em 1em;
     cursor: pointer;
     user-select: none;
     position: relative;
@@ -1247,19 +1240,6 @@
     color: rgba(0, 0, 0, 0.8);
     background-color: rgba(0, 0, 0, 0.05);
     border-radius: 50%;
-  }
-
-  /* Remove the old h4 styling since we're now using the section-title directly */
-  h4 {
-    margin: 0;
-    font-size: inherit;
-    font-weight: inherit;
-    color: inherit;
-    text-transform: inherit;
-    letter-spacing: inherit;
-    display: inherit;
-    align-items: inherit;
-    gap: inherit;
   }
 
   /* Replace the old section-count styling with this entity-count styling */
@@ -1753,9 +1733,9 @@
   /* Improve entity layout in collapsible sections */
   .entity {
     display: flex;
-    flex-wrap: nowrap; /* Prevent immediate wrapping */
-    align-items: center; /* Center items vertically */
-    justify-content: space-between; /* Distribute space between main components */
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 0.6em;
     padding: 0.5em 0.7em;
     border-radius: 0.3em;
@@ -1766,25 +1746,22 @@
     cursor: pointer;
   }
 
-  /* Ensure left side components stay grouped together */
   .entity-left {
     display: flex;
     align-items: center;
     flex: 1;
-    min-width: 0; /* Allow text truncation */
+    min-width: 0;
   }
   
-  /* Adjust entity info to not grow excessively */
   .entity-info {
     flex: 1;
-    min-width: 0; /* Ensure text can truncate */
+    min-width: 0;
     margin-right: 0.5em;
   }
   
-  /* Remove the full width from entity actions */
   .entity-actions {
-    width: auto; /* Don't take full width */
-    margin-left: auto; /* Push to the right */
+    width: auto;
+    margin-left: auto;
     display: flex;
     flex-wrap: wrap;
     gap: 0.4em;
@@ -2064,9 +2041,9 @@
   /* Improve entity layout in collapsible sections */
   .entity {
     display: flex;
-    flex-wrap: nowrap; /* Prevent immediate wrapping */
-    align-items: center; /* Center items vertically */
-    justify-content: space-between; /* Distribute space between main components */
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 0.6em;
     padding: 0.5em 0.7em;
     border-radius: 0.3em;
@@ -2077,25 +2054,22 @@
     cursor: pointer;
   }
 
-  /* Ensure left side components stay grouped together */
   .entity-left {
     display: flex;
     align-items: center;
     flex: 1;
-    min-width: 0; /* Allow text truncation */
+    min-width: 0;
   }
   
-  /* Adjust entity info to not grow excessively */
   .entity-info {
     flex: 1;
-    min-width: 0; /* Ensure text can truncate */
+    min-width: 0;
     margin-right: 0.5em;
   }
   
-  /* Remove the full width from entity actions */
   .entity-actions {
-    width: auto; /* Don't take full width */
-    margin-left: auto; /* Push to the right */
+    width: auto;
+    margin-left: auto;
     display: flex;
     flex-wrap: wrap;
     gap: 0.4em;
@@ -2375,9 +2349,317 @@
   /* Improve entity layout in collapsible sections */
   .entity {
     display: flex;
-    flex-wrap: nowrap; /* Prevent immediate wrapping */
-    align-items: center; /* Center items vertically */
-    justify-content: space-between; /* Distribute space between main components */
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6em;
+    padding: 0.5em 0.7em;
+    border-radius: 0.3em;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s ease;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .entity-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .entity-info {
+    flex: 1;
+    min-width: 0;
+    margin-right: 0.5em;
+  }
+  
+  .entity-actions {
+    width: auto;
+    margin-left: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    align-self: center;
+  }
+
+  /* Make entity content items properly aligned */
+  .entity-name, .entity-details {
+    width: 100%;
+  }
+
+  /* Entity details should be flex to align status and other elements */
+  .entity-details {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.7);
+    gap: 0.5em;
+    align-items: flex-start; /* Prevent children from stretching vertically */
+  }
+
+  .entity-details-left {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+    align-items: flex-start; /* Ensure children align to the start */
+  }
+
+  /* Status badge styling to prevent flex growth */
+  .entity-status-badge {
+    display: inline-block;
+    font-size: 0.8em;
+    font-weight: 500;
+    padding: 0.1em 0.5em;
+    border-radius: 0.3em;
+    white-space: nowrap;
+    text-transform: capitalize;
+    flex-shrink: 0; /* Prevent badge from shrinking */
+    align-self: flex-start; /* Keep badge at its natural size */
+  }
+  
+  .entity-status-badge.idle {
+    background: rgba(128, 128, 128, 0.15);
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .entity-status-badge.moving {
+    background: rgba(0, 128, 0, 0.15);
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #006400;
+  }
+  
+  .entity-status-badge.mobilizing {
+    background: rgba(255, 140, 0, 0.15);
+    border: 1px solid rgba(255, 140, 0, 0.3);
+    color: #d06000;
+  }
+  
+  .entity-status-badge.demobilising {
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    color: #6a1b9a;
+  }
+  
+  .entity-status-badge.gathering, 
+  .entity-status-badge.starting_to_gather {
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    color: #8a2be2;
+  }
+  
+  .entity-status-badge.fighting {
+    background: rgba(220, 20, 60, 0.15);
+    border: 1px solid rgba(220, 20, 60, 0.3);
+    color: #c62828;
+  }
+  
+  .entity-status-badge.active {
+    background: rgba(255, 0, 0, 0.15);
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    color: #d32f2f;
+  }
+  
+  .entity-status-badge.resolved {
+    background: rgba(0, 128, 0, 0.15);
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #2e7d32;
+  }
+  
+  .entity-status-badge.pending-tick {
+    position: relative;
+    animation: pulse 1s infinite alternate;
+  }
+  
+  .entity-status-badge.pending-tick::after {
+    content: '↻';
+    margin-left: 0.3em;
+    font-weight: bold;
+  }
+
+  /* Timer styles */
+  .timer {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.85em;
+    color: #d32f2f;
+    text-align: center;
+  }
+
+  /* Progress bar styles */
+  .progress-bar {
+    height: 0.5em;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0.25em;
+    overflow: hidden;
+    margin-bottom: 0.2em;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background-color: rgba(139, 0, 0, 0.7);
+    transition: width 1s ease;
+  }
+
+  /* Button styles */
+  .join-battle-btn {
+    margin-top: 0.5em;
+    padding: 0.4em 0.8em;
+    background-color: #d32f2f;
+    color: white;
+    border: none;
+    border-radius: 0.3em;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    align-self: flex-end;
+  }
+  
+  .join-battle-btn:hover {
+    background-color: #b71c1c;
+  }
+
+  /* Rarity badge styles */
+  .rarity-badge {
+    display: inline-block;
+    font-size: 0.9em;
+    padding: 0.1em 0.5em;
+    border-radius: 0.3em;
+    font-weight: 500;
+  }
+  
+  .rarity-badge.common {
+    background-color: rgba(158, 158, 158, 0.2);
+    color: #616161;
+    border: 1px solid rgba(158, 158, 158, 0.4);
+  }
+  
+  .rarity-badge.uncommon {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+  }
+  
+  .rarity-badge.rare {
+    background-color: rgba(33, 150, 243, 0.2);
+    color: #0277bd;
+  }
+  
+  .rarity-badge.epic {
+    background-color: rgba(156, 39, 176, 0.2);
+    color: #7b1fa2;
+  }
+  
+  .rarity-badge.legendary {
+    background-color: rgba(255, 152, 0, 0.2);
+    color: #ef6c00;
+  }
+  
+  .rarity-badge.mythic {
+    background-color: rgba(233, 30, 99, 0.2);
+    color: #c2185b;
+    border: 1px solid rgba(233, 30, 99, 0.4);
+  }
+
+  @keyframes pulse {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+  }
+
+  @keyframes pulseMythic {
+    from {
+      box-shadow: 0 0 0 0 rgba(233, 30, 99, 0.1);
+    }
+    to {
+      box-shadow: 0 0 10px 2px rgba(233, 30, 99, 0.3);
+    }
+  }
+
+  /* Add styles for the integrated structure elements */
+  .structure-name {
+    color: rgba(0, 0, 0, 1); /* Solid black */
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+  
+  .structure-type {
+    display: flex;
+    align-items: center;
+  }
+
+  .structure-type-icon-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5em;
+    vertical-align: middle;
+  }
+  
+  :global(.structure-type-icon) {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
+  }
+  
+  /* Fix race icons to match Overview's styling */
+  :global(.race-icon-details) {
+    width: 1.4em;
+    height: 1.4em;
+    opacity: 0.85;
+    fill: rgba(0, 0, 0, 0.7);
+  }
+  
+  /* Race-specific styling */
+  :global(.race-icon-details.fairy-icon path) {
+    fill: rgba(138, 43, 226, 0.8);
+  }
+  
+  :global(.race-icon-details.goblin-icon path) {
+    fill: rgba(0, 128, 0, 0.8);
+  }
+  
+  :global(.entity-race-icon) {
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+    flex-shrink: 0;
+  }
+
+  /* New styles for desktop two-column layout */
+  .tile-info-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+  }
+  
+  /* Desktop layout - structure on left, terrain on right */
+  @media (min-width: 640px) {
+    .tile-info-container {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1.5em;
+    }
+    
+    .structure-column,
+    .terrain-column {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .tile-info-container:has(.terrain-column:only-child) .terrain-column {
+      width: 100%;
+    }
+  }
+
+  /* Improve entity layout in collapsible sections */
+  .entity {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 0.6em;
     padding: 0.5em 0.7em;
     border-radius: 0.3em;
