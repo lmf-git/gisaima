@@ -345,23 +345,70 @@ function processBattleAttrition(battle, tileData) {
   // Calculate power ratio for determining casualty rates
   const powerRatio = side1Power / side2Power;
   
-  // Calculate base casualty rates for each side (inverse relationship)
-  const baseSide1CasualtyRate = powerRatio > 1 ? 0.05 / powerRatio : 0.05 * (1/powerRatio);  
-  const baseSide2CasualtyRate = powerRatio > 1 ? 0.05 * powerRatio : 0.05 / (1/powerRatio);
+  // Calculate base casualty rates for each side with more dynamic scaling
+  // Higher casualty rates for more balanced battles
+  let baseSide1CasualtyRate, baseSide2CasualtyRate;
   
-  // Add some variance but always have at least some casualties
-  const side1CasualtyRate = Math.max(0.01, baseSide1CasualtyRate * (0.7 + Math.random() * 0.6));
-  const side2CasualtyRate = Math.max(0.01, baseSide2CasualtyRate * (0.7 + Math.random() * 0.6));
+  // If one side overwhelmingly overpowers the other (100x or more), they take no casualties
+  if (powerRatio >= 100) {
+    // Side 1 is overwhelmingly stronger - they take no casualties
+    baseSide1CasualtyRate = 0;
+    // Side 2 takes heavy casualties
+    baseSide2CasualtyRate = 0.25 + (Math.min(powerRatio, 500) / 1000); // 25-75% casualties per tick
+  } else if (powerRatio <= 0.01) { // 1/100
+    // Side 2 is overwhelmingly stronger - they take no casualties
+    baseSide2CasualtyRate = 0;
+    // Side 1 takes heavy casualties
+    baseSide1CasualtyRate = 0.25 + (Math.min(1/powerRatio, 500) / 1000); // 25-75% casualties per tick
+  } else {
+    // More balanced battle, calculate based on power ratio
+    if (powerRatio > 1) {
+      // Side 1 is stronger
+      const advantage = Math.min(powerRatio, 50); // Cap at 50x advantage
+      baseSide1CasualtyRate = 0.10 / Math.sqrt(advantage); // Lower casualties for stronger side
+      baseSide2CasualtyRate = 0.10 * Math.sqrt(advantage); // Higher casualties for weaker side
+    } else {
+      // Side 2 is stronger
+      const advantage = Math.min(1/powerRatio, 50); // Cap at 50x advantage
+      baseSide2CasualtyRate = 0.10 / Math.sqrt(advantage); // Lower casualties for stronger side
+      baseSide1CasualtyRate = 0.10 * Math.sqrt(advantage); // Higher casualties for weaker side
+    }
+  }
   
-  // Apply casualties to side 1 (processor-intensive part)
+  // Adjust for battle scale - larger battles should have higher overall casualty rates
+  // to ensure they don't drag on too long
+  const totalUnits = side1Power + side2Power;
+  const scaleFactor = 1 + (Math.log10(Math.max(10, totalUnits)) / 5); // Scale up by up to 70% for very large battles
+  
+  // Apply scale factor and add some randomness, but maintain minimum casualty rate
+  const side1CasualtyRate = Math.max(
+    baseSide1CasualtyRate * scaleFactor * (0.8 + Math.random() * 0.4), // ±20% variance
+    baseSide1CasualtyRate > 0 ? 0.02 : 0 // Minimum 2% if not immune
+  );
+  
+  const side2CasualtyRate = Math.max(
+    baseSide2CasualtyRate * scaleFactor * (0.8 + Math.random() * 0.4), // ±20% variance
+    baseSide2CasualtyRate > 0 ? 0.02 : 0 // Minimum 2% if not immune
+  );
+  
+  // Log the casualty rates for debugging
+  logger.debug(`Battle ${battle.id}: Side 1 (${side1Power} units) casualty rate: ${(side1CasualtyRate * 100).toFixed(1)}%, Side 2 (${side2Power} units) casualty rate: ${(side2CasualtyRate * 100).toFixed(1)}%`);
+  
+  // Apply casualties to side 1
   let totalSide1Casualties = 0;
   for (const group of side1Groups) {
+    // Skip if this side has immunity due to overwhelming force
+    if (side1CasualtyRate === 0) {
+      casualties.side1[group.id] = 0;
+      continue;
+    }
+    
     // Base number of casualties for this group
     const groupCasualties = Math.floor(group.unitCount * side1CasualtyRate);
     
-    // Always have at least 1 casualty if possible
+    // Ensure we have at least 1 casualty for smaller groups if rate is non-zero
     const actualCasualties = Math.min(
-      Math.max(1, groupCasualties), 
+      Math.max(groupCasualties, group.unitCount <= 5 ? 1 : 0), 
       group.unitCount - 1 // Leave at least 1 unit if possible
     );
     
@@ -373,15 +420,21 @@ function processBattleAttrition(battle, tileData) {
     totalSide1Casualties += casualties.side1[group.id];
   }
   
-  // Apply casualties to side 2 (processor-intensive part)
+  // Apply casualties to side 2
   let totalSide2Casualties = 0;
   for (const group of side2Groups) {
+    // Skip if this side has immunity due to overwhelming force
+    if (side2CasualtyRate === 0) {
+      casualties.side2[group.id] = 0;
+      continue;
+    }
+    
     // Base number of casualties for this group
     const groupCasualties = Math.floor(group.unitCount * side2CasualtyRate);
     
-    // Always have at least 1 casualty if possible
+    // Ensure we have at least 1 casualty for smaller groups if rate is non-zero
     const actualCasualties = Math.min(
-      Math.max(1, groupCasualties),
+      Math.max(groupCasualties, group.unitCount <= 5 ? 1 : 0),
       group.unitCount - 1 // Leave at least 1 unit if possible
     );
     
@@ -399,7 +452,7 @@ function processBattleAttrition(battle, tileData) {
   // Check if all side 2 groups are wiped out
   const side2RemainingUnits = side2Power - totalSide2Casualties;
   
-  // Battle is resolved if one side has no units left
+  // Battle is resolved if one side has no units left or is reduced to critical numbers
   const isResolved = side1RemainingUnits <= 0 || side2RemainingUnits <= 0;
   let winningSide = null;
   
