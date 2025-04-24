@@ -1,9 +1,8 @@
 <script>
   import { fly, scale } from 'svelte/transition';
   import { elasticOut } from 'svelte/easing';
-  import { get } from 'svelte/store';
   import { currentPlayer } from '../../lib/stores/game.js';
-  import { targetStore, highlightedStore } from '../../lib/stores/map.js';
+  import { targetStore } from '../../lib/stores/map.js';
   import Close from '../icons/Close.svelte';
   import Eye from '../icons/Eye.svelte';
   import Rally from '../icons/Rally.svelte';
@@ -15,286 +14,34 @@
   import Torch from '../icons/Torch.svelte';
   import Info from '../icons/Info.svelte';
 
-  // Define props correctly with Svelte 5 runes
-  // const props = $props();
-  
-  // Access props safely using default values pattern
+  // Define props with simplified approach
   const {
     onClose = (() => {}),
     onAction = (() => {}),
     onShowDetails = (() => {}),
-    isOpen = false,
-    actions = [],
-    tileData = null
+    isOpen = false
   } = $props();
   
-  // Access tileData prop for currentTileData calculation
-  const currentTileData = $derived(tileData || $targetStore || null);
-  
-  // Add direct debug logging every time the component opens
-  $effect(() => {
-    if (isOpen && currentTileData) {
-      console.log("Peek opened with currentTileData:", currentTileData);
-      console.log("Current player:", $currentPlayer);
-      
-      if (currentTileData.groups && currentTileData.groups.length > 0) {
-        console.log("Groups on tile:", currentTileData.groups.length);
-        currentTileData.groups.forEach(group => {
-          console.log(`Group ${group.id}: owner=${group.owner}, current player id=${$currentPlayer?.id}, equal=${group.owner === $currentPlayer?.id}, status=${group.status}, inBattle=${group.inBattle}`);
-        });
-      } else {
-        console.log("No groups on this tile");
-      }
-    }
-  });
+  // Access current tile data for action display
+  const currentTileData = $derived($targetStore);
 
-  // SIMPLIFIED CONDITION FUNCTIONS
-  
-  function canMobilize(tile) {
-    if (!tile || !$currentPlayer) return false;
-    
-    // Check if player is on the tile
-    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
-    
-    // Check if player is not already in a mobilizing/demobilising group
-    const inProcessGroup = tile.groups?.some(g => 
-      (g.status === 'mobilizing' || g.status === 'demobilising') && 
-      g.owner === $currentPlayer.id
-    );
-    
-    const result = playerOnTile && !inProcessGroup;
-    console.log(`canMobilize: ${result}`);
-    return result;
-  }
-  
-  function canDemobilize(tile) {
-    if (!tile || !$currentPlayer || !tile.structure) return false;
-    
-    // Check if there are any player-owned groups that are idle
-    const result = tile.groups?.some(g => 
-      g.owner === $currentPlayer.id && 
-      g.status === 'idle' &&
-      (g.inBattle === false || g.inBattle === undefined) // Handle undefined case
-    );
-    
-    console.log(`canDemobilize: ${result}`);
-    return result;
-  }
-
-  function canBuild(tile) {
-    // Always allow build for now
-    return true;
-  }
-  
-  function canMove(tile) {
-    if (!tile || !$currentPlayer) {
-      console.log("canMove: false (missing tile or player)");
-      return false;
-    }
-    
-    if (!tile.groups || !Array.isArray(tile.groups) || tile.groups.length === 0) {
-      console.log("canMove: false (no groups)");
-      return false;
-    }
-    
-    // Log each group's ownership check for debugging
-    tile.groups.forEach(g => {
-      console.log(`Group ${g.id}: owned by player=${g.owner === $currentPlayer.id}, status=${g.status}, inBattle=${g.inBattle}`);
-    });
-    
-    // Explicitly handle the case where inBattle is undefined
-    const hasIdleGroups = tile.groups.some(g => 
-      g.owner === $currentPlayer.id && 
-      g.status === 'idle' && 
-      (g.inBattle === false || g.inBattle === undefined)
-    );
-    
-    console.log(`canMove: ${hasIdleGroups}`);
-    return hasIdleGroups;
-  }
-  
-  function canAttack(tile) {
-    if (!tile || !$currentPlayer) return false;
-    
-    // Check if there are any player-owned groups that are idle
-    const playerGroups = tile.groups?.filter(g => 
-      g.owner === $currentPlayer.id && 
-      g.status === 'idle' &&
-      (g.inBattle === false || g.inBattle === undefined)
-    );
-    
-    // Check if there are any enemy groups on the tile
-    const enemyGroups = tile.groups?.filter(g => 
-      g.owner !== $currentPlayer.id && 
-      g.status === 'idle' &&
-      (g.inBattle === false || g.inBattle === undefined)
-    );
-    
-    const result = playerGroups?.length > 0 && enemyGroups?.length > 0;
-    console.log(`canAttack: ${result}`);
-    return result;
-  }
-  
-  function canGather(tile) {
-    if (!tile || !$currentPlayer) {
-      console.log("canGather: false (no tile or player)");
-      return false;
-    }
-    
-    // Check if there are items to gather
-    if (!tile.items || !tile.items.length) {
-      console.log("canGather: false (no items)");
-      return false;
-    }
-    
-    // Check if player has idle groups
-    const hasIdleGroups = tile.groups?.some(g => 
-      g.owner === $currentPlayer.id && 
-      g.status === 'idle' &&
-      (g.inBattle === false || g.inBattle === undefined)
-    );
-    
-    console.log(`canGather: ${hasIdleGroups}`);
-    return hasIdleGroups;
-  }
-  
-  function canJoinBattle(tile) {
-    if (!tile || !$currentPlayer) return false;
-    
-    // Check if there's battle and player has idle groups
-    const result = tile.battles?.length > 0 &&
-                  tile.groups?.some(g => 
-                    g.owner === $currentPlayer.id && 
-                    g.status === 'idle' &&
-                    (g.inBattle === false || g.inBattle === undefined)
-                  );
-    
-    console.log(`canJoinBattle: ${result}`);
-    return result;
-  }
-
-  // Add new canFallbackBuild function that will always return true
-  function canFallbackBuild() {
-    return true; // Always enable the build action as a fallback
-  }
-
-  // Update action definitions to include more guaranteed actions
-  const allPossibleActions = [
-    // Always show Details and Build actions regardless of conditions
-    { id: 'details', label: 'Details', icon: Info, condition: () => true },
-    { id: 'build', label: 'Build', icon: Hammer, condition: canFallbackBuild },
-    // Conditional actions
-    { id: 'inspect', label: 'Inspect', icon: Eye, condition: tile => tile?.structure },
-    { id: 'mobilise', label: 'Mobilise', icon: Rally, condition: canMobilize },
-    { id: 'move', label: 'Move', icon: Compass, condition: canMove },
-    { id: 'attack', label: 'Attack', icon: Attack, condition: canAttack },
-    { id: 'gather', label: 'Gather', icon: Crop, condition: canGather },
-    { id: 'joinBattle', label: 'Join Battle', icon: Attack, condition: canJoinBattle },
-    { 
-      id: 'demobilise', 
-      label: 'Demobilise', 
-      icon: tile => tile?.structure?.type === 'spawn' ? Torch : Structure, 
-      condition: canDemobilize 
-    }
+  // Fixed set of actions - always show these core actions
+  const availableActions = [
+    { id: 'details', label: 'Details', icon: Info },
+    { id: 'build', label: 'Build', icon: Hammer },
+    { id: 'move', label: 'Move', icon: Compass },
+    { id: 'mobilise', label: 'Mobilise', icon: Rally },
+    { id: 'gather', label: 'Gather', icon: Crop },
+    { id: 'attack', label: 'Attack', icon: Attack }
   ];
 
-  // Modify the availableActions calculated property to be a proper runes derived value
-  let availableActions = $state([]); // initialize as empty state array
-  
-  // Create a computation effect that updates the availableActions
+  // Add inspect action if there's a structure
   $effect(() => {
-    // Skip calculation if not open
-    if (!isOpen) return;
-    
-    console.log("Peek calculating actions, isOpen:", isOpen);
-    console.log("Provided actions array:", actions);
-    console.log("Current tile data for actions:", currentTileData);
-    
-    // External actions override - only use if we actually have some provided
-    if (actions && Array.isArray(actions) && actions.length > 0) {
-      console.log("Using provided actions:", actions);
-      availableActions = [...actions]; // Create a new array to trigger reactivity
-      return;
-    }
-    
-    // Guarantee basic actions when there's no data
-    if (!currentTileData) {
-      console.log("No currentTileData available for action filtering");
-      availableActions = [
-        {id: 'details', label: 'Details', icon: Info},
-        {id: 'build', label: 'Build', icon: Hammer}
-      ];
-      return;
-    }
-    
-    // Add more explicit debugging
-    console.log("Filtering actions with currentTileData:", currentTileData);
-    console.log("Current player for action filtering:", $currentPlayer);
-    
-    // Special case for tiles with no groups - more permissive
-    if (!currentTileData.groups || currentTileData.groups.length === 0) {
-      console.log("No groups on tile, showing limited actions");
-      // Always show details, build, and inspect if there's a structure
-      const basicActions = [
-        {id: 'details', label: 'Details', icon: Info},
-        {id: 'build', label: 'Build', icon: Hammer}
-      ];
-      
-      // Add inspect action if there's a structure
-      if (currentTileData.structure) {
-        basicActions.push({
-          id: 'inspect', 
-          label: 'Inspect', 
-          icon: Eye
-        });
+    if (isOpen && currentTileData?.structure) {
+      // Add inspect action at the beginning if there's a structure
+      if (!availableActions.some(a => a.id === 'inspect')) {
+        availableActions.unshift({ id: 'inspect', label: 'Inspect', icon: Eye });
       }
-      
-      // Add mobilise action if the player is on the tile
-      if (currentTileData.players?.some(p => p.id === $currentPlayer?.id)) {
-        basicActions.push({
-          id: 'mobilise',
-          label: 'Mobilise',
-          icon: Rally
-        });
-      }
-      
-      console.log("Basic actions for empty tile:", basicActions.map(a => a.id));
-      availableActions = basicActions;
-      return;
-    }
-    
-    // Try/catch the entire filtering operation
-    try {
-      const filtered = allPossibleActions.filter(action => {
-        try {
-          const conditionMet = action.condition(currentTileData);
-          console.log(`Action ${action.id} condition result: ${conditionMet}`);
-          return conditionMet;
-        } catch (error) {
-          console.error(`Error checking condition for action ${action.id}:`, error);
-          // Always allow these actions even on error
-          return action.id === 'details' || action.id === 'build';
-        }
-      });
-      
-      console.log("Final filtered actions:", filtered.map(a => a.id));
-      
-      // Ensure we always have at least these two actions
-      if (!filtered.some(a => a.id === 'details')) {
-        filtered.push({id: 'details', label: 'Details', icon: Info});
-      }
-      if (!filtered.some(a => a.id === 'build')) {
-        filtered.push({id: 'build', label: 'Build', icon: Hammer});
-      }
-      
-      availableActions = filtered;
-    } catch (error) {
-      console.error("Error during action filtering:", error);
-      // Return fallback actions if something goes wrong
-      availableActions = [
-        {id: 'details', label: 'Details', icon: Info},
-        {id: 'build', label: 'Build', icon: Hammer}
-      ];
     }
   });
 
@@ -316,23 +63,12 @@
   // Calculate close button position
   const closePosition = $derived(calculatePosition(availableActions.length, totalItems));
 
-  // Fix the effect to log action generation when component opens
-  $effect(() => {
-    if (isOpen) {
-      // Use normal logging since availableActions is now a regular state array
-      console.log("Peek is open, available actions:", availableActions);
-      console.log("Total items (including close):", totalItems);
-    }
-  });
-
   function handleActionClick(actionId, event) {
-    // Prevent event from bubbling to parent elements (especially center tile)
+    // Prevent event from bubbling to parent elements
     if (event) {
       event.stopPropagation();
       event.preventDefault();
     }
-    
-    console.log('Peek action clicked:', actionId);
     
     // Special handling for details action
     if (actionId === 'details') {
@@ -349,7 +85,6 @@
       event.preventDefault();
     }
     
-    console.log('Show details clicked, calling onShowDetails');
     onShowDetails();
     onClose(); // Also close the peek view
   }
@@ -372,10 +107,8 @@
           onclick={(e) => handleActionClick(action.id, e)}
           transition:fly|local={{ delay: 50 * index, duration: 300, y: 20, opacity: 0 }}
         >
-          {#if typeof action.icon === 'function'}
-            <svelte:component this={action.icon(currentTileData)} extraClass="action-icon" />
-          {:else}
-            <svelte:component this={action.icon} extraClass="action-icon" />
+          {#if action.icon}
+            @html <action.icon />
           {/if}
           <span class="action-label">{action.label}</span>
         </button>
