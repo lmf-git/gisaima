@@ -1,5 +1,53 @@
 {
   "players": {
+    "0lWjEwolugVdi5PtsFfqWjcGSY73": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "Lucky Dwarf",
+          "id": "0lWjEwolugVdi5PtsFfqWjcGSY73",
+          "joined": 1745523481292,
+          "lastLocation": {
+            "timestamp": 1745523492947,
+            "x": -32,
+            "y": -10
+          },
+          "race": "dwarf"
+        }
+      }
+    },
+    "2IS3ZuqaZ9WMTTJigBDYXEc6Gwq2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "Elf Hater 3",
+          "id": "2IS3ZuqaZ9WMTTJigBDYXEc6Gwq2",
+          "joined": 1745519962455,
+          "lastLocation": {
+            "timestamp": 1745519968672,
+            "x": -32,
+            "y": -10
+          },
+          "race": "dwarf"
+        }
+      }
+    },
+    "3FeM8naopHdO98eKIbFu6b1QvO82": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "Elf Hater",
+          "id": "3FeM8naopHdO98eKIbFu6b1QvO82",
+          "joined": 1745519856499,
+          "lastLocation": {
+            "timestamp": 1745519861015,
+            "x": -32,
+            "y": -10
+          },
+          "race": "dwarf"
+        }
+      }
+    },
     "88NuPGQKeBSci21kTUznAeJ2IWF2": {
       "worlds": {
         "ancient-lands": {
@@ -49,6 +97,49 @@
         }
       }
     },
+    "Fsec3klBgbOgCMVDkHYM0CCxijg2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_attack": true,
+            "first_attack_date": 1745522074285,
+            "first_message": true,
+            "first_message_date": 1745518404597,
+            "first_steps": true,
+            "first_steps_date": 1745519162410,
+            "mobilised": true,
+            "mobilised_date": 1745522114137
+          },
+          "alive": true,
+          "displayName": "JimmyRigged",
+          "groups": {
+            "-OOd23OZjKBDoZt5B0E1": {
+              "at": "-30,-12",
+              "id": "-OOd23OZjKBDoZt5B0E1",
+              "status": "idle"
+            },
+            "-OOdDT4AuHhVSLmvPXy7": {
+              "at": "-30,-12",
+              "id": "-OOdDT4AuHhVSLmvPXy7",
+              "status": "idle"
+            }
+          },
+          "id": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "inGroup": "-OOdDT4AuHhVSLmvPXy7",
+          "joined": 1745518322353,
+          "lastLocation": {
+            "timestamp": 1745522765785,
+            "x": -30,
+            "y": -8
+          },
+          "lastMessage": {
+            "text": "You were defeated in battle.",
+            "timestamp": 1745522101916
+          },
+          "race": "elf"
+        }
+      }
+    },
     "JN5dIUjWnXO2dd2o4GaD7tdernI2": {
       "worlds": {
         "ancient-lands": {
@@ -62,6 +153,112 @@
             "y": -12
           },
           "race": "elf"
+        }
+      }
+    },
+    "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_attack": true,
+            "first_attack_date": 1745511598008,
+            "first_message": true,
+            "first_message_date": 1745511722420,
+            "mobilised": true,
+            "mobilised_date": 1745511647656
+          },
+          "alive": true,
+          "displayName": "gunsy",
+          "groups": {
+            "-OOc_zFbAQdz2dvemVnc": {
+              "at": "-18,-22",
+              "id": "-OOc_zFbAQdz2dvemVnc",
+              "status": "idle"
+            },
+            "-OOcaUtPgnl1DCAm0gIp": {
+              "at": "-18,-22",
+              "id": "-OOcaUtPgnl1DCAm0gIp",
+              "status": "idle"
+            }
+          },
+          "id": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
+          "inGroup": "-OOcaUtPgnl1DCAm0gIp",
+          "joined": 1745511381535,
+          "lastLocation": {
+            "x": -18,
+            "y": -22
+          },
+          "lastMessage": {
+            "text": "You were defeated in battle.",
+            "timestamp": 1745511602097
+          },
+          "race": "fairy"
+        }
+      }
+    },
+    "YI5zJA04mxUloRSfmMeXZ8n1Kpo2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_message": true,
+            "first_message_date": 1745518389878
+          },
+          "alive": true,
+          "displayName": "test",
+          "id": "YI5zJA04mxUloRSfmMeXZ8n1Kpo2",
+          "joined": 1745517356639,
+          "lastLocation": {
+            "timestamp": 1745517359820,
+            "x": -23,
+            "y": 5
+          },
+          "race": "human"
+        }
+      }
+    },
+    "aYgIjt4uhcc56HYTYQqtrOYqfRo2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "testdwarf",
+          "id": "aYgIjt4uhcc56HYTYQqtrOYqfRo2",
+          "joined": 1745522808957,
+          "lastLocation": {
+            "timestamp": 1745522812088,
+            "x": -32,
+            "y": -10
+          },
+          "race": "dwarf"
+        }
+      }
+    },
+    "dB97DhSkG1YppglcPG8jH1vKwYY2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_steps": true,
+            "first_steps_date": 1745520301842,
+            "mobilised": true,
+            "mobilised_date": 1745520089667
+          },
+          "alive": true,
+          "displayName": "Elf Hater 2",
+          "groups": {
+            "-OOd5hOld1qngoQkuU_H": {
+              "at": "-32,-10",
+              "id": "-OOd5hOld1qngoQkuU_H",
+              "status": "idle"
+            }
+          },
+          "id": "dB97DhSkG1YppglcPG8jH1vKwYY2",
+          "inGroup": "-OOd5hOld1qngoQkuU_H",
+          "joined": 1745519888368,
+          "lastLocation": {
+            "timestamp": 1745521921887,
+            "x": -19,
+            "y": -8
+          },
+          "race": "dwarf"
         }
       }
     },
@@ -110,7 +307,7 @@
         "ancient-lands": {
           "achievements": {
             "demobilizer": true,
-            "demobilizer_date": 1745492978052,
+            "demobilizer_date": 1745509670849,
             "first_message": true,
             "first_message_date": 1745492823831,
             "first_steps": true,
@@ -118,7 +315,7 @@
             "inspector": true,
             "inspector_date": 1745492906265,
             "mobilised": true,
-            "mobilised_date": 1745493324804
+            "mobilised_date": 1745511130230
           },
           "alive": true,
           "displayName": "test",
@@ -132,17 +329,50 @@
               "at": "-18,-22",
               "id": "-OObVb45PNyVC29YOPEe",
               "status": "idle"
+            },
+            "-OOcZX5kGe8Zujo09LiV": {
+              "at": "-18,-22",
+              "id": "-OOcZX5kGe8Zujo09LiV",
+              "status": "idle"
             }
           },
           "id": "oEHWacrKO0bJEZ2IrzF1DKDOO7t1",
-          "inGroup": "-OObVb45PNyVC29YOPEe",
+          "inGroup": "-OOcZX5kGe8Zujo09LiV",
           "joined": 1745489863892,
           "lastLocation": {
-            "timestamp": 1745498045288,
-            "x": -17,
+            "x": -18,
             "y": -22
           },
           "race": "fairy"
+        }
+      }
+    },
+    "poLOhsmgxsT75GYIz5H090CMT4L2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_message": true,
+            "first_message_date": 1745518493992,
+            "mobilised": true,
+            "mobilised_date": 1745518484394
+          },
+          "alive": true,
+          "displayName": "LMF",
+          "groups": {
+            "-OOd-_XyBTHvTVdcJQhj": {
+              "at": "-30,-12",
+              "id": "-OOd-_XyBTHvTVdcJQhj",
+              "status": "idle"
+            }
+          },
+          "id": "poLOhsmgxsT75GYIz5H090CMT4L2",
+          "inGroup": "-OOd-_XyBTHvTVdcJQhj",
+          "joined": 1745518464692,
+          "lastLocation": {
+            "x": -30,
+            "y": -12
+          },
+          "race": "elf"
         }
       }
     }
@@ -224,6 +454,301 @@
           "timestamp": 1745493324164,
           "type": "system"
         },
+        "-OOcZX8-jG4Y2sSdCUR1": {
+          "location": {
+            "x": -18,
+            "y": -22
+          },
+          "text": "test's Force is being mobilized at (-18,-22)",
+          "timestamp": 1745511129579,
+          "type": "system"
+        },
+        "-OOc_zHtEA-sxyxZJeqc": {
+          "location": {
+            "x": -18,
+            "y": -22
+          },
+          "text": "gunsy's Force is being mobilized at (-18,-22)",
+          "timestamp": 1745511511138,
+          "type": "system"
+        },
+        "-OOcaUvaD6jq__PAvuh_": {
+          "location": {
+            "x": -18,
+            "y": -22
+          },
+          "text": "gunsy's Force is being mobilized at (-18,-22)",
+          "timestamp": 1745511644821,
+          "type": "system"
+        },
+        "-OOcamEZPcgkVuoizXc3": {
+          "location": {
+            "x": -18,
+            "y": -22
+          },
+          "text": "henlo",
+          "timestamp": 1745511722066,
+          "type": "user",
+          "userId": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
+          "userName": "dharanisrivatsa"
+        },
+        "-OOd-DYksX_lS7iFQ4Gg": {
+          "location": {
+            "timestamp": 1745517359820,
+            "x": -23,
+            "y": 5
+          },
+          "text": "Hi Jimmy",
+          "timestamp": 1745518389592,
+          "type": "user",
+          "userId": "YI5zJA04mxUloRSfmMeXZ8n1Kpo2",
+          "userName": "Anonymous"
+        },
+        "-OOd-J_SNE0_jAO0_sJP": {
+          "location": {
+            "timestamp": 1745518327232,
+            "x": -30,
+            "y": -12
+          },
+          "text": "Hello",
+          "timestamp": 1745518404569,
+          "type": "user",
+          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "userName": "Anonymous"
+        },
+        "-OOd-L0fmK0PMz80oD2T": {
+          "location": {
+            "timestamp": 1745517359820,
+            "x": -23,
+            "y": 5
+          },
+          "text": "what did you spawn as",
+          "timestamp": 1745518420180,
+          "type": "user",
+          "userId": "YI5zJA04mxUloRSfmMeXZ8n1Kpo2",
+          "userName": "Anonymous"
+        },
+        "-OOd-ObeyCcWuSsKVroL": {
+          "location": {
+            "timestamp": 1745517359820,
+            "x": -23,
+            "y": 5
+          },
+          "text": "race",
+          "timestamp": 1745518434898,
+          "type": "user",
+          "userId": "YI5zJA04mxUloRSfmMeXZ8n1Kpo2",
+          "userName": "Anonymous"
+        },
+        "-OOd-PwvTO3Uv2jfUhs9": {
+          "location": {
+            "timestamp": 1745518327232,
+            "x": -30,
+            "y": -12
+          },
+          "text": "elf",
+          "timestamp": 1745518430647,
+          "type": "user",
+          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "userName": "Anonymous"
+        },
+        "-OOd-RvdvrDr0Pd8YkNw": {
+          "location": {
+            "timestamp": 1745517359820,
+            "x": -23,
+            "y": 5
+          },
+          "text": "1 sec",
+          "timestamp": 1745518448465,
+          "type": "user",
+          "userId": "YI5zJA04mxUloRSfmMeXZ8n1Kpo2",
+          "userName": "Anonymous"
+        },
+        "-OOd-U9g6VfQKe686iEx": {
+          "location": {
+            "timestamp": 1745518327232,
+            "x": -30,
+            "y": -12
+          },
+          "text": "how do i move around",
+          "timestamp": 1745518447911,
+          "type": "user",
+          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "userName": "Anonymous"
+        },
+        "-OOd-__16Q8y2q4wMHRK": {
+          "location": {
+            "x": -30,
+            "y": -12
+          },
+          "text": "LMF's Force is being mobilized at (-30,-12)",
+          "timestamp": 1745518483707,
+          "type": "system"
+        },
+        "-OOd-byoSB-Mi8dlRLJv": {
+          "location": {
+            "x": -30,
+            "y": -12
+          },
+          "text": "if you click on the spawn tile you are on",
+          "timestamp": 1745518493724,
+          "type": "user",
+          "userId": "poLOhsmgxsT75GYIz5H090CMT4L2",
+          "userName": "Anonymous"
+        },
+        "-OOd23S5LaPlS3C454Df": {
+          "location": {
+            "x": -30,
+            "y": -12
+          },
+          "text": "JimmyRigged's Force is being mobilized at (-30,-12)",
+          "timestamp": 1745519134370,
+          "type": "system"
+        },
+        "-OOd29T4cNhp20V32RSr": {
+          "location": {
+            "x": -30,
+            "y": -12
+          },
+          "text": "ok i mobilized myself",
+          "timestamp": 1745519149569,
+          "type": "user",
+          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "userName": "Anonymous"
+        },
+        "-OOd2L2zzU8KlfWFNGR3": {
+          "location": {
+            "x": -30,
+            "y": -12
+          },
+          "text": "yay ok im figuring it out",
+          "timestamp": 1745519197050,
+          "type": "user",
+          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "userName": "Anonymous"
+        },
+        "-OOd2Mpo2EGonbzis0vp": {
+          "location": {
+            "x": -30,
+            "y": -12
+          },
+          "text": "i plotted my journey",
+          "timestamp": 1745519204336,
+          "type": "user",
+          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "userName": "Anonymous"
+        },
+        "-OOd2TIDfhmbnkl0NjIe": {
+          "location": {
+            "x": -30,
+            "y": -12
+          },
+          "text": "that will take ages lol",
+          "timestamp": 1745519240463,
+          "type": "user",
+          "userId": "poLOhsmgxsT75GYIz5H090CMT4L2",
+          "userName": "Anonymous"
+        },
+        "-OOd2UXCDT3zKlG2XwYt": {
+          "location": {
+            "x": -30,
+            "y": -12
+          },
+          "text": "haha okay",
+          "timestamp": 1745519235849,
+          "type": "user",
+          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "userName": "Anonymous"
+        },
+        "-OOd2YlY0ayLUA6x0Bqs": {
+          "location": {
+            "x": -30,
+            "y": -12
+          },
+          "text": "I feel like the chat messages get disordered every so often",
+          "timestamp": 1745519262884,
+          "type": "user",
+          "userId": "poLOhsmgxsT75GYIz5H090CMT4L2",
+          "userName": "Anonymous"
+        },
+        "-OOd3zgSQ1-FbUjdAD9B": {
+          "location": {
+            "timestamp": 1745519581397,
+            "x": -26,
+            "y": -12
+          },
+          "text": "Yeah they do a little, I think its just from the time zones",
+          "timestamp": 1745519629721,
+          "type": "user",
+          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "userName": "Anonymous"
+        },
+        "-OOd47-T3A7ESSYCT6G-": {
+          "location": {
+            "timestamp": 1745519581397,
+            "x": -26,
+            "y": -12
+          },
+          "text": "I didn't travel very far so I'm about halfway to my destination",
+          "timestamp": 1745519663770,
+          "type": "user",
+          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "userName": "Anonymous"
+        },
+        "-OOd49rC1h9oN5WLVcYR": {
+          "location": {
+            "timestamp": 1745519581397,
+            "x": -26,
+            "y": -12
+          },
+          "text": "Pullin up @ the Dwarven Stronghold",
+          "timestamp": 1745519675465,
+          "type": "user",
+          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "userName": "Anonymous"
+        },
+        "-OOd5hRgTGVknpX5Mse7": {
+          "location": {
+            "x": -32,
+            "y": -10
+          },
+          "text": "Elf Hater 2's Force is being mobilized at (-32,-10)",
+          "timestamp": 1745520088747,
+          "type": "system"
+        },
+        "-OOd5wDy2BZ_kTxCH4JR": {
+          "location": {
+            "timestamp": 1745520061983,
+            "x": -23,
+            "y": -8
+          },
+          "text": "Not \"Elf Hater 2\" LOL",
+          "timestamp": 1745520139834,
+          "type": "user",
+          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "userName": "Anonymous"
+        },
+        "-OOdDK1s89dx0j4J7WOF": {
+          "location": {
+            "timestamp": 1745520781396,
+            "x": -19,
+            "y": -8
+          },
+          "text": "im attacking you",
+          "timestamp": 1745522076412,
+          "type": "user",
+          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "userName": "Anonymous"
+        },
+        "-OOdDT7iOID5IAoPy2NQ": {
+          "location": {
+            "x": -30,
+            "y": -12
+          },
+          "text": "JimmyRigged's Force is being mobilized at (-30,-12)",
+          "timestamp": 1745522123144,
+          "type": "system"
+        },
         "battle_1745484723001_battle_1745483648051_103": {
           "location": {
             "x": -23,
@@ -249,6 +774,24 @@
           },
           "text": "Battle at (-23, 5) has ended after 1 ticks! Victorious: test's Force Defeated: test2's Force (1 casualties) (1 items seized)",
           "timestamp": 1745486946112,
+          "type": "event"
+        },
+        "battle_1745511602097_battle_1745511595419_206": {
+          "location": {
+            "x": -18,
+            "y": -22
+          },
+          "text": "Battle at (-18, -22) has ended after 1 ticks! Victorious: test's Force Defeated: gunsy's Force (1 casualties)",
+          "timestamp": 1745511602097,
+          "type": "event"
+        },
+        "battle_1745522101915_battle_1745522083802_116": {
+          "location": {
+            "x": -19,
+            "y": -8
+          },
+          "text": "Battle at (-19, -8) has ended after 1 ticks! Victorious: Elf Hater 2's Force Defeated: JimmyRigged's Force (1 casualties) (1 items seized)",
+          "timestamp": 1745522101915,
           "type": "event"
         },
         "chat_1745483585619_25": {
@@ -335,6 +878,90 @@
           "userId": "oEHWacrKO0bJEZ2IrzF1DKDOO7t1",
           "userName": "test's Force"
         },
+        "chat_1745511181303_401": {
+          "location": {
+            "timestamp": 1745511181303,
+            "x": -18,
+            "y": -22
+          },
+          "text": "A lone fairy warrior has mobilized at (-18, -22) - \"test's Force\"",
+          "timestamp": 1745511181303,
+          "type": "event",
+          "userId": "oEHWacrKO0bJEZ2IrzF1DKDOO7t1",
+          "userName": "test's Force"
+        },
+        "chat_1745511541783_681": {
+          "location": {
+            "timestamp": 1745511541783,
+            "x": -18,
+            "y": -22
+          },
+          "text": "A lone fairy warrior has mobilized at (-18, -22) - \"gunsy's Force\"",
+          "timestamp": 1745511541783,
+          "type": "event",
+          "userId": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
+          "userName": "gunsy's Force"
+        },
+        "chat_1745511661288_580": {
+          "location": {
+            "timestamp": 1745511661288,
+            "x": -18,
+            "y": -22
+          },
+          "text": "A lone fairy warrior has mobilized at (-18, -22) - \"gunsy's Force\"",
+          "timestamp": 1745511661288,
+          "type": "event",
+          "userId": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
+          "userName": "gunsy's Force"
+        },
+        "chat_1745518500576_889": {
+          "location": {
+            "timestamp": 1745518500576,
+            "x": -30,
+            "y": -12
+          },
+          "text": "A lone elf warrior has mobilized at (-30, -12) - \"LMF's Force\"",
+          "timestamp": 1745518500576,
+          "type": "event",
+          "userId": "poLOhsmgxsT75GYIz5H090CMT4L2",
+          "userName": "LMF's Force"
+        },
+        "chat_1745519160655_132": {
+          "location": {
+            "timestamp": 1745519160655,
+            "x": -30,
+            "y": -12
+          },
+          "text": "A lone elf warrior has mobilized at (-30, -12) - \"JimmyRigged's Force\"",
+          "timestamp": 1745519160655,
+          "type": "event",
+          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "userName": "JimmyRigged's Force"
+        },
+        "chat_1745520125776_862": {
+          "location": {
+            "timestamp": 1745520125776,
+            "x": -32,
+            "y": -10
+          },
+          "text": "A lone dwarf warrior has mobilized at (-32, -10) - \"Elf Hater 2's Force\"",
+          "timestamp": 1745520125776,
+          "type": "event",
+          "userId": "dB97DhSkG1YppglcPG8jH1vKwYY2",
+          "userName": "Elf Hater 2's Force"
+        },
+        "chat_1745522161405_307": {
+          "location": {
+            "timestamp": 1745522161405,
+            "x": -30,
+            "y": -12
+          },
+          "text": "A lone elf warrior has mobilized at (-30, -12) - \"JimmyRigged's Force\"",
+          "timestamp": 1745522161405,
+          "type": "event",
+          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "userName": "JimmyRigged's Force"
+        },
         "death_1745484723002_fphA92tMTfRAu6FU6RDNJ33VQni1": {
           "location": {
             "x": -23,
@@ -360,6 +987,24 @@
           },
           "text": "Unknown player was defeated in battle at (-23, 5)",
           "timestamp": 1745486946113,
+          "type": "event"
+        },
+        "death_1745511602097_OsqXI7j9BFcfwSLt7MuPnV7PZFQ2": {
+          "location": {
+            "x": -18,
+            "y": -22
+          },
+          "text": "Unknown player was defeated in battle at (-18, -22)",
+          "timestamp": 1745511602097,
+          "type": "event"
+        },
+        "death_1745522101916_Fsec3klBgbOgCMVDkHYM0CCxijg2": {
+          "location": {
+            "x": -19,
+            "y": -8
+          },
+          "text": "Unknown player was defeated in battle at (-19, -8)",
+          "timestamp": 1745522101916,
           "type": "event"
         },
         "gather_1745486761904_-OOb4owT0OYyo524niqW": {
@@ -389,6 +1034,78 @@
           "timestamp": 1745498161574,
           "type": "event"
         },
+        "gather_1745503861745_-OObVb45PNyVC29YOPEe": {
+          "location": {
+            "x": -18,
+            "y": -22
+          },
+          "text": "test's Force gathered resources in plains biome at (-18, -22): 1 Wooden Sticks, 1 Stone Pieces",
+          "timestamp": 1745503861745,
+          "type": "event"
+        },
+        "gather_1745511721959_-OOcaUtPgnl1DCAm0gIp": {
+          "location": {
+            "x": -18,
+            "y": -22
+          },
+          "text": "gunsy's Force gathered resources in plains biome at (-18, -22): 3 Wooden Sticks",
+          "timestamp": 1745511721959,
+          "type": "event"
+        },
+        "gather_1745511841181_-OOcaUtPgnl1DCAm0gIp": {
+          "location": {
+            "x": -18,
+            "y": -22
+          },
+          "text": "gunsy's Force gathered resources in plains biome at (-18, -22): 5 Wooden Sticks",
+          "timestamp": 1745511841181,
+          "type": "event"
+        },
+        "gather_1745520242022_-OOd23OZjKBDoZt5B0E1": {
+          "location": {
+            "x": -23,
+            "y": -8
+          },
+          "text": "JimmyRigged's Force gathered resources in plains biome at (-23, -8): 2 Wooden Sticks",
+          "timestamp": 1745520242022,
+          "type": "event"
+        },
+        "gather_1745520360767_-OOd23OZjKBDoZt5B0E1": {
+          "location": {
+            "x": -23,
+            "y": -8
+          },
+          "text": "JimmyRigged's Force gathered resources in plains biome at (-23, -8): 4 Wooden Sticks",
+          "timestamp": 1745520360767,
+          "type": "event"
+        },
+        "gather_1745521621868_-OOd23OZjKBDoZt5B0E1": {
+          "location": {
+            "x": -19,
+            "y": -8
+          },
+          "text": "JimmyRigged's Force gathered resources in plains biome at (-19, -8): 2 Wooden Sticks",
+          "timestamp": 1745521621868,
+          "type": "event"
+        },
+        "gather_1745522945724_-OOdDT4AuHhVSLmvPXy7": {
+          "location": {
+            "x": -30,
+            "y": -8
+          },
+          "text": "JimmyRigged's Force gathered resources in plains biome at (-30, -8): 5 Wooden Sticks",
+          "timestamp": 1745522945724,
+          "type": "event"
+        },
+        "gather_1745523301282_-OOdDT4AuHhVSLmvPXy7": {
+          "location": {
+            "x": -30,
+            "y": -8
+          },
+          "text": "JimmyRigged's Force gathered resources in plains biome at (-30, -8): 2 Wooden Sticks, 3 Stone Pieces",
+          "timestamp": 1745523301282,
+          "type": "event"
+        },
         "move_1745498045288_-OObVb45PNyVC29YOPEe_1": {
           "location": {
             "x": -17,
@@ -397,10 +1114,210 @@
           "text": "test's Force has arrived at (-17,-22)",
           "timestamp": 1745498045288,
           "type": "event"
+        },
+        "move_1745503801302_-OObVb45PNyVC29YOPEe_1": {
+          "location": {
+            "x": -18,
+            "y": -22
+          },
+          "text": "test's Force has arrived at (-18,-22)",
+          "timestamp": 1745503801302,
+          "type": "event"
+        },
+        "move_1745519466051_-OOd23OZjKBDoZt5B0E1_3": {
+          "location": {
+            "x": -27,
+            "y": -12
+          },
+          "text": "JimmyRigged's Force has arrived at (-27,-12) and continues their journey",
+          "timestamp": 1745519466051,
+          "type": "event"
+        },
+        "move_1745519821082_-OOd23OZjKBDoZt5B0E1_6": {
+          "location": {
+            "x": -25,
+            "y": -10
+          },
+          "text": "JimmyRigged's Force has arrived at (-25,-10) and continues their journey",
+          "timestamp": 1745519821082,
+          "type": "event"
+        },
+        "move_1745520061983_-OOd23OZjKBDoZt5B0E1_9": {
+          "location": {
+            "x": -23,
+            "y": -8
+          },
+          "text": "JimmyRigged's Force has arrived at (-23,-8)",
+          "timestamp": 1745520061983,
+          "type": "event"
+        },
+        "move_1745520661933_-OOd23OZjKBDoZt5B0E1_3": {
+          "location": {
+            "x": -20,
+            "y": -8
+          },
+          "text": "JimmyRigged's Force has arrived at (-20,-8) and continues their journey",
+          "timestamp": 1745520661933,
+          "type": "event"
+        },
+        "move_1745520661933_-OOd5hOld1qngoQkuU_H_3": {
+          "location": {
+            "x": -29,
+            "y": -10
+          },
+          "text": "Elf Hater 2's Force has arrived at (-29,-10) and continues their journey",
+          "timestamp": 1745520661933,
+          "type": "event"
+        },
+        "move_1745520781396_-OOd23OZjKBDoZt5B0E1_4": {
+          "location": {
+            "x": -19,
+            "y": -8
+          },
+          "text": "JimmyRigged's Force has arrived at (-19,-8)",
+          "timestamp": 1745520781396,
+          "type": "event"
+        },
+        "move_1745520905859_-OOd5hOld1qngoQkuU_H_5": {
+          "location": {
+            "x": -27,
+            "y": -10
+          },
+          "text": "Elf Hater 2's Force has arrived at (-27,-10)",
+          "timestamp": 1745520905859,
+          "type": "event"
+        },
+        "move_1745521385142_-OOd5hOld1qngoQkuU_H_3": {
+          "location": {
+            "x": -24,
+            "y": -9
+          },
+          "text": "Elf Hater 2's Force has arrived at (-24,-9) and continues their journey",
+          "timestamp": 1745521385142,
+          "type": "event"
+        },
+        "move_1745521741248_-OOd5hOld1qngoQkuU_H_6": {
+          "location": {
+            "x": -21,
+            "y": -9
+          },
+          "text": "Elf Hater 2's Force has arrived at (-21,-9) and continues their journey",
+          "timestamp": 1745521741248,
+          "type": "event"
+        },
+        "move_1745521921887_-OOd5hOld1qngoQkuU_H_8": {
+          "location": {
+            "x": -19,
+            "y": -8
+          },
+          "text": "Elf Hater 2's Force has arrived at (-19,-8)",
+          "timestamp": 1745521921887,
+          "type": "event"
+        },
+        "move_1745522702019_-OOdDT4AuHhVSLmvPXy7_3": {
+          "location": {
+            "x": -30,
+            "y": -9
+          },
+          "text": "JimmyRigged's Force has arrived at (-30,-9) and continues their journey",
+          "timestamp": 1745522702019,
+          "type": "event"
+        },
+        "move_1745522765785_-OOdDT4AuHhVSLmvPXy7_4": {
+          "location": {
+            "x": -30,
+            "y": -8
+          },
+          "text": "JimmyRigged's Force has arrived at (-30,-8)",
+          "timestamp": 1745522765785,
+          "type": "event"
         }
       },
       "chunks": {
         "-1,-1": {
+          "-19,-8": {
+            "groups": {
+              "-OOd5hOld1qngoQkuU_H": {
+                "createdAt": 1745520088747,
+                "id": "-OOd5hOld1qngoQkuU_H",
+                "inBattle": false,
+                "items": [
+                  {
+                    "id": "item_1745520242411_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 8,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Victory in battle! All units survived the battle.",
+                  "timestamp": 1745522101916
+                },
+                "lastUpdated": 1745521921887,
+                "moveSpeed": 1,
+                "moveStarted": 1745521063451,
+                "movementPath": [
+                  {
+                    "x": -27,
+                    "y": -10
+                  },
+                  {
+                    "x": -26,
+                    "y": -10
+                  },
+                  {
+                    "x": -25,
+                    "y": -10
+                  },
+                  {
+                    "x": -24,
+                    "y": -9
+                  },
+                  {
+                    "x": -23,
+                    "y": -9
+                  },
+                  {
+                    "x": -22,
+                    "y": -9
+                  },
+                  {
+                    "x": -21,
+                    "y": -9
+                  },
+                  {
+                    "x": -20,
+                    "y": -8
+                  },
+                  {
+                    "x": -19,
+                    "y": -8
+                  }
+                ],
+                "name": "Elf Hater 2's Force",
+                "nextMoveTime": 1745521981887,
+                "owner": "dB97DhSkG1YppglcPG8jH1vKwYY2",
+                "pathIndex": 8,
+                "race": "dwarf",
+                "status": "idle",
+                "targetX": -19,
+                "targetY": -8,
+                "unitCount": 1,
+                "units": {
+                  "dB97DhSkG1YppglcPG8jH1vKwYY2": {
+                    "displayName": "Elf Hater 2",
+                    "id": "dB97DhSkG1YppglcPG8jH1vKwYY2",
+                    "lastActive": 1745519895179,
+                    "race": "dwarf",
+                    "type": "player"
+                  }
+                },
+                "x": -19,
+                "y": -8
+              }
+            }
+          },
           "-23,-8": {
             "structure": {
               "capacity": 60,
@@ -451,71 +1368,88 @@
           }
         },
         "-1,-2": {
-          "-17,-22": {
+          "-18,-22": {
             "groups": {
-              "-OObVb45PNyVC29YOPEe": {
-                "createdAt": 1745493324164,
-                "id": "-OObVb45PNyVC29YOPEe",
-                "items": [
-                  {
-                    "id": "item_1745498162469_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "item_1745498162469_2",
-                    "name": "Stone Pieces",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
+              "-OOcZX5kGe8Zujo09LiV": {
+                "createdAt": 1745511129579,
+                "id": "-OOcZX5kGe8Zujo09LiV",
+                "inBattle": false,
                 "lastMessage": {
-                  "text": "Gathered 2 items",
-                  "timestamp": 1745498161574
+                  "text": "Victory in battle! All units survived the battle.",
+                  "timestamp": 1745511602098
                 },
-                "lastUpdated": 1745498161574,
-                "moveSpeed": 1,
-                "moveStarted": 1745497968545,
-                "movementPath": [
-                  {
-                    "x": -18,
-                    "y": -22
-                  },
-                  {
-                    "x": -17,
-                    "y": -22
-                  }
-                ],
+                "lastUpdated": 1745511181303,
                 "name": "test's Force",
-                "nextMoveTime": 1745498105288,
                 "owner": "oEHWacrKO0bJEZ2IrzF1DKDOO7t1",
-                "pathIndex": 1,
                 "race": "fairy",
                 "status": "idle",
-                "targetX": -17,
-                "targetY": -22,
                 "unitCount": 1,
                 "units": {
                   "oEHWacrKO0bJEZ2IrzF1DKDOO7t1": {
                     "displayName": "test",
                     "id": "oEHWacrKO0bJEZ2IrzF1DKDOO7t1",
-                    "lastActive": 1745493001309,
+                    "lastActive": 1745509681548,
                     "race": "fairy",
                     "type": "player"
                   }
                 },
-                "x": -17,
+                "x": -18,
+                "y": -22
+              },
+              "-OOcaUtPgnl1DCAm0gIp": {
+                "createdAt": 1745511644821,
+                "id": "-OOcaUtPgnl1DCAm0gIp",
+                "items": [
+                  {
+                    "id": "item_1745511722340_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 8,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Gathered 1 item",
+                  "timestamp": 1745511841181
+                },
+                "lastUpdated": 1745511841181,
+                "name": "gunsy's Force",
+                "owner": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
+                "race": "fairy",
+                "status": "idle",
+                "unitCount": 1,
+                "units": {
+                  "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2": {
+                    "displayName": "gunsy",
+                    "id": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
+                    "lastActive": 1745511607025,
+                    "race": "fairy",
+                    "type": "player"
+                  }
+                },
+                "x": -18,
                 "y": -22
               }
-            }
-          },
-          "-18,-22": {
+            },
             "structure": {
               "description": "A fairy settlement where the ancient spirits still speak",
               "id": "structure_al_fairy_spawn",
+              "items": [
+                {
+                  "id": "item_1745498162469_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 3,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745498162469_2",
+                  "name": "Stone Pieces",
+                  "quantity": 3,
+                  "rarity": "common",
+                  "type": "resource"
+                }
+              ],
               "name": "Whisperwind Circle",
               "race": "fairy",
               "type": "spawn"
@@ -544,6 +1478,33 @@
         },
         "-2,-1": {
           "-30,-12": {
+            "groups": {
+              "-OOd-_XyBTHvTVdcJQhj": {
+                "createdAt": 1745518483707,
+                "id": "-OOd-_XyBTHvTVdcJQhj",
+                "lastMessage": {
+                  "text": "Group is fully mobilized and ready",
+                  "timestamp": 1745518500576
+                },
+                "lastUpdated": 1745518500576,
+                "name": "LMF's Force",
+                "owner": "poLOhsmgxsT75GYIz5H090CMT4L2",
+                "race": "elf",
+                "status": "idle",
+                "unitCount": 1,
+                "units": {
+                  "poLOhsmgxsT75GYIz5H090CMT4L2": {
+                    "displayName": "LMF",
+                    "id": "poLOhsmgxsT75GYIz5H090CMT4L2",
+                    "lastActive": 1745518467461,
+                    "race": "elf",
+                    "type": "player"
+                  }
+                },
+                "x": -30,
+                "y": -12
+              }
+            },
             "players": {
               "JN5dIUjWnXO2dd2o4GaD7tdernI2": {
                 "displayName": "gewgaw",
@@ -560,14 +1521,118 @@
               "type": "spawn"
             }
           },
+          "-30,-8": {
+            "groups": {
+              "-OOdDT4AuHhVSLmvPXy7": {
+                "createdAt": 1745522123144,
+                "id": "-OOdDT4AuHhVSLmvPXy7",
+                "items": [
+                  {
+                    "id": "item_1745522946117_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 7,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1745523301675_2",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Gathered 2 items",
+                  "timestamp": 1745523301282
+                },
+                "lastUpdated": 1745523301282,
+                "moveSpeed": 1,
+                "moveStarted": 1745522409413,
+                "movementPath": [
+                  {
+                    "x": -30,
+                    "y": -12
+                  },
+                  {
+                    "x": -30,
+                    "y": -11
+                  },
+                  {
+                    "x": -30,
+                    "y": -10
+                  },
+                  {
+                    "x": -30,
+                    "y": -9
+                  },
+                  {
+                    "x": -30,
+                    "y": -8
+                  }
+                ],
+                "name": "JimmyRigged's Force",
+                "nextMoveTime": 1745522825785,
+                "owner": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+                "pathIndex": 4,
+                "race": "elf",
+                "status": "idle",
+                "targetX": -30,
+                "targetY": -8,
+                "unitCount": 1,
+                "units": {
+                  "Fsec3klBgbOgCMVDkHYM0CCxijg2": {
+                    "displayName": "JimmyRigged",
+                    "id": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+                    "lastActive": 1745522094498,
+                    "race": "elf",
+                    "type": "player"
+                  }
+                },
+                "x": -30,
+                "y": -8
+              }
+            }
+          },
           "-32,-10": {
             "players": {
+              "0lWjEwolugVdi5PtsFfqWjcGSY73": {
+                "displayName": "Lucky Dwarf",
+                "id": "0lWjEwolugVdi5PtsFfqWjcGSY73",
+                "lastActive": 1745523493217,
+                "race": "dwarf"
+              },
+              "2IS3ZuqaZ9WMTTJigBDYXEc6Gwq2": {
+                "displayName": "Elf Hater 3",
+                "id": "2IS3ZuqaZ9WMTTJigBDYXEc6Gwq2",
+                "lastActive": 1745519968930,
+                "race": "dwarf"
+              },
+              "3FeM8naopHdO98eKIbFu6b1QvO82": {
+                "displayName": "Elf Hater",
+                "id": "3FeM8naopHdO98eKIbFu6b1QvO82",
+                "lastActive": 1745519861277,
+                "race": "dwarf"
+              },
               "88NuPGQKeBSci21kTUznAeJ2IWF2": {
                 "displayName": "Billbobollocks",
                 "id": "88NuPGQKeBSci21kTUznAeJ2IWF2",
                 "lastActive": 1745487878622,
                 "race": "dwarf"
+              },
+              "aYgIjt4uhcc56HYTYQqtrOYqfRo2": {
+                "displayName": "testdwarf",
+                "id": "aYgIjt4uhcc56HYTYQqtrOYqfRo2",
+                "lastActive": 1745522812339,
+                "race": "dwarf"
               }
+            },
+            "structure": {
+              "description": "The ancestral mountain home of the dwarf clans",
+              "id": "structure_al_dwarf_spawn",
+              "name": "Deepforge Stronghold",
+              "race": "dwarf",
+              "type": "spawn"
             }
           }
         },
@@ -618,6 +1683,12 @@
               }
             },
             "players": {
+              "YI5zJA04mxUloRSfmMeXZ8n1Kpo2": {
+                "displayName": "test",
+                "id": "YI5zJA04mxUloRSfmMeXZ8n1Kpo2",
+                "lastActive": 1745517360101,
+                "race": "human"
+              },
               "fphA92tMTfRAu6FU6RDNJ33VQni1": {
                 "displayName": "test2",
                 "id": "fphA92tMTfRAu6FU6RDNJ33VQni1",
@@ -665,7 +1736,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745498221754,
+        "lastTick": 1745523721600,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",
