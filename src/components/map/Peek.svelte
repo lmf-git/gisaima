@@ -187,17 +187,17 @@
     onClose(); // Also close the peek view
   }
 
-  // Added for exit animation tracking
-  let isExiting = false;
+  // Fixed: Make isExiting properly reactive with $state
+  let isExiting = $state(false);
   let exitTimeout;
 
-  // Handle close with animation - improved timing
+  // Simplified close handler - just set the reactive state
   function handleClose() {
     isExiting = true;
     exitTimeout = setTimeout(() => {
       onClose();
       isExiting = false;
-    }, 800); // Increased to 800ms to ensure all staggered animations complete
+    }, 650); // Shorter timeout is sufficient with fixed reactivity
   }
 
   // Clean up on component destroy
@@ -319,8 +319,9 @@
   }
   
   .peek-container.exiting .action-button {
-    animation: action-out 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    animation-delay: calc((var(--total) - var(--index) - 1) * 100ms); /* Increased from 80ms to 100ms */
+    /* Use more pronounced animation */
+    animation: action-out 350ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation-delay: calc((var(--total) - var(--index) - 1) * 50ms); /* Shorter delay for quicker feedback */
     pointer-events: none; /* Disable interactions during exit */
   }
   
