@@ -1095,9 +1095,9 @@
               </div>
             {/if}
 
-            <!-- Add target indicator for center tile -->
-            {#if cell.isCenter && $ready}
-              <div class="target-indicator"></div>
+            <!-- Change target indicator to highlight indicator that shows on highlighted tiles -->
+            {#if cell.highlighted && $ready}
+              <div class="highlight-indicator"></div>
             {/if}
 
             <!-- Add structure name display -->
@@ -1825,8 +1825,8 @@
     pointer-events: none;
   }
 
-  /* Add target indicator styling */
-  .target-indicator {
+  /* Rename target-indicator to highlight-indicator and update animation name */
+  .highlight-indicator {
     position: absolute;
     width: 0.8em;
     height: 0.8em;
@@ -1839,10 +1839,10 @@
                 0 0 20px rgba(255, 255, 255, 0.3);
     z-index: 5;
     pointer-events: none;
-    animation: pulse-target 2s infinite ease-in-out;
+    animation: pulse-highlight 2s infinite ease-in-out;
   }
   
-  @keyframes pulse-target {
+  @keyframes pulse-highlight {
     0% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.9); }
     50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
     100% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.9); }
