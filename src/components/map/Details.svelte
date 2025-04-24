@@ -1682,8 +1682,8 @@
   
   
   :global(.race-icon-details) {
-    width: 1.8em;  /* Increased from 1.4em */
-    height: 1.8em;  /* Increased from 1.4em */
+    width: 1.4em;
+    height: 1.4em;
     opacity: 0.85;
     fill: rgba(0, 0, 0, 0.7);
   }
@@ -1751,6 +1751,7 @@
     align-items: center;
     flex: 1;
     min-width: 0;
+    gap: 1em; /* Add 1em gap between icon and content */
   }
   
   .entity-info {
@@ -2059,6 +2060,7 @@
     align-items: center;
     flex: 1;
     min-width: 0;
+    gap: 1em; /* Add 1em gap between icon and content */
   }
   
   .entity-info {
@@ -2367,6 +2369,7 @@
     align-items: center;
     flex: 1;
     min-width: 0;
+    gap: 1em; /* Add 1em gap between icon and content */
   }
   
   .entity-info {
