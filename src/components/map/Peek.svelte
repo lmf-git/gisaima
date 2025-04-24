@@ -77,7 +77,7 @@
         <!-- Update the button onclick handler to pass the event -->
         <button 
           class="action-button {action.id}-button" 
-          style="transform: translate({position.x}em, {position.y}em);"
+          style="--x: {position.x}em; --y: {position.y}em;"
           onclick={(event) => handleActionClick(action.id, event)}
           aria-label={action.label}
           transition:fly|local={{ delay: 50 * index, duration: 300, y: 20, opacity: 0 }}
@@ -92,7 +92,7 @@
       <!-- Close button -->
       <button 
         class="action-button close-button" 
-        style="transform: translate({closePosition.x}em, {closePosition.y}em);"
+        style="--x: {closePosition.x}em; --y: {closePosition.y}em;"
         onclick={onClose}
         aria-label="Close menu"
         transition:fly|local={{ delay: 50 * availableActions.length, duration: 300, y: 20, opacity: 0 }}
@@ -133,20 +133,23 @@
     justify-content: center;
     padding: 0.6em;
     border-radius: 50%;
-    width: 4.5em;  /* Increased from 4em */
-    height: 4.5em; /* Increased from 4em */
-    background-color: rgba(255, 255, 255, 0.95); /* Increased opacity */
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35); /* Enhanced shadow */
+    width: 4.5em;
+    height: 4.5em;
+    background-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
     cursor: pointer;
     transition: all 0.2s ease;
-    border: 3px solid rgba(255, 255, 255, 0.8); /* Thicker more visible border */
+    border: 3px solid rgba(255, 255, 255, 0.8);
     pointer-events: auto;
     font-family: var(--font-body);
+    /* Apply consistent transform for proper centering */
+    transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em)));
   }
   
   .action-button:hover {
+    /* Keep the centering transform and just add scale */
     transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em))) scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* Enhanced hover shadow */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   }
   
   .action-label {
