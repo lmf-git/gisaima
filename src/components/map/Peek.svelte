@@ -1,6 +1,9 @@
 <script>
   import { fly, scale } from 'svelte/transition';
   import { elasticOut } from 'svelte/easing';
+  import { get } from 'svelte/store';
+  import { currentPlayer } from '../../lib/stores/game.js';
+  import { targetStore, highlightedStore } from '../../lib/stores/map.js';
   import Close from '../icons/Close.svelte';
   import Eye from '../icons/Eye.svelte';
   import Rally from '../icons/Rally.svelte';
@@ -9,27 +12,205 @@
   import Hammer from '../icons/Hammer.svelte';
   import Crop from '../icons/Crop.svelte';
   import Structure from '../icons/Structure.svelte';
+  import Torch from '../icons/Torch.svelte';
+  import Info from '../icons/Info.svelte';
 
   // Props with improved defaults using runes
   const { 
     onClose = () => {},
     onAction = () => {},
+    onShowDetails = () => {}, // Prop to handle opening details view
     isOpen = false,
     actions = [],
     tileData = null
   } = $props();
 
-  // Use derived values for action rendering logic
-  // Default actions if none provided
-  const availableActions = $derived(actions.length > 0 ? actions : [
-    { id: 'inspect', label: 'Inspect', icon: Eye },
-    { id: 'mobilise', label: 'Mobilise', icon: Rally },
-    { id: 'move', label: 'Move', icon: Compass },
-    { id: 'attack', label: 'Attack', icon: Attack },
-    { id: 'build', label: 'Build', icon: Hammer },
-    { id: 'gather', label: 'Gather', icon: Crop },
-    { id: 'demobilise', label: 'Demobilise', icon: Structure }
-  ]);
+  // More direct way to get current tile data - prioritize tileData prop, fallback to targetStore
+  const currentTileData = $derived(tileData || $targetStore || null);
+  
+  // Add direct debug logging every time the component opens
+  $effect(() => {
+    if (isOpen && currentTileData) {
+      console.log("Peek opened with currentTileData:", currentTileData);
+      console.log("Current player:", $currentPlayer);
+      
+      if (currentTileData.groups && currentTileData.groups.length > 0) {
+        console.log("Groups on tile:", currentTileData.groups.length);
+        currentTileData.groups.forEach(group => {
+          console.log(`Group ${group.id}: owner=${group.owner}, current player id=${$currentPlayer?.id}, equal=${group.owner === $currentPlayer?.id}, status=${group.status}, inBattle=${group.inBattle}`);
+        });
+      } else {
+        console.log("No groups on this tile");
+      }
+    }
+  });
+
+  // SIMPLIFIED CONDITION FUNCTIONS
+  
+  function canMobilize(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Check if player is on the tile
+    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
+    
+    // Check if player is not already in a mobilizing/demobilising group
+    const inProcessGroup = tile.groups?.some(g => 
+      (g.status === 'mobilizing' || g.status === 'demobilising') && 
+      g.owner === $currentPlayer.id
+    );
+    
+    const result = playerOnTile && !inProcessGroup;
+    console.log(`canMobilize: ${result}`);
+    return result;
+  }
+  
+  function canDemobilize(tile) {
+    if (!tile || !$currentPlayer || !tile.structure) return false;
+    
+    // Check if there are any player-owned groups that are idle
+    const result = tile.groups?.some(g => 
+      g.owner === $currentPlayer.id && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+    
+    console.log(`canDemobilize: ${result}`);
+    return result;
+  }
+
+  function canBuild(tile) {
+    // Always allow build for now
+    return true;
+  }
+  
+  function canMove(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    if (!tile.groups || !Array.isArray(tile.groups) || tile.groups.length === 0) {
+      console.log("canMove: false (no groups)");
+      return false;
+    }
+    
+    // Simple direct check for player owned idle groups
+    const hasIdleGroups = tile.groups.some(g => 
+      g.owner === $currentPlayer.id && 
+      g.status === 'idle' && 
+      !g.inBattle
+    );
+    
+    console.log(`canMove: ${hasIdleGroups}`);
+    return hasIdleGroups;
+  }
+  
+  function canAttack(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Check if there are any player-owned groups that are idle
+    const playerGroups = tile.groups?.filter(g => 
+      g.owner === $currentPlayer.id && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+    
+    // Check if there are any enemy groups on the tile
+    const enemyGroups = tile.groups?.filter(g => 
+      g.owner !== $currentPlayer.id && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+    
+    const result = playerGroups?.length > 0 && enemyGroups?.length > 0;
+    console.log(`canAttack: ${result}`);
+    return result;
+  }
+  
+  function canGather(tile) {
+    if (!tile || !$currentPlayer) {
+      console.log("canGather: false (no tile or player)");
+      return false;
+    }
+    
+    // Check if there are items to gather
+    if (!tile.items || !tile.items.length) {
+      console.log("canGather: false (no items)");
+      return false;
+    }
+    
+    // Check if player has idle groups
+    const hasIdleGroups = tile.groups?.some(g => 
+      g.owner === $currentPlayer.id && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+    
+    console.log(`canGather: ${hasIdleGroups}`);
+    return hasIdleGroups;
+  }
+  
+  function canJoinBattle(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Check if there's battle and player has idle groups
+    const result = tile.battles?.length > 0 &&
+                  tile.groups?.some(g => 
+                    g.owner === $currentPlayer.id && 
+                    g.status === 'idle' &&
+                    !g.inBattle
+                  );
+    
+    console.log(`canJoinBattle: ${result}`);
+    return result;
+  }
+
+  // Define actions with their conditions
+  // Always show the details button
+  const allPossibleActions = [
+    { id: 'details', label: 'Details', icon: Info, condition: () => true },
+    { id: 'inspect', label: 'Inspect', icon: Eye, condition: tile => tile?.structure },
+    { id: 'mobilise', label: 'Mobilise', icon: Rally, condition: canMobilize },
+    { id: 'move', label: 'Move', icon: Compass, condition: canMove },
+    { id: 'attack', label: 'Attack', icon: Attack, condition: canAttack },
+    { id: 'build', label: 'Build', icon: Hammer, condition: canBuild },
+    { id: 'gather', label: 'Gather', icon: Crop, condition: canGather },
+    { id: 'joinBattle', label: 'Join Battle', icon: Attack, condition: canJoinBattle },
+    { 
+      id: 'demobilise', 
+      label: 'Demobilise', 
+      icon: tile => tile?.structure?.type === 'spawn' ? Torch : Structure, 
+      condition: canDemobilize 
+    }
+  ];
+
+  // Filter actions based on provided actions or the conditions applied to tileData
+  const availableActions = $derived(() => {
+    // If explicit actions are provided, use those
+    if (actions.length > 0) return actions;
+    
+    // Otherwise filter based on conditions
+    if (!currentTileData) return [];
+    
+    console.log("Filtering actions with currentTileData:", currentTileData);
+    
+    const filtered = allPossibleActions.filter(action => {
+      try {
+        const conditionMet = action.condition(currentTileData);
+        console.log(`Action ${action.id}: condition met = ${conditionMet}`);
+        
+        // Handle dynamic icon (for demobilise action)
+        if (conditionMet && typeof action.icon === 'function') {
+          action.iconComponent = action.icon(currentTileData);
+        }
+        
+        return conditionMet;
+      } catch (error) {
+        console.error(`Error evaluating condition for ${action.id}:`, error);
+        return false;
+      }
+    });
+    
+    console.log("Final filtered actions:", filtered.map(a => a.id));
+    return filtered;
+  });
 
   // Include close button as part of the circle
   const totalItems = $derived(availableActions.length + 1); // +1 for close button
@@ -57,9 +238,25 @@
     }
     
     console.log('Peek action clicked:', actionId);
-    onAction(actionId);
     
-    // Don't call onClose() here - let the parent component control this
+    // Special handling for details action
+    if (actionId === 'details') {
+      handleShowDetails(event);
+      return;
+    }
+    
+    onAction(actionId);
+  }
+  
+  function handleShowDetails(event) {
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    
+    console.log('Show details clicked, calling onShowDetails');
+    onShowDetails();
+    onClose(); // Also close the peek view
   }
 </script>
 
@@ -74,7 +271,6 @@
       <!-- Actions in a circle -->
       {#each availableActions as action, index}
         {@const position = calculatePosition(index, totalItems)}
-        <!-- Update the button onclick handler to pass the event -->
         <button 
           class="action-button {action.id}-button" 
           style="--x: {position.x}em; --y: {position.y}em;"
@@ -82,7 +278,9 @@
           aria-label={action.label}
           transition:fly|local={{ delay: 50 * index, duration: 300, y: 20, opacity: 0 }}
         >
-        {#if action.icon}
+        {#if action.iconComponent}
+          <action.iconComponent class="action-icon" />
+        {:else if action.icon}
           <action.icon class="action-icon" />
         {/if}
           <span class="action-label">{action.label}</span>
@@ -98,6 +296,7 @@
         transition:fly|local={{ delay: 50 * availableActions.length, duration: 300, y: 20, opacity: 0 }}
       >
         <Close extraClass="action-icon close-icon" />
+        <span class="action-label">Close</span>
       </button>
     </div>
   </div>
@@ -195,7 +394,7 @@
   
   /* Style different action types with better contrast colors */
   .inspect-button {
-    background-color: rgba(33, 150, 243, 0.65); /* Higher opacity for better contrast with white */
+    background-color: rgba(33, 150, 243, 0.65);
     border-color: rgba(33, 150, 243, 0.85);
     color: white;
   }
@@ -242,6 +441,12 @@
     color: white;
   }
   
+  .details-button {
+    background-color: rgba(90, 200, 250, 0.65);
+    border-color: rgba(90, 200, 250, 0.85);
+    color: white;
+  }
+  
   /* Specific hover effects for each button type */
   .inspect-button:hover {
     background-color: rgba(33, 150, 243, 0.8);
@@ -273,5 +478,9 @@
   
   .close-button:hover {
     background-color: rgba(117, 117, 117, 0.8);
+  }
+  
+  .details-button:hover {
+    background-color: rgba(90, 200, 250, 0.8);
   }
 </style>
