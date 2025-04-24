@@ -15,18 +15,21 @@
   import Torch from '../icons/Torch.svelte';
   import Info from '../icons/Info.svelte';
 
-  // Use the correct Svelte 5 runes props syntax
+  // Define props correctly with Svelte 5 runes
+  // const props = $props();
+  
+  // Access props safely using default values pattern
   const {
-    onClose =  () => {},
-    onAction =  () => {},
-    onShowDetails =  () => {},
-    isOpen =  false,
-    actions =  [],
-    tileData =  null
+    onClose = (() => {}),
+    onAction = (() => {}),
+    onShowDetails = (() => {}),
+    isOpen = false,
+    actions = [],
+    tileData = null
   } = $props();
   
-  // Access props using propName
-  const currentTileData = $derived( $targetStore || null);
+  // Access tileData prop for currentTileData calculation
+  const currentTileData = $derived(tileData || $targetStore || null);
   
   // Add direct debug logging every time the component opens
   $effect(() => {
