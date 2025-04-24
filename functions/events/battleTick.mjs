@@ -346,7 +346,6 @@ function processBattleAttrition(battle, tileData) {
   const powerRatio = side1Power / side2Power;
   
   // Calculate base casualty rates for each side with more dynamic scaling
-  // Higher casualty rates for more balanced battles
   let baseSide1CasualtyRate, baseSide2CasualtyRate;
   
   // If one side overwhelmingly overpowers the other (100x or more), they take no casualties
@@ -375,24 +374,35 @@ function processBattleAttrition(battle, tileData) {
     }
   }
   
-  // Adjust for battle scale - larger battles should have higher overall casualty rates
-  // to ensure they don't drag on too long
+  // Calculate battle size - now using a simple reversed logarithmic scale
+  // Larger battles will have proportionally lower casualty rates
   const totalUnits = side1Power + side2Power;
-  const scaleFactor = 1 + (Math.log10(Math.max(10, totalUnits)) / 5); // Scale up by up to 70% for very large battles
   
-  // Apply scale factor and add some randomness, but maintain minimum casualty rate
+  // Simple inverse relationship - as battle size increases, scale factor decreases
+  // For 10 units: ~1.0 scale factor
+  // For 100 units: ~0.67 scale factor
+  // For 1000 units: ~0.43 scale factor
+  // For 10000 units: ~0.29 scale factor
+  const battleSizeScaleFactor = Math.max(0.1, 1.0 / Math.pow(Math.log10(Math.max(10, totalUnits)), 0.7));
+  
+  // Apply size scale factor and add some randomness, but maintain minimum casualty rates
   const side1CasualtyRate = Math.max(
-    baseSide1CasualtyRate * scaleFactor * (0.8 + Math.random() * 0.4), // ±20% variance
-    baseSide1CasualtyRate > 0 ? 0.02 : 0 // Minimum 2% if not immune
+    baseSide1CasualtyRate * battleSizeScaleFactor * (0.8 + Math.random() * 0.4), // ±20% variance
+    baseSide1CasualtyRate > 0 ? 0.005 : 0 // Minimum 0.5% if not immune
   );
   
   const side2CasualtyRate = Math.max(
-    baseSide2CasualtyRate * scaleFactor * (0.8 + Math.random() * 0.4), // ±20% variance
-    baseSide2CasualtyRate > 0 ? 0.02 : 0 // Minimum 2% if not immune
+    baseSide2CasualtyRate * battleSizeScaleFactor * (0.8 + Math.random() * 0.4), // ±20% variance
+    baseSide2CasualtyRate > 0 ? 0.005 : 0 // Minimum 0.5% if not immune
   );
   
+  // Add minimum absolute casualties for very large battles to ensure they progress
+  const minimumSide1Casualties = Math.max(1, Math.floor(side1Power * 0.002)); // At least 0.2% casualties
+  const minimumSide2Casualties = Math.max(1, Math.floor(side2Power * 0.002)); // At least 0.2% casualties
+  
   // Log the casualty rates for debugging
-  logger.debug(`Battle ${battle.id}: Side 1 (${side1Power} units) casualty rate: ${(side1CasualtyRate * 100).toFixed(1)}%, Side 2 (${side2Power} units) casualty rate: ${(side2CasualtyRate * 100).toFixed(1)}%`);
+  logger.debug(`Battle ${battle.id}: Size: ${totalUnits} units, Scale factor: ${battleSizeScaleFactor.toFixed(2)}`);
+  logger.debug(`Side 1 (${side1Power} units) casualty rate: ${(side1CasualtyRate * 100).toFixed(1)}%, Side 2 (${side2Power} units) casualty rate: ${(side2CasualtyRate * 100).toFixed(1)}%`);
   
   // Apply casualties to side 1
   let totalSide1Casualties = 0;
@@ -404,11 +414,19 @@ function processBattleAttrition(battle, tileData) {
     }
     
     // Base number of casualties for this group
-    const groupCasualties = Math.floor(group.unitCount * side1CasualtyRate);
+    let groupCasualties = Math.floor(group.unitCount * side1CasualtyRate);
     
-    // Ensure we have at least 1 casualty for smaller groups if rate is non-zero
+    // Ensure minimum casualties are applied to ensure battle progress
+    if (totalUnits > 1000) {
+      // For large battles, ensure at least some casualties happen
+      const minGroupCasualties = Math.max(1, Math.ceil((group.unitCount / side1Power) * minimumSide1Casualties));
+      groupCasualties = Math.max(groupCasualties, minGroupCasualties);
+    }
+    
+    // For small battles, always have at least 1 casualty if possible
+    // But for large battles, proportionally distribute casualties
     const actualCasualties = Math.min(
-      Math.max(groupCasualties, group.unitCount <= 5 ? 1 : 0), 
+      Math.max(groupCasualties, totalUnits <= 20 ? 1 : 0), 
       group.unitCount - 1 // Leave at least 1 unit if possible
     );
     
@@ -430,11 +448,19 @@ function processBattleAttrition(battle, tileData) {
     }
     
     // Base number of casualties for this group
-    const groupCasualties = Math.floor(group.unitCount * side2CasualtyRate);
+    let groupCasualties = Math.floor(group.unitCount * side2CasualtyRate);
     
-    // Ensure we have at least 1 casualty for smaller groups if rate is non-zero
+    // Ensure minimum casualties are applied to ensure battle progress
+    if (totalUnits > 1000) {
+      // For large battles, ensure at least some casualties happen
+      const minGroupCasualties = Math.max(1, Math.ceil((group.unitCount / side2Power) * minimumSide2Casualties));
+      groupCasualties = Math.max(groupCasualties, minGroupCasualties);
+    }
+    
+    // For small battles, always have at least 1 casualty if possible
+    // But for large battles, proportionally distribute casualties 
     const actualCasualties = Math.min(
-      Math.max(groupCasualties, group.unitCount <= 5 ? 1 : 0),
+      Math.max(groupCasualties, totalUnits <= 20 ? 1 : 0),
       group.unitCount - 1 // Leave at least 1 unit if possible
     );
     
@@ -474,89 +500,139 @@ function processBattleAttrition(battle, tileData) {
 }
 
 /**
- * Apply battle casualties for a continuing battle
+ * Process all battles for a given world
  * 
- * @param {Object} db Database reference
- * @param {string} worldId World ID
- * @param {Object} battle Battle data
- * @param {Object} tileData Tile data
- * @param {Object} casualties Casualties to apply
- * @returns {Promise<void>}
+ * @param {string} worldId The ID of the world to process battles for
+ * @returns {Promise<number>} The number of battles processed
  */
-async function applyBattleCasualties(db, worldId, battle, tileData, casualties) {
+export async function processBattles(worldId) {
   try {
-    const chunkKey = getChunkKey(battle.locationX, battle.locationY);
-    const tileKey = `${battle.locationX},${battle.locationY}`;
-    const updates = {};
+    const db = getDatabase();
+    const now = Date.now();
     
-    // Process casualties for side 1
-    for (const [groupId, casualtyCount] of Object.entries(casualties.side1)) {
-      const group = tileData.groups[groupId];
-      if (!group) continue;
-      
-      // Calculate remaining units
-      const remainingUnits = Math.max(1, group.unitCount - casualtyCount);
-      
-      // Update the group's unit count
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = remainingUnits;
-      
-      // Add battle message
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastMessage`] = {
-        text: `Lost ${casualtyCount} units in ongoing battle.`,
-        timestamp: Date.now()
-      };
+    // Find battles by scanning world chunks
+    // We'll build a list of all battles by checking tile data
+    const activeBattles = [];
+    
+    // Get all chunks in the world
+    const chunksRef = db.ref(`worlds/${worldId}/chunks`);
+    const chunksSnapshot = await chunksRef.once('value');
+    
+    if (!chunksSnapshot.exists()) {
+      logger.debug(`No chunks found for world ${worldId}`);
+      return 0;
     }
     
-    // Process casualties for side 2
-    for (const [groupId, casualtyCount] of Object.entries(casualties.side2)) {
-      const group = tileData.groups[groupId];
-      if (!group) continue;
+    // Scan each chunk for battles
+    await chunksSnapshot.forEach(async (chunkSnapshot) => {
+      const chunkKey = chunkSnapshot.key;
+      const chunk = chunkSnapshot.val();
       
-      // Calculate remaining units
-      const remainingUnits = Math.max(1, group.unitCount - casualtyCount);
+      // Skip non-tile entries like 'lastUpdated'
+      if (typeof chunk !== 'object') return;
       
-      // Update the group's unit count
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = remainingUnits;
-      
-      // Add battle message
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastMessage`] = {
-        text: `Lost ${casualtyCount} units in ongoing battle.`,
-        timestamp: Date.now()
-      };
-    }
-    
-    // Update battle power values
-    let side1Power = 0;
-    let side2Power = 0;
-    
-    // Recalculate power based on remaining units
-    for (const [groupId, group] of Object.entries(tileData.groups)) {
-      if (group.inBattle && group.battleId === battle.id) {
-        const casualtyCount = group.battleSide === 1 
-          ? casualties.side1[groupId] || 0 
-          : casualties.side2[groupId] || 0;
+      // Check each tile in the chunk
+      for (const [tileKey, tileData] of Object.entries(chunk)) {
+        // Skip non-tile entries
+        if (!tileData || typeof tileData !== 'object') continue;
         
-        const remainingUnits = Math.max(1, group.unitCount - casualtyCount);
-        
-        if (group.battleSide === 1) {
-          side1Power += remainingUnits;
-        } else if (group.battleSide === 2) {
-          side2Power += remainingUnits;
+        // Check if the tile has battles
+        if (tileData.battles) {
+          for (const [battleId, battle] of Object.entries(tileData.battles)) {
+              // Extract coordinates from tileKey
+              const [x, y] = tileKey.split(',').map(Number);
+              
+              // Collect the battle data with location info
+              activeBattles.push({
+                id: battleId,
+                locationX: x,
+                locationY: y,
+                ...battle,
+                tileRef: `worlds/${worldId}/chunks/${chunkKey}/${tileKey}`
+              });
+
+          }
         }
+      }
+    });
+    
+    logger.info(`Processing ${activeBattles.length} battles in world ${worldId}`);
+    let battleProcessCount = 0;
+    
+    for (const battle of activeBattles) {
+      try {
+        // Load tile data once for each battle
+        const chunkKey = getChunkKey(battle.locationX, battle.locationY);
+        const tileKey = `${battle.locationX},${battle.locationY}`;
+        const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
+        const tileSnapshot = await tileRef.once('value');
+        
+        if (!tileSnapshot.exists()) {
+          logger.warn(`Tile ${tileKey} does not exist, skipping battle ${battle.id}`);
+          continue;
+        }
+        
+        const tileData = tileSnapshot.val();
+        
+        // First check if battle has already become one-sided
+        const winningSide = checkForOneSidedBattle(battle, tileData);
+        
+        if (winningSide) {
+          // Resolve battles when they become one-sided (one side has no units left)
+          await processBattleResolution(db, worldId, battle, tileData, winningSide);
+          battleProcessCount++;
+          logger.info(`Battle ${battle.id} resolved: side ${winningSide} victorious (elimination)`);
+          continue;
+        }
+        
+        // Calculate total units involved in battle
+        const totalUnits = calculateTotalUnitsInBattle(battle, tileData);
+        
+        // Process battle attrition for this tick
+        const attritionResult = processBattleAttrition(battle, tileData);
+        
+        if (attritionResult.isResolved) {
+          // If battle is resolved through attrition in this tick
+          await processBattleResolution(db, worldId, battle, tileData, attritionResult.winningSide);
+          battleProcessCount++;
+          logger.info(`Battle ${battle.id} resolved: side ${attritionResult.winningSide} victorious (attrition)`);
+        } else {
+          // Apply unit casualties for this tick
+          await applyBattleCasualties(db, worldId, battle, tileData, attritionResult.casualties);
+          logger.info(`Battle ${battle.id} continues - ${totalUnits} units involved, casualties applied`);
+        }
+      } catch (error) {
+        logger.error(`Error processing battle ${battle.id}:`, error);
+        // Continue with other battles even if one fails
       }
     }
     
-    // Update battle power in the database
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/side1Power`] = side1Power;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/side2Power`] = side2Power;
-    
-    // Apply the updates
-    await db.ref().update(updates);
-    
+    return battleProcessCount;
   } catch (error) {
-    logger.error(`Error applying battle casualties for battle ${battle.id}:`, error);
-    throw error;
+    logger.error(`Error processing battles for world ${worldId}:`, error);
+    return 0;
   }
+}
+
+/**
+ * Calculate the total number of units involved in a battle
+ * 
+ * @param {Object} battle Battle data
+ * @param {Object} tileData Tile data
+ * @returns {number} Total units
+ */
+function calculateTotalUnitsInBattle(battle, tileData) {
+  const groupsData = tileData.groups || {};
+  let totalUnits = 0;
+  
+  // Add up all units from groups involved in this battle
+  for (const [groupId, group] of Object.entries(groupsData)) {
+    if (group.inBattle && group.battleId === battle.id) {
+      totalUnits += group.unitCount || 1;
+    }
+  }
+  
+  return totalUnits;
 }
 
 /**
