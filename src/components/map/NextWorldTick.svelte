@@ -11,12 +11,14 @@
   
   // Local state variables
   let isPending = $state(false);
-  let isProcessing = $state(false);
   let secondsRemaining = $state(0);
   let updateCounter = $state(0); // Forces reactivity on interval
   let intervalId;
+  let previousLastTick = $state(null); // Track previous lastTick to detect changes
+  let tickChangeTimestamp = $state(null); // Track when tick was last changed
+  let graceTimeMs = 5000; // Grace period after tick change before showing pending again
   
-  // Calculate if tick is pending or processing
+  // Calculate if tick is pending
   function updateTickState() {
     if (!$game.worldKey || !$game.worlds[$game.worldKey]) return;
     
@@ -25,6 +27,13 @@
     const lastTick = world.lastTick || now;
     const worldSpeed = world.speed || 1;
     
+    // Check if lastTick has changed - if so, reset pending state and record timestamp
+    if (previousLastTick !== lastTick) {
+      isPending = false;
+      previousLastTick = lastTick;
+      tickChangeTimestamp = now;
+    }
+    
     // Base tick interval (1 minute) adjusted for world speed
     const baseTickInterval = 60000;
     const adjustedInterval = Math.round(baseTickInterval / worldSpeed);
@@ -32,17 +41,19 @@
     // Time since last tick
     const timeSinceLastTick = now - lastTick;
     
-    // Time until next expected tick
+    // Time since tick change
+    const timeSinceTickChange = tickChangeTimestamp ? (now - tickChangeTimestamp) : 60000;
+    
+    // Only set to pending if:
+    // 1. Last tick was more than 60 seconds ago
+    // 2. We're past the grace period after a tick change
+    if (timeSinceLastTick > 60000 && timeSinceTickChange > graceTimeMs) {
+      isPending = true;
+    }
+    
+    // Calculate seconds for next expected tick
     const expectedNextTick = lastTick + adjustedInterval;
     const timeRemaining = expectedNextTick - now;
-    
-    // We're in "processing" state when more time has passed than the expected interval
-    isProcessing = timeSinceLastTick > adjustedInterval;
-    
-    // We're in "pending" state when we're within 5 seconds of the next expected tick
-    isPending = timeRemaining < 5000 && timeRemaining >= 0;
-    
-    // Calculate seconds for display
     secondsRemaining = Math.max(0, Math.ceil(timeRemaining / 1000));
   }
   
@@ -57,8 +68,8 @@
     const lastTick = world.lastTick || now;
     const worldSpeed = world.speed || 1;
     
-    // Check if we're in processing state
-    if (isProcessing) return "Processing";
+    // Check if we're in pending state
+    if (isPending) return "Processing";
     
     // If we're within a minute, show seconds countdown
     const baseTickInterval = 60000; 
@@ -76,6 +87,12 @@
   
   // Set up interval timer to update every second
   onMount(() => {
+    // Initialize previousLastTick and tickChangeTimestamp
+    if ($game.worldKey && $game.worlds[$game.worldKey]) {
+      previousLastTick = $game.worlds[$game.worldKey].lastTick || Date.now();
+      tickChangeTimestamp = Date.now();
+    }
+
     updateTickState(); // Initial update
     intervalId = setInterval(() => {
       updateTickState();
@@ -87,18 +104,33 @@
   onDestroy(() => {
     if (intervalId) clearInterval(intervalId);
   });
+  
+  // Add effect to track changes in lastTick
+  $effect(() => {
+    if ($game.worldKey && $game.worlds[$game.worldKey]?.lastTick) {
+      const currentLastTick = $game.worlds[$game.worldKey].lastTick;
+      const now = Date.now();
+      
+      // If lastTick has changed, we've received a new tick
+      if (previousLastTick && currentLastTick !== previousLastTick) {
+        // Reset pending state and record the time when tick changed
+        isPending = false;
+        tickChangeTimestamp = now;
+      }
+      
+      previousLastTick = currentLastTick;
+    }
+  });
 </script>
 
-<div class="next-tick-container {extraClass}" class:compact={compact} class:pending={isPending} class:processing={isProcessing}>
+<div class="next-tick-container {extraClass}" class:compact={compact} class:pending={isPending}>
   {#if showLabel}
     <span class="next-tick-label">Next tick:</span>
   {/if}
   
   <span class="next-tick-time">
-    {#if isProcessing}
+    {#if isPending}
       <span class="spinner"></span> Processing
-    {:else if isPending}
-      <span class="spinner"></span> {secondsRemaining}s
     {:else}
       {formatTimeDisplay()}
     {/if}
@@ -139,11 +171,6 @@
   .next-tick-container.pending {
     background-color: rgba(255, 230, 190, 0.9);
     animation: pulse 1.5s infinite alternate;
-  }
-  
-  .next-tick-container.processing {
-    background-color: rgba(255, 190, 170, 0.9);
-    animation: pulse 1s infinite alternate;
   }
 
   @keyframes pulse {

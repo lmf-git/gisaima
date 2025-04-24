@@ -174,6 +174,8 @@ export const nextWorldTick = derived(
     }
     
     const world = $game.worlds[$game.worldKey];
+    console.log('next tick world', world);
+
     const worldSpeed = world.speed || 1.0;
     const lastTick = world.lastTick || Date.now();
     
