@@ -22,6 +22,7 @@
   import Crop from '../icons/Crop.svelte';
   import Rally from '../icons/Rally.svelte';
   import Attack from '../icons/Attack.svelte';
+  import Hammer from '../icons/Hammer.svelte';
 
   // Props
   const { 
@@ -182,6 +183,10 @@
       case 'move':
         onShowModal({ type: 'move', data: data ? { ...tileData, group: data.group } : tileData });
         break;
+
+      case 'build':
+        onShowModal({ type: 'build', data: tileData });
+        break;
         
       case 'attack':
         onShowModal({ type: 'attack', data: tileData });
@@ -275,6 +280,10 @@
       !g.inBattle
     );
   }
+
+  function canBuild(tile) {
+    return true;
+  };
   
   function canMove(tile) {
     if (!tile || !$currentPlayer) return false;
@@ -575,6 +584,13 @@
                   <button class="action-button attack-button" onclick={() => executeAction('attack')}>
                     <Attack extraClass="action-icon attack-icon" />
                     Attack
+                  </button>
+                {/if}
+
+                {#if canBuild(detailsData)}
+                  <button class="action-button attack-button" onclick={() => executeAction('build')}>
+                    <Hammer extraClass="action-icon hammer-icon" />
+                    Build
                   </button>
                 {/if}
                 
