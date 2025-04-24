@@ -546,6 +546,15 @@
     clickCount++;
     lastClickTime = Date.now();
     
+    // First check if Peek is open and we're not clicking on center tile
+    // Close it immediately to allow click to be processed in same action
+    if (isPeekVisible && !clickedCenterTile) {
+      console.log('Closing Peek since we clicked on a non-center tile');
+      isPeekVisible = false;
+      peekOpenedAtPosition = null;
+      // Continue processing the click - don't return
+    }
+    
     if (wasDrag) {
       console.log('Click ignored: drag detected');
       wasDrag = false; // Reset drag state for next click
@@ -1124,7 +1133,7 @@
             {/if}
 
             <!-- Change target indicator to highlight indicator that shows on highlighted tiles -->
-            {#if cell.highlighted && $ready && !isPeekVisible}
+            {#if cell.highlighted && $ready && (!isPeekVisible || !cell.isCenter)}
               <div class="highlight-indicator"></div>
             {/if}
 
