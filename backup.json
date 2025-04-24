@@ -4,101 +4,55 @@
       "worlds": {
         "ancient-lands": {
           "achievements": {
-            "first_attack": true,
-            "first_attack_date": 1745475972643,
             "mobilised": true,
-            "mobilised_date": 1745475955951
+            "mobilised_date": 1745480736126
           },
           "alive": true,
-          "displayName": "test3",
+          "displayName": "testing",
           "groups": {
-            "-OOaTL_011azSTRTsXT3": {
-              "at": "-18,-22",
-              "id": "-OOaTL_011azSTRTsXT3",
+            "-OOak_fZ4m0XhuJ1jhHG": {
+              "at": "-23,5",
+              "id": "-OOak_fZ4m0XhuJ1jhHG",
               "status": "idle"
             }
           },
           "id": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
-          "inGroup": "-OOaTL_011azSTRTsXT3",
-          "joined": 1745475923714,
+          "inGroup": "-OOak_fZ4m0XhuJ1jhHG",
+          "joined": 1745480707947,
           "lastLocation": {
-            "x": -18,
-            "y": -22
+            "x": -23,
+            "y": 5
           },
-          "race": "fairy"
+          "race": "human"
         }
       }
     },
-    "F4Pg3cWB4Kcit6ZIu3DkcDNsyTr1": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "displayName": "geawgege",
-          "id": "F4Pg3cWB4Kcit6ZIu3DkcDNsyTr1",
-          "joined": 1745475081958,
-          "lastLocation": {
-            "timestamp": 1745475085032,
-            "x": -32,
-            "y": -10
-          },
-          "race": "dwarf"
-        }
-      }
-    },
-    "JN5dIUjWnXO2dd2o4GaD7tdernI2": {
+    "fphA92tMTfRAu6FU6RDNJ33VQni1": {
       "worlds": {
         "ancient-lands": {
           "achievements": {
-            "first_steps": true,
-            "first_steps_date": 1745475728105,
+            "first_attack": true,
+            "first_attack_date": 1745480780634,
             "mobilised": true,
-            "mobilised_date": 1745475676643
+            "mobilised_date": 1745480714108
           },
           "alive": true,
-          "displayName": "gewgwe",
+          "displayName": "test",
           "groups": {
-            "-OOaSHS1isHg4MD2PWV4": {
-              "at": "-30,-12",
-              "id": "-OOaSHS1isHg4MD2PWV4",
+            "-OOakVJMbtsW-gb9yfyN": {
+              "at": "-23,5",
+              "id": "-OOakVJMbtsW-gb9yfyN",
               "status": "idle"
             }
           },
-          "id": "JN5dIUjWnXO2dd2o4GaD7tdernI2",
-          "inGroup": "-OOaSHS1isHg4MD2PWV4",
-          "joined": 1745475254820,
+          "id": "fphA92tMTfRAu6FU6RDNJ33VQni1",
+          "inGroup": "-OOakVJMbtsW-gb9yfyN",
+          "joined": 1745480687711,
           "lastLocation": {
-            "timestamp": 1745475905795,
-            "x": -32,
-            "y": -10
+            "x": -23,
+            "y": 5
           },
-          "race": "elf"
-        }
-      }
-    },
-    "YmMxPlCzBXW4Pg86QcqsGaOopPQ2": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "mobilised": true,
-            "mobilised_date": 1745475960354
-          },
-          "alive": true,
-          "displayName": "test2",
-          "groups": {
-            "-OOaTMgxhj5MH-9bBRzW": {
-              "at": "-18,-22",
-              "id": "-OOaTMgxhj5MH-9bBRzW",
-              "status": "idle"
-            }
-          },
-          "id": "YmMxPlCzBXW4Pg86QcqsGaOopPQ2",
-          "inGroup": "-OOaTMgxhj5MH-9bBRzW",
-          "joined": 1745475908413,
-          "lastLocation": {
-            "x": -18,
-            "y": -22
-          },
-          "race": "fairy"
+          "race": "human"
         }
       }
     }
@@ -106,76 +60,76 @@
   "worlds": {
     "ancient-lands": {
       "chat": {
-        "-OOaSHU-xcHAYBW8LV4h": {
+        "-OOahCmU8zeddLCJNSqy": {
           "location": {
             "x": -30,
             "y": -12
           },
-          "text": "gewgwe's Force is being mobilized at (-30,-12)",
-          "timestamp": 1745475676032,
+          "text": "testelf's Force is being mobilized at (-30,-12)",
+          "timestamp": 1745479851106,
           "type": "system"
         },
-        "-OOaTLbQML2BLIAdsCws": {
+        "-OOakVLFNFeciuo9RNyP": {
           "location": {
-            "x": -18,
-            "y": -22
+            "x": -23,
+            "y": 5
           },
-          "text": "test3's Force is being mobilized at (-18,-22)",
-          "timestamp": 1745475955072,
+          "text": "test's Force is being mobilized at (-23,5)",
+          "timestamp": 1745480713555,
           "type": "system"
         },
-        "-OOaTMixG7Re35zWEozb": {
+        "-OOak_hU79gyRS4Zq8p6": {
           "location": {
-            "x": -18,
-            "y": -22
+            "x": -23,
+            "y": 5
           },
-          "text": "test2's Force is being mobilized at (-18,-22)",
-          "timestamp": 1745475959676,
+          "text": "testing's Force is being mobilized at (-23,5)",
+          "timestamp": 1745480735520,
           "type": "system"
         },
-        "chat_1745475721867_433": {
+        "chat_1745479865043_2": {
           "location": {
-            "timestamp": 1745475721867,
+            "timestamp": 1745479865043,
             "x": -30,
             "y": -12
           },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"gewgwe's Force\"",
-          "timestamp": 1745475721867,
+          "text": "A lone elf warrior has mobilized at (-30, -12) - \"testelf's Force\"",
+          "timestamp": 1745479865043,
           "type": "event",
-          "userId": "JN5dIUjWnXO2dd2o4GaD7tdernI2",
-          "userName": "gewgwe's Force"
+          "userId": "fphA92tMTfRAu6FU6RDNJ33VQni1",
+          "userName": "testelf's Force"
         },
-        "chat_1745475961524_231": {
+        "chat_1745480761823_309": {
           "location": {
-            "timestamp": 1745475961524,
-            "x": -18,
-            "y": -22
+            "timestamp": 1745480761823,
+            "x": -23,
+            "y": 5
           },
-          "text": "A lone fairy warrior has mobilized at (-18, -22) - \"test3's Force\"",
-          "timestamp": 1745475961524,
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"testing's Force\"",
+          "timestamp": 1745480761823,
           "type": "event",
           "userId": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
-          "userName": "test3's Force"
+          "userName": "testing's Force"
         },
-        "chat_1745475961524_251": {
+        "chat_1745480761823_735": {
           "location": {
-            "timestamp": 1745475961524,
-            "x": -18,
-            "y": -22
+            "timestamp": 1745480761823,
+            "x": -23,
+            "y": 5
           },
-          "text": "A lone fairy warrior has mobilized at (-18, -22) - \"test2's Force\"",
-          "timestamp": 1745475961524,
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"test's Force\"",
+          "timestamp": 1745480761823,
           "type": "event",
-          "userId": "YmMxPlCzBXW4Pg86QcqsGaOopPQ2",
-          "userName": "test2's Force"
+          "userId": "fphA92tMTfRAu6FU6RDNJ33VQni1",
+          "userName": "test's Force"
         },
-        "move_1745475905795_-OOaSHS1isHg4MD2PWV4_2": {
+        "move_1745480221598_-OOahCkbrgwkcsT1hD6y_2": {
           "location": {
             "x": -32,
             "y": -10
           },
-          "text": "gewgwe's Force has arrived at (-32,-10)",
-          "timestamp": 1745475905795,
+          "text": "testelf's Force has arrived at (-32,-10)",
+          "timestamp": 1745480221598,
           "type": "event"
         }
       },
@@ -232,73 +186,6 @@
         },
         "-1,-2": {
           "-18,-22": {
-            "battles": {
-              "battle_1745475971950_450": {
-                "id": "battle_1745475971950_450",
-                "side1Power": 1,
-                "side2Power": 1
-              }
-            },
-            "groups": {
-              "-OOaTL_011azSTRTsXT3": {
-                "battleId": "battle_1745475971950_450",
-                "battleRole": "attacker",
-                "battleSide": 1,
-                "createdAt": 1745475955072,
-                "id": "-OOaTL_011azSTRTsXT3",
-                "inBattle": true,
-                "lastMessage": {
-                  "text": "Group is fully mobilized and ready",
-                  "timestamp": 1745475961524
-                },
-                "lastUpdated": 1745475961524,
-                "name": "test3's Force",
-                "owner": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
-                "race": "fairy",
-                "status": "fighting",
-                "unitCount": 1,
-                "units": {
-                  "DqBhu8Nd4jNCYq51s8izH6JTHL63": {
-                    "displayName": "test3",
-                    "id": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
-                    "lastActive": 1745475932709,
-                    "race": "fairy",
-                    "type": "player"
-                  }
-                },
-                "x": -18,
-                "y": -22
-              },
-              "-OOaTMgxhj5MH-9bBRzW": {
-                "battleId": "battle_1745475971950_450",
-                "battleRole": "defender",
-                "battleSide": 2,
-                "createdAt": 1745475959676,
-                "id": "-OOaTMgxhj5MH-9bBRzW",
-                "inBattle": true,
-                "lastMessage": {
-                  "text": "Group is fully mobilized and ready",
-                  "timestamp": 1745475961524
-                },
-                "lastUpdated": 1745475961524,
-                "name": "test2's Force",
-                "owner": "YmMxPlCzBXW4Pg86QcqsGaOopPQ2",
-                "race": "fairy",
-                "status": "fighting",
-                "unitCount": 1,
-                "units": {
-                  "YmMxPlCzBXW4Pg86QcqsGaOopPQ2": {
-                    "displayName": "test2",
-                    "id": "YmMxPlCzBXW4Pg86QcqsGaOopPQ2",
-                    "lastActive": 1745475911008,
-                    "race": "fairy",
-                    "type": "player"
-                  }
-                },
-                "x": -18,
-                "y": -22
-              }
-            },
             "structure": {
               "description": "A fairy settlement where the ancient spirits still speak",
               "id": "structure_al_fairy_spawn",
@@ -337,67 +224,77 @@
               "race": "elf",
               "type": "spawn"
             }
-          },
-          "-32,-10": {
-            "groups": {
-              "-OOaSHS1isHg4MD2PWV4": {
-                "createdAt": 1745475676032,
-                "id": "-OOaSHS1isHg4MD2PWV4",
-                "lastMessage": {
-                  "text": "Moving to next location (-32,-10)",
-                  "timestamp": 1745475905795
-                },
-                "lastUpdated": 1745475905795,
-                "moveSpeed": 1,
-                "moveStarted": 1745475731006,
-                "movementPath": [
-                  {
-                    "x": -30,
-                    "y": -12
-                  },
-                  {
-                    "x": -31,
-                    "y": -11
-                  },
-                  {
-                    "x": -32,
-                    "y": -10
-                  }
-                ],
-                "name": "gewgwe's Force",
-                "nextMoveTime": 1745475965795,
-                "owner": "JN5dIUjWnXO2dd2o4GaD7tdernI2",
-                "pathIndex": 2,
-                "race": "elf",
-                "status": "idle",
-                "targetX": -32,
-                "targetY": -10,
-                "unitCount": 1,
-                "units": {
-                  "JN5dIUjWnXO2dd2o4GaD7tdernI2": {
-                    "displayName": "gewgwe",
-                    "id": "JN5dIUjWnXO2dd2o4GaD7tdernI2",
-                    "lastActive": 1745475343525,
-                    "race": "elf",
-                    "type": "player"
-                  }
-                },
-                "x": -32,
-                "y": -10
-              }
-            },
-            "players": {
-              "F4Pg3cWB4Kcit6ZIu3DkcDNsyTr1": {
-                "displayName": "geawgege",
-                "id": "F4Pg3cWB4Kcit6ZIu3DkcDNsyTr1",
-                "lastActive": 1745475085290,
-                "race": "dwarf"
-              }
-            }
           }
         },
         "-2,0": {
           "-23,5": {
+            "battles": {
+              "battle_1745480780287_26": {
+                "id": "battle_1745480780287_26",
+                "side1Power": 1,
+                "side2Power": 1
+              }
+            },
+            "groups": {
+              "-OOakVJMbtsW-gb9yfyN": {
+                "battleId": "battle_1745480780287_26",
+                "battleRole": "attacker",
+                "battleSide": 1,
+                "createdAt": 1745480713555,
+                "id": "-OOakVJMbtsW-gb9yfyN",
+                "inBattle": true,
+                "lastMessage": {
+                  "text": "Group is fully mobilized and ready",
+                  "timestamp": 1745480761823
+                },
+                "lastUpdated": 1745480761823,
+                "name": "test's Force",
+                "owner": "fphA92tMTfRAu6FU6RDNJ33VQni1",
+                "race": "human",
+                "status": "fighting",
+                "unitCount": 1,
+                "units": {
+                  "fphA92tMTfRAu6FU6RDNJ33VQni1": {
+                    "displayName": "test",
+                    "id": "fphA92tMTfRAu6FU6RDNJ33VQni1",
+                    "lastActive": 1745480691794,
+                    "race": "human",
+                    "type": "player"
+                  }
+                },
+                "x": -23,
+                "y": 5
+              },
+              "-OOak_fZ4m0XhuJ1jhHG": {
+                "battleId": "battle_1745480780287_26",
+                "battleRole": "defender",
+                "battleSide": 2,
+                "createdAt": 1745480735520,
+                "id": "-OOak_fZ4m0XhuJ1jhHG",
+                "inBattle": true,
+                "lastMessage": {
+                  "text": "Group is fully mobilized and ready",
+                  "timestamp": 1745480761823
+                },
+                "lastUpdated": 1745480761823,
+                "name": "testing's Force",
+                "owner": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
+                "race": "human",
+                "status": "fighting",
+                "unitCount": 1,
+                "units": {
+                  "DqBhu8Nd4jNCYq51s8izH6JTHL63": {
+                    "displayName": "testing",
+                    "id": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
+                    "lastActive": 1745480729879,
+                    "race": "human",
+                    "type": "player"
+                  }
+                },
+                "x": -23,
+                "y": 5
+              }
+            },
             "structure": {
               "description": "A rugged frontier settlement where hardy humans carve out a living",
               "id": "structure_al_human_spawn",
@@ -438,7 +335,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745476261304,
+        "lastTick": 1745480885986,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",

@@ -134,7 +134,10 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = {
       id: battleId,
       side1Power: attackerTotalPower,
-      side2Power: defenderTotalPower
+      side2Power: defenderTotalPower,
+      tickCount: 0,  // Initialize battle tick counter
+      status: 'active',
+      startedAt: now
     };
     
     // Update groups
