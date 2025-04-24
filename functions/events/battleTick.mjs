@@ -223,73 +223,24 @@ function processBattleAttrition(battle, tileData) {
     };
   }
 
-  // Completely new battle scaling algorithm with proper scaling across all battle sizes
-  // Use a logarithmic scaling approach that produces more reasonable results
+  // UNIFIED BATTLE SCALING ALGORITHM
+  // A continuous function that scales base casualty rates based on battle size
   
-  // Base casualty parameters
-  const tinyBattleBaseRate = 0.30;    // Base rate for 1v1 battles (30%)
-  const smallBattleBaseRate = 0.15;   // Base rate for ~10 unit battles (15%)
-  const mediumBattleBaseRate = 0.08;  // Base rate for ~50 unit battles (8%)
-  const largeBattleBaseRate = 0.04;   // Base rate for ~100 unit battles (4%)
-  const massiveBattleBaseRate = 0.02; // Base rate for 1000+ unit battles (2%)
+  // Base parameters
+  const maxCasualtyRate = 0.30;    // Maximum base casualty rate (30% for tiny battles)
+  const scalingFactor = 15;        // Controls how quickly casualty rates drop as battles get larger
   
-  // Calculate the effective base rate using logarithmic scaling
-  let baseRate;
+  // Calculate base casualty rate using a continuous function
+  // This formula will smoothly scale from 30% for tiny battles down to ~2% for 1000+ unit battles
+  const baseRate = maxCasualtyRate / (1 + Math.sqrt(totalUnits / scalingFactor));
   
-  if (totalUnits <= 2) {
-    // Tiny battles (1-2 units) use the highest rate
-    baseRate = tinyBattleBaseRate;
-  } else if (totalUnits <= 10) {
-    // Small battles (3-10 units)
-    const smallBattleProgress = (totalUnits - 2) / 8;
-    baseRate = tinyBattleBaseRate - (smallBattleProgress * (tinyBattleBaseRate - smallBattleBaseRate));
-  } else if (totalUnits <= 50) {
-    // Medium battles (11-50 units)
-    const mediumBattleProgress = (totalUnits - 10) / 40;
-    baseRate = smallBattleBaseRate - (mediumBattleProgress * (smallBattleBaseRate - mediumBattleBaseRate));
-  } else if (totalUnits <= 200) {
-    // Large battles (51-200 units)
-    const largeBattleProgress = (totalUnits - 50) / 150;
-    baseRate = mediumBattleBaseRate - (largeBattleProgress * (mediumBattleBaseRate - largeBattleBaseRate));
-  } else {
-    // Massive battles (201+ units)
-    // Use logarithmic decay: rate = largeBattleBaseRate * (1 - log_factor * log10(totalUnits/200))
-    // This ensures that casualty rates continue to decrease for extremely large battles
-    const logFactor = 0.2; // Controls how quickly rates decrease with size
-    baseRate = Math.max(
-      massiveBattleBaseRate, 
-      largeBattleBaseRate * (1 - logFactor * Math.log10(totalUnits / 200))
-    );
-  }
+  // Calculate duration-based escalation with a unified approach
+  // More units = slower escalation
+  const durationFactor = 0.30 / (1 + Math.log10(totalUnits + 1));
   
-  // Duration-based escalation - battles intensify over time
-  // Different escalation rates based on battle size
-  let durationFactor;
-  if (totalUnits <= 10) {
-    // Small battles escalate quickly (30% per tick)
-    durationFactor = 0.3;
-  } else if (totalUnits <= 50) {
-    // Medium battles escalate moderately (20% per tick)
-    durationFactor = 0.2;
-  } else if (totalUnits <= 500) {
-    // Large battles escalate more slowly (15% per tick)
-    durationFactor = 0.15;
-  } else {
-    // Massive battles escalate very slowly (10% per tick)
-    durationFactor = 0.1;
-  }
-  
-  // Grace period before escalation starts (longer for larger battles)
-  let gracePeriod;
-  if (totalUnits <= 10) {
-    gracePeriod = 1; // Small battles escalate after 1 tick
-  } else if (totalUnits <= 100) {
-    gracePeriod = 2; // Medium battles escalate after 2 ticks
-  } else if (totalUnits <= 1000) {
-    gracePeriod = 3; // Large battles escalate after 3 ticks
-  } else {
-    gracePeriod = 4; // Massive battles escalate after 4 ticks
-  }
+  // Grace period before escalation begins (continuous function)
+  // 1 unit = 1 tick, 10 units = 1-2 ticks, 100 units = 2 ticks, 1000 units = 3 ticks, etc.
+  const gracePeriod = Math.min(4, Math.floor(Math.log10(totalUnits + 1)));
   
   // Calculate duration multiplier
   const durationMultiplier = tickCount <= gracePeriod ? 1 : (1 + durationFactor * (tickCount - gracePeriod));
@@ -297,8 +248,8 @@ function processBattleAttrition(battle, tileData) {
   // Calculate final casualty rate
   const casualtyRate = baseRate * durationMultiplier;
   
-  // Add randomness scaled by battle size
-  const randomnessFactor = 0.3 + (0.2 / Math.sqrt(totalUnits)); // Ranges from ~0.5 for tiny battles to ~0.3 for huge battles
+  // Add randomness (more for smaller battles, less for larger ones)
+  const randomnessFactor = 0.3 + (0.2 / Math.sqrt(Math.max(totalUnits, 1)));
   const randomVariation = 1 - randomnessFactor + (Math.random() * randomnessFactor * 2);
   
   // Calculate final casualty rates including asymmetry between stronger and weaker sides
@@ -571,6 +522,10 @@ export async function processBattles(worldId) {
     // Early return if no battles found
     if (battles.length === 0) {
       logger.info(`No battles to process in world ${worldId}`);
+      
+      // Clean up completed battles even if there are no active battles to process
+      await cleanupCompletedBattles(db, worldId);
+      
       return 0;
     }
     
@@ -619,9 +574,77 @@ export async function processBattles(worldId) {
       }
     }
     
+    // Clean up old completed battles
+    await cleanupCompletedBattles(db, worldId);
+    
     return battleProcessCount;
   } catch (error) {
     logger.error(`Error processing battles for world ${worldId}:`, error);
+    return 0;
+  }
+}
+
+/**
+ * Clean up completed battles that are older than the retention period
+ * 
+ * @param {Object} db Database reference
+ * @param {string} worldId World ID
+ * @returns {Promise<number>} Number of battles cleaned up
+ */
+async function cleanupCompletedBattles(db, worldId) {
+  try {
+    // Define retention period (24 hours in milliseconds)
+    const retentionPeriod = 24 * 60 * 60 * 1000;
+    const cutoffTime = Date.now() - retentionPeriod;
+    
+    // Track for logging
+    let cleanupCount = 0;
+    const updates = {};
+    
+    // Get all chunks in the world
+    const chunksRef = db.ref(`worlds/${worldId}/chunks`);
+    const chunksSnapshot = await chunksRef.once('value');
+    
+    if (!chunksSnapshot.exists()) {
+      return 0;
+    }
+    
+    // Scan each chunk for completed battles
+    chunksSnapshot.forEach((chunkSnapshot) => {
+      const chunkKey = chunkSnapshot.key;
+      const chunk = chunkSnapshot.val();
+      
+      // Skip non-tile entries
+      if (typeof chunk !== 'object') return;
+      
+      // Check each tile in the chunk
+      for (const [tileKey, tileData] of Object.entries(chunk)) {
+        // Skip non-tile entries
+        if (!tileData || typeof tileData !== 'object') continue;
+        
+        // Check if the tile has battles
+        if (tileData.battles) {
+          for (const [battleId, battle] of Object.entries(tileData.battles)) {
+            // Check if battle is completed and old enough to be removed
+            if (battle.status === 'completed' && battle.completedAt && battle.completedAt < cutoffTime) {
+              // Mark for removal
+              updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`] = null;
+              cleanupCount++;
+            }
+          }
+        }
+      }
+    });
+    
+    // Apply all removals in a single batch
+    if (Object.keys(updates).length > 0) {
+      await db.ref().update(updates);
+      logger.info(`Cleaned up ${cleanupCount} completed battles older than ${new Date(cutoffTime).toISOString()}`);
+    }
+    
+    return cleanupCount;
+  } catch (error) {
+    logger.error(`Error cleaning up completed battles for world ${worldId}:`, error);
     return 0;
   }
 }
