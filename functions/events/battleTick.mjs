@@ -165,7 +165,7 @@ function distributeLootToWinningGroups(updates, worldId, chunkKey, tileKey, grou
 }
 
 /**
- * Process all active battles for a given world
+ * Process all battles for a given world
  * 
  * @param {string} worldId The ID of the world to process battles for
  * @returns {Promise<number>} The number of battles processed
@@ -175,8 +175,8 @@ export async function processBattles(worldId) {
     const db = getDatabase();
     const now = Date.now();
     
-    // Find active battles by scanning world chunks
-    // We'll build a list of all active battles by checking tile data
+    // Find battles by scanning world chunks
+    // We'll build a list of all battles by checking tile data
     const activeBattles = [];
     
     // Get all chunks in the world
@@ -204,8 +204,6 @@ export async function processBattles(worldId) {
         // Check if the tile has battles
         if (tileData.battles) {
           for (const [battleId, battle] of Object.entries(tileData.battles)) {
-            // Only process active battles
-            if (battle.status !== 'completed') {
               // Extract coordinates from tileKey
               const [x, y] = tileKey.split(',').map(Number);
               
@@ -217,13 +215,13 @@ export async function processBattles(worldId) {
                 ...battle,
                 tileRef: `worlds/${worldId}/chunks/${chunkKey}/${tileKey}`
               });
-            }
+
           }
         }
       }
     });
     
-    logger.info(`Processing ${activeBattles.length} active battles in world ${worldId}`);
+    logger.info(`Processing ${activeBattles.length} battles in world ${worldId}`);
     let battleProcessCount = 0;
     
     for (const battle of activeBattles) {

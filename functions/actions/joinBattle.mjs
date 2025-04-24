@@ -48,10 +48,6 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     
     const battleData = tileData.battles[battleId];
     
-    if (battleData.status !== 'active') {
-      throw new HttpsError("failed-precondition", "Battle is no longer active");
-    }
-    
     // Check if the battle is in the same location
     if (battleData.locationX !== locationX || battleData.locationY !== locationY) {
       throw new HttpsError("failed-precondition", "Battle is not at this location");

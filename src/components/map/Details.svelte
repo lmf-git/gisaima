@@ -775,7 +775,7 @@
                           Gather
                         </button>
                       {/if}
-                      {#if detailsData.battles?.some(b => b.status === 'active')}
+                      {#if detailsData.battles?.length > 0}
                         <button class="entity-action" onclick={() => executeAction('joinBattle', { group })}>
                           Join Battle
                         </button>
@@ -1018,9 +1018,6 @@
                   <div class="entity-info">
                     <div class="entity-name">
                       Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}
-                      <span class="entity-status-badge {battle.status === 'resolved' ? 'resolved' : 'active'}">
-                        {battle.status === 'resolved' ? 'Resolved' : 'Active'}
-                      </span>
                     </div>
                     
                     <div class="entity-details">
@@ -1043,21 +1040,10 @@
                           {/if}
                         </div>
                       </div>
-                      
-                      {#if battle.status === 'active' && battle.startTime && battle.endTime}
-                        <div class="battle-progress">
-                          <div class="progress-bar">
-                            <div class="progress-fill" style="width: {calculateBattleProgress(battle)}%"></div>
-                          </div>
-                          <div class="battle-timer">
-                            {formatBattleTimeRemaining(battle)}
-                          </div>
-                        </div>
-                      {/if}
                     </div>
                   </div>
                   
-                  {#if battle.status === 'active' && canJoinBattle(detailsData)}
+                  {#if canJoinBattle(detailsData)}
                     <button class="join-battle-btn" onclick={() => executeAction('joinBattle')}>
                       Join Battle
                     </button>

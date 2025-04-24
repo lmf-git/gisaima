@@ -112,7 +112,7 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
     const side1Leader = attackerGroupIds[0];
     const side2Leader = defenderGroupIds[0];
     
-    // Battle data (without endTime)
+    // Battle data (without status)
     const battleData = {
       id: battleId,
       locationX,
@@ -128,8 +128,7 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
         groups: side2Groups,
         power: defenderTotalPower,
         leader: side2Leader
-      },
-      status: 'active'
+      }
     };
     
     // Update all groups to be in battle
@@ -165,8 +164,7 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
       id: battleId,
       startTime: now,
       side1Power: attackerTotalPower,
-      side2Power: defenderTotalPower,
-      status: 'active'
+      side2Power: defenderTotalPower
     };
     
     // Update groups
@@ -185,7 +183,6 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
       success: true,
       message: `Battle started between ${attackerGroups.length} attackers and ${defenderGroups.length} defenders`,
       battleId
-      // Remove endTime from the response
     };
   } catch (error) {
     logger.error("Error starting battle:", error);

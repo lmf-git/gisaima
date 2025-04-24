@@ -56,7 +56,7 @@
       selectedGroup = null;
     }
     
-    // Find active battles with improved detection
+    // Find battles with improved detection
     const battles = new Map();
     
     // First handle direct battle references in tileData.battles
@@ -86,7 +86,6 @@
                 1: { groups: [], power: 0 },
                 2: { groups: [], power: 0 }
               },
-              status: group.battleStatus || 'active',
               selected: false
             });
           }

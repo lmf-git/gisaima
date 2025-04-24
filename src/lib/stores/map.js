@@ -270,9 +270,7 @@ function processChunkData(data = {}, chunkKey) {
               sides: {
                 1: { groups: [], power: 0 },
                 2: { groups: [], power: 0 }
-              },
-              status: group.battleStatus || 'active',
-              started: group.battleStarted || Date.now()
+              }
             });
           }
 
@@ -295,7 +293,6 @@ function processChunkData(data = {}, chunkKey) {
             sides: battle.sides || {},
             startTime: battle.startTime || Date.now(),
             endTime: battle.endTime,
-            status: battle.status || 'active',
             participants: battle.participants || [],
             power: battle.power || { 1: 0, 2: 0 },
             winner: battle.winner,

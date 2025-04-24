@@ -236,9 +236,7 @@
               "battle_1745475971950_450": {
                 "id": "battle_1745475971950_450",
                 "side1Power": 1,
-                "side2Power": 1,
-                "startTime": 1745475972061,
-                "status": "active"
+                "side2Power": 1
               }
             },
             "groups": {
