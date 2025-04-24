@@ -1,9 +1,11 @@
 <script>
-  const { extraClass = '' } = $props();
+  const { size = '1em', extraClass = '' } = $props();
 </script>
 
 <svg 
   class={extraClass}
+  width={size} 
+  height={size}
   viewBox="0 0 1920 1920" 
   fill="currentColor"
   aria-hidden="true"

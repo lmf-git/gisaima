@@ -139,7 +139,7 @@
             on:click={(e) => handleActionClick(item.action.id, e)}
           >
             {#if item.action.icon}
-              <item.action.icon />
+              <item.action.icon extraClass="action-icon" />
             {/if}
             <span class="action-label">{item.action.label}</span>
           </button>

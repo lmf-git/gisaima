@@ -1,7 +1,5 @@
 <script>
-  // Props
-  export let size = "100%";
-  export let extraClass = "";
+  const { size = '1em', extraClass = '' } = $props();
 </script>
 
 <svg
@@ -10,6 +8,7 @@
   width={size}
   height={size}
   class={extraClass}
+  fill="currentColor"
   aria-hidden="true"
   focusable="false"
 >
