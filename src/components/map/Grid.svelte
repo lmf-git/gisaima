@@ -23,7 +23,8 @@
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
   import Compass from '../icons/Compass.svelte';
-  import YouAreHere from '../icons/YouAreHere.svelte'; // Add YouAreHere import
+  import YouAreHere from '../icons/YouAreHere.svelte';
+  import Peek from '../map/Peek.svelte';  // Add Peek component import
   
   // Props with defaults using Svelte 5 $props() rune
   const { 
@@ -35,6 +36,73 @@
     customPathPoints = [], // Accept path points directly as a prop instead of using a ref
     modalOpen = false // Add new prop to indicate if any modal is open
   } = $props();
+  
+  // Add state for Peek component visibility
+  let isPeekVisible = $state(false);
+  let clickedCenterTile = $state(false);
+  
+  // Define default actions for Peek
+  const peekActions = [
+    { id: 'inspect', label: 'Inspect', icon: null },
+    { id: 'move', label: 'Move', icon: Compass }
+  ];
+  
+  // Add a function to handle actions from Peek
+  function handlePeekAction(actionId) {
+    if (onClick) {
+      const centerTile = $coordinates.find(cell => cell.isCenter);
+      if (centerTile) {
+        onClick({ 
+          x: centerTile.x, 
+          y: centerTile.y,
+          action: actionId,
+          tileData: centerTile
+        });
+      }
+    }
+    isPeekVisible = false;
+  }
+  
+  // Function to toggle Peek visibility when center tile is clicked
+  function handleCenterTileClick(event) {
+    // Add more explicit logging to confirm this function is called
+    console.log('CENTER TILE CLICK HANDLER TRIGGERED');
+    console.log('Event details:', { 
+      type: event.type,
+      target: event.target.tagName,
+      currentTarget: event.currentTarget?.tagName,
+      isPeekVisible,
+      isPathDrawingMode,
+      detailed,
+      modalOpen
+    });
+    
+    // Ensure we stop propagation to prevent the grid click handler from triggering
+    event.stopPropagation();
+    event.preventDefault();
+    
+    console.log('Center tile clicked, current Peek state:', isPeekVisible);
+    
+    // Don't show Peek in path drawing mode or if detailed view is open
+    if (isPathDrawingMode || detailed || modalOpen) {
+      console.log('Not showing Peek: path drawing mode, detailed view, or modal open');
+      return;
+    }
+    
+    // Toggle Peek visibility
+    isPeekVisible = !isPeekVisible;
+    clickedCenterTile = true;
+    
+    console.log('Set Peek visibility to:', isPeekVisible);
+  }
+
+  // Add an effect to close Peek when modals open
+  $effect(() => {
+    if (modalOpen && isPeekVisible) {
+      console.log('Modal opened, closing Peek');
+      isPeekVisible = false;
+    }
+  });
   
   let mapElement = null;
   let resizeObserver = null;
@@ -444,6 +512,9 @@
   }
 
   function handleGridClick(event) {
+    // Add logging to check if grid click handler is getting events
+    console.log('Grid click detected, clickedCenterTile:', clickedCenterTile);
+    
     clickCount++;
     lastClickTime = Date.now();
     
@@ -455,6 +526,13 @@
     
     if (!$ready) {
       console.log('Click ignored: map not ready');
+      return;
+    }
+    
+    // Ignore clicks on the center tile since it's handled separately
+    if (clickedCenterTile) {
+      console.log('Click ignored: center tile already handling this click');
+      clickedCenterTile = false; // Reset for next click
       return;
     }
     
@@ -826,6 +904,14 @@
     
     return dominantRace;
   }
+
+  // Add a specific effect to log center tiles
+  $effect(() => {
+    const centerTile = $gridArray.find(cell => cell.isCenter);
+    if (centerTile) {
+      console.log('Center tile position:', centerTile.x, centerTile.y);
+    }
+  });
 </script>
 
 <svelte:window
@@ -977,6 +1063,7 @@
           {@const playerCount = getPlayerCount(cell)}
           {@const dominantRace = getDominantRace(cell)}
           {@const distanceFromPlayer = getDistanceFromPlayer(cell.x, cell.y)}
+          
           <div
             class="tile {getStructureClass(cell.structure)} {cell.terrain?.rarity || 'common'}"
             class:center={cell.isCenter}
@@ -994,6 +1081,10 @@
               transition-delay: {cell.isCenter ? 0 : Math.min(0.8, (distanceFromPlayer || cell.distance) * 0.02) + 's'};
             "
             onmouseenter={() => handleTileHover(cell)}
+            onclick={cell.isCenter ? handleCenterTileClick : undefined}
+            data-is-center={cell.isCenter ? 'true' : 'false'}
+            data-coords={`${cell.x},${cell.y}`}
+            data-debug={cell.isCenter ? 'center-tile' : ''}
             aria-label={`Coordinates ${cell.x},${cell.y}`}
             role="gridcell"
           >
@@ -1002,6 +1093,11 @@
               <div class="you-are-here-container">
                 <YouAreHere hasStructure={!!cell.structure} />
               </div>
+            {/if}
+
+            <!-- Add target indicator for center tile -->
+            {#if cell.isCenter && $ready}
+              <div class="target-indicator"></div>
             {/if}
 
             <!-- Add structure name display -->
@@ -1078,6 +1174,20 @@
       </div>
     {/if}
   </div>
+  
+  <!-- Add the Peek component -->
+  <Peek 
+    isOpen={isPeekVisible}
+    onClose={() => {
+      console.log('Closing Peek from onClose handler');
+      isPeekVisible = false;
+    }}
+    onAction={(actionId) => {
+      console.log('Peek action triggered:', actionId);
+      handlePeekAction(actionId);
+    }}
+    actions={peekActions}
+  />
   
   {#if isPathDrawingMode}
     <div class="path-controls">
@@ -1226,6 +1336,17 @@
     opacity: 1 !important;
     transform: scale(1.05) !important;
     transition: background-color 0.3s ease;
+    cursor: pointer; /* Add pointer cursor to indicate clickability */
+    pointer-events: auto !important; /* Force pointer events to be active */
+  }
+
+  /* Add a hover effect specifically for the center tile to improve UX */
+  .tile.center:hover {
+    box-shadow: 
+      inset 0 0 0 2px rgba(255, 255, 255, 0.9),
+      inset 0 0 0.7em rgba(255, 255, 255, 0.5),
+      0 0 1.2em rgba(255, 255, 255, 0.4);
+    transition: box-shadow 0.2s ease;
   }
 
   /* Add a higher z-index for tiles with the player position marker */
@@ -1702,5 +1823,28 @@
     justify-content: center;
     z-index: 10;
     pointer-events: none;
+  }
+
+  /* Add target indicator styling */
+  .target-indicator {
+    position: absolute;
+    width: 0.8em;
+    height: 0.8em;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.6);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.6), 
+                0 0 20px rgba(255, 255, 255, 0.3);
+    z-index: 5;
+    pointer-events: none;
+    animation: pulse-target 2s infinite ease-in-out;
+  }
+  
+  @keyframes pulse-target {
+    0% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.9); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    100% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.9); }
   }
 </style>

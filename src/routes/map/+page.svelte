@@ -111,6 +111,9 @@
 
     const spawnMenuVisible = $derived(!$game?.player?.alive);
 
+    let peekOpen = $state(false);
+    let peekTile = $state(null);
+
     function handlePanelHover(panelType) {
         if (panelType && ((panelType === 'chat' && showChat) || 
                         (panelType === 'achievements' && showAchievements) || 
@@ -704,7 +707,7 @@
         }, 300);
     }
 
-    // Updated to check if spawn menu is open
+    // Updated to handle Peek actions
     function handleGridClick(coords) {
         // Skip processing if spawn menu is open (player not alive)
         if (!$game?.player?.alive) {
@@ -714,6 +717,42 @@
         // Check if this is a path confirmation action
         if (coords && coords.confirmPath === true) {
             confirmPathDrawing(currentPath);
+            return;
+        }
+
+        // Check if this is a Peek action
+        if (coords && coords.action) {
+            console.log('Peek action selected:', coords.action);
+            
+            // Handle different peek actions
+            switch(coords.action) {
+                case 'inspect':
+                    // Get the tile data
+                    const clickedTile = $coordinates.find(c => c.x === coords.x && c.y === coords.y);
+                    if (clickedTile) {
+                        setHighlighted(coords.x, coords.y);
+                        toggleDetailsModal(true);
+                    }
+                    break;
+                    
+                case 'move':
+                    // Open the move dialog
+                    showModal({
+                        type: 'move',
+                        data: {
+                            x: coords.x,
+                            y: coords.y,
+                            tile: coords.tileData
+                        }
+                    });
+                    break;
+                    
+                // Handle other actions as needed
+                default:
+                    console.log('Unhandled Peek action:', coords.action);
+                    break;
+            }
+            
             return;
         }
 
@@ -743,8 +782,8 @@
             
             // Only highlight and open details if there's meaningful content and not in path drawing mode
             if (clickedTile && hasTileContent(clickedTile) && !isPathDrawingMode) {
-                setHighlighted(coords.x, coords.y);
-                toggleDetailsModal(true);
+                peekTile = clickedTile;
+                peekOpen = true;
             } else if (!isPathDrawingMode) {
                 // If there's no content and not in path drawing mode, just ensure nothing is highlighted
                 setHighlighted(null, null);
@@ -1280,6 +1319,10 @@
               onDemobilize={handleDemobilize}
             />
           {/if}
+        {/if}
+
+        {#if peekOpen && !isTutorialVisible && $game?.player?.alive}
+            <Peek bind:isOpen={peekOpen} tileData={peekTile} />
         {/if}
     {/if}
 </div>
