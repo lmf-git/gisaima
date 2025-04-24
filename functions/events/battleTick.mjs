@@ -213,35 +213,6 @@ function processBattleAttrition(battle, tileData) {
   
   // Check if either side has overwhelming advantage (5:1 ratio)
   const powerRatio = Math.max(side1Power, side2Power) / Math.min(Math.max(side1Power, side2Power), 1);
-  
-  // For very small, equal battles (like 1v1) that risk stalemate, increase resolve chance over time
-  if (totalUnits <= 4 && Math.abs(side1Power - side2Power) <= 1) {
-    // Chance increases with each tick - 50% base, +20% per tick, max 95%
-    const resolveChance = Math.min(0.5 + (tickCount * 0.2), 0.95);
-    
-    if (Math.random() < resolveChance) {
-      const winningSide = Math.random() < 0.5 ? 1 : 2;
-      logger.info(`Small equal battle (${totalUnits} units) resolved after ${tickCount} ticks`);
-      
-      const casualties = {};
-      if (side1Power > 1 && side2Power > 1) {
-        // Apply minimal casualties to both sides
-        const side1GroupId = Object.keys(side1Groups)[0];
-        const side2GroupId = Object.keys(side2Groups)[0];
-        casualties[side1GroupId] = 1;
-        casualties[side2GroupId] = 1;
-      }
-      
-      return {
-        isResolved: true,
-        winningSide,
-        casualties,
-        tickCount
-      };
-    }
-  }
-  
-  // If power ratio exceeds 5:1, resolve immediately
   if (powerRatio > 5) {
     const winningSide = side1Power > side2Power ? 1 : 2;
     return {
@@ -252,39 +223,41 @@ function processBattleAttrition(battle, tileData) {
     };
   }
 
-  // Single scaling formula for base casualty rate that considers:
-  // 1. Total battle size (smaller battles = higher % casualties)
-  // 2. Battle duration (longer battles = escalating casualties)
-  const baseRate = 0.03;  // Base casualty rate (3% for initial ticks of large battles)
-  const scalingFactor = 1.5;  // Scaling factor for battle size
+  // Unified scaling formula for all battle sizes
+  // Naturally produces higher casualty rates for smaller battles
+  // Base settings for the scaling algorithm
+  const baseRate = 0.03;       // Minimum casualty rate for very large battles
+  const scalingFactor = 2.5;   // Increased from 1.5 to make small battles resolve quickly
   
-  // Calculate the size-based component - higher for small battles
+  // Size-based scaling - inverse square root relationship with unit count
   const sizeFactor = baseRate * (1 + (scalingFactor / Math.sqrt(totalUnits || 1)));
   
-  // Calculate the duration-based component - battles intensify over time
-  // After 5 ticks, casualties start increasing based on duration
-  const durationMultiplier = tickCount <= 5 ? 1 : 1 + (0.15 * (tickCount - 5));
+  // Duration-based escalation - battles intensify over time
+  // Quicker escalation (20% per tick after tick 3) to help resolve lingering battles
+  const durationMultiplier = tickCount <= 3 ? 1 : 1 + (0.2 * (tickCount - 3));
   
-  // Combine the two factors (size and duration)
+  // Calculate scaled casualty rate
   const scaledRate = sizeFactor * durationMultiplier;
   
-  // Add randomness (70-130% of calculated rate)
-  const randomFactor = 0.7 + (Math.random() * 0.6);
+  // Add significant randomness to create possibility of quick resolutions
+  // Especially important for small battles
+  const minRandomFactor = 0.7 + (1 / (totalUnits + 1));  // Higher minimum for small battles
+  const randomFactor = minRandomFactor + (Math.random() * 0.8);
   
-  // Weaker side takes double casualties
+  // Weaker side takes higher casualties
   const weakerSideRate = scaledRate * 2 * randomFactor;
   const strongerSideRate = scaledRate * randomFactor;
   
   logger.info(
     `Battle ${battle.id} (${totalUnits} units): Tick ${tickCount}, casualty rates - ` +
     `Stronger: ${Math.round(strongerSideRate * 100)}%, Weaker: ${Math.round(weakerSideRate * 100)}% ` +
-    `(Duration multiplier: ${durationMultiplier.toFixed(2)}x)`
+    `(Size: ${sizeFactor.toFixed(2)}x, Duration: ${durationMultiplier.toFixed(2)}x)`
   );
   
   // Determine which side is stronger
   const isFirstSideStronger = side1Power >= side2Power;
   
-  // Calculate casualties for each side
+  // Calculate casualties
   const casualties = {};
   let side1RemainingUnits = 0;
   let side2RemainingUnits = 0;
@@ -299,6 +272,10 @@ function processBattleAttrition(battle, tileData) {
     if (groupCasualties > 0 && groupCasualties < unitCount) {
       casualties[groupId] = groupCasualties;
       side1RemainingUnits += (unitCount - groupCasualties);
+    } else if (groupCasualties >= unitCount) {
+      // In very small battles, this can wipe out a group entirely
+      casualties[groupId] = unitCount - 1; // Leave 1 unit for proper battle resolution
+      side1RemainingUnits += 1;
     } else {
       side1RemainingUnits += unitCount;
     }
@@ -314,12 +291,17 @@ function processBattleAttrition(battle, tileData) {
     if (groupCasualties > 0 && groupCasualties < unitCount) {
       casualties[groupId] = groupCasualties;
       side2RemainingUnits += (unitCount - groupCasualties);
+    } else if (groupCasualties >= unitCount) {
+      // In very small battles, this can wipe out a group entirely
+      casualties[groupId] = unitCount - 1; // Leave 1 unit for proper battle resolution
+      side2RemainingUnits += 1;
     } else {
       side2RemainingUnits += unitCount;
     }
   }
   
   // Check if battle should resolve this tick
+  // A side is nearly defeated when reduced to minimal units
   if (side1RemainingUnits <= 1 && Object.keys(side1Groups).length > 0) {
     return {
       isResolved: true,
@@ -706,19 +688,24 @@ async function processBattleResolution(db, worldId, battle, tileData, winningSid
     
     // Track initial unit counts for calculating casualties
     const initialUnitCounts = {};
+    let totalInitialSide1 = 0;
+    let totalInitialSide2 = 0;
     
     // Find all groups involved in this battle
     for (const [groupId, group] of Object.entries(groupsData)) {
       if (group.inBattle && group.battleId === battle.id) {
         // Store initial unit count for casualty calculation
-        initialUnitCounts[groupId] = group.unitCount || 1;
+        const unitCount = group.unitCount || 1;
+        initialUnitCounts[groupId] = unitCount;
         
         if (group.battleSide === 1) {
-          side1Groups[groupId] = true;
-          side1Power += group.unitCount || 1;
+          side1Groups[groupId] = group;
+          side1Power += unitCount;
+          totalInitialSide1 += unitCount;
         } else if (group.battleSide === 2) {
-          side2Groups[groupId] = true;
-          side2Power += group.unitCount || 1;
+          side2Groups[groupId] = group;
+          side2Power += unitCount;
+          totalInitialSide2 += unitCount;
         }
       }
     }
@@ -736,8 +723,8 @@ async function processBattleResolution(db, worldId, battle, tileData, winningSid
     // Prepare data for casualties and battle statistics
     const battleStats = {
       initialStrength: {
-        side1: side1Power,
-        side2: side2Power
+        side1: totalInitialSide1,
+        side2: totalInitialSide2
       },
       winningSide: winningSide,
       casualties: {
@@ -772,9 +759,49 @@ async function processBattleResolution(db, worldId, battle, tileData, winningSid
       victorCasualtyRate = 0.10 + (Math.random() * 0.15); // 10-25%
     }
     
-    // Rest of the resolution function remains the same...
-    // ...existing code...
-
+    // Collect group names for winning and losing sides
+    const winningGroups = Object.keys(victorSide.groups).map(groupId => {
+      const group = groupsData[groupId];
+      return group ? (group.name || `Group ${groupId}`) : `Unknown group`;
+    });
+    
+    const losingGroups = Object.keys(defeatedSide.groups).map(groupId => {
+      const group = groupsData[groupId];
+      return group ? (group.name || `Group ${groupId}`) : `Unknown group`;
+    });
+    
+    // Collect loot from losing groups
+    const battleLoot = collectLootFromLosingGroups(groupsData, defeatedSide);
+    
+    // Distribute loot to winning groups if there's any
+    if (battleLoot.length > 0) {
+      distributeLootToWinningGroups(
+        updates, 
+        worldId, 
+        chunkKey, 
+        tileKey, 
+        groupsData, 
+        victorSide, 
+        battleLoot
+      );
+    }
+    
+    // Process losing groups (complete defeat - all units lost)
+    const losingCasualties = processLosingGroups(updates, worldId, chunkKey, tileKey, groupsData, defeatedSide);
+    battleStats.casualties[winningSide === 1 ? 'side2' : 'side1'] = losingCasualties;
+    
+    // Process winning groups with casualties
+    const winningCasualties = processWinningGroupsWithCasualties(
+      updates, worldId, chunkKey, tileKey, groupsData, victorSide, victorCasualtyRate
+    );
+    battleStats.casualties[winningSide === 1 ? 'side1' : 'side2'] = winningCasualties;
+    
+    // Calculate totals for battle statistics
+    battleStats.casualties.total = battleStats.casualties.side1 + battleStats.casualties.side2;
+    battleStats.survivingUnits.side1 = totalInitialSide1 - battleStats.casualties.side1;
+    battleStats.survivingUnits.side2 = totalInitialSide2 - battleStats.casualties.side2;
+    battleStats.survivingUnits.total = battleStats.survivingUnits.side1 + battleStats.survivingUnits.side2;
+    
     // Update battle status and store detailed results in the tile record
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/status`] = 'completed';
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/winner`] = winningSide;

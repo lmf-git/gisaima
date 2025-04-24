@@ -5,20 +5,20 @@
         "ancient-lands": {
           "achievements": {
             "mobilised": true,
-            "mobilised_date": 1745480736126
+            "mobilised_date": 1745483576266
           },
           "alive": true,
-          "displayName": "testing",
+          "displayName": "human2",
           "groups": {
-            "-OOak_fZ4m0XhuJ1jhHG": {
+            "-OOavQ5UNm_DzJkjuO-x": {
               "at": "-23,5",
-              "id": "-OOak_fZ4m0XhuJ1jhHG",
+              "id": "-OOavQ5UNm_DzJkjuO-x",
               "status": "idle"
             }
           },
           "id": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
-          "inGroup": "-OOak_fZ4m0XhuJ1jhHG",
-          "joined": 1745480707947,
+          "inGroup": "-OOavQ5UNm_DzJkjuO-x",
+          "joined": 1745483562023,
           "lastLocation": {
             "x": -23,
             "y": 5
@@ -32,22 +32,22 @@
         "ancient-lands": {
           "achievements": {
             "first_attack": true,
-            "first_attack_date": 1745480780634,
+            "first_attack_date": 1745483648323,
             "mobilised": true,
-            "mobilised_date": 1745480714108
+            "mobilised_date": 1745483579720
           },
           "alive": true,
-          "displayName": "test",
+          "displayName": "human1",
           "groups": {
-            "-OOakVJMbtsW-gb9yfyN": {
+            "-OOavQwlnwnbblfQ_H05": {
               "at": "-23,5",
-              "id": "-OOakVJMbtsW-gb9yfyN",
+              "id": "-OOavQwlnwnbblfQ_H05",
               "status": "idle"
             }
           },
           "id": "fphA92tMTfRAu6FU6RDNJ33VQni1",
-          "inGroup": "-OOakVJMbtsW-gb9yfyN",
-          "joined": 1745480687711,
+          "inGroup": "-OOavQwlnwnbblfQ_H05",
+          "joined": 1745483556058,
           "lastLocation": {
             "x": -23,
             "y": 5
@@ -60,77 +60,47 @@
   "worlds": {
     "ancient-lands": {
       "chat": {
-        "-OOahCmU8zeddLCJNSqy": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "testelf's Force is being mobilized at (-30,-12)",
-          "timestamp": 1745479851106,
-          "type": "system"
-        },
-        "-OOakVLFNFeciuo9RNyP": {
+        "-OOavQ7Nfc01x13Cg0xf": {
           "location": {
             "x": -23,
             "y": 5
           },
-          "text": "test's Force is being mobilized at (-23,5)",
-          "timestamp": 1745480713555,
+          "text": "human2's Force is being mobilized at (-23,5)",
+          "timestamp": 1745483575771,
           "type": "system"
         },
-        "-OOak_hU79gyRS4Zq8p6": {
+        "-OOavQyg0lyftUpbKtxg": {
           "location": {
             "x": -23,
             "y": 5
           },
-          "text": "testing's Force is being mobilized at (-23,5)",
-          "timestamp": 1745480735520,
+          "text": "human1's Force is being mobilized at (-23,5)",
+          "timestamp": 1745483579245,
           "type": "system"
         },
-        "chat_1745479865043_2": {
+        "chat_1745483585619_25": {
           "location": {
-            "timestamp": 1745479865043,
-            "x": -30,
-            "y": -12
-          },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"testelf's Force\"",
-          "timestamp": 1745479865043,
-          "type": "event",
-          "userId": "fphA92tMTfRAu6FU6RDNJ33VQni1",
-          "userName": "testelf's Force"
-        },
-        "chat_1745480761823_309": {
-          "location": {
-            "timestamp": 1745480761823,
+            "timestamp": 1745483585619,
             "x": -23,
             "y": 5
           },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"testing's Force\"",
-          "timestamp": 1745480761823,
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"human2's Force\"",
+          "timestamp": 1745483585619,
           "type": "event",
           "userId": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
-          "userName": "testing's Force"
+          "userName": "human2's Force"
         },
-        "chat_1745480761823_735": {
+        "chat_1745483585619_451": {
           "location": {
-            "timestamp": 1745480761823,
+            "timestamp": 1745483585619,
             "x": -23,
             "y": 5
           },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"test's Force\"",
-          "timestamp": 1745480761823,
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"human1's Force\"",
+          "timestamp": 1745483585619,
           "type": "event",
           "userId": "fphA92tMTfRAu6FU6RDNJ33VQni1",
-          "userName": "test's Force"
-        },
-        "move_1745480221598_-OOahCkbrgwkcsT1hD6y_2": {
-          "location": {
-            "x": -32,
-            "y": -10
-          },
-          "text": "testelf's Force has arrived at (-32,-10)",
-          "timestamp": 1745480221598,
-          "type": "event"
+          "userName": "human1's Force"
         }
       },
       "chunks": {
@@ -229,35 +199,38 @@
         "-2,0": {
           "-23,5": {
             "battles": {
-              "battle_1745480780287_26": {
-                "id": "battle_1745480780287_26",
+              "battle_1745483648051_103": {
+                "id": "battle_1745483648051_103",
                 "side1Power": 1,
-                "side2Power": 1
+                "side2Power": 1,
+                "startedAt": 1745483648051,
+                "status": "active",
+                "tickCount": 0
               }
             },
             "groups": {
-              "-OOakVJMbtsW-gb9yfyN": {
-                "battleId": "battle_1745480780287_26",
-                "battleRole": "attacker",
-                "battleSide": 1,
-                "createdAt": 1745480713555,
-                "id": "-OOakVJMbtsW-gb9yfyN",
+              "-OOavQ5UNm_DzJkjuO-x": {
+                "battleId": "battle_1745483648051_103",
+                "battleRole": "defender",
+                "battleSide": 2,
+                "createdAt": 1745483575771,
+                "id": "-OOavQ5UNm_DzJkjuO-x",
                 "inBattle": true,
                 "lastMessage": {
                   "text": "Group is fully mobilized and ready",
-                  "timestamp": 1745480761823
+                  "timestamp": 1745483585619
                 },
-                "lastUpdated": 1745480761823,
-                "name": "test's Force",
-                "owner": "fphA92tMTfRAu6FU6RDNJ33VQni1",
+                "lastUpdated": 1745483585619,
+                "name": "human2's Force",
+                "owner": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
                 "race": "human",
                 "status": "fighting",
                 "unitCount": 1,
                 "units": {
-                  "fphA92tMTfRAu6FU6RDNJ33VQni1": {
-                    "displayName": "test",
-                    "id": "fphA92tMTfRAu6FU6RDNJ33VQni1",
-                    "lastActive": 1745480691794,
+                  "DqBhu8Nd4jNCYq51s8izH6JTHL63": {
+                    "displayName": "human2",
+                    "id": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
+                    "lastActive": 1745483569007,
                     "race": "human",
                     "type": "player"
                   }
@@ -265,28 +238,28 @@
                 "x": -23,
                 "y": 5
               },
-              "-OOak_fZ4m0XhuJ1jhHG": {
-                "battleId": "battle_1745480780287_26",
-                "battleRole": "defender",
-                "battleSide": 2,
-                "createdAt": 1745480735520,
-                "id": "-OOak_fZ4m0XhuJ1jhHG",
+              "-OOavQwlnwnbblfQ_H05": {
+                "battleId": "battle_1745483648051_103",
+                "battleRole": "attacker",
+                "battleSide": 1,
+                "createdAt": 1745483579245,
+                "id": "-OOavQwlnwnbblfQ_H05",
                 "inBattle": true,
                 "lastMessage": {
                   "text": "Group is fully mobilized and ready",
-                  "timestamp": 1745480761823
+                  "timestamp": 1745483585619
                 },
-                "lastUpdated": 1745480761823,
-                "name": "testing's Force",
-                "owner": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
+                "lastUpdated": 1745483585619,
+                "name": "human1's Force",
+                "owner": "fphA92tMTfRAu6FU6RDNJ33VQni1",
                 "race": "human",
                 "status": "fighting",
                 "unitCount": 1,
                 "units": {
-                  "DqBhu8Nd4jNCYq51s8izH6JTHL63": {
-                    "displayName": "testing",
-                    "id": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
-                    "lastActive": 1745480729879,
+                  "fphA92tMTfRAu6FU6RDNJ33VQni1": {
+                    "displayName": "human1",
+                    "id": "fphA92tMTfRAu6FU6RDNJ33VQni1",
+                    "lastActive": 1745483566296,
                     "race": "human",
                     "type": "player"
                   }
@@ -335,7 +308,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745480885986,
+        "lastTick": 1745483821112,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",
