@@ -1,6 +1,6 @@
 <script>
-  import { scale } from 'svelte/transition';
-  import { elasticOut } from 'svelte/easing';
+  import { scale, fly } from 'svelte/transition';
+  import { elasticOut, cubicOut } from 'svelte/easing';
   import { currentPlayer } from '../../lib/stores/game.js';
   import { targetStore } from '../../lib/stores/map.js';
   import Close from '../icons/Close.svelte';
@@ -63,6 +63,21 @@
   // Calculate close button position
   const closePosition = $derived(calculatePosition(availableActions.length, totalItems));
 
+  // Create a combined array with all items including the close button for animation sequencing
+  const allItems = $derived([
+    ...availableActions.map((action, index) => ({
+      type: 'action',
+      action,
+      position: calculatePosition(index, totalItems),
+      index
+    })),
+    {
+      type: 'close',
+      position: closePosition,
+      index: availableActions.length
+    }
+  ]);
+
   function handleActionClick(actionId, event) {
     // Prevent event from bubbling to parent elements
     if (event) {
@@ -88,38 +103,60 @@
     onShowDetails();
     onClose(); // Also close the peek view
   }
+
+  // Custom transition function that ensures proper staggering
+  function staggeredFly(node, { delay = 0, duration = 300, y = 20 }) {
+    return {
+      delay,
+      duration,
+      css: t => `
+        opacity: ${t};
+        transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em) + ${(1 - t) * y}px));
+      `
+    };
+  }
 </script>
 
 {#if isOpen}
   <div 
-    class="peek-container animated-container"
+    class="peek-container"
     role="dialog"
     aria-label="Quick actions menu"
+    transition:scale={{
+      duration: 300,
+      easing: elasticOut,
+      start: 0.5,
+      opacity: 0
+    }}
   >
     <div class="action-circle">
-      <!-- Actions in a circle -->
-      {#each availableActions as action, index}
-        {@const position = calculatePosition(index, totalItems)}
-        <button 
-          class="action-button {action.id}-button animated-action" 
-          style="--x:{position.x}em; --y:{position.y}em; --delay: {50 * index}ms;"
-          onclick={(e) => handleActionClick(action.id, e)}
-        >
-          {#if action.icon}
-            <action.icon />
-          {/if}
-          <span class="action-label">{action.label}</span>
-        </button>
+      <!-- Render all items in sequence for consistent animation -->
+      {#each allItems as item}
+        {#if item.type === 'action'}
+          <button 
+            class="action-button {item.action.id}-button" 
+            style="--x:{item.position.x}em; --y:{item.position.y}em;"
+            onclick={(e) => handleActionClick(item.action.id, e)}
+            use:staggeredFly={{ delay: 100 * item.index, duration: 300 }}
+            out:staggeredFly={{ delay: 100 * (totalItems - item.index - 1), duration: 300 }}
+          >
+            {#if item.action.icon}
+              <item.action.icon />
+            {/if}
+            <span class="action-label">{item.action.label}</span>
+          </button>
+        {:else if item.type === 'close'}
+          <button 
+            class="action-button close-button" 
+            style="--x:{item.position.x}em; --y:{item.position.y}em;"
+            onclick={onClose}
+            use:staggeredFly={{ delay: 100 * item.index, duration: 300 }}
+            out:staggeredFly={{ delay: 100 * (totalItems - item.index - 1), duration: 300 }}
+          >
+            <Close extraClass="close-icon" />
+          </button>
+        {/if}
       {/each}
-      
-      <!-- Close button -->
-      <button 
-        class="action-button close-button animated-action" 
-        style="--x:{closePosition.x}em; --y:{closePosition.y}em; --delay: {50 * availableActions.length}ms;"
-        onclick={onClose}
-      >
-        <Close extraClass="close-icon" />
-      </button>
     </div>
   </div>
 {/if}
@@ -144,40 +181,6 @@
     pointer-events: none;
   }
   
-  .animated-container {
-    animation: scale-in 300ms forwards cubic-bezier(0.5, 0, 0.25, 1.5); /* elasticOut-like easing */
-    transform-origin: center;
-  }
-  
-  .animated-action {
-    opacity: 0;
-    transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em) + 20px)); /* Initial position with y offset */
-    animation: action-appear 300ms forwards;
-    animation-delay: var(--delay, 0ms); /* Dynamic delay based on index */
-  }
-  
-  @keyframes scale-in {
-    0% {
-      transform: translate(-50%, -50%) scale(0.5);
-      opacity: 0;
-    }
-    100% {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-    }
-  }
-  
-  @keyframes action-appear {
-    0% {
-      opacity: 0;
-      transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em) + 20px));
-    }
-    100% {
-      opacity: 1;
-      transform: translate(calc(-50% + var(--x, 0em)), calc(-50% + var(--y, 0em)));
-    }
-  }
-  
   .action-button {
     position: absolute;
     top: 50%;
@@ -193,11 +196,11 @@
     background-color: rgba(255, 255, 255, 0.97);
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: box-shadow 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                border-color 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border: 3px solid rgba(255, 255, 255, 0.9);
     pointer-events: auto;
     font-family: var(--font-body);
-    /* Transform is now handled by the animation */
   }
   
   .action-button:hover {
