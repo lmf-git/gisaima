@@ -672,65 +672,69 @@
             <div class="section-content" transition:slide|local={{ duration: 300 }}>
               {#each sortedGroups as group}
                 <div class="entity group {isOwnedByCurrentPlayer(group) ? 'player-owned' : ''}">
-                  <div class="entity-icon">
-                    {#if group.race}
-                      {#if group.race.toLowerCase() === 'human'}
-                        <Human extraClass="race-icon-details" />
-                      {:else if group.race.toLowerCase() === 'elf'}
-                        <Elf extraClass="race-icon-details" />
-                      {:else if group.race.toLowerCase() === 'dwarf'}
-                        <Dwarf extraClass="race-icon-details" />
-                      {:else if group.race.toLowerCase() === 'goblin'}
-                        <Goblin extraClass="race-icon-details" />
-                      {:else if group.race.toLowerCase() === 'fairy'}
-                        <Fairy extraClass="race-icon-details" />
-                      {/if}
-                    {/if}
-                  </div>
-                  <div class="entity-info">
-                    <div class="entity-name">
-                      {formatEntityName(group)}
-                      {#if isOwnedByCurrentPlayer(group)}
-                        <span class="entity-badge owner-badge">Yours</span>
+                  <div class="entity-left">
+                    <div class="entity-icon">
+                      {#if group.race}
+                        {#if group.race.toLowerCase() === 'human'}
+                          <Human extraClass="race-icon-details" />
+                        {:else if group.race.toLowerCase() === 'elf'}
+                          <Elf extraClass="race-icon-details" />
+                        {:else if group.race.toLowerCase() === 'dwarf'}
+                          <Dwarf extraClass="race-icon-details" />
+                        {:else if group.race.toLowerCase() === 'goblin'}
+                          <Goblin extraClass="race-icon-details" />
+                        {:else if group.race.toLowerCase() === 'fairy'}
+                          <Fairy extraClass="race-icon-details" />
+                        {/if}
                       {/if}
                     </div>
                     
-                    <div class="entity-details">
-                      <div class="entity-details-left">
-                        <span class="unit-count">
-                          {group.unitCount || (group.units ? group.units.length : 0)} units
-                          {#if getGroupItemCount(group) > 0}
-                            • <span class="item-count">{getGroupItemCount(group)} items</span>
-                          {/if}
-                        </span>
-                        
-                        <span class="entity-status-badge {getStatusClass(group.status)}"
-                          class:pending-tick={isPendingTick(
-                            group.status === 'moving' 
-                              ? group.nextMoveTime 
-                              : (group.status === 'gathering' || group.status === 'starting_to_gather' 
-                                  ? group.gatheringUntil 
-                                  : group.readyAt)
-                          )}
-                        >
-                          {#if group.status === 'starting_to_gather'}
-                            Preparing to gather
-                          {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
-                            {_fmt(group.status)} {formatTimeRemaining(group.readyAt, group.status)}
-                          {:else if group.status === 'moving'}
-                            {_fmt(group.status)} 
-                            {#if group.nextMoveTime && !isPendingTick(group.nextMoveTime)}
-                              ({formatTimeRemaining(group.nextMoveTime)})
+                    <div class="entity-info">
+                      <div class="entity-name">
+                        {formatEntityName(group)}
+                        {#if isOwnedByCurrentPlayer(group)}
+                          <span class="entity-badge owner-badge">Yours</span>
+                        {/if}
+                        <span class="entity-coords">({formatCoords(group.x, group.y)})</span>
+                      </div>
+                      
+                      <div class="entity-details">
+                        <div class="entity-details-left">
+                          <span class="unit-count">
+                            {group.unitCount || (group.units ? group.units.length : 0)} units
+                            {#if getGroupItemCount(group) > 0}
+                              • <span class="item-count">{getGroupItemCount(group)} items</span>
                             {/if}
-                          {:else if group.status === 'gathering'}
-                            {_fmt(group.status)} 
-                            {#if group.gatheringUntil && !isPendingTick(group.gatheringUntil)}
-                              ({formatTimeRemaining(group.gatheringUntil)})
+                          </span>
+                          
+                          <span class="entity-status-badge {getStatusClass(group.status)}"
+                            class:pending-tick={isPendingTick(
+                              group.status === 'moving' 
+                                ? group.nextMoveTime 
+                                : (group.status === 'gathering' || group.status === 'starting_to_gather' 
+                                    ? group.gatheringUntil 
+                                    : group.readyAt)
+                            )}
+                          >
+                            {#if group.status === 'starting_to_gather'}
+                              Preparing to gather
+                            {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
+                              {_fmt(group.status)} {formatTimeRemaining(group.readyAt, group.status)}
+                            {:else if group.status === 'moving'}
+                              {_fmt(group.status)} 
+                              {#if group.nextMoveTime && !isPendingTick(group.nextMoveTime)}
+                                ({formatTimeRemaining(group.nextMoveTime)})
+                              {/if}
+                            {:else if group.status === 'gathering'}
+                              {_fmt(group.status)} 
+                              {#if group.gatheringUntil && !isPendingTick(group.gatheringUntil)}
+                                ({formatTimeRemaining(group.gatheringUntil)})
+                              {/if}
+                            {:else}
+                              {_fmt(group.status)}
                             {/if}
-                          {:else}
-                            {_fmt(group.status)}
-                          {/if}
-                        </span>
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -831,6 +835,7 @@
                       {#if player.id === $currentPlayer?.id}
                         <span class="entity-badge owner-badge">You</span>
                       {/if}
+                      <span class="entity-coords">({formatCoords(player.x, player.y)})</span>
                     </div>
                     <div class="entity-details">
                       <div class="entity-details-left">
@@ -915,6 +920,7 @@
                   <div class="entity-info">
                     <div class="entity-name">
                       {item.name || _fmt(item.type) || "Unknown Item"}
+                      <span class="entity-coords">({formatCoords(item.x, item.y)})</span>
                     </div>
                     <div class="entity-details">
                       {#if item.type}
@@ -1144,10 +1150,119 @@
     margin-top: 1em;
   }
   
-  .section-content {
-    padding: 0.8em;
-    overflow-y: auto; /* Enable vertical scrolling */
-    max-height: 30vh; /* Create a reasonable height limit for sections */
+  /* Fix section header styling */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5em 0.8em;
+    cursor: pointer;
+    user-select: none;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 0.3em 0.3em 0 0;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  .section-header:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .section-title {
+    margin: 0;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+  }
+  
+  /* Fix collapsible indicator styling */
+  .collapse-button {
+    background: none;
+    border: none;
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 0.9em;
+    cursor: pointer;
+    padding: 0;
+    width: 1.8em;
+    height: 1.8em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+  
+  .collapse-button:hover {
+    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  /* Improve entity layout in collapsible sections */
+  .entity {
+    display: flex;
+    flex-wrap: nowrap; /* Prevent immediate wrapping */
+    align-items: center; /* Center items vertically */
+    justify-content: space-between; /* Distribute space between main components */
+    margin-bottom: 0.6em;
+    padding: 0.5em 0.7em;
+    border-radius: 0.3em;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s ease;
+    position: relative;
+    cursor: pointer;
+  }
+
+  /* Ensure left side components stay grouped together */
+  .entity-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0; /* Allow text truncation */
+  }
+  
+  /* Adjust entity info to not grow excessively */
+  .entity-info {
+    flex: 1;
+    min-width: 0; /* Ensure text can truncate */
+    margin-right: 0.5em;
+  }
+  
+  /* Remove the full width from entity actions */
+  .entity-actions {
+    width: auto; /* Don't take full width */
+    margin-left: auto; /* Push to the right */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    align-self: center;
+  }
+
+  /* Make entity content items properly aligned */
+  .entity-name, .entity-details {
+    width: 100%;
+  }
+
+  /* Entity details should be flex to align status and other elements */
+  .entity-details {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.7);
+    gap: 0.5em;
+  }
+
+  .entity-details-left {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
   }
 
   h4 {
@@ -1387,51 +1502,14 @@
 
   .item-type {
     font-weight: 500;
-  }
-
-  .item-rarity {
-    font-size: 0.8em;
-    padding: 0.1em 0.4em;
-    border-radius: 0.2em;
-  }
-  
-  .item-rarity.uncommon {
-    background-color: rgba(76, 175, 80, 0.2);
-    color: #2e7d32;
-  }
-
-  .item-rarity.rare {
-    background-color: rgba(33, 150, 243, 0.2);
-    color: #0277bd;
-  }
-
-  .item-rarity.epic {
-    background-color: rgba(156, 39, 176, 0.2);
-    color: #7b1fa2;
-  }
-
-  .item-rarity.legendary {
-    background-color: rgba(255, 152, 0, 0.2);
-    color: #ef6c00;
-  }
-
-  .item-rarity.mythic {
-    background-color: rgba(233, 30, 99, 0.2);
-    color: #c2185b;
-    border: 1px solid rgba(233, 30, 99, 0.4);
-  }
-
-  .item-description {
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.6);
-    font-style: italic;
-    margin-top: 0.4em;
+    margin-right: 0.5em;
   }
 
   .item-quantity {
     font-size: 0.85em;
     color: rgba(0, 0, 0, 0.6);
     margin-left: 0.2em;
+    margin-right: 0.5em;
   }
 
   /* Battle styles */
@@ -1446,8 +1524,9 @@
     gap: 0.3em;
     font-size: 0.85em;
     margin-top: 0.4em;
+    width: 100%;
   }
-  
+
   .battle-side {
     padding: 0.2em 0.5em;
     border-radius: 0.3em;
@@ -1751,64 +1830,154 @@
     flex-shrink: 0;
   }
 
+  /* Updated entity styling to match Overview component */
+  .entity {
+    display: flex;
+    flex-wrap: nowrap; /* Prevent immediate wrapping */
+    align-items: center; /* Center items vertically */
+    justify-content: space-between; /* Distribute space between main components */
+    margin-bottom: 0.6em;
+    padding: 0.5em 0.7em;
+    border-radius: 0.3em;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s ease;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .entity:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
   .entity-icon {
     margin-right: 0.7em;
-    margin-top: 0.2em; /* Adjust vertical alignment */
     flex-shrink: 0;
     display: flex;
-    align-items: flex-start; /* Align to top of entity */
+    align-items: center;
     justify-content: center;
-    width: 1.8em; /* Give fixed width for consistency */
-    height: 1.8em; /* Give fixed height for consistency */
+    width: 1.8em; /* Fixed width */
+    height: 1.8em; /* Fixed height */
   }
-  
-  :global(.race-icon-details) {
-    width: 1.5em; /* Slightly larger */
-    height: 1.5em;
-    opacity: 0.85;
-    fill: rgba(0, 0, 0, 0.7);
-  }
-  
-  /* Fix 2: Improve contrast for demobilising status badge */
-  .entity-status-badge.demobilising {
-    background: rgba(0, 150, 136, 0.2); /* Changed to teal to match button */
-    border: 1px solid rgba(0, 150, 136, 0.4);
-    color: rgba(0, 0, 0, 0.7); /* Darker text for better contrast */
-    font-weight: 600; /* Make text bolder */
-  }
-  
-  /* Fix 3: Improve race icon positioning in entity items */
-  .entity-icon {
-    margin-right: 0.7em;
-    margin-top: 0.2em; /* Adjust vertical alignment */
-    flex-shrink: 0;
+
+  .entity-name {
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.85);
+    line-height: 1.2;
+    margin-bottom: 0.2em;
     display: flex;
-    align-items: flex-start; /* Align to top of entity */
-    justify-content: center;
-    width: 1.8em; /* Give fixed width for consistency */
-    height: 1.8em; /* Give fixed height for consistency */
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .entity-coords {
+    font-size: 0.7em;
+    color: rgba(0, 0, 0, 0.5);
+    margin-left: 0.6em;
+    font-weight: normal;
+  }
+
+  .entity-details {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.7);
+    justify-content: space-between;
+    gap: 0.4em;
+    margin-right: 0.5em; /* Space for actions */
+  }
+
+  .entity-details-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+  }
+
+  .entity-distance {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.5);
+    margin-left: auto;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+  }
+
+  .entity-race {
+    margin-right: 0.8em;
+  }
+
+  .entity-badge {
+    font-size: 0.7em;
+    padding: 0.2em 0.4em;
+    border-radius: 0.3em;
+    font-weight: 500;
+    margin-left: 0.6em;
+  }
+
+  /* Status badge styling consistent with Overview */
+  .entity-status-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8em;
+    font-weight: 500;
+    padding: 0.1em 0.5em;
+    border-radius: 0.3em;
+    white-space: nowrap;
+    text-transform: capitalize;
   }
   
-  /* Fix 4: Improve styling for actions in collapsible entity items */
+  /* Battle sides styling to match Overview */
+  .battle-sides {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3em;
+    font-size: 0.85em;
+    margin-top: 0.4em;
+    width: 100%;
+  }
+
+  /* Actions styling for better positioning */
   .entity-actions {
+    width: auto; /* Don't take full width */
+    margin-left: auto; /* Push to the right */
     display: flex;
     flex-wrap: wrap;
     gap: 0.5em;
     margin-top: 0.7em;
-    width: 100%; /* Ensure proper width */
   }
 
   .entity-action {
-    padding: 0.4em 0.6em;
-    font-size: 0.8em;
+    padding: 0.3em 0.5em;
+    font-size: 0.75em;
     background-color: rgba(200, 200, 200, 0.1);
     border: 1px solid rgba(200, 200, 200, 0.3);
     border-radius: 0.3em;
     cursor: pointer;
     transition: all 0.2s;
-    display: inline-flex; /* Changed to inline-flex */
+    display: inline-flex;
     align-items: center;
     gap: 0.3em;
-    white-space: nowrap; /* Prevent text wrapping within button */
+    white-space: nowrap;
+  }
+
+  .entity-action:hover {
+    background-color: rgba(200, 200, 200, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Consistent item styling */
+  .item-type {
+    font-weight: 500;
+    margin-right: 0.5em;
+  }
+
+  .item-quantity {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.6);
+    margin-left: 0.2em;
+    margin-right: 0.5em;
   }
 </style>
