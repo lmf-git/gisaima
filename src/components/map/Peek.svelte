@@ -10,26 +10,16 @@
   import Crop from '../icons/Crop.svelte';
   import Structure from '../icons/Structure.svelte';
 
-  // Props
+  // Props with improved defaults using runes
   const { 
     onClose = () => {},
     onAction = () => {},
     isOpen = false,
-    actions = []
+    actions = [],
+    tileData = null
   } = $props();
 
-  // Calculate positions in a circle for each action
-  function calculatePosition(index, total) {
-    const radius = 6; // em units
-    const angleStep = (2 * Math.PI) / total;
-    const angle = index * angleStep - Math.PI / 2; // Start from top (-90 degrees)
-    
-    return {
-      x: Math.cos(angle) * radius,
-      y: Math.sin(angle) * radius
-    };
-  }
-
+  // Use derived values for action rendering logic
   // Default actions if none provided
   const availableActions = $derived(actions.length > 0 ? actions : [
     { id: 'inspect', label: 'Inspect', icon: Eye },
@@ -43,6 +33,18 @@
 
   // Include close button as part of the circle
   const totalItems = $derived(availableActions.length + 1); // +1 for close button
+  
+  // Calculate positions in a circle for each action
+  function calculatePosition(index, total) {
+    const radius = 6; // em units
+    const angleStep = (2 * Math.PI) / total;
+    const angle = index * angleStep - Math.PI / 2; // Start from top (-90 degrees)
+    
+    return {
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius
+    };
+  }
   
   // Calculate close button position
   const closePosition = $derived(calculatePosition(availableActions.length, totalItems));
@@ -72,7 +74,7 @@
           transition:fly|local={{ delay: 50 * index, duration: 300, y: 20, opacity: 0 }}
         >
           {#if action.icon}
-            <action.icon extraClass="action-icon" />
+            <svelte:component this={action.icon} extraClass="action-icon" />
           {/if}
           <span class="action-label">{action.label}</span>
         </button>

@@ -33,14 +33,28 @@
     onAddPathPoint = null,
     onClick = null,
     onClose = () => {},
-    customPathPoints = [], // Accept path points directly as a prop instead of using a ref
-    modalOpen = false // Add new prop to indicate if any modal is open
+    customPathPoints = [],
+    modalOpen = false
   } = $props();
   
-  // Add state for Peek component visibility
-  let isPeekVisible = $state(false);
-  let clickedCenterTile = $state(false);
-  // Add state to track the position where Peek was opened
+  // Track last click time for the center tile to handle debouncing
+  let lastCenterClickTime = $state(0);
+  
+  // Use $derived instead of $state for Peek visibility
+  // This ensures Peek visibility is tied to conditions rather than being toggled manually
+  const isPeekVisible = $derived(
+    // Only show Peek if:
+    !isPathDrawingMode &&      // Not in path drawing mode
+    !detailed &&               // Detailed view not open
+    !modalOpen &&              // No modal open
+    Date.now() - lastCenterClickTime < 10000 && // Was clicked recently
+    lastCenterClickTime > 0    // Has been clicked at least once
+  );
+  
+  // Replace clickedCenterTile flag with a derived value
+  const isCenterTileActive = $derived(Date.now() - lastCenterClickTime < 300);
+  
+  // Track Peek position to detect map movement
   let peekOpenedAtPosition = $state(null);
   
   // Define default actions for Peek
@@ -62,76 +76,64 @@
         });
       }
     }
-    isPeekVisible = false;
+    // No need to set isPeekVisible = false because it's derived
+    lastCenterClickTime = 0; // Reset the click time to close Peek
   }
   
   // Function to toggle Peek visibility when center tile is clicked
   function handleCenterTileClick(event) {
-    // Add more explicit logging to confirm this function is called
-    console.log('CENTER TILE CLICK HANDLER TRIGGERED');
-    console.log('Event details:', { 
-      type: event.type,
-      target: event.target.tagName,
-      currentTarget: event.currentTarget?.tagName,
-      isPeekVisible,
-      isPathDrawingMode,
-      detailed,
-      modalOpen
-    });
-    
     // Ensure we stop propagation to prevent the grid click handler from triggering
     event.stopPropagation();
     event.preventDefault();
     
-    console.log('Center tile clicked, current Peek state:', isPeekVisible);
+    console.log('Center tile clicked');
     
-    // Don't show Peek in path drawing mode or if detailed view is open
+    // Don't handle clicks if these conditions apply
     if (isPathDrawingMode || detailed || modalOpen) {
       console.log('Not showing Peek: path drawing mode, detailed view, or modal open');
       return;
     }
     
-    // Toggle Peek visibility
-    isPeekVisible = !isPeekVisible;
-    clickedCenterTile = true;
-    
-    // Store the current center position when Peek is opened
-    if (isPeekVisible) {
+    // Toggle Peek based on timing - if it was recently opened, close it
+    if (Date.now() - lastCenterClickTime < 300) {
+      // If clicking again quickly, close Peek
+      console.log('Quick second click, closing Peek');
+      lastCenterClickTime = 0;
+    } else {
+      // First click or after delay, open Peek
+      console.log('Opening Peek');
+      lastCenterClickTime = Date.now();
+      
+      // Store the current center position when Peek is opened
       const centerTile = $gridArray.find(cell => cell.isCenter);
       if (centerTile) {
         peekOpenedAtPosition = { x: centerTile.x, y: centerTile.y };
         console.log('Peek opened at position:', peekOpenedAtPosition);
       }
-    } else {
-      peekOpenedAtPosition = null;
     }
-    
-    console.log('Set Peek visibility to:', isPeekVisible);
   }
 
-  // Add an effect to close Peek when modals open
-  $effect(() => {
-    if (modalOpen && isPeekVisible) {
-      console.log('Modal opened, closing Peek');
-      isPeekVisible = false;
-      peekOpenedAtPosition = null;
-    }
-  });
-  
-  // Add an effect to close Peek when the target tile position changes
+  // Add an effect to monitor map movement for closing Peek
   $effect(() => {
     if (!isPeekVisible || !peekOpenedAtPosition) return;
     
     const centerTile = $gridArray.find(cell => cell.isCenter);
     
     if (centerTile && (centerTile.x !== peekOpenedAtPosition.x || centerTile.y !== peekOpenedAtPosition.y)) {
-      console.log('Target position changed from', peekOpenedAtPosition, 'to', { x: centerTile.x, y: centerTile.y });
-      console.log('Closing Peek due to position change');
-      isPeekVisible = false;
+      console.log('Target position changed - closing Peek');
+      lastCenterClickTime = 0; // Reset to close Peek
       peekOpenedAtPosition = null;
     }
   });
   
+  // Add an effect to reset position when Peek closes
+  $effect(() => {
+    if (!isPeekVisible && peekOpenedAtPosition) {
+      console.log('Peek closed, resetting position data');
+      peekOpenedAtPosition = null;
+    }
+  });
+
   let mapElement = null;
   let resizeObserver = null;
   let introduced = $state(false);
@@ -541,17 +543,16 @@
 
   function handleGridClick(event) {
     // Add logging to check if grid click handler is getting events
-    console.log('Grid click detected, clickedCenterTile:', clickedCenterTile);
+    console.log('Grid click detected, isCenterTileActive:', isCenterTileActive);
     
     clickCount++;
     lastClickTime = Date.now();
     
     // First check if Peek is open and we're not clicking on center tile
     // Close it immediately to allow click to be processed in same action
-    if (isPeekVisible && !clickedCenterTile) {
+    if (isPeekVisible && !isCenterTileActive) {
       console.log('Closing Peek since we clicked on a non-center tile');
-      isPeekVisible = false;
-      peekOpenedAtPosition = null;
+      lastCenterClickTime = 0; // Reset to close Peek
       // Continue processing the click - don't return
     }
     
@@ -567,9 +568,8 @@
     }
     
     // Ignore clicks on the center tile since it's handled separately
-    if (clickedCenterTile) {
+    if (isCenterTileActive) {
       console.log('Click ignored: center tile already handling this click');
-      clickedCenterTile = false; // Reset for next click
       return;
     }
     
@@ -1212,17 +1212,14 @@
     {/if}
   </div>
   
-  <!-- Add the Peek component -->
+  <!-- Add the Peek component with updated handling -->
   <Peek 
     isOpen={isPeekVisible}
     onClose={() => {
       console.log('Closing Peek from onClose handler');
-      isPeekVisible = false;
+      lastCenterClickTime = 0; // Reset to close Peek
     }}
-    onAction={(actionId) => {
-      console.log('Peek action triggered:', actionId);
-      handlePeekAction(actionId);
-    }}
+    onAction={handlePeekAction}
     actions={peekActions}
   />
   

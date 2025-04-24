@@ -113,6 +113,12 @@
 
     let peekOpen = $state(false);
     let peekTile = $state(null);
+    let peekLastClosed = $state(0);
+    
+    // Use derived value to determine if we should skip click processing
+    const shouldSkipClickDueToPeek = $derived(
+      Date.now() - peekLastClosed < 200 // Skip if peek was closed within last 200ms
+    );
 
     function handlePanelHover(panelType) {
         if (panelType && ((panelType === 'chat' && showChat) || 
@@ -709,11 +715,8 @@
 
     // Updated to handle Peek actions
     function handleGridClick(coords) {
-        // Skip processing if spawn menu is open (player not alive)
-        if (!$game?.player?.alive) {
-            return;
-        }
-        
+        if (!$game?.player?.alive) return;
+
         // Check if this is a path confirmation action
         if (coords && coords.confirmPath === true) {
             confirmPathDrawing(currentPath);
@@ -722,37 +725,12 @@
 
         // Check if this is a Peek action
         if (coords && coords.action) {
-            console.log('Peek action selected:', coords.action);
-            
-            // Handle different peek actions
-            switch(coords.action) {
-                case 'inspect':
-                    // Get the tile data
-                    const clickedTile = $coordinates.find(c => c.x === coords.x && c.y === coords.y);
-                    if (clickedTile) {
-                        setHighlighted(coords.x, coords.y);
-                        toggleDetailsModal(true);
-                    }
-                    break;
-                    
-                case 'move':
-                    // Open the move dialog
-                    showModal({
-                        type: 'move',
-                        data: {
-                            x: coords.x,
-                            y: coords.y,
-                            tile: coords.tileData
-                        }
-                    });
-                    break;
-                    
-                // Handle other actions as needed
-                default:
-                    console.log('Unhandled Peek action:', coords.action);
-                    break;
+            // Get the tile data
+            const clickedTile = $coordinates.find(c => c.x === coords.x && c.y === coords.y);
+            if (clickedTile) {
+                setHighlighted(coords.x, coords.y);
+                toggleDetailsModal(true);
             }
-            
             return;
         }
 
@@ -774,26 +752,56 @@
 
         // Regular grid click handling (not in path drawing mode)
         if (coords) {
-            // First move the target to the clicked location - don't update URL
-            moveTarget(coords.x, coords.y, false);
-
-            // Get the tile data after moving
-            const clickedTile = $coordinates.find(c => c.x === coords.x && c.y === coords.y);
+            // Store current peek state before changing anything
+            const currentPeekTile = peekTile;
             
-            // Only highlight and open details if there's meaningful content and not in path drawing mode
-            if (clickedTile && hasTileContent(clickedTile) && !isPathDrawingMode) {
-                peekTile = clickedTile;
-                peekOpen = true;
-            } else if (!isPathDrawingMode) {
-                // If there's no content and not in path drawing mode, just ensure nothing is highlighted
-                setHighlighted(null, null);
-                toggleDetailsModal(false);
+            // Always close peek first
+            if (peekOpen) {
+                console.log('Closing previously open Peek');
+                peekOpen = false;
+                peekTile = null;
+                peekLastClosed = Date.now(); // Record when peek was closed
+            }
+            
+            // If we just closed peek, don't immediately process the click
+            if (shouldSkipClickDueToPeek) {
+                console.log('Skipping click processing because we just closed Peek');
+                setTimeout(() => {
+                    isProcessingClick = false;
+                }, 100);
+                return;
+            }
+            
+            // Move the target to the clicked location
+            moveTarget(coords.x, coords.y, false);
+            
+            // Find the clicked tile
+            const clickedTile = $coordinates.find(
+                c => c.x === coords.x && c.y === coords.y
+            );
+            
+            // Only show peek if:
+            // 1. The tile has content
+            // 2. We're not in path drawing mode
+            // 3. It's not the same tile we just closed peek for
+            if (clickedTile && 
+                hasTileContent(clickedTile) && 
+                !isPathDrawingMode && 
+                (!currentPeekTile || 
+                 currentPeekTile.x !== clickedTile.x || 
+                 currentPeekTile.y !== clickedTile.y)) {
+                
+                // Set a short timeout to prevent peek from instantly reopening
+                setTimeout(() => {
+                    peekTile = clickedTile;
+                    peekOpen = true;
+                }, 50);
             }
         }
 
         // Reset debounce flag
         setTimeout(() => {
-            isProcessingClick = false;
+          isProcessingClick = false;
         }, 300);
     }
 
@@ -1033,19 +1041,18 @@
         confirmPathDrawing(path);
     }
 
-    // Replace the existing effect with a more robust version
+    // Simplify the effect to only handle map dragging cases
     $effect(() => {
-        // Check if peek is open
+        // Only operate if peek is open and we have a tile
         if (!peekOpen || !peekTile) return;
         
-        // Use map.target directly which is more reliable than the derived store
-        const currentTarget = $map.target;
-        
-        // Compare the target coordinates with peek tile coordinates
-        if (currentTarget && (currentTarget.x !== peekTile.x || currentTarget.y !== peekTile.y)) {
-            console.log('Target moved from', [peekTile.x, peekTile.y], 'to', [currentTarget.x, currentTarget.y]);
-            console.log('Closing peek actions');
+        // Only handle map dragging - clicks are handled in handleGridClick
+        if ($map.isDragging) {
+          const currentTarget = $map.target;
+          // Close peek if target changed during drag
+          if (currentTarget && (currentTarget.x !== peekTile.x || currentTarget.y !== peekTile.y)) {
             peekOpen = false;
+          }
         }
     });
 </script>
@@ -1338,7 +1345,16 @@
         {/if}
 
         {#if peekOpen && !isTutorialVisible && $game?.player?.alive}
-            <Peek bind:isOpen={peekOpen} tileData={peekTile} />
+          <Peek 
+            bind:isOpen={peekOpen}
+            tileData={peekTile}
+            onClose={() => {
+              console.log('Map: Peek closed from onClose');
+              peekOpen = false;
+              peekTile = null;
+              peekLastClosed = Date.now(); // Record when peek was closed
+            }}
+          />
         {/if}
     {/if}
 </div>
