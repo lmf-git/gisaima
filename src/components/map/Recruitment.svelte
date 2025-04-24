@@ -1,0 +1,1106 @@
+<script>
+  import { onMount, onDestroy } from "svelte";
+  import { get } from "svelte/store";
+  import { game, currentPlayer } from "../../lib/stores/game.js";
+  import { getFunctions, httpsCallable } from "firebase/functions";
+  import Close from '../icons/Close.svelte';
+  import Human from '../icons/Human.svelte';
+  import Elf from '../icons/Elf.svelte';
+  import Dwarf from '../icons/Dwarf.svelte';
+  import Goblin from '../icons/Goblin.svelte';
+  import Fairy from '../icons/Fairy.svelte';
+  import Shield from '../icons/Shield.svelte';
+  import Sword from '../icons/Sword.svelte';
+  import Bow from '../icons/Bow.svelte';
+
+  // Props
+  const { 
+    structure = null,
+    x = 0, 
+    y = 0, 
+    onClose = () => {}, 
+    onRecruitStart = () => {}
+  } = $props();
+  
+  // Component state
+  let isLoading = $state(false);
+  let error = $state(null);
+  let success = $state(null);
+  let selectedUnit = $state(null);
+  let quantity = $state(1);
+  let availableUnits = $state([]);
+  let structureData = $state(null);
+  let queue = $state([]);
+  let maxUnits = $state(10); // Default max queue size
+  
+  // Set initial data from props
+  $effect(() => {
+    if (structure) {
+      structureData = structure;
+      
+      // Determine available units based on structure type and race
+      loadAvailableUnits(structure);
+      
+      // Get current recruitment queue
+      if (structure.recruitmentQueue) {
+        queue = Object.values(structure.recruitmentQueue)
+          .filter(item => item && typeof item === 'object')
+          .sort((a, b) => (a.startedAt || 0) - (b.startedAt || 0));
+      }
+      
+      // Set max units based on structure capacity
+      maxUnits = structure.capacity || 10;
+    }
+  });
+  
+  // Load available units for recruitment based on structure
+  function loadAvailableUnits(structure) {
+    const race = structure.race?.toLowerCase();
+    
+    // Default units available to all races
+    const baseUnits = [
+      {
+        id: 'basic_warrior',
+        name: 'Basic Warrior',
+        description: 'Basic melee fighter with sword and shield',
+        type: 'warrior',
+        race: race || 'neutral',
+        cost: { wood: 2, stone: 1 },
+        timePerUnit: 60, // seconds per unit
+        icon: 'sword',
+        power: 1
+      },
+      {
+        id: 'scout',
+        name: 'Scout',
+        description: 'Fast unit with high visibility',
+        type: 'scout',
+        race: race || 'neutral',
+        cost: { wood: 1, leather: 1 },
+        timePerUnit: 45, // seconds per unit
+        icon: 'bow',
+        power: 0.5
+      }
+    ];
+    
+    // Race-specific units
+    const raceUnits = [];
+    if (race === 'human') {
+      raceUnits.push({
+        id: 'human_knight',
+        name: 'Knight',
+        description: 'Heavily armored warrior with high defense',
+        type: 'knight',
+        race: 'human',
+        cost: { wood: 1, stone: 2, iron: 1 },
+        timePerUnit: 90,
+        icon: 'shield',
+        power: 2
+      });
+    } else if (race === 'elf') {
+      raceUnits.push({
+        id: 'elf_archer',
+        name: 'Elven Archer',
+        description: 'Skilled ranged fighter with deadly accuracy',
+        type: 'archer',
+        race: 'elf',
+        cost: { wood: 3, leather: 1 },
+        timePerUnit: 75,
+        icon: 'bow',
+        power: 1.5
+      });
+    } else if (race === 'dwarf') {
+      raceUnits.push({
+        id: 'dwarf_defender',
+        name: 'Dwarven Defender',
+        description: 'Sturdy warrior specialized in defense',
+        type: 'defender',
+        race: 'dwarf',
+        cost: { stone: 2, iron: 2 },
+        timePerUnit: 90,
+        icon: 'shield',
+        power: 2
+      });
+    } else if (race === 'goblin') {
+      raceUnits.push({
+        id: 'goblin_raider',
+        name: 'Goblin Raider',
+        description: 'Quick but weak fighter, good in groups',
+        type: 'raider',
+        race: 'goblin',
+        cost: { wood: 1 },
+        timePerUnit: 30,
+        icon: 'sword',
+        power: 0.75
+      });
+    } else if (race === 'fairy') {
+      raceUnits.push({
+        id: 'fairy_enchanter',
+        name: 'Fairy Enchanter',
+        description: 'Magical unit with support abilities',
+        type: 'enchanter',
+        race: 'fairy',
+        cost: { herbs: 2, crystal: 1 },
+        timePerUnit: 60,
+        icon: 'staff',
+        power: 1.5
+      });
+    }
+    
+    // Add structure-specific units based on structure type
+    const structureUnits = [];
+    if (structure.type === 'fortress' || structure.type === 'stronghold') {
+      structureUnits.push({
+        id: 'elite_guard',
+        name: 'Elite Guard',
+        description: 'Highly trained soldier with advanced combat skills',
+        type: 'elite',
+        race: race || 'neutral',
+        cost: { wood: 2, stone: 2, iron: 2 },
+        timePerUnit: 120,
+        icon: 'shield',
+        power: 3
+      });
+    }
+    
+    // Combine all available units
+    availableUnits = [...baseUnits, ...raceUnits, ...structureUnits];
+    
+    // Set initial selected unit
+    if (availableUnits.length > 0) {
+      selectedUnit = availableUnits[0];
+    }
+  }
+  
+  // Calculate total resources needed
+  function calculateTotalCost() {
+    if (!selectedUnit) return {};
+    
+    const totalCost = {};
+    Object.entries(selectedUnit.cost).forEach(([resource, amount]) => {
+      totalCost[resource] = amount * quantity;
+    });
+    
+    return totalCost;
+  }
+  
+  // Calculate estimated completion time
+  function calculateCompletionTime() {
+    if (!selectedUnit) return null;
+    
+    const now = Date.now();
+    const secondsPerUnit = selectedUnit.timePerUnit || 60;
+    const totalSeconds = secondsPerUnit * quantity;
+    
+    // Add time for existing queue items
+    let queueTimeSeconds = 0;
+    queue.forEach(item => {
+      if (item.completesAt && item.completesAt > now) {
+        queueTimeSeconds += (item.completesAt - now) / 1000;
+      }
+    });
+    
+    // Total time including queue
+    const totalTimeSeconds = queueTimeSeconds + totalSeconds;
+    const completionDate = new Date(now + (totalTimeSeconds * 1000));
+    
+    return {
+      seconds: totalSeconds,
+      totalSeconds: totalTimeSeconds,
+      date: completionDate,
+      queueSeconds: queueTimeSeconds,
+      ticksRequired: Math.ceil(totalSeconds / 60) // Assuming 1 tick = 60 seconds
+    };
+  }
+  
+  // Format a number with commas
+  function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+  
+  // Format time from seconds to readable format
+  function formatTime(seconds) {
+    if (seconds < 60) return `${Math.ceil(seconds)}s`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${Math.ceil(seconds % 60)}s`;
+    return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
+  }
+  
+  // Format date to human-readable format
+  function formatDate(date) {
+    if (!date) return '';
+    const now = new Date();
+    const diff = date - now;
+    
+    // If less than a day, show relative time
+    if (diff < 86400000) { // 24 hours in ms
+      return `Today at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+    }
+    
+    return date.toLocaleString();
+  }
+  
+  // Format a resource name
+  function formatResource(name) {
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  }
+  
+  // Get player's resources
+  function getPlayerResources() {
+    const player = get(currentPlayer);
+    const worldId = get(game).worldKey;
+    
+    if (!player || !worldId || !player.worlds || !player.worlds[worldId]) {
+      return {};
+    }
+    
+    return player.worlds[worldId].resources || {};
+  }
+  
+  // Check if player has enough resources
+  function hasEnoughResources() {
+    if (!selectedUnit) return false;
+    
+    const playerResources = getPlayerResources();
+    const totalCost = calculateTotalCost();
+    
+    for (const [resource, amount] of Object.entries(totalCost)) {
+      const playerAmount = playerResources[resource] || 0;
+      if (playerAmount < amount) return false;
+    }
+    
+    return true;
+  }
+  
+  // Start recruitment
+  async function startRecruitment() {
+    if (!selectedUnit) {
+      error = "No unit type selected";
+      return;
+    }
+    
+    if (quantity < 1) {
+      error = "Quantity must be at least 1";
+      return;
+    }
+    
+    if (!hasEnoughResources()) {
+      error = "Not enough resources";
+      return;
+    }
+    
+    if (queue.length >= maxUnits) {
+      error = "Recruitment queue is full";
+      return;
+    }
+    
+    try {
+      isLoading = true;
+      error = null;
+      
+      const functions = getFunctions();
+      const recruitUnitsFn = httpsCallable(functions, 'recruitUnits');
+      
+      const result = await recruitUnitsFn({
+        structureId: structureData.id,
+        x,
+        y,
+        worldId: get(game).worldKey,
+        unitType: selectedUnit.id,
+        quantity: quantity,
+        cost: calculateTotalCost()
+      });
+      
+      console.log("Recruitment started:", result.data);
+      success = `Started recruiting ${quantity} ${selectedUnit.name} units`;
+      
+      // Refresh queue from the result
+      if (result.data.queue) {
+        queue = Object.values(result.data.queue)
+          .sort((a, b) => (a.startedAt || 0) - (b.startedAt || 0));
+      }
+      
+      // Trigger the achievement callback
+      onRecruitStart(result.data);
+      
+    } catch (err) {
+      console.error("Error starting recruitment:", err);
+      error = err.message || "Failed to start recruitment";
+    } finally {
+      isLoading = false;
+    }
+  }
+  
+  // Cancel a recruitment item
+  async function cancelRecruitment(recruitmentId) {
+    try {
+      isLoading = true;
+      error = null;
+      
+      const functions = getFunctions();
+      const cancelRecruitmentFn = httpsCallable(functions, 'cancelRecruitment');
+      
+      await cancelRecruitmentFn({
+        recruitmentId,
+        structureId: structureData.id,
+        x,
+        y,
+        worldId: get(game).worldKey
+      });
+      
+      // Remove from local queue
+      queue = queue.filter(item => item.id !== recruitmentId);
+      success = "Recruitment cancelled";
+      
+    } catch (err) {
+      console.error("Error cancelling recruitment:", err);
+      error = err.message || "Failed to cancel recruitment";
+    } finally {
+      isLoading = false;
+    }
+  }
+  
+  // Get icon component for unit type
+  function getUnitIcon(unit) {
+    if (!unit) return null;
+    
+    // First check icon property
+    if (unit.icon) {
+      if (unit.icon === 'sword') return Sword;
+      if (unit.icon === 'bow') return Bow;
+      if (unit.icon === 'shield') return Shield;
+    }
+    
+    // Fall back to race icons
+    if (unit.race) {
+      const race = unit.race.toLowerCase();
+      if (race === 'human') return Human;
+      if (race === 'elf') return Elf;
+      if (race === 'dwarf') return Dwarf;
+      if (race === 'goblin') return Goblin;
+      if (race === 'fairy') return Fairy;
+    }
+    
+    // Default
+    return Sword;
+  }
+  
+  // Get progress percentage for a queue item
+  function getProgressPercentage(item) {
+    if (!item || !item.startedAt || !item.completesAt) return 0;
+    
+    const now = Date.now();
+    const total = item.completesAt - item.startedAt;
+    const elapsed = now - item.startedAt;
+    
+    if (elapsed >= total) return 100;
+    return Math.floor((elapsed / total) * 100);
+  }
+  
+  // Add keyboard handler for the Escape key
+  function handleKeyDown(event) {
+    if (event.key === 'Escape' && !isLoading) {
+      onClose();
+    }
+  }
+  
+  // Initialize
+  onMount(() => {
+    // Refresh queue on interval
+    const interval = setInterval(() => {
+      // Force update of progress calculations
+      queue = [...queue];
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  });
+</script>
+
+<svelte:window on:keydown={handleKeyDown} />
+
+<div class="modal-container">
+  <div class="recruitment-modal">
+    <header class="modal-header">
+      <h3>
+        Recruitment at {structureData?.name || 'Structure'} ({x}, {y})
+      </h3>
+      <button class="close-button" onclick={onClose} disabled={isLoading}>
+        <Close size="1.6em" extraClass="close-icon-dark" />
+      </button>
+    </header>
+
+    <div class="modal-content">
+      <!-- Queue section -->
+      <div class="section queue-section">
+        <h4>
+          Recruitment Queue 
+          <span class="entity-count">{queue.length}/{maxUnits}</span>
+        </h4>
+        
+        {#if queue.length === 0}
+          <div class="empty-state">No units currently being recruited</div>
+        {:else}
+          <div class="queue-list">
+            {#each queue as item}
+              <div class="queue-item">
+                <div class="queue-item-header">
+                  <div class="queue-item-icon">
+                    <!-- Get the appropriate icon based on unit type -->
+                    {#if item.unitType}
+                      {#key item.unitType}
+                        {#if item.icon === 'sword'}
+                          <Sword extraClass="unit-icon" />
+                        {:else if item.icon === 'bow'}
+                          <Bow extraClass="unit-icon" />
+                        {:else if item.icon === 'shield'}
+                          <Shield extraClass="unit-icon" />
+                        {:else if item.race === 'human'}
+                          <Human extraClass="unit-icon" />
+                        {:else if item.race === 'elf'}
+                          <Elf extraClass="unit-icon" />
+                        {:else if item.race === 'dwarf'}
+                          <Dwarf extraClass="unit-icon" />
+                        {:else if item.race === 'goblin'}
+                          <Goblin extraClass="unit-icon" />
+                        {:else if item.race === 'fairy'}
+                          <Fairy extraClass="unit-icon" />
+                        {:else}
+                          <Sword extraClass="unit-icon" />
+                        {/if}
+                      {/key}
+                    {/if}
+                  </div>
+                  <div class="queue-item-info">
+                    <div class="queue-item-name">
+                      {item.unitName || "Unknown Unit"} x{item.quantity}
+                    </div>
+                    <div class="queue-item-time">
+                      Completes: {formatDate(new Date(item.completesAt))}
+                    </div>
+                  </div>
+                  {#if item.owner === $currentPlayer?.id}
+                    <button 
+                      class="cancel-button" 
+                      onclick={() => cancelRecruitment(item.id)}
+                      disabled={isLoading}>
+                      ✕
+                    </button>
+                  {/if}
+                </div>
+                
+                <div class="progress-bar">
+                  <div 
+                    class="progress-fill"
+                    style={`width: ${getProgressPercentage(item)}%`}>
+                  </div>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+      
+      <!-- Recruitment form -->
+      <div class="section recruitment-form">
+        <h4>Recruit New Units</h4>
+        
+        {#if availableUnits.length === 0}
+          <div class="empty-state">No units available for recruitment</div>
+        {:else}
+          <div class="form-content">
+            <!-- Unit selection -->
+            <div class="form-group">
+              <label for="unit-select">Unit Type</label>
+              <div class="unit-select-container">
+                {#each availableUnits as unit}
+                  <button 
+                    class="unit-option {selectedUnit?.id === unit.id ? 'selected' : ''}"
+                    onclick={() => selectedUnit = unit}
+                    title={unit.description}
+                  >
+                    <div class="unit-option-icon">
+                      {@const IconComponent = getUnitIcon(unit)}
+                      <svelte:component this={IconComponent} extraClass="unit-icon" />
+                    </div>
+                    <div class="unit-option-info">
+                      <div class="unit-option-name">{unit.name}</div>
+                      <div class="unit-option-power">Power: {unit.power}</div>
+                    </div>
+                  </button>
+                {/each}
+              </div>
+            </div>
+            
+            {#if selectedUnit}
+              <!-- Unit details -->
+              <div class="unit-details">
+                <h5>{selectedUnit.name}</h5>
+                <p class="unit-description">{selectedUnit.description}</p>
+                
+                <div class="unit-stats">
+                  <div class="unit-stat">
+                    <span class="stat-label">Power:</span>
+                    <span class="stat-value">{selectedUnit.power}</span>
+                  </div>
+                  <div class="unit-stat">
+                    <span class="stat-label">Time:</span>
+                    <span class="stat-value">{formatTime(selectedUnit.timePerUnit)} each</span>
+                  </div>
+                </div>
+                
+                <div class="unit-cost">
+                  <h6>Cost per unit:</h6>
+                  <div class="cost-items">
+                    {#each Object.entries(selectedUnit.cost) as [resource, amount]}
+                      <div class="cost-item">
+                        {formatResource(resource)}: {amount}
+                      </div>
+                    {/each}
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Quantity selection -->
+              <div class="form-group">
+                <label for="quantity">Quantity</label>
+                <div class="quantity-control">
+                  <button 
+                    class="quantity-button" 
+                    onclick={() => quantity = Math.max(1, quantity - 1)}
+                    disabled={isLoading || quantity <= 1}>
+                    -
+                  </button>
+                  <input 
+                    type="number" 
+                    id="quantity"
+                    bind:value={quantity}
+                    min="1"
+                    max="100"
+                    disabled={isLoading}
+                  />
+                  <button 
+                    class="quantity-button"
+                    onclick={() => quantity = Math.min(100, quantity + 1)}
+                    disabled={isLoading || quantity >= 100}>
+                    +
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Total cost and time -->
+              <div class="totals">
+                <div class="total-section">
+                  <h6>Total Cost:</h6>
+                  <div class="total-items">
+                    {#each Object.entries(calculateTotalCost()) as [resource, amount]}
+                      {@const playerResource = getPlayerResources()[resource] || 0}
+                      <div 
+                        class="total-item {playerResource < amount ? 'insufficient' : ''}"
+                        title={`You have ${playerResource} ${formatResource(resource)}`}
+                      >
+                        {formatResource(resource)}: {amount}
+                        <span class="player-has">({playerResource})</span>
+                      </div>
+                    {/each}
+                  </div>
+                </div>
+                
+                {@const completionInfo = calculateCompletionTime()}
+                <div class="total-section">
+                  <h6>Time Required:</h6>
+                  <div class="time-info">
+                    <div>Production: {formatTime(completionInfo?.seconds || 0)}</div>
+                    {#if completionInfo?.queueSeconds > 0}
+                      <div>Queue wait: {formatTime(completionInfo?.queueSeconds || 0)}</div>
+                      <div class="completion-estimate">
+                        Estimated completion: {formatDate(completionInfo?.date)}
+                      </div>
+                    {/if}
+                  </div>
+                </div>
+              </div>
+              
+              {#if error}
+                <div class="error-message">{error}</div>
+              {/if}
+              
+              {#if success}
+                <div class="success-message">{success}</div>
+              {/if}
+              
+              <!-- Submit button -->
+              <div class="form-actions">
+                <button 
+                  class="recruit-button"
+                  onclick={startRecruitment}
+                  disabled={isLoading || !hasEnoughResources() || queue.length >= maxUnits}
+                >
+                  {isLoading ? "Processing..." : "Start Recruitment"}
+                </button>
+              </div>
+            {/if}
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  .recruitment-modal {
+    width: 90%;
+    max-width: 36rem;
+    max-height: 85vh;
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 0.05em solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    animation: modalAppear 0.3s ease-out forwards;
+    overflow: hidden;
+  }
+
+  @keyframes modalAppear {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .modal-header {
+    padding: 0.8rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.8);
+    font-family: var(--font-heading);
+  }
+
+  .close-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+  }
+
+  .close-button:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .modal-content {
+    padding: 1rem;
+    overflow-y: auto;
+    max-height: calc(85vh - 3.5rem);
+  }
+
+  .section {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 0.3rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    font-family: var(--font-heading);
+  }
+
+  .entity-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1em;
+    font-size: 0.8em;
+    font-weight: 500;
+    padding: 0.1em 0.6em;
+    margin-left: 0.5rem;
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);
+  }
+
+  .empty-state {
+    padding: 2rem 0;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.5);
+    font-style: italic;
+  }
+
+  .queue-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .queue-item {
+    padding: 0.8rem;
+    background-color: rgba(255, 255, 255, 0.6);
+    border-radius: 0.3rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .queue-item-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .queue-item-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  :global(.unit-icon) {
+    width: 1.5rem;
+    height: 1.5rem;
+    opacity: 0.8;
+  }
+
+  .queue-item-info {
+    flex-grow: 1;
+  }
+
+  .queue-item-name {
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+  }
+
+  .queue-item-time {
+    font-size: 0.85rem;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .cancel-button {
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    background-color: rgba(255, 59, 48, 0.1);
+    border: 1px solid rgba(255, 59, 48, 0.2);
+    color: rgb(255, 59, 48);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+
+  .cancel-button:hover:not(:disabled) {
+    background-color: rgba(255, 59, 48, 0.2);
+  }
+
+  .progress-bar {
+    height: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0.25rem;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background-color: rgba(52, 199, 89, 0.8);
+    transition: width 0.3s ease;
+  }
+
+  .form-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  label {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .unit-select-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    max-height: 10rem;
+    overflow-y: auto;
+    padding: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 0.3rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .unit-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 0.3rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+    width: calc(50% - 0.25rem);
+    text-align: left;
+  }
+
+  .unit-option:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+
+  .unit-option.selected {
+    background-color: rgba(0, 122, 255, 0.1);
+    border-color: rgba(0, 122, 255, 0.3);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+  }
+
+  .unit-option-icon {
+    width: 2rem;
+    height: 2rem;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .unit-option-info {
+    flex-grow: 1;
+    font-size: 0.85rem;
+  }
+
+  .unit-option-name {
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+  }
+
+  .unit-option-power {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .unit-details {
+    padding: 1rem;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 0.3rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  h5 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .unit-description {
+    margin: 0 0 1rem 0;
+    font-size: 0.9rem;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .unit-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .unit-stat {
+    font-size: 0.85rem;
+  }
+
+  .stat-label {
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .unit-cost h6,
+  .total-section h6 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .cost-items,
+  .total-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .cost-item,
+  .total-item {
+    font-size: 0.85rem;
+    padding: 0.2rem 0.5rem;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 0.2rem;
+  }
+
+  .total-item.insufficient {
+    background-color: rgba(255, 59, 48, 0.1);
+    color: rgb(168, 36, 28);
+  }
+
+  .player-has {
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.5);
+    margin-left: 0.2rem;
+  }
+
+  .quantity-control {
+    display: flex;
+    align-items: center;
+    width: fit-content;
+  }
+
+  .quantity-button {
+    width: 2rem;
+    height: 2rem;
+    background-color: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .quantity-button:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+
+  input[type="number"] {
+    width: 3rem;
+    height: 2rem;
+    text-align: center;
+    font-size: 1rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0;
+    margin: 0 0.5rem;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 0;
+  }
+
+  .totals {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 0.3rem;
+  }
+
+  .time-info {
+    font-size: 0.85rem;
+  }
+
+  .completion-estimate {
+    margin-top: 0.5rem;
+    font-weight: 500;
+  }
+
+  .error-message {
+    padding: 0.8rem;
+    background-color: rgba(255, 59, 48, 0.1);
+    border: 1px solid rgba(255, 59, 48, 0.2);
+    border-radius: 0.3rem;
+    color: rgb(168, 36, 28);
+    font-size: 0.9rem;
+  }
+
+  .success-message {
+    padding: 0.8rem;
+    background-color: rgba(52, 199, 89, 0.1);
+    border: 1px solid rgba(52, 199, 89, 0.2);
+    border-radius: 0.3rem;
+    color: rgb(20, 128, 56);
+    font-size: 0.9rem;
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+  }
+
+  .recruit-button {
+    padding: 0.7rem 1.2rem;
+    background-color: rgba(0, 122, 255, 0.8);
+    color: white;
+    border: none;
+    border-radius: 0.3rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .recruit-button:hover:not(:disabled) {
+    background-color: rgba(0, 122, 255, 0.9);
+  }
+
+  .recruit-button:disabled {
+    background-color: rgba(0, 0, 0, 0.2);
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 768px) {
+    .unit-option {
+      width: 100%;
+    }
+  }
+</style>
