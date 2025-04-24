@@ -50,22 +50,33 @@
     Date.now() - lastCenterClickTime < 10000 && // Was clicked recently
     lastCenterClickTime > 0    // Has been clicked at least once
   );
-  
-  // Function to close the Peek UI
+
+  // Function to close the Peek UI - re-defined as function declaration
   function closePeek() {
     console.log('Closing Peek UI');
     lastCenterClickTime = 0; // Setting this to 0 will make isPeekVisible false
     peekOpenedAtPosition = null;
   }
   
+  // Add a manual effect to monitor isPeekVisible changes
+  $effect(() => {
+    console.log("isPeekVisible changed to:", isPeekVisible);
+    if (isPeekVisible) {
+      console.log("Peek is visible, lastCenterClickTime:", lastCenterClickTime);
+    } else {
+      console.log("Peek is hidden, lastCenterClickTime:", lastCenterClickTime);
+    }
+  });
+
   // Replace clickedCenterTile flag with a derived value
   const isCenterTileActive = $derived(Date.now() - lastCenterClickTime < 300);
   
   // Track Peek position to detect map movement
   let peekOpenedAtPosition = $state(null);
   
-  // Define default actions for Peek
-  const peekActions = [];
+  // Define default actions for Peek - set to null instead of empty array
+  // to ensure we don't override the internal condition checks in Peek
+  const peekActions = null;
   
   // Add a function to handle actions from Peek
   function handlePeekAction(actionId) {
@@ -576,9 +587,6 @@
       // If peek is open and we're not clicking on center tile, close it immediately
       console.log('Closing Peek since we clicked on a non-center tile');
       lastCenterClickTime = 0; // Fixed: Changed from lastCenterTileActive to lastCenterClickTime
-      
-      // We deliberately DON'T return here - we want to process this click
-      // for movement even though we just closed the Peek
     }
     
     // Get the clicked coordinates
@@ -1025,60 +1033,56 @@
                   <circle 
                     cx="{midX}" 
                     cy="{midY}" 
-                    r="0.3" 
-                    fill="transparent"
-                    stroke="rgba(200, 200, 255, 0.7)"
+                    r="0.15" 
+                    fill="rgba(255, 255, 255, 0.5)" 
+                    stroke="rgba(255, 255, 255, 0.9)"
                     stroke-width="0.3"
-                    opacity="0.7"
                   />
                 {/if}
               {/if}
             {/each}
           </g>
         {/if}
-        
-        <!-- Movement paths group -->
-        <g class="movement-paths-group" aria-label="Active movement paths">
-          {#each movementPaths as path}
-            <g class="path-group" class:current-player-path={path.owner === $currentPlayer?.uid}>
-              <path 
-                d={createPathData(path.points)} 
-                stroke={path.color}
-                stroke-width="0.5"
-                stroke-dasharray="6,4"
-                stroke-linejoin="round"
-                stroke-linecap="round"
-                fill="none"
-                opacity="0.7"
-                class="animated-path"
-                aria-label={`Movement path for ${path.owner === $currentPlayer?.uid ? 'your' : 'another'} group`}
-              >
-                <animate 
-                  attributeName="stroke-dashoffset" 
-                  from="0" 
-                  to="-10" 
-                  dur="20s" 
-                  repeatCount="indefinite"
-                />
-              </path>
+
+        {#each movementPaths as path}
+          <g class="path-group" class:current-player-path={path.owner === $currentPlayer?.uid}>
+            <path 
+              d={createPathData(path.points)} 
+              stroke={path.color}
+              stroke-width="0.5"
+              stroke-dasharray="6,4"
+              stroke-linejoin="round"
+              stroke-linecap="round"
+              fill="none"
+              opacity="0.7"
+              class="animated-path"
+              aria-label={`Movement path for ${path.owner === $currentPlayer?.uid ? 'your' : 'another'} group`}
+            >
+              <animate 
+                attributeName="stroke-dashoffset" 
+                from="0" 
+                to="-10" 
+                dur="20s" 
+                repeatCount="indefinite"
+              />
+            </path>
+            
+            <!-- Draw direction dots along the path with better performance -->
+            {#each path.points.filter((_, i) => i === 0 || i === path.points.length - 1 || i % 3 === 0) as point, i}
+              {@const pos = coordToPosition(point.x, point.y)}
               
-              <!-- Draw direction dots along the path with better performance -->
-              {#each path.points.filter((_, i) => i === 0 || i === path.points.length - 1 || i % 3 === 0) as point, i}
-                {@const pos = coordToPosition(point.x, point.y)}
-                
-                <circle 
-                  cx="{pos.posX * 100}" 
-                  cy="{pos.posY * 100}" 
-                  r="{i === 0 || i === path.points.length - 1 ? '0.35' : '0.2'}" 
-                  fill="transparent" 
-                  stroke={path.color}
-                  stroke-width="0.3"
-                  opacity="{i === 0 || i === path.points.length - 1 ? '0.9' : '0.7'}"
-                />
-              {/each}
-            </g>
-          {/each}
-        </g>
+              <circle 
+                cx="{pos.posX * 100}" 
+                cy="{pos.posY * 100}" 
+                r="{i === 0 || i === path.points.length - 1 ? '0.35' : '0.2'}" 
+                fill="transparent" 
+                stroke={path.color}
+                stroke-width="0.3"
+                opacity="{i === 0 || i === path.points.length - 1 ? '0.9' : '0.7'}"
+              />
+            {/each}
+          </g>
+        {/each}
       </svg>
       
       <div class="grid main-grid" 
@@ -1208,7 +1212,7 @@
   <!-- Modify the Peek component to use isPeekVisible instead of peekOpen -->
   <Peek 
     isOpen={isPeekVisible}
-    onClose={closePeek}
+    onClose={() => closePeek()}
     tileData={$targetStore}
     actions={peekActions}
     onAction={(actionId) => handlePeekAction(actionId)}

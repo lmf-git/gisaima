@@ -71,7 +71,7 @@
     const result = tile.groups?.some(g => 
       g.owner === $currentPlayer.id && 
       g.status === 'idle' &&
-      !g.inBattle
+      (g.inBattle === false || g.inBattle === undefined) // Handle undefined case
     );
     
     console.log(`canDemobilize: ${result}`);
@@ -84,18 +84,26 @@
   }
   
   function canMove(tile) {
-    if (!tile || !$currentPlayer) return false;
+    if (!tile || !$currentPlayer) {
+      console.log("canMove: false (missing tile or player)");
+      return false;
+    }
     
     if (!tile.groups || !Array.isArray(tile.groups) || tile.groups.length === 0) {
       console.log("canMove: false (no groups)");
       return false;
     }
     
-    // Simple direct check for player owned idle groups
+    // Log each group's ownership check for debugging
+    tile.groups.forEach(g => {
+      console.log(`Group ${g.id}: owned by player=${g.owner === $currentPlayer.id}, status=${g.status}, inBattle=${g.inBattle}`);
+    });
+    
+    // Explicitly handle the case where inBattle is undefined
     const hasIdleGroups = tile.groups.some(g => 
       g.owner === $currentPlayer.id && 
       g.status === 'idle' && 
-      !g.inBattle
+      (g.inBattle === false || g.inBattle === undefined)
     );
     
     console.log(`canMove: ${hasIdleGroups}`);
@@ -109,14 +117,14 @@
     const playerGroups = tile.groups?.filter(g => 
       g.owner === $currentPlayer.id && 
       g.status === 'idle' &&
-      !g.inBattle
+      (g.inBattle === false || g.inBattle === undefined)
     );
     
     // Check if there are any enemy groups on the tile
     const enemyGroups = tile.groups?.filter(g => 
       g.owner !== $currentPlayer.id && 
       g.status === 'idle' &&
-      !g.inBattle
+      (g.inBattle === false || g.inBattle === undefined)
     );
     
     const result = playerGroups?.length > 0 && enemyGroups?.length > 0;
@@ -140,7 +148,7 @@
     const hasIdleGroups = tile.groups?.some(g => 
       g.owner === $currentPlayer.id && 
       g.status === 'idle' &&
-      !g.inBattle
+      (g.inBattle === false || g.inBattle === undefined)
     );
     
     console.log(`canGather: ${hasIdleGroups}`);
@@ -155,22 +163,28 @@
                   tile.groups?.some(g => 
                     g.owner === $currentPlayer.id && 
                     g.status === 'idle' &&
-                    !g.inBattle
+                    (g.inBattle === false || g.inBattle === undefined)
                   );
     
     console.log(`canJoinBattle: ${result}`);
     return result;
   }
 
-  // Define actions with their conditions
-  // Always show the details button
+  // Add new canFallbackBuild function that will always return true
+  function canFallbackBuild() {
+    return true; // Always enable the build action as a fallback
+  }
+
+  // Update action definitions to include more guaranteed actions
   const allPossibleActions = [
+    // Always show Details and Build actions regardless of conditions
     { id: 'details', label: 'Details', icon: Info, condition: () => true },
+    { id: 'build', label: 'Build', icon: Hammer, condition: canFallbackBuild },
+    // Conditional actions
     { id: 'inspect', label: 'Inspect', icon: Eye, condition: tile => tile?.structure },
     { id: 'mobilise', label: 'Mobilise', icon: Rally, condition: canMobilize },
     { id: 'move', label: 'Move', icon: Compass, condition: canMove },
     { id: 'attack', label: 'Attack', icon: Attack, condition: canAttack },
-    { id: 'build', label: 'Build', icon: Hammer, condition: canBuild },
     { id: 'gather', label: 'Gather', icon: Crop, condition: canGather },
     { id: 'joinBattle', label: 'Join Battle', icon: Attack, condition: canJoinBattle },
     { 
@@ -181,19 +195,34 @@
     }
   ];
 
-  // Filter actions based on provided actions or the conditions applied to tileData
+  // Enhanced filtering of actions with more logging
   const availableActions = $derived(() => {
-    // CRITICAL: Remove this check to always use our own filtering based on conditions
-    // instead of using pre-defined actions passed from parent
-    // if (actions.length > 0) return actions;
+    if (actions && Array.isArray(actions) && actions.length > 0) {
+      console.log("Using provided actions:", actions);
+      return actions;
+    }
     
-    // Always filter based on conditions
     if (!currentTileData) {
       console.log("No currentTileData available for action filtering");
-      return [{id: 'details', label: 'Details', icon: Info}]; // Always allow Details action
+      return [
+        {id: 'details', label: 'Details', icon: Info},
+        {id: 'build', label: 'Build', icon: Hammer}
+      ];
     }
     
     console.log("Filtering actions with currentTileData:", currentTileData);
+    
+    // Add special case for empty tiles - always provide at least build and details
+    if (!currentTileData.groups || currentTileData.groups.length === 0) {
+      console.log("No groups on tile, showing limited actions");
+      const basicActions = allPossibleActions.filter(action => 
+        action.id === 'details' || 
+        action.id === 'build' || 
+        (action.id === 'inspect' && currentTileData.structure)
+      );
+      console.log("Basic actions for empty tile:", basicActions.map(a => a.id));
+      return basicActions;
+    }
     
     const filtered = allPossibleActions.filter(action => {
       try {
@@ -202,12 +231,21 @@
         return conditionMet;
       } catch (error) {
         console.error(`Error checking condition for action ${action.id}:`, error);
-        return action.id === 'details'; // Always include details action even on error
+        return action.id === 'details' || action.id === 'build'; // Always include some default actions on error
       }
     });
     
     console.log("Final filtered actions:", filtered.map(a => a.id));
-    return filtered.length > 0 ? filtered : [{id: 'details', label: 'Details', icon: Info}];
+    
+    // Ensure we always have at least these two actions
+    if (filtered.length === 0 || !filtered.some(a => a.id === 'details')) {
+      filtered.push({id: 'details', label: 'Details', icon: Info});
+    }
+    if (filtered.length === 1 && !filtered.some(a => a.id === 'build')) {
+      filtered.push({id: 'build', label: 'Build', icon: Hammer});
+    }
+    
+    return filtered;
   });
 
   // Include close button as part of the circle
