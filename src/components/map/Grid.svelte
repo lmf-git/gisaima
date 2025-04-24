@@ -385,12 +385,20 @@
     }
   });
   
-  // Simplified player position logic
+  // Simplified player position logic (already exists - no change needed)
   const playerPosition = $derived(() => {
     const gameState = get(game);  // Get current game state
     // Only use lastLocation when needed
     return gameState.player?.alive ? gameState.player?.lastLocation : null;
   });
+
+  // Add a helper function to calculate distance from player to a tile
+  function getDistanceFromPlayer(x, y) {
+    if (!playerPosition) return null;
+    
+    // Calculate Manhattan distance from player's last location
+    return Math.abs(x - playerPosition.x) + Math.abs(y - playerPosition.y);
+  }
   
   function isCurrentPlayer(playerEntity) {
     if (!playerEntity || !$currentPlayer) return false;
@@ -968,6 +976,7 @@
           {@const isCurrentPlayerHere = shouldShowPlayerPosition(cell)}
           {@const playerCount = getPlayerCount(cell)}
           {@const dominantRace = getDominantRace(cell)}
+          {@const distanceFromPlayer = getDistanceFromPlayer(cell.x, cell.y)}
           <div
             class="tile {getStructureClass(cell.structure)} {cell.terrain?.rarity || 'common'}"
             class:center={cell.isCenter}
@@ -982,7 +991,7 @@
             class:from-world-data={playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y && !hasCurrentPlayerEntity(cell)}
             style="
               background-color: {cell.isCenter ? 'var(--center-tile-color)' : cell.color || 'var(--terrain-color)'};
-              transition-delay: {cell.isCenter ? 0 : Math.min(0.5, cell.distance * 0.03) + 's'};
+              transition-delay: {cell.isCenter ? 0 : Math.min(0.8, (distanceFromPlayer || cell.distance) * 0.02) + 's'};
             "
             onmouseenter={() => handleTileHover(cell)}
             aria-label={`Coordinates ${cell.x},${cell.y}`}
@@ -1171,13 +1180,20 @@
   .main-grid.animated .tile {
     opacity: 0;
     transform: scale(0.8);
-    animation: revealTile 0.5s ease-out forwards;
-    animation-fill-mode: both;
+    /* animation: revealTile 0.5s ease-out forwards; */
+    /* animation-fill-mode: both; */
   }
   
   .main-grid:not(.animated) .tile {
     opacity: 1;
     transform: scale(1);
+    transition: opacity 0.8s ease-out, background-color 0.3s ease;
+  }
+  
+  /* Animate tiles fading in based on distance from player */
+  .main-grid:not(.animated) .tile:not(.center) {
+    /* animation: fadeInTile 0.8s ease-out forwards; */
+    /* animation-fill-mode: both; */
   }
   
   /* Remove animation from center tile completely */
@@ -1203,6 +1219,7 @@
       inset 0 0 0.5em rgba(255, 255, 255, 0.3),
       0 0 1em rgba(255, 255, 255, 0.2);
     z-index: 3;
+    opacity: 1; /* Center tile is always visible */
     /* Keep the transition for background-color */
     transition: background-color 0.3s ease;
   }
@@ -1371,223 +1388,9 @@
   }
   
   .item-indicator.mythic {
-    background: radial-gradient(circle, rgba(255, 158, 255, 0.9), rgba(225, 98, 225, 0.9));
+    background: radial-gradient(circle, rgba(255, 128, 255, 0.9), rgba(225, 98, 225, 0.9));
     box-shadow: 0 0 0.2em rgba(255, 128, 255, 0.6);
     border: 0.08em solid rgba(255, 180, 255, 0.7);
-    animation: pulseItemMythic 2s infinite;
-  }
-  
-  .current-player-indicator {
-    transform: scale(1.1);
-    animation: pulse 2s infinite;
-    background: radial-gradient(circle, rgba(84, 234, 218, 0.9), rgba(44, 184, 168, 0.9));
-    border-color: rgba(255, 255, 255, 0.7);
-    box-shadow: 0 0 0.2em turquoise;
-  }
-  
-  /* Remove the old player position styles that conflict */
-  .player-position {
-    position: relative;
-    /* Removed the box-shadow with gold color */
-    z-index: 2;
-  }
-  
-  .player-position:before {
-    /* Remove the content and border completely */
-    content: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    /* Removed the gold border */
-    pointer-events: none;
-    z-index: 2;
-  }
-  
-  .map-container.touch-active {
-    touch-action: none;
-    overflow: hidden;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
-  }
-
-  @media (max-width: 768px) {
-    .tile {
-      font-size: 0.9em;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .tile {
-      font-size: 0.7em;
-    }
-  }
-
-  @media (min-width: 640px) {
-    .tile {
-      font-size: 1.1em;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .tile {
-      font-size: 1.2em;
-    }
-  }
-
-  @media (min-width: 1440px) {
-    .tile {
-      font-size: 1.3em;
-    }
-  }
-
-  @keyframes revealTile {
-    0% {
-      opacity: 0;
-      transform: scale(0.8);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  .spawn-structure {
-    box-shadow: inset 0 0 0.5em rgba(0, 255, 255, 0.4);
-  }
-  
-  .spawn-indicator {
-    background: rgba(0, 255, 255, 0.9);
-    box-shadow: 0 0 .25em rgba(0, 255, 255, 0.8);
-    border-radius: 50%;
-  }
-  
-  .spawn-indicator {
-    background: rgba(0, 255, 255, 0.9);
-    box-shadow: 0 0 .25em rgba(0, 255, 255, 0.8);
-    border-radius: 50%;
-  }
-
-  .tile.spawn-structure:hover .spawn-icon-container :global(svg) {
-    filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.8));
-    /* Changed from cyan drop shadow to dark shadow */
-    opacity: 0.9;
-  }
-  
-  .entity-indicator {
-    z-index: 4;
-  }
-  
-  .spawn-icon-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-    pointer-events: none;
-    opacity: 0.6;
-  }
-  
-  :global(.spawn-icon) {
-    opacity: 0.8;
-    filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.7));
-    /* Changed from light cyan drop shadow to dark shadow */
-    fill: rgba(40, 40, 40, 0.9); /* Added dark fill color */
-  }
-  
-  :global(.structure-icon) {
-    opacity: 0.8;
-    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.6));
-    /* Changed from white drop shadow to dark shadow */
-    fill: rgba(40, 40, 40, 0.9); /* Added dark fill color */
-  }
-
-  .tile.spawn-structure:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border: 0.15em double rgba(0, 255, 255, 0.6);
-    pointer-events: none;
-    z-index: 3;
-  }
-  
-  .tile.has-structure.has-groups.spawn-structure,
-  .tile.has-structure.has-players.spawn-structure {
-    box-shadow: inset 0 0 0.5em rgba(0, 255, 255, 0.6);
-  }
-
-  .tile.mythic {
-    z-index: 5;
-  }
-  
-  .tile.legendary {
-    z-index: 4;
-  }
-  
-  .tile.epic {
-    z-index: 3;
-  }
-
-  .tile.mythic.highlighted::after,
-  .tile.legendary.highlighted::after,
-  .tile.epic.highlighted::after,
-  .tile.rare.highlighted::after,
-  .tile.uncommon.highlighted::after {
-    box-shadow: inset 0 0 0 2px white, inset 0 0 4px 1px rgba(255, 255, 255, 0.8);
-    z-index: 15;
-  }
-  
-  .tile.highlighted .entity-indicator {
-    z-index: 16;
-  }
-
-  .item-indicator {
-    bottom: .2em;
-    right: .2em;
-    width: .5em;
-    height: .5em;
-    background: rgba(255, 215, 0, 0.9);
-    border: .0625em solid rgba(0, 0, 0, 0.3);
-    box-shadow: 0 0 .15em rgba(255, 215, 0, 0.6);
-    border-radius: 50%;
-  }
-  
-  .item-indicator.uncommon {
-    background: rgba(30, 255, 0, 0.9);
-    box-shadow: 0 0 .15em rgba(30, 255, 0, 0.6);
-  }
-  
-  .item-indicator.rare {
-    background: rgba(0, 112, 221, 0.9);
-    box-shadow: 0 0 .15em rgba(0, 112, 221, 0.6);
-  }
-  
-  .item-indicator.epic {
-    background: rgba(148, 0, 211, 0.9);
-    box-shadow: 0 0 .15em rgba(148, 0, 211, 0.6);
-  }
-  
-  .item-indicator.legendary {
-    background: rgba(255, 165, 0, 0.9);
-    box-shadow: 0 0 .15em rgba(255, 165, 0, 0.6);
-  }
-  
-  .item-indicator.mythic {
-    background: rgba(255, 128, 255, 0.9);
-    box-shadow: 0 0 .15em rgba(255, 128, 255, 0.6);
     animation: pulseItemMythic 2s infinite;
   }
   
@@ -1785,7 +1588,7 @@
     /* Changed from white drop shadow to dark shadow */
     fill: rgba(40, 40, 40, 0.9); /* Added dark fill color */
   }
-  
+
   .battle-indicator {
     position: absolute;
     top: 0.2em;
