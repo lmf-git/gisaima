@@ -628,14 +628,14 @@
         <div class="entities-section">
           <div 
             class="section-header"
-            onclick={(e) => toggleSection('groups', e)}
+            onclick={() => toggleSection('groups')}
             role="button"
             tabindex="0"
             aria-expanded={!collapsedSections.groups}
-            onkeydown={(e) => e.key === 'Enter' && toggleSection('groups', e)}
+            onkeydown={(e) => handleSectionKeyDown(e, 'groups')}
           >
             <div class="section-title">
-              <h4>Groups <span class="entity-count groups-count">{detailsData.groups.length}</span></h4>
+              Groups <span class="entity-count groups-count">{detailsData.groups.length}</span>
             </div>
             <div class="section-controls">
               {#if !collapsedSections.groups}
@@ -662,8 +662,8 @@
                   </button>
                 </div>
               {/if}
-              <button class="collapse-button" aria-label="Toggle section">
-                <span class="collapse-icon">{collapsedSections.groups ? '▼' : '▲'}</span>
+              <button class="collapse-button">
+                {collapsedSections.groups ? '▼' : '▲'}
               </button>
             </div>
           </div>
@@ -770,14 +770,14 @@
         <div class="entities-section">
           <div 
             class="section-header"
-            onclick={(e) => toggleSection('players', e)}
+            onclick={() => toggleSection('players')}
             role="button"
             tabindex="0"
             aria-expanded={!collapsedSections.players}
-            onkeydown={(e) => e.key === 'Enter' && toggleSection('players', e)}
+            onkeydown={(e) => handleSectionKeyDown(e, 'players')}
           >
             <div class="section-title">
-              <h4>Players <span class="entity-count players-count">{detailsData.players.length}</span></h4>
+              Players <span class="entity-count players-count">{detailsData.players.length}</span>
             </div>
             <div class="section-controls">
               {#if !collapsedSections.players}
@@ -804,8 +804,8 @@
                   </button>
                 </div>
               {/if}
-              <button class="collapse-button" aria-label="Toggle section">
-                <span class="collapse-icon">{collapsedSections.players ? '▼' : '▲'}</span>
+              <button class="collapse-button">
+                {collapsedSections.players ? '▼' : '▲'}
               </button>
             </div>
           </div>
@@ -873,14 +873,14 @@
         <div class="entities-section">
           <div 
             class="section-header"
-            onclick={(e) => toggleSection('items', e)}
+            onclick={() => toggleSection('items')}
             role="button"
             tabindex="0"
             aria-expanded={!collapsedSections.items}
-            onkeydown={(e) => e.key === 'Enter' && toggleSection('items', e)}
+            onkeydown={(e) => handleSectionKeyDown(e, 'items')}
           >
             <div class="section-title">
-              <h4>Items <span class="entity-count items-count">{detailsData.items.length}</span></h4>
+              Items <span class="entity-count items-count">{detailsData.items.length}</span>
             </div>
             <div class="section-controls">
               {#if !collapsedSections.items}
@@ -907,8 +907,8 @@
                   </button>
                 </div>
               {/if}
-              <button class="collapse-button" aria-label="Toggle section">
-                <span class="collapse-icon">{collapsedSections.items ? '▼' : '▲'}</span>
+              <button class="collapse-button">
+                {collapsedSections.items ? '▼' : '▲'}
               </button>
             </div>
           </div>
@@ -946,17 +946,17 @@
       
       <!-- Battles section with styled count -->
       {#if detailsData.battles?.length > 0}
-        <div class="entities-section battles-section">
+        <div class="entities-section">
           <div 
             class="section-header"
-            onclick={(e) => toggleSection('battles', e)}
+            onclick={() => toggleSection('battles')}
             role="button"
             tabindex="0"
             aria-expanded={!collapsedSections.battles}
-            onkeydown={(e) => e.key === 'Enter' && toggleSection('battles', e)}
+            onkeydown={(e) => handleSectionKeyDown(e, 'battles')}
           >
             <div class="section-title">
-              <h4>Battles <span class="entity-count battles-count">{detailsData.battles.length}</span></h4>
+              Battles <span class="entity-count battles-count">{detailsData.battles.length}</span>
             </div>
             <div class="section-controls">
               {#if !collapsedSections.battles}
@@ -983,8 +983,8 @@
                   </button>
                 </div>
               {/if}
-              <button class="collapse-button" aria-label="Toggle section">
-                <span class="collapse-icon">{collapsedSections.battles ? '▼' : '▲'}</span>
+              <button class="collapse-button">
+                {collapsedSections.battles ? '▼' : '▲'}
               </button>
             </div>
           </div>
@@ -1150,18 +1150,19 @@
     margin-top: 1em;
   }
   
-  /* Fix section header styling */
+  /* Fix section header styling to match Overview component */
   .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5em 0.8em;
+    padding: 0.5em 1em;  /* Add horizontal padding */
     cursor: pointer;
     user-select: none;
+    position: relative;
+    width: 100%;
     background-color: rgba(0, 0, 0, 0.03);
     border-radius: 0.3em 0.3em 0 0;
     transition: background-color 0.2s ease;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   }
   
   .section-header:hover {
@@ -1179,143 +1180,104 @@
     align-items: center;
     gap: 0.3em;
   }
-  
-  /* Fix collapsible indicator styling */
-  .collapse-button {
+
+  .section-controls {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 0.5em;
+    margin-left: auto;
+  }
+  
+  .collapse-button {
     background: none;
     border: none;
     color: rgba(0, 0, 0, 0.5);
     font-size: 0.8em;
     cursor: pointer;
-    padding: 0.3em;
-    width: 2em;
-    height: 2em;
-    border-radius: 50%;
+    padding: 0.2em 0.5em;
     transition: all 0.2s ease;
-  }
-  
-  .collapse-button:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: rgba(0, 0, 0, 0.8);
-  }
-
-  .collapse-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 1em;
-    height: 1em;
-    line-height: 1;
-  }
-
-  /* Improve entity layout in collapsible sections */
-  .entity {
-    display: flex;
-    flex-wrap: nowrap; /* Prevent immediate wrapping */
-    align-items: center; /* Center items vertically */
-    justify-content: space-between; /* Distribute space between main components */
-    margin-bottom: 0.6em;
-    padding: 0.5em 0.7em;
-    border-radius: 0.3em;
-    background-color: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    transition: background-color 0.2s ease;
-    position: relative;
-    cursor: pointer;
-  }
-
-  /* Ensure left side components stay grouped together */
-  .entity-left {
-    display: flex;
-    align-items: center;
-    flex: 1;
-    min-width: 0; /* Allow text truncation */
+    min-width: 1.5em;
+    min-height: 1.5em;
   }
   
-  /* Adjust entity info to not grow excessively */
-  .entity-info {
-    flex: 1;
-    min-width: 0; /* Ensure text can truncate */
-    margin-right: 0.5em;
-  }
-  
-  /* Remove the full width from entity actions */
-  .entity-actions {
-    width: auto; /* Don't take full width */
-    margin-left: auto; /* Push to the right */
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4em;
-    align-self: center;
+  .collapse-button:hover {
+    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
   }
 
-  /* Make entity content items properly aligned */
-  .entity-name, .entity-details {
-    width: 100%;
-  }
-
-  /* Entity details should be flex to align status and other elements */
-  .entity-details {
-    display: flex;
-    flex-wrap: wrap;
-    font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.7);
-    gap: 0.5em;
-  }
-
-  .entity-details-left {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4em;
-  }
-
+  /* Remove the old h4 styling since we're now using the section-title directly */
   h4 {
     margin: 0;
-    font-size: 0.9em;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    display: inherit;
+    align-items: inherit;
+    gap: inherit;
+  }
+
+  /* Replace the old section-count styling with this entity-count styling */
+  .entity-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1em;
+    font-size: 0.7em;
+    font-weight: bold;
+    padding: 0.1em 0.6em;
+    margin-left: 0.3em;
+    line-height: 1;
+    background: rgba(0, 0, 0, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);
+  }
+
+  /* Sort controls */
+  .sort-controls {
+    display: flex;
+    gap: 0.2em;
+    margin-right: 0.5em;
+  }
+  
+  .sort-option {
+    background: none;
+    border: none;
+    font-size: 0.7em;
+    color: rgba(0, 0, 0, 0.5);
+    padding: 0.2em 0.4em;
+    border-radius: 0.3em;
+    cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.3em;
+    gap: 0.2em;
+    transition: all 0.2s ease;
   }
-
-  .attribute {
-    display: flex;
-    margin-bottom: 0.6em;
-    font-size: 0.9em;
-    gap: 0.8em; /* Add gap between label and value */
-    align-items: flex-start;
-  }
-
-  .attribute-label {
-    /* Remove fixed width */
-    color: rgba(0, 0, 0, 0.6);
-    font-weight: 500;
-    min-width: 40px; /* Just a small minimum width to prevent very narrow labels */
-    flex-shrink: 0; /* Prevents the label from shrinking */
-  }
-
-  .attribute-value {
-    flex-grow: 1;
+  
+  .sort-option:hover {
+    background-color: rgba(0, 0, 0, 0.05);
     color: rgba(0, 0, 0, 0.8);
   }
-
-  .terrain-color {
-    display: inline-block;
-    width: 1em;
-    height: 1em;
-    border-radius: 0.2em;
-    margin-right: 0.5em;
-    vertical-align: middle;
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  
+  .sort-option.active {
+    background-color: rgba(66, 133, 244, 0.1);
+    color: rgba(66, 133, 244, 0.9);
+  }
+  
+  .sort-direction {
+    font-size: 0.9em;
+    font-weight: bold;
+  }
+  
+  /* Section content styling */
+  .section-content {
+    padding: 0.5em;
   }
 
   .actions-grid {
@@ -1745,84 +1707,6 @@
     }
   }
 
-  /* Sort controls styling */
-  .sort-controls {
-    display: flex;
-    gap: 0.2em;
-    margin-right: 0.5em;
-  }
-  
-  .sort-option {
-    background: none;
-    border: none;
-    font-size: 0.7em;
-    color: rgba(0, 0, 0, 0.5);
-    padding: 0.2em 0.4em;
-    border-radius: 0.3em;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.2em;
-    transition: all 0.2s ease;
-  }
-  
-  .sort-option:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: rgba(0, 0, 0, 0.8);
-  }
-  
-  .sort-option.active {
-    background-color: rgba(66, 133, 244, 0.1);
-    color: rgba(66, 133, 244, 0.9);
-  }
-  
-  /* Replace the old section-count styling with this new entity-count styling */
-  .entity-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 1em;
-    font-size: 0.8em;
-    font-weight: 500;
-    padding: 0.1em 0.6em;
-    margin-left: 0.3em;
-    color: rgba(255, 255, 255, 0.95);
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);
-  }
-  
-  /* Entity-specific count styling to match Overview and Grid */
-  .groups-count {
-    background: rgba(255, 100, 100, 0.8);
-    border-color: rgba(255, 100, 100, 0.5);
-    box-shadow: 0 0 0.15em rgba(255, 100, 100, 0.6);
-  }
-  
-  .players-count {
-    background: rgba(100, 100, 255, 0.8);
-    border-color: rgba(100, 100, 255, 0.5);
-    box-shadow: 0 0 0.15em rgba(100, 100, 255, 0.6);
-  }
-  
-  .items-count {
-    background: rgba(255, 215, 0, 0.8);
-    border-color: rgba(255, 215, 0, 0.5);
-    box-shadow: 0 0 0.15em rgba(255, 215, 0, 0.6);
-  }
-  
-  .battles-count {
-    background: rgba(139, 0, 0, 0.8);
-    border-color: rgba(139, 0, 0, 0.5);
-    box-shadow: 0 0 0.15em rgba(139, 0, 0, 0.6);
-    color: white;
-  }
-
-  /* Remove the old section-count style that we're replacing */
-  .section-count {
-    display: none;
-  }
-
   /* Improve entity layout in collapsible sections */
   .entity {
     display: flex;
@@ -1839,50 +1723,48 @@
     cursor: pointer;
   }
 
-  .entity:hover {
-    background-color: rgba(255, 255, 255, 0.8);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  .entity-icon {
-    margin-right: 0.7em;
-    flex-shrink: 0;
+  /* Ensure left side components stay grouped together */
+  .entity-left {
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 1.8em; /* Fixed width */
-    height: 1.8em; /* Fixed height */
+    flex: 1;
+    min-width: 0; /* Allow text truncation */
   }
-
-  .entity-name {
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.85);
-    line-height: 1.2;
-    margin-bottom: 0.2em;
+  
+  /* Adjust entity info to not grow excessively */
+  .entity-info {
+    flex: 1;
+    min-width: 0; /* Ensure text can truncate */
+    margin-right: 0.5em;
+  }
+  
+  /* Remove the full width from entity actions */
+  .entity-actions {
+    width: auto; /* Don't take full width */
+    margin-left: auto; /* Push to the right */
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    gap: 0.4em;
+    align-self: center;
   }
 
-  .entity-coords {
-    font-size: 0.7em;
-    color: rgba(0, 0, 0, 0.5);
-    margin-left: 0.6em;
-    font-weight: normal;
+  /* Make entity content items properly aligned */
+  .entity-name, .entity-details {
+    width: 100%;
   }
 
+  /* Entity details should be flex to align status and other elements */
   .entity-details {
     display: flex;
     flex-wrap: wrap;
-    width: 100%;
     font-size: 0.85em;
     color: rgba(0, 0, 0, 0.7);
-    justify-content: space-between;
-    gap: 0.4em;
-    margin-right: 0.5em; /* Space for actions */
+    gap: 0.5em;
   }
 
   .entity-details-left {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 0.4em;
