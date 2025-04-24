@@ -162,7 +162,8 @@ export async function sendMessage(text, messageType = 'user') {
   
   try {
     const currentUser = get(user);
-    const currentWorld = get(game).worldKey;
+    const gameState = get(game);
+    const currentWorld = gameState.worldKey;
     
     if (!currentUser || !currentWorld) {
       console.error('Cannot send message: user or world not available');
@@ -171,15 +172,18 @@ export async function sendMessage(text, messageType = 'user') {
     
     const chatRef = ref(db, `worlds/${currentWorld}/chat`);
     
+    // Use in-game display name first, then Firebase Auth display name, then 'Anonymous' as fallback
+    const playerDisplayName = gameState.player?.displayName || currentUser.displayName || 'Anonymous';
+    
     // Create message object (Firebase will generate the unique ID)
     const message = {
       text: text.trim(),
       type: messageType,
       timestamp: Date.now(),
       userId: currentUser.uid,
-      userName: currentUser.displayName || 'Anonymous',
+      userName: playerDisplayName,
       // Include location if available
-      location: get(game).player?.lastLocation || null
+      location: gameState.player?.lastLocation || null
     };
     
     // Push to Firebase - this will generate a unique ID automatically
