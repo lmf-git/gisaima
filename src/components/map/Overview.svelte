@@ -1362,17 +1362,17 @@
     position: absolute;
     bottom: 0.5em;
     left: 0.5em;
-    z-index: 998; /* Base z-index */
+    z-index: 998; 
     transition: opacity 0.2s ease, z-index 0s;
     font-size: 1.4em;
     font-family: var(--font-body);
     max-width: 95%;
-    outline: none; /* Remove outline when focused via tabindex */
+    outline: none; 
   }
 
-  /* Add active state styling to increase z-index when active */
+  
   .entities-wrapper.active {
-    z-index: 1001; /* Higher than both base values to ensure it's on top */
+    z-index: 1001; 
   }
 
   .entities-wrapper.closing {
@@ -1396,7 +1396,7 @@
     transform-origin: bottom left;
   }
   
-  /* Add animations to match Minimap's style */
+  
   .entities-wrapper.closing .entities-panel {
     animation: slideOutToBottom 0.8s ease-in forwards;
   }
@@ -1443,21 +1443,21 @@
     position: relative;
   }
 
-  /* Style for items that are "Here" (distance = 0) - replace data attribute with class */
+  
   .is-here {
     background-color: rgba(64, 158, 255, 0.1);
     border-color: rgba(64, 158, 255, 0.3);
     position: relative;
   }
   
-  /* Style the distance text when it's "Here" */
+  
   .is-here .entity-distance {
     color: rgba(64, 158, 255, 0.9);
     font-weight: 500;
     font-size: 0.9em;
   }
 
-  /* If both at-target and is-here, prioritize at-target styling */
+  
   .at-target.is-here .entity-distance {
     color: rgba(64, 158, 255, 1.0);
     font-weight: 600;
@@ -1472,7 +1472,7 @@
     align-items: center;
   }
   
-  /* Make the dot character in "• Here" slightly larger */
+  
   .is-here .entity-distance::first-letter {
     font-size: 1.8em;
     line-height: 0;
@@ -1564,11 +1564,11 @@
     box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);
   }
 
-  /* Match these colors to the grid entity indicators */
+  
   .filter-count-structures {
     background: rgba(0, 0, 0, 0.9);
     box-shadow: 0 0 0.15em rgba(0, 0, 0, 0.6);
-    color: rgba(255, 255, 255, 0.9); /* Add white text color for visibility against black background */
+    color: rgba(255, 255, 255, 0.9); 
   }
   
   .filter-count-groups {
@@ -1615,7 +1615,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0.4em;  /* Increased padding for larger hit area */
+    padding: 0.4em;  
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1726,7 +1726,7 @@
     justify-content: space-between;
   }
 
-  /* Properly style the race icons using :global */
+  
   :global(.race-icon-overview) {
     width: 1.4em;
     height: 1.4em;
@@ -1734,7 +1734,7 @@
     fill: rgba(0, 0, 0, 0.7);
   }
   
-  /* Race-specific styling */
+  
   :global(.race-icon-overview.fairy-icon path) {
     fill: rgba(138, 43, 226, 0.8);
   }
@@ -1743,7 +1743,7 @@
     fill: rgba(0, 128, 0, 0.8);
   }
 
-  /* Structure icon styling */
+  
   :global(.overview-structure-icon) {
     opacity: 0.9;
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
@@ -1754,7 +1754,7 @@
     opacity: 1 !important;
   }
 
-  /* Battle entity styling */
+  
   .entity.battle {
     background-color: rgba(139, 0, 0, 0.05);
     border: 1px solid rgba(139, 0, 0, 0.2);
@@ -1771,7 +1771,7 @@
     font-size: 1.2em;
   }
 
-  /* Status badge styling */
+  
   .entity-status-badge {
     display: inline-block;
     font-size: 0.8em;
@@ -1842,12 +1842,12 @@
     font-weight: bold;
   }
 
-  /* Section header styling */
+  
   .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5em 1em;  /* Add horizontal padding */
+    padding: 0.5em 1em;  
     cursor: pointer;
     user-select: none;
     position: relative;
@@ -1901,7 +1901,7 @@
     border-radius: 50%;
   }
 
-  /* Sort controls */
+  
   .sort-controls {
     display: flex;
     gap: 0.2em;
@@ -1939,12 +1939,12 @@
 
   .tab-sort-controls {
     display: flex;
-    justify-content: center; /* Center the sort controls */
+    justify-content: center; 
     margin-bottom: 0.5em;
     padding: 0.3em 0;
   }
 
-  /* Entity badge styling */
+  
   .entity-badge {
     font-size: 0.7em;
     padding: 0.2em 0.4em;
@@ -1974,7 +1974,7 @@
     background-color: var(--color-bright-accent, #64ffda);
   }
 
-  /* Battle-specific styles */
+  
   .battle-winner {
     color: #ff9800;
     font-weight: bold;
@@ -2036,7 +2036,7 @@
     transition: width 1s ease;
   }
 
-  /* Group and item styles */
+  
   .unit-count {
     color: rgba(0, 0, 0, 0.7);
     font-weight: 500;
@@ -2047,7 +2047,7 @@
     font-weight: 500;
   }
 
-  /* Empty state */
+  
   .empty-state {
     padding: 2em;
     text-align: center;
@@ -2055,7 +2055,7 @@
     font-style: italic;
   }
 
-  /* Animations */
+  
   @keyframes pulse {
     from { opacity: 0.8; }
     to { opacity: 1; }

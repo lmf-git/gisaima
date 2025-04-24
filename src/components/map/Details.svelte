@@ -1242,7 +1242,7 @@
     border-radius: 50%;
   }
 
-  /* Replace the old section-count styling with this entity-count styling */
+  
   .entity-count {
     display: inline-flex;
     align-items: center;
@@ -1259,7 +1259,7 @@
     box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);
   }
 
-  /* Sort controls */
+  
   .sort-controls {
     display: flex;
     gap: 0.2em;
@@ -1295,7 +1295,7 @@
     font-weight: bold;
   }
   
-  /* Section content styling */
+  
   .section-content {
     padding: 0.5em;
   }
@@ -1306,10 +1306,10 @@
     gap: 0.5em;
   }
 
-  /* Basic action button styling */
+  
   .action-button {
     padding: 0.6em;
-    background-color: rgba(200, 200, 200, 0.1); /* Neutral light gray as default */
+    background-color: rgba(200, 200, 200, 0.1); 
     border: 1px solid rgba(200, 200, 200, 0.3);
     border-radius: 4px;
     cursor: pointer;
@@ -1328,7 +1328,7 @@
     transform: translateY(-1px);
   }
   
-  /* Blue for inspect - information action */
+  
   .inspect-button {
     background-color: rgba(33, 150, 243, 0.1);
     border-color: rgba(33, 150, 243, 0.3);
@@ -1338,18 +1338,18 @@
     background-color: rgba(33, 150, 243, 0.2);
   }
 
-  /* Fix 1: Ensure move actions have proper green background */
+  
   .action-button:has(.compass-icon) {
     background-color: rgba(76, 175, 80, 0.1);
     border-color: rgba(76, 175, 80, 0.3);
-    color: rgba(0, 0, 0, 0.8); /* Ensure text is visible */
+    color: rgba(0, 0, 0, 0.8); 
   }
   
   .action-button:has(.compass-icon):hover {
     background-color: rgba(76, 175, 80, 0.2);
   }
   
-  /* Gold/amber for gather - represents resources */
+  
   .action-button:has(.crop-icon) {
     background-color: rgba(255, 193, 7, 0.1);
     border-color: rgba(255, 193, 7, 0.3);
@@ -1359,7 +1359,7 @@
     background-color: rgba(255, 193, 7, 0.2);
   }
 
-  /* Teal for demobilise - represents entering structures */
+  
   .action-button:has(.structure-icon),
   .action-button:has(.torch-icon) {
     background-color: rgba(0, 150, 136, 0.1);
@@ -1371,7 +1371,7 @@
     background-color: rgba(0, 150, 136, 0.2);
   }
 
-  /* Red for attack - represents combat */
+  
   .attack-button {
     background-color: rgba(244, 67, 54, 0.1);
     border-color: rgba(244, 67, 54, 0.3);
@@ -1381,7 +1381,7 @@
     background-color: rgba(244, 67, 54, 0.2);
   }
 
-  /* Blue for mobilise - represents forming/creating */
+  
   .action-button:has(.rally-icon) {
     background-color: rgba(63, 81, 181, 0.1);
     border-color: rgba(63, 81, 181, 0.3);
@@ -1391,7 +1391,7 @@
     background-color: rgba(63, 81, 181, 0.2);
   }
 
-  /* Brown for build action */
+  
   .action-button:has(.hammer-icon) {
     background-color: rgba(121, 85, 72, 0.1);
     border-color: rgba(121, 85, 72, 0.3);
@@ -1401,7 +1401,7 @@
     background-color: rgba(121, 85, 72, 0.2);
   }
   
-  /* Dark red for join battle - similar to attack but darker */
+  
   .action-button:not(:has(.action-icon)) {
     background-color: rgba(183, 28, 28, 0.1);
     border-color: rgba(183, 28, 28, 0.3);
@@ -1411,7 +1411,7 @@
     background-color: rgba(183, 28, 28, 0.2);
   }
 
-  /* Small entity action buttons - use same color scheme as main buttons */
+  
   .entity-action:has(.compass-icon) {
     background-color: rgba(76, 175, 80, 0.1);
     border-color: rgba(76, 175, 80, 0.3);
@@ -1503,7 +1503,7 @@
     margin-right: 0.5em;
   }
 
-  /* Battle styles */
+  
   .entity.battle {
     background-color: rgba(139, 0, 0, 0.05);
     border: 1px solid rgba(139, 0, 0, 0.2);
@@ -1580,7 +1580,7 @@
     text-align: center;
   }
 
-  /* Button styles */
+  
   .join-battle-btn {
     margin-top: 0.5em;
     padding: 0.4em 0.8em;
@@ -1598,7 +1598,7 @@
     background-color: #b71c1c;
   }
 
-  /* Rarity badge styles */
+  
   .rarity-badge {
     display: inline-block;
     font-size: 0.9em;
@@ -1653,9 +1653,9 @@
     }
   }
 
-  /* Add styles for the integrated structure elements */
+  
   .structure-name {
-    color: rgba(0, 0, 0, 1); /* Solid black */
+    color: rgba(0, 0, 0, 1); 
     font-weight: 500;
     display: flex;
     align-items: center;
@@ -1680,7 +1680,7 @@
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
   }
   
-  /* Fix race icons to match Overview's styling */
+  
   :global(.race-icon-details) {
     width: 1.4em;
     height: 1.4em;
@@ -1688,7 +1688,7 @@
     fill: rgba(0, 0, 0, 0.7);
   }
   
-  /* Race-specific styling */
+  
   :global(.race-icon-details.fairy-icon path) {
     fill: rgba(138, 43, 226, 0.8);
   }
@@ -1703,14 +1703,14 @@
     flex-shrink: 0;
   }
 
-  /* New styles for desktop two-column layout */
+  
   .tile-info-container {
     display: flex;
     flex-direction: column;
     gap: 0.8em;
   }
   
-  /* Desktop layout - structure on left, terrain on right */
+  
   @media (min-width: 640px) {
     .tile-info-container {
       flex-direction: row;
@@ -1730,7 +1730,7 @@
     }
   }
 
-  /* Improve entity layout in collapsible sections */
+  
   .entity {
     display: flex;
     flex-wrap: nowrap;
@@ -1768,19 +1768,19 @@
     align-self: center;
   }
 
-  /* Make entity content items properly aligned */
+  
   .entity-name, .entity-details {
     width: 100%;
   }
 
-  /* Entity details should be flex to align status and other elements */
+  
   .entity-details {
     display: flex;
     flex-wrap: wrap;
     font-size: 0.85em;
     color: rgba(0, 0, 0, 0.7);
     gap: 0.5em;
-    align-items: flex-start; /* Prevent children from stretching vertically */
+    align-items: flex-start; 
   }
 
   .entity-details-left {
@@ -1789,10 +1789,10 @@
     display: flex;
     flex-direction: column;
     gap: 0.4em;
-    align-items: flex-start; /* Ensure children align to the start */
+    align-items: flex-start; 
   }
 
-  /* Status badge styling to prevent flex growth */
+  
   .entity-status-badge {
     display: inline-block;
     font-size: 0.8em;
@@ -1801,8 +1801,8 @@
     border-radius: 0.3em;
     white-space: nowrap;
     text-transform: capitalize;
-    flex-shrink: 0; /* Prevent badge from shrinking */
-    align-self: flex-start; /* Keep badge at its natural size */
+    flex-shrink: 0; 
+    align-self: flex-start; 
   }
   
   .entity-status-badge.idle {
@@ -1865,7 +1865,7 @@
     font-weight: bold;
   }
 
-  /* Timer styles */
+  
   .timer {
     font-family: var(--font-mono, monospace);
     font-size: 0.85em;
@@ -1873,7 +1873,7 @@
     text-align: center;
   }
 
-  /* Progress bar styles */
+  
   .progress-bar {
     height: 0.5em;
     background-color: rgba(0, 0, 0, 0.1);
@@ -1888,7 +1888,7 @@
     transition: width 1s ease;
   }
 
-  /* Button styles */
+  
   .join-battle-btn {
     margin-top: 0.5em;
     padding: 0.4em 0.8em;
@@ -1906,7 +1906,7 @@
     background-color: #b71c1c;
   }
 
-  /* Rarity badge styles */
+  
   .rarity-badge {
     display: inline-block;
     font-size: 0.9em;
@@ -1961,9 +1961,9 @@
     }
   }
 
-  /* Add styles for the integrated structure elements */
+  
   .structure-name {
-    color: rgba(0, 0, 0, 1); /* Solid black */
+    color: rgba(0, 0, 0, 1); 
     font-weight: 500;
     display: flex;
     align-items: center;
@@ -1988,7 +1988,7 @@
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
   }
   
-  /* Fix race icons to match Overview's styling */
+  
   :global(.race-icon-details) {
     width: 1.4em;
     height: 1.4em;
@@ -1996,7 +1996,7 @@
     fill: rgba(0, 0, 0, 0.7);
   }
   
-  /* Race-specific styling */
+  
   :global(.race-icon-details.fairy-icon path) {
     fill: rgba(138, 43, 226, 0.8);
   }
@@ -2011,14 +2011,14 @@
     flex-shrink: 0;
   }
 
-  /* New styles for desktop two-column layout */
+  
   .tile-info-container {
     display: flex;
     flex-direction: column;
     gap: 0.8em;
   }
   
-  /* Desktop layout - structure on left, terrain on right */
+  
   @media (min-width: 640px) {
     .tile-info-container {
       flex-direction: row;
@@ -2038,7 +2038,7 @@
     }
   }
 
-  /* Improve entity layout in collapsible sections */
+  
   .entity {
     display: flex;
     flex-wrap: nowrap;
@@ -2076,19 +2076,19 @@
     align-self: center;
   }
 
-  /* Make entity content items properly aligned */
+  
   .entity-name, .entity-details {
     width: 100%;
   }
 
-  /* Entity details should be flex to align status and other elements */
+  
   .entity-details {
     display: flex;
     flex-wrap: wrap;
     font-size: 0.85em;
     color: rgba(0, 0, 0, 0.7);
     gap: 0.5em;
-    align-items: flex-start; /* Prevent children from stretching vertically */
+    align-items: flex-start; 
   }
 
   .entity-details-left {
@@ -2097,10 +2097,10 @@
     display: flex;
     flex-direction: column;
     gap: 0.4em;
-    align-items: flex-start; /* Ensure children align to the start */
+    align-items: flex-start; 
   }
 
-  /* Status badge styling to prevent flex growth */
+  
   .entity-status-badge {
     display: inline-block;
     font-size: 0.8em;
@@ -2109,8 +2109,8 @@
     border-radius: 0.3em;
     white-space: nowrap;
     text-transform: capitalize;
-    flex-shrink: 0; /* Prevent badge from shrinking */
-    align-self: flex-start; /* Keep badge at its natural size */
+    flex-shrink: 0; 
+    align-self: flex-start; 
   }
   
   .entity-status-badge.idle {
@@ -2173,7 +2173,7 @@
     font-weight: bold;
   }
 
-  /* Timer styles */
+  
   .timer {
     font-family: var(--font-mono, monospace);
     font-size: 0.85em;
@@ -2181,7 +2181,7 @@
     text-align: center;
   }
 
-  /* Progress bar styles */
+  
   .progress-bar {
     height: 0.5em;
     background-color: rgba(0, 0, 0, 0.1);
@@ -2196,7 +2196,7 @@
     transition: width 1s ease;
   }
 
-  /* Button styles */
+  
   .join-battle-btn {
     margin-top: 0.5em;
     padding: 0.4em 0.8em;
@@ -2214,7 +2214,7 @@
     background-color: #b71c1c;
   }
 
-  /* Rarity badge styles */
+  
   .rarity-badge {
     display: inline-block;
     font-size: 0.9em;
@@ -2269,9 +2269,9 @@
     }
   }
 
-  /* Add styles for the integrated structure elements */
+  
   .structure-name {
-    color: rgba(0, 0, 0, 1); /* Solid black */
+    color: rgba(0, 0, 0, 1); 
     font-weight: 500;
     display: flex;
     align-items: center;
@@ -2296,7 +2296,7 @@
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
   }
   
-  /* Fix race icons to match Overview's styling */
+  
   :global(.race-icon-details) {
     width: 1.4em;
     height: 1.4em;
@@ -2304,7 +2304,7 @@
     fill: rgba(0, 0, 0, 0.7);
   }
   
-  /* Race-specific styling */
+  
   :global(.race-icon-details.fairy-icon path) {
     fill: rgba(138, 43, 226, 0.8);
   }
@@ -2319,14 +2319,14 @@
     flex-shrink: 0;
   }
 
-  /* New styles for desktop two-column layout */
+  
   .tile-info-container {
     display: flex;
     flex-direction: column;
     gap: 0.8em;
   }
   
-  /* Desktop layout - structure on left, terrain on right */
+  
   @media (min-width: 640px) {
     .tile-info-container {
       flex-direction: row;
@@ -2346,7 +2346,7 @@
     }
   }
 
-  /* Improve entity layout in collapsible sections */
+  
   .entity {
     display: flex;
     flex-wrap: nowrap;
@@ -2384,19 +2384,19 @@
     align-self: center;
   }
 
-  /* Make entity content items properly aligned */
+  
   .entity-name, .entity-details {
     width: 100%;
   }
 
-  /* Entity details should be flex to align status and other elements */
+  
   .entity-details {
     display: flex;
     flex-wrap: wrap;
     font-size: 0.85em;
     color: rgba(0, 0, 0, 0.7);
     gap: 0.5em;
-    align-items: flex-start; /* Prevent children from stretching vertically */
+    align-items: flex-start; 
   }
 
   .entity-details-left {
@@ -2405,10 +2405,10 @@
     display: flex;
     flex-direction: column;
     gap: 0.4em;
-    align-items: flex-start; /* Ensure children align to the start */
+    align-items: flex-start; 
   }
 
-  /* Status badge styling to prevent flex growth */
+  
   .entity-status-badge {
     display: inline-block;
     font-size: 0.8em;
@@ -2417,8 +2417,8 @@
     border-radius: 0.3em;
     white-space: nowrap;
     text-transform: capitalize;
-    flex-shrink: 0; /* Prevent badge from shrinking */
-    align-self: flex-start; /* Keep badge at its natural size */
+    flex-shrink: 0; 
+    align-self: flex-start; 
   }
   
   .entity-status-badge.idle {
@@ -2481,7 +2481,7 @@
     font-weight: bold;
   }
 
-  /* Timer styles */
+  
   .timer {
     font-family: var(--font-mono, monospace);
     font-size: 0.85em;
@@ -2489,7 +2489,7 @@
     text-align: center;
   }
 
-  /* Progress bar styles */
+  
   .progress-bar {
     height: 0.5em;
     background-color: rgba(0, 0, 0, 0.1);
@@ -2504,7 +2504,7 @@
     transition: width 1s ease;
   }
 
-  /* Button styles */
+  
   .join-battle-btn {
     margin-top: 0.5em;
     padding: 0.4em 0.8em;
@@ -2522,7 +2522,7 @@
     background-color: #b71c1c;
   }
 
-  /* Rarity badge styles */
+  
   .rarity-badge {
     display: inline-block;
     font-size: 0.9em;
@@ -2577,9 +2577,9 @@
     }
   }
 
-  /* Add styles for the integrated structure elements */
+  
   .structure-name {
-    color: rgba(0, 0, 0, 1); /* Solid black */
+    color: rgba(0, 0, 0, 1); 
     font-weight: 500;
     display: flex;
     align-items: center;
@@ -2604,7 +2604,7 @@
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
   }
   
-  /* Fix race icons to match Overview's styling */
+  
   :global(.race-icon-details) {
     width: 1.4em;
     height: 1.4em;
@@ -2612,7 +2612,7 @@
     fill: rgba(0, 0, 0, 0.7);
   }
   
-  /* Race-specific styling */
+  
   :global(.race-icon-details.fairy-icon path) {
     fill: rgba(138, 43, 226, 0.8);
   }
@@ -2627,14 +2627,14 @@
     flex-shrink: 0;
   }
 
-  /* New styles for desktop two-column layout */
+  
   .tile-info-container {
     display: flex;
     flex-direction: column;
     gap: 0.8em;
   }
   
-  /* Desktop layout - structure on left, terrain on right */
+  
   @media (min-width: 640px) {
     .tile-info-container {
       flex-direction: row;
@@ -2654,7 +2654,7 @@
     }
   }
 
-  /* Improve entity layout in collapsible sections */
+  
   .entity {
     display: flex;
     flex-wrap: nowrap;
