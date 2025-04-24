@@ -1682,8 +1682,8 @@
   
   
   :global(.race-icon-details) {
-    width: 1.4em;
-    height: 1.4em;
+    width: 1.8em;  /* Increased from 1.4em */
+    height: 1.8em;  /* Increased from 1.4em */
     opacity: 0.85;
     fill: rgba(0, 0, 0, 0.7);
   }
