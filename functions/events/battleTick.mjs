@@ -522,10 +522,6 @@ export async function processBattles(worldId) {
     // Early return if no battles found
     if (battles.length === 0) {
       logger.info(`No battles to process in world ${worldId}`);
-      
-      // Clean up completed battles even if there are no active battles to process
-      await cleanupCompletedBattles(db, worldId);
-      
       return 0;
     }
     
@@ -574,77 +570,9 @@ export async function processBattles(worldId) {
       }
     }
     
-    // Clean up old completed battles
-    await cleanupCompletedBattles(db, worldId);
-    
     return battleProcessCount;
   } catch (error) {
     logger.error(`Error processing battles for world ${worldId}:`, error);
-    return 0;
-  }
-}
-
-/**
- * Clean up completed battles that are older than the retention period
- * 
- * @param {Object} db Database reference
- * @param {string} worldId World ID
- * @returns {Promise<number>} Number of battles cleaned up
- */
-async function cleanupCompletedBattles(db, worldId) {
-  try {
-    // Define retention period (24 hours in milliseconds)
-    const retentionPeriod = 24 * 60 * 60 * 1000;
-    const cutoffTime = Date.now() - retentionPeriod;
-    
-    // Track for logging
-    let cleanupCount = 0;
-    const updates = {};
-    
-    // Get all chunks in the world
-    const chunksRef = db.ref(`worlds/${worldId}/chunks`);
-    const chunksSnapshot = await chunksRef.once('value');
-    
-    if (!chunksSnapshot.exists()) {
-      return 0;
-    }
-    
-    // Scan each chunk for completed battles
-    chunksSnapshot.forEach((chunkSnapshot) => {
-      const chunkKey = chunkSnapshot.key;
-      const chunk = chunkSnapshot.val();
-      
-      // Skip non-tile entries
-      if (typeof chunk !== 'object') return;
-      
-      // Check each tile in the chunk
-      for (const [tileKey, tileData] of Object.entries(chunk)) {
-        // Skip non-tile entries
-        if (!tileData || typeof tileData !== 'object') continue;
-        
-        // Check if the tile has battles
-        if (tileData.battles) {
-          for (const [battleId, battle] of Object.entries(tileData.battles)) {
-            // Check if battle is completed and old enough to be removed
-            if (battle.status === 'completed' && battle.completedAt && battle.completedAt < cutoffTime) {
-              // Mark for removal
-              updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`] = null;
-              cleanupCount++;
-            }
-          }
-        }
-      }
-    });
-    
-    // Apply all removals in a single batch
-    if (Object.keys(updates).length > 0) {
-      await db.ref().update(updates);
-      logger.info(`Cleaned up ${cleanupCount} completed battles older than ${new Date(cutoffTime).toISOString()}`);
-    }
-    
-    return cleanupCount;
-  } catch (error) {
-    logger.error(`Error cleaning up completed battles for world ${worldId}:`, error);
     return 0;
   }
 }
@@ -883,11 +811,8 @@ async function processBattleResolution(db, worldId, battle, tileData, winningSid
     battleStats.survivingUnits.side2 = totalInitialSide2 - battleStats.casualties.side2;
     battleStats.survivingUnits.total = battleStats.survivingUnits.side1 + battleStats.survivingUnits.side2;
     
-    // Update battle status and store detailed results in the tile record
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/status`] = 'completed';
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/winner`] = winningSide;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/completedAt`] = now;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/results`] = battleStats;
+    // Delete the battle record immediately instead of marking it as completed
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}`] = null;
     
     // Create battle outcome chat message with more detail
     const winSideText = winningSide === 1 ? "Attackers" : "Defenders";
