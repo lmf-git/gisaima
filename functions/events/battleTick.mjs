@@ -223,35 +223,93 @@ function processBattleAttrition(battle, tileData) {
     };
   }
 
-  // Unified scaling formula for all battle sizes
-  // Naturally produces higher casualty rates for smaller battles
-  // Base settings for the scaling algorithm
-  const baseRate = 0.03;       // Minimum casualty rate for very large battles
-  const scalingFactor = 2.5;   // Increased from 1.5 to make small battles resolve quickly
+  // Completely new battle scaling algorithm with proper scaling across all battle sizes
+  // Use a logarithmic scaling approach that produces more reasonable results
   
-  // Size-based scaling - inverse square root relationship with unit count
-  const sizeFactor = baseRate * (1 + (scalingFactor / Math.sqrt(totalUnits || 1)));
+  // Base casualty parameters
+  const tinyBattleBaseRate = 0.30;    // Base rate for 1v1 battles (30%)
+  const smallBattleBaseRate = 0.15;   // Base rate for ~10 unit battles (15%)
+  const mediumBattleBaseRate = 0.08;  // Base rate for ~50 unit battles (8%)
+  const largeBattleBaseRate = 0.04;   // Base rate for ~100 unit battles (4%)
+  const massiveBattleBaseRate = 0.02; // Base rate for 1000+ unit battles (2%)
+  
+  // Calculate the effective base rate using logarithmic scaling
+  let baseRate;
+  
+  if (totalUnits <= 2) {
+    // Tiny battles (1-2 units) use the highest rate
+    baseRate = tinyBattleBaseRate;
+  } else if (totalUnits <= 10) {
+    // Small battles (3-10 units)
+    const smallBattleProgress = (totalUnits - 2) / 8;
+    baseRate = tinyBattleBaseRate - (smallBattleProgress * (tinyBattleBaseRate - smallBattleBaseRate));
+  } else if (totalUnits <= 50) {
+    // Medium battles (11-50 units)
+    const mediumBattleProgress = (totalUnits - 10) / 40;
+    baseRate = smallBattleBaseRate - (mediumBattleProgress * (smallBattleBaseRate - mediumBattleBaseRate));
+  } else if (totalUnits <= 200) {
+    // Large battles (51-200 units)
+    const largeBattleProgress = (totalUnits - 50) / 150;
+    baseRate = mediumBattleBaseRate - (largeBattleProgress * (mediumBattleBaseRate - largeBattleBaseRate));
+  } else {
+    // Massive battles (201+ units)
+    // Use logarithmic decay: rate = largeBattleBaseRate * (1 - log_factor * log10(totalUnits/200))
+    // This ensures that casualty rates continue to decrease for extremely large battles
+    const logFactor = 0.2; // Controls how quickly rates decrease with size
+    baseRate = Math.max(
+      massiveBattleBaseRate, 
+      largeBattleBaseRate * (1 - logFactor * Math.log10(totalUnits / 200))
+    );
+  }
   
   // Duration-based escalation - battles intensify over time
-  // Quicker escalation (20% per tick after tick 3) to help resolve lingering battles
-  const durationMultiplier = tickCount <= 3 ? 1 : 1 + (0.2 * (tickCount - 3));
+  // Different escalation rates based on battle size
+  let durationFactor;
+  if (totalUnits <= 10) {
+    // Small battles escalate quickly (30% per tick)
+    durationFactor = 0.3;
+  } else if (totalUnits <= 50) {
+    // Medium battles escalate moderately (20% per tick)
+    durationFactor = 0.2;
+  } else if (totalUnits <= 500) {
+    // Large battles escalate more slowly (15% per tick)
+    durationFactor = 0.15;
+  } else {
+    // Massive battles escalate very slowly (10% per tick)
+    durationFactor = 0.1;
+  }
   
-  // Calculate scaled casualty rate
-  const scaledRate = sizeFactor * durationMultiplier;
+  // Grace period before escalation starts (longer for larger battles)
+  let gracePeriod;
+  if (totalUnits <= 10) {
+    gracePeriod = 1; // Small battles escalate after 1 tick
+  } else if (totalUnits <= 100) {
+    gracePeriod = 2; // Medium battles escalate after 2 ticks
+  } else if (totalUnits <= 1000) {
+    gracePeriod = 3; // Large battles escalate after 3 ticks
+  } else {
+    gracePeriod = 4; // Massive battles escalate after 4 ticks
+  }
   
-  // Add significant randomness to create possibility of quick resolutions
-  // Especially important for small battles
-  const minRandomFactor = 0.7 + (1 / (totalUnits + 1));  // Higher minimum for small battles
-  const randomFactor = minRandomFactor + (Math.random() * 0.8);
+  // Calculate duration multiplier
+  const durationMultiplier = tickCount <= gracePeriod ? 1 : (1 + durationFactor * (tickCount - gracePeriod));
   
-  // Weaker side takes higher casualties
-  const weakerSideRate = scaledRate * 2 * randomFactor;
-  const strongerSideRate = scaledRate * randomFactor;
+  // Calculate final casualty rate
+  const casualtyRate = baseRate * durationMultiplier;
+  
+  // Add randomness scaled by battle size
+  const randomnessFactor = 0.3 + (0.2 / Math.sqrt(totalUnits)); // Ranges from ~0.5 for tiny battles to ~0.3 for huge battles
+  const randomVariation = 1 - randomnessFactor + (Math.random() * randomnessFactor * 2);
+  
+  // Calculate final casualty rates including asymmetry between stronger and weaker sides
+  const weakerSideMultiplier = 2.0;
+  const strongerSideRate = casualtyRate * randomVariation;
+  const weakerSideRate = casualtyRate * weakerSideMultiplier * randomVariation;
   
   logger.info(
     `Battle ${battle.id} (${totalUnits} units): Tick ${tickCount}, casualty rates - ` +
     `Stronger: ${Math.round(strongerSideRate * 100)}%, Weaker: ${Math.round(weakerSideRate * 100)}% ` +
-    `(Size: ${sizeFactor.toFixed(2)}x, Duration: ${durationMultiplier.toFixed(2)}x)`
+    `(Base: ${Math.round(baseRate * 100)}%, Duration: ${durationMultiplier.toFixed(2)}x)`
   );
   
   // Determine which side is stronger
