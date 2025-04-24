@@ -359,7 +359,26 @@ function calculateBattleWinner(battle, tileData) {
     }
   }
   
-  // Calculate power ratio
+  // Handle exactly equal power - pure 50/50 random outcome
+  if (side1Power === side2Power) {
+    logger.info(`Battle ${battle.id} has exactly equal sides (${side1Power} vs ${side2Power}) - picking random winner`);
+    return Math.random() < 0.5 ? 1 : 2;
+  }
+  
+  // For nearly equal power (within 20%), increase randomness
+  const powerDifferenceRatio = Math.abs(side1Power - side2Power) / Math.max(side1Power, side2Power);
+  if (powerDifferenceRatio < 0.2) { // Power difference less than 20%
+    logger.info(`Battle ${battle.id} has nearly equal sides (${side1Power} vs ${side2Power}) - mostly random outcome`);
+    
+    // Give slight advantage to stronger side, but mostly random
+    const strongerSide = side1Power > side2Power ? 1 : 2;
+    const weakerSide = strongerSide === 1 ? 2 : 1;
+    
+    // 60/40 odds favoring stronger side for small differences
+    return Math.random() < 0.6 ? strongerSide : weakerSide;
+  }
+  
+  // For more significant differences, use power ratio
   const powerRatio = side1Power / Math.max(side2Power, 1);
   
   // Use power ratio to determine winner with some randomness

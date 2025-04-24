@@ -1,172 +1,104 @@
 {
-  "battles": {
-    "ancient-lands": {
-      "battle_1745431869549_825": {
-        "endTime": 1745432049658,
-        "id": "battle_1745431869549_825",
-        "locationX": -21,
-        "locationY": 5,
-        "side1": {
-          "groups": {
-            "-OOYp0QOOeBbqE4gt_LY": true
-          },
-          "leader": "-OOYp0QOOeBbqE4gt_LY",
-          "power": 1
-        },
-        "side2": {
-          "groups": {
-            "-OOYb5KPFEXVhn0XBBfT": true
-          },
-          "leader": "-OOYb5KPFEXVhn0XBBfT",
-          "power": 1
-        },
-        "started": 1745431869658,
-        "status": "active"
-      }
-    }
-  },
   "players": {
-    "33WaCOrPNuWbsK9pirGTTSStYs02": {
+    "DqBhu8Nd4jNCYq51s8izH6JTHL63": {
       "worlds": {
         "ancient-lands": {
           "achievements": {
-            "first_gather": true,
-            "first_gather_date": 1745431482375,
-            "first_steps": true,
-            "first_steps_date": 1745431632510,
+            "first_attack": true,
+            "first_attack_date": 1745475972643,
             "mobilised": true,
-            "mobilised_date": 1745431374777
+            "mobilised_date": 1745475955951
           },
           "alive": true,
-          "displayName": "Steve",
+          "displayName": "test3",
           "groups": {
-            "-OOYoHXYzQwVeE1gsZ0Z": {
-              "at": "-23,5",
-              "id": "-OOYoHXYzQwVeE1gsZ0Z",
+            "-OOaTL_011azSTRTsXT3": {
+              "at": "-18,-22",
+              "id": "-OOaTL_011azSTRTsXT3",
               "status": "idle"
             }
           },
-          "id": "33WaCOrPNuWbsK9pirGTTSStYs02",
-          "inGroup": "-OOYoHXYzQwVeE1gsZ0Z",
-          "joined": 1745431153097,
+          "id": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
+          "inGroup": "-OOaTL_011azSTRTsXT3",
+          "joined": 1745475923714,
           "lastLocation": {
-            "timestamp": 1745431805820,
-            "x": -21,
-            "y": 5
+            "x": -18,
+            "y": -22
           },
-          "race": "human"
+          "race": "fairy"
         }
       }
     },
-    "9SJkWdHmfUZtqKWHQQvKowA1kyK2": {
+    "F4Pg3cWB4Kcit6ZIu3DkcDNsyTr1": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "geawgege",
+          "id": "F4Pg3cWB4Kcit6ZIu3DkcDNsyTr1",
+          "joined": 1745475081958,
+          "lastLocation": {
+            "timestamp": 1745475085032,
+            "x": -32,
+            "y": -10
+          },
+          "race": "dwarf"
+        }
+      }
+    },
+    "JN5dIUjWnXO2dd2o4GaD7tdernI2": {
       "worlds": {
         "ancient-lands": {
           "achievements": {
             "first_steps": true,
-            "first_steps_date": 1745430418500,
+            "first_steps_date": 1745475728105,
             "mobilised": true,
-            "mobilised_date": 1745429287827
+            "mobilised_date": 1745475676643
           },
           "alive": true,
-          "displayName": "geweagew",
+          "displayName": "gewgwe",
           "groups": {
-            "-OOYgK2_MdOwrhLkNQG4": {
+            "-OOaSHS1isHg4MD2PWV4": {
               "at": "-30,-12",
-              "id": "-OOYgK2_MdOwrhLkNQG4",
+              "id": "-OOaSHS1isHg4MD2PWV4",
               "status": "idle"
             }
           },
-          "id": "9SJkWdHmfUZtqKWHQQvKowA1kyK2",
-          "inGroup": "-OOYgK2_MdOwrhLkNQG4",
-          "joined": 1745429218839,
+          "id": "JN5dIUjWnXO2dd2o4GaD7tdernI2",
+          "inGroup": "-OOaSHS1isHg4MD2PWV4",
+          "joined": 1745475254820,
           "lastLocation": {
-            "timestamp": 1745431205238,
-            "x": -27,
-            "y": -12
+            "timestamp": 1745475905795,
+            "x": -32,
+            "y": -10
           },
           "race": "elf"
         }
       }
     },
-    "a9iCghLVxlhM736Rbi0Zif13wGl2": {
+    "YmMxPlCzBXW4Pg86QcqsGaOopPQ2": {
       "worlds": {
         "ancient-lands": {
           "achievements": {
-            "demobilizer": true,
-            "demobilizer_date": 1745431536620,
-            "first_attack": true,
-            "first_attack_date": 1745431870214,
-            "first_gather": true,
-            "first_gather_date": 1745431419489,
-            "first_message": true,
-            "first_message_date": 1745431142093,
-            "first_steps": true,
-            "first_steps_date": 1745431663264,
-            "inspector": true,
-            "inspector_date": 1745431609685,
             "mobilised": true,
-            "mobilised_date": 1745431566979
+            "mobilised_date": 1745475960354
           },
           "alive": true,
-          "displayName": "Austin",
+          "displayName": "test2",
           "groups": {
-            "-OOYo3GrIkUYzje42KKL": {
-              "at": "-23,5",
-              "id": "-OOYo3GrIkUYzje42KKL",
-              "status": "idle"
-            },
-            "-OOYp0QOOeBbqE4gt_LY": {
-              "at": "-23,5",
-              "id": "-OOYp0QOOeBbqE4gt_LY",
+            "-OOaTMgxhj5MH-9bBRzW": {
+              "at": "-18,-22",
+              "id": "-OOaTMgxhj5MH-9bBRzW",
               "status": "idle"
             }
           },
-          "id": "a9iCghLVxlhM736Rbi0Zif13wGl2",
-          "inGroup": "-OOYp0QOOeBbqE4gt_LY",
-          "joined": 1745430632144,
+          "id": "YmMxPlCzBXW4Pg86QcqsGaOopPQ2",
+          "inGroup": "-OOaTMgxhj5MH-9bBRzW",
+          "joined": 1745475908413,
           "lastLocation": {
-            "timestamp": 1745431805820,
-            "x": -21,
-            "y": 5
+            "x": -18,
+            "y": -22
           },
-          "race": "human"
-        }
-      }
-    },
-    "mLmp0dddWsUA7o1QdvCJKgOwbUC2": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "demobilizer": true,
-            "demobilizer_date": 1745427884188,
-            "first_steps": true,
-            "first_steps_date": 1745428154096,
-            "mobilised": true,
-            "mobilised_date": 1745427916826
-          },
-          "alive": true,
-          "displayName": "Adam",
-          "groups": {
-            "-OOYYqlRYtmEGOhZa69Q": {
-              "at": "-23,5",
-              "id": "-OOYYqlRYtmEGOhZa69Q",
-              "status": "idle"
-            },
-            "-OOYb5KPFEXVhn0XBBfT": {
-              "at": "-23,5",
-              "id": "-OOYb5KPFEXVhn0XBBfT",
-              "status": "idle"
-            }
-          },
-          "id": "mLmp0dddWsUA7o1QdvCJKgOwbUC2",
-          "inGroup": "-OOYb5KPFEXVhn0XBBfT",
-          "joined": 1745425977592,
-          "lastLocation": {
-            "timestamp": 1745428321053,
-            "x": -21,
-            "y": 5
-          },
-          "race": "human"
+          "race": "fairy"
         }
       }
     }
@@ -174,362 +106,76 @@
   "worlds": {
     "ancient-lands": {
       "chat": {
-        "-OOY7HZdDi3rMuC3P-X5": {
+        "-OOaSHU-xcHAYBW8LV4h": {
           "location": {
             "x": -30,
             "y": -12
           },
-          "text": "New Force is being mobilized at (-30,-12)",
-          "timestamp": 1745419839714,
+          "text": "gewgwe's Force is being mobilized at (-30,-12)",
+          "timestamp": 1745475676032,
           "type": "system"
         },
-        "-OOYFIz1S2Y09KIyBlCX": {
+        "-OOaTLbQML2BLIAdsCws": {
           "location": {
-            "x": -23,
-            "y": 5
+            "x": -18,
+            "y": -22
           },
-          "text": "New Force is being mobilized at (-23,5)",
-          "timestamp": 1745421942646,
+          "text": "test3's Force is being mobilized at (-18,-22)",
+          "timestamp": 1745475955072,
           "type": "system"
         },
-        "-OOYFW3jtUqhz9jzRta4": {
+        "-OOaTMixG7Re35zWEozb": {
           "location": {
-            "x": -23,
-            "y": 5
+            "x": -18,
+            "y": -22
           },
-          "text": "Heya",
-          "timestamp": 1745421996301,
-          "type": "user",
-          "userId": "A9V9Sx3yqSQjzDvrme0gcfn5oZl2",
-          "userName": "Anonymous"
+          "text": "test2's Force is being mobilized at (-18,-22)",
+          "timestamp": 1745475959676,
+          "type": "system"
         },
-        "-OOYSc5aGWJ_Wxl2Xn5z": {
+        "chat_1745475721867_433": {
+          "location": {
+            "timestamp": 1745475721867,
+            "x": -30,
+            "y": -12
+          },
+          "text": "A lone elf warrior has mobilized at (-30, -12) - \"gewgwe's Force\"",
+          "timestamp": 1745475721867,
+          "type": "event",
+          "userId": "JN5dIUjWnXO2dd2o4GaD7tdernI2",
+          "userName": "gewgwe's Force"
+        },
+        "chat_1745475961524_231": {
+          "location": {
+            "timestamp": 1745475961524,
+            "x": -18,
+            "y": -22
+          },
+          "text": "A lone fairy warrior has mobilized at (-18, -22) - \"test3's Force\"",
+          "timestamp": 1745475961524,
+          "type": "event",
+          "userId": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
+          "userName": "test3's Force"
+        },
+        "chat_1745475961524_251": {
+          "location": {
+            "timestamp": 1745475961524,
+            "x": -18,
+            "y": -22
+          },
+          "text": "A lone fairy warrior has mobilized at (-18, -22) - \"test2's Force\"",
+          "timestamp": 1745475961524,
+          "type": "event",
+          "userId": "YmMxPlCzBXW4Pg86QcqsGaOopPQ2",
+          "userName": "test2's Force"
+        },
+        "move_1745475905795_-OOaSHS1isHg4MD2PWV4_2": {
           "location": {
             "x": -32,
             "y": -10
           },
-          "text": "New Force is being mobilized at (-32,-10)",
-          "timestamp": 1745425432912,
-          "type": "system"
-        },
-        "-OOYYqnWoj7zlv4slzL1": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "New Force is being mobilized at (-23,5)",
-          "timestamp": 1745427066013,
-          "type": "system"
-        },
-        "-OOYb5MR_1IvV02q5grB": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "New Force is being mobilized at (-23,5)",
-          "timestamp": 1745427916188,
-          "type": "system"
-        },
-        "-OOYgK4iY_kK8v2B6hmA": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "New Force is being mobilized at (-30,-12)",
-          "timestamp": 1745429287200,
-          "type": "system"
-        },
-        "-OOYnOnlMCN6qCCkhiot": {
-          "location": {
-            "timestamp": 1745430635696,
-            "x": -23,
-            "y": 5
-          },
-          "text": "morning",
-          "timestamp": 1745431141818,
-          "type": "user",
-          "userId": "a9iCghLVxlhM736Rbi0Zif13wGl2",
-          "userName": "Anonymous"
-        },
-        "-OOYo3J7N7CVoF3YV6Pu": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Austin's Force is being mobilized at (-23,5)",
-          "timestamp": 1745431315634,
-          "type": "system"
-        },
-        "-OOYoDDH7s2AgSnCQy84": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "hello there",
-          "timestamp": 1745431356507,
-          "type": "user",
-          "userId": "a9iCghLVxlhM736Rbi0Zif13wGl2",
-          "userName": "Anonymous"
-        },
-        "-OOYoHZmjgr2TLSn_zrp": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "New Force is being mobilized at (-23,5)",
-          "timestamp": 1745431374047,
-          "type": "system"
-        },
-        "-OOYp0SYl6w9rokSfy_-": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "New Force is being mobilized at (-23,5)",
-          "timestamp": 1745431566101,
-          "type": "system"
-        },
-        "chat_1745419861345_726": {
-          "location": {
-            "timestamp": 1745419861345,
-            "x": -30,
-            "y": -12
-          },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"New Force\"",
-          "timestamp": 1745419861345,
-          "type": "event",
-          "userId": "O2XpFdiBXsRPLZsRzyFUsFu7UXd2",
-          "userName": "New Force"
-        },
-        "chat_1745421961809_652": {
-          "location": {
-            "timestamp": 1745421961809,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"New Force\"",
-          "timestamp": 1745421961809,
-          "type": "event",
-          "userId": "A9V9Sx3yqSQjzDvrme0gcfn5oZl2",
-          "userName": "New Force"
-        },
-        "chat_1745425445855_983": {
-          "location": {
-            "timestamp": 1745425445855,
-            "x": -32,
-            "y": -10
-          },
-          "text": "A lone dwarf warrior has mobilized at (-32, -10) - \"New Force\"",
-          "timestamp": 1745425445855,
-          "type": "event",
-          "userId": "UFyD3h741RXZlbiDT91PGZJ8BJ92",
-          "userName": "New Force"
-        },
-        "chat_1745427121890_811": {
-          "location": {
-            "timestamp": 1745427121890,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"New Force\"",
-          "timestamp": 1745427121890,
-          "type": "event",
-          "userId": "mLmp0dddWsUA7o1QdvCJKgOwbUC2",
-          "userName": "New Force"
-        },
-        "chat_1745427961715_83": {
-          "location": {
-            "timestamp": 1745427961715,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"New Force\"",
-          "timestamp": 1745427961715,
-          "type": "event",
-          "userId": "mLmp0dddWsUA7o1QdvCJKgOwbUC2",
-          "userName": "New Force"
-        },
-        "chat_1745429341239_701": {
-          "location": {
-            "timestamp": 1745429341239,
-            "x": -30,
-            "y": -12
-          },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"New Force\"",
-          "timestamp": 1745429341239,
-          "type": "event",
-          "userId": "9SJkWdHmfUZtqKWHQQvKowA1kyK2",
-          "userName": "New Force"
-        },
-        "chat_1745431325567_109": {
-          "location": {
-            "timestamp": 1745431325567,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"Austin's Force\"",
-          "timestamp": 1745431325567,
-          "type": "event",
-          "userId": "a9iCghLVxlhM736Rbi0Zif13wGl2",
-          "userName": "Austin's Force"
-        },
-        "chat_1745431381203_642": {
-          "location": {
-            "timestamp": 1745431381203,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"New Force\"",
-          "timestamp": 1745431381203,
-          "type": "event",
-          "userId": "33WaCOrPNuWbsK9pirGTTSStYs02",
-          "userName": "New Force"
-        },
-        "chat_1745431621710_337": {
-          "location": {
-            "timestamp": 1745431621710,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"New Force\"",
-          "timestamp": 1745431621710,
-          "type": "event",
-          "userId": "a9iCghLVxlhM736Rbi0Zif13wGl2",
-          "userName": "New Force"
-        },
-        "gather_1745431441859_-OOYo3GrIkUYzje42KKL": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Austin's Force gathered resources in plains biome at (-23, 5): 4 Wooden Sticks",
-          "timestamp": 1745431441859,
-          "type": "event"
-        },
-        "gather_1745431562052_-OOYoHXYzQwVeE1gsZ0Z": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "New Force gathered resources in plains biome at (-23, 5): 5 Wooden Sticks",
-          "timestamp": 1745431562052,
-          "type": "event"
-        },
-        "move_1745422561121_-OOYFIwvzIX5uvZsfCR0_3": {
-          "location": {
-            "x": -25,
-            "y": 8
-          },
-          "text": "New Force has arrived at (-25,8) and continues their journey",
-          "timestamp": 1745422561121,
-          "type": "event"
-        },
-        "move_1745422801959_-OOYFIwvzIX5uvZsfCR0_6": {
-          "location": {
-            "x": -27,
-            "y": 5
-          },
-          "text": "New Force has arrived at (-27,5) and continues their journey",
-          "timestamp": 1745422801959,
-          "type": "event"
-        },
-        "move_1745423101306_-OOYFIwvzIX5uvZsfCR0_9": {
-          "location": {
-            "x": -26,
-            "y": 2
-          },
-          "text": "New Force has arrived at (-26,2) and continues their journey",
-          "timestamp": 1745423101306,
-          "type": "event"
-        },
-        "move_1745423401603_-OOYFIwvzIX5uvZsfCR0_12": {
-          "location": {
-            "x": -25,
-            "y": -1
-          },
-          "text": "New Force has arrived at (-25,-1) and continues their journey",
-          "timestamp": 1745423401603,
-          "type": "event"
-        },
-        "move_1745423645845_-OOYFIwvzIX5uvZsfCR0_15": {
-          "location": {
-            "x": -24,
-            "y": -4
-          },
-          "text": "New Force has arrived at (-24,-4) and continues their journey",
-          "timestamp": 1745423645845,
-          "type": "event"
-        },
-        "move_1745423881616_-OOYFIwvzIX5uvZsfCR0_18": {
-          "location": {
-            "x": -23,
-            "y": -7
-          },
-          "text": "New Force has arrived at (-23,-7) and continues their journey",
-          "timestamp": 1745423881616,
-          "type": "event"
-        },
-        "move_1745424001901_-OOYFIwvzIX5uvZsfCR0_19": {
-          "location": {
-            "x": -23,
-            "y": -8
-          },
-          "text": "New Force has arrived at (-23,-8)",
-          "timestamp": 1745424001901,
-          "type": "event"
-        },
-        "move_1745428321053_-OOYb5KPFEXVhn0XBBfT_2": {
-          "location": {
-            "x": -21,
-            "y": 5
-          },
-          "text": "New Force has arrived at (-21,5)",
-          "timestamp": 1745428321053,
-          "type": "event"
-        },
-        "move_1745430485907_-OOYgK2_MdOwrhLkNQG4_1": {
-          "location": {
-            "x": -29,
-            "y": -12
-          },
-          "text": "New Force has arrived at (-29,-12)",
-          "timestamp": 1745430485907,
-          "type": "event"
-        },
-        "move_1745430605175_-OOYgK2_MdOwrhLkNQG4_1": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "New Force has arrived at (-30,-12)",
-          "timestamp": 1745430605175,
-          "type": "event"
-        },
-        "move_1745431205238_-OOYgK2_MdOwrhLkNQG4_3": {
-          "location": {
-            "x": -27,
-            "y": -12
-          },
-          "text": "New Force has arrived at (-27,-12)",
-          "timestamp": 1745431205238,
-          "type": "event"
-        },
-        "move_1745431805820_-OOYoHXYzQwVeE1gsZ0Z_2": {
-          "location": {
-            "x": -21,
-            "y": 5
-          },
-          "text": "New Force has arrived at (-21,5)",
-          "timestamp": 1745431805820,
-          "type": "event"
-        },
-        "move_1745431805820_-OOYp0QOOeBbqE4gt_LY_2": {
-          "location": {
-            "x": -21,
-            "y": 5
-          },
-          "text": "New Force has arrived at (-21,5)",
-          "timestamp": 1745431805820,
+          "text": "gewgwe's Force has arrived at (-32,-10)",
+          "timestamp": 1745475905795,
           "type": "event"
         }
       },
@@ -586,6 +232,75 @@
         },
         "-1,-2": {
           "-18,-22": {
+            "battles": {
+              "battle_1745475971950_450": {
+                "id": "battle_1745475971950_450",
+                "side1Power": 1,
+                "side2Power": 1,
+                "startTime": 1745475972061,
+                "status": "active"
+              }
+            },
+            "groups": {
+              "-OOaTL_011azSTRTsXT3": {
+                "battleId": "battle_1745475971950_450",
+                "battleRole": "attacker",
+                "battleSide": 1,
+                "createdAt": 1745475955072,
+                "id": "-OOaTL_011azSTRTsXT3",
+                "inBattle": true,
+                "lastMessage": {
+                  "text": "Group is fully mobilized and ready",
+                  "timestamp": 1745475961524
+                },
+                "lastUpdated": 1745475961524,
+                "name": "test3's Force",
+                "owner": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
+                "race": "fairy",
+                "status": "fighting",
+                "unitCount": 1,
+                "units": {
+                  "DqBhu8Nd4jNCYq51s8izH6JTHL63": {
+                    "displayName": "test3",
+                    "id": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
+                    "lastActive": 1745475932709,
+                    "race": "fairy",
+                    "type": "player"
+                  }
+                },
+                "x": -18,
+                "y": -22
+              },
+              "-OOaTMgxhj5MH-9bBRzW": {
+                "battleId": "battle_1745475971950_450",
+                "battleRole": "defender",
+                "battleSide": 2,
+                "createdAt": 1745475959676,
+                "id": "-OOaTMgxhj5MH-9bBRzW",
+                "inBattle": true,
+                "lastMessage": {
+                  "text": "Group is fully mobilized and ready",
+                  "timestamp": 1745475961524
+                },
+                "lastUpdated": 1745475961524,
+                "name": "test2's Force",
+                "owner": "YmMxPlCzBXW4Pg86QcqsGaOopPQ2",
+                "race": "fairy",
+                "status": "fighting",
+                "unitCount": 1,
+                "units": {
+                  "YmMxPlCzBXW4Pg86QcqsGaOopPQ2": {
+                    "displayName": "test2",
+                    "id": "YmMxPlCzBXW4Pg86QcqsGaOopPQ2",
+                    "lastActive": 1745475911008,
+                    "race": "fairy",
+                    "type": "player"
+                  }
+                },
+                "x": -18,
+                "y": -22
+              }
+            },
             "structure": {
               "description": "A fairy settlement where the ancient spirits still speak",
               "id": "structure_al_fairy_spawn",
@@ -616,59 +331,6 @@
           }
         },
         "-2,-1": {
-          "-27,-12": {
-            "groups": {
-              "-OOYgK2_MdOwrhLkNQG4": {
-                "createdAt": 1745429287200,
-                "id": "-OOYgK2_MdOwrhLkNQG4",
-                "lastMessage": {
-                  "text": "Moving to next location (-27,-12)",
-                  "timestamp": 1745431205238
-                },
-                "lastUpdated": 1745431205238,
-                "moveSpeed": 1,
-                "moveStarted": 1745430903097,
-                "movementPath": [
-                  {
-                    "x": -30,
-                    "y": -12
-                  },
-                  {
-                    "x": -29,
-                    "y": -12
-                  },
-                  {
-                    "x": -28,
-                    "y": -12
-                  },
-                  {
-                    "x": -27,
-                    "y": -12
-                  }
-                ],
-                "name": "New Force",
-                "nextMoveTime": 1745431265238,
-                "owner": "9SJkWdHmfUZtqKWHQQvKowA1kyK2",
-                "pathIndex": 3,
-                "race": "elf",
-                "status": "idle",
-                "targetX": -27,
-                "targetY": -12,
-                "unitCount": 1,
-                "units": {
-                  "9SJkWdHmfUZtqKWHQQvKowA1kyK2": {
-                    "displayName": "geweagew",
-                    "id": "9SJkWdHmfUZtqKWHQQvKowA1kyK2",
-                    "lastActive": 1745429222057,
-                    "race": "elf",
-                    "type": "player"
-                  }
-                },
-                "x": -27,
-                "y": -12
-              }
-            }
-          },
           "-30,-12": {
             "structure": {
               "description": "An elven city built around the oldest living trees in the realm",
@@ -677,174 +339,66 @@
               "race": "elf",
               "type": "spawn"
             }
+          },
+          "-32,-10": {
+            "groups": {
+              "-OOaSHS1isHg4MD2PWV4": {
+                "createdAt": 1745475676032,
+                "id": "-OOaSHS1isHg4MD2PWV4",
+                "lastMessage": {
+                  "text": "Moving to next location (-32,-10)",
+                  "timestamp": 1745475905795
+                },
+                "lastUpdated": 1745475905795,
+                "moveSpeed": 1,
+                "moveStarted": 1745475731006,
+                "movementPath": [
+                  {
+                    "x": -30,
+                    "y": -12
+                  },
+                  {
+                    "x": -31,
+                    "y": -11
+                  },
+                  {
+                    "x": -32,
+                    "y": -10
+                  }
+                ],
+                "name": "gewgwe's Force",
+                "nextMoveTime": 1745475965795,
+                "owner": "JN5dIUjWnXO2dd2o4GaD7tdernI2",
+                "pathIndex": 2,
+                "race": "elf",
+                "status": "idle",
+                "targetX": -32,
+                "targetY": -10,
+                "unitCount": 1,
+                "units": {
+                  "JN5dIUjWnXO2dd2o4GaD7tdernI2": {
+                    "displayName": "gewgwe",
+                    "id": "JN5dIUjWnXO2dd2o4GaD7tdernI2",
+                    "lastActive": 1745475343525,
+                    "race": "elf",
+                    "type": "player"
+                  }
+                },
+                "x": -32,
+                "y": -10
+              }
+            },
+            "players": {
+              "F4Pg3cWB4Kcit6ZIu3DkcDNsyTr1": {
+                "displayName": "geawgege",
+                "id": "F4Pg3cWB4Kcit6ZIu3DkcDNsyTr1",
+                "lastActive": 1745475085290,
+                "race": "dwarf"
+              }
+            }
           }
         },
         "-2,0": {
-          "-21,5": {
-            "battles": {
-              "battle_1745431869549_825": {
-                "endTime": 1745432049658,
-                "id": "battle_1745431869549_825",
-                "side1Power": 1,
-                "side2Power": 1,
-                "startTime": 1745431869658
-              }
-            },
-            "groups": {
-              "-OOYb5KPFEXVhn0XBBfT": {
-                "battleId": "battle_1745431869549_825",
-                "battleRole": "defender",
-                "battleSide": 2,
-                "createdAt": 1745427916188,
-                "id": "-OOYb5KPFEXVhn0XBBfT",
-                "inBattle": true,
-                "lastMessage": {
-                  "text": "Moving to next location (-21,5)",
-                  "timestamp": 1745428321053
-                },
-                "lastUpdated": 1745428321053,
-                "moveSpeed": 1,
-                "moveStarted": 1745428171184,
-                "movementPath": [
-                  {
-                    "x": -23,
-                    "y": 5
-                  },
-                  {
-                    "x": -22,
-                    "y": 5
-                  },
-                  {
-                    "x": -21,
-                    "y": 5
-                  }
-                ],
-                "name": "New Force",
-                "nextMoveTime": 1745428381053,
-                "owner": "mLmp0dddWsUA7o1QdvCJKgOwbUC2",
-                "pathIndex": 2,
-                "race": "human",
-                "status": "fighting",
-                "targetX": -21,
-                "targetY": 5,
-                "unitCount": 1,
-                "units": {
-                  "mLmp0dddWsUA7o1QdvCJKgOwbUC2": {
-                    "displayName": "Adam",
-                    "id": "mLmp0dddWsUA7o1QdvCJKgOwbUC2",
-                    "lastActive": 1745427901109,
-                    "race": "human",
-                    "type": "player"
-                  }
-                },
-                "x": -21,
-                "y": 5
-              },
-              "-OOYoHXYzQwVeE1gsZ0Z": {
-                "createdAt": 1745431374047,
-                "id": "-OOYoHXYzQwVeE1gsZ0Z",
-                "items": [
-                  {
-                    "id": "item_1745431562425_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 5,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Moving to next location (-21,5)",
-                  "timestamp": 1745431805820
-                },
-                "lastUpdated": 1745431805820,
-                "moveSpeed": 1,
-                "moveStarted": 1745431634776,
-                "movementPath": [
-                  {
-                    "x": -23,
-                    "y": 5
-                  },
-                  {
-                    "x": -22,
-                    "y": 5
-                  },
-                  {
-                    "x": -21,
-                    "y": 5
-                  }
-                ],
-                "name": "New Force",
-                "nextMoveTime": 1745431865820,
-                "owner": "33WaCOrPNuWbsK9pirGTTSStYs02",
-                "pathIndex": 2,
-                "race": "human",
-                "status": "idle",
-                "targetX": -21,
-                "targetY": 5,
-                "unitCount": 1,
-                "units": {
-                  "33WaCOrPNuWbsK9pirGTTSStYs02": {
-                    "displayName": "Steve",
-                    "id": "33WaCOrPNuWbsK9pirGTTSStYs02",
-                    "lastActive": 1745431157194,
-                    "race": "human",
-                    "type": "player"
-                  }
-                },
-                "x": -21,
-                "y": 5
-              },
-              "-OOYp0QOOeBbqE4gt_LY": {
-                "battleId": "battle_1745431869549_825",
-                "battleRole": "attacker",
-                "battleSide": 1,
-                "createdAt": 1745431566101,
-                "id": "-OOYp0QOOeBbqE4gt_LY",
-                "inBattle": true,
-                "lastMessage": {
-                  "text": "Moving to next location (-21,5)",
-                  "timestamp": 1745431805820
-                },
-                "lastUpdated": 1745431805820,
-                "moveSpeed": 1,
-                "moveStarted": 1745431667354,
-                "movementPath": [
-                  {
-                    "x": -23,
-                    "y": 5
-                  },
-                  {
-                    "x": -22,
-                    "y": 5
-                  },
-                  {
-                    "x": -21,
-                    "y": 5
-                  }
-                ],
-                "name": "New Force",
-                "nextMoveTime": 1745431865820,
-                "owner": "a9iCghLVxlhM736Rbi0Zif13wGl2",
-                "pathIndex": 2,
-                "race": "human",
-                "status": "fighting",
-                "targetX": -21,
-                "targetY": 5,
-                "unitCount": 1,
-                "units": {
-                  "a9iCghLVxlhM736Rbi0Zif13wGl2": {
-                    "displayName": "Austin",
-                    "id": "a9iCghLVxlhM736Rbi0Zif13wGl2",
-                    "lastActive": 1745431562052,
-                    "race": "human",
-                    "type": "player"
-                  }
-                },
-                "x": -21,
-                "y": 5
-              }
-            }
-          },
           "-23,5": {
             "structure": {
               "description": "A rugged frontier settlement where hardy humans carve out a living",
@@ -886,7 +440,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1745431865709,
+        "lastTick": 1745476261304,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",
