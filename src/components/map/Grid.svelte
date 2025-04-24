@@ -1228,6 +1228,11 @@
     transition: background-color 0.3s ease;
   }
 
+  /* Add a higher z-index for tiles with the player position marker */
+  .tile.player-position {
+    z-index: 20; /* Higher than has-structure (10) and other tiles (1) */
+  }
+
   .tile.has-structure {
     z-index: 10;
   }
