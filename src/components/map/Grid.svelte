@@ -1177,53 +1177,7 @@
     overflow: hidden;
   }
 
-  .main-grid.animated .tile {
-    opacity: 0;
-    transform: scale(0.8);
-    /* animation: revealTile 0.5s ease-out forwards; */
-    /* animation-fill-mode: both; */
-  }
-  
-  .main-grid:not(.animated) .tile {
-    opacity: 1;
-    transform: scale(1);
-    transition: opacity 0.8s ease-out, background-color 0.3s ease;
-  }
-  
-  /* Animate tiles fading in based on distance from player */
-  .main-grid:not(.animated) .tile:not(.center) {
-    /* animation: fadeInTile 0.8s ease-out forwards; */
-    /* animation-fill-mode: both; */
-  }
-  
-  /* Remove animation from center tile completely */
-  .main-grid.animated .tile.center {
-    z-index: 3;
-    position: relative;
-    /* Remove animation and replace with direct styles */
-    animation: none;
-    opacity: 1;
-    transform: scale(1.05);
-    box-shadow: 
-      inset 0 0 0.5em rgba(255, 255, 255, 0.3),
-      0 0 1em rgba(255, 255, 255, 0.2);
-    /* Keep the transition for background-color */
-    transition: background-color 0.3s ease;
-  }
-  
-  .main-grid:not(.animated) .tile.center {
-    position: relative;
-    border: 0.12em solid rgba(255, 255, 255, 0.5);
-    box-shadow: 
-      inset 0 0 0 2px rgba(255, 255, 255, 0.7),
-      inset 0 0 0.5em rgba(255, 255, 255, 0.3),
-      0 0 1em rgba(255, 255, 255, 0.2);
-    z-index: 3;
-    opacity: 1; /* Center tile is always visible */
-    /* Keep the transition for background-color */
-    transition: background-color 0.3s ease;
-  }
-
+  /* Clean up the tile animation approach to use transitions consistently */
   .tile {
     display: flex;
     align-items: center;
@@ -1238,22 +1192,46 @@
     z-index: 1;
     font-family: var(--font-body);
     position: relative; /* Ensure this is set for absolute positioning */
-    transition: background-color 0.3s ease; /* Add explicit transition property */
+    
+    /* Consistent transition for all states */
+    transition: 
+      opacity 0.8s ease-out,
+      transform 0.8s ease-out,
+      background-color 0.3s ease;
+  }
+
+  /* Initial state for animated tiles */
+  .main-grid.animated .tile {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  /* Final state for all visible tiles */
+  .main-grid:not(.animated) .tile {
+    opacity: 1;
+    transform: scale(1);
+  }
+  
+  /* Special handling for center tile */
+  .tile.center {
+    z-index: 3;
+    position: relative;
+    border: 0.12em solid rgba(255, 255, 255, 0.5);
+    box-shadow: 
+      inset 0 0 0 2px rgba(255, 255, 255, 0.7),
+      inset 0 0 0.5em rgba(255, 255, 255, 0.3),
+      0 0 1em rgba(255, 255, 255, 0.2);
+    
+    /* Center tile is always visible with slightly larger scale */
+    opacity: 1 !important;
+    transform: scale(1.05) !important;
+    transition: background-color 0.3s ease;
   }
 
   .tile.has-structure {
     z-index: 10;
   }
 
-  .tile.center {
-    z-index: 3;
-    position: relative;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7);
-    border: 0.12em solid rgba(255, 255, 255, 0.5);
-    /* Ensure color transition works */
-    transition: background-color 0.3s ease; 
-  }
-  
   .map:not(.moving) .tile:hover::after,
   .tile.highlighted::after {
     content: "";
