@@ -37,6 +37,7 @@
     import Overview from '../../components/map/Overview.svelte';
     import Close from '../../components/icons/Close.svelte';
     import Mobilise from '../../components/map/Mobilise.svelte';
+    import Build from '../../components/map/Build.svelte'; // Import the Build component
     import Move from '../../components/map/Move.svelte';
     import AttackGroups from '../../components/map/AttackGroups.svelte';
     import JoinBattle from '../../components/map/JoinBattle.svelte';
@@ -446,7 +447,7 @@
         
         console.log('Opening modal:', options.type, options.data);
         
-        if (['inspect', 'mobilise', 'move', 'gather', 'demobilise', 'joinBattle', 'attack'].includes(options.type)) {
+        if (['inspect', 'mobilise', 'move', 'gather', 'demobilise', 'joinBattle', 'attack', 'build'].includes(options.type)) {
             if (detailed) {
                 toggleDetailsModal(false);
             }
@@ -1007,6 +1008,12 @@
         closeModal();
     }
 
+    function handleBuild(data) {
+        unlockAchievement('first_build');
+        console.log('Building started:', data);
+        closeModal();
+    }
+
     function handlePathConfirm(path) {
         unlockAchievement('strategist');
         confirmPathDrawing(path);
@@ -1256,67 +1263,47 @@
         {#if modalState.visible}
           {#if modalState.type === 'inspect' && modalState.data}
             <StructureOverview 
-              x={modalState.data.x}
-              y={modalState.data.y}
-              tile={modalState.data.tile}
+              data={modalState.data}
               onClose={closeModal}
-              onAchievement={unlockAchievement}
-              key={structureRenderCount}
             />
           {:else if modalState.type === 'mobilise'}
-            <Mobilise
+            <Mobilise 
+              onClose={closeModal} 
+              onMobilize={handleMobilise}
+            />
+          {:else if modalState.type === 'build'}
+            <Build
               onClose={closeModal}
-              onMobilize={() => {
-                unlockAchievement('mobilised');
-                closeModal();
-              }}
+              onBuild={handleBuild}
             />
           {:else if modalState.type === 'move'}
-            <Move
-              onClose={(complete = true, startingPathDraw = false) => {
-                closeModal();
-              }}
-              onPathDrawingStart={handlePathDrawingStart}
-              onPathDrawingCancel={handlePathDrawingCancel}
-              onConfirmPath={(path) => {
-                unlockAchievement('strategist');
-                handlePathConfirm(path);
-              }}
-              pathDrawingGroup={pathDrawingGroup}
-              currentPath={currentPath}
+            <Move 
+              onClose={closeModal}
+              groupData={modalState.data?.group || null}
+              onStartMoving={handleMove}
+              onDrawPath={handlePathDrawingStart}
             />
           {:else if modalState.type === 'attack'}
-            <AttackGroups
+            <AttackGroups 
               onClose={closeModal}
-              onAttack={(data) => {
-                unlockAchievement('first_attack');
-                handleAttack(data);
-              }}
+              onAttack={handleAttack}
             />
           {:else if modalState.type === 'joinBattle'}
             <JoinBattle
               onClose={closeModal}
-              onJoinBattle={(data) => {
-                unlockAchievement('battle_joiner');
-                handleJoinBattle(data);
-              }}
+              groupData={modalState.data?.group || null}
+              onJoinBattle={handleJoinBattle}
             />
           {:else if modalState.type === 'gather'}
-            <Gather 
-              onClose={() => closeModal()} 
-              onGather={(result) => {
-                unlockAchievement('first_gather');
-                handleGather(result);
-              }}
-              data={modalState.data}
+            <Gather
+              onClose={closeModal}
+              onGatherComplete={handleGather}
+              groupData={modalState.data?.group || null}
             />
           {:else if modalState.type === 'demobilise'}
             <Demobilise
               onClose={closeModal}
-              onDemobilize={(data) => {
-                unlockAchievement('demobilizer');
-                handleDemobilize(data);
-              }}
+              onDemobilize={handleDemobilize}
             />
           {/if}
         {/if}

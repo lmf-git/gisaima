@@ -16,6 +16,7 @@ export { moveGroup } from './actions/move.mjs';
 export { attackGroups } from './actions/attackGroups.mjs';
 export { startGathering } from './actions/gather.mjs';
 export { joinBattle } from './actions/joinBattle.mjs';
+export { buildStructure } from './actions/build.mjs'; // Add the build action
 
 // Scheduled tasks
 export { processGameTicks } from './tick.mjs';

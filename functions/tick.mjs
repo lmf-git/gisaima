@@ -12,6 +12,7 @@ import { processMobilizations } from "./events/mobiliseTick.mjs";
 import { processDemobilization } from "./events/demobiliseTick.mjs";
 import { processMovement } from "./events/moveTick.mjs";
 import { processGathering } from "./events/gatheringTick.mjs";
+import { processBuilding } from "./events/buildTick.mjs"; // Import the building tick processor
 
 // Process world ticks to handle mobilizations and other time-based events
 export const processGameTicks = onSchedule({
@@ -42,6 +43,7 @@ export const processGameTicks = onSchedule({
     let demobilizationsProcessed = 0;
     let movementsProcessed = 0;
     let gatheringsProcessed = 0;
+    let buildingsProcessed = 0; // Add counter for buildings
     
     // Process each world
     for (const worldId in worlds) {
@@ -74,6 +76,13 @@ export const processGameTicks = onSchedule({
           if (tileKey === 'lastUpdated') continue; // Skip metadata
           
           const tile = chunk[tileKey];
+          
+          // Check if there's a structure being built on this tile
+          if (tile.structure && tile.structure.status === 'building') {
+            if (processBuilding(worldId, updates, chunkKey, tileKey, tile, now)) {
+              buildingsProcessed++;
+            }
+          }
           
           // Check if there are groups on this tile
           if (tile.groups) {
@@ -138,7 +147,9 @@ export const processGameTicks = onSchedule({
       console.log(`Processed ${battlesProcessed} battles in world ${worldId}`);
     }
     
-    console.log(`Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, ${movementsProcessed} movement steps, and ${gatheringsProcessed} gatherings`);    return null;  } catch (error) {
+    console.log(`Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, ${movementsProcessed} movement steps, ${gatheringsProcessed} gatherings, and ${buildingsProcessed} building updates`);    
+    return null;
+  } catch (error) {
     console.error("Error processing game ticks:", error);
     return null;
   }
