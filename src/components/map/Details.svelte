@@ -662,8 +662,8 @@
                   </button>
                 </div>
               {/if}
-              <button class="collapse-button">
-                {collapsedSections.groups ? '▼' : '▲'}
+              <button class="collapse-button" aria-label="Toggle section">
+                <span class="collapse-icon">{collapsedSections.groups ? '▼' : '▲'}</span>
               </button>
             </div>
           </div>
@@ -804,8 +804,8 @@
                   </button>
                 </div>
               {/if}
-              <button class="collapse-button">
-                {collapsedSections.players ? '▼' : '▲'}
+              <button class="collapse-button" aria-label="Toggle section">
+                <span class="collapse-icon">{collapsedSections.players ? '▼' : '▲'}</span>
               </button>
             </div>
           </div>
@@ -907,8 +907,8 @@
                   </button>
                 </div>
               {/if}
-              <button class="collapse-button">
-                {collapsedSections.items ? '▼' : '▲'}
+              <button class="collapse-button" aria-label="Toggle section">
+                <span class="collapse-icon">{collapsedSections.items ? '▼' : '▲'}</span>
               </button>
             </div>
           </div>
@@ -983,8 +983,8 @@
                   </button>
                 </div>
               {/if}
-              <button class="collapse-button">
-                {collapsedSections.battles ? '▼' : '▲'}
+              <button class="collapse-button" aria-label="Toggle section">
+                <span class="collapse-icon">{collapsedSections.battles ? '▼' : '▲'}</span>
               </button>
             </div>
           </div>
@@ -1182,24 +1182,33 @@
   
   /* Fix collapsible indicator styling */
   .collapse-button {
-    background: none;
-    border: none;
-    color: rgba(0, 0, 0, 0.5);
-    font-size: 0.9em;
-    cursor: pointer;
-    padding: 0;
-    width: 1.8em;
-    height: 1.8em;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: none;
+    border: none;
+    color: rgba(0, 0, 0, 0.5);
+    font-size: 0.8em;
+    cursor: pointer;
+    padding: 0.3em;
+    width: 2em;
+    height: 2em;
     border-radius: 50%;
     transition: all 0.2s ease;
   }
   
   .collapse-button:hover {
-    color: rgba(0, 0, 0, 0.8);
     background-color: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.8);
+  }
+
+  .collapse-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1em;
+    height: 1em;
+    line-height: 1;
   }
 
   /* Improve entity layout in collapsible sections */
@@ -1686,32 +1695,27 @@
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
   }
   
-  :global(.entity-race-icon path) {
+  /* Fix race icons to match Overview's styling */
+  :global(.race-icon-details) {
+    width: 1.4em;
+    height: 1.4em;
+    opacity: 0.85;
     fill: rgba(0, 0, 0, 0.7);
   }
   
-  :global(.spawn-icon) {
-    filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.7));
+  /* Race-specific styling */
+  :global(.race-icon-details.fairy-icon path) {
+    fill: rgba(138, 43, 226, 0.8);
   }
   
-  :global(.fortress-icon) {
-    filter: drop-shadow(0 0 2px rgba(230, 190, 138, 0.7));
+  :global(.race-icon-details.goblin-icon path) {
+    fill: rgba(0, 128, 0, 0.8);
   }
   
-  :global(.outpost-icon) {
-    filter: drop-shadow(0 0 2px rgba(138, 176, 230, 0.7));
-  }
-  
-  :global(.watchtower-icon) {
-    filter: drop-shadow(0 0 2px rgba(168, 230, 138, 0.7));
-  }
-  
-  :global(.stronghold-icon) {
-    filter: drop-shadow(0 0 2px rgba(230, 138, 138, 0.7));
-  }
-  
-  :global(.citadel-icon) {
-    filter: drop-shadow(0 0 2px rgba(209, 138, 230, 0.7));
+  :global(.entity-race-icon) {
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+    flex-shrink: 0;
   }
 
   /* New styles for desktop two-column layout */
@@ -1772,11 +1776,6 @@
     color: rgba(66, 133, 244, 0.9);
   }
   
-  .sort-direction {
-    font-size: 0.9em;
-    font-weight: bold;
-  }
-  
   /* Replace the old section-count styling with this new entity-count styling */
   .entity-count {
     display: inline-flex;
@@ -1823,14 +1822,8 @@
   .section-count {
     display: none;
   }
-  
-  .entity-race-icon {
-    margin-right: 0.7em;
-    margin-top: 0.1em;
-    flex-shrink: 0;
-  }
 
-  /* Updated entity styling to match Overview component */
+  /* Improve entity layout in collapsible sections */
   .entity {
     display: flex;
     flex-wrap: nowrap; /* Prevent immediate wrapping */
