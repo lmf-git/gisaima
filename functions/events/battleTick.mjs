@@ -18,6 +18,33 @@ function getChunkKey(x, y) {
 }
 
 /**
+ * Utility function to check if a group has zero units
+ * 
+ * @param {Object} group The group object to check
+ * @returns {boolean} True if the group has zero units and should be removed
+ */
+function isEmptyGroup(group) {
+  if (!group) return true;
+  
+  // Check unitCount property first
+  if (group.unitCount !== undefined) {
+    return group.unitCount <= 0;
+  }
+  
+  // If no unitCount, check units array/object
+  if (group.units) {
+    if (Array.isArray(group.units)) {
+      return group.units.length === 0;
+    } else {
+      return Object.keys(group.units).length === 0;
+    }
+  }
+  
+  // Default to false - don't remove if we can't determine
+  return false;
+}
+
+/**
  * Process all active battles for a given world
  * 
  * @param {string} worldId The ID of the world to process battles for
@@ -288,6 +315,7 @@ async function processBattleResolution(db, worldId, battle, forcedWinner = null)
 
 /**
  * Process winning groups - set them back to idle state
+ * Groups with zero units will be removed
  */
 async function processWinningGroups(updates, worldId, chunkKey, tileKey, groups, winningSide) {
   const winningGroupIds = Object.keys(winningSide.groups || {});
@@ -297,10 +325,10 @@ async function processWinningGroups(updates, worldId, chunkKey, tileKey, groups,
     if (!group) continue;
     
     // Check if group has any units left
-    const unitCount = group.unitCount || (group.units ? Object.keys(group.units).length : 0);
-    if (unitCount <= 0) {
+    if (isEmptyGroup(group)) {
       // Remove empty groups
       updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`] = null;
+      logger.info(`Removing empty winning group ${groupId} at ${tileKey}`);
       continue;
     }
 
