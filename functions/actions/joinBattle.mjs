@@ -36,15 +36,17 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     const chunkKey = getChunkKey(locationX, locationY);
     
     const locationKey = `${locationX},${locationY}`;
-    const battleRef = db.ref(`battles/${worldId}/${battleId}`);
+    const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}`);
     
-    // Get battle data
-    const battleSnapshot = await battleRef.once("value");
-    const battleData = battleSnapshot.val();
+    // Get tile data which includes battle information
+    const tileSnapshot = await tileRef.once("value");
+    const tileData = tileSnapshot.val() || {};
     
-    if (!battleData) {
-      throw new HttpsError("not-found", "Battle not found");
+    if (!tileData.battles || !tileData.battles[battleId]) {
+      throw new HttpsError("not-found", "Battle not found at this location");
     }
+    
+    const battleData = tileData.battles[battleId];
     
     if (battleData.status !== 'active') {
       throw new HttpsError("failed-precondition", "Battle is no longer active");
@@ -56,9 +58,6 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     }
     
     // Find the group that wants to join
-    const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}`);
-    const tileSnapshot = await tileRef.once("value");
-    const tileData = tileSnapshot.val() || {};
     const groups = tileData.groups || {};
     
     const joiningGroup = Object.values(groups).find(g => g.id === groupId);

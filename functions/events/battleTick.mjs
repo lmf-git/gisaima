@@ -175,41 +175,74 @@ export async function processBattles(worldId) {
     const db = getDatabase();
     const now = Date.now();
     
-    // Get active battles
-    const battlesRef = db.ref(`battles/${worldId}`).orderByChild('status').equalTo('active');
-    const battlesSnapshot = await battlesRef.once('value');
+    // Find active battles by scanning world chunks
+    // We'll build a list of all active battles by checking tile data
+    const activeBattles = [];
     
-    if (!battlesSnapshot.exists()) {
-      logger.debug(`No active battles found for world ${worldId}`);
+    // Get all chunks in the world
+    const chunksRef = db.ref(`worlds/${worldId}/chunks`);
+    const chunksSnapshot = await chunksRef.once('value');
+    
+    if (!chunksSnapshot.exists()) {
+      logger.debug(`No chunks found for world ${worldId}`);
       return 0;
     }
     
-    const battles = [];
-    battlesSnapshot.forEach(snapshot => {
-      battles.push({
-        id: snapshot.key,
-        ...snapshot.val()
-      });
+    // Scan each chunk for battles
+    await chunksSnapshot.forEach(async (chunkSnapshot) => {
+      const chunkKey = chunkSnapshot.key;
+      const chunk = chunkSnapshot.val();
+      
+      // Skip non-tile entries like 'lastUpdated'
+      if (typeof chunk !== 'object') return;
+      
+      // Check each tile in the chunk
+      for (const [tileKey, tileData] of Object.entries(chunk)) {
+        // Skip non-tile entries
+        if (!tileData || typeof tileData !== 'object') continue;
+        
+        // Check if the tile has battles
+        if (tileData.battles) {
+          for (const [battleId, battle] of Object.entries(tileData.battles)) {
+            // Only process active battles
+            if (battle.status !== 'completed') {
+              // Extract coordinates from tileKey
+              const [x, y] = tileKey.split(',').map(Number);
+              
+              // Collect the battle data with location info
+              activeBattles.push({
+                id: battleId,
+                locationX: x,
+                locationY: y,
+                ...battle,
+                tileRef: `worlds/${worldId}/chunks/${chunkKey}/${tileKey}`
+              });
+            }
+          }
+        }
+      }
     });
     
-    logger.info(`Processing ${battles.length} active battles in world ${worldId}`);
+    logger.info(`Processing ${activeBattles.length} active battles in world ${worldId}`);
     let battleProcessCount = 0;
     
-    for (const battle of battles) {
+    for (const battle of activeBattles) {
       try {
-        // First check if the battle is one-sided (one side has no participants)
-        const isOneSided = await checkForOneSidedBattle(db, worldId, battle);
-        
-        if (isOneSided) {
-          // Immediately resolve one-sided battles
-          await processBattleResolution(db, worldId, battle, isOneSided);
-          battleProcessCount++;
-          logger.info(`Battle ${battle.id} resolved early: one side has no participants`);
-        }
-        // If not one-sided but time has expired, resolve normally
-        else if (battle.endTime && battle.endTime <= now) {
-          await processBattleResolution(db, worldId, battle);
-          battleProcessCount++;
+        // For battles that have reached their endTime
+        if (battle.endTime && battle.endTime <= now) {
+          // First check if the battle is one-sided
+          const isOneSided = await checkForOneSidedBattle(db, worldId, battle);
+          
+          if (isOneSided) {
+            // Immediately resolve one-sided battles
+            await processBattleResolution(db, worldId, battle, isOneSided);
+            battleProcessCount++;
+            logger.info(`Battle ${battle.id} resolved early: one side has no participants`);
+          } else {
+            // Process normal time expiration
+            await processBattleResolution(db, worldId, battle);
+            battleProcessCount++;
+          }
         }
       } catch (error) {
         logger.error(`Error processing battle ${battle.id}:`, error);
@@ -251,24 +284,18 @@ async function checkForOneSidedBattle(db, worldId, battle) {
   let side1Count = 0;
   let side2Count = 0;
   
-  // Check each group mentioned in the battle
-  if (battle.side1 && battle.side1.groups) {
-    for (const groupId of Object.keys(battle.side1.groups)) {
-      // Group must still exist in tile data and be in this battle
-      if (groupsData[groupId] && 
-          groupsData[groupId].inBattle && 
-          groupsData[groupId].battleId === battle.id) {
-        side1Count++;
-      }
-    }
+  // Get the battle data directly from the tile
+  const battleData = tileData.battles && tileData.battles[battle.id];
+  if (!battleData) {
+    return 1; // Default to side 1 if battle data is missing
   }
   
-  if (battle.side2 && battle.side2.groups) {
-    for (const groupId of Object.keys(battle.side2.groups)) {
-      // Group must still exist in tile data and be in this battle
-      if (groupsData[groupId] && 
-          groupsData[groupId].inBattle && 
-          groupsData[groupId].battleId === battle.id) {
+  // Scan all groups to find those participating in this battle
+  for (const [groupId, group] of Object.entries(groupsData)) {
+    if (group.inBattle && group.battleId === battle.id) {
+      if (group.battleSide === 1) {
+        side1Count++;
+      } else if (group.battleSide === 2) {
         side2Count++;
       }
     }
@@ -318,14 +345,6 @@ async function processBattleResolution(db, worldId, battle, forcedWinner = null)
       };
     }
     
-    // Set winner and loser based on selection
-    const winningSide = winnerSide === 1 ? battle.side1 : battle.side2;
-    const losingSide = winnerSide === 1 ? battle.side2 : battle.side1;
-    
-    // Update battle status
-    battle.status = 'completed';
-    battle.completedAt = now;
-    
     // Get the chunk key
     const chunkKey = getChunkKey(battle.locationX, battle.locationY);
     const tileKey = `${battle.locationX},${battle.locationY}`;
@@ -333,70 +352,91 @@ async function processBattleResolution(db, worldId, battle, forcedWinner = null)
     // Prepare updates
     const updates = {};
     
-    // Delete battle immediately from the battles collection
-    updates[`battles/${worldId}/${battle.id}`] = null;
-
-    // But update the reference in tile data for clients to see the result
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/status`] = 'completed';
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/winner`] = winnerSide;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/completedAt`] = now;
-    
-    // Get groups from this tile to update them
+    // Get groups from this tile to process them
     const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
     const tileSnapshot = await tileRef.once('value');
+    
+    if (!tileSnapshot.exists()) {
+      logger.warn(`Tile ${tileKey} does not exist, cannot resolve battle ${battle.id}`);
+      return;
+    }
+    
+    const tileData = tileSnapshot.val();
+    const groupsData = tileData.groups || {};
+    
+    // Rebuild the sides data from the current groups state
+    const side1Groups = {};
+    const side2Groups = {};
+    
+    // Find all groups involved in this battle
+    for (const [groupId, group] of Object.entries(groupsData)) {
+      if (group.inBattle && group.battleId === battle.id) {
+        if (group.battleSide === 1) {
+          side1Groups[groupId] = true;
+        } else if (group.battleSide === 2) {
+          side2Groups[groupId] = true;
+        }
+      }
+    }
+    
+    // Use the reconstructed sides info for battle resolution
+    const winningSide = { 
+      groups: winnerSide === 1 ? side1Groups : side2Groups 
+    };
+    const losingSide = { 
+      groups: winnerSide === 1 ? side2Groups : side1Groups 
+    };
     
     // Prepare data for chat message
     let winningGroups = [];
     let losingGroups = [];
     let battleLoot = []; // Track looted items
     
-    if (tileSnapshot.exists()) {
-      const tileData = tileSnapshot.val();
-      
-      // Process all groups on both sides
-      if (tileData.groups) {
-        // Get groups for chat message before processing
-        const allGroups = tileData.groups;
-        
-        // Collect winning group names
-        if (winningSide && winningSide.groups) {
-          winningGroups = Object.keys(winningSide.groups)
-            .map(groupId => {
-              const group = allGroups[groupId];
-              return group ? (group.name || `Group ${groupId}`) : `Unknown group`;
-            });
-        }
-        
-        // Collect losing group names
-        if (losingSide && losingSide.groups) {
-          losingGroups = Object.keys(losingSide.groups)
-            .map(groupId => {
-              const group = allGroups[groupId];
-              return group ? (group.name || `Group ${groupId}`) : `Unknown group`;
-            });
-        }
-        
-        // NEW: Collect loot from losing groups before processing them
-        battleLoot = collectLootFromLosingGroups(tileData.groups, losingSide);
-        
-        // NEW: Distribute loot to winning groups if there's any loot
-        if (battleLoot.length > 0) {
-          distributeLootToWinningGroups(
-            updates, 
-            worldId, 
-            chunkKey, 
-            tileKey, 
-            tileData.groups, 
-            winningSide, 
-            battleLoot
-          );
-        }
-        
-        // Process winning and losing groups as normal
-        await processWinningGroups(updates, worldId, chunkKey, tileKey, tileData.groups, winningSide);
-        await processLosingGroups(updates, worldId, chunkKey, tileKey, tileData.groups, losingSide);
+    // Process all groups on both sides
+    if (Object.keys(groupsData).length > 0) {
+      // Collect winning group names
+      if (winningSide && winningSide.groups) {
+        winningGroups = Object.keys(winningSide.groups)
+          .map(groupId => {
+            const group = groupsData[groupId];
+            return group ? (group.name || `Group ${groupId}`) : `Unknown group`;
+          });
       }
+      
+      // Collect losing group names
+      if (losingSide && losingSide.groups) {
+        losingGroups = Object.keys(losingSide.groups)
+          .map(groupId => {
+            const group = groupsData[groupId];
+            return group ? (group.name || `Group ${groupId}`) : `Unknown group`;
+          });
+      }
+      
+      // Collect loot from losing groups before processing them
+      battleLoot = collectLootFromLosingGroups(groupsData, losingSide);
+      
+      // Distribute loot to winning groups if there's any loot
+      if (battleLoot.length > 0) {
+        distributeLootToWinningGroups(
+          updates, 
+          worldId, 
+          chunkKey, 
+          tileKey, 
+          groupsData, 
+          winningSide, 
+          battleLoot
+        );
+      }
+      
+      // Process winning and losing groups
+      await processWinningGroups(updates, worldId, chunkKey, tileKey, groupsData, winningSide);
+      await processLosingGroups(updates, worldId, chunkKey, tileKey, groupsData, losingSide);
     }
+    
+    // Update battle status in the tile record to completed
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/status`] = 'completed';
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/winner`] = winnerSide;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/completedAt`] = now;
     
     // Create battle outcome chat message with more detail
     const winSideText = winnerSide === 1 ? "Attackers" : "Defenders";
@@ -416,7 +456,7 @@ async function processBattleResolution(db, worldId, battle, forcedWinner = null)
       detailedMessage += ` (Decisive Victory)`;
     }
     
-    // NEW: Add information about items looted
+    // Add information about items looted
     if (battleLoot.length > 0) {
       detailedMessage += ` (${battleLoot.length} items seized)`;
     }
@@ -438,10 +478,6 @@ async function processBattleResolution(db, worldId, battle, forcedWinner = null)
     
     const resolutionReason = forcedWinner ? "one-sided battle" : "time expiration";
     logger.info(`Completed battle ${battle.id} in world ${worldId} - Side ${winnerSide} won (${resolutionReason})`);
-    
-    // Clean up the tile battle reference after a delay to allow clients to see the result
-    // But this needs to happen outside the Firebase function since setTimeout isn't reliable
-    // We'll let clients know it's completed via the status field
     
   } catch (error) {
     logger.error(`Error processing battle ${battle.id}:`, error);

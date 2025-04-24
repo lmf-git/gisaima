@@ -164,8 +164,15 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
     // Create transaction for atomic updates
     const updates = {};
     
-    // Create battle entry
-    updates[`battles/${worldId}/${battleId}`] = battleData;
+    // Add battle reference directly to the tile only (no top-level battles entry)
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = {
+      id: battleId,
+      startTime: now,
+      endTime: battleEndTime,
+      side1Power: attackerTotalPower,
+      side2Power: defenderTotalPower,
+      status: 'active'
+    };
     
     // Update groups
     for (const [groupId, groupUpdate] of Object.entries(groupUpdates)) {
@@ -175,15 +182,6 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleRole`] = groupUpdate.battleRole;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/status`] = groupUpdate.status;
     }
-    
-    // Also add a reference to the battle directly on the tile
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = {
-      id: battleId,
-      startTime: now,
-      endTime: now + battleDuration,
-      side1Power: attackerTotalPower,
-      side2Power: defenderTotalPower
-    };
     
     // Execute the multi-path update
     await db.ref().update(updates);
