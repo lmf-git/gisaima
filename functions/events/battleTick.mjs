@@ -333,24 +333,13 @@ async function processBattleResolution(db, worldId, battle, forcedWinner = null)
     // Prepare updates
     const updates = {};
     
-    // Update battle in database
-    updates[`battles/${worldId}/${battle.id}/status`] = battle.status;
-    updates[`battles/${worldId}/${battle.id}/completedAt`] = battle.completedAt;
-    updates[`battles/${worldId}/${battle.id}/result`] = battle.result;
+    // Delete battle immediately from the battles collection
+    updates[`battles/${worldId}/${battle.id}`] = null;
 
-    // Update battle status in tile data as well
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/status`] = battle.status;
+    // But update the reference in tile data for clients to see the result
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/status`] = 'completed';
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/winner`] = winnerSide;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/completedAt`] = now;
-    
-    // Schedule removal of the battle reference after a delay to allow clients to see the result
-    setTimeout(async () => {
-      try {
-        await db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}`).remove();
-      } catch (err) {
-        logger.warn(`Failed to remove battle reference: ${err.message}`);
-      }
-    }, 60000); // Keep completed battle visible for 1 minute
     
     // Get groups from this tile to update them
     const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
@@ -449,6 +438,10 @@ async function processBattleResolution(db, worldId, battle, forcedWinner = null)
     
     const resolutionReason = forcedWinner ? "one-sided battle" : "time expiration";
     logger.info(`Completed battle ${battle.id} in world ${worldId} - Side ${winnerSide} won (${resolutionReason})`);
+    
+    // Clean up the tile battle reference after a delay to allow clients to see the result
+    // But this needs to happen outside the Firebase function since setTimeout isn't reliable
+    // We'll let clients know it's completed via the status field
     
   } catch (error) {
     logger.error(`Error processing battle ${battle.id}:`, error);
