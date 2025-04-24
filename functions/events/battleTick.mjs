@@ -239,33 +239,32 @@ export async function processBattles(worldId) {
         
         const tileData = tileSnapshot.val();
         
-        // Check if battle has become one-sided
+        // First check if battle has already become one-sided
         const winningSide = checkForOneSidedBattle(battle, tileData);
         
         if (winningSide) {
-          // Resolve battles when they become one-sided
+          // Resolve battles when they become one-sided (one side has no units left)
           await processBattleResolution(db, worldId, battle, tileData, winningSide);
           battleProcessCount++;
-          logger.info(`Battle ${battle.id} resolved: side ${winningSide} victorious`);
+          logger.info(`Battle ${battle.id} resolved: side ${winningSide} victorious (elimination)`);
           continue;
         }
         
         // Calculate total units involved in battle
         const totalUnits = calculateTotalUnitsInBattle(battle, tileData);
         
-        // For ongoing battles, determine if they should be resolved this tick based on size
-        const battleAge = now - (battle.startTime || battle.started || now);
-        const shouldResolveNow = shouldResolveBattle(totalUnits, battleAge);
+        // Process battle attrition for this tick
+        const attritionResult = processBattleAttrition(battle, tileData);
         
-        if (shouldResolveNow) {
-          // Determine winner normally since it's not one-sided
-          const calculatedWinner = calculateBattleWinner(battle, tileData);
-          
-          await processBattleResolution(db, worldId, battle, tileData, calculatedWinner);
+        if (attritionResult.isResolved) {
+          // If battle is resolved through attrition in this tick
+          await processBattleResolution(db, worldId, battle, tileData, attritionResult.winningSide);
           battleProcessCount++;
-          logger.info(`Battle ${battle.id} resolved after duration: stronger side ${calculatedWinner} victorious`);
+          logger.info(`Battle ${battle.id} resolved: side ${attritionResult.winningSide} victorious (attrition)`);
         } else {
-          logger.debug(`Battle ${battle.id} continues - ${totalUnits} units involved, age: ${Math.round(battleAge/1000)}s`);
+          // Apply unit casualties for this tick
+          await applyBattleCasualties(db, worldId, battle, tileData, attritionResult.casualties);
+          logger.info(`Battle ${battle.id} continues - ${totalUnits} units involved, casualties applied`);
         }
       } catch (error) {
         logger.error(`Error processing battle ${battle.id}:`, error);
@@ -302,87 +301,209 @@ function calculateTotalUnitsInBattle(battle, tileData) {
 }
 
 /**
- * Determine if a battle should be resolved this tick based on size and age
- * 
- * @param {number} totalUnits Total units involved
- * @param {number} battleAge Age of battle in milliseconds
- * @returns {boolean} Whether the battle should be resolved
- */
-function shouldResolveBattle(totalUnits, battleAge) {
-  // Base probability of resolution each tick
-  let baseChance = 0.4; // 40% chance for small battles
-  
-  // If battle has fewer than 5 units, use base chance
-  if (totalUnits <= 5) {
-    return Math.random() < baseChance;
-  }
-  
-  // For larger battles, reduce the chance based on unit count
-  const unitFactor = Math.log10(totalUnits) * 0.5; // Logarithmic scaling
-  const chance = baseChance / (1 + unitFactor);
-  
-  // Increase chance based on battle age (battles shouldn't last forever)
-  const ageInMinutes = battleAge / (60 * 1000);
-  const ageBonus = Math.min(0.3, ageInMinutes * 0.05); // Max +30% after 6 minutes
-  
-  // Calculate final resolution probability
-  const finalChance = chance + ageBonus;
-  
-  // Add some debug logging
-  logger.debug(`Battle resolution chance: ${(finalChance * 100).toFixed(1)}% (${totalUnits} units, ${ageInMinutes.toFixed(1)} minutes)`);
-  
-  return Math.random() < finalChance;
-}
-
-/**
- * Calculate the winner based on relative strength when battle is not one-sided
+ * Process battle attrition for a single tick
  * 
  * @param {Object} battle Battle data
- * @param {Object} tileData Tile data
- * @returns {number} Winning side (1 or 2)
+ * @param {Object} tileData Tile data containing the groups
+ * @returns {Object} Result containing casualties, whether the battle is resolved, and winning side
  */
-function calculateBattleWinner(battle, tileData) {
+function processBattleAttrition(battle, tileData) {
   const groupsData = tileData.groups || {};
+  const side1Groups = [];
+  const side2Groups = [];
   let side1Power = 0;
   let side2Power = 0;
   
-  // Calculate power for each side
+  // Sort groups by their battle side
   for (const [groupId, group] of Object.entries(groupsData)) {
     if (group.inBattle && group.battleId === battle.id) {
       if (group.battleSide === 1) {
+        side1Groups.push(group);
         side1Power += group.unitCount || 1;
       } else if (group.battleSide === 2) {
+        side2Groups.push(group);
         side2Power += group.unitCount || 1;
       }
     }
   }
   
-  // Handle exactly equal power - pure 50/50 random outcome
-  if (side1Power === side2Power) {
-    logger.info(`Battle ${battle.id} has exactly equal sides (${side1Power} vs ${side2Power}) - picking random winner`);
-    return Math.random() < 0.5 ? 1 : 2;
+  // Initialize casualties tracking by group
+  const casualties = {
+    side1: {},
+    side2: {}
+  };
+  
+  // Early exit if either side has no units (handled by checkForOneSidedBattle)
+  if (side1Power === 0 || side2Power === 0) {
+    return {
+      casualties,
+      isResolved: true,
+      winningSide: side1Power > 0 ? 1 : 2
+    };
   }
   
-  // For nearly equal power (within 20%), increase randomness
-  const powerDifferenceRatio = Math.abs(side1Power - side2Power) / Math.max(side1Power, side2Power);
-  if (powerDifferenceRatio < 0.2) { // Power difference less than 20%
-    logger.info(`Battle ${battle.id} has nearly equal sides (${side1Power} vs ${side2Power}) - mostly random outcome`);
+  // Calculate power ratio for determining casualty rates
+  const powerRatio = side1Power / side2Power;
+  
+  // Calculate base casualty rates for each side (inverse relationship)
+  const baseSide1CasualtyRate = powerRatio > 1 ? 0.05 / powerRatio : 0.05 * (1/powerRatio);  
+  const baseSide2CasualtyRate = powerRatio > 1 ? 0.05 * powerRatio : 0.05 / (1/powerRatio);
+  
+  // Add some variance but always have at least some casualties
+  const side1CasualtyRate = Math.max(0.01, baseSide1CasualtyRate * (0.7 + Math.random() * 0.6));
+  const side2CasualtyRate = Math.max(0.01, baseSide2CasualtyRate * (0.7 + Math.random() * 0.6));
+  
+  // Apply casualties to side 1 (processor-intensive part)
+  let totalSide1Casualties = 0;
+  for (const group of side1Groups) {
+    // Base number of casualties for this group
+    const groupCasualties = Math.floor(group.unitCount * side1CasualtyRate);
     
-    // Give slight advantage to stronger side, but mostly random
-    const strongerSide = side1Power > side2Power ? 1 : 2;
-    const weakerSide = strongerSide === 1 ? 2 : 1;
+    // Always have at least 1 casualty if possible
+    const actualCasualties = Math.min(
+      Math.max(1, groupCasualties), 
+      group.unitCount - 1 // Leave at least 1 unit if possible
+    );
     
-    // 60/40 odds favoring stronger side for small differences
-    return Math.random() < 0.6 ? strongerSide : weakerSide;
+    // Determine if entire group is wiped out
+    const wipeout = actualCasualties >= group.unitCount;
+    
+    // Store casualties
+    casualties.side1[group.id] = wipeout ? group.unitCount : actualCasualties;
+    totalSide1Casualties += casualties.side1[group.id];
   }
   
-  // For more significant differences, use power ratio
-  const powerRatio = side1Power / Math.max(side2Power, 1);
+  // Apply casualties to side 2 (processor-intensive part)
+  let totalSide2Casualties = 0;
+  for (const group of side2Groups) {
+    // Base number of casualties for this group
+    const groupCasualties = Math.floor(group.unitCount * side2CasualtyRate);
+    
+    // Always have at least 1 casualty if possible
+    const actualCasualties = Math.min(
+      Math.max(1, groupCasualties),
+      group.unitCount - 1 // Leave at least 1 unit if possible
+    );
+    
+    // Determine if entire group is wiped out
+    const wipeout = actualCasualties >= group.unitCount;
+    
+    // Store casualties
+    casualties.side2[group.id] = wipeout ? group.unitCount : actualCasualties;
+    totalSide2Casualties += casualties.side2[group.id];
+  }
   
-  // Use power ratio to determine winner with some randomness
-  // Stronger side has better odds but upsets are possible
-  const threshold = 1 / (1 + powerRatio); // Converts ratio to probability
-  return Math.random() > threshold ? 1 : 2;
+  // Check if all side 1 groups are wiped out
+  const side1RemainingUnits = side1Power - totalSide1Casualties;
+  
+  // Check if all side 2 groups are wiped out
+  const side2RemainingUnits = side2Power - totalSide2Casualties;
+  
+  // Battle is resolved if one side has no units left
+  const isResolved = side1RemainingUnits <= 0 || side2RemainingUnits <= 0;
+  let winningSide = null;
+  
+  if (isResolved) {
+    // Determine the winning side
+    if (side1RemainingUnits <= 0 && side2RemainingUnits <= 0) {
+      // Both sides wiped out - randomly determine winner
+      winningSide = Math.random() < 0.5 ? 1 : 2;
+    } else {
+      winningSide = side1RemainingUnits > 0 ? 1 : 2;
+    }
+  }
+  
+  return {
+    casualties,
+    isResolved,
+    winningSide
+  };
+}
+
+/**
+ * Apply battle casualties for a continuing battle
+ * 
+ * @param {Object} db Database reference
+ * @param {string} worldId World ID
+ * @param {Object} battle Battle data
+ * @param {Object} tileData Tile data
+ * @param {Object} casualties Casualties to apply
+ * @returns {Promise<void>}
+ */
+async function applyBattleCasualties(db, worldId, battle, tileData, casualties) {
+  try {
+    const chunkKey = getChunkKey(battle.locationX, battle.locationY);
+    const tileKey = `${battle.locationX},${battle.locationY}`;
+    const updates = {};
+    
+    // Process casualties for side 1
+    for (const [groupId, casualtyCount] of Object.entries(casualties.side1)) {
+      const group = tileData.groups[groupId];
+      if (!group) continue;
+      
+      // Calculate remaining units
+      const remainingUnits = Math.max(1, group.unitCount - casualtyCount);
+      
+      // Update the group's unit count
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = remainingUnits;
+      
+      // Add battle message
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastMessage`] = {
+        text: `Lost ${casualtyCount} units in ongoing battle.`,
+        timestamp: Date.now()
+      };
+    }
+    
+    // Process casualties for side 2
+    for (const [groupId, casualtyCount] of Object.entries(casualties.side2)) {
+      const group = tileData.groups[groupId];
+      if (!group) continue;
+      
+      // Calculate remaining units
+      const remainingUnits = Math.max(1, group.unitCount - casualtyCount);
+      
+      // Update the group's unit count
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = remainingUnits;
+      
+      // Add battle message
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastMessage`] = {
+        text: `Lost ${casualtyCount} units in ongoing battle.`,
+        timestamp: Date.now()
+      };
+    }
+    
+    // Update battle power values
+    let side1Power = 0;
+    let side2Power = 0;
+    
+    // Recalculate power based on remaining units
+    for (const [groupId, group] of Object.entries(tileData.groups)) {
+      if (group.inBattle && group.battleId === battle.id) {
+        const casualtyCount = group.battleSide === 1 
+          ? casualties.side1[groupId] || 0 
+          : casualties.side2[groupId] || 0;
+        
+        const remainingUnits = Math.max(1, group.unitCount - casualtyCount);
+        
+        if (group.battleSide === 1) {
+          side1Power += remainingUnits;
+        } else if (group.battleSide === 2) {
+          side2Power += remainingUnits;
+        }
+      }
+    }
+    
+    // Update battle power in the database
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/side1Power`] = side1Power;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/side2Power`] = side2Power;
+    
+    // Apply the updates
+    await db.ref().update(updates);
+    
+  } catch (error) {
+    logger.error(`Error applying battle casualties for battle ${battle.id}:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -512,9 +633,6 @@ async function processBattleResolution(db, worldId, battle, tileData, winningSid
     
     // Prepare data for casualties and battle statistics
     const battleStats = {
-      startTime: battle.startTime || battle.started,
-      endTime: now,
-      duration: now - (battle.startTime || battle.started),
       initialStrength: {
         side1: side1Power,
         side2: side2Power

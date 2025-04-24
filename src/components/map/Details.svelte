@@ -326,8 +326,8 @@
   function canJoinBattle(tile) {
     if (!tile || !$currentPlayer) return false;
     
-    // Check if there's an active battle and player has idle groups
-    return tile.battles?.some(b => b.status === 'active') &&
+    // Check if there's battle and player has idle groups
+    return tile.battles?.length > 0 &&
            tile.groups?.some(g => 
              g.owner === $currentPlayer.id && 
              g.status === 'idle' &&
@@ -424,50 +424,6 @@
   function getGroupItemCount(group) {
     if (!group.items) return 0;
     return Array.isArray(group.items) ? group.items.length : Object.keys(group.items).length;
-  }
-
-  // Enhanced battle-specific functions
-  function formatBattleTimeRemaining(battle) {
-    if (!battle) return '';
-    
-    updateCounter; // Keep reactive dependency
-    
-    // Handle different battle statuses
-    if (battle.status === 'resolved') {
-      return 'Completed';
-    }
-    
-    if (!battle.endTime) {
-      return 'In progress';
-    }
-    
-    const now = Date.now();
-    const remaining = battle.endTime - now;
-    
-    if (remaining <= 0) {
-      return 'Resolving...';
-    } else if (remaining <= 60000) {
-      return '< 1m';
-    }
-    
-    const minutes = Math.floor(remaining / 60000);
-    const seconds = Math.floor((remaining % 60000) / 1000);
-    
-    return `${minutes}m ${seconds}s`;
-  }
-  
-  // Calculate battle progress percentage
-  function calculateBattleProgress(battle) {
-    if (!battle || !battle.startTime || !battle.endTime || battle.status === 'resolved') {
-      return 100;
-    }
-    
-    const now = Date.now();
-    const total = battle.endTime - battle.startTime;
-    const elapsed = now - battle.startTime;
-    
-    // Cap at 100%
-    return Math.min(100, Math.floor((elapsed / total) * 100));
   }
   
   // Format total power for each side

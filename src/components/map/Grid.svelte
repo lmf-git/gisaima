@@ -744,11 +744,7 @@
     return pathData;
   }
 
-  function getCoordinateChunkKey(x, y) {
-    return getChunkKey(x, y);
-  }
-
-  // Helper function to check if a tile has an active battle
+  // Helper function to check if a tile has a battle
   function hasBattle(tile) {
     // First check direct battle references
     if (tile.battles && tile.battles.length > 0) {

@@ -291,8 +291,6 @@ function processChunkData(data = {}, chunkKey) {
             y: parseInt(y),
             distance: Math.sqrt(Math.pow(x - get(map).target.x, 2) + Math.pow(y - get(map).target.y, 2)),
             sides: battle.sides || {},
-            startTime: battle.startTime || Date.now(),
-            endTime: battle.endTime,
             participants: battle.participants || [],
             power: battle.power || { 1: 0, 2: 0 },
             winner: battle.winner,

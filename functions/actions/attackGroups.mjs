@@ -92,13 +92,7 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
     
     // Create a battle ID
     const battleId = `battle_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    
-    // Set up initial battle data
-    const worldInfoRef = db.ref(`worlds/${worldId}/info`);
-    const worldInfoSnapshot = await worldInfoRef.once("value");
-    const worldInfo = worldInfoSnapshot.val() || {};
-    
-    // Remove battle end time calculation - battles now continue until one side is eliminated
+
     const now = Date.now();
     
     // Prepare side groups
@@ -107,29 +101,6 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
     
     const side2Groups = {};
     defenderGroupIds.forEach(id => side2Groups[id] = true);
-    
-    // Choose leaders (first group of each side)
-    const side1Leader = attackerGroupIds[0];
-    const side2Leader = defenderGroupIds[0];
-    
-    // Battle data (without status)
-    const battleData = {
-      id: battleId,
-      locationX,
-      locationY,
-      started: now,
-      startTime: now,
-      side1: {
-        groups: side1Groups,
-        power: attackerTotalPower,
-        leader: side1Leader
-      },
-      side2: {
-        groups: side2Groups,
-        power: defenderTotalPower,
-        leader: side2Leader
-      }
-    };
     
     // Update all groups to be in battle
     const groupUpdates = {};
@@ -159,10 +130,9 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
     // Create transaction for atomic updates
     const updates = {};
     
-    // Add battle reference directly to the tile only (no top-level battles entry)
+    // Add battle reference directly to the tile only
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = {
       id: battleId,
-      startTime: now,
       side1Power: attackerTotalPower,
       side2Power: defenderTotalPower
     };

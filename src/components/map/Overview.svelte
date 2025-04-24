@@ -445,59 +445,6 @@
     return entity.owner?.toString() === $currentPlayer.id?.toString();
   }
 
-  // Enhance formatBattleTimeRemaining function to handle more states
-  function formatBattleTimeRemaining(battle) {
-    if (!battle) return '';
-    
-    updateCounter; // Keep reactive dependency
-    
-    // Handle different battle statuses
-    if (battle.status === 'resolved') {
-      return 'Completed';
-    }
-    
-    if (!battle.endTime) {
-      return 'In progress';
-    }
-    
-    const now = Date.now();
-    const remaining = battle.endTime - now;
-    
-    if (remaining <= 0) {
-      return 'Resolving...';
-    } else if (remaining <= 60000) {
-      return '< 1m';
-    }
-    
-    const minutes = Math.floor(remaining / 60000);
-    const seconds = Math.floor((remaining % 60000) / 1000);
-    
-    return `${minutes}m ${seconds}s`;
-  }
-
-  // Function to format battle duration - removed duplicate declaration
-  function formatDuration(startTime, endTime) {
-    if (!startTime || !endTime) return '';
-    const durationMs = endTime - startTime;
-    const minutes = Math.floor(durationMs / 60000);
-    const seconds = Math.floor((durationMs % 60000) / 1000);
-    return `${minutes}m ${seconds}s`;
-  }
-
-  // Calculate battle progress percentage
-  function calculateBattleProgress(battle) {
-    if (!battle || !battle.startTime || !battle.endTime || battle.status === 'resolved') {
-      return 100;
-    }
-    
-    const now = Date.now();
-    const total = battle.endTime - battle.startTime;
-    const elapsed = now - battle.startTime;
-    
-    // Cap at 100%
-    return Math.min(100, Math.floor((elapsed / total) * 100));
-  }
-  
   // Format total power for each side
   function formatPower(power) {
     if (!power && power !== 0) return '?';
@@ -1318,8 +1265,6 @@
                   class="entity battle"
                   class:at-target={isAtTarget(battle.x, battle.y)}
                   class:is-here={battle.distance === 0}
-                  class:resolved={battle.status === 'resolved'}
-                  class:active={battle.status === 'active'}
                   class:player-participating={isPlayerInBattle(battle)}
                   onclick={(e) => handleEntityAction(battle.x, battle.y, e)}
                   onkeydown={(e) => handleEntityAction(battle.x, battle.y, e)}
@@ -1328,15 +1273,12 @@
                   aria-label="Navigate to battle at {battle.x},{battle.y}"
                 >
                   <div class="entity-battle-icon">
-                    {battle.status === 'resolved' ? '🏆' : '⚔️'}
+                    ⚔️
                   </div>
                   
                   <div class="entity-info">
                     <div class="entity-name">
                       Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}
-                      <span class="entity-status-badge {battle.status === 'resolved' ? 'resolved' : 'active'}">
-                        {battle.status === 'resolved' ? 'Resolved' : 'Active'}
-                      </span>
                       <span class="entity-coords">{formatCoords(battle.x, battle.y)}</span>
                     </div>
                     
@@ -1370,21 +1312,6 @@
                         </div>
                       {/if}
                       
-                      {#if battle.status === 'active' && battle.startTime && battle.endTime}
-                        <div class="battle-progress">
-                          <div class="progress-bar">
-                            <div class="progress-fill" style="width: {calculateBattleProgress(battle)}%"></div>
-                          </div>
-                          <div class="battle-timer">
-                            {formatBattleTimeRemaining(battle)}
-                          </div>
-                        </div>
-                      {:else if battle.startTime && battle.endTime && battle.status === 'resolved'}
-                        <div class="battle-duration">
-                          Duration: {formatDuration(battle.startTime, battle.endTime)}
-                        </div>
-                      {/if}
-                      
                       <div class="entity-distance">{formatDistance(battle.distance)}</div>
                     </div>
                     
@@ -1396,7 +1323,7 @@
                       </div>
                     {/if}
                     
-                    {#if battle.status === 'active' && isPlayerAvailableOnTile($coordinates.find(c => c.x === battle.x && c.y === battle.y), $currentPlayer?.id) && hasIdlePlayerGroups($coordinates.find(c => c.x === battle.x && c.y === battle.y), $currentPlayer?.id)}
+                    {#if isPlayerAvailableOnTile($coordinates.find(c => c.x === battle.x && c.y === battle.y), $currentPlayer?.id) && hasIdlePlayerGroups($coordinates.find(c => c.x === battle.x && c.y === battle.y), $currentPlayer?.id)}
                       <div class="battle-actions">
                         <button 
                           class="join-battle-btn"
