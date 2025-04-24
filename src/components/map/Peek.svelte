@@ -82,9 +82,9 @@
           aria-label={action.label}
           transition:fly|local={{ delay: 50 * index, duration: 300, y: 20, opacity: 0 }}
         >
-          {#if action.icon}
-            <svelte:component this={action.icon} extraClass="action-icon" />
-          {/if}
+        {#if action.icon}
+          <action.icon class="action-icon" />
+        {/if}
           <span class="action-label">{action.label}</span>
         </button>
       {/each}
