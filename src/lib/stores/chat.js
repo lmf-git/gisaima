@@ -175,11 +175,11 @@ export async function sendMessage(text, messageType = 'user') {
     // Use in-game display name first, then Firebase Auth display name, then 'Anonymous' as fallback
     const playerDisplayName = gameState.player?.displayName || currentUser.displayName || 'Anonymous';
     
-    // Create message object (Firebase will generate the unique ID)
+    // Create message object with server timestamp for consistent ordering
     const message = {
       text: text.trim(),
       type: messageType,
-      timestamp: Date.now(),
+      timestamp: serverTimestamp(), // Use Firebase server timestamp for consistent ordering
       userId: currentUser.uid,
       userName: playerDisplayName,
       // Include location if available
@@ -208,22 +208,17 @@ export function markAllAsRead() {
 }
 
 /**
- * Increment the unread count
- */
-export function incrementUnreadCount() {
-  chatStore.update(state => ({
-    ...state,
-    unreadCount: state.unreadCount + 1
-  }));
-}
-
-/**
  * Get the formatted time for a message
  * @param {number} timestamp Message timestamp
  * @returns {string} Formatted time
  */
 export function getMessageTime(timestamp) {
   if (!timestamp) return '';
+  
+  // Handle Firebase server timestamp objects (they come as objects before resolving)
+  if (typeof timestamp === 'object' && timestamp !== null) {
+    timestamp = Date.now(); // Just use current time if server timestamp hasn't resolved yet
+  }
   
   const date = new Date(timestamp);
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

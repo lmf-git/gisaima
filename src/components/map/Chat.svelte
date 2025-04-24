@@ -248,6 +248,7 @@
           class:system-message={isSystem}
           class:event-message={isEvent}
           class:player-message={isUser}
+          data-timestamp={message.timestamp}
         >
           {#if isUser}
             <span class="message-user">{message.userName || 'Anonymous'}:</span>
