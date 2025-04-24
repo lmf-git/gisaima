@@ -228,21 +228,15 @@ export async function processBattles(worldId) {
     
     for (const battle of activeBattles) {
       try {
-        // For battles that have reached their endTime
-        if (battle.endTime && battle.endTime <= now) {
-          // First check if the battle is one-sided
-          const isOneSided = await checkForOneSidedBattle(db, worldId, battle);
-          
-          if (isOneSided) {
-            // Immediately resolve one-sided battles
-            await processBattleResolution(db, worldId, battle, isOneSided);
-            battleProcessCount++;
-            logger.info(`Battle ${battle.id} resolved early: one side has no participants`);
-          } else {
-            // Process normal time expiration
-            await processBattleResolution(db, worldId, battle);
-            battleProcessCount++;
-          }
+        // For ALL active battles, check if they're one-sided
+        // Remove the endTime condition - battles continue until one side is eliminated
+        const isOneSided = await checkForOneSidedBattle(db, worldId, battle);
+        
+        if (isOneSided) {
+          // Resolve battles when they become one-sided
+          await processBattleResolution(db, worldId, battle, isOneSided);
+          battleProcessCount++;
+          logger.info(`Battle ${battle.id} resolved: one side has no participants`);
         }
       } catch (error) {
         logger.error(`Error processing battle ${battle.id}:`, error);
@@ -332,12 +326,11 @@ async function processBattleResolution(db, worldId, battle, forcedWinner = null)
       winnerSide = forcedWinner;
       battle.result = {
         winningSide: winnerSide,
-        earlyResolution: true,
         reason: "opposing_side_eliminated"
       };
     } else {
-      // SIMPLIFIED: Randomly determine a winner instead of using power calculations
-      // 50% chance for either side to win
+      // This should rarely happen since we're only resolving one-sided battles
+      // But keep it as a fallback
       winnerSide = Math.random() < 0.5 ? 1 : 2;
       battle.result = {
         winningSide: winnerSide,
@@ -476,7 +469,7 @@ async function processBattleResolution(db, worldId, battle, forcedWinner = null)
     // Apply all updates
     await db.ref().update(updates);
     
-    const resolutionReason = forcedWinner ? "one-sided battle" : "time expiration";
+    const resolutionReason = forcedWinner ? "one side eliminated" : "system resolution";
     logger.info(`Completed battle ${battle.id} in world ${worldId} - Side ${winnerSide} won (${resolutionReason})`);
     
   } catch (error) {

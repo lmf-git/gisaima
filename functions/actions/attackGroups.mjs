@@ -97,13 +97,9 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
     const worldInfoRef = db.ref(`worlds/${worldId}/info`);
     const worldInfoSnapshot = await worldInfoRef.once("value");
     const worldInfo = worldInfoSnapshot.val() || {};
-    const worldSpeed = worldInfo.speed || 1.0;
     
-    const baseBattleTime = 3 * 60000; // 3 minutes
-    const battleDuration = Math.round(baseBattleTime / worldSpeed);
-    
+    // Remove battle end time calculation - battles now continue until one side is eliminated
     const now = Date.now();
-    const battleEndTime = now + battleDuration;
     
     // Prepare side groups
     const side1Groups = {};
@@ -116,13 +112,13 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
     const side1Leader = attackerGroupIds[0];
     const side2Leader = defenderGroupIds[0];
     
-    // Battle data
+    // Battle data (without endTime)
     const battleData = {
       id: battleId,
       locationX,
       locationY,
       started: now,
-      endTime: battleEndTime,
+      startTime: now,
       side1: {
         groups: side1Groups,
         power: attackerTotalPower,
@@ -168,7 +164,6 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = {
       id: battleId,
       startTime: now,
-      endTime: battleEndTime,
       side1Power: attackerTotalPower,
       side2Power: defenderTotalPower,
       status: 'active'
@@ -189,8 +184,8 @@ export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
     return {
       success: true,
       message: `Battle started between ${attackerGroups.length} attackers and ${defenderGroups.length} defenders`,
-      battleId,
-      endTime: battleEndTime
+      battleId
+      // Remove endTime from the response
     };
   } catch (error) {
     logger.error("Error starting battle:", error);

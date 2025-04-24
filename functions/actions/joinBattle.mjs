@@ -91,7 +91,7 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     updates[`battles/${worldId}/${battleId}/${battleSideKey}/power`] = 
       battleData[battleSideKey].power + groupUnitCount;
 
-    // Update the battle power on the tile reference too
+    // Update battle side power
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/${battleSideKey}Power`] = 
       battleData[battleSideKey].power + groupUnitCount;
     
