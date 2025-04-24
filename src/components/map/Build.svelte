@@ -13,7 +13,10 @@
 
   let tileData = $derived($targetStore || null);
 
-  const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const _fmt = t => {
+    if (typeof t !== 'string') return t || '';
+    return t.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
   
   // Available structure templates
   let structureOptions = $state([
