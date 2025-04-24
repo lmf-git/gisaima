@@ -1092,28 +1092,30 @@
     }
   }
 
+  /* Updated modal-header to match Build component */
   .modal-header {
-    padding: 0.8em 1em;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    background-color: rgba(0, 0, 0, 0.05);
+    justify-content: space-between;
+    padding: 0.8em 1em;
+    background: rgba(0, 0, 0, 0.05);
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    font-family: var(--font-heading);
   }
 
+  /* Updated h3 styling to match h2 in Build component */
   h3 {
     margin: 0;
-    font-size: 1.1em;
+    font-size: 1.3em;
     font-weight: 600;
     color: rgba(0, 0, 0, 0.8);
+    font-family: var(--font-heading);
   }
 
   .close-button {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0.4em;
+    padding: 0.3em;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1128,34 +1130,62 @@
   }
 
   .modal-content {
-    padding: 0.8em;
+    padding: 1em 1.5em 1.5em;
     overflow-y: auto;
-    max-height: calc(85vh - 4em); /* Account for header space */
+    max-height: calc(85vh - 4em);
+    color: rgba(0, 0, 0, 0.8);
   }
 
-  /* Core section styling */
+  /* Updated core section styling to match location-info in Build component */
   .core-section {
-    margin-bottom: 1.2em;
-    border-radius: 8px;
-    overflow: hidden;
+    padding-bottom: 1em;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 1em;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 0.3em;
     border: 1px solid rgba(0, 0, 0, 0.1);
-    background-color: rgba(255, 255, 255, 0.8); /* Increased opacity for better contrast */
+    padding: 0.8em;
   }
 
   .core-content {
-    padding: 0.8em;
+    padding: 0;
   }
 
-  /* Improve contrast for attribute labels and values */
+  /* Updated attribute styling to match Build component */
+  .attribute {
+    display: flex;
+    margin-bottom: 0.6em;
+    font-size: 0.9em;
+    gap: 0.8em;
+    align-items: flex-start;
+  }
+
   .attribute-label {
-    color: rgba(0, 0, 0, 0.8); /* Darker label text */
+    color: rgba(0, 0, 0, 0.6);
     font-weight: 500;
+    min-width: 40px;
+    flex-shrink: 0;
   }
 
   .attribute-value {
-    color: rgba(0, 0, 0, 0.9); /* Darker value text */
+    flex-grow: 1;
+    color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
   }
 
+  .terrain-color {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border-radius: 0.2em;
+    margin-right: 0.5em;
+    vertical-align: middle;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  }
+
+  /* Rest of the styling remains the same */
   .core-actions {
     margin-top: 1em;
   }
@@ -1570,6 +1600,7 @@
     text-align: center;
   }
 
+  /* Button styles */
   .join-battle-btn {
     margin-top: 0.5em;
     padding: 0.4em 0.8em;
@@ -1587,6 +1618,343 @@
     background-color: #b71c1c;
   }
 
+  /* Rarity badge styles */
+  .rarity-badge {
+    display: inline-block;
+    font-size: 0.9em;
+    padding: 0.1em 0.5em;
+    border-radius: 0.3em;
+    font-weight: 500;
+  }
+  
+  .rarity-badge.common {
+    background-color: rgba(158, 158, 158, 0.2);
+    color: #616161;
+    border: 1px solid rgba(158, 158, 158, 0.4);
+  }
+  
+  .rarity-badge.uncommon {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+  }
+  
+  .rarity-badge.rare {
+    background-color: rgba(33, 150, 243, 0.2);
+    color: #0277bd;
+  }
+  
+  .rarity-badge.epic {
+    background-color: rgba(156, 39, 176, 0.2);
+    color: #7b1fa2;
+  }
+  
+  .rarity-badge.legendary {
+    background-color: rgba(255, 152, 0, 0.2);
+    color: #ef6c00;
+  }
+  
+  .rarity-badge.mythic {
+    background-color: rgba(233, 30, 99, 0.2);
+    color: #c2185b;
+    border: 1px solid rgba(233, 30, 99, 0.4);
+  }
+
+  @keyframes pulse {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+  }
+
+  @keyframes pulseMythic {
+    from {
+      box-shadow: 0 0 0 0 rgba(233, 30, 99, 0.1);
+    }
+    to {
+      box-shadow: 0 0 10px 2px rgba(233, 30, 99, 0.3);
+    }
+  }
+
+  /* Add styles for the integrated structure elements */
+  .structure-name {
+    color: rgba(0, 0, 0, 1); /* Solid black */
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+  
+  .structure-type {
+    display: flex;
+    align-items: center;
+  }
+
+  .structure-type-icon-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5em;
+    vertical-align: middle;
+  }
+  
+  :global(.structure-type-icon) {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
+  }
+  
+  /* Fix race icons to match Overview's styling */
+  :global(.race-icon-details) {
+    width: 1.4em;
+    height: 1.4em;
+    opacity: 0.85;
+    fill: rgba(0, 0, 0, 0.7);
+  }
+  
+  /* Race-specific styling */
+  :global(.race-icon-details.fairy-icon path) {
+    fill: rgba(138, 43, 226, 0.8);
+  }
+  
+  :global(.race-icon-details.goblin-icon path) {
+    fill: rgba(0, 128, 0, 0.8);
+  }
+  
+  :global(.entity-race-icon) {
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+    flex-shrink: 0;
+  }
+
+  /* New styles for desktop two-column layout */
+  .tile-info-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+  }
+  
+  /* Desktop layout - structure on left, terrain on right */
+  @media (min-width: 640px) {
+    .tile-info-container {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1.5em;
+    }
+    
+    .structure-column,
+    .terrain-column {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .tile-info-container:has(.terrain-column:only-child) .terrain-column {
+      width: 100%;
+    }
+  }
+
+  /* Improve entity layout in collapsible sections */
+  .entity {
+    display: flex;
+    flex-wrap: nowrap; /* Prevent immediate wrapping */
+    align-items: center; /* Center items vertically */
+    justify-content: space-between; /* Distribute space between main components */
+    margin-bottom: 0.6em;
+    padding: 0.5em 0.7em;
+    border-radius: 0.3em;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s ease;
+    position: relative;
+    cursor: pointer;
+  }
+
+  /* Ensure left side components stay grouped together */
+  .entity-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0; /* Allow text truncation */
+  }
+  
+  /* Adjust entity info to not grow excessively */
+  .entity-info {
+    flex: 1;
+    min-width: 0; /* Ensure text can truncate */
+    margin-right: 0.5em;
+  }
+  
+  /* Remove the full width from entity actions */
+  .entity-actions {
+    width: auto; /* Don't take full width */
+    margin-left: auto; /* Push to the right */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    align-self: center;
+  }
+
+  /* Make entity content items properly aligned */
+  .entity-name, .entity-details {
+    width: 100%;
+  }
+
+  /* Entity details should be flex to align status and other elements */
+  .entity-details {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.7);
+    gap: 0.5em;
+  }
+
+  .entity-details-left {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+  }
+
+  .entity-distance {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.5);
+    margin-left: auto;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+  }
+
+  .entity-race {
+    margin-right: 0.8em;
+  }
+
+  /* Update entity badge styles to match Overview */
+  .entity-badge {
+    font-size: 0.7em;
+    padding: 0.2em 0.4em;
+    border-radius: 0.3em;
+    font-weight: 500;
+    margin-left: 0.6em;
+  }
+  
+  /* Add owner badge styling from Overview */
+  .owner-badge {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+    border: 1px solid rgba(76, 175, 80, 0.4);
+  }
+
+  /* Status badge styling to match Overview exactly */
+  .entity-status-badge {
+    display: inline-block;
+    font-size: 0.8em;
+    font-weight: 500;
+    padding: 0.1em 0.5em;
+    border-radius: 0.3em;
+    white-space: nowrap;
+    text-transform: capitalize;
+  }
+  
+  .entity-status-badge.idle {
+    background: rgba(128, 128, 128, 0.15);
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .entity-status-badge.moving {
+    background: rgba(0, 128, 0, 0.15);
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #006400;
+  }
+  
+  .entity-status-badge.mobilizing {
+    background: rgba(255, 140, 0, 0.15);
+    border: 1px solid rgba(255, 140, 0, 0.3);
+    color: #d06000;
+  }
+  
+  .entity-status-badge.demobilising {
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    color: #6a1b9a;
+  }
+  
+  .entity-status-badge.gathering, 
+  .entity-status-badge.starting_to_gather {
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    color: #8a2be2;
+  }
+  
+  .entity-status-badge.fighting {
+    background: rgba(220, 20, 60, 0.15);
+    border: 1px solid rgba(220, 20, 60, 0.3);
+    color: #c62828;
+  }
+  
+  .entity-status-badge.active {
+    background: rgba(255, 0, 0, 0.15);
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    color: #d32f2f;
+  }
+  
+  .entity-status-badge.resolved {
+    background: rgba(0, 128, 0, 0.15);
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #2e7d32;
+  }
+  
+  .entity-status-badge.pending-tick {
+    position: relative;
+    animation: pulse 1s infinite alternate;
+  }
+  
+  .entity-status-badge.pending-tick::after {
+    content: '↻';
+    margin-left: 0.3em;
+    font-weight: bold;
+  }
+
+  /* Timer styles */
+  .timer {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.85em;
+    color: #d32f2f;
+    text-align: center;
+  }
+
+  /* Progress bar styles */
+  .progress-bar {
+    height: 0.5em;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0.25em;
+    overflow: hidden;
+    margin-bottom: 0.2em;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background-color: rgba(139, 0, 0, 0.7);
+    transition: width 1s ease;
+  }
+
+  /* Button styles */
+  .join-battle-btn {
+    margin-top: 0.5em;
+    padding: 0.4em 0.8em;
+    background-color: #d32f2f;
+    color: white;
+    border: none;
+    border-radius: 0.3em;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    align-self: flex-end;
+  }
+  
+  .join-battle-btn:hover {
+    background-color: #b71c1c;
+  }
+
+  /* Rarity badge styles */
   .rarity-badge {
     display: inline-block;
     font-size: 0.9em;
@@ -2406,4 +2774,3 @@
     cursor: pointer;
   }
 </style>
-```
