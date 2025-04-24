@@ -74,28 +74,26 @@
   // Track Peek position to detect map movement
   let peekOpenedAtPosition = $state(null);
   
-  // Define default actions for Peek - set to null instead of empty array
-  // to ensure we don't override the internal condition checks in Peek
-  const peekActions = null;
+  // Change this from null to an empty array
+  // This allows the Peek component to use its internal condition checks
+  const peekActions = [];
   
-  // Add a function to handle actions from Peek
-  function handlePeekAction(actionId) {
-    // Use targetStore directly instead of a passed tile parameter
-    if (!$targetStore) return;
-    
-    console.log(`Grid handling peek action: ${actionId} at ${$targetStore.x},${$targetStore.y}`);
-    
-    // Close the peek UI
-    closePeek();
-    
-    // Forward the action to the parent component
-    onClick({
-      x: $targetStore.x,
-      y: $targetStore.y,
-      action: actionId
-    });
+  // Add a function to check if a tile has content for Peek to show
+  function hasTileContent(tile) {
+    return (
+      tile && (
+        (tile.structure) || 
+        (tile.groups && tile.groups.length > 0) || 
+        (tile.items && tile.items.length > 0) ||
+        (tile.players && tile.players.length > 0) ||
+        (tile.battles && tile.battles.length > 0)
+      )
+    );
   }
   
+  // Add a derived value to compute the current center tile data
+  const centerTileData = $derived($gridArray.find(cell => cell.isCenter));
+
   // Function to toggle Peek visibility when center tile is clicked
   function handleCenterTileClick(event) {
     // Ensure we stop propagation to prevent the grid click handler from triggering
@@ -951,6 +949,23 @@
       console.log('Center tile position:', centerTile.x, centerTile.y);
     }
   });
+
+  // Add a function to handle the actions from Peek
+  function handlePeekAction(actionId) {
+    console.log(`Grid handling peek action: ${actionId}`);
+    
+    // Close the peek UI immediately
+    closePeek();
+    
+    // Forward the action to the parent component with the current target coordinates
+    if (onClick && centerTileData) {
+      onClick({
+        x: centerTileData.x,
+        y: centerTileData.y,
+        action: actionId
+      });
+    }
+  }
 </script>
 
 <svelte:window
@@ -1209,16 +1224,22 @@
     {/if}
   </div>
   
-  <!-- Modify the Peek component to use isPeekVisible instead of peekOpen -->
+  <!-- Modify the Peek component implementation -->
   <Peek 
     isOpen={isPeekVisible}
     onClose={() => closePeek()}
-    tileData={$targetStore}
+    tileData={centerTileData}
     actions={peekActions}
-    onAction={(actionId) => handlePeekAction(actionId)}
+    onAction={handlePeekAction}
     onShowDetails={() => {
-      setHighlighted($targetStore.x, $targetStore.y);
-      onClick({ x: $targetStore.x, y: $targetStore.y, action: 'details' });
+      if (centerTileData) {
+        setHighlighted(centerTileData.x, centerTileData.y);
+        onClick({ 
+          x: centerTileData.x, 
+          y: centerTileData.y, 
+          action: 'details' 
+        });
+      }
       closePeek();
     }}
   />

@@ -934,6 +934,19 @@
       }
     }
 
+    // Add function to check if a tile has content for Peek
+    function hasTileContent(tile) {
+      return (
+        tile && (
+          (tile.structure) || 
+          (tile.groups && tile.groups.length > 0) || 
+          (tile.items && tile.items.length > 0) ||
+          (tile.players && tile.players.length > 0) ||
+          (tile.battles && tile.battles.length > 0)
+        )
+      );
+    }
+
     // ...existing code...
 </script>
 

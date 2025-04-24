@@ -15,18 +15,18 @@
   import Torch from '../icons/Torch.svelte';
   import Info from '../icons/Info.svelte';
 
-  // Props with improved defaults using runes
-  const { 
-    onClose = () => {},
-    onAction = () => {},
-    onShowDetails = () => {}, // Prop to handle opening details view
-    isOpen = false,
-    actions = [],
-    tileData = null
+  // Use the correct Svelte 5 runes props syntax
+  const {
+    onClose =  () => {},
+    onAction =  () => {},
+    onShowDetails =  () => {},
+    isOpen =  false,
+    actions =  [],
+    tileData =  null
   } = $props();
-
-  // More direct way to get current tile data - prioritize tileData prop, fallback to targetStore
-  const currentTileData = $derived(tileData || $targetStore || null);
+  
+  // Access props using propName
+  const currentTileData = $derived( $targetStore || null);
   
   // Add direct debug logging every time the component opens
   $effect(() => {
@@ -195,57 +195,104 @@
     }
   ];
 
-  // Enhanced filtering of actions with more logging
-  const availableActions = $derived(() => {
+  // Modify the availableActions calculated property to be a proper runes derived value
+  let availableActions = $state([]); // initialize as empty state array
+  
+  // Create a computation effect that updates the availableActions
+  $effect(() => {
+    // Skip calculation if not open
+    if (!isOpen) return;
+    
+    console.log("Peek calculating actions, isOpen:", isOpen);
+    console.log("Provided actions array:", actions);
+    console.log("Current tile data for actions:", currentTileData);
+    
+    // External actions override - only use if we actually have some provided
     if (actions && Array.isArray(actions) && actions.length > 0) {
       console.log("Using provided actions:", actions);
-      return actions;
+      availableActions = [...actions]; // Create a new array to trigger reactivity
+      return;
     }
     
+    // Guarantee basic actions when there's no data
     if (!currentTileData) {
       console.log("No currentTileData available for action filtering");
-      return [
+      availableActions = [
+        {id: 'details', label: 'Details', icon: Info},
+        {id: 'build', label: 'Build', icon: Hammer}
+      ];
+      return;
+    }
+    
+    // Add more explicit debugging
+    console.log("Filtering actions with currentTileData:", currentTileData);
+    console.log("Current player for action filtering:", $currentPlayer);
+    
+    // Special case for tiles with no groups - more permissive
+    if (!currentTileData.groups || currentTileData.groups.length === 0) {
+      console.log("No groups on tile, showing limited actions");
+      // Always show details, build, and inspect if there's a structure
+      const basicActions = [
+        {id: 'details', label: 'Details', icon: Info},
+        {id: 'build', label: 'Build', icon: Hammer}
+      ];
+      
+      // Add inspect action if there's a structure
+      if (currentTileData.structure) {
+        basicActions.push({
+          id: 'inspect', 
+          label: 'Inspect', 
+          icon: Eye
+        });
+      }
+      
+      // Add mobilise action if the player is on the tile
+      if (currentTileData.players?.some(p => p.id === $currentPlayer?.id)) {
+        basicActions.push({
+          id: 'mobilise',
+          label: 'Mobilise',
+          icon: Rally
+        });
+      }
+      
+      console.log("Basic actions for empty tile:", basicActions.map(a => a.id));
+      availableActions = basicActions;
+      return;
+    }
+    
+    // Try/catch the entire filtering operation
+    try {
+      const filtered = allPossibleActions.filter(action => {
+        try {
+          const conditionMet = action.condition(currentTileData);
+          console.log(`Action ${action.id} condition result: ${conditionMet}`);
+          return conditionMet;
+        } catch (error) {
+          console.error(`Error checking condition for action ${action.id}:`, error);
+          // Always allow these actions even on error
+          return action.id === 'details' || action.id === 'build';
+        }
+      });
+      
+      console.log("Final filtered actions:", filtered.map(a => a.id));
+      
+      // Ensure we always have at least these two actions
+      if (!filtered.some(a => a.id === 'details')) {
+        filtered.push({id: 'details', label: 'Details', icon: Info});
+      }
+      if (!filtered.some(a => a.id === 'build')) {
+        filtered.push({id: 'build', label: 'Build', icon: Hammer});
+      }
+      
+      availableActions = filtered;
+    } catch (error) {
+      console.error("Error during action filtering:", error);
+      // Return fallback actions if something goes wrong
+      availableActions = [
         {id: 'details', label: 'Details', icon: Info},
         {id: 'build', label: 'Build', icon: Hammer}
       ];
     }
-    
-    console.log("Filtering actions with currentTileData:", currentTileData);
-    
-    // Add special case for empty tiles - always provide at least build and details
-    if (!currentTileData.groups || currentTileData.groups.length === 0) {
-      console.log("No groups on tile, showing limited actions");
-      const basicActions = allPossibleActions.filter(action => 
-        action.id === 'details' || 
-        action.id === 'build' || 
-        (action.id === 'inspect' && currentTileData.structure)
-      );
-      console.log("Basic actions for empty tile:", basicActions.map(a => a.id));
-      return basicActions;
-    }
-    
-    const filtered = allPossibleActions.filter(action => {
-      try {
-        const conditionMet = action.condition(currentTileData);
-        console.log(`Action ${action.id} condition result: ${conditionMet}`);
-        return conditionMet;
-      } catch (error) {
-        console.error(`Error checking condition for action ${action.id}:`, error);
-        return action.id === 'details' || action.id === 'build'; // Always include some default actions on error
-      }
-    });
-    
-    console.log("Final filtered actions:", filtered.map(a => a.id));
-    
-    // Ensure we always have at least these two actions
-    if (filtered.length === 0 || !filtered.some(a => a.id === 'details')) {
-      filtered.push({id: 'details', label: 'Details', icon: Info});
-    }
-    if (filtered.length === 1 && !filtered.some(a => a.id === 'build')) {
-      filtered.push({id: 'build', label: 'Build', icon: Hammer});
-    }
-    
-    return filtered;
   });
 
   // Include close button as part of the circle
@@ -265,6 +312,15 @@
   
   // Calculate close button position
   const closePosition = $derived(calculatePosition(availableActions.length, totalItems));
+
+  // Fix the effect to log action generation when component opens
+  $effect(() => {
+    if (isOpen) {
+      // Use normal logging since availableActions is now a regular state array
+      console.log("Peek is open, available actions:", availableActions);
+      console.log("Total items (including close):", totalItems);
+    }
+  });
 
   function handleActionClick(actionId, event) {
     // Prevent event from bubbling to parent elements (especially center tile)
