@@ -18,7 +18,7 @@
   // Accept onClose and add onSpawnComplete prop
   const {
     onClose = () => {},
-    onSpawnComplete = () => {} // New prop to notify when spawn is complete
+    onSpawnComplete = () => {} 
   } = $props();
 
   // Component state using Svelte 5 runes
@@ -26,10 +26,12 @@
   let loading = $state(false);
   let error = $state(null);
   
-  // Add state for tracking player death
-  let playerDied = $state(false);
-  let deathMessage = $state('');
-  let deathTimestamp = $state(null);
+  // Simplify player status detection using $derived
+  const playerDied = $derived(!$game.player?.alive);
+  const deathMessage = $derived($game.player?.lastMessage?.text || '');
+  
+  // Extract player display name from game store
+  const playerDisplayName = $derived($game.player?.displayName || '');
 
   // Use $derived correctly following the Features.svelte pattern
   const spawnList = $derived((() => {
@@ -42,22 +44,6 @@
       return spawn.race?.toLowerCase() === $game.player.race.toLowerCase();
     });
   })());
-
-  // Extract player display name from game store
-  const playerDisplayName = $derived($game.player?.displayName || '');
-  
-  // Check for player death message
-  $effect(() => {
-    if ($game.player?.lastMessage) {
-      playerDied = !$game.player.alive;
-      deathMessage = $game.player.lastMessage.text;
-      deathTimestamp = $game.player.lastMessage.timestamp;
-    } else {
-      playerDied = false;
-      deathMessage = '';
-      deathTimestamp = null;
-    }
-  });
 
   // Add a helper function to format text with proper capitalization
   function formatRace(text) {
@@ -194,7 +180,7 @@
       // 1. Update the player data in the database
       const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.worldKey}`);
       
-      // Use the display name from the player data in the game store (fallback to uid-based name if not available)
+      // Use the display name from the player data in the game store
       const displayName = $game.player?.displayName || 
         $user.displayName || 
         ($user.email ? $user.email.split('@')[0] : `Player ${$user.uid.substring(0, 4)}`);
@@ -268,7 +254,7 @@
   <div class="spawn-menu">
     <header class="modal-header">
       <h2 id="spawn-title">
-        {#if playerDied}
+        {#if deathMessage}
           You have fallen
         {:else}
           Choose Spawn Point
@@ -278,14 +264,11 @@
     
     <div class="content">
       <!-- Death message or race header -->
-      {#if playerDied}
+      {#if deathMessage}
         <div class="death-message-container">
-          <p class="death-message">{deathMessage}</p>
-          {#if deathTimestamp}
-            <p class="death-time">
-              {new Date(deathTimestamp).toLocaleString()}
-            </p>
-          {/if}
+          <p class="death-message">
+            {deathMessage || "You were defeated in battle."}
+          </p>
         </div>
       {:else}
         <div class="race-header">
@@ -356,7 +339,7 @@
           >
             {#if loading}
               <span class="spinner"></span> Spawning...
-            {:else if playerDied}
+            {:else if deathMessage}
               Respawn
             {:else}
               Spawn Here
@@ -449,17 +432,11 @@
   
   .death-message {
     font-size: 1.1em;
-    margin: 0 0 0.5em 0;
+    margin: 0;
     font-style: italic;
     color: #dc3545;
   }
   
-  .death-time {
-    font-size: 0.8em;
-    margin: 0;
-    color: rgba(0, 0, 0, 0.6);
-  }
-
   .race-icon {
     display: flex;
     align-items: center;
