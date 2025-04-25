@@ -982,18 +982,71 @@
         console.log('Path confirmed:', path);
         console.log('For group:', pathDrawingGroup);
         
-        // Here you would typically call your API to submit the path
-        // For now we'll just disable path drawing mode
-        
-        // Exit path drawing mode
+        // Exit path drawing mode immediately to improve UX
         isPathDrawingMode = false;
         
-        // TODO: Add actual path submission logic here
-        // This is where you'd send the path to your backend
+        // Get the first and last points of the path
+        const startPoint = path[0];
+        const endPoint = path[path.length - 1];
         
-        // Reset state
-        pathDrawingGroup = null;
-        currentPath = [];
+        // Get the functions instance
+        const functions = getFunctions();
+        const moveGroupFunction = httpsCallable(functions, 'moveGroup');
+        
+        // Create a loading modal or some visual indicator
+        // You could modify modalState to show a loading state
+        modalState = {
+            type: 'loading',
+            data: { message: 'Sending movement orders...' },
+            visible: true
+        };
+        
+        // Call the Firebase function to move the group
+        moveGroupFunction({
+            groupId: pathDrawingGroup.id,
+            fromX: startPoint.x,
+            fromY: startPoint.y,
+            toX: endPoint.x,
+            toY: endPoint.y,
+            path: path,  // Send the full path we've drawn
+            worldId: $game.worldKey  // Get the current world ID from the game store
+        })
+        .then((result) => {
+            console.log('Group movement initiated successfully:', result.data);
+            
+            // Show success modal
+            modalState = {
+                type: 'success',
+                data: { 
+                    message: 'Movement orders sent!',
+                    details: `Your group will move to (${endPoint.x}, ${endPoint.y}) in ${result.data.totalSteps} steps.`
+                },
+                visible: true
+            };
+            
+            // Close success modal after a delay
+            setTimeout(() => {
+                closeModal();
+            }, 2000);
+        })
+        .catch((error) => {
+            console.error('Error moving group:', error);
+            
+            // Show error modal
+            modalState = {
+                type: 'error',
+                data: { 
+                    message: 'Failed to send movement orders',
+                    details: error.message
+                },
+                visible: true
+            };
+        })
+        .finally(() => {
+            // Reset path drawing state
+            pathDrawingGroup = null;
+            currentPath = [];
+        });
     }
 
     // ...existing code...
