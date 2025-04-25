@@ -151,8 +151,11 @@
   
   const isMoving = $derived($map.isDragging || keyboardNavigationInterval !== null);
   
-  // Create a derived value to track when we should render detail elements
-  const shouldRenderDetails = $derived(introduced && animationsComplete && !isMoving);
+  // Change this to only depend on initial animation completion, not on current movement
+  const shouldRenderDetails = $derived(introduced && animationsComplete);
+  
+  // Add a separate check just for paths which should hide during movement
+  const shouldRenderPaths = $derived(shouldRenderDetails && !isMoving);
   
   const gridArray = derived(
     coordinates,
@@ -998,8 +1001,8 @@
       : "Interactive coordinate map. Use WASD or arrow keys to navigate."}
   >    
     {#if $ready}
-      <!-- Only render paths when animations are complete -->
-      {#if shouldRenderDetails}
+      <!-- Only render paths when animations are complete AND not moving -->
+      {#if shouldRenderPaths}
         <svg class="path-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
           <!-- Custom path drawing group -->
           {#if isPathDrawingMode && customPathPoints && customPathPoints.length > 0}
@@ -1128,7 +1131,7 @@
             class:from-world-data={playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y && !hasCurrentPlayerEntity(cell)}
             style="
               background-color: {cell.isCenter ? 'var(--center-tile-color)' : cell.color || 'var(--terrain-color)'};
-              transition-delay: {cell.isCenter ? '0s' : Math.min(0.8, (distanceFromPlayer || cell.distance) * 0.02) + 's'};
+              transition-delay: {Math.min(0.8, (distanceFromPlayer || cell.distance) * 0.02) + 's'};
             "
             onmouseenter={() => handleTileHover(cell)}
             onclick={cell.isCenter ? handleCenterTileClick : undefined}
@@ -1138,7 +1141,7 @@
             aria-label={`Coordinates ${cell.x},${cell.y}`}
             role="gridcell"
           >
-            <!-- Only render additional elements when animations are complete -->
+            <!-- Only render additional elements when initial animations are complete, don't hide during movement -->
             {#if shouldRenderDetails || cell.isCenter}
               <!-- Add YouAreHere component for player's position -->
               {#if isCurrentPlayerHere && $ready}
@@ -1910,7 +1913,7 @@
   }
   
   @keyframes pulse-highlight {
-    0% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.9); }
+    0% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.9    0.9); }
     50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
     100% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.9); }
   }
