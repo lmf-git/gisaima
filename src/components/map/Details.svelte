@@ -282,7 +282,10 @@
   }
 
   function canBuild(tile) {
-    return true;
+    return !tile?.structure && tile.groups?.some(g => 
+      g.owner === $currentPlayer.id && 
+      g.status === 'idle'
+    );
   };
   
   function canMove(tile) {
