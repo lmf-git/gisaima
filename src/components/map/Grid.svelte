@@ -1135,9 +1135,6 @@
             "
             onmouseenter={() => handleTileHover(cell)}
             onclick={cell.isCenter ? handleCenterTileClick : undefined}
-            data-is-center={cell.isCenter ? 'true' : 'false'}
-            data-coords={`${cell.x},${cell.y}`}
-            data-debug={cell.isCenter ? 'center-tile' : ''}
             aria-label={`Coordinates ${cell.x},${cell.y}`}
             role="gridcell"
           >
