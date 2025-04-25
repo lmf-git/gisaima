@@ -2,6 +2,8 @@
   import { slide } from "svelte/transition";
   import { onMount, onDestroy } from "svelte";
   import { currentPlayer } from "../../lib/stores/game.js";
+  // Import targetStore for accessing current tile data
+  import { targetStore } from "../../lib/stores/map.js";
   import Close from '../icons/Close.svelte';
   import Structure from '../icons/Structure.svelte';
   import Torch from '../icons/Torch.svelte';
@@ -34,6 +36,28 @@
   
   // Simplify animation control
   let isReady = $state(false);
+
+  // Fix the derived value to return the actual data, not a function
+  let tileData = $state(null);
+  
+  // Use an effect to update tileData when dependencies change
+  $effect(() => {
+    // If we have complete tile data from props, use that
+    if (tile?.structure) {
+      tileData = tile;
+      return;
+    }
+    
+    // If we have coordinates from props but incomplete tile data, 
+    // check if targetStore has data for those coordinates
+    if (x !== undefined && y !== undefined && $targetStore?.x === x && $targetStore?.y === y) {
+      tileData = $targetStore;
+      return;
+    }
+    
+    // If props don't have coordinates, use targetStore directly
+    tileData = $targetStore;
+  });
   
   // Add a function to trigger the inspector achievement when component mounts
   onMount(() => {
@@ -44,6 +68,12 @@
     if (onAchievement && typeof onAchievement === 'function') {
       onAchievement('inspector');
     }
+    
+    console.log('StructureOverview mounted with data:', {
+      propsData: { x, y, tileHasStructure: !!tile?.structure },
+      targetStoreData: { x: $targetStore?.x, y: $targetStore?.y, hasStructure: !!$targetStore?.structure },
+      usingData: tileData // Log the value, not the function
+    });
   });
   
   onDestroy(() => {
@@ -90,23 +120,23 @@
     }
   }
   
-  // Reactive declarations using $derived
+  // Reactive declarations using $derived - now using tileData instead of tile
   let hasPersonalBank = $derived(
     $currentPlayer?.id && 
-    tile?.structure?.banks && 
-    tile?.structure?.banks[$currentPlayer.id] && 
-    tile?.structure?.banks[$currentPlayer.id].length > 0
+    tileData?.structure?.banks && 
+    tileData?.structure?.banks[$currentPlayer.id] && 
+    tileData?.structure?.banks[$currentPlayer.id].length > 0
   );
   
   let displayItems = $derived(
     activeTab === 'shared' 
-      ? (tile?.structure?.items || [])
-      : (hasPersonalBank ? tile?.structure?.banks[$currentPlayer.id] : [])
+      ? (tileData?.structure?.items || [])
+      : (hasPersonalBank ? tileData?.structure?.banks[$currentPlayer.id] : [])
   );
   
   let showStorageTabs = $derived(
     hasPersonalBank || 
-    (tile?.structure?.items && tile?.structure?.items.length > 0)
+    (tileData?.structure?.items && tileData?.structure?.items.length > 0)
   );
   
   // Add keyboard handler for the Escape key
@@ -117,16 +147,14 @@
   }
 </script>
 
-<!-- Add global keyboard event listener -->
 <svelte:window on:keydown={handleKeyDown} />
 
 <div class="modal-container" class:ready={isReady}>
-  <!-- Use key binding to force re-render on each open -->
   <div class="structure-modal" key={renderKey}>
     <header class="modal-header">
       <h3>
-        {formatText(tile?.structure?.type || 'Structure')} 
-        {tile ? `(${formatCoords(tile.x, tile.y)})` : ''}
+        {formatText(tileData?.structure?.type || 'Structure')} 
+        {tileData ? `(${formatCoords(tileData.x, tileData.y)})` : ''}
       </h3>
       <button class="close-button" onclick={onClose}>
         <Close size="1.6em" extraClass="close-icon-dark" />
@@ -136,48 +164,48 @@
     <div class="modal-content">
       <div class="structure-container">
         <div class="structure-icon-container">
-          {#if tile?.structure?.type === 'spawn'}
+          {#if tileData?.structure?.type === 'spawn'}
             <Torch size="3.5em" extraClass="structure-type-icon spawn-icon" />
           {:else}
-            <Structure size="3.5em" extraClass="structure-type-icon {tile?.structure?.type || ''}-icon" />
+            <Structure size="3.5em" extraClass="structure-type-icon {tileData?.structure?.type || ''}-icon" />
           {/if}
         </div>
         
         <div class="structure-info">
           <div class="structure-name">
-            <h2>{tile?.structure?.name || formatText(tile?.structure?.type) || 'Unknown'}</h2>
-            {#if isOwnedByCurrentPlayer(tile?.structure)}
+            <h2>{tileData?.structure?.name || formatText(tileData?.structure?.type) || 'Unknown'}</h2>
+            {#if isOwnedByCurrentPlayer(tileData?.structure)}
               <span class="entity-badge owner-badge">Yours</span>
             {/if}
             
-            {#if tile?.structure?.race}
+            {#if tileData?.structure?.race}
               <span class="entity-badge race-badge">
                 <!-- Race icon in race badge is kept -->
-                {#if tile?.structure?.race.toLowerCase() === 'human'}
+                {#if tileData?.structure?.race.toLowerCase() === 'human'}
                   <Human extraClass="race-icon-badge" />
-                {:else if tile?.structure?.race.toLowerCase() === 'elf'}
+                {:else if tileData?.structure?.race.toLowerCase() === 'elf'}
                   <Elf extraClass="race-icon-badge" />
-                {:else if tile?.structure?.race.toLowerCase() === 'dwarf'}
+                {:else if tileData?.structure?.race.toLowerCase() === 'dwarf'}
                   <Dwarf extraClass="race-icon-badge" />
-                {:else if tile?.structure?.race.toLowerCase() === 'goblin'}
+                {:else if tileData?.structure?.race.toLowerCase() === 'goblin'}
                   <Goblin extraClass="race-icon-badge" />
-                {:else if tile?.structure?.race.toLowerCase() === 'fairy'}
+                {:else if tileData?.structure?.race.toLowerCase() === 'fairy'}
                   <Fairy extraClass="race-icon-badge" />
                 {/if}
-                <span>{formatText(tile?.structure?.race)}</span>
+                <span>{formatText(tileData?.structure?.race)}</span>
               </span>
             {/if}
           </div>
           
-          {#if tile?.structure?.description}
+          {#if tileData?.structure?.description}
             <div class="structure-description">
-              {tile.structure.description}
+              {tileData.structure.description}
             </div>
           {/if}
         </div>
       </div>
       
-      <!-- Storage section - includes both shared and personal items -->
+      <!-- Storage section - updated to use tileData -->
       {#if showStorageTabs}
         <div class="entities-section">
           <div 
@@ -201,15 +229,15 @@
           
           {#if !collapsedSections.items}
             <div class="section-content">
-              {#if hasPersonalBank || (tile?.structure?.items && tile?.structure?.items.length > 0)}
+              {#if hasPersonalBank || (tileData?.structure?.items && tileData?.structure?.items.length > 0)}
                 <div class="storage-tabs">
                   <button 
                     class="tab-button {activeTab === 'shared' ? 'active' : ''}" 
                     onclick={() => activeTab = 'shared'}
                   >
                     Shared Storage
-                    {#if tile?.structure?.items && tile?.structure?.items.length > 0}
-                      <span class="tab-count">{tile?.structure?.items.length}</span>
+                    {#if tileData?.structure?.items && tileData?.structure?.items.length > 0}
+                      <span class="tab-count">{tileData?.structure?.items.length}</span>
                     {/if}
                   </button>
                   
@@ -219,7 +247,7 @@
                       onclick={() => activeTab = 'personal'}
                     >
                       Your Bank
-                      <span class="tab-count">{tile?.structure?.banks[$currentPlayer.id].length}</span>
+                      <span class="tab-count">{tileData?.structure?.banks[$currentPlayer.id].length}</span>
                     </button>
                   {/if}
                 </div>

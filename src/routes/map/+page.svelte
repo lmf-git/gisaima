@@ -725,8 +725,8 @@
 
         // Check if this is a Peek action
         if (coords && coords.action) {
-            // Handle the action based on its type
-            handlePeekAction(coords.action, coords.x, coords.y);
+            // Ensure we're passing the complete data when handling a Peek action
+            handlePeekAction(coords.action, coords);
             return;
         }
 
@@ -853,98 +853,88 @@
     }
 
     // Add a new function to handle Peek actions
-    function handlePeekAction(actionId, x, y) {
-      console.log(`Handling peek action: ${actionId} at ${x},${y}`);
+    function handlePeekAction(actionId, actionData) {
+      console.log(`Handling peek action: ${actionId}`, actionData);
       
-      // Get the tile data for the action
-      const actionTile = $coordinates.find(c => c.x === x && c.y === y);
-      if (!actionTile) {
-        console.error("No tile data found for peek action");
-        return;
+      // If we have actionData containing coordinates and tile data, use it
+      if (actionData && actionData.x !== undefined && actionData.y !== undefined) {
+        // Set highlighted to the correct tile
+        setHighlighted(actionData.x, actionData.y);
+        
+        // Handle each action type
+        switch(actionId) {
+          case 'details':
+            // Toggle the details panel when "Details" is clicked from Peek
+            toggleDetailsModal(true);
+            break;
+            
+          case 'inspect':
+            showModal({
+              type: 'inspect',
+              data: {
+                x: actionData.x,
+                y: actionData.y,
+                tile: actionData.tile
+              }
+            });
+            break;
+            
+          case 'mobilise':
+            showModal({
+              type: 'mobilise',
+              data: actionData
+            });
+            break;
+            
+          case 'move':
+            showModal({
+              type: 'move',
+              data: actionData
+            });
+            break;
+            
+          case 'attack':
+            showModal({
+              type: 'attack',
+              data: actionData
+            });
+            break;
+            
+          case 'build':
+            showModal({
+              type: 'build',
+              data: actionData
+            });
+            break;
+            
+          case 'gather':
+            showModal({
+              type: 'gather',
+              data: actionData
+            });
+            break;
+            
+          case 'joinBattle':
+            showModal({
+              type: 'joinBattle',
+              data: actionData
+            });
+            break;
+            
+          case 'demobilise':
+            showModal({
+              type: 'demobilise',
+              data: actionData
+            });
+            break;
+            
+          default:
+            console.warn(`Unknown action type: ${actionId}`);
+            break;
+        }
+      } else {
+        console.error("No valid action data for peek action");
       }
-
-      // Set highlighted to the correct tile
-      setHighlighted(x, y);
-      
-      // Handle each action type
-      switch(actionId) {
-        case 'details':
-          toggleDetailsModal(true);
-          break;
-          
-        case 'inspect':
-          showModal({
-            type: 'inspect',
-            data: { x, y, tile: actionTile }
-          });
-          break;
-          
-        case 'mobilise':
-          showModal({
-            type: 'mobilise',
-            data: actionTile
-          });
-          break;
-          
-        case 'move':
-          showModal({
-            type: 'move',
-            data: actionTile
-          });
-          break;
-          
-        case 'attack':
-          showModal({
-            type: 'attack',
-            data: actionTile
-          });
-          break;
-          
-        case 'build':
-          showModal({
-            type: 'build',
-            data: actionTile
-          });
-          break;
-          
-        case 'gather':
-          showModal({
-            type: 'gather',
-            data: actionTile
-          });
-          break;
-          
-        case 'joinBattle':
-          showModal({
-            type: 'joinBattle',
-            data: actionTile
-          });
-          break;
-          
-        case 'demobilise':
-          showModal({
-            type: 'demobilise',
-            data: actionTile
-          });
-          break;
-          
-        default:
-          console.warn(`Unknown action type: ${actionId}`);
-          break;
-      }
-    }
-
-    // Add function to check if a tile has content for Peek
-    function hasTileContent(tile) {
-      return (
-        tile && (
-          (tile.structure) || 
-          (tile.groups && tile.groups.length > 0) || 
-          (tile.items && tile.items.length > 0) ||
-          (tile.players && tile.players.length > 0) ||
-          (tile.battles && tile.battles.length > 0)
-        )
-      );
     }
 
     // ...existing code...
@@ -1193,8 +1183,11 @@
         {#if modalState.visible}
           {#if modalState.type === 'inspect' && modalState.data}
             <StructureOverview 
-              data={modalState.data}
+              x={modalState.data.x}
+              y={modalState.data.y}
+              tile={modalState.data.tile}
               onClose={closeModal}
+              onAchievement={savePlayerAchievement}
             />
           {:else if modalState.type === 'mobilise'}
             <Mobilise 
