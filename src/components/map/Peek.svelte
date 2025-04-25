@@ -52,6 +52,18 @@
     );
   }
   
+  // Add canBuild function to check for player-owned idle groups
+  function canBuild(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Can only build if player has at least one idle group on the tile
+    return tile.groups?.some(g => 
+      g.owner === $currentPlayer.id && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+  }
+  
   function canMove(tile) {
     if (!tile || !$currentPlayer) return false;
     
@@ -113,7 +125,7 @@
   const allActions = [
     { id: 'details', label: 'Details', icon: Info, condition: () => true }, // Always show details
     { id: 'inspect', label: 'Inspect', icon: Eye, condition: (tile) => tile?.structure },
-    { id: 'build', label: 'Build', icon: Hammer, condition: () => true }, // Always allow build option
+    { id: 'build', label: 'Build', icon: Hammer, condition: canBuild }, // Updated to use canBuild condition
     { id: 'move', label: 'Move', icon: Compass, condition: canMove },
     { id: 'mobilise', label: 'Mobilise', icon: Rally, condition: canMobilize },
     { id: 'gather', label: 'Gather', icon: Crop, condition: canGather },
