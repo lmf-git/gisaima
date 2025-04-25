@@ -1,6 +1,6 @@
 <script>
   import { onMount, onDestroy } from "svelte";
-  import { derived, get } from "svelte/store";  // Add get import
+  import { derived, get } from "svelte/store";
   import { browser } from '$app/environment';
   import { 
     map, 
@@ -24,7 +24,7 @@
   import Fairy from '../icons/Fairy.svelte';
   import Compass from '../icons/Compass.svelte';
   import YouAreHere from '../icons/YouAreHere.svelte';
-  import Peek from '../map/Peek.svelte';  // Add Peek component import
+  import Peek from '../map/Peek.svelte';
   
   // Props with defaults using Svelte 5 $props() rune
   const { 
@@ -136,6 +136,8 @@
     }
   });
 
+  // Add a new state variable to track grid animation completion
+  let gridAnimationComplete = $state(false);
   let mapElement = null;
   let resizeObserver = null;
   let introduced = $state(false);
@@ -678,6 +680,14 @@
     
     setTimeout(() => introduced = true, 1000);
 
+    // Add a timeout to mark grid animation as complete after transition
+    // The timeout should be longer than the longest possible transition delay plus transition duration
+    // Assuming max distance could be 20 tiles with 0.02s per tile = 0.4s delay + 0.8s transition
+    setTimeout(() => {
+      gridAnimationComplete = true;
+      console.log('Grid animation complete');
+    }, 1500);
+
     return () => {
       if (resizeObserver) resizeObserver.disconnect();
       if (keyboardCleanup) keyboardCleanup();
@@ -968,7 +978,8 @@
     style="--tile-size: {TILE_SIZE}em; --center-tile-color: {backgroundColor};" 
     class:modal-open={detailed} 
     class:touch-active={$map.isDragging && $map.dragSource === 'map'}
-    class:path-drawing-mode={!!isPathDrawingMode}>
+    class:path-drawing-mode={!!isPathDrawingMode}
+    class:grid-animation-complete={gridAnimationComplete}>
   <div
     class="map"
     bind:this={mapElement}
@@ -989,103 +1000,106 @@
   >    
     {#if $ready}
       <svg class="path-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <!-- Custom path drawing group -->
-        {#if isPathDrawingMode && customPathPoints && customPathPoints.length > 0}
-          {@const pathData = createPathData(customPathPoints)}
-          <g class="path-group custom-path-group" aria-label="Custom movement path">
-            <path 
-              d={pathData} 
-              stroke="rgba(255, 255, 255, 0.9)"
-              stroke-width="0.6"
-              stroke-dasharray="4,3"
-              stroke-linejoin="round" 
-              stroke-linecap="round"
-              fill="none"
-              opacity="0.8"
-            >
-              <animate 
-                attributeName="stroke-dashoffset" 
-                from="0" 
-                to="-7" 
-                dur="20s" 
-                repeatCount="indefinite"
-              />
-            </path>
-            
-            <!-- Draw direction dots along the path -->
-            {#each customPathPoints as point, i}
-              {@const pos = coordToPosition(point.x, point.y)}
+        <!-- Only show paths when grid animation is complete -->
+        {#if gridAnimationComplete}
+          <!-- Custom path drawing group -->
+          {#if isPathDrawingMode && customPathPoints && customPathPoints.length > 0}
+            {@const pathData = createPathData(customPathPoints)}
+            <g class="path-group custom-path-group" aria-label="Custom movement path">
+              <path 
+                d={pathData} 
+                stroke="rgba(255, 255, 255, 0.9)"
+                stroke-width="0.6"
+                stroke-dasharray="4,3"
+                stroke-linejoin="round" 
+                stroke-linecap="round"
+                fill="none"
+                opacity="0.8"
+              >
+                <animate 
+                  attributeName="stroke-dashoffset" 
+                  from="0" 
+                  to="-7" 
+                  dur="20s" 
+                  repeatCount="indefinite"
+                />
+              </path>
               
-              <!-- Draw point markers with consistent colors -->
-              <circle 
-                cx="{pos.posX * 100}" 
-                cy="{pos.posY * 100}" 
-                r="{i === 0 || i === customPathPoints.length - 1 ? '0.7' : '0.5'}" 
-                fill="{i === 0 ? 'rgba(255, 255, 255, 0.3)' : i === customPathPoints.length - 1 ? 'rgba(255, 255, 255, 0.3)' : 'rgba(200, 200, 255, 0.2)'}" 
-                stroke="{i === 0 ? 'rgba(66, 133, 244, 0.9)' : i === customPathPoints.length - 1 ? 'rgba(66, 133, 244, 0.9)' : 'rgba(200, 200, 255, 0.8)'}"
-                stroke-width="0.4"
-              />
-              
-              <!-- Draw connection dots between points -->
-              {#if i < customPathPoints.length - 1}
-                {@const nextPos = coordToPosition(customPathPoints[i+1].x, customPathPoints[i+1].y)}
-                {@const midX = (pos.posX * 100 + nextPos.posX * 100) / 2}
-                {@const midY = (pos.posY * 100 + nextPos.posY * 100) / 2}
+              <!-- Draw direction dots along the path -->
+              {#each customPathPoints as point, i}
+                {@const pos = coordToPosition(point.x, point.y)}
                 
-                {#if Math.abs(nextPos.posX - pos.posX) > 0.02 || Math.abs(nextPos.posY - pos.posY) > 0.02}
-                  <circle 
-                    cx="{midX}" 
-                    cy="{midY}" 
-                    r="0.15" 
-                    fill="rgba(255, 255, 255, 0.5)" 
-                    stroke="rgba(255, 255, 255, 0.9)"
-                    stroke-width="0.3"
-                  />
+                <!-- Draw point markers with consistent colors -->
+                <circle 
+                  cx="{pos.posX * 100}" 
+                  cy="{pos.posY * 100}" 
+                  r="{i === 0 || i === customPathPoints.length - 1 ? '0.7' : '0.5'}" 
+                  fill="{i === 0 ? 'rgba(255, 255, 255, 0.3)' : i === customPathPoints.length - 1 ? 'rgba(255, 255, 255, 0.3)' : 'rgba(200, 200, 255, 0.2)'}" 
+                  stroke="{i === 0 ? 'rgba(66, 133, 244, 0.9)' : i === customPathPoints.length - 1 ? 'rgba(66, 133, 244, 0.9)' : 'rgba(200, 200, 255, 0.8)'}"
+                  stroke-width="0.4"
+                />
+                
+                <!-- Draw connection dots between points -->
+                {#if i < customPathPoints.length - 1}
+                  {@const nextPos = coordToPosition(customPathPoints[i+1].x, customPathPoints[i+1].y)}
+                  {@const midX = (pos.posX * 100 + nextPos.posX * 100) / 2}
+                  {@const midY = (pos.posY * 100 + nextPos.posY * 100) / 2}
+                  
+                  {#if Math.abs(nextPos.posX - pos.posX) > 0.02 || Math.abs(nextPos.posY - pos.posY) > 0.02}
+                    <circle 
+                      cx="{midX}" 
+                      cy="{midY}" 
+                      r="0.15" 
+                      fill="rgba(255, 255, 255, 0.5)" 
+                      stroke="rgba(255, 255, 255, 0.9)"
+                      stroke-width="0.3"
+                    />
+                  {/if}
                 {/if}
-              {/if}
-            {/each}
-          </g>
-        {/if}
+              {/each}
+            </g>
+          {/if}
 
-        {#each movementPaths as path}
-          <g class="path-group" class:current-player-path={path.owner === $currentPlayer?.uid}>
-            <path 
-              d={createPathData(path.points)} 
-              stroke={path.color}
-              stroke-width="0.5"
-              stroke-dasharray="6,4"
-              stroke-linejoin="round"
-              stroke-linecap="round"
-              fill="none"
-              opacity="0.7"
-              class="animated-path"
-              aria-label={`Movement path for ${path.owner === $currentPlayer?.uid ? 'your' : 'another'} group`}
-            >
-              <animate 
-                attributeName="stroke-dashoffset" 
-                from="0" 
-                to="-10" 
-                dur="20s" 
-                repeatCount="indefinite"
-              />
-            </path>
-            
-            <!-- Draw direction dots along the path with better performance -->
-            {#each path.points.filter((_, i) => i === 0 || i === path.points.length - 1 || i % 3 === 0) as point, i}
-              {@const pos = coordToPosition(point.x, point.y)}
-              
-              <circle 
-                cx="{pos.posX * 100}" 
-                cy="{pos.posY * 100}" 
-                r="{i === 0 || i === path.points.length - 1 ? '0.35' : '0.2'}" 
-                fill="transparent" 
+          {#each movementPaths as path}
+            <g class="path-group" class:current-player-path={path.owner === $currentPlayer?.uid}>
+              <path 
+                d={createPathData(path.points)} 
                 stroke={path.color}
-                stroke-width="0.3"
-                opacity="{i === 0 || i === path.points.length - 1 ? '0.9' : '0.7'}"
-              />
-            {/each}
-          </g>
-        {/each}
+                stroke-width="0.5"
+                stroke-dasharray="6,4"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+                fill="none"
+                opacity="0.7"
+                class="animated-path"
+                aria-label={`Movement path for ${path.owner === $currentPlayer?.uid ? 'your' : 'another'} group`}
+              >
+                <animate 
+                  attributeName="stroke-dashoffset" 
+                  from="0" 
+                  to="-10" 
+                  dur="20s" 
+                  repeatCount="indefinite"
+                />
+              </path>
+              
+              <!-- Draw direction dots along the path with better performance -->
+              {#each path.points.filter((_, i) => i === 0 || i === path.points.length - 1 || i % 3 === 0) as point, i}
+                {@const pos = coordToPosition(point.x, point.y)}
+                
+                <circle 
+                  cx="{pos.posX * 100}" 
+                  cy="{pos.posY * 100}" 
+                  r="{i === 0 || i === path.points.length - 1 ? '0.35' : '0.2'}" 
+                  fill="transparent" 
+                  stroke={path.color}
+                  stroke-width="0.3"
+                  opacity="{i === 0 || i === path.points.length - 1 ? '0.9' : '0.7'}"
+                />
+              {/each}
+            </g>
+          {/each}
+        {/if}
       </svg>
       
       <div class="grid main-grid" 
@@ -1105,7 +1119,7 @@
             class="tile {getStructureClass(cell.structure)} {cell.terrain?.rarity || 'common'}"
             class:center={cell.isCenter}
             tabindex="-1"
-            class:highlighted={cell.highlighted}
+            class:highlighted={cell.highlighted && (gridAnimationComplete || cell.isCenter)}
             class:has-structure={cell.structure}
             class:has-groups={cell.groups?.length > 0}
             class:has-players={hasPlayers}
@@ -1115,7 +1129,7 @@
             class:from-world-data={playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y && !hasCurrentPlayerEntity(cell)}
             style="
               background-color: {cell.isCenter ? 'var(--center-tile-color)' : cell.color || 'var(--terrain-color)'};
-              transition-delay: {cell.isCenter ? 0 : Math.min(0.8, (distanceFromPlayer || cell.distance) * 0.02) + 's'};
+              transition-delay: {Math.min(0.8, (distanceFromPlayer || cell.distance || 0) * 0.02) + 's'};
             "
             onmouseenter={() => handleTileHover(cell)}
             onclick={cell.isCenter ? handleCenterTileClick : undefined}
@@ -1125,26 +1139,27 @@
             aria-label={`Coordinates ${cell.x},${cell.y}`}
             role="gridcell"
           >
-            <!-- Add YouAreHere component for player's position -->
-            {#if isCurrentPlayerHere && $ready}
+            <!-- Add YouAreHere component for player's position - only when grid animation is complete -->
+            {#if isCurrentPlayerHere && $ready && gridAnimationComplete}
               <div class="you-are-here-container">
                 <YouAreHere hasStructure={!!cell.structure} />
               </div>
             {/if}
 
-            <!-- Change target indicator to highlight indicator that shows on highlighted tiles -->
-            {#if cell.highlighted && $ready && (!isPeekVisible || !cell.isCenter)}
+            <!-- Only show highlight indicator when animation is complete -->
+            {#if cell.highlighted && $ready && (!isPeekVisible || !cell.isCenter) && gridAnimationComplete}
               <div class="highlight-indicator"></div>
             {/if}
 
-            <!-- Add structure name display -->
-            {#if cell.structure && cell.structure.name}
+            <!-- Add structure name display - only when grid animation is complete -->
+            {#if cell.structure && cell.structure.name && gridAnimationComplete}
               <div class="structure-name-label">
                 { cell.structure.name.length > 20 ? cell.structure.name.substring(0, 20) + '...' : cell.structure.name }
               </div>
             {/if}
             
-            {#if dominantRace}
+            <!-- Only show race background when grid animation is complete -->
+            {#if dominantRace && gridAnimationComplete}
               <div class="race-background-icon">
                 {#if dominantRace === 'human'}
                   <Human extraClass="race-icon-tile" />
@@ -1160,7 +1175,8 @@
               </div>
             {/if}
 
-            {#if cell.structure}
+            <!-- Only show structure icons when grid animation is complete -->
+            {#if cell.structure && gridAnimationComplete}
               <div class="structure-icon-container">
                 {#if cell.structure.type === 'spawn'}
                   <Torch size="70%" extraClass="spawn-icon" />
@@ -1170,67 +1186,71 @@
               </div>
             {/if}
 
-            <!-- Battle indicator -->
-            {#if hasBattle(cell)}
+            <!-- Battle indicator - only when grid animation is complete -->
+            {#if hasBattle(cell) && gridAnimationComplete}
               <div class="battle-indicator" title="Active battle in progress">
                 ⚔️
               </div>
             {/if}
             
-            <!-- Entity indicators -->
-            <div class="entity-indicators">
-              {#if hasPlayers}
-                <div class="entity-indicator player-indicator" 
-                     class:current-player-indicator={isCurrentPlayerHere}>
-                  {#if playerCount > 1}
-                    <span class="count">{playerCount}</span>
-                  {/if}
-                </div>
-              {/if}
-              
-              {#if cell.groups?.length > 0}
-                <div class="entity-indicator group-indicator">
-                  {#if cell.groups.length > 1}
-                    <span class="count">{cell.groups.length}</span>
-                  {/if}
-                </div>
-              {/if}
-              
-              {#if cell.items?.length > 0}
-                <div class="entity-indicator item-indicator {highestRarityItem?.rarity || 'common'}" 
-                  style="--glow-size: {getRarityGlowSize(highestRarityItem?.rarity)}; 
-                         --glow-color: {getRarityColor(highestRarityItem?.rarity)}">
-                  {#if cell.items.length > 1}
-                    <span class="count">{cell.items.length}</span>
-                  {/if}
-                </div>
-              {/if}
-            </div>
+            <!-- Entity indicators - only when grid animation is complete -->
+            {#if gridAnimationComplete}
+              <div class="entity-indicators">
+                {#if hasPlayers}
+                  <div class="entity-indicator player-indicator" 
+                       class:current-player-indicator={isCurrentPlayerHere}>
+                    {#if playerCount > 1}
+                      <span class="count">{playerCount}</span>
+                    {/if}
+                  </div>
+                {/if}
+                
+                {#if cell.groups?.length > 0}
+                  <div class="entity-indicator group-indicator">
+                    {#if cell.groups.length > 1}
+                      <span class="count">{cell.groups.length}</span>
+                    {/if}
+                  </div>
+                {/if}
+                
+                {#if cell.items?.length > 0}
+                  <div class="entity-indicator item-indicator {highestRarityItem?.rarity || 'common'}" 
+                    style="--glow-size: {getRarityGlowSize(highestRarityItem?.rarity)}; 
+                           --glow-color: {getRarityColor(highestRarityItem?.rarity)}">
+                    {#if cell.items.length > 1}
+                      <span class="count">{cell.items.length}</span>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
+            {/if}
           </div>
         {/each}
       </div>
     {/if}
   </div>
   
-  <!-- Modify the Peek component implementation -->
-  <Peek 
-    isOpen={isPeekVisible}
-    onClose={() => closePeek()}
-    tileData={centerTileData}
-    actions={peekActions}
-    onAction={handlePeekAction}
-    onShowDetails={() => {
-      if (centerTileData) {
-        setHighlighted(centerTileData.x, centerTileData.y);
-        onClick({ 
-          x: centerTileData.x, 
-          y: centerTileData.y, 
-          action: 'details' 
-        });
-      }
-      closePeek();
-    }}
-  />
+  <!-- Only show Peek when grid animation is complete -->
+  {#if gridAnimationComplete}
+    <Peek 
+      isOpen={isPeekVisible}
+      onClose={() => closePeek()}
+      tileData={centerTileData}
+      actions={peekActions}
+      onAction={handlePeekAction}
+      onShowDetails={() => {
+        if (centerTileData) {
+          setHighlighted(centerTileData.x, centerTileData.y);
+          onClick({ 
+            x: centerTileData.x, 
+            y: centerTileData.y, 
+            action: 'details' 
+          });
+        }
+        closePeek();
+      }}
+    />
+  {/if}
   
   {#if isPathDrawingMode}
     <div class="path-controls">
@@ -1365,7 +1385,7 @@
     transform: scale(1);
   }
   
-  /* Special handling for center tile */
+  /* Special handling for center tile - now uses transition delay like other tiles */
   .tile.center {
     z-index: 3;
     position: relative;
@@ -1375,12 +1395,44 @@
       inset 0 0 0.5em rgba(255, 255, 255, 0.3),
       0 0 1em rgba(255, 255, 255, 0.2);
     
-    /* Center tile is always visible with slightly larger scale */
-    opacity: 1 !important;
-    transform: scale(1.05) !important;
-    transition: background-color 0.3s ease;
-    cursor: pointer; /* Add pointer cursor to indicate clickability */
-    pointer-events: auto !important; /* Force pointer events to be active */
+    /* Removed !important opacity and transform to allow transitions to apply */
+    /* Instead of showing immediately, center tile now transitions like other tiles */
+    transition: 
+      opacity 0.8s ease-out,
+      transform 0.8s ease-out,
+      background-color 0.3s ease,
+      box-shadow 0.2s ease;
+  }
+
+  /* Hide various indicators until grid animation is complete */
+  .map-container:not(.grid-animation-complete) .battle-indicator,
+  .map-container:not(.grid-animation-complete) .structure-name-label,
+  .map-container:not(.grid-animation-complete) .structure-icon-container,
+  .map-container:not(.grid-animation-complete) .race-background-icon,
+  .map-container:not(.grid-animation-complete) .entity-indicators,
+  .map-container:not(.grid-animation-complete) .highlight-indicator,
+  .map-container:not(.grid-animation-complete) .you-are-here-container {
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+  
+  /* Show path layer only after grid animation is complete */
+  .map-container:not(.grid-animation-complete) .path-layer {
+    opacity: 0;
+    visibility: hidden;
+  }
+  
+  .map-container.grid-animation-complete .path-layer {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.5s ease;
+  }
+  
+  /* Add transition for center tile */
+  .main-grid.animated .tile.center {
+    opacity: 0;
+    transform: scale(0.8);
+    transition-delay: 0.2s; /* Slight delay for center tile, but not as much as far tiles */
   }
 
   /* Add a hover effect specifically for the center tile to improve UX */
@@ -1852,7 +1904,7 @@
     width: auto;
     overflow: visible;
     border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 0 0.4em rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 0.4em rgba(0, 0, 0,0.8);
   }
 
   /* Make structure name more prominent on hover */
