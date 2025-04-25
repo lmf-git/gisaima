@@ -438,7 +438,7 @@
     });
 
     $effect(() => {
-        if ($game.player?.alive && isTutorialVisible) {
+        if ($game?.player?.alive && isTutorialVisible) {
             // Close achievements and details when tutorial becomes visible
             showAchievements = false;
             detailed = false;
@@ -938,7 +938,66 @@
       }
     }
 
+    // Function to start path drawing mode with the selected group
+    function startPathDrawing(groupData) {
+        console.log('Starting path drawing mode with group:', groupData);
+        
+        // Store the group we're drawing a path for
+        pathDrawingGroup = groupData;
+        
+        // Reset the current path
+        currentPath = [];
+        
+        // If we have a start point, add it as the first point in the path
+        if (groupData?.startPoint) {
+            console.log('Adding initial point from group start location:', groupData.startPoint);
+            currentPath = [groupData.startPoint];
+        }
+        
+        // Enable path drawing mode
+        isPathDrawingMode = true;
+        
+        // Set this to prevent weird transition effects
+        isTransitioningToPathDrawing = true;
+        setTimeout(() => {
+            isTransitioningToPathDrawing = false;
+        }, 300);
+    }
+    
+    // Function to handle cancellation of path drawing
+    function handlePathDrawingCancel() {
+        console.log('Path drawing cancelled');
+        isPathDrawingMode = false;
+        pathDrawingGroup = null;
+        currentPath = [];
+    }
+    
+    // Function to confirm the path that was drawn
+    function confirmPathDrawing(path) {
+        if (!pathDrawingGroup || path.length < 2) {
+            console.log('Cannot confirm path: missing group data or path too short');
+            return;
+        }
+        
+        console.log('Path confirmed:', path);
+        console.log('For group:', pathDrawingGroup);
+        
+        // Here you would typically call your API to submit the path
+        // For now we'll just disable path drawing mode
+        
+        // Exit path drawing mode
+        isPathDrawingMode = false;
+        
+        // TODO: Add actual path submission logic here
+        // This is where you'd send the path to your backend
+        
+        // Reset state
+        pathDrawingGroup = null;
+        currentPath = [];
+    }
+
     // ...existing code...
+
 </script>
 
 <svelte:window on:keydown={handleKeyDown} />
@@ -1203,6 +1262,7 @@
           {:else if modalState.type === 'move'}
             <Move 
               onClose={closeModal}
+              onDrawPath={startPathDrawing}
               groupData={modalState.data?.group || null}
             />
           {:else if modalState.type === 'attack'}

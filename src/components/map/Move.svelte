@@ -8,7 +8,8 @@
   // Props using $props() rune
   const { 
     onClose = () => {}, 
-    onDrawPath = () => {}
+    onDrawPath = () => {},  // Make sure we use this prop
+    groupData = null  // Add groupData prop if it's passed in
   } = $props();
 
   // States
@@ -70,8 +71,11 @@
       // Check and unlock the first_steps achievement
       unlockFirstStepsAchievement();
       
-      onDrawPath(groupWithStartPoint); // Changed from onPathDrawingStart to onDrawPath
-      onClose(false, true); // Close this modal, but indicate we're starting path drawing
+      // Call onDrawPath with the group data to start path drawing mode
+      onDrawPath(groupWithStartPoint);
+      
+      // Close this modal, passing true as second parameter to indicate we're starting path drawing
+      onClose();
     } catch (e) {
       error = e.message || "An error occurred";
       processing = false;
