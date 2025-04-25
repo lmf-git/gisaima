@@ -1115,7 +1115,7 @@
             class:from-world-data={playerPosition && cell.x === playerPosition.x && cell.y === playerPosition.y && !hasCurrentPlayerEntity(cell)}
             style="
               background-color: {cell.isCenter ? 'var(--center-tile-color)' : cell.color || 'var(--terrain-color)'};
-              transition-delay: {cell.isCenter ? 0 : Math.min(0.8, (distanceFromPlayer || cell.distance) * 0.02) + 's'};
+              transition-delay: {cell.isCenter ? '0s' : Math.min(0.8, (distanceFromPlayer || cell.distance) * 0.02) + 's'};
             "
             onmouseenter={() => handleTileHover(cell)}
             onclick={cell.isCenter ? handleCenterTileClick : undefined}
