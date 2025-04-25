@@ -1366,13 +1366,15 @@
     transition: 
       opacity 0.8s ease-out,
       transform 0.8s ease-out,
-      background-color 0.3s ease;
+      background-color 0.8s ease-out; /* Changed from 0.3s to 0.8s to match opacity */
   }
 
   /* Initial state for animated tiles */
   .main-grid.animated .tile {
     opacity: 0;
     transform: scale(0.8);
+    /* Add this to make all tiles start from the same background color */
+    background-color: transparent !important;
   }
 
   /* Final state for all visible tiles */
@@ -1394,9 +1396,20 @@
     /* Center tile is always visible with slightly larger scale */
     opacity: 1 !important;
     transform: scale(1.05) !important;
-    transition: background-color 0.3s ease;
+    /* Remove transition: background-color 0.3s ease */
     cursor: pointer; /* Add pointer cursor to indicate clickability */
     pointer-events: auto !important; /* Force pointer events to be active */
+  }
+
+  /* Initial state for center tile during animation to match other tiles */
+  .main-grid.animated .tile.center {
+    /* Override just the background color but still keep other properties */
+    background-color: transparent !important;
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 
+      inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+      inset 0 0 0.2em rgba(255, 255, 255, 0.1),
+      0 0 0.5em rgba(255, 255, 255, 0.1);
   }
 
   /* Add a hover effect specifically for the center tile to improve UX */
