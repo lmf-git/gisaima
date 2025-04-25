@@ -16,7 +16,6 @@
   let processing = $state(false); // Add processing state
   let isSubmitting = $state(false);
   let error = $state(null);
-  let isReady = $state(false);
   
   // Derived states
   const currentTile = $derived($targetStore);
@@ -27,11 +26,6 @@
     if (eligibleGroups.length === 1) {
       selectedGroupId = eligibleGroups[0].id;
     }
-    
-    // Set ready state after a short delay to ensure DOM is ready
-    setTimeout(() => {
-      isReady = true;
-    }, 10);
   });
 
   function getEligibleGroups() {

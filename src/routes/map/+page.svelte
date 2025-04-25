@@ -1204,7 +1204,6 @@
             <Move 
               onClose={closeModal}
               groupData={modalState.data?.group || null}
-              onDrawPath={handlePathDrawingStart}
             />
           {:else if modalState.type === 'attack'}
             <AttackGroups 
