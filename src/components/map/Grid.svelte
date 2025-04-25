@@ -144,9 +144,15 @@
   let wasDrag = $state(false);
   let dist = $state(0);
   
+  // Add new state to track when animations are finished
+  let animationsComplete = $state(false);
+  
   const DRAG_THRESHOLD = 5;
   
   const isMoving = $derived($map.isDragging || keyboardNavigationInterval !== null);
+  
+  // Create a derived value to track when we should render detail elements
+  const shouldRenderDetails = $derived(introduced && animationsComplete && !isMoving);
   
   const gridArray = derived(
     coordinates,
@@ -676,7 +682,11 @@
     
     const keyboardCleanup = setupKeyboardNavigation();
     
+    // Set introduced after initial delay
     setTimeout(() => introduced = true, 1000);
+    
+    // Set animationsComplete with a slight additional delay to ensure transitions are complete
+    setTimeout(() => animationsComplete = true, 1800);
 
     return () => {
       if (resizeObserver) resizeObserver.disconnect();
@@ -988,105 +998,108 @@
       : "Interactive coordinate map. Use WASD or arrow keys to navigate."}
   >    
     {#if $ready}
-      <svg class="path-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <!-- Custom path drawing group -->
-        {#if isPathDrawingMode && customPathPoints && customPathPoints.length > 0}
-          {@const pathData = createPathData(customPathPoints)}
-          <g class="path-group custom-path-group" aria-label="Custom movement path">
-            <path 
-              d={pathData} 
-              stroke="rgba(255, 255, 255, 0.9)"
-              stroke-width="0.6"
-              stroke-dasharray="4,3"
-              stroke-linejoin="round" 
-              stroke-linecap="round"
-              fill="none"
-              opacity="0.8"
-            >
-              <animate 
-                attributeName="stroke-dashoffset" 
-                from="0" 
-                to="-7" 
-                dur="20s" 
-                repeatCount="indefinite"
-              />
-            </path>
-            
-            <!-- Draw direction dots along the path -->
-            {#each customPathPoints as point, i}
-              {@const pos = coordToPosition(point.x, point.y)}
+      <!-- Only render paths when animations are complete -->
+      {#if shouldRenderDetails}
+        <svg class="path-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <!-- Custom path drawing group -->
+          {#if isPathDrawingMode && customPathPoints && customPathPoints.length > 0}
+            {@const pathData = createPathData(customPathPoints)}
+            <g class="path-group custom-path-group" aria-label="Custom movement path">
+              <path 
+                d={pathData} 
+                stroke="rgba(255, 255, 255, 0.9)"
+                stroke-width="0.6"
+                stroke-dasharray="4,3"
+                stroke-linejoin="round" 
+                stroke-linecap="round"
+                fill="none"
+                opacity="0.8"
+              >
+                <animate 
+                  attributeName="stroke-dashoffset" 
+                  from="0" 
+                  to="-7" 
+                  dur="20s" 
+                  repeatCount="indefinite"
+                />
+              </path>
               
-              <!-- Draw point markers with consistent colors -->
-              <circle 
-                cx="{pos.posX * 100}" 
-                cy="{pos.posY * 100}" 
-                r="{i === 0 || i === customPathPoints.length - 1 ? '0.7' : '0.5'}" 
-                fill="{i === 0 ? 'rgba(255, 255, 255, 0.3)' : i === customPathPoints.length - 1 ? 'rgba(255, 255, 255, 0.3)' : 'rgba(200, 200, 255, 0.2)'}" 
-                stroke="{i === 0 ? 'rgba(66, 133, 244, 0.9)' : i === customPathPoints.length - 1 ? 'rgba(66, 133, 244, 0.9)' : 'rgba(200, 200, 255, 0.8)'}"
-                stroke-width="0.4"
-              />
-              
-              <!-- Draw connection dots between points -->
-              {#if i < customPathPoints.length - 1}
-                {@const nextPos = coordToPosition(customPathPoints[i+1].x, customPathPoints[i+1].y)}
-                {@const midX = (pos.posX * 100 + nextPos.posX * 100) / 2}
-                {@const midY = (pos.posY * 100 + nextPos.posY * 100) / 2}
+              <!-- Draw direction dots along the path -->
+              {#each customPathPoints as point, i}
+                {@const pos = coordToPosition(point.x, point.y)}
                 
-                {#if Math.abs(nextPos.posX - pos.posX) > 0.02 || Math.abs(nextPos.posY - pos.posY) > 0.02}
-                  <circle 
-                    cx="{midX}" 
-                    cy="{midY}" 
-                    r="0.15" 
-                    fill="rgba(255, 255, 255, 0.5)" 
-                    stroke="rgba(255, 255, 255, 0.9)"
-                    stroke-width="0.3"
-                  />
+                <!-- Draw point markers with consistent colors -->
+                <circle 
+                  cx="{pos.posX * 100}" 
+                  cy="{pos.posY * 100}" 
+                  r="{i === 0 || i === customPathPoints.length - 1 ? '0.7' : '0.5'}" 
+                  fill="{i === 0 ? 'rgba(255, 255, 255, 0.3)' : i === customPathPoints.length - 1 ? 'rgba(255, 255, 255, 0.3)' : 'rgba(200, 200, 255, 0.2)'}" 
+                  stroke="{i === 0 ? 'rgba(66, 133, 244, 0.9)' : i === customPathPoints.length - 1 ? 'rgba(66, 133, 244, 0.9)' : 'rgba(200, 200, 255, 0.8)'}"
+                  stroke-width="0.4"
+                />
+                
+                <!-- Draw connection dots between points -->
+                {#if i < customPathPoints.length - 1}
+                  {@const nextPos = coordToPosition(customPathPoints[i+1].x, customPathPoints[i+1].y)}
+                  {@const midX = (pos.posX * 100 + nextPos.posX * 100) / 2}
+                  {@const midY = (pos.posY * 100 + nextPos.posY * 100) / 2}
+                  
+                  {#if Math.abs(nextPos.posX - pos.posX) > 0.02 || Math.abs(nextPos.posY - pos.posY) > 0.02}
+                    <circle 
+                      cx="{midX}" 
+                      cy="{midY}" 
+                      r="0.15" 
+                      fill="rgba(255, 255, 255, 0.5)" 
+                      stroke="rgba(255, 255, 255, 0.9)"
+                      stroke-width="0.3"
+                    />
+                  {/if}
                 {/if}
-              {/if}
-            {/each}
-          </g>
-        {/if}
+              {/each}
+            </g>
+          {/if}
 
-        {#each movementPaths as path}
-          <g class="path-group" class:current-player-path={path.owner === $currentPlayer?.uid}>
-            <path 
-              d={createPathData(path.points)} 
-              stroke={path.color}
-              stroke-width="0.5"
-              stroke-dasharray="6,4"
-              stroke-linejoin="round"
-              stroke-linecap="round"
-              fill="none"
-              opacity="0.7"
-              class="animated-path"
-              aria-label={`Movement path for ${path.owner === $currentPlayer?.uid ? 'your' : 'another'} group`}
-            >
-              <animate 
-                attributeName="stroke-dashoffset" 
-                from="0" 
-                to="-10" 
-                dur="20s" 
-                repeatCount="indefinite"
-              />
-            </path>
-            
-            <!-- Draw direction dots along the path with better performance -->
-            {#each path.points.filter((_, i) => i === 0 || i === path.points.length - 1 || i % 3 === 0) as point, i}
-              {@const pos = coordToPosition(point.x, point.y)}
-              
-              <circle 
-                cx="{pos.posX * 100}" 
-                cy="{pos.posY * 100}" 
-                r="{i === 0 || i === path.points.length - 1 ? '0.35' : '0.2'}" 
-                fill="transparent" 
+          {#each movementPaths as path}
+            <g class="path-group" class:current-player-path={path.owner === $currentPlayer?.uid}>
+              <path 
+                d={createPathData(path.points)} 
                 stroke={path.color}
-                stroke-width="0.3"
-                opacity="{i === 0 || i === path.points.length - 1 ? '0.9' : '0.7'}"
-              />
-            {/each}
-          </g>
-        {/each}
-      </svg>
+                stroke-width="0.5"
+                stroke-dasharray="6,4"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+                fill="none"
+                opacity="0.7"
+                class="animated-path"
+                aria-label={`Movement path for ${path.owner === $currentPlayer?.uid ? 'your' : 'another'} group`}
+              >
+                <animate 
+                  attributeName="stroke-dashoffset" 
+                  from="0" 
+                  to="-10" 
+                  dur="20s" 
+                  repeatCount="indefinite"
+                />
+              </path>
+              
+              <!-- Draw direction dots along the path with better performance -->
+              {#each path.points.filter((_, i) => i === 0 || i === path.points.length - 1 || i % 3 === 0) as point, i}
+                {@const pos = coordToPosition(point.x, point.y)}
+                
+                <circle 
+                  cx="{pos.posX * 100}" 
+                  cy="{pos.posY * 100}" 
+                  r="{i === 0 || i === path.points.length - 1 ? '0.35' : '0.2'}" 
+                  fill="transparent" 
+                  stroke={path.color}
+                  stroke-width="0.3"
+                  opacity="{i === 0 || i === path.points.length - 1 ? '0.9' : '0.7'}"
+                />
+              {/each}
+            </g>
+          {/each}
+        </svg>
+      {/if}
       
       <div class="grid main-grid" 
         style="--cols: {$map.cols}; --rows: {$map.rows};" 
@@ -1125,94 +1138,97 @@
             aria-label={`Coordinates ${cell.x},${cell.y}`}
             role="gridcell"
           >
-            <!-- Add YouAreHere component for player's position -->
-            {#if isCurrentPlayerHere && $ready}
-              <div class="you-are-here-container">
-                <YouAreHere hasStructure={!!cell.structure} />
-              </div>
-            {/if}
+            <!-- Only render additional elements when animations are complete -->
+            {#if shouldRenderDetails || cell.isCenter}
+              <!-- Add YouAreHere component for player's position -->
+              {#if isCurrentPlayerHere && $ready}
+                <div class="you-are-here-container">
+                  <YouAreHere hasStructure={!!cell.structure} />
+                </div>
+              {/if}
 
-            <!-- Change target indicator to highlight indicator that shows on highlighted tiles -->
-            {#if cell.highlighted && $ready && (!isPeekVisible || !cell.isCenter)}
-              <div class="highlight-indicator"></div>
-            {/if}
+              <!-- Change target indicator to highlight indicator that shows on highlighted tiles -->
+              {#if cell.highlighted && $ready && (!isPeekVisible || !cell.isCenter)}
+                <div class="highlight-indicator"></div>
+              {/if}
 
-            <!-- Add structure name display -->
-            {#if cell.structure && cell.structure.name}
-              <div class="structure-name-label">
-                { cell.structure.name.length > 20 ? cell.structure.name.substring(0, 20) + '...' : cell.structure.name }
-              </div>
-            {/if}
-            
-            {#if dominantRace}
-              <div class="race-background-icon">
-                {#if dominantRace === 'human'}
-                  <Human extraClass="race-icon-tile" />
-                {:else if dominantRace === 'elf'}
-                  <Elf extraClass="race-icon-tile" />
-                {:else if dominantRace === 'dwarf'}
-                  <Dwarf extraClass="race-icon-tile" />
-                {:else if dominantRace === 'goblin'}
-                  <Goblin extraClass="race-icon-tile" />
-                {:else if dominantRace === 'fairy'}
-                  <Fairy extraClass="race-icon-tile" />
-                {/if}
-              </div>
-            {/if}
-
-            {#if cell.structure}
-              <div class="structure-icon-container">
-                {#if cell.structure.type === 'spawn'}
-                  <Torch size="70%" extraClass="spawn-icon" />
-                {:else}
-                  <Structure size="70%" extraClass="structure-icon {cell.structure.type}-icon" />
-                {/if}
-              </div>
-            {/if}
-
-            <!-- Battle indicator -->
-            {#if hasBattle(cell)}
-              <div class="battle-indicator" title="Active battle in progress">
-                ⚔️
-              </div>
-            {/if}
-            
-            <!-- Entity indicators -->
-            <div class="entity-indicators">
-              {#if hasPlayers}
-                <div class="entity-indicator player-indicator" 
-                     class:current-player-indicator={isCurrentPlayerHere}>
-                  {#if playerCount > 1}
-                    <span class="count">{playerCount}</span>
-                  {/if}
+              <!-- Add structure name display -->
+              {#if cell.structure && cell.structure.name}
+                <div class="structure-name-label">
+                  { cell.structure.name.length > 20 ? cell.structure.name.substring(0, 20) + '...' : cell.structure.name }
                 </div>
               {/if}
               
-              {#if cell.groups?.length > 0}
-                <div class="entity-indicator group-indicator">
-                  {#if cell.groups.length > 1}
-                    <span class="count">{cell.groups.length}</span>
+              {#if dominantRace}
+                <div class="race-background-icon">
+                  {#if dominantRace === 'human'}
+                    <Human extraClass="race-icon-tile" />
+                  {:else if dominantRace === 'elf'}
+                    <Elf extraClass="race-icon-tile" />
+                  {:else if dominantRace === 'dwarf'}
+                    <Dwarf extraClass="race-icon-tile" />
+                  {:else if dominantRace === 'goblin'}
+                    <Goblin extraClass="race-icon-tile" />
+                  {:else if dominantRace === 'fairy'}
+                    <Fairy extraClass="race-icon-tile" />
                   {/if}
+                </div>
+              {/if}
+
+              {#if cell.structure}
+                <div class="structure-icon-container">
+                  {#if cell.structure.type === 'spawn'}
+                    <Torch size="70%" extraClass="spawn-icon" />
+                  {:else}
+                    <Structure size="70%" extraClass="structure-icon {cell.structure.type}-icon" />
+                  {/if}
+                </div>
+              {/if}
+
+              <!-- Battle indicator -->
+              {#if hasBattle(cell)}
+                <div class="battle-indicator" title="Active battle in progress">
+                  ⚔️
                 </div>
               {/if}
               
-              {#if cell.items?.length > 0}
-                <div class="entity-indicator item-indicator {highestRarityItem?.rarity || 'common'}" 
-                  style="--glow-size: {getRarityGlowSize(highestRarityItem?.rarity)}; 
-                         --glow-color: {getRarityColor(highestRarityItem?.rarity)}">
-                  {#if cell.items.length > 1}
-                    <span class="count">{cell.items.length}</span>
-                  {/if}
-                </div>
-              {/if}
-            </div>
+              <!-- Entity indicators -->
+              <div class="entity-indicators">
+                {#if hasPlayers}
+                  <div class="entity-indicator player-indicator" 
+                       class:current-player-indicator={isCurrentPlayerHere}>
+                    {#if playerCount > 1}
+                      <span class="count">{playerCount}</span>
+                    {/if}
+                  </div>
+                {/if}
+                
+                {#if cell.groups?.length > 0}
+                  <div class="entity-indicator group-indicator">
+                    {#if cell.groups.length > 1}
+                      <span class="count">{cell.groups.length}</span>
+                    {/if}
+                  </div>
+                {/if}
+                
+                {#if cell.items?.length > 0}
+                  <div class="entity-indicator item-indicator {highestRarityItem?.rarity || 'common'}" 
+                    style="--glow-size: {getRarityGlowSize(highestRarityItem?.rarity)}; 
+                           --glow-color: {getRarityColor(highestRarityItem?.rarity)}">
+                    {#if cell.items.length > 1}
+                      <span class="count">{cell.items.length}</span>
+                    {/if}
+                  </div>
+                {/if}
+              </div>
+            {/if}
           </div>
         {/each}
       </div>
     {/if}
   </div>
   
-  <!-- Modify the Peek component implementation -->
+  <!-- Peek component should still be available -->
   <Peek 
     isOpen={isPeekVisible}
     onClose={() => closePeek()}
