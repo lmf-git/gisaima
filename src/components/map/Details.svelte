@@ -710,7 +710,7 @@
                             {/if}
                           </span>
                           
-                          <span class="entity-status-badge {getStatusClass(group.status)}"
+                          <span class="entity-badge {getStatusClass(group.status)}"
                             class:pending-tick={isPendingTick(
                               group.status === 'moving' 
                                 ? group.nextMoveTime 
@@ -847,7 +847,7 @@
                         {/if}
                         
                         {#if player.status}
-                          <span class="entity-status-badge {getStatusClass(player.status)}">
+                          <span class="entity-badge {getStatusClass(player.status)}">
                             {_fmt(player.status)}
                           </span>
                         {/if}
@@ -1823,7 +1823,7 @@
   }
 
   
-  .entity-status-badge {
+  .entity-badge {
     display: inline-block;
     font-size: 0.8em;
     font-weight: 500;
@@ -1835,61 +1835,61 @@
     align-self: flex-start; 
   }
   
-  .entity-status-badge.idle {
+  .entity-badge.idle {
     background: rgba(128, 128, 128, 0.15);
     border: 1px solid rgba(128, 128, 128, 0.3);
     color: rgba(0, 0, 0, 0.7);
   }
   
-  .entity-status-badge.moving {
+  .entity-badge.moving {
     background: rgba(0, 128, 0, 0.15);
     border: 1px solid rgba(0, 128, 0, 0.3);
     color: #006400;
   }
   
-  .entity-status-badge.mobilizing {
+  .entity-badge.mobilizing {
     background: rgba(255, 140, 0, 0.15);
     border: 1px solid rgba(255, 140, 0, 0.3);
     color: #d06000;
   }
   
-  .entity-status-badge.demobilising {
+  .entity-badge.demobilising {
     background: rgba(138, 43, 226, 0.15);
     border: 1px solid rgba(138, 43, 226, 0.3);
     color: #6a1b9a;
   }
   
-  .entity-status-badge.gathering, 
-  .entity-status-badge.starting_to_gather {
+  .entity-badge.gathering, 
+  .entity-badge.starting_to_gather {
     background: rgba(138, 43, 226, 0.15);
     border: 1px solid rgba(138, 43, 226, 0.3);
     color: #8a2be2;
   }
   
-  .entity-status-badge.fighting {
+  .entity-badge.fighting {
     background: rgba(220, 20, 60, 0.15);
     border: 1px solid rgba(220, 20, 60, 0.3);
     color: #c62828;
   }
   
-  .entity-status-badge.active {
+  .entity-badge.active {
     background: rgba(255, 0, 0, 0.15);
     border: 1px solid rgba(255, 0, 0, 0.3);
     color: #d32f2f;
   }
   
-  .entity-status-badge.resolved {
+  .entity-badge.resolved {
     background: rgba(0, 128, 0, 0.15);
     border: 1px solid rgba(0, 128, 0, 0.3);
     color: #2e7d32;
   }
   
-  .entity-status-badge.pending-tick {
+  .entity-badge.pending-tick {
     position: relative;
     animation: pulse 1s infinite alternate;
   }
   
-  .entity-status-badge.pending-tick::after {
+  .entity-badge.pending-tick::after {
     content: '↻';
     margin-left: 0.3em;
     font-weight: bold;
@@ -2132,7 +2132,7 @@
   }
 
   
-  .entity-status-badge {
+  .entity-badge {
     display: inline-block;
     font-size: 0.8em;
     font-weight: 500;
@@ -2144,61 +2144,61 @@
     align-self: flex-start; 
   }
   
-  .entity-status-badge.idle {
+  .entity-badge.idle {
     background: rgba(128, 128, 128, 0.15);
     border: 1px solid rgba(128, 128, 128, 0.3);
     color: rgba(0, 0, 0, 0.7);
   }
   
-  .entity-status-badge.moving {
+  .entity-badge.moving {
     background: rgba(0, 128, 0, 0.15);
     border: 1px solid rgba(0, 128, 0, 0.3);
     color: #006400;
   }
   
-  .entity-status-badge.mobilizing {
+  .entity-badge.mobilizing {
     background: rgba(255, 140, 0, 0.15);
     border: 1px solid rgba(255, 140, 0, 0.3);
     color: #d06000;
   }
   
-  .entity-status-badge.demobilising {
+  .entity-badge.demobilising {
     background: rgba(138, 43, 226, 0.15);
     border: 1px solid rgba(138, 43, 226, 0.3);
     color: #6a1b9a;
   }
   
-  .entity-status-badge.gathering, 
-  .entity-status-badge.starting_to_gather {
+  .entity-badge.gathering, 
+  .entity-badge.starting_to_gather {
     background: rgba(138, 43, 226, 0.15);
     border: 1px solid rgba(138, 43, 226, 0.3);
     color: #8a2be2;
   }
   
-  .entity-status-badge.fighting {
+  .entity-badge.fighting {
     background: rgba(220, 20, 60, 0.15);
     border: 1px solid rgba(220, 20, 60, 0.3);
     color: #c62828;
   }
   
-  .entity-status-badge.active {
+  .entity-badge.active {
     background: rgba(255, 0, 0, 0.15);
     border: 1px solid rgba(255, 0, 0, 0.3);
     color: #d32f2f;
   }
   
-  .entity-status-badge.resolved {
+  .entity-badge.resolved {
     background: rgba(0, 128, 0, 0.15);
     border: 1px solid rgba(0, 128, 0, 0.3);
     color: #2e7d32;
   }
   
-  .entity-status-badge.pending-tick {
+  .entity-badge.pending-tick {
     position: relative;
     animation: pulse 1s infinite alternate;
   }
   
-  .entity-status-badge.pending-tick::after {
+  .entity-badge.pending-tick::after {
     content: '↻';
     margin-left: 0.3em;
     font-weight: bold;
@@ -2441,7 +2441,7 @@
   }
 
   
-  .entity-status-badge {
+  .entity-badge {
     display: inline-block;
     font-size: 0.8em;
     font-weight: 500;
@@ -2453,61 +2453,61 @@
     align-self: flex-start; 
   }
   
-  .entity-status-badge.idle {
+  .entity-badge.idle {
     background: rgba(128, 128, 128, 0.15);
     border: 1px solid rgba(128, 128, 128, 0.3);
     color: rgba(0, 0, 0, 0.7);
   }
   
-  .entity-status-badge.moving {
+  .entity-badge.moving {
     background: rgba(0, 128, 0, 0.15);
     border: 1px solid rgba(0, 128, 0, 0.3);
     color: #006400;
   }
   
-  .entity-status-badge.mobilizing {
+  .entity-badge.mobilizing {
     background: rgba(255, 140, 0, 0.15);
     border: 1px solid rgba(255, 140, 0, 0.3);
     color: #d06000;
   }
   
-  .entity-status-badge.demobilising {
+  .entity-badge.demobilising {
     background: rgba(138, 43, 226, 0.15);
     border: 1px solid rgba(138, 43, 226, 0.3);
     color: #6a1b9a;
   }
   
-  .entity-status-badge.gathering, 
-  .entity-status-badge.starting_to_gather {
+  .entity-badge.gathering, 
+  .entity-badge.starting_to_gather {
     background: rgba(138, 43, 226, 0.15);
     border: 1px solid rgba(138, 43, 226, 0.3);
     color: #8a2be2;
   }
   
-  .entity-status-badge.fighting {
+  .entity-badge.fighting {
     background: rgba(220, 20, 60, 0.15);
     border: 1px solid rgba(220, 20, 60, 0.3);
     color: #c62828;
   }
   
-  .entity-status-badge.active {
+  .entity-badge.active {
     background: rgba(255, 0, 0, 0.15);
     border: 1px solid rgba(255, 0, 0, 0.3);
     color: #d32f2f;
   }
   
-  .entity-status-badge.resolved {
+  .entity-badge.resolved {
     background: rgba(0, 128, 0, 0.15);
     border: 1px solid rgba(0, 128, 0, 0.3);
     color: #2e7d32;
   }
   
-  .entity-status-badge.pending-tick {
+  .entity-badge.pending-tick {
     position: relative;
     animation: pulse 1s infinite alternate;
   }
   
-  .entity-status-badge.pending-tick::after {
+  .entity-badge.pending-tick::after {
     content: '↻';
     margin-left: 0.3em;
     font-weight: bold;
@@ -2750,7 +2750,7 @@
   }
 
   
-  .entity-status-badge {
+  .entity-badge {
     display: inline-block;
     font-size: 0.8em;
     font-weight: 500;
@@ -2762,61 +2762,61 @@
     align-self: flex-start; 
   }
   
-  .entity-status-badge.idle {
+  .entity-badge.idle {
     background: rgba(128, 128, 128, 0.15);
     border: 1px solid rgba(128, 128, 128, 0.3);
     color: rgba(0, 0, 0, 0.7);
   }
   
-  .entity-status-badge.moving {
+  .entity-badge.moving {
     background: rgba(0, 128, 0, 0.15);
     border: 1px solid rgba(0, 128, 0, 0.3);
     color: #006400;
   }
   
-  .entity-status-badge.mobilizing {
+  .entity-badge.mobilizing {
     background: rgba(255, 140, 0, 0.15);
     border: 1px solid rgba(255, 140, 0, 0.3);
     color: #d06000;
   }
   
-  .entity-status-badge.demobilising {
+  .entity-badge.demobilising {
     background: rgba(138, 43, 226, 0.15);
     border: 1px solid rgba(138, 43, 226, 0.3);
     color: #6a1b9a;
   }
   
-  .entity-status-badge.gathering, 
-  .entity-status-badge.starting_to_gather {
+  .entity-badge.gathering, 
+  .entity-badge.starting_to_gather {
     background: rgba(138, 43, 226, 0.15);
     border: 1px solid rgba(138, 43, 226, 0.3);
     color: #8a2be2;
   }
   
-  .entity-status-badge.fighting {
+  .entity-badge.fighting {
     background: rgba(220, 20, 60, 0.15);
     border: 1px solid rgba(220, 20, 60, 0.3);
     color: #c62828;
   }
   
-  .entity-status-badge.active {
+  .entity-badge.active {
     background: rgba(255, 0, 0, 0.15);
     border: 1px solid rgba(255, 0, 0, 0.3);
     color: #d32f2f;
   }
   
-  .entity-status-badge.resolved {
+  .entity-badge.resolved {
     background: rgba(0, 128, 0, 0.15);
     border: 1px solid rgba(0, 128, 0, 0.3);
     color: #2e7d32;
   }
   
-  .entity-status-badge.pending-tick {
+  .entity-badge.pending-tick {
     position: relative;
     animation: pulse 1s infinite alternate;
   }
   
-  .entity-status-badge.pending-tick::after {
+  .entity-badge.pending-tick::after {
     content: '↻';
     margin-left: 0.3em;
     font-weight: bold;
@@ -3009,5 +3009,580 @@
     transition: background-color 0.2s ease;
     position: relative;
     cursor: pointer;
+  }
+
+  .entity-badge.gathering, 
+  .entity-badge.starting_to_gather {
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    color: #8a2be2;
+  }
+  
+  .entity-badge.fighting {
+    background: rgba(220, 20, 60, 0.15);
+    border: 1px solid rgba(220, 20, 60, 0.3);
+    color: #c62828;
+  }
+  
+  .entity-badge.active {
+    background: rgba(255, 0, 0, 0.15);
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    color: #d32f2f;
+  }
+  
+  .entity-badge.resolved {
+    background: rgba(0, 128, 0, 0.15);
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #2e7d32;
+  }
+  
+  .entity-badge.pending-tick {
+    position: relative;
+    animation: pulse 1s infinite alternate;
+  }
+  
+  .entity-badge.pending-tick::after {
+    content: '↻';
+    margin-left: 0.3em;
+    font-weight: bold;
+  }
+
+  
+  .timer {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.85em;
+    color: #d32f2f;
+    text-align: center;
+  }
+
+  
+  .progress-bar {
+    height: 0.5em;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0.25em;
+    overflow: hidden;
+    margin-bottom: 0.2em;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background-color: rgba(139, 0, 0, 0.7);
+    transition: width 1s ease;
+  }
+
+  
+  .join-battle-btn {
+    margin-top: 0.5em;
+    padding: 0.4em 0.8em;
+    background-color: #d32f2f;
+    color: white;
+    border: none;
+    border-radius: 0.3em;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    align-self: flex-end;
+  }
+  
+  .join-battle-btn:hover {
+    background-color: #b71c1c;
+  }
+
+  
+  .rarity-badge {
+    display: inline-block;
+    font-size: 0.9em;
+    padding: 0.1em 0.5em;
+    border-radius: 0.3em;
+    font-weight: 500;
+  }
+  
+  .rarity-badge.common {
+    background-color: rgba(158, 158, 158, 0.2);
+    color: #616161;
+    border: 1px solid rgba(158, 158, 158, 0.4);
+  }
+  
+  .rarity-badge.uncommon {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+  }
+  
+  .rarity-badge.rare {
+    background-color: rgba(33, 150, 243, 0.2);
+    color: #0277bd;
+  }
+  
+  .rarity-badge.epic {
+    background-color: rgba(156, 39, 176, 0.2);
+    color: #7b1fa2;
+  }
+  
+  .rarity-badge.legendary {
+    background-color: rgba(255, 152, 0, 0.2);
+    color: #ef6c00;
+  }
+  
+  .rarity-badge.mythic {
+    background-color: rgba(233, 30, 99, 0.2);
+    color: #c2185b;
+    border: 1px solid rgba(233, 30, 99, 0.4);
+  }
+
+  @keyframes pulse {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+  }
+
+  @keyframes pulseMythic {
+    from {
+      box-shadow: 0 0 0 0 rgba(233, 30, 99, 0.1);
+    }
+    to {
+      box-shadow: 0 0 10px 2px rgba(233, 30, 99, 0.3);
+    }
+  }
+
+  
+  .structure-name {
+    color: rgba(0, 0, 0, 1); 
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+  
+  .structure-type {
+    display: flex;
+    align-items: center;
+  }
+
+  .structure-type-icon-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5em;
+    vertical-align: middle;
+  }
+  
+  :global(.structure-type-icon) {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
+  }
+  
+  
+  :global(.race-icon-details) {
+    width: 1.4em;
+    height: 1.4em;
+    opacity: 0.85;
+    fill: rgba(0, 0, 0, 0.7);
+  }
+  
+  
+  :global(.race-icon-details.fairy-icon path) {
+    fill: rgba(138, 43, 226, 0.8);
+  }
+  
+  :global(.race-icon-details.goblin-icon path) {
+    fill: rgba(0, 128, 0, 0.8);
+  }
+  
+  :global(.entity-race-icon) {
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+    flex-shrink: 0;
+  }
+
+  
+  .tile-info-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+  }
+  
+  
+  @media (min-width: 640px) {
+    .tile-info-container {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1.5em;
+    }
+    
+    .structure-column,
+    .terrain-column {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .tile-info-container:has(.terrain-column:only-child) .terrain-column {
+      width: 100%;
+    }
+  }
+
+  
+  .entity {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6em;
+    padding: 0.5em 0.7em;
+    border-radius: 0.3em;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s ease;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .entity-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    gap: 1em; /* Add 1em gap between icon and content */
+  }
+  
+  .entity-info {
+    flex: 1;
+    min-width: 0;
+    margin-right: 0.5em;
+  }
+  
+  .entity-actions {
+    width: auto;
+    margin-left: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    align-self: center;
+  }
+
+  
+  .entity-name, .entity-details {
+    width: 100%;
+  }
+
+  
+  .entity-details {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.7);
+    gap: 0.5em;
+    align-items: flex-start; 
+  }
+
+  .entity-details-left {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+    align-items: flex-start; 
+  }
+
+  
+  .entity-badge {
+    display: inline-block;
+    font-size: 0.8em;
+    font-weight: 500;
+    padding: 0.1em 0.5em;
+    border-radius: 0.3em;
+    white-space: nowrap;
+    text-transform: capitalize;
+    flex-shrink: 0; 
+    align-self: flex-start; 
+  }
+  
+  .entity-badge.idle {
+    background: rgba(128, 128, 128, 0.15);
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .entity-badge.moving {
+    background: rgba(0, 128, 0, 0.15);
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #006400;
+  }
+  
+  .entity-badge.mobilizing {
+    background: rgba(255, 140, 0, 0.15);
+    border: 1px solid rgba(255, 140, 0, 0.3);
+    color: #d06000;
+  }
+  
+  .entity-badge.demobilising {
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    color: #6a1b9a;
+  }
+  
+  .entity-badge.gathering, 
+  .entity-badge.starting_to_gather {
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    color: #8a2be2;
+  }
+  
+  .entity-badge.fighting {
+    background: rgba(220, 20, 60, 0.15);
+    border: 1px solid rgba(220, 20, 60, 0.3);
+    color: #c62828;
+  }
+  
+  .entity-badge.active {
+    background: rgba(255, 0, 0, 0.15);
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    color: #d32f2f;
+  }
+  
+  .entity-badge.resolved {
+    background: rgba(0, 128, 0, 0.15);
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #2e7d32;
+  }
+  
+  .entity-badge.pending-tick {
+    position: relative;
+    animation: pulse 1s infinite alternate;
+  }
+  
+  .entity-badge.pending-tick::after {
+    content: '↻';
+    margin-left: 0.3em;
+    font-weight: bold;
+  }
+
+  .entity-badge.owner-badge {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+    border: 1px solid rgba(76, 175, 80, 0.4);
+  }
+
+  .timer {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.85em;
+    color: #d32f2f;
+    text-align: center;
+  }
+
+  
+  .progress-bar {
+    height: 0.5em;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0.25em;
+    overflow: hidden;
+    margin-bottom: 0.2em;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background-color: rgba(139, 0, 0, 0.7);
+    transition: width 1s ease;
+  }
+
+  
+  .join-battle-btn {
+    margin-top: 0.5em;
+    padding: 0.4em 0.8em;
+    background-color: #d32f2f;
+    color: white;
+    border: none;
+    border-radius: 0.3em;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    align-self: flex-end;
+  }
+  
+  .join-battle-btn:hover {
+    background-color: #b71c1c;
+  }
+
+  
+  .rarity-badge {
+    display: inline-block;
+    font-size: 0.9em;
+    padding: 0.1em 0.5em;
+    border-radius: 0.3em;
+    font-weight: 500;
+  }
+  
+  .rarity-badge.common {
+    background-color: rgba(158, 158, 158, 0.2);
+    color: #616161;
+    border: 1px solid rgba(158, 158, 158, 0.4);
+  }
+  
+  .rarity-badge.uncommon {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #2e7d32;
+  }
+  
+  .rarity-badge.rare {
+    background-color: rgba(33, 150, 243, 0.2);
+    color: #0277bd;
+  }
+  
+  .rarity-badge.epic {
+    background-color: rgba(156, 39, 176, 0.2);
+    color: #7b1fa2;
+  }
+  
+  .rarity-badge.legendary {
+    background-color: rgba(255, 152, 0, 0.2);
+    color: #ef6c00;
+  }
+  
+  .rarity-badge.mythic {
+    background-color: rgba(233, 30, 99, 0.2);
+    color: #c2185b;
+    border: 1px solid rgba(233, 30, 99, 0.4);
+  }
+
+  @keyframes pulse {
+    from { opacity: 0.7; }
+    to { opacity: 1; }
+  }
+
+  @keyframes pulseMythic {
+    from {
+      box-shadow: 0 0 0 0 rgba(233, 30, 99, 0.1);
+    }
+    to {
+      box-shadow: 0 0 10px 2px rgba(233, 30, 99, 0.3);
+    }
+  }
+
+  
+  .structure-name {
+    color: rgba(0, 0, 0, 1); 
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+  
+  .structure-type {
+    display: flex;
+    align-items: center;
+  }
+
+  .structure-type-icon-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5em;
+    vertical-align: middle;
+  }
+  
+  :global(.structure-type-icon) {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
+  }
+  
+  
+  :global(.race-icon-details) {
+    width: 1.4em;
+    height: 1.4em;
+    opacity: 0.85;
+    fill: rgba(0, 0, 0, 0.7);
+  }
+  
+  
+  :global(.race-icon-details.fairy-icon path) {
+    fill: rgba(138, 43, 226, 0.8);
+  }
+  
+  :global(.race-icon-details.goblin-icon path) {
+    fill: rgba(0, 128, 0, 0.8);
+  }
+  
+  :global(.entity-race-icon) {
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+    flex-shrink: 0;
+  }
+
+  
+  .tile-info-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+  }
+  
+  
+  @media (min-width: 640px) {
+    .tile-info-container {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1.5em;
+    }
+    
+    .structure-column,
+    .terrain-column {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .tile-info-container:has(.terrain-column:only-child) .terrain-column {
+      width: 100%;
+    }
+  }
+
+  
+  .entity {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.6em;
+    padding: 0.5em 0.7em;
+    border-radius: 0.3em;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s ease;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .entity-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    gap: 1em; /* Add 1em gap between icon and content */
+  }
+  
+  .entity-info {
+    flex: 1;
+    min-width: 0;
+    margin-right: 0.5em;
+  }
+  
+  .entity-actions {
+    width: auto;
+    margin-left: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    align-self: center;
+  }
+
+  
+  .entity-name, .entity-details {
+    width: 100%;
+  }
+
+  
+  .entity-details {
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.7);
   }
 </style>

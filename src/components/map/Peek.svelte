@@ -392,7 +392,7 @@
     font-size: 1.05em; /* Grow text on hover */
   }
   
-  :global(.action-icon) {
+  .peek-container :global(.action-icon) {
     width: 1.8em;
     height: 1.8em;
     fill: white; /* Changed to white */
