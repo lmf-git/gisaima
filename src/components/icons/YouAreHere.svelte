@@ -60,19 +60,19 @@
 
   .location-text {
     position: absolute;
-    bottom: -3.1em; /* Changed from -2.6em to -3.1em for even lower placement */
+    bottom: -3.1em;
     left: 50%;
     transform: translateX(-50%);
     /* Change to dark text on gold background */
-    color: rgba(50, 30, 0, 0.95); /* Dark text color */
+    color: rgba(50, 30, 0, 0.95);
     font-weight: bold;
-    font-size: calc(var(--indicator-size) / 8);
+    font-size: calc(var(--indicator-size) / 6); /* Increased from /8 to /6 for larger text */
     padding: 0.2em 0.6em;
     /* Gold background matching ring color scheme */
     background: linear-gradient(to bottom, rgba(255, 215, 0, 0.9), rgba(218, 165, 32, 0.85));
     border-radius: 0.3em;
     white-space: nowrap;
-    text-shadow: 0 0 2px rgba(255, 255, 255, 0.7); /* Light text shadow for readability */
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
     font-family: var(--font-heading, sans-serif);
     letter-spacing: 0.05em;
     animation: bounce 2s infinite;
@@ -86,8 +86,8 @@
 
   /* Make text for structures smaller with matching style */
   .has-structure .location-text {
-    font-size: calc(var(--indicator-size) / 16); /* Smaller - changed from /13 to /16 */
-    bottom: -2.7em; /* Changed from -2.2em to -2.7em to be lower */
+    font-size: calc(var(--indicator-size) / 12); /* Increased from /16 to /12 for larger text */
+    bottom: -2.7em;
     padding: 0.25em 0.7em;
     background: linear-gradient(to bottom, rgba(255, 215, 0, 0.85), rgba(218, 165, 32, 0.8));
     border: 1px solid rgba(255, 215, 0, 0.7);
@@ -95,7 +95,7 @@
       0 0 3px rgba(0, 0, 0, 0.5), 
       0 0 6px rgba(255, 215, 0, 0.3), 
       inset 0 0 2px rgba(255, 255, 255, 0.7);
-    font-weight: 600; /* Slightly less bold than regular */
+    font-weight: 600;
   }
 
   @keyframes pulse {

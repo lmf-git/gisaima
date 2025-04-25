@@ -1829,12 +1829,12 @@
 
   .structure-name-label {
     position: absolute;
-    top: -1.6em; /* Changed from -1.285em to -1.6em to position it higher */
+    top: -1.8em; /* Adjusted from -1.6em to -1.8em to accommodate larger text */
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
-    font-size: 0.85em; /* Increased from 0.7em to 0.85em */
-    font-weight: 700; /* Increased from 600 to 700 for better visibility */
+    font-size: 1em; /* Increased from 0.85em to 1em */
+    font-weight: 700;
     color: rgba(255, 255, 255, 0.95);
     text-shadow: 
       0 0 0.2em rgba(0, 0, 0, 0.8),
@@ -1843,23 +1843,23 @@
     z-index: 1100;
     white-space: nowrap;
     font-family: var(--font-heading);
-    padding: 0.25em 0.6em; /* Slightly larger padding */
+    padding: 0.25em 0.6em;
     line-height: 1.1;
     letter-spacing: 0.02em;
-    background: rgba(0, 0, 0, 0.6); /* Slightly darker background for better contrast */
+    background: rgba(0, 0, 0, 0.6);
     border-radius: 0.3em;
     backdrop-filter: blur(2px);
     width: auto;
     overflow: visible;
-    border: 1px solid rgba(255, 255, 255, 0.3); /* Slightly more visible border */
-    box-shadow: 0 0 0.4em rgba(0, 0, 0, 0.8); /* Enhanced shadow */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0.4em rgba(0, 0, 0, 0.8);
   }
 
   /* Make structure name more prominent on hover */
   .tile:hover .structure-name-label {
-    background: rgba(0, 0, 0, 0.75); /* Darker background on hover */
+    background: rgba(0, 0, 0, 0.75);
     z-index: 1200;
-    transform: translateX(-50%) scale(1.1); /* Larger scale on hover */
+    transform: translateX(-50%) scale(1.1);
     transition: all 0.2s ease;
   }
 
