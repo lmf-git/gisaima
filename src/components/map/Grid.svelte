@@ -10,7 +10,8 @@
     moveTarget,
     targetStore,
     highlightedStore,
-    setHighlighted
+    setHighlighted,
+    hasTileContent
   } from "../../lib/stores/map.js";
   import { game, currentPlayer } from "../../lib/stores/game.js";
   import { user } from '../../lib/stores/user';
@@ -77,19 +78,6 @@
   // Change this from null to an empty array
   // This allows the Peek component to use its internal condition checks
   const peekActions = [];
-  
-  // Add a function to check if a tile has content for Peek to show
-  function hasTileContent(tile) {
-    return (
-      tile && (
-        (tile.structure) || 
-        (tile.groups && tile.groups.length > 0) || 
-        (tile.items && tile.items.length > 0) ||
-        (tile.players && tile.players.length > 0) ||
-        (tile.battles && tile.battles.length > 0)
-      )
-    );
-  }
   
   // Add a derived value to compute the current center tile data
   const centerTileData = $derived($gridArray.find(cell => cell.isCenter));

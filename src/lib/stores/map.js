@@ -158,6 +158,19 @@ export function isInternalUrlChange() {
   return isInternalUrlUpdate;
 }
 
+// Add exported utility function to check if a tile has content to display
+export function hasTileContent(tile) {
+  return (
+    tile && (
+      (tile.structure) || 
+      (tile.groups && tile.groups.length > 0) || 
+      (tile.items && tile.items.length > 0) ||
+      (tile.players && tile.players.length > 0) ||
+      (tile.battles && tile.battles.length > 0)
+    )
+  );
+}
+
 // Track modal hierarchies for keyboard handling
 export const modalHierarchy = writable({
   structureOverview: false,

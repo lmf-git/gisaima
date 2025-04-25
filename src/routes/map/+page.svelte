@@ -22,7 +22,8 @@
         isInternalUrlChange,
         setHighlighted,
         coordinates,
-        handleKeyboardEvent
+        handleKeyboardEvent,
+        hasTileContent // Add import for hasTileContent function
     } from "../../lib/stores/map.js";
     
     import { getFunctions, httpsCallable } from 'firebase/functions'; 
