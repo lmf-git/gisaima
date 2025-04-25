@@ -187,6 +187,16 @@
       return;
     }
     
+    // Special handling for inspect action to include tile data
+    if (actionId === 'inspect' && currentTileData) {
+      onAction(actionId, {
+        x: currentTileData.x,
+        y: currentTileData.y,
+        tile: currentTileData
+      });
+      return;
+    }
+    
     onAction(actionId);
   }
   
