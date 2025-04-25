@@ -11,6 +11,7 @@
   import Structure from '../icons/Structure.svelte';
   import Torch from '../icons/Torch.svelte';
   import Info from '../icons/Info.svelte';
+  import Logo from '../Logo.svelte'; // Import the Logo component
   import { onDestroy } from 'svelte';
 
   // Define props with simplified approach
@@ -277,7 +278,7 @@
             <button 
               class="action-button {item.action.id}-button" 
               style="--x:{item.position.x}em; --y:{item.position.y}em; --index:{item.index}; --total:{totalItems};"
-              on:click={(e) => handleActionClick(item.action.id, e)}
+              onclick={(e) => handleActionClick(item.action.id, e)}
             >
               {#if item.action.icon}
                 <item.action.icon extraClass="action-icon" />
@@ -288,9 +289,13 @@
             <button 
               class="action-button close-button" 
               style="--x:{item.position.x}em; --y:{item.position.y}em; --index:{item.index}; --total:{totalItems};"
-              on:click={handleClose}
+              onclick={handleClose}
             >
-              <Close extraClass="close-icon" />
+              {#if isExiting}
+                <Logo extraClass="logo-icon" />
+              {:else}
+                <Close extraClass="close-icon" />
+              {/if}
             </button>
           {/if}
         {/if}
@@ -384,7 +389,14 @@
     height: 2em;
   }
   
-  .action-button:hover :global(.close-icon) {
+  :global(.logo-icon) {
+    width: 2.2em;
+    height: 2.2em;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  
+  .action-button:hover :global(.close-icon),
+  .action-button:hover :global(.logo-icon) {
     width: 2.4em;
     height: 2.4em;
   }
