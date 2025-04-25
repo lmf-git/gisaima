@@ -30,55 +30,9 @@
   
   // Add state for storage tab selection
   let activeTab = $state('shared');
-  
-  // Add a render counter to force fresh animation on each open
-  let renderKey = $state(0);
-  
-  // Simplify animation control
-  let isReady = $state(false);
 
   // Fix the derived value to return the actual data, not a function
-  let tileData = $state(null);
-  
-  // Use an effect to update tileData when dependencies change
-  $effect(() => {
-    // If we have complete tile data from props, use that
-    if (tile?.structure) {
-      tileData = tile;
-      return;
-    }
-    
-    // If we have coordinates from props but incomplete tile data, 
-    // check if targetStore has data for those coordinates
-    if (x !== undefined && y !== undefined && $targetStore?.x === x && $targetStore?.y === y) {
-      tileData = $targetStore;
-      return;
-    }
-    
-    // If props don't have coordinates, use targetStore directly
-    tileData = $targetStore;
-  });
-  
-  // Add a function to trigger the inspector achievement when component mounts
-  onMount(() => {
-    // Short timeout to ensure DOM is ready
-    setTimeout(() => isReady = true, 10);
-    
-    // Trigger the inspector achievement when viewing structure details
-    if (onAchievement && typeof onAchievement === 'function') {
-      onAchievement('inspector');
-    }
-    
-    console.log('StructureOverview mounted with data:', {
-      propsData: { x, y, tileHasStructure: !!tile?.structure },
-      targetStoreData: { x: $targetStore?.x, y: $targetStore?.y, hasStructure: !!$targetStore?.structure },
-      usingData: tileData // Log the value, not the function
-    });
-  });
-  
-  onDestroy(() => {
-    isReady = false;
-  });
+  let tileData = $derived($targetStore || null);
   
   // Function to toggle section collapse state
   function toggleSection(sectionId) {
@@ -103,21 +57,6 @@
   // Get rarity class from item rarity for consistent styling with grid
   function getRarityClass(rarity) {
     return rarity?.toLowerCase() || 'common';
-  }
-  
-  // Get race icon component based on race
-  function getRaceIcon(race) {
-    if (!race) return null;
-    
-    const raceLower = race.toLowerCase();
-    switch(raceLower) {
-      case 'human': return Human;
-      case 'elf': return Elf;
-      case 'dwarf': return Dwarf;
-      case 'goblin': return Goblin;
-      case 'fairy': return Fairy;
-      default: return null;
-    }
   }
   
   // Reactive declarations using $derived - now using tileData instead of tile
@@ -149,8 +88,8 @@
 
 <svelte:window on:keydown={handleKeyDown} />
 
-<div class="modal-container" class:ready={isReady}>
-  <div class="structure-modal" key={renderKey}>
+<div class="modal-container">
+  <div class="structure-modal">
     <header class="modal-header">
       <h3>
         {formatText(tileData?.structure?.type || 'Structure')} 
@@ -304,13 +243,13 @@
     align-items: center;
     z-index: 1000;
     pointer-events: none;
-    opacity: 0;
+    opacity: 1;
     transition: opacity 0.2s ease-out;
   }
   
-  .modal-container.ready {
+  /* .modal-container.ready {
     opacity: 1;
-  }
+  } */
 
   .structure-modal {
     pointer-events: auto;
