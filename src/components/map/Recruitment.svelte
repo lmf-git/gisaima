@@ -32,6 +32,7 @@
     let structureData = $state(null);
     let queue = $state([]);
     let maxUnits = $state(10); // Default max queue size
+    let completionInfo = $state(null); // Add this to store completion time calculation
 
     // Set initial data from props
     $effect(() => {
@@ -56,6 +57,8 @@
     // Load available units for recruitment based on structure
     function loadAvailableUnits(structure) {
         const race = structure.race?.toLowerCase();
+        const playerResources = getPlayerResources();
+        const structureLevel = structure.level || 1;
 
         // Default units available to all races
         const baseUnits = [
@@ -69,6 +72,9 @@
                 timePerUnit: 60, // seconds per unit
                 icon: "sword",
                 power: 1,
+                requirements: {
+                    structureLevel: 1
+                }
             },
             {
                 id: "scout",
@@ -80,6 +86,9 @@
                 timePerUnit: 45, // seconds per unit
                 icon: "bow",
                 power: 0.5,
+                requirements: {
+                    structureLevel: 1
+                }
             },
         ];
 
@@ -96,6 +105,10 @@
                 timePerUnit: 90,
                 icon: "shield",
                 power: 2,
+                requirements: {
+                    structureLevel: 2,
+                    race: "human"
+                }
             });
         } else if (race === "elf") {
             raceUnits.push({
@@ -108,6 +121,10 @@
                 timePerUnit: 75,
                 icon: "bow",
                 power: 1.5,
+                requirements: {
+                    structureLevel: 2,
+                    race: "elf"
+                }
             });
         } else if (race === "dwarf") {
             raceUnits.push({
@@ -120,6 +137,10 @@
                 timePerUnit: 90,
                 icon: "shield",
                 power: 2,
+                requirements: {
+                    structureLevel: 2,
+                    race: "dwarf"
+                }
             });
         } else if (race === "goblin") {
             raceUnits.push({
@@ -132,6 +153,10 @@
                 timePerUnit: 30,
                 icon: "sword",
                 power: 0.75,
+                requirements: {
+                    structureLevel: 2,
+                    race: "goblin"
+                }
             });
         } else if (race === "fairy") {
             raceUnits.push({
@@ -144,7 +169,32 @@
                 timePerUnit: 60,
                 icon: "staff",
                 power: 1.5,
+                requirements: {
+                    structureLevel: 2,
+                    race: "fairy"
+                }
             });
+        }
+
+        // Add additional race units that could be unlockable
+        if (race) {
+            // Add advanced unit for each race
+            const advancedUnit = {
+                id: `${race}_elite`,
+                name: `Elite ${formatRaceName(race)}`,
+                description: "Advanced unit with special abilities",
+                type: "elite",
+                race: race,
+                cost: { wood: 2, stone: 2, iron: 1, crystal: 1 },
+                timePerUnit: 120,
+                icon: race === "elf" ? "bow" : "sword",
+                power: 2.5,
+                requirements: {
+                    structureLevel: 3,
+                    race: race
+                }
+            };
+            raceUnits.push(advancedUnit);
         }
 
         // Add structure-specific units based on structure type
@@ -153,24 +203,114 @@
             structureUnits.push({
                 id: "elite_guard",
                 name: "Elite Guard",
-                description:
-                    "Highly trained soldier with advanced combat skills",
+                description: "Highly trained soldier with advanced combat skills",
                 type: "elite",
                 race: race || "neutral",
                 cost: { wood: 2, stone: 2, iron: 2 },
                 timePerUnit: 120,
                 icon: "shield",
                 power: 3,
+                requirements: {
+                    structureType: ["fortress", "stronghold"],
+                    structureLevel: 2
+                }
+            });
+            
+            // Add a siege unit
+            structureUnits.push({
+                id: "siege_ram",
+                name: "Battering Ram",
+                description: "Siege unit effective against structures",
+                type: "siege",
+                race: "neutral",
+                cost: { wood: 5, stone: 3, iron: 2 },
+                timePerUnit: 180,
+                icon: "shield",
+                power: 1.5,
+                requirements: {
+                    structureType: ["fortress", "stronghold"],
+                    structureLevel: 3,
+                    research: "siegecraft"
+                }
             });
         }
 
-        // Combine all available units
-        availableUnits = [...baseUnits, ...raceUnits, ...structureUnits];
+        // Combine all units and check availability
+        const allUnits = [...baseUnits, ...raceUnits, ...structureUnits];
+        
+        // Process each unit to determine availability
+        allUnits.forEach(unit => {
+            // Check requirements
+            let available = true;
+            let unavailableReason = "";
+            
+            // Structure level check
+            if (unit.requirements.structureLevel > structureLevel) {
+                available = false;
+                unavailableReason = `Requires structure level ${unit.requirements.structureLevel}`;
+            }
+            
+            // Race check
+            if (unit.requirements.race && unit.requirements.race !== race) {
+                available = false;
+                unavailableReason = `Requires ${formatRaceName(unit.requirements.race)} structure`;
+            }
+            
+            // Structure type check
+            if (unit.requirements.structureType && 
+                !unit.requirements.structureType.includes(structure.type)) {
+                available = false;
+                unavailableReason = `Requires ${formatStructureTypeName(unit.requirements.structureType[0])}`;
+            }
+            
+            // Research check
+            if (unit.requirements.research) {
+                // Assuming we need to check if research is completed
+                const researchCompleted = structure.research && 
+                    structure.research[unit.requirements.research];
+                if (!researchCompleted) {
+                    available = false;
+                    unavailableReason = `Requires ${formatResearchName(unit.requirements.research)} research`;
+                }
+            }
+            
+            // Add availability properties to unit
+            unit.available = available;
+            unit.unavailableReason = unavailableReason;
+        });
 
-        // Set initial selected unit
-        if (availableUnits.length > 0) {
+        availableUnits = allUnits;
+
+        // Set initial selected unit to first available unit
+        const firstAvailable = availableUnits.find(unit => unit.available);
+        if (firstAvailable) {
+            selectedUnit = firstAvailable;
+        } else if (availableUnits.length > 0) {
+            // If no available units, still select the first one for display purposes
             selectedUnit = availableUnits[0];
         }
+    }
+
+    // Helpers for unit requirements
+    function formatRaceName(race) {
+        if (!race) return "";
+        return race.charAt(0).toUpperCase() + race.slice(1);
+    }
+    
+    function formatStructureTypeName(type) {
+        if (!type) return "";
+        return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+    
+    function formatResearchName(research) {
+        if (!research) return "";
+        return research.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    // Select a unit - modified to allow selecting unavailable units for info display
+    function selectUnit(unit) {
+        selectedUnit = unit;
+        error = null;
     }
 
     // Calculate total resources needed
@@ -214,6 +354,15 @@
         };
     }
 
+    // Update completionInfo whenever relevant data changes
+    $effect(() => {
+        if (selectedUnit && quantity > 0) {
+            completionInfo = calculateCompletionTime();
+        } else {
+            completionInfo = null;
+        }
+    });
+
     // Format a number with commas
     function formatNumber(num) {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -247,16 +396,26 @@
         return name.charAt(0).toUpperCase() + name.slice(1);
     }
 
-    // Get player's resources
+    // Get player's resources - updated to use player's personal bank
     function getPlayerResources() {
         const player = get(currentPlayer);
-        const worldId = get(game).worldKey;
-
-        if (!player || !worldId || !player.worlds || !player.worlds[worldId]) {
-            return {};
+        if (!player || !player.id) return {};
+        
+        // Use player's personal bank at this structure
+        if (structureData && structureData.banks && structureData.banks[player.id]) {
+            const resources = {};
+            structureData.banks[player.id].forEach(item => {
+                if (item.type === 'resource') {
+                    // Convert item name to lowercase for consistency
+                    const resourceName = item.name.toLowerCase();
+                    resources[resourceName] = (resources[resourceName] || 0) + item.quantity;
+                }
+            });
+            return resources;
         }
-
-        return player.worlds[worldId].resources || {};
+        
+        // If no player bank, return empty object
+        return {};
     }
 
     // Check if player has enough resources
@@ -544,12 +703,9 @@
                             {#each availableUnits as unit}
                                 {@const IconComponent = getUnitIcon(unit)}
                                 <button
-                                    class="unit-option {selectedUnit?.id ===
-                                    unit.id
-                                        ? 'selected'
-                                        : ''}"
-                                    onclick={() => (selectedUnit = unit)}
-                                    title={unit.description}
+                                    class="unit-option {selectedUnit?.id === unit.id ? 'selected' : ''} {!unit.available ? 'unavailable' : ''}"
+                                    onclick={() => selectUnit(unit)}
+                                    title={unit.available ? unit.description : `${unit.description} - ${unit.unavailableReason}`}
                                 >
                                     <div class="unit-option-icon">
                                         {#if IconComponent}
@@ -559,6 +715,9 @@
                                     <div class="unit-option-info">
                                         <div class="unit-option-name">
                                             {unit.name}
+                                            {#if !unit.available}
+                                                <span class="locked-icon">🔒</span>
+                                            {/if}
                                         </div>
                                         <div class="unit-option-power">
                                             Power: {unit.power}
@@ -571,26 +730,28 @@
 
                     {#if selectedUnit}
                         <!-- Unit details -->
-                        <div class="unit-details">
+                        <div class="unit-details {!selectedUnit.available ? 'unavailable' : ''}">
                             <h5>{selectedUnit.name}</h5>
                             <p class="unit-description">
                                 {selectedUnit.description}
                             </p>
+                            
+                            {#if !selectedUnit.available}
+                                <div class="unavailable-reason">
+                                    <span class="locked-icon">🔒</span> {selectedUnit.unavailableReason}
+                                </div>
+                            {/if}
 
                             <div class="unit-stats">
                                 <div class="unit-stat">
                                     <span class="stat-label">Power:</span>
-                                    <span class="stat-value"
-                                        >{selectedUnit.power}</span
-                                    >
+                                    <span class="stat-value">{selectedUnit.power}</span>
                                 </div>
                                 <div class="unit-stat">
                                     <span class="stat-label">Time:</span>
-                                    <span class="stat-value"
-                                        >{formatTime(
-                                            selectedUnit.timePerUnit,
-                                        )} each</span
-                                    >
+                                    <span class="stat-value">{formatTime(
+                                        selectedUnit.timePerUnit,
+                                    )} each</span>
                                 </div>
                             </div>
 
@@ -606,115 +767,106 @@
                             </div>
                         </div>
 
-                        <!-- Quantity selection -->
-                        <div class="form-group">
-                            <label for="quantity">Quantity</label>
-                            <div class="quantity-control">
-                                <button
-                                    class="quantity-button"
-                                    onclick={() =>
-                                        (quantity = Math.max(
-                                            1,
-                                            quantity - 1,
-                                        ))}
-                                    disabled={isLoading || quantity <= 1}
-                                >
-                                    -
-                                </button>
-                                <input
-                                    type="number"
-                                    id="quantity"
-                                    bind:value={quantity}
-                                    min="1"
-                                    max="100"
-                                    disabled={isLoading}
-                                />
-                                <button
-                                    class="quantity-button"
-                                    onclick={() =>
-                                        (quantity = Math.min(
-                                            100,
-                                            quantity + 1,
-                                        ))}
-                                    disabled={isLoading || quantity >= 100}
-                                >
-                                    +
-                                </button>
+                        <!-- Only show quantity selection and recruitment UI if the unit is available -->
+                        {#if selectedUnit.available}
+                            <!-- Quantity selection -->
+                            <div class="form-group">
+                                <label for="quantity">Quantity</label>
+                                <div class="quantity-control">
+                                    <button
+                                        class="quantity-button"
+                                        onclick={() => (quantity = Math.max(1, quantity - 1))}
+                                        disabled={isLoading || quantity <= 1}
+                                    >
+                                        -
+                                    </button>
+                                    <input
+                                        type="number"
+                                        id="quantity"
+                                        bind:value={quantity}
+                                        min="1"
+                                        max="100"
+                                        disabled={isLoading}
+                                    />
+                                    <button
+                                        class="quantity-button"
+                                        onclick={() => (quantity = Math.min(100, quantity + 1))}
+                                        disabled={isLoading || quantity >= 100}
+                                    >
+                                        +
+                                    </button>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Total cost and time -->
-                        <div class="totals">
-                            <div class="total-section">
-                                <h6>Total Cost:</h6>
-                                <div class="total-items">
-                                    {#each Object.entries(calculateTotalCost()) as [resource, amount]}
-                                        {@const playerResource =
-                                            getPlayerResources()[
-                                                resource
-                                            ] || 0}
-                                        <div
-                                            class="total-item {playerResource <
-                                            amount
-                                                ? 'insufficient'
-                                                : ''}"
-                                            title={`You have ${playerResource} ${formatResource(resource)}`}
-                                        >
-                                            {formatResource(resource)}: {amount}
-                                            <span class="player-has"
-                                                >({playerResource})</span
+                            <!-- Total cost and time -->
+                            <div class="totals">
+                                <div class="total-section">
+                                    <h6>Total Cost:</h6>
+                                    <div class="total-items">
+                                        {#each Object.entries(calculateTotalCost()) as [resource, amount]}
+                                            {@const playerResource =
+                                                getPlayerResources()[
+                                                    resource
+                                                ] || 0}
+                                            <div
+                                                class="total-item {playerResource <
+                                                amount
+                                                    ? 'insufficient'
+                                                    : ''}"
+                                                title={`You have ${playerResource} ${formatResource(resource)}`}
                                             >
-                                        </div>
-                                    {/each}
-                                </div>
-                            </div>
-                            <div class="total-section">
-                                <h6>Time Required:</h6>
-                                <div class="time-info">
-                                    <div>
-                                        Production: {formatTime(
-                                            completionInfo?.seconds || 0,
-                                        )}
+                                                {formatResource(resource)}: {amount}
+                                                <span class="player-has"
+                                                    >({playerResource})</span
+                                                >
+                                            </div>
+                                        {/each}
                                     </div>
-                                    {#if completionInfo?.queueSeconds > 0}
+                                </div>
+                                <div class="total-section">
+                                    <h6>Time Required:</h6>
+                                    <div class="time-info">
                                         <div>
-                                            Queue wait: {formatTime(
-                                                completionInfo?.queueSeconds ||
-                                                    0,
+                                            Production: {formatTime(
+                                                completionInfo?.seconds || 0,
                                             )}
                                         </div>
-                                        <div class="completion-estimate">
-                                            Estimated completion: {formatDate(
-                                                completionInfo?.date,
-                                            )}
-                                        </div>
-                                    {/if}
+                                        {#if completionInfo?.queueSeconds > 0}
+                                            <div>
+                                                Queue wait: {formatTime(
+                                                    completionInfo?.queueSeconds ||
+                                                        0,
+                                                )}
+                                            </div>
+                                            <div class="completion-estimate">
+                                                Estimated completion: {formatDate(
+                                                    completionInfo?.date,
+                                                )}
+                                            </div>
+                                        {/if}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {#if error}
-                            <div class="error-message">{error}</div>
+                            {#if error}
+                                <div class="error-message">{error}</div>
+                            {/if}
+
+                            {#if success}
+                                <div class="success-message">{success}</div>
+                            {/if}
+
+                            <!-- Submit button -->
+                            <div class="form-actions">
+                                <button
+                                    class="recruit-button"
+                                    onclick={startRecruitment}
+                                    disabled={isLoading || !hasEnoughResources() || queue.length >= maxUnits}
+                                >
+                                    {isLoading ? "Processing..." : "Start Recruitment"}
+                                </button>
+                            </div>
                         {/if}
-
-                        {#if success}
-                            <div class="success-message">{success}</div>
-                        {/if}
-
-                        <!-- Submit button -->
-                        <div class="form-actions">
-                            <button
-                                class="recruit-button"
-                                onclick={startRecruitment}
-                                disabled={isLoading ||
-                                    !hasEnoughResources() ||
-                                    queue.length >= maxUnits}
-                            >
-                                {isLoading
-                                    ? "Processing..."
-                                    : "Start Recruitment"}
-                            </button>
-                        </div>
                     {/if}
                 </div>
             {/if}
@@ -1160,5 +1312,50 @@
         .unit-option {
             width: 100%;
         }
+    }
+
+    .unit-option.unavailable {
+        opacity: 0.7;
+        background-color: rgba(0, 0, 0, 0.05);
+        border-color: rgba(0, 0, 0, 0.1);
+        cursor: help;
+    }
+
+    .unit-option.unavailable:hover {
+        background-color: rgba(0, 0, 0, 0.08);
+    }
+
+    .unit-option.unavailable .unit-icon {
+        opacity: 0.5;
+    }
+
+    .locked-icon {
+        display: inline-block;
+        font-size: 0.7em;
+        margin-left: 0.3rem;
+        color: rgba(0, 0, 0, 0.6);
+    }
+
+    .unit-details.unavailable {
+        background-color: rgba(0, 0, 0, 0.05);
+        border-color: rgba(0, 0, 0, 0.15);
+    }
+
+    .unavailable-reason {
+        margin: 0.5rem 0 1rem;
+        padding: 0.5rem;
+        background-color: rgba(255, 152, 0, 0.1);
+        border: 1px solid rgba(255, 152, 0, 0.3);
+        border-radius: 0.3rem;
+        color: rgb(196, 98, 0);
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .unavailable-reason .locked-icon {
+        font-size: 1em;
+        color: rgb(196, 98, 0);
     }
 </style>
