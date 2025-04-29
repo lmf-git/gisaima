@@ -13,6 +13,7 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
+  import Shield from '../icons/Shield.svelte';
 
   // Props - using correct Svelte 5 runes syntax
   const { 
@@ -87,11 +88,36 @@
 
   // Function to check if recruitment is possible at this structure
   function canRecruitAtStructure() {
-    if (!structureData || !isOwner) return false;
+    // Check if structure exists
+    if (!structure) return false;
     
-    // Allow recruitment at certain structure types
-    const recruitmentStructures = ['spawn', 'barracks', 'village_hall', 'town_hall', 'city_hall'];
-    return recruitmentStructures.includes(structureData.type);
+    // Check if current player owns the structure
+    if (structure.owner !== $currentPlayer?.id) return false;
+    
+    // Check if structure type supports recruitment
+    // Typically fortresses, strongholds, barracks, etc. support recruitment
+    const recruitmentStructures = ['fortress', 'stronghold', 'barracks', 'outpost', 'castle'];
+    return recruitmentStructures.includes(structure.type?.toLowerCase());
+  }
+
+  // Function to execute various actions like 'recruitment'
+  function executeAction(action) {
+    if (onShowModal) {
+      switch (action) {
+        case 'recruitment':
+          onShowModal({ 
+            type: 'recruitment',
+            data: { 
+              x, 
+              y, 
+              structure,
+              tile
+            }
+          });
+          break;
+        // ...other cases...
+      }
+    }
   }
 </script>
 
@@ -235,6 +261,14 @@
             </div>
           {/if}
         </div>
+      {/if}
+
+      <!-- Recruitment button -->
+      {#if canRecruitAtStructure()}
+        <button class="action-button" onclick={() => executeAction('recruitment')}>
+          <Shield extraClass="action-icon shield-icon" />
+          Recruit Units
+        </button>
       {/if}
     </div>
   </div>
