@@ -469,6 +469,13 @@
     color: white;
   }
   
+  /* Add craft button styling with pinkish color */
+  .craft-button {
+    background-color: rgba(233, 30, 99, 0.65);
+    border-color: rgba(233, 30, 99, 0.85);
+    color: white;
+  }
+  
   .gather-button {
     background-color: rgba(255, 193, 7, 0.65);
     border-color: rgba(255, 193, 7, 0.85);
@@ -512,6 +519,11 @@
   
   .build-button:hover {
     background-color: rgba(121, 85, 72, 0.8);
+  }
+  
+  /* Add hover effect for craft button */
+  .craft-button:hover {
+    background-color: rgba(233, 30, 99, 0.8);
   }
   
   .gather-button:hover {
