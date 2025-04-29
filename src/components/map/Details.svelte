@@ -231,6 +231,18 @@
         });
         break;
         
+      case 'craft':
+        onShowModal({ 
+          type: 'craft', 
+          data: { 
+            x: tileData.x, 
+            y: tileData.y, 
+            structure: tileData.structure,
+            tile: tileData
+          } 
+        });
+        break;
+        
       default:
         console.warn("Unknown action:", action);
     }
@@ -334,6 +346,22 @@
       g.status === 'idle' &&
       !g.inBattle
     );
+  }
+  
+  function canCraft(tile) {
+    if (!tile || !$currentPlayer || !tile.structure) return false;
+    
+    // Can only craft at certain structures and if player has idle groups
+    // return (tile.structure?.type === 'crafting_table' || 
+    //        tile.structure?.type === 'forge' || 
+    //        tile.structure?.type === 'workshop' ||
+    //        tile.structure?.type === 'alchemy_lab') && 
+    //        tile.groups?.some(g => 
+    //          g.owner === $currentPlayer.id && 
+    //          g.status === 'idle' &&
+    //          !g.inBattle
+    //        );
+    return true;
   }
   
   function canJoinBattle(tile) {
@@ -688,6 +716,13 @@
                   <button class="action-button" onclick={() => executeAction('build')}>
                     <Hammer extraClass="action-icon hammer-icon" />
                     Build
+                  </button>
+                {/if}
+                
+                {#if canCraft(detailsData)}
+                  <button class="action-button craft-button" onclick={() => executeAction('craft')}>
+                    <Hammer extraClass="action-icon hammer-icon" />
+                    Craft
                   </button>
                 {/if}
                 
@@ -2043,6 +2078,5 @@
   
   .entity-action.flee-action:disabled {
     opacity: 0.6;
-    cursor: wait;
-  }
+    cursor: wait  }
 </style>

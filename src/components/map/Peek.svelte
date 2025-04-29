@@ -119,11 +119,28 @@
            );
   }
 
+  function canCraft(tile) {
+    if (!tile || !$currentPlayer || !tile.structure) return false;
+    
+    // Can only craft at certain structures or if player has idle groups
+    // return (tile.structure?.type === 'crafting_table' || 
+    //        tile.structure?.type === 'forge' || 
+    //        tile.structure?.type === 'workshop' ||
+    //        tile.structure?.type === 'alchemy_lab') && 
+    //        tile.groups?.some(g => 
+    //          g.owner === $currentPlayer.id && 
+    //          g.status === 'idle' &&
+    //          !g.inBattle
+    //        );
+    return true;
+  }
+
   // Define all possible actions
   const allActions = [
     { id: 'details', label: 'Details', icon: Info, condition: () => true }, // Always show details
     { id: 'inspect', label: 'Inspect', icon: Eye, condition: (tile) => tile?.structure },
     { id: 'build', label: 'Build', icon: Hammer, condition: canBuild }, // Updated to use canBuild condition
+    { id: 'craft', label: 'Craft', icon: Hammer, condition: canCraft }, // Add craft action
     { id: 'move', label: 'Move', icon: Compass, condition: canMove },
     { id: 'mobilise', label: 'Mobilise', icon: Rally, condition: canMobilize },
     { id: 'gather', label: 'Gather', icon: Crop, condition: canGather },

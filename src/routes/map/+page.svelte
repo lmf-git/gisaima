@@ -45,6 +45,7 @@
     import Demobilise from '../../components/map/Demobilise.svelte';
     import StructureOverview from '../../components/map/StructureOverview.svelte';
     import Gather from '../../components/map/Gather.svelte';
+    import Crafting from '../../components/map/Crafting.svelte'; // Uncomment this import
     import Recruitment from '../../components/map/Recruitment.svelte'; // Add the import for Recruitment
     import Map from '../../components/icons/Map.svelte';
     import Spyglass from '../../components/icons/Spyglass.svelte';
@@ -1314,6 +1315,14 @@
           {:else if modalState.type === 'mobilise'}
             <Mobilise 
               onClose={closeModal}
+            />
+          {:else if modalState.type === 'craft' && modalState.data}
+            <Crafting
+              structure={modalState.data.structure}
+              x={modalState.data.x}
+              y={modalState.data.y}
+              onClose={closeModal}
+              onCraftStart={savePlayerAchievement}
             />
           {:else if modalState.type === 'build' && modalState.data}
             <Build 
