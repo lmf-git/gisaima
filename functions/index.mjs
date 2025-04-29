@@ -13,11 +13,12 @@ initializeApp();
 export { mobiliseUnits } from './actions/mobilise.mjs';
 export { demobiliseUnits } from './actions/demobilise.mjs';
 export { moveGroup } from './actions/move.mjs';
-export { cancelMove } from './actions/cancelMove.mjs'; // Add the new cancelMove function
+export { cancelMove } from './actions/cancelMove.mjs';
 export { attack } from './actions/attack.mjs';
 export { startGathering } from './actions/gather.mjs';
 export { joinBattle } from './actions/joinBattle.mjs';
 export { buildStructure } from './actions/build.mjs';
+export { fleeBattle } from './actions/fleeBattle.mjs'; // Add the new fleeBattle function
 
 // Scheduled tasks
 export { processGameTicks } from './tick.mjs';

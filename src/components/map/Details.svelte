@@ -513,6 +513,58 @@
       cancellingGroupId = null;
     }
   }
+
+  // Add state to track fleeing group ID
+  let fleeingGroupId = $state(null);
+
+  // Add function to check if a group can flee from battle
+  function canFleeFromBattle(group) {
+    if (!group || !$currentPlayer) return false;
+    
+    // Group must be owned by current player, in battle, and not already fleeing
+    return group.owner === $currentPlayer.id && 
+           group.inBattle === true && 
+           group.battleId && 
+           fleeingGroupId !== group.id;
+  }
+
+  // Function to handle fleeing from battle
+  async function handleFleeBattle(group, event) {
+    if (!group || !$currentPlayer || fleeingGroupId) {
+      return;
+    }
+    
+    // Stop event propagation
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    // Set fleeing state
+    fleeingGroupId = group.id;
+    
+    try {
+      // Get Firebase functions
+      const functions = getFunctions();
+      const fleeBattleFunction = httpsCallable(functions, 'fleeBattle');
+      
+      // Call the fleeBattle function with group data
+      const result = await fleeBattleFunction({
+        groupId: group.id,
+        x: group.x,
+        y: group.y,
+        worldId: $game.worldKey
+      });
+      
+      console.log('Successfully fled from battle:', result.data);
+      
+      // No need to update UI manually as Firebase will trigger changes
+    } catch (error) {
+      console.error('Error fleeing from battle:', error);
+    } finally {
+      // Clear fleeing state
+      fleeingGroupId = null;
+    }
+  }
 </script>
 
 <!-- Add global keyboard event listener -->
@@ -790,58 +842,6 @@
                         <Compass extraClass="action-icon-small compass-icon" />
                         Move
                       </button>
-                      {#if detailsData.items?.length > 0}
-                        <button class="entity-action" onclick={() => executeAction('gather', { group })}>
-                          <Crop extraClass="action-icon-small crop-icon" />
-                          Gather
-                        </button>
-                      {/if}
-                      {#if detailsData.battles?.length > 0}
-                        <button class="entity-action" onclick={() => executeAction('joinBattle', { group })}>
-                          Join Battle
-                        </button>
-                      {/if}
-                    </div>
-                  {:else if isOwnedByCurrentPlayer(group) && group.status === 'moving'}
-                    <div class="entity-actions">
-                      <button 
-                        class="entity-action cancel-action" 
-                        onclick={(e) => cancelGroupMove(group, e)}
-                        disabled={cancellingGroupId === group.id}
-                      >
-                        <Cancel extraClass="action-icon-small cancel-icon" />
-                        {cancellingGroupId === group.id ? 'Cancelling...' : 'Cancel Move'}
-                      </button>
-                    </div>
-                  {/if}
-                </div>
-              {/each}
-            </div>
-          {/if}
-        </div>
-      {/if}
-      
-      <!-- Players section with styled count -->
-      {#if detailsData.players?.length > 0}
-        <div class="entities-section">
-          <div 
-            class="section-header"
-            onclick={() => toggleSection('players')}
-            role="button"
-            tabindex="0"
-            aria-expanded={!collapsedSections.players}
-            onkeydown={(e) => handleSectionKeyDown(e, 'players')}
-          >
-            <div class="section-title">
-              Players <span class="entity-count players-count">{detailsData.players.length}</span>
-            </div>
-            <div class="section-controls">
-              {#if !collapsedSections.players}
-                <div class="sort-controls">
-                  <button 
-                    class="sort-option"
-                    class:active={sortOptions.players.by === 'name'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('players', 'name'); }}
                   >
                     <span>Name</span>
                     {#if sortOptions.players.by === 'name'}
