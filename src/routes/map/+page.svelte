@@ -930,6 +930,18 @@
               data: actionData
             });
             break;
+            
+          case 'craft':
+            showModal({
+              type: 'craft',
+              data: {
+                x: actionData.x,
+                y: actionData.y,
+                structure: actionData.tile.structure,
+                tile: actionData.tile
+              }
+            });
+            break;
 
           case 'recruitment': // Handle recruitment action
             showModal({

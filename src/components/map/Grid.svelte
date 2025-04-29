@@ -963,7 +963,8 @@
       onClick({
         x: centerTileData.x,
         y: centerTileData.y,
-        action: actionId
+        action: actionId,
+        tile: centerTileData  // Include the complete tile data with structure information
       });
     }
   }
@@ -1911,7 +1912,7 @@
     width: 0.8em;
     height: 0.8em;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.6);
+       background-color: rgba(255, 255, 255, 0.6);
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);

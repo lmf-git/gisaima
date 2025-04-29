@@ -179,18 +179,22 @@
     switch (action) {
       case 'mobilise':
         onShowModal({ type: 'mobilise', data: tileData });
+        onClose(); // Close details panel when opening another modal
         break;
         
       case 'move':
         onShowModal({ type: 'move', data: data ? { ...tileData, group: data.group } : tileData });
+        onClose(); // Close details panel
         break;
 
       case 'build':
         onShowModal({ type: 'build', data: tileData });
+        onClose(); // Close details panel
         break;
         
       case 'attack':
         onShowModal({ type: 'attack', data: tileData });
+        onClose(); // Close details panel
         break;
         
       case 'gather':
@@ -203,14 +207,17 @@
           : { ...tileData };
           
         onShowModal({ type: 'gather', data: gatherData });
+        onClose(); // Close details panel
         break;
         
       case 'demobilise':
         onShowModal({ type: 'demobilise', data: tileData });
+        onClose(); // Close details panel
         break;
         
       case 'joinBattle':
         onShowModal({ type: 'joinBattle', data: data ? { ...tileData, group: data.group } : tileData });
+        onClose(); // Close details panel
         break;
         
       case 'inspect':
@@ -229,6 +236,7 @@
             tile: tileData 
           } 
         });
+        onClose(); // Close details panel
         break;
         
       case 'craft':
@@ -241,6 +249,7 @@
             tile: tileData
           } 
         });
+        onClose(); // Close details panel
         break;
         
       default:
@@ -2067,7 +2076,7 @@
   /* Add the flee-action button style */
   .entity-action.flee-action {
     background-color: rgba(156, 39, 176, 0.1);
-    border-color: rgba(156, 39, 176, 0.3);
+border-color: rgba(156, 39, 176, 0.3);
     color: rgba(156, 39, 176, 0.9);
   }
   
@@ -2078,5 +2087,6 @@
   
   .entity-action.flee-action:disabled {
     opacity: 0.6;
-    cursor: wait  }
+    cursor: wait;
+  }
 </style>
