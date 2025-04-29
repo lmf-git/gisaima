@@ -104,9 +104,7 @@
       g.owner === $currentPlayer.id && 
       g.status === 'idle' &&
       !g.inBattle
-    ) && 
-    // And there are items to gather
-    tile.items?.length > 0;
+    );
   }
   
   function canJoinBattle(tile) {
