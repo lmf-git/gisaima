@@ -1309,42 +1309,62 @@
               tile={modalState.data.tile}
               onClose={closeModal}
               onAchievement={savePlayerAchievement}
+              onShowModal={showModal}
             />
           {:else if modalState.type === 'mobilise'}
             <Mobilise 
               onClose={closeModal}
             />
-          {:else if modalState.type === 'build'}
-            <Build
+          {:else if modalState.type === 'build' && modalState.data}
+            <Build 
+              x={modalState.data.x}
+              y={modalState.data.y}
+              tile={modalState.data.tile}
               onClose={closeModal}
             />
-          {:else if modalState.type === 'move'}
-            <Move 
-              onClose={closeModal}
-              onDrawPath={startPathDrawing}
-              groupData={modalState.data?.group || null}
-            />
-          {:else if modalState.type === 'attack'}
-            <AttackGroups 
+          {:else if modalState.type === 'move' && modalState.data}
+            <Move
+              x={modalState.data.x}
+              y={modalState.data.y}
+              tile={modalState.data.tile}
+              onStartPathDrawing={startPathDrawing}
               onClose={closeModal}
             />
-          {:else if modalState.type === 'joinBattle'}
+          {:else if modalState.type === 'attack' && modalState.data}
+            <AttackGroups
+              x={modalState.data.x}
+              y={modalState.data.y}
+              tile={modalState.data.tile} 
+              onClose={closeModal}
+            />
+          {:else if modalState.type === 'joinBattle' && modalState.data}
             <JoinBattle
+              x={modalState.data.x}
+              y={modalState.data.y}
+              tile={modalState.data.tile}
               onClose={closeModal}
-              groupData={modalState.data?.group || null}
             />
-          {:else if modalState.type === 'gather'}
+          {:else if modalState.type === 'gather' && modalState.data}
             <Gather
+              x={modalState.data.x}
+              y={modalState.data.y}
+              tile={modalState.data.tile}
               onClose={closeModal}
-              groupData={modalState.data?.group || null}
             />
-          {:else if modalState.type === 'demobilise'}
+          {:else if modalState.type === 'demobilise' && modalState.data}
             <Demobilise
+              x={modalState.data.x}
+              y={modalState.data.y}
+              tile={modalState.data.tile}
               onClose={closeModal}
             />
-          {:else if modalState.type === 'recruitment'}
+          {:else if modalState.type === 'recruitment' && modalState.data}
             <Recruitment
+              structure={modalState.data.structure}
+              x={modalState.data.x}
+              y={modalState.data.y}
               onClose={closeModal}
+              onRecruitStart={savePlayerAchievement}
             />
           {/if}
         {/if}

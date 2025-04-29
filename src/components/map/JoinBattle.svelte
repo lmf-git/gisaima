@@ -5,7 +5,14 @@
   import Close from '../icons/Close.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
 
-  const { onClose = () => {}, onJoinBattle = () => {} } = $props();
+  const { 
+    onClose = () => {}, 
+    onJoinBattle = () => {},
+    groupData = null, // Add missing groupData prop
+    x,
+    y,
+    tile
+  } = $props();
 
   // Get tile data directly from the targetStore (same as current player location)
   // This makes more sense as players can only join battles at their current location

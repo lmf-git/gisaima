@@ -6,7 +6,14 @@
   import { getFunctions, httpsCallable } from 'firebase/functions';
 
   // Props with default empty function to avoid destructuring errors - only need callbacks
-  const { onClose = () => {}, onGather = () => {} } = $props();
+  const { 
+    onClose = () => {}, 
+    onGather = () => {},
+    groupData = null, // Add missing groupData prop
+    x,
+    y,
+    tile
+  } = $props();
   
   // Get functions instance
   const functions = getFunctions();

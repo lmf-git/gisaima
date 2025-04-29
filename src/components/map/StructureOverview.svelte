@@ -21,7 +21,8 @@
     y = 0, 
     tile = null, 
     onClose = () => {},
-    onAchievement = () => {} // Add this to handle achievements
+    onAchievement = () => {}, // Add this to handle achievements
+    onShowModal = () => {} // Add this prop to handle showing modals
   } = $props();
   
   // Add state to track collapsed sections
@@ -89,15 +90,16 @@
   // Function to check if recruitment is possible at this structure
   function canRecruitAtStructure() {
     // Check if structure exists
-    if (!structure) return false;
+    if (!tileData?.structure) return false;
     
     // Check if current player owns the structure
-    if (structure.owner !== $currentPlayer?.id) return false;
+    // if (tileData.structure.owner !== $currentPlayer?.id) return false;
     
     // Check if structure type supports recruitment
     // Typically fortresses, strongholds, barracks, etc. support recruitment
-    const recruitmentStructures = ['fortress', 'stronghold', 'barracks', 'outpost', 'castle'];
-    return recruitmentStructures.includes(structure.type?.toLowerCase());
+    // const recruitmentStructures = ['fortress', 'stronghold', 'barracks', 'outpost', 'castle'];
+    // return recruitmentStructures.includes(tileData.structure.type?.toLowerCase());
+    return true;
   }
 
   // Function to execute various actions like 'recruitment'
@@ -110,8 +112,8 @@
             data: { 
               x, 
               y, 
-              structure,
-              tile
+              structure: tileData?.structure,
+              tile: tileData
             }
           });
           break;
