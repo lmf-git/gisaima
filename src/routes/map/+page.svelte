@@ -1309,7 +1309,6 @@
           {:else if modalState.type === 'build'}
             <Build
               onClose={closeModal}
-              onBuild={handleBuild}
             />
           {:else if modalState.type === 'move'}
             <Move 
@@ -1320,24 +1319,20 @@
           {:else if modalState.type === 'attack'}
             <AttackGroups 
               onClose={closeModal}
-              onAttack={handleAttack}
             />
           {:else if modalState.type === 'joinBattle'}
             <JoinBattle
               onClose={closeModal}
               groupData={modalState.data?.group || null}
-              onJoinBattle={handleJoinBattle}
             />
           {:else if modalState.type === 'gather'}
             <Gather
               onClose={closeModal}
-              onGatherComplete={handleGather}
               groupData={modalState.data?.group || null}
             />
           {:else if modalState.type === 'demobilise'}
             <Demobilise
               onClose={closeModal}
-              onDemobilize={handleDemobilize}
             />
           {/if}
         {/if}
