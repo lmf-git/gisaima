@@ -38,6 +38,150 @@
     // Flag to track if component is ready
     let isReady = $state(false);
 
+    // Hardcoded crafting recipes
+    const CRAFTING_RECIPES = {
+        // Basic tools
+        'simple_axe': {
+            id: 'simple_axe',
+            name: 'Simple Axe',
+            description: 'A basic tool for cutting wood more efficiently',
+            category: 'tool',
+            type: 'axe',
+            materials: { 
+                'wooden_sticks': 2, 
+                'stone_pieces': 1 
+            },
+            timeToCraft: 180, // seconds
+            level: 1,
+            effects: {
+                'woodGatheringSpeed': 1.2
+            }
+        },
+        'simple_pickaxe': {
+            id: 'simple_pickaxe',
+            name: 'Simple Pickaxe',
+            description: 'A basic tool for mining stone and minerals',
+            category: 'tool',
+            type: 'pickaxe',
+            materials: { 
+                'wooden_sticks': 2, 
+                'stone_pieces': 2 
+            },
+            timeToCraft: 240,
+            level: 1,
+            effects: {
+                'stoneGatheringSpeed': 1.2
+            }
+        },
+        
+        // Weapons
+        'wooden_sword': {
+            id: 'wooden_sword',
+            name: 'Wooden Sword',
+            description: 'A basic weapon for self-defense',
+            category: 'weapon',
+            type: 'sword',
+            materials: { 
+                'wooden_sticks': 3 
+            },
+            timeToCraft: 120,
+            level: 1,
+            effects: {
+                'attackPower': 1.1
+            }
+        },
+        'stone_sword': {
+            id: 'stone_sword',
+            name: 'Stone Sword',
+            description: 'A sturdier weapon with better damage',
+            category: 'weapon',
+            type: 'sword',
+            materials: { 
+                'wooden_sticks': 1, 
+                'stone_pieces': 3 
+            },
+            timeToCraft: 300,
+            level: 2,
+            effects: {
+                'attackPower': 1.3
+            }
+        },
+        
+        // Armor
+        'leather_armor': {
+            id: 'leather_armor',
+            name: 'Leather Armor',
+            description: 'Basic armor providing some protection',
+            category: 'armor',
+            type: 'chest',
+            materials: { 
+                'leather': 5 
+            },
+            timeToCraft: 360,
+            level: 1,
+            effects: {
+                'defense': 1.2
+            }
+        },
+        
+        // Race-specific items
+        'elven_bow': {
+            id: 'elven_bow',
+            name: 'Elven Bow',
+            description: 'A finely crafted bow with increased range',
+            category: 'weapon',
+            type: 'bow',
+            materials: { 
+                'wooden_sticks': 4, 
+                'herbs': 2 
+            },
+            timeToCraft: 420,
+            level: 2,
+            raceRequired: 'elf',
+            effects: {
+                'attackPower': 1.4,
+                'range': 1.2
+            }
+        },
+        'dwarven_hammer': {
+            id: 'dwarven_hammer',
+            name: 'Dwarven Hammer',
+            description: 'Heavy hammer with excellent crafting properties',
+            category: 'tool',
+            type: 'hammer',
+            materials: { 
+                'wooden_sticks': 2, 
+                'stone_pieces': 3,
+                'iron': 1
+            },
+            timeToCraft: 480,
+            level: 2,
+            raceRequired: 'dwarf',
+            effects: {
+                'craftingSpeed': 1.3,
+                'buildSpeed': 1.2
+            }
+        },
+        
+        // Consumables
+        'healing_potion': {
+            id: 'healing_potion',
+            name: 'Healing Potion',
+            description: 'Restores health during battle',
+            category: 'consumable',
+            type: 'potion',
+            materials: { 
+                'herbs': 3, 
+                'water': 1 
+            },
+            timeToCraft: 150,
+            level: 1,
+            effects: {
+                'healing': 20
+            }
+        }
+    };
+
     // Load data when component mounts
     onMount(async () => {
         isLoading = true;
@@ -71,21 +215,55 @@
         }
     }
 
-    // Load available recipes from cloud function
+    // Load available recipes from hardcoded data instead of cloud function
     async function loadAvailableRecipes() {
-        const functions = getFunctions();
-        const getRecipesFn = httpsCallable(functions, "getAvailableRecipes");
+        try {
+            const player = get(currentPlayer);
+            // Get player's race and crafting level
+            const playerRace = player?.race || '';
+            playerCraftingLevel = player?.skills?.crafting || 1;
+            
+            // Apply structure bonus if available
+            if (structure?.bonuses?.crafting?.timeReduction) {
+                craftingBonus = structure.bonuses.crafting.timeReduction;
+            }
 
-        const result = await getRecipesFn({
-            worldId: get(game).worldKey,
-            x,
-            y,
-            structureId: structure?.id
-        });
-
-        if (result.data.success) {
+            // Process recipes to check availability
+            const recipes = Object.values(CRAFTING_RECIPES).map(recipe => {
+                // Deep copy the recipe to avoid modifying the original
+                const recipeCopy = { ...recipe };
+                
+                // Check availability
+                let available = true;
+                let unavailableReason = '';
+                
+                // Check level requirement
+                if (recipe.level > playerCraftingLevel) {
+                    available = false;
+                    unavailableReason = `Requires crafting level ${recipe.level}`;
+                }
+                
+                // Check race requirement if applicable
+                if (recipe.raceRequired && playerRace !== recipe.raceRequired) {
+                    available = false;
+                    unavailableReason = `Requires ${recipe.raceRequired} race`;
+                }
+                
+                // Add availability info
+                recipeCopy.available = available;
+                recipeCopy.unavailableReason = unavailableReason;
+                
+                // Apply structure bonuses if available
+                if (available && craftingBonus > 0) {
+                    recipeCopy.timeToCraft = Math.max(1, Math.floor(recipeCopy.timeToCraft * (1 - craftingBonus)));                    
+                    recipeCopy.bonusApplied = true;
+                }
+                
+                return recipeCopy;
+            });
+            
             // Set available recipes
-            availableRecipes = result.data.recipes;
+            availableRecipes = recipes;
             
             // Extract unique categories
             const uniqueCategories = ['all'];
@@ -96,19 +274,14 @@
             });
             categories = uniqueCategories;
             
-            // Set player crafting level
-            playerCraftingLevel = result.data.playerCraftingLevel || 1;
-            
-            // Set crafting bonus if available
-            if (result.data.structureBonuses) {
-                craftingBonus = result.data.structureBonuses.timeReduction || 0;
-            }
-            
             // Set initial selected recipe (the first available one)
             const firstAvailable = availableRecipes.find(r => r.available);
             if (firstAvailable) {
                 selectedRecipe = firstAvailable;
             }
+        } catch (err) {
+            console.error("Error loading recipes:", err);
+            error = "Failed to load recipes";
         }
     }
 

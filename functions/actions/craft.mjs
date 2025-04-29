@@ -528,7 +528,7 @@ export const getAvailableRecipes = onCall({ maxInstances: 20 }, async (request) 
     const db = getDatabase();
     const playerRef = db.ref(`players/${userId}/worlds/${worldId}`);
     
-    // Get player data
+    // Get player data - we only need race and crafting level
     const playerSnapshot = await playerRef.once('value');
     if (!playerSnapshot.exists()) {
       throw new HttpsError('not-found', 'Player not found in this world');
@@ -538,8 +538,7 @@ export const getAvailableRecipes = onCall({ maxInstances: 20 }, async (request) 
     const playerRace = playerData.race;
     const playerCraftingLevel = playerData.skills?.crafting || 1;
     
-    // If structure is provided, check for special recipes
-    let structureType = null;
+    // Check for structure bonuses (simplified)
     let structureBonuses = {};
     
     if (structureId && x !== undefined && y !== undefined) {
@@ -550,8 +549,6 @@ export const getAvailableRecipes = onCall({ maxInstances: 20 }, async (request) 
       
       if (structureSnapshot.exists()) {
         const structureData = structureSnapshot.val();
-        structureType = structureData.type;
-        
         // Check for crafting bonuses
         if (structureData.bonuses?.crafting) {
           structureBonuses = structureData.bonuses.crafting;
@@ -559,7 +556,7 @@ export const getAvailableRecipes = onCall({ maxInstances: 20 }, async (request) 
       }
     }
     
-    // Filter recipes based on player level, race, and structure
+    // Filter recipes based on player level, race, and structure - using hardcoded recipes
     const availableRecipes = Object.entries(CraftingRecipes).map(([id, recipe]) => {
       // Deep copy the recipe to avoid modifying the original
       const recipeCopy = JSON.parse(JSON.stringify(recipe));
@@ -581,27 +578,13 @@ export const getAvailableRecipes = onCall({ maxInstances: 20 }, async (request) 
         unavailableReason = `Requires ${recipe.raceRequired} race`;
       }
       
-      // Check structure requirements if applicable
-      if (recipe.structureRequired) {
-        if (!structureType) {
-          available = false;
-          unavailableReason = `Requires a ${recipe.structureRequired} structure`;
-        } else if (Array.isArray(recipe.structureRequired) && !recipe.structureRequired.includes(structureType)) {
-          available = false;
-          unavailableReason = `Requires one of these structures: ${recipe.structureRequired.join(', ')}`;
-        } else if (typeof recipe.structureRequired === 'string' && recipe.structureRequired !== structureType) {
-          available = false;
-          unavailableReason = `Requires a ${recipe.structureRequired} structure`;
-        }
-      }
-      
       // Add availability info
       recipeCopy.available = available;
       recipeCopy.unavailableReason = unavailableReason;
       
       // Apply structure bonuses if available
       if (available && Object.keys(structureBonuses).length > 0) {
-        recipeCopy.timeToCraft = Math.max(1, Math.floor(recipeCopy.timeToCraft * (structureBonuses.timeReduction || 1)));
+        recipeCopy.timeToCraft = Math.max(1, Math.floor(recipeCopy.timeToCraft * (1 - (structureBonuses.timeReduction || 0))));
         
         if (recipeCopy.effects) {
           for (const [effect, value] of Object.entries(recipeCopy.effects)) {
