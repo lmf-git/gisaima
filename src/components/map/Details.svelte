@@ -8,6 +8,7 @@
   import Close from '../icons/Close.svelte';
   import Torch from '../icons/Torch.svelte';
   import Structure from '../icons/Structure.svelte';
+  import Cancel from '../icons/Close.svelte'; // Reusing Close icon for cancel
 
   // Import race icon components
   import Human from '../icons/Human.svelte';
@@ -471,6 +472,47 @@
       toggleSection(sectionId);
     }
   }
+
+  // Track cancellation state
+  let cancellingGroupId = $state(null);
+
+  // Function to cancel group movement
+  async function cancelGroupMove(group, event) {
+    if (!group || !$currentPlayer || cancellingGroupId) {
+      return;
+    }
+    
+    // Stop event propagation to prevent other click handlers from triggering
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    // Set cancelling state
+    cancellingGroupId = group.id;
+    
+    try {
+      // Get Firebase functions
+      const functions = getFunctions();
+      const cancelMoveFunction = httpsCallable(functions, 'cancelMove');
+      
+      // Call the cancelMove function with group and location data
+      const result = await cancelMoveFunction({
+        groupId: group.id,
+        x: group.x,
+        y: group.y,
+        worldId: $game.worldKey
+      });
+      
+      console.log('Movement cancelled successfully:', result.data);
+      
+      // No need to update UI here as Firebase will trigger changes via subscription
+    } catch (error) {
+      console.error('Error cancelling movement:', error);
+    } finally {
+      // Clear cancelling state
+      cancellingGroupId = null;
+    }
+  }
 </script>
 
 <!-- Add global keyboard event listener -->
@@ -759,6 +801,17 @@
                           Join Battle
                         </button>
                       {/if}
+                    </div>
+                  {:else if isOwnedByCurrentPlayer(group) && group.status === 'moving'}
+                    <div class="entity-actions">
+                      <button 
+                        class="entity-action cancel-action" 
+                        onclick={(e) => cancelGroupMove(group, e)}
+                        disabled={cancellingGroupId === group.id}
+                      >
+                        <Cancel extraClass="action-icon-small cancel-icon" />
+                        {cancellingGroupId === group.id ? 'Cancelling...' : 'Cancel Move'}
+                      </button>
                     </div>
                   {/if}
                 </div>
@@ -1893,5 +1946,22 @@
     flex-wrap: wrap;
     font-size: 0.85em;
     color: rgba(0, 0, 0, 0.7);
+  }
+  
+  /* Add styling for cancel button */
+  .entity-action.cancel-action {
+    background-color: rgba(244, 67, 54, 0.1);
+    border-color: rgba(244, 67, 54, 0.3);
+    color: rgba(244, 67, 54, 0.9);
+  }
+  
+  .entity-action.cancel-action:hover:not(:disabled) {
+    background-color: rgba(244, 67, 54, 0.2);
+    transform: translateY(-1px);
+  }
+  
+  .entity-action.cancel-action:disabled {
+    opacity: 0.6;
+    cursor: wait;
   }
 </style>
