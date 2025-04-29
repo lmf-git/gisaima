@@ -1862,6 +1862,11 @@
     gap: 1em; /* Add 1em gap between icon and content */
   }
   
+  /* Add spacing for player entity icons to match the gap in entity-left */
+  .entity.player .entity-icon {
+    margin-right: 1em;
+  }
+  
   .entity-info {
     flex: 1;
     min-width: 0;
