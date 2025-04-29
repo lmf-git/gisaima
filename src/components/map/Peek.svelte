@@ -57,7 +57,7 @@
     if (!tile || !$currentPlayer) return false;
     
     // Can only build if player has at least one idle group on the tile
-    return tile.groups?.some(g => 
+    return !tile?.structure && tile.groups?.some(g => 
       g.owner === $currentPlayer.id && 
       g.status === 'idle' &&
       !g.inBattle
