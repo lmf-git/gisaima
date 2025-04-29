@@ -842,6 +842,70 @@
                         <Compass extraClass="action-icon-small compass-icon" />
                         Move
                       </button>
+                      {#if detailsData.items?.length > 0}
+                        <button class="entity-action" onclick={() => executeAction('gather', { group })}>
+                          <Crop extraClass="action-icon-small crop-icon" />
+                          Gather
+                        </button>
+                      {/if}
+                      {#if detailsData.battles?.length > 0}
+                        <button class="entity-action" onclick={() => executeAction('joinBattle', { group })}>
+                          Join Battle
+                        </button>
+                      {/if}
+                    </div>
+                  {:else if isOwnedByCurrentPlayer(group) && group.status === 'moving'}
+                    <div class="entity-actions">
+                      <button 
+                        class="entity-action cancel-action" 
+                        onclick={(e) => cancelGroupMove(group, e)}
+                        disabled={cancellingGroupId === group.id}
+                      >
+                        <Cancel extraClass="action-icon-small cancel-icon" />
+                        {cancellingGroupId === group.id ? 'Cancelling...' : 'Cancel Move'}
+                      </button>
+                    </div>
+                  {:else if canFleeFromBattle(group)}
+                    <!-- Add new flee button for groups in battle -->
+                    <div class="entity-actions">
+                      <button 
+                        class="entity-action flee-action" 
+                        onclick={(e) => handleFleeBattle(group, e)}
+                        disabled={fleeingGroupId === group.id}
+                      >
+                        <Cancel extraClass="action-icon-small flee-icon" />
+                        {fleeingGroupId === group.id ? 'Fleeing...' : 'Flee Battle'}
+                      </button>
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      {/if}
+      
+      <!-- Players section with styled count -->
+      {#if detailsData.players?.length > 0}
+        <div class="entities-section">
+          <div 
+            class="section-header"
+            onclick={() => toggleSection('players')}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.players}
+            onkeydown={(e) => handleSectionKeyDown(e, 'players')}
+          >
+            <div class="section-title">
+              Players <span class="entity-count players-count">{detailsData.players.length}</span>
+            </div>
+            <div class="section-controls">
+              {#if !collapsedSections.players}
+                <div class="sort-controls">
+                  <button 
+                    class="sort-option"
+                    class:active={sortOptions.players.by === 'name'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('players', 'name'); }}
                   >
                     <span>Name</span>
                     {#if sortOptions.players.by === 'name'}
@@ -1961,6 +2025,23 @@
   }
   
   .entity-action.cancel-action:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  /* Add the flee-action button style */
+  .entity-action.flee-action {
+    background-color: rgba(156, 39, 176, 0.1);
+    border-color: rgba(156, 39, 176, 0.3);
+    color: rgba(156, 39, 176, 0.9);
+  }
+  
+  .entity-action.flee-action:hover:not(:disabled) {
+    background-color: rgba(156, 39, 176, 0.2);
+    transform: translateY(-1px);
+  }
+  
+  .entity-action.flee-action:disabled {
     opacity: 0.6;
     cursor: wait;
   }
