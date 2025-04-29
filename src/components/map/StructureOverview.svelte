@@ -14,6 +14,7 @@
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
   import Shield from '../icons/Shield.svelte';
+  import Hammer from '../icons/Hammer.svelte'; // For upgrade icon
 
   // Props - using correct Svelte 5 runes syntax
   const { 
@@ -27,11 +28,17 @@
   
   // Add state to track collapsed sections
   let collapsedSections = $state({
-    items: false
+    items: false,
+    building: false
   });
   
   // Add state for storage tab selection
   let activeTab = $state('shared');
+  
+  // Add state for upgrade process
+  let isUpgrading = $state(false);
+  let upgradeError = $state(null);
+  let upgradeSuccess = $state(null);
 
   // Fix the derived value to return the actual data, not a function
   let tileData = $derived($targetStore || null);
@@ -117,9 +124,169 @@
             }
           });
           break;
+        case 'upgrade':
+          onShowModal({
+            type: 'upgrade',
+            data: {
+              x,
+              y,
+              structure: tileData?.structure,
+              tile: tileData
+            }
+          });
+          break;
         // ...other cases...
       }
     }
+  }
+
+  // New function to check if structure can be upgraded
+  function canUpgradeStructure() {
+    if (!tileData?.structure) return false;
+    
+    // Check if structure is owned by player or is a public structure like spawn
+    const isOwner = isOwnedByCurrentPlayer(tileData?.structure);
+    const isSpawn = tileData?.structure?.type === 'spawn';
+    
+    // Check level - make sure it's not at max level (assumed max level 5)
+    const currentLevel = tileData?.structure?.level || 1;
+    const maxLevel = 5;
+    
+    // Can upgrade if the player owns it or it's a spawn point
+    return (isOwner || isSpawn) && currentLevel < maxLevel;
+  }
+
+  // Function to get required resources for upgrade
+  function getUpgradeRequirements() {
+    if (!tileData?.structure) return [];
+    
+    const currentLevel = tileData?.structure?.level || 1;
+    const structureType = tileData?.structure?.type || 'generic';
+    
+    // Base requirements scaling with level
+    const baseWood = currentLevel * 5;
+    const baseStone = currentLevel * 3;
+    
+    // Different structure types have different requirements
+    const requirements = [];
+    
+    if (structureType === 'outpost' || structureType === 'spawn') {
+      requirements.push({ name: 'Wooden Sticks', quantity: baseWood });
+      requirements.push({ name: 'Stone Pieces', quantity: baseStone });
+    } else if (structureType === 'stronghold' || structureType === 'fortress') {
+      requirements.push({ name: 'Wooden Sticks', quantity: baseWood * 1.5 });
+      requirements.push({ name: 'Stone Pieces', quantity: baseStone * 1.5 });
+      requirements.push({ name: 'Iron Ore', quantity: currentLevel * 2 });
+    } else {
+      // Default requirements
+      requirements.push({ name: 'Wooden Sticks', quantity: baseWood });
+      requirements.push({ name: 'Stone Pieces', quantity: baseStone });
+    }
+    
+    // Higher level upgrades might require special materials
+    if (currentLevel >= 3) {
+      requirements.push({ name: 'Crystal Shard', quantity: 1 });
+    }
+    
+    return requirements;
+  }
+
+  // Function to check if player has resources for upgrade
+  function hasResourcesForUpgrade() {
+    const requirements = getUpgradeRequirements();
+    if (!requirements.length) return false;
+    
+    // Check both shared storage and personal bank
+    const sharedItems = tileData?.structure?.items || [];
+    const personalItems = hasPersonalBank ? tileData?.structure?.banks[$currentPlayer.id] : [];
+    
+    // Combine available resources from both sources
+    const availableResources = {};
+    
+    // Count shared resources
+    sharedItems.forEach(item => {
+      if (!availableResources[item.name]) {
+        availableResources[item.name] = 0;
+      }
+      availableResources[item.name] += item.quantity || 0;
+    });
+    
+    // Count personal resources
+    personalItems.forEach(item => {
+      if (!availableResources[item.name]) {
+        availableResources[item.name] = 0;
+      }
+      availableResources[item.name] += item.quantity || 0;
+    });
+    
+    // Check if all requirements are met
+    for (const req of requirements) {
+      const available = availableResources[req.name] || 0;
+      if (available < req.quantity) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
+  // Function to start structure upgrade
+  async function startUpgrade() {
+    if (!canUpgradeStructure() || !hasResourcesForUpgrade()) {
+      upgradeError = 'Cannot upgrade: missing resources or prerequisites';
+      return;
+    }
+    
+    try {
+      isUpgrading = true;
+      upgradeError = null;
+      upgradeSuccess = null;
+      
+      executeAction('upgrade');
+      
+    } catch (error) {
+      console.error("Error starting upgrade:", error);
+      upgradeError = error.message || "Failed to start upgrade";
+    } finally {
+      isUpgrading = false;
+    }
+  }
+
+  // Get features that would be unlocked by next upgrade
+  function getNewFeatures() {
+    if (!tileData?.structure) return [];
+    
+    const currentLevel = tileData?.structure?.level || 1;
+    const structureType = tileData?.structure?.type || 'generic';
+    
+    // Features that would be unlocked at the next level
+    const newFeatures = [];
+    
+    if (currentLevel === 1) {
+      if (structureType === 'outpost') {
+        newFeatures.push({
+          name: 'Storage Expansion',
+          description: 'Increases storage capacity',
+          icon: '📦'
+        });
+      } else if (structureType === 'stronghold') {
+        newFeatures.push({
+          name: 'Advanced Forge',
+          description: 'Allows crafting of better weapons',
+          icon: '⚔️'
+        });
+      }
+    } else if (currentLevel === 2) {
+      if (['stronghold', 'fortress'].includes(structureType)) {
+        newFeatures.push({
+          name: 'Recruitment Hall',
+          description: 'Allows training advanced units',
+          icon: '🛡️'
+        });
+      }
+    }
+    
+    return newFeatures;
   }
 </script>
 
@@ -154,6 +321,11 @@
               <span class="entity-badge owner-badge">Yours</span>
             {/if}
             
+            <!-- Add level badge -->
+            {#if tileData?.structure?.level || tileData?.structure?.level === 0}
+              <span class="entity-badge level-badge">Level {tileData.structure.level}</span>
+            {/if}
+            
             {#if tileData?.structure?.race}
               <span class="entity-badge race-badge">
                 <!-- Race icon in race badge is kept -->
@@ -181,6 +353,135 @@
         </div>
       </div>
       
+      <!-- Building info section (collapsible) -->
+      <div class="entities-section">
+        <div 
+          class="section-header"
+          onclick={() => toggleSection('building')}
+          onkeydown={(e) => {
+            if (e.key === 'Enter') {
+              toggleSection('building');
+              e.preventDefault();
+            }
+          }}
+          role="button"
+          tabindex="0"
+          aria-expanded={!collapsedSections.building}
+        >
+          <h4>Building Info</h4>
+          <button class="collapse-button">
+            {collapsedSections.building ? '▼' : '▲'}
+          </button>
+        </div>
+        
+        {#if !collapsedSections.building}
+          <div class="section-content" transition:slide|local={{duration: 300}}>
+            <div class="building-info">
+              <!-- Level and basic info -->
+              <div class="info-group">
+                <div class="info-label">Type:</div>
+                <div class="info-value">{formatText(tileData?.structure?.type || 'Unknown')}</div>
+              </div>
+              
+              <div class="info-group">
+                <div class="info-label">Level:</div>
+                <div class="info-value">{tileData?.structure?.level || 1}</div>
+              </div>
+              
+              {#if tileData?.structure?.capacity}
+                <div class="info-group">
+                  <div class="info-label">Capacity:</div>
+                  <div class="info-value">{tileData.structure.capacity}</div>
+                </div>
+              {/if}
+              
+              {#if tileData?.structure?.owner}
+                <div class="info-group">
+                  <div class="info-label">Owner:</div>
+                  <div class="info-value">{tileData.structure.ownerName || 'Unknown'}</div>
+                </div>
+              {/if}
+              
+              <!-- Building features -->
+              {#if tileData?.structure?.features && tileData.structure.features.length > 0}
+                <div class="features-list">
+                  <h5>Features</h5>
+                  {#each tileData.structure.features as feature}
+                    <div class="feature-item">
+                      <div class="feature-icon">{feature.icon}</div>
+                      <div class="feature-details">
+                        <div class="feature-name">{feature.name}</div>
+                        <div class="feature-description">{feature.description}</div>
+                      </div>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+              
+              <!-- Upgrade section -->
+              {#if canUpgradeStructure()}
+                <div class="upgrade-section">
+                  <h5>Upgrade to Level {(tileData?.structure?.level || 1) + 1}</h5>
+                  
+                  <!-- Resource requirements -->
+                  <div class="upgrade-requirements">
+                    <div class="requirements-title">Required Resources:</div>
+                    <div class="requirements-list">
+                      {#each getUpgradeRequirements() as requirement}
+                        {@const available = displayItems.reduce((total, item) => 
+                          item.name === requirement.name ? total + (item.quantity || 0) : total, 0)}
+                        <div class="requirement-item {available >= requirement.quantity ? 'sufficient' : 'insufficient'}">
+                          {requirement.name}: {requirement.quantity} 
+                          <span class="available-count">
+                            (Have: {available})
+                          </span>
+                        </div>
+                      {/each}
+                    </div>
+                  </div>
+                  
+                  <!-- New features that would be unlocked -->
+                  {#if getNewFeatures().length > 0}
+                    <div class="new-features">
+                      <div class="new-features-title">Unlocks:</div>
+                      <div class="new-features-list">
+                        {#each getNewFeatures() as feature}
+                          <div class="new-feature-item">
+                            <div class="feature-icon">{feature.icon}</div>
+                            <div class="feature-details">
+                              <div class="feature-name">{feature.name}</div>
+                              <div class="feature-description">{feature.description}</div>
+                            </div>
+                          </div>
+                        {/each}
+                      </div>
+                    </div>
+                  {/if}
+                  
+                  {#if upgradeError}
+                    <div class="error-message">{upgradeError}</div>
+                  {/if}
+                  
+                  {#if upgradeSuccess}
+                    <div class="success-message">{upgradeSuccess}</div>
+                  {/if}
+                  
+                  <!-- Upgrade button -->
+                  <button 
+                    class="upgrade-button action-button" 
+                    onclick={startUpgrade}
+                    disabled={isUpgrading || !hasResourcesForUpgrade()}
+                  >
+                    <Hammer extraClass="action-icon" />
+                    <span>{isUpgrading ? 'Upgrading...' : 'Upgrade Structure'}</span>
+                  </button>
+                </div>
+              {/if}
+            </div>
+          </div>
+        {/if}
+      </div>
+      
       <!-- Storage section - updated to use tileData -->
       {#if showStorageTabs}
         <div class="entities-section">
@@ -188,7 +489,7 @@
             class="section-header"
             onclick={() => toggleSection('items')}
             onkeydown={(e) => {
-              if (e.key === 'Escape' && !collapsedSections.items) {
+              if (e.key === 'Enter' && !collapsedSections.items) {
                 toggleSection('items');
                 e.preventDefault();
               }
@@ -204,7 +505,7 @@
           </div>
           
           {#if !collapsedSections.items}
-            <div class="section-content">
+            <div class="section-content" transition:slide|local={{duration: 300}}>
               {#if hasPersonalBank || (tileData?.structure?.items && tileData?.structure?.items.length > 0)}
                 <div class="storage-tabs">
                   <button 
@@ -265,13 +566,24 @@
         </div>
       {/if}
 
-      <!-- Recruitment button -->
-      {#if canRecruitAtStructure()}
-        <button class="action-button recruit-button" onclick={() => executeAction('recruitment')}>
-          <Shield extraClass="action-icon" />
-          <span>Recruit Units</span>
-        </button>
-      {/if}
+      <!-- Action buttons section -->
+      <div class="action-buttons">
+        <!-- Recruitment button -->
+        {#if canRecruitAtStructure()}
+          <button class="action-button recruit-button" onclick={() => executeAction('recruitment')}>
+            <Shield extraClass="action-icon" />
+            <span>Recruit Units</span>
+          </button>
+        {/if}
+        
+        <!-- Upgrade button (outside of collapsible section) -->
+        {#if canUpgradeStructure() && hasResourcesForUpgrade()}
+          <button class="action-button upgrade-alt-button" onclick={startUpgrade} disabled={isUpgrading}>
+            <Hammer extraClass="action-icon" />
+            <span>{isUpgrading ? 'Upgrading...' : 'Upgrade Structure'}</span>
+          </button>
+        {/if}
+      </div>
     </div>
   </div>
 </div>
@@ -291,10 +603,6 @@
     opacity: 1;
     transition: opacity 0.2s ease-out;
   }
-  
-  /* .modal-container.ready {
-    opacity: 1;
-  } */
 
   .structure-modal {
     pointer-events: auto;
@@ -367,6 +675,7 @@
   .modal-content {
     padding: 0.8em;
     overflow-y: auto;
+    max-height: calc(85vh - 4rem);
   }
 
   .structure-container {
@@ -434,6 +743,12 @@
     color: #0277bd;
     border: 1px solid rgba(33, 150, 243, 0.4);
   }
+  
+  .level-badge {
+    background-color: rgba(156, 39, 176, 0.2);
+    color: #7b1fa2;
+    border: 1px solid rgba(156, 39, 176, 0.4);
+  }
 
   /* Race icon styling inside the badge */
   :global(.race-icon-badge) {
@@ -500,6 +815,133 @@
 
   .section-content {
     padding: 0.8em;
+  }
+  
+  /* Building info styling */
+  .building-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+  }
+  
+  .info-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9em;
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  .info-label {
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .info-value {
+    color: rgba(0, 0, 0, 0.9);
+  }
+  
+  h5 {
+    margin: 0.8em 0 0.4em 0;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .features-list, .upgrade-requirements, .new-features {
+    background-color: rgba(255, 255, 255, 0.4);
+    border-radius: 0.3em;
+    padding: 0.6em;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  .feature-item, .new-feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6em;
+    margin-bottom: 0.5em;
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  .feature-item:last-child, .new-feature-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  
+  .feature-icon {
+    font-size: 1.2em;
+    background-color: rgba(0, 0, 0, 0.05);
+    width: 1.8em;
+    height: 1.8em;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .feature-details {
+    flex: 1;
+  }
+  
+  .feature-name {
+    font-weight: 500;
+    margin-bottom: 0.2em;
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .feature-description {
+    font-size: 0.8em;
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  /* Upgrade section styling */
+  .upgrade-section {
+    margin-top: 1em;
+    padding-top: 1em;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .requirements-title, .new-features-title {
+    font-size: 0.85em;
+    font-weight: 500;
+    margin-bottom: 0.4em;
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .requirements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4em;
+  }
+  
+  .requirement-item {
+    font-size: 0.85em;
+    padding: 0.3em 0.6em;
+    border-radius: 0.3em;
+    background-color: rgba(0, 0, 0, 0.03);
+  }
+  
+  .requirement-item.sufficient {
+    color: #2e7d32;
+    background-color: rgba(76, 175, 80, 0.1);
+  }
+  
+  .requirement-item.insufficient {
+    color: #c62828;
+    background-color: rgba(244, 67, 54, 0.1);
+  }
+  
+  .available-count {
+    font-size: 0.9em;
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .new-features {
+    margin-top: 1em;
   }
 
   /* Tab system for shared/personal storage */
@@ -738,6 +1180,13 @@
     filter: drop-shadow(0 0 2px rgba(209, 138, 230, 0.7));
   }
 
+  /* Action buttons container */
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6em;
+  }
+
   /* Action buttons styling */
   .action-button {
     display: flex;
@@ -773,6 +1222,53 @@
   .recruit-button:active {
     transform: translateY(1px);
     box-shadow: 0 0.05em 0.2em rgba(0, 0, 0, 0.1);
+  }
+  
+  .upgrade-button, .upgrade-alt-button {
+    background: linear-gradient(to bottom, rgba(156, 39, 176, 0.9), rgba(123, 31, 162, 0.9));
+    color: white;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(123, 31, 162, 0.5);
+    margin-top: 1em;
+  }
+  
+  .upgrade-button:hover, .upgrade-alt-button:hover {
+    background: linear-gradient(to bottom, rgba(156, 39, 176, 1), rgba(123, 31, 162, 1));
+    box-shadow: 0 0.2em 0.5em rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+  }
+  
+  .upgrade-button:active, .upgrade-alt-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 0.05em 0.2em rgba(0, 0, 0, 0.1);
+  }
+  
+  .upgrade-button:disabled, .upgrade-alt-button:disabled {
+    background: linear-gradient(to bottom, rgba(158, 158, 158, 0.5), rgba(117, 117, 117, 0.5));
+    border: 1px solid rgba(97, 97, 97, 0.3);
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .error-message {
+    padding: 0.6em;
+    margin-top: 0.8em;
+    border-radius: 0.3em;
+    font-size: 0.85em;
+    color: #c62828;
+    background-color: rgba(244, 67, 54, 0.1);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+  }
+  
+  .success-message {
+    padding: 0.6em;
+    margin-top: 0.8em;
+    border-radius: 0.3em;
+    font-size: 0.85em;
+    color: #2e7d32;
+    background-color: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
   }
 
   :global(.action-button .action-icon) {
