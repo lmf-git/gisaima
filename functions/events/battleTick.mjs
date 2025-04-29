@@ -1,1133 +1,446 @@
 /**
- * Battle tick processing for Gisaima
- * Handles battle resolution at the end of each tick cycle
+ * Battle Tick function for Gisaima
+ * Processes ongoing battles and determines outcomes for groups and structures
  */
 
-import { getDatabase } from 'firebase-admin/database';
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import { getDatabase } from "firebase-admin/database";
 import { logger } from "firebase-functions";
 
-// Define CHUNK_SIZE constant for consistent usage
-const CHUNK_SIZE = 20;
+// Run battle tick every minute
+export const processBattles = onSchedule({
+  schedule: "every 1 minutes",
+  maxInstances: 1,
+  memory: "256MiB"
+}, async (event) => {
+  const db = getDatabase();
+  const worldsRef = db.ref("worlds");
 
-// Function to calculate chunk key consistently
-function getChunkKey(x, y) {
-  // Simple integer division works for both positive and negative coordinates
-  const chunkX = Math.floor(x / CHUNK_SIZE);
-  const chunkY = Math.floor(y / CHUNK_SIZE);
-  return `${chunkX},${chunkY}`;
-}
-
-/**
- * Utility function to check if a group has zero units
- * 
- * @param {Object} group The group object to check
- * @returns {boolean} True if the group has zero units and should be removed
- */
-function isEmptyGroup(group) {
-  if (!group) return true;
-  
-  // Check unitCount property first
-  if (group.unitCount !== undefined) {
-    return group.unitCount <= 0;
-  }
-  
-  // If no unitCount, check units array/object
-  if (group.units) {
-    if (Array.isArray(group.units)) {
-      return group.units.length === 0;
-    } else {
-      return Object.keys(group.units).length === 0;
-    }
-  }
-  
-  // Default to false - don't remove if we can't determine
-  return false;
-}
-
-/**
- * Collect all items from the losing groups
- * 
- * @param {Object} groups All groups on the tile
- * @param {Object} losingSide The side that lost the battle
- * @returns {Array} Array of collected items
- */
-function collectLootFromLosingGroups(groups, losingSide) {
-  const losingGroupIds = Object.keys(losingSide.groups || {});
-  const allLoot = [];
-  
-  for (const groupId of losingGroupIds) {
-    const group = groups[groupId];
-    if (!group) continue;
-    
-    // Check if group has items
-    if (group.items) {
-      // Handle both array and object structure for items
-      const items = Array.isArray(group.items) ? 
-        group.items : Object.values(group.items);
-      
-      // Add all items to the loot pile
-      allLoot.push(...items);
-    }
-  }
-  
-  return allLoot;
-}
-
-/**
- * Distribute collected loot among winning groups
- * 
- * @param {Object} updates Database updates object
- * @param {string} worldId The world ID
- * @param {string} chunkKey Chunk key for the location
- * @param {string} tileKey Tile key for the location
- * @param {Object} groups All groups on the tile
- * @param {Object} winningSide The side that won the battle
- * @param {Array} loot The items collected from losing groups
- */
-function distributeLootToWinningGroups(updates, worldId, chunkKey, tileKey, groups, winningSide, loot) {
-  if (!loot || loot.length === 0) return; // No loot to distribute
-  
-  const winningGroupIds = Object.keys(winningSide.groups || {});
-  // Filter out any winning groups that don't actually exist in the groups data
-  const activeWinningGroups = winningGroupIds.filter(groupId => groups[groupId]);
-  
-  if (activeWinningGroups.length === 0) return; // No groups to receive loot
-  
-  // If only one winning group, give them all the loot
-  if (activeWinningGroups.length === 1) {
-    const groupId = activeWinningGroups[0];
-    const group = groups[groupId];
-    
-    // Get existing items (if any)
-    let existingItems = [];
-    if (group.items) {
-      existingItems = Array.isArray(group.items) ? 
-        [...group.items] : [...Object.values(group.items)];
-    }
-    
-    // Add all loot to this group
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/items`] = [
-      ...existingItems,
-      ...loot
-    ];
-    
-    // Add message about looting
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastMessage`] = {
-      text: `Looted ${loot.length} items from battle!`,
-      timestamp: Date.now()
-    };
-    
-    return;
-  }
-  
-  // Distribute items randomly among winning groups
-  // Create a counter to track how many items each group receives
-  const lootCounts = {};
-  activeWinningGroups.forEach(groupId => lootCounts[groupId] = 0);
-  
-  // For each item, pick a random winning group
-  for (const item of loot) {
-    const randomIndex = Math.floor(Math.random() * activeWinningGroups.length);
-    const groupId = activeWinningGroups[randomIndex];
-    const group = groups[groupId];
-    
-    // Get existing items (if any) for this group
-    let existingItems = [];
-    if (group.items) {
-      existingItems = Array.isArray(group.items) ? 
-        [...group.items] : [...Object.values(group.items)];
-    }
-    
-    // The path to this group's items
-    const itemsPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/items`;
-    
-    // Add this item to the existing items array
-    if (!updates[itemsPath]) {
-      updates[itemsPath] = [...existingItems];
-    }
-    
-    // Add the item
-    updates[itemsPath].push(item);
-    
-    // Increment the counter for this group
-    lootCounts[groupId] = (lootCounts[groupId] || 0) + 1;
-  }
-  
-  // Add looting messages for each group that received items
-  for (const [groupId, count] of Object.entries(lootCounts)) {
-    if (count > 0) {
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastMessage`] = {
-        text: `Looted ${count} items from battle!`,
-        timestamp: Date.now()
-      };
-    }
-  }
-}
-
-/**
- * Process the attrition phase of a battle
- * 
- * @param {Object} battle Battle data
- * @param {Object} tileData Pre-loaded tile data
- * @returns {Object} Result object with isResolved, winningSide, casualties
- */
-function processBattleAttrition(battle, tileData) {
-  // Default result - battle continues with no casualties
-  const defaultResult = {
-    isResolved: false,
-    winningSide: null,
-    casualties: {}
-  };
-
-  // Check if we have groups data
-  if (!tileData.groups) {
-    logger.warn(`Missing groups data for battle ${battle.id}`);
-    return defaultResult;
-  }
-
-  // Identify battle participants and their sides
-  const side1Groups = {};
-  const side2Groups = {};
-  let side1Power = 0;
-  let side2Power = 0;
-  let totalUnits = 0;
-
-  // Count units on each side
-  for (const [groupId, group] of Object.entries(tileData.groups)) {
-    if (group.inBattle && group.battleId === battle.id) {
-      const unitCount = group.unitCount || 1;
-      totalUnits += unitCount;
-      
-      if (group.battleSide === 1) {
-        side1Groups[groupId] = group;
-        side1Power += unitCount;
-      } else if (group.battleSide === 2) {
-        side2Groups[groupId] = group;
-        side2Power += unitCount;
-      }
-    }
-  }
-
-  // Track battle duration in ticks
-  const tickCount = (battle.tickCount || 0) + 1;
-  
-  // Check if either side has overwhelming advantage (5:1 ratio)
-  const powerRatio = Math.max(side1Power, side2Power) / Math.min(Math.max(side1Power, side2Power), 1);
-  if (powerRatio > 5) {
-    const winningSide = side1Power > side2Power ? 1 : 2;
-    return {
-      isResolved: true,
-      winningSide,
-      casualties: {},
-      tickCount
-    };
-  }
-
-  // UNIFIED BATTLE SCALING ALGORITHM
-  // A continuous function that scales base casualty rates based on battle size
-  
-  // Base parameters
-  const maxCasualtyRate = 0.30;    // Maximum base casualty rate (30% for tiny battles)
-  const scalingFactor = 15;        // Controls how quickly casualty rates drop as battles get larger
-  
-  // Calculate base casualty rate using a continuous function
-  // This formula will smoothly scale from 30% for tiny battles down to ~2% for 1000+ unit battles
-  const baseRate = maxCasualtyRate / (1 + Math.sqrt(totalUnits / scalingFactor));
-  
-  // Calculate duration-based escalation with a unified approach
-  // More units = slower escalation
-  const durationFactor = 0.30 / (1 + Math.log10(totalUnits + 1));
-  
-  // Grace period before escalation begins (continuous function)
-  // 1 unit = 1 tick, 10 units = 1-2 ticks, 100 units = 2 ticks, 1000 units = 3 ticks, etc.
-  const gracePeriod = Math.min(4, Math.floor(Math.log10(totalUnits + 1)));
-  
-  // Calculate duration multiplier
-  const durationMultiplier = tickCount <= gracePeriod ? 1 : (1 + durationFactor * (tickCount - gracePeriod));
-  
-  // Calculate final casualty rate
-  const casualtyRate = baseRate * durationMultiplier;
-  
-  // Add randomness (more for smaller battles, less for larger ones)
-  const randomnessFactor = 0.3 + (0.2 / Math.sqrt(Math.max(totalUnits, 1)));
-  const randomVariation = 1 - randomnessFactor + (Math.random() * randomnessFactor * 2);
-  
-  // Calculate final casualty rates including asymmetry between stronger and weaker sides
-  const weakerSideMultiplier = 2.0;
-  const strongerSideRate = casualtyRate * randomVariation;
-  const weakerSideRate = casualtyRate * weakerSideMultiplier * randomVariation;
-  
-  logger.info(
-    `Battle ${battle.id} (${totalUnits} units): Tick ${tickCount}, casualty rates - ` +
-    `Stronger: ${Math.round(strongerSideRate * 100)}%, Weaker: ${Math.round(weakerSideRate * 100)}% ` +
-    `(Base: ${Math.round(baseRate * 100)}%, Duration: ${durationMultiplier.toFixed(2)}x)`
-  );
-  
-  // Determine which side is stronger
-  const isFirstSideStronger = side1Power >= side2Power;
-  
-  // Calculate casualties
-  const casualties = {};
-  let side1RemainingUnits = 0;
-  let side2RemainingUnits = 0;
-  
-  // Apply casualties to side 1
-  for (const groupId in side1Groups) {
-    const group = side1Groups[groupId];
-    const unitCount = group.unitCount || 1;
-    const casRate = isFirstSideStronger ? strongerSideRate : weakerSideRate;
-    const groupCasualties = Math.floor(unitCount * casRate);
-    
-    if (groupCasualties > 0 && groupCasualties < unitCount) {
-      casualties[groupId] = groupCasualties;
-      side1RemainingUnits += (unitCount - groupCasualties);
-    } else if (groupCasualties >= unitCount) {
-      // In very small battles, this can wipe out a group entirely
-      casualties[groupId] = unitCount - 1; // Leave 1 unit for proper battle resolution
-      side1RemainingUnits += 1;
-    } else {
-      side1RemainingUnits += unitCount;
-    }
-  }
-  
-  // Apply casualties to side 2
-  for (const groupId in side2Groups) {
-    const group = side2Groups[groupId];
-    const unitCount = group.unitCount || 1;
-    const casRate = !isFirstSideStronger ? strongerSideRate : weakerSideRate;
-    const groupCasualties = Math.floor(unitCount * casRate);
-    
-    if (groupCasualties > 0 && groupCasualties < unitCount) {
-      casualties[groupId] = groupCasualties;
-      side2RemainingUnits += (unitCount - groupCasualties);
-    } else if (groupCasualties >= unitCount) {
-      // In very small battles, this can wipe out a group entirely
-      casualties[groupId] = unitCount - 1; // Leave 1 unit for proper battle resolution
-      side2RemainingUnits += 1;
-    } else {
-      side2RemainingUnits += unitCount;
-    }
-  }
-  
-  // Check if battle should resolve this tick
-  // A side is nearly defeated when reduced to minimal units
-  if (side1RemainingUnits <= 1 && Object.keys(side1Groups).length > 0) {
-    return {
-      isResolved: true,
-      winningSide: 2,
-      casualties,
-      tickCount
-    };
-  } else if (side2RemainingUnits <= 1 && Object.keys(side2Groups).length > 0) {
-    return {
-      isResolved: true, 
-      winningSide: 1,
-      casualties,
-      tickCount
-    };
-  }
-  
-  // Forced resolution for very long battles to prevent endless stalemates
-  if (tickCount >= 20) {
-    // After 20 ticks, 20% chance per tick to force resolution
-    const forceResolveChance = 0.2;
-    if (Math.random() < forceResolveChance) {
-      // Determine winner by current power
-      const winningSide = side1Power >= side2Power ? 1 : 2;
-      logger.info(`Force-resolving extended battle after ${tickCount} ticks. Winner: Side ${winningSide}`);
-      
-      return {
-        isResolved: true,
-        winningSide,
-        casualties,
-        tickCount,
-        forcedResolution: true
-      };
-    }
-  }
-  
-  // Continue battle with calculated casualties
-  return {
-    isResolved: false,
-    winningSide: null,
-    casualties,
-    tickCount
-  };
-}
-
-/**
- * Apply casualties to units involved in a battle
- * 
- * @param {Object} db Database reference
- * @param {string} worldId World ID
- * @param {Object} battle Battle data
- * @param {Object} tileData Pre-loaded tile data
- * @param {Object} attritionResult Result from processBattleAttrition
- * @returns {Promise<void>}
- */
-async function applyBattleCasualties(db, worldId, battle, tileData, attritionResult) {
   try {
-    const casualties = attritionResult.casualties || {};
+    // Get all worlds
+    const worldsSnapshot = await worldsRef.once("value");
+    const worlds = worldsSnapshot.val();
     
-    if (Object.keys(casualties).length === 0) {
-      logger.debug(`No casualties to apply for battle ${battle.id}`);
+    if (!worlds) {
+      logger.info("No worlds found");
       return;
     }
     
-    const chunkKey = getChunkKey(battle.locationX, battle.locationY);
-    const tileKey = `${battle.locationX},${battle.locationY}`;
-    
-    // Prepare batch updates
-    const updates = {};
-    
-    // Track total casualties by side
-    const side1Casualties = { count: 0, total: 0 };
-    const side2Casualties = { count: 0, total: 0 };
-    
-    // Apply casualties to each group
-    for (const [groupId, casualtyCount] of Object.entries(casualties)) {
-      if (casualtyCount <= 0) continue;
+    // Process each world
+    for (const [worldId, worldData] of Object.entries(worlds)) {
+      if (!worldData.chunks) continue;
       
-      const group = tileData.groups[groupId];
-      if (!group) {
-        logger.warn(`Group ${groupId} not found when applying casualties`);
-        continue;
-      }
-      
-      const currentUnitCount = group.unitCount || 1;
-      const newUnitCount = Math.max(1, currentUnitCount - casualtyCount); // Ensure at least 1 unit remains
-      const actualCasualtyCount = currentUnitCount - newUnitCount;
-      
-      if (actualCasualtyCount > 0) {
-        // Update unit count
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
-        
-        // Add message about casualties
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastMessage`] = {
-          text: `Lost ${actualCasualtyCount} units in battle!`,
-          timestamp: Date.now()
-        };
-        
-        // Track casualties by side
-        if (group.battleSide === 1) {
-          side1Casualties.count += actualCasualtyCount;
-          side1Casualties.total += currentUnitCount;
-        } else if (group.battleSide === 2) {
-          side2Casualties.count += actualCasualtyCount;
-          side2Casualties.total += currentUnitCount;
-        }
-      }
-    }
-    
-    // Update battle statistics with casualties
-    if (side1Casualties.count > 0 || side2Casualties.count > 0) {
-      const side1CasualtyPercentage = side1Casualties.count > 0 ? 
-        Math.round((side1Casualties.count / side1Casualties.total) * 100) : 0;
-      
-      const side2CasualtyPercentage = side2Casualties.count > 0 ? 
-        Math.round((side2Casualties.count / side2Casualties.total) * 100) : 0;
-      
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/casualties`] = {
-        side1: (battle.casualties?.side1 || 0) + side1Casualties.count,
-        side2: (battle.casualties?.side2 || 0) + side2Casualties.count,
-        side1Percentage: side1CasualtyPercentage,
-        side2Percentage: side2CasualtyPercentage,
-        lastUpdate: Date.now()
-      };
-      
-      // Update battle power to reflect current state
-      const side1CurrentPower = side1Casualties.total - side1Casualties.count;
-      const side2CurrentPower = side2Casualties.total - side2Casualties.count;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/side1Power`] = side1CurrentPower;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/side2Power`] = side2CurrentPower;
-    }
-    
-    // Update battle tick count to track duration
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/tickCount`] = attritionResult.tickCount || 1;
-    
-    // Apply all updates in a single transaction
-    if (Object.keys(updates).length > 0) {
-      await db.ref().update(updates);
-      logger.info(`Applied casualties to battle ${battle.id}: Side 1: ${side1Casualties.count}, Side 2: ${side2Casualties.count}`);
-    }
-  } catch (error) {
-    logger.error(`Error applying casualties to battle ${battle.id}:`, error);
-    throw error; // Rethrow for upstream handling
-  }
-}
+      // Track all active battles
+      const battles = [];
 
-/**
- * Process all battles for a given world
- * 
- * @param {string} worldId The ID of the world to process battles for
- * @returns {Promise<number>} The number of battles processed
- */
-export async function processBattles(worldId) {
-  try {
-    const db = getDatabase();
+      // Scan through chunks for battles
+      for (const [chunkKey, chunkData] of Object.entries(worldData.chunks)) {
+        if (!chunkData) continue;
+        
+        for (const [locationKey, tileData] of Object.entries(chunkData)) {
+          if (locationKey === "lastUpdated" || !tileData) continue;
 
-    // Find battles by scanning world chunks
-    // We'll build a list of all battles by checking tile data
-    const battles = [];
-    
-    // Get all chunks in the world
-    const chunksRef = db.ref(`worlds/${worldId}/chunks`);
-    const chunksSnapshot = await chunksRef.once('value');
-    
-    if (!chunksSnapshot.exists()) {
-      logger.debug(`No chunks found for world ${worldId}`);
-      return 0;
-    }
-    
-    // Scan each chunk for battles
-    chunksSnapshot.forEach((chunkSnapshot) => {
-      const chunkKey = chunkSnapshot.key;
-      const chunk = chunkSnapshot.val();
-      
-      // Skip non-tile entries like 'lastUpdated'
-      if (typeof chunk !== 'object') return;
-      
-      // Check each tile in the chunk
-      for (const [tileKey, tileData] of Object.entries(chunk)) {
-        // Skip non-tile entries
-        if (!tileData || typeof tileData !== 'object') continue;
-        
-        // Check if the tile has battles
-        if (tileData.battles) {
-          for (const [battleId, battle] of Object.entries(tileData.battles)) {
-              // Skip battles that are already completed
-              if (battle.status === 'completed') continue;
-              
-              // Extract coordinates from tileKey
-              const [x, y] = tileKey.split(',').map(Number);
-              
-              // Collect the battle data with location info
-              battles.push({
-                id: battleId,
-                locationX: x,
-                locationY: y,
-                ...battle,
-                tileRef: `worlds/${worldId}/chunks/${chunkKey}/${tileKey}`
-              });
-
-              logger.debug(`Found active battle ${battleId} at location (${x}, ${y}) in world ${worldId}`);
-          }
-        }
-      }
-    });
-    
-    logger.info(`Processing ${battles.length} battles in world ${worldId}`);
-    let battleProcessCount = 0;
-    
-    // Early return if no battles found
-    if (battles.length === 0) {
-      logger.info(`No battles to process in world ${worldId}`);
-      return 0;
-    }
-    
-    for (const battle of battles) {
-      try {
-        // Load tile data once for each battle
-        const chunkKey = getChunkKey(battle.locationX, battle.locationY);
-        const tileKey = `${battle.locationX},${battle.locationY}`;
-        const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
-        const tileSnapshot = await tileRef.once('value');
-        
-        if (!tileSnapshot.exists()) {
-          logger.warn(`Tile ${tileKey} does not exist, skipping battle ${battle.id}`);
-          continue;
-        }
-        
-        const tileData = tileSnapshot.val();
-        
-        // First check if battle has already become one-sided (one side has no participants)
-        const winningSide = checkForOneSidedBattle(battle, tileData);
-        
-        if (winningSide) {
-          // Resolve battles when they become one-sided (one side has no units left)
-          await processBattleResolution(db, worldId, battle, tileData, winningSide);
-          battleProcessCount++;
-          logger.info(`Battle ${battle.id} resolved: side ${winningSide} victorious (elimination)`);
-          continue;
-        }
-        
-        // Process battle attrition for this tick
-        const attritionResult = processBattleAttrition(battle, tileData);
-        
-        if (attritionResult.isResolved) {
-          // If battle is resolved through attrition in this tick
-          await processBattleResolution(db, worldId, battle, tileData, attritionResult.winningSide);
-          battleProcessCount++;
-          logger.info(`Battle ${battle.id} resolved: side ${attritionResult.winningSide} victorious (attrition)`);
-        } else {
-          // Apply unit casualties for this tick
-          await applyBattleCasualties(db, worldId, battle, tileData, attritionResult);
-          logger.info(`Battle ${battle.id} continues - casualties applied (tick ${attritionResult.tickCount})`);
-        }
-      } catch (error) {
-        logger.error(`Error processing battle ${battle.id}:`, error);
-        // Continue with other battles even if one fails
-      }
-    }
-    
-    return battleProcessCount;
-  } catch (error) {
-    logger.error(`Error processing battles for world ${worldId}:`, error);
-    return 0;
-  }
-}
-
-/**
- * Calculate the total number of units involved in a battle
- * 
- * @param {Object} battle Battle data
- * @param {Object} tileData Tile data
- * @returns {number} Total units
- */
-function calculateTotalUnitsInBattle(battle, tileData) {
-  const groupsData = tileData.groups || {};
-  let totalUnits = 0;
-  
-  // Add up all units from groups involved in this battle
-  for (const [groupId, group] of Object.entries(groupsData)) {
-    if (group.inBattle && group.battleId === battle.id) {
-      totalUnits += group.unitCount || 1;
-    }
-  }
-  
-  return totalUnits;
-}
-
-/**
- * Check if a battle has become one-sided (one side has no participants)
- * 
- * @param {Object} battle Battle data
- * @param {Object} tileData Pre-loaded tile data
- * @returns {number|false} The winning side number (1 or 2) if one-sided, false otherwise
- */
-function checkForOneSidedBattle(battle, tileData) {
-  // No need to load tile data again - use what was provided
-  const groupsData = tileData.groups || {};
-  
-  // Count active groups on each side
-  let side1Count = 0;
-  let side2Count = 0;
-  
-  // Get the battle data directly from the tile
-  const battleData = tileData.battles && tileData.battles[battle.id];
-  if (!battleData) {
-    return 1; // Default to side 1 if battle data is missing
-  }
-  
-  // Scan all groups to find those participating in this battle
-  for (const [groupId, group] of Object.entries(groupsData)) {
-    if (group.inBattle && group.battleId === battle.id) {
-      if (group.battleSide === 1) {
-        side1Count++;
-      } else if (group.battleSide === 2) {
-        side2Count++;
-      }
-    }
-  }
-  
-  // If one side has no participants, the other side wins
-  if (side1Count > 0 && side2Count === 0) {
-    return 1; // Side 1 wins
-  } else if (side1Count === 0 && side2Count > 0) {
-    return 2; // Side 2 wins
-  }
-  
-  // If both sides have participants, or neither side has participants, it's not one-sided
-  return false;
-}
-
-/**
- * Process the resolution of a specific battle
- * 
- * @param {Object} db Database reference
- * @param {string} worldId World ID
- * @param {Object} battle Battle data
- * @param {Object} tileData Pre-loaded tile data
- * @param {number} winningSide The winning side (1 or 2)
- * @returns {Promise<void>}
- */
-async function processBattleResolution(db, worldId, battle, tileData, winningSide) {
-  try {
-    const now = Date.now();
-    
-    // Get the chunk key
-    const chunkKey = getChunkKey(battle.locationX, battle.locationY);
-    const tileKey = `${battle.locationX},${battle.locationY}`;
-    
-    // Update tileData if needed (fallback for direct API calls)
-    if (!tileData) {
-      const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
-      const tileSnapshot = await tileRef.once('value');
-      
-      if (!tileSnapshot.exists()) {
-        logger.warn(`Tile ${tileKey} does not exist, cannot resolve battle ${battle.id}`);
-        return;
-      }
-      
-      tileData = tileSnapshot.val();
-    }
-    
-    // Validate winning side
-    if (winningSide !== 1 && winningSide !== 2) {
-      logger.error(`Invalid winningSide value: ${winningSide}`);
-      return;
-    }
-    
-    // Set battle result
-    battle.result = {
-      winningSide,
-      reason: "opposing_side_eliminated",
-      totalTicks: battle.tickCount || 1
-    };
-    
-    // Prepare updates
-    const updates = {};
-    const groupsData = tileData.groups || {};
-    
-    // Rebuild the sides data from the current groups state
-    const side1Groups = {};
-    const side2Groups = {};
-    let side1Power = 0;
-    let side2Power = 0;
-    
-    // Track initial unit counts for calculating casualties
-    const initialUnitCounts = {};
-    let totalInitialSide1 = 0;
-    let totalInitialSide2 = 0;
-    
-    // Find all groups involved in this battle
-    for (const [groupId, group] of Object.entries(groupsData)) {
-      if (group.inBattle && group.battleId === battle.id) {
-        // Store initial unit count for casualty calculation
-        const unitCount = group.unitCount || 1;
-        initialUnitCounts[groupId] = unitCount;
-        
-        if (group.battleSide === 1) {
-          side1Groups[groupId] = group;
-          side1Power += unitCount;
-          totalInitialSide1 += unitCount;
-        } else if (group.battleSide === 2) {
-          side2Groups[groupId] = group;
-          side2Power += unitCount;
-          totalInitialSide2 += unitCount;
-        }
-      }
-    }
-    
-    // Use the reconstructed sides info for battle resolution
-    const victorSide = { 
-      groups: winningSide === 1 ? side1Groups : side2Groups,
-      power: winningSide === 1 ? side1Power : side2Power 
-    };
-    const defeatedSide = { 
-      groups: winningSide === 1 ? side2Groups : side1Groups,
-      power: winningSide === 1 ? side2Power : side1Power
-    };
-    
-    // Prepare data for casualties and battle statistics
-    const battleStats = {
-      initialStrength: {
-        side1: totalInitialSide1,
-        side2: totalInitialSide2
-      },
-      winningSide: winningSide,
-      casualties: {
-        side1: 0,
-        side2: 0,
-        total: 0
-      },
-      survivingUnits: {
-        side1: 0,
-        side2: 0,
-        total: 0
-      },
-      duration: battle.tickCount || 1
-    };
-    
-    // Calculate casualties based on relative strength
-    const powerRatio = Math.max(victorSide.power, 1) / Math.max(defeatedSide.power || 1, 1);
-    let victorCasualtyRate;
-    
-    // Calculate casualty rate based on the power ratio
-    if (powerRatio > 5) {
-      // Overwhelming advantage - very minimal casualties
-      victorCasualtyRate = 0.01 + (Math.random() * 0.04); // 1-5%
-    } else if (powerRatio > 3) {
-      // Strong advantage - low casualties
-      victorCasualtyRate = 0.03 + (Math.random() * 0.07); // 3-10%
-    } else if (powerRatio > 1.5) {
-      // Moderate advantage - some casualties
-      victorCasualtyRate = 0.05 + (Math.random() * 0.10); // 5-15%
-    } else {
-      // Close match - higher casualties
-      victorCasualtyRate = 0.10 + (Math.random() * 0.15); // 10-25%
-    }
-    
-    // Collect group names for winning and losing sides
-    const winningGroups = Object.keys(victorSide.groups).map(groupId => {
-      const group = groupsData[groupId];
-      return group ? (group.name || `Group ${groupId}`) : `Unknown group`;
-    });
-    
-    const losingGroups = Object.keys(defeatedSide.groups).map(groupId => {
-      const group = groupsData[groupId];
-      return group ? (group.name || `Group ${groupId}`) : `Unknown group`;
-    });
-    
-    // Collect loot from losing groups
-    const battleLoot = collectLootFromLosingGroups(groupsData, defeatedSide);
-    
-    // Distribute loot to winning groups if there's any
-    if (battleLoot.length > 0) {
-      distributeLootToWinningGroups(
-        updates, 
-        worldId, 
-        chunkKey, 
-        tileKey, 
-        groupsData, 
-        victorSide, 
-        battleLoot
-      );
-    }
-    
-    // Process losing groups (complete defeat - all units lost)
-    const losingCasualties = processLosingGroups(updates, worldId, chunkKey, tileKey, groupsData, defeatedSide);
-    battleStats.casualties[winningSide === 1 ? 'side2' : 'side1'] = losingCasualties;
-    
-    // Process winning groups with casualties
-    const winningCasualties = processWinningGroupsWithCasualties(
-      updates, worldId, chunkKey, tileKey, groupsData, victorSide, victorCasualtyRate
-    );
-    battleStats.casualties[winningSide === 1 ? 'side1' : 'side2'] = winningCasualties;
-    
-    // Calculate totals for battle statistics
-    battleStats.casualties.total = battleStats.casualties.side1 + battleStats.casualties.side2;
-    battleStats.survivingUnits.side1 = totalInitialSide1 - battleStats.casualties.side1;
-    battleStats.survivingUnits.side2 = totalInitialSide2 - battleStats.casualties.side2;
-    battleStats.survivingUnits.total = battleStats.survivingUnits.side1 + battleStats.survivingUnits.side2;
-    
-    // Delete the battle record immediately instead of marking it as completed
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}`] = null;
-    
-    // Create battle outcome chat message with more detail
-    const winSideText = winningSide === 1 ? "Attackers" : "Defenders";
-    const battleChatText = `Battle at (${battle.locationX}, ${battle.locationY}) has ended after ${battleStats.duration} ticks!`;
-    
-    // Add details about groups
-    let detailedMessage = battleChatText;
-    if (winningGroups.length > 0) {
-      detailedMessage += ` Victorious: ${winningGroups.join(', ')}`;
-    }
-    if (losingGroups.length > 0) {
-      detailedMessage += ` Defeated: ${losingGroups.join(', ')}`;
-    }
-    
-    // Add information about casualties
-    detailedMessage += ` (${battleStats.casualties.total} casualties)`;
-    
-    // Add information about items looted
-    if (battleLoot.length > 0) {
-      detailedMessage += ` (${battleLoot.length} items seized)`;
-    }
-
-    // Add to world chat
-    const chatMessageId = `battle_${now}_${battle.id}`;
-    updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-      text: detailedMessage,
-      type: 'event',
-      timestamp: now,
-      location: {
-        x: battle.locationX,
-        y: battle.locationY
-      }
-    };
-    
-    // Apply all updates
-    await db.ref().update(updates);
-    
-    logger.info(`Completed battle ${battle.id} in world ${worldId} - Side ${winningSide} won after ${battleStats.duration} ticks`);
-    
-  } catch (error) {
-    logger.error(`Error processing battle ${battle.id}:`, error);
-    throw error; // Re-throw to be handled by caller
-  }
-}
-
-/**
- * Process winning groups with casualties - set them back to idle state
- * Groups with zero units will be removed, others will have reduced unit counts
- * 
- * @param {Object} updates Database updates object
- * @param {string} worldId World ID
- * @param {string} chunkKey Chunk key for location
- * @param {string} tileKey Tile key for location
- * @param {Object} groups Groups data
- * @param {Object} winningSide Winning side data
- * @param {number} casualtyRate Percentage of units to remove (0.0-1.0)
- * @returns {number} Total casualties inflicted on winning side
- */
-function processWinningGroupsWithCasualties(updates, worldId, chunkKey, tileKey, groups, winningSide, casualtyRate) {
-  const winningGroupIds = Object.keys(winningSide.groups || {});
-  let totalCasualties = 0;
-  
-  for (const groupId of winningGroupIds) {
-    const group = groups[groupId];
-    if (!group) continue;
-    
-    // Check if group has player units
-    const hasPlayers = group.units ? Object.values(group.units).some(unit => unit.type === 'player') : false;
-    
-    // Get current unit count
-    const currentUnits = group.unitCount || 1;
-    
-    // Calculate casualties - ensure at least 1 unit survives
-    let casualties = Math.min(
-      currentUnits - 1,  // Leave at least 1 unit
-      Math.floor(currentUnits * casualtyRate)
-    );
-    
-    // Special handling for player units - they die last and only at high casualty rates
-    if (hasPlayers) {
-      // Count how many player units vs regular units
-      const units = Array.isArray(group.units) ? group.units : Object.values(group.units);
-      const playerUnits = units.filter(unit => unit.type === 'player');
-      const playerUnitCount = playerUnits.length;
-      const nonPlayerUnitCount = currentUnits - playerUnitCount;
-      
-      // Calculate casualties differently based on unit composition
-      if (nonPlayerUnitCount > 0) {
-        // If there are non-player units, they take casualties first
-        const nonPlayerCasualties = Math.min(nonPlayerUnitCount, casualties);
-        const playerCasualties = casualties - nonPlayerCasualties;
-        
-        // Only apply player casualties if they're above 80% of total player units
-        if (playerCasualties > 0 && (playerCasualties / playerUnitCount <= 0.8)) {
-          // Reduce casualties to only affect non-player units
-          casualties = nonPlayerCasualties;
+          const [x, y] = locationKey.split(",").map(Number);
           
-          logger.info(`Protected player units in group ${groupId}: ${playerUnitCount} players, casualty rate: ${casualtyRate}`);
-        }
-      }
-      // If it's only player units, standard casualty calculation applies
-    }
-    
-    // Calculate remaining units
-    const remainingUnits = currentUnits - casualties;
-    totalCasualties += casualties;
-    
-    // Check if group has any units left
-    if (remainingUnits <= 0) {
-      // This shouldn't happen with our calculation, but just in case
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`] = null;
-      logger.info(`Removing empty winning group ${groupId} at ${tileKey}`);
-      continue;
-    }
-
-    // Update group status and unit count
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/inBattle`] = false;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleId`] = null;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleRole`] = null;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = remainingUnits;
-    
-    // Add victory message with casualty information
-    const casualtyText = casualties > 0 ? 
-      ` Lost ${casualties} units in the fighting.` : 
-      ' All units survived the battle.';
-      
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastMessage`] = {
-      text: `Victory in battle!${casualtyText}`,
-      timestamp: Date.now()
-    };
-  }
-  
-  return totalCasualties;
-}
-
-/**
- * Process losing groups - remove them and mark players as dead
- * 
- * @param {Object} updates Database updates object
- * @param {string} worldId World ID
- * @param {string} chunkKey Chunk key for location
- * @param {string} tileKey Tile key for location
- * @param {Object} groups Groups data
- * @param {Object} losingSide Losing side data
- * @returns {number} Total casualties from losing side
- */
-function processLosingGroups(updates, worldId, chunkKey, tileKey, groups, losingSide) {
-  const losingGroupIds = Object.keys(losingSide.groups || {});
-  const now = Date.now();
-  let totalCasualties = 0;
-  const survivingPlayerUnits = [];
-  
-  // Count total units to calculate overall casualty rate
-  let totalLosingUnits = 0;
-  let totalPlayerUnits = 0;
-  let isPlayerVsPlayerOnly = true;
-  
-  // First pass - count units and check if this is a player-vs-player battle only
-  losingGroupIds.forEach(groupId => {
-    const group = groups[groupId];
-    if (!group) return;
-    
-    totalLosingUnits += (group.unitCount || 1);
-    
-    // Count player units and check if there are non-player units
-    if (group.units) {
-      const units = Array.isArray(group.units) ? group.units : Object.values(group.units);
-      const playerUnitsInGroup = units.filter(unit => unit.type === 'player');
-      totalPlayerUnits += playerUnitsInGroup.length;
-      
-      // If any unit is not a player, this isn't purely player vs player
-      if (units.some(unit => unit.type !== 'player')) {
-        isPlayerVsPlayerOnly = false;
-      }
-    }
-  });
-  
-  // Calculate the actual casualty percentage for players
-  // In pure player vs player battles, don't apply special protection
-  const shouldProtectPlayers = !isPlayerVsPlayerOnly && (totalPlayerUnits > 0);
-  
-  // Second pass - process groups and handle casualties
-  for (const groupId of losingGroupIds) {
-    if (groups[groupId]) {
-      const group = groups[groupId];
-      
-      // Track casualties
-      totalCasualties += (group.unitCount || 1);
-      
-      // Find any player in this group and handle them specially
-      if (group.units) {
-        // Handle both array and object structure for units
-        const units = Array.isArray(group.units) ? 
-          group.units : Object.values(group.units);
-        
-        for (const unit of units) {
-          if (unit.type === 'player' && unit.id) {
-            if (shouldProtectPlayers) {
-              // Apply special player protection - only let players die if:
-              // 1. Over 80% of all losing units are casualties (total elimination)
-              // 2. It's a player vs player battle where protection doesn't apply
-              
-              const highCasualtyRate = Math.random() > 0.2; // 80% chance of death
-              
-              if (highCasualtyRate) {
-                // Mark player as dead
-                logger.info(`Player ${unit.id} died in battle (group ${groupId})`);
-                updates[`players/${unit.id}/worlds/${worldId}/alive`] = false;
-                updates[`players/${unit.id}/worlds/${worldId}/inGroup`] = null;
-                updates[`players/${unit.id}/worlds/${worldId}/lastMessage`] = {
-                  text: `You were defeated in battle.`,
-                  timestamp: now
-                };
-                
-                // Add player death announcement to chat
-                const playerName = unit.name || "Unknown player";
-                const chatMessageId = `death_${now}_${unit.id}`;
-                updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-                  text: `${playerName} was defeated in battle at (${tileKey.replace(',', ', ')})`,
-                  type: 'event',
-                  timestamp: now,
-                  location: {
-                    x: parseInt(tileKey.split(',')[0]),
-                    y: parseInt(tileKey.split(',')[1])
-                  }
-                };
-              } else {
-                // Player survived despite being on losing side - create a survival message
-                logger.info(`Player ${unit.id} survived battle despite losing (group ${groupId})`);
-                updates[`players/${unit.id}/worlds/${worldId}/inGroup`] = null; // Remove from group
-                updates[`players/${unit.id}/worlds/${worldId}/lastMessage`] = {
-                  text: `You survived the battle but your forces were defeated.`,
-                  timestamp: now
-                };
-                
-                // Add player to survivors list to potentially create a new group for them
-                survivingPlayerUnits.push(unit);
+          if (tileData.battles) {
+            for (const [battleId, battleData] of Object.entries(tileData.battles)) {
+              // Only process active battles
+              if (battleData.status === "active") {
+                battles.push({
+                  worldId,
+                  chunkKey,
+                  locationKey,
+                  x,
+                  y,
+                  battleId,
+                  battleData
+                });
               }
-            } else {
-              // No special protection - standard player death
-              logger.info(`Player ${unit.id} died in battle (group ${groupId}) - no protection applied`);
-              updates[`players/${unit.id}/worlds/${worldId}/alive`] = false;
-              updates[`players/${unit.id}/worlds/${worldId}/inGroup`] = null;
-              updates[`players/${unit.id}/worlds/${worldId}/lastMessage`] = {
-                text: `You were defeated in battle.`,
-                timestamp: now
-              };
-              
-              // Add player death announcement to chat
-              const playerName = unit.name || "Unknown player";
-              const chatMessageId = `death_${now}_${unit.id}`;
-              updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-                text: `${playerName} was defeated in battle at (${tileKey.replace(',', ', ')})`,
-                type: 'event',
-                timestamp: now,
-                location: {
-                  x: parseInt(tileKey.split(',')[0]),
-                  y: parseInt(tileKey.split(',')[1])
-                }
-              };
             }
           }
         }
       }
       
-      // Remove the entire losing group
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`] = null;
+      logger.info(`Found ${battles.length} active battles in world ${worldId}`);
+      
+      // Process each battle
+      for (const battle of battles) {
+        try {
+          await processBattle(battle);
+        } catch (error) {
+          logger.error(`Error processing battle ${battle.battleId}:`, error);
+        }
+      }
+    }
+    
+    logger.info("Battle tick processing complete");
+    
+  } catch (error) {
+    logger.error("Error processing battle tick:", error);
+  }
+});
+
+async function processBattle(battle) {
+  const { worldId, chunkKey, locationKey, x, y, battleId, battleData } = battle;
+  const db = getDatabase();
+  
+  // Get current battle state
+  const battleRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`);
+  const battleSnapshot = await battleRef.once("value");
+  
+  if (!battleSnapshot.exists()) {
+    logger.warn(`Battle ${battleId} no longer exists`);
+    return;
+  }
+  
+  const currentBattleData = battleSnapshot.val();
+  
+  // Skip if battle is not active
+  if (currentBattleData.status !== "active") {
+    return;
+  }
+  
+  // Get tile data to access groups and structures
+  const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}`);
+  const tileSnapshot = await tileRef.once("value");
+  const tileData = tileSnapshot.val();
+  
+  if (!tileData) {
+    logger.error(`Tile data not found for battle ${battleId}`);
+    return;
+  }
+  
+  // Determine what types of targets are in this battle
+  const targetTypes = currentBattleData.targetTypes || [];
+  const includesGroups = targetTypes.includes("group");
+  const includesStructure = targetTypes.includes("structure");
+  
+  // If no targetTypes field exists (for backward compatibility), check the old targetType field
+  if (targetTypes.length === 0 && currentBattleData.targetType) {
+    if (currentBattleData.targetType === "group") targetTypes.push("group");
+    if (currentBattleData.targetType === "structure") targetTypes.push("structure");
+  }
+  
+  // Get groups involved in the battle
+  const groups = tileData.groups || {};
+  const attackers = [];
+  const defenders = [];
+  
+  // Find all groups involved in this battle
+  for (const [groupId, groupData] of Object.entries(groups)) {
+    if (groupData.battleId === battleId) {
+      if (groupData.battleSide === 1) {
+        attackers.push({ ...groupData, id: groupId });
+      } else if (groupData.battleSide === 2) {
+        defenders.push({ ...groupData, id: groupId });
+      }
     }
   }
   
-  // Create a new group for surviving player units if needed
-  if (survivingPlayerUnits.length > 0) {
-    const newGroupId = `group_${now}_survivors`;
-    const unitsByPlayer = {};
-    
-    // Organize surviving units by player
-    survivingPlayerUnits.forEach(unit => {
-      unitsByPlayer[unit.id] = unit;
-    });
-    
-    // Create a new group for survivors
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${newGroupId}`] = {
-      id: newGroupId,
-      name: "Battle Survivors",
-      createdAt: now,
-      status: 'idle',
-      unitCount: survivingPlayerUnits.length,
-      units: unitsByPlayer,
-      lastMessage: {
-        text: "Your group was reformed from battle survivors.",
-        timestamp: now
-      },
-      x: parseInt(tileKey.split(',')[0]),
-      y: parseInt(tileKey.split(',')[1])
-    };
-    
-    // Update player references to the new group
-    survivingPlayerUnits.forEach(unit => {
-      updates[`players/${unit.id}/worlds/${worldId}/inGroup`] = newGroupId;
-    });
-    
-    // Add chat message about survivors
-    const chatMessageId = `survivors_${now}`;
-    updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-      text: `${survivingPlayerUnits.length} players survived the battle at (${tileKey.replace(',', ', ')}) and formed a new group.`,
-      type: 'event',
-      timestamp: now,
-      location: {
-        x: parseInt(tileKey.split(',')[0]),
-        y: parseInt(tileKey.split(',')[1])
-      }
-    };
+  // Process structure if included in this battle
+  let structure = null;
+  if (tileData.structure && tileData.structure.battleId === battleId) {
+    structure = { ...tileData.structure };
   }
   
-  return totalCasualties;
+  // Validate battle participants
+  if (attackers.length === 0) {
+    logger.warn(`Battle ${battleId} has no attackers, ending battle`);
+    await endBattle(worldId, chunkKey, locationKey, battleId, 2, defenders, structure);
+    return;
+  }
+  
+  if (includesGroups && defenders.length === 0 && includesStructure && !structure) {
+    logger.warn(`Battle ${battleId} has no valid defenders, ending battle`);
+    await endBattle(worldId, chunkKey, locationKey, battleId, 1, attackers, null);
+    return;
+  }
+  
+  // Calculate total power for each side
+  const attackerPower = calculateTotalPower(attackers);
+  
+  // Defender power combines group power and structure power
+  let defenderGroupPower = calculateTotalPower(defenders);
+  let structurePower = structure ? calculateStructurePower(structure) : 0;
+  let defenderTotalPower = defenderGroupPower + structurePower;
+  
+  // Increment battle tick
+  const tickCount = (currentBattleData.tickCount || 0) + 1;
+  
+  // Determine if battle should end on this tick
+  const shouldEndBattle = tickCount >= 3; // End after 3 ticks
+  let winner = null;
+  
+  if (shouldEndBattle || attackerPower === 0 || defenderTotalPower === 0) {
+    // Determine winner
+    if (attackerPower > defenderTotalPower) {
+      winner = 1; // Attackers win
+    } else if (defenderTotalPower > attackerPower) {
+      winner = 2; // Defenders win
+    } else {
+      // In case of tie, defenders have advantage
+      winner = 2;
+    }
+    
+    // End the battle with the determined winner
+    await endBattle(
+      worldId, 
+      chunkKey, 
+      locationKey, 
+      battleId, 
+      winner, 
+      winner === 1 ? attackers : defenders,
+      winner === 2 ? structure : null
+    );
+    
+    return;
+  }
+  
+  // Update battle data for next tick
+  await battleRef.update({
+    tickCount,
+    side1Power: attackerPower,
+    side2Power: defenderTotalPower,
+    defenderGroupPower,
+    structurePower
+  });
+  
+  logger.info(`Battle ${battleId} tick ${tickCount} processed. Attackers: ${attackerPower}, Defenders: ${defenderTotalPower} (Groups: ${defenderGroupPower}, Structure: ${structurePower})`);
+}
+
+async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, winningGroups, winningStructure) {
+  const db = getDatabase();
+  const now = Date.now();
+  
+  try {
+    // Get current battle and tile data
+    const battleRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`);
+    const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}`);
+    
+    const [battleSnapshot, tileSnapshot] = await Promise.all([
+      battleRef.once("value"),
+      tileRef.once("value")
+    ]);
+    
+    if (!battleSnapshot.exists() || !tileSnapshot.exists()) {
+      logger.error(`Battle ${battleId} or tile data not found`);
+      return;
+    }
+    
+    const battleData = battleSnapshot.val();
+    const tileData = tileSnapshot.val();
+    
+    // Determine target types
+    const targetTypes = battleData.targetTypes || [];
+    const includesGroups = targetTypes.includes("group");
+    const includesStructure = targetTypes.includes("structure");
+    
+    // For backward compatibility
+    if (targetTypes.length === 0 && battleData.targetType) {
+      if (battleData.targetType === "group") targetTypes.push("group");
+      if (battleData.targetType === "structure") targetTypes.push("structure");
+    }
+    
+    // Get groups involved in the battle
+    const groups = tileData.groups || {};
+    const attackers = [];
+    const defenders = [];
+    let casualties = 0;
+    
+    // Find all groups involved in this battle
+    for (const [groupId, groupData] of Object.entries(groups)) {
+      if (groupData.battleId === battleId) {
+        if (groupData.battleSide === 1) {
+          attackers.push({ ...groupData, id: groupId });
+        } else if (groupData.battleSide === 2) {
+          defenders.push({ ...groupData, id: groupId });
+        }
+      }
+    }
+    
+    // Structure data if applicable
+    const structure = tileData.structure?.battleId === battleId ? tileData.structure : null;
+    
+    // Prepare updates object
+    const updates = {};
+    
+    // Update battle status
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/status`] = "completed";
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/winner`] = winningSide;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/endedAt`] = now;
+    
+    // Process groups based on battle outcome
+    const losingGroups = winningSide === 1 ? defenders : attackers;
+    
+    // Update winning groups
+    if (winningGroups) {
+      for (const group of winningGroups) {
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/inBattle`] = false;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleId`] = null;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleSide`] = null;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleRole`] = null;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/status`] = "idle";
+        
+        // Add victory message
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/lastMessage`] = {
+          text: "Victory in battle! All units survived the battle.",
+          timestamp: now
+        };
+      }
+    }
+    
+    // Handle losing groups - remove them
+    for (const group of losingGroups) {
+      // Remove the group
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+      casualties++;
+      
+      // Update player state if this was a player's group
+      if (group.owner) {
+        updates[`worlds/${worldId}/chat/death_${now}_${group.owner}`] = {
+          text: `${group.name || "Unknown player"} was defeated in battle at (${locationKey})`,
+          type: "event",
+          location: { x: parseInt(locationKey.split(',')[0]), y: parseInt(locationKey.split(',')[1]) },
+          timestamp: now
+        };
+        
+        // Add defeat message to player
+        updates[`players/${group.owner}/worlds/${worldId}/lastMessage`] = {
+          text: "You were defeated in battle.",
+          timestamp: now
+        };
+      }
+    }
+    
+    // Handle structure if it was in the battle
+    if (includesStructure && structure) {
+      if (winningSide === 1) {
+        // Attackers won - structure is destroyed or claimed
+        if (structure.type === "spawn") {
+          // Spawn points can't be destroyed, just reset battle status
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/inBattle`] = false;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/battleId`] = null;
+        } else {
+          // Transfer ownership of the structure if it has an owner
+          if (structure.owner) {
+            const newOwner = winningGroups && winningGroups[0]?.owner;
+            if (newOwner) {
+              updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/owner`] = newOwner;
+              updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/ownerName`] = 
+                winningGroups[0]?.name?.replace("'s Force", "") || "Unknown Conqueror";
+            }
+          }
+          
+          // Reset battle status
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/inBattle`] = false;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/battleId`] = null;
+        }
+      } else {
+        // Defenders won - structure stays intact
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/inBattle`] = false;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/battleId`] = null;
+      }
+    }
+    
+    // Add battle outcome to chat
+    const attackerName = attackers.length > 0 ? attackers[0].name || "Unknown Force" : "Unknown Force";
+    
+    // Build a result message based on what was being attacked
+    let resultMessage = `Battle at (${locationKey}) has ended after ${battleData.tickCount || 1} ticks! `;
+    
+    // Different messages based on what was involved in the battle
+    if (includesGroups && includesStructure) {
+      const defenderName = defenders.length > 0 ? defenders[0].name || "Unknown Force" : "Unknown Force";
+      const structureName = structure ? structure.name || "Structure" : "Structure";
+      
+      if (winningSide === 1) {
+        resultMessage += `Victorious: ${attackerName} defeated ${defenderName} and captured ${structureName}`;
+      } else {
+        resultMessage += `${defenderName} and ${structureName} successfully defended against ${attackerName}`;
+      }
+    } 
+    else if (includesGroups) {
+      const defenderName = defenders.length > 0 ? defenders[0].name || "Unknown Force" : "Unknown Force";
+      
+      if (winningSide === 1) {
+        resultMessage += `Victorious: ${attackerName} Defeated: ${defenderName}`;
+      } else {
+        resultMessage += `Victorious: ${defenderName} Defeated: ${attackerName}`;
+      }
+    }
+    else if (includesStructure) {
+      const structureName = structure ? structure.name || "Structure" : "Structure";
+      
+      if (winningSide === 1) {
+        resultMessage += `${attackerName} successfully captured ${structureName}`;
+      } else {
+        resultMessage += `${attackerName} failed to capture ${structureName}`;
+      }
+    }
+    
+    // Add casualties count
+    if (casualties > 0) {
+      resultMessage += ` (${casualties} casualties)`;
+    }
+    
+    // Add battle outcome to chat
+    updates[`worlds/${worldId}/chat/battle_${now}_${battleId}_${Math.floor(Math.random() * 1000)}`] = {
+      text: resultMessage,
+      type: "event",
+      location: { x: parseInt(locationKey.split(',')[0]), y: parseInt(locationKey.split(',')[1]) },
+      timestamp: now
+    };
+    
+    // Execute all updates atomically
+    await db.ref().update(updates);
+    logger.info(`Battle ${battleId} ended. Winner: side ${winningSide}`);
+    
+  } catch (error) {
+    logger.error(`Error ending battle ${battleId}:`, error);
+  }
+}
+
+function calculateTotalPower(groups) {
+  if (!groups || groups.length === 0) return 0;
+  
+  return groups.reduce((total, group) => {
+    let groupPower = group.unitCount || 1;
+    
+    // If we have unit details, use those
+    if (group.units) {
+      if (Array.isArray(group.units)) {
+        groupPower = group.units.length;
+      } else if (typeof group.units === 'object') {
+        groupPower = Object.keys(group.units).length;
+      }
+    }
+    
+    return total + groupPower;
+  }, 0);
+}
+
+function calculateStructurePower(structure) {
+  if (!structure) return 0;
+  
+  // Base power by structure type
+  let basePower = 5;
+  
+  switch (structure.type) {
+    case 'spawn':
+      basePower = 15;
+      break;
+    case 'fortress':
+      basePower = 30;
+      break;
+    case 'watchtower':
+      basePower = 10;
+      break;
+    case 'stronghold':
+      basePower = 25;
+      break;
+    default:
+      basePower = 5;
+  }
+  
+  return basePower;
 }

@@ -11,6 +11,7 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
+  import Structure from '../icons/Structure.svelte';
 
   // Props
   const { onClose = () => {}, onAttack = () => {} } = $props();
@@ -24,13 +25,15 @@
   // Get functions instance
   const functions = getFunctions();
   
-  // Available groups and enemy groups
+  // Available groups and enemy targets
   let playerGroups = $state([]);
   let enemyGroups = $state([]);
+  let structures = $state([]);
   
   // Use arrays for selected groups instead of single selections
   let selectedPlayerGroups = $state([]);
   let selectedEnemyGroups = $state([]);
+  let selectedStructure = $state(null);
   
   // Loading state
   let loading = $state(false);
@@ -60,44 +63,60 @@
     return [];
   }
   
-  // Calculate available groups just once when tile data changes
+  // Calculate available groups and structures just once when tile data changes
   $effect(() => {
-    if (!tileData || !currentPlayerId || !tileData.groups) return;
+    if (!tileData || !currentPlayerId) return;
     
-    // Only recalculate when tile data or player ID changes
-    const groups = normalizeGroupsData(tileData.groups);
-    
-    // Find player groups that can attack (idle groups)
-    const myGroups = groups.filter(group => 
-      group.owner === currentPlayerId && 
-      group.status === 'idle' &&
-      !group.inBattle
-    );
-    
-    // Find enemy groups that can be attacked (idle groups not owned by player)
-    const enemies = groups.filter(group => 
-      group.owner !== currentPlayerId && 
-      group.status === 'idle' &&
-      !group.inBattle
-    );
-
-    // Update only if changes detected (length check is faster than deep comparison)
-    if (playerGroups.length !== myGroups.length || !playerGroups.every((g, i) => g.id === myGroups[i]?.id)) {
-      playerGroups = myGroups;
+    // Handle groups
+    if (tileData.groups) {
+      const groups = normalizeGroupsData(tileData.groups);
       
-      // Auto-select first group if there's only one player group
-      if (myGroups.length === 1) {
-        selectedPlayerGroups = [myGroups[0]];
-      } else {
-        // Reset selections when groups change
-        selectedPlayerGroups = [];
+      // Find player groups that can attack (idle groups)
+      const myGroups = groups.filter(group => 
+        group.owner === currentPlayerId && 
+        group.status === 'idle' &&
+        !group.inBattle
+      );
+      
+      // Find enemy groups that can be attacked (idle groups not owned by player)
+      const enemies = groups.filter(group => 
+        group.owner !== currentPlayerId && 
+        group.status === 'idle' &&
+        !group.inBattle
+      );
+  
+      // Update only if changes detected
+      if (playerGroups.length !== myGroups.length || !playerGroups.every((g, i) => g.id === myGroups[i]?.id)) {
+        playerGroups = myGroups;
+        
+        // Auto-select first group if there's only one player group
+        if (myGroups.length === 1) {
+          selectedPlayerGroups = [myGroups[0]];
+        } else {
+          // Reset selections when groups change
+          selectedPlayerGroups = [];
+        }
       }
+      
+      if (enemyGroups.length !== enemies.length || !enemyGroups.every((g, i) => g.id === enemies[i]?.id)) {
+        enemyGroups = enemies;
+        // Reset selections when groups change
+        selectedEnemyGroups = [];
+      }
+    } else {
+      playerGroups = [];
+      enemyGroups = [];
     }
     
-    if (enemyGroups.length !== enemies.length || !enemyGroups.every((g, i) => g.id === enemies[i]?.id)) {
-      enemyGroups = enemies;
-      // Reset selections when groups change
-      selectedEnemyGroups = [];
+    // Handle structure
+    if (tileData.structure && 
+        tileData.structure.owner && 
+        tileData.structure.owner !== currentPlayerId &&
+        !tileData.structure.inBattle) {
+      structures = [tileData.structure];
+    } else {
+      structures = [];
+      if (selectedStructure) selectedStructure = null;
     }
   });
   
@@ -129,6 +148,19 @@
     }
   }
   
+  // Select a structure as target
+  function selectStructure(structure) {
+    if (loading) return; // Prevent selection during loading
+    
+    if (selectedStructure && selectedStructure.id === structure.id) {
+      // Deselect if already selected
+      selectedStructure = null;
+    } else {
+      // Select the structure
+      selectedStructure = structure;
+    }
+  }
+  
   // Add keyboard handlers to support accessibility
   function handlePlayerGroupKeyDown(event, group) {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -143,6 +175,13 @@
       toggleEnemyGroup(group);
     }
   }
+
+  function handleStructureKeyDown(event, structure) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      selectStructure(structure);
+    }
+  }
   
   // Calculate total power for selected groups
   function calculateTotalPower(groups) {
@@ -153,33 +192,46 @@
   
   // Start an attack
   async function startAttack() {
-    if (selectedPlayerGroups.length === 0 || selectedEnemyGroups.length === 0) return;
+    // Validate selections
+    if (selectedPlayerGroups.length === 0) {
+      errorMessage = "Select at least one of your groups to attack with";
+      return;
+    }
+
+    if (selectedEnemyGroups.length === 0 && !selectedStructure) {
+      errorMessage = "Select at least one target to attack (enemy groups or structure)";
+      return;
+    }
     
     loading = true;
     errorMessage = '';
     
     try {
-      // Get arrays of IDs for both sides
+      // Get arrays of IDs for attackers
       const attackerGroupIds = selectedPlayerGroups.map(g => g.id);
-      const defenderGroupIds = selectedEnemyGroups.map(g => g.id);
       
-      console.log('Starting attack with params:', {
+      // Common parameters
+      const params = {
         worldId: $game.worldKey,
         attackerGroupIds,
-        defenderGroupIds,
         locationX: tileData.x,
-        locationY: tileData.y,
-      });
+        locationY: tileData.y
+      };
+      
+      // Add both defender groups and structure if selected
+      if (selectedEnemyGroups.length > 0) {
+        params.defenderGroupIds = selectedEnemyGroups.map(g => g.id);
+      }
+      
+      if (selectedStructure) {
+        params.structureId = selectedStructure.id;
+      }
+      
+      console.log('Starting attack with params:', params);
       
       // Call the cloud function with the updated parameter names
       const attackFunction = httpsCallable(functions, 'attack');
-      const result = await attackFunction({
-        worldId: $game.worldKey,
-        attackerGroupIds,
-        defenderGroupIds,
-        locationX: tileData.x,
-        locationY: tileData.y
-      });
+      const result = await attackFunction(params);
       
       if (result.data.success) {
         console.log('Attack started:', result.data);
@@ -187,9 +239,10 @@
         // Call the callback function if provided
         onAttack({
           attackerGroupIds,
-          defenderGroupIds,
           battleId: result.data.battleId,
-          tile: tileData
+          tile: tileData,
+          defenderGroupIds: params.defenderGroupIds,
+          structureId: params.structureId
         });
         
         onClose(true);
@@ -202,7 +255,7 @@
       if (error.code === 'unauthenticated') {
         errorMessage = 'Authentication error: Please log in again.';
       } else if (error.code === 'not-found') {
-        errorMessage = 'One of the groups was not found. It may have moved.';
+        errorMessage = 'Target was not found. It may have moved or been destroyed.';
       } else {
         errorMessage = error.message || 'Failed to start attack';
       }
@@ -211,20 +264,10 @@
     }
   }
   
-  // Check if a player group is selected
-  function isPlayerGroupSelected(groupId) {
-    return selectedPlayerGroups.some(g => g.id === groupId);
-  }
-  
-  // Check if an enemy group is selected
-  function isEnemyGroupSelected(groupId) {
-    return selectedEnemyGroups.some(g => g.id === groupId);
-  }
-  
-  // Check if attack is possible - need at least one group on each side
+  // Check if attack is possible - need at least one group on attacker side and at least one target
   let canAttack = $derived(
     selectedPlayerGroups.length > 0 && 
-    selectedEnemyGroups.length > 0 &&
+    (selectedEnemyGroups.length > 0 || selectedStructure !== null) &&
     !loading
   );
   
@@ -239,30 +282,36 @@
   function formatOwnerName(group) {
     return group.ownerName || "Unknown Player";
   }
+
+  // Check if we have structures available to attack
+  let hasStructures = $derived(structures.length > 0);
+
+  // Check if we have enemy groups available to attack
+  let hasEnemyGroups = $derived(enemyGroups.length > 0);
+  
+  // Check if we have any targets at all
+  let hasTargets = $derived(hasEnemyGroups || hasStructures);
 </script>
 
 <svelte:window onkeydown={handleKeyDown} />
 
 <div class="attack-modal" transition:scale={{ start: 0.95, duration: 200 }}>
   <header class="modal-header">
-    <h2>Attack Enemy Groups - {tileData?.x}, {tileData?.y}</h2>
+    <h2>Attack - {tileData?.x}, {tileData?.y}</h2>
     <button class="close-btn" onclick={onClose} aria-label="Close dialog">
       <Close size="1.5em" />
     </button>
   </header>
   
   <div class="content">
-    {#if playerGroups.length === 0 || enemyGroups.length === 0}
+    {#if playerGroups.length === 0}
       <div class="message error">
-        <p>
-          {#if playerGroups.length === 0}
-            You don't have any available groups that can attack.
-          {:else if enemyGroups.length === 0}
-            There are no enemy groups available to attack at this location.
-          {:else}
-            No groups available for combat.
-          {/if}
-        </p>
+        <p>You don't have any available groups that can attack.</p>
+        <button class="cancel-btn" onclick={onClose}>Close</button>
+      </div>
+    {:else if !hasTargets}
+      <div class="message error">
+        <p>There are no valid targets to attack at this location.</p>
         <button class="cancel-btn" onclick={onClose}>Close</button>
       </div>
     {:else}
@@ -316,51 +365,99 @@
           </div>
         </div>
         
-        <div class="selection-section">
-          <h3>Select Enemies to Attack</h3>
-          <div class="selection-count">({selectedEnemyGroups.length} selected)</div>
-          <div class="groups-list">
-            {#each enemyGroups as group}
-              <div 
-                class="group-item enemy-group" 
-                class:selected={isEnemyGroupSelected(group.id)}
-                onclick={() => toggleEnemyGroup(group)}
-                onkeydown={(e) => handleEnemyGroupKeyDown(e, group)}
-                aria-disabled={loading}
-                role="checkbox"
-                aria-checked={isEnemyGroupSelected(group.id)}
-                tabindex="0"
-              >
-                <div class="custom-checkbox" class:checked={isEnemyGroupSelected(group.id)}></div>
-                <div class="entity-icon">
-                  {#if group.race}
-                    {#if group.race.toLowerCase() === 'human'}
-                      <Human extraClass="race-icon-attack" />
-                    {:else if group.race.toLowerCase() === 'elf'}
-                      <Elf extraClass="race-icon-attack" />
-                    {:else if group.race.toLowerCase() === 'dwarf'}
-                      <Dwarf extraClass="race-icon-attack" />
-                    {:else if group.race.toLowerCase() === 'goblin'}
-                      <Goblin extraClass="race-icon-attack" />
-                    {:else if group.race.toLowerCase() === 'fairy'}
-                      <Fairy extraClass="race-icon-attack" />
-                    {/if}
-                  {/if}
-                </div>
-                <div class="group-info">
-                  <div class="group-name">
-                    {group.name || `Group ${group.id.slice(-4)}`}
+        <div class="selection-section enemies">
+          <h3>Select Targets</h3>
+          
+          <!-- Show enemy groups if available -->
+          {#if hasEnemyGroups}
+            <div class="target-section">
+              <h4>Enemy Groups</h4>
+              <div class="selection-count">({selectedEnemyGroups.length} selected)</div>
+              <div class="groups-list">
+                {#each enemyGroups as group}
+                  <div 
+                    class="group-item enemy-group" 
+                    class:selected={isEnemyGroupSelected(group.id)}
+                    onclick={() => toggleEnemyGroup(group)}
+                    onkeydown={(e) => handleEnemyGroupKeyDown(e, group)}
+                    aria-disabled={loading}
+                    role="checkbox"
+                    aria-checked={isEnemyGroupSelected(group.id)}
+                    tabindex="0"
+                  >
+                    <div class="custom-checkbox" class:checked={isEnemyGroupSelected(group.id)}></div>
+                    <div class="entity-icon">
+                      {#if group.race}
+                        {#if group.race.toLowerCase() === 'human'}
+                          <Human extraClass="race-icon-attack" />
+                        {:else if group.race.toLowerCase() === 'elf'}
+                          <Elf extraClass="race-icon-attack" />
+                        {:else if group.race.toLowerCase() === 'dwarf'}
+                          <Dwarf extraClass="race-icon-attack" />
+                        {:else if group.race.toLowerCase() === 'goblin'}
+                          <Goblin extraClass="race-icon-attack" />
+                        {:else if group.race.toLowerCase() === 'fairy'}
+                          <Fairy extraClass="race-icon-attack" />
+                        {/if}
+                      {/if}
+                    </div>
+                    <div class="group-info">
+                      <div class="group-name">
+                        {group.name || `Group ${group.id.slice(-4)}`}
+                      </div>
+                      <div class="group-details">
+                        <span class="unit-count">Units: {group.unitCount || group.units?.length || 1}</span>
+                        {#if group.race}
+                          <span class="group-race">{_fmt(group.race)}</span>
+                        {/if}
+                      </div>
+                    </div>
                   </div>
-                  <div class="group-details">
-                    <span class="unit-count">Units: {group.unitCount || group.units?.length || 1}</span>
-                    {#if group.race}
-                      <span class="group-race">{_fmt(group.race)}</span>
-                    {/if}
-                  </div>
-                </div>
+                {/each}
               </div>
-            {/each}
-          </div>
+            </div>
+          {/if}
+          
+          <!-- Show structure if available -->
+          {#if hasStructures}
+            <div class="target-section">
+              <h4>Structure</h4>
+              <div class="selection-count">({selectedStructure ? 1 : 0} selected)</div>
+              <div class="groups-list">
+                {#each structures as structure}
+                  <div 
+                    class="group-item structure-item" 
+                    class:selected={selectedStructure && selectedStructure.id === structure.id}
+                    onclick={() => selectStructure(structure)}
+                    onkeydown={(e) => handleStructureKeyDown(e, structure)}
+                    aria-disabled={loading}
+                    role="checkbox"
+                    aria-checked={selectedStructure && selectedStructure.id === structure.id}
+                    tabindex="0"
+                  >
+                    <div class="custom-checkbox" class:checked={selectedStructure && selectedStructure.id === structure.id}></div>
+                    <div class="entity-icon structure-icon">
+                      <Structure extraClass="structure-icon-attack" />
+                    </div>
+                    <div class="group-info">
+                      <div class="group-name">
+                        {structure.name || `Structure ${structure.id.slice(-4)}`}
+                      </div>
+                      <div class="group-details">
+                        <span class="structure-type">{_fmt(structure.type || "unknown")}</span>
+                        {#if structure.race}
+                          <span class="structure-race">{_fmt(structure.race)}</span>
+                        {/if}
+                      </div>
+                      {#if structure.ownerName}
+                        <div class="structure-owner">Owner: {structure.ownerName}</div>
+                      {/if}
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
         </div>
       </div>
       
@@ -457,6 +554,11 @@
     border-radius: 0.4em;
     padding: 1em;
   }
+  
+  .selection-section.enemies {
+    display: flex;
+    flex-direction: column;
+  }
 
   .selection-count {
     font-size: 0.8em;
@@ -520,6 +622,12 @@
     background-color: #d32f2f;
     border-color: #d32f2f;
   }
+  
+  /* Structure item checkbox styling */
+  .structure-item .custom-checkbox.checked {
+    background-color: #9c27b0;
+    border-color: #9c27b0;
+  }
 
   .group-info {
     flex: 1;
@@ -546,6 +654,19 @@
     background-color: rgba(220, 20, 60, 0.1);
     border-color: rgba(220, 20, 60, 0.3);
   }
+  
+  .group-item.structure-item {
+    border-color: rgba(156, 39, 176, 0.3);
+  }
+  
+  .group-item.structure-item:hover {
+    background-color: rgba(156, 39, 176, 0.05);
+  }
+  
+  .group-item.structure-item.selected {
+    background-color: rgba(156, 39, 176, 0.1);
+    border-color: rgba(156, 39, 176, 0.3);
+  }
 
   .group-name {
     font-weight: 600;
@@ -560,14 +681,20 @@
     justify-content: space-between;
   }
   
-  .unit-count {
+  .unit-count, .structure-type {
     color: rgba(0, 0, 0, 0.75);
     font-weight: 500;
   }
   
-  .group-race {
+  .group-race, .structure-race {
     color: #3e6bbf;
     font-weight: 500;
+  }
+  
+  .structure-owner {
+    font-size: 0.9em;
+    color: #555;
+    margin-top: 0.2em;
   }
 
   .actions {
@@ -668,12 +795,30 @@
   :global(.race-icon-attack.goblin-icon path) {
     fill: #7D5D3B; /* Earthy tone for goblin instead of bright green */
   }
+  
+  :global(.structure-icon-attack) {
+    width: 1.4em;
+    height: 1.4em;
+    opacity: 0.85;
+    fill: #9c27b0; /* Purple for structures */
+  }
 
-  @media (min-width: 768px) {
-    .attack-selection {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-gap: 1em;
-    }
+  .target-section {
+    margin-bottom: 1em;
+    border-top: 1px solid #eee;
+    padding-top: 0.8em;
+  }
+  
+  .target-section:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+  
+  h4 {
+    margin: 0 0 0.5em 0;
+    font-family: var(--font-heading);
+    font-size: 1em;
+    font-weight: 500;
+    color: #555;
   }
 </style>
