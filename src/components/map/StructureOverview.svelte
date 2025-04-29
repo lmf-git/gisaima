@@ -84,6 +84,15 @@
       onClose();
     }
   }
+
+  // Function to check if recruitment is possible at this structure
+  function canRecruitAtStructure() {
+    if (!structureData || !isOwner) return false;
+    
+    // Allow recruitment at certain structure types
+    const recruitmentStructures = ['spawn', 'barracks', 'village_hall', 'town_hall', 'city_hall'];
+    return recruitmentStructures.includes(structureData.type);
+  }
 </script>
 
 <svelte:window on:keydown={handleKeyDown} />

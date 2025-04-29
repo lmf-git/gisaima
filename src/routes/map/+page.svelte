@@ -38,13 +38,14 @@
     import Overview from '../../components/map/Overview.svelte';
     import Close from '../../components/icons/Close.svelte';
     import Mobilise from '../../components/map/Mobilise.svelte';
-    import Build from '../../components/map/Build.svelte'; // Import the Build component
+    import Build from '../../components/map/Build.svelte'; 
     import Move from '../../components/map/Move.svelte';
     import AttackGroups from '../../components/map/AttackGroups.svelte';
     import JoinBattle from '../../components/map/JoinBattle.svelte';
     import Demobilise from '../../components/map/Demobilise.svelte';
     import StructureOverview from '../../components/map/StructureOverview.svelte';
     import Gather from '../../components/map/Gather.svelte';
+    import Recruitment from '../../components/map/Recruitment.svelte'; // Add the import for Recruitment
     import Map from '../../components/icons/Map.svelte';
     import Spyglass from '../../components/icons/Spyglass.svelte';
     import Recenter from '../../components/map/Recenter.svelte';
@@ -928,6 +929,13 @@
               data: actionData
             });
             break;
+
+          case 'recruitment': // Handle recruitment action
+            showModal({
+              type: 'recruitment',
+              data: actionData
+            });
+            break;
             
           default:
             console.warn(`Unknown action type: ${actionId}`);
@@ -1332,6 +1340,10 @@
             />
           {:else if modalState.type === 'demobilise'}
             <Demobilise
+              onClose={closeModal}
+            />
+          {:else if modalState.type === 'recruitment'}
+            <Recruitment
               onClose={closeModal}
             />
           {/if}
