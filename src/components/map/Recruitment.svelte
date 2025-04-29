@@ -32,30 +32,55 @@
     let structureData = $state(null);
     let queue = $state([]);
     let maxUnits = $state(10); // Default max queue size
-    let completionInfo = $state(null); // Add this to store completion time calculation
+    let completionInfo = $state(null);
+    
+    // Flag to track initial setup
+    let initialSetupDone = $state(false);
 
-    // Set initial data from props
+    // Set initial data from props - modified to avoid infinite loops
     $effect(() => {
-        if (structure) {
+        if (structure && !initialSetupDone) {
             structureData = structure;
 
-            // Determine available units based on structure type and race
-            loadAvailableUnits(structure);
-
-            // Get current recruitment queue
+            // Set max units based on structure capacity
+            maxUnits = structure.capacity || 10;
+            
+            // Load available units first
+            const units = getAvailableUnits(structure);
+            availableUnits = units;
+            
+            // Update queue
             if (structure.recruitmentQueue) {
                 queue = Object.values(structure.recruitmentQueue)
                     .filter((item) => item && typeof item === "object")
                     .sort((a, b) => (a.startedAt || 0) - (b.startedAt || 0));
             }
-
-            // Set max units based on structure capacity
-            maxUnits = structure.capacity || 10;
+            
+            // Set initial selected unit AFTER setting available units
+            const firstAvailable = units.find(unit => unit.available);
+            if (firstAvailable) {
+                selectedUnit = firstAvailable;
+            } else if (units.length > 0) {
+                selectedUnit = units[0];
+            }
+            
+            // Mark setup as complete to avoid re-running
+            initialSetupDone = true;
         }
     });
 
-    // Load available units for recruitment based on structure
-    function loadAvailableUnits(structure) {
+    // Update completion info when selectedUnit or quantity changes
+    $effect(() => {
+        if (selectedUnit && quantity > 0) {
+            // Create a new object without modifying state
+            completionInfo = calculateCompletionTime();
+        } else {
+            completionInfo = null;
+        }
+    });
+
+    // Function to get available units without modifying state
+    function getAvailableUnits(structure) {
         const race = structure.race?.toLowerCase();
         const playerResources = getPlayerResources();
         const structureLevel = structure.level || 1;
@@ -239,7 +264,7 @@
         const allUnits = [...baseUnits, ...raceUnits, ...structureUnits];
         
         // Process each unit to determine availability
-        allUnits.forEach(unit => {
+        return allUnits.map(unit => {
             // Check requirements
             let available = true;
             let unavailableReason = "";
@@ -274,21 +299,18 @@
                 }
             }
             
-            // Add availability properties to unit
-            unit.available = available;
-            unit.unavailableReason = unavailableReason;
+            // Return modified copy of the unit with availability info
+            return {
+                ...unit,
+                available,
+                unavailableReason
+            };
         });
+    }
 
-        availableUnits = allUnits;
-
-        // Set initial selected unit to first available unit
-        const firstAvailable = availableUnits.find(unit => unit.available);
-        if (firstAvailable) {
-            selectedUnit = firstAvailable;
-        } else if (availableUnits.length > 0) {
-            // If no available units, still select the first one for display purposes
-            selectedUnit = availableUnits[0];
-        }
+    // Load available units - keeping for compatibility, but refactored to use getAvailableUnits
+    function loadAvailableUnits(structure) {
+        availableUnits = getAvailableUnits(structure);
     }
 
     // Helpers for unit requirements
@@ -325,7 +347,7 @@
         return totalCost;
     }
 
-    // Calculate estimated completion time
+    // Calculate estimated completion time - modified to avoid state changes
     function calculateCompletionTime() {
         if (!selectedUnit) return null;
 
@@ -353,15 +375,6 @@
             ticksRequired: Math.ceil(totalSeconds / 60), // Assuming 1 tick = 60 seconds
         };
     }
-
-    // Update completionInfo whenever relevant data changes
-    $effect(() => {
-        if (selectedUnit && quantity > 0) {
-            completionInfo = calculateCompletionTime();
-        } else {
-            completionInfo = null;
-        }
-    });
 
     // Format a number with commas
     function formatNumber(num) {
@@ -581,7 +594,7 @@
 
 <svelte:window on:keydown={handleKeyDown} />
 
-<div class="recruitment-modal" transition:scale={{ start: 0.95, duration: 200 }}>
+<div class="recruitment-modal">
     <header class="modal-header">
         <h3>
             Recruitment at {structureData?.name || "Structure"} ({x}, {y})
@@ -971,7 +984,7 @@
     .empty-state {
         padding: 2rem 0;
         text-align: center;
-        color: rgba(0, 0, 0, 0.5);
+        color: rgba(0, 0, 0, 0.6); /* Increased from 0.5 for better contrast */
         font-style: italic;
     }
 
@@ -1023,7 +1036,7 @@
 
     .queue-item-time {
         font-size: 0.85rem;
-        color: rgba(0, 0, 0, 0.6);
+        color: rgba(0, 0, 0, 0.6); /* Increased from potentially lighter value */
     }
 
     .cancel-button {
@@ -1135,7 +1148,7 @@
 
     .unit-option-power {
         font-size: 0.75rem;
-        color: rgba(0, 0, 0, 0.6);
+        color: rgba(0, 0, 0, 0.7); /* Increased from 0.6 for better contrast */
     }
 
     .unit-details {
@@ -1149,12 +1162,13 @@
         margin: 0 0 0.5rem 0;
         font-size: 1rem;
         font-weight: 600;
+        color: rgba(0, 0, 0, 0.9); /* Add explicit color with strong contrast */
     }
 
     .unit-description {
         margin: 0 0 1rem 0;
         font-size: 0.9rem;
-        color: rgba(0, 0, 0, 0.7);
+        color: rgba(0, 0, 0, 0.7); /* Ensuring good contrast */
     }
 
     .unit-stats {
@@ -1169,7 +1183,11 @@
 
     .stat-label {
         font-weight: 500;
-        color: rgba(0, 0, 0, 0.6);
+        color: rgba(0, 0, 0, 0.7); /* Increased from 0.6 for better contrast */
+    }
+    
+    .stat-value {
+        color: rgba(0, 0, 0, 0.8); /* Add explicit color with good contrast */
     }
 
     .unit-cost h6,
@@ -1193,6 +1211,7 @@
         padding: 0.2rem 0.5rem;
         background-color: rgba(0, 0, 0, 0.05);
         border-radius: 0.2rem;
+        color: rgba(0, 0, 0, 0.8); /* Add explicit color with good contrast */
     }
 
     .total-item.insufficient {
@@ -1202,7 +1221,7 @@
 
     .player-has {
         font-size: 0.75rem;
-        color: rgba(0, 0, 0, 0.5);
+        color: rgba(0, 0, 0, 0.6); /* Increased from 0.5 for better contrast */
         margin-left: 0.2rem;
     }
 
@@ -1257,11 +1276,13 @@
 
     .time-info {
         font-size: 0.85rem;
+        color: rgba(0, 0, 0, 0.8); /* Added explicit color with good contrast */
     }
 
     .completion-estimate {
         margin-top: 0.5rem;
         font-weight: 500;
+        color: rgba(0, 0, 0, 0.9); /* Added explicit color with strong contrast */
     }
 
     .error-message {
@@ -1333,7 +1354,7 @@
         display: inline-block;
         font-size: 0.7em;
         margin-left: 0.3rem;
-        color: rgba(0, 0, 0, 0.6);
+        color: rgba(0, 0, 0, 0.6); /* Increased from 0.5 for better contrast */
     }
 
     .unit-details.unavailable {
