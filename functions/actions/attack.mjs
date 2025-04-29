@@ -8,7 +8,7 @@ import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 
 // Attack another group function - updated for multi-group battles
-export const attackGroups = onCall({ maxInstances: 10 }, async (request) => {
+export const attack = onCall({ maxInstances: 10 }, async (request) => {
   const { attackerGroupIds, defenderGroupIds, locationX, locationY } = request.data;
   const userId = request.auth?.uid;
   

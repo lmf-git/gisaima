@@ -172,7 +172,7 @@
       });
       
       // Call the cloud function with the updated parameter names
-      const attackFunction = httpsCallable(functions, 'attackGroups');
+      const attackFunction = httpsCallable(functions, 'attack');
       const result = await attackFunction({
         worldId: $game.worldKey,
         attackerGroupIds,

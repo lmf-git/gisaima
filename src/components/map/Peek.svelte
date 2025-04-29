@@ -5,7 +5,7 @@
   import Eye from '../icons/Eye.svelte';
   import Rally from '../icons/Rally.svelte';
   import Compass from '../icons/Compass.svelte';
-  import Attack from '../icons/Attack.svelte';
+  import Sword from '../icons/Sword.svelte';
   import Hammer from '../icons/Hammer.svelte';
   import Crop from '../icons/Crop.svelte';
   import Structure from '../icons/Structure.svelte';
@@ -127,9 +127,9 @@
     { id: 'move', label: 'Move', icon: Compass, condition: canMove },
     { id: 'mobilise', label: 'Mobilise', icon: Rally, condition: canMobilize },
     { id: 'gather', label: 'Gather', icon: Crop, condition: canGather },
-    { id: 'attack', label: 'Attack', icon: Attack, condition: canAttack },
+    { id: 'attack', label: 'Attack', icon: Sword, condition: canAttack },
     { id: 'demobilise', label: 'Demobilise', icon: Structure, condition: canDemobilize },
-    { id: 'joinBattle', label: 'Join Battle', icon: Attack, condition: canJoinBattle }
+    { id: 'joinBattle', label: 'Join Battle', icon: Sword, condition: canJoinBattle }
   ];
 
   // Filter actions based on conditions

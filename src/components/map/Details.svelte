@@ -22,7 +22,7 @@
   import Eye from '../icons/Eye.svelte';
   import Crop from '../icons/Crop.svelte';
   import Rally from '../icons/Rally.svelte';
-  import Attack from '../icons/Attack.svelte';
+  import Sword from '../icons/Sword.svelte';
   import Hammer from '../icons/Hammer.svelte';
 
   // Props
@@ -627,7 +627,7 @@
                 
                 {#if canAttack(detailsData)}
                   <button class="action-button attack-button" onclick={() => executeAction('attack')}>
-                    <Attack extraClass="action-icon attack-icon" />
+                    <Sword extraClass="action-icon attack-icon" />
                     Attack
                   </button>
                 {/if}

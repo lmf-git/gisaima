@@ -40,7 +40,7 @@
     import Mobilise from '../../components/map/Mobilise.svelte';
     import Build from '../../components/map/Build.svelte'; 
     import Move from '../../components/map/Move.svelte';
-    import AttackGroups from '../../components/map/AttackGroups.svelte';
+    import Attack from '../../components/map/Attack.svelte';
     import JoinBattle from '../../components/map/JoinBattle.svelte';
     import Demobilise from '../../components/map/Demobilise.svelte';
     import StructureOverview from '../../components/map/StructureOverview.svelte';
@@ -1331,7 +1331,7 @@
               onClose={closeModal}
             />
           {:else if modalState.type === 'attack' && modalState.data}
-            <AttackGroups
+            <Attack
               x={modalState.data.x}
               y={modalState.data.y}
               tile={modalState.data.tile} 
