@@ -264,6 +264,16 @@
     }
   }
   
+  // Check if a player group is selected
+  function isPlayerGroupSelected(groupId) {
+    return selectedPlayerGroups.some(g => g.id === groupId);
+  }
+  
+  // Check if an enemy group is selected
+  function isEnemyGroupSelected(groupId) {
+    return selectedEnemyGroups.some(g => g.id === groupId);
+  }
+  
   // Check if attack is possible - need at least one group on attacker side and at least one target
   let canAttack = $derived(
     selectedPlayerGroups.length > 0 && 

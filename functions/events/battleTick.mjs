@@ -312,28 +312,63 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
       }
     }
     
+    // Variables to track structure outcomes
+    let structureDestroyed = false;
+    let structureCaptured = false;
+    let newOwner = null;
+    let previousOwner = null;
+    
     // Handle structure if it was in the battle
     if (includesStructure && structure) {
       if (winningSide === 1) {
-        // Attackers won - structure is destroyed or claimed
+        // Attackers won - structure could be destroyed or claimed
         if (structure.type === "spawn") {
           // Spawn points can't be destroyed, just reset battle status
           updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/inBattle`] = false;
           updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/battleId`] = null;
         } else {
-          // Transfer ownership of the structure if it has an owner
-          if (structure.owner) {
-            const newOwner = winningGroups && winningGroups[0]?.owner;
-            if (newOwner) {
-              updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/owner`] = newOwner;
-              updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/ownerName`] = 
-                winningGroups[0]?.name?.replace("'s Force", "") || "Unknown Conqueror";
-            }
-          }
+          // Calculate destruction chance based on structure type and battle damage
+          const destructionChance = calculateDestructionChance(structure, battleData);
+          const isDestroyed = Math.random() < destructionChance;
           
-          // Reset battle status
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/inBattle`] = false;
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/battleId`] = null;
+          if (isDestroyed) {
+            // Structure is destroyed - remove it entirely
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure`] = null;
+            structureDestroyed = true;
+            previousOwner = structure.owner;
+            
+            logger.info(`Structure ${structure.name || structure.id} destroyed at (${locationKey})`);
+          } else {
+            // Structure survives but is captured - find strongest attacker to be new owner
+            previousOwner = structure.owner;
+            
+            // Find strongest attacker group
+            if (attackers.length > 0) {
+              // Sort attackers by power (descending)
+              const sortedAttackers = [...attackers].sort((a, b) => {
+                const powerA = calculateGroupPower(a);
+                const powerB = calculateGroupPower(b);
+                return powerB - powerA;
+              });
+              
+              // The strongest group's owner becomes the new structure owner
+              const strongestGroup = sortedAttackers[0];
+              if (strongestGroup && strongestGroup.owner) {
+                newOwner = strongestGroup.owner;
+                const newOwnerName = strongestGroup.name?.replace("'s Force", "") || "Unknown Conqueror";
+                
+                updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/owner`] = newOwner;
+                updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/ownerName`] = newOwnerName;
+                structureCaptured = true;
+                
+                logger.info(`Structure ${structure.name || structure.id} captured by ${newOwnerName} at (${locationKey})`);
+              }
+            }
+            
+            // Reset battle status
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/inBattle`] = false;
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/battleId`] = null;
+          }
         }
       } else {
         // Defenders won - structure stays intact
@@ -354,7 +389,13 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
       const structureName = structure ? structure.name || "Structure" : "Structure";
       
       if (winningSide === 1) {
-        resultMessage += `Victorious: ${attackerName} defeated ${defenderName} and captured ${structureName}`;
+        if (structureDestroyed) {
+          resultMessage += `Victorious: ${attackerName} defeated ${defenderName} and destroyed ${structureName}`;
+        } else if (structureCaptured) {
+          resultMessage += `Victorious: ${attackerName} defeated ${defenderName} and captured ${structureName}`;
+        } else {
+          resultMessage += `Victorious: ${attackerName} defeated ${defenderName} and captured ${structureName}`;
+        }
       } else {
         resultMessage += `${defenderName} and ${structureName} successfully defended against ${attackerName}`;
       }
@@ -372,7 +413,13 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
       const structureName = structure ? structure.name || "Structure" : "Structure";
       
       if (winningSide === 1) {
-        resultMessage += `${attackerName} successfully captured ${structureName}`;
+        if (structureDestroyed) {
+          resultMessage += `${attackerName} successfully destroyed ${structureName}`;
+        } else if (structureCaptured) {
+          resultMessage += `${attackerName} successfully captured ${structureName}`;
+        } else {
+          resultMessage += `${attackerName} successfully captured ${structureName}`;
+        }
       } else {
         resultMessage += `${attackerName} failed to capture ${structureName}`;
       }
@@ -391,6 +438,23 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
       timestamp: now
     };
     
+    // If structure was destroyed or captured, add a specific message
+    if (structureDestroyed) {
+      updates[`worlds/${worldId}/chat/structure_destroyed_${now}_${Math.floor(Math.random() * 1000)}`] = {
+        text: `A ${structure.type || ''} structure was destroyed at (${locationKey})`,
+        type: "event",
+        location: { x: parseInt(locationKey.split(',')[0]), y: parseInt(locationKey.split(',')[1]) },
+        timestamp: now
+      };
+    } else if (structureCaptured && previousOwner !== newOwner) {
+      updates[`worlds/${worldId}/chat/structure_captured_${now}_${Math.floor(Math.random() * 1000)}`] = {
+        text: `${structure.name || 'A structure'} at (${locationKey}) was captured by ${attackers[0]?.name?.replace("'s Force", "") || "Unknown Conqueror"}`,
+        type: "event",
+        location: { x: parseInt(locationKey.split(',')[0]), y: parseInt(locationKey.split(',')[1]) },
+        timestamp: now
+      };
+    }
+    
     // Execute all updates atomically
     await db.ref().update(updates);
     logger.info(`Battle ${battleId} ended. Winner: side ${winningSide}`);
@@ -398,6 +462,52 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
   } catch (error) {
     logger.error(`Error ending battle ${battleId}:`, error);
   }
+}
+
+// Calculate chance for structure to be destroyed based on structure type and battle damage
+function calculateDestructionChance(structure, battleData) {
+  // Base destruction chance by structure type (lower for more important structures)
+  let baseChance = 0.2; // Default 20% chance
+  
+  switch (structure.type) {
+    case 'fortress':
+      baseChance = 0.05; // 5% base chance - very sturdy
+      break;
+    case 'watchtower':
+      baseChance = 0.25; // 25% base chance - relatively fragile
+      break;
+    case 'stronghold':
+      baseChance = 0.1; // 10% base chance - quite sturdy
+      break;
+    case 'camp':
+      baseChance = 0.4; // 40% base chance - very fragile
+      break;
+    case 'outpost':
+      baseChance = 0.3; // 30% base chance - somewhat fragile
+      break;
+    case 'village':
+      baseChance = 0.15; // 15% base chance - moderately sturdy
+      break;
+    default:
+      baseChance = 0.2; // 20% base chance for unknown types
+  }
+  
+  // Consider battle damage - the longer the battle, the higher the chance of destruction
+  const battleTicksFactor = Math.min(1, (battleData.tickCount || 0) / 5); // Max factor of 1 after 5 ticks
+  
+  // Consider power ratio - if attackers were much stronger than the structure,
+  // increase destruction chance
+  const attackerPower = battleData.side1Power || 0;
+  const structurePower = battleData.structurePower || 0;
+  
+  // Calculate power ratio factor, capped at 2 (doubling the destruction chance)
+  const powerRatioFactor = Math.min(2, attackerPower / Math.max(1, structurePower));
+  
+  // Calculate final destruction chance
+  const finalChance = baseChance * (1 + battleTicksFactor * 0.5) * powerRatioFactor;
+  
+  // Cap the chance at 75% - even the most overwhelming attack has some chance to leave structure standing
+  return Math.min(0.75, finalChance);
 }
 
 function calculateTotalPower(groups) {
@@ -443,4 +553,33 @@ function calculateStructurePower(structure) {
   }
   
   return basePower;
+}
+
+// Helper function to calculate group power (for sorting attackers by strength)
+function calculateGroupPower(group) {
+  // Base calculation using unit count
+  let power = group.unitCount || 1;
+  
+  // If we have detailed units data, use it for better calculations
+  if (group.units && typeof group.units === 'object') {
+    // Check if it's an array or object
+    if (Array.isArray(group.units)) {
+      power = group.units.reduce((total, unit) => {
+        // Calculate unit strength (default to 1 if not specified)
+        const unitStrength = unit.strength || 1;
+        return total + unitStrength;
+      }, 0);
+    } else {
+      // Handle object format (keys are unit IDs)
+      power = Object.values(group.units).reduce((total, unit) => {
+        const unitStrength = unit.strength || 1;
+        return total + unitStrength;
+      }, 0);
+    }
+    
+    // Ensure minimum power of 1
+    power = Math.max(1, power);
+  }
+  
+  return power;
 }
