@@ -18,7 +18,7 @@ export { attack } from './actions/attack.mjs';
 export { startGathering } from './actions/gather.mjs';
 export { joinBattle } from './actions/joinBattle.mjs';
 export { buildStructure } from './actions/build.mjs';
-export { fleeBattle } from './actions/fleeBattle.mjs'; // Add the new fleeBattle function
+export { fleeBattle } from './actions/fleeBattle.mjs';
 
 // Scheduled tasks
 export { processGameTicks } from './tick.mjs';

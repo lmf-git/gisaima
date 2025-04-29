@@ -13,6 +13,7 @@ import { processDemobilization } from "./events/demobiliseTick.mjs";
 import { processMovement } from "./events/moveTick.mjs";
 import { processGathering } from "./events/gatheringTick.mjs";
 import { processBuilding } from "./events/buildTick.mjs"; // Import the building tick processor
+import { spawnMonsters } from "./events/monsterSpawnTick.mjs"; // Import the monster spawning function
 
 // Process world ticks to handle mobilizations and other time-based events
 export const processGameTicks = onSchedule({
@@ -44,6 +45,7 @@ export const processGameTicks = onSchedule({
     let movementsProcessed = 0;
     let gatheringsProcessed = 0;
     let buildingsProcessed = 0; // Add counter for buildings
+    let monstersSpawned = 0; // Add counter for monster spawning
     
     // Process each world
     for (const worldId in worlds) {
@@ -145,9 +147,16 @@ export const processGameTicks = onSchedule({
       // Process battles for the world using the imported function
       const battlesProcessed = await processBattles(worldId);
       console.log(`Processed ${battlesProcessed} battles in world ${worldId}`);
+      
+      // Spawn monsters with a 20% chance on each tick (to avoid spawning too many)
+      if (Math.random() < 0.2) {
+        const spawnedCount = await spawnMonsters(worldId);
+        monstersSpawned += spawnedCount;
+        console.log(`Spawned ${spawnedCount} monster groups in world ${worldId}`);
+      }
     }
     
-    console.log(`Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, ${movementsProcessed} movement steps, ${gatheringsProcessed} gatherings, and ${buildingsProcessed} building updates`);    
+    console.log(`Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, ${movementsProcessed} movement steps, ${gatheringsProcessed} gatherings, ${buildingsProcessed} building updates, and spawned ${monstersSpawned} monster groups`);    
     return null;
   } catch (error) {
     console.error("Error processing game ticks:", error);
