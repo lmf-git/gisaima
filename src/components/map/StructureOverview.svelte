@@ -267,9 +267,9 @@
 
       <!-- Recruitment button -->
       {#if canRecruitAtStructure()}
-        <button class="action-button" onclick={() => executeAction('recruitment')}>
-          <Shield extraClass="action-icon shield-icon" />
-          Recruit Units
+        <button class="action-button recruit-button" onclick={() => executeAction('recruitment')}>
+          <Shield extraClass="action-icon" />
+          <span>Recruit Units</span>
         </button>
       {/if}
     </div>
@@ -736,5 +736,48 @@
   
   :global(.citadel-icon) {
     filter: drop-shadow(0 0 2px rgba(209, 138, 230, 0.7));
+  }
+
+  /* Action buttons styling */
+  .action-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6em;
+    width: 100%;
+    padding: 0.8em;
+    margin-top: 0.8em;
+    border-radius: 0.3em;
+    font-family: inherit;
+    font-size: 0.95em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 0.1em 0.3em rgba(0, 0, 0, 0.1);
+    border: none;
+  }
+
+  .recruit-button {
+    background: linear-gradient(to bottom, rgba(76, 175, 80, 0.9), rgba(56, 142, 60, 0.9));
+    color: white;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(46, 125, 50, 0.5);
+  }
+
+  .recruit-button:hover {
+    background: linear-gradient(to bottom, rgba(76, 175, 80, 1), rgba(56, 142, 60, 1));
+    box-shadow: 0 0.2em 0.5em rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+  }
+
+  .recruit-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 0.05em 0.2em rgba(0, 0, 0, 0.1);
+  }
+
+  :global(.action-button .action-icon) {
+    width: 1.2em;
+    height: 1.2em;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
   }
 </style>

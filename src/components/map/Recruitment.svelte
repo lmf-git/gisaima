@@ -422,323 +422,312 @@
 
 <svelte:window on:keydown={handleKeyDown} />
 
-<div class="modal-container">
-    <div class="recruitment-modal">
-        <header class="modal-header">
-            <h3>
-                Recruitment at {structureData?.name || "Structure"} ({x}, {y})
-            </h3>
-            <button class="close-button" onclick={onClose} disabled={isLoading}>
-                <Close size="1.6em" extraClass="close-icon-dark" />
-            </button>
-        </header>
+<div class="recruitment-modal" transition:scale={{ start: 0.95, duration: 200 }}>
+    <header class="modal-header">
+        <h3>
+            Recruitment at {structureData?.name || "Structure"} ({x}, {y})
+        </h3>
+        <button class="close-button" onclick={onClose} disabled={isLoading}>
+            <Close size="1.6em" extraClass="close-icon-dark" />
+        </button>
+    </header>
 
-        <div class="modal-content">
-            <!-- Queue section -->
-            <div class="section queue-section">
-                <h4>
-                    Recruitment Queue
-                    <span class="entity-count">{queue.length}/{maxUnits}</span>
-                </h4>
+    <div class="modal-content">
+        <!-- Queue section -->
+        <div class="section queue-section">
+            <h4>
+                Recruitment Queue
+                <span class="entity-count">{queue.length}/{maxUnits}</span>
+            </h4>
 
-                {#if queue.length === 0}
-                    <div class="empty-state">
-                        No units currently being recruited
-                    </div>
-                {:else}
-                    <div class="queue-list">
-                        {#each queue as item}
-                            <div class="queue-item">
-                                <div class="queue-item-header">
-                                    <div class="queue-item-icon">
-                                        <!-- Get the appropriate icon based on unit type -->
-                                        {#if item.unitType}
-                                            {#key item.unitType}
-                                                {#if item.icon === "sword"}
-                                                    <Sword
-                                                        extraClass="unit-icon"
-                                                    />
-                                                {:else if item.icon === "bow"}
-                                                    <Bow
-                                                        extraClass="unit-icon"
-                                                    />
-                                                {:else if item.icon === "shield"}
-                                                    <Shield
-                                                        extraClass="unit-icon"
-                                                    />
-                                                {:else if item.race === "human"}
-                                                    <Human
-                                                        extraClass="unit-icon"
-                                                    />
-                                                {:else if item.race === "elf"}
-                                                    <Elf
-                                                        extraClass="unit-icon"
-                                                    />
-                                                {:else if item.race === "dwarf"}
-                                                    <Dwarf
-                                                        extraClass="unit-icon"
-                                                    />
-                                                {:else if item.race === "goblin"}
-                                                    <Goblin
-                                                        extraClass="unit-icon"
-                                                    />
-                                                {:else if item.race === "fairy"}
-                                                    <Fairy
-                                                        extraClass="unit-icon"
-                                                    />
-                                                {:else}
-                                                    <Sword
-                                                        extraClass="unit-icon"
-                                                    />
-                                                {/if}
-                                            {/key}
-                                        {/if}
-                                    </div>
-                                    <div class="queue-item-info">
-                                        <div class="queue-item-name">
-                                            {item.unitName || "Unknown Unit"} x{item.quantity}
-                                        </div>
-                                        <div class="queue-item-time">
-                                            Completes: {formatDate(
-                                                new Date(item.completesAt),
-                                            )}
-                                        </div>
-                                    </div>
-                                    {#if item.owner === $currentPlayer?.id}
-                                        <button
-                                            class="cancel-button"
-                                            onclick={() =>
-                                                cancelRecruitment(item.id)}
-                                            disabled={isLoading}
-                                        >
-                                            ✕
-                                        </button>
+            {#if queue.length === 0}
+                <div class="empty-state">
+                    No units currently being recruited
+                </div>
+            {:else}
+                <div class="queue-list">
+                    {#each queue as item}
+                        <div class="queue-item">
+                            <div class="queue-item-header">
+                                <div class="queue-item-icon">
+                                    <!-- Get the appropriate icon based on unit type -->
+                                    {#if item.unitType}
+                                        {#key item.unitType}
+                                            {#if item.icon === "sword"}
+                                                <Sword
+                                                    extraClass="unit-icon"
+                                                />
+                                            {:else if item.icon === "bow"}
+                                                <Bow
+                                                    extraClass="unit-icon"
+                                                />
+                                            {:else if item.icon === "shield"}
+                                                <Shield
+                                                    extraClass="unit-icon"
+                                                />
+                                            {:else if item.race === "human"}
+                                                <Human
+                                                    extraClass="unit-icon"
+                                                />
+                                            {:else if item.race === "elf"}
+                                                <Elf
+                                                    extraClass="unit-icon"
+                                                />
+                                            {:else if item.race === "dwarf"}
+                                                <Dwarf
+                                                    extraClass="unit-icon"
+                                                />
+                                            {:else if item.race === "goblin"}
+                                                <Goblin
+                                                    extraClass="unit-icon"
+                                                />
+                                            {:else if item.race === "fairy"}
+                                                <Fairy
+                                                    extraClass="unit-icon"
+                                                />
+                                            {:else}
+                                                <Sword
+                                                    extraClass="unit-icon"
+                                                />
+                                            {/if}
+                                        {/key}
                                     {/if}
                                 </div>
+                                <div class="queue-item-info">
+                                    <div class="queue-item-name">
+                                        {item.unitName || "Unknown Unit"} x{item.quantity}
+                                    </div>
+                                    <div class="queue-item-time">
+                                        Completes: {formatDate(
+                                            new Date(item.completesAt),
+                                        )}
+                                    </div>
+                                </div>
+                                {#if item.owner === $currentPlayer?.id}
+                                    <button
+                                        class="cancel-button"
+                                        onclick={() =>
+                                            cancelRecruitment(item.id)}
+                                        disabled={isLoading}
+                                    >
+                                        ✕
+                                    </button>
+                                {/if}
+                            </div>
 
-                                <div class="progress-bar">
-                                    <div
-                                        class="progress-fill"
-                                        style={`width: ${getProgressPercentage(item)}%`}
-                                    ></div>
+                            <div class="progress-bar">
+                                <div
+                                    class="progress-fill"
+                                    style={`width: ${getProgressPercentage(item)}%`}
+                                ></div>
+                            </div>
+                        </div>
+                    {/each}
+                </div>
+            {/if}
+        </div>
+
+        <!-- Recruitment form -->
+        <div class="section recruitment-form">
+            <h4>Recruit New Units</h4>
+
+            {#if availableUnits.length === 0}
+                <div class="empty-state">
+                    No units available for recruitment
+                </div>
+            {:else}
+                <div class="form-content">
+                    <!-- Unit selection -->
+                    <div class="form-group">
+                        <label for="unit-select">Unit Type</label>
+                        <div class="unit-select-container">
+                            {#each availableUnits as unit}
+                                {@const IconComponent = getUnitIcon(unit)}
+                                <button
+                                    class="unit-option {selectedUnit?.id ===
+                                    unit.id
+                                        ? 'selected'
+                                        : ''}"
+                                    onclick={() => (selectedUnit = unit)}
+                                    title={unit.description}
+                                >
+                                    <div class="unit-option-icon">
+                                        {#if IconComponent}
+                                            <IconComponent extraClass="unit-icon" />
+                                        {/if}
+                                    </div>
+                                    <div class="unit-option-info">
+                                        <div class="unit-option-name">
+                                            {unit.name}
+                                        </div>
+                                        <div class="unit-option-power">
+                                            Power: {unit.power}
+                                        </div>
+                                    </div>
+                                </button>
+                            {/each}
+                        </div>
+                    </div>
+
+                    {#if selectedUnit}
+                        <!-- Unit details -->
+                        <div class="unit-details">
+                            <h5>{selectedUnit.name}</h5>
+                            <p class="unit-description">
+                                {selectedUnit.description}
+                            </p>
+
+                            <div class="unit-stats">
+                                <div class="unit-stat">
+                                    <span class="stat-label">Power:</span>
+                                    <span class="stat-value"
+                                        >{selectedUnit.power}</span
+                                    >
+                                </div>
+                                <div class="unit-stat">
+                                    <span class="stat-label">Time:</span>
+                                    <span class="stat-value"
+                                        >{formatTime(
+                                            selectedUnit.timePerUnit,
+                                        )} each</span
+                                    >
                                 </div>
                             </div>
-                        {/each}
-                    </div>
-                {/if}
-            </div>
 
-            <!-- Recruitment form -->
-            <div class="section recruitment-form">
-                <h4>Recruit New Units</h4>
-
-                {#if availableUnits.length === 0}
-                    <div class="empty-state">
-                        No units available for recruitment
-                    </div>
-                {:else}
-                    <div class="form-content">
-                        <!-- Unit selection -->
-                        <div class="form-group">
-                            <label for="unit-select">Unit Type</label>
-                            <div class="unit-select-container">
-                                {#each availableUnits as unit}
-                                    {@const IconComponent = getUnitIcon(unit)}
-                                    <button
-                                        class="unit-option {selectedUnit?.id ===
-                                        unit.id
-                                            ? 'selected'
-                                            : ''}"
-                                        onclick={() => (selectedUnit = unit)}
-                                        title={unit.description}
-                                    >
-                                        <div class="unit-option-icon">
-                                            {#if IconComponent}
-                                                <IconComponent extraClass="unit-icon" />
-                                            {/if}
+                            <div class="unit-cost">
+                                <h6>Cost per unit:</h6>
+                                <div class="cost-items">
+                                    {#each Object.entries(selectedUnit.cost) as [resource, amount]}
+                                        <div class="cost-item">
+                                            {formatResource(resource)}: {amount}
                                         </div>
-                                        <div class="unit-option-info">
-                                            <div class="unit-option-name">
-                                                {unit.name}
-                                            </div>
-                                            <div class="unit-option-power">
-                                                Power: {unit.power}
-                                            </div>
-                                        </div>
-                                    </button>
-                                {/each}
+                                    {/each}
+                                </div>
                             </div>
                         </div>
 
-                        {#if selectedUnit}
-                            <!-- Unit details -->
-                            <div class="unit-details">
-                                <h5>{selectedUnit.name}</h5>
-                                <p class="unit-description">
-                                    {selectedUnit.description}
-                                </p>
-
-                                <div class="unit-stats">
-                                    <div class="unit-stat">
-                                        <span class="stat-label">Power:</span>
-                                        <span class="stat-value"
-                                            >{selectedUnit.power}</span
-                                        >
-                                    </div>
-                                    <div class="unit-stat">
-                                        <span class="stat-label">Time:</span>
-                                        <span class="stat-value"
-                                            >{formatTime(
-                                                selectedUnit.timePerUnit,
-                                            )} each</span
-                                        >
-                                    </div>
-                                </div>
-
-                                <div class="unit-cost">
-                                    <h6>Cost per unit:</h6>
-                                    <div class="cost-items">
-                                        {#each Object.entries(selectedUnit.cost) as [resource, amount]}
-                                            <div class="cost-item">
-                                                {formatResource(resource)}: {amount}
-                                            </div>
-                                        {/each}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Quantity selection -->
-                            <div class="form-group">
-                                <label for="quantity">Quantity</label>
-                                <div class="quantity-control">
-                                    <button
-                                        class="quantity-button"
-                                        onclick={() =>
-                                            (quantity = Math.max(
-                                                1,
-                                                quantity - 1,
-                                            ))}
-                                        disabled={isLoading || quantity <= 1}
-                                    >
-                                        -
-                                    </button>
-                                    <input
-                                        type="number"
-                                        id="quantity"
-                                        bind:value={quantity}
-                                        min="1"
-                                        max="100"
-                                        disabled={isLoading}
-                                    />
-                                    <button
-                                        class="quantity-button"
-                                        onclick={() =>
-                                            (quantity = Math.min(
-                                                100,
-                                                quantity + 1,
-                                            ))}
-                                        disabled={isLoading || quantity >= 100}
-                                    >
-                                        +
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Total cost and time -->
-                            <div class="totals">
-                                <div class="total-section">
-                                    <h6>Total Cost:</h6>
-                                    <div class="total-items">
-                                        {#each Object.entries(calculateTotalCost()) as [resource, amount]}
-                                            {@const playerResource =
-                                                getPlayerResources()[
-                                                    resource
-                                                ] || 0}
-                                            <div
-                                                class="total-item {playerResource <
-                                                amount
-                                                    ? 'insufficient'
-                                                    : ''}"
-                                                title={`You have ${playerResource} ${formatResource(resource)}`}
-                                            >
-                                                {formatResource(resource)}: {amount}
-                                                <span class="player-has"
-                                                    >({playerResource})</span
-                                                >
-                                            </div>
-                                        {/each}
-                                    </div>
-                                </div>
-                                <div class="total-section">
-                                    <h6>Time Required:</h6>
-                                    <div class="time-info">
-                                        <div>
-                                            Production: {formatTime(
-                                                completionInfo?.seconds || 0,
-                                            )}
-                                        </div>
-                                        {#if completionInfo?.queueSeconds > 0}
-                                            <div>
-                                                Queue wait: {formatTime(
-                                                    completionInfo?.queueSeconds ||
-                                                        0,
-                                                )}
-                                            </div>
-                                            <div class="completion-estimate">
-                                                Estimated completion: {formatDate(
-                                                    completionInfo?.date,
-                                                )}
-                                            </div>
-                                        {/if}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {#if error}
-                                <div class="error-message">{error}</div>
-                            {/if}
-
-                            {#if success}
-                                <div class="success-message">{success}</div>
-                            {/if}
-
-                            <!-- Submit button -->
-                            <div class="form-actions">
+                        <!-- Quantity selection -->
+                        <div class="form-group">
+                            <label for="quantity">Quantity</label>
+                            <div class="quantity-control">
                                 <button
-                                    class="recruit-button"
-                                    onclick={startRecruitment}
-                                    disabled={isLoading ||
-                                        !hasEnoughResources() ||
-                                        queue.length >= maxUnits}
+                                    class="quantity-button"
+                                    onclick={() =>
+                                        (quantity = Math.max(
+                                            1,
+                                            quantity - 1,
+                                        ))}
+                                    disabled={isLoading || quantity <= 1}
                                 >
-                                    {isLoading
-                                        ? "Processing..."
-                                        : "Start Recruitment"}
+                                    -
+                                </button>
+                                <input
+                                    type="number"
+                                    id="quantity"
+                                    bind:value={quantity}
+                                    min="1"
+                                    max="100"
+                                    disabled={isLoading}
+                                />
+                                <button
+                                    class="quantity-button"
+                                    onclick={() =>
+                                        (quantity = Math.min(
+                                            100,
+                                            quantity + 1,
+                                        ))}
+                                    disabled={isLoading || quantity >= 100}
+                                >
+                                    +
                                 </button>
                             </div>
+                        </div>
+
+                        <!-- Total cost and time -->
+                        <div class="totals">
+                            <div class="total-section">
+                                <h6>Total Cost:</h6>
+                                <div class="total-items">
+                                    {#each Object.entries(calculateTotalCost()) as [resource, amount]}
+                                        {@const playerResource =
+                                            getPlayerResources()[
+                                                resource
+                                            ] || 0}
+                                        <div
+                                            class="total-item {playerResource <
+                                            amount
+                                                ? 'insufficient'
+                                                : ''}"
+                                            title={`You have ${playerResource} ${formatResource(resource)}`}
+                                        >
+                                            {formatResource(resource)}: {amount}
+                                            <span class="player-has"
+                                                >({playerResource})</span
+                                            >
+                                        </div>
+                                    {/each}
+                                </div>
+                            </div>
+                            <div class="total-section">
+                                <h6>Time Required:</h6>
+                                <div class="time-info">
+                                    <div>
+                                        Production: {formatTime(
+                                            completionInfo?.seconds || 0,
+                                        )}
+                                    </div>
+                                    {#if completionInfo?.queueSeconds > 0}
+                                        <div>
+                                            Queue wait: {formatTime(
+                                                completionInfo?.queueSeconds ||
+                                                    0,
+                                            )}
+                                        </div>
+                                        <div class="completion-estimate">
+                                            Estimated completion: {formatDate(
+                                                completionInfo?.date,
+                                            )}
+                                        </div>
+                                    {/if}
+                                </div>
+                            </div>
+                        </div>
+
+                        {#if error}
+                            <div class="error-message">{error}</div>
                         {/if}
-                    </div>
-                {/if}
-            </div>
+
+                        {#if success}
+                            <div class="success-message">{success}</div>
+                        {/if}
+
+                        <!-- Submit button -->
+                        <div class="form-actions">
+                            <button
+                                class="recruit-button"
+                                onclick={startRecruitment}
+                                disabled={isLoading ||
+                                    !hasEnoughResources() ||
+                                    queue.length >= maxUnits}
+                            >
+                                {isLoading
+                                    ? "Processing..."
+                                    : "Start Recruitment"}
+                            </button>
+                        </div>
+                    {/if}
+                </div>
+            {/if}
         </div>
     </div>
 </div>
 
 <style>
-    .modal-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-        background-color: rgba(0, 0, 0, 0.5);
-    }
-
     .recruitment-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         width: 90%;
         max-width: 36rem;
         max-height: 85vh;
@@ -750,19 +739,9 @@
         box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.2);
         display: flex;
         flex-direction: column;
-        animation: modalAppear 0.3s ease-out forwards;
+        z-index: 1000;
         overflow: hidden;
-    }
-
-    @keyframes modalAppear {
-        from {
-            opacity: 0;
-            transform: scale(0.95);
-        }
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
+        font-family: var(--font-body);
     }
 
     .modal-header {
