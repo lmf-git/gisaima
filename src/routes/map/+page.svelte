@@ -1304,8 +1304,7 @@
             />
           {:else if modalState.type === 'mobilise'}
             <Mobilise 
-              onClose={closeModal} 
-              onMobilize={handleMobilise}
+              onClose={closeModal}
             />
           {:else if modalState.type === 'build'}
             <Build
