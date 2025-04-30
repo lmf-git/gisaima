@@ -1,4 +1,4 @@
-import { db } from './config.mjs';
+import { getDatabase } from 'firebase-admin/database';
 import { ref, get, update, set, query, orderByChild, equalTo } from "firebase/database";
 
 /**
@@ -9,6 +9,7 @@ import { ref, get, update, set, query, orderByChild, equalTo } from "firebase/da
  */
 export async function processUpgrades(data = {}) {
   try {
+    const db = getDatabase();
     const worldId = data.worldId || 'ancient-lands'; // Default to ancient-lands if no worldId provided
     const now = Date.now();
     

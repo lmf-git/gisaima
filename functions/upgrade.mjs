@@ -1,4 +1,4 @@
-import { db } from './config.mjs';
+import { getDatabase } from 'firebase-admin/database';
 import { ref, get, set, update, serverTimestamp } from "firebase/database";
 
 /**
@@ -17,6 +17,7 @@ export async function startStructureUpgrade(data, context) {
       throw new Error('Missing required parameters');
     }
     
+    const db = getDatabase();
     const { worldId, x, y, playerId } = data;
     
     // Calculate chunk coordinates
