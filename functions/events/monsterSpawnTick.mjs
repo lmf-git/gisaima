@@ -358,6 +358,8 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
       y: location.y
     }
   };
+  
+  return groupId;
 }
 
 /**

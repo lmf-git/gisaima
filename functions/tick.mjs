@@ -15,7 +15,8 @@ import { processGathering } from "./events/gatheringTick.mjs";
 import { processBuilding } from "./events/buildTick.mjs";
 import { spawnMonsters } from "./events/monsterSpawnTick.mjs";
 import { upgradeTickProcessor } from "./events/upgradeTick.mjs";
-import { processCrafting } from "./events/craftingTick.mjs"; // Import the crafting processor
+import { processCrafting } from "./events/craftingTick.mjs"; 
+import { processMonsterStrategies } from "./events/monsterStrategyTick.mjs"; // Import the monster strategy processor
 
 // Process world ticks to handle mobilizations and other time-based events
 export const processGameTicks = onSchedule({
@@ -48,6 +49,8 @@ export const processGameTicks = onSchedule({
     let gatheringsProcessed = 0;
     let buildingsProcessed = 0;
     let monstersSpawned = 0;
+    let monsterStrategiesProcessed = 0;
+    let monsterGroupsMerged = 0;
     
     // Process each world
     for (const worldId in worlds) {
@@ -146,21 +149,36 @@ export const processGameTicks = onSchedule({
         }
       }
 
-      // Process battles for the world using the imported function - FIXED: properly call the function with worldId
+      // Process battles for the world
       const battlesProcessed = await processBattles(worldId);
       console.log(`Processed ${battlesProcessed} battles in world ${worldId}`);
       
-      // Process structure upgrades for this world
+      // Process structure upgrades
       console.log(`Processing structure upgrades for world ${worldId}`);
       const upgradeResult = await upgradeTickProcessor(worldId);
       console.log(`Processed ${upgradeResult.processed || 0} structure upgrades in world ${worldId}`);
       
-      // Process crafting operations for this world
+      // Process crafting operations
       console.log(`Processing crafting for world ${worldId}`);
       const craftingResult = await processCrafting(worldId);
       console.log(`Processed ${craftingResult.processed || 0} crafting operations in world ${worldId}`);
       
-      // Spawn monsters with a 20% chance on each tick (to avoid spawning too many)
+      // Process monster strategies with a 30% chance each tick
+      if (Math.random() < 0.3) {
+        console.log(`Processing monster strategies for world ${worldId}`);
+        const strategyResult = await processMonsterStrategies(worldId);
+        
+        if (strategyResult.totalProcessed) {
+          monsterStrategiesProcessed += strategyResult.totalProcessed;
+          monsterGroupsMerged += strategyResult.groupsMerged || 0;
+          console.log(`Processed ${strategyResult.totalProcessed} monster strategies in world ${worldId}`);
+          console.log(`Monster strategies: ${strategyResult.movesInitiated} moves, ${strategyResult.gatheringStarted} gathering, ` + 
+                     `${strategyResult.structuresBuildStarted} building, ${strategyResult.structuresUpgraded} upgrades, ` +
+                     `${strategyResult.battlesJoined} battles joined, ${strategyResult.groupsMerged} groups merged`);
+        }
+      }
+      
+      // Spawn monsters with a 20% chance on each tick
       if (Math.random() < 0.2) {
         const spawnedCount = await spawnMonsters(worldId);
         monstersSpawned += spawnedCount;
@@ -168,7 +186,10 @@ export const processGameTicks = onSchedule({
       }
     }
     
-    console.log(`Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, ${movementsProcessed} movement steps, ${gatheringsProcessed} gatherings, ${buildingsProcessed} building updates, and spawned ${monstersSpawned} monster groups`);    
+    // Update log message to include new monster activity types
+    console.log(`Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, ` +
+               `${movementsProcessed} movement steps, ${gatheringsProcessed} gatherings, ${buildingsProcessed} building updates, ` +
+               `${monsterStrategiesProcessed} monster strategies, ${monsterGroupsMerged} monster groups merged, and spawned ${monstersSpawned} monster groups`);    
     return null;
   } catch (error) {
     console.error("Error processing game ticks:", error);
