@@ -1,5 +1,4 @@
 import { getDatabase } from 'firebase-admin/database';
-import { ref, get, update, set, query, orderByChild, equalTo } from "firebase/database";
 
 /**
  * Process pending structure upgrades
@@ -16,14 +15,11 @@ export async function processUpgrades(data = {}) {
     console.log(`Processing upgrades for world ${worldId} at ${new Date(now).toISOString()}`);
     
     // Get completed but unprocessed upgrades
-    const upgradesRef = ref(db, `worlds/${worldId}/upgrades`);
-    const upgradesQuery = query(
-      upgradesRef,
-      orderByChild('status'),
-      equalTo('pending')
-    );
-    
-    const upgradesSnapshot = await get(upgradesQuery);
+    const upgradesRef = db.ref(`worlds/${worldId}/upgrades`);
+    const upgradesSnapshot = await upgradesRef
+      .orderByChild('status')
+      .equalTo('pending')
+      .once('value');
     
     if (!upgradesSnapshot.exists()) {
       console.log(`No pending upgrades found for world ${worldId}`);
@@ -58,8 +54,8 @@ export async function processUpgrades(data = {}) {
         failed++;
         
         // Mark upgrade as failed
-        const upgradeRef = ref(db, `worlds/${worldId}/upgrades/${upgrade.id}`);
-        await update(upgradeRef, {
+        const upgradeRef = db.ref(`worlds/${worldId}/upgrades/${upgrade.id}`);
+        await upgradeRef.update({
           processed: true,
           failed: true,
           error: error.message,
@@ -103,8 +99,8 @@ async function applyUpgrade(worldId, upgrade) {
     
     // Existing structure upgrade logic
     // Get the structure
-    const structureRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
-    const structureSnapshot = await get(structureRef);
+    const structureRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
+    const structureSnapshot = await structureRef.once('value');
     
     if (!structureSnapshot.exists()) {
       throw new Error('Structure not found');
@@ -143,11 +139,11 @@ async function applyUpgrade(worldId, upgrade) {
     }
     
     // Update the structure in database
-    await set(structureRef, updatedStructure);
+    await structureRef.set(updatedStructure);
     
     // Mark upgrade as processed
-    const upgradeRef = ref(db, `worlds/${worldId}/upgrades/${upgrade.id}`);
-    await update(upgradeRef, {
+    const upgradeRef = db.ref(`worlds/${worldId}/upgrades/${upgrade.id}`);
+    await upgradeRef.update({
       processed: true,
       failed: false,
       processedAt: now,
@@ -156,8 +152,8 @@ async function applyUpgrade(worldId, upgrade) {
     
     // Add a completion event to the world chat
     const [x, y] = tileKey.split(',').map(Number);
-    const chatRef = ref(db, `worlds/${worldId}/chat/upgrade_complete_${upgrade.id}`);
-    await set(chatRef, {
+    const chatRef = db.ref(`worlds/${worldId}/chat/upgrade_complete_${upgrade.id}`);
+    await chatRef.set({
       location: { x, y },
       text: `A structure at (${x}, ${y}) has been upgraded to level ${toLevel}!`,
       timestamp: now,
@@ -166,8 +162,8 @@ async function applyUpgrade(worldId, upgrade) {
     
     // Notify the player who started the upgrade
     if (upgrade.startedBy) {
-      const notificationRef = ref(db, `players/${upgrade.startedBy}/notifications/upgrade_${now}`);
-      await set(notificationRef, {
+      const notificationRef = db.ref(`players/${upgrade.startedBy}/notifications/upgrade_${now}`);
+      await notificationRef.set({
         type: 'upgrade_complete',
         worldId,
         structureId: structure.id,
@@ -188,8 +184,8 @@ async function applyUpgrade(worldId, upgrade) {
     console.error(`Error applying upgrade ${upgrade.id}:`, error);
     
     // Mark upgrade as failed
-    const upgradeRef = ref(db, `worlds/${worldId}/upgrades/${upgrade.id}`);
-    await update(upgradeRef, {
+    const upgradeRef = db.ref(`worlds/${worldId}/upgrades/${upgrade.id}`);
+    await upgradeRef.update({
       processed: true,
       failed: true,
       error: error.message,
@@ -199,8 +195,8 @@ async function applyUpgrade(worldId, upgrade) {
     
     // Update the structure to remove upgrade in progress
     try {
-      const structureRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
-      await update(structureRef, {
+      const structureRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
+      await structureRef.update({
         upgradeInProgress: false,
         upgradeId: null,
         upgradeCompletesAt: null
@@ -229,8 +225,8 @@ async function applyBuildingUpgrade(worldId, upgrade) {
   try {
     // Get the building
     const buildingPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/buildings/${buildingId}`;
-    const buildingRef = ref(db, buildingPath);
-    const buildingSnapshot = await get(buildingRef);
+    const buildingRef = db.ref(buildingPath);
+    const buildingSnapshot = await buildingRef.once('value');
     
     if (!buildingSnapshot.exists()) {
       throw new Error('Building not found');
@@ -266,11 +262,11 @@ async function applyBuildingUpgrade(worldId, upgrade) {
     }
     
     // Update the building in database
-    await set(buildingRef, updatedBuilding);
+    await buildingRef.set(updatedBuilding);
     
     // Mark upgrade as processed
-    const upgradeRef = ref(db, `worlds/${worldId}/upgrades/${upgrade.id}`);
-    await update(upgradeRef, {
+    const upgradeRef = db.ref(`worlds/${worldId}/upgrades/${upgrade.id}`);
+    await upgradeRef.update({
       processed: true,
       failed: false,
       processedAt: now,
@@ -279,8 +275,8 @@ async function applyBuildingUpgrade(worldId, upgrade) {
     
     // Add a completion event to the world chat
     const [x, y] = tileKey.split(',').map(Number);
-    const chatRef = ref(db, `worlds/${worldId}/chat/building_upgrade_complete_${upgrade.id}`);
-    await set(chatRef, {
+    const chatRef = db.ref(`worlds/${worldId}/chat/building_upgrade_complete_${upgrade.id}`);
+    await chatRef.set({
       location: { x, y },
       text: `A ${building.name || building.type} at (${x}, ${y}) has been upgraded to level ${toLevel}!`,
       timestamp: now,
@@ -289,8 +285,8 @@ async function applyBuildingUpgrade(worldId, upgrade) {
     
     // Notify the player who started the upgrade
     if (upgrade.startedBy) {
-      const notificationRef = ref(db, `players/${upgrade.startedBy}/notifications/building_upgrade_${now}`);
-      await set(notificationRef, {
+      const notificationRef = db.ref(`players/${upgrade.startedBy}/notifications/building_upgrade_${now}`);
+      await notificationRef.set({
         type: 'building_upgrade_complete',
         worldId,
         structureId: upgrade.structureId,
@@ -312,8 +308,8 @@ async function applyBuildingUpgrade(worldId, upgrade) {
     console.error(`Error applying building upgrade ${upgrade.id}:`, error);
     
     // Mark upgrade as failed
-    const upgradeRef = ref(db, `worlds/${worldId}/upgrades/${upgrade.id}`);
-    await update(upgradeRef, {
+    const upgradeRef = db.ref(`worlds/${worldId}/upgrades/${upgrade.id}`);
+    await upgradeRef.update({
       processed: true,
       failed: true,
       error: error.message,
@@ -323,8 +319,8 @@ async function applyBuildingUpgrade(worldId, upgrade) {
     
     // Update the building to remove upgrade in progress
     try {
-      const buildingRef = ref(db, `worlds/${worldId}/chunks/${upgrade.chunkKey}/${upgrade.tileKey}/structure/buildings/${upgrade.buildingId}`);
-      await update(buildingRef, {
+      const buildingRef = db.ref(`worlds/${worldId}/chunks/${upgrade.chunkKey}/${upgrade.tileKey}/structure/buildings/${upgrade.buildingId}`);
+      await buildingRef.update({
         upgradeInProgress: false,
         upgradeId: null,
         upgradeStartedAt: null,
@@ -565,193 +561,7 @@ function getNewBenefitsForBuilding(buildingType, level) {
 }
 
 /**
- * Complete crafting (called by scheduled function)
- * @param {string} craftingId - ID of the crafting to complete
- * @param {string} worldId - World ID
- * @returns {Promise<Object>} Result of completion
- */
-export async function completeCrafting(craftingId, worldId) {
-  try {
-    const db = getDatabase();
-    // Get crafting data
-    const craftingRef = ref(db, `worlds/${worldId}/crafting/${craftingId}`);
-    const craftingSnapshot = await get(craftingRef);
-    
-    if (!craftingSnapshot.exists()) {
-      throw new Error('Crafting not found');
-    }
-    
-    const crafting = craftingSnapshot.val();
-    
-    // Skip if already processed
-    if (crafting.processed) {
-      return {
-        success: false,
-        error: 'Crafting already processed'
-      };
-    }
-    
-    // Add item to player's inventory
-    const playerInventoryRef = ref(db, `players/${crafting.playerId}/worlds/${worldId}/inventory`);
-    const playerInventorySnapshot = await get(playerInventoryRef);
-    
-    let playerInventory = playerInventorySnapshot.exists() ? playerInventorySnapshot.val() : [];
-    
-    // Create a new unique item ID
-    const itemId = `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    
-    // Add crafted item
-    playerInventory.push({
-      id: itemId,
-      name: crafting.result.name,
-      quantity: crafting.result.quantity || 1,
-      type: crafting.result.type,
-      rarity: crafting.result.rarity || 'common',
-      description: crafting.result.description,
-      crafted: true,
-      craftedAt: Date.now(),
-      craftedBy: crafting.playerId
-    });
-    
-    // Update player's inventory
-    await set(playerInventoryRef, playerInventory);
-    
-    // Update player's crafting status
-    const playerRef = ref(db, `players/${crafting.playerId}/worlds/${worldId}`);
-    await update(playerRef, {
-      'crafting/current': null,
-      'crafting/completesAt': null,
-      'crafting/lastCompleted': Date.now()
-    });
-    
-    // Increase player's crafting XP if they have a skills object
-    const playerSkillsRef = ref(db, `players/${crafting.playerId}/worlds/${worldId}/skills`);
-    const playerSkillsSnapshot = await get(playerSkillsRef);
-    
-    if (playerSkillsSnapshot.exists()) {
-      const skills = playerSkillsSnapshot.val();
-      const currentXP = skills.crafting?.xp || 0;
-      const currentLevel = skills.crafting?.level || 1;
-      
-      // Calculate XP gained (based on recipe rarity and level)
-      const rarityMultipliers = {
-        'common': 1,
-        'uncommon': 1.5,
-        'rare': 2.5,
-        'epic': 4,
-        'legendary': 7
-      };
-      
-      const recipeRarity = crafting.result.rarity || 'common';
-      const rarityMultiplier = rarityMultipliers[recipeRarity] || 1;
-      
-      const baseXP = 10; // Base XP for crafting
-      const xpGained = Math.round(baseXP * rarityMultiplier);
-      
-      const newXP = currentXP + xpGained;
-      
-      // Check if player leveled up
-      const requiredXP = currentLevel * 100; // Simple XP curve
-      let newLevel = currentLevel;
-      let leveledUp = false;
-      
-      if (newXP >= requiredXP) {
-        newLevel = currentLevel + 1;
-        leveledUp = true;
-      }
-      
-      // Update skills
-      await update(playerSkillsRef, {
-        'crafting/xp': newXP,
-        'crafting/level': newLevel,
-        'crafting/lastGain': Date.now()
-      });
-      
-      // If player leveled up, announce it
-      if (leveledUp) {
-        const chatRef = ref(db, `worlds/${worldId}/chat/crafting_levelup_${crafting.playerId}_${Date.now()}`);
-        await set(chatRef, {
-          location: crafting.structureLocation,
-          text: `${crafting.playerName} reached crafting level ${newLevel}!`,
-          timestamp: Date.now(),
-          type: 'event'
-        });
-      }
-    }
-    
-    // Mark crafting as completed
-    await update(craftingRef, {
-      status: 'completed',
-      completedAt: Date.now(),
-      processed: true
-    });
-    
-    // Add completion event to chat
-    const chatRef = ref(db, `worlds/${worldId}/chat/crafting_complete_${craftingId}`);
-    await set(chatRef, {
-      location: crafting.structureLocation,
-      text: `${crafting.playerName} finished crafting ${crafting.result.name}.`,
-      timestamp: Date.now(),
-      type: 'event'
-    });
-    
-    return {
-      success: true,
-      result: crafting.result,
-      leveledUp
-    };
-    
-  } catch (error) {
-    console.error('Error completing crafting:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
-
-/**
  * Scheduled function to automatically process upgrades
  * This is called on a timer/schedule
  */
-export async function upgradeTickProcessor(context) {
-  try {
-    // Get all worlds that might have upgrades
-    const worldsRef = ref(db, 'worlds');
-    const worldsSnapshot = await get(worldsRef);
-    
-    if (!worldsSnapshot.exists()) {
-      console.log('No worlds found');
-      return { processed: 0 };
-    }
-    
-    let totalProcessed = 0;
-    let totalFailed = 0;
-    
-    // Process upgrades for each world
-    const worlds = [];
-    worldsSnapshot.forEach(child => {
-      worlds.push(child.key);
-    });
-    
-    console.log(`Processing upgrades for ${worlds.length} worlds`);
-    
-    for (const worldId of worlds) {
-      const result = await processUpgrades({ worldId });
-      totalProcessed += result.processed || 0;
-      totalFailed += result.failed || 0;
-    }
-    
-    return {
-      processed: totalProcessed,
-      failed: totalFailed
-    };
-    
-  } catch (error) {
-    console.error('Error in upgrade tick processor:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
+export const upgradeTickProcessor = processUpgrades;

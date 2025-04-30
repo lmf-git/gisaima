@@ -36,9 +36,10 @@ export const cancelMove = onCall({ maxInstances: 10 }, async (request) => {
   try {
     const db = getDatabase();
     
-    // Calculate chunk key for the position
-    const chunkX = Math.floor(x / 20);
-    const chunkY = Math.floor(y / 20);
+    // Calculate chunk key for the position - consider using consistent getChunkKey function
+    const CHUNK_SIZE = 20;
+    const chunkX = Math.floor(x / CHUNK_SIZE);
+    const chunkY = Math.floor(y / CHUNK_SIZE);
     const chunkKey = `${chunkX},${chunkY}`;
     const tileKey = `${x},${y}`;
     

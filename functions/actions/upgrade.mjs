@@ -1,5 +1,4 @@
 import { getDatabase } from 'firebase-admin/database';
-import { ref, get, set, update, serverTimestamp } from "firebase/database";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 /**
@@ -38,9 +37,9 @@ export const startStructureUpgrade = onCall({ maxInstances: 10 }, async (request
     const chunkKey = `${chunkX},${chunkY}`;
     const tileKey = `${x},${y}`;
     
-    // Get the structure
-    const structureRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
-    const structureSnapshot = await get(structureRef);
+    // Get the structure - convert to Admin SDK methods
+    const structureRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
+    const structureSnapshot = await structureRef.once('value');
     
     if (!structureSnapshot.exists()) {
       throw new Error('Structure not found');
@@ -49,8 +48,8 @@ export const startStructureUpgrade = onCall({ maxInstances: 10 }, async (request
     const structure = structureSnapshot.val();
     
     // Get player data for crafting level
-    const playerRef = ref(db, `players/${playerId}/worlds/${worldId}`);
-    const playerSnapshot = await get(playerRef);
+    const playerRef = db.ref(`players/${playerId}/worlds/${worldId}`);
+    const playerSnapshot = await playerRef.get();
     
     if (!playerSnapshot.exists()) {
       throw new Error('Player data not found');
@@ -147,24 +146,25 @@ export const startStructureUpgrade = onCall({ maxInstances: 10 }, async (request
     };
     
     // Save the crafting entry
-    const craftingRef = ref(db, `worlds/${worldId}/crafting/${craftingId}`);
-    await set(craftingRef, craftingData);
+    const craftingRef = db.ref(`worlds/${worldId}/crafting/${craftingId}`);
+    await craftingRef.set(craftingData);
     
     // Update player's crafting status
-    await update(playerRef, {
+    const updatePlayerRef = db.ref(`players/${playerId}/worlds/${worldId}`);
+    await updatePlayerRef.update({
       'crafting/current': craftingId,
       'crafting/completesAt': now + craftingTimeMs
     });
     
     // Consume materials from inventory
-    const playerInventoryRef = ref(db, `players/${playerId}/worlds/${worldId}/inventory`);
-    const playerInventorySnapshot = await get(playerInventoryRef);
+    const playerInventoryRef = db.ref(`players/${playerId}/worlds/${worldId}/inventory`);
+    const playerInventorySnapshot = await playerInventoryRef.get();
     
     let playerInventory = playerInventorySnapshot.exists() ? playerInventorySnapshot.val() : [];
     
     // Add crafting event to chat
-    const chatRef = ref(db, `worlds/${worldId}/chat/crafting_${craftingId}`);
-    await set(chatRef, {
+    const chatRef = db.ref(`worlds/${worldId}/chat/crafting_${craftingId}`);
+    await chatRef.set({
       location: { x, y },
       text: `${player.displayName} started crafting ${data.result.name}.`,
       timestamp: now,
@@ -222,9 +222,9 @@ export const startBuildingUpgrade = onCall({ maxInstances: 10 }, async (request)
     const chunkKey = `${chunkX},${chunkY}`;
     const tileKey = `${x},${y}`;
     
-    // Get the structure and building
-    const structureRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
-    const structureSnapshot = await get(structureRef);
+    // Get the structure - convert to Admin SDK methods
+    const structureRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
+    const structureSnapshot = await structureRef.once('value');
     
     if (!structureSnapshot.exists()) {
       throw new Error('Structure not found');
@@ -262,8 +262,8 @@ export const startBuildingUpgrade = onCall({ maxInstances: 10 }, async (request)
     }
     
     // Get player data
-    const playerRef = ref(db, `players/${playerId}/worlds/${worldId}`);
-    const playerSnapshot = await get(playerRef);
+    const playerRef = db.ref(`players/${playerId}/worlds/${worldId}`);
+    const playerSnapshot = await playerRef.get();
     
     if (!playerSnapshot.exists()) {
       throw new Error('Player data not found');
@@ -275,8 +275,8 @@ export const startBuildingUpgrade = onCall({ maxInstances: 10 }, async (request)
     const requiredResources = calculateBuildingUpgradeResources(building.type, currentLevel);
     
     // Check if required resources are available in the structure's shared storage
-    const structureItemsRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/items`);
-    const structureItemsSnapshot = await get(structureItemsRef);
+    const structureItemsRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/items`);
+    const structureItemsSnapshot = await structureItemsRef.get();
     
     const structureItems = structureItemsSnapshot.exists() ? structureItemsSnapshot.val() : [];
     
@@ -338,12 +338,12 @@ export const startBuildingUpgrade = onCall({ maxInstances: 10 }, async (request)
     };
     
     // Save upgrade to database
-    const upgradeRef = ref(db, `worlds/${worldId}/upgrades/${upgradeId}`);
-    await set(upgradeRef, upgradeData);
+    const upgradeRef = db.ref(`worlds/${worldId}/upgrades/${upgradeId}`);
+    await upgradeRef.set(upgradeData);
     
     // Update building to mark as upgrading
-    const buildingRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/buildings/${buildingId}`);
-    await update(buildingRef, {
+    const buildingRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/buildings/${buildingId}`);
+    await buildingRef.update({
       upgradeInProgress: true,
       upgradeId,
       upgradeStartedAt: now,
@@ -365,11 +365,11 @@ export const startBuildingUpgrade = onCall({ maxInstances: 10 }, async (request)
     }
     
     // Update structure storage with consumed resources
-    await set(structureItemsRef, structureItems);
+    await structureItemsRef.set(structureItems);
     
     // Add upgrade event to chat
-    const chatRef = ref(db, `worlds/${worldId}/chat/building_upgrade_${upgradeId}`);
-    await set(chatRef, {
+    const chatRef = db.ref(`worlds/${worldId}/chat/building_upgrade_${upgradeId}`);
+    await chatRef.set({
       location: { x, y },
       text: `${player.displayName} started upgrading a ${building.name || building.type} from level ${currentLevel} to ${nextLevel}.`,
       timestamp: now,

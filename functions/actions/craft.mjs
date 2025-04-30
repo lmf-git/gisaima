@@ -1,5 +1,4 @@
 import { getDatabase } from 'firebase-admin/database';
-import { ref, get, set, update } from "firebase/database";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 /**
@@ -37,10 +36,10 @@ export const startCrafting = onCall({ maxInstances: 10 }, async (request) => {
     const chunkKey = `${chunkX},${chunkY}`;
     const tileKey = `${x},${y}`;
     
-    // Get the structure
+    // Get the structure - convert to Admin SDK methods
     const db = getDatabase();
-    const structureRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
-    const structureSnapshot = await get(structureRef);
+    const structureRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
+    const structureSnapshot = await structureRef.once('value');
     
     if (!structureSnapshot.exists()) {
       throw new Error('Structure not found');
@@ -48,9 +47,9 @@ export const startCrafting = onCall({ maxInstances: 10 }, async (request) => {
     
     const structure = structureSnapshot.val();
     
-    // Get player data for crafting level
-    const playerRef = ref(db, `players/${playerId}/worlds/${worldId}`);
-    const playerSnapshot = await get(playerRef);
+    // Get player data for crafting level - convert to Admin SDK methods
+    const playerRef = db.ref(`players/${playerId}/worlds/${worldId}`);
+    const playerSnapshot = await playerRef.once('value');
     
     if (!playerSnapshot.exists()) {
       throw new Error('Player data not found');
@@ -87,8 +86,8 @@ export const startCrafting = onCall({ maxInstances: 10 }, async (request) => {
     }
     
     // Get player inventory
-    const playerInventoryRef = ref(db, `players/${playerId}/worlds/${worldId}/inventory`);
-    const playerInventorySnapshot = await get(playerInventoryRef);
+    const playerInventoryRef = db.ref(`players/${playerId}/worlds/${worldId}/inventory`);
+    const playerInventorySnapshot = await playerInventoryRef.once('value');
     
     const playerInventory = playerInventorySnapshot.exists() ? playerInventorySnapshot.val() : [];
     
@@ -169,11 +168,11 @@ export const startCrafting = onCall({ maxInstances: 10 }, async (request) => {
     };
     
     // Save the crafting entry
-    const craftingRef = ref(db, `worlds/${worldId}/crafting/${craftingId}`);
-    await set(craftingRef, craftingData);
+    const craftingRef = db.ref(`worlds/${worldId}/crafting/${craftingId}`);
+    await craftingRef.set(craftingData);
     
     // Update player's crafting status
-    await update(playerRef, {
+    await playerRef.update({
       'crafting/current': craftingId,
       'crafting/completesAt': now + craftingTimeMs
     });
@@ -205,11 +204,11 @@ export const startCrafting = onCall({ maxInstances: 10 }, async (request) => {
     }
     
     // Update player inventory
-    await set(playerInventoryRef, updatedInventory);
+    await playerInventoryRef.set(updatedInventory);
     
     // Add crafting event to chat
-    const chatRef = ref(db, `worlds/${worldId}/chat/crafting_${craftingId}`);
-    await set(chatRef, {
+    const chatRef = db.ref(`worlds/${worldId}/chat/crafting_${craftingId}`);
+    await chatRef.set({
       location: { x, y },
       text: `${player.displayName} started crafting ${recipe.result.name}.`,
       timestamp: now,
@@ -250,9 +249,10 @@ export const cancelCrafting = onCall({ maxInstances: 10 }, async (request) => {
     // Use authenticated user ID
     const playerId = request.auth.uid;
     
-    // Get the crafting data
-    const craftingRef = ref(db, `worlds/${data.worldId}/crafting/${data.craftingId}`);
-    const craftingSnapshot = await get(craftingRef);
+    // Get the crafting data - convert to Admin SDK methods
+    const db = getDatabase();
+    const craftingRef = db.ref(`worlds/${data.worldId}/crafting/${data.craftingId}`);
+    const craftingSnapshot = await craftingRef.once('value');
     
     if (!craftingSnapshot.exists()) {
       throw new Error('Crafting not found');
@@ -271,15 +271,15 @@ export const cancelCrafting = onCall({ maxInstances: 10 }, async (request) => {
     }
     
     // Update crafting status
-    await update(craftingRef, {
+    await craftingRef.update({
       status: 'canceled',
       canceledAt: Date.now(),
       processed: true
     });
     
     // Clear player's current crafting
-    const playerRef = ref(db, `players/${playerId}/worlds/${data.worldId}/crafting`);
-    await update(playerRef, {
+    const playerRef = db.ref(`players/${playerId}/worlds/${data.worldId}/crafting`);
+    await playerRef.update({
       current: null,
       completesAt: null
     });
@@ -291,8 +291,8 @@ export const cancelCrafting = onCall({ maxInstances: 10 }, async (request) => {
     }
     
     // Add refunded materials to player inventory
-    const playerInventoryRef = ref(db, `players/${playerId}/worlds/${data.worldId}/inventory`);
-    const playerInventorySnapshot = await get(playerInventoryRef);
+    const playerInventoryRef = db.ref(`players/${playerId}/worlds/${data.worldId}/inventory`);
+    const playerInventorySnapshot = await playerInventoryRef.once('value');
     
     let playerInventory = playerInventorySnapshot.exists() ? playerInventorySnapshot.val() : [];
     
@@ -317,11 +317,11 @@ export const cancelCrafting = onCall({ maxInstances: 10 }, async (request) => {
     }
     
     // Update player inventory
-    await set(playerInventoryRef, playerInventory);
+    await playerInventoryRef.set(playerInventory);
     
     // Add cancellation event to the chat
-    const chatRef = ref(db, `worlds/${data.worldId}/chat/cancel_crafting_${data.craftingId}`);
-    await set(chatRef, {
+    const chatRef = db.ref(`worlds/${data.worldId}/chat/cancel_crafting_${data.craftingId}`);
+    await chatRef.set({
       location: crafting.structureLocation,
       text: `${crafting.playerName} canceled crafting ${crafting.result.name}.`,
       timestamp: Date.now(),
