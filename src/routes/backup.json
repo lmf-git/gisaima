@@ -1,0 +1,1176 @@
+{
+  "players": {
+    "Fsec3klBgbOgCMVDkHYM0CCxijg2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_attack": true,
+            "first_attack_date": 1745522074285,
+            "first_build": true,
+            "first_build_date": 1745525664913,
+            "first_message": true,
+            "first_message_date": 1745518404597,
+            "first_steps": true,
+            "first_steps_date": 1745519162410,
+            "mobilised": true,
+            "mobilised_date": 1745522114137
+          },
+          "alive": true,
+          "displayName": "JimmyRigged",
+          "groups": {
+            "-OOd23OZjKBDoZt5B0E1": {
+              "at": "-30,-12",
+              "id": "-OOd23OZjKBDoZt5B0E1",
+              "status": "idle"
+            },
+            "-OOdDT4AuHhVSLmvPXy7": {
+              "at": "-30,-12",
+              "id": "-OOdDT4AuHhVSLmvPXy7",
+              "status": "idle"
+            }
+          },
+          "id": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+          "inGroup": "-OOdDT4AuHhVSLmvPXy7",
+          "joined": 1745518322353,
+          "lastLocation": {
+            "timestamp": 1745527921358,
+            "x": -34,
+            "y": -3
+          },
+          "lastMessage": {
+            "text": "You were defeated in battle.",
+            "timestamp": 1745522101916
+          },
+          "race": "elf"
+        }
+      }
+    },
+    "MRtwAHk77DZqgaZgmAS2sPBnXoV2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "mrbraindead",
+          "id": "MRtwAHk77DZqgaZgmAS2sPBnXoV2",
+          "joined": 1745585239475,
+          "lastLocation": {
+            "timestamp": 1745585246675,
+            "x": -30,
+            "y": -12
+          },
+          "race": "elf"
+        }
+      }
+    },
+    "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_attack": true,
+            "first_attack_date": 1745511598008,
+            "first_message": true,
+            "first_message_date": 1745511722420,
+            "mobilised": true,
+            "mobilised_date": 1745511647656
+          },
+          "alive": true,
+          "displayName": "gunsy",
+          "groups": {
+            "-OOc_zFbAQdz2dvemVnc": {
+              "at": "-18,-22",
+              "id": "-OOc_zFbAQdz2dvemVnc",
+              "status": "idle"
+            },
+            "-OOcaUtPgnl1DCAm0gIp": {
+              "at": "-18,-22",
+              "id": "-OOcaUtPgnl1DCAm0gIp",
+              "status": "idle"
+            }
+          },
+          "id": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
+          "inGroup": "-OOcaUtPgnl1DCAm0gIp",
+          "joined": 1745511381535,
+          "lastLocation": {
+            "x": -18,
+            "y": -22
+          },
+          "lastMessage": {
+            "text": "You were defeated in battle.",
+            "timestamp": 1745511602097
+          },
+          "race": "fairy"
+        }
+      }
+    },
+    "YIDyjpxkBSR8eqemfslNDfs1YBr2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_message": true,
+            "first_message_date": 1745984057362,
+            "first_steps": true,
+            "first_steps_date": 1745984112051
+          },
+          "alive": true,
+          "displayName": "FuaK",
+          "groups": {
+            "-OP3kM7ZrP9K3VSiuk0J": {
+              "at": "-30,-12",
+              "id": "-OP3kM7ZrP9K3VSiuk0J",
+              "status": "idle"
+            }
+          },
+          "id": "YIDyjpxkBSR8eqemfslNDfs1YBr2",
+          "inGroup": "-OP3kM7ZrP9K3VSiuk0J",
+          "joined": 1745983927133,
+          "lastLocation": {
+            "timestamp": 1745985721875,
+            "x": -30,
+            "y": -12
+          },
+          "race": "elf"
+        }
+      }
+    },
+    "kKRX0XkbRpPHYTpoqM9ppmnoC4C2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_attack": true,
+            "first_attack_date": 1746049448924,
+            "first_steps": true,
+            "first_steps_date": 1746048709442,
+            "first_victory": true,
+            "first_victory_date": 1746050282884,
+            "mobilised": true
+          },
+          "alive": true,
+          "displayName": "LMF",
+          "groups": {
+            "-OP7_n87RqlbeFnI33DU": {
+              "at": "-23,5",
+              "id": "-OP7_n87RqlbeFnI33DU",
+              "status": "idle"
+            }
+          },
+          "id": "kKRX0XkbRpPHYTpoqM9ppmnoC4C2",
+          "inGroup": "-OP7_n87RqlbeFnI33DU",
+          "joined": 1746048281323,
+          "lastLocation": {
+            "timestamp": 1746054361876,
+            "x": -27,
+            "y": 3
+          },
+          "race": "human"
+        }
+      }
+    },
+    "ptUgwrwSwlhaNiCwTHoDn7PrY1p2": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "urchinmaxxer",
+          "id": "ptUgwrwSwlhaNiCwTHoDn7PrY1p2",
+          "joined": 1745991443109,
+          "lastLocation": {
+            "timestamp": 1745991450501,
+            "x": -32,
+            "y": -10
+          },
+          "race": "dwarf"
+        }
+      }
+    },
+    "rBBlixvWCih6uFNcG4vK7qcGvmv1": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_message": true,
+            "first_message_date": 1745538968987,
+            "first_steps": true,
+            "first_steps_date": 1745539015481,
+            "mobilised": true,
+            "mobilised_date": 1745538934066
+          },
+          "alive": true,
+          "displayName": "sunsueme",
+          "groups": {
+            "-OOeDa2UNCNmF3-wWau2": {
+              "at": "-23,5",
+              "id": "-OOeDa2UNCNmF3-wWau2",
+              "status": "idle"
+            }
+          },
+          "id": "rBBlixvWCih6uFNcG4vK7qcGvmv1",
+          "inGroup": "-OOeDa2UNCNmF3-wWau2",
+          "joined": 1745538810933,
+          "lastLocation": {
+            "timestamp": 1745615821334,
+            "x": -27,
+            "y": 3
+          },
+          "race": "human"
+        }
+      }
+    },
+    "scls4twPVdNaZABrOfKAhVXsd3v2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_steps": true,
+            "first_steps_date": 1745984306927
+          },
+          "alive": true,
+          "displayName": "madnico",
+          "groups": {
+            "-OP3lS6o6oDQ6rmA8Fyh": {
+              "at": "-32,-10",
+              "id": "-OP3lS6o6oDQ6rmA8Fyh",
+              "status": "idle"
+            }
+          },
+          "id": "scls4twPVdNaZABrOfKAhVXsd3v2",
+          "inGroup": "-OP3lS6o6oDQ6rmA8Fyh",
+          "joined": 1745984012261,
+          "lastLocation": {
+            "timestamp": 1745985245789,
+            "x": -29,
+            "y": -11
+          },
+          "race": "dwarf"
+        }
+      }
+    },
+    "tNIGfMI4O8ZsTkgtmg5GdTKt1k53": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_attack": true,
+            "first_attack_date": 1746055340942,
+            "first_steps": true,
+            "first_steps_date": 1746054707205,
+            "mobilised": true
+          },
+          "alive": true,
+          "displayName": "LMF_localhost",
+          "groups": {
+            "-OP7xTtC4Cpdf_LXxoIr": {
+              "at": "-23,5",
+              "id": "-OP7xTtC4Cpdf_LXxoIr",
+              "status": "idle"
+            }
+          },
+          "id": "tNIGfMI4O8ZsTkgtmg5GdTKt1k53",
+          "inGroup": "-OP7xTtC4Cpdf_LXxoIr",
+          "joined": 1746054218933,
+          "lastLocation": {
+            "timestamp": 1746054842032,
+            "x": -22,
+            "y": 3
+          },
+          "race": "human"
+        }
+      }
+    }
+  },
+  "worlds": {
+    "ancient-lands": {
+      "chunks": {
+        "-1,-1": {
+          "-23,-8": {
+            "structure": {
+              "capacity": 60,
+              "features": [
+                {
+                  "description": "Allows crafting of superior metal items and weapons",
+                  "icon": "🔥",
+                  "name": "Forge"
+                },
+                {
+                  "description": "Create powerful potions and brews",
+                  "icon": "🍺",
+                  "name": "Brewery"
+                }
+              ],
+              "id": "structure_dwarven_stronghold",
+              "items": [
+                {
+                  "description": "Incredibly strong but lightweight metal ore",
+                  "id": "item_al_1001",
+                  "name": "Mithril Ore",
+                  "quantity": 10,
+                  "rarity": "rare",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_al_1002",
+                  "name": "Mountain Stone",
+                  "quantity": 22,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "description": "A gem that emanates heat and light",
+                  "id": "item_al_1003",
+                  "name": "Fire Ruby",
+                  "quantity": 1,
+                  "rarity": "epic",
+                  "type": "gem"
+                }
+              ],
+              "name": "Dwarven Stronghold",
+              "owner": "Lxr6qkXZtYTZOhAZqrfAaTx5ZOt1",
+              "ownerName": "TestPlayer",
+              "race": "dwarf",
+              "type": "stronghold"
+            }
+          }
+        },
+        "-1,-2": {
+          "-18,-22": {
+            "groups": {
+              "-OOcaUtPgnl1DCAm0gIp": {
+                "createdAt": 1745511644821,
+                "id": "-OOcaUtPgnl1DCAm0gIp",
+                "items": [
+                  {
+                    "id": "item_1745511722340_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 8,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Gathered 1 item",
+                  "timestamp": 1745511841181
+                },
+                "lastUpdated": 1745511841181,
+                "name": "gunsy's Force",
+                "owner": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
+                "race": "fairy",
+                "status": "idle",
+                "unitCount": 1,
+                "units": {
+                  "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2": {
+                    "displayName": "gunsy",
+                    "id": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
+                    "lastActive": 1745511607025,
+                    "race": "fairy",
+                    "type": "player"
+                  }
+                },
+                "x": -18,
+                "y": -22
+              }
+            },
+            "structure": {
+              "description": "A fairy settlement where the ancient spirits still speak",
+              "id": "structure_al_fairy_spawn",
+              "items": [
+                {
+                  "id": "item_1745498162469_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 3,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745498162469_2",
+                  "name": "Stone Pieces",
+                  "quantity": 3,
+                  "rarity": "common",
+                  "type": "resource"
+                }
+              ],
+              "name": "Whisperwind Circle",
+              "race": "fairy",
+              "type": "spawn"
+            }
+          }
+        },
+        "-1,0": {
+          "-15,3": {
+            "structure": {
+              "description": "A resourceful goblin settlement built from the remains of ancient beasts",
+              "id": "structure_al_goblin_spawn",
+              "items": [
+                {
+                  "id": "item_1745060101976_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 5,
+                  "rarity": "common",
+                  "type": "resource"
+                }
+              ],
+              "name": "Boneridge Camp",
+              "race": "goblin",
+              "type": "spawn"
+            }
+          }
+        },
+        "-2,-1": {
+          "-26,-1": {
+            "groups": {
+              "monster_1746054843517_5576": {
+                "createdAt": 1746054843517,
+                "id": "monster_1746054843517_5576",
+                "items": [
+                  {
+                    "id": "item_1746054843517_142",
+                    "name": "Crude Weapon",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "weapon"
+                  }
+                ],
+                "lastUpdated": 1746054843517,
+                "monsterType": "elemental",
+                "name": "Wild Elemental",
+                "status": "idle",
+                "type": "monster",
+                "unitCount": 3,
+                "x": -26,
+                "y": -1
+              }
+            }
+          },
+          "-29,-11": {
+            "groups": {
+              "-OP3lS6o6oDQ6rmA8Fyh": {
+                "createdAt": 1745984279091,
+                "id": "-OP3lS6o6oDQ6rmA8Fyh",
+                "items": [
+                  {
+                    "id": "item_1745984762404_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 14,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1745984762404_2",
+                    "name": "Stone Pieces",
+                    "quantity": 6,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Gathered 2 items",
+                  "timestamp": 1745985361139
+                },
+                "lastUpdated": 1745985361139,
+                "moveSpeed": 1,
+                "moveStarted": 1745985166325,
+                "movementPath": [
+                  {
+                    "x": -30,
+                    "y": -12
+                  },
+                  {
+                    "x": -29,
+                    "y": -11
+                  }
+                ],
+                "name": "madnico's Force",
+                "nextMoveTime": 1745985305789,
+                "owner": "scls4twPVdNaZABrOfKAhVXsd3v2",
+                "pathIndex": 1,
+                "race": "dwarf",
+                "status": "idle",
+                "targetX": -29,
+                "targetY": -11,
+                "unitCount": 1,
+                "units": {
+                  "scls4twPVdNaZABrOfKAhVXsd3v2": {
+                    "displayName": "madnico",
+                    "id": "scls4twPVdNaZABrOfKAhVXsd3v2",
+                    "lastActive": 1745984018329,
+                    "race": "dwarf",
+                    "type": "player"
+                  }
+                },
+                "x": -29,
+                "y": -11
+              }
+            }
+          },
+          "-30,-12": {
+            "groups": {
+              "-OP3kM7ZrP9K3VSiuk0J": {
+                "createdAt": 1745983992419,
+                "id": "-OP3kM7ZrP9K3VSiuk0J",
+                "items": [
+                  {
+                    "id": "item_1745984466034_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 31,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1745984885679_2",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "description": "A strange object of unknown origin",
+                    "id": "item_1745985842446_special",
+                    "name": "Mysterious Artifact",
+                    "quantity": 1,
+                    "rarity": "rare",
+                    "type": "artifact"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Gathered 3 items",
+                  "timestamp": 1745985842035
+                },
+                "lastUpdated": 1745985842035,
+                "moveSpeed": 1,
+                "moveStarted": 1745985603983,
+                "movementPath": [
+                  {
+                    "x": -29,
+                    "y": -11
+                  },
+                  {
+                    "x": -30,
+                    "y": -12
+                  }
+                ],
+                "name": "FuaK's Force",
+                "nextMoveTime": 1745985781875,
+                "owner": "YIDyjpxkBSR8eqemfslNDfs1YBr2",
+                "pathIndex": 1,
+                "race": "elf",
+                "status": "idle",
+                "targetX": -30,
+                "targetY": -12,
+                "unitCount": 1,
+                "units": {
+                  "YIDyjpxkBSR8eqemfslNDfs1YBr2": {
+                    "displayName": "FuaK",
+                    "id": "YIDyjpxkBSR8eqemfslNDfs1YBr2",
+                    "lastActive": 1745983935472,
+                    "race": "elf",
+                    "type": "player"
+                  }
+                },
+                "x": -30,
+                "y": -12
+              }
+            },
+            "players": {
+              "MRtwAHk77DZqgaZgmAS2sPBnXoV2": {
+                "displayName": "mrbraindead",
+                "id": "MRtwAHk77DZqgaZgmAS2sPBnXoV2",
+                "lastActive": 1745585246791,
+                "race": "elf"
+              }
+            },
+            "structure": {
+              "description": "An elven city built around the oldest living trees in the realm",
+              "id": "structure_al_elf_spawn",
+              "items": [
+                {
+                  "id": "item_1745940541018_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 5,
+                  "rarity": "common",
+                  "type": "resource"
+                }
+              ],
+              "name": "Ancient Arborium",
+              "race": "elf",
+              "type": "spawn"
+            }
+          },
+          "-32,-10": {
+            "players": {
+              "ptUgwrwSwlhaNiCwTHoDn7PrY1p2": {
+                "displayName": "urchinmaxxer",
+                "id": "ptUgwrwSwlhaNiCwTHoDn7PrY1p2",
+                "lastActive": 1745991450520,
+                "race": "dwarf"
+              }
+            },
+            "structure": {
+              "description": "The ancestral mountain home of the dwarf clans",
+              "id": "structure_al_dwarf_spawn",
+              "name": "Deepforge Stronghold",
+              "race": "dwarf",
+              "type": "spawn"
+            }
+          },
+          "-34,-3": {
+            "groups": {
+              "-OOdDT4AuHhVSLmvPXy7": {
+                "createdAt": 1745522123144,
+                "id": "-OOdDT4AuHhVSLmvPXy7",
+                "items": [
+                  {
+                    "id": "item_1745522946117_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 14,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1745523301675_2",
+                    "name": "Stone Pieces",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Gathered 1 item",
+                  "timestamp": 1745529001761
+                },
+                "lastUpdated": 1745529001761,
+                "moveSpeed": 1,
+                "moveStarted": 1745527358539,
+                "movementPath": [
+                  {
+                    "x": -38,
+                    "y": -8
+                  },
+                  {
+                    "x": -37,
+                    "y": -7
+                  },
+                  {
+                    "x": -36,
+                    "y": -6
+                  },
+                  {
+                    "x": -36,
+                    "y": -5
+                  },
+                  {
+                    "x": -35,
+                    "y": -4
+                  },
+                  {
+                    "x": -34,
+                    "y": -3
+                  }
+                ],
+                "name": "JimmyRigged's Force",
+                "nextMoveTime": 1745527981358,
+                "owner": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+                "pathIndex": 5,
+                "race": "elf",
+                "status": "idle",
+                "targetX": -34,
+                "targetY": -3,
+                "unitCount": 1,
+                "units": {
+                  "Fsec3klBgbOgCMVDkHYM0CCxijg2": {
+                    "displayName": "JimmyRigged",
+                    "id": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+                    "lastActive": 1745522094498,
+                    "race": "elf",
+                    "type": "player"
+                  }
+                },
+                "x": -34,
+                "y": -3
+              }
+            }
+          },
+          "-37,-8": {
+            "structure": {
+              "builder": "-OOdDT4AuHhVSLmvPXy7",
+              "completedAt": 1745525762026,
+              "id": "structure_ancient-lands_-37,-8_1745525674002",
+              "name": "JimmyRigged's Outpost",
+              "owner": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
+              "ownerName": "JimmyRigged",
+              "race": "elf",
+              "status": "complete",
+              "type": "outpost"
+            }
+          }
+        },
+        "-2,0": {
+          "-22,2": {
+            "groups": {
+              "monster_1746054242673_1603": {
+                "createdAt": 1746054242673,
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746054242673_1603",
+                "items": [
+                  {
+                    "id": "item_1746055082419_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 4,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746055082419_2",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Gathered 2 items",
+                  "timestamp": 1746055082015
+                },
+                "lastUpdated": 1746055082015,
+                "monsterType": "goblin",
+                "moveSpeed": 1,
+                "moveStarted": 1746054486416,
+                "movementPath": [
+                  {
+                    "x": -25,
+                    "y": -1
+                  },
+                  {
+                    "x": -24,
+                    "y": 0
+                  },
+                  {
+                    "x": -23,
+                    "y": 1
+                  },
+                  {
+                    "x": -22,
+                    "y": 2
+                  }
+                ],
+                "name": "Goblin Raiders",
+                "nextMoveTime": 1746054902032,
+                "pathIndex": 3,
+                "status": "idle",
+                "targetX": -22,
+                "targetY": 2,
+                "type": "monster",
+                "unitCount": 2,
+                "x": -22,
+                "y": 2
+              }
+            }
+          },
+          "-22,3": {
+            "battles": {
+              "battle_1746055340942_153": {
+                "createdAt": 1746055340942,
+                "defenderGroupPower": 2,
+                "id": "battle_1746055340942_153",
+                "locationX": -22,
+                "locationY": 3,
+                "side1": {
+                  "groups": {
+                    "-OP7xTtC4Cpdf_LXxoIr": true
+                  },
+                  "power": 1
+                },
+                "side1Power": 1,
+                "side2": {
+                  "groups": {
+                    "monster_1746054606983_7311": true
+                  },
+                  "power": 2
+                },
+                "side2Power": 2,
+                "status": "active",
+                "structurePower": 0,
+                "targetTypes": [
+                  "group"
+                ],
+                "tickCount": 0
+              }
+            },
+            "groups": {
+              "-OP7xTtC4Cpdf_LXxoIr": {
+                "battleId": "battle_1746055340942_153",
+                "battleRole": "attacker",
+                "battleSide": 1,
+                "createdAt": 1746054540936,
+                "id": "-OP7xTtC4Cpdf_LXxoIr",
+                "inBattle": true,
+                "lastMessage": {
+                  "text": "Moving to next location (-22,3)",
+                  "timestamp": 1746054842032
+                },
+                "lastUpdated": 1746054842032,
+                "moveSpeed": 1,
+                "moveStarted": 1746054710147,
+                "movementPath": [
+                  {
+                    "x": -23,
+                    "y": 5
+                  },
+                  {
+                    "x": -23,
+                    "y": 4
+                  },
+                  {
+                    "x": -22,
+                    "y": 3
+                  }
+                ],
+                "name": "LMF_localhost's Force",
+                "nextMoveTime": 1746054902032,
+                "owner": "tNIGfMI4O8ZsTkgtmg5GdTKt1k53",
+                "pathIndex": 2,
+                "race": "human",
+                "status": "fighting",
+                "targetX": -22,
+                "targetY": 3,
+                "unitCount": 1,
+                "units": {
+                  "tNIGfMI4O8ZsTkgtmg5GdTKt1k53": {
+                    "displayName": "LMF_localhost",
+                    "id": "tNIGfMI4O8ZsTkgtmg5GdTKt1k53",
+                    "lastActive": 1746054384526,
+                    "race": "human",
+                    "type": "player"
+                  }
+                },
+                "x": -22,
+                "y": 3
+              },
+              "monster_1746054606983_7311": {
+                "battleId": "battle_1746055340942_153",
+                "battleRole": "defender",
+                "battleSide": 2,
+                "createdAt": 1746054606983,
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746054606983_7311",
+                "inBattle": true,
+                "items": [
+                  {
+                    "id": "item_1746054606983_245",
+                    "name": "Wooden Sticks",
+                    "quantity": 6,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746054842426_2",
+                    "name": "Stone Pieces",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Gathered 2 items",
+                  "timestamp": 1746054842032
+                },
+                "lastUpdated": 1746054842032,
+                "monsterType": "elemental",
+                "name": "Wild Elemental",
+                "status": "fighting",
+                "type": "monster",
+                "unitCount": 2,
+                "x": -22,
+                "y": 3
+              }
+            }
+          },
+          "-23,5": {
+            "structure": {
+              "description": "A rugged frontier settlement where hardy humans carve out a living",
+              "id": "structure_al_human_spawn",
+              "items": [
+                {
+                  "id": "item_1745062986244_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 13,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745062986245_2",
+                  "name": "Stone Pieces",
+                  "quantity": 7,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "description": "A strange object of unknown origin",
+                  "id": "item_1745062986245_special",
+                  "name": "Mysterious Artifact",
+                  "quantity": 1,
+                  "rarity": "rare",
+                  "type": "artifact"
+                }
+              ],
+              "name": "Stoneguard Citadel",
+              "race": "human",
+              "type": "spawn"
+            }
+          },
+          "-26,2": {
+            "groups": {
+              "monster_1746054062474_6856": {
+                "createdAt": 1746054062474,
+                "id": "monster_1746054062474_6856",
+                "items": [
+                  {
+                    "id": "item_1746054062474_719",
+                    "name": "Crude Weapon",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "weapon"
+                  },
+                  {
+                    "id": "item_1746054062474_559",
+                    "name": "Ancient Coin",
+                    "quantity": 2,
+                    "rarity": "uncommon",
+                    "type": "treasure"
+                  }
+                ],
+                "lastUpdated": 1746054062474,
+                "monsterType": "goblin",
+                "name": "Goblin Raiders",
+                "status": "idle",
+                "type": "monster",
+                "unitCount": 3,
+                "x": -26,
+                "y": 2
+              }
+            }
+          },
+          "-27,3": {
+            "groups": {
+              "-OOeDa2UNCNmF3-wWau2": {
+                "createdAt": 1745538933016,
+                "id": "-OOeDa2UNCNmF3-wWau2",
+                "items": [
+                  {
+                    "id": "item_1745539321974_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 10,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1745541002242_2",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Moving to next location (-27,3)",
+                  "timestamp": 1745615821334
+                },
+                "lastUpdated": 1745615821334,
+                "moveSpeed": 1,
+                "moveStarted": 1745615722100,
+                "movementPath": [
+                  {
+                    "x": -26,
+                    "y": 3
+                  },
+                  {
+                    "x": -27,
+                    "y": 3
+                  }
+                ],
+                "name": "sunsueme's Force",
+                "nextMoveTime": 1745615881334,
+                "owner": "rBBlixvWCih6uFNcG4vK7qcGvmv1",
+                "pathIndex": 1,
+                "race": "human",
+                "status": "idle",
+                "targetX": -27,
+                "targetY": 3,
+                "unitCount": 1,
+                "units": {
+                  "rBBlixvWCih6uFNcG4vK7qcGvmv1": {
+                    "displayName": "sunsueme",
+                    "id": "rBBlixvWCih6uFNcG4vK7qcGvmv1",
+                    "lastActive": 1745538829413,
+                    "race": "human",
+                    "type": "player"
+                  }
+                },
+                "x": -27,
+                "y": 3
+              },
+              "-OP7_n87RqlbeFnI33DU": {
+                "createdAt": 1746048332421,
+                "id": "-OP7_n87RqlbeFnI33DU",
+                "inBattle": false,
+                "items": [
+                  {
+                    "id": "item_1746052985996_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 4,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746052985996_2",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Moving to next location (-27,3)",
+                  "timestamp": 1746054361876
+                },
+                "lastUpdated": 1746054361876,
+                "moveSpeed": 1,
+                "moveStarted": 1746054019871,
+                "movementPath": [
+                  {
+                    "x": -23,
+                    "y": 2
+                  },
+                  {
+                    "x": -24,
+                    "y": 2
+                  },
+                  {
+                    "x": -25,
+                    "y": 2
+                  },
+                  {
+                    "x": -26,
+                    "y": 3
+                  },
+                  {
+                    "x": -27,
+                    "y": 3
+                  }
+                ],
+                "name": "LMF's Force",
+                "nextMoveTime": 1746054421876,
+                "owner": "kKRX0XkbRpPHYTpoqM9ppmnoC4C2",
+                "pathIndex": 4,
+                "race": "human",
+                "status": "idle",
+                "targetX": -27,
+                "targetY": 3,
+                "unitCount": 1,
+                "units": {
+                  "kKRX0XkbRpPHYTpoqM9ppmnoC4C2": {
+                    "displayName": "LMF",
+                    "id": "kKRX0XkbRpPHYTpoqM9ppmnoC4C2",
+                    "lastActive": 1746048289529,
+                    "race": "human",
+                    "type": "player"
+                  }
+                },
+                "x": -27,
+                "y": 3
+              }
+            }
+          },
+          "-30,1": {
+            "groups": {
+              "monster_1746055083166_2458": {
+                "createdAt": 1746055083166,
+                "id": "monster_1746055083166_2458",
+                "lastUpdated": 1746055083166,
+                "monsterType": "spider",
+                "name": "Giant Spiders",
+                "status": "idle",
+                "type": "monster",
+                "unitCount": 2,
+                "x": -30,
+                "y": 1
+              }
+            }
+          }
+        }
+      },
+      "info": {
+        "center": {
+          "x": -23,
+          "y": -8
+        },
+        "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
+        "lastTick": 1746055321315,
+        "name": "Ancient Lands",
+        "playerCount": 16,
+        "seed": 13579,
+        "size": "large",
+        "spawns": {
+          "-1:-2:-18:-22": {
+            "description": "A fairy settlement where the ancient spirits still speak",
+            "id": "structure_al_fairy_spawn",
+            "name": "Whisperwind Circle",
+            "position": {
+              "chunkX": -1,
+              "chunkY": -2,
+              "x": -18,
+              "y": -22
+            },
+            "race": "fairy",
+            "type": "spawn"
+          },
+          "-1:0:-15:3": {
+            "description": "A resourceful goblin settlement built from the remains of ancient beasts",
+            "id": "structure_al_goblin_spawn",
+            "name": "Boneridge Camp",
+            "position": {
+              "chunkX": -1,
+              "chunkY": 0,
+              "x": -15,
+              "y": 3
+            },
+            "race": "goblin",
+            "type": "spawn"
+          },
+          "-2:-1:-30:-12": {
+            "description": "An elven city built around the oldest living trees in the realm",
+            "id": "structure_al_elf_spawn",
+            "name": "Ancient Arborium",
+            "position": {
+              "chunkX": -2,
+              "chunkY": -1,
+              "x": -30,
+              "y": -12
+            },
+            "race": "elf",
+            "type": "spawn"
+          },
+          "-2:-1:-32:-10": {
+            "description": "The ancestral mountain home of the dwarf clans",
+            "id": "structure_al_dwarf_spawn",
+            "name": "Deepforge Stronghold",
+            "position": {
+              "chunkX": -2,
+              "chunkY": -1,
+              "x": -32,
+              "y": -10
+            },
+            "race": "dwarf",
+            "type": "spawn"
+          },
+          "-2:0:-23:5": {
+            "description": "A rugged frontier settlement where hardy humans carve out a living",
+            "id": "structure_al_human_spawn",
+            "name": "Stoneguard Citadel",
+            "position": {
+              "chunkX": -2,
+              "chunkY": 0,
+              "x": -23,
+              "y": 5
+            },
+            "race": "human",
+            "type": "spawn"
+          }
+        },
+        "speed": 1
+      }
+    }
+  }
+}
