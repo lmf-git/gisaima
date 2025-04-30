@@ -59,7 +59,6 @@
     import AchievementIcon from '../../components/icons/Trophy.svelte';
     import AchievementUnlocked from '../../components/map/AchievementUnlocked.svelte';
     import NextWorldTick from '../../components/map/NextWorldTick.svelte';
-    import FirstSteps from '../../components/map/FirstSteps.svelte'; // Add import for FirstSteps
     
     const DEBUG_MODE = true;
     const debugLog = (...args) => DEBUG_MODE && console.log(...args);
@@ -1245,8 +1244,6 @@
                     />
                 </div>
             {/if}
-
-            <FirstSteps />
             
             <!-- Add Notices component -->
             {#if showNotices && !isTutorialVisible}

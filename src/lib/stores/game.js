@@ -16,20 +16,14 @@ const CHUNK_SIZE = 20;
 
 // Achievement definitions moved to top level constant
 const ACHIEVEMENT_DEFINITIONS = {
-  'first_steps': {
-    title: 'First Steps',
-    description: 'Draw your first movement path',
-    category: 'explore',
-  },
-  'world_traveler': {
-    title: 'World Traveler',
-    description: 'Visit 50 different tiles',
-    category: 'explore',
-    hidden: true,
-  },
   'mobilised': {
     title: 'Leader',
     description: 'Mobilize your first group',
+    category: 'explore',
+  },
+  'first_steps': {
+    title: 'First Steps',
+    description: 'Draw your first movement path',
     category: 'explore',
   },
   'demobilizer': {
@@ -37,48 +31,25 @@ const ACHIEVEMENT_DEFINITIONS = {
     description: 'Demobilize a group at a structure',
     category: 'explore',
   },
+  'first_gather': {
+    title: 'Gatherer',
+    description: 'Gather resources for the first time',
+    category: 'items',
+  },
+  'first_message': {
+    title: 'Communicator',
+    description: 'Send your first chat message',
+    category: 'social',
+  },
   'first_attack': {
     title: 'First Blood',
     description: 'Start your first attack',
-    category: 'combat',
-  },
-  'first_battle': {
-    title: 'Battle Hardened',
-    description: 'Win your first battle',
     category: 'combat',
   },
   'battle_joiner': {
     title: 'Opportunist',
     description: 'Join an in-progress battle',
     category: 'combat',
-  },
-  'survivor': {
-    title: 'Survivor',
-    description: 'Survive 5 battles',
-    category: 'combat',
-    hidden: true,
-  },
-  'first_gather': {
-    title: 'Gatherer',
-    description: 'Gather resources for the first time',
-    category: 'items',
-  },
-  'treasure_finder': {
-    title: 'Treasure Finder',
-    description: 'Find a rare resource',
-    category: 'items',
-    hidden: true,
-  },
-  'army_builder': {
-    title: 'Army Builder',
-    description: 'Create 5 groups simultaneously',
-    category: 'social',
-    hidden: true,
-  },
-  'first_message': {
-    title: 'Communicator',
-    description: 'Send your first chat message',
-    category: 'social',
   },
 };
 
