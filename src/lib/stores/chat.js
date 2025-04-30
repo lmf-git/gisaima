@@ -19,7 +19,8 @@ export const chatStore = writable({
   unreadCount: 0,
   currentWorldId: null,
   lastReadTime: Date.now(),
-  subscriberCount: 0 // Track number of active subscribers
+  subscriberCount: 0, // Track number of active subscribers
+  readMessageIds: new Set() // Add a Set to track read message IDs
 });
 
 // Derived store to get messages sorted by timestamp
@@ -38,9 +39,10 @@ export const unreadMessages = derived(
     
     // Only count messages from last 5 minutes that haven't been read
     // AND were not sent by the current user
+    // AND are not in the readMessageIds Set
     return $chat.messages.filter(msg => {
       const isRecent = (now - msg.timestamp) < UNREAD_THRESHOLD;
-      const isUnread = msg.timestamp > $chat.lastReadTime;
+      const isUnread = msg.timestamp > $chat.lastReadTime && !$chat.readMessageIds.has(msg.id);
       const isNotOwnMessage = msg.userId !== currentUserId; // Exclude own messages
       return isRecent && isUnread && isNotOwnMessage;
     }).length;
@@ -241,11 +243,36 @@ export async function sendMessage(text, messageType = 'user') {
  * Mark all messages as read
  */
 export function markAllAsRead() {
-  chatStore.update(state => ({
-    ...state,
-    unreadCount: 0,
-    lastReadTime: Date.now()
-  }));
+  chatStore.update(state => {
+    // Create a Set of all message IDs
+    const allMessageIds = new Set(state.messages.map(msg => msg.id));
+    
+    return {
+      ...state,
+      unreadCount: 0,
+      lastReadTime: Date.now(),
+      readMessageIds: allMessageIds // Mark all messages as read
+    };
+  });
+}
+
+/**
+ * Mark specific messages as read
+ * @param {string[]} messageIds Array of message IDs to mark as read
+ */
+export function markMessagesAsRead(messageIds) {
+  if (!messageIds || messageIds.length === 0) return;
+  
+  chatStore.update(state => {
+    // Create a new Set with existing read messages plus the new ones
+    const updatedReadIds = new Set(state.readMessageIds);
+    messageIds.forEach(id => updatedReadIds.add(id));
+    
+    return {
+      ...state,
+      readMessageIds: updatedReadIds
+    };
+  });
 }
 
 /**

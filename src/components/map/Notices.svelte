@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { fly, fade } from 'svelte/transition';
   import { flip } from 'svelte/animate';
-  import { messages, getMessageTime, initializeChat } from '../../lib/stores/chat.js';
+  import { messages, getMessageTime, initializeChat, markMessagesAsRead } from '../../lib/stores/chat.js';
   import { game } from '../../lib/stores/game.js';
   import { user } from '../../lib/stores/user.js'; 
 
@@ -87,10 +87,16 @@
     
     if (newMessages.length === 0) return;
     
+    // Track message IDs to mark as read
+    const messageIdsToMarkAsRead = [];
+    
     // Process all new relevant messages
     for (const message of newMessages) {
       // Track that we've processed this message ID
       processedMessageIds.add(message.id);
+      
+      // Add to list of IDs to mark as read
+      messageIdsToMarkAsRead.push(message.id);
       
       // Update last seen timestamp if needed
       if (message.timestamp > lastSeenTimestamp) {
@@ -106,6 +112,12 @@
         timestamp: message.timestamp,
         location: message.location
       });
+    }
+    
+    // Mark all these messages as read since they appeared in notices
+    if (messageIdsToMarkAsRead.length > 0) {
+      console.log(`Notices: Marking ${messageIdsToMarkAsRead.length} messages as read`);
+      markMessagesAsRead(messageIdsToMarkAsRead);
     }
     
     // Limit the size of the processed IDs set to prevent memory leaks
