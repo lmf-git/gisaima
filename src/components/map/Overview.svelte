@@ -544,15 +544,14 @@
   }
 </script>
 
-<div 
+<section 
   class="entities-wrapper" 
   class:closing 
   class:active={isActive}
   onmouseenter={onMouseEnter}
-  role="region"
+  role="dialog"
   aria-label="Map entities overview"
-  onkeydown={handleKeyDown} 
-  tabindex="0"
+  aria-modal="true"
 >
   <div class="entities-panel">
     <h3 class="title">
@@ -560,7 +559,12 @@
       <span class="subtitle">{visibleChunks} chunks visible</span>
       
       <!-- Replace the close button to match the size in Details component -->
-      <button class="close-button" onclick={handleClose} aria-label="Close map entities panel">
+      <button 
+        class="close-button" 
+        onclick={handleClose} 
+        aria-label="Close map entities panel"
+        onkeydown={(e) => e.key === 'Escape' && handleClose()}
+      >
         <Close size="1.6em" extraClass="close-icon-dark" />
       </button>
     </h3>
@@ -1355,7 +1359,7 @@
       {/if}
     </div>
   </div>
-</div>
+</section>
 
 <style>
   .entities-wrapper {
