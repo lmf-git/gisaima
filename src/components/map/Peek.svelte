@@ -87,9 +87,10 @@
     );
     
     // Check if there are any enemy groups on the tile
+    // Now includes both idle and gathering status
     const enemyGroups = tile.groups?.filter(g => 
       g.owner !== $currentPlayer.id && 
-      g.status === 'idle' &&
+      (g.status === 'idle' || g.status === 'gathering') &&
       !g.inBattle
     );
     
