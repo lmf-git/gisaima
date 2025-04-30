@@ -240,6 +240,12 @@
         onClose(); // Close details panel
         break;
         
+      // Add case for recruitment action
+      case 'recruit':
+        onShowModal({ type: 'recruit', data: tileData });
+        onClose(); // Close details panel
+        break;
+        
       case 'craft':
         onShowModal({ 
           type: 'craft', 
@@ -386,17 +392,21 @@
            );
   }
 
-  // Add function to check if player can be mobilized
-  function canMobilizePlayer(player) {
-    if (!player || !$currentPlayer || player.id !== $currentPlayer.id) return false;
+  // Add function to check if recruitment is possible
+  function canRecruit(tile) {
+    if (!tile || !$currentPlayer || !tile.structure) return false;
     
-    // Check if player is not already in a mobilizing/demobilising group
-    const inProcessGroup = detailsData?.groups?.some(g => 
+    // Player must be on tile as an entity
+    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
+    
+    // Player should not be in a mobilizing or demobilising group
+    const inProcessGroup = tile.groups?.some(g => 
       (g.status === 'mobilizing' || g.status === 'demobilising') && 
       g.owner === $currentPlayer.id
     );
     
-    return !inProcessGroup;
+    // Check if player is on tile but not already in a group
+    return playerOnTile && !inProcessGroup;
   }
 
   // Get status class from status
@@ -705,6 +715,13 @@
                   <button class="action-button" onclick={() => executeAction('mobilise')}>
                     <Rally extraClass="action-icon rally-icon" />
                     Mobilise
+                  </button>
+                {/if}
+                
+                {#if canRecruit(detailsData)}
+                  <button class="action-button" onclick={() => executeAction('recruit')}>
+                    <Horn extraClass="action-icon horn-icon" />
+                    Recruit
                   </button>
                 {/if}
                 
@@ -1587,17 +1604,17 @@
   .action-button:has(.rally-icon):hover {
     background-color: rgba(63, 81, 181, 0.2);
   }
+  
+  /* Add styling for horn icon (recruit action) */
+  .action-button:has(.horn-icon) {
+    background-color: rgba(156, 39, 176, 0.1);
+    border-color: rgba(156, 39, 176, 0.3);
+  }
+  
+  .action-button:has(.horn-icon):hover {
+    background-color: rgba(156, 39, 176, 0.2);
+  }
 
-  
-  .action-button:has(.hammer-icon) {
-    background-color: rgba(121, 85, 72, 0.1);
-    border-color: rgba(121, 85, 72, 0.3);
-  }
-  
-  .action-button:has(.hammer-icon):hover {
-    background-color: rgba(121, 85, 72, 0.2);
-  }
-  
   
   .action-button:not(:has(.action-icon)) {
     background-color: rgba(183, 28, 28, 0.1);
@@ -1634,6 +1651,16 @@
   
   .entity-action:has(.rally-icon):hover {
     background-color: rgba(63, 81, 181, 0.2);
+  }
+
+  /* Add styling for horn icon in entity actions */
+  .entity-action:has(.horn-icon) {
+    background-color: rgba(156, 39, 176, 0.1);
+    border-color: rgba(156, 39, 176, 0.3);
+  }
+  
+  .entity-action:has(.horn-icon):hover {
+    background-color: rgba(156, 39, 176, 0.2);
   }
 
   .player-owned {
@@ -1828,7 +1855,7 @@
   
   .entity-badge.demobilising {
     background: rgba(138, 43, 226, 0.15);
-    border: 1px solid rgba(138, 43, 226, 0.3);
+    border:1px solid rgba(138, 43, 226, 0.3);
     color: #6a1b9a;
   }
   
@@ -2038,9 +2065,8 @@
   .entity-info {
     flex: 1;
     min-width: 0;
-    margin-right: 0.5em;
-  }
-  
+    margin-right: 0.5em  }
+
   .entity-actions {
     width: auto;
     margin-left: auto;
@@ -2083,7 +2109,7 @@
   /* Add the flee-action button style */
   .entity-action.flee-action {
     background-color: rgba(156, 39, 176, 0.1);
-border-color: rgba(156, 39, 176, 0.3);
+    border-color: rgba(156, 39, 176, 0.3);
     color: rgba(156, 39, 176, 0.9);
   }
   
