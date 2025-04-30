@@ -1,225 +1,138 @@
 import { getDatabase } from 'firebase-admin/database';
+import { logger } from 'firebase-functions';
 
 /**
- * Process pending crafting operations
- * @param {string} worldId - The world ID to process crafting for
- * @returns {Promise<Object>} Processing results
+ * Process crafting operations
+ * @param {string} worldId - The ID of the world to process
+ * @returns {Promise<{processed: number}>} - Result with count of processed items 
  */
 export async function processCrafting(worldId) {
   try {
     const db = getDatabase();
     const now = Date.now();
+    let processed = 0;
     
-    console.log(`Processing crafting for world ${worldId} at ${new Date(now).toISOString()}`);
-    
-    // Get completed but unprocessed crafting operations
+    // Get all crafting operations for this world
     const craftingRef = db.ref(`worlds/${worldId}/crafting`);
-    const craftingSnapshot = await craftingRef.orderByChild('status').equalTo('in_progress').once('value');
+    const craftingSnapshot = await craftingRef.once('value');
+    const craftingData = craftingSnapshot.val();
     
-    if (!craftingSnapshot.exists()) {
-      console.log(`No pending crafting found for world ${worldId}`);
-      return { processed: 0 };
+    if (!craftingData) {
+      return { processed };
     }
     
-    const craftingItems = [];
-    craftingSnapshot.forEach(child => {
-      const crafting = child.val();
-      // Only include crafting that is complete but not yet processed
-      if (crafting.completesAt <= now && !crafting.processed) {
-        craftingItems.push(crafting);
-      }
-    });
+    // Get the world's tick count for tick-based processing
+    const worldTicksRef = db.ref(`worlds/${worldId}/info/tickCount`);
+    const worldTicksSnapshot = await worldTicksRef.once('value');
+    let currentTickCount = (worldTicksSnapshot.val() || 0);
     
-    console.log(`Found ${craftingItems.length} completed crafting items to process`);
-    
-    let completed = 0;
-    let failed = 0;
+    // Increment the world tick count for this cycle
+    await worldTicksRef.set(currentTickCount + 1);
     
     // Process each crafting operation
-    for (const crafting of craftingItems) {
-      try {
-        const result = await completeCrafting(crafting.id, worldId);
-        if (result.success) {
-          completed++;
-        } else {
-          failed++;
+    const updates = {};
+    const craftingToProcess = Object.entries(craftingData);
+    
+    for (const [craftingId, crafting] of craftingToProcess) {
+      // Skip already processed crafting
+      if (crafting.processed || crafting.status !== 'in_progress') {
+        continue;
+      }
+      
+      // Check if this crafting has a ticksRequired property (new system)
+      if (typeof crafting.ticksRequired === 'number') {
+        // If we have ticksRequired, use tick-based completion
+        if (typeof crafting.ticksCompleted !== 'number') {
+          // Initialize ticksCompleted if not present
+          updates[`worlds/${worldId}/crafting/${craftingId}/ticksCompleted`] = 1;
+          continue; // Skip this iteration - we'll process it in the next tick
         }
-      } catch (error) {
-        console.error(`Error processing crafting ${crafting.id}:`, error);
-        failed++;
         
-        // Mark crafting as failed
-        const craftingItemRef = db.ref(`worlds/${worldId}/crafting/${crafting.id}`);
-        await craftingItemRef.update({
-          processed: true,
-          failed: true,
-          error: error.message,
-          processedAt: now,
-          status: 'failed'
-        });
+        // Increment completed ticks
+        const newTicksCompleted = crafting.ticksCompleted + 1;
+        updates[`worlds/${worldId}/crafting/${craftingId}/ticksCompleted`] = newTicksCompleted;
+        
+        // Check if crafting is complete
+        if (newTicksCompleted >= crafting.ticksRequired) {
+          completeCrafting(worldId, craftingId, crafting, updates);
+          processed++;
+        }
+      } 
+      // Fallback for legacy time-based crafting (completesAt property)
+      else if (crafting.completesAt && crafting.completesAt <= now) {
+        completeCrafting(worldId, craftingId, crafting, updates);
+        processed++;
+      }
+      // Convert old time-based to new tick-based
+      else if (crafting.craftingTime) {
+        // Convert time-based to tick-based (assuming 1 tick per minute)
+        const ticksRequired = crafting.craftingTime;
+        updates[`worlds/${worldId}/crafting/${craftingId}/ticksRequired`] = ticksRequired;
+        updates[`worlds/${worldId}/crafting/${craftingId}/ticksCompleted`] = 1;
       }
     }
     
-    console.log(`Processed ${completed} crafting operations successfully, ${failed} failed`);
+    // Apply all updates
+    if (Object.keys(updates).length > 0) {
+      await db.ref().update(updates);
+    }
     
-    return {
-      processed: completed,
-      failed: failed,
-      total: craftingItems.length
-    };
-    
+    return { processed };
   } catch (error) {
-    console.error('Error processing crafting operations:', error);
-    return {
-      success: false,
-      error: error.message
-    };
+    logger.error('Error processing crafting:', error);
+    return { processed: 0, error: error.message };
   }
 }
 
 /**
- * Complete crafting (called by scheduled function)
- * @param {string} craftingId - ID of the crafting to complete
- * @param {string} worldId - World ID
- * @returns {Promise<Object>} Result of completion
+ * Complete a crafting operation
  */
-async function completeCrafting(craftingId, worldId) {
-  try {
-    const db = getDatabase();
-    // Get crafting data
-    const craftingRef = db.ref(`worlds/${worldId}/crafting/${craftingId}`);
-    const craftingSnapshot = await craftingRef.once('value');
+function completeCrafting(worldId, craftingId, crafting, updates) {
+  const now = Date.now();
+  
+  // Mark crafting as complete
+  updates[`worlds/${worldId}/crafting/${craftingId}/status`] = 'completed';
+  updates[`worlds/${worldId}/crafting/${craftingId}/processed`] = true;
+  updates[`worlds/${worldId}/crafting/${craftingId}/completedAt`] = now;
+  
+  // Add the crafted item to player's inventory
+  if (crafting.playerId && crafting.result) {
+    const inventoryPath = `players/${crafting.playerId}/worlds/${worldId}/inventory`;
+    const newItemId = `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     
-    if (!craftingSnapshot.exists()) {
-      throw new Error('Crafting not found');
-    }
-    
-    const crafting = craftingSnapshot.val();
-    
-    // Skip if already processed
-    if (crafting.processed) {
-      return {
-        success: false,
-        error: 'Crafting already processed'
-      };
-    }
-    
-    // Add item to player's inventory
-    const playerInventoryRef = db.ref(`players/${crafting.playerId}/worlds/${worldId}/inventory`);
-    const playerInventorySnapshot = await playerInventoryRef.once('value');
-    
-    let playerInventory = playerInventorySnapshot.exists() ? playerInventorySnapshot.val() : [];
-    
-    // Create a new unique item ID
-    const itemId = `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    
-    // Add crafted item
-    playerInventory.push({
-      id: itemId,
-      name: crafting.result.name,
-      quantity: crafting.result.quantity || 1,
-      type: crafting.result.type,
-      rarity: crafting.result.rarity || 'common',
-      description: crafting.result.description,
-      crafted: true,
-      craftedAt: Date.now(),
-      craftedBy: crafting.playerId
-    });
-    
-    // Update player's inventory
-    await playerInventoryRef.set(playerInventory);
-    
-    // Update player's crafting status
-    const playerRef = db.ref(`players/${crafting.playerId}/worlds/${worldId}`);
-    await playerRef.update({
-      'crafting/current': null,
-      'crafting/completesAt': null,
-      'crafting/lastCompleted': Date.now()
-    });
-    
-    // Increase player's crafting XP if they have a skills object
-    const playerSkillsRef = db.ref(`players/${crafting.playerId}/worlds/${worldId}/skills`);
-    const playerSkillsSnapshot = await playerSkillsRef.once('value');
-    
-    let leveledUp = false;
-    
-    if (playerSkillsSnapshot.exists()) {
-      const skills = playerSkillsSnapshot.val();
-      const currentXP = skills.crafting?.xp || 0;
-      const currentLevel = skills.crafting?.level || 1;
-      
-      // Calculate XP gained (based on recipe rarity and level)
-      const rarityMultipliers = {
-        'common': 1,
-        'uncommon': 1.5,
-        'rare': 2.5,
-        'epic': 4,
-        'legendary': 7
-      };
-      
-      const recipeRarity = crafting.result.rarity || 'common';
-      const rarityMultiplier = rarityMultipliers[recipeRarity] || 1;
-      
-      const baseXP = 10; // Base XP for crafting
-      const xpGained = Math.round(baseXP * rarityMultiplier);
-      
-      const newXP = currentXP + xpGained;
-      
-      // Check if player leveled up
-      const requiredXP = currentLevel * 100; // Simple XP curve
-      let newLevel = currentLevel;
-      
-      if (newXP >= requiredXP) {
-        newLevel = currentLevel + 1;
-        leveledUp = true;
-      }
-      
-      // Update skills
-      await playerSkillsRef.update({
-        'crafting/xp': newXP,
-        'crafting/level': newLevel,
-        'crafting/lastGain': Date.now()
-      });
-      
-      // If player leveled up, announce it
-      if (leveledUp) {
-        const chatRef = db.ref(`worlds/${worldId}/chat/crafting_levelup_${crafting.playerId}_${Date.now()}`);
-        await chatRef.set({
-          location: crafting.structureLocation,
-          text: `${crafting.playerName} reached crafting level ${newLevel}!`,
-          timestamp: Date.now(),
-          type: 'event'
-        });
-      }
-    }
-    
-    // Mark crafting as completed
-    await craftingRef.update({
-      status: 'completed',
-      completedAt: Date.now(),
-      processed: true
-    });
-    
-    // Add completion event to chat
-    const chatRef = db.ref(`worlds/${worldId}/chat/crafting_complete_${craftingId}`);
-    await chatRef.set({
-      location: crafting.structureLocation,
-      text: `${crafting.playerName} finished crafting ${crafting.result.name}.`,
-      timestamp: Date.now(),
-      type: 'event'
-    });
-    
-    return {
-      success: true,
-      result: crafting.result,
-      leveledUp
+    // Create new item with proper structure
+    const newItem = {
+      ...crafting.result,
+      id: newItemId,
+      craftedAt: now
     };
     
-  } catch (error) {
-    console.error('Error completing crafting:', error);
-    return {
-      success: false,
-      error: error.message
-    };
+    updates[`${inventoryPath}/${newItemId}`] = newItem;
   }
+  
+  // Clear player's current crafting status
+  if (crafting.playerId) {
+    updates[`players/${crafting.playerId}/worlds/${worldId}/crafting/current`] = null;
+    updates[`players/${crafting.playerId}/worlds/${worldId}/crafting/completesAt`] = null;
+  }
+  
+  // Add a notification
+  const notificationId = `crafting_completed_${craftingId}`;
+  updates[`players/${crafting.playerId}/worlds/${worldId}/notifications/${notificationId}`] = {
+    id: notificationId,
+    type: 'crafting_completed',
+    message: `You have completed crafting ${crafting.result.name}!`,
+    craftingId: craftingId,
+    itemName: crafting.result.name,
+    createdAt: now,
+    read: false
+  };
+  
+  // Add chat event
+  updates[`worlds/${worldId}/chat/crafting_complete_${craftingId}`] = {
+    location: crafting.structureLocation,
+    text: `${crafting.playerName} completed crafting ${crafting.result.name}.`,
+    timestamp: now,
+    type: 'event'
+  };
 }

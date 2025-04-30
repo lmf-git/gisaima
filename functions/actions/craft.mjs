@@ -107,13 +107,40 @@ export const startCrafting = onCall({ maxInstances: 10 }, async (request) => {
       }
     }
     
-    // Use craftingTime directly as ticks, not seconds
-    const craftingTicks = recipe.craftingTime || 1;
+    // Calculate crafting time as ticks instead of seconds
+    const craftingTicks = recipe.craftingTime || 1; // Default 1 tick
     
-    // Calculate completion time based on ticks rather than seconds
-    // Each tick is determined by the world's tick rate
+    // Apply crafting time modifiers
+    let craftingTickModifier = 1.0;
     
-    // Create the crafting entry
+    // Lower time for higher crafting level (up to 50% reduction)
+    const levelModifier = Math.min(0.5, (craftingLevel - 1) * 0.05);
+    craftingTickModifier -= levelModifier;
+    
+    // Check for building bonuses
+    let craftingSpeedBonus = 0;
+    
+    if (structure.buildings) {
+      for (const buildingId in structure.buildings) {
+        const building = structure.buildings[buildingId];
+        if (building.type === recipe.requiredBuilding?.type && building.benefits) {
+          for (const benefit of building.benefits) {
+            if (benefit.bonus && benefit.bonus.craftingSpeed) {
+              craftingSpeedBonus += benefit.bonus.craftingSpeed;
+            }
+          }
+        }
+      }
+    }
+    
+    craftingTickModifier -= craftingSpeedBonus;
+    
+    // Ensure minimum 10% of original time
+    craftingTickModifier = Math.max(0.1, craftingTickModifier);
+    
+    const finalCraftingTicks = Math.ceil(craftingTicks * craftingTickModifier);
+    
+    // Create the crafting entry using the tick-based approach
     const now = Date.now();
     const craftingId = `crafting_${worldId}_${playerId}_${now}`;
     
@@ -126,7 +153,8 @@ export const startCrafting = onCall({ maxInstances: 10 }, async (request) => {
       structureId: structure.id,
       structureLocation: { x, y },
       startedAt: now,
-      completesAt: now + craftingTicks,
+      ticksRequired: finalCraftingTicks,  // Store ticks required instead of completesAt
+      ticksCompleted: 0,                  // Initialize ticks completed counter
       materials: recipe.materials,
       result: {
         name: recipe.result.name,
@@ -143,10 +171,10 @@ export const startCrafting = onCall({ maxInstances: 10 }, async (request) => {
     const craftingRef = db.ref(`worlds/${worldId}/crafting/${craftingId}`);
     await craftingRef.set(craftingData);
     
-    // Update player's crafting status
+    // Update player's crafting status - but don't include completesAt since we're using ticks
     await playerRef.update({
       'crafting/current': craftingId,
-      'crafting/completesAt': now + craftingTicks
+      'crafting/ticksRequired': finalCraftingTicks
     });
     
     // Consume materials from inventory
@@ -190,8 +218,7 @@ export const startCrafting = onCall({ maxInstances: 10 }, async (request) => {
     return {
       success: true,
       craftingId,
-      completesAt: now + craftingTicks,
-      timeToComplete: craftingTicks,
+      ticksRequired: finalCraftingTicks,
       result: craftingData.result
     };
     

@@ -1,12 +1,11 @@
 <script>
-  import { onMount } from 'svelte';
+  import { scale } from 'svelte/transition';
   import { getFunctions, httpsCallable } from 'firebase/functions';
   import { game, currentPlayer } from '../../lib/stores/game.js';
-  import { coordinates } from '../../lib/stores/map.js';
-  import Modal from '../ui/Modal.svelte';
   import Button from '../ui/Button.svelte';
   import Tabs from '../ui/Tabs.svelte';
   import Spinner from '../ui/Spinner.svelte';
+  import Close from '../icons/Close.svelte';
 
   // Define props using $props() rune
   const {
@@ -481,6 +480,7 @@
                .join(' ');
   }
 
+  // Update the craftItem function to handle tick-based crafting response
   async function craftItem() {
     if (!selectedRecipe || !canCraftRecipe(selectedRecipe)) return;
     
@@ -520,7 +520,9 @@
           });
         }
         
-        successMessage = `Successfully started crafting ${selectedRecipe.name}!`;
+        // Use ticksRequired from the response for the success message
+        const ticksRequired = result.data.ticksRequired || selectedRecipe.craftingTime;
+        successMessage = `Successfully started crafting ${selectedRecipe.name}! Will complete in ${formatCraftingTicks(ticksRequired)}.`;
         
         // Trigger any achievement tracking
         onCraftStart(
@@ -544,141 +546,218 @@
     if (!ticks) return "Instant";
     return ticks === 1 ? `${ticks} tick` : `${ticks} ticks`;
   }
+  
+  function handleKeyDown(event) {
+    if (event.key === 'Escape') {
+      onClose();
+    }
+  }
 </script>
 
-<Modal title="Crafting" onClose={onClose} width="35rem">
-  {#if loading}
-    <div class="loading-container">
-      <Spinner size="2rem" />
-      <p>Loading recipes...</p>
-    </div>
-  {:else if error}
-    <div class="error-message">
-      {error}
-      <Button onClick={() => error = null}>Try Again</Button>
-    </div>
-  {:else}
-    <div class="crafting-container">
-      <Tabs 
-        items={categories} 
-        bind:selected={selectedTab}
-        extraClass="crafting-tabs"
-      />
-      
-      <div class="recipe-list">
-        {#if filteredRecipes.length === 0}
-          <div class="empty-message">No recipes available in this category.</div>
-        {:else}
-          {#each filteredRecipes as recipe}
-            <div 
-              class="recipe-item" 
-              class:selected={selectedRecipe?.id === recipe.id}
-              class:disabled={!canCraftRecipe(recipe)}
-              on:click={() => selectedRecipe = recipe}
-            >
-              <div class="recipe-header">
-                <div class="recipe-name">{recipe.name}</div>
-                <div class="recipe-rarity {recipe.result.rarity || 'common'}">{recipe.result.rarity || 'common'}</div>
-              </div>
-              <div class="recipe-description">{recipe.result.description}</div>
-              
-              {#if !canCraftRecipe(recipe)}
-                <div class="recipe-blocked">{getCraftingBlockReason(recipe)}</div>
-              {/if}
-              
-              {#if recipe.requiredBuilding}
-                <div class="recipe-requires">
-                  Requires: 
-                  {formatBuildingType(recipe.requiredBuilding.type)} (Level {recipe.requiredBuilding.level})
-                </div>
-              {/if}
-              
-              {#if recipe.requiredLevel && recipe.requiredLevel > 1}
-                <div class="recipe-craft-level">
-                  Crafting Level: {recipe.requiredLevel}
-                </div>
-              {/if}
-              
-              <div class="recipe-time">
-                <span class="time-icon">⏱</span>
-                <!-- Replace time formatting with tick formatting -->
-                {formatCraftingTicks(recipe.craftingTime)}
-              </div>
-            </div>
-          {/each}
-        {/if}
+<svelte:window onkeydown={handleKeyDown} />
+
+<div 
+  class="crafting-modal" 
+  transition:scale={{ start: 0.95, duration: 200 }}>
+  
+  <header class="modal-header">
+    <h2 id="crafting-title">Crafting</h2>
+    <button class="close-btn" onclick={onClose} aria-label="Close crafting dialog">
+      <Close size="1.5em" />
+    </button>
+  </header>
+  
+  <div class="content">
+    {#if loading}
+      <div class="loading-container">
+        <Spinner size="2rem" />
+        <p>Loading recipes...</p>
       </div>
-      
-      {#if selectedRecipe}
-        <div class="recipe-details">
-          <h3>{selectedRecipe.name}</h3>
-          <p>{selectedRecipe.result.description}</p>
-          
-          <h4>Required Materials:</h4>
-          <div class="materials-list">
-            {#if typeof selectedRecipe.materials === 'object'}
-              {#each Object.entries(selectedRecipe.materials) as [name, quantity]}
-                <div 
-                  class="material-item"
-                  class:insufficient={
-                    !playerInventory.find(item => item.name === name && item.quantity >= quantity)
-                  }
-                >
-                  <span class="material-name">{name}</span>
-                  <span class="material-quantity">
-                    {(playerInventory.find(item => item.name === name)?.quantity || 0)} / {quantity}
+    {:else if error}
+      <div class="error-message">
+        {error}
+        <Button onClick={() => error = null}>Try Again</Button>
+      </div>
+    {:else}
+      <div class="crafting-container">
+        <Tabs 
+          items={categories} 
+          bind:selected={selectedTab}
+          extraClass="crafting-tabs"
+        />
+        
+        <div class="recipe-list">
+          {#if filteredRecipes.length === 0}
+            <div class="empty-message">No recipes available in this category.</div>
+          {:else}
+            {#each filteredRecipes as recipe}
+              <div 
+                class="recipe-item" 
+                class:selected={selectedRecipe?.id === recipe.id}
+                class:disabled={!canCraftRecipe(recipe)}
+                onclick={() => selectedRecipe = recipe}
+              >
+                <div class="recipe-header">
+                  <div class="recipe-name">{recipe.name}</div>
+                  <div class="recipe-rarity {recipe.result.rarity || 'common'}">{recipe.result.rarity || 'common'}</div>
+                </div>
+                <div class="recipe-description">{recipe.result.description}</div>
+                
+                {#if !canCraftRecipe(recipe)}
+                  <div class="recipe-blocked">{getCraftingBlockReason(recipe)}</div>
+                {/if}
+                
+                {#if recipe.requiredBuilding}
+                  <div class="recipe-requires">
+                    Requires: 
+                    {formatBuildingType(recipe.requiredBuilding.type)} (Level {recipe.requiredBuilding.level})
+                  </div>
+                {/if}
+                
+                {#if recipe.requiredLevel && recipe.requiredLevel > 1}
+                  <div class="recipe-craft-level">
+                    Crafting Level: {recipe.requiredLevel}
+                  </div>
+                {/if}
+                
+                <div class="recipe-time">
+                  <span class="time-icon">⏱</span>
+                  {formatCraftingTicks(recipe.craftingTime)}
+                </div>
+              </div>
+            {/each}
+          {/if}
+        </div>
+        
+        {#if selectedRecipe}
+          <div class="recipe-details">
+            <h3>{selectedRecipe.name}</h3>
+            <p>{selectedRecipe.result.description}</p>
+            
+            <h4>Required Materials:</h4>
+            <div class="materials-list">
+              {#if typeof selectedRecipe.materials === 'object'}
+                {#each Object.entries(selectedRecipe.materials) as [name, quantity]}
+                  <div 
+                    class="material-item"
+                    class:insufficient={
+                      !playerInventory.find(item => item.name === name && item.quantity >= quantity)
+                    }
+                  >
+                    <span class="material-name">{name}</span>
+                    <span class="material-quantity">
+                      {(playerInventory.find(item => item.name === name)?.quantity || 0)} / {quantity}
+                    </span>
+                  </div>
+                {/each}
+              {/if}
+            </div>
+            
+            {#if selectedRecipe.requiredBuilding}
+              <div class="building-requirement">
+                <h4>Required Building:</h4>
+                <div class="building-info">
+                  <span class="building-name">
+                    {formatBuildingType(selectedRecipe.requiredBuilding.type)}
+                  </span>
+                  <span class="level-info">
+                    Level {selectedRecipe.requiredBuilding.level}
+                  </span>
+                  <span class="status-indicator {meetsBuildingLevelRequirements(selectedRecipe) ? 'available' : 'unavailable'}">
+                    {meetsBuildingLevelRequirements(selectedRecipe) ? '✓ Available' : '✗ Not Available'}
                   </span>
                 </div>
-              {/each}
+              </div>
             {/if}
-          </div>
-          
-          {#if selectedRecipe.requiredBuilding}
-            <div class="building-requirement">
-              <h4>Required Building:</h4>
-              <div class="building-info">
-                <span class="building-name">
-                  {formatBuildingType(selectedRecipe.requiredBuilding.type)}
-                </span>
-                <span class="level-info">
-                  Level {selectedRecipe.requiredBuilding.level}
-                </span>
-                <span class="status-indicator {meetsBuildingLevelRequirements(selectedRecipe) ? 'available' : 'unavailable'}">
-                  {meetsBuildingLevelRequirements(selectedRecipe) ? '✓ Available' : '✗ Not Available'}
-                </span>
+            
+            <div class="crafting-time-info">
+              <h4>Crafting Time:</h4>
+              <div class="time-display">
+                <span class="tick-count">{formatCraftingTicks(selectedRecipe.craftingTime)}</span>
               </div>
             </div>
-          {/if}
-          
-          <div class="crafting-time-info">
-            <h4>Crafting Time:</h4>
-            <div class="time-display">
-              <span class="tick-count">{formatCraftingTicks(selectedRecipe.craftingTime)}</span>
-            </div>
+            
+            {#if successMessage}
+              <div class="success-message">{successMessage}</div>
+            {/if}
+            
+            <Button 
+              onClick={craftItem}
+              disabled={!canCraftRecipe(selectedRecipe) || craftingInProgress}
+              loading={craftingInProgress}
+            >
+              Craft Item
+            </Button>
           </div>
-          
-          {#if successMessage}
-            <div class="success-message">{successMessage}</div>
-          {/if}
-          
-          <Button 
-            onClick={craftItem}
-            disabled={!canCraftRecipe(selectedRecipe) || craftingInProgress}
-            loading={craftingInProgress}
-          >
-            Craft Item
-          </Button>
-        </div>
-      {:else}
-        <div class="empty-details">
-          <p>Select a recipe to view details.</p>
-        </div>
-      {/if}
-    </div>
-  {/if}
-</Modal>
+        {:else}
+          <div class="empty-details">
+            <p>Select a recipe to view details.</p>
+          </div>
+        {/if}
+      </div>
+    {/if}
+  </div>
+</div>
 
 <style>
+  .crafting-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 36em;
+    max-height: 90vh;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 0.5em;
+    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-body);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+  }
+  
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8em 1em;
+    background: rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  h2 {
+    margin: 0;
+    font-size: 1.3em;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.8);
+    font-family: var(--font-heading);
+  }
+  
+  .content {
+    padding: 1em;
+    overflow-y: auto;
+    max-height: calc(90vh - 4em);
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.3em;
+    display: flex;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+  }
+  
+  .close-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+  
   .crafting-container {
     display: grid;
     grid-template-columns: 14rem 1fr;
@@ -695,13 +774,13 @@
     overflow-y: auto;
     max-height: 50vh;
     padding-right: 0.5rem;
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
   }
   
   .recipe-item {
     padding: 0.75rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.25rem;
     margin-bottom: 0.5rem;
     cursor: pointer;
@@ -709,12 +788,12 @@
   }
   
   .recipe-item:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.1);
   }
   
   .recipe-item.selected {
-    border-color: rgba(255, 215, 0, 0.6);
-    background: rgba(255, 215, 0, 0.1);
+    border-color: rgba(66, 133, 244, 0.6);
+    background: rgba(66, 133, 244, 0.1);
   }
   
   .recipe-item.disabled {
@@ -821,12 +900,12 @@
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.05rem;
-    color: #aaaaaa;
+    color: #666666;
   }
   
   .materials-list {
     margin-bottom: 1rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 0.3rem;
     padding: 0.5rem;
   }
@@ -844,7 +923,7 @@
   
   .building-requirement {
     margin-bottom: 1rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 0.3rem;
     padding: 0.5rem;
   }
@@ -885,7 +964,7 @@
   .success-message {
     background-color: rgba(0, 255, 0, 0.1);
     border: 1px solid rgba(0, 255, 0, 0.3);
-    color: lightgreen;
+    color: #4caf50;
     padding: 0.5rem;
     border-radius: 0.25rem;
     margin: 1rem 0;
@@ -896,7 +975,7 @@
   .empty-details {
     padding: 1rem;
     text-align: center;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(0, 0, 0, 0.5);
     font-style: italic;
   }
   
@@ -920,10 +999,10 @@
     gap: 1rem;
   }
   
-  /* Add styles for the crafting time info section */
+  /* Styles for the crafting time info section */
   .crafting-time-info {
     margin-top: 1rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 0.3rem;
     padding: 0.5rem;
   }
@@ -940,5 +1019,20 @@
     font-weight: 600;
     color: #ffcc66;
     text-shadow: 0 0 5px rgba(255, 204, 102, 0.5);
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 480px) {
+    .crafting-container {
+      grid-template-columns: 1fr;
+    }
+    
+    .recipe-list {
+      max-height: 30vh;
+      border-right: none;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      padding-bottom: 1rem;
+      margin-bottom: 1rem;
+    }
   }
 </style>
