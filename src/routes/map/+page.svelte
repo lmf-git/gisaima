@@ -721,6 +721,12 @@
             confirmPathDrawing(currentPath);
             return;
         }
+        
+        // Handle undo path action
+        if (coords && coords.undoPath === true) {
+            undoLastPathPoint();
+            return;
+        }
 
         // Check if this is a Peek action
         if (coords && coords.action) {
@@ -960,6 +966,15 @@
       }
     }
 
+    // Add a function to handle removing the last path point
+    function undoLastPathPoint() {
+        console.log('Undoing last path point');
+        if (currentPath.length > 0) {
+            // Remove the last point from the path
+            currentPath = currentPath.slice(0, -1);
+        }
+    }
+
     // Function to start path drawing mode with the selected group
     function startPathDrawing(groupData) {
         console.log('Starting path drawing mode with group:', groupData);
@@ -1107,6 +1122,7 @@
             onClick={handleGridClick}
             isPathDrawingMode={isPathDrawingMode}
             onAddPathPoint={handlePathPoint}
+            onUndoPoint={undoLastPathPoint}
             customPathPoints={currentPath}
             modalOpen={isAnyModalOpen}
             onClose={() => {

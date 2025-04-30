@@ -34,6 +34,7 @@
     onAddPathPoint = null,
     onClick = null,
     onClose = () => {},
+    onUndoPoint = null, // Add new prop for undo functionality
     customPathPoints = [],
     modalOpen = false,
     peekOpen = false
@@ -670,6 +671,18 @@
   let lastClickTime = $state(0);
   let clickCount = $state(0);
 
+  // Add function to handle undo path point
+  function handleUndoPoint() {
+    console.log('Grid: Undo last path point');
+    // Call the parent component's undo function if available
+    if (onUndoPoint) {
+      onUndoPoint();
+    } else {
+      // Fallback: Notify parent through onClick
+      onClick?.({ undoPath: true });
+    }
+  }
+
   onMount(() => {
     resizeObserver = new ResizeObserver(() => {
       if (mapElement) {
@@ -1273,6 +1286,18 @@
         <button class="path-control-btn cancel-btn" onclick={() => onClose()} aria-label="Cancel path drawing">
           Cancel
         </button>
+        
+        <!-- Add Undo button that appears when there's at least one point -->
+        {#if customPathPoints?.length >= 1}
+          <button 
+            class="path-control-btn undo-btn" 
+            onclick={handleUndoPoint} 
+            aria-label="Undo last path point"
+          >
+            Undo
+          </button>
+        {/if}
+        
         {#if customPathPoints?.length >= 2}
           <button 
             class="path-control-btn confirm-btn" 
@@ -1742,6 +1767,17 @@
     cursor: not-allowed;
     transform: none !important;
     box-shadow: none !important;
+  }
+
+  .path-control-btn.undo-btn {
+    background-color: #f8f9fa;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+  }
+  
+  .path-control-btn.undo-btn:hover {
+    background-color: #e8eaed;
+    border-color: #c1c1c1;
   }
   
   @keyframes slide-up {
