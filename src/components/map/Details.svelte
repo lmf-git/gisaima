@@ -1348,6 +1348,12 @@
     margin-top: 1em;
   }
   
+  .entities-section {
+    margin-bottom: 1.2em;
+    border-radius: 0.3em;
+    overflow: hidden;
+  }
+  
   .section-header {
     display: flex;
     justify-content: space-between;
@@ -2073,6 +2079,7 @@
     cursor: wait;
   }
 
+  /* Add```svelte
   /* Add the flee-action button style */
   .entity-action.flee-action {
     background-color: rgba(156, 39, 176, 0.1);
@@ -2090,3 +2097,4 @@ border-color: rgba(156, 39, 176, 0.3);
     cursor: wait;
   }
 </style>
+```

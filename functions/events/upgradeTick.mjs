@@ -2,14 +2,15 @@ import { getDatabase } from 'firebase-admin/database';
 
 /**
  * Process pending structure upgrades
- * @param {Object} data - The context data
- * @param {string} data.worldId - The world ID to process upgrades for
+ * @param {Object|string} data - The context data or worldId string
  * @returns {Promise<Object>} Processing results
  */
 export async function processUpgrades(data = {}) {
   try {
     const db = getDatabase();
-    const worldId = data.worldId || 'ancient-lands'; // Default to ancient-lands if no worldId provided
+    
+    // Handle both object with worldId and direct worldId string
+    const worldId = typeof data === 'string' ? data : (data.worldId || 'ancient-lands');
     const now = Date.now();
     
     console.log(`Processing upgrades for world ${worldId} at ${new Date(now).toISOString()}`);

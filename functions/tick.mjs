@@ -152,7 +152,7 @@ export const processGameTicks = onSchedule({
       
       // Process structure upgrades for this world
       console.log(`Processing structure upgrades for world ${worldId}`);
-      const upgradeResult = await upgradeTickProcessor({ worldId });
+      const upgradeResult = await upgradeTickProcessor(worldId);
       console.log(`Processed ${upgradeResult.processed || 0} structure upgrades in world ${worldId}`);
       
       // Process crafting operations for this world
