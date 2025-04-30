@@ -633,15 +633,42 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
     let structureCaptured = false;
     let newOwner = null;
     let previousOwner = null;
+    let structureItems = [];
+    let structureWasLooted = false;
     
     // Handle structure if it was in the battle
     if (includesStructure && structure) {
       if (winningSide === 1) {
         // Attackers won - structure could be destroyed or claimed
+        
+        // Collect structure items for looting if they exist
+        if (structure.items && attackers.length > 0) {
+          // Handle both array and object formats for structure items
+          if (Array.isArray(structure.items)) {
+            structureItems = [...structure.items];
+          } else if (typeof structure.items === 'object') {
+            structureItems = Object.values(structure.items);
+          }
+          
+          // Add source info to each item
+          structureItems = structureItems.map(item => ({
+            ...item,
+            source: `structure_${structure.id || structure.type || 'unknown'}`
+          }));
+          
+          // Distribute items to winning groups
+          if (structureItems.length > 0) {
+            distributeItemsToGroups(structureItems, attackers, worldId, chunkKey, locationKey, updates, now);
+            structureWasLooted = true;
+          }
+        }
+        
         if (structure.type === "spawn") {
           // Spawn points can't be destroyed, just reset battle status
           updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/inBattle`] = false;
           updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/battleId`] = null;
+          
+          // Spawn points keep their items
         } else {
           // Calculate destruction chance based on structure type and battle damage
           const destructionChance = calculateDestructionChance(structure, battleData);
@@ -676,6 +703,11 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
                 updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/owner`] = newOwner;
                 updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/ownerName`] = newOwnerName;
                 structureCaptured = true;
+                
+                // Remove all items since they've been looted
+                if (structureWasLooted) {
+                  updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/items`] = [];
+                }
                 
                 logger.info(`Structure ${structure.name || structure.id} captured by ${newOwnerName} at (${locationKey})`);
               }
@@ -712,6 +744,10 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
         } else {
           resultMessage += `Victorious: ${attackerName} defeated ${defenderName} and captured ${structureName}`;
         }
+        
+        if (structureWasLooted) {
+          resultMessage += ` (${structureItems.length} items looted)`;
+        }
       } else {
         resultMessage += `${defenderName} and ${structureName} successfully defended against ${attackerName}`;
       }
@@ -735,6 +771,10 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
           resultMessage += `${attackerName} successfully captured ${structureName}`;
         } else {
           resultMessage += `${attackerName} successfully captured ${structureName}`;
+        }
+        
+        if (structureWasLooted) {
+          resultMessage += ` (${structureItems.length} items looted)`;
         }
       } else {
         resultMessage += `${attackerName} failed to capture ${structureName}`;
@@ -768,6 +808,17 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
         type: "event",
         location: { x: parseInt(locationKey.split(',')[0]), y: parseInt(locationKey.split(',')[1]) },
         timestamp: now
+      };
+    }
+    
+    // Add specific loot message if structure was looted
+    if (structureWasLooted) {
+      const lootMessageId = `structure_looted_${now}_${Math.floor(Math.random() * 1000)}`;
+      updates[`worlds/${worldId}/chat/${lootMessageId}`] = {
+        text: `${attackerName} looted ${structureItems.length} items from ${structure.name || 'the structure'} at (${locationKey})`,
+        type: "event",
+        location: { x: parseInt(locationKey.split(',')[0]), y: parseInt(locationKey.split(',')[1]) },
+        timestamp: now + 1 // +1 to ensure it appears after the battle message
       };
     }
     
