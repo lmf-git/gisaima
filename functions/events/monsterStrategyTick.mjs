@@ -677,6 +677,74 @@ function createMonsterMoveMessage(monsterGroup, targetType, targetLocation) {
   }
 }
 
+/**
+ * Move monster to an adjacent tile (typically for attacking)
+ */
+function moveToAdjacentTile(monsterGroup, location, adjacentTile, updates, now, moveReason) {
+  const groupId = monsterGroup.id;
+  const chunkKey = monsterGroup.chunkKey;
+  const tileKey = monsterGroup.tileKey;
+  
+  // Base path for this group
+  const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+  
+  // Create a simple two-point path from current location to the adjacent tile
+  const path = [
+    { x: location.x, y: location.y },
+    { x: adjacentTile.x, y: adjacentTile.y }
+  ];
+  
+  // Set movement data
+  updates[`${groupPath}/status`] = 'moving';
+  updates[`${groupPath}/movementPath`] = path;
+  updates[`${groupPath}/pathIndex`] = 0;
+  updates[`${groupPath}/moveStarted`] = now;
+  updates[`${groupPath}/moveSpeed`] = 1.5; // Slightly faster for attack moves
+  updates[`${groupPath}/targetX`] = adjacentTile.x;
+  updates[`${groupPath}/targetY`] = adjacentTile.y;
+  updates[`${groupPath}/nextMoveTime`] = now + 45000; // 45 seconds - faster for adjacent moves
+  updates[`${groupPath}/lastUpdated`] = now;
+  updates[`${groupPath}/moveReason`] = moveReason;
+  
+  // Add a chat message if this is a structure attack
+  if (moveReason === 'structure_attack' && adjacentTile.structure) {
+    const chatMessageId = `monster_attack_move_${now}_${groupId}`;
+    const structureType = adjacentTile.structure.type || 'settlement';
+    const structureName = adjacentTile.structure.name || structureType;
+    
+    updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+      text: `${monsterGroup.name || "Monster group"} is moving to attack the ${structureName} at (${adjacentTile.x}, ${adjacentTile.y})!`,
+      type: 'event',
+      timestamp: now,
+      location: {
+        x: location.x,
+        y: location.y
+      }
+    };
+  } else if (moveReason === 'structure_attack' && adjacentTile.hasPlayerGroups) {
+    const chatMessageId = `monster_attack_move_${now}_${groupId}`;
+    
+    updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+      text: `${monsterGroup.name || "Monster group"} is moving to attack players at (${adjacentTile.x}, ${adjacentTile.y})!`,
+      type: 'event',
+      timestamp: now,
+      location: {
+        x: location.x,
+        y: location.y
+      }
+    };
+  }
+  
+  return {
+    action: 'move',
+    target: {
+      type: moveReason,
+      x: adjacentTile.x,
+      y: adjacentTile.y,
+      distance: 1
+    }
+  };
+}
 
 /**
  * Move the monster group in a random direction
