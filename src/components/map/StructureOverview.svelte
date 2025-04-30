@@ -30,7 +30,8 @@
   let collapsedSections = $state({
     items: false,
     building: false,
-    buildings: false  // Added buildings section
+    buildings: false,
+    availableBuildings: false  // Add this line
   });
   
   // Add state for storage tab selection
@@ -319,6 +320,14 @@
     return structure.owner === $currentPlayer.id;
   }
 
+  // New function: Check if player can modify this structure (owner or spawn)
+  function canModifyStructure(structure) {
+    if (!structure || !$currentPlayer) return false;
+    const isPlayerOwner = structure.owner === $currentPlayer.id;
+    const isSpawn = structure.type === 'spawn';
+    return isPlayerOwner || isSpawn;
+  }
+
   // Function to check if a building can be upgraded
   function canUpgradeBuilding(buildingId, building) {
     // Check if building exists and is not already upgrading
@@ -365,7 +374,18 @@
 
   // Function to check if a new building can be added
   function canAddNewBuilding() {
-    // Check structure level - typically level 2+ can have buildings
+    if (!tileData?.structure) return false;
+    
+    // Special handling for spawn structures - allow more buildings
+    if (tileData.structure.type === 'spawn') {
+      const buildingsCount = tileData?.structure?.buildings ? 
+        Object.keys(tileData.structure.buildings).length : 0;
+      
+      // Spawn points can have up to 5 buildings regardless of level
+      return buildingsCount < 5;
+    }
+    
+    // For other structures, use the regular logic
     const structureLevel = tileData?.structure?.level || 1;
     const buildingsCount = tileData?.structure?.buildings ? 
       Object.keys(tileData.structure.buildings).length : 0;
@@ -374,10 +394,199 @@
     return structureLevel > buildingsCount;
   }
 
-  // Function to show dialog for adding new building
-  function showNewBuildingDialog() {
-    executeAction('add-building', { structure: tileData?.structure });
+  // Get available building types based on structure level and existing buildings
+  function getAvailableBuildingTypes() {
+    if (!tileData?.structure) return [];
+    
+    const structureLevel = tileData.structure.level || 1;
+    const existingBuildings = tileData.structure.buildings || {};
+    const existingTypes = Object.values(existingBuildings).map(b => b.type);
+    
+    // All possible building types
+    const allBuildingTypes = [
+      { type: 'smithy', name: 'Smithy', description: 'A place to craft weapons, tools and metal armor. Higher levels enable advanced smithing recipes.' },
+      { type: 'barracks', name: 'Barracks', description: 'Train and house troops here. Higher levels allow training more advanced units.' },
+      { type: 'mine', name: 'Mine', description: 'Extract minerals and resources. Higher levels yield better resources and improved mining efficiency.' },
+      { type: 'wall', name: 'Defensive Wall', description: 'Defensive structure that improves settlement security. Higher levels increase defensive capabilities.' },
+      { type: 'academy', name: 'Academy', description: 'Research new technologies and spells. Higher levels unlock advanced research options.' },
+      { type: 'market', name: 'Market', description: 'Trade goods with others. Higher levels improve trade rates and available items.' },
+      { type: 'farm', name: 'Farm', description: 'Produce food and plant resources. Higher levels increase crop yields and enable rare plants.' }
+    ];
+    
+    // Filter out already built types (only allow one of each type for simplicity)
+    const filteredByType = allBuildingTypes.filter(b => !existingTypes.includes(b.type));
+    
+    // Special handling for spawn structures - allow more buildings
+    if (tileData.structure.type === 'spawn') {
+      // Spawn points can have up to 5 buildings regardless of level
+      const buildingsCount = Object.keys(existingBuildings).length;
+      const availableSlots = Math.max(0, 5 - buildingsCount);
+      
+      if (availableSlots <= 0) return [];
+      return filteredByType;
+    }
+    
+    // Regular handling for other structures
+    const buildingsCount = Object.keys(existingBuildings).length;
+    const availableSlots = Math.max(0, structureLevel - buildingsCount);
+    
+    if (availableSlots <= 0) return [];
+    return filteredByType;
   }
+
+  // Check if player has resources for a specific building
+  function hasResourcesForBuilding(buildingType) {
+    const requirements = getBuildingRequirements(buildingType);
+    if (!requirements.length) return false;
+    
+    // Check shared storage (only using shared for new buildings)
+    const sharedItems = tileData?.structure?.items || [];
+    
+    // Track available resources
+    const availableResources = {};
+    
+    // Count shared resources
+    sharedItems.forEach(item => {
+      if (!availableResources[item.name]) {
+        availableResources[item.name] = 0;
+      }
+      availableResources[item.name] += item.quantity || 0;
+    });
+    
+    // Check if all requirements are met
+    for (const req of requirements) {
+      const available = availableResources[req.name] || 0;
+      if (available < req.quantity) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
+  // Get resource requirements for a new building
+  function getBuildingRequirements(buildingType) {
+    const requirements = [];
+    
+    switch (buildingType) {
+      case 'smithy':
+        requirements.push({ name: 'Wooden Sticks', quantity: 10 });
+        requirements.push({ name: 'Stone Pieces', quantity: 15 });
+        requirements.push({ name: 'Iron Ore', quantity: 5 });
+        break;
+      case 'barracks':
+        requirements.push({ name: 'Wooden Sticks', quantity: 15 });
+        requirements.push({ name: 'Stone Pieces', quantity: 10 });
+        break;
+      case 'mine':
+        requirements.push({ name: 'Wooden Sticks', quantity: 8 });
+        requirements.push({ name: 'Stone Pieces', quantity: 20 });
+        break;
+      case 'wall':
+        requirements.push({ name: 'Stone Pieces', quantity: 25 });
+        break;
+      case 'academy':
+        requirements.push({ name: 'Wooden Sticks', quantity: 12 });
+        requirements.push({ name: 'Stone Pieces', quantity: 8 });
+        break;
+      case 'market':
+        requirements.push({ name: 'Wooden Sticks', quantity: 15 });
+        requirements.push({ name: 'Stone Pieces', quantity: 5 });
+        break;
+      case 'farm':
+        requirements.push({ name: 'Wooden Sticks', quantity: 10 });
+        requirements.push({ name: 'Seeds', quantity: 5 });
+        break;
+      default:
+        requirements.push({ name: 'Wooden Sticks', quantity: 10 });
+        requirements.push({ name: 'Stone Pieces', quantity: 10 });
+    }
+    
+    return requirements;
+  }
+
+  // Get building icon based on type
+  function getBuildingIcon(type) {
+    switch (type) {
+      case 'smithy': return '⚒️';
+      case 'barracks': return '🛡️';
+      case 'mine': return '⛏️';
+      case 'wall': return '🧱';
+      case 'academy': return '📚';
+      case 'market': return '💰';
+      case 'farm': return '🌾';
+      default: return '🏠';
+    }
+  }
+
+  // Get combined list of existing buildings and available building types
+  function getAllBuildingsAndOptions() {
+    if (!tileData?.structure) return [];
+    
+    // Get existing buildings as an array of objects with buildingId property
+    const existingBuildings = tileData.structure.buildings ? 
+      Object.entries(tileData.structure.buildings).map(([id, building]) => ({
+        ...building,
+        buildingId: id,
+        isExisting: true
+      })) : [];
+    
+    // Get available building types if new buildings can be added
+    let availableBuildings = [];
+    if (canAddNewBuilding()) {
+      const existingTypes = existingBuildings.map(b => b.type);
+      
+      // Get available building types
+      availableBuildings = getAvailableBuildingTypes()
+        .filter(b => !existingTypes.includes(b.type))
+        .map(building => ({
+          ...building,
+          level: 0,
+          isExisting: false,
+          description: building.description || getBuildingDescription(building.type)
+        }));
+    }
+    
+    // Combine and sort - existing buildings first, then available buildings by name
+    return [
+      ...existingBuildings.sort((a, b) => a.name.localeCompare(b.name)),
+      ...availableBuildings.sort((a, b) => a.name.localeCompare(b.name))
+    ];
+  }
+
+  // Get building description if not already provided
+  function getBuildingDescription(buildingType) {
+    switch (buildingType) {
+      case 'smithy':
+        return 'A place to craft weapons, tools and metal armor. Higher levels enable advanced smithing recipes.';
+      case 'barracks':
+        return 'Train and house troops here. Higher levels allow training more advanced units.';
+      case 'mine':
+        return 'Extract minerals and resources. Higher levels yield better resources and improved mining efficiency.';
+      case 'wall':
+        return 'Defensive structure that improves settlement security. Higher levels increase defensive capabilities.';
+      case 'academy':
+        return 'Research new technologies and spells. Higher levels unlock advanced research options.';
+      case 'market':
+        return 'Trade goods with others. Higher levels improve trade rates and available items.';
+      case 'farm':
+        return 'Produce food and plant resources. Higher levels increase crop yields and enable rare plants.';
+      default:
+        return 'A building within your structure.';
+    }
+  }
+
+  // Function to build a new building
+  function buildNewBuilding(buildingType) {
+    executeAction('add-building', { buildingType });
+  }
+
+  // Set buildings section to be expanded by default since it now contains more content
+  $effect(() => {
+    collapsedSections.buildings = false;
+  });
+
+  // ...existing code...
 </script>
 
 <svelte:window on:keydown={handleKeyDown} />
@@ -572,7 +781,7 @@
         {/if}
       </div>
       
-      <!-- NEW SECTION: Buildings within structure -->
+      <!-- UPDATED SECTION: Combined Buildings section -->
       <div class="entities-section">
         <div 
           class="section-header"
@@ -595,91 +804,110 @@
         
         {#if !collapsedSections.buildings}
           <div class="section-content" transition:slide|local={{duration: 300}}>
-            {#if tileData?.structure?.buildings && Object.keys(tileData?.structure?.buildings).length > 0}
+            {#if getAllBuildingsAndOptions().length > 0}
               <div class="buildings-grid">
-                {#each Object.entries(tileData.structure.buildings) as [buildingId, building]}
-                  <div class="building-card {building.upgradeInProgress ? 'upgrading' : ''}">
-                    <div class="building-icon">
-                      {#if building.type === 'smithy'}
-                        ⚒️
-                      {:else if building.type === 'barracks'}
-                        🛡️
-                      {:else if building.type === 'mine'}
-                        ⛏️
-                      {:else if building.type === 'wall'}
-                        🧱
-                      {:else if building.type === 'academy'}
-                        📚
-                      {:else if building.type === 'market'}
-                        💰
-                      {:else if building.type === 'farm'}
-                        🌾
-                      {:else}
-                        🏠
-                      {/if}
-                    </div>
+                <!-- Fix the building card section for accurate resource status labels -->
+                {#each getAllBuildingsAndOptions() as building}
+                  <div class="building-card {building.upgradeInProgress ? 'upgrading' : ''} {building.level === 0 ? 'available-building' : ''}">
+                    {#if building.level === 0}
+                      <div class="building-header">
+                        <div class="building-icon">
+                          {getBuildingIcon(building.type)}
+                        </div>
+                        
+                        <div class="building-title">
+                          <div class="building-name">{building.name || formatText(building.type)}</div>
+                          <div class="building-level">
+                            <!-- Fix the label to accurately show resource status -->
+                            <span class={hasResourcesForBuilding(building.type) ? "available-label" : "unavailable-label"}>
+                              {hasResourcesForBuilding(building.type) ? "Available to Build" : "Missing Resources"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    {:else}
+                      <div class="building-header">
+                        <div class="building-icon">
+                          {getBuildingIcon(building.type)}
+                        </div>
+                        
+                        <div class="building-title">
+                          <div class="building-name">{building.name || formatText(building.type)}</div>
+                          <div class="building-level">
+                            Level {building.level || 1}
+                          </div>
+                        </div>
+                      </div>
+                    {/if}
                     
-                    <div class="building-info">
-                      <div class="building-name">{building.name || formatText(building.type)}</div>
-                      <div class="building-level">Level {building.level || 1}</div>
-                      
-                      {#if building.description}
-                        <div class="building-description">{building.description}</div>
-                      {/if}
-                      
-                      {#if building.upgradeInProgress}
-                        <div class="upgrade-progress">
-                          <div class="progress-bar">
-                            <div class="progress-fill" style="width: {getBuildingUpgradeProgress(building)}%"></div>
-                          </div>
-                          <div class="progress-text">
-                            Upgrade to level {(building.level || 1) + 1}: {getBuildingUpgradeProgress(building)}%
-                          </div>
+                    {#if building.description}
+                      <div class="building-description">{building.description}</div>
+                    {/if}
+                    
+                    {#if building.level === 0}
+                      <!-- AVAILABLE BUILDING - Show requirements and build button -->
+                      <div class="building-requirements">
+                        <h6>Required Resources:</h6>
+                        <div class="requirements-list">
+                          {#each getBuildingRequirements(building.type) as req}
+                            {@const available = (tileData?.structure?.items || []).reduce((total, item) => 
+                              item.name === req.name ? total + (item.quantity || 0) : total, 0)}
+                            <div class="requirement-item {available >= req.quantity ? 'sufficient' : 'insufficient'}">
+                              {req.name}: {req.quantity} 
+                              <span class="available-count">
+                                (Have: {available})
+                              </span>
+                            </div>
+                          {/each}
                         </div>
-                      {:else if canUpgradeBuilding(buildingId, building)}
-                        <button 
-                          class="upgrade-building-button"
-                          onclick={() => startBuildingUpgrade(buildingId, building)}
-                        >
-                          <Hammer extraClass="action-icon-small" />
-                          Upgrade to Level {(building.level || 1) + 1}
-                        </button>
-                      {:else}
-                        <div class="building-max-level">
-                          {building.level >= 5 ? 'Maximum level reached' : 'Upgrade requirements not met'}
+                      </div>
+                      
+                      <button 
+                        class="build-building-button"
+                        onclick={() => buildNewBuilding(building.type)}
+                        disabled={!hasResourcesForBuilding(building.type)}
+                      >
+                        Build Now
+                      </button>
+                    {:else if building.upgradeInProgress}
+                      <!-- UPGRADING BUILDING - Show progress -->
+                      <div class="upgrade-progress">
+                        <div class="progress-bar">
+                          <div class="progress-fill" style="width: {getBuildingUpgradeProgress(building)}%"></div>
                         </div>
-                      {/if}
-                    </div>
+                        <div class="progress-text">
+                          Upgrade to level {(building.level || 1) + 1}: {getBuildingUpgradeProgress(building)}%
+                        </div>
+                      </div>
+                    {:else if canUpgradeBuilding(building.buildingId, building)}
+                      <!-- UPGRADABLE BUILDING - Show upgrade button -->
+                      <button 
+                        class="upgrade-building-button"
+                        onclick={() => startBuildingUpgrade(building.buildingId, building)}
+                      >
+                        <Hammer extraClass="action-icon-small" />
+                        Upgrade to Level {(building.level || 1) + 1}
+                      </button>
+                    {:else}
+                      <!-- NON-UPGRADABLE BUILDING - Show reason -->
+                      <div class="building-max-level">
+                        {building.level >= 5 ? 'Maximum level reached' : 'Upgrade requirements not met'}
+                      </div>
+                    {/if}
                   </div>
                 {/each}
               </div>
-              
-              {#if isOwner(tileData?.structure) && canAddNewBuilding()}
-                <div class="add-building-container">
-                  <button class="add-building-button" onclick={() => showNewBuildingDialog()}>
-                    <span>+</span> Add New Building
-                  </button>
-                </div>
-              {/if}
             {:else}
               <div class="empty-state">
-                {isOwner(tileData?.structure) ? 
+                {canModifyStructure(tileData?.structure) ? 
                   'No buildings yet. Add buildings to improve your structure!' : 
                   'No buildings in this structure yet.'}
               </div>
-              
-              {#if isOwner(tileData?.structure)}
-                <div class="add-building-container">
-                  <button class="add-building-button" onclick={() => showNewBuildingDialog()}>
-                    <span>+</span> Add First Building
-                  </button>
-                </div>
-              {/if}
             {/if}
           </div>
         {/if}
       </div>
-      
+
       <!-- Storage section -->
       {#if showStorageTabs}
         <div class="entities-section">
@@ -1481,7 +1709,7 @@
     opacity: 0.9;
   }
 
-  /* Building styles */
+  /* Updated building styles */
   .buildings-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
@@ -1491,8 +1719,7 @@
   
   .building-card {
     display: flex;
-    align-items: flex-start;
-    gap: 0.8em;
+    flex-direction: column;
     background-color: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.3em;
@@ -1505,9 +1732,33 @@
     box-shadow: 0 0.1em 0.3em rgba(0, 0, 0, 0.1);
   }
   
-  .building-card.upgrading {
-    background-color: rgba(156, 39, 176, 0.1);
-    border-color: rgba(156, 39, 176, 0.3);
+  .available-label {
+    color: #1b8a1f;
+    font-weight: 500;
+  }
+  
+  .unavailable-label {
+    color: #c62828;
+    font-weight: 500;
+  }
+  
+  .building-card.available-building {
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px dashed rgba(76, 175, 80, 0.7);
+  }
+  
+  /* Add a new class for buildings with missing resources */
+  .building-card.available-building:has(.unavailable-label) {
+    border: 1px dashed rgba(198, 40, 40, 0.7);
+    background-color: rgba(255, 250, 250, 0.7);
+  }
+  
+  /* New building header style */
+  .building-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8em;
+    margin-bottom: 0.7em;
   }
   
   .building-icon {
@@ -1522,115 +1773,103 @@
     flex-shrink: 0;
   }
   
-  .building-info {
+  .building-title {
     flex: 1;
   }
   
   .building-name {
-    font-weight: 500;
+    font-weight: 600;
     font-size: 1em;
-    margin-bottom: 0.2em;
-    color: rgba(0, 0, 0, 0.8);
+    color: rgba(0, 0, 0, 0.85);
+    margin-bottom: 0.15em;
   }
   
   .building-level {
     font-size: 0.85em;
     color: rgba(0, 0, 0, 0.6);
-    margin-bottom: 0.5em;
   }
   
   .building-description {
     font-size: 0.85em;
     color: rgba(0, 0, 0, 0.7);
-    margin-bottom: 0.7em;
+    margin-bottom: 0.8em;
     line-height: 1.3;
   }
   
-  .upgrade-progress {
-    margin-top: 0.5em;
-  }
-  
-  .progress-bar {
-    height: 0.5em;
-    background-color: rgba(0, 0, 0, 0.1);
+  .building-requirements {
+    margin: 0.2em 0 0.8em 0;
+    background-color: rgba(255, 255, 255, 0.5);
     border-radius: 0.3em;
-    overflow: hidden;
-    margin-bottom: 0.3em;
+    padding: 0.6em;
+    border: 1px solid rgba(0, 0, 0, 0.08);
   }
   
-  .progress-fill {
-    height: 100%;
-    background-color: rgba(156, 39, 176, 0.6);
-    transition: width 0.3s ease;
-  }
-  
-  .progress-text {
+  .building-requirements h6 {
+    margin: 0 0 0.4em 0;
     font-size: 0.8em;
-    color: rgba(0, 0, 0, 0.6);
-    text-align: center;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.75);
   }
   
-  .upgrade-building-button {
-    margin-top: 0.5em;
-    padding: 0.4em 0.7em;
-    font-size: 0.85em;
-    background-color: rgba(156, 39, 176, 0.8);
-    color: white;
-    border: none;
-    border-radius: 0.3em;
+  .requirements-list {
     display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-direction: column;
     gap: 0.4em;
-    cursor: pointer;
-    transition: all 0.2s ease;
   }
   
-  .upgrade-building-button:hover {
-    background-color: rgba(156, 39, 176, 0.9);
-    transform: translateY(-1px);
-  }
-  
-  .building-max-level {
+  .requirement-item {
     font-size: 0.8em;
-    color: rgba(0, 0, 0, 0.5);
-    font-style: italic;
-    margin-top: 0.5em;
-  }
-  
-  .add-building-container {
-    margin-top: 1em;
+    padding: 0.3em 0.6em;
+    border-radius: 0.3em;
+    background-color: rgba(0, 0, 0, 0.04);
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
+    align-items: center;
   }
   
-  .add-building-button {
-    padding: 0.5em 1em;
-    background-color: rgba(76, 175, 80, 0.8);
+  .requirement-item.sufficient {
+    color: #2e7d32;
+    background-color: rgba(76, 175, 80, 0.1);
+  }
+  
+  .requirement-item.insufficient {
+    color: #c62828;
+    background-color: rgba(244, 67, 54, 0.1);
+  }
+  
+  .available-count {
+    font-weight: 400;
+    color: rgba(0, 0, 0, 0.7); /* Improved contrast */
+  }
+  
+  /* Updated button styles for better clarity */
+  .build-building-button {
+    margin-top: 0.2em;
+    padding: 0.5em 0.7em;
+    font-size: 0.85em;
+    background-color: rgba(76, 175, 80, 0.85);
     color: white;
     border: none;
     border-radius: 0.3em;
     font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.4em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%; /* Make button full width */
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2); /* Improve text contrast */
   }
   
-  .add-building-button:hover {
-    background-color: rgba(76, 175, 80, 0.9);
+  .build-building-button:not(:disabled):hover {
+    background-color: rgba(76, 175, 80, 1);
     transform: translateY(-1px);
   }
   
-  .add-building-button span {
-    font-size: 1.1em;
-    font-weight: 600;
-  }
-  
-  :global(.action-icon-small) {
-    width: 1em;
-    height: 1em;
-    opacity: 0.9;
+  .build-building-button:disabled {
+    background-color: rgba(158, 158, 158, 0.5);
+    cursor: not-allowed;
+    transform: none;
   }
 </style>
