@@ -1826,8 +1826,8 @@
   }
 
   :global(.race-icon-tile) {
-    width: 80%; /* Slightly smaller for better proportion */
-    height: 80%; /* Slightly smaller for better proportion */
+    width: 90%; /* Slightly smaller for better proportion */
+    height: 90%; /* Slightly smaller for better proportion */
     opacity: 0.7; /* Increased from 0.3 to 0.7 for better visibility */
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3)); /* Add subtle glow */
     fill: rgba(255, 255, 255, 0.7); /* Brighter base fill */
@@ -1857,6 +1857,12 @@
   :global(.race-icon-tile.dwarf-icon path) {
     fill: rgba(255, 200, 140, 0.9); /* Brighter earthy tone for dwarves */
     filter: drop-shadow(0 0 3px rgba(255, 200, 140, 0.5));
+  }
+  
+  /* Add Monster-specific styling with red color */
+  :global(.race-icon-tile.monster-icon path) {
+    fill: rgba(235, 58, 58, 0.9); /* Bright red for monsters */
+    filter: drop-shadow(0 0 3px rgba(255, 100, 100, 0.5));
   }
   
   /* Add special animation for center tile with race icon */
