@@ -1003,6 +1003,7 @@
     ontouchend={handleTouchEnd}
     ontouchcancel={handleTouchEnd}
     onclick={handleGridClick}
+    onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleGridClick(e)}
     class:moving={isMoving}
     class:path-drawing={!!isPathDrawingMode}
     style="--terrain-color: {backgroundColor};"
@@ -1132,7 +1133,7 @@
           <div
             class="tile {getStructureClass(cell.structure)} {cell.terrain?.rarity || 'common'}"
             class:center={cell.isCenter}
-            tabindex="-1"
+            tabindex={cell.isCenter ? "0" : "-1"}
             class:highlighted={cell.highlighted}
             class:has-structure={cell.structure}
             class:has-groups={cell.groups?.length > 0}
@@ -1147,6 +1148,7 @@
             "
             onmouseenter={() => handleTileHover(cell)}
             onclick={cell.isCenter ? handleCenterTileClick : undefined}
+            onkeydown={cell.isCenter ? (e) => (e.key === 'Enter' || e.key === ' ') && handleCenterTileClick(e) : undefined}
             aria-label={`Coordinates ${cell.x},${cell.y}`}
             role="gridcell"
           >

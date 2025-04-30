@@ -568,6 +568,11 @@
                 class:selected={selectedRecipe?.id === recipe.id}
                 class:disabled={!canCraftRecipe(recipe)}
                 onclick={() => selectedRecipe = recipe}
+                onkeydown={(e) => e.key === 'Enter' && (selectedRecipe = recipe)}
+                tabindex="0"
+                role="button"
+                aria-pressed={selectedRecipe?.id === recipe.id}
+                aria-disabled={!canCraftRecipe(recipe)}
               >
                 <div class="recipe-header">
                   <div class="recipe-name">{recipe.name}</div>

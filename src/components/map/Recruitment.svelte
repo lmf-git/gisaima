@@ -1346,10 +1346,6 @@
         background-color: rgba(0, 0, 0, 0.08);
     }
 
-    .unit-option.unavailable .unit-icon {
-        opacity: 0.5;
-    }
-
     .locked-icon {
         display: inline-block;
         font-size: 0.7em;
