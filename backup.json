@@ -1,21 +1,5 @@
 {
   "players": {
-    "78aVPoGt00OyDnnDZXsDs789zfk1": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "displayName": "Temp",
-          "id": "78aVPoGt00OyDnnDZXsDs789zfk1",
-          "joined": 1746028858033,
-          "lastLocation": {
-            "timestamp": 1746028863253,
-            "x": -23,
-            "y": 5
-          },
-          "race": "human"
-        }
-      }
-    },
     "88NuPGQKeBSci21kTUznAeJ2IWF2": {
       "worlds": {
         "ancient-lands": {
@@ -33,56 +17,6 @@
             "y": -10
           },
           "race": "dwarf"
-        }
-      }
-    },
-    "CjrL1RMjJ7cSYdtKpcavU1WHnpl1": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_attack": true,
-            "first_attack_date": 1746031748337,
-            "first_steps": true,
-            "first_steps_date": 1746031380534
-          },
-          "alive": true,
-          "displayName": "LMF3",
-          "groups": {
-            "-OP6SLPY7045yICzYLzC": {
-              "at": "-23,5",
-              "id": "-OP6SLPY7045yICzYLzC",
-              "status": "idle"
-            },
-            "-OP6TJBVXZ1SeNObOf2v": {
-              "at": "-23,5",
-              "id": "-OP6TJBVXZ1SeNObOf2v",
-              "status": "idle"
-            },
-            "-OP6UKt5LqQr2KnEqEe9": {
-              "at": "-23,5",
-              "id": "-OP6UKt5LqQr2KnEqEe9",
-              "status": "idle"
-            },
-            "-OP6Uraj_v_mgk5Mx7O3": {
-              "at": "-23,5",
-              "id": "-OP6Uraj_v_mgk5Mx7O3",
-              "status": "idle"
-            },
-            "-OP6WK4DUaxKGGXBymhs": {
-              "at": "-23,5",
-              "id": "-OP6WK4DUaxKGGXBymhs",
-              "status": "idle"
-            }
-          },
-          "id": "CjrL1RMjJ7cSYdtKpcavU1WHnpl1",
-          "inGroup": "-OP6WK4DUaxKGGXBymhs",
-          "joined": 1746028741067,
-          "lastLocation": {
-            "timestamp": 1746031621263,
-            "x": -23,
-            "y": 3
-          },
-          "race": "human"
         }
       }
     },
@@ -112,29 +46,6 @@
             "y": 3
           },
           "race": "goblin"
-        }
-      }
-    },
-    "FE1hinGzuRMqHmaLUsFQJz60JXw1": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "displayName": "LMF1",
-          "groups": {
-            "-OP6OV2nt-VYs6-Ph_nW": {
-              "at": "-23,5",
-              "id": "-OP6OV2nt-VYs6-Ph_nW",
-              "status": "idle"
-            }
-          },
-          "id": "FE1hinGzuRMqHmaLUsFQJz60JXw1",
-          "inGroup": "-OP6OV2nt-VYs6-Ph_nW",
-          "joined": 1746028316561,
-          "lastLocation": {
-            "x": -23,
-            "y": 5
-          },
-          "race": "human"
         }
       }
     },
@@ -239,22 +150,6 @@
         }
       }
     },
-    "XmiAagMiXrVXN9md4NYk9oNuwOg2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "displayName": "test",
-          "id": "XmiAagMiXrVXN9md4NYk9oNuwOg2",
-          "joined": 1746028825410,
-          "lastLocation": {
-            "timestamp": 1746028829303,
-            "x": -23,
-            "y": 5
-          },
-          "race": "human"
-        }
-      }
-    },
     "YIDyjpxkBSR8eqemfslNDfs1YBr2": {
       "worlds": {
         "ancient-lands": {
@@ -282,22 +177,6 @@
             "y": -12
           },
           "race": "elf"
-        }
-      }
-    },
-    "aYgIjt4uhcc56HYTYQqtrOYqfRo2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "displayName": "testdwarf",
-          "id": "aYgIjt4uhcc56HYTYQqtrOYqfRo2",
-          "joined": 1745522808957,
-          "lastLocation": {
-            "timestamp": 1745522812088,
-            "x": -32,
-            "y": -10
-          },
-          "race": "dwarf"
         }
       }
     },
@@ -374,33 +253,6 @@
             "y": -11
           },
           "race": "dwarf"
-        }
-      }
-    },
-    "yJmNrZK918ffAOIUR2VjTrFEufS2": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_attack": true,
-            "first_attack_date": 1746028401875
-          },
-          "alive": true,
-          "displayName": "LMF2",
-          "groups": {
-            "-OP6OfjqIqV35QrTYJN9": {
-              "at": "-23,5",
-              "id": "-OP6OfjqIqV35QrTYJN9",
-              "status": "idle"
-            }
-          },
-          "id": "yJmNrZK918ffAOIUR2VjTrFEufS2",
-          "inGroup": "-OP6OfjqIqV35QrTYJN9",
-          "joined": 1746028365241,
-          "lastLocation": {
-            "x": -23,
-            "y": 5
-          },
-          "race": "human"
         }
       }
     }
@@ -3463,54 +3315,6 @@
             }
           },
           "-23,5": {
-            "groups": {
-              "-OP6OV2nt-VYs6-Ph_nW": {
-                "createdAt": 1746028331310,
-                "id": "-OP6OV2nt-VYs6-Ph_nW",
-                "inBattle": false,
-                "lastMessage": {
-                  "text": "Victory in battle! All units survived the battle.",
-                  "timestamp": 1746028562540
-                },
-                "lastUpdated": 1746028381236,
-                "name": "LMF1's Force",
-                "owner": "FE1hinGzuRMqHmaLUsFQJz60JXw1",
-                "race": "human",
-                "status": "idle",
-                "unitCount": 1,
-                "units": {
-                  "FE1hinGzuRMqHmaLUsFQJz60JXw1": {
-                    "displayName": "LMF1",
-                    "id": "FE1hinGzuRMqHmaLUsFQJz60JXw1",
-                    "lastActive": 1746028322995,
-                    "race": "human",
-                    "type": "player"
-                  }
-                },
-                "x": -23,
-                "y": 5
-              }
-            },
-            "players": {
-              "78aVPoGt00OyDnnDZXsDs789zfk1": {
-                "displayName": "Temp",
-                "id": "78aVPoGt00OyDnnDZXsDs789zfk1",
-                "lastActive": 1746028865255,
-                "race": "human"
-              },
-              "XmiAagMiXrVXN9md4NYk9oNuwOg2": {
-                "displayName": "test",
-                "id": "XmiAagMiXrVXN9md4NYk9oNuwOg2",
-                "lastActive": 1746028829578,
-                "race": "human"
-              },
-              "YI5zJA04mxUloRSfmMeXZ8n1Kpo2": {
-                "displayName": "test",
-                "id": "YI5zJA04mxUloRSfmMeXZ8n1Kpo2",
-                "lastActive": 1745517360101,
-                "race": "human"
-              }
-            },
             "structure": {
               "description": "A rugged frontier settlement where hardy humans carve out a living",
               "id": "structure_al_human_spawn",
@@ -3612,7 +3416,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746031985108,
+        "lastTick": 1746033121267,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",

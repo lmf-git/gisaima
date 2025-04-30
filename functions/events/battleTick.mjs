@@ -494,27 +494,21 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
       }
     }
     
-    // Handle losing groups - but only those that weren't already removed during attrition
+    // Handle losing groups - assume groups without units were already removed during attrition
     for (const group of losingGroups) {
-      // First check if the group still exists at this location
-      const groupRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`);
-      const groupSnapshot = await groupRef.once("value");
+      // Remove the group - if it still exists (no need to check explicitly)
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+      casualties++;
       
-      if (groupSnapshot.exists()) {
-        // Group still exists, so remove it now
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
-        casualties++;
-        
-        // Only add a notification that the group was defeated in battle
-        if (group.owner) {
-          // Add group defeat notification to the chat log
-          updates[`worlds/${worldId}/chat/death_${now}_${group.owner}`] = {
-            text: `${group.name || "Unknown player"} was defeated in battle at (${locationKey})`,
-            type: "event",
-            location: { x: parseInt(locationKey.split(',')[0]), y: parseInt(locationKey.split(',')[1]) },
-            timestamp: now
-          };
-        }
+      // Only add a notification that the group was defeated in battle
+      if (group.owner) {
+        // Add group defeat notification to the chat log
+        updates[`worlds/${worldId}/chat/death_${now}_${group.owner}`] = {
+          text: `${group.name || "Unknown player"} was defeated in battle at (${locationKey})`,
+          type: "event",
+          location: { x: parseInt(locationKey.split(',')[0]), y: parseInt(locationKey.split(',')[1]) },
+          timestamp: now
+        };
       }
     }
     
