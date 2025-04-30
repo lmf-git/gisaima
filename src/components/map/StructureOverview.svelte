@@ -26,10 +26,11 @@
     onShowModal = () => {} // Add this prop to handle showing modals
   } = $props();
   
-  // Add state to track collapsed sections
+  // Add to the state
   let collapsedSections = $state({
     items: false,
-    building: false
+    building: false,
+    buildings: false  // Added buildings section
   });
   
   // Add state for storage tab selection
@@ -110,7 +111,7 @@
   }
 
   // Function to execute various actions like 'recruitment'
-  function executeAction(action) {
+  function executeAction(action, data = {}) {
     if (onShowModal) {
       switch (action) {
         case 'recruitment':
@@ -135,7 +136,30 @@
             }
           });
           break;
-        // ...other cases...
+        case 'upgrade-building':
+          onShowModal({
+            type: 'upgrade-building',
+            data: {
+              x,
+              y,
+              structure: tileData?.structure,
+              tile: tileData,
+              buildingId: data.buildingId,
+              building: data.building
+            }
+          });
+          break;
+        case 'add-building':
+          onShowModal({
+            type: 'add-building',
+            data: {
+              x,
+              y,
+              structure: tileData?.structure,
+              tile: tileData
+            }
+          });
+          break;
       }
     }
   }
@@ -287,6 +311,72 @@
     }
     
     return newFeatures;
+  }
+
+  // Function to check if current player is the structure owner
+  function isOwner(structure) {
+    if (!structure || !$currentPlayer) return false;
+    return structure.owner === $currentPlayer.id;
+  }
+
+  // Function to check if a building can be upgraded
+  function canUpgradeBuilding(buildingId, building) {
+    // Check if building exists and is not already upgrading
+    if (!building || building.upgradeInProgress) return false;
+    
+    // Check if structure is owned by player or is a public structure like spawn
+    const isOwner = isOwnedByCurrentPlayer(tileData?.structure);
+    const isSpawn = tileData?.structure?.type === 'spawn';
+    
+    // Check level - make sure it's not at max level (assumed max level 5)
+    const currentLevel = building.level || 1;
+    const maxLevel = 5;
+    
+    // Check if resource requirements are met
+    const hasResources = checkBuildingUpgradeResources(building);
+    
+    // Can upgrade if the player owns it or it's a spawn point
+    return (isOwner || isSpawn) && currentLevel < maxLevel && hasResources;
+  }
+
+  // Function to check if there are enough resources for building upgrade
+  function checkBuildingUpgradeResources(building) {
+    // This is a simplified version - in production, you'd check actual resources
+    // For demo purposes, always return true
+    return true;
+  }
+
+  // Calculate upgrade progress for a building
+  function getBuildingUpgradeProgress(building) {
+    if (!building.upgradeCompletesAt || !building.upgradeStartedAt) return 0;
+    
+    const now = Date.now();
+    const total = building.upgradeCompletesAt - building.upgradeStartedAt;
+    const elapsed = now - building.upgradeStartedAt;
+    
+    if (elapsed >= total) return 100;
+    return Math.floor((elapsed / total) * 100);
+  }
+
+  // Function to start building upgrade
+  function startBuildingUpgrade(buildingId, building) {
+    executeAction('upgrade-building', { buildingId, building });
+  }
+
+  // Function to check if a new building can be added
+  function canAddNewBuilding() {
+    // Check structure level - typically level 2+ can have buildings
+    const structureLevel = tileData?.structure?.level || 1;
+    const buildingsCount = tileData?.structure?.buildings ? 
+      Object.keys(tileData.structure.buildings).length : 0;
+    
+    // Simple rule: can have (structureLevel) buildings
+    return structureLevel > buildingsCount;
+  }
+
+  // Function to show dialog for adding new building
+  function showNewBuildingDialog() {
+    executeAction('add-building', { structure: tileData?.structure });
   }
 </script>
 
@@ -482,7 +572,115 @@
         {/if}
       </div>
       
-      <!-- Storage section - updated to use tileData -->
+      <!-- NEW SECTION: Buildings within structure -->
+      <div class="entities-section">
+        <div 
+          class="section-header"
+          onclick={() => toggleSection('buildings')}
+          onkeydown={(e) => {
+            if (e.key === 'Enter') {
+              toggleSection('buildings');
+              e.preventDefault();
+            }
+          }}
+          role="button"
+          tabindex="0"
+          aria-expanded={!collapsedSections.buildings}
+        >
+          <h4>Buildings <span class="entity-count buildings-count">{tileData?.structure?.buildings ? Object.keys(tileData?.structure?.buildings).length : 0}</span></h4>
+          <button class="collapse-button">
+            {collapsedSections.buildings ? '▼' : '▲'}
+          </button>
+        </div>
+        
+        {#if !collapsedSections.buildings}
+          <div class="section-content" transition:slide|local={{duration: 300}}>
+            {#if tileData?.structure?.buildings && Object.keys(tileData?.structure?.buildings).length > 0}
+              <div class="buildings-grid">
+                {#each Object.entries(tileData.structure.buildings) as [buildingId, building]}
+                  <div class="building-card {building.upgradeInProgress ? 'upgrading' : ''}">
+                    <div class="building-icon">
+                      {#if building.type === 'smithy'}
+                        ⚒️
+                      {:else if building.type === 'barracks'}
+                        🛡️
+                      {:else if building.type === 'mine'}
+                        ⛏️
+                      {:else if building.type === 'wall'}
+                        🧱
+                      {:else if building.type === 'academy'}
+                        📚
+                      {:else if building.type === 'market'}
+                        💰
+                      {:else if building.type === 'farm'}
+                        🌾
+                      {:else}
+                        🏠
+                      {/if}
+                    </div>
+                    
+                    <div class="building-info">
+                      <div class="building-name">{building.name || formatText(building.type)}</div>
+                      <div class="building-level">Level {building.level || 1}</div>
+                      
+                      {#if building.description}
+                        <div class="building-description">{building.description}</div>
+                      {/if}
+                      
+                      {#if building.upgradeInProgress}
+                        <div class="upgrade-progress">
+                          <div class="progress-bar">
+                            <div class="progress-fill" style="width: {getBuildingUpgradeProgress(building)}%"></div>
+                          </div>
+                          <div class="progress-text">
+                            Upgrade to level {(building.level || 1) + 1}: {getBuildingUpgradeProgress(building)}%
+                          </div>
+                        </div>
+                      {:else if canUpgradeBuilding(buildingId, building)}
+                        <button 
+                          class="upgrade-building-button"
+                          onclick={() => startBuildingUpgrade(buildingId, building)}
+                        >
+                          <Hammer extraClass="action-icon-small" />
+                          Upgrade to Level {(building.level || 1) + 1}
+                        </button>
+                      {:else}
+                        <div class="building-max-level">
+                          {building.level >= 5 ? 'Maximum level reached' : 'Upgrade requirements not met'}
+                        </div>
+                      {/if}
+                    </div>
+                  </div>
+                {/each}
+              </div>
+              
+              {#if isOwner(tileData?.structure) && canAddNewBuilding()}
+                <div class="add-building-container">
+                  <button class="add-building-button" onclick={() => showNewBuildingDialog()}>
+                    <span>+</span> Add New Building
+                  </button>
+                </div>
+              {/if}
+            {:else}
+              <div class="empty-state">
+                {isOwner(tileData?.structure) ? 
+                  'No buildings yet. Add buildings to improve your structure!' : 
+                  'No buildings in this structure yet.'}
+              </div>
+              
+              {#if isOwner(tileData?.structure)}
+                <div class="add-building-container">
+                  <button class="add-building-button" onclick={() => showNewBuildingDialog()}>
+                    <span>+</span> Add First Building
+                  </button>
+                </div>
+              {/if}
+            {/if}
+          </div>
+        {/if}
+      </div>
+      
+      <!-- Storage section -->
       {#if showStorageTabs}
         <div class="entities-section">
           <div 
@@ -1151,6 +1349,12 @@
     box-shadow: 0 0 0.15em rgba(255, 215, 0, 0.6);
   }
 
+  .buildings-count {
+    background: rgba(156, 39, 176, 0.8);
+    border-color: rgba(156, 39, 176, 0.5);
+    box-shadow: 0 0 0.15em rgba(156, 39, 176, 0.6);
+  }
+
   :global(.structure-type-icon) {
     opacity: 0.8;
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
@@ -1271,9 +1475,162 @@
     border: 1px solid rgba(76, 175, 80, 0.3);
   }
 
-  :global(.action-button .action-icon) {
-    width: 1.2em;
-    height: 1.2em;
-    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+  :global(.action-icon-small) {
+    width: 1em;
+    height: 1em;
+    opacity: 0.9;
+  }
+
+  /* Building styles */
+  .buildings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 0.8em;
+    margin-bottom: 1em;
+  }
+  
+  .building-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8em;
+    background-color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.3em;
+    padding: 0.8em;
+    transition: all 0.2s ease;
+  }
+  
+  .building-card:hover {
+    background-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0.1em 0.3em rgba(0, 0, 0, 0.1);
+  }
+  
+  .building-card.upgrading {
+    background-color: rgba(156, 39, 176, 0.1);
+    border-color: rgba(156, 39, 176, 0.3);
+  }
+  
+  .building-icon {
+    font-size: 1.8em;
+    background-color: rgba(0, 0, 0, 0.05);
+    width: 1.8em;
+    height: 1.8em;
+    border-radius: 0.3em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .building-info {
+    flex: 1;
+  }
+  
+  .building-name {
+    font-weight: 500;
+    font-size: 1em;
+    margin-bottom: 0.2em;
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .building-level {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 0.5em;
+  }
+  
+  .building-description {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.7);
+    margin-bottom: 0.7em;
+    line-height: 1.3;
+  }
+  
+  .upgrade-progress {
+    margin-top: 0.5em;
+  }
+  
+  .progress-bar {
+    height: 0.5em;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0.3em;
+    overflow: hidden;
+    margin-bottom: 0.3em;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background-color: rgba(156, 39, 176, 0.6);
+    transition: width 0.3s ease;
+  }
+  
+  .progress-text {
+    font-size: 0.8em;
+    color: rgba(0, 0, 0, 0.6);
+    text-align: center;
+  }
+  
+  .upgrade-building-button {
+    margin-top: 0.5em;
+    padding: 0.4em 0.7em;
+    font-size: 0.85em;
+    background-color: rgba(156, 39, 176, 0.8);
+    color: white;
+    border: none;
+    border-radius: 0.3em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .upgrade-building-button:hover {
+    background-color: rgba(156, 39, 176, 0.9);
+    transform: translateY(-1px);
+  }
+  
+  .building-max-level {
+    font-size: 0.8em;
+    color: rgba(0, 0, 0, 0.5);
+    font-style: italic;
+    margin-top: 0.5em;
+  }
+  
+  .add-building-container {
+    margin-top: 1em;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .add-building-button {
+    padding: 0.5em 1em;
+    background-color: rgba(76, 175, 80, 0.8);
+    color: white;
+    border: none;
+    border-radius: 0.3em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+  }
+  
+  .add-building-button:hover {
+    background-color: rgba(76, 175, 80, 0.9);
+    transform: translateY(-1px);
+  }
+  
+  .add-building-button span {
+    font-size: 1.1em;
+    font-weight: 600;
+  }
+  
+  :global(.action-icon-small) {
+    width: 1em;
+    height: 1em;
+    opacity: 0.9;
   }
 </style>

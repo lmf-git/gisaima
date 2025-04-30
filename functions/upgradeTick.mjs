@@ -95,6 +95,12 @@ async function applyUpgrade(worldId, upgrade) {
   const { chunkKey, tileKey, fromLevel, toLevel } = upgrade;
   
   try {
+    // Handle building upgrades differently from structure upgrades
+    if (upgrade.type === 'building' && upgrade.buildingId) {
+      return await applyBuildingUpgrade(worldId, upgrade);
+    }
+    
+    // Existing structure upgrade logic
     // Get the structure
     const structureRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
     const structureSnapshot = await get(structureRef);
@@ -210,6 +216,131 @@ async function applyUpgrade(worldId, upgrade) {
 }
 
 /**
+ * Apply a building upgrade within a structure
+ * @param {string} worldId - The world ID
+ * @param {Object} upgrade - The upgrade data
+ * @returns {Promise<Object>} Result of the upgrade
+ */
+async function applyBuildingUpgrade(worldId, upgrade) {
+  const now = Date.now();
+  const { chunkKey, tileKey, buildingId, fromLevel, toLevel } = upgrade;
+  
+  try {
+    // Get the building
+    const buildingPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/buildings/${buildingId}`;
+    const buildingRef = ref(db, buildingPath);
+    const buildingSnapshot = await get(buildingRef);
+    
+    if (!buildingSnapshot.exists()) {
+      throw new Error('Building not found');
+    }
+    
+    const building = buildingSnapshot.val();
+    
+    // Check if building level matches expected level
+    if ((building.level || 1) !== fromLevel) {
+      throw new Error('Building level mismatch');
+    }
+    
+    // Apply upgrade - create the updated building with new level and features
+    const updatedBuilding = {
+      ...building,
+      level: toLevel,
+      upgradeInProgress: false,
+      upgradeId: null,
+      upgradeStartedAt: null,
+      upgradeCompletesAt: null,
+      lastUpgraded: now
+    };
+    
+    // Add new benefits based on level and building type
+    updatedBuilding.benefits = updatedBuilding.benefits || [];
+    
+    // Add new level-specific benefits
+    const newBenefits = getNewBenefitsForBuilding(building.type, toLevel);
+    if (newBenefits && newBenefits.length) {
+      updatedBuilding.benefits = [...updatedBuilding.benefits.filter(b => 
+        !newBenefits.some(nb => nb.name === b.name)), // Remove any existing benefits with same name
+        ...newBenefits];
+    }
+    
+    // Update the building in database
+    await set(buildingRef, updatedBuilding);
+    
+    // Mark upgrade as processed
+    const upgradeRef = ref(db, `worlds/${worldId}/upgrades/${upgrade.id}`);
+    await update(upgradeRef, {
+      processed: true,
+      failed: false,
+      processedAt: now,
+      status: 'completed'
+    });
+    
+    // Add a completion event to the world chat
+    const [x, y] = tileKey.split(',').map(Number);
+    const chatRef = ref(db, `worlds/${worldId}/chat/building_upgrade_complete_${upgrade.id}`);
+    await set(chatRef, {
+      location: { x, y },
+      text: `A ${building.name || building.type} at (${x}, ${y}) has been upgraded to level ${toLevel}!`,
+      timestamp: now,
+      type: 'system'
+    });
+    
+    // Notify the player who started the upgrade
+    if (upgrade.startedBy) {
+      const notificationRef = ref(db, `players/${upgrade.startedBy}/notifications/building_upgrade_${now}`);
+      await set(notificationRef, {
+        type: 'building_upgrade_complete',
+        worldId,
+        structureId: upgrade.structureId,
+        buildingId: buildingId,
+        buildingName: building.name || building.type,
+        location: { x, y },
+        fromLevel,
+        toLevel,
+        timestamp: now
+      });
+    }
+    
+    return {
+      success: true,
+      building: updatedBuilding
+    };
+    
+  } catch (error) {
+    console.error(`Error applying building upgrade ${upgrade.id}:`, error);
+    
+    // Mark upgrade as failed
+    const upgradeRef = ref(db, `worlds/${worldId}/upgrades/${upgrade.id}`);
+    await update(upgradeRef, {
+      processed: true,
+      failed: true,
+      error: error.message,
+      processedAt: now,
+      status: 'failed'
+    });
+    
+    // Update the building to remove upgrade in progress
+    try {
+      const buildingRef = ref(db, `worlds/${worldId}/chunks/${upgrade.chunkKey}/${upgrade.tileKey}/structure/buildings/${upgrade.buildingId}`);
+      await update(buildingRef, {
+        upgradeInProgress: false,
+        upgradeId: null,
+        upgradeStartedAt: null,
+        upgradeCompletesAt: null
+      });
+    } catch (err) {
+      console.error('Error updating building after failed upgrade:', err);
+    }
+    
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
  * Get new features to add for this structure type at a specific level
  */
 function getNewFeaturesForLevel(structureType, level) {
@@ -283,6 +414,153 @@ function getNewFeaturesForLevel(structureType, level) {
   // (These could be expanded later)
   
   return features;
+}
+
+/**
+ * Get new benefits to add for this building type at a specific level
+ */
+function getNewBenefitsForBuilding(buildingType, level) {
+  const benefits = [];
+  
+  switch (buildingType) {
+    case 'smithy':
+      if (level === 2) {
+        benefits.push({
+          name: 'Basic Smithing',
+          description: 'Allows crafting metal tools',
+          bonus: { craftingSpeed: 0.1 }
+        });
+      } else if (level === 3) {
+        benefits.push({
+          name: 'Advanced Smithing',
+          description: 'Allows crafting advanced weapons',
+          unlocks: ['iron_sword', 'iron_pickaxe']
+        });
+      } else if (level === 4) {
+        benefits.push({
+          name: 'Expert Smithing',
+          description: 'Allows crafting expert-level equipment',
+          unlocks: ['steel_sword', 'steel_armor']
+        });
+      } else if (level === 5) {
+        benefits.push({
+          name: 'Master Smithing',
+          description: 'Allows crafting legendary items',
+          unlocks: ['legendary_weapon']
+        });
+      }
+      break;
+    
+    case 'barracks':
+      if (level === 2) {
+        benefits.push({
+          name: 'Basic Training',
+          description: 'Allows training of basic soldiers',
+          unlocks: ['recruit_soldier']
+        });
+      } else if (level === 3) {
+        benefits.push({
+          name: 'Advanced Training',
+          description: 'Allows training of skilled units',
+          unlocks: ['skilled_soldier', 'archer']
+        });
+      } else if (level === 4) {
+        benefits.push({
+          name: 'Elite Training',
+          description: 'Allows training of elite units',
+          unlocks: ['elite_soldier', 'cavalry']
+        });
+      } else if (level === 5) {
+        benefits.push({
+          name: 'Legendary Training',
+          description: 'Allows training of legendary units',
+          unlocks: ['champion', 'royal_guard']
+        });
+      }
+      break;
+    
+    case 'mine':
+      if (level === 2) {
+        benefits.push({
+          name: 'Efficient Mining',
+          description: 'Improves mining yields by 10%',
+          bonus: { miningYield: 0.1 }
+        });
+      } else if (level === 3) {
+        benefits.push({
+          name: 'Deep Mining',
+          description: 'Allows mining of rare resources',
+          unlocks: ['gold_ore', 'silver_ore']
+        });
+      } else if (level === 4) {
+        benefits.push({
+          name: 'Advanced Mining',
+          description: 'Further improves mining yields',
+          bonus: { miningYield: 0.2 }
+        });
+      } else if (level === 5) {
+        benefits.push({
+          name: 'Master Mining',
+          description: 'Allows mining of legendary materials',
+          unlocks: ['mithril_ore', 'adamantite']
+        });
+      }
+      break;
+    
+    case 'academy':
+      if (level === 2) {
+        benefits.push({
+          name: 'Basic Research',
+          description: 'Allows researching basic technologies',
+          unlocks: ['basic_research']
+        });
+      } else if (level === 3) {
+        benefits.push({
+          name: 'Advanced Research',
+          description: 'Allows researching advanced technologies',
+          unlocks: ['advanced_research']
+        });
+      } else if (level === 4) {
+        benefits.push({
+          name: 'Expert Research',
+          description: 'Allows researching expert technologies',
+          unlocks: ['expert_research']
+        });
+      } else if (level === 5) {
+        benefits.push({
+          name: 'Magical Research',
+          description: 'Allows researching magical technologies',
+          unlocks: ['magical_research']
+        });
+      }
+      break;
+      
+    case 'farm':
+      if (level >= 2) {
+        benefits.push({
+          name: 'Improved Farming',
+          description: `Increases crop yield by ${(level-1) * 10}%`,
+          bonus: { farmingYield: (level-1) * 0.1 }
+        });
+      }
+      
+      if (level === 3) {
+        benefits.push({
+          name: 'Special Crops',
+          description: 'Allows growing special crops',
+          unlocks: ['rare_herbs', 'magical_seeds']
+        });
+      } else if (level === 5) {
+        benefits.push({
+          name: 'Magical Farming',
+          description: 'Allows growing magical plants',
+          unlocks: ['dragon_fruit', 'golden_apple']
+        });
+      }
+      break;
+  }
+  
+  return benefits;
 }
 
 /**
