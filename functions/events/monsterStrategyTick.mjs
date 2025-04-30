@@ -677,16 +677,6 @@ function createMonsterMoveMessage(monsterGroup, targetType, targetLocation) {
   }
 }
 
-/**
- * Count total resources in a group's inventory
- */
-function countTotalResources(items) {
-  if (!items || !Array.isArray(items)) return 0;
-  
-  return items.reduce((total, item) => {
-    return total + (item.quantity || 1);
-  }, 0);
-}
 
 /**
  * Move the monster group in a random direction
