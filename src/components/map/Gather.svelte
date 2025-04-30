@@ -1,151 +1,101 @@
 <script>
   import { fade, scale } from 'svelte/transition';
   import { currentPlayer, game, timeUntilNextTick } from '../../lib/stores/game';
-  import { targetStore } from '../../lib/stores/map';
+  import { highlightedStore, targetStore } from '../../lib/stores/map';
   import Close from '../icons/Close.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
 
-  // Props with default empty function to avoid destructuring errors - only need callbacks
-  const { 
-    onClose = () => {}, 
-    onGather = () => {},
-    groupData = null, // Add missing groupData prop
-    x,
-    y,
-    tile
-  } = $props();
-  
-  // Get functions instance
+  const { onClose = () => {}, onGather = () => {} } = $props();
   const functions = getFunctions();
   
-  // Track selected entities
-  let selectedGroup = $state(null);
-  let selectedItems = $state([]);
+  // Use $derived for tileData to prevent reactivity issues
+  let tileData = $derived($targetStore || null);
   
-  // Available groups and items
+  // Initialize state
   let availableGroups = $state([]);
-  let availableItems = $state([]);
-  
-  // Status messages
+  let selectedGroup = $state(null);
   let error = $state(null);
   let statusMessage = $state('');
-  
-  // Processing flag
   let processing = $state(false);
-
-  // Process data directly from targetStore when it changes
+  
+  // Add a flag to prevent re-filtering groups once an operation has started
+  let operationInProgress = $state(false);
+  
+  // Create a derived value for player ID to avoid direct reactive reads in the effect
+  let playerId = $derived($currentPlayer?.id);
+  
   $effect(() => {
-    // Reset if no target data
-    if (!$targetStore) {
+    // Don't update available groups if an operation is in progress
+    if (operationInProgress) return;
+    
+    // Reset groups list if we don't have valid data
+    if (!tileData || !tileData.groups || !playerId) {
       availableGroups = [];
-      availableItems = [];
+      selectedGroup = null;
       return;
     }
     
-    // Filter only groups owned by the current player and with idle status
-    const groups = $targetStore.groups;
+    // Create a new array without directly referencing reactively accessed properties inside filter
+    const filteredGroups = [];
     
-    if (groups && $currentPlayer?.id) {
-      // Handle both array and object formats of groups
-      const groupsArray = Array.isArray(groups) ? groups : Object.values(groups);
-      
-      availableGroups = groupsArray
-        .filter(group => 
-          group.owner === $currentPlayer.id && 
-          group.status === 'idle' &&
-          !group.inBattle
-        )
-        .map(group => ({
+    // Manually iterate instead of using filter/map to prevent reactivity issues
+    for (let i = 0; i < tileData.groups.length; i++) {
+      const group = tileData.groups[i];
+      if (group.owner === playerId && group.status === 'idle' && !group.inBattle) {
+        filteredGroups.push({
           ...group,
           selected: false
-        }));
-      
-      // Auto-select first group if there's only one
-      if (availableGroups.length === 1) {
-        selectedGroup = availableGroups[0];
-      } else {
-        selectedGroup = null;
+        });
       }
-    } else {
-      availableGroups = [];
-      selectedGroup = null;
     }
     
-    // Process items - even if there are none, we'll handle that case
-    const items = $targetStore.items || [];
+    // Update state only once
+    availableGroups = filteredGroups;
     
-    // Handle both array and object formats of items
-    const itemsArray = Array.isArray(items) ? items : Object.values(items);
-    
-    availableItems = itemsArray.map(item => ({
-      ...item,
-      selected: false
-    }));
-      
-    // Clear item selections when available data changes
-    selectedItems = [];
+    // Auto-select only after setting availableGroups
+    if (filteredGroups.length === 1 && !selectedGroup) {
+      selectedGroup = filteredGroups[0];
+    } else if (filteredGroups.length === 0) {
+      selectedGroup = null;
+    }
   });
   
-  // Select a group
   function selectGroup(group) {
     if (processing) return;
     selectedGroup = group;
+    error = null;
+    statusMessage = '';
   }
   
-  // Toggle item selection - prevent during processing
-  function toggleItem(item) {
-    if (processing) return;
-    
-    if (selectedItems.some(i => i.id === item.id)) {
-      selectedItems = selectedItems.filter(i => i.id !== item.id);
-    } else {
-      selectedItems = [...selectedItems, item];
-    }
-  }
-
-  // Add this function to handle keyboard events for items
-  function handleItemKeyDown(event, item) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault(); // Prevent page scroll on space
-      toggleItem(item);
-    }
-  }
-  
-  // Start gathering process
-  async function startGather() {
+  async function startGathering() {
     if (!selectedGroup || processing) return;
-    // Note: Removed check for selectedItems.length to allow gathering even without items
-    
     processing = true;
+    // Set the flag to prevent re-filtering groups
+    operationInProgress = true;
     error = null;
     statusMessage = 'Starting gathering...';
     
     try {
-      // Create the function reference
       const gatherFn = httpsCallable(functions, 'startGathering');
-      
-      // Call with the required parameters
       const result = await gatherFn({
         groupId: selectedGroup.id,
-        itemIds: selectedItems.map(item => item.id),
-        locationX: $targetStore.x,
-        locationY: $targetStore.y,
+        locationX: tileData.x,
+        locationY: tileData.y,
         worldId: $game.worldKey
       });
       
       console.log('Gathering started:', result.data);
+      const nextTickFormatted = timeUntilNextTick;
+      statusMessage = `Gathering started! Resources will be collected at the next game tick (in approximately ${nextTickFormatted}).`;
       
-      // Show a success message with the next game tick time
-      statusMessage = `Gathering started! Your group will collect items at the next game tick (in approximately ${$timeUntilNextTick}).`;
+      if (onGather) {
+        onGather({
+          group: selectedGroup,
+          location: { x: tileData.x, y: tileData.y }
+        });
+      }
       
-      // Notify the parent of the successful gathering
-      onGather({
-        group: selectedGroup,
-        items: selectedItems,
-        location: { x: $targetStore.x, y: $targetStore.y }
-      });
-      
-      // Wait a bit then close
+      // We don't set selectedGroup to null here to keep the UI stable
       setTimeout(() => {
         onClose(true);
       }, 3000);
@@ -153,19 +103,20 @@
       console.error('Gathering error:', err);
       error = err.message || 'An error occurred during gathering.';
       statusMessage = '';
+      // Reset the operation flag on error
+      operationInProgress = false;
     } finally {
       processing = false;
+      // We don't reset operationInProgress here to keep the UI stable
     }
   }
   
-  // Close on escape key
   function handleKeyDown(event) {
     if (event.key === 'Escape') {
       onClose();
     }
   }
   
-  // Helper function for formatting text
   function _fmt(t) {
     if (!t) return '';
     return t.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -176,122 +127,85 @@
 
 <div class="gather-modal" transition:scale={{ start: 0.95, duration: 200 }}>
   <header class="modal-header">
-    <h2>Gather Resources - {$targetStore?.x}, {$targetStore?.y}</h2>
-    <button class="close-btn" onclick={onClose} aria-label="Close dialog">
+    <h2>Gather Resources - {tileData?.x}, {tileData?.y}</h2>
+    <button class="close-btn" onclick={onClose} aria-label="Close gather dialog">
       <Close size="1.5em" />
     </button>
   </header>
   
   <div class="content">
-    <!-- Modified to show instructions even without items available -->
-    {#if availableGroups.length === 0}
-      <div class="message error">
-        <p>You don't have any idle groups at this location that can gather resources.</p>
-        <button class="cancel-btn" onclick={onClose}>Close</button>
-      </div>
-    {:else}
-      {#if error}
-        <div class="error">{error}</div>
-      {/if}
-      
-      {#if statusMessage}
-        <div class="status">{statusMessage}</div>
-      {/if}
-      
+    {#if tileData}
       <p class="description">
-        Select a group to gather resources from this location. 
-        {#if availableItems.length > 0}
-          You can pick specific items to collect, or gather general resources from the surrounding area.
-        {:else}
-          Your group will collect resources from the surrounding area.
-        {/if}
+        Select a group to gather resources at this location.
         Gathering will complete at the next game tick.
       </p>
       
-      <div class="group-selection">
-        <h3>Select Group</h3>
-        <div class="groups-list">
-          {#each availableGroups as group}
-            <button 
-              class="group-item" 
-              class:selected={selectedGroup?.id === group.id}
-              disabled={processing}
-              onclick={() => selectGroup(group)}
-              aria-pressed={selectedGroup?.id === group.id}
-            >
-              <div class="group-info">
-                <div class="group-name">{group.name || `Group ${group.id.slice(-4)}`}</div>
-                <div class="group-units">{group.unitCount || 'Unknown'} units</div>
-              </div>
-            </button>
-          {/each}
+      <div class="location-info">
+        <div class="terrain">
+          <div class="terrain-color" style="background-color: {tileData.color}"></div>
+          <span class="terrain-name">{_fmt(tileData.biome?.name) || "Unknown"}</span>
         </div>
       </div>
       
-      {#if availableItems.length > 0}
-        <div class="items-section">
-          <h3>Available Items (Optional)</h3>
-          <div class="items-list">
-            {#each availableItems as item}
-              <div 
-                class="item-selector" 
-                class:selected={selectedItems.includes(item)}
-                onclick={() => toggleItem(item)}
-                onkeydown={(e) => handleItemKeyDown(e, item)}
-                role="checkbox"
-                tabindex="0"
-                aria-checked={selectedItems.includes(item)}
+      {#if availableGroups.length > 0}
+        <div class="group-selection">
+          <h3>Available Groups</h3>
+          <div class="groups-list">
+            {#each availableGroups as group}
+              <button 
+                class="group-item" 
+                class:selected={selectedGroup?.id === group.id}
+                disabled={processing}
+                onclick={() => selectGroup(group)}
+                aria-pressed={selectedGroup?.id === group.id}
               >
-                <input 
-                  type="checkbox" 
-                  checked={selectedItems.includes(item)} 
-                  id={`item-${item.id}`}
-                  tabindex="-1"
-                />
-                <div class="item {item.rarity ? item.rarity.toLowerCase() : 'common'}">
-                  <div class="item-name">{item.name || _fmt(item.type) || "Unknown Item"}</div>
-                  <div class="item-details">
-                    {#if item.type}
-                      <span class="item-type">{_fmt(item.type)}</span>
-                    {/if}
-                    {#if item.rarity && item.rarity !== 'common'}
-                      <span class="item-rarity">{_fmt(item.rarity)}</span>
-                    {/if}
-                    {#if item.quantity > 1}
-                      <span class="item-quantity">×{item.quantity}</span>
-                    {/if}
-                  </div>
+                <div class="group-info">
+                  <div class="group-name">{group.name || `Group ${group.id.slice(-4)}`}</div>
+                  <div class="group-units">{group.unitCount || 'Unknown'} units</div>
                 </div>
-              </div>
+              </button>
             {/each}
           </div>
-          <div class="selection-summary">
-            <strong>{selectedItems.length}</strong> item{selectedItems.length !== 1 ? 's' : ''} selected
-          </div>
+        </div>
+        
+        {#if error}
+          <div class="error">{error}</div>
+        {/if}
+        
+        {#if statusMessage}
+          <div class="status">{statusMessage}</div>
+        {/if}
+        
+        <div class="actions">
+          <button 
+            class="cancel-btn" 
+            onclick={() => onClose()} 
+            disabled={processing}
+          >
+            Cancel
+          </button>
+          
+          <button 
+            class="gather-btn" 
+            onclick={startGathering} 
+            disabled={!selectedGroup || processing}
+          >
+            {processing ? 'Processing...' : 'Gather Resources'}
+          </button>
         </div>
       {:else}
-        <div class="info-box">
-          <p>No specific items available on this tile, but your group can still gather resources from the surrounding area.</p>
+        <div class="empty-state">
+          <p>No groups available to gather at this location.</p>
+          <button class="close-btn-secondary" onclick={() => onClose()}>
+            Close
+          </button>
         </div>
       {/if}
-      
-      <div class="actions">
-        <button 
-          class="cancel-btn" 
-          onclick={onClose} 
-          disabled={processing}
-        >
-          Cancel
-        </button>
-        
-        <button 
-          class="gather-btn" 
-          onclick={startGather} 
-          disabled={!selectedGroup || processing}
-        >
-          {processing ? 'Processing...' : 'Gather Resources'}
-        </button>
-      </div>
+    {:else}
+      <p class="no-tile">No location selected</p>
+      <button class="close-btn-secondary" onclick={() => onClose()}>
+        Close
+      </button>
     {/if}
   </div>
 </div>
@@ -317,43 +231,19 @@
 
   .modal-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     padding: 0.8em 1em;
     background: #f5f5f5;
     border-bottom: 1px solid #e0e0e0;
   }
 
-  h2, h3 {
-    margin: 0;
-    font-family: var(--font-heading);
-  }
-  
   h2 {
+    margin: 0;
     font-size: 1.3em;
     font-weight: 600;
     color: #333;
-  }
-  
-  h3 {
-    margin-bottom: 0.8em;
-    font-size: 1.1em;
-    font-weight: 500;
-    color: #333;
-  }
-
-  .close-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0.3em;
-    display: flex;
-    border-radius: 50%;
-    transition: background-color 0.2s;
-  }
-
-  .close-btn:hover {
-    background-color: rgba(0, 0, 0, 0.1);
+    font-family: var(--font-heading);
   }
 
   .content {
@@ -361,15 +251,49 @@
     overflow-y: auto;
     max-height: calc(90vh - 4em);
   }
-
+  
   .description {
-    margin-bottom: 1em;
-    color: #555;
-    line-height: 1.4;
+    margin-bottom: 1.5em;
+    color: rgba(0, 0, 0, 0.8);
+  }
+  
+  .location-info {
+    margin-bottom: 1.5em;
+    background: #f5f5f5;
+    padding: 1em;
+    border-radius: 0.3em;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .terrain {
+    display: flex;
+    align-items: center;
+    font-size: 1.1em;
+  }
+  
+  .terrain-color {
+    width: 1em;
+    height: 1em;
+    border-radius: 0.2em;
+    margin-right: 0.5em;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  }
+  
+  .terrain-name {
+    color: rgba(0, 0, 0, 0.8);
+    font-weight: 500;
   }
 
   .group-selection {
     margin-bottom: 1.5em;
+  }
+
+  h3 {
+    font-size: 1.1em;
+    margin: 0 0 0.8em 0;
+    font-family: var(--font-heading);
+    color: rgba(0, 0, 0, 0.8);
   }
 
   .groups-list {
@@ -390,7 +314,6 @@
     background: white;
     transition: all 0.2s;
     text-align: left;
-    width: 100%;
   }
 
   .group-item:hover:not(:disabled) {
@@ -415,92 +338,12 @@
   .group-name {
     font-weight: 500;
     margin-bottom: 0.2em;
+    color: rgba(0, 0, 0, 0.85);
   }
 
   .group-units {
     font-size: 0.8em;
-    color: #666;
-  }
-
-  .items-section {
-    margin-bottom: 1.5em;
-  }
-
-  .items-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5em;
-    max-height: 18em;
-    overflow-y: auto;
-  }
-
-  .item-selector {
-    display: flex;
-    align-items: center;
-    padding: 0.6em 0.8em;
-    border: 1px solid #e0e0e0;
-    border-radius: 0.3em;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: white;
-  }
-
-  .item-selector:hover {
-    background: #f9f9f9;
-  }
-
-  .item-selector.selected {
-    background: rgba(66, 133, 244, 0.1);
-    border-color: rgba(66, 133, 244, 0.4);
-  }
-
-  .item-selector input[type="checkbox"] {
-    margin-right: 1em;
-  }
-
-  .item {
-    flex: 1;
-  }
-
-  .item-name {
-    font-weight: 500;
-    margin-bottom: 0.3em;
-  }
-
-  .item-details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5em;
-    font-size: 0.85em;
-  }
-
-  .item-type {
-    color: #555;
-  }
-
-  .item-rarity {
-    font-weight: 500;
-  }
-
-  .item.rare .item-rarity {
-    color: #2196f3;
-  }
-
-  .item.epic .item-rarity {
-    color: #9c27b0;
-  }
-
-  .item.legendary .item-rarity {
-    color: #ff9800;
-  }
-
-  .item.mythic .item-rarity {
-    color: #e91e63;
-  }
-
-  .item-quantity {
-    font-weight: 500;
-    color: #555;
+    color: rgba(0, 0, 0, 0.75);
   }
 
   .error {
@@ -521,45 +364,30 @@
     color: #0277bd;
   }
 
-  .message {
-    padding: 1em;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1em;
-  }
-
-  .message.error {
-    background-color: rgba(255, 0, 0, 0.1);
-    border-left: 3px solid #ff3232;
-    color: #d32f2f;
-  }
-
-  .selection-summary {
-    margin-top: 0.5em;
-    font-size: 0.9em;
-    color: #555;
-  }
-
-  .info-box {
-    padding: 0.8em;
-    margin-bottom: 1.5em;
-    background-color: rgba(33, 150, 243, 0.1);
-    border-left: 3px solid #2196f3;
-    border-radius: 0.3em;
-    color: #0277bd;
-  }
-
   .actions {
     display: flex;
     justify-content: flex-end;
     gap: 0.8em;
-    margin-top: 1em;
   }
 
-  .cancel-btn, .gather-btn {
-    padding: 0.7em 1.2em;
+  .close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.3em;
+    display: flex;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+  }
+
+  .close-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .close-btn-secondary {
+    padding: 0.6em 1em;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
     border-radius: 0.3em;
     cursor: pointer;
     font-family: inherit;
@@ -567,28 +395,59 @@
     transition: all 0.2s;
   }
 
-  .cancel-btn {
-    background: #f5f5f5;
-    border: 1px solid #ddd;
-  }
-
-  .gather-btn {
-    background: #2196f3;
-    border: 1px solid #1e88e5;
-    color: white;
-  }
-
-  .cancel-btn:hover:not(:disabled) {
+  .close-btn-secondary:hover {
     background: #eee;
   }
 
+  .cancel-btn, .gather-btn {
+    padding: 0.7em 1.2em;
+    border-radius: 0.3em;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1em;
+    transition: all 0.2s;
+  }
+
+  .cancel-btn {
+    background-color: #f1f3f4;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+  }
+
+  .cancel-btn:hover:not(:disabled) {
+    background-color: #e8eaed;
+  }
+
+  .gather-btn {
+    background-color: #4285f4;
+    color: white;
+    border: none;
+  }
+
   .gather-btn:hover:not(:disabled) {
-    background: #1e88e5;
+    background-color: #3367d6;
   }
 
   .cancel-btn:disabled,
   .gather-btn:disabled {
-    opacity: 0.6;
+    opacity: 0.7;
     cursor: not-allowed;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 2em 1em;
+    color: #777;
+  }
+
+  .empty-state p {
+    margin-bottom: 1em;
+    color: rgba(0, 0, 0, 0.8);
+  }
+
+  .no-tile {
+    padding: 2em 1em;
+    text-align: center;
+    color: rgba(0, 0, 0, 0.8);
   }
 </style>
