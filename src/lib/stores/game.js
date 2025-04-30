@@ -27,19 +27,9 @@ const ACHIEVEMENT_DEFINITIONS = {
     category: 'explore',
     hidden: true,
   },
-  'inspector': {
-    title: 'Inspector',
-    description: 'Inspect your first structure',
-    category: 'explore',
-  },
   'mobilised': {
     title: 'Leader',
     description: 'Mobilize your first group',
-    category: 'explore',
-  },
-  'strategist': {
-    title: 'Strategist',
-    description: 'Move a group to another location',
     category: 'explore',
   },
   'demobilizer': {
