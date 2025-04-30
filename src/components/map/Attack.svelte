@@ -215,13 +215,16 @@
         locationY: tileData.y
       };
       
-      // Add both defender groups and structure if selected
+      // Add defender groups only if selected
       if (selectedEnemyGroups.length > 0) {
         params.defenderGroupIds = selectedEnemyGroups.map(g => g.id);
       }
       
+      // Add structure if selected
       if (selectedStructure) {
         params.structureId = selectedStructure.id;
+        // Log the structure ID to help with debugging
+        console.log('Targeting structure with ID:', selectedStructure.id);
       }
       
       console.log('Starting attack with params:', params);
@@ -232,16 +235,6 @@
       
       if (result.data.success) {
         console.log('Attack started:', result.data);
-        
-        // Call the callback function if provided
-        // onAttack({
-        //   attackerGroupIds,
-        //   battleId: result.data.battleId,
-        //   tile: tileData,
-        //   defenderGroupIds: params.defenderGroupIds,
-        //   structureId: params.structureId
-        // });
-        
         onClose(true);
       } else {
         errorMessage = result.data.error || 'Failed to start attack';
@@ -253,6 +246,12 @@
         errorMessage = 'Authentication error: Please log in again.';
       } else if (error.code === 'not-found') {
         errorMessage = 'Target was not found. It may have moved or been destroyed.';
+      } else if (error.code === 'permission-denied') {
+        errorMessage = 'You do not have permission to perform this action.';
+      } else if (error.code === 'internal') {
+        errorMessage = 'Server error occurred. Please try again later.';
+      } else if (error.code === 'failed-precondition') {
+        errorMessage = 'Cannot attack: target status has changed.';
       } else {
         errorMessage = error.message || 'Failed to start attack';
       }

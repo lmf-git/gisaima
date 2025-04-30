@@ -8,40 +8,52 @@ import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 
 // Attack function - supports attacking groups and structures simultaneously
-export const attack = onCall({ maxInstances: 10 }, async (request) => {
-  const { 
-    attackerGroupIds, 
-    locationX, 
-    locationY, 
-    defenderGroupIds, 
-    structureId
-  } = request.data;
-  
-  const userId = request.auth?.uid;
-  
-  if (!userId) {
-    throw new HttpsError("unauthenticated", "User must be authenticated");
-  }
-  
-  // Validate common parameters
-  if (!Array.isArray(attackerGroupIds) || 
-      attackerGroupIds.length === 0 || 
-      locationX === undefined || 
-      locationY === undefined) {
-    throw new HttpsError("invalid-argument", "Missing required parameters");
-  }
-  
-  // Validate that at least one target type is specified
-  if (!defenderGroupIds && !structureId) {
-    throw new HttpsError("invalid-argument", "No attack targets specified (missing defenderGroupIds and structureId)");
-  }
-  
-  // Validate defender groups if provided
-  if (defenderGroupIds && !Array.isArray(defenderGroupIds)) {
-    throw new HttpsError("invalid-argument", "defenderGroupIds must be an array");
-  }
-  
+export const attack = onCall({ 
+  maxInstances: 10
+}, async (request) => {
   try {
+    const { 
+      attackerGroupIds, 
+      locationX, 
+      locationY, 
+      defenderGroupIds, 
+      structureId
+    } = request.data;
+
+    console.log('test) attack')
+    
+    // Get user ID from auth context, but don't fail if not present yet
+    const userId = request.auth?.uid;
+    
+    logger.info(`Attack request received. Auth: ${userId ? 'Authenticated' : 'Unauthenticated'}, Params:`, {
+      attackerCount: attackerGroupIds?.length,
+      location: `${locationX},${locationY}`,
+      hasDefenders: defenderGroupIds?.length > 0,
+      hasStructure: !!structureId
+    });
+    
+    if (!userId) {
+      throw new HttpsError("unauthenticated", "User must be authenticated to perform attacks. Please sign in and try again.");
+    }
+    
+    // Validate common parameters
+    if (!Array.isArray(attackerGroupIds) || 
+        attackerGroupIds.length === 0 || 
+        locationX === undefined || 
+        locationY === undefined) {
+      throw new HttpsError("invalid-argument", "Missing required attack parameters");
+    }
+    
+    // Validate that at least one target type is specified
+    if ((!defenderGroupIds || defenderGroupIds.length === 0) && !structureId) {
+      throw new HttpsError("invalid-argument", "No attack targets specified (missing defenderGroupIds and structureId)");
+    }
+    
+    // Validate defender groups if provided
+    if (defenderGroupIds && !Array.isArray(defenderGroupIds)) {
+      throw new HttpsError("invalid-argument", "defenderGroupIds must be an array");
+    }
+    
     const db = getDatabase();
     const worldId = request.data.worldId || 'default';
     
@@ -64,7 +76,7 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
     
     // Check for groups
     const groups = tileData.groups || {};
-    if (Object.keys(groups).length === 0 && defenderGroupIds && defenderGroupIds.length > 0) {
+    if (defenderGroupIds && defenderGroupIds.length > 0 && Object.keys(groups).length === 0) {
       throw new HttpsError("not-found", "No groups found at this location");
     }
     
@@ -77,7 +89,7 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
       
       // Verify the structure matches the provided ID
       if (tileData.structure.id !== structureId) {
-        throw new HttpsError("not-found", "Structure ID mismatch");
+        throw new HttpsError("not-found", `Structure ID mismatch: expected ${structureId}, found ${tileData.structure.id || 'undefined'}`);
       }
       
       // Check if structure is already in battle
@@ -179,6 +191,9 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
     if (defenderGroups.length > 0) targetTypes.push("group");
     if (structure) targetTypes.push("structure");
     
+    // For logging/debugging
+    logger.info(`Starting battle with targets: ${targetTypes.join(', ')}, attackerPower: ${attackerTotalPower}, defenderPower: ${defenderTotalPower} (groups: ${defenderGroupPower}, structure: ${structurePower})`);
+    
     // Update all attacker groups to be in battle
     const groupUpdates = {};
     
@@ -274,7 +289,12 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
     };
   } catch (error) {
     logger.error("Error starting battle:", error);
-    throw new HttpsError("internal", error.message || "Failed to start battle");
+    if (error.code) {
+      // If it's already a HttpsError, rethrow it
+      throw error;
+    } else {
+      throw new HttpsError("internal", error.message || "Server error while processing battle request");
+    }
   }
 });
 
