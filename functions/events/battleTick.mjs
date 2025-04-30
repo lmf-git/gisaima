@@ -220,6 +220,33 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
     const side1Groups = await fetchBattleGroups(worldId, chunkKey, locationKey, battleData.side1.groups || {});
     const side2Groups = await fetchBattleGroups(worldId, chunkKey, locationKey, battleData.side2.groups || {});
     
+    // FIX: Early check if either side has no groups - end battle immediately
+    if (side1Groups.length === 0 || side2Groups.length === 0) {
+      const winningSide = side1Groups.length > 0 ? 1 : 2;
+      const winningGroups = winningSide === 1 ? side1Groups : side2Groups;
+      
+      // Get structure if involved
+      let structure = null;
+      if (battleData.targetTypes?.includes("structure")) {
+        const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure`);
+        const structureSnapshot = await tileRef.once("value");
+        structure = structureSnapshot.val();
+      }
+      
+      await endBattle(worldId, chunkKey, locationKey, battleId, winningSide, winningGroups, structure);
+      
+      // Add battle end message
+      updates[`worlds/${worldId}/chat/battle_${now}_${battleId}_${Math.floor(Math.random() * 1000)}`] = {
+        text: `Battle at (${locationKey.split(',')[0]},${locationKey.split(',')[1]}) has ended! One side had no units.`,
+        type: "event",
+        location: { x: parseInt(locationKey.split(',')[0]), y: parseInt(locationKey.split(',')[1]) },
+        timestamp: now
+      };
+      
+      await db.ref().update(updates);
+      return { success: true };
+    }
+    
     // Also get structure if it's involved in the battle
     let structure = null;
     if (battleData.targetTypes?.includes("structure")) {
@@ -263,21 +290,54 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
         updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/health`] = structure.health;
       }
       
-      // Recalculate powers after attrition
-      side1Power = calculateSidePower(side1Groups);
-      side2Power = calculateSidePower(side2Groups) + (structure?.health > 0 ? calculateStructurePower(structure) : 0);
+      // FIX: Filter out groups that have been removed due to all units being casualties
+      const filteredSide1Groups = side1Groups.filter(group => {
+        // A group is removed if it has no units or unitCount is 0
+        const hasUnits = group.units && Object.keys(group.units).length > 0;
+        return hasUnits;
+      });
+      
+      const filteredSide2Groups = side2Groups.filter(group => {
+        const hasUnits = group.units && Object.keys(group.units).length > 0;
+        return hasUnits;
+      });
+
+      // Update battle data with filtered groups
+      if (battleData.side1 && battleData.side1.groups) {
+        const validGroupIds = filteredSide1Groups.map(g => g.id);
+        Object.keys(battleData.side1.groups).forEach(groupId => {
+          if (!validGroupIds.includes(groupId)) {
+            // Remove this group from the battle's side1 groups
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/side1/groups/${groupId}`] = null;
+          }
+        });
+      }
+      
+      if (battleData.side2 && battleData.side2.groups) {
+        const validGroupIds = filteredSide2Groups.map(g => g.id);
+        Object.keys(battleData.side2.groups).forEach(groupId => {
+          if (!validGroupIds.includes(groupId)) {
+            // Remove this group from the battle's side2 groups
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/side2/groups/${groupId}`] = null;
+          }
+        });
+      }
+      
+      // Recalculate powers after attrition with filtered groups
+      side1Power = calculateSidePower(filteredSide1Groups);
+      side2Power = calculateSidePower(filteredSide2Groups) + (structure?.health > 0 ? calculateStructurePower(structure) : 0);
       
       // Update battle data
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/side1Power`] = side1Power;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/side2Power`] = side2Power;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/tickCount`] = (battleData.tickCount || 0) + 1;
       
-      // Check if battle should end
-      if (side1Power <= 0 || side2Power <= 0) {
-        // Determine winner
-        const winningSide = side1Power > 0 ? 1 : 2;
-        const winningGroups = winningSide === 1 ? side1Groups : side2Groups;
-        const losingGroups = winningSide === 1 ? side2Groups : side1Groups;
+      // Check if battle should end after filtering
+      if (side1Power <= 0 || side2Power <= 0 || filteredSide1Groups.length === 0 || filteredSide2Groups.length === 0) {
+        // Determine winner based on remaining groups, not just power
+        const winningSide = (filteredSide1Groups.length > 0 && side1Power > 0) ? 1 : 2;
+        const winningGroups = winningSide === 1 ? filteredSide1Groups : filteredSide2Groups;
+        const losingGroups = winningSide === 1 ? filteredSide2Groups : filteredSide1Groups;
         
         // End the battle
         await endBattle(worldId, chunkKey, locationKey, battleId, winningSide, winningGroups, structure);
@@ -330,7 +390,8 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
     // Determine how many units should be lost
     const unitCount = Object.keys(group.units).length;
     const expectedCasualties = Math.max(0, Math.floor(unitCount * baseCasualtyChance * (0.8 + Math.random() * 0.4)));
-    const actualCasualties = Math.min(unitCount - 1, expectedCasualties); // Leave at least one unit
+    // Allow all units to be casualties
+    const actualCasualties = Math.min(unitCount, expectedCasualties);
     
     // If no casualties, skip
     if (actualCasualties <= 0) return;
@@ -357,7 +418,7 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
           (unit.displayName && !unit.npc)) {
         
         // Determine the player ID - could be unit.id, unitKey, or group.owner
-        const playerId = unit.id || unitKey;
+        const playerId = unit.id || unitKey || group.owner;
         if (!playerId) {
           logger.error(`Cannot determine player ID for unit in group ${group.id}`);
           return;
@@ -385,6 +446,10 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
 
       // Remove the unit from the group
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/units/${unitKey}`] = null;
+      
+      // Also remove from our in-memory representation so power calculations are correct
+      delete group.units[unitKey];
+      
       totalCasualties++;
     });
     
@@ -403,12 +468,19 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
           location: { x: parseInt(locationKey.split(',')[0]), y: parseInt(locationKey.split(',')[1]) },
           timestamp: now
         };
+        
+        // Ensure player is marked as not alive if their group is removed
+        updates[`players/${group.owner}/worlds/${worldId}/alive`] = false;
+        logger.info(`Marking player ${group.owner} as not alive - entire group was destroyed`);
       }
       
       logger.info(`Group ${group.id} (${group.name || "Unknown"}) completely destroyed in battle`);
     } else {
       // Update the unit count
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnitCount;
+      
+      // Update our in-memory representation as well
+      group.unitCount = remainingUnitCount;
     }
   });
   
@@ -508,6 +580,15 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
       });
     }
     
+    // FIX: Ensure all losing groups' owners are properly marked as not alive
+    for (const group of losingGroups) {
+      if (group.owner) {
+        // Make sure player is marked as not alive in their record
+        updates[`players/${group.owner}/worlds/${worldId}/alive`] = false;
+        logger.info(`Marking losing player ${group.owner} as not alive during battle completion`);
+      }
+    }
+    
     // Count casualties from the losing side for the battle outcome message
     // Do not try to remove groups - they should already be removed if they have no units
     let casualties = losingGroups.length;
@@ -524,7 +605,7 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
         };
       }
     }
-    
+
     // Variables to track structure outcomes
     let structureDestroyed = false;
     let structureCaptured = false;
