@@ -120,19 +120,31 @@
   }
 
   function canCraft(tile) {
+    if (!tile || !$currentPlayer) return false;
+    
+    // Allow crafting if player is present on the tile (either as an entity or in a group)
+    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
+    const playerInGroup = tile.groups?.some(g => g.owner === $currentPlayer.id);
+    
+    // Can craft if player is present (either individually or in a group)
+    return playerOnTile || playerInGroup;
+  }
+
+  // Add function to check if recruitment is possible
+  function canRecruit(tile) {
     if (!tile || !$currentPlayer || !tile.structure) return false;
     
-    // Can only craft at certain structures or if player has idle groups
-    // return (tile.structure?.type === 'crafting_table' || 
-    //        tile.structure?.type === 'forge' || 
-    //        tile.structure?.type === 'workshop' ||
-    //        tile.structure?.type === 'alchemy_lab') && 
-    //        tile.groups?.some(g => 
-    //          g.owner === $currentPlayer.id && 
-    //          g.status === 'idle' &&
-    //          !g.inBattle
-    //        );
-    return true;
+    // Player must be on tile as an entity
+    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
+    
+    // Player should not be in a mobilizing or demobilizing group
+    const inProcessGroup = tile.groups?.some(g => 
+      (g.status === 'mobilizing' || g.status === 'demobilising') && 
+      g.owner === $currentPlayer.id
+    );
+    
+    // Check if player is on tile but not already in a group
+    return playerOnTile && !inProcessGroup;
   }
 
   // Define all possible actions
@@ -140,13 +152,15 @@
     { id: 'details', label: 'Details', icon: Info, condition: () => true }, // Always show details
     { id: 'inspect', label: 'Inspect', icon: Eye, condition: (tile) => tile?.structure },
     { id: 'build', label: 'Build', icon: Hammer, condition: canBuild }, // Updated to use canBuild condition
-    { id: 'craft', label: 'Craft', icon: Hammer, condition: canCraft }, // Add craft action
+    { id: 'craft', label: 'Craft', icon: Hammer, condition: canCraft }, // Now uses updated canCraft condition
     { id: 'move', label: 'Move', icon: Compass, condition: canMove },
     { id: 'mobilise', label: 'Mobilise', icon: Rally, condition: canMobilize },
     { id: 'gather', label: 'Gather', icon: Crop, condition: canGather },
     { id: 'attack', label: 'Attack', icon: Sword, condition: canAttack },
     { id: 'demobilise', label: 'Demobilise', icon: Structure, condition: canDemobilize },
-    { id: 'joinBattle', label: 'Join Battle', icon: Sword, condition: canJoinBattle }
+    { id: 'joinBattle', label: 'Join Battle', icon: Sword, condition: canJoinBattle },
+    // Add recruitment action
+    { id: 'recruitment', label: 'Recruit', icon: Rally, condition: canRecruit }
   ];
 
   // Filter actions based on conditions
@@ -475,6 +489,13 @@
     border-color: rgba(233, 30, 99, 0.85);
     color: white;
   }
+
+  /* Add recruitment button styling */
+  .recruitment-button {
+    background-color: rgba(156, 39, 176, 0.65);
+    border-color: rgba(156, 39, 176, 0.85);
+    color: white;
+  }
   
   .gather-button {
     background-color: rgba(255, 193, 7, 0.65);
@@ -524,6 +545,11 @@
   /* Add hover effect for craft button */
   .craft-button:hover {
     background-color: rgba(233, 30, 99, 0.8);
+  }
+
+  /* Add hover effect for recruitment button */
+  .recruitment-button:hover {
+    background-color: rgba(156, 39, 176, 0.8);
   }
   
   .gather-button:hover {

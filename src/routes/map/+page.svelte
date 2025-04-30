@@ -866,7 +866,7 @@
             // Toggle the details panel when "Details" is clicked from Peek
             toggleDetailsModal(true);
             break;
-            
+              
           case 'inspect':
             showModal({
               type: 'inspect',
@@ -877,56 +877,56 @@
               }
             });
             break;
-            
+              
           case 'mobilise':
             showModal({
               type: 'mobilise',
               data: actionData
             });
             break;
-            
+              
           case 'move':
             showModal({
               type: 'move',
               data: actionData
             });
             break;
-            
+              
           case 'attack':
             showModal({
               type: 'attack',
               data: actionData
             });
             break;
-            
+              
           case 'build':
             showModal({
               type: 'build',
               data: actionData
             });
             break;
-            
+              
           case 'gather':
             showModal({
               type: 'gather',
               data: actionData
             });
             break;
-            
+              
           case 'joinBattle':
             showModal({
               type: 'joinBattle',
               data: actionData
             });
             break;
-            
+              
           case 'demobilise':
             showModal({
               type: 'demobilise',
               data: actionData
             });
             break;
-            
+              
           case 'craft':
             showModal({
               type: 'craft',
@@ -942,10 +942,15 @@
           case 'recruitment': // Handle recruitment action
             showModal({
               type: 'recruitment',
-              data: actionData
+              data: {
+                x: actionData.x,
+                y: actionData.y,
+                structure: actionData.tile.structure,
+                tile: actionData.tile
+              }
             });
             break;
-            
+              
           default:
             console.warn(`Unknown action type: ${actionId}`);
             break;
