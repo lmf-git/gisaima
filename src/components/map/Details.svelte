@@ -240,9 +240,9 @@
         onClose(); // Close details panel
         break;
         
-      // Add case for recruitment action
+      // Change 'recruit' to 'recruitment' to match what +page.svelte expects
       case 'recruit':
-        onShowModal({ type: 'recruit', data: tileData });
+        onShowModal({ type: 'recruitment', data: tileData });
         onClose(); // Close details panel
         break;
         
@@ -408,7 +408,20 @@
     // Check if player is on tile but not already in a group
     return playerOnTile && !inProcessGroup;
   }
-
+  
+  // Add function to check if player can be mobilized
+  function canMobilizePlayer(player) {
+    if (!player || !$currentPlayer || player.id !== $currentPlayer.id) return false;
+    
+    // Check if player is not already in a mobilizing/demobilising group
+    const inProcessGroup = detailsData?.groups?.some(g => 
+      (g.status === 'mobilizing' || g.status === 'demobilising') && 
+      g.owner === $currentPlayer.id
+    );
+    
+    return !inProcessGroup;
+  }
+  
   // Get status class from status
   function getStatusClass(status) {
     return status || 'idle';
@@ -2123,3 +2136,4 @@
     cursor: wait;
   }
 </style>
+```
