@@ -2,9 +2,6 @@
   import { scale } from 'svelte/transition';
   import { getFunctions, httpsCallable } from 'firebase/functions';
   import { game, currentPlayer } from '../../lib/stores/game.js';
-  import Button from '../ui/Button.svelte';
-  import Tabs from '../ui/Tabs.svelte';
-  import Spinner from '../ui/Spinner.svelte';
   import Close from '../icons/Close.svelte';
 
   // Define props using $props() rune
@@ -552,6 +549,10 @@
       onClose();
     }
   }
+  
+  function switchTab(tabId) {
+    selectedTab = tabId;
+  }
 </script>
 
 <svelte:window onkeydown={handleKeyDown} />
@@ -570,21 +571,27 @@
   <div class="content">
     {#if loading}
       <div class="loading-container">
-        <Spinner size="2rem" />
+        <div class="loading-spinner"></div>
         <p>Loading recipes...</p>
       </div>
     {:else if error}
       <div class="error-message">
         {error}
-        <Button onClick={() => error = null}>Try Again</Button>
+        <button class="try-again-btn" onclick={() => error = null}>Try Again</button>
       </div>
     {:else}
       <div class="crafting-container">
-        <Tabs 
-          items={categories} 
-          bind:selected={selectedTab}
-          extraClass="crafting-tabs"
-        />
+        <div class="tabs crafting-tabs">
+          {#each categories as category}
+            <button 
+              class="tab-button" 
+              class:active={selectedTab === category.id}
+              onclick={() => switchTab(category.id)}
+            >
+              {category.label}
+            </button>
+          {/each}
+        </div>
         
         <div class="recipe-list">
           {#if filteredRecipes.length === 0}
@@ -681,13 +688,18 @@
               <div class="success-message">{successMessage}</div>
             {/if}
             
-            <Button 
-              onClick={craftItem}
+            <button 
+              class="craft-btn" 
+              onclick={craftItem}
               disabled={!canCraftRecipe(selectedRecipe) || craftingInProgress}
-              loading={craftingInProgress}
             >
-              Craft Item
-            </Button>
+              {#if craftingInProgress}
+                <div class="button-spinner"></div>
+                Crafting...
+              {:else}
+                Craft Item
+              {/if}
+            </button>
           </div>
         {:else}
           <div class="empty-details">
@@ -700,6 +712,7 @@
 </div>
 
 <style>
+  /* Base modal styles */
   .crafting-modal {
     position: fixed;
     top: 50%;
@@ -720,6 +733,7 @@
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
   }
   
+  /* Header styles */
   .modal-header {
     display: flex;
     align-items: center;
@@ -744,6 +758,7 @@
     color: rgba(0, 0, 0, 0.8);
   }
   
+  /* Close button */
   .close-btn {
     background: none;
     border: none;
@@ -758,6 +773,7 @@
     background-color: rgba(0, 0, 0, 0.1);
   }
   
+  /* Crafting container layout */
   .crafting-container {
     display: grid;
     grid-template-columns: 14rem 1fr;
@@ -765,11 +781,39 @@
     max-height: 70vh;
   }
   
-  .crafting-tabs {
+  /* Tab styles */
+  .tabs {
     grid-column: span 2;
     margin-bottom: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   }
   
+  .tab-button {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+  }
+  
+  .tab-button:hover {
+    opacity: 1;
+  }
+  
+  .tab-button.active {
+    opacity: 1;
+    border-bottom-color: #4285f4;
+    font-weight: 500;
+  }
+  
+  /* Recipe list */
   .recipe-list {
     overflow-y: auto;
     max-height: 50vh;
@@ -801,6 +845,7 @@
     border-color: rgba(255, 0, 0, 0.3);
   }
   
+  /* Recipe header */
   .recipe-header {
     display: flex;
     justify-content: space-between;
@@ -813,6 +858,7 @@
     font-size: 0.95rem;
   }
   
+  /* Rarity badges */
   .recipe-rarity {
     font-size: 0.75rem;
     padding: 0.1rem 0.3rem;
@@ -845,6 +891,7 @@
     color: #ef6c00;
   }
   
+  /* Recipe descriptions */
   .recipe-description {
     font-size: 0.85rem;
     opacity: 0.8;
@@ -852,6 +899,7 @@
     line-height: 1.2;
   }
   
+  /* Recipe status and requirements */
   .recipe-blocked {
     font-size: 0.8rem;
     color: #ff6666;
@@ -885,6 +933,7 @@
     margin-right: 0.3rem;
   }
   
+  /* Recipe details */
   .recipe-details {
     padding: 0 0.5rem;
   }
@@ -903,6 +952,7 @@
     color: #666666;
   }
   
+  /* Materials list */
   .materials-list {
     margin-bottom: 1rem;
     background: rgba(0, 0, 0, 0.05);
@@ -921,6 +971,7 @@
     color: #ff6666;
   }
   
+  /* Building requirements */
   .building-requirement {
     margin-bottom: 1rem;
     background: rgba(0, 0, 0, 0.05);
@@ -961,6 +1012,7 @@
     background: rgba(244, 67, 54, 0.1);
   }
   
+  /* Message styles */
   .success-message {
     background-color: rgba(0, 255, 0, 0.1);
     border: 1px solid rgba(0, 255, 0, 0.3);
@@ -979,6 +1031,7 @@
     font-style: italic;
   }
   
+  /* Loading styles */
   .loading-container {
     display: flex;
     flex-direction: column;
@@ -988,6 +1041,21 @@
     gap: 1rem;
   }
   
+  .loading-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 0.25rem solid rgba(0, 0, 0, 0.1);
+    border-top: 0.25rem solid #4285f4;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Error message */
   .error-message {
     padding: 1rem;
     text-align: center;
@@ -999,7 +1067,23 @@
     gap: 1rem;
   }
   
-  /* Styles for the crafting time info section */
+  .try-again-btn {
+    padding: 0.5rem 1rem;
+    background: #f1f3f4;
+    border: 1px solid #dadce0;
+    border-radius: 0.25rem;
+    color: #3c4043;
+    font-family: var(--font-body);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+  }
+  
+  .try-again-btn:hover {
+    background-color: #e8eaed;
+  }
+  
+  /* Crafting time info */
   .crafting-time-info {
     margin-top: 1rem;
     background: rgba(0, 0, 0, 0.05);
@@ -1019,6 +1103,44 @@
     font-weight: 600;
     color: #ffcc66;
     text-shadow: 0 0 5px rgba(255, 204, 102, 0.5);
+  }
+  
+  /* Craft button */
+  .craft-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.7rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: white;
+    background-color: #4285f4;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 1rem;
+  }
+  
+  .craft-btn:hover:not(:disabled) {
+    background-color: #3367d6;
+  }
+  
+  .craft-btn:disabled {
+    background-color: #9e9e9e;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+  
+  .button-spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 0.15rem solid rgba(255, 255, 255, 0.3);
+    border-top: 0.15rem solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
   }
   
   /* Responsive adjustments */
