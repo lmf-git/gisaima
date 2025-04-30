@@ -421,6 +421,16 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
         location: { x: tileX, y: tileY }
       };
 
+      // Simplified achievement handling
+      if (!currentData.players[uid].worlds[worldId].achievements) {
+        currentData.players[uid].worlds[worldId].achievements = {};
+      }
+      
+      // Check if player doesn't already have achievement and add it
+      if (!currentData.players[uid].worlds[worldId].achievements.mobilised) {
+        currentData.players[uid].worlds[worldId].achievements.mobilised = true;
+      }
+
       return currentData;
     });
 
