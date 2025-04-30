@@ -114,8 +114,10 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
           throw new HttpsError("failed-precondition", `Group ${groupId} is already in battle`);
         }
         
-        if (group.status !== "idle") {
-          throw new HttpsError("failed-precondition", `Group ${groupId} is not idle (status: ${group.status})`);
+        // Allow attacking groups that are either idle or gathering
+        if (group.status !== "idle" && group.status !== "gathering") {
+          throw new HttpsError("failed-precondition", 
+            `Group ${groupId} cannot be attacked (status: ${group.status}). Only idle or gathering groups can be attacked.`);
         }
         
         defenderGroups.push({
