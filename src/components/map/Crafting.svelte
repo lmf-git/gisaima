@@ -14,8 +14,8 @@
   } = $props();
 
   // Use $state() for reactive variables
-  let recipes = $state([]);
-  let loading = $state(true);
+  let recipes = $state(getHardcodedRecipes()); // Initialize directly with hardcoded recipes
+  let loading = $state(false); // Set loading to false since we have recipes right away
   let error = $state(null);
   let selectedTab = $state('weapon');
   let selectedRecipe = $state(null);
@@ -36,36 +36,23 @@
     { id: 'trade_good', label: 'Trade Goods' }
   ];
 
-  // Use $effect() for initialization logic (replaces onMount)
+  // Simpler effect to just handle player inventory and building levels
   $effect(() => {
-    loadRecipesAndInventory();
-  });
-
-  // Use $derived for computed values - filter recipes by selected category
-  const filteredRecipes = $derived(
-    recipes.filter(recipe => recipe.category === selectedTab)
-  );
-
-  // Extract API call to a separate function
-  async function loadRecipesAndInventory() {
-    try {
-      // Get player inventory
-      const inventory = $currentPlayer?.inventory || [];
-      playerInventory = Array.isArray(inventory) ? inventory : [];
+    // Get player inventory
+    playerInventory = Array.isArray($currentPlayer?.inventory) 
+      ? [...$currentPlayer.inventory] 
+      : [];
+    
+    // Extract building levels from structure
+    if (structure) {
+      const newLevels = {};
       
-      // Determine building levels from structure
-      if (structure) {
-        // Extract structure capabilities into building levels
-        const newLevels = {};
-        
-        // Extract structure level for basic crafting
-        newLevels.crafting = structure.level || 1;
-        
-        // Extract features from the structure
-        const features = structure.features || [];
-        
-        // Map features to building levels
-        features.forEach(feature => {
+      // Extract structure level for basic crafting
+      newLevels.crafting = structure.level || 1;
+      
+      // Extract structure features and buildings
+      if (structure.features) {
+        structure.features.forEach(feature => {
           switch(feature.name) {
             case 'Basic Workshop':
             case 'Advanced Workshop':
@@ -78,59 +65,37 @@
             case 'Alchemy Lab':
               newLevels.alchemy = feature.level || 1;
               break;
-            // Add more cases as needed
           }
         });
-        
-        // Check for structure level/type-based building levels
-        if (structure.type === 'stronghold') {
-          newLevels.crafting = Math.max(2, newLevels.crafting); 
-        } else if (structure.type === 'outpost') {
-          newLevels.crafting = Math.max(1, newLevels.crafting);
-        }
-        
-        // Extract buildings directly
-        if (structure.buildings) {
-          Object.values(structure.buildings).forEach(building => {
-            // If we already have a level from a feature, use the higher value
-            newLevels[building.type] = Math.max(
-              newLevels[building.type] || 0,
-              building.level || 1
-            );
-          });
-        }
-        
-        // Update the state with all changes at once
-        currentBuildingLevels = newLevels;
       }
       
-      // Load hardcoded recipes instead of fetching
-      recipes = getHardcodedRecipes();
+      // Set structure type bonuses
+      if (structure.type === 'stronghold') {
+        newLevels.crafting = Math.max(2, newLevels.crafting);
+      } else if (structure.type === 'outpost') {
+        newLevels.crafting = Math.max(1, newLevels.crafting);
+      }
       
-      // Attempt to fetch recipes from server as a backup
-      try {
-        const functions = getFunctions();
-        const getRecipes = httpsCallable(functions, 'getRecipes');
-        const result = await getRecipes({
-          worldId: $game.worldKey,
-          position: { x, y }
+      // Process buildings
+      if (structure.buildings) {
+        Object.values(structure.buildings).forEach(building => {
+          newLevels[building.type] = Math.max(
+            newLevels[building.type] || 0,
+            building.level || 1
+          );
         });
-        
-        if (result.data && Array.isArray(result.data) && result.data.length > 0) {
-          recipes = result.data;
-        }
-      } catch (err) {
-        console.log('Using hardcoded recipes as server fetch failed:', err);
       }
-    } catch (err) {
-      console.error('Error loading recipes and inventory:', err);
-      error = err.message || 'Failed to load recipes';
-    } finally {
-      loading = false;
+      
+      currentBuildingLevels = newLevels;
     }
-  }
+  });
 
-  // Function to get hardcoded recipes from craft.mjs
+  // Use $derived for computed values - filter recipes by selected category
+  const filteredRecipes = $derived(
+    recipes.filter(recipe => recipe.category === selectedTab)
+  );
+
+  // Function to get hardcoded recipes
   function getHardcodedRecipes() {
     return [
       // WEAPONS - SMITHY RELATED ITEMS
@@ -538,7 +503,7 @@
     }
   }
   
-  // Replace the formatCraftingTime function with a simpler tick formatter
+  // Format tick formatter
   function formatCraftingTicks(ticks) {
     if (!ticks) return "Instant";
     return ticks === 1 ? `${ticks} tick` : `${ticks} ticks`;
