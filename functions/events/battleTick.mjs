@@ -178,9 +178,13 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       const side1Ratio = side2Power / totalPower;
       const side2Ratio = side1Power / totalPower;
       
-      // Apply attrition to both sides
-      const side1Casualties = applyAttrition(side1Groups, side1Ratio, worldId, chunkKey, locationKey, updates, now);
-      const side2Casualties = applyAttrition(side2Groups, side2Ratio, worldId, chunkKey, locationKey, updates, now);
+      // Create collectors for items from defeated groups
+      let side1Loot = [];
+      let side2Loot = [];
+      
+      // Apply attrition to both sides and collect loot from defeated groups
+      const side1Casualties = applyAttrition(side1Groups, side1Ratio, worldId, chunkKey, locationKey, updates, now, side1Loot);
+      const side2Casualties = applyAttrition(side2Groups, side2Ratio, worldId, chunkKey, locationKey, updates, now, side2Loot);
       
       // Apply damage to structure if involved
       let structureDamage = 0;
@@ -196,6 +200,17 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       const filteredSide2Groups = filterAndRemoveEmptyGroups(
         side2Groups, worldId, chunkKey, locationKey, updates, battleId, 2
       );
+      
+      // Distribute loot to surviving groups
+      if (side1Loot.length > 0 && filteredSide2Groups.length > 0) {
+        // Side 1 lost units and had loot, distribute to side 2
+        distributeItemsToGroups(side1Loot, filteredSide2Groups, worldId, chunkKey, locationKey, updates, now);
+      }
+      
+      if (side2Loot.length > 0 && filteredSide1Groups.length > 0) {
+        // Side 2 lost units and had loot, distribute to side 1
+        distributeItemsToGroups(side2Loot, filteredSide1Groups, worldId, chunkKey, locationKey, updates, now);
+      }
       
       // Recalculate powers after attrition
       side1Power = calculateSidePower(filteredSide1Groups);
@@ -225,9 +240,12 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
         );
       } else if (side1Casualties + side2Casualties > 0) {
         // Battle continues - add message about casualties if any
+        const lootMessage = (side1Loot.length > 0 || side2Loot.length > 0) ? 
+          ` Items were looted from the fallen.` : '';
+          
         addBattleProgressMessageToUpdates(
           updates, worldId, now, battleId, locationKey,
-          `Battle rages! ${side1Casualties + side2Casualties} casualties this tick.`
+          `Battle rages! ${side1Casualties + side2Casualties} casualties this tick.${lootMessage}`
         );
       }
     }
@@ -239,6 +257,140 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
   } catch (error) {
     console.error("Error processing battle tick:", error);
     return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Apply attrition to a side's groups
+ * Modified to collect items from defeated units with backward compatibility
+ * @param {Array} groups - Groups to apply attrition to
+ * @param {number} casualtyRatio - Ratio of units to be casualties
+ * @param {string} worldId - World ID
+ * @param {string} chunkKey - Chunk key
+ * @param {string} locationKey - Tile location key
+ * @param {Object} updates - Firebase updates object
+ * @param {number} now - Current timestamp
+ * @param {Array} [lootCollector] - Optional array to collect items from defeated groups
+ * @returns {number} Number of casualties
+ */
+function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, updates, now, lootCollector = null) {
+  let casualties = 0;
+  
+  groups.forEach(group => {
+    const groupCasualties = Math.ceil((group.unitCount || 1) * casualtyRatio);
+    casualties += groupCasualties;
+    
+    // Update group unit count
+    const remainingUnits = Math.max(0, (group.unitCount || 1) - groupCasualties);
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnits;
+    
+    // If group is wiped out, collect items (if collector provided) and mark it for removal
+    if (remainingUnits === 0) {
+      // Collect items from the group before marking for removal (if collector is provided)
+      if (lootCollector !== null) {
+        collectItemsFromGroup(group, lootCollector);
+      }
+      
+      // Mark group for removal
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+    }
+  });
+  
+  return casualties;
+}
+
+/**
+ * Collect items from a group that is being removed
+ * @param {Object} group - The group being removed
+ * @param {Array} lootCollector - Array to collect items
+ */
+function collectItemsFromGroup(group, lootCollector) {
+  if (!group.items) return;
+  
+  // Handle items stored as array
+  if (Array.isArray(group.items)) {
+    group.items.forEach(item => {
+      if (item) lootCollector.push({...item, source: group.id});
+    });
+  } 
+  // Handle items stored as object
+  else if (typeof group.items === 'object') {
+    Object.values(group.items).forEach(item => {
+      if (item) lootCollector.push({...item, source: group.id});
+    });
+  }
+  
+  logger.info(`Collected ${lootCollector.length} items from defeated group ${group.id} (${group.name || "Unknown"})`);
+}
+
+/**
+ * Distribute collected items to surviving groups
+ * @param {Array} items - Items collected from defeated groups
+ * @param {Array} groups - Surviving groups to receive items
+ * @param {string} worldId - World ID
+ * @param {string} chunkKey - Chunk key
+ * @param {string} locationKey - Location key
+ * @param {Object} updates - Firebase updates object
+ * @param {number} now - Current timestamp
+ */
+function distributeItemsToGroups(items, groups, worldId, chunkKey, locationKey, updates, now) {
+  if (items.length === 0 || groups.length === 0) return;
+  
+  // Sort groups by power/size (larger groups get more items)
+  const sortedGroups = [...groups].sort((a, b) => {
+    return (b.unitCount || 1) - (a.unitCount || 1);
+  });
+  
+  logger.info(`Distributing ${items.length} items to ${sortedGroups.length} surviving groups`);
+  
+  // Distribute items proportionally based on group size
+  let itemIndex = 0;
+  const totalUnits = sortedGroups.reduce((sum, group) => sum + (group.unitCount || 1), 0);
+  
+  // Calculate how many items each group should get based on their proportion of total units
+  for (let i = 0; i < sortedGroups.length; i++) {
+    const group = sortedGroups[i];
+    const groupUnitRatio = (group.unitCount || 1) / totalUnits;
+    const itemCount = Math.max(1, Math.round(items.length * groupUnitRatio));
+    
+    // Don't exceed remaining items
+    const itemsToAdd = Math.min(itemCount, items.length - itemIndex);
+    if (itemsToAdd <= 0) break;
+    
+    // Get group's current items
+    let existingItems = [];
+    if (Array.isArray(group.items)) {
+      existingItems = [...group.items];
+    } else if (group.items) {
+      existingItems = Object.values(group.items);
+    }
+    
+    // Add new items to the group
+    for (let j = 0; j < itemsToAdd; j++) {
+      if (itemIndex >= items.length) break;
+      
+      const item = items[itemIndex];
+      const itemWithNewId = {
+        ...item,
+        id: `item_battle_loot_${now}_${Math.floor(Math.random() * 10000)}`,
+        lootedFrom: item.source
+      };
+      
+      delete itemWithNewId.source;
+      existingItems.push(itemWithNewId);
+      itemIndex++;
+    }
+    
+    // Update the group's items in Firebase
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/items`] = existingItems;
+    
+    // Add a message about looting
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/lastMessage`] = {
+      text: `Looted ${itemsToAdd} item${itemsToAdd !== 1 ? 's' : ''} from the battlefield`,
+      timestamp: now
+    };
+    
+    logger.info(`Added ${itemsToAdd} looted items to group ${group.id} (${group.name || "Unknown"})`);
   }
 }
 
@@ -346,30 +498,6 @@ function calculateSidePower(groups) {
     
     return total + groupPower;
   }, 0);
-}
-
-/**
- * Apply attrition to a side's groups
- * @returns {number} Number of casualties
- */
-function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, updates, now) {
-  let casualties = 0;
-  
-  groups.forEach(group => {
-    const groupCasualties = Math.ceil((group.unitCount || 1) * casualtyRatio);
-    casualties += groupCasualties;
-    
-    // Update group unit count
-    const remainingUnits = Math.max(0, (group.unitCount || 1) - groupCasualties);
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnits;
-    
-    // If group is wiped out, mark it for removal
-    if (remainingUnits === 0) {
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
-    }
-  });
-  
-  return casualties;
 }
 
 async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, winningGroups, winningStructure) {
