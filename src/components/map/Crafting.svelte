@@ -826,7 +826,6 @@
                             <button 
                                 class="recipe-card {selectedRecipe?.id === recipe.id ? 'selected' : ''} {!recipe.available ? 'unavailable' : ''}"
                                 onclick={() => selectRecipe(recipe)}
-                                disabled={!recipe.available}
                                 title={recipe.available ? recipe.description : `${recipe.description} (${recipe.unavailableReason})`}
                             >
                                 <div class="recipe-icon-container">
@@ -1151,7 +1150,7 @@
 
     .recipe-card.unavailable {
         opacity: 0.7;
-        cursor: default;
+        cursor: help; /* Changed from default to help to indicate info is available */
     }
 
     .locked-overlay {
