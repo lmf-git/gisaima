@@ -369,7 +369,7 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
         // Mark player as not alive
         updates[`players/${unit.id}/worlds/${worldId}/alive`] = false;
       }
-      
+
       // Remove the unit from the group
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/units/${unitKey}`] = null;
       totalCasualties++;

@@ -1,132 +1,5 @@
 {
   "players": {
-    "0lWjEwolugVdi5PtsFfqWjcGSY73": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_steps": true,
-            "first_steps_date": 1745524396769,
-            "mobilised": true,
-            "mobilised_date": 1745524375788
-          },
-          "alive": true,
-          "displayName": "Lucky Dwarf",
-          "groups": {
-            "-OOdM2qw5DDoYN1Q8vLr": {
-              "at": "-32,-10",
-              "id": "-OOdM2qw5DDoYN1Q8vLr",
-              "status": "idle"
-            }
-          },
-          "id": "0lWjEwolugVdi5PtsFfqWjcGSY73",
-          "inGroup": "-OOdM2qw5DDoYN1Q8vLr",
-          "joined": 1745523481292,
-          "lastLocation": {
-            "timestamp": 1745576645197,
-            "x": -23,
-            "y": -8
-          },
-          "race": "dwarf"
-        }
-      }
-    },
-    "1jjkFgvd9qSwq2SuOvPMPpjs3vW2": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_attack": true,
-            "first_attack_date": 1746025259013
-          },
-          "alive": true,
-          "displayName": "Test Human",
-          "groups": {
-            "-OP6CLHLwV6ql033pCTl": {
-              "at": "-23,5",
-              "id": "-OP6CLHLwV6ql033pCTl",
-              "status": "idle"
-            }
-          },
-          "id": "1jjkFgvd9qSwq2SuOvPMPpjs3vW2",
-          "inGroup": "-OP6CLHLwV6ql033pCTl",
-          "joined": 1746025126680,
-          "lastLocation": {
-            "x": -23,
-            "y": 5
-          },
-          "lastMessage": {
-            "text": "You were defeated in battle.",
-            "timestamp": 1746025382024
-          },
-          "race": "human"
-        }
-      }
-    },
-    "2IS3ZuqaZ9WMTTJigBDYXEc6Gwq2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "displayName": "Elf Hater 3",
-          "id": "2IS3ZuqaZ9WMTTJigBDYXEc6Gwq2",
-          "joined": 1745519962455,
-          "lastLocation": {
-            "timestamp": 1745519968672,
-            "x": -32,
-            "y": -10
-          },
-          "race": "dwarf"
-        }
-      }
-    },
-    "3FeM8naopHdO98eKIbFu6b1QvO82": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "displayName": "Elf Hater",
-          "id": "3FeM8naopHdO98eKIbFu6b1QvO82",
-          "joined": 1745519856499,
-          "lastLocation": {
-            "timestamp": 1745519861015,
-            "x": -32,
-            "y": -10
-          },
-          "race": "dwarf"
-        }
-      }
-    },
-    "4kr5HbmwW4YZ6TmMtMlxaPc1qAE3": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_attack": true,
-            "first_attack_date": 1746023700931,
-            "first_steps": true,
-            "first_steps_date": 1745985070396
-          },
-          "alive": true,
-          "displayName": "Violent Dwarf",
-          "groups": {
-            "-OP3oDLkyoqF7kGuN9Bk": {
-              "at": "-32,-10",
-              "id": "-OP3oDLkyoqF7kGuN9Bk",
-              "status": "idle"
-            }
-          },
-          "id": "4kr5HbmwW4YZ6TmMtMlxaPc1qAE3",
-          "inGroup": "-OP3oDLkyoqF7kGuN9Bk",
-          "joined": 1745984992825,
-          "lastLocation": {
-            "timestamp": 1746022266022,
-            "x": -29,
-            "y": -11
-          },
-          "lastMessage": {
-            "text": "You were defeated in battle.",
-            "timestamp": 1746023822148
-          },
-          "race": "dwarf"
-        }
-      }
-    },
     "88NuPGQKeBSci21kTUznAeJ2IWF2": {
       "worlds": {
         "ancient-lands": {
@@ -144,95 +17,6 @@
             "y": -10
           },
           "race": "dwarf"
-        }
-      }
-    },
-    "BIEd0vebBDZH88rwHVyyQeY3lkC2": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_steps": true,
-            "first_steps_date": 1745989902573
-          },
-          "alive": true,
-          "displayName": "tester",
-          "groups": {
-            "-OP44U8iphksQ7XwLSM7": {
-              "at": "-30,-12",
-              "id": "-OP44U8iphksQ7XwLSM7",
-              "status": "idle"
-            }
-          },
-          "id": "BIEd0vebBDZH88rwHVyyQeY3lkC2",
-          "inGroup": "-OP44U8iphksQ7XwLSM7",
-          "joined": 1745989524402,
-          "lastLocation": {
-            "x": -30,
-            "y": -12
-          },
-          "race": "elf"
-        }
-      }
-    },
-    "Bnt5Zl6N7eSg0OxhIlElmSUeFWn2": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_steps": true,
-            "first_steps_date": 1745989488979
-          },
-          "alive": true,
-          "displayName": "test",
-          "groups": {
-            "-OP4-dJLWZ_1fWEqhfZq": {
-              "at": "-30,-12",
-              "id": "-OP4-dJLWZ_1fWEqhfZq",
-              "status": "idle"
-            },
-            "-OP41c5dAxIIvgh9M1Jb": {
-              "at": "-30,-12",
-              "id": "-OP41c5dAxIIvgh9M1Jb",
-              "status": "idle"
-            }
-          },
-          "id": "Bnt5Zl6N7eSg0OxhIlElmSUeFWn2",
-          "inGroup": "-OP41c5dAxIIvgh9M1Jb",
-          "joined": 1745988248822,
-          "lastLocation": {
-            "timestamp": 1745989561497,
-            "x": -29,
-            "y": -12
-          },
-          "race": "elf"
-        }
-      }
-    },
-    "DqBhu8Nd4jNCYq51s8izH6JTHL63": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_gather": true,
-            "first_gather_date": 1745486663806,
-            "mobilised": true,
-            "mobilised_date": 1745486303625
-          },
-          "alive": true,
-          "displayName": "test",
-          "groups": {
-            "-OOb4owT0OYyo524niqW": {
-              "at": "-23,5",
-              "id": "-OOb4owT0OYyo524niqW",
-              "status": "idle"
-            }
-          },
-          "id": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
-          "inGroup": "-OOb4owT0OYyo524niqW",
-          "joined": 1745486284553,
-          "lastLocation": {
-            "x": -23,
-            "y": 5
-          },
-          "race": "human"
         }
       }
     },
@@ -310,22 +94,6 @@
         }
       }
     },
-    "JN5dIUjWnXO2dd2o4GaD7tdernI2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "displayName": "gewgaw",
-          "id": "JN5dIUjWnXO2dd2o4GaD7tdernI2",
-          "joined": 1745487714715,
-          "lastLocation": {
-            "timestamp": 1745487719077,
-            "x": -30,
-            "y": -12
-          },
-          "race": "elf"
-        }
-      }
-    },
     "MRtwAHk77DZqgaZgmAS2sPBnXoV2": {
       "worlds": {
         "ancient-lands": {
@@ -382,26 +150,6 @@
         }
       }
     },
-    "YI5zJA04mxUloRSfmMeXZ8n1Kpo2": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_message": true,
-            "first_message_date": 1745518389878
-          },
-          "alive": true,
-          "displayName": "test",
-          "id": "YI5zJA04mxUloRSfmMeXZ8n1Kpo2",
-          "joined": 1745517356639,
-          "lastLocation": {
-            "timestamp": 1745517359820,
-            "x": -23,
-            "y": 5
-          },
-          "race": "human"
-        }
-      }
-    },
     "YIDyjpxkBSR8eqemfslNDfs1YBr2": {
       "worlds": {
         "ancient-lands": {
@@ -445,242 +193,6 @@
             "y": -10
           },
           "race": "dwarf"
-        }
-      }
-    },
-    "dB97DhSkG1YppglcPG8jH1vKwYY2": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_steps": true,
-            "first_steps_date": 1745520301842,
-            "mobilised": true,
-            "mobilised_date": 1745520089667
-          },
-          "alive": true,
-          "displayName": "Elf Hater 2",
-          "groups": {
-            "-OOd5hOld1qngoQkuU_H": {
-              "at": "-32,-10",
-              "id": "-OOd5hOld1qngoQkuU_H",
-              "status": "idle"
-            }
-          },
-          "id": "dB97DhSkG1YppglcPG8jH1vKwYY2",
-          "inGroup": "-OOd5hOld1qngoQkuU_H",
-          "joined": 1745519888368,
-          "lastLocation": {
-            "timestamp": 1745521921887,
-            "x": -19,
-            "y": -8
-          },
-          "race": "dwarf"
-        }
-      }
-    },
-    "e1dbsigg7CbPdTtWkpYWX7AsJvh2": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_steps": true,
-            "first_steps_date": 1745936905906
-          },
-          "alive": true,
-          "displayName": "Test Elf",
-          "groups": {
-            "-OP0wBs_mIad-OgoUy1F": {
-              "at": "-30,-12",
-              "id": "-OP0wBs_mIad-OgoUy1F",
-              "status": "idle"
-            },
-            "-OP18Uj6AK1k1Q2OFwl2": {
-              "at": "-30,-12",
-              "id": "-OP18Uj6AK1k1Q2OFwl2",
-              "status": "idle"
-            },
-            "-OP3SyAMFAV_k-6GUhkh": {
-              "at": "-30,-12",
-              "id": "-OP3SyAMFAV_k-6GUhkh",
-              "status": "idle"
-            }
-          },
-          "id": "e1dbsigg7CbPdTtWkpYWX7AsJvh2",
-          "inGroup": "-OP3SyAMFAV_k-6GUhkh",
-          "joined": 1745936356445,
-          "lastLocation": {
-            "timestamp": 1745986565571,
-            "x": -29,
-            "y": -11
-          },
-          "race": "elf"
-        }
-      }
-    },
-    "fphA92tMTfRAu6FU6RDNJ33VQni1": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_attack": true,
-            "first_attack_date": 1745486910772,
-            "first_gather": true,
-            "first_gather_date": 1745486666373,
-            "first_steps": true,
-            "first_steps_date": 1745983379148,
-            "mobilised": true,
-            "mobilised_date": 1745486562354
-          },
-          "alive": true,
-          "displayName": "test2",
-          "groups": {
-            "-OOb4pQZ4hSwIJ2He5gE": {
-              "at": "-23,5",
-              "id": "-OOb4pQZ4hSwIJ2He5gE",
-              "status": "idle"
-            },
-            "-OOb5o6eqWrHQO_Mrl6I": {
-              "at": "-23,5",
-              "id": "-OOb5o6eqWrHQO_Mrl6I",
-              "status": "idle"
-            },
-            "-OP3hZOzsxJjweXtzQgG": {
-              "at": "-23,5",
-              "id": "-OP3hZOzsxJjweXtzQgG",
-              "status": "idle"
-            }
-          },
-          "id": "fphA92tMTfRAu6FU6RDNJ33VQni1",
-          "inGroup": "-OP3hZOzsxJjweXtzQgG",
-          "joined": 1745486289524,
-          "lastLocation": {
-            "timestamp": 1745984041090,
-            "x": -23,
-            "y": 5
-          },
-          "lastMessage": {
-            "text": "You were defeated in battle.",
-            "timestamp": 1745486946113
-          },
-          "race": "human"
-        }
-      }
-    },
-    "jMQFcac8X9Wu9bfGxmCZRi46nt02": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_steps": true,
-            "first_steps_date": 1745542628922,
-            "mobilised": true,
-            "mobilised_date": 1745542580406
-          },
-          "alive": true,
-          "displayName": "Test",
-          "groups": {
-            "-OOeRVFDDVT2hVfzXsTf": {
-              "at": "-32,-10",
-              "id": "-OOeRVFDDVT2hVfzXsTf",
-              "status": "idle"
-            }
-          },
-          "id": "jMQFcac8X9Wu9bfGxmCZRi46nt02",
-          "inGroup": "-OOeRVFDDVT2hVfzXsTf",
-          "joined": 1745542452756,
-          "lastLocation": {
-            "timestamp": 1745580121634,
-            "x": -31,
-            "y": -7
-          },
-          "race": "dwarf"
-        }
-      }
-    },
-    "l7haex3DRSNco4w2PcqWvOxgQYI2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "displayName": "Mr Elf",
-          "id": "l7haex3DRSNco4w2PcqWvOxgQYI2",
-          "joined": 1745580807476,
-          "lastLocation": {
-            "timestamp": 1745580811529,
-            "x": -30,
-            "y": -12
-          },
-          "race": "elf"
-        }
-      }
-    },
-    "oEHWacrKO0bJEZ2IrzF1DKDOO7t1": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "demobilizer": true,
-            "demobilizer_date": 1745509670849,
-            "first_message": true,
-            "first_message_date": 1745492823831,
-            "first_steps": true,
-            "first_steps_date": 1745492745327,
-            "inspector": true,
-            "inspector_date": 1745492906265,
-            "mobilised": true,
-            "mobilised_date": 1745511130230
-          },
-          "alive": true,
-          "displayName": "test",
-          "groups": {
-            "-OObT0NCxbtIRsif2vDH": {
-              "at": "-18,-22",
-              "id": "-OObT0NCxbtIRsif2vDH",
-              "status": "idle"
-            },
-            "-OObVb45PNyVC29YOPEe": {
-              "at": "-18,-22",
-              "id": "-OObVb45PNyVC29YOPEe",
-              "status": "idle"
-            },
-            "-OOcZX5kGe8Zujo09LiV": {
-              "at": "-18,-22",
-              "id": "-OOcZX5kGe8Zujo09LiV",
-              "status": "idle"
-            }
-          },
-          "id": "oEHWacrKO0bJEZ2IrzF1DKDOO7t1",
-          "inGroup": "-OOcZX5kGe8Zujo09LiV",
-          "joined": 1745489863892,
-          "lastLocation": {
-            "x": -18,
-            "y": -22
-          },
-          "race": "fairy"
-        }
-      }
-    },
-    "poLOhsmgxsT75GYIz5H090CMT4L2": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_message": true,
-            "first_message_date": 1745518493992,
-            "mobilised": true,
-            "mobilised_date": 1745518484394
-          },
-          "alive": true,
-          "displayName": "LMF",
-          "groups": {
-            "-OOd-_XyBTHvTVdcJQhj": {
-              "at": "-30,-12",
-              "id": "-OOd-_XyBTHvTVdcJQhj",
-              "status": "idle"
-            }
-          },
-          "id": "poLOhsmgxsT75GYIz5H090CMT4L2",
-          "inGroup": "-OOd-_XyBTHvTVdcJQhj",
-          "joined": 1745518464692,
-          "lastLocation": {
-            "x": -30,
-            "y": -12
-          },
-          "race": "elf"
         }
       }
     },
@@ -757,29 +269,6 @@
             "y": -11
           },
           "race": "dwarf"
-        }
-      }
-    },
-    "slBL44vs3eZG5K7f4Cn1xQpJH9B2": {
-      "worlds": {
-        "ancient-lands": {
-          "alive": true,
-          "displayName": "test",
-          "groups": {
-            "-OP3xBMAYh_KJXeiG6V_": {
-              "at": "-30,-12",
-              "id": "-OP3xBMAYh_KJXeiG6V_",
-              "status": "idle"
-            }
-          },
-          "id": "slBL44vs3eZG5K7f4Cn1xQpJH9B2",
-          "inGroup": "-OP3xBMAYh_KJXeiG6V_",
-          "joined": 1745987190019,
-          "lastLocation": {
-            "x": -30,
-            "y": -12
-          },
-          "race": "elf"
         }
       }
     }
@@ -1334,6 +823,15 @@
           "timestamp": 1746025145559,
           "type": "system"
         },
+        "-OP6JZxEr2lsJE9o6bM-": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Test Battles's Force is being mobilized at (-23,5)",
+          "timestamp": 1746027040270,
+          "type": "system"
+        },
         "battle_1745484723001_battle_1745483648051_103": {
           "location": {
             "x": -23,
@@ -1397,6 +895,15 @@
           "timestamp": 1746025382024,
           "type": "event"
         },
+        "battle_1746027422408_battle_1746027291256_749_571": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle at (-23,5) has ended after 2 ticks! Victorious: test's Force Defeated: Test Battles's Force (1 casualties)",
+          "timestamp": 1746027422408,
+          "type": "event"
+        },
         "battle_start_1746023700931_battle_1746023700931_769": {
           "location": {
             "x": -29,
@@ -1413,6 +920,15 @@
           },
           "text": "Battle has begun at (-23, 5)! Test Human's Force is attacking test's Force!",
           "timestamp": 1746025259013,
+          "type": "event"
+        },
+        "battle_start_1746027291256_battle_1746027291256_749": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle has begun at (-23, 5)! Test Battles's Force is attacking test's Force!",
+          "timestamp": 1746027291256,
           "type": "event"
         },
         "chat_1745483585619_25": {
@@ -1796,6 +1312,18 @@
           "userId": "1jjkFgvd9qSwq2SuOvPMPpjs3vW2",
           "userName": "Test Human's Force"
         },
+        "chat_1746027065124_715": {
+          "location": {
+            "timestamp": 1746027065124,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"Test Battles's Force\"",
+          "timestamp": 1746027065124,
+          "type": "event",
+          "userId": "Es79jTLOipcT4Djs93mglYkQioW2",
+          "userName": "Test Battles's Force"
+        },
         "chat_monster_spawn_1745989802985_840": {
           "location": {
             "x": -34,
@@ -1839,6 +1367,15 @@
           },
           "text": "A small group of Giant Spiders has been spotted at (-26, -9)",
           "timestamp": 1746022802121,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746027066267_149": {
+          "location": {
+            "x": -22,
+            "y": 0
+          },
+          "text": "A small group of Goblin Raiders has been spotted at (-22, 0)",
+          "timestamp": 1746027066267,
           "type": "event"
         },
         "death_1745484723002_fphA92tMTfRAu6FU6RDNJ33VQni1": {
@@ -1902,6 +1439,15 @@
           },
           "text": "Test Human's Force was defeated in battle at (-23,5)",
           "timestamp": 1746025382024,
+          "type": "event"
+        },
+        "death_1746027422408_Es79jTLOipcT4Djs93mglYkQioW2": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Test Battles's Force was defeated in battle at (-23,5)",
+          "timestamp": 1746027422408,
           "type": "event"
         },
         "gather_1745486761904_-OOb4owT0OYyo524niqW": {
@@ -2825,89 +2371,6 @@
       },
       "chunks": {
         "-1,-1": {
-          "-19,-8": {
-            "groups": {
-              "-OOd5hOld1qngoQkuU_H": {
-                "createdAt": 1745520088747,
-                "id": "-OOd5hOld1qngoQkuU_H",
-                "inBattle": false,
-                "items": [
-                  {
-                    "id": "item_1745520242411_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 8,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Victory in battle! All units survived the battle.",
-                  "timestamp": 1745522101916
-                },
-                "lastUpdated": 1745521921887,
-                "moveSpeed": 1,
-                "moveStarted": 1745521063451,
-                "movementPath": [
-                  {
-                    "x": -27,
-                    "y": -10
-                  },
-                  {
-                    "x": -26,
-                    "y": -10
-                  },
-                  {
-                    "x": -25,
-                    "y": -10
-                  },
-                  {
-                    "x": -24,
-                    "y": -9
-                  },
-                  {
-                    "x": -23,
-                    "y": -9
-                  },
-                  {
-                    "x": -22,
-                    "y": -9
-                  },
-                  {
-                    "x": -21,
-                    "y": -9
-                  },
-                  {
-                    "x": -20,
-                    "y": -8
-                  },
-                  {
-                    "x": -19,
-                    "y": -8
-                  }
-                ],
-                "name": "Elf Hater 2's Force",
-                "nextMoveTime": 1745521981887,
-                "owner": "dB97DhSkG1YppglcPG8jH1vKwYY2",
-                "pathIndex": 8,
-                "race": "dwarf",
-                "status": "idle",
-                "targetX": -19,
-                "targetY": -8,
-                "unitCount": 1,
-                "units": {
-                  "dB97DhSkG1YppglcPG8jH1vKwYY2": {
-                    "displayName": "Elf Hater 2",
-                    "id": "dB97DhSkG1YppglcPG8jH1vKwYY2",
-                    "lastActive": 1745519895179,
-                    "race": "dwarf",
-                    "type": "player"
-                  }
-                },
-                "x": -19,
-                "y": -8
-              }
-            }
-          },
           "-23,-8": {
             "structure": {
               "capacity": 60,
@@ -2960,32 +2423,6 @@
         "-1,-2": {
           "-18,-22": {
             "groups": {
-              "-OOcZX5kGe8Zujo09LiV": {
-                "createdAt": 1745511129579,
-                "id": "-OOcZX5kGe8Zujo09LiV",
-                "inBattle": false,
-                "lastMessage": {
-                  "text": "Victory in battle! All units survived the battle.",
-                  "timestamp": 1745511602098
-                },
-                "lastUpdated": 1745511181303,
-                "name": "test's Force",
-                "owner": "oEHWacrKO0bJEZ2IrzF1DKDOO7t1",
-                "race": "fairy",
-                "status": "idle",
-                "unitCount": 1,
-                "units": {
-                  "oEHWacrKO0bJEZ2IrzF1DKDOO7t1": {
-                    "displayName": "test",
-                    "id": "oEHWacrKO0bJEZ2IrzF1DKDOO7t1",
-                    "lastActive": 1745509681548,
-                    "race": "fairy",
-                    "type": "player"
-                  }
-                },
-                "x": -18,
-                "y": -22
-              },
               "-OOcaUtPgnl1DCAm0gIp": {
                 "createdAt": 1745511644821,
                 "id": "-OOcaUtPgnl1DCAm0gIp",
@@ -3075,79 +2512,6 @@
           }
         },
         "-2,-1": {
-          "-23,-8": {
-            "groups": {
-              "-OOdM2qw5DDoYN1Q8vLr": {
-                "createdAt": 1745524375035,
-                "id": "-OOdM2qw5DDoYN1Q8vLr",
-                "lastMessage": {
-                  "text": "Moving to next location (-23,-8)",
-                  "timestamp": 1745576645197
-                },
-                "lastUpdated": 1745576645197,
-                "moveSpeed": 1,
-                "moveStarted": 1745575832432,
-                "movementPath": [
-                  {
-                    "x": -30,
-                    "y": -8
-                  },
-                  {
-                    "x": -30,
-                    "y": -7
-                  },
-                  {
-                    "x": -29,
-                    "y": -6
-                  },
-                  {
-                    "x": -28,
-                    "y": -7
-                  },
-                  {
-                    "x": -27,
-                    "y": -8
-                  },
-                  {
-                    "x": -26,
-                    "y": -7
-                  },
-                  {
-                    "x": -25,
-                    "y": -7
-                  },
-                  {
-                    "x": -24,
-                    "y": -7
-                  },
-                  {
-                    "x": -23,
-                    "y": -8
-                  }
-                ],
-                "name": "Lucky Dwarf's Force",
-                "nextMoveTime": 1745576705197,
-                "owner": "0lWjEwolugVdi5PtsFfqWjcGSY73",
-                "pathIndex": 8,
-                "race": "dwarf",
-                "status": "idle",
-                "targetX": -23,
-                "targetY": -8,
-                "unitCount": 1,
-                "units": {
-                  "0lWjEwolugVdi5PtsFfqWjcGSY73": {
-                    "displayName": "Lucky Dwarf",
-                    "id": "0lWjEwolugVdi5PtsFfqWjcGSY73",
-                    "lastActive": 1745523493217,
-                    "race": "dwarf",
-                    "type": "player"
-                  }
-                },
-                "x": -23,
-                "y": -8
-              }
-            }
-          },
           "-24,-10": {
             "groups": {
               "monster_1746021663383_379": {
@@ -3182,64 +2546,6 @@
           },
           "-29,-11": {
             "groups": {
-              "-OP3SyAMFAV_k-6GUhkh": {
-                "createdAt": 1745979171602,
-                "id": "-OP3SyAMFAV_k-6GUhkh",
-                "inBattle": false,
-                "items": [
-                  {
-                    "id": "item_1745982722448_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 6,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "item_1745982722448_2",
-                    "name": "Stone Pieces",
-                    "quantity": 5,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Victory in battle! All units survived the battle.",
-                  "timestamp": 1746023822148
-                },
-                "lastUpdated": 1745986565571,
-                "moveSpeed": 1,
-                "moveStarted": 1745986470102,
-                "movementPath": [
-                  {
-                    "x": -28,
-                    "y": -12
-                  },
-                  {
-                    "x": -29,
-                    "y": -11
-                  }
-                ],
-                "name": "Test Elf's Force",
-                "nextMoveTime": 1745986625571,
-                "owner": "e1dbsigg7CbPdTtWkpYWX7AsJvh2",
-                "pathIndex": 1,
-                "race": "elf",
-                "status": "idle",
-                "targetX": -29,
-                "targetY": -11,
-                "unitCount": 1,
-                "units": {
-                  "e1dbsigg7CbPdTtWkpYWX7AsJvh2": {
-                    "displayName": "Test Elf",
-                    "id": "e1dbsigg7CbPdTtWkpYWX7AsJvh2",
-                    "lastActive": 1745969165972,
-                    "race": "elf",
-                    "type": "player"
-                  }
-                },
-                "x": -29,
-                "y": -11
-              },
               "-OP3lS6o6oDQ6rmA8Fyh": {
                 "createdAt": 1745984279091,
                 "id": "-OP3lS6o6oDQ6rmA8Fyh",
@@ -3299,94 +2605,8 @@
               }
             }
           },
-          "-29,-12": {
-            "groups": {
-              "-OP41c5dAxIIvgh9M1Jb": {
-                "createdAt": 1745988780518,
-                "id": "-OP41c5dAxIIvgh9M1Jb",
-                "items": [
-                  {
-                    "id": "item_1745989326213_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 4,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "item_1745989326213_2",
-                    "name": "Stone Pieces",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Moving to next location (-29,-12)",
-                  "timestamp": 1745989561497
-                },
-                "lastUpdated": 1745989561497,
-                "moveSpeed": 1,
-                "moveStarted": 1745989493647,
-                "movementPath": [
-                  {
-                    "x": -30,
-                    "y": -12
-                  },
-                  {
-                    "x": -29,
-                    "y": -12
-                  }
-                ],
-                "name": "test's Force",
-                "nextMoveTime": 1745989621497,
-                "owner": "Bnt5Zl6N7eSg0OxhIlElmSUeFWn2",
-                "pathIndex": 1,
-                "race": "elf",
-                "status": "idle",
-                "targetX": -29,
-                "targetY": -12,
-                "unitCount": 1,
-                "units": {
-                  "Bnt5Zl6N7eSg0OxhIlElmSUeFWn2": {
-                    "displayName": "test",
-                    "id": "Bnt5Zl6N7eSg0OxhIlElmSUeFWn2",
-                    "lastActive": 1745988721639,
-                    "race": "elf",
-                    "type": "player"
-                  }
-                },
-                "x": -29,
-                "y": -12
-              }
-            }
-          },
           "-30,-12": {
             "groups": {
-              "-OOd-_XyBTHvTVdcJQhj": {
-                "createdAt": 1745518483707,
-                "id": "-OOd-_XyBTHvTVdcJQhj",
-                "lastMessage": {
-                  "text": "Group is fully mobilized and ready",
-                  "timestamp": 1745518500576
-                },
-                "lastUpdated": 1745518500576,
-                "name": "LMF's Force",
-                "owner": "poLOhsmgxsT75GYIz5H090CMT4L2",
-                "race": "elf",
-                "status": "idle",
-                "unitCount": 1,
-                "units": {
-                  "poLOhsmgxsT75GYIz5H090CMT4L2": {
-                    "displayName": "LMF",
-                    "id": "poLOhsmgxsT75GYIz5H090CMT4L2",
-                    "lastActive": 1745518467461,
-                    "race": "elf",
-                    "type": "player"
-                  }
-                },
-                "x": -30,
-                "y": -12
-              },
               "-OP3kM7ZrP9K3VSiuk0J": {
                 "createdAt": 1745983992419,
                 "id": "-OP3kM7ZrP9K3VSiuk0J",
@@ -3451,75 +2671,13 @@
                 },
                 "x": -30,
                 "y": -12
-              },
-              "-OP3xBMAYh_KJXeiG6V_": {
-                "createdAt": 1745987356166,
-                "id": "-OP3xBMAYh_KJXeiG6V_",
-                "lastMessage": {
-                  "text": "Group is fully mobilized and ready",
-                  "timestamp": 1745987401383
-                },
-                "lastUpdated": 1745987401383,
-                "name": "test's Force",
-                "owner": "slBL44vs3eZG5K7f4Cn1xQpJH9B2",
-                "race": "elf",
-                "status": "idle",
-                "unitCount": 1,
-                "units": {
-                  "slBL44vs3eZG5K7f4Cn1xQpJH9B2": {
-                    "displayName": "test",
-                    "id": "slBL44vs3eZG5K7f4Cn1xQpJH9B2",
-                    "lastActive": 1745987348668,
-                    "race": "elf",
-                    "type": "player"
-                  }
-                },
-                "x": -30,
-                "y": -12
-              },
-              "-OP44U8iphksQ7XwLSM7": {
-                "createdAt": 1745989530283,
-                "id": "-OP44U8iphksQ7XwLSM7",
-                "lastMessage": {
-                  "text": "Group is fully mobilized and ready",
-                  "timestamp": 1745989561497
-                },
-                "lastUpdated": 1745989561497,
-                "name": "tester's Force",
-                "owner": "BIEd0vebBDZH88rwHVyyQeY3lkC2",
-                "race": "elf",
-                "status": "idle",
-                "unitCount": 1,
-                "units": {
-                  "BIEd0vebBDZH88rwHVyyQeY3lkC2": {
-                    "displayName": "tester",
-                    "id": "BIEd0vebBDZH88rwHVyyQeY3lkC2",
-                    "lastActive": 1745989526738,
-                    "race": "elf",
-                    "type": "player"
-                  }
-                },
-                "x": -30,
-                "y": -12
               }
             },
             "players": {
-              "JN5dIUjWnXO2dd2o4GaD7tdernI2": {
-                "displayName": "gewgaw",
-                "id": "JN5dIUjWnXO2dd2o4GaD7tdernI2",
-                "lastActive": 1745487719330,
-                "race": "elf"
-              },
               "MRtwAHk77DZqgaZgmAS2sPBnXoV2": {
                 "displayName": "mrbraindead",
                 "id": "MRtwAHk77DZqgaZgmAS2sPBnXoV2",
                 "lastActive": 1745585246791,
-                "race": "elf"
-              },
-              "l7haex3DRSNco4w2PcqWvOxgQYI2": {
-                "displayName": "Mr Elf",
-                "id": "l7haex3DRSNco4w2PcqWvOxgQYI2",
-                "lastActive": 1745580811859,
                 "race": "elf"
               }
             },
@@ -3540,91 +2698,12 @@
               "type": "spawn"
             }
           },
-          "-31,-7": {
-            "groups": {
-              "-OOeRVFDDVT2hVfzXsTf": {
-                "createdAt": 1745542579275,
-                "id": "-OOeRVFDDVT2hVfzXsTf",
-                "lastMessage": {
-                  "text": "Moving to next location (-31,-7)",
-                  "timestamp": 1745580121634
-                },
-                "lastUpdated": 1745580121634,
-                "moveSpeed": 1,
-                "moveStarted": 1745579630359,
-                "movementPath": [
-                  {
-                    "x": -30,
-                    "y": -8
-                  },
-                  {
-                    "x": -29,
-                    "y": -8
-                  },
-                  {
-                    "x": -28,
-                    "y": -7
-                  },
-                  {
-                    "x": -29,
-                    "y": -7
-                  },
-                  {
-                    "x": -30,
-                    "y": -7
-                  },
-                  {
-                    "x": -31,
-                    "y": -7
-                  }
-                ],
-                "name": "Test's Force",
-                "nextMoveTime": 1745580181634,
-                "owner": "jMQFcac8X9Wu9bfGxmCZRi46nt02",
-                "pathIndex": 5,
-                "race": "dwarf",
-                "status": "idle",
-                "targetX": -31,
-                "targetY": -7,
-                "unitCount": 1,
-                "units": {
-                  "jMQFcac8X9Wu9bfGxmCZRi46nt02": {
-                    "displayName": "Test",
-                    "id": "jMQFcac8X9Wu9bfGxmCZRi46nt02",
-                    "lastActive": 1745542460807,
-                    "race": "dwarf",
-                    "type": "player"
-                  }
-                },
-                "x": -31,
-                "y": -7
-              }
-            }
-          },
           "-32,-10": {
             "players": {
-              "2IS3ZuqaZ9WMTTJigBDYXEc6Gwq2": {
-                "displayName": "Elf Hater 3",
-                "id": "2IS3ZuqaZ9WMTTJigBDYXEc6Gwq2",
-                "lastActive": 1745519968930,
-                "race": "dwarf"
-              },
-              "3FeM8naopHdO98eKIbFu6b1QvO82": {
-                "displayName": "Elf Hater",
-                "id": "3FeM8naopHdO98eKIbFu6b1QvO82",
-                "lastActive": 1745519861277,
-                "race": "dwarf"
-              },
               "88NuPGQKeBSci21kTUznAeJ2IWF2": {
                 "displayName": "Billbobollocks",
                 "id": "88NuPGQKeBSci21kTUznAeJ2IWF2",
                 "lastActive": 1745487878622,
-                "race": "dwarf"
-              },
-              "aYgIjt4uhcc56HYTYQqtrOYqfRo2": {
-                "displayName": "testdwarf",
-                "id": "aYgIjt4uhcc56HYTYQqtrOYqfRo2",
-                "lastActive": 1745522812339,
                 "race": "dwarf"
               },
               "ptUgwrwSwlhaNiCwTHoDn7PrY1p2": {
@@ -3807,127 +2886,32 @@
           }
         },
         "-2,0": {
-          "-23,5": {
-            "battles": {
-              "battle_1746025259013_133": {
-                "createdAt": 1746025259013,
-                "defenderGroupPower": 1,
-                "endedAt": 1746025382024,
-                "id": "battle_1746025259013_133",
-                "locationX": -23,
-                "locationY": 5,
-                "side1": {
-                  "groups": {
-                    "-OP6CLHLwV6ql033pCTl": true
-                  },
-                  "power": 1
-                },
-                "side1Power": 1,
-                "side2": {
-                  "groups": {
-                    "-OOb4owT0OYyo524niqW": true
-                  },
-                  "power": 1
-                },
-                "side2Power": 1,
-                "status": "completed",
-                "structurePower": 0,
-                "targetTypes": [
-                  "group"
-                ],
-                "tickCount": 2,
-                "winner": 2
-              }
-            },
+          "-22,0": {
             "groups": {
-              "-OOb4owT0OYyo524niqW": {
-                "createdAt": 1745486303066,
-                "id": "-OOb4owT0OYyo524niqW",
-                "inBattle": false,
+              "monster_1746027066267_1506": {
+                "createdAt": 1746027066267,
+                "id": "monster_1746027066267_1506",
                 "items": [
                   {
-                    "id": "item_1745486762245_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "item_1745486762245_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
+                    "id": "item_1746027066268_692",
+                    "name": "Shiny Gem",
+                    "quantity": 1,
+                    "rarity": "rare",
+                    "type": "gem"
                   }
                 ],
-                "lastMessage": {
-                  "text": "Victory in battle! All units survived the battle.",
-                  "timestamp": 1746025382024
-                },
-                "lastUpdated": 1745486761904,
-                "name": "test's Force",
-                "owner": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
-                "race": "human",
+                "lastUpdated": 1746027066267,
+                "monsterType": "goblin",
+                "name": "Goblin Raiders",
                 "status": "idle",
-                "unitCount": 1,
-                "units": {
-                  "DqBhu8Nd4jNCYq51s8izH6JTHL63": {
-                    "displayName": "test",
-                    "id": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
-                    "lastActive": 1745486292132,
-                    "race": "human",
-                    "type": "player"
-                  }
-                },
-                "x": -23,
-                "y": 5
-              },
-              "-OP3hZOzsxJjweXtzQgG": {
-                "createdAt": 1745983260350,
-                "id": "-OP3hZOzsxJjweXtzQgG",
-                "lastMessage": {
-                  "text": "Moving to next location (-23,5)",
-                  "timestamp": 1745984041090
-                },
-                "lastUpdated": 1745984041090,
-                "moveSpeed": 1,
-                "moveStarted": 1745983832432,
-                "movementPath": [
-                  {
-                    "x": -21,
-                    "y": 5
-                  },
-                  {
-                    "x": -22,
-                    "y": 5
-                  },
-                  {
-                    "x": -23,
-                    "y": 5
-                  }
-                ],
-                "name": "test2's Force",
-                "nextMoveTime": 1745984101090,
-                "owner": "fphA92tMTfRAu6FU6RDNJ33VQni1",
-                "pathIndex": 2,
-                "race": "human",
-                "status": "idle",
-                "targetX": -23,
-                "targetY": 5,
-                "unitCount": 1,
-                "units": {
-                  "fphA92tMTfRAu6FU6RDNJ33VQni1": {
-                    "displayName": "test2",
-                    "id": "fphA92tMTfRAu6FU6RDNJ33VQni1",
-                    "lastActive": 1745487077382,
-                    "race": "human",
-                    "type": "player"
-                  }
-                },
-                "x": -23,
-                "y": 5
+                "type": "monster",
+                "unitCount": 2,
+                "x": -22,
+                "y": 0
               }
-            },
+            }
+          },
+          "-23,5": {
             "players": {
               "YI5zJA04mxUloRSfmMeXZ8n1Kpo2": {
                 "displayName": "test",
@@ -4037,7 +3021,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746025621238,
+        "lastTick": 1746028085875,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",
