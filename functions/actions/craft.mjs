@@ -1,24 +1,52 @@
 import { getDatabase } from 'firebase-admin/database';
 import { ref, get, set, update } from "firebase/database";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 /**
- * Get crafting recipes
- * @param {Object} data - Request data
- * @param {string} data.worldId - The world ID
- * @param {string} data.playerId - The player requesting recipes
- * @param {number} data.x - Structure X coordinate (optional)
- * @param {number} data.y - Structure Y coordinate (optional)
- * @returns {Promise<Object>} Available recipes
+ * Start crafting an item
  */
-export async function getAvailableRecipes(data, context) {
+export const startCrafting = onCall({ maxInstances: 10 }, async (request) => {
+  // Ensure user is authenticated
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be logged in to craft items');
+  }
+  
+  const data = request.data;
+  
   try {
     // Basic validation
-    if (!data.worldId || !data.playerId) {
+    if (!data.worldId || data.x === undefined || data.y === undefined || !data.recipeId) {
       throw new Error('Missing required parameters');
     }
     
+    // Use authenticated user ID
+    const playerId = request.auth.uid;
+    
+    const { worldId, x, y, recipeId } = data;
+    
+    // Get recipe data
+    const recipe = getAllCraftingRecipes().find(r => r.id === recipeId);
+    if (!recipe) {
+      throw new Error('Recipe not found');
+    }
+    
+    // Calculate chunk coordinates
+    const chunkSize = 20;
+    const chunkX = Math.floor(x / chunkSize);
+    const chunkY = Math.floor(y / chunkSize);
+    const chunkKey = `${chunkX},${chunkY}`;
+    const tileKey = `${x},${y}`;
+    
+    // Get the structure
     const db = getDatabase();
-    const { worldId, playerId, x, y } = data;
+    const structureRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
+    const structureSnapshot = await get(structureRef);
+    
+    if (!structureSnapshot.exists()) {
+      throw new Error('Structure not found');
+    }
+    
+    const structure = structureSnapshot.val();
     
     // Get player data for crafting level
     const playerRef = ref(db, `players/${playerId}/worlds/${worldId}`);
@@ -31,71 +59,285 @@ export async function getAvailableRecipes(data, context) {
     const player = playerSnapshot.val();
     const craftingLevel = player.skills?.crafting?.level || 1;
     
-    // Get structure data if coordinates provided
-    let structure = null;
-    
-    if (x !== undefined && y !== undefined) {
-      const chunkSize = 20;
-      const chunkX = Math.floor(x / chunkSize);
-      const chunkY = Math.floor(y / chunkSize);
-      const chunkKey = `${chunkX},${chunkY}`;
-      const tileKey = `${x},${y}`;
-      
-      const structureRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
-      const structureSnapshot = await get(structureRef);
-      
-      if (structureSnapshot.exists()) {
-        structure = structureSnapshot.val();
-      }
+    // Check if player has required crafting level
+    if (recipe.requiredLevel && recipe.requiredLevel > craftingLevel) {
+      throw new Error(`This recipe requires crafting level ${recipe.requiredLevel}`);
     }
     
-    // Get all recipes
-    let recipes = getAllCraftingRecipes();
-    
-    // Filter recipes based on player level and available buildings
-    recipes = recipes.map(recipe => {
-      // Check player level requirement
-      const hasLevel = !recipe.requiredLevel || recipe.requiredLevel <= craftingLevel;
+    // Check building requirements
+    if (recipe.requiredBuilding) {
+      const { type, level } = recipe.requiredBuilding;
       
-      // Check building requirement if structure provided
-      let hasBuilding = true;
-      if (recipe.requiredBuilding && structure) {
-        hasBuilding = false;
-        
-        if (structure.buildings) {
-          for (const buildingId in structure.buildings) {
-            const building = structure.buildings[buildingId];
-            if (building.type === recipe.requiredBuilding.type && 
-                (building.level || 1) >= recipe.requiredBuilding.level) {
-              hasBuilding = true;
-              break;
-            }
+      // Check if structure has the required building at the right level
+      let hasRequiredBuilding = false;
+      
+      if (structure.buildings) {
+        for (const buildingId in structure.buildings) {
+          const building = structure.buildings[buildingId];
+          if (building.type === type && (building.level || 1) >= level) {
+            hasRequiredBuilding = true;
+            break;
           }
         }
       }
       
-      return {
-        ...recipe,
-        available: hasLevel && hasBuilding,
-        hasLevelRequirement: hasLevel,
-        hasBuildingRequirement: hasBuilding
-      };
+      if (!hasRequiredBuilding) {
+        throw new Error(`This recipe requires a ${type} of level ${level} or higher`);
+      }
+    }
+    
+    // Get player inventory
+    const playerInventoryRef = ref(db, `players/${playerId}/worlds/${worldId}/inventory`);
+    const playerInventorySnapshot = await get(playerInventoryRef);
+    
+    const playerInventory = playerInventorySnapshot.exists() ? playerInventorySnapshot.val() : [];
+    
+    // Check for required materials
+    for (const [materialName, amount] of Object.entries(recipe.materials)) {
+      let availableAmount = 0;
+      
+      // Check player inventory
+      for (const item of playerInventory) {
+        if (item.name === materialName) {
+          availableAmount += item.quantity || 0;
+        }
+      }
+      
+      if (availableAmount < amount) {
+        throw new Error(`Not enough ${materialName}. Need ${amount}, have ${availableAmount}.`);
+      }
+    }
+    
+    // Calculate crafting time
+    const baseCraftingTime = recipe.craftingTime || 60; // Default 60 seconds
+    
+    // Apply crafting time modifiers
+    let craftingTimeModifier = 1.0;
+    
+    // Lower time for higher crafting level (up to 50% reduction)
+    const levelModifier = Math.min(0.5, (craftingLevel - 1) * 0.05);
+    craftingTimeModifier -= levelModifier;
+    
+    // Check for building bonuses
+    let craftingSpeedBonus = 0;
+    
+    if (structure.buildings) {
+      for (const buildingId in structure.buildings) {
+        const building = structure.buildings[buildingId];
+        if (building.type === recipe.requiredBuilding?.type && building.benefits) {
+          for (const benefit of building.benefits) {
+            if (benefit.bonus && benefit.bonus.craftingSpeed) {
+              craftingSpeedBonus += benefit.bonus.craftingSpeed;
+            }
+          }
+        }
+      }
+    }
+    
+    craftingTimeModifier -= craftingSpeedBonus;
+    
+    // Ensure minimum 10% of original time
+    craftingTimeModifier = Math.max(0.1, craftingTimeModifier);
+    
+    const finalCraftingTime = Math.ceil(baseCraftingTime * craftingTimeModifier);
+    const craftingTimeMs = finalCraftingTime * 1000; // Convert to ms
+    
+    // Create the crafting entry
+    const now = Date.now();
+    const craftingId = `crafting_${worldId}_${playerId}_${now}`;
+    
+    const craftingData = {
+      id: craftingId,
+      recipeId,
+      playerId,
+      playerName: player.displayName,
+      worldId,
+      structureId: structure.id,
+      structureLocation: { x, y },
+      startedAt: now,
+      completesAt: now + craftingTimeMs,
+      materials: recipe.materials,
+      result: {
+        name: recipe.result.name,
+        type: recipe.result.type,
+        quantity: recipe.result.quantity || 1,
+        rarity: recipe.result.rarity || 'common',
+        description: recipe.result.description
+      },
+      status: 'in_progress',
+      processed: false
+    };
+    
+    // Save the crafting entry
+    const craftingRef = ref(db, `worlds/${worldId}/crafting/${craftingId}`);
+    await set(craftingRef, craftingData);
+    
+    // Update player's crafting status
+    await update(playerRef, {
+      'crafting/current': craftingId,
+      'crafting/completesAt': now + craftingTimeMs
+    });
+    
+    // Consume materials from inventory
+    const updatedInventory = [];
+    const materialsCopy = {...recipe.materials}; // Clone to track remaining quantities
+    
+    for (const item of playerInventory) {
+      const requiredAmount = materialsCopy[item.name] || 0;
+      
+      if (requiredAmount > 0) {
+        // This item is required for crafting
+        const amountToUse = Math.min(requiredAmount, item.quantity);
+        materialsCopy[item.name] -= amountToUse;
+        
+        if (item.quantity > amountToUse) {
+          // We still have some left
+          updatedInventory.push({
+            ...item,
+            quantity: item.quantity - amountToUse
+          });
+        }
+        // Otherwise, the item is completely consumed
+      } else {
+        // This item is not needed for crafting
+        updatedInventory.push(item);
+      }
+    }
+    
+    // Update player inventory
+    await set(playerInventoryRef, updatedInventory);
+    
+    // Add crafting event to chat
+    const chatRef = ref(db, `worlds/${worldId}/chat/crafting_${craftingId}`);
+    await set(chatRef, {
+      location: { x, y },
+      text: `${player.displayName} started crafting ${recipe.result.name}.`,
+      timestamp: now,
+      type: 'event'
     });
     
     return {
       success: true,
-      recipes,
-      craftingLevel
+      craftingId,
+      completesAt: now + craftingTimeMs,
+      timeToComplete: craftingTimeMs,
+      result: craftingData.result
     };
     
   } catch (error) {
-    console.error('Error getting available recipes:', error);
-    return {
-      success: false,
-      error: error.message
-    };
+    console.error('Error starting crafting:', error);
+    throw new HttpsError('internal', error.message);
   }
-}
+});
+
+/**
+ * Cancel an in-progress crafting
+ */
+export const cancelCrafting = onCall({ maxInstances: 10 }, async (request) => {
+  // Ensure user is authenticated
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be logged in to cancel crafting');
+  }
+  
+  const data = request.data;
+  
+  try {
+    // Basic validation
+    if (!data.worldId || !data.craftingId) {
+      throw new Error('Missing required parameters');
+    }
+    
+    // Use authenticated user ID
+    const playerId = request.auth.uid;
+    
+    // Get the crafting data
+    const craftingRef = ref(db, `worlds/${data.worldId}/crafting/${data.craftingId}`);
+    const craftingSnapshot = await get(craftingRef);
+    
+    if (!craftingSnapshot.exists()) {
+      throw new Error('Crafting not found');
+    }
+    
+    const crafting = craftingSnapshot.val();
+    
+    // Verify this player owns this crafting
+    if (crafting.playerId !== playerId) {
+      throw new Error('You cannot cancel this crafting');
+    }
+    
+    // Check if crafting is still in progress
+    if (crafting.processed || crafting.status !== 'in_progress') {
+      throw new Error('This crafting cannot be canceled');
+    }
+    
+    // Update crafting status
+    await update(craftingRef, {
+      status: 'canceled',
+      canceledAt: Date.now(),
+      processed: true
+    });
+    
+    // Clear player's current crafting
+    const playerRef = ref(db, `players/${playerId}/worlds/${data.worldId}/crafting`);
+    await update(playerRef, {
+      current: null,
+      completesAt: null
+    });
+    
+    // Refund materials (90% of materials)
+    const refundMaterials = {};
+    for (const [material, amount] of Object.entries(crafting.materials)) {
+      refundMaterials[material] = Math.floor(amount * 0.9); // 90% refund
+    }
+    
+    // Add refunded materials to player inventory
+    const playerInventoryRef = ref(db, `players/${playerId}/worlds/${data.worldId}/inventory`);
+    const playerInventorySnapshot = await get(playerInventoryRef);
+    
+    let playerInventory = playerInventorySnapshot.exists() ? playerInventorySnapshot.val() : [];
+    
+    // Add refunded materials
+    for (const [materialName, amount] of Object.entries(refundMaterials)) {
+      if (amount <= 0) continue;
+      
+      // Find existing item in inventory
+      const existingItemIndex = playerInventory.findIndex(item => item.name === materialName);
+      
+      if (existingItemIndex >= 0) {
+        // Add to existing stack
+        playerInventory[existingItemIndex].quantity += amount;
+      } else {
+        // Add as new item
+        playerInventory.push({
+          name: materialName,
+          quantity: amount,
+          type: 'resource' // Assume resources
+        });
+      }
+    }
+    
+    // Update player inventory
+    await set(playerInventoryRef, playerInventory);
+    
+    // Add cancellation event to the chat
+    const chatRef = ref(db, `worlds/${data.worldId}/chat/cancel_crafting_${data.craftingId}`);
+    await set(chatRef, {
+      location: crafting.structureLocation,
+      text: `${crafting.playerName} canceled crafting ${crafting.result.name}.`,
+      timestamp: Date.now(),
+      type: 'event'
+    });
+    
+    return {
+      success: true,
+      refundedMaterials
+    };
+    
+  } catch (error) {
+    console.error('Error canceling crafting:', error);
+    throw new HttpsError('internal', error.message);
+  }
+});
 
 /**
  * Get all crafting recipes (hard-coded)
@@ -535,478 +777,4 @@ function getAllCraftingRecipes() {
       }
     }
   ];
-}
-
-/**
- * Start crafting an item
- * @param {Object} data - Crafting data
- * @param {string} data.worldId - The world ID
- * @param {string} data.playerId - The player ID
- * @param {number} data.x - Structure X coordinate
- * @param {number} data.y - Structure Y coordinate
- * @param {string} data.recipeId - The recipe ID to craft
- * @returns {Promise<Object>} Result of the crafting attempt
- */
-export async function startCrafting(data, context) {
-  try {
-    // Basic validation
-    if (!data.worldId || !data.playerId || data.x === undefined || 
-        data.y === undefined || !data.recipeId) {
-      throw new Error('Missing required parameters');
-    }
-    
-    const { worldId, playerId, x, y, recipeId } = data;
-    
-    // Get recipe data
-    const recipe = getAllCraftingRecipes().find(r => r.id === recipeId);
-    if (!recipe) {
-      throw new Error('Recipe not found');
-    }
-    
-    // Calculate chunk coordinates
-    const chunkSize = 20;
-    const chunkX = Math.floor(x / chunkSize);
-    const chunkY = Math.floor(y / chunkSize);
-    const chunkKey = `${chunkX},${chunkY}`;
-    const tileKey = `${x},${y}`;
-    
-    // Get the structure
-    const structureRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
-    const structureSnapshot = await get(structureRef);
-    
-    if (!structureSnapshot.exists()) {
-      throw new Error('Structure not found');
-    }
-    
-    const structure = structureSnapshot.val();
-    
-    // Get player data for crafting level
-    const playerRef = ref(db, `players/${playerId}/worlds/${worldId}`);
-    const playerSnapshot = await get(playerRef);
-    
-    if (!playerSnapshot.exists()) {
-      throw new Error('Player data not found');
-    }
-    
-    const player = playerSnapshot.val();
-    const craftingLevel = player.skills?.crafting?.level || 1;
-    
-    // Check if player has required crafting level
-    if (recipe.requiredLevel && recipe.requiredLevel > craftingLevel) {
-      throw new Error(`This recipe requires crafting level ${recipe.requiredLevel}`);
-    }
-    
-    // Check building requirements
-    if (recipe.requiredBuilding) {
-      const { type, level } = recipe.requiredBuilding;
-      
-      // Check if structure has the required building at the right level
-      let hasRequiredBuilding = false;
-      
-      if (structure.buildings) {
-        for (const buildingId in structure.buildings) {
-          const building = structure.buildings[buildingId];
-          if (building.type === type && (building.level || 1) >= level) {
-            hasRequiredBuilding = true;
-            break;
-          }
-        }
-      }
-      
-      if (!hasRequiredBuilding) {
-        throw new Error(`This recipe requires a ${type} of level ${level} or higher`);
-      }
-    }
-    
-    // Get player inventory
-    const playerInventoryRef = ref(db, `players/${playerId}/worlds/${worldId}/inventory`);
-    const playerInventorySnapshot = await get(playerInventoryRef);
-    
-    const playerInventory = playerInventorySnapshot.exists() ? playerInventorySnapshot.val() : [];
-    
-    // Check for required materials
-    for (const [materialName, amount] of Object.entries(recipe.materials)) {
-      let availableAmount = 0;
-      
-      // Check player inventory
-      for (const item of playerInventory) {
-        if (item.name === materialName) {
-          availableAmount += item.quantity || 0;
-        }
-      }
-      
-      if (availableAmount < amount) {
-        throw new Error(`Not enough ${materialName}. Need ${amount}, have ${availableAmount}.`);
-      }
-    }
-    
-    // Calculate crafting time
-    const baseCraftingTime = recipe.craftingTime || 60; // Default 60 seconds
-    
-    // Apply crafting time modifiers
-    let craftingTimeModifier = 1.0;
-    
-    // Lower time for higher crafting level (up to 50% reduction)
-    const levelModifier = Math.min(0.5, (craftingLevel - 1) * 0.05);
-    craftingTimeModifier -= levelModifier;
-    
-    // Check for building bonuses
-    let craftingSpeedBonus = 0;
-    
-    if (structure.buildings) {
-      for (const buildingId in structure.buildings) {
-        const building = structure.buildings[buildingId];
-        if (building.type === recipe.requiredBuilding?.type && building.benefits) {
-          for (const benefit of building.benefits) {
-            if (benefit.bonus && benefit.bonus.craftingSpeed) {
-              craftingSpeedBonus += benefit.bonus.craftingSpeed;
-            }
-          }
-        }
-      }
-    }
-    
-    craftingTimeModifier -= craftingSpeedBonus;
-    
-    // Ensure minimum 10% of original time
-    craftingTimeModifier = Math.max(0.1, craftingTimeModifier);
-    
-    const finalCraftingTime = Math.ceil(baseCraftingTime * craftingTimeModifier);
-    const craftingTimeMs = finalCraftingTime * 1000; // Convert to ms
-    
-    // Create the crafting entry
-    const now = Date.now();
-    const craftingId = `crafting_${worldId}_${playerId}_${now}`;
-    
-    const craftingData = {
-      id: craftingId,
-      recipeId,
-      playerId,
-      playerName: player.displayName,
-      worldId,
-      structureId: structure.id,
-      structureLocation: { x, y },
-      startedAt: now,
-      completesAt: now + craftingTimeMs,
-      materials: recipe.materials,
-      result: {
-        name: recipe.result.name,
-        type: recipe.result.type,
-        quantity: recipe.result.quantity || 1,
-        rarity: recipe.result.rarity || 'common',
-        description: recipe.result.description
-      },
-      status: 'in_progress',
-      processed: false
-    };
-    
-    // Save the crafting entry
-    const craftingRef = ref(db, `worlds/${worldId}/crafting/${craftingId}`);
-    await set(craftingRef, craftingData);
-    
-    // Update player's crafting status
-    await update(playerRef, {
-      'crafting/current': craftingId,
-      'crafting/completesAt': now + craftingTimeMs
-    });
-    
-    // Consume materials from inventory
-    const updatedInventory = [];
-    const materialsCopy = {...recipe.materials}; // Clone to track remaining quantities
-    
-    for (const item of playerInventory) {
-      const requiredAmount = materialsCopy[item.name] || 0;
-      
-      if (requiredAmount > 0) {
-        // This item is required for crafting
-        const amountToUse = Math.min(requiredAmount, item.quantity);
-        materialsCopy[item.name] -= amountToUse;
-        
-        if (item.quantity > amountToUse) {
-          // We still have some left
-          updatedInventory.push({
-            ...item,
-            quantity: item.quantity - amountToUse
-          });
-        }
-        // Otherwise, the item is completely consumed
-      } else {
-        // This item is not needed for crafting
-        updatedInventory.push(item);
-      }
-    }
-    
-    // Update player inventory
-    await set(playerInventoryRef, updatedInventory);
-    
-    // Add crafting event to chat
-    const chatRef = ref(db, `worlds/${worldId}/chat/crafting_${craftingId}`);
-    await set(chatRef, {
-      location: { x, y },
-      text: `${player.displayName} started crafting ${recipe.result.name}.`,
-      timestamp: now,
-      type: 'event'
-    });
-    
-    return {
-      success: true,
-      craftingId,
-      completesAt: now + craftingTimeMs,
-      timeToComplete: craftingTimeMs,
-      result: craftingData.result
-    };
-    
-  } catch (error) {
-    console.error('Error starting crafting:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
-
-/**
- * Cancel an in-progress crafting
- */
-export async function cancelCrafting(data, context) {
-  try {
-    // Basic validation
-    if (!data.worldId || !data.craftingId || !data.playerId) {
-      throw new Error('Missing required parameters');
-    }
-    
-    const { worldId, craftingId, playerId } = data;
-    
-    // Get the crafting data
-    const craftingRef = ref(db, `worlds/${worldId}/crafting/${craftingId}`);
-    const craftingSnapshot = await get(craftingRef);
-    
-    if (!craftingSnapshot.exists()) {
-      throw new Error('Crafting not found');
-    }
-    
-    const crafting = craftingSnapshot.val();
-    
-    // Verify this player owns this crafting
-    if (crafting.playerId !== playerId) {
-      throw new Error('You cannot cancel this crafting');
-    }
-    
-    // Check if crafting is still in progress
-    if (crafting.processed || crafting.status !== 'in_progress') {
-      throw new Error('This crafting cannot be canceled');
-    }
-    
-    // Update crafting status
-    await update(craftingRef, {
-      status: 'canceled',
-      canceledAt: Date.now(),
-      processed: true
-    });
-    
-    // Clear player's current crafting
-    const playerRef = ref(db, `players/${playerId}/worlds/${worldId}/crafting`);
-    await update(playerRef, {
-      current: null,
-      completesAt: null
-    });
-    
-    // Refund materials (90% of materials)
-    const refundMaterials = {};
-    for (const [material, amount] of Object.entries(crafting.materials)) {
-      refundMaterials[material] = Math.floor(amount * 0.9); // 90% refund
-    }
-    
-    // Add refunded materials to player inventory
-    const playerInventoryRef = ref(db, `players/${playerId}/worlds/${worldId}/inventory`);
-    const playerInventorySnapshot = await get(playerInventoryRef);
-    
-    let playerInventory = playerInventorySnapshot.exists() ? playerInventorySnapshot.val() : [];
-    
-    // Add refunded materials
-    for (const [materialName, amount] of Object.entries(refundMaterials)) {
-      if (amount <= 0) continue;
-      
-      // Find existing item in inventory
-      const existingItemIndex = playerInventory.findIndex(item => item.name === materialName);
-      
-      if (existingItemIndex >= 0) {
-        // Add to existing stack
-        playerInventory[existingItemIndex].quantity += amount;
-      } else {
-        // Add as new item
-        playerInventory.push({
-          name: materialName,
-          quantity: amount,
-          type: 'resource' // Assume resources
-        });
-      }
-    }
-    
-    // Update player inventory
-    await set(playerInventoryRef, playerInventory);
-    
-    // Add cancellation event to the chat
-    const chatRef = ref(db, `worlds/${worldId}/chat/cancel_crafting_${craftingId}`);
-    await set(chatRef, {
-      location: crafting.structureLocation,
-      text: `${crafting.playerName} canceled crafting ${crafting.result.name}.`,
-      timestamp: Date.now(),
-      type: 'event'
-    });
-    
-    return {
-      success: true,
-      refundedMaterials
-    };
-    
-  } catch (error) {
-    console.error('Error canceling crafting:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
-
-/**
- * Complete crafting (called by scheduled function)
- */
-export async function completeCrafting(craftingId, worldId) {
-  try {
-    // Get crafting data
-    const craftingRef = ref(db, `worlds/${worldId}/crafting/${craftingId}`);
-    const craftingSnapshot = await get(craftingRef);
-    
-    if (!craftingSnapshot.exists()) {
-      throw new Error('Crafting not found');
-    }
-    
-    const crafting = craftingSnapshot.val();
-    
-    // Skip if already processed
-    if (crafting.processed) {
-      return {
-        success: false,
-        error: 'Crafting already processed'
-      };
-    }
-    
-    // Add item to player's inventory
-    const playerInventoryRef = ref(db, `players/${crafting.playerId}/worlds/${worldId}/inventory`);
-    const playerInventorySnapshot = await get(playerInventoryRef);
-    
-    let playerInventory = playerInventorySnapshot.exists() ? playerInventorySnapshot.val() : [];
-    
-    // Create a new unique item ID
-    const itemId = `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    
-    // Add crafted item
-    playerInventory.push({
-      id: itemId,
-      name: crafting.result.name,
-      quantity: crafting.result.quantity || 1,
-      type: crafting.result.type,
-      rarity: crafting.result.rarity || 'common',
-      description: crafting.result.description,
-      crafted: true,
-      craftedAt: Date.now(),
-      craftedBy: crafting.playerId
-    });
-    
-    // Update player's inventory
-    await set(playerInventoryRef, playerInventory);
-    
-    // Update player's crafting status
-    const playerRef = ref(db, `players/${crafting.playerId}/worlds/${worldId}`);
-    await update(playerRef, {
-      'crafting/current': null,
-      'crafting/completesAt': null,
-      'crafting/lastCompleted': Date.now()
-    });
-    
-    // Increase player's crafting XP if they have a skills object
-    const playerSkillsRef = ref(db, `players/${crafting.playerId}/worlds/${worldId}/skills`);
-    const playerSkillsSnapshot = await get(playerSkillsRef);
-    
-    if (playerSkillsSnapshot.exists()) {
-      const skills = playerSkillsSnapshot.val();
-      const currentXP = skills.crafting?.xp || 0;
-      const currentLevel = skills.crafting?.level || 1;
-      
-      // Calculate XP gained (based on recipe rarity and level)
-      const rarityMultipliers = {
-        'common': 1,
-        'uncommon': 1.5,
-        'rare': 2.5,
-        'epic': 4,
-        'legendary': 7
-      };
-      
-      const recipeRarity = crafting.result.rarity || 'common';
-      const rarityMultiplier = rarityMultipliers[recipeRarity] || 1;
-      
-      const baseXP = 10; // Base XP for crafting
-      const xpGained = Math.round(baseXP * rarityMultiplier);
-      
-      const newXP = currentXP + xpGained;
-      
-      // Check if player leveled up
-      const requiredXP = currentLevel * 100; // Simple XP curve
-      let newLevel = currentLevel;
-      let leveledUp = false;
-      
-      if (newXP >= requiredXP) {
-        newLevel = currentLevel + 1;
-        leveledUp = true;
-      }
-      
-      // Update skills
-      await update(playerSkillsRef, {
-        'crafting/xp': newXP,
-        'crafting/level': newLevel,
-        'crafting/lastGain': Date.now()
-      });
-      
-      // If player leveled up, announce it
-      if (leveledUp) {
-        const chatRef = ref(db, `worlds/${worldId}/chat/crafting_levelup_${crafting.playerId}_${Date.now()}`);
-        await set(chatRef, {
-          location: crafting.structureLocation,
-          text: `${crafting.playerName} reached crafting level ${newLevel}!`,
-          timestamp: Date.now(),
-          type: 'event'
-        });
-      }
-    }
-    
-    // Mark crafting as completed
-    await update(craftingRef, {
-      status: 'completed',
-      completedAt: Date.now(),
-      processed: true
-    });
-    
-    // Add completion event to chat
-    const chatRef = ref(db, `worlds/${worldId}/chat/crafting_complete_${craftingId}`);
-    await set(chatRef, {
-      location: crafting.structureLocation,
-      text: `${crafting.playerName} finished crafting ${crafting.result.name}.`,
-      timestamp: Date.now(),
-      type: 'event'
-    });
-    
-    return {
-      success: true,
-      result: crafting.result,
-      leveledUp
-    };
-    
-  } catch (error) {
-    console.error('Error completing crafting:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
 }

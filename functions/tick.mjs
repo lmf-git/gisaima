@@ -12,8 +12,10 @@ import { processMobilizations } from "./events/mobiliseTick.mjs";
 import { processDemobilization } from "./events/demobiliseTick.mjs";
 import { processMovement } from "./events/moveTick.mjs";
 import { processGathering } from "./events/gatheringTick.mjs";
-import { processBuilding } from "./events/buildTick.mjs"; // Import the building tick processor
-import { spawnMonsters } from "./events/monsterSpawnTick.mjs"; // Import the monster spawning function
+import { processBuilding } from "./events/buildTick.mjs";
+import { spawnMonsters } from "./events/monsterSpawnTick.mjs";
+import { upgradeTickProcessor } from "./events/upgradeTick.mjs";
+import { processCrafting } from "./events/craftingTick.mjs"; // Import the crafting processor
 
 // Process world ticks to handle mobilizations and other time-based events
 export const processGameTicks = onSchedule({
@@ -44,12 +46,12 @@ export const processGameTicks = onSchedule({
     let demobilizationsProcessed = 0;
     let movementsProcessed = 0;
     let gatheringsProcessed = 0;
-    let buildingsProcessed = 0; // Add counter for buildings
-    let monstersSpawned = 0; // Add counter for monster spawning
+    let buildingsProcessed = 0;
+    let monstersSpawned = 0;
     
     // Process each world
     for (const worldId in worlds) {
-      if (worldId === 'lastUpdated') continue; // Skip metadata
+      if (worldId === 'lastUpdated') continue;
       
       // Update world's lastTick timestamp
       await db.ref(`worlds/${worldId}/info/lastTick`).set(now);
@@ -69,13 +71,13 @@ export const processGameTicks = onSchedule({
       
       // Process all chunks
       for (const chunkKey in chunks) {
-        if (chunkKey === 'lastUpdated') continue; // Skip metadata
+        if (chunkKey === 'lastUpdated') continue;
         
         const chunk = chunks[chunkKey];
         
         // Process all tile data in the chunk
         for (const tileKey in chunk) {
-          if (tileKey === 'lastUpdated') continue; // Skip metadata
+          if (tileKey === 'lastUpdated') continue;
           
           const tile = chunk[tileKey];
           
@@ -147,6 +149,16 @@ export const processGameTicks = onSchedule({
       // Process battles for the world using the imported function
       const battlesProcessed = await processBattles(worldId);
       console.log(`Processed ${battlesProcessed} battles in world ${worldId}`);
+      
+      // Process structure upgrades for this world
+      console.log(`Processing structure upgrades for world ${worldId}`);
+      const upgradeResult = await upgradeTickProcessor({ worldId });
+      console.log(`Processed ${upgradeResult.processed || 0} structure upgrades in world ${worldId}`);
+      
+      // Process crafting operations for this world
+      console.log(`Processing crafting for world ${worldId}`);
+      const craftingResult = await processCrafting(worldId);
+      console.log(`Processed ${craftingResult.processed || 0} crafting operations in world ${worldId}`);
       
       // Spawn monsters with a 20% chance on each tick (to avoid spawning too many)
       if (Math.random() < 0.2) {

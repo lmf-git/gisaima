@@ -1,0 +1,473 @@
+import { getDatabase } from 'firebase-admin/database';
+import { ref, get, set, update, serverTimestamp } from "firebase/database";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
+
+/**
+ * Start a structure upgrade
+ * @param {Object} data - The upgrade data
+ * @param {string} data.worldId - The world ID
+ * @param {number} data.x - Structure X coordinate
+ * @param {number} data.y - Structure Y coordinate
+ * @param {string} data.playerId - The player requesting the upgrade
+ * @returns {Promise<Object>} The result of the upgrade request
+ */
+export const startStructureUpgrade = onCall({ maxInstances: 10 }, async (request) => {
+  // Ensure user is authenticated
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be logged in to upgrade structures');
+  }
+  
+  const data = request.data;
+  
+  try {
+    // Basic validation
+    if (!data.worldId || data.x === undefined || data.y === undefined) {
+      throw new Error('Missing required parameters');
+    }
+    
+    // Use authenticated user ID
+    const playerId = request.auth.uid;
+    
+    const db = getDatabase();
+    const { worldId, x, y } = data;
+    
+    // Calculate chunk coordinates
+    const chunkSize = 20;
+    const chunkX = Math.floor(x / chunkSize);
+    const chunkY = Math.floor(y / chunkSize);
+    const chunkKey = `${chunkX},${chunkY}`;
+    const tileKey = `${x},${y}`;
+    
+    // Get the structure
+    const structureRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
+    const structureSnapshot = await get(structureRef);
+    
+    if (!structureSnapshot.exists()) {
+      throw new Error('Structure not found');
+    }
+    
+    const structure = structureSnapshot.val();
+    
+    // Get player data for crafting level
+    const playerRef = ref(db, `players/${playerId}/worlds/${worldId}`);
+    const playerSnapshot = await get(playerRef);
+    
+    if (!playerSnapshot.exists()) {
+      throw new Error('Player data not found');
+    }
+    
+    const player = playerSnapshot.val();
+    const craftingLevel = player.skills?.crafting?.level || 1;
+    
+    // Check if player has required crafting level
+    if (data.requiredLevel && data.requiredLevel > craftingLevel) {
+      throw new Error(`This recipe requires crafting level ${data.requiredLevel}`);
+    }
+    
+    // Check building requirements
+    if (data.requiredBuilding) {
+      const { type, level } = data.requiredBuilding;
+      
+      // Check if structure has the required building at the right level
+      let hasRequiredBuilding = false;
+      
+      if (structure.buildings) {
+        for (const buildingId in structure.buildings) {
+          const building = structure.buildings[buildingId];
+          if (building.type === type && (building.level || 1) >= level) {
+            hasRequiredBuilding = true;
+            break;
+          }
+        }
+      }
+      
+      if (!hasRequiredBuilding) {
+        throw new Error(`This recipe requires a ${type} of level ${level} or higher`);
+      }
+    }
+    
+    // Calculate crafting time
+    const baseCraftingTime = data.craftingTime || 60; // Default 60 seconds
+    
+    // Apply crafting time modifiers
+    let craftingTimeModifier = 1.0;
+    
+    // Lower time for higher crafting level (up to 50% reduction)
+    const levelModifier = Math.min(0.5, (craftingLevel - 1) * 0.05);
+    craftingTimeModifier -= levelModifier;
+    
+    // Check for building bonuses
+    let craftingSpeedBonus = 0;
+    
+    if (structure.buildings) {
+      for (const buildingId in structure.buildings) {
+        const building = structure.buildings[buildingId];
+        if (building.type === data.requiredBuilding?.type && building.benefits) {
+          for (const benefit of building.benefits) {
+            if (benefit.bonus && benefit.bonus.craftingSpeed) {
+              craftingSpeedBonus += benefit.bonus.craftingSpeed;
+            }
+          }
+        }
+      }
+    }
+    
+    craftingTimeModifier -= craftingSpeedBonus;
+    
+    // Ensure minimum 10% of original time
+    craftingTimeModifier = Math.max(0.1, craftingTimeModifier);
+    
+    const finalCraftingTime = Math.ceil(baseCraftingTime * craftingTimeModifier);
+    const craftingTimeMs = finalCraftingTime * 1000; // Convert to ms
+    
+    // Create the crafting entry
+    const now = Date.now();
+    const craftingId = `crafting_${worldId}_${playerId}_${now}`;
+    
+    const craftingData = {
+      id: craftingId,
+      recipeId: data.recipeId,
+      playerId,
+      playerName: player.displayName,
+      worldId,
+      structureId: structure.id,
+      structureLocation: { x, y },
+      startedAt: now,
+      completesAt: now + craftingTimeMs,
+      materials: data.materials,
+      result: {
+        name: data.result.name,
+        type: data.result.type,
+        quantity: data.result.quantity || 1,
+        rarity: data.result.rarity || 'common',
+        description: data.result.description
+      },
+      status: 'in_progress',
+      processed: false
+    };
+    
+    // Save the crafting entry
+    const craftingRef = ref(db, `worlds/${worldId}/crafting/${craftingId}`);
+    await set(craftingRef, craftingData);
+    
+    // Update player's crafting status
+    await update(playerRef, {
+      'crafting/current': craftingId,
+      'crafting/completesAt': now + craftingTimeMs
+    });
+    
+    // Consume materials from inventory
+    const playerInventoryRef = ref(db, `players/${playerId}/worlds/${worldId}/inventory`);
+    const playerInventorySnapshot = await get(playerInventoryRef);
+    
+    let playerInventory = playerInventorySnapshot.exists() ? playerInventorySnapshot.val() : [];
+    
+    // Add crafting event to chat
+    const chatRef = ref(db, `worlds/${worldId}/chat/crafting_${craftingId}`);
+    await set(chatRef, {
+      location: { x, y },
+      text: `${player.displayName} started crafting ${data.result.name}.`,
+      timestamp: now,
+      type: 'event'
+    });
+    
+    return {
+      success: true,
+      craftingId,
+      completesAt: now + craftingTimeMs,
+      timeToComplete: craftingTimeMs,
+      result: craftingData.result
+    };
+    
+  } catch (error) {
+    console.error('Error starting structure upgrade:', error);
+    throw new HttpsError('internal', error.message);
+  }
+});
+
+/**
+ * Start a building upgrade within a structure
+ * @param {Object} data - The upgrade data
+ * @param {string} data.worldId - The world ID
+ * @param {number} data.x - Structure X coordinate
+ * @param {number} data.y - Structure Y coordinate
+ * @param {string} data.buildingId - ID of the building to upgrade
+ * @param {string} data.playerId - The player requesting the upgrade
+ * @returns {Promise<Object>} The result of the upgrade request
+ */
+export const startBuildingUpgrade = onCall({ maxInstances: 10 }, async (request) => {
+  // Ensure user is authenticated
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be logged in to upgrade buildings');
+  }
+  
+  const data = request.data;
+  
+  try {
+    // Basic validation
+    if (!data.worldId || data.x === undefined || data.y === undefined || !data.buildingId) {
+      throw new Error('Missing required parameters');
+    }
+    
+    // Use authenticated user ID
+    const playerId = request.auth.uid;
+    
+    const db = getDatabase();
+    const { worldId, x, y, buildingId } = data;
+    
+    // Calculate chunk coordinates
+    const chunkSize = 20;
+    const chunkX = Math.floor(x / chunkSize);
+    const chunkY = Math.floor(y / chunkSize);
+    const chunkKey = `${chunkX},${chunkY}`;
+    const tileKey = `${x},${y}`;
+    
+    // Get the structure and building
+    const structureRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
+    const structureSnapshot = await get(structureRef);
+    
+    if (!structureSnapshot.exists()) {
+      throw new Error('Structure not found');
+    }
+    
+    const structure = structureSnapshot.val();
+    
+    // Check if the building exists
+    if (!structure.buildings || !structure.buildings[buildingId]) {
+      throw new Error('Building not found');
+    }
+    
+    const building = structure.buildings[buildingId];
+    
+    // Check if building is already being upgraded
+    if (building.upgradeInProgress) {
+      throw new Error('Building is already being upgraded');
+    }
+    
+    // Check if player is owner of the structure or if it's a spawn point
+    const isOwner = structure.owner === playerId;
+    const isSpawn = structure.type === 'spawn';
+    
+    if (!isOwner && !isSpawn) {
+      throw new Error('You do not have permission to upgrade this building');
+    }
+    
+    // Calculate current and next level
+    const currentLevel = building.level || 1;
+    const nextLevel = currentLevel + 1;
+    
+    // Check if building is already at max level (assume max level 5)
+    if (currentLevel >= 5) {
+      throw new Error('Building is already at maximum level');
+    }
+    
+    // Get player data
+    const playerRef = ref(db, `players/${playerId}/worlds/${worldId}`);
+    const playerSnapshot = await get(playerRef);
+    
+    if (!playerSnapshot.exists()) {
+      throw new Error('Player data not found');
+    }
+    
+    const player = playerSnapshot.val();
+    
+    // Calculate required resources based on building type and current level
+    const requiredResources = calculateBuildingUpgradeResources(building.type, currentLevel);
+    
+    // Check if required resources are available in the structure's shared storage
+    const structureItemsRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/items`);
+    const structureItemsSnapshot = await get(structureItemsRef);
+    
+    const structureItems = structureItemsSnapshot.exists() ? structureItemsSnapshot.val() : [];
+    
+    // Check if all resources are available
+    for (const resource of requiredResources) {
+      const availableItem = structureItems.find(item => item.name === resource.name);
+      const availableQuantity = availableItem ? availableItem.quantity : 0;
+      
+      if (availableQuantity < resource.quantity) {
+        throw new Error(`Insufficient ${resource.name}: need ${resource.quantity}, have ${availableQuantity}`);
+      }
+    }
+    
+    // Calculate upgrade time based on level and building type
+    const baseUpgradeTime = 60; // 60 seconds base time
+    const levelMultiplier = 1 + (currentLevel * 0.5); // Each level adds 50% more time
+    
+    // Different building types have different upgrade times
+    const buildingTypeMultipliers = {
+      smithy: 1.2,
+      barracks: 1.5,
+      mine: 1.3,
+      wall: 0.8,
+      academy: 1.4,
+      market: 1.0,
+      farm: 0.9
+    };
+    
+    const typeMultiplier = buildingTypeMultipliers[building.type] || 1;
+    
+    // Calculate final upgrade time in seconds
+    const upgradeTime = Math.ceil(baseUpgradeTime * levelMultiplier * typeMultiplier);
+    const upgradeTimeMs = upgradeTime * 1000; // Convert to ms
+    
+    // Generate a unique upgrade ID
+    const now = Date.now();
+    const upgradeId = `building_upgrade_${worldId}_${buildingId}_${now}`;
+    
+    // Create upgrade entry in database
+    const upgradeData = {
+      id: upgradeId,
+      type: 'building',
+      worldId,
+      buildingId,
+      buildingType: building.type,
+      buildingName: building.name || formatText(building.type),
+      structureId: structure.id,
+      chunkKey,
+      tileKey,
+      fromLevel: currentLevel,
+      toLevel: nextLevel,
+      startedAt: now,
+      completesAt: now + upgradeTimeMs,
+      startedBy: playerId,
+      playerName: player.displayName,
+      resources: requiredResources,
+      status: 'pending',
+      processed: false
+    };
+    
+    // Save upgrade to database
+    const upgradeRef = ref(db, `worlds/${worldId}/upgrades/${upgradeId}`);
+    await set(upgradeRef, upgradeData);
+    
+    // Update building to mark as upgrading
+    const buildingRef = ref(db, `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/buildings/${buildingId}`);
+    await update(buildingRef, {
+      upgradeInProgress: true,
+      upgradeId,
+      upgradeStartedAt: now,
+      upgradeCompletesAt: now + upgradeTimeMs
+    });
+    
+    // Consume resources from structure storage
+    for (const resource of requiredResources) {
+      const itemIndex = structureItems.findIndex(item => item.name === resource.name);
+      
+      if (itemIndex >= 0) {
+        structureItems[itemIndex].quantity -= resource.quantity;
+        
+        if (structureItems[itemIndex].quantity <= 0) {
+          // Remove item if quantity is zero or negative
+          structureItems.splice(itemIndex, 1);
+        }
+      }
+    }
+    
+    // Update structure storage with consumed resources
+    await set(structureItemsRef, structureItems);
+    
+    // Add upgrade event to chat
+    const chatRef = ref(db, `worlds/${worldId}/chat/building_upgrade_${upgradeId}`);
+    await set(chatRef, {
+      location: { x, y },
+      text: `${player.displayName} started upgrading a ${building.name || building.type} from level ${currentLevel} to ${nextLevel}.`,
+      timestamp: now,
+      type: 'event'
+    });
+    
+    return {
+      success: true,
+      upgradeId,
+      buildingId,
+      fromLevel: currentLevel,
+      toLevel: nextLevel,
+      completesAt: now + upgradeTimeMs,
+      timeToComplete: upgradeTimeMs
+    };
+    
+  } catch (error) {
+    console.error('Error starting building upgrade:', error);
+    throw new HttpsError('internal', error.message);
+  }
+});
+
+/**
+ * Calculate required resources for building upgrade
+ * @param {string} buildingType - Type of building
+ * @param {number} currentLevel - Current building level
+ * @returns {Array<Object>} Array of required resources
+ */
+function calculateBuildingUpgradeResources(buildingType, currentLevel) {
+  const resources = [];
+  const levelMultiplier = currentLevel * 1.5;
+  
+  // Base resources needed for all buildings
+  resources.push({ name: 'Wooden Sticks', quantity: Math.floor(10 * levelMultiplier) });
+  resources.push({ name: 'Stone Pieces', quantity: Math.floor(8 * levelMultiplier) });
+  
+  // Additional resources based on building type
+  switch (buildingType) {
+    case 'smithy':
+      resources.push({ name: 'Iron Ore', quantity: Math.floor(5 * levelMultiplier) });
+      if (currentLevel >= 3) {
+        resources.push({ name: 'Coal', quantity: Math.floor(3 * levelMultiplier) });
+      }
+      break;
+      
+    case 'barracks':
+      resources.push({ name: 'Iron Ore', quantity: Math.floor(3 * levelMultiplier) });
+      if (currentLevel >= 3) {
+        resources.push({ name: 'Leather', quantity: Math.floor(2 * levelMultiplier) });
+      }
+      break;
+      
+    case 'mine':
+      resources.push({ name: 'Iron Ore', quantity: Math.floor(2 * levelMultiplier) });
+      resources.push({ name: 'Stone Pieces', quantity: Math.floor(5 * levelMultiplier) }); // Extra stone for mines
+      break;
+      
+    case 'wall':
+      resources.push({ name: 'Stone Pieces', quantity: Math.floor(10 * levelMultiplier) }); // Walls need more stone
+      if (currentLevel >= 3) {
+        resources.push({ name: 'Iron Ore', quantity: Math.floor(3 * levelMultiplier) });
+      }
+      break;
+      
+    case 'academy':
+      resources.push({ name: 'Paper', quantity: Math.floor(3 * levelMultiplier) });
+      if (currentLevel >= 2) {
+        resources.push({ name: 'Crystal Shard', quantity: currentLevel - 1 });
+      }
+      break;
+      
+    case 'market':
+      resources.push({ name: 'Wooden Sticks', quantity: Math.floor(5 * levelMultiplier) }); // Extra wood for market stalls
+      resources.push({ name: 'Cloth', quantity: Math.floor(3 * levelMultiplier) });
+      break;
+      
+    case 'farm':
+      resources.push({ name: 'Seeds', quantity: Math.floor(5 * levelMultiplier) });
+      if (currentLevel >= 2) {
+        resources.push({ name: 'Water', quantity: Math.floor(2 * levelMultiplier) });
+      }
+      break;
+  }
+  
+  // Higher level buildings need special resources
+  if (currentLevel >= 4) {
+    resources.push({ name: 'Crystal Shard', quantity: 1 });
+  }
+  
+  return resources;
+}
+
+/**
+ * Format text by replacing underscores with spaces and capitalizing words
+ * @param {string} text - Text to format
+ * @returns {string} Formatted text
+ */
+function formatText(text) {
+  if (!text) return '';
+  return text.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}

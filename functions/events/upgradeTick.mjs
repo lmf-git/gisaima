@@ -565,6 +565,152 @@ function getNewBenefitsForBuilding(buildingType, level) {
 }
 
 /**
+ * Complete crafting (called by scheduled function)
+ * @param {string} craftingId - ID of the crafting to complete
+ * @param {string} worldId - World ID
+ * @returns {Promise<Object>} Result of completion
+ */
+export async function completeCrafting(craftingId, worldId) {
+  try {
+    const db = getDatabase();
+    // Get crafting data
+    const craftingRef = ref(db, `worlds/${worldId}/crafting/${craftingId}`);
+    const craftingSnapshot = await get(craftingRef);
+    
+    if (!craftingSnapshot.exists()) {
+      throw new Error('Crafting not found');
+    }
+    
+    const crafting = craftingSnapshot.val();
+    
+    // Skip if already processed
+    if (crafting.processed) {
+      return {
+        success: false,
+        error: 'Crafting already processed'
+      };
+    }
+    
+    // Add item to player's inventory
+    const playerInventoryRef = ref(db, `players/${crafting.playerId}/worlds/${worldId}/inventory`);
+    const playerInventorySnapshot = await get(playerInventoryRef);
+    
+    let playerInventory = playerInventorySnapshot.exists() ? playerInventorySnapshot.val() : [];
+    
+    // Create a new unique item ID
+    const itemId = `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    
+    // Add crafted item
+    playerInventory.push({
+      id: itemId,
+      name: crafting.result.name,
+      quantity: crafting.result.quantity || 1,
+      type: crafting.result.type,
+      rarity: crafting.result.rarity || 'common',
+      description: crafting.result.description,
+      crafted: true,
+      craftedAt: Date.now(),
+      craftedBy: crafting.playerId
+    });
+    
+    // Update player's inventory
+    await set(playerInventoryRef, playerInventory);
+    
+    // Update player's crafting status
+    const playerRef = ref(db, `players/${crafting.playerId}/worlds/${worldId}`);
+    await update(playerRef, {
+      'crafting/current': null,
+      'crafting/completesAt': null,
+      'crafting/lastCompleted': Date.now()
+    });
+    
+    // Increase player's crafting XP if they have a skills object
+    const playerSkillsRef = ref(db, `players/${crafting.playerId}/worlds/${worldId}/skills`);
+    const playerSkillsSnapshot = await get(playerSkillsRef);
+    
+    if (playerSkillsSnapshot.exists()) {
+      const skills = playerSkillsSnapshot.val();
+      const currentXP = skills.crafting?.xp || 0;
+      const currentLevel = skills.crafting?.level || 1;
+      
+      // Calculate XP gained (based on recipe rarity and level)
+      const rarityMultipliers = {
+        'common': 1,
+        'uncommon': 1.5,
+        'rare': 2.5,
+        'epic': 4,
+        'legendary': 7
+      };
+      
+      const recipeRarity = crafting.result.rarity || 'common';
+      const rarityMultiplier = rarityMultipliers[recipeRarity] || 1;
+      
+      const baseXP = 10; // Base XP for crafting
+      const xpGained = Math.round(baseXP * rarityMultiplier);
+      
+      const newXP = currentXP + xpGained;
+      
+      // Check if player leveled up
+      const requiredXP = currentLevel * 100; // Simple XP curve
+      let newLevel = currentLevel;
+      let leveledUp = false;
+      
+      if (newXP >= requiredXP) {
+        newLevel = currentLevel + 1;
+        leveledUp = true;
+      }
+      
+      // Update skills
+      await update(playerSkillsRef, {
+        'crafting/xp': newXP,
+        'crafting/level': newLevel,
+        'crafting/lastGain': Date.now()
+      });
+      
+      // If player leveled up, announce it
+      if (leveledUp) {
+        const chatRef = ref(db, `worlds/${worldId}/chat/crafting_levelup_${crafting.playerId}_${Date.now()}`);
+        await set(chatRef, {
+          location: crafting.structureLocation,
+          text: `${crafting.playerName} reached crafting level ${newLevel}!`,
+          timestamp: Date.now(),
+          type: 'event'
+        });
+      }
+    }
+    
+    // Mark crafting as completed
+    await update(craftingRef, {
+      status: 'completed',
+      completedAt: Date.now(),
+      processed: true
+    });
+    
+    // Add completion event to chat
+    const chatRef = ref(db, `worlds/${worldId}/chat/crafting_complete_${craftingId}`);
+    await set(chatRef, {
+      location: crafting.structureLocation,
+      text: `${crafting.playerName} finished crafting ${crafting.result.name}.`,
+      timestamp: Date.now(),
+      type: 'event'
+    });
+    
+    return {
+      success: true,
+      result: crafting.result,
+      leveledUp
+    };
+    
+  } catch (error) {
+    console.error('Error completing crafting:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
  * Scheduled function to automatically process upgrades
  * This is called on a timer/schedule
  */
