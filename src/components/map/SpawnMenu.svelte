@@ -1,11 +1,11 @@
 <script>
   import { scale } from 'svelte/transition';
-  import { ref, set, update } from 'firebase/database';
-  import { db } from '../../lib/firebase/firebase.js';
   import { game, currentPlayer } from '../../lib/stores/game';
   import { moveTarget, map, targetStore, clearSavedTargetPosition } from '../../lib/stores/map';
   import { user } from '../../lib/stores/user';
   import { goto } from '$app/navigation';
+  import { httpsCallable } from 'firebase/functions';
+  import { functions } from '../../lib/firebase/firebase.js';
 
   // Import torch and race icons
   import Torch from '../icons/Torch.svelte';
@@ -158,7 +158,7 @@
     }
   }
 
-  // Core function for handling spawn confirmation
+  // Core function for handling spawn confirmation - updated to use Cloud Function
   async function confirm(spawn) {
     if (!spawn || !$user || !$game.worldKey) {
       setError('Missing required data for spawn selection');
@@ -177,45 +177,20 @@
 
       console.log(`Spawning player at ${spawnX},${spawnY} for spawn ID: ${spawn.id || 'unknown'}`);
       
-      // 1. Update the player data in the database
-      const playerWorldRef = ref(db, `players/${$user.uid}/worlds/${$game.worldKey}`);
-      
-      // Use the display name from the player data in the game store
-      const displayName = $game.player?.displayName || 
-        $user.displayName || 
-        ($user.email ? $user.email.split('@')[0] : `Player ${$user.uid.substring(0, 4)}`);
-        
-      await update(playerWorldRef, {
-        alive: true,
-        lastLocation: {
-          x: spawnX,
-          y: spawnY,
-          timestamp: Date.now()
-        },
-        id: $user.uid, // Explicitly store the user ID
-      });
-
-      // 2. Calculate chunk coordinates for the player entity
-      const CHUNK_SIZE = 20;
-      const chunkX = Math.floor(spawnX / CHUNK_SIZE);
-      const chunkY = Math.floor(spawnY / CHUNK_SIZE);
-      const chunkKey = `${chunkX},${chunkY}`;
-      const tileKey = `${spawnX},${spawnY}`;
-      
-      // 3. Create a player entity in the world at the spawn location
-      const playerEntityRef = ref(db, 
-        `worlds/${$game.worldKey}/chunks/${chunkKey}/${tileKey}/players/${$user.uid}`
-      );
-      
-      // Create player entity data with consistent ID fields and use the display name
-      await set(playerEntityRef, {
-        displayName,
-        lastActive: Date.now(),
-        id: $user.uid,
-        race: $game.player?.race || 'human'
+      // Call the Cloud Function instead of directly updating the database
+      const spawnPlayerFn = httpsCallable(functions, 'spawnPlayer');
+      const result = await spawnPlayerFn({
+        worldId: $game.worldKey,
+        spawnId: spawn.id || null,
+        spawnX,
+        spawnY
       });
       
-      console.log(`Player spawned at ${tileKey} in chunk ${chunkKey} with uid ${$user.uid} and name ${displayName}`);
+      if (!result.data.success) {
+        throw new Error('Spawn operation failed');
+      }
+      
+      console.log('Player spawned successfully:', result.data);
       
       // Ensure map is still focused on spawn location before closing
       if ($map.target.x !== spawnX || $map.target.y !== spawnY) {

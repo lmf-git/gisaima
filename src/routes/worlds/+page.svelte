@@ -4,14 +4,17 @@
   import { user, loading as userLoading } from '../../lib/stores/user.js';
   import { 
     game, 
-    joinWorld, 
     setCurrentWorld, 
     getWorldInfo,
     getWorldCenterCoordinates,
-    loadJoinedWorlds
+    loadJoinedWorlds,
+    listenToPlayerWorldData
   } from '../../lib/stores/game.js';
+  import { clearSavedTargetPosition } from '../../lib/stores/map.js';
   import { ref, onValue } from "firebase/database";
-  import { db } from '../../lib/firebase/firebase.js'
+  import { db } from '../../lib/firebase/firebase.js';
+  import { httpsCallable } from "firebase/functions";
+  import { functions } from '../../lib/firebase/firebase.js';
   import { browser } from '$app/environment';
   import JoinConfirmation from '../../components/JoinConfirmation.svelte';
   import WorldCard from '../../components/WorldCard.svelte';
@@ -85,12 +88,67 @@
     const coordParams = getCoordinateParams();
     
     try {
-      await joinWorld(
-        world, 
-        $user.uid, 
+      // Set loading state
+      game.update(state => ({ ...state, loading: true, error: null }));
+      
+      // Clear any saved target position when joining a world
+      if (browser) {
+        clearSavedTargetPosition(selectedWorld.id);
+      }
+      
+      // Call the Cloud Function directly
+      const joinWorldFn = httpsCallable(functions, 'joinWorld');
+      const result = await joinWorldFn({
+        worldId: selectedWorld.id,
         race,
-        name
-      );
+        displayName: name,
+        spawnPosition: selectedWorld.center || worldCenters[selectedWorld.id] || { x: 0, y: 0 }
+      });
+      
+      const { success, coordinates } = result.data;
+      
+      if (!success) {
+        throw new Error('Failed to join world');
+      }
+      
+      // Update local state to include this world
+      game.update(state => {
+        const joinedWorlds = [...(state.joinedWorlds || [])];
+        
+        // Only add if not already in the list
+        if (!joinedWorlds.includes(selectedWorld.id)) {
+          joinedWorlds.push(selectedWorld.id);
+        }
+        
+        return {
+          ...state,
+          joinedWorlds,
+          worldKey: selectedWorld.id,
+          loading: false,
+        };
+      });
+      
+      // Wait for the world info to be fully loaded
+      let worldInfo = await getWorldInfo(selectedWorld.id);
+      
+      if (!worldInfo) {
+        console.log(`No world info returned for ${selectedWorld.id}, retrying...`);
+        worldInfo = await getWorldInfo(selectedWorld.id);
+      }
+      
+      // Save to localStorage
+      if (browser) {
+        try {
+          localStorage.setItem('gisaima-current-world', selectedWorld.id);
+        } catch (e) {
+          console.error('Failed to save world to localStorage:', e);
+        }
+      }
+      
+      // Set up listener for player data in this world
+      if ($user.uid) {
+        listenToPlayerWorldData($user.uid, selectedWorld.id);
+      }
 
       await setCurrentWorld(selectedWorld.id);
       
@@ -100,6 +158,11 @@
       goto(`/map?world=${selectedWorld.id}${coordParams}`);
     } catch (error) {
       console.error('Failed to join world:', error);
+      game.update(state => ({ 
+        ...state, 
+        loading: false, 
+        error: `Failed to join world: ${error.message}` 
+      }));
       closeConfirmation();
     }
   }

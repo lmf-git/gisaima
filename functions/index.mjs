@@ -16,7 +16,8 @@ export { moveGroup } from './actions/move.mjs';
 export { startGathering } from './actions/gather.mjs';
 export { joinBattle } from './actions/joinBattle.mjs';
 export { buildStructure } from './actions/build.mjs';
-
+export { joinWorld } from './actions/joinWorld.mjs';
+export { spawnPlayer } from './actions/spawnPlayer.mjs';
 
 export { cancelMove } from './actions/cancelMove.mjs';
 export { attack } from './actions/attack.mjs';
