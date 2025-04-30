@@ -232,6 +232,9 @@ export async function processMonsterStrategies(worldId) {
               case 'join_battle': // New action type
                 results.battlesJoined++;
                 break;
+              case 'attack': // New action type
+                results.battlesJoined++;
+                break;
             }
           }
         }
@@ -565,6 +568,22 @@ async function executeMonsterStrategy(db, worldId, monsterGroup, location, tileD
     return await joinExistingBattle(db, worldId, monsterGroup, tileData, updates, now);
   }
   
+  // NEW: Check for player groups on this tile to attack
+  const playerGroupsOnTile = findPlayerGroupsOnTile(tileData);
+  if (playerGroupsOnTile.length > 0 && Math.random() < 0.8) { // 80% chance to attack player groups
+    return await initiateAttackOnPlayers(db, worldId, monsterGroup, playerGroupsOnTile, location, updates, now);
+  }
+  
+  // NEW: Check for attackable player structure on this tile
+  const attackableStructure = tileData.structure && 
+    tileData.structure.owner && 
+    !tileData.structure.owner.includes('monster') &&
+    tileData.structure.type !== 'spawn';  // Don't attack spawn points
+    
+  if (attackableStructure && Math.random() < 0.7) { // 70% chance to attack structure
+    return await initiateAttackOnStructure(db, worldId, monsterGroup, tileData.structure, location, updates, now);
+  }
+
   // Factors that influence decisions
   const unitCount = monsterGroup.unitCount || 1;
   const mergeCount = monsterGroup.mergeCount || 0;
@@ -632,6 +651,242 @@ async function executeMonsterStrategy(db, worldId, monsterGroup, location, tileD
   // Strategy 5: Move towards a strategic target
   // This is the default action if others don't apply
   return await moveMonsterTowardsTarget(db, worldId, monsterGroup, location, worldScan, updates, now);
+}
+
+/**
+ * Find player groups on the current tile
+ * @param {object} tileData - Data for the current tile
+ * @returns {Array} Array of player group objects
+ */
+function findPlayerGroupsOnTile(tileData) {
+  const playerGroups = [];
+  
+  if (tileData.groups) {
+    Object.entries(tileData.groups).forEach(([groupId, groupData]) => {
+      // Check if it's a player group (has owner, not a monster, and is idle)
+      if (groupData.owner && 
+          groupData.status === 'idle' && 
+          !groupData.inBattle &&
+          !isMonsterGroup(groupData)) {
+        playerGroups.push({
+          id: groupId,
+          ...groupData
+        });
+      }
+    });
+  }
+  
+  return playerGroups;
+}
+
+/**
+ * Initiate an attack on player groups
+ * @param {object} db - Firebase database reference
+ * @param {string} worldId - World ID
+ * @param {object} monsterGroup - The monster group initiating the attack
+ * @param {Array} targetGroups - Array of target player groups
+ * @param {object} location - The location coordinates
+ * @param {object} updates - Updates object to modify
+ * @param {number} now - Current timestamp
+ * @returns {object} Action result
+ */
+async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, location, updates, now) {
+  const { x, y } = location;
+  
+  // Choose which player groups to attack (up to 3)
+  const targetCount = Math.min(targetGroups.length, 3);
+  // Sort by group size or randomly if sizes unknown
+  targetGroups.sort((a, b) => (a.unitCount || 1) - (b.unitCount || 1));
+  const selectedTargets = targetGroups.slice(0, targetCount);
+  
+  // Create battle ID and prepare battle data
+  const battleId = `battle_${now}_${Math.floor(Math.random() * 1000)}`;
+  
+  // Calculate power for each side
+  const monsterPower = calculateGroupStrength(monsterGroup);
+  const targetPower = selectedTargets.reduce((total, group) => total + (group.unitCount || 1), 0);
+  
+  // Create battle object
+  const battleData = {
+    id: battleId,
+    createdAt: now,
+    status: 'active',
+    locationX: x,
+    locationY: y,
+    targetTypes: ['group'],
+    side1Power: monsterPower,
+    side2Power: targetPower,
+    side1: {
+      power: monsterPower,
+      groups: {
+        [monsterGroup.id]: true
+      }
+    },
+    side2: {
+      power: targetPower,
+      groups: selectedTargets.reduce((obj, group) => {
+        obj[group.id] = true;
+        return obj;
+      }, {})
+    },
+    tickCount: 0
+  };
+  
+  // Get chunk key for current location
+  const chunkKey = monsterGroup.chunkKey;
+  const tileKey = `${x},${y}`;
+  
+  // Add battle to the tile
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`] = battleData;
+  
+  // Update monster group to be in battle
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/inBattle`] = true;
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleId`] = battleId;
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleSide`] = 1;
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleRole`] = 'attacker';
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/status`] = 'fighting';
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/lastUpdated`] = now;
+  
+  // Update each target group to be in battle
+  for (const target of selectedTargets) {
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/inBattle`] = true;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/battleId`] = battleId;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/battleSide`] = 2;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/battleRole`] = 'defender';
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/status`] = 'fighting';
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/lastUpdated`] = now;
+  }
+  
+  // Add battle start message to chat
+  const targetName = selectedTargets.length > 0 ? 
+    (selectedTargets[0].name || `Player group ${selectedTargets[0].id.slice(-4)}`) :
+    'Player groups';
+    
+  const messageId = `monster_attack_${now}_${monsterGroup.id}`;
+  updates[`worlds/${worldId}/chat/${messageId}`] = {
+    text: `${monsterGroup.name || 'Monsters'} have attacked ${targetName} at (${x}, ${y})!`,
+    type: 'event',
+    timestamp: now,
+    location: { x, y }
+  };
+  
+  return {
+    action: 'attack',
+    targets: selectedTargets.map(t => t.id),
+    battleId
+  };
+}
+
+/**
+ * Initiate an attack on a player structure
+ * @param {object} db - Firebase database reference
+ * @param {string} worldId - World ID
+ * @param {object} monsterGroup - The monster group initiating the attack
+ * @param {object} structure - Target structure
+ * @param {object} location - The location coordinates
+ * @param {object} updates - Updates object to modify
+ * @param {number} now - Current timestamp
+ * @returns {object} Action result
+ */
+async function initiateAttackOnStructure(db, worldId, monsterGroup, structure, location, updates, now) {
+  const { x, y } = location;
+  
+  // Create battle ID and prepare battle data
+  const battleId = `battle_${now}_${Math.floor(Math.random() * 1000)}`;
+  
+  // Calculate power for monster group and structure
+  const monsterPower = calculateGroupStrength(monsterGroup);
+  const structurePower = calculateStructurePower(structure);
+  
+  // Create battle object
+  const battleData = {
+    id: battleId,
+    createdAt: now,
+    status: 'active',
+    locationX: x,
+    locationY: y,
+    targetTypes: ['structure'],
+    side1Power: monsterPower,
+    side2Power: structurePower,
+    structurePower: structurePower,
+    side1: {
+      power: monsterPower,
+      groups: {
+        [monsterGroup.id]: true
+      }
+    },
+    side2: {
+      power: structurePower,
+      groups: {}
+    },
+    tickCount: 0
+  };
+  
+  // Get chunk key for current location
+  const chunkKey = monsterGroup.chunkKey;
+  const tileKey = `${x},${y}`;
+  
+  // Add battle to the tile
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`] = battleData;
+  
+  // Update monster group to be in battle
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/inBattle`] = true;
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleId`] = battleId;
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleSide`] = 1;
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleRole`] = 'attacker';
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/status`] = 'fighting';
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/lastUpdated`] = now;
+  
+  // Mark structure as in battle
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/inBattle`] = true;
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/battleId`] = battleId;
+  
+  // Add battle start message to chat
+  const structureName = structure.name || structure.type || "Settlement";
+  const messageId = `monster_attack_structure_${now}_${monsterGroup.id}`;
+  updates[`worlds/${worldId}/chat/${messageId}`] = {
+    text: `${monsterGroup.name || 'Monsters'} are attacking ${structureName} at (${x}, ${y})!`,
+    type: 'event',
+    timestamp: now,
+    location: { x, y }
+  };
+  
+  return {
+    action: 'attack',
+    targetStructure: structure.id,
+    battleId
+  };
+}
+
+/**
+ * Calculate power for a structure (helper function)
+ * @param {object} structure - Structure data
+ * @returns {number} Structure's power value
+ */
+function calculateStructurePower(structure) {
+  if (!structure) return 0;
+  
+  // Base power by structure type
+  let basePower = 5;
+  
+  switch (structure.type) {
+    case 'spawn':
+      basePower = 15;
+      break;
+    case 'fortress':
+      basePower = 30;
+      break;
+    case 'watchtower':
+      basePower = 10;
+      break;
+    case 'stronghold':
+      basePower = 25;
+      break;
+    default:
+      basePower = 5;
+  }
+  
+  return basePower;
 }
 
 /**
