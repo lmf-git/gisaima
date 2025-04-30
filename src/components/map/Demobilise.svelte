@@ -18,12 +18,19 @@
   let error = $state(null);
   let statusMessage = $state('');
   let processing = $state(false);
+  
+  // Add a flag to prevent re-filtering groups once an operation has started
+  let operationInProgress = $state(false);
 
   // Create a derived value for player ID to avoid direct reactive reads in the effect
   let playerId = $derived($currentPlayer?.id);
 
   // Fix the effect that was causing the infinite loop
   $effect(() => {
+    // Don't update available groups if an operation is in progress
+    // This prevents the UI from showing "No groups available" while closing
+    if (operationInProgress) return;
+    
     // Reset groups list if we don't have valid data
     if (!tileData || !tileData.groups || !playerId) {
       availableGroups = [];
@@ -66,6 +73,8 @@
   async function startDemobilize() {
     if (!selectedGroup || processing) return;
     processing = true;
+    // Set the flag to prevent re-filtering groups
+    operationInProgress = true;
     error = null;
     statusMessage = 'Starting demobilization...';
 
@@ -91,7 +100,7 @@
         storageDestination: storageDestination
       });
 
-      selectedGroup = null;
+      // We no longer set selectedGroup to null here to keep the UI stable
       setTimeout(() => {
         onClose(true);
       }, 3000);
@@ -99,8 +108,12 @@
       console.error('Demobilization error:', err);
       error = err.message || 'An error occurred during demobilization.';
       statusMessage = '';
+      // Reset the operation flag on error
+      operationInProgress = false;
     } finally {
       processing = false;
+      // We don't reset operationInProgress here because we want to keep
+      // the UI stable until the modal is closed
     }
   }
 
