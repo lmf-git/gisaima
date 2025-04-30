@@ -85,9 +85,8 @@
       });
       
       console.log('Gathering started:', result.data);
-      // Fix: Use $ prefix to access the store value
-      const nextTickFormatted = $timeUntilNextTick;
-      statusMessage = `Gathering started! Resources will be collected at the next game tick (in approximately ${nextTickFormatted}).`;
+      // Update message to indicate multiple ticks
+      statusMessage = `Gathering started! Resources will be collected in 2 game ticks.`;
       
       if (onGather) {
         onGather({
@@ -138,7 +137,7 @@
     {#if tileData}
       <p class="description">
         Select a group to gather resources at this location.
-        Gathering will complete at the next game tick.
+        Gathering will complete after 2 game ticks.
       </p>
       
       <div class="location-info">

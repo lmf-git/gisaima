@@ -20,13 +20,21 @@ import { mergeItems } from "./utils.mjs";
  * @returns {boolean} Whether gathering was processed
  */
 export function processGathering(worldId, updates, group, chunkKey, tileKey, groupId, tile, now) {
-  // Skip if not in gathering state or not time to complete gathering yet
-  if (group.status !== 'gathering' || !group.gatheringUntil || group.gatheringUntil > now) {
+  // Skip if not in gathering state
+  if (group.status !== 'gathering') {
     return false;
   }
   
   // Full database path to this group
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+  
+  // Check if we need to decrement ticks remaining
+  if (group.gatheringTicksRemaining && group.gatheringTicksRemaining > 1) {
+    // Decrement the counter and continue waiting
+    updates[`${groupPath}/gatheringTicksRemaining`] = group.gatheringTicksRemaining - 1;
+    updates[`${groupPath}/lastUpdated`] = now;
+    return false; // Gathering not completed yet
+  }
   
   // Generate gathered items based on group and biome
   const biome = group.gatheringBiome || tile.biome?.name || 'plains';

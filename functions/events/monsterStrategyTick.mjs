@@ -1446,10 +1446,11 @@ async function startMonsterGathering(db, worldId, monsterGroup, updates, now) {
   // Get the biome or default to plains
   const biome = tileData.biome?.name || 'plains';
   
-  // Set gathering status - similar to how gather.mjs works
+  // Set gathering status with tick counting
   updates[`${groupPath}/status`] = 'gathering';
   updates[`${groupPath}/gatheringStarted`] = now;
   updates[`${groupPath}/gatheringBiome`] = biome;
+  updates[`${groupPath}/gatheringTicksRemaining`] = 2; // Set to wait for 2 ticks
   updates[`${groupPath}/lastUpdated`] = now;
   
   // Add a chat message

@@ -58,16 +58,12 @@ export const startGathering = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError('failed-precondition', 'Group is in battle and cannot gather');
     }
 
-    // Calculate next tick time for gathering completion
+    // Get world info to provide tick information
     const now = Date.now();
     const worldRef = db.ref(`worlds/${worldId}/info`);
     const worldSnapshot = await worldRef.once('value');
     const worldData = worldSnapshot.val() || {};
     const tickInterval = worldData.tickInterval || 60000; // Default 1 minute
-    let nextTickTime = worldData.lastTick + tickInterval;
-    while (nextTickTime <= now) {
-      nextTickTime += tickInterval;
-    }
 
     // Get biome information for the tile
     const biome = tileData.biome?.name || 'plains';
@@ -89,15 +85,15 @@ export const startGathering = onCall({ maxInstances: 10 }, async (request) => {
     await tileRef.child(`groups/${groupId}`).update({
       status: 'gathering',
       gatheringStarted: now,
-      gatheringUntil: nextTickTime,
       gatheringBiome: biome,
+      gatheringTicksRemaining: 2, // Set to wait for 2 ticks before completing
       lastUpdated: now
     });
 
     return {
       success: true,
       message: 'Gathering started',
-      readyAt: nextTickTime
+      completesIn: 2 // Now we report ticks remaining instead of just "next tick"
     };
   } catch (error) {
     console.error(`Error in gather function:`, error);
