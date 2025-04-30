@@ -210,7 +210,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
     const updates = {};
     
     // Add battle data
-    updates[`battles/${worldId}/${battleId}`] = battleData;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = battleData;
     
     // Update attacker groups
