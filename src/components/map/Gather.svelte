@@ -85,7 +85,8 @@
       });
       
       console.log('Gathering started:', result.data);
-      const nextTickFormatted = timeUntilNextTick;
+      // Fix: Use $ prefix to access the store value
+      const nextTickFormatted = $timeUntilNextTick;
       statusMessage = `Gathering started! Resources will be collected at the next game tick (in approximately ${nextTickFormatted}).`;
       
       if (onGather) {
