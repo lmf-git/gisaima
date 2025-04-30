@@ -1,36 +1,5 @@
 {
   "players": {
-    "DmMQpTpsYyQ2NCmh8qTzjKshlMq2": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_attack": true,
-            "first_attack_date": 1746046327679,
-            "first_steps": true,
-            "first_steps_date": 1746046061539,
-            "mobilised": true
-          },
-          "alive": true,
-          "displayName": "Admin",
-          "groups": {
-            "-OP7RirjOjWt5t8mJN_8": {
-              "at": "-23,5",
-              "id": "-OP7RirjOjWt5t8mJN_8",
-              "status": "idle"
-            }
-          },
-          "id": "DmMQpTpsYyQ2NCmh8qTzjKshlMq2",
-          "inGroup": "-OP7RirjOjWt5t8mJN_8",
-          "joined": 1746045861043,
-          "lastLocation": {
-            "timestamp": 1746046516113,
-            "x": -23,
-            "y": 5
-          },
-          "race": "human"
-        }
-      }
-    },
     "Fsec3klBgbOgCMVDkHYM0CCxijg2": {
       "worlds": {
         "ancient-lands": {
@@ -182,6 +151,39 @@
         }
       }
     },
+    "kKRX0XkbRpPHYTpoqM9ppmnoC4C2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_attack": true,
+            "first_attack_date": 1746049448924,
+            "first_steps": true,
+            "first_steps_date": 1746048709442,
+            "first_victory": true,
+            "first_victory_date": 1746050282884,
+            "mobilised": true
+          },
+          "alive": true,
+          "displayName": "LMF",
+          "groups": {
+            "-OP7_n87RqlbeFnI33DU": {
+              "at": "-23,5",
+              "id": "-OP7_n87RqlbeFnI33DU",
+              "status": "idle"
+            }
+          },
+          "id": "kKRX0XkbRpPHYTpoqM9ppmnoC4C2",
+          "inGroup": "-OP7_n87RqlbeFnI33DU",
+          "joined": 1746048281323,
+          "lastLocation": {
+            "timestamp": 1746048841732,
+            "x": -23,
+            "y": 3
+          },
+          "race": "human"
+        }
+      }
+    },
     "ptUgwrwSwlhaNiCwTHoDn7PrY1p2": {
       "worlds": {
         "ancient-lands": {
@@ -316,2475 +318,6 @@
           "timestamp": 1745492645451,
           "type": "system"
         },
-        "-OObTgopgTyX0BPiupsq": {
-          "location": {
-            "x": -18,
-            "y": -22
-          },
-          "text": "test",
-          "timestamp": 1745492823488,
-          "type": "user",
-          "userId": "oEHWacrKO0bJEZ2IrzF1DKDOO7t1",
-          "userName": "Anonymous"
-        },
-        "-OObVb6L2YHmbMGejBOC": {
-          "location": {
-            "x": -18,
-            "y": -22
-          },
-          "text": "test's Force is being mobilized at (-18,-22)",
-          "timestamp": 1745493324164,
-          "type": "system"
-        },
-        "-OOcZX8-jG4Y2sSdCUR1": {
-          "location": {
-            "x": -18,
-            "y": -22
-          },
-          "text": "test's Force is being mobilized at (-18,-22)",
-          "timestamp": 1745511129579,
-          "type": "system"
-        },
-        "-OOc_zHtEA-sxyxZJeqc": {
-          "location": {
-            "x": -18,
-            "y": -22
-          },
-          "text": "gunsy's Force is being mobilized at (-18,-22)",
-          "timestamp": 1745511511138,
-          "type": "system"
-        },
-        "-OOcaUvaD6jq__PAvuh_": {
-          "location": {
-            "x": -18,
-            "y": -22
-          },
-          "text": "gunsy's Force is being mobilized at (-18,-22)",
-          "timestamp": 1745511644821,
-          "type": "system"
-        },
-        "-OOcamEZPcgkVuoizXc3": {
-          "location": {
-            "x": -18,
-            "y": -22
-          },
-          "text": "henlo",
-          "timestamp": 1745511722066,
-          "type": "user",
-          "userId": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
-          "userName": "dharanisrivatsa"
-        },
-        "-OOd-DYksX_lS7iFQ4Gg": {
-          "location": {
-            "timestamp": 1745517359820,
-            "x": -23,
-            "y": 5
-          },
-          "text": "Hi Jimmy",
-          "timestamp": 1745518389592,
-          "type": "user",
-          "userId": "YI5zJA04mxUloRSfmMeXZ8n1Kpo2",
-          "userName": "Anonymous"
-        },
-        "-OOd-J_SNE0_jAO0_sJP": {
-          "location": {
-            "timestamp": 1745518327232,
-            "x": -30,
-            "y": -12
-          },
-          "text": "Hello",
-          "timestamp": 1745518404569,
-          "type": "user",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "Anonymous"
-        },
-        "-OOd-L0fmK0PMz80oD2T": {
-          "location": {
-            "timestamp": 1745517359820,
-            "x": -23,
-            "y": 5
-          },
-          "text": "what did you spawn as",
-          "timestamp": 1745518420180,
-          "type": "user",
-          "userId": "YI5zJA04mxUloRSfmMeXZ8n1Kpo2",
-          "userName": "Anonymous"
-        },
-        "-OOd-ObeyCcWuSsKVroL": {
-          "location": {
-            "timestamp": 1745517359820,
-            "x": -23,
-            "y": 5
-          },
-          "text": "race",
-          "timestamp": 1745518434898,
-          "type": "user",
-          "userId": "YI5zJA04mxUloRSfmMeXZ8n1Kpo2",
-          "userName": "Anonymous"
-        },
-        "-OOd-PwvTO3Uv2jfUhs9": {
-          "location": {
-            "timestamp": 1745518327232,
-            "x": -30,
-            "y": -12
-          },
-          "text": "elf",
-          "timestamp": 1745518430647,
-          "type": "user",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "Anonymous"
-        },
-        "-OOd-RvdvrDr0Pd8YkNw": {
-          "location": {
-            "timestamp": 1745517359820,
-            "x": -23,
-            "y": 5
-          },
-          "text": "1 sec",
-          "timestamp": 1745518448465,
-          "type": "user",
-          "userId": "YI5zJA04mxUloRSfmMeXZ8n1Kpo2",
-          "userName": "Anonymous"
-        },
-        "-OOd-U9g6VfQKe686iEx": {
-          "location": {
-            "timestamp": 1745518327232,
-            "x": -30,
-            "y": -12
-          },
-          "text": "how do i move around",
-          "timestamp": 1745518447911,
-          "type": "user",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "Anonymous"
-        },
-        "-OOd-__16Q8y2q4wMHRK": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "LMF's Force is being mobilized at (-30,-12)",
-          "timestamp": 1745518483707,
-          "type": "system"
-        },
-        "-OOd-byoSB-Mi8dlRLJv": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "if you click on the spawn tile you are on",
-          "timestamp": 1745518493724,
-          "type": "user",
-          "userId": "poLOhsmgxsT75GYIz5H090CMT4L2",
-          "userName": "Anonymous"
-        },
-        "-OOd23S5LaPlS3C454Df": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "JimmyRigged's Force is being mobilized at (-30,-12)",
-          "timestamp": 1745519134370,
-          "type": "system"
-        },
-        "-OOd29T4cNhp20V32RSr": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "ok i mobilized myself",
-          "timestamp": 1745519149569,
-          "type": "user",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "Anonymous"
-        },
-        "-OOd2L2zzU8KlfWFNGR3": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "yay ok im figuring it out",
-          "timestamp": 1745519197050,
-          "type": "user",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "Anonymous"
-        },
-        "-OOd2Mpo2EGonbzis0vp": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "i plotted my journey",
-          "timestamp": 1745519204336,
-          "type": "user",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "Anonymous"
-        },
-        "-OOd2TIDfhmbnkl0NjIe": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "that will take ages lol",
-          "timestamp": 1745519240463,
-          "type": "user",
-          "userId": "poLOhsmgxsT75GYIz5H090CMT4L2",
-          "userName": "Anonymous"
-        },
-        "-OOd2UXCDT3zKlG2XwYt": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "haha okay",
-          "timestamp": 1745519235849,
-          "type": "user",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "Anonymous"
-        },
-        "-OOd2YlY0ayLUA6x0Bqs": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "I feel like the chat messages get disordered every so often",
-          "timestamp": 1745519262884,
-          "type": "user",
-          "userId": "poLOhsmgxsT75GYIz5H090CMT4L2",
-          "userName": "Anonymous"
-        },
-        "-OOd3zgSQ1-FbUjdAD9B": {
-          "location": {
-            "timestamp": 1745519581397,
-            "x": -26,
-            "y": -12
-          },
-          "text": "Yeah they do a little, I think its just from the time zones",
-          "timestamp": 1745519629721,
-          "type": "user",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "Anonymous"
-        },
-        "-OOd47-T3A7ESSYCT6G-": {
-          "location": {
-            "timestamp": 1745519581397,
-            "x": -26,
-            "y": -12
-          },
-          "text": "I didn't travel very far so I'm about halfway to my destination",
-          "timestamp": 1745519663770,
-          "type": "user",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "Anonymous"
-        },
-        "-OOd49rC1h9oN5WLVcYR": {
-          "location": {
-            "timestamp": 1745519581397,
-            "x": -26,
-            "y": -12
-          },
-          "text": "Pullin up @ the Dwarven Stronghold",
-          "timestamp": 1745519675465,
-          "type": "user",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "Anonymous"
-        },
-        "-OOd5hRgTGVknpX5Mse7": {
-          "location": {
-            "x": -32,
-            "y": -10
-          },
-          "text": "Elf Hater 2's Force is being mobilized at (-32,-10)",
-          "timestamp": 1745520088747,
-          "type": "system"
-        },
-        "-OOd5wDy2BZ_kTxCH4JR": {
-          "location": {
-            "timestamp": 1745520061983,
-            "x": -23,
-            "y": -8
-          },
-          "text": "Not \"Elf Hater 2\" LOL",
-          "timestamp": 1745520139834,
-          "type": "user",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "Anonymous"
-        },
-        "-OOdDK1s89dx0j4J7WOF": {
-          "location": {
-            "timestamp": 1745520781396,
-            "x": -19,
-            "y": -8
-          },
-          "text": "im attacking you",
-          "timestamp": 1745522076412,
-          "type": "user",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "Anonymous"
-        },
-        "-OOdDT7iOID5IAoPy2NQ": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "JimmyRigged's Force is being mobilized at (-30,-12)",
-          "timestamp": 1745522123144,
-          "type": "system"
-        },
-        "-OOdM2tLS7AhPfRrHzWW": {
-          "location": {
-            "x": -32,
-            "y": -10
-          },
-          "text": "Lucky Dwarf's Force is being mobilized at (-32,-10)",
-          "timestamp": 1745524375035,
-          "type": "system"
-        },
-        "-OOeDa6ODrETm0oYXEkb": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "sunsueme's Force is being mobilized at (-23,5)",
-          "timestamp": 1745538933016,
-          "type": "system"
-        },
-        "-OOeDihvqTwGN-wqKItI": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Help how do I move",
-          "timestamp": 1745538968596,
-          "type": "user",
-          "userId": "rBBlixvWCih6uFNcG4vK7qcGvmv1",
-          "userName": "Anonymous"
-        },
-        "-OOeRVJNR6kaNl7ud5aj": {
-          "location": {
-            "x": -32,
-            "y": -10
-          },
-          "text": "Test's Force is being mobilized at (-32,-10)",
-          "timestamp": 1745542579275,
-          "type": "system"
-        },
-        "-OP0wBwkanDSUNiRuUAJ": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "Test Elf's Force is being mobilized at (-30,-12)",
-          "timestamp": 1745936764514,
-          "type": "system"
-        },
-        "-OP18UnYe_ABX8uAB38P": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "Test Elf's Force is being mobilized at (-30,-12)",
-          "timestamp": 1745940249606,
-          "type": "system"
-        },
-        "-OP3SyEfGrkjn7WlgDXu": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "Test Elf's Force is being mobilized at (-30,-12)",
-          "timestamp": 1745979171602,
-          "type": "system"
-        },
-        "-OP3gyfupCZB0rdVcTKR": {
-          "location": {
-            "x": -15,
-            "y": 3
-          },
-          "text": "Goblincock's Force is being mobilized at (-15,3)",
-          "timestamp": 1745983105555,
-          "type": "system"
-        },
-        "-OP3hZRG5TEEw4_za2CT": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "test2's Force is being mobilized at (-23,5)",
-          "timestamp": 1745983260350,
-          "type": "system"
-        },
-        "-OP3j3dxGgaKNXWe0pD1": {
-          "location": {
-            "timestamp": 1745983621596,
-            "x": -20,
-            "y": 4
-          },
-          "text": "I yam sentient",
-          "timestamp": 1745983654712,
-          "type": "user",
-          "userId": "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2",
-          "userName": "Goblincock"
-        },
-        "-OP3kM9vpmLEb32j0RFD": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "FuaK's Force is being mobilized at (-30,-12)",
-          "timestamp": 1745983992419,
-          "type": "system"
-        },
-        "-OP3kauHLmcrjEzB-Lrd": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "who is alive here?",
-          "timestamp": 1745984057213,
-          "type": "user",
-          "userId": "YIDyjpxkBSR8eqemfslNDfs1YBr2",
-          "userName": "FuaK"
-        },
-        "-OP3lS9Dc_LK25GU9auw": {
-          "location": {
-            "x": -32,
-            "y": -10
-          },
-          "text": "madnico's Force is being mobilized at (-32,-10)",
-          "timestamp": 1745984279091,
-          "type": "system"
-        },
-        "-OP3oDO7n258-59jyTSU": {
-          "location": {
-            "x": -32,
-            "y": -10
-          },
-          "text": "Violent Dwarf's Force is being mobilized at (-32,-10)",
-          "timestamp": 1745985005038,
-          "type": "system"
-        },
-        "-OP3xBRJOrX045NcRy50": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "test's Force is being mobilized at (-30,-12)",
-          "timestamp": 1745987356166,
-          "type": "system"
-        },
-        "-OP4-dOYq4mpyDWxihvg": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "test's Force is being mobilized at (-30,-12)",
-          "timestamp": 1745988261202,
-          "type": "system"
-        },
-        "-OP41c849QBA2PwwKPE3": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "test's Force is being mobilized at (-30,-12)",
-          "timestamp": 1745988780518,
-          "type": "system"
-        },
-        "-OP44UB6Fznf18yc6n09": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "tester's Force is being mobilized at (-30,-12)",
-          "timestamp": 1745989530283,
-          "type": "system"
-        },
-        "-OP6CLLj1RpCLDUD8A-B": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Test Human's Force is being mobilized at (-23,5)",
-          "timestamp": 1746025145559,
-          "type": "system"
-        },
-        "-OP6JZxEr2lsJE9o6bM-": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Test Battles's Force is being mobilized at (-23,5)",
-          "timestamp": 1746027040270,
-          "type": "system"
-        },
-        "-OP6OV5c5ksfOdc6qFQ8": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF1's Force is being mobilized at (-23,5)",
-          "timestamp": 1746028331310,
-          "type": "system"
-        },
-        "-OP6Ofm9zLqMlTuE16zO": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF2's Force is being mobilized at (-23,5)",
-          "timestamp": 1746028379185,
-          "type": "system"
-        },
-        "-OP6SLU_qqsoxkNsOHIN": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF3's Force is being mobilized at (-23,5)",
-          "timestamp": 1746029340383,
-          "type": "system"
-        },
-        "-OP6TJDuw7-ITv1aFvFh": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF3's Force is being mobilized at (-23,5)",
-          "timestamp": 1746029593436,
-          "type": "system"
-        },
-        "-OP6UKvMxEPG3y8X1UmX": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF3's Force is being mobilized at (-23,5)",
-          "timestamp": 1746029862530,
-          "type": "system"
-        },
-        "-OP6Urd0VPW85Zhef1Uc": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF3's Force is being mobilized at (-23,5)",
-          "timestamp": 1746030000619,
-          "type": "system"
-        },
-        "-OP6WK6d8k9f0EJt-1q5": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF3's Force is being mobilized at (-23,5)",
-          "timestamp": 1746030383498,
-          "type": "system"
-        },
-        "-OP79LL0Tx6bSOS5LPbh": {
-          "location": {
-            "x": -32,
-            "y": -10
-          },
-          "text": "MrGirl's Force is being mobilized at (-32,-10)",
-          "timestamp": 1746041136192,
-          "type": "system"
-        },
-        "-OP79fPW07DJVn9NqLfS": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF's Force is being mobilized at (-23,5)",
-          "timestamp": 1746041222719,
-          "type": "system"
-        },
-        "-OP79hXx6RAK4EpU8fnE": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Hello",
-          "timestamp": 1746041231793,
-          "type": "user",
-          "userId": "ec4OU7rVbqadlWumAcBh8WIu0q12",
-          "userName": "LMF"
-        },
-        "-OP7LHqSDgLEvfwmWB4j": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF's Force is being mobilized at (-23,5)",
-          "timestamp": 1746044267627,
-          "type": "system"
-        },
-        "-OP7RixLaGqJ69bVOICK": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Admin's Force is being mobilized at (-23,5)",
-          "timestamp": 1746045955624,
-          "type": "system"
-        },
-        "battle_1745484723001_battle_1745483648051_103": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle at (-23, 5) has ended after 1 ticks! Victorious: human2's Force Defeated: human1's Force (1 casualties)",
-          "timestamp": 1745484723001,
-          "type": "event"
-        },
-        "battle_1745486522567_battle_1745486485376_438": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle at (-23, 5) has ended after 1 ticks! Victorious: test's Force Defeated: test2's Force (1 casualties)",
-          "timestamp": 1745486522567,
-          "type": "event"
-        },
-        "battle_1745486946112_battle_1745486910404_615": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle at (-23, 5) has ended after 1 ticks! Victorious: test's Force Defeated: test2's Force (1 casualties) (1 items seized)",
-          "timestamp": 1745486946112,
-          "type": "event"
-        },
-        "battle_1745511602097_battle_1745511595419_206": {
-          "location": {
-            "x": -18,
-            "y": -22
-          },
-          "text": "Battle at (-18, -22) has ended after 1 ticks! Victorious: test's Force Defeated: gunsy's Force (1 casualties)",
-          "timestamp": 1745511602097,
-          "type": "event"
-        },
-        "battle_1745522101915_battle_1745522083802_116": {
-          "location": {
-            "x": -19,
-            "y": -8
-          },
-          "text": "Battle at (-19, -8) has ended after 1 ticks! Victorious: Elf Hater 2's Force Defeated: JimmyRigged's Force (1 casualties) (1 items seized)",
-          "timestamp": 1745522101915,
-          "type": "event"
-        },
-        "battle_1746023822148_battle_1746023700931_769_379": {
-          "location": {
-            "x": -29,
-            "y": -11
-          },
-          "text": "Battle at (-29,-11) has ended after 2 ticks! Victorious: Test Elf's Force Defeated: Violent Dwarf's Force (1 casualties)",
-          "timestamp": 1746023822148,
-          "type": "event"
-        },
-        "battle_1746025382024_battle_1746025259013_133_505": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle at (-23,5) has ended after 2 ticks! Victorious: test's Force Defeated: Test Human's Force (1 casualties)",
-          "timestamp": 1746025382024,
-          "type": "event"
-        },
-        "battle_1746027422408_battle_1746027291256_749_571": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle at (-23,5) has ended after 2 ticks! Victorious: test's Force Defeated: Test Battles's Force (1 casualties)",
-          "timestamp": 1746027422408,
-          "type": "event"
-        },
-        "battle_1746028562540_battle_1746028401875_828_521": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle at (-23,5) has ended after 2 ticks! Victorious: LMF1's Force Defeated: LMF2's Force (1 casualties)",
-          "timestamp": 1746028562540,
-          "type": "event"
-        },
-        "battle_1746031926592_battle_1746031748337_658_7": {
-          "location": {
-            "x": -23,
-            "y": 3
-          },
-          "text": "Battle at (-23,3) has ended after 2 ticks! Victorious: Goblin Raiders Defeated: LMF3's Force (1 casualties)",
-          "timestamp": 1746031926592,
-          "type": "event"
-        },
-        "battle_1746045001947_battle_1746044871545_233_447": {
-          "location": {
-            "x": -23,
-            "y": 3
-          },
-          "text": "Battle at (-23,3) has ended after 2 ticks! Victorious: Goblin Raiders Defeated: LMF's Force (1 casualties)",
-          "timestamp": 1746045001947,
-          "type": "event"
-        },
-        "battle_1746046502078_battle_1746046327679_445_536": {
-          "location": {
-            "x": -23,
-            "y": 3
-          },
-          "text": "Battle at (-23,3) has ended after 2 ticks! Victorious: Goblin Raiders Defeated: Admin's Force (1 casualties)",
-          "timestamp": 1746046502078,
-          "type": "event"
-        },
-        "battle_start_1746023700931_battle_1746023700931_769": {
-          "location": {
-            "x": -29,
-            "y": -11
-          },
-          "text": "Battle has begun at (-29, -11)! Violent Dwarf's Force is attacking Test Elf's Force!",
-          "timestamp": 1746023700931,
-          "type": "event"
-        },
-        "battle_start_1746025259013_battle_1746025259013_133": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle has begun at (-23, 5)! Test Human's Force is attacking test's Force!",
-          "timestamp": 1746025259013,
-          "type": "event"
-        },
-        "battle_start_1746027291256_battle_1746027291256_749": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle has begun at (-23, 5)! Test Battles's Force is attacking test's Force!",
-          "timestamp": 1746027291256,
-          "type": "event"
-        },
-        "battle_start_1746028401875_battle_1746028401875_828": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle has begun at (-23, 5)! LMF2's Force is attacking LMF1's Force!",
-          "timestamp": 1746028401875,
-          "type": "event"
-        },
-        "battle_start_1746031748337_battle_1746031748337_658": {
-          "location": {
-            "x": -23,
-            "y": 3
-          },
-          "text": "Battle has begun at (-23, 3)! LMF3's Force is attacking Goblin Raiders!",
-          "timestamp": 1746031748337,
-          "type": "event"
-        },
-        "battle_start_1746044871545_battle_1746044871545_233": {
-          "location": {
-            "x": -23,
-            "y": 3
-          },
-          "text": "Battle has begun at (-23, 3)! LMF's Force is attacking Goblin Raiders!",
-          "timestamp": 1746044871545,
-          "type": "event"
-        },
-        "battle_start_1746046327679_battle_1746046327679_445": {
-          "location": {
-            "x": -23,
-            "y": 3
-          },
-          "text": "Battle has begun at (-23, 3)! Admin's Force is attacking Goblin Raiders!",
-          "timestamp": 1746046327679,
-          "type": "event"
-        },
-        "chat_1745483585619_25": {
-          "location": {
-            "timestamp": 1745483585619,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"human2's Force\"",
-          "timestamp": 1745483585619,
-          "type": "event",
-          "userId": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
-          "userName": "human2's Force"
-        },
-        "chat_1745483585619_451": {
-          "location": {
-            "timestamp": 1745483585619,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"human1's Force\"",
-          "timestamp": 1745483585619,
-          "type": "event",
-          "userId": "fphA92tMTfRAu6FU6RDNJ33VQni1",
-          "userName": "human1's Force"
-        },
-        "chat_1745486341146_218": {
-          "location": {
-            "timestamp": 1745486341146,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"test's Force\"",
-          "timestamp": 1745486341146,
-          "type": "event",
-          "userId": "DqBhu8Nd4jNCYq51s8izH6JTHL63",
-          "userName": "test's Force"
-        },
-        "chat_1745486341146_958": {
-          "location": {
-            "timestamp": 1745486341146,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"test2's Force\"",
-          "timestamp": 1745486341146,
-          "type": "event",
-          "userId": "fphA92tMTfRAu6FU6RDNJ33VQni1",
-          "userName": "test2's Force"
-        },
-        "chat_1745486581221_566": {
-          "location": {
-            "timestamp": 1745486581221,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"test2's Force\"",
-          "timestamp": 1745486581221,
-          "type": "event",
-          "userId": "fphA92tMTfRAu6FU6RDNJ33VQni1",
-          "userName": "test2's Force"
-        },
-        "chat_1745492701961_977": {
-          "location": {
-            "timestamp": 1745492701961,
-            "x": -18,
-            "y": -22
-          },
-          "text": "A lone fairy warrior has mobilized at (-18, -22) - \"test's Force\"",
-          "timestamp": 1745492701961,
-          "type": "event",
-          "userId": "oEHWacrKO0bJEZ2IrzF1DKDOO7t1",
-          "userName": "test's Force"
-        },
-        "chat_1745493361697_646": {
-          "location": {
-            "timestamp": 1745493361697,
-            "x": -18,
-            "y": -22
-          },
-          "text": "A lone fairy warrior has mobilized at (-18, -22) - \"test's Force\"",
-          "timestamp": 1745493361697,
-          "type": "event",
-          "userId": "oEHWacrKO0bJEZ2IrzF1DKDOO7t1",
-          "userName": "test's Force"
-        },
-        "chat_1745511181303_401": {
-          "location": {
-            "timestamp": 1745511181303,
-            "x": -18,
-            "y": -22
-          },
-          "text": "A lone fairy warrior has mobilized at (-18, -22) - \"test's Force\"",
-          "timestamp": 1745511181303,
-          "type": "event",
-          "userId": "oEHWacrKO0bJEZ2IrzF1DKDOO7t1",
-          "userName": "test's Force"
-        },
-        "chat_1745511541783_681": {
-          "location": {
-            "timestamp": 1745511541783,
-            "x": -18,
-            "y": -22
-          },
-          "text": "A lone fairy warrior has mobilized at (-18, -22) - \"gunsy's Force\"",
-          "timestamp": 1745511541783,
-          "type": "event",
-          "userId": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
-          "userName": "gunsy's Force"
-        },
-        "chat_1745511661288_580": {
-          "location": {
-            "timestamp": 1745511661288,
-            "x": -18,
-            "y": -22
-          },
-          "text": "A lone fairy warrior has mobilized at (-18, -22) - \"gunsy's Force\"",
-          "timestamp": 1745511661288,
-          "type": "event",
-          "userId": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
-          "userName": "gunsy's Force"
-        },
-        "chat_1745518500576_889": {
-          "location": {
-            "timestamp": 1745518500576,
-            "x": -30,
-            "y": -12
-          },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"LMF's Force\"",
-          "timestamp": 1745518500576,
-          "type": "event",
-          "userId": "poLOhsmgxsT75GYIz5H090CMT4L2",
-          "userName": "LMF's Force"
-        },
-        "chat_1745519160655_132": {
-          "location": {
-            "timestamp": 1745519160655,
-            "x": -30,
-            "y": -12
-          },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"JimmyRigged's Force\"",
-          "timestamp": 1745519160655,
-          "type": "event",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "JimmyRigged's Force"
-        },
-        "chat_1745520125776_862": {
-          "location": {
-            "timestamp": 1745520125776,
-            "x": -32,
-            "y": -10
-          },
-          "text": "A lone dwarf warrior has mobilized at (-32, -10) - \"Elf Hater 2's Force\"",
-          "timestamp": 1745520125776,
-          "type": "event",
-          "userId": "dB97DhSkG1YppglcPG8jH1vKwYY2",
-          "userName": "Elf Hater 2's Force"
-        },
-        "chat_1745522161405_307": {
-          "location": {
-            "timestamp": 1745522161405,
-            "x": -30,
-            "y": -12
-          },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"JimmyRigged's Force\"",
-          "timestamp": 1745522161405,
-          "type": "event",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "JimmyRigged's Force"
-        },
-        "chat_1745524381386_862": {
-          "location": {
-            "timestamp": 1745524381386,
-            "x": -32,
-            "y": -10
-          },
-          "text": "A lone dwarf warrior has mobilized at (-32, -10) - \"Lucky Dwarf's Force\"",
-          "timestamp": 1745524381386,
-          "type": "event",
-          "userId": "0lWjEwolugVdi5PtsFfqWjcGSY73",
-          "userName": "Lucky Dwarf's Force"
-        },
-        "chat_1745525674002_707": {
-          "location": {
-            "x": -37,
-            "y": -8
-          },
-          "text": "JimmyRigged's Outpost construction has begun at (-37,-8)",
-          "timestamp": 1745525674002,
-          "type": "system"
-        },
-        "chat_1745525762026_225": {
-          "location": {
-            "timestamp": 1745525762026,
-            "x": -37,
-            "y": -8
-          },
-          "text": "JimmyRigged's Outpost has been completed at (-37, -8)",
-          "timestamp": 1745525762026,
-          "type": "event",
-          "userId": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
-          "userName": "JimmyRigged"
-        },
-        "chat_1745538965073_761": {
-          "location": {
-            "timestamp": 1745538965073,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"sunsueme's Force\"",
-          "timestamp": 1745538965073,
-          "type": "event",
-          "userId": "rBBlixvWCih6uFNcG4vK7qcGvmv1",
-          "userName": "sunsueme's Force"
-        },
-        "chat_1745542621541_41": {
-          "location": {
-            "timestamp": 1745542621541,
-            "x": -32,
-            "y": -10
-          },
-          "text": "A lone dwarf warrior has mobilized at (-32, -10) - \"Test's Force\"",
-          "timestamp": 1745542621541,
-          "type": "event",
-          "userId": "jMQFcac8X9Wu9bfGxmCZRi46nt02",
-          "userName": "Test's Force"
-        },
-        "chat_1745936821309_694": {
-          "location": {
-            "timestamp": 1745936821309,
-            "x": -30,
-            "y": -12
-          },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"Test Elf's Force\"",
-          "timestamp": 1745936821309,
-          "type": "event",
-          "userId": "e1dbsigg7CbPdTtWkpYWX7AsJvh2",
-          "userName": "Test Elf's Force"
-        },
-        "chat_1745940301545_133": {
-          "location": {
-            "timestamp": 1745940301545,
-            "x": -30,
-            "y": -12
-          },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"Test Elf's Force\"",
-          "timestamp": 1745940301545,
-          "type": "event",
-          "userId": "e1dbsigg7CbPdTtWkpYWX7AsJvh2",
-          "userName": "Test Elf's Force"
-        },
-        "chat_1745979185440_552": {
-          "location": {
-            "timestamp": 1745979185440,
-            "x": -30,
-            "y": -12
-          },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"Test Elf's Force\"",
-          "timestamp": 1745979185440,
-          "type": "event",
-          "userId": "e1dbsigg7CbPdTtWkpYWX7AsJvh2",
-          "userName": "Test Elf's Force"
-        },
-        "chat_1745983142008_698": {
-          "location": {
-            "timestamp": 1745983142008,
-            "x": -15,
-            "y": 3
-          },
-          "text": "A lone goblin warrior has mobilized at (-15, 3) - \"Goblincock's Force\"",
-          "timestamp": 1745983142008,
-          "type": "event",
-          "userId": "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2",
-          "userName": "Goblincock's Force"
-        },
-        "chat_1745983265071_461": {
-          "location": {
-            "timestamp": 1745983265071,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"test2's Force\"",
-          "timestamp": 1745983265071,
-          "type": "event",
-          "userId": "fphA92tMTfRAu6FU6RDNJ33VQni1",
-          "userName": "test2's Force"
-        },
-        "chat_1745984041090_500": {
-          "location": {
-            "timestamp": 1745984041090,
-            "x": -30,
-            "y": -12
-          },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"FuaK's Force\"",
-          "timestamp": 1745984041090,
-          "type": "event",
-          "userId": "YIDyjpxkBSR8eqemfslNDfs1YBr2",
-          "userName": "FuaK's Force"
-        },
-        "chat_1745984281439_112": {
-          "location": {
-            "timestamp": 1745984281439,
-            "x": -32,
-            "y": -10
-          },
-          "text": "A lone dwarf warrior has mobilized at (-32, -10) - \"madnico's Force\"",
-          "timestamp": 1745984281439,
-          "type": "event",
-          "userId": "scls4twPVdNaZABrOfKAhVXsd3v2",
-          "userName": "madnico's Force"
-        },
-        "chat_1745985061792_226": {
-          "location": {
-            "timestamp": 1745985061792,
-            "x": -32,
-            "y": -10
-          },
-          "text": "A lone dwarf warrior has mobilized at (-32, -10) - \"Violent Dwarf's Force\"",
-          "timestamp": 1745985061792,
-          "type": "event",
-          "userId": "4kr5HbmwW4YZ6TmMtMlxaPc1qAE3",
-          "userName": "Violent Dwarf's Force"
-        },
-        "chat_1745987401383_328": {
-          "location": {
-            "timestamp": 1745987401383,
-            "x": -30,
-            "y": -12
-          },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"test's Force\"",
-          "timestamp": 1745987401383,
-          "type": "event",
-          "userId": "slBL44vs3eZG5K7f4Cn1xQpJH9B2",
-          "userName": "test's Force"
-        },
-        "chat_1745988301590_155": {
-          "location": {
-            "timestamp": 1745988301590,
-            "x": -30,
-            "y": -12
-          },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"test's Force\"",
-          "timestamp": 1745988301590,
-          "type": "event",
-          "userId": "Bnt5Zl6N7eSg0OxhIlElmSUeFWn2",
-          "userName": "test's Force"
-        },
-        "chat_1745988781611_577": {
-          "location": {
-            "timestamp": 1745988781611,
-            "x": -30,
-            "y": -12
-          },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"test's Force\"",
-          "timestamp": 1745988781611,
-          "type": "event",
-          "userId": "Bnt5Zl6N7eSg0OxhIlElmSUeFWn2",
-          "userName": "test's Force"
-        },
-        "chat_1745989561497_568": {
-          "location": {
-            "timestamp": 1745989561497,
-            "x": -30,
-            "y": -12
-          },
-          "text": "A lone elf warrior has mobilized at (-30, -12) - \"tester's Force\"",
-          "timestamp": 1745989561497,
-          "type": "event",
-          "userId": "BIEd0vebBDZH88rwHVyyQeY3lkC2",
-          "userName": "tester's Force"
-        },
-        "chat_1746025201325_678": {
-          "location": {
-            "timestamp": 1746025201325,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"Test Human's Force\"",
-          "timestamp": 1746025201325,
-          "type": "event",
-          "userId": "1jjkFgvd9qSwq2SuOvPMPpjs3vW2",
-          "userName": "Test Human's Force"
-        },
-        "chat_1746027065124_715": {
-          "location": {
-            "timestamp": 1746027065124,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"Test Battles's Force\"",
-          "timestamp": 1746027065124,
-          "type": "event",
-          "userId": "Es79jTLOipcT4Djs93mglYkQioW2",
-          "userName": "Test Battles's Force"
-        },
-        "chat_1746028381236_577": {
-          "location": {
-            "timestamp": 1746028381236,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"LMF2's Force\"",
-          "timestamp": 1746028381236,
-          "type": "event",
-          "userId": "yJmNrZK918ffAOIUR2VjTrFEufS2",
-          "userName": "LMF2's Force"
-        },
-        "chat_1746028381236_906": {
-          "location": {
-            "timestamp": 1746028381236,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"LMF1's Force\"",
-          "timestamp": 1746028381236,
-          "type": "event",
-          "userId": "FE1hinGzuRMqHmaLUsFQJz60JXw1",
-          "userName": "LMF1's Force"
-        },
-        "chat_1746029341417_880": {
-          "location": {
-            "timestamp": 1746029341417,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"LMF3's Force\"",
-          "timestamp": 1746029341417,
-          "type": "event",
-          "userId": "CjrL1RMjJ7cSYdtKpcavU1WHnpl1",
-          "userName": "LMF3's Force"
-        },
-        "chat_1746029641229_963": {
-          "location": {
-            "timestamp": 1746029641229,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"LMF3's Force\"",
-          "timestamp": 1746029641229,
-          "type": "event",
-          "userId": "CjrL1RMjJ7cSYdtKpcavU1WHnpl1",
-          "userName": "LMF3's Force"
-        },
-        "chat_1746029886000_862": {
-          "location": {
-            "timestamp": 1746029886000,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"LMF3's Force\"",
-          "timestamp": 1746029886000,
-          "type": "event",
-          "userId": "CjrL1RMjJ7cSYdtKpcavU1WHnpl1",
-          "userName": "LMF3's Force"
-        },
-        "chat_1746030001357_898": {
-          "location": {
-            "timestamp": 1746030001357,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"LMF3's Force\"",
-          "timestamp": 1746030001357,
-          "type": "event",
-          "userId": "CjrL1RMjJ7cSYdtKpcavU1WHnpl1",
-          "userName": "LMF3's Force"
-        },
-        "chat_1746030421758_142": {
-          "location": {
-            "timestamp": 1746030421758,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"LMF3's Force\"",
-          "timestamp": 1746030421758,
-          "type": "event",
-          "userId": "CjrL1RMjJ7cSYdtKpcavU1WHnpl1",
-          "userName": "LMF3's Force"
-        },
-        "chat_1746041165115_538": {
-          "location": {
-            "timestamp": 1746041165115,
-            "x": -32,
-            "y": -10
-          },
-          "text": "A lone dwarf warrior has mobilized at (-32, -10) - \"MrGirl's Force\"",
-          "timestamp": 1746041165115,
-          "type": "event",
-          "userId": "cKn1JRVQpmN3zxjHF7NMez6M7xo2",
-          "userName": "MrGirl's Force"
-        },
-        "chat_1746041282033_489": {
-          "location": {
-            "timestamp": 1746041282033,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"LMF's Force\"",
-          "timestamp": 1746041282033,
-          "type": "event",
-          "userId": "ec4OU7rVbqadlWumAcBh8WIu0q12",
-          "userName": "LMF's Force"
-        },
-        "chat_1746044281856_426": {
-          "location": {
-            "timestamp": 1746044281856,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"LMF's Force\"",
-          "timestamp": 1746044281856,
-          "type": "event",
-          "userId": "wATra1ptGvevKepb1wyIeCZDK702",
-          "userName": "LMF's Force"
-        },
-        "chat_1746045961986_82": {
-          "location": {
-            "timestamp": 1746045961986,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A lone human warrior has mobilized at (-23, 5) - \"Admin's Force\"",
-          "timestamp": 1746045961986,
-          "type": "event",
-          "userId": "DmMQpTpsYyQ2NCmh8qTzjKshlMq2",
-          "userName": "Admin's Force"
-        },
-        "chat_monster_spawn_1745989802985_840": {
-          "location": {
-            "x": -34,
-            "y": -14
-          },
-          "text": "A small group of Wild Wolves has been spotted at (-34, -14)",
-          "timestamp": 1745989802985,
-          "type": "event"
-        },
-        "chat_monster_spawn_1745990102530_708": {
-          "location": {
-            "x": -33,
-            "y": -11
-          },
-          "text": "A small group of Bandits has been spotted at (-33, -11)",
-          "timestamp": 1745990102530,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746021663383_396": {
-          "location": {
-            "x": -24,
-            "y": -10
-          },
-          "text": "A small group of Wild Elemental has been spotted at (-24, -10)",
-          "timestamp": 1746021663383,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746022142272_763": {
-          "location": {
-            "x": -32,
-            "y": -14
-          },
-          "text": "A band of Wild Wolves has appeared at (-32, -14)",
-          "timestamp": 1746022142272,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746022802121_693": {
-          "location": {
-            "x": -26,
-            "y": -9
-          },
-          "text": "A small group of Giant Spiders has been spotted at (-26, -9)",
-          "timestamp": 1746022802121,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746027066267_149": {
-          "location": {
-            "x": -22,
-            "y": 0
-          },
-          "text": "A small group of Goblin Raiders has been spotted at (-22, 0)",
-          "timestamp": 1746027066267,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746029887181_640": {
-          "location": {
-            "x": -19,
-            "y": 6
-          },
-          "text": "A band of Goblin Raiders has appeared at (-19, 6)",
-          "timestamp": 1746029887181,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746030062426_256": {
-          "location": {
-            "x": -23,
-            "y": 3
-          },
-          "text": "A small group of Goblin Raiders has been spotted at (-23, 3)",
-          "timestamp": 1746030062426,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746030182695_204": {
-          "location": {
-            "x": -21,
-            "y": 9
-          },
-          "text": "A small group of Giant Spiders has been spotted at (-21, 9)",
-          "timestamp": 1746030182695,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746031562598_608": {
-          "location": {
-            "x": -18,
-            "y": 5
-          },
-          "text": "A band of Goblin Raiders has appeared at (-18, 5)",
-          "timestamp": 1746031562598,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746031682315_371": {
-          "location": {
-            "x": -22,
-            "y": -1
-          },
-          "text": "A small group of Bandits has been spotted at (-22, -1)",
-          "timestamp": 1746031682315,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746041346344_558": {
-          "location": {
-            "x": -26,
-            "y": 6
-          },
-          "text": "A small group of Goblin Raiders has been spotted at (-26, 6)",
-          "timestamp": 1746041346344,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746042062212_206": {
-          "location": {
-            "x": -23,
-            "y": 2
-          },
-          "text": "A band of Bandits has appeared at (-23, 2)",
-          "timestamp": 1746042062212,
-          "type": "event"
-        },
-        "death_1745484723002_fphA92tMTfRAu6FU6RDNJ33VQni1": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Unknown player was defeated in battle at (-23, 5)",
-          "timestamp": 1745484723002,
-          "type": "event"
-        },
-        "death_1745486522568_fphA92tMTfRAu6FU6RDNJ33VQni1": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Unknown player was defeated in battle at (-23, 5)",
-          "timestamp": 1745486522568,
-          "type": "event"
-        },
-        "death_1745486946113_fphA92tMTfRAu6FU6RDNJ33VQni1": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Unknown player was defeated in battle at (-23, 5)",
-          "timestamp": 1745486946113,
-          "type": "event"
-        },
-        "death_1745511602097_OsqXI7j9BFcfwSLt7MuPnV7PZFQ2": {
-          "location": {
-            "x": -18,
-            "y": -22
-          },
-          "text": "Unknown player was defeated in battle at (-18, -22)",
-          "timestamp": 1745511602097,
-          "type": "event"
-        },
-        "death_1745522101916_Fsec3klBgbOgCMVDkHYM0CCxijg2": {
-          "location": {
-            "x": -19,
-            "y": -8
-          },
-          "text": "Unknown player was defeated in battle at (-19, -8)",
-          "timestamp": 1745522101916,
-          "type": "event"
-        },
-        "death_1746023822148_4kr5HbmwW4YZ6TmMtMlxaPc1qAE3": {
-          "location": {
-            "x": -29,
-            "y": -11
-          },
-          "text": "Violent Dwarf's Force was defeated in battle at (-29,-11)",
-          "timestamp": 1746023822148,
-          "type": "event"
-        },
-        "death_1746025382024_1jjkFgvd9qSwq2SuOvPMPpjs3vW2": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Test Human's Force was defeated in battle at (-23,5)",
-          "timestamp": 1746025382024,
-          "type": "event"
-        },
-        "death_1746027422408_Es79jTLOipcT4Djs93mglYkQioW2": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Test Battles's Force was defeated in battle at (-23,5)",
-          "timestamp": 1746027422408,
-          "type": "event"
-        },
-        "death_1746028562540_yJmNrZK918ffAOIUR2VjTrFEufS2": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF2's Force was defeated in battle at (-23,5)",
-          "timestamp": 1746028562540,
-          "type": "event"
-        },
-        "death_1746031926592_CjrL1RMjJ7cSYdtKpcavU1WHnpl1": {
-          "location": {
-            "x": -23,
-            "y": 3
-          },
-          "text": "LMF3's Force was defeated in battle at (-23,3)",
-          "timestamp": 1746031926592,
-          "type": "event"
-        },
-        "death_1746045001947_wATra1ptGvevKepb1wyIeCZDK702": {
-          "location": {
-            "x": -23,
-            "y": 3
-          },
-          "text": "LMF's Force was defeated in battle at (-23,3)",
-          "timestamp": 1746045001947,
-          "type": "event"
-        },
-        "death_1746046502078_DmMQpTpsYyQ2NCmh8qTzjKshlMq2": {
-          "location": {
-            "x": -23,
-            "y": 3
-          },
-          "text": "Admin's Force was defeated in battle at (-23,3)",
-          "timestamp": 1746046502078,
-          "type": "event"
-        },
-        "gather_1745486761904_-OOb4owT0OYyo524niqW": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "test's Force gathered resources in plains biome at (-23, 5): 3 Wooden Sticks",
-          "timestamp": 1745486761904,
-          "type": "event"
-        },
-        "gather_1745486761904_-OOb5o6eqWrHQO_Mrl6I": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "test2's Force gathered resources in plains biome at (-23, 5): 2 Wooden Sticks",
-          "timestamp": 1745486761904,
-          "type": "event"
-        },
-        "gather_1745498161574_-OObVb45PNyVC29YOPEe": {
-          "location": {
-            "x": -17,
-            "y": -22
-          },
-          "text": "test's Force gathered resources in plains biome at (-17, -22): 2 Wooden Sticks, 2 Stone Pieces",
-          "timestamp": 1745498161574,
-          "type": "event"
-        },
-        "gather_1745503861745_-OObVb45PNyVC29YOPEe": {
-          "location": {
-            "x": -18,
-            "y": -22
-          },
-          "text": "test's Force gathered resources in plains biome at (-18, -22): 1 Wooden Sticks, 1 Stone Pieces",
-          "timestamp": 1745503861745,
-          "type": "event"
-        },
-        "gather_1745511721959_-OOcaUtPgnl1DCAm0gIp": {
-          "location": {
-            "x": -18,
-            "y": -22
-          },
-          "text": "gunsy's Force gathered resources in plains biome at (-18, -22): 3 Wooden Sticks",
-          "timestamp": 1745511721959,
-          "type": "event"
-        },
-        "gather_1745511841181_-OOcaUtPgnl1DCAm0gIp": {
-          "location": {
-            "x": -18,
-            "y": -22
-          },
-          "text": "gunsy's Force gathered resources in plains biome at (-18, -22): 5 Wooden Sticks",
-          "timestamp": 1745511841181,
-          "type": "event"
-        },
-        "gather_1745520242022_-OOd23OZjKBDoZt5B0E1": {
-          "location": {
-            "x": -23,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force gathered resources in plains biome at (-23, -8): 2 Wooden Sticks",
-          "timestamp": 1745520242022,
-          "type": "event"
-        },
-        "gather_1745520360767_-OOd23OZjKBDoZt5B0E1": {
-          "location": {
-            "x": -23,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force gathered resources in plains biome at (-23, -8): 4 Wooden Sticks",
-          "timestamp": 1745520360767,
-          "type": "event"
-        },
-        "gather_1745521621868_-OOd23OZjKBDoZt5B0E1": {
-          "location": {
-            "x": -19,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force gathered resources in plains biome at (-19, -8): 2 Wooden Sticks",
-          "timestamp": 1745521621868,
-          "type": "event"
-        },
-        "gather_1745522945724_-OOdDT4AuHhVSLmvPXy7": {
-          "location": {
-            "x": -30,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force gathered resources in plains biome at (-30, -8): 5 Wooden Sticks",
-          "timestamp": 1745522945724,
-          "type": "event"
-        },
-        "gather_1745523301282_-OOdDT4AuHhVSLmvPXy7": {
-          "location": {
-            "x": -30,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force gathered resources in plains biome at (-30, -8): 2 Wooden Sticks, 3 Stone Pieces",
-          "timestamp": 1745523301282,
-          "type": "event"
-        },
-        "gather_1745525641757_-OOdDT4AuHhVSLmvPXy7": {
-          "location": {
-            "x": -37,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force gathered resources in plains biome at (-37, -8): 3 Wooden Sticks, 1 Stone Pieces",
-          "timestamp": 1745525641757,
-          "type": "event"
-        },
-        "gather_1745526421831_-OOdDT4AuHhVSLmvPXy7": {
-          "location": {
-            "x": -38,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force gathered resources in plains biome at (-38, -8): 5 Wooden Sticks",
-          "timestamp": 1745526421831,
-          "type": "event"
-        },
-        "gather_1745526962000_-OOdDT4AuHhVSLmvPXy7": {
-          "location": {
-            "x": -38,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force gathered resources in plains biome at (-38, -8): 1 Wooden Sticks",
-          "timestamp": 1745526962000,
-          "type": "event"
-        },
-        "gather_1745529001761_-OOdDT4AuHhVSLmvPXy7": {
-          "location": {
-            "x": -34,
-            "y": -3
-          },
-          "text": "JimmyRigged's Force gathered resources in plains biome at (-34, -3): 3 Wooden Sticks",
-          "timestamp": 1745529001761,
-          "type": "event"
-        },
-        "gather_1745539321582_-OOeDa2UNCNmF3-wWau2": {
-          "location": {
-            "x": -25,
-            "y": 5
-          },
-          "text": "sunsueme's Force gathered resources in plains biome at (-25, 5): 1 Wooden Sticks",
-          "timestamp": 1745539321582,
-          "type": "event"
-        },
-        "gather_1745541001844_-OOeDa2UNCNmF3-wWau2": {
-          "location": {
-            "x": -26,
-            "y": 5
-          },
-          "text": "sunsueme's Force gathered resources in plains biome at (-26, 5): 3 Wooden Sticks, 1 Stone Pieces",
-          "timestamp": 1745541001844,
-          "type": "event"
-        },
-        "gather_1745542321749_-OOeDa2UNCNmF3-wWau2": {
-          "location": {
-            "x": -26,
-            "y": 3
-          },
-          "text": "sunsueme's Force gathered resources in plains biome at (-26, 3): 3 Wooden Sticks, 2 Stone Pieces",
-          "timestamp": 1745542321749,
-          "type": "event"
-        },
-        "gather_1745576286034_-OOeDa2UNCNmF3-wWau2": {
-          "location": {
-            "x": -26,
-            "y": 3
-          },
-          "text": "sunsueme's Force gathered resources in plains biome at (-26, 3): 3 Wooden Sticks",
-          "timestamp": 1745576286034,
-          "type": "event"
-        },
-        "gather_1745940540617_-OP18Uj6AK1k1Q2OFwl2": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "Test Elf's Force gathered resources in plains biome at (-30, -12): 5 Wooden Sticks",
-          "timestamp": 1745940540617,
-          "type": "event"
-        },
-        "gather_1745982722030_-OP3SyAMFAV_k-6GUhkh": {
-          "location": {
-            "x": -28,
-            "y": -12
-          },
-          "text": "Test Elf's Force gathered resources in plains biome at (-28, -12): 1 Wooden Sticks, 2 Stone Pieces",
-          "timestamp": 1745982722030,
-          "type": "event"
-        },
-        "gather_1745984041090_-OP3gybJVR1U3yqLOxBQ": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Goblincock's Force gathered resources in plains biome at (-23, 5): 4 Wooden Sticks",
-          "timestamp": 1745984041090,
-          "type": "event"
-        },
-        "gather_1745984465511_-OP3kM7ZrP9K3VSiuk0J": {
-          "location": {
-            "x": -32,
-            "y": -10
-          },
-          "text": "FuaK's Force gathered resources in plains biome at (-32, -10): 4 Wooden Sticks",
-          "timestamp": 1745984465511,
-          "type": "event"
-        },
-        "gather_1745984580794_-OP3kM7ZrP9K3VSiuk0J": {
-          "location": {
-            "x": -32,
-            "y": -10
-          },
-          "text": "FuaK's Force gathered resources in plains biome at (-32, -10): 5 Wooden Sticks",
-          "timestamp": 1745984580794,
-          "type": "event"
-        },
-        "gather_1745984641606_-OP3kM7ZrP9K3VSiuk0J": {
-          "location": {
-            "x": -32,
-            "y": -10
-          },
-          "text": "FuaK's Force gathered resources in plains biome at (-32, -10): 5 Wooden Sticks",
-          "timestamp": 1745984641606,
-          "type": "event"
-        },
-        "gather_1745984761879_-OP3lS6o6oDQ6rmA8Fyh": {
-          "location": {
-            "x": -31,
-            "y": -11
-          },
-          "text": "madnico's Force gathered resources in plains biome at (-31, -11): 1 Wooden Sticks, 3 Stone Pieces",
-          "timestamp": 1745984761879,
-          "type": "event"
-        },
-        "gather_1745984885153_-OP3kM7ZrP9K3VSiuk0J": {
-          "location": {
-            "x": -31,
-            "y": -10
-          },
-          "text": "FuaK's Force gathered resources in plains biome at (-31, -10): 5 Wooden Sticks, 1 Stone Pieces",
-          "timestamp": 1745984885153,
-          "type": "event"
-        },
-        "gather_1745984885153_-OP3lS6o6oDQ6rmA8Fyh": {
-          "location": {
-            "x": -31,
-            "y": -11
-          },
-          "text": "madnico's Force gathered resources in plains biome at (-31, -11): 4 Wooden Sticks",
-          "timestamp": 1745984885153,
-          "type": "event"
-        },
-        "gather_1745985121376_-OP3kM7ZrP9K3VSiuk0J": {
-          "location": {
-            "x": -30,
-            "y": -9
-          },
-          "text": "FuaK's Force gathered resources in plains biome at (-30, -9): 3 Wooden Sticks",
-          "timestamp": 1745985121376,
-          "type": "event"
-        },
-        "gather_1745985121376_-OP3lS6o6oDQ6rmA8Fyh": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "madnico's Force gathered resources in plains biome at (-30, -12): 5 Wooden Sticks",
-          "timestamp": 1745985121376,
-          "type": "event"
-        },
-        "gather_1745985245789_-OP3kM7ZrP9K3VSiuk0J": {
-          "location": {
-            "x": -30,
-            "y": -9
-          },
-          "text": "FuaK's Force gathered resources in plains biome at (-30, -9): 4 Wooden Sticks",
-          "timestamp": 1745985245789,
-          "type": "event"
-        },
-        "gather_1745985361139_-OP3lS6o6oDQ6rmA8Fyh": {
-          "location": {
-            "x": -29,
-            "y": -11
-          },
-          "text": "madnico's Force gathered resources in plains biome at (-29, -11): 4 Wooden Sticks, 3 Stone Pieces",
-          "timestamp": 1745985361139,
-          "type": "event"
-        },
-        "gather_1745985541344_-OP3kM7ZrP9K3VSiuk0J": {
-          "location": {
-            "x": -29,
-            "y": -11
-          },
-          "text": "FuaK's Force gathered resources in plains biome at (-29, -11): 3 Wooden Sticks",
-          "timestamp": 1745985541344,
-          "type": "event"
-        },
-        "gather_1745985842035_-OP3kM7ZrP9K3VSiuk0J": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "FuaK's Force gathered resources in plains biome at (-30, -12): 2 Wooden Sticks, 2 Stone Pieces, 1 Mysterious Artifact (Rare)",
-          "timestamp": 1745985842035,
-          "type": "event"
-        },
-        "gather_1745986321032_-OP3SyAMFAV_k-6GUhkh": {
-          "location": {
-            "x": -28,
-            "y": -12
-          },
-          "text": "Test Elf's Force gathered resources in plains biome at (-28, -12): 5 Wooden Sticks, 3 Stone Pieces",
-          "timestamp": 1745986321032,
-          "type": "event"
-        },
-        "gather_1745989325807_-OP41c5dAxIIvgh9M1Jb": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "test's Force gathered resources in plains biome at (-30, -12): 4 Wooden Sticks, 3 Stone Pieces",
-          "timestamp": 1745989325807,
-          "type": "event"
-        },
-        "gather_1746029521207_-OP6SLPY7045yICzYLzC": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF3's Force gathered resources in plains biome at (-23, 5): 1 Wooden Sticks, 1 Stone Pieces",
-          "timestamp": 1746029521207,
-          "type": "event"
-        },
-        "gather_1746030125603_-OP6Uraj_v_mgk5Mx7O3": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF3's Force gathered resources in plains biome at (-23, 5): 3 Wooden Sticks, 3 Stone Pieces",
-          "timestamp": 1746030125603,
-          "type": "event"
-        },
-        "gather_1746030965733_-OP6WK4DUaxKGGXBymhs": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF3's Force gathered resources in plains biome at (-23, 5): 4 Wooden Sticks",
-          "timestamp": 1746030965733,
-          "type": "event"
-        },
-        "gather_1746031081527_-OP6WK4DUaxKGGXBymhs": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF3's Force gathered resources in plains biome at (-23, 5): 3 Wooden Sticks",
-          "timestamp": 1746031081527,
-          "type": "event"
-        },
-        "gather_1746031201333_-OP6WK4DUaxKGGXBymhs": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "LMF3's Force gathered resources in plains biome at (-23, 5): 2 Wooden Sticks",
-          "timestamp": 1746031201333,
-          "type": "event"
-        },
-        "gather_1746044521946_monster_1746030062426_1588": {
-          "location": {
-            "x": -23,
-            "y": 3
-          },
-          "text": "Goblin Raiders gathered resources in plains biome at (-23, 3): 3 Wooden Sticks, 1 Stone Pieces",
-          "timestamp": 1746044521946,
-          "type": "event"
-        },
-        "gather_1746044521946_monster_1746031562598_5280": {
-          "location": {
-            "x": -18,
-            "y": 5
-          },
-          "text": "Goblin Raiders gathered resources in plains biome at (-18, 5): 2 Wooden Sticks, 2 Stone Pieces",
-          "timestamp": 1746044521946,
-          "type": "event"
-        },
-        "gather_1746044521946_monster_1746041346344_4763": {
-          "location": {
-            "x": -26,
-            "y": 6
-          },
-          "text": "Goblin Raiders gathered resources in plains biome at (-26, 6): 5 Wooden Sticks, 3 Stone Pieces",
-          "timestamp": 1746044521946,
-          "type": "event"
-        },
-        "monster_gather_1746044406672_monster_1746030062426_1588": {
-          "location": {
-            "x": -23,
-            "y": 3
-          },
-          "text": "Goblin Raiders is gathering resources in the plains.",
-          "timestamp": 1746044406672,
-          "type": "event"
-        },
-        "monster_gather_1746044406672_monster_1746031562598_5280": {
-          "location": {
-            "x": -18,
-            "y": 5
-          },
-          "text": "Goblin Raiders is gathering resources in the plains.",
-          "timestamp": 1746044406672,
-          "type": "event"
-        },
-        "monster_gather_1746044406672_monster_1746041346344_4763": {
-          "location": {
-            "x": -26,
-            "y": 6
-          },
-          "text": "Goblin Raiders is gathering resources in the plains.",
-          "timestamp": 1746044406672,
-          "type": "event"
-        },
-        "move_1745498045288_-OObVb45PNyVC29YOPEe_1": {
-          "location": {
-            "x": -17,
-            "y": -22
-          },
-          "text": "test's Force has arrived at (-17,-22)",
-          "timestamp": 1745498045288,
-          "type": "event"
-        },
-        "move_1745503801302_-OObVb45PNyVC29YOPEe_1": {
-          "location": {
-            "x": -18,
-            "y": -22
-          },
-          "text": "test's Force has arrived at (-18,-22)",
-          "timestamp": 1745503801302,
-          "type": "event"
-        },
-        "move_1745519466051_-OOd23OZjKBDoZt5B0E1_3": {
-          "location": {
-            "x": -27,
-            "y": -12
-          },
-          "text": "JimmyRigged's Force has arrived at (-27,-12) and continues their journey",
-          "timestamp": 1745519466051,
-          "type": "event"
-        },
-        "move_1745519821082_-OOd23OZjKBDoZt5B0E1_6": {
-          "location": {
-            "x": -25,
-            "y": -10
-          },
-          "text": "JimmyRigged's Force has arrived at (-25,-10) and continues their journey",
-          "timestamp": 1745519821082,
-          "type": "event"
-        },
-        "move_1745520061983_-OOd23OZjKBDoZt5B0E1_9": {
-          "location": {
-            "x": -23,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force has arrived at (-23,-8)",
-          "timestamp": 1745520061983,
-          "type": "event"
-        },
-        "move_1745520661933_-OOd23OZjKBDoZt5B0E1_3": {
-          "location": {
-            "x": -20,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force has arrived at (-20,-8) and continues their journey",
-          "timestamp": 1745520661933,
-          "type": "event"
-        },
-        "move_1745520661933_-OOd5hOld1qngoQkuU_H_3": {
-          "location": {
-            "x": -29,
-            "y": -10
-          },
-          "text": "Elf Hater 2's Force has arrived at (-29,-10) and continues their journey",
-          "timestamp": 1745520661933,
-          "type": "event"
-        },
-        "move_1745520781396_-OOd23OZjKBDoZt5B0E1_4": {
-          "location": {
-            "x": -19,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force has arrived at (-19,-8)",
-          "timestamp": 1745520781396,
-          "type": "event"
-        },
-        "move_1745520905859_-OOd5hOld1qngoQkuU_H_5": {
-          "location": {
-            "x": -27,
-            "y": -10
-          },
-          "text": "Elf Hater 2's Force has arrived at (-27,-10)",
-          "timestamp": 1745520905859,
-          "type": "event"
-        },
-        "move_1745521385142_-OOd5hOld1qngoQkuU_H_3": {
-          "location": {
-            "x": -24,
-            "y": -9
-          },
-          "text": "Elf Hater 2's Force has arrived at (-24,-9) and continues their journey",
-          "timestamp": 1745521385142,
-          "type": "event"
-        },
-        "move_1745521741248_-OOd5hOld1qngoQkuU_H_6": {
-          "location": {
-            "x": -21,
-            "y": -9
-          },
-          "text": "Elf Hater 2's Force has arrived at (-21,-9) and continues their journey",
-          "timestamp": 1745521741248,
-          "type": "event"
-        },
-        "move_1745521921887_-OOd5hOld1qngoQkuU_H_8": {
-          "location": {
-            "x": -19,
-            "y": -8
-          },
-          "text": "Elf Hater 2's Force has arrived at (-19,-8)",
-          "timestamp": 1745521921887,
-          "type": "event"
-        },
-        "move_1745522702019_-OOdDT4AuHhVSLmvPXy7_3": {
-          "location": {
-            "x": -30,
-            "y": -9
-          },
-          "text": "JimmyRigged's Force has arrived at (-30,-9) and continues their journey",
-          "timestamp": 1745522702019,
-          "type": "event"
-        },
-        "move_1745522765785_-OOdDT4AuHhVSLmvPXy7_4": {
-          "location": {
-            "x": -30,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force has arrived at (-30,-8)",
-          "timestamp": 1745522765785,
-          "type": "event"
-        },
-        "move_1745524685752_-OOdM2qw5DDoYN1Q8vLr_3": {
-          "location": {
-            "x": -32,
-            "y": -7
-          },
-          "text": "Lucky Dwarf's Force has arrived at (-32,-7) and continues their journey",
-          "timestamp": 1745524685752,
-          "type": "event"
-        },
-        "move_1745524801238_-OOdM2qw5DDoYN1Q8vLr_4": {
-          "location": {
-            "x": -32,
-            "y": -6
-          },
-          "text": "Lucky Dwarf's Force has arrived at (-32,-6)",
-          "timestamp": 1745524801238,
-          "type": "event"
-        },
-        "move_1745524921694_-OOdDT4AuHhVSLmvPXy7_3": {
-          "location": {
-            "x": -33,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force has arrived at (-33,-8) and continues their journey",
-          "timestamp": 1745524921694,
-          "type": "event"
-        },
-        "move_1745525281833_-OOdDT4AuHhVSLmvPXy7_6": {
-          "location": {
-            "x": -36,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force has arrived at (-36,-8) and continues their journey",
-          "timestamp": 1745525281833,
-          "type": "event"
-        },
-        "move_1745525345628_-OOdDT4AuHhVSLmvPXy7_7": {
-          "location": {
-            "x": -37,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force has arrived at (-37,-8)",
-          "timestamp": 1745525345628,
-          "type": "event"
-        },
-        "move_1745526361065_-OOdDT4AuHhVSLmvPXy7_1": {
-          "location": {
-            "x": -38,
-            "y": -8
-          },
-          "text": "JimmyRigged's Force has arrived at (-38,-8)",
-          "timestamp": 1745526361065,
-          "type": "event"
-        },
-        "move_1745527681802_-OOdDT4AuHhVSLmvPXy7_3": {
-          "location": {
-            "x": -36,
-            "y": -5
-          },
-          "text": "JimmyRigged's Force has arrived at (-36,-5) and continues their journey",
-          "timestamp": 1745527681802,
-          "type": "event"
-        },
-        "move_1745527921358_-OOdDT4AuHhVSLmvPXy7_5": {
-          "location": {
-            "x": -34,
-            "y": -3
-          },
-          "text": "JimmyRigged's Force has arrived at (-34,-3)",
-          "timestamp": 1745527921358,
-          "type": "event"
-        },
-        "move_1745539260805_-OOeDa2UNCNmF3-wWau2_2": {
-          "location": {
-            "x": -25,
-            "y": 5
-          },
-          "text": "sunsueme's Force has arrived at (-25,5)",
-          "timestamp": 1745539260805,
-          "type": "event"
-        },
-        "move_1745539981327_-OOeDa2UNCNmF3-wWau2_3": {
-          "location": {
-            "x": -24,
-            "y": 5
-          },
-          "text": "sunsueme's Force has arrived at (-24,5) and continues their journey",
-          "timestamp": 1745539981327,
-          "type": "event"
-        },
-        "move_1745540221079_-OOeDa2UNCNmF3-wWau2_5": {
-          "location": {
-            "x": -26,
-            "y": 5
-          },
-          "text": "sunsueme's Force has arrived at (-26,5)",
-          "timestamp": 1745540221079,
-          "type": "event"
-        },
-        "move_1745541241240_-OOeDa2UNCNmF3-wWau2_2": {
-          "location": {
-            "x": -26,
-            "y": 3
-          },
-          "text": "sunsueme's Force has arrived at (-26,3)",
-          "timestamp": 1745541241240,
-          "type": "event"
-        },
-        "move_1745542925336_-OOeRVFDDVT2hVfzXsTf_3": {
-          "location": {
-            "x": -33,
-            "y": -8
-          },
-          "text": "Test's Force has arrived at (-33,-8) and continues their journey",
-          "timestamp": 1745542925336,
-          "type": "event"
-        },
-        "move_1745543221223_-OOeRVFDDVT2hVfzXsTf_6": {
-          "location": {
-            "x": -30,
-            "y": -8
-          },
-          "text": "Test's Force has arrived at (-30,-8)",
-          "timestamp": 1745543221223,
-          "type": "event"
-        },
-        "move_1745546461387_-OOdM2qw5DDoYN1Q8vLr_2": {
-          "location": {
-            "x": -30,
-            "y": -8
-          },
-          "text": "Lucky Dwarf's Force has arrived at (-30,-8)",
-          "timestamp": 1745546461387,
-          "type": "event"
-        },
-        "move_1745576101838_-OOdM2qw5DDoYN1Q8vLr_3": {
-          "location": {
-            "x": -28,
-            "y": -7
-          },
-          "text": "Lucky Dwarf's Force has arrived at (-28,-7) and continues their journey",
-          "timestamp": 1745576101838,
-          "type": "event"
-        },
-        "move_1745576405408_-OOdM2qw5DDoYN1Q8vLr_6": {
-          "location": {
-            "x": -25,
-            "y": -7
-          },
-          "text": "Lucky Dwarf's Force has arrived at (-25,-7) and continues their journey",
-          "timestamp": 1745576405408,
-          "type": "event"
-        },
-        "move_1745576645197_-OOdM2qw5DDoYN1Q8vLr_8": {
-          "location": {
-            "x": -23,
-            "y": -8
-          },
-          "text": "Lucky Dwarf's Force has arrived at (-23,-8)",
-          "timestamp": 1745576645197,
-          "type": "event"
-        },
-        "move_1745579941102_-OOeRVFDDVT2hVfzXsTf_3": {
-          "location": {
-            "x": -29,
-            "y": -7
-          },
-          "text": "Test's Force has arrived at (-29,-7) and continues their journey",
-          "timestamp": 1745579941102,
-          "type": "event"
-        },
-        "move_1745580121634_-OOeRVFDDVT2hVfzXsTf_5": {
-          "location": {
-            "x": -31,
-            "y": -7
-          },
-          "text": "Test's Force has arrived at (-31,-7)",
-          "timestamp": 1745580121634,
-          "type": "event"
-        },
-        "move_1745615821334_-OOeDa2UNCNmF3-wWau2_1": {
-          "location": {
-            "x": -27,
-            "y": 3
-          },
-          "text": "sunsueme's Force has arrived at (-27,3)",
-          "timestamp": 1745615821334,
-          "type": "event"
-        },
-        "move_1745966281299_-OP18Uj6AK1k1Q2OFwl2_3": {
-          "location": {
-            "x": -27,
-            "y": -10
-          },
-          "text": "Test Elf's Force has arrived at (-27,-10) and continues their journey",
-          "timestamp": 1745966281299,
-          "type": "event"
-        },
-        "move_1745966581439_-OP18Uj6AK1k1Q2OFwl2_6": {
-          "location": {
-            "x": -24,
-            "y": -9
-          },
-          "text": "Test Elf's Force has arrived at (-24,-9) and continues their journey",
-          "timestamp": 1745966581439,
-          "type": "event"
-        },
-        "move_1745966701860_-OP18Uj6AK1k1Q2OFwl2_7": {
-          "location": {
-            "x": -23,
-            "y": -8
-          },
-          "text": "Test Elf's Force has arrived at (-23,-8)",
-          "timestamp": 1745966701860,
-          "type": "event"
-        },
-        "move_1745968081714_-OP18Uj6AK1k1Q2OFwl2_3": {
-          "location": {
-            "x": -26,
-            "y": -10
-          },
-          "text": "Test Elf's Force has arrived at (-26,-10) and continues their journey",
-          "timestamp": 1745968081714,
-          "type": "event"
-        },
-        "move_1745968445945_-OP18Uj6AK1k1Q2OFwl2_6": {
-          "location": {
-            "x": -29,
-            "y": -11
-          },
-          "text": "Test Elf's Force has arrived at (-29,-11) and continues their journey",
-          "timestamp": 1745968445945,
-          "type": "event"
-        },
-        "move_1745968561328_-OP18Uj6AK1k1Q2OFwl2_7": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "Test Elf's Force has arrived at (-30,-12)",
-          "timestamp": 1745968561328,
-          "type": "event"
-        },
-        "move_1745979305773_-OP3SyAMFAV_k-6GUhkh_1": {
-          "location": {
-            "x": -29,
-            "y": -12
-          },
-          "text": "Test Elf's Force has arrived at (-29,-12)",
-          "timestamp": 1745979305773,
-          "type": "event"
-        },
-        "move_1745982661308_-OP3SyAMFAV_k-6GUhkh_1": {
-          "location": {
-            "x": -28,
-            "y": -12
-          },
-          "text": "Test Elf's Force has arrived at (-28,-12)",
-          "timestamp": 1745982661308,
-          "type": "event"
-        },
-        "move_1745983445944_-OP3gybJVR1U3yqLOxBQ_3": {
-          "location": {
-            "x": -18,
-            "y": 4
-          },
-          "text": "Goblincock's Force has arrived at (-18,4) and continues their journey",
-          "timestamp": 1745983445944,
-          "type": "event"
-        },
-        "move_1745983621596_-OP3hZOzsxJjweXtzQgG_3": {
-          "location": {
-            "x": -20,
-            "y": 4
-          },
-          "text": "test2's Force has arrived at (-20,4)",
-          "timestamp": 1745983621596,
-          "type": "event"
-        },
-        "move_1745983741356_-OP3gybJVR1U3yqLOxBQ_6": {
-          "location": {
-            "x": -21,
-            "y": 5
-          },
-          "text": "Goblincock's Force has arrived at (-21,5) and continues their journey",
-          "timestamp": 1745983741356,
-          "type": "event"
-        },
-        "move_1745983801560_-OP3hZOzsxJjweXtzQgG_1": {
-          "location": {
-            "x": -21,
-            "y": 5
-          },
-          "text": "test2's Force has arrived at (-21,5)",
-          "timestamp": 1745983801560,
-          "type": "event"
-        },
-        "move_1745983921830_-OP3gybJVR1U3yqLOxBQ_8": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Goblincock's Force has arrived at (-23,5)",
-          "timestamp": 1745983921830,
-          "type": "event"
-        },
-        "move_1745984041090_-OP3hZOzsxJjweXtzQgG_2": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "test2's Force has arrived at (-23,5)",
-          "timestamp": 1745984041090,
-          "type": "event"
-        },
-        "move_1745984342015_-OP3kM7ZrP9K3VSiuk0J_2": {
-          "location": {
-            "x": -32,
-            "y": -10
-          },
-          "text": "FuaK's Force has arrived at (-32,-10)",
-          "timestamp": 1745984342015,
-          "type": "event"
-        },
-        "move_1745984580794_-OP3gybJVR1U3yqLOxBQ_3": {
-          "location": {
-            "x": -20,
-            "y": 4
-          },
-          "text": "Goblincock's Force has arrived at (-20,4) and continues their journey",
-          "timestamp": 1745984580794,
-          "type": "event"
-        },
-        "move_1745984761879_-OP3kM7ZrP9K3VSiuk0J_1": {
-          "location": {
-            "x": -31,
-            "y": -10
-          },
-          "text": "FuaK's Force has arrived at (-31,-10)",
-          "timestamp": 1745984761879,
-          "type": "event"
-        },
-        "move_1745984885153_-OP3gybJVR1U3yqLOxBQ_6": {
-          "location": {
-            "x": -17,
-            "y": 4
-          },
-          "text": "Goblincock's Force has arrived at (-17,4) and continues their journey",
-          "timestamp": 1745984885153,
-          "type": "event"
-        },
-        "move_1745985001857_-OP3kM7ZrP9K3VSiuk0J_1": {
-          "location": {
-            "x": -30,
-            "y": -9
-          },
-          "text": "FuaK's Force has arrived at (-30,-9)",
-          "timestamp": 1745985001857,
-          "type": "event"
-        },
-        "move_1745985001857_-OP3lS6o6oDQ6rmA8Fyh_1": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "madnico's Force has arrived at (-30,-12)",
-          "timestamp": 1745985001857,
-          "type": "event"
-        },
-        "move_1745985121376_-OP3gybJVR1U3yqLOxBQ_8": {
-          "location": {
-            "x": -15,
-            "y": 3
-          },
-          "text": "Goblincock's Force has arrived at (-15,3)",
-          "timestamp": 1745985121376,
-          "type": "event"
-        },
-        "move_1745985245789_-OP3lS6o6oDQ6rmA8Fyh_1": {
-          "location": {
-            "x": -29,
-            "y": -11
-          },
-          "text": "madnico's Force has arrived at (-29,-11)",
-          "timestamp": 1745985245789,
-          "type": "event"
-        },
         "move_1745985361139_-OP3oDLkyoqF7kGuN9Bk_3": {
           "location": {
             "x": -29,
@@ -2902,40 +435,49 @@
           "timestamp": 1746046201329,
           "type": "event"
         },
-        "move_start_1746041195430_-OP79LEz6lBjeP0gTkln": {
-          "location": {
-            "x": -32,
-            "y": -10
-          },
-          "text": "MrGirl's Force is setting out from (-32,-10) to (-29,-6)",
-          "timestamp": 1746041195430,
-          "type": "system"
-        },
-        "move_start_1746044546285_-OP7LHkionCHJdHDy0xm": {
+        "move_1746048841732_-OP7_n87RqlbeFnI33DU_2": {
           "location": {
             "x": -23,
-            "y": 5
+            "y": 3
           },
-          "text": "LMF's Force is setting out from (-23,5) to (-23,3)",
-          "timestamp": 1746044546285,
-          "type": "system"
+          "text": "LMF's Force has arrived at (-23,3)",
+          "timestamp": 1746048841732,
+          "type": "event"
         },
-        "move_start_1746046066406_-OP7RirjOjWt5t8mJN_8": {
+        "move_1746049685697_monster_1745989802985_7946_1": {
+          "location": {
+            "x": -33,
+            "y": -14
+          },
+          "text": "Wild Wolves has arrived at (-33,-14)",
+          "timestamp": 1746049685697,
+          "type": "event"
+        },
+        "move_1746049685697_monster_1746027066267_1506_1": {
           "location": {
             "x": -23,
-            "y": 5
+            "y": 1
           },
-          "text": "Admin's Force is setting out from (-23,5) to (-23,3)",
-          "timestamp": 1746046066406,
-          "type": "system"
+          "text": "Goblin Raiders has arrived at (-23,1)",
+          "timestamp": 1746049685697,
+          "type": "event"
         },
-        "rare_1745985842035_-OP3kM7ZrP9K3VSiuk0J": {
+        "move_1746049685697_monster_1746029887181_2979_1": {
           "location": {
-            "x": -30,
-            "y": -12
+            "x": -20,
+            "y": 6
           },
-          "text": "FuaK's Force has discovered something extraordinary!\n★★★ Mysterious Artifact ★★★",
-          "timestamp": 1745985842036,
+          "text": "Goblin Raiders has arrived at (-20,6)",
+          "timestamp": 1746049685697,
+          "type": "event"
+        },
+        "move_1746049865302_monster_1746027066267_1506_1": {
+          "location": {
+            "x": -24,
+            "y": 1
+          },
+          "text": "Goblin Raiders has arrived at (-24,1)",
+          "timestamp": 1746049865302,
           "type": "event"
         }
       },
@@ -3072,7 +614,7 @@
               "type": "spawn"
             }
           },
-          "-18,5": {
+          "-17,6": {
             "groups": {
               "monster_1746031562598_5280": {
                 "createdAt": 1746031562598,
@@ -3108,42 +650,82 @@
                   }
                 ],
                 "lastMessage": {
-                  "text": "Gathered 2 items",
-                  "timestamp": 1746044521946
+                  "text": "Moving to next location (-17,6)",
+                  "timestamp": 1746049985490
                 },
-                "lastUpdated": 1746044521946,
+                "lastUpdated": 1746049985490,
                 "monsterType": "goblin",
+                "moveSpeed": 1,
+                "moveStarted": 1746049866888,
+                "movementPath": [
+                  {
+                    "x": -18,
+                    "y": 5
+                  },
+                  {
+                    "x": -17,
+                    "y": 6
+                  }
+                ],
                 "name": "Goblin Raiders",
+                "nextMoveTime": 1746050045490,
+                "pathIndex": 1,
                 "status": "idle",
+                "targetX": -15,
+                "targetY": 8,
                 "type": "monster",
                 "unitCount": 4,
-                "x": -18,
-                "y": 5
+                "x": -17,
+                "y": 6
               }
             }
           },
-          "-19,6": {
+          "-20,6": {
             "groups": {
               "monster_1746029887181_2979": {
                 "createdAt": 1746029887181,
+                "gatheringBiome": "plains",
+                "gatheringStarted": 1746049687272,
                 "id": "monster_1746029887181_2979",
-                "lastUpdated": 1746029887181,
+                "lastMessage": {
+                  "text": "Moving to next location (-20,6)",
+                  "timestamp": 1746049685697
+                },
+                "lastUpdated": 1746049687272,
                 "monsterType": "goblin",
+                "moveSpeed": 1,
+                "moveStarted": 1746049562798,
+                "movementPath": [
+                  {
+                    "x": -19,
+                    "y": 6
+                  },
+                  {
+                    "x": -20,
+                    "y": 6
+                  }
+                ],
                 "name": "Goblin Raiders",
-                "status": "idle",
+                "nextMoveTime": 1746049745697,
+                "pathIndex": 1,
+                "status": "gathering",
+                "targetX": -22,
+                "targetY": 6,
                 "type": "monster",
                 "unitCount": 4,
-                "x": -19,
+                "x": -20,
                 "y": 6
               }
             }
           }
         },
         "-2,-1": {
-          "-22,-1": {
+          "-23,-1": {
             "groups": {
               "monster_1746031682315_2506": {
                 "createdAt": 1746031682315,
+                "gatheringBiome": "plains",
+                "gatheringStarted": 1746049866888,
                 "id": "monster_1746031682315_2506",
                 "items": [
                   {
@@ -3154,13 +736,33 @@
                     "type": "alchemy"
                   }
                 ],
-                "lastUpdated": 1746031682315,
+                "lastMessage": {
+                  "text": "Moving to next location (-23,-1)",
+                  "timestamp": 1746049865302
+                },
+                "lastUpdated": 1746049866888,
                 "monsterType": "bandit",
+                "moveSpeed": 1,
+                "moveStarted": 1746049803132,
+                "movementPath": [
+                  {
+                    "x": -22,
+                    "y": -1
+                  },
+                  {
+                    "x": -23,
+                    "y": -1
+                  }
+                ],
                 "name": "Bandits",
-                "status": "idle",
+                "nextMoveTime": 1746049925302,
+                "pathIndex": 1,
+                "status": "gathering",
+                "targetX": -24,
+                "targetY": -1,
                 "type": "monster",
                 "unitCount": 2,
-                "x": -22,
+                "x": -23,
                 "y": -1
               }
             }
@@ -3169,11 +771,13 @@
             "groups": {
               "monster_1746021663383_379": {
                 "createdAt": 1746021663383,
+                "gatheringBiome": "plains",
+                "gatheringStarted": 1746049803132,
                 "id": "monster_1746021663383_379",
-                "lastUpdated": 1746021663383,
+                "lastUpdated": 1746049803132,
                 "monsterType": "elemental",
                 "name": "Wild Elemental",
-                "status": "idle",
+                "status": "gathering",
                 "type": "monster",
                 "unitCount": 1,
                 "x": -24,
@@ -3185,11 +789,13 @@
             "groups": {
               "monster_1746022802121_7190": {
                 "createdAt": 1746022802121,
+                "gatheringBiome": "plains",
+                "gatheringStarted": 1746049622321,
                 "id": "monster_1746022802121_7190",
-                "lastUpdated": 1746022802121,
+                "lastUpdated": 1746049622321,
                 "monsterType": "spider",
                 "name": "Giant Spiders",
-                "status": "idle",
+                "status": "gathering",
                 "type": "monster",
                 "unitCount": 1,
                 "x": -26,
@@ -3372,6 +978,8 @@
             "groups": {
               "monster_1746022142272_7752": {
                 "createdAt": 1746022142272,
+                "gatheringBiome": "plains",
+                "gatheringStarted": 1746049562798,
                 "id": "monster_1746022142272_7752",
                 "items": [
                   {
@@ -3389,10 +997,10 @@
                     "type": "weapon"
                   }
                 ],
-                "lastUpdated": 1746022142272,
+                "lastUpdated": 1746049562798,
                 "monsterType": "wolf",
                 "name": "Wild Wolves",
-                "status": "idle",
+                "status": "gathering",
                 "type": "monster",
                 "unitCount": 5,
                 "x": -32,
@@ -3404,40 +1012,17 @@
             "groups": {
               "monster_1745990102530_865": {
                 "createdAt": 1745990102530,
+                "gatheringBiome": "plains",
+                "gatheringStarted": 1746049562798,
                 "id": "monster_1745990102530_865",
-                "lastUpdated": 1745990102530,
+                "lastUpdated": 1746049562798,
                 "monsterType": "bandit",
                 "name": "Bandits",
-                "status": "idle",
+                "status": "gathering",
                 "type": "monster",
                 "unitCount": 2,
                 "x": -33,
                 "y": -11
-              }
-            }
-          },
-          "-34,-14": {
-            "groups": {
-              "monster_1745989802985_7946": {
-                "createdAt": 1745989802985,
-                "id": "monster_1745989802985_7946",
-                "items": [
-                  {
-                    "id": "item_1745989802985_915",
-                    "name": "Bone Fragment",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "lastUpdated": 1745989802985,
-                "monsterType": "wolf",
-                "name": "Wild Wolves",
-                "status": "idle",
-                "type": "monster",
-                "unitCount": 2,
-                "x": -34,
-                "y": -14
               }
             }
           },
@@ -3518,6 +1103,61 @@
               }
             }
           },
+          "-36,-11": {
+            "groups": {
+              "monster_1745989802985_7946": {
+                "createdAt": 1745989802985,
+                "gatheringBiome": "plains",
+                "gatheringStarted": 1746050283449,
+                "id": "monster_1745989802985_7946",
+                "items": [
+                  {
+                    "id": "item_1745989802985_915",
+                    "name": "Bone Fragment",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Moving to next location (-36,-11)",
+                  "timestamp": 1746049985490
+                },
+                "lastUpdated": 1746050283449,
+                "monsterType": "wolf",
+                "moveSpeed": 1,
+                "moveStarted": 1746049687272,
+                "movementPath": [
+                  {
+                    "x": -33,
+                    "y": -14
+                  },
+                  {
+                    "x": -34,
+                    "y": -13
+                  },
+                  {
+                    "x": -35,
+                    "y": -12
+                  },
+                  {
+                    "x": -36,
+                    "y": -11
+                  }
+                ],
+                "name": "Wild Wolves",
+                "nextMoveTime": 1746050045490,
+                "pathIndex": 3,
+                "status": "gathering",
+                "targetX": -36,
+                "targetY": -11,
+                "type": "monster",
+                "unitCount": 2,
+                "x": -36,
+                "y": -11
+              }
+            }
+          },
           "-37,-8": {
             "structure": {
               "builder": "-OOdDT4AuHhVSLmvPXy7",
@@ -3537,6 +1177,8 @@
             "groups": {
               "monster_1746030182695_6418": {
                 "createdAt": 1746030182695,
+                "gatheringBiome": "plains",
+                "gatheringStarted": 1746049622321,
                 "id": "monster_1746030182695_6418",
                 "items": [
                   {
@@ -3547,10 +1189,10 @@
                     "type": "treasure"
                   }
                 ],
-                "lastUpdated": 1746030182695,
+                "lastUpdated": 1746049622321,
                 "monsterType": "spider",
                 "name": "Giant Spiders",
-                "status": "idle",
+                "status": "gathering",
                 "type": "monster",
                 "unitCount": 1,
                 "x": -21,
@@ -3558,35 +1200,12 @@
               }
             }
           },
-          "-22,0": {
-            "groups": {
-              "monster_1746027066267_1506": {
-                "createdAt": 1746027066267,
-                "id": "monster_1746027066267_1506",
-                "items": [
-                  {
-                    "id": "item_1746027066268_692",
-                    "name": "Shiny Gem",
-                    "quantity": 1,
-                    "rarity": "rare",
-                    "type": "gem"
-                  }
-                ],
-                "lastUpdated": 1746027066267,
-                "monsterType": "goblin",
-                "name": "Goblin Raiders",
-                "status": "idle",
-                "type": "monster",
-                "unitCount": 2,
-                "x": -22,
-                "y": 0
-              }
-            }
-          },
           "-23,2": {
             "groups": {
               "monster_1746042062212_5675": {
                 "createdAt": 1746042062212,
+                "gatheringBiome": "plains",
+                "gatheringStarted": 1746049622321,
                 "id": "monster_1746042062212_5675",
                 "items": [
                   {
@@ -3604,10 +1223,10 @@
                     "type": "gem"
                   }
                 ],
-                "lastUpdated": 1746042062212,
+                "lastUpdated": 1746049622321,
                 "monsterType": "bandit",
                 "name": "Bandits",
-                "status": "idle",
+                "status": "gathering",
                 "type": "monster",
                 "unitCount": 3,
                 "x": -23,
@@ -3616,21 +1235,25 @@
             }
           },
           "-23,3": {
+            "battles": {
+              "battle_1746049448924_461": {
+                "side1Power": 1,
+                "side2Power": 0,
+                "tickCount": 1
+              }
+            },
             "groups": {
-              "-OP7RirjOjWt5t8mJN_8": {
-                "battleId": "battle_1746046327679_445",
-                "battleRole": "attacker",
-                "battleSide": 1,
-                "createdAt": 1746045955624,
-                "id": "-OP7RirjOjWt5t8mJN_8",
-                "inBattle": true,
+              "-OP7_n87RqlbeFnI33DU": {
+                "createdAt": 1746048332421,
+                "id": "-OP7_n87RqlbeFnI33DU",
+                "inBattle": false,
                 "lastMessage": {
-                  "text": "Moving to next location (-23,3)",
-                  "timestamp": 1746046201329
+                  "text": "Victory in battle! All units survived the battle.",
+                  "timestamp": 1746050282884
                 },
-                "lastUpdated": 1746046201329,
+                "lastUpdated": 1746048841732,
                 "moveSpeed": 1,
-                "moveStarted": 1746046066406,
+                "moveStarted": 1746048713544,
                 "movementPath": [
                   {
                     "x": -23,
@@ -3645,71 +1268,30 @@
                     "y": 3
                   }
                 ],
-                "name": "Admin's Force",
-                "nextMoveTime": 1746046261329,
-                "owner": "DmMQpTpsYyQ2NCmh8qTzjKshlMq2",
+                "name": "LMF's Force",
+                "nextMoveTime": 1746048901732,
+                "owner": "kKRX0XkbRpPHYTpoqM9ppmnoC4C2",
                 "pathIndex": 2,
                 "race": "human",
-                "status": "fighting",
+                "status": "idle",
                 "targetX": -23,
                 "targetY": 3,
                 "unitCount": 1,
                 "units": {
-                  "DmMQpTpsYyQ2NCmh8qTzjKshlMq2": {
-                    "displayName": "Admin",
-                    "id": "DmMQpTpsYyQ2NCmh8qTzjKshlMq2",
-                    "lastActive": 1746045867928,
+                  "kKRX0XkbRpPHYTpoqM9ppmnoC4C2": {
+                    "displayName": "LMF",
+                    "id": "kKRX0XkbRpPHYTpoqM9ppmnoC4C2",
+                    "lastActive": 1746048289529,
                     "race": "human",
                     "type": "player"
                   }
                 },
                 "x": -23,
                 "y": 3
-              },
-              "monster_1746030062426_1588": {
-                "createdAt": 1746030062426,
-                "id": "monster_1746030062426_1588",
-                "inBattle": false,
-                "items": [
-                  {
-                    "id": "item_1746044522351_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "item_1746044522351_2",
-                    "name": "Stone Pieces",
-                    "quantity": 1,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Victory in battle! All units survived the battle.",
-                  "timestamp": 1746046502078
-                },
-                "lastUpdated": 1746044521946,
-                "monsterType": "goblin",
-                "name": "Goblin Raiders",
-                "status": "idle",
-                "type": "monster",
-                "unitCount": 1,
-                "x": -23,
-                "y": 3
               }
             }
           },
           "-23,5": {
-            "players": {
-              "DmMQpTpsYyQ2NCmh8qTzjKshlMq2": {
-                "displayName": "Admin",
-                "id": "DmMQpTpsYyQ2NCmh8qTzjKshlMq2",
-                "lastActive": 1746046516227,
-                "race": "human"
-              }
-            },
             "structure": {
               "description": "A rugged frontier settlement where hardy humans carve out a living",
               "id": "structure_al_human_spawn",
@@ -3742,6 +1324,53 @@
               "type": "spawn"
             }
           },
+          "-24,1": {
+            "groups": {
+              "monster_1746027066267_1506": {
+                "createdAt": 1746027066267,
+                "gatheringBiome": "plains",
+                "gatheringStarted": 1746049866888,
+                "id": "monster_1746027066267_1506",
+                "items": [
+                  {
+                    "id": "item_1746027066268_692",
+                    "name": "Shiny Gem",
+                    "quantity": 1,
+                    "rarity": "rare",
+                    "type": "gem"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Moving to next location (-24,1)",
+                  "timestamp": 1746049865302
+                },
+                "lastUpdated": 1746049866888,
+                "monsterType": "goblin",
+                "moveSpeed": 1,
+                "moveStarted": 1746049803132,
+                "movementPath": [
+                  {
+                    "x": -23,
+                    "y": 1
+                  },
+                  {
+                    "x": -24,
+                    "y": 1
+                  }
+                ],
+                "name": "Goblin Raiders",
+                "nextMoveTime": 1746049925302,
+                "pathIndex": 1,
+                "status": "gathering",
+                "targetX": -25,
+                "targetY": 1,
+                "type": "monster",
+                "unitCount": 2,
+                "x": -24,
+                "y": 1
+              }
+            }
+          },
           "-26,6": {
             "groups": {
               "monster_1746041346344_4763": {
@@ -3767,10 +1396,30 @@
                   "text": "Gathered 2 items",
                   "timestamp": 1746044521946
                 },
-                "lastUpdated": 1746044521946,
+                "lastUpdated": 1746050283449,
                 "monsterType": "goblin",
+                "moveSpeed": 1,
+                "moveStarted": 1746050283449,
+                "movementPath": [
+                  {
+                    "x": -26,
+                    "y": 6
+                  },
+                  {
+                    "x": -25,
+                    "y": 7
+                  },
+                  {
+                    "x": -24,
+                    "y": 8
+                  }
+                ],
                 "name": "Goblin Raiders",
-                "status": "idle",
+                "nextMoveTime": 1746050343449,
+                "pathIndex": 0,
+                "status": "moving",
+                "targetX": -23,
+                "targetY": 9,
                 "type": "monster",
                 "unitCount": 2,
                 "x": -26,
@@ -3847,9 +1496,9 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746046501265,
+        "lastTick": 1746050341707,
         "name": "Ancient Lands",
-        "playerCount": 14,
+        "playerCount": 15,
         "seed": 13579,
         "size": "large",
         "spawns": {
