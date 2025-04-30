@@ -22,9 +22,10 @@
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
+  import Monster from '../icons/Monster.svelte'; // Add Monster component import
   import Compass from '../icons/Compass.svelte';
   import YouAreHere from '../icons/YouAreHere.svelte';
-  import Peek from '../map/Peek.svelte';  // Add Peek component import
+  import Peek from '../map/Peek.svelte';
   
   // Props with defaults using Svelte 5 $props() rune
   const { 
@@ -903,12 +904,13 @@
     return 0;
   }
 
-  // Function to determine the dominant race on a tile
+  // Function to determine the dominant race or entity type on a tile
   function getDominantRace(cell) {
     if (!cell) return null;
     
-    // Create a map to count each race
+    // Create a map to count each race and entity type
     const raceCounts = {};
+    let monsterCount = 0;
     
     // Count races in player entities
     if (cell.players && cell.players.length > 0) {
@@ -919,31 +921,40 @@
       });
     }
     
-    // Count races in group entities (groups often have more weight)
+    // Count races in group entities and check for monster groups
     if (cell.groups && cell.groups.length > 0) {
       cell.groups.forEach(group => {
-        if (group.race) {
+        if (group.type === 'monster') {
+          // Give monsters higher weight than regular groups
+          monsterCount += (group.unitCount || 1) * 2;
+        } else if (group.race) {
           // Give groups slightly more weight than individual players
           raceCounts[group.race.toLowerCase()] = (raceCounts[group.race.toLowerCase()] || 0) + 1.5;
         }
       });
     }
     
-    // Find the race with the highest count
-    let dominantRace = null;
+    // Check if monsters are the dominant entity
     let highestCount = 0;
+    let dominantType = null;
     
+    // First check regular races
     for (const [race, count] of Object.entries(raceCounts)) {
       if (count > highestCount) {
         highestCount = count;
-        dominantRace = race;
+        dominantType = race;
       }
     }
     
-    return dominantRace;
+    // Then check if monsters override the dominant race
+    if (monsterCount > highestCount) {
+      return 'monster';
+    }
+    
+    return dominantType;
   }
 
-  // Add a specific effect to log center tiles
+  // Add an effect to log center tiles
   $effect(() => {
     const centerTile = $gridArray.find(cell => cell.isCenter);
     if (centerTile) {
@@ -1163,15 +1174,17 @@
               {#if dominantRace}
                 <div class="race-background-icon">
                   {#if dominantRace === 'human'}
-                    <Human extraClass="race-icon-tile" />
+                    <Human extraClass="race-icon-tile human-icon" />
                   {:else if dominantRace === 'elf'}
-                    <Elf extraClass="race-icon-tile" />
+                    <Elf extraClass="race-icon-tile elf-icon" />
                   {:else if dominantRace === 'dwarf'}
-                    <Dwarf extraClass="race-icon-tile" />
+                    <Dwarf extraClass="race-icon-tile dwarf-icon" />
                   {:else if dominantRace === 'goblin'}
-                    <Goblin extraClass="race-icon-tile" />
+                    <Goblin extraClass="race-icon-tile goblin-icon" />
                   {:else if dominantRace === 'fairy'}
-                    <Fairy extraClass="race-icon-tile" />
+                    <Fairy extraClass="race-icon-tile fairy-icon" />
+                  {:else if dominantRace === 'monster'}
+                    <Monster extraClass="race-icon-tile monster-icon" />
                   {/if}
                 </div>
               {/if}
@@ -1813,8 +1826,8 @@
   }
 
   :global(.race-icon-tile) {
-    width: 70%; /* Slightly smaller for better proportion */
-    height: 70%; /* Slightly smaller for better proportion */
+    width: 80%; /* Slightly smaller for better proportion */
+    height: 80%; /* Slightly smaller for better proportion */
     opacity: 0.7; /* Increased from 0.3 to 0.7 for better visibility */
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.3)); /* Add subtle glow */
     fill: rgba(255, 255, 255, 0.7); /* Brighter base fill */
@@ -1890,7 +1903,7 @@
     background: rgba(0, 0, 0, 0.75);
     z-index: 1200;
     transform: translateX(-50%) scale(1.1);
-    transition: all 0.2s ease;
+    transition:all 0.2s ease;
   }
 
   .you-are-here-container {
