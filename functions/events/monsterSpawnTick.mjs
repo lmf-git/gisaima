@@ -324,9 +324,8 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
     Math.random() * (monsterData.unitCountRange[1] - monsterData.unitCountRange[0] + 1)
   ) + monsterData.unitCountRange[0];
   
-  // Create the basic monster group
-  const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
-  updates[groupPath] = {
+  // Create the monster group object, including items if needed
+  const monsterGroup = {
     id: groupId,
     name: monsterData.name,
     type: 'monster',
@@ -339,6 +338,15 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
     lastUpdated: now
   };
   
+  // Maybe add items to the monster group object directly (not as a separate update)
+  if (Math.random() < monsterData.itemChance) {
+    monsterGroup.items = generateMonsterItems(monsterType, unitCount);
+  }
+  
+  // Set the complete monster group at once
+  const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+  updates[groupPath] = monsterGroup;
+  
   // Add a message about monster sighting
   const chatMessageKey = `chat_monster_spawn_${now}_${Math.floor(Math.random() * 1000)}`;
   updates[`worlds/${worldId}/chat/${chatMessageKey}`] = {
@@ -350,11 +358,6 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
       y: location.y
     }
   };
-  
-  // Maybe add items to the monster group
-  if (Math.random() < monsterData.itemChance) {
-    updates[`${groupPath}/items`] = generateMonsterItems(monsterType, unitCount);
-  }
 }
 
 /**
@@ -380,23 +383,11 @@ async function mergeWithExistingMonster(worldId, chunkKey, tileKey, existingMons
   const newCount = Math.min(currentCount + addedUnits, monsterData.mergeLimit);
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${existingMonster.id}`;
   
-  // Update the monster group
-  updates[`${groupPath}/unitCount`] = newCount;
-  updates[`${groupPath}/lastUpdated`] = now;
-  
-  // Add a message about monster reinforcements
-  if (newCount > currentCount) {
-    const chatMessageKey = `chat_monster_grow_${now}_${Math.floor(Math.random() * 1000)}`;
-    updates[`worlds/${worldId}/chat/${chatMessageKey}`] = {
-      text: createMonsterGrowthMessage(existingMonster.name, currentCount, newCount, tileKey),
-      type: 'event',
-      timestamp: now,
-      location: {
-        x: parseInt(tileKey.split(',')[0]),
-        y: parseInt(tileKey.split(',')[1])
-      }
-    };
-  }
+  // Create partial update for the monster
+  const monsterUpdates = {
+    unitCount: newCount,
+    lastUpdated: now
+  };
   
   // Maybe add more items
   if (Math.random() < monsterData.itemChance) {
@@ -415,7 +406,25 @@ async function mergeWithExistingMonster(worldId, chunkKey, tileKey, existingMons
       mergedItems = [...existingItemsArray, ...newItems];
     }
     
-    updates[`${groupPath}/items`] = mergedItems;
+    // Include items directly in the monster update
+    monsterUpdates.items = mergedItems;
+  }
+  
+  // Update the monster group with all changes at once
+  updates[groupPath] = monsterUpdates;
+  
+  // Add a message about monster reinforcements
+  if (newCount > currentCount) {
+    const chatMessageKey = `chat_monster_grow_${now}_${Math.floor(Math.random() * 1000)}`;
+    updates[`worlds/${worldId}/chat/${chatMessageKey}`] = {
+      text: createMonsterGrowthMessage(existingMonster.name, currentCount, newCount, tileKey),
+      type: 'event',
+      timestamp: now,
+      location: {
+        x: parseInt(tileKey.split(',')[0]),
+        y: parseInt(tileKey.split(',')[1])
+      }
+    };
   }
 }
 

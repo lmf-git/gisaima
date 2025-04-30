@@ -14,16 +14,13 @@
   import Structure from '../icons/Structure.svelte';
 
   // Props
-  const { onClose = () => {}, onAttack = () => {} } = $props();
+  const { onClose = () => {} } = $props();
 
   // Get tile data directly from the targetStore (same as current player location)
   let tileData = $derived($targetStore || null);
 
   // Format text for display
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  
-  // Get functions instance
-  const functions = getFunctions();
   
   // Available groups and enemy targets
   let playerGroups = $state([]);
@@ -230,20 +227,20 @@
       console.log('Starting attack with params:', params);
       
       // Call the cloud function with the updated parameter names
-      const attackFunction = httpsCallable(functions, 'attack');
+      const attackFunction = httpsCallable(getFunctions(), 'attack');
       const result = await attackFunction(params);
       
       if (result.data.success) {
         console.log('Attack started:', result.data);
         
         // Call the callback function if provided
-        onAttack({
-          attackerGroupIds,
-          battleId: result.data.battleId,
-          tile: tileData,
-          defenderGroupIds: params.defenderGroupIds,
-          structureId: params.structureId
-        });
+        // onAttack({
+        //   attackerGroupIds,
+        //   battleId: result.data.battleId,
+        //   tile: tileData,
+        //   defenderGroupIds: params.defenderGroupIds,
+        //   structureId: params.structureId
+        // });
         
         onClose(true);
       } else {

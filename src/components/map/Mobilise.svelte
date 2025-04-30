@@ -11,8 +11,7 @@
   import { getFunctions, httpsCallable } from 'firebase/functions';
 
   const { 
-    onClose = () => {},
-    onMobilize = () => {}
+    onClose = () => {}
   } = $props();
 
   let tileData = $derived($targetStore || null);
@@ -137,7 +136,6 @@
       });
       
       console.log('Mobilization result:', result.data);
-      onMobilize();
       onClose();
     } catch (error) {
       console.error('Error during mobilization:', error);
@@ -170,20 +168,6 @@
     
     if (event.key === 'Enter' && event.target.tagName === 'INPUT') {
       event.preventDefault();
-    }
-  }
-
-  function getRaceIcon(race) {
-    if (!race) return null;
-    
-    const raceKey = race.toLowerCase();
-    switch (raceKey) {
-      case 'human': return Human;
-      case 'elf': return Elf;
-      case 'dwarf': return Dwarf;
-      case 'goblin': return Goblin;
-      case 'fairy': return Fairy;
-      default: return null;
     }
   }
   
