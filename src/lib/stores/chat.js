@@ -18,7 +18,8 @@ export const chatStore = writable({
   error: null,
   unreadCount: 0,
   currentWorldId: null,
-  lastReadTime: Date.now() // Add this line
+  lastReadTime: Date.now(),
+  subscriberCount: 0 // Track number of active subscribers
 });
 
 // Derived store to get messages sorted by timestamp
@@ -56,9 +57,41 @@ let activeChatSubscription = null;
  */
 export function initializeChat(worldId) {
   if (!browser || !worldId) return () => {};
+
+  // Update subscriber count
+  chatStore.update(state => ({
+    ...state,
+    subscriberCount: state.subscriberCount + 1
+  }));
   
-  // Clean up any existing subscription
+  // If there's already an active subscription for this world, just return a cleanup function
+  if (activeChatSubscription && get(chatStore).currentWorldId === worldId) {
+    console.log(`Chat subscription already active for world: ${worldId}, subscriber count: ${get(chatStore).subscriberCount}`);
+    
+    // Return a cleanup function that decreases the subscriber count
+    return () => {
+      chatStore.update(state => {
+        const newCount = Math.max(0, state.subscriberCount - 1);
+        console.log(`Removing chat subscriber, count now: ${newCount}`);
+        
+        // If no more subscribers, clean up the subscription
+        if (newCount === 0 && activeChatSubscription) {
+          console.log(`Last subscriber removed, cleaning up chat subscription`);
+          activeChatSubscription();
+          activeChatSubscription = null;
+        }
+        
+        return {
+          ...state,
+          subscriberCount: newCount
+        };
+      });
+    };
+  }
+  
+  // Clean up any existing subscription if it's for a different world
   if (activeChatSubscription) {
+    console.log(`Cleaning up existing chat subscription for different world`);
     activeChatSubscription();
     activeChatSubscription = null;
   }
@@ -69,14 +102,13 @@ export function initializeChat(worldId) {
     loading: true,
     error: null,
     currentWorldId: worldId,
-    messages: [] // Clear previous world's messages
+    messages: state.currentWorldId !== worldId ? [] : state.messages // Clear messages only if world changed
   }));
   
   try {
     console.log(`Setting up chat subscription for world: ${worldId}`);
     
     // Reference to the world's chat messages, ordered by timestamp and limited to last messages
-    // Note: Add ".indexOn": "timestamp" rule to Firebase database rules for this path
     const chatRef = query(
       ref(db, `worlds/${worldId}/chat`),
       orderByChild('timestamp'),
@@ -108,9 +140,6 @@ export function initializeChat(worldId) {
         });
         
         console.log(`Loaded ${messages.length} chat messages for world ${worldId}`);
-        if (messages.length > 0) {
-          console.log(`Sample message ID: ${messages[0].id}, type: ${messages[0].type}`);
-        }
       } else {
         console.log(`No messages found for world ${worldId}`);
       }
@@ -130,20 +159,32 @@ export function initializeChat(worldId) {
       }));
     });
     
-    // Return cleanup function
+    // Return cleanup function that decreases subscriber count
     return () => {
-      if (activeChatSubscription) {
-        console.log(`Cleaning up chat subscription for world: ${worldId}`);
-        activeChatSubscription();
-        activeChatSubscription = null;
-      }
+      chatStore.update(state => {
+        const newCount = Math.max(0, state.subscriberCount - 1);
+        console.log(`Removing chat subscriber, count now: ${newCount}`);
+        
+        // If no more subscribers, clean up the subscription
+        if (newCount === 0 && activeChatSubscription) {
+          console.log(`Last subscriber removed, cleaning up chat subscription`);
+          activeChatSubscription();
+          activeChatSubscription = null;
+        }
+        
+        return {
+          ...state,
+          subscriberCount: newCount
+        };
+      });
     };
   } catch (error) {
     console.error('Chat initialization error:', error);
     chatStore.update(state => ({
       ...state,
       loading: false,
-      error: error.message
+      error: error.message,
+      subscriberCount: state.subscriberCount - 1 // Decrement since this subscriber failed
     }));
     return () => {};
   }

@@ -408,36 +408,31 @@
     });
 
     $effect(() => {
-        if (browser && initialized) {
-            const savedChatState = localStorage.getItem('chat');
-            const savedAchievementsState = localStorage.getItem('achievements');
-            const achievementsClosed = localStorage.getItem('achievements_closed') === 'true';
-            
-            // Add handling for minimap and overview states
-            const savedMinimapState = localStorage.getItem('minimap');
-            const savedOverviewState = localStorage.getItem('overview');
-            
-            // Set minimap state based on localStorage (default to false if not set)
-            showMinimap = savedMinimapState === 'true';
-            
-            // Set overview/entities state based on localStorage (default to false if not set)
-            showEntities = savedOverviewState === 'true'; // Changed to only show if explicitly true
+      if (browser && initialized) {
+        const savedChatState = localStorage.getItem('chat');
+        const savedAchievementsState = localStorage.getItem('achievements');
+        const achievementsClosed = localStorage.getItem('achievements_closed') === 'true';
+        
+        // Add handling for minimap and overview states
+        const savedMinimapState = localStorage.getItem('minimap');
+        const savedOverviewState = localStorage.getItem('overview');
+        
+        // Set minimap state based on localStorage (default to false if not set)
+        showMinimap = savedMinimapState === 'true';
+        
+        // Set overview/entities state based on localStorage (default to false if not set)
+        showEntities = savedOverviewState === 'true'; // Changed to only show if explicitly true
 
-            // First handle achievements since it has higher priority
-            if (savedAchievementsState === 'true' && !achievementsClosed) {
-                showAchievements = true;
-                showChat = false; // Ensure chat is closed if achievements is open
-                return; // Exit early to avoid further changes
-            }
-            
-            // If achievements isn't open, then handle chat
-            if (savedChatState !== 'false') { // Default to true unless explicitly set to false
-                showChat = true;
-                showAchievements = false; // Ensure achievements is closed if chat is open
-            } else {
-                showChat = false;
-            }
+        // First handle achievements since it has higher priority
+        if (savedAchievementsState === 'true' && !achievementsClosed) {
+          showAchievements = true;
+          showChat = false; // Ensure chat is closed if achievements is open
+          return; // Exit early to avoid further changes
         }
+        
+        // If achievements isn't open, then handle chat - Default to false unless explicitly true
+        showChat = savedChatState === 'true';
+      }
     });
 
     $effect(() => {

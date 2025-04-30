@@ -1,8 +1,8 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { fly, fade } from 'svelte/transition';
   import { flip } from 'svelte/animate';
-  import { messages, getMessageTime } from '../../lib/stores/chat.js';
+  import { messages, getMessageTime, initializeChat } from '../../lib/stores/chat.js';
   import { game } from '../../lib/stores/game.js';
   import { user } from '../../lib/stores/user.js'; 
 
@@ -17,10 +17,27 @@
   let processedMessageIds = $state(new Set());
   // Track the last seen timestamp independently of active notices
   let lastSeenTimestamp = $state(Date.now());
+  // Cleanup function for chat subscription
+  let cleanup = $state(() => {});
 
   // Notice timeout duration in milliseconds
   const NOTICE_TIMEOUT = 6000;
   const NOTICE_FADE_DURATION = 300;
+
+  // Setup chat subscription when component mounts
+  $effect(() => {
+    const worldKey = $game.worldKey;
+    if (worldKey) {
+      console.log(`Notices: Initializing chat subscription for world: ${worldKey}`);
+      cleanup = initializeChat(worldKey);
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      console.log('Notices: Cleaning up chat subscription');
+      cleanup();
+    };
+  });
 
   // Function to check if a message is relevant to the player
   function isRelevantToPlayer(message) {
