@@ -73,17 +73,6 @@ export const spawnPlayer = onCall({
     
     logger.info(`Player spawned successfully at ${tileKey} in chunk ${chunkKey} with race ${race}`);
     
-    // 4. Optional: Record the spawn event in a history log or for analytics
-    const eventRef = db.ref(`worlds/${worldId}/events/spawns`).push();
-    await eventRef.set({
-      playerId: uid,
-      displayName,
-      race,
-      timestamp: Date.now(),
-      location: { x: spawnX, y: spawnY },
-      spawnId: spawnId || null
-    });
-    
     return {
       success: true,
       location: { x: spawnX, y: spawnY },

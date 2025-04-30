@@ -165,20 +165,57 @@
     }
   }
 
-  // New function to check if structure can be upgraded
+  // New function: Check if player can see and use upgrade UI
+  function canSeeUpgradeUI(structure) {
+    if (!structure || !$currentPlayer) return false;
+    
+    // Check if structure is owned by player
+    const isOwner = isOwnedByCurrentPlayer(structure);
+    
+    // Special handling for spawn points
+    if (structure.type === 'spawn') {
+      // For spawn structures, player must be of the same race
+      const isPlayerRace = structure.race === $currentPlayer.race;
+      if (!isPlayerRace) return false;
+    } else if (!isOwner) {
+      // For non-spawn structures, player must be the owner
+      return false;
+    }
+    
+    // Check if player is present at the tile
+    const isPlayerAtTile = tileData?.players?.some(p => p.id === $currentPlayer.id);
+    
+    // Check if player has a group at the tile
+    const hasGroupAtTile = tileData?.groups?.some(g => g.owner === $currentPlayer.id);
+    
+    // Player must be present or have a group at the tile
+    if (!isPlayerAtTile && !hasGroupAtTile) return false;
+    
+    return true;
+  }
+
+  // New function: Check if player can see and use building upgrade UI
+  function canSeeBuildingUpgradeUI(building) {
+    if (!building || !$currentPlayer) return false;
+    
+    // First check if player can see structure upgrade UI at all
+    if (!canSeeUpgradeUI(tileData?.structure)) return false;
+    
+    return true;
+  }
+
+  // Modify the existing canUpgradeStructure to use the new visibility function
   function canUpgradeStructure() {
     if (!tileData?.structure) return false;
     
-    // Check if structure is owned by player or is a public structure like spawn
-    const isOwner = isOwnedByCurrentPlayer(tileData?.structure);
-    const isSpawn = tileData?.structure?.type === 'spawn';
+    // First check if player can see upgrade UI at all
+    if (!canSeeUpgradeUI(tileData?.structure)) return false;
     
     // Check level - make sure it's not at max level (assumed max level 5)
     const currentLevel = tileData?.structure?.level || 1;
     const maxLevel = 5;
     
-    // Can upgrade if the player owns it or it's a spawn point
-    return (isOwner || isSpawn) && currentLevel < maxLevel;
+    return currentLevel < maxLevel;
   }
 
   // Function to get required resources for upgrade
@@ -333,9 +370,8 @@
     // Check if building exists and is not already upgrading
     if (!building || building.upgradeInProgress) return false;
     
-    // Check if structure is owned by player or is a public structure like spawn
-    const isOwner = isOwnedByCurrentPlayer(tileData?.structure);
-    const isSpawn = tileData?.structure?.type === 'spawn';
+    // Check if player can see building upgrade UI
+    if (!canSeeBuildingUpgradeUI(building)) return false;
     
     // Check level - make sure it's not at max level (assumed max level 5)
     const currentLevel = building.level || 1;
@@ -344,8 +380,7 @@
     // Check if resource requirements are met
     const hasResources = checkBuildingUpgradeResources(building);
     
-    // Can upgrade if the player owns it or it's a spawn point
-    return (isOwner || isSpawn) && currentLevel < maxLevel && hasResources;
+    return currentLevel < maxLevel && hasResources;
   }
 
   // Function to check if there are enough resources for building upgrade
@@ -862,13 +897,17 @@
                         </div>
                       </div>
                       
-                      <button 
-                        class="build-building-button"
-                        onclick={() => buildNewBuilding(building.type)}
-                        disabled={!hasResourcesForBuilding(building.type)}
-                      >
-                        Build Now
-                      </button>
+                      <!-- Only show build button if player can see upgrade UI and it's not a spawn of different race -->
+                      {#if canSeeUpgradeUI(tileData?.structure) && 
+                        !(tileData?.structure?.type === 'spawn' && tileData?.structure?.race !== $currentPlayer?.race)}
+                        <button 
+                          class="build-building-button"
+                          onclick={() => buildNewBuilding(building.type)}
+                          disabled={!hasResourcesForBuilding(building.type)}
+                        >
+                          Build Now
+                        </button>
+                      {/if}
                     {:else if building.upgradeInProgress}
                       <!-- UPGRADING BUILDING - Show progress -->
                       <div class="upgrade-progress">
