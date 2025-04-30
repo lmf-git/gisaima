@@ -294,6 +294,7 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
       
       // Update player state if this was a player's group
       if (group.owner) {
+        // Always add the death notification to the chat log
         updates[`worlds/${worldId}/chat/death_${now}_${group.owner}`] = {
           text: `${group.name || "Unknown player"} was defeated in battle at (${locationKey})`,
           type: "event",
@@ -301,14 +302,28 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
           timestamp: now
         };
         
-        // Add defeat message to player
-        updates[`players/${group.owner}/worlds/${worldId}/lastMessage`] = {
-          text: "You were defeated in battle.",
-          timestamp: now
-        };
+        // Check if the player's character unit was in this group
+        let playerInGroup = false;
+        if (group.units) {
+          // Check for a player unit with matching owner ID
+          Object.values(group.units).forEach(unit => {
+            if (unit.type === 'player' && unit.id === group.owner) {
+              playerInGroup = true;
+            }
+          });
+        }
         
-        // Mark player as not alive
-        updates[`players/${group.owner}/worlds/${worldId}/alive`] = false;
+        // Only update player's alive status and send defeat message if their character was in the group
+        if (playerInGroup) {
+          // Add defeat message to player
+          updates[`players/${group.owner}/worlds/${worldId}/lastMessage`] = {
+            text: "You were defeated in battle.",
+            timestamp: now
+          };
+          
+          // Mark player as not alive
+          updates[`players/${group.owner}/worlds/${worldId}/alive`] = false;
+        }
       }
     }
     
