@@ -509,3 +509,272 @@ function createMonsterGrowthMessage(monsterName, oldCount, newCount, location) {
     return `${addedUnits} more creatures have joined the ${monsterName} at (${locationText})`;
   }
 }
+
+/**
+ * Monster Group Merging and Enhancement
+ * New function to check and merge monster groups
+ */
+export async function mergeMonsterGroups(worldId) {
+  const db = getDatabase();
+  const now = Date.now();
+  let mergesPerformed = 0;
+  
+  try {
+    // Get all chunks for this world
+    const chunksRef = db.ref(`worlds/${worldId}/chunks`);
+    const chunksSnapshot = await chunksRef.once('value');
+    const chunks = chunksSnapshot.val();
+    
+    if (!chunks) {
+      logger.info(`No chunks found in world ${worldId}`);
+      return 0;
+    }
+
+    // Track updates to apply
+    const updates = {};
+    
+    // Check each tile for multiple monster groups
+    for (const [chunkKey, chunkData] of Object.entries(chunks)) {
+      if (!chunkData || chunkKey === 'lastUpdated') continue;
+      
+      for (const [tileKey, tileData] of Object.entries(chunkData)) {
+        if (!tileData || tileKey === 'lastUpdated') continue;
+        
+        // Skip if no groups on this tile
+        if (!tileData.groups) continue;
+        
+        // Find all monster groups on this tile
+        const monsterGroups = [];
+        for (const [groupId, groupData] of Object.entries(tileData.groups)) {
+          // Only consider idle monster groups that aren't in battle
+          if (groupData.type === 'monster' && 
+              groupData.status === 'idle' && 
+              !groupData.inBattle) {
+            monsterGroups.push({...groupData, id: groupId});
+          }
+        }
+        
+        // Need at least 2 monster groups to merge
+        if (monsterGroups.length < 2) continue;
+        
+        // Group by monster type
+        const groupsByType = {};
+        for (const group of monsterGroups) {
+          if (!groupsByType[group.monsterType]) {
+            groupsByType[group.monsterType] = [];
+          }
+          groupsByType[group.monsterType].push(group);
+        }
+        
+        // Process each monster type group
+        for (const [monsterType, groups] of Object.entries(groupsByType)) {
+          if (groups.length < 2) continue;
+          
+          // Sort by unit count, descending
+          groups.sort((a, b) => (b.unitCount || 0) - (a.unitCount || 0));
+          
+          // Take the largest group as the base
+          const baseGroup = groups[0];
+          const mergedGroups = groups.slice(1);
+          
+          // Calculate total units
+          let totalUnits = baseGroup.unitCount || 1;
+          for (const group of mergedGroups) {
+            totalUnits += group.unitCount || 1;
+          }
+          
+          // Add bonus units for merging (10-30% bonus)
+          const bonusUnits = Math.floor(totalUnits * (0.1 + Math.random() * 0.2));
+          totalUnits += bonusUnits;
+          
+          // Get monster type data
+          const monsterTypeData = MONSTER_TYPES[monsterType] || MONSTER_TYPES.goblin;
+          
+          // Cap at merge limit
+          totalUnits = Math.min(totalUnits, monsterTypeData.mergeLimit || 15);
+          
+          // Determine new name based on size
+          const newName = getMonsterGroupName(monsterType, totalUnits);
+          
+          // Merge items from all groups
+          const mergedItems = [];
+          
+          // Add items from base group
+          if (baseGroup.items) {
+            if (Array.isArray(baseGroup.items)) {
+              mergedItems.push(...baseGroup.items);
+            } else {
+              mergedItems.push(...Object.values(baseGroup.items));
+            }
+          }
+          
+          // Add items from other groups
+          for (const group of mergedGroups) {
+            if (group.items) {
+              if (Array.isArray(group.items)) {
+                mergedItems.push(...group.items);
+              } else {
+                mergedItems.push(...Object.values(group.items));
+              }
+            }
+          }
+          
+          // Add bonus items (1-3 based on size)
+          const bonusItemCount = Math.min(Math.ceil(totalUnits / 5), 3);
+          for (let i = 0; i < bonusItemCount; i++) {
+            if (Math.random() < 0.7) { // 70% chance for each bonus item
+              mergedItems.push(generateBonusItem(monsterType, totalUnits));
+            }
+          }
+          
+          // Update the base group
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/unitCount`] = totalUnits;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/name`] = newName;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/items`] = mergedItems;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/lastUpdated`] = now;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/merged`] = true;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/mergeCount`] = 
+              (baseGroup.mergeCount || 0) + mergedGroups.length;
+          
+          // Remove the other groups
+          for (const group of mergedGroups) {
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${group.id}`] = null;
+          }
+          
+          // Add a chat message about the merger
+          const chatMessageKey = `chat_monster_merge_${now}_${Math.floor(Math.random() * 1000)}`;
+          const [x, y] = tileKey.split(',').map(Number);
+          
+          updates[`worlds/${worldId}/chat/${chatMessageKey}`] = {
+            text: `Monster groups have merged at (${x}, ${y}) forming a larger ${newName} horde!`,
+            type: 'event',
+            timestamp: now,
+            location: { x, y }
+          };
+          
+          mergesPerformed++;
+        }
+      }
+    }
+    
+    // Apply all updates
+    if (Object.keys(updates).length > 0) {
+      await db.ref().update(updates);
+      logger.info(`Performed ${mergesPerformed} monster group merges in world ${worldId}`);
+    }
+    
+    return mergesPerformed;
+  } catch (error) {
+    logger.error(`Error merging monster groups in world ${worldId}:`, error);
+    return 0;
+  }
+}
+
+// Helper function to generate a monster group name based on size
+function getMonsterGroupName(monsterType, unitCount) {
+  const monsterData = MONSTER_TYPES[monsterType] || MONSTER_TYPES.goblin;
+  const baseName = monsterData.name || 'Monster';
+  
+  // Different names based on size
+  if (unitCount <= 2) {
+    return `Small ${baseName}`;
+  } else if (unitCount <= 5) {
+    return baseName;
+  } else if (unitCount <= 8) {
+    return `${baseName} Warband`;
+  } else if (unitCount <= 12) {
+    return `${baseName} Horde`;
+  } else {
+    return `Massive ${baseName} Legion`;
+  }
+}
+
+// Helper function to generate a bonus item for merged groups
+function generateBonusItem(monsterType, unitCount) {
+  const rarityRoll = Math.random();
+  let rarity = 'common';
+  
+  // Better items for larger groups
+  if (unitCount > 10 && rarityRoll > 0.9) {
+    rarity = 'epic';
+  } else if ((unitCount > 7 && rarityRoll > 0.85) || rarityRoll > 0.95) {
+    rarity = 'rare';
+  } else if ((unitCount > 5 && rarityRoll > 0.7) || rarityRoll > 0.8) {
+    rarity = 'uncommon';
+  }
+  
+  // Choose item type based on monster type and rarity
+  const itemTypes = {
+    goblin: ['resource', 'weapon', 'treasure'],
+    wolf: ['resource', 'trophy', 'alchemy'],
+    bandit: ['weapon', 'treasure', 'resource'],
+    spider: ['alchemy', 'resource', 'trophy'],
+    skeleton: ['weapon', 'treasure', 'gem'],
+    troll: ['trophy', 'resource', 'gem'],
+    elemental: ['gem', 'alchemy', 'trophy']
+  };
+  
+  const possibleTypes = itemTypes[monsterType] || ['resource', 'treasure', 'weapon'];
+  const itemType = possibleTypes[Math.floor(Math.random() * possibleTypes.length)];
+  
+  // Define items based on type and rarity
+  const items = {
+    resource: {
+      common: ['Wooden Sticks', 'Stone Pieces', 'Bone Fragment'],
+      uncommon: ['Monster Hide', 'Quality Wood', 'Pure Stone'],
+      rare: ['Rare Metals', 'Monster Core', 'Precious Wood'],
+      epic: ['Primal Essence', 'Ancient Materials', 'Dimensional Fragment']
+    },
+    weapon: {
+      common: ['Crude Weapon', 'Rusty Blade', 'Simple Mace'],
+      uncommon: ['Monster Blade', 'Hunter\'s Bow', 'War Axe'],
+      rare: ['Enchanted Weapon', 'Beast Slayer', 'Warrior\'s Edge'],
+      epic: ['Legendary Weapon', 'Ancient Warblade', 'Soul Harvester']
+    },
+    treasure: {
+      common: ['Ancient Coin', 'Minor Relic', 'Trinket'],
+      uncommon: ['Gold Coins', 'Valuable Relic', 'Silver Medallion'],
+      rare: ['Gold Medallion', 'Treasure Chest', 'Ancient Artifact'],
+      epic: ['Royal Treasure', 'King\'s Ransom', 'Legendary Hoard']
+    },
+    trophy: {
+      common: ['Monster Tooth', 'Beast Claw', 'Small Horn'],
+      uncommon: ['Monster Trophy', 'Beast Pelt', 'Creature Heart'],
+      rare: ['Champion\'s Trophy', 'Apex Predator Hide', 'Monster King Head'],
+      epic: ['Ancient Beast Skull', 'Legendary Creature Part', 'Ultimate Trophy']
+    },
+    alchemy: {
+      common: ['Mysterious Herb', 'Monster Blood', 'Odd Mushroom'],
+      uncommon: ['Potent Herb', 'Magical Essence', 'Creature Extract'],
+      rare: ['Rare Ingredient', 'Arcane Compound', 'Mythical Herb'],
+      epic: ['Philosopher\'s Element', 'Immortality Essence', 'Divine Extract']
+    },
+    gem: {
+      common: ['Shiny Gem', 'Crystal Fragment', 'Glowing Stone'],
+      uncommon: ['Semi-Precious Gem', 'Mana Crystal', 'Elemental Stone'],
+      rare: ['Precious Gem', 'Power Crystal', 'Soul Stone'],
+      epic: ['Legendary Gem', 'Wish Stone', 'God\'s Tear']
+    }
+  };
+  
+  // Select from available names
+  const itemOptions = items[itemType]?.[rarity] || ['Mysterious Item'];
+  const itemName = itemOptions[Math.floor(Math.random() * itemOptions.length)];
+  
+  // Determine quantity based on rarity
+  let quantity = 1;
+  if (rarity === 'common') {
+    quantity = Math.floor(Math.random() * 3) + 1;
+  } else if (rarity === 'uncommon') {
+    quantity = Math.floor(Math.random() * 2) + 1;
+  }
+  
+  // Create the item
+  return {
+    id: `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    name: itemName,
+    type: itemType,
+    rarity: rarity,
+    quantity: quantity
+  };
+}
