@@ -452,7 +452,6 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
     const groups = tileData.groups || {};
     const attackers = [];
     const defenders = [];
-    let casualties = 0;
     
     // Find all groups involved in this battle
     for (const [groupId, groupData] of Object.entries(groups)) {
@@ -494,13 +493,12 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
       }
     }
     
-    // Handle losing groups - assume groups without units were already removed during attrition
+    // Count casualties from the losing side for the battle outcome message
+    // Do not try to remove groups - they should already be removed if they have no units
+    let casualties = losingGroups.length;
+    
+    // Just add battle result messages to the chat for each losing group's owner
     for (const group of losingGroups) {
-      // Remove the group - if it still exists (no need to check explicitly)
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
-      casualties++;
-      
-      // Only add a notification that the group was defeated in battle
       if (group.owner) {
         // Add group defeat notification to the chat log
         updates[`worlds/${worldId}/chat/death_${now}_${group.owner}`] = {
