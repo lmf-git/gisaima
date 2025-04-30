@@ -539,22 +539,10 @@
     }
   }
   
-  // Format crafting time to human-readable string
-  function formatCraftingTime(seconds) {
-    if (!seconds) return "Instant";
-    if (seconds < 60) return `${seconds} seconds`;
-    if (seconds < 3600) {
-      const minutes = Math.floor(seconds / 60);
-      const remainingSeconds = seconds % 60;
-      return remainingSeconds > 0 
-        ? `${minutes}m ${remainingSeconds}s` 
-        : `${minutes} minutes`;
-    }
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return minutes > 0 
-      ? `${hours}h ${minutes}m` 
-      : `${hours} hours`;
+  // Replace the formatCraftingTime function with a simpler tick formatter
+  function formatCraftingTicks(ticks) {
+    if (!ticks) return "Instant";
+    return ticks === 1 ? `${ticks} tick` : `${ticks} ticks`;
   }
 </script>
 
@@ -613,7 +601,8 @@
               
               <div class="recipe-time">
                 <span class="time-icon">⏱</span>
-                {formatCraftingTime(recipe.craftingTime)}
+                <!-- Replace time formatting with tick formatting -->
+                {formatCraftingTicks(recipe.craftingTime)}
               </div>
             </div>
           {/each}
@@ -660,6 +649,13 @@
               </div>
             </div>
           {/if}
+          
+          <div class="crafting-time-info">
+            <h4>Crafting Time:</h4>
+            <div class="time-display">
+              <span class="tick-count">{formatCraftingTicks(selectedRecipe.craftingTime)}</span>
+            </div>
+          </div>
           
           {#if successMessage}
             <div class="success-message">{successMessage}</div>
@@ -922,5 +918,27 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+  }
+  
+  /* Add styles for the crafting time info section */
+  .crafting-time-info {
+    margin-top: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0.3rem;
+    padding: 0.5rem;
+  }
+  
+  .time-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+  
+  .tick-count {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ffcc66;
+    text-shadow: 0 0 5px rgba(255, 204, 102, 0.5);
   }
 </style>

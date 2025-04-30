@@ -107,39 +107,11 @@ export const startCrafting = onCall({ maxInstances: 10 }, async (request) => {
       }
     }
     
-    // Calculate crafting time
-    const baseCraftingTime = recipe.craftingTime || 60; // Default 60 seconds
+    // Use craftingTime directly as ticks, not seconds
+    const craftingTicks = recipe.craftingTime || 1;
     
-    // Apply crafting time modifiers
-    let craftingTimeModifier = 1.0;
-    
-    // Lower time for higher crafting level (up to 50% reduction)
-    const levelModifier = Math.min(0.5, (craftingLevel - 1) * 0.05);
-    craftingTimeModifier -= levelModifier;
-    
-    // Check for building bonuses
-    let craftingSpeedBonus = 0;
-    
-    if (structure.buildings) {
-      for (const buildingId in structure.buildings) {
-        const building = structure.buildings[buildingId];
-        if (building.type === recipe.requiredBuilding?.type && building.benefits) {
-          for (const benefit of building.benefits) {
-            if (benefit.bonus && benefit.bonus.craftingSpeed) {
-              craftingSpeedBonus += benefit.bonus.craftingSpeed;
-            }
-          }
-        }
-      }
-    }
-    
-    craftingTimeModifier -= craftingSpeedBonus;
-    
-    // Ensure minimum 10% of original time
-    craftingTimeModifier = Math.max(0.1, craftingTimeModifier);
-    
-    const finalCraftingTime = Math.ceil(baseCraftingTime * craftingTimeModifier);
-    const craftingTimeMs = finalCraftingTime * 1000; // Convert to ms
+    // Calculate completion time based on ticks rather than seconds
+    // Each tick is determined by the world's tick rate
     
     // Create the crafting entry
     const now = Date.now();
@@ -154,7 +126,7 @@ export const startCrafting = onCall({ maxInstances: 10 }, async (request) => {
       structureId: structure.id,
       structureLocation: { x, y },
       startedAt: now,
-      completesAt: now + craftingTimeMs,
+      completesAt: now + craftingTicks,
       materials: recipe.materials,
       result: {
         name: recipe.result.name,
@@ -174,7 +146,7 @@ export const startCrafting = onCall({ maxInstances: 10 }, async (request) => {
     // Update player's crafting status
     await playerRef.update({
       'crafting/current': craftingId,
-      'crafting/completesAt': now + craftingTimeMs
+      'crafting/completesAt': now + craftingTicks
     });
     
     // Consume materials from inventory
@@ -218,8 +190,8 @@ export const startCrafting = onCall({ maxInstances: 10 }, async (request) => {
     return {
       success: true,
       craftingId,
-      completesAt: now + craftingTimeMs,
-      timeToComplete: craftingTimeMs,
+      completesAt: now + craftingTicks,
+      timeToComplete: craftingTicks,
       result: craftingData.result
     };
     
