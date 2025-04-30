@@ -991,25 +991,6 @@
           {/if}
         </div>
       {/if}
-
-      <!-- Action buttons section -->
-      <div class="action-buttons">
-        <!-- Recruitment button -->
-        {#if canRecruitAtStructure()}
-          <button class="action-button recruit-button" onclick={() => executeAction('recruitment')}>
-            <Shield extraClass="action-icon" />
-            <span>Recruit Units</span>
-          </button>
-        {/if}
-        
-        <!-- Upgrade button (outside of collapsible section) -->
-        {#if canUpgradeStructure() && hasResourcesForUpgrade()}
-          <button class="action-button upgrade-alt-button" onclick={startUpgrade} disabled={isUpgrading}>
-            <Hammer extraClass="action-icon" />
-            <span>{isUpgrading ? 'Upgrading...' : 'Upgrade Structure'}</span>
-          </button>
-        {/if}
-      </div>
     </div>
   </div>
 </div>
@@ -1610,103 +1591,6 @@
   
   :global(.citadel-icon) {
     filter: drop-shadow(0 0 2px rgba(209, 138, 230, 0.7));
-  }
-
-  /* Action buttons container */
-  .action-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6em;
-  }
-
-  /* Action buttons styling */
-  .action-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6em;
-    width: 100%;
-    padding: 0.8em;
-    margin-top: 0.8em;
-    border-radius: 0.3em;
-    font-family: inherit;
-    font-size: 0.95em;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 0.1em 0.3em rgba(0, 0, 0, 0.1);
-    border: none;
-  }
-
-  .recruit-button {
-    background: linear-gradient(to bottom, rgba(76, 175, 80, 0.9), rgba(56, 142, 60, 0.9));
-    color: white;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(46, 125, 50, 0.5);
-  }
-
-  .recruit-button:hover {
-    background: linear-gradient(to bottom, rgba(76, 175, 80, 1), rgba(56, 142, 60, 1));
-    box-shadow: 0 0.2em 0.5em rgba(0, 0, 0, 0.15);
-    transform: translateY(-1px);
-  }
-
-  .recruit-button:active {
-    transform: translateY(1px);
-    box-shadow: 0 0.05em 0.2em rgba(0, 0, 0, 0.1);
-  }
-  
-  .upgrade-button, .upgrade-alt-button {
-    background: linear-gradient(to bottom, rgba(156, 39, 176, 0.9), rgba(123, 31, 162, 0.9));
-    color: white;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(123, 31, 162, 0.5);
-    margin-top: 1em;
-  }
-  
-  .upgrade-button:hover, .upgrade-alt-button:hover {
-    background: linear-gradient(to bottom, rgba(156, 39, 176, 1), rgba(123, 31, 162, 1));
-    box-shadow: 0 0.2em 0.5em rgba(0, 0, 0, 0.15);
-    transform: translateY(-1px);
-  }
-  
-  .upgrade-button:active, .upgrade-alt-button:active {
-    transform: translateY(1px);
-    box-shadow: 0 0.05em 0.2em rgba(0, 0, 0, 0.1);
-  }
-  
-  .upgrade-button:disabled, .upgrade-alt-button:disabled {
-    background: linear-gradient(to bottom, rgba(158, 158, 158, 0.5), rgba(117, 117, 117, 0.5));
-    border: 1px solid rgba(97, 97, 97, 0.3);
-    cursor: not-allowed;
-    box-shadow: none;
-    transform: none;
-  }
-
-  .error-message {
-    padding: 0.6em;
-    margin-top: 0.8em;
-    border-radius: 0.3em;
-    font-size: 0.85em;
-    color: #c62828;
-    background-color: rgba(244, 67, 54, 0.1);
-    border: 1px solid rgba(244, 67, 54, 0.3);
-  }
-  
-  .success-message {
-    padding: 0.6em;
-    margin-top: 0.8em;
-    border-radius: 0.3em;
-    font-size: 0.85em;
-    color: #2e7d32;
-    background-color: rgba(76, 175, 80, 0.1);
-    border: 1px solid rgba(76, 175, 80, 0.3);
-  }
-
-  :global(.action-icon-small) {
-    width: 1em;
-    height: 1em;
-    opacity: 0.9;
   }
 
   /* Updated building styles */
