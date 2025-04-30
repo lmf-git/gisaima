@@ -34,6 +34,7 @@
     let activeCategory = $state('all');
     let playerCraftingLevel = $state(1);
     let craftingBonus = $state(0);
+    let recipesCollapsed = $state(false); // New state to track if recipes are collapsed
     
     // Flag to track if component is ready
     let isReady = $state(false);
@@ -524,6 +525,22 @@
     function selectRecipe(recipe) {
         selectedRecipe = recipe;
         error = null;
+        
+        // Auto-collapse when recipe is selected
+        recipesCollapsed = true;
+    }
+    
+    // Toggle recipes collapsed state
+    function toggleRecipesCollapsed() {
+        recipesCollapsed = !recipesCollapsed;
+    }
+
+    // Handle keyboard events for accessibility
+    function handleRecipesKeyDown(event) {
+        if (event.key === 'Enter') {
+            toggleRecipesCollapsed();
+            event.preventDefault();
+        }
     }
 
     // Check if player has enough materials for the selected recipe
@@ -813,39 +830,73 @@
             </div>
             
             <div class="section recipes-section">
-                <h4>Available Recipes</h4>
+                <div 
+                    class="section-header"
+                    onclick={toggleRecipesCollapsed}
+                    onkeydown={handleRecipesKeyDown}
+                    role="button"
+                    tabindex="0"
+                    aria-expanded={!recipesCollapsed}
+                >
+                    <h4>
+                        Available Recipes
+                        {#if selectedRecipe && recipesCollapsed}
+                            <span class="selected-recipe-indicator"> - {selectedRecipe.name} selected</span>
+                        {/if}
+                    </h4>
+                    <button class="collapse-button">
+                        {recipesCollapsed ? '▼' : '▲'}
+                    </button>
+                </div>
                 
-                {#if getFilteredRecipes().length === 0}
-                    <div class="empty-state">
-                        No recipes available in this category
-                    </div>
-                {:else}
-                    <div class="recipes-grid">
-                        {#each getFilteredRecipes() as recipe}
-                            {@const IconComponent = getRecipeIcon(recipe)}
-                            <button 
-                                class="recipe-card {selectedRecipe?.id === recipe.id ? 'selected' : ''} {!recipe.available ? 'unavailable' : ''}"
-                                onclick={() => selectRecipe(recipe)}
-                                title={recipe.available ? recipe.description : `${recipe.description} (${recipe.unavailableReason})`}
-                            >
-                                <div class="recipe-icon-container">
-                                    {#if IconComponent}
-                                        <IconComponent extraClass="recipe-icon-svg" />
-                                    {/if}
-                                    {#if !recipe.available}
-                                        <div class="locked-overlay">
-                                            🔒
+                {#if !selectedRecipe || !recipesCollapsed}
+                    {#if getFilteredRecipes().length === 0}
+                        <div class="section-content animate-expand">
+                            <div class="empty-state">
+                                No recipes available in this category
+                            </div>
+                        </div>
+                    {:else}
+                        <div class="section-content animate-expand">
+                            <div class="recipes-grid">
+                                {#each getFilteredRecipes() as recipe}
+                                    {@const IconComponent = getRecipeIcon(recipe)}
+                                    <button 
+                                        class="recipe-card {selectedRecipe?.id === recipe.id ? 'selected' : ''} {!recipe.available ? 'unavailable' : ''}"
+                                        onclick={() => selectRecipe(recipe)}
+                                        title={recipe.available ? recipe.description : `${recipe.description} (${recipe.unavailableReason})`}
+                                    >
+                                        <div class="recipe-icon-container">
+                                            {#if IconComponent}
+                                                <IconComponent extraClass="recipe-icon-svg" />
+                                            {/if}
+                                            {#if !recipe.available}
+                                                <div class="locked-overlay">
+                                                    🔒
+                                                </div>
+                                            {/if}
                                         </div>
-                                    {/if}
-                                </div>
-                                <div class="recipe-name">
-                                    {recipe.name}
-                                </div>
-                                <div class="recipe-level">
-                                    Level {recipe.level || 1}
-                                </div>
+                                        <div class="recipe-name">
+                                            {recipe.name}
+                                        </div>
+                                        <div class="recipe-level">
+                                            Level {recipe.level || 1}
+                                        </div>
+                                    </button>
+                                {/each}
+                            </div>
+                        </div>
+                    {/if}
+                {:else if selectedRecipe && recipesCollapsed}
+                    <div class="section-content animate-expand">
+                        <div class="collapsed-recipe-info">
+                            <button 
+                                class="show-all-recipes-button" 
+                                onclick={toggleRecipesCollapsed}
+                            >
+                                Show All Recipes
                             </button>
-                        {/each}
+                        </div>
                     </div>
                 {/if}
             </div>
@@ -1398,5 +1449,92 @@
         .stat-label {
             width: auto;
         }
+    }
+
+    .section-content {
+        padding: 0.8rem;
+        overflow: hidden;
+        max-height: 2000px; /* Large enough for any content */
+        opacity: 1;
+    }
+    
+    .animate-expand {
+        animation: content-expand 0.3s ease-out;
+    }
+    
+    @keyframes content-expand {
+        from {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        to {
+            max-height: 2000px;
+            opacity: 1;
+            padding: 0.8rem;
+        }
+    }
+    
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background-color: rgba(0, 0, 0, 0.03);
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .section-header:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .collapse-button {
+        background: none;
+        border: none;
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 0.8rem;
+        cursor: pointer;
+        padding: 0.2rem 0.5rem;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 1.5rem;
+        min-height: 1.5rem;
+    }
+    
+    .collapse-button:hover {
+        color: rgba(0, 0, 0, 0.8);
+        background-color: rgba(0, 0, 0, 0.05);
+        border-radius: 50%;
+    }
+    
+    .selected-recipe-indicator {
+        font-size: 0.9rem;
+        font-weight: normal;
+        color: rgba(0, 0, 0, 0.6);
+    }
+    
+    .collapsed-recipe-info {
+        display: flex;
+        justify-content: center;
+        padding: 0.5rem 0;
+    }
+    
+    .show-all-recipes-button {
+        background-color: rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        color: rgba(0, 0, 0, 0.7);
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.3rem;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .show-all-recipes-button:hover {
+        background-color: rgba(0, 0, 0, 0.1);
     }
 </style>
