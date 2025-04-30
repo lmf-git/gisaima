@@ -1,5 +1,5 @@
 import { writable, derived, get } from 'svelte/store';
-import { TerrainGenerator } from '$lib/shared/map/noise.js';
+import { TerrainGenerator } from 'gisaima-shared/map/noise';
 
 import { ref, onValue } from "firebase/database";
 import { db } from '../firebase/firebase.js';
