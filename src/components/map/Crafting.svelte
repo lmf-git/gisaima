@@ -107,6 +107,49 @@
             }
         },
         
+        // Adding metal weapons requiring smithy
+        'iron_sword': {
+            id: 'iron_sword',
+            name: 'Iron Sword',
+            description: 'A well-crafted iron sword. Standard issue for many fighters.',
+            category: 'weapon',
+            type: 'sword',
+            materials: { 
+                'wooden_sticks': 2, 
+                'iron_ingot': 3 
+            },
+            timeToCraft: 600,
+            level: 3,
+            requiredBuilding: {
+                type: 'smithy',
+                level: 2
+            },
+            effects: {
+                'attackPower': 1.5
+            }
+        },
+        'steel_dagger': {
+            id: 'steel_dagger',
+            name: 'Steel Dagger',
+            description: 'A swift and deadly dagger made of fine steel.',
+            category: 'weapon',
+            type: 'dagger',
+            materials: { 
+                'steel_ingot': 1, 
+                'leather': 2 
+            },
+            timeToCraft: 480,
+            level: 3,
+            requiredBuilding: {
+                type: 'smithy',
+                level: 2
+            },
+            effects: {
+                'attackSpeed': 1.4,
+                'criticalHit': 1.2
+            }
+        },
+        
         // Armor
         'leather_armor': {
             id: 'leather_armor',
@@ -121,6 +164,116 @@
             level: 1,
             effects: {
                 'defense': 1.2
+            }
+        },
+        'iron_breastplate': {
+            id: 'iron_breastplate',
+            name: 'Iron Breastplate',
+            description: 'Sturdy chest protection forged from iron.',
+            category: 'armor',
+            type: 'chest',
+            materials: { 
+                'iron_ingot': 5,
+                'leather': 2
+            },
+            timeToCraft: 720,
+            level: 4,
+            requiredBuilding: {
+                type: 'smithy',
+                level: 3
+            },
+            effects: {
+                'defense': 1.6,
+                'staminaRegen': 0.9 // penalty for heavy armor
+            }
+        },
+        
+        // Farm-related items
+        'herbal_tea': {
+            id: 'herbal_tea',
+            name: 'Herbal Tea',
+            category: 'consumable',
+            type: 'potion',
+            description: 'A soothing tea that provides minor healing and stamina recovery.',
+            materials: {
+                'medicinal_herb': 2,
+                'water_vial': 1
+            },
+            timeToCraft: 90,
+            level: 1,
+            requiredBuilding: {
+                type: 'farm',
+                level: 1
+            },
+            effects: {
+                'healthRegen': 1.2,
+                'staminaRegen': 1.3
+            }
+        },
+        'hearty_stew': {
+            id: 'hearty_stew',
+            name: 'Hearty Stew',
+            category: 'consumable',
+            type: 'food',
+            description: 'A filling meal that provides substantial stamina recovery and temporary health boost.',
+            materials: {
+                'vegetables': 3,
+                'meat': 2,
+                'water_vial': 1
+            },
+            timeToCraft: 240,
+            level: 2,
+            requiredBuilding: {
+                type: 'farm',
+                level: 2
+            },
+            effects: {
+                'maxHealth': 1.1,
+                'staminaRegen': 1.5,
+                'hungerReduction': 3
+            }
+        },
+        
+        // Academy-related items
+        'minor_mana_potion': {
+            id: 'minor_mana_potion',
+            name: 'Minor Mana Potion',
+            category: 'consumable',
+            type: 'potion',
+            description: 'A simple potion that restores a small amount of magical energy.',
+            materials: {
+                'blue_herb': 3,
+                'crystal_water': 1
+            },
+            timeToCraft: 180,
+            level: 2,
+            requiredBuilding: {
+                type: 'academy',
+                level: 1
+            },
+            effects: {
+                'manaRestore': 30
+            }
+        },
+        'scroll_of_identify': {
+            id: 'scroll_of_identify',
+            name: 'Scroll of Identify',
+            category: 'scroll',
+            type: 'scroll',
+            description: 'A magical scroll that reveals the true nature and properties of an item when read.',
+            materials: {
+                'parchment': 1,
+                'magic_ink': 1,
+                'crystal_dust': 2
+            },
+            timeToCraft: 300,
+            level: 3,
+            requiredBuilding: {
+                type: 'academy',
+                level: 2
+            },
+            effects: {
+                'identifyItem': true
             }
         },
         
@@ -160,6 +313,28 @@
             effects: {
                 'craftingSpeed': 1.3,
                 'buildSpeed': 1.2
+            }
+        },
+        
+        // Market-specific recipes
+        'trading_contract': {
+            id: 'trading_contract',
+            name: 'Trading Contract',
+            category: 'document',
+            type: 'document',
+            description: 'A basic document used to formalize trading agreements.',
+            materials: {
+                'parchment': 2,
+                'ink': 1
+            },
+            timeToCraft: 120,
+            level: 1,
+            requiredBuilding: {
+                type: 'market',
+                level: 1
+            },
+            effects: {
+                'tradingFee': 0.9
             }
         },
         
@@ -249,6 +424,16 @@
                     unavailableReason = `Requires ${recipe.raceRequired} race`;
                 }
                 
+                // Check building requirement if applicable
+                if (recipe.requiredBuilding) {
+                    const hasRequiredBuilding = checkBuildingRequirement(recipe.requiredBuilding);
+                    if (!hasRequiredBuilding) {
+                        available = false;
+                        const buildingName = formatText(recipe.requiredBuilding.type);
+                        unavailableReason = `Requires ${buildingName} level ${recipe.requiredBuilding.level}`;
+                    }
+                }
+                
                 // Add availability info
                 recipeCopy.available = available;
                 recipeCopy.unavailableReason = unavailableReason;
@@ -283,6 +468,25 @@
             console.error("Error loading recipes:", err);
             error = "Failed to load recipes";
         }
+    }
+    
+    // Check if structure has required building at required level
+    function checkBuildingRequirement(requirement) {
+        if (!structure || !structure.buildings) {
+            return false;
+        }
+        
+        const { type, level } = requirement;
+        
+        // Check if any building in the structure matches the requirement
+        for (const buildingId in structure.buildings) {
+            const building = structure.buildings[buildingId];
+            if (building.type === type && (building.level || 1) >= level) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     // Load player inventory
@@ -689,6 +893,15 @@
                                 <span class="stat-label">Required level:</span>
                                 <span class="stat-value {selectedRecipe.level > playerCraftingLevel ? 'insufficient' : ''}">
                                     {selectedRecipe.level} {selectedRecipe.level > playerCraftingLevel ? `(You: ${playerCraftingLevel})` : ''}
+                                </span>
+                            </div>
+                        {/if}
+                        
+                        {#if selectedRecipe.requiredBuilding}
+                            <div class="recipe-stat">
+                                <span class="stat-label">Required building:</span>
+                                <span class="stat-value {!checkBuildingRequirement(selectedRecipe.requiredBuilding) ? 'insufficient' : ''}">
+                                    {formatText(selectedRecipe.requiredBuilding.type)} (level {selectedRecipe.requiredBuilding.level})
                                 </span>
                             </div>
                         {/if}
@@ -1167,6 +1380,7 @@
         color: rgba(0, 0, 0, 0.6);
     }
 
+    /* Add a style for building requirements that are not met */
     .insufficient {
         color: rgb(168, 36, 28);
     }
