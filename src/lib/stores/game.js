@@ -1,6 +1,6 @@
 import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
-import { ref, onValue, get as dbGet, set, update } from "firebase/database";
+import { ref, onValue, get as dbGet, set } from "firebase/database";
 import { db } from '../firebase/firebase.js';
 import { user, isAuthReady as userAuthReady } from './user'; 
 import { clearSavedTargetPosition } from './map.js'; // Import clearSavedTargetPosition from map.js
