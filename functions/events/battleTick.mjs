@@ -263,10 +263,8 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
     // Prepare updates object
     const updates = {};
     
-    // Update battle status
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/status`] = "completed";
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/winner`] = winningSide;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/endedAt`] = now;
+    // Delete the battle entirely instead of marking it as completed
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = null;
     
     // Process groups based on battle outcome
     const losingGroups = winningSide === 1 ? defenders : attackers;
@@ -308,6 +306,9 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
           text: "You were defeated in battle.",
           timestamp: now
         };
+        
+        // Mark player as not alive
+        updates[`players/${group.owner}/worlds/${worldId}/alive`] = false;
       }
     }
     

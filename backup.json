@@ -1,35 +1,4 @@
 {
-  "battles": {
-    "ancient-lands": {
-      "battle_1746023700931_769": {
-        "createdAt": 1746023700931,
-        "defenderGroupPower": 1,
-        "id": "battle_1746023700931_769",
-        "locationX": -29,
-        "locationY": -11,
-        "side1": {
-          "groups": {
-            "-OP3oDLkyoqF7kGuN9Bk": true
-          },
-          "power": 1
-        },
-        "side1Power": 1,
-        "side2": {
-          "groups": {
-            "-OP3SyAMFAV_k-6GUhkh": true
-          },
-          "power": 1
-        },
-        "side2Power": 1,
-        "status": "active",
-        "structurePower": 0,
-        "targetTypes": [
-          "group"
-        ],
-        "tickCount": 0
-      }
-    }
-  },
   "players": {
     "0lWjEwolugVdi5PtsFfqWjcGSY73": {
       "worlds": {
@@ -58,6 +27,37 @@
             "y": -8
           },
           "race": "dwarf"
+        }
+      }
+    },
+    "1jjkFgvd9qSwq2SuOvPMPpjs3vW2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_attack": true,
+            "first_attack_date": 1746025259013
+          },
+          "alive": true,
+          "displayName": "Test Human",
+          "groups": {
+            "-OP6CLHLwV6ql033pCTl": {
+              "at": "-23,5",
+              "id": "-OP6CLHLwV6ql033pCTl",
+              "status": "idle"
+            }
+          },
+          "id": "1jjkFgvd9qSwq2SuOvPMPpjs3vW2",
+          "inGroup": "-OP6CLHLwV6ql033pCTl",
+          "joined": 1746025126680,
+          "lastLocation": {
+            "x": -23,
+            "y": 5
+          },
+          "lastMessage": {
+            "text": "You were defeated in battle.",
+            "timestamp": 1746025382024
+          },
+          "race": "human"
         }
       }
     },
@@ -1325,6 +1325,15 @@
           "timestamp": 1745989530283,
           "type": "system"
         },
+        "-OP6CLLj1RpCLDUD8A-B": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Test Human's Force is being mobilized at (-23,5)",
+          "timestamp": 1746025145559,
+          "type": "system"
+        },
         "battle_1745484723001_battle_1745483648051_103": {
           "location": {
             "x": -23,
@@ -1379,6 +1388,15 @@
           "timestamp": 1746023822148,
           "type": "event"
         },
+        "battle_1746025382024_battle_1746025259013_133_505": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle at (-23,5) has ended after 2 ticks! Victorious: test's Force Defeated: Test Human's Force (1 casualties)",
+          "timestamp": 1746025382024,
+          "type": "event"
+        },
         "battle_start_1746023700931_battle_1746023700931_769": {
           "location": {
             "x": -29,
@@ -1386,6 +1404,15 @@
           },
           "text": "Battle has begun at (-29, -11)! Violent Dwarf's Force is attacking Test Elf's Force!",
           "timestamp": 1746023700931,
+          "type": "event"
+        },
+        "battle_start_1746025259013_battle_1746025259013_133": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle has begun at (-23, 5)! Test Human's Force is attacking test's Force!",
+          "timestamp": 1746025259013,
           "type": "event"
         },
         "chat_1745483585619_25": {
@@ -1757,6 +1784,18 @@
           "userId": "BIEd0vebBDZH88rwHVyyQeY3lkC2",
           "userName": "tester's Force"
         },
+        "chat_1746025201325_678": {
+          "location": {
+            "timestamp": 1746025201325,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"Test Human's Force\"",
+          "timestamp": 1746025201325,
+          "type": "event",
+          "userId": "1jjkFgvd9qSwq2SuOvPMPpjs3vW2",
+          "userName": "Test Human's Force"
+        },
         "chat_monster_spawn_1745989802985_840": {
           "location": {
             "x": -34,
@@ -1854,6 +1893,15 @@
           },
           "text": "Violent Dwarf's Force was defeated in battle at (-29,-11)",
           "timestamp": 1746023822148,
+          "type": "event"
+        },
+        "death_1746025382024_1jjkFgvd9qSwq2SuOvPMPpjs3vW2": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Test Human's Force was defeated in battle at (-23,5)",
+          "timestamp": 1746025382024,
           "type": "event"
         },
         "gather_1745486761904_-OOb4owT0OYyo524niqW": {
@@ -3133,37 +3181,6 @@
             }
           },
           "-29,-11": {
-            "battles": {
-              "battle_1746023700931_769": {
-                "createdAt": 1746023700931,
-                "defenderGroupPower": 1,
-                "endedAt": 1746023822148,
-                "id": "battle_1746023700931_769",
-                "locationX": -29,
-                "locationY": -11,
-                "side1": {
-                  "groups": {
-                    "-OP3oDLkyoqF7kGuN9Bk": true
-                  },
-                  "power": 1
-                },
-                "side1Power": 1,
-                "side2": {
-                  "groups": {
-                    "-OP3SyAMFAV_k-6GUhkh": true
-                  },
-                  "power": 1
-                },
-                "side2Power": 1,
-                "status": "completed",
-                "structurePower": 0,
-                "targetTypes": [
-                  "group"
-                ],
-                "tickCount": 2,
-                "winner": 2
-              }
-            },
             "groups": {
               "-OP3SyAMFAV_k-6GUhkh": {
                 "createdAt": 1745979171602,
@@ -3791,6 +3808,37 @@
         },
         "-2,0": {
           "-23,5": {
+            "battles": {
+              "battle_1746025259013_133": {
+                "createdAt": 1746025259013,
+                "defenderGroupPower": 1,
+                "endedAt": 1746025382024,
+                "id": "battle_1746025259013_133",
+                "locationX": -23,
+                "locationY": 5,
+                "side1": {
+                  "groups": {
+                    "-OP6CLHLwV6ql033pCTl": true
+                  },
+                  "power": 1
+                },
+                "side1Power": 1,
+                "side2": {
+                  "groups": {
+                    "-OOb4owT0OYyo524niqW": true
+                  },
+                  "power": 1
+                },
+                "side2Power": 1,
+                "status": "completed",
+                "structurePower": 0,
+                "targetTypes": [
+                  "group"
+                ],
+                "tickCount": 2,
+                "winner": 2
+              }
+            },
             "groups": {
               "-OOb4owT0OYyo524niqW": {
                 "createdAt": 1745486303066,
@@ -3814,7 +3862,7 @@
                 ],
                 "lastMessage": {
                   "text": "Victory in battle! All units survived the battle.",
-                  "timestamp": 1745486946113
+                  "timestamp": 1746025382024
                 },
                 "lastUpdated": 1745486761904,
                 "name": "test's Force",
@@ -3989,7 +4037,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746024061451,
+        "lastTick": 1746025621238,
         "name": "Ancient Lands",
         "seed": 13579,
         "size": "large",
