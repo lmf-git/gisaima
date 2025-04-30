@@ -351,9 +351,20 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
       const unit = group.units[unitKey];
       
       // Handle player death if this is a player unit
-      if (unit.type === 'player') {
+      if ((unit.type === 'player') || 
+          (unit.id && unit.id === group.owner) || 
+          (unitKey === group.owner) || 
+          (unit.displayName && !unit.npc)) {
+        
+        // Determine the player ID - could be unit.id, unitKey, or group.owner
+        const playerId = unit.id || unitKey;
+        if (!playerId) {
+          logger.error(`Cannot determine player ID for unit in group ${group.id}`);
+          return;
+        }
+        
         // Add death message to chat
-        updates[`worlds/${worldId}/chat/death_${now}_${unit.id}`] = {
+        updates[`worlds/${worldId}/chat/death_${now}_${playerId}`] = {
           text: `${unit.displayName || "Unknown player"} was defeated in battle at (${locationKey})`,
           type: "event",
           location: { x: parseInt(locationKey.split(',')[0]), y: parseInt(locationKey.split(',')[1]) },
@@ -361,13 +372,15 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
         };
         
         // Send defeat message to player
-        updates[`players/${unit.id}/worlds/${worldId}/lastMessage`] = {
+        updates[`players/${playerId}/worlds/${worldId}/lastMessage`] = {
           text: "You were defeated in battle.",
           timestamp: now
         };
         
-        // Mark player as not alive
-        updates[`players/${unit.id}/worlds/${worldId}/alive`] = false;
+        // Mark player as not alive in top-level player data
+        updates[`players/${playerId}/worlds/${worldId}/alive`] = false;
+        
+        logger.info(`Marking player ${playerId} (${unit.displayName || "Unknown"}) as not alive due to battle casualty`);
       }
 
       // Remove the unit from the group
@@ -375,9 +388,28 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
       totalCasualties++;
     });
     
-    // Update the unit count
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = 
-      Object.keys(group.units).length - casualtyKeys.length;
+    // Check if this was the last unit in the group
+    const remainingUnitCount = unitKeys.length;
+    
+    if (remainingUnitCount <= 0) {
+      // No units left, remove the entire group
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+      
+      // Add group defeat notification to the chat log
+      if (group.owner) {
+        updates[`worlds/${worldId}/chat/death_${now}_${group.owner}`] = {
+          text: `${group.name || "Unknown player"} was defeated in battle at (${locationKey})`,
+          type: "event",
+          location: { x: parseInt(locationKey.split(',')[0]), y: parseInt(locationKey.split(',')[1]) },
+          timestamp: now
+        };
+      }
+      
+      logger.info(`Group ${group.id} (${group.name || "Unknown"}) completely destroyed in battle`);
+    } else {
+      // Update the unit count
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnitCount;
+    }
   });
   
   return totalCasualties;
@@ -462,24 +494,27 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
       }
     }
     
-    // Handle losing groups - remove them
+    // Handle losing groups - but only those that weren't already removed during attrition
     for (const group of losingGroups) {
-      // Remove the group
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
-      casualties++;
+      // First check if the group still exists at this location
+      const groupRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`);
+      const groupSnapshot = await groupRef.once("value");
       
-      // Update player state if this was a player's group
-      if (group.owner) {
-        // Add death notification to the chat log
-        updates[`worlds/${worldId}/chat/death_${now}_${group.owner}`] = {
-          text: `${group.name || "Unknown player"} was defeated in battle at (${locationKey})`,
-          type: "event",
-          location: { x: parseInt(locationKey.split(',')[0]), y: parseInt(locationKey.split(',')[1]) },
-          timestamp: now
-        };
+      if (groupSnapshot.exists()) {
+        // Group still exists, so remove it now
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+        casualties++;
         
-        // Do not update player alive status or send defeat messages here
-        // This is now handled when individual units die during battle processing
+        // Only add a notification that the group was defeated in battle
+        if (group.owner) {
+          // Add group defeat notification to the chat log
+          updates[`worlds/${worldId}/chat/death_${now}_${group.owner}`] = {
+            text: `${group.name || "Unknown player"} was defeated in battle at (${locationKey})`,
+            type: "event",
+            location: { x: parseInt(locationKey.split(',')[0]), y: parseInt(locationKey.split(',')[1]) },
+            timestamp: now
+          };
+        }
       }
     }
     
