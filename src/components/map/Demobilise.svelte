@@ -7,7 +7,11 @@
   
   const { onClose = () => {}, onDemobilize = () => {} } = $props();
   const functions = getFunctions();
+  
+  // Use $derived for tileData to prevent reactivity issues
   let tileData = $derived($targetStore || null);
+  
+  // Initialize state
   let availableGroups = $state([]);
   let selectedGroup = $state(null);
   let storageDestination = $state('shared');
@@ -15,24 +19,39 @@
   let statusMessage = $state('');
   let processing = $state(false);
 
+  // Create a derived value for player ID to avoid direct reactive reads in the effect
+  let playerId = $derived($currentPlayer?.id);
+
+  // Fix the effect that was causing the infinite loop
   $effect(() => {
-    if (!tileData || !tileData.groups) {
+    // Reset groups list if we don't have valid data
+    if (!tileData || !tileData.groups || !playerId) {
       availableGroups = [];
+      selectedGroup = null;
       return;
     }
-    availableGroups = tileData.groups
-      .filter(group => {
-        return group.owner === $currentPlayer?.id && group.status === 'idle';
-      })
-      .map(group => ({
-        ...group,
-        selected: false
-      }));
     
-    // Auto-select first group if there's only one
-    if (availableGroups.length === 1) {
-      selectedGroup = availableGroups[0];
-    } else {
+    // Create a new array without directly referencing reactively accessed properties inside filter
+    const filteredGroups = [];
+    
+    // Manually iterate instead of using filter/map to prevent reactivity issues
+    for (let i = 0; i < tileData.groups.length; i++) {
+      const group = tileData.groups[i];
+      if (group.owner === playerId && group.status === 'idle') {
+        filteredGroups.push({
+          ...group,
+          selected: false
+        });
+      }
+    }
+    
+    // Update state only once
+    availableGroups = filteredGroups;
+    
+    // Auto-select only after setting availableGroups
+    if (filteredGroups.length === 1 && !selectedGroup) {
+      selectedGroup = filteredGroups[0];
+    } else if (filteredGroups.length === 0) {
       selectedGroup = null;
     }
   });
