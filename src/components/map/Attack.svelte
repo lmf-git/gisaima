@@ -210,28 +210,35 @@
       // Common parameters
       const params = {
         worldId: $game.worldKey,
-        attackerGroupIds,
+        attackerGroupIds: selectedPlayerGroups.map(g => g.id),
         locationX: tileData.x,
         locationY: tileData.y
       };
       
-      // Add defender groups only if selected
+      // Add defender groups if any are selected
       if (selectedEnemyGroups.length > 0) {
         params.defenderGroupIds = selectedEnemyGroups.map(g => g.id);
       }
       
-      // Add structure if selected
+      // Add structure if one is selected
       if (selectedStructure) {
         params.structureId = selectedStructure.id;
-        // Log the structure ID to help with debugging
         console.log('Targeting structure with ID:', selectedStructure.id);
       }
       
       console.log('Starting attack with params:', params);
       
+      // Get Firebase functions instance
+      const functions = getFunctions();
+      
       // Call the cloud function with the updated parameter names
-      const attackFunction = httpsCallable(getFunctions(), 'attack');
+      // Make sure firebase.json has proper CORS setup for functions
+      const attackFunction = httpsCallable(functions, 'attack');
+      
+      // Wait for the result
+      console.log('Calling attack function...');
       const result = await attackFunction(params);
+      console.log('Attack function result:', result);
       
       if (result.data.success) {
         console.log('Attack started:', result.data);
@@ -252,6 +259,8 @@
         errorMessage = 'Server error occurred. Please try again later.';
       } else if (error.code === 'failed-precondition') {
         errorMessage = 'Cannot attack: target status has changed.';
+      } else if (error.code === 'functions/unauthorized') {
+        errorMessage = 'Authorization failure. Please log in again.';
       } else {
         errorMessage = error.message || 'Failed to start attack';
       }

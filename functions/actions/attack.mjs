@@ -1,61 +1,45 @@
 /**
  * Attack function for Gisaima
- * Handles initiating battles between groups and targeting structures simultaneously
+ * Handles starting battles between groups and structures
  */
 
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 
-// Attack function - supports attacking groups and structures simultaneously
-export const attack = onCall({ 
-  maxInstances: 10
-}, async (request) => {
+// Attack function that supports targeting both groups and structures
+export const attack = onCall({ maxInstances: 10 }, async (request) => {
+  const { 
+    worldId,
+    attackerGroupIds, 
+    defenderGroupIds,
+    structureId,
+    locationX, 
+    locationY 
+  } = request.data;
+  
+  const userId = request.auth?.uid;
+  
+  if (!userId) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+  
+  if (!attackerGroupIds || !Array.isArray(attackerGroupIds) || attackerGroupIds.length === 0) {
+    throw new HttpsError("invalid-argument", "Must provide at least one attacker group");
+  }
+  
+  if (locationX === undefined || locationY === undefined) {
+    throw new HttpsError("invalid-argument", "Must provide location coordinates");
+  }
+  
+  // Validate that we have at least one target (groups or structure)
+  if ((!defenderGroupIds || !Array.isArray(defenderGroupIds) || defenderGroupIds.length === 0) && 
+      !structureId) {
+    throw new HttpsError("invalid-argument", "Must provide at least one target (groups or structure)");
+  }
+  
   try {
-    const { 
-      attackerGroupIds, 
-      locationX, 
-      locationY, 
-      defenderGroupIds, 
-      structureId
-    } = request.data;
-
-    console.log('test) attack')
-    
-    // Get user ID from auth context, but don't fail if not present yet
-    const userId = request.auth?.uid;
-    
-    logger.info(`Attack request received. Auth: ${userId ? 'Authenticated' : 'Unauthenticated'}, Params:`, {
-      attackerCount: attackerGroupIds?.length,
-      location: `${locationX},${locationY}`,
-      hasDefenders: defenderGroupIds?.length > 0,
-      hasStructure: !!structureId
-    });
-    
-    if (!userId) {
-      throw new HttpsError("unauthenticated", "User must be authenticated to perform attacks. Please sign in and try again.");
-    }
-    
-    // Validate common parameters
-    if (!Array.isArray(attackerGroupIds) || 
-        attackerGroupIds.length === 0 || 
-        locationX === undefined || 
-        locationY === undefined) {
-      throw new HttpsError("invalid-argument", "Missing required attack parameters");
-    }
-    
-    // Validate that at least one target type is specified
-    if ((!defenderGroupIds || defenderGroupIds.length === 0) && !structureId) {
-      throw new HttpsError("invalid-argument", "No attack targets specified (missing defenderGroupIds and structureId)");
-    }
-    
-    // Validate defender groups if provided
-    if (defenderGroupIds && !Array.isArray(defenderGroupIds)) {
-      throw new HttpsError("invalid-argument", "defenderGroupIds must be an array");
-    }
-    
     const db = getDatabase();
-    const worldId = request.data.worldId || 'default';
     
     // Fix chunk calculation for negative coordinates
     const CHUNK_SIZE = 20;
@@ -68,261 +52,279 @@ export const attack = onCall({
     
     const chunkKey = getChunkKey(locationX, locationY);
     const locationKey = `${locationX},${locationY}`;
-    const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}`);
     
-    // Get the current tile data
+    // Get the tile data which includes groups and structure
+    const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}`);
     const tileSnapshot = await tileRef.once("value");
     const tileData = tileSnapshot.val() || {};
     
-    // Check for groups
-    const groups = tileData.groups || {};
-    if (defenderGroupIds && defenderGroupIds.length > 0 && Object.keys(groups).length === 0) {
-      throw new HttpsError("not-found", "No groups found at this location");
+    if (!tileData) {
+      throw new HttpsError("not-found", "Location not found");
     }
     
-    // Check for structure if targeting a structure
-    let structure = null;
-    if (structureId) {
-      if (!tileData.structure) {
-        throw new HttpsError("not-found", "No structure found at this location");
-      }
-      
-      // Verify the structure matches the provided ID
-      if (tileData.structure.id !== structureId) {
-        throw new HttpsError("not-found", `Structure ID mismatch: expected ${structureId}, found ${tileData.structure.id || 'undefined'}`);
-      }
-      
-      // Check if structure is already in battle
-      if (tileData.structure.inBattle) {
-        throw new HttpsError("failed-precondition", "Structure is already under attack");
-      }
-      
-      // Check if structure is owned by the attacker (can't attack your own structure)
-      if (tileData.structure.owner === userId) {
-        throw new HttpsError("permission-denied", "You cannot attack your own structure");
-      }
-      
-      structure = tileData.structure;
-    }
+    // Get groups at the location
+    const groupsAtLocation = tileData.groups || {};
     
-    // Validate attacker groups - all must exist and belong to the user
+    // Verify all attacker groups exist at the location and are owned by the user
     const attackerGroups = [];
-    let attackerTotalPower = 0;
-    
     for (const groupId of attackerGroupIds) {
-      const group = groups[groupId];
+      const group = groupsAtLocation[groupId];
       if (!group) {
         throw new HttpsError("not-found", `Attacker group ${groupId} not found at this location`);
       }
+      
       if (group.owner !== userId) {
-        throw new HttpsError("permission-denied", "You can only attack with your own groups");
-      }
-      if (group.inBattle) {
-        throw new HttpsError("failed-precondition", `Group ${group.name || group.id} is already in battle`);
+        throw new HttpsError("permission-denied", `You do not own group ${groupId}`);
       }
       
-      // Add to our validated list and calculate power
-      attackerGroups.push(group);
-      attackerTotalPower += calculateGroupPower(group);
+      if (group.inBattle) {
+        throw new HttpsError("failed-precondition", `Group ${groupId} is already in battle`);
+      }
+      
+      if (group.status !== "idle") {
+        throw new HttpsError("failed-precondition", `Group ${groupId} is not idle (status: ${group.status})`);
+      }
+      
+      attackerGroups.push({
+        ...group,
+        id: groupId
+      });
     }
     
-    // Process defender groups if provided
-    const defenderGroups = [];
-    let defenderGroupPower = 0;
-    let defenderRace = null;
+    // Track what types of targets we're attacking
+    const targetTypes = [];
     
+    // Verify defender groups if provided
+    const defenderGroups = [];
     if (defenderGroupIds && defenderGroupIds.length > 0) {
+      targetTypes.push("group");
+      
       for (const groupId of defenderGroupIds) {
-        const group = groups[groupId];
+        const group = groupsAtLocation[groupId];
         if (!group) {
           throw new HttpsError("not-found", `Defender group ${groupId} not found at this location`);
         }
+        
+        // Cannot attack your own groups
+        if (group.owner === userId) {
+          throw new HttpsError("permission-denied", "You cannot attack your own groups");
+        }
+        
         if (group.inBattle) {
-          throw new HttpsError("failed-precondition", `Target group ${group.name || group.id} is already in battle`);
+          throw new HttpsError("failed-precondition", `Group ${groupId} is already in battle`);
         }
         
-        // Add to our validated list and calculate power
-        defenderGroups.push(group);
-        defenderGroupPower += calculateGroupPower(group);
-        
-        // Record race of first defender for battle message
-        if (!defenderRace && group.race) {
-          defenderRace = group.race;
+        if (group.status !== "idle") {
+          throw new HttpsError("failed-precondition", `Group ${groupId} is not idle (status: ${group.status})`);
         }
+        
+        defenderGroups.push({
+          ...group,
+          id: groupId
+        });
       }
     }
     
-    // Process structure defense power if structure is targeted
-    let structurePower = 0;
-    if (structure) {
-      // Calculate structure defense power based on type
-      switch (structure.type) {
-        case 'spawn':
-          structurePower = 15;
-          break;
-        case 'fortress':
-          structurePower = 30;
-          break;
-        case 'watchtower':
-          structurePower = 10;
-          break;
-        case 'stronghold':
-          structurePower = 25;
-          break;
-        default:
-          structurePower = 5;
+    // Verify structure if provided
+    let structure = null;
+    if (structureId) {
+      targetTypes.push("structure");
+      
+      if (!tileData.structure || tileData.structure.id !== structureId) {
+        throw new HttpsError("not-found", "Structure not found at this location");
       }
       
-      // Use structure race if we don't have a defender race yet
-      if (!defenderRace && structure.race) {
-        defenderRace = structure.race;
+      structure = tileData.structure;
+      
+      // Cannot attack structures you own
+      if (structure.owner === userId) {
+        throw new HttpsError("permission-denied", "You cannot attack your own structure");
       }
+      
+      // Cannot attack spawn points
+      if (structure.type === "spawn") {
+        throw new HttpsError("permission-denied", "Cannot attack spawn points");
+      }
+      
+      // Cannot attack structures already in battle
+      if (structure.inBattle) {
+        throw new HttpsError("failed-precondition", "Structure is already in battle");
+      }
+      
+      structure = {
+        ...structure,
+        id: structureId
+      };
     }
     
-    // Calculate total defender power
-    const defenderTotalPower = defenderGroupPower + structurePower;
-
     // Create a battle ID
     const battleId = `battle_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const now = Date.now();
     
-    // Determine what types of targets are in this battle
-    const targetTypes = [];
-    if (defenderGroups.length > 0) targetTypes.push("group");
-    if (structure) targetTypes.push("structure");
+    // Calculate initial power for each side
+    const attackerPower = calculateTotalPower(attackerGroups);
     
-    // For logging/debugging
-    logger.info(`Starting battle with targets: ${targetTypes.join(', ')}, attackerPower: ${attackerTotalPower}, defenderPower: ${defenderTotalPower} (groups: ${defenderGroupPower}, structure: ${structurePower})`);
-    
-    // Update all attacker groups to be in battle
-    const groupUpdates = {};
-    
-    // Update attacker groups
-    attackerGroupIds.forEach(groupId => {
-      groupUpdates[groupId] = {
-        inBattle: true,
-        battleId,
-        battleSide: 1,
-        battleRole: 'attacker',
-        status: 'fighting'
-      };
-    });
-    
-    // Update defender groups if any
-    if (defenderGroupIds && defenderGroupIds.length > 0) {
-      defenderGroupIds.forEach(groupId => {
-        groupUpdates[groupId] = {
-          inBattle: true,
-          battleId,
-          battleSide: 2,
-          battleRole: 'defender',
-          status: 'fighting'
-        };
-      });
+    let defenderGroupPower = 0;
+    if (defenderGroups.length > 0) {
+      defenderGroupPower = calculateTotalPower(defenderGroups);
     }
     
-    // Create transaction for atomic updates
-    const updates = {};
+    let structurePower = 0;
+    if (structure) {
+      structurePower = calculateStructurePower(structure);
+    }
     
-    // Add battle reference to the tile with target types
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = {
+    // Total defender power combines groups and structure
+    const defenderTotalPower = defenderGroupPower + structurePower;
+    
+    // Prepare the battle data
+    const battleData = {
       id: battleId,
-      side1Power: attackerTotalPower,
+      createdAt: now,
+      status: "active",
+      locationX,
+      locationY,
+      targetTypes,
+      side1Power: attackerPower,
       side2Power: defenderTotalPower,
-      targetTypes: targetTypes,
       defenderGroupPower,
       structurePower,
-      tickCount: 0,
-      status: 'active',
-      startedAt: now
+      side1: {
+        power: attackerPower,
+        groups: attackerGroupIds.reduce((acc, id) => {
+          acc[id] = true;
+          return acc;
+        }, {})
+      },
+      side2: {
+        power: defenderTotalPower,
+        groups: defenderGroupIds ? defenderGroupIds.reduce((acc, id) => {
+          acc[id] = true;
+          return acc;
+        }, {}) : {}
+      },
+      tickCount: 0
     };
     
-    // Update attacker and defender groups
-    for (const [groupId, groupUpdate] of Object.entries(groupUpdates)) {
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/inBattle`] = groupUpdate.inBattle;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleId`] = groupUpdate.battleId;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleSide`] = groupUpdate.battleSide;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleRole`] = groupUpdate.battleRole;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/status`] = groupUpdate.status;
+    // Prepare updates object for atomicity
+    const updates = {};
+    
+    // Add battle data
+    updates[`battles/${worldId}/${battleId}`] = battleData;
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = battleData;
+    
+    // Update attacker groups
+    for (const group of attackerGroups) {
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/inBattle`] = true;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleId`] = battleId;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleSide`] = 1;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleRole`] = 'attacker';
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/status`] = 'fighting';
     }
     
-    // Update structure battle status if targeted
+    // Update defender groups
+    for (const group of defenderGroups) {
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/inBattle`] = true;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleId`] = battleId;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleSide`] = 2;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleRole`] = 'defender';
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/status`] = 'fighting';
+    }
+    
+    // Update structure if attacking one
     if (structure) {
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/inBattle`] = true;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/battleId`] = battleId;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/battleSide`] = 2; // Structure is always defender (side 2)
     }
     
-    // Add system chat message about battle
-    const attackerGroupName = attackerGroups[0]?.name || "Unknown force";
+    // Add chat message for battle start
+    const attackerName = attackerGroups.length > 0 ? attackerGroups[0].name || "Unknown Force" : "Unknown Force";
     
-    // Create appropriate message based on what's being attacked
-    let chatMessage;
+    let targetDescription = "";
     if (defenderGroups.length > 0 && structure) {
-      // Both groups and structure
-      chatMessage = `${attackerGroupName} is attacking ${defenderGroups.length} ${defenderRace || ''} groups and ${structure.name || "a structure"} at (${locationX},${locationY})`;
+      const defenderName = defenderGroups[0].name || "Unknown Force";
+      targetDescription = `${defenderName} and ${structure.name || "a structure"}`;
     } else if (defenderGroups.length > 0) {
-      // Only groups
-      chatMessage = `${attackerGroupName} is attacking ${defenderGroups.length} ${defenderRace || ''} groups at (${locationX},${locationY})`;
-    } else {
-      // Only structure
-      chatMessage = `${attackerGroupName} is attacking ${structure.name || "a structure"} at (${locationX},${locationY})`;
+      targetDescription = defenderGroups[0].name || "Unknown Force";
+    } else if (structure) {
+      targetDescription = structure.name || "a structure";
     }
     
-    const chatId = `battle_start_${battleId}`;
-    updates[`worlds/${worldId}/chat/${chatId}`] = {
-      text: chatMessage,
-      type: "system",
+    updates[`worlds/${worldId}/chat/battle_start_${now}_${battleId}`] = {
+      text: `Battle has begun at (${locationX}, ${locationY})! ${attackerName} is attacking ${targetDescription}!`,
+      type: 'event',
       timestamp: now,
-      location: { x: locationX, y: locationY },
-      battleId
+      location: {
+        x: locationX,
+        y: locationY
+      }
     };
     
-    // Execute the multi-path update
+    // Add achievement for first attack if applicable
+    if (attackerGroups.length > 0) {
+      const attackerOwnerId = attackerGroups[0].owner;
+      updates[`players/${attackerOwnerId}/worlds/${worldId}/achievements/first_attack`] = true;
+      updates[`players/${attackerOwnerId}/worlds/${worldId}/achievements/first_attack_date`] = now;
+    }
+    
+    // Execute all updates atomically
     await db.ref().update(updates);
     
     return {
       success: true,
-      message: chatMessage,
-      battleId,
-      targetTypes
+      message: "Attack started successfully",
+      battleId
     };
+    
   } catch (error) {
-    logger.error("Error starting battle:", error);
-    if (error.code) {
-      // If it's already a HttpsError, rethrow it
-      throw error;
-    } else {
-      throw new HttpsError("internal", error.message || "Server error while processing battle request");
-    }
+    logger.error("Error starting attack:", error);
+    throw new HttpsError("internal", "Failed to start attack: " + (error.message || "Unknown error"));
   }
 });
 
-// Helper function to calculate group power
-function calculateGroupPower(group) {
-  // Base calculation using unit count
-  let power = group.unitCount || 1;
+// Helper function to calculate total power of groups
+function calculateTotalPower(groups) {
+  if (!groups || groups.length === 0) return 0;
   
-  // If we have detailed units data, use it for better calculations
-  if (group.units && typeof group.units === 'object') {
-    // Check if it's an array or object
-    if (Array.isArray(group.units)) {
-      power = group.units.reduce((total, unit) => {
-        // Calculate unit strength (default to 1 if not specified)
-        const unitStrength = unit.strength || 1;
-        return total + unitStrength;
-      }, 0);
-    } else {
-      // Handle object format (keys are unit IDs)
-      power = Object.values(group.units).reduce((total, unit) => {
-        const unitStrength = unit.strength || 1;
-        return total + unitStrength;
-      }, 0);
+  return groups.reduce((total, group) => {
+    let groupPower = group.unitCount || 1;
+    
+    // If we have unit details, use those
+    if (group.units) {
+      if (Array.isArray(group.units)) {
+        groupPower = group.units.length;
+      } else if (typeof group.units === 'object') {
+        groupPower = Object.keys(group.units).length;
+      }
     }
     
-    // Ensure minimum power of 1
-    power = Math.max(1, power);
+    return total + groupPower;
+  }, 0);
+}
+
+// Helper function to calculate structure power
+function calculateStructurePower(structure) {
+  if (!structure) return 0;
+  
+  // Base power by structure type
+  let basePower = 5;
+  
+  switch (structure.type) {
+    case 'spawn':
+      basePower = 15;
+      break;
+    case 'fortress':
+      basePower = 30;
+      break;
+    case 'watchtower':
+      basePower = 10;
+      break;
+    case 'stronghold':
+      basePower = 25;
+      break;
+    default:
+      basePower = 5;
   }
   
-  return power;
+  return basePower;
 }
