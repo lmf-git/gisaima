@@ -1,5 +1,4 @@
 import { getDatabase } from 'firebase-admin/database';
-import { ref, get, update, set, query, orderByChild, equalTo } from "firebase/database";
 
 /**
  * Process pending crafting operations
@@ -14,14 +13,8 @@ export async function processCrafting(worldId) {
     console.log(`Processing crafting for world ${worldId} at ${new Date(now).toISOString()}`);
     
     // Get completed but unprocessed crafting operations
-    const craftingRef = ref(db, `worlds/${worldId}/crafting`);
-    const craftingQuery = query(
-      craftingRef,
-      orderByChild('status'),
-      equalTo('in_progress')
-    );
-    
-    const craftingSnapshot = await get(craftingQuery);
+    const craftingRef = db.ref(`worlds/${worldId}/crafting`);
+    const craftingSnapshot = await craftingRef.orderByChild('status').equalTo('in_progress').once('value');
     
     if (!craftingSnapshot.exists()) {
       console.log(`No pending crafting found for world ${worldId}`);
@@ -56,8 +49,8 @@ export async function processCrafting(worldId) {
         failed++;
         
         // Mark crafting as failed
-        const craftingItemRef = ref(db, `worlds/${worldId}/crafting/${crafting.id}`);
-        await update(craftingItemRef, {
+        const craftingItemRef = db.ref(`worlds/${worldId}/crafting/${crafting.id}`);
+        await craftingItemRef.update({
           processed: true,
           failed: true,
           error: error.message,
@@ -94,8 +87,8 @@ async function completeCrafting(craftingId, worldId) {
   try {
     const db = getDatabase();
     // Get crafting data
-    const craftingRef = ref(db, `worlds/${worldId}/crafting/${craftingId}`);
-    const craftingSnapshot = await get(craftingRef);
+    const craftingRef = db.ref(`worlds/${worldId}/crafting/${craftingId}`);
+    const craftingSnapshot = await craftingRef.once('value');
     
     if (!craftingSnapshot.exists()) {
       throw new Error('Crafting not found');
@@ -112,8 +105,8 @@ async function completeCrafting(craftingId, worldId) {
     }
     
     // Add item to player's inventory
-    const playerInventoryRef = ref(db, `players/${crafting.playerId}/worlds/${worldId}/inventory`);
-    const playerInventorySnapshot = await get(playerInventoryRef);
+    const playerInventoryRef = db.ref(`players/${crafting.playerId}/worlds/${worldId}/inventory`);
+    const playerInventorySnapshot = await playerInventoryRef.once('value');
     
     let playerInventory = playerInventorySnapshot.exists() ? playerInventorySnapshot.val() : [];
     
@@ -134,19 +127,21 @@ async function completeCrafting(craftingId, worldId) {
     });
     
     // Update player's inventory
-    await set(playerInventoryRef, playerInventory);
+    await playerInventoryRef.set(playerInventory);
     
     // Update player's crafting status
-    const playerRef = ref(db, `players/${crafting.playerId}/worlds/${worldId}`);
-    await update(playerRef, {
+    const playerRef = db.ref(`players/${crafting.playerId}/worlds/${worldId}`);
+    await playerRef.update({
       'crafting/current': null,
       'crafting/completesAt': null,
       'crafting/lastCompleted': Date.now()
     });
     
     // Increase player's crafting XP if they have a skills object
-    const playerSkillsRef = ref(db, `players/${crafting.playerId}/worlds/${worldId}/skills`);
-    const playerSkillsSnapshot = await get(playerSkillsRef);
+    const playerSkillsRef = db.ref(`players/${crafting.playerId}/worlds/${worldId}/skills`);
+    const playerSkillsSnapshot = await playerSkillsRef.once('value');
+    
+    let leveledUp = false;
     
     if (playerSkillsSnapshot.exists()) {
       const skills = playerSkillsSnapshot.val();
@@ -173,7 +168,6 @@ async function completeCrafting(craftingId, worldId) {
       // Check if player leveled up
       const requiredXP = currentLevel * 100; // Simple XP curve
       let newLevel = currentLevel;
-      let leveledUp = false;
       
       if (newXP >= requiredXP) {
         newLevel = currentLevel + 1;
@@ -181,7 +175,7 @@ async function completeCrafting(craftingId, worldId) {
       }
       
       // Update skills
-      await update(playerSkillsRef, {
+      await playerSkillsRef.update({
         'crafting/xp': newXP,
         'crafting/level': newLevel,
         'crafting/lastGain': Date.now()
@@ -189,8 +183,8 @@ async function completeCrafting(craftingId, worldId) {
       
       // If player leveled up, announce it
       if (leveledUp) {
-        const chatRef = ref(db, `worlds/${worldId}/chat/crafting_levelup_${crafting.playerId}_${Date.now()}`);
-        await set(chatRef, {
+        const chatRef = db.ref(`worlds/${worldId}/chat/crafting_levelup_${crafting.playerId}_${Date.now()}`);
+        await chatRef.set({
           location: crafting.structureLocation,
           text: `${crafting.playerName} reached crafting level ${newLevel}!`,
           timestamp: Date.now(),
@@ -200,15 +194,15 @@ async function completeCrafting(craftingId, worldId) {
     }
     
     // Mark crafting as completed
-    await update(craftingRef, {
+    await craftingRef.update({
       status: 'completed',
       completedAt: Date.now(),
       processed: true
     });
     
     // Add completion event to chat
-    const chatRef = ref(db, `worlds/${worldId}/chat/crafting_complete_${craftingId}`);
-    await set(chatRef, {
+    const chatRef = db.ref(`worlds/${worldId}/chat/crafting_complete_${craftingId}`);
+    await chatRef.set({
       location: crafting.structureLocation,
       text: `${crafting.playerName} finished crafting ${crafting.result.name}.`,
       timestamp: Date.now(),
