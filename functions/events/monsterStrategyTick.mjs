@@ -473,12 +473,12 @@ async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, wor
 
   // If no suitable target found or too far, move randomly
   if (!targetLocation || targetDistance > MAX_SCAN_DISTANCE) {
-    return moveRandomly(monsterGroup, location, updates, now);
+    return moveRandomly(worldId, monsterGroup, location, updates, now);
   }
 
   // If target is more than 1 tile away, move only 1 tile in that direction
   if (targetDistance > 1.5) {
-    return moveOneStepTowardsTarget(monsterGroup, location, targetLocation, targetType, updates, now);
+    return moveOneStepTowardsTarget(worldId, monsterGroup, location, targetLocation, targetType, updates, now);
   }
   
   // Calculate a path to the target (using a simple approach for now)
@@ -531,7 +531,7 @@ async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, wor
 /**
  * Move one step towards a target location
  */
-function moveOneStepTowardsTarget(monsterGroup, location, targetLocation, targetType, updates, now) {
+function moveOneStepTowardsTarget(worldId, monsterGroup, location, targetLocation, targetType, updates, now) {
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
   
   const dx = targetLocation.x - location.x;
@@ -681,7 +681,7 @@ function createMonsterMoveMessage(monsterGroup, targetType, targetLocation) {
 /**
  * Move the monster group in a random direction
  */
-function moveRandomly(monsterGroup, location, updates, now) {
+function moveRandomly(worldId, monsterGroup, location, updates, now) {
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
   
   // Generate a random direction
@@ -1093,12 +1093,19 @@ function calculateGroupStrength(group) {
 }
 
 /**
- * Merge monster groups that are on the same tile
+ * Monster Group Merging and Enhancement
+ * New function to check and merge monster groups
  */
-async function mergeMonsterGroups(db, worldId, chunks) {
+export async function mergeMonsterGroups(worldId) {
+  const db = getDatabase();
   const now = Date.now();
   let mergesPerformed = 0;
   const updates = {};
+  
+  // Get all chunks for this world
+  const chunksRef = db.ref(`worlds/${worldId}/chunks`);
+  const chunksSnapshot = await chunksRef.once('value');
+  const chunks = chunksSnapshot.val();
   
   // Process each chunk
   for (const [chunkKey, chunkData] of Object.entries(chunks)) {

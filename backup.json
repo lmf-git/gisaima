@@ -1,54 +1,5 @@
 {
   "players": {
-    "88NuPGQKeBSci21kTUznAeJ2IWF2": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "inspector": true,
-            "inspector_date": 1745487914412
-          },
-          "alive": true,
-          "displayName": "Billbobollocks",
-          "id": "88NuPGQKeBSci21kTUznAeJ2IWF2",
-          "joined": 1745487867669,
-          "lastLocation": {
-            "timestamp": 1745487878543,
-            "x": -32,
-            "y": -10
-          },
-          "race": "dwarf"
-        }
-      }
-    },
-    "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_message": true,
-            "first_message_date": 1745983654752,
-            "first_steps": true,
-            "first_steps_date": 1745983151004
-          },
-          "alive": true,
-          "displayName": "Goblincock",
-          "groups": {
-            "-OP3gybJVR1U3yqLOxBQ": {
-              "at": "-15,3",
-              "id": "-OP3gybJVR1U3yqLOxBQ",
-              "status": "idle"
-            }
-          },
-          "id": "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2",
-          "joined": 1745983020354,
-          "lastLocation": {
-            "timestamp": 1745986201491,
-            "x": -15,
-            "y": 3
-          },
-          "race": "goblin"
-        }
-      }
-    },
     "Fsec3klBgbOgCMVDkHYM0CCxijg2": {
       "worlds": {
         "ancient-lands": {
@@ -180,6 +131,26 @@
         }
       }
     },
+    "cDA0QJMjbBWwDFcKxrd4Vd6hfV53": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_steps": true,
+            "first_steps_date": 1746043269376
+          },
+          "alive": true,
+          "displayName": "Underachiever",
+          "id": "cDA0QJMjbBWwDFcKxrd4Vd6hfV53",
+          "joined": 1746043262953,
+          "lastLocation": {
+            "timestamp": 1746043267498,
+            "x": -23,
+            "y": 5
+          },
+          "race": "human"
+        }
+      }
+    },
     "ptUgwrwSwlhaNiCwTHoDn7PrY1p2": {
       "worlds": {
         "ancient-lands": {
@@ -253,6 +224,36 @@
             "y": -11
           },
           "race": "dwarf"
+        }
+      }
+    },
+    "wATra1ptGvevKepb1wyIeCZDK702": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_attack": true,
+            "first_attack_date": 1746044871545,
+            "first_steps": true,
+            "first_steps_date": 1746044541021
+          },
+          "alive": true,
+          "displayName": "LMF",
+          "groups": {
+            "-OP7LHkionCHJdHDy0xm": {
+              "at": "-23,5",
+              "id": "-OP7LHkionCHJdHDy0xm",
+              "status": "idle"
+            }
+          },
+          "id": "wATra1ptGvevKepb1wyIeCZDK702",
+          "inGroup": "-OP7LHkionCHJdHDy0xm",
+          "joined": 1746043583558,
+          "lastLocation": {
+            "timestamp": 1746044705970,
+            "x": -23,
+            "y": 3
+          },
+          "race": "human"
         }
       }
     }
@@ -879,6 +880,44 @@
           "timestamp": 1746030383498,
           "type": "system"
         },
+        "-OP79LL0Tx6bSOS5LPbh": {
+          "location": {
+            "x": -32,
+            "y": -10
+          },
+          "text": "MrGirl's Force is being mobilized at (-32,-10)",
+          "timestamp": 1746041136192,
+          "type": "system"
+        },
+        "-OP79fPW07DJVn9NqLfS": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "LMF's Force is being mobilized at (-23,5)",
+          "timestamp": 1746041222719,
+          "type": "system"
+        },
+        "-OP79hXx6RAK4EpU8fnE": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Hello",
+          "timestamp": 1746041231793,
+          "type": "user",
+          "userId": "ec4OU7rVbqadlWumAcBh8WIu0q12",
+          "userName": "LMF"
+        },
+        "-OP7LHqSDgLEvfwmWB4j": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "LMF's Force is being mobilized at (-23,5)",
+          "timestamp": 1746044267627,
+          "type": "system"
+        },
         "battle_1745484723001_battle_1745483648051_103": {
           "location": {
             "x": -23,
@@ -969,6 +1008,15 @@
           "timestamp": 1746031926592,
           "type": "event"
         },
+        "battle_1746045001947_battle_1746044871545_233_447": {
+          "location": {
+            "x": -23,
+            "y": 3
+          },
+          "text": "Battle at (-23,3) has ended after 2 ticks! Victorious: Goblin Raiders Defeated: LMF's Force (1 casualties)",
+          "timestamp": 1746045001947,
+          "type": "event"
+        },
         "battle_start_1746023700931_battle_1746023700931_769": {
           "location": {
             "x": -29,
@@ -1012,6 +1060,15 @@
           },
           "text": "Battle has begun at (-23, 3)! LMF3's Force is attacking Goblin Raiders!",
           "timestamp": 1746031748337,
+          "type": "event"
+        },
+        "battle_start_1746044871545_battle_1746044871545_233": {
+          "location": {
+            "x": -23,
+            "y": 3
+          },
+          "text": "Battle has begun at (-23, 3)! LMF's Force is attacking Goblin Raiders!",
+          "timestamp": 1746044871545,
           "type": "event"
         },
         "chat_1745483585619_25": {
@@ -1491,6 +1548,42 @@
           "userId": "CjrL1RMjJ7cSYdtKpcavU1WHnpl1",
           "userName": "LMF3's Force"
         },
+        "chat_1746041165115_538": {
+          "location": {
+            "timestamp": 1746041165115,
+            "x": -32,
+            "y": -10
+          },
+          "text": "A lone dwarf warrior has mobilized at (-32, -10) - \"MrGirl's Force\"",
+          "timestamp": 1746041165115,
+          "type": "event",
+          "userId": "cKn1JRVQpmN3zxjHF7NMez6M7xo2",
+          "userName": "MrGirl's Force"
+        },
+        "chat_1746041282033_489": {
+          "location": {
+            "timestamp": 1746041282033,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"LMF's Force\"",
+          "timestamp": 1746041282033,
+          "type": "event",
+          "userId": "ec4OU7rVbqadlWumAcBh8WIu0q12",
+          "userName": "LMF's Force"
+        },
+        "chat_1746044281856_426": {
+          "location": {
+            "timestamp": 1746044281856,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"LMF's Force\"",
+          "timestamp": 1746044281856,
+          "type": "event",
+          "userId": "wATra1ptGvevKepb1wyIeCZDK702",
+          "userName": "LMF's Force"
+        },
         "chat_monster_spawn_1745989802985_840": {
           "location": {
             "x": -34,
@@ -1590,6 +1683,24 @@
           "timestamp": 1746031682315,
           "type": "event"
         },
+        "chat_monster_spawn_1746041346344_558": {
+          "location": {
+            "x": -26,
+            "y": 6
+          },
+          "text": "A small group of Goblin Raiders has been spotted at (-26, 6)",
+          "timestamp": 1746041346344,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746042062212_206": {
+          "location": {
+            "x": -23,
+            "y": 2
+          },
+          "text": "A band of Bandits has appeared at (-23, 2)",
+          "timestamp": 1746042062212,
+          "type": "event"
+        },
         "death_1745484723002_fphA92tMTfRAu6FU6RDNJ33VQni1": {
           "location": {
             "x": -23,
@@ -1678,6 +1789,15 @@
           },
           "text": "LMF3's Force was defeated in battle at (-23,3)",
           "timestamp": 1746031926592,
+          "type": "event"
+        },
+        "death_1746045001947_wATra1ptGvevKepb1wyIeCZDK702": {
+          "location": {
+            "x": -23,
+            "y": 3
+          },
+          "text": "LMF's Force was defeated in battle at (-23,3)",
+          "timestamp": 1746045001947,
           "type": "event"
         },
         "gather_1745486761904_-OOb4owT0OYyo524niqW": {
@@ -2047,6 +2167,60 @@
           },
           "text": "LMF3's Force gathered resources in plains biome at (-23, 5): 2 Wooden Sticks",
           "timestamp": 1746031201333,
+          "type": "event"
+        },
+        "gather_1746044521946_monster_1746030062426_1588": {
+          "location": {
+            "x": -23,
+            "y": 3
+          },
+          "text": "Goblin Raiders gathered resources in plains biome at (-23, 3): 3 Wooden Sticks, 1 Stone Pieces",
+          "timestamp": 1746044521946,
+          "type": "event"
+        },
+        "gather_1746044521946_monster_1746031562598_5280": {
+          "location": {
+            "x": -18,
+            "y": 5
+          },
+          "text": "Goblin Raiders gathered resources in plains biome at (-18, 5): 2 Wooden Sticks, 2 Stone Pieces",
+          "timestamp": 1746044521946,
+          "type": "event"
+        },
+        "gather_1746044521946_monster_1746041346344_4763": {
+          "location": {
+            "x": -26,
+            "y": 6
+          },
+          "text": "Goblin Raiders gathered resources in plains biome at (-26, 6): 5 Wooden Sticks, 3 Stone Pieces",
+          "timestamp": 1746044521946,
+          "type": "event"
+        },
+        "monster_gather_1746044406672_monster_1746030062426_1588": {
+          "location": {
+            "x": -23,
+            "y": 3
+          },
+          "text": "Goblin Raiders is gathering resources in the plains.",
+          "timestamp": 1746044406672,
+          "type": "event"
+        },
+        "monster_gather_1746044406672_monster_1746031562598_5280": {
+          "location": {
+            "x": -18,
+            "y": 5
+          },
+          "text": "Goblin Raiders is gathering resources in the plains.",
+          "timestamp": 1746044406672,
+          "type": "event"
+        },
+        "monster_gather_1746044406672_monster_1746041346344_4763": {
+          "location": {
+            "x": -26,
+            "y": 6
+          },
+          "text": "Goblin Raiders is gathering resources in the plains.",
+          "timestamp": 1746044406672,
           "type": "event"
         },
         "move_1745498045288_-OObVb45PNyVC29YOPEe_1": {
@@ -2643,6 +2817,51 @@
           "timestamp": 1746031621263,
           "type": "event"
         },
+        "move_1746041405536_-OP79LEz6lBjeP0gTkln_3": {
+          "location": {
+            "x": -30,
+            "y": -7
+          },
+          "text": "MrGirl's Force has arrived at (-30,-7) and continues their journey",
+          "timestamp": 1746041405536,
+          "type": "event"
+        },
+        "move_1746041521476_-OP79LEz6lBjeP0gTkln_4": {
+          "location": {
+            "x": -29,
+            "y": -6
+          },
+          "text": "MrGirl's Force has arrived at (-29,-6)",
+          "timestamp": 1746041521476,
+          "type": "event"
+        },
+        "move_1746044705970_-OP7LHkionCHJdHDy0xm_2": {
+          "location": {
+            "x": -23,
+            "y": 3
+          },
+          "text": "LMF's Force has arrived at (-23,3)",
+          "timestamp": 1746044705970,
+          "type": "event"
+        },
+        "move_start_1746041195430_-OP79LEz6lBjeP0gTkln": {
+          "location": {
+            "x": -32,
+            "y": -10
+          },
+          "text": "MrGirl's Force is setting out from (-32,-10) to (-29,-6)",
+          "timestamp": 1746041195430,
+          "type": "system"
+        },
+        "move_start_1746044546285_-OP7LHkionCHJdHDy0xm": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "LMF's Force is setting out from (-23,5) to (-23,3)",
+          "timestamp": 1746044546285,
+          "type": "system"
+        },
         "rare_1745985842035_-OP3kM7ZrP9K3VSiuk0J": {
           "location": {
             "x": -30,
@@ -2769,14 +2988,6 @@
         },
         "-1,0": {
           "-15,3": {
-            "players": {
-              "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2": {
-                "displayName": "Goblincock",
-                "id": "EU8i1ZdkrPUiuqC3pb5zrq4Gumz2",
-                "lastActive": 1745986201491,
-                "race": "goblin"
-              }
-            },
             "structure": {
               "description": "A resourceful goblin settlement built from the remains of ancient beasts",
               "id": "structure_al_goblin_spawn",
@@ -2813,9 +3024,27 @@
                     "quantity": 1,
                     "rarity": "uncommon",
                     "type": "alchemy"
+                  },
+                  {
+                    "id": "item_1746044522348_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746044522348_2",
+                    "name": "Stone Pieces",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
                   }
                 ],
-                "lastUpdated": 1746031562598,
+                "lastMessage": {
+                  "text": "Gathered 2 items",
+                  "timestamp": 1746044521946
+                },
+                "lastUpdated": 1746044521946,
                 "monsterType": "goblin",
                 "name": "Goblin Raiders",
                 "status": "idle",
@@ -3057,12 +3286,6 @@
           },
           "-32,-10": {
             "players": {
-              "88NuPGQKeBSci21kTUznAeJ2IWF2": {
-                "displayName": "Billbobollocks",
-                "id": "88NuPGQKeBSci21kTUznAeJ2IWF2",
-                "lastActive": 1745487878622,
-                "race": "dwarf"
-              },
               "ptUgwrwSwlhaNiCwTHoDn7PrY1p2": {
                 "displayName": "urchinmaxxer",
                 "id": "ptUgwrwSwlhaNiCwTHoDn7PrY1p2",
@@ -3293,17 +3516,114 @@
               }
             }
           },
+          "-23,2": {
+            "groups": {
+              "monster_1746042062212_5675": {
+                "createdAt": 1746042062212,
+                "id": "monster_1746042062212_5675",
+                "items": [
+                  {
+                    "id": "item_1746042062213_723",
+                    "name": "Monster Hide",
+                    "quantity": 2,
+                    "rarity": "uncommon",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746042062213_197",
+                    "name": "Shiny Gem",
+                    "quantity": 1,
+                    "rarity": "rare",
+                    "type": "gem"
+                  }
+                ],
+                "lastUpdated": 1746042062212,
+                "monsterType": "bandit",
+                "name": "Bandits",
+                "status": "idle",
+                "type": "monster",
+                "unitCount": 3,
+                "x": -23,
+                "y": 2
+              }
+            }
+          },
           "-23,3": {
             "groups": {
+              "-OP7LHkionCHJdHDy0xm": {
+                "battleId": "battle_1746044871545_233",
+                "battleRole": "attacker",
+                "battleSide": 1,
+                "createdAt": 1746044267627,
+                "id": "-OP7LHkionCHJdHDy0xm",
+                "inBattle": true,
+                "lastMessage": {
+                  "text": "Moving to next location (-23,3)",
+                  "timestamp": 1746044705970
+                },
+                "lastUpdated": 1746044705970,
+                "moveSpeed": 1,
+                "moveStarted": 1746044546285,
+                "movementPath": [
+                  {
+                    "x": -23,
+                    "y": 5
+                  },
+                  {
+                    "x": -23,
+                    "y": 4
+                  },
+                  {
+                    "x": -23,
+                    "y": 3
+                  }
+                ],
+                "name": "LMF's Force",
+                "nextMoveTime": 1746044765970,
+                "owner": "wATra1ptGvevKepb1wyIeCZDK702",
+                "pathIndex": 2,
+                "race": "human",
+                "status": "fighting",
+                "targetX": -23,
+                "targetY": 3,
+                "unitCount": 1,
+                "units": {
+                  "wATra1ptGvevKepb1wyIeCZDK702": {
+                    "displayName": "LMF",
+                    "id": "wATra1ptGvevKepb1wyIeCZDK702",
+                    "lastActive": 1746043587274,
+                    "race": "human",
+                    "type": "player"
+                  }
+                },
+                "x": -23,
+                "y": 3
+              },
               "monster_1746030062426_1588": {
                 "createdAt": 1746030062426,
                 "id": "monster_1746030062426_1588",
                 "inBattle": false,
+                "items": [
+                  {
+                    "id": "item_1746044522351_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746044522351_2",
+                    "name": "Stone Pieces",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
                 "lastMessage": {
                   "text": "Victory in battle! All units survived the battle.",
-                  "timestamp": 1746031926592
+                  "timestamp": 1746045001947
                 },
-                "lastUpdated": 1746030062426,
+                "lastUpdated": 1746044521946,
                 "monsterType": "goblin",
                 "name": "Goblin Raiders",
                 "status": "idle",
@@ -3315,6 +3635,33 @@
             }
           },
           "-23,5": {
+            "groups": {
+              "-OP79fMyI6iw7mB1jdPj": {
+                "createdAt": 1746041222719,
+                "id": "-OP79fMyI6iw7mB1jdPj",
+                "lastMessage": {
+                  "text": "Group is fully mobilized and ready",
+                  "timestamp": 1746041282033
+                },
+                "lastUpdated": 1746041282033,
+                "name": "LMF's Force",
+                "owner": "ec4OU7rVbqadlWumAcBh8WIu0q12",
+                "race": "human",
+                "status": "idle",
+                "unitCount": 1,
+                "units": {
+                  "ec4OU7rVbqadlWumAcBh8WIu0q12": {
+                    "displayName": "LMF",
+                    "id": "ec4OU7rVbqadlWumAcBh8WIu0q12",
+                    "lastActive": 1746037478391,
+                    "race": "human",
+                    "type": "player"
+                  }
+                },
+                "x": -23,
+                "y": 5
+              }
+            },
             "structure": {
               "description": "A rugged frontier settlement where hardy humans carve out a living",
               "id": "structure_al_human_spawn",
@@ -3345,6 +3692,42 @@
               "name": "Stoneguard Citadel",
               "race": "human",
               "type": "spawn"
+            }
+          },
+          "-26,6": {
+            "groups": {
+              "monster_1746041346344_4763": {
+                "createdAt": 1746041346344,
+                "id": "monster_1746041346344_4763",
+                "items": [
+                  {
+                    "id": "item_1746044522352_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 5,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746044522352_2",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Gathered 2 items",
+                  "timestamp": 1746044521946
+                },
+                "lastUpdated": 1746044521946,
+                "monsterType": "goblin",
+                "name": "Goblin Raiders",
+                "status": "idle",
+                "type": "monster",
+                "unitCount": 2,
+                "x": -26,
+                "y": 6
+              }
             }
           },
           "-27,3": {
@@ -3416,8 +3799,9 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746033121267,
+        "lastTick": 1746045065570,
         "name": "Ancient Lands",
+        "playerCount": 13,
         "seed": 13579,
         "size": "large",
         "spawns": {
