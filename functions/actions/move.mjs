@@ -135,6 +135,20 @@ export const moveGroup = onCall({ maxInstances: 10 }, async (request) => {
     const adjustedTickTime = Math.round(baseTickTime / worldSpeed);
     const nextMoveTime = now + adjustedTickTime;
     
+    // Add a chat message about the journey starting
+    const groupName = group.name || "Unnamed group";
+    const chatMessageId = `move_start_${now}_${groupId}`;
+    const chatRef = db.ref(`worlds/${worldId}/chat/${chatMessageId}`);
+    await chatRef.set({
+      type: 'system',
+      text: `${groupName} is setting out from (${fromX},${fromY}) to (${toX},${toY})`,
+      timestamp: now,
+      location: {
+        x: fromX,
+        y: fromY
+      }
+    });
+    
     // Update the group with path information and set status to 'moving'
     await groupRef.update({
       status: 'moving',

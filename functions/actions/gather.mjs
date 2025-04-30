@@ -72,6 +72,19 @@ export const startGathering = onCall({ maxInstances: 10 }, async (request) => {
     // Get biome information for the tile
     const biome = tileData.biome?.name || 'plains';
 
+    // Add a chat message to indicate gathering has started
+    const chatMessageId = `gather_start_${now}_${groupId}`;
+    const chatRef = db.ref(`worlds/${worldId}/chat/${chatMessageId}`);
+    await chatRef.set({
+      type: 'system',
+      text: `${group.name} has started gathering in ${biome} biome at (${locationX},${locationY})`,
+      timestamp: now,
+      location: { 
+        x: locationX, 
+        y: locationY 
+      }
+    });
+
     // Update group status to gathering
     await tileRef.child(`groups/${groupId}`).update({
       status: 'gathering',

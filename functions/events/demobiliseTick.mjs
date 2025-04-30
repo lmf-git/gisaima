@@ -37,6 +37,10 @@ export function processDemobilization(worldId, updates, group, chunkKey, tileKey
   // Get storage preference (defaults to shared if not specified)
   const storageDestination = group.storageDestination || 'shared';
   
+  // Get the group name for chat messages
+  const groupName = group.name || "Unnamed group";
+  const structureName = tile.structure.name || "structure";
+  
   // Transfer items from group to structure based on storage preference
   if (group.items && Array.isArray(group.items) && group.items.length > 0) {
     if (storageDestination === 'personal' && group.owner) {
@@ -128,6 +132,18 @@ export function processDemobilization(worldId, updates, group, chunkKey, tileKey
       }
     }
   }
+  
+  // Create chat message for demobilization completion
+  const chatMessageId = `demob_complete_${now}_${groupId}`;
+  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+    text: `${groupName} has been demobilized into ${structureName} at (${tileKey.replace(',', ', ')})`,
+    type: 'event',
+    timestamp: now,
+    location: {
+      x: parseInt(tileKey.split(',')[0]),
+      y: parseInt(tileKey.split(',')[1])
+    }
+  };
   
   // Now that we've handled all the transfers, delete the group
   updates[groupPath] = null;

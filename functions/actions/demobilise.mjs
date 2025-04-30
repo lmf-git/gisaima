@@ -98,6 +98,16 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
     // Use status flag for tick processing instead of time calculation
     const now = Date.now();
     
+    // Add a chat message for demobilization
+    const chatMessageId = `demob_start_${now}_${groupId}`;
+    const chatRef = db.ref(`worlds/${worldId}/chat/${chatMessageId}`);
+    await chatRef.set({
+      type: 'system',
+      text: `${groupData.name} is demobilizing at (${locationX},${locationY})`,
+      timestamp: now,
+      location: { x: locationX, y: locationY }
+    });
+    
     // Enhanced update with more precise location data for player placement
     await groupRef.update({
       status: 'demobilising',  // This status alone is sufficient for the tick processor
