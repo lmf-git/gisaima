@@ -400,6 +400,26 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
   }
 }
 
+// Helper function to calculate total power of all groups on a side
+function calculateSidePower(groups) {
+  if (!groups || groups.length === 0) return 0;
+  
+  return groups.reduce((total, group) => {
+    let groupPower = group.unitCount || 1;
+    
+    // If we have unit details, use those
+    if (group.units) {
+      if (Array.isArray(group.units)) {
+        groupPower = group.units.length;
+      } else if (typeof group.units === 'object') {
+        groupPower = Object.keys(group.units).length;
+      }
+    }
+    
+    return total + groupPower;
+  }, 0);
+}
+
 /**
  * Apply attrition to a side's groups
  * @returns {number} Number of casualties
