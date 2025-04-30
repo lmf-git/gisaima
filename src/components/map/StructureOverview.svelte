@@ -1795,4 +1795,69 @@
     cursor: not-allowed;
     transform: none;
   }
+  
+  /* Action button - base style for action buttons */
+  .action-button {
+    margin-top: 0.8em;
+    padding: 0.6em 0.8em;
+    font-size: 0.9em;
+    border: none;
+    border-radius: 0.3em;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Upgrade button specific styling */
+  .upgrade-button {
+    background-color: rgba(33, 150, 243, 0.85);
+    color: white;
+    border: 1px solid rgba(33, 150, 243, 0.2);
+  }
+  
+  .upgrade-button:not(:disabled):hover {
+    background-color: rgba(33, 150, 243, 1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+  }
+  
+  .upgrade-button:disabled {
+    background-color: rgba(158, 158, 158, 0.5);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  /* Error and success message styling */
+  .error-message {
+    color: #c62828;
+    font-size: 0.85em;
+    margin-top: 0.5em;
+    padding: 0.4em;
+    background-color: rgba(244, 67, 54, 0.1);
+    border-radius: 0.3em;
+  }
+  
+  .success-message {
+    color: #2e7d32;
+    font-size: 0.85em;
+    margin-top: 0.5em;
+    padding: 0.4em;
+    background-color: rgba(76, 175, 80, 0.1);
+    border-radius: 0.3em;
+  }
+  
+  /* Styling for the action icon */
+  :global(.action-icon) {
+    width: 1.2em;
+    height: 1.2em;
+    fill: currentColor;
+  }
 </style>
