@@ -51,6 +51,11 @@ const ACHIEVEMENT_DEFINITIONS = {
     description: 'Join an in-progress battle',
     category: 'combat',
   },
+  'first_victory': {
+    title: 'Victorious',
+    description: 'Win your first battle',
+    category: 'combat',
+  },
 };
 
 // Make the achievement definitions available to other modules

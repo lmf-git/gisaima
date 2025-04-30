@@ -478,6 +478,9 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
     
     // Update winning groups
     if (winningGroups) {
+      // Track unique winning owners for achievements
+      const winningOwners = new Set();
+      
       for (const group of winningGroups) {
         updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/inBattle`] = false;
         updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleId`] = null;
@@ -490,7 +493,19 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
           text: "Victory in battle! All units survived the battle.",
           timestamp: now
         };
+        
+        // Add owner to the set of winners if they exist
+        if (group.owner) {
+          winningOwners.add(group.owner);
+        }
       }
+      
+      // Grant first_victory achievement to all winning owners
+      winningOwners.forEach(ownerId => {
+        updates[`players/${ownerId}/worlds/${worldId}/achievements/first_victory`] = true;
+        updates[`players/${ownerId}/worlds/${worldId}/achievements/first_victory_date`] = now;
+        logger.info(`Granting first_victory achievement to player ${ownerId}`);
+      });
     }
     
     // Count casualties from the losing side for the battle outcome message

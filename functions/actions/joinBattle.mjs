@@ -98,9 +98,13 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleRole`] = 'supporter';
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/status`] = 'fighting';
 
+    // Add achievement for joining a battle
+    const now = Date.now();
+    updates[`players/${userId}/worlds/${worldId}/achievements/battle_joiner`] = true;
+    updates[`players/${userId}/worlds/${worldId}/achievements/battle_joiner_date`] = now;
+
     // Add chat message for joining battle
     const groupName = joiningGroup.name || "Unnamed force";
-    const now = Date.now();
     const chatMessageId = `battle_join_${now}_${groupId}`;
     updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
       text: `${groupName} has joined the battle at (${locationX}, ${locationY}) on side ${side}!`,
