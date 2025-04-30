@@ -545,10 +545,12 @@ async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, wor
     return moveOneStepTowardsTarget(worldId, monsterGroup, location, targetLocation, targetType, updates, now);
   }
   
-  // Calculate a path to the target (using a simple approach for now)
+  // Calculate a path to the target using a randomized step count for more varied monster movement
+  const randomMaxSteps = 1 + Math.floor(Math.random() * 3);
   const path = calculateSimplePath(
     location.x, location.y,
-    targetLocation.x, targetLocation.y
+    targetLocation.x, targetLocation.y, 
+    randomMaxSteps
   );
   
   // Movement speed can depend on monster type
@@ -596,10 +598,7 @@ async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, wor
  * Move one step towards a target location
  */
 function moveOneStepTowardsTarget(worldId, monsterGroup, location, targetLocation, targetType, updates, now) {
-  const groupId = monsterGroup.id;
-  const chunkKey = monsterGroup.chunkKey;
-  const tileKey = monsterGroup.tileKey;
-  const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+  const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
   
   const dx = targetLocation.x - location.x;
   const dy = targetLocation.y - location.y;
@@ -658,90 +657,58 @@ function moveOneStepTowardsTarget(worldId, monsterGroup, location, targetLocatio
 }
 
 /**
- * Find structures on adjacent tiles
+ * Move the monster group in a random direction
  */
-async function findAdjacentStructures(db, worldId, location) {
-  // Define adjacent tiles (including diagonals)
-  const adjacentOffsets = [
-    {x: 0, y: 1}, {x: 1, y: 0}, {x: 0, y: -1}, {x: -1, y: 0},
-    {x: 1, y: 1}, {x: 1, y: -1}, {x: -1, y: 1}, {x: -1, y: -1}
+function moveRandomly(worldId, monsterGroup, location, updates, now) {
+  const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
+  
+  // Generate a random direction
+  const directions = [
+    { x: 1, y: 0 },
+    { x: -1, y: 0 },
+    { x: 0, y: 1 },
+    { x: 0, y: -1 },
+    { x: 1, y: 1 },
+    { x: 1, y: -1 },
+    { x: -1, y: 1 },
+    { x: -1, y: -1 }
   ];
   
-  for (const offset of adjacentOffsets) {
-    const adjX = location.x + offset.x;
-    const adjY = location.y + offset.y;
-    
-    // Calculate chunk for this adjacent tile
-    const adjChunkX = Math.floor(adjX / 20);
-    const adjChunkY = Math.floor(adjY / 20);
-    const adjChunkKey = `${adjChunkX},${adjChunkY}`;
-    const adjTileKey = `${adjX},${adjY}`;
-    
-    // Check if there's a structure on this tile
-    const tileRef = db.ref(`worlds/${worldId}/chunks/${adjChunkKey}/${adjTileKey}`);
-    const tileSnapshot = await tileRef.once('value');
-    const tileData = tileSnapshot.val();
-    
-    if (tileData && tileData.structure) {
-      // Found structure on an adjacent tile
-      // Don't attack monster structures
-      if (tileData.structure.owner === 'monster') {
-        continue;
-      }
-      
-      return {
-        x: adjX,
-        y: adjY,
-        chunkKey: adjChunkKey,
-        tileKey: adjTileKey,
-        structure: tileData.structure
-      };
-    }
-    
-    // Also check for player groups to attack
-    if (tileData && tileData.groups) {
-      let hasPlayerGroups = false;
-      
-      for (const [groupId, group] of Object.entries(tileData.groups)) {
-        if (group.owner && group.owner !== 'monster' && group.type !== 'monster') {
-          hasPlayerGroups = true;
-          break;
-        }
-      }
-      
-      if (hasPlayerGroups) {
-        return {
-          x: adjX,
-          y: adjY,
-          chunkKey: adjChunkKey,
-          tileKey: adjTileKey,
-          hasPlayerGroups: true
-        };
-      }
-    }
-  }
+  const direction = directions[Math.floor(Math.random() * directions.length)];
+  // Randomize movement distance between 1-3 tiles
+  const moveDistance = 1 + Math.floor(Math.random() * 3);
+  const targetX = location.x + direction.x * moveDistance;
+  const targetY = location.y + direction.y * moveDistance;
   
-  return null;
-}
-
-/**
- * Create a descriptive message for monster movement
- */
-function createMonsterMoveMessage(monsterGroup, targetType, targetLocation) {
-  const groupName = monsterGroup.name || "Monster group";
-  const size = monsterGroup.unitCount <= 3 ? "small" : 
-              monsterGroup.unitCount <= 8 ? "medium-sized" : "large";
+  // Calculate a path to the random target
+  // Use a random number of steps between 1-3
+  const randomMaxSteps = 1 + Math.floor(Math.random() * 3);
+  const path = calculateSimplePath(
+    location.x, location.y,
+    targetX, targetY,
+    randomMaxSteps
+  );
   
-  switch (targetType) {
-    case 'player_spawn':
-      return `A ${size} ${groupName} is marching toward the settlement at (${targetLocation.x}, ${targetLocation.y})!`;
-    case 'monster_structure':
-      return `${groupName} is moving toward their lair at (${targetLocation.x}, ${targetLocation.y}).`;
-    case 'resource':
-      return `${groupName} is searching for resources near (${targetLocation.x}, ${targetLocation.y}).`;
-    default:
-      return `${groupName} is on the move.`;
-  }
+  // Set the movement data
+  updates[`${groupPath}/status`] = 'moving';
+  updates[`${groupPath}/movementPath`] = path;
+  updates[`${groupPath}/pathIndex`] = 0;
+  updates[`${groupPath}/moveStarted`] = now;
+  updates[`${groupPath}/moveSpeed`] = 1;
+  updates[`${groupPath}/targetX`] = targetX;
+  updates[`${groupPath}/targetY`] = targetY;
+  updates[`${groupPath}/nextMoveTime`] = now + 60000; // One minute
+  updates[`${groupPath}/lastUpdated`] = now;
+  
+  return {
+    action: 'move',
+    target: {
+      type: 'random',
+      x: targetX,
+      y: targetY,
+      distance: Math.sqrt(direction.x*direction.x + direction.y*direction.y) * moveDistance
+    }
+  };
 }
 
 /**
@@ -814,52 +781,338 @@ function moveToAdjacentTile(monsterGroup, location, adjacentTile, updates, now, 
 }
 
 /**
- * Move the monster group in a random direction
+ * Scan the world for key locations and update the worldScan object
  */
-function moveRandomly(worldId, monsterGroup, location, updates, now) {
-  const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
+async function scanWorldMap(db, worldId, chunks) {
+  const playerSpawns = [];
+  const monsterStructures = [];
+  const resourceHotspots = [];
   
-  // Generate a random direction
-  const directions = [
-    { x: 1, y: 0 },
-    { x: -1, y: 0 },
-    { x: 0, y: 1 },
-    { x: 0, y: -1 },
-    { x: 1, y: 1 },
-    { x: 1, y: -1 },
-    { x: -1, y: 1 },
-    { x: -1, y: -1 }
-  ];
-  
-  const direction = directions[Math.floor(Math.random() * directions.length)];
-  const targetX = location.x + direction.x * (1 + Math.floor(Math.random() * 3));
-  const targetY = location.y + direction.y * (1 + Math.floor(Math.random() * 3));
-  
-  // Calculate a path to the random target
-  const path = calculateSimplePath(
-    location.x, location.y,
-    targetX, targetY
-  );
-  
-  // Set the movement data
-  updates[`${groupPath}/status`] = 'moving';
-  updates[`${groupPath}/movementPath`] = path;
-  updates[`${groupPath}/pathIndex`] = 0;
-  updates[`${groupPath}/moveStarted`] = now;
-  updates[`${groupPath}/moveSpeed`] = 1;
-  updates[`${groupPath}/targetX`] = targetX;
-  updates[`${groupPath}/targetY`] = targetY;
-  updates[`${groupPath}/nextMoveTime`] = now + 60000; // One minute
-  updates[`${groupPath}/lastUpdated`] = now;
+  // Scan through all chunks and tiles
+  for (const [chunkKey, chunkData] of Object.entries(chunks)) {
+    if (!chunkData || chunkKey === 'lastUpdated') continue;
+    
+    // Process each tile in the chunk
+    for (const [tileKey, tileData] of Object.entries(chunkData)) {
+      if (!tileData || tileKey === 'lastUpdated') continue;
+      
+      const [x, y] = tileKey.split(',').map(Number);
+      const location = { x, y, chunkKey, tileKey };
+      
+      // Check for player spawn structures
+      if (tileData.structure && tileData.structure.type === 'spawn') {
+        playerSpawns.push({
+          ...location,
+          structure: tileData.structure
+        });
+      }
+      
+      // Check for monster structures
+      if (tileData.structure && 
+         (tileData.structure.type.includes('monster') || 
+          tileData.structure.owner === 'monster')) {
+        monsterStructures.push({
+          ...location,
+          structure: tileData.structure
+        });
+      }
+      
+      // Identify resource hotspots (tiles with resources)
+      if (tileData.resources && Object.keys(tileData.resources).length > 0) {
+        resourceHotspots.push({
+          ...location,
+          resources: tileData.resources
+        });
+      }
+    }
+  }
   
   return {
-    action: 'move',
-    target: {
-      type: 'random',
-      x: targetX,
-      y: targetY,
-      distance: Math.sqrt(direction.x*direction.x + direction.y*direction.y)
+    playerSpawns,
+    monsterStructures,
+    resourceHotspots
+  };
+}
+
+/**
+ * Calculate distance between two locations
+ */
+function calculateDistance(loc1, loc2) {
+  const dx = loc1.x - loc2.x;
+  const dy = loc1.y - loc2.y;
+  return Math.sqrt(dx*dx + dy*dy);
+}
+
+/**
+ * Calculate the combat strength of a monster group
+ */
+function calculateGroupStrength(group) {
+  const unitCount = group.unitCount || 1;
+  let baseStrength = unitCount;
+  
+  // Adjust based on monster type
+  switch (group.monsterType) {
+    case 'troll':
+      baseStrength *= 2.5;
+      break;
+    case 'skeleton':
+      baseStrength *= 1.2;
+      break;
+    case 'elemental':
+      baseStrength *= 2.0;
+      break;
+    case 'wolf':
+      baseStrength *= 1.5;
+      break;
+    case 'goblin':
+      baseStrength *= 0.8;
+      break;
+    default:
+      // Keep base strength
+      break;
+  }
+  
+  // Adjust for merge count (groups that have merged are stronger)
+  const mergeBonus = group.mergeCount ? (group.mergeCount * 0.2) : 0;
+  baseStrength *= (1 + mergeBonus);
+  
+  return baseStrength;
+}
+
+/**
+ * Monster Group Merging and Enhancement
+ * New function to check and merge monster groups
+ */
+export async function mergeMonsterGroups(worldId) {
+  const db = getDatabase();
+  const now = Date.now();
+  let mergesPerformed = 0;
+  const updates = {};
+  
+  // Get all chunks for this world
+  const chunksRef = db.ref(`worlds/${worldId}/chunks`);
+  const chunksSnapshot = await chunksRef.once('value');
+  const chunks = chunksSnapshot.val();
+  
+  // Process each chunk
+  for (const [chunkKey, chunkData] of Object.entries(chunks)) {
+    if (!chunkData || chunkKey === 'lastUpdated') continue;
+    
+    // Process each tile in the chunk
+    for (const [tileKey, tileData] of Object.entries(chunkData)) {
+      if (!tileData || tileKey === 'lastUpdated') continue;
+      
+      // Skip if no groups on this tile
+      if (!tileData.groups) continue;
+      
+      // Find monster groups on this tile
+      const monsterGroups = [];
+      for (const [groupId, groupData] of Object.entries(tileData.groups)) {
+        if ((groupData.type === 'monster' || groupData.monsterType) && 
+            groupData.status === 'idle' && !groupData.inBattle) {
+          monsterGroups.push({ id: groupId, ...groupData });
+        }
+      }
+      
+      // Need at least 2 monster groups to merge
+      if (monsterGroups.length < 2) continue;
+      
+      // Sort monster groups by their type
+      const groupsByType = {};
+      for (const group of monsterGroups) {
+        const type = group.monsterType || 'unknown';
+        if (!groupsByType[type]) {
+          groupsByType[type] = [];
+        }
+        groupsByType[type].push(group);
+      }
+      
+      // Process each type
+      for (const [monsterType, typeGroups] of Object.entries(groupsByType)) {
+        if (typeGroups.length < 2) continue;
+        
+        // Only merge with 70% chance to avoid always merging
+        if (Math.random() > 0.7) continue;
+        
+        // Sort by unit count (descending)
+        typeGroups.sort((a, b) => (b.unitCount || 1) - (a.unitCount || 1));
+        
+        // Largest group becomes the base
+        const baseGroup = typeGroups[0];
+        const mergeTargets = typeGroups.slice(1);
+        
+        // Calculate total unit count
+        let totalUnits = baseGroup.unitCount || 1;
+        for (const group of mergeTargets) {
+          totalUnits += group.unitCount || 1;
+        }
+        
+        // Add bonus units (10-30% bonus)
+        const bonusUnits = Math.floor(totalUnits * (0.1 + Math.random() * 0.2));
+        totalUnits += bonusUnits;
+        
+        // Cap at a reasonable size (e.g., 20)
+        totalUnits = Math.min(totalUnits, 20);
+        
+        // Combine items from all groups
+        const allItems = [];
+        
+        // Add items from base group
+        if (baseGroup.items) {
+          if (Array.isArray(baseGroup.items)) {
+            allItems.push(...baseGroup.items);
+          } else {
+            allItems.push(...Object.values(baseGroup.items));
+          }
+        }
+        
+        // Add items from merge targets
+        for (const group of mergeTargets) {
+          if (group.items) {
+            if (Array.isArray(group.items)) {
+              allItems.push(...group.items);
+            } else {
+              allItems.push(...Object.values(group.items));
+            }
+          }
+        }
+        
+        // Add bonus items
+        const bonusItemCount = Math.min(2, Math.ceil(bonusUnits / 3));
+        for (let i = 0; i < bonusItemCount; i++) {
+          if (Math.random() < 0.8) {
+            allItems.push(generateBonusItem(monsterType));
+          }
+        }
+        
+        // Update the base group
+        const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}`;
+        
+        // Determine new name based on size
+        let newName;
+        if (totalUnits <= 3) {
+          newName = `Small ${baseGroup.name}`;
+        } else if (totalUnits <= 7) {
+          newName = `${baseGroup.name} Pack`;
+        } else if (totalUnits <= 12) {
+          newName = `${baseGroup.name} Horde`;
+        } else {
+          newName = `Massive ${baseGroup.name} Legion`;
+        }
+        
+        updates[`${basePath}/unitCount`] = totalUnits;
+        updates[`${basePath}/name`] = newName;
+        updates[`${basePath}/items`] = allItems;
+        updates[`${basePath}/lastUpdated`] = now;
+        updates[`${basePath}/mergeCount`] = (baseGroup.mergeCount || 0) + mergeTargets.length;
+        updates[`${basePath}/merged`] = true;
+        
+        // Remove the merged groups
+        for (const group of mergeTargets) {
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${group.id}`] = null;
+        }
+        
+        // Add chat message about the merge
+        const chatMessageId = `monster_merge_${now}_${baseGroup.id}`;
+        const [x, y] = tileKey.split(',').map(Number);
+        
+        updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+          text: `Monster groups have merged at (${x}, ${y}) forming a ${newName}!`,
+          type: 'event',
+          timestamp: now,
+          location: { x, y }
+        };
+        
+        mergesPerformed++;
+      }
     }
+  }
+  
+  // Apply all updates
+  if (Object.keys(updates).length > 0) {
+    await db.ref().update(updates);
+  }
+  
+  return { mergesPerformed };
+}
+
+/**
+ * Generate a bonus item for merged monster groups
+ */
+function generateBonusItem(monsterType) {
+  // Choose rarity with weighted probabilities
+  const rarityRoll = Math.random();
+  let rarity;
+  
+  if (rarityRoll > 0.98) {
+    rarity = 'epic';
+  } else if (rarityRoll > 0.90) {
+    rarity = 'rare';
+  } else if (rarityRoll > 0.70) {
+    rarity = 'uncommon';
+  } else {
+    rarity = 'common';
+  }
+  
+  // Define possible item types
+  const itemTypes = ['resource', 'weapon', 'material', 'gem'];
+  const itemType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+  
+  // Define monster type specific items
+  const monsterItems = {
+    goblin: {
+      resource: 'Stolen Goods',
+      weapon: 'Crude Weapon',
+      material: 'Goblin Hide',
+      gem: 'Shiny Rock'
+    },
+    wolf: {
+      resource: 'Wolf Meat',
+      weapon: 'Wolf Fang',
+      material: 'Wolf Pelt',
+      gem: 'Wolf Eye'
+    },
+    spider: {
+      resource: 'Spider Silk',
+      weapon: 'Venom Sac',
+      material: 'Spider Leg',
+      gem: 'Spider Eye'
+    },
+    skeleton: {
+      resource: 'Bone Dust',
+      weapon: 'Ancient Blade',
+      material: 'Skull Fragment',
+      gem: 'Soul Essence'
+    },
+    troll: {
+      resource: 'Troll Meat',
+      weapon: 'Troll Club',
+      material: 'Troll Hide',
+      gem: 'Troll Tooth'
+    },
+    // Default for unknown types
+    default: {
+      resource: 'Monster Parts',
+      weapon: 'Monster Weapon',
+      material: 'Monster Hide',
+      gem: 'Unusual Stone'
+    }
+  };
+  
+  // Get item based on monster type and item type
+  const itemName = monsterItems[monsterType]?.[itemType] || 
+                  monsterItems.default[itemType];
+  
+  // Quantity depends on rarity
+  const quantity = rarity === 'common' ? Math.floor(Math.random() * 3) + 1 : 
+                  rarity === 'uncommon' ? Math.floor(Math.random() * 2) + 1 : 1;
+  
+  return {
+    id: `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    name: itemName,
+    type: itemType,
+    rarity,
+    quantity
   };
 }
 
@@ -1184,283 +1437,21 @@ async function upgradeMonsterStructure(db, worldId, monsterGroup, structure, upd
 }
 
 /**
- * Calculate distance between two locations
+ * Create a descriptive message for monster movement
  */
-function calculateDistance(loc1, loc2) {
-  const dx = loc1.x - loc2.x;
-  const dy = loc1.y - loc2.y;
-  return Math.sqrt(dx*dx + dy*dy);
-}
-
-/**
- * Calculate the combat strength of a monster group
- */
-function calculateGroupStrength(group) {
-  const unitCount = group.unitCount || 1;
-  let baseStrength = unitCount;
+function createMonsterMoveMessage(monsterGroup, targetType, targetLocation) {
+  const groupName = monsterGroup.name || "Monster group";
+  const size = monsterGroup.unitCount <= 3 ? "small" : 
+              monsterGroup.unitCount <= 8 ? "medium-sized" : "large";
   
-  // Adjust based on monster type
-  switch (group.monsterType) {
-    case 'troll':
-      baseStrength *= 2.5;
-      break;
-    case 'skeleton':
-      baseStrength *= 1.2;
-      break;
-    case 'elemental':
-      baseStrength *= 2.0;
-      break;
-    case 'wolf':
-      baseStrength *= 1.5;
-      break;
-    case 'goblin':
-      baseStrength *= 0.8;
-      break;
+  switch (targetType) {
+    case 'player_spawn':
+      return `A ${size} ${groupName} is marching toward the settlement at (${targetLocation.x}, ${targetLocation.y})!`;
+    case 'monster_structure':
+      return `${groupName} is moving toward their lair at (${targetLocation.x}, ${targetLocation.y}).`;
+    case 'resource':
+      return `${groupName} is searching for resources near (${targetLocation.x}, ${targetLocation.y}).`;
     default:
-      // Keep base strength
-      break;
+      return `${groupName} is on the move.`;
   }
-  
-  // Adjust for merge count (groups that have merged are stronger)
-  const mergeBonus = group.mergeCount ? (group.mergeCount * 0.2) : 0;
-  baseStrength *= (1 + mergeBonus);
-  
-  return baseStrength;
-}
-
-/**
- * Monster Group Merging and Enhancement
- * New function to check and merge monster groups
- */
-export async function mergeMonsterGroups(worldId) {
-  const db = getDatabase();
-  const now = Date.now();
-  let mergesPerformed = 0;
-  const updates = {};
-  
-  // Get all chunks for this world
-  const chunksRef = db.ref(`worlds/${worldId}/chunks`);
-  const chunksSnapshot = await chunksRef.once('value');
-  const chunks = chunksSnapshot.val();
-  
-  // Process each chunk
-  for (const [chunkKey, chunkData] of Object.entries(chunks)) {
-    if (!chunkData || chunkKey === 'lastUpdated') continue;
-    
-    // Process each tile in the chunk
-    for (const [tileKey, tileData] of Object.entries(chunkData)) {
-      if (!tileData || tileKey === 'lastUpdated') continue;
-      
-      // Skip if no groups on this tile
-      if (!tileData.groups) continue;
-      
-      // Find monster groups on this tile
-      const monsterGroups = [];
-      for (const [groupId, groupData] of Object.entries(tileData.groups)) {
-        if ((groupData.type === 'monster' || groupData.monsterType) && 
-            groupData.status === 'idle' && !groupData.inBattle) {
-          monsterGroups.push({ id: groupId, ...groupData });
-        }
-      }
-      
-      // Need at least 2 monster groups to merge
-      if (monsterGroups.length < 2) continue;
-      
-      // Sort monster groups by their type
-      const groupsByType = {};
-      for (const group of monsterGroups) {
-        const type = group.monsterType || 'unknown';
-        if (!groupsByType[type]) {
-          groupsByType[type] = [];
-        }
-        groupsByType[type].push(group);
-      }
-      
-      // Process each type
-      for (const [monsterType, typeGroups] of Object.entries(groupsByType)) {
-        if (typeGroups.length < 2) continue;
-        
-        // Only merge with 70% chance to avoid always merging
-        if (Math.random() > 0.7) continue;
-        
-        // Sort by unit count (descending)
-        typeGroups.sort((a, b) => (b.unitCount || 1) - (a.unitCount || 1));
-        
-        // Largest group becomes the base
-        const baseGroup = typeGroups[0];
-        const mergeTargets = typeGroups.slice(1);
-        
-        // Calculate total unit count
-        let totalUnits = baseGroup.unitCount || 1;
-        for (const group of mergeTargets) {
-          totalUnits += group.unitCount || 1;
-        }
-        
-        // Add bonus units (10-30% bonus)
-        const bonusUnits = Math.floor(totalUnits * (0.1 + Math.random() * 0.2));
-        totalUnits += bonusUnits;
-        
-        // Cap at a reasonable size (e.g., 20)
-        totalUnits = Math.min(totalUnits, 20);
-        
-        // Combine items from all groups
-        const allItems = [];
-        
-        // Add items from base group
-        if (baseGroup.items) {
-          if (Array.isArray(baseGroup.items)) {
-            allItems.push(...baseGroup.items);
-          } else {
-            allItems.push(...Object.values(baseGroup.items));
-          }
-        }
-        
-        // Add items from merge targets
-        for (const group of mergeTargets) {
-          if (group.items) {
-            if (Array.isArray(group.items)) {
-              allItems.push(...group.items);
-            } else {
-              allItems.push(...Object.values(group.items));
-            }
-          }
-        }
-        
-        // Add bonus items
-        const bonusItemCount = Math.min(2, Math.ceil(bonusUnits / 3));
-        for (let i = 0; i < bonusItemCount; i++) {
-          if (Math.random() < 0.8) {
-            allItems.push(generateBonusItem(monsterType));
-          }
-        }
-        
-        // Update the base group
-        const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}`;
-        
-        // Determine new name based on size
-        let newName;
-        if (totalUnits <= 3) {
-          newName = `Small ${baseGroup.name}`;
-        } else if (totalUnits <= 7) {
-          newName = `${baseGroup.name} Pack`;
-        } else if (totalUnits <= 12) {
-          newName = `${baseGroup.name} Horde`;
-        } else {
-          newName = `Massive ${baseGroup.name} Legion`;
-        }
-        
-        updates[`${basePath}/unitCount`] = totalUnits;
-        updates[`${basePath}/name`] = newName;
-        updates[`${basePath}/items`] = allItems;
-        updates[`${basePath}/lastUpdated`] = now;
-        updates[`${basePath}/mergeCount`] = (baseGroup.mergeCount || 0) + mergeTargets.length;
-        updates[`${basePath}/merged`] = true;
-        
-        // Remove the merged groups
-        for (const group of mergeTargets) {
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${group.id}`] = null;
-        }
-        
-        // Add chat message about the merge
-        const chatMessageId = `monster_merge_${now}_${baseGroup.id}`;
-        const [x, y] = tileKey.split(',').map(Number);
-        
-        updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-          text: `Monster groups have merged at (${x}, ${y}) forming a ${newName}!`,
-          type: 'event',
-          timestamp: now,
-          location: { x, y }
-        };
-        
-        mergesPerformed++;
-      }
-    }
-  }
-  
-  // Apply all updates
-  if (Object.keys(updates).length > 0) {
-    await db.ref().update(updates);
-  }
-  
-  return { mergesPerformed };
-}
-
-/**
- * Generate a bonus item for merged monster groups
- */
-function generateBonusItem(monsterType) {
-  // Choose rarity with weighted probabilities
-  const rarityRoll = Math.random();
-  let rarity;
-  
-  if (rarityRoll > 0.98) {
-    rarity = 'epic';
-  } else if (rarityRoll > 0.90) {
-    rarity = 'rare';
-  } else if (rarityRoll > 0.70) {
-    rarity = 'uncommon';
-  } else {
-    rarity = 'common';
-  }
-  
-  // Define possible item types
-  const itemTypes = ['resource', 'weapon', 'material', 'gem'];
-  const itemType = itemTypes[Math.floor(Math.random() * itemTypes.length)];
-  
-  // Define monster type specific items
-  const monsterItems = {
-    goblin: {
-      resource: 'Stolen Goods',
-      weapon: 'Crude Weapon',
-      material: 'Goblin Hide',
-      gem: 'Shiny Rock'
-    },
-    wolf: {
-      resource: 'Wolf Meat',
-      weapon: 'Wolf Fang',
-      material: 'Wolf Pelt',
-      gem: 'Wolf Eye'
-    },
-    spider: {
-      resource: 'Spider Silk',
-      weapon: 'Venom Sac',
-      material: 'Spider Leg',
-      gem: 'Spider Eye'
-    },
-    skeleton: {
-      resource: 'Bone Dust',
-      weapon: 'Ancient Blade',
-      material: 'Skull Fragment',
-      gem: 'Soul Essence'
-    },
-    troll: {
-      resource: 'Troll Meat',
-      weapon: 'Troll Club',
-      material: 'Troll Hide',
-      gem: 'Troll Tooth'
-    },
-    // Default for unknown types
-    default: {
-      resource: 'Monster Parts',
-      weapon: 'Monster Weapon',
-      material: 'Monster Hide',
-      gem: 'Unusual Stone'
-    }
-  };
-  
-  // Get item based on monster type and item type
-  const itemName = monsterItems[monsterType]?.[itemType] || 
-                  monsterItems.default[itemType];
-  
-  // Quantity depends on rarity
-  const quantity = rarity === 'common' ? Math.floor(Math.random() * 3) + 1 : 
-                  rarity === 'uncommon' ? Math.floor(Math.random() * 2) + 1 : 1;
-  
-  return {
-    id: `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-    name: itemName,
-    type: itemType,
-    rarity,
-    quantity
-  };
 }
