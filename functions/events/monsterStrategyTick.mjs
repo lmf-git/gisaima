@@ -8,6 +8,70 @@ import { getDatabase } from 'firebase-admin/database';
 import { getChunkKey } from "./utils.mjs";
 import { mergeItems } from "./utils.mjs";
 
+/**
+ * Calculate a simple path between two points using a modified Bresenham's line algorithm
+ * @param {number} startX - Starting X coordinate
+ * @param {number} startY - Starting Y coordinate
+ * @param {number} endX - Target X coordinate
+ * @param {number} endY - Target Y coordinate
+ * @param {number} maxSteps - Maximum number of steps to include in the path (default: 20)
+ * @returns {Array<{x: number, y: number}>} Array of coordinates representing the path
+ */
+function calculateSimplePath(startX, startY, endX, endY, maxSteps = 20) {
+  // Ensure inputs are integers
+  startX = Math.round(startX);
+  startY = Math.round(startY);
+  endX = Math.round(endX);
+  endY = Math.round(endY);
+  
+  // Create path array with starting point
+  const path = [{x: startX, y: startY}];
+  
+  // If start and end are the same, return just the start point
+  if (startX === endX && startY === endY) {
+    return path;
+  }
+  
+  // Calculate absolute differences and direction signs
+  const dx = Math.abs(endX - startX);
+  const dy = Math.abs(endY - startY);
+  const sx = startX < endX ? 1 : -1;
+  const sy = startY < endY ? 1 : -1;
+  
+  // Determine error for Bresenham's algorithm
+  let err = dx - dy;
+  let x = startX;
+  let y = startY;
+  
+  // Limit path length to avoid excessive computation
+  let stepsLeft = Math.min(maxSteps, dx + dy);
+  
+  while ((x !== endX || y !== endY) && stepsLeft > 0) {
+    const e2 = 2 * err;
+    
+    if (e2 > -dy) {
+      err -= dy;
+      x += sx;
+    }
+    
+    if (e2 < dx) {
+      err += dx;
+      y += sy;
+    }
+    
+    // Add current position to path
+    path.push({x, y});
+    stepsLeft--;
+  }
+  
+  // If path is too short, ensure the end point is included
+  if (path.length < maxSteps && (path[path.length-1].x !== endX || path[path.length-1].y !== endY)) {
+    path.push({x: endX, y: endY});
+  }
+  
+  return path;
+}
+
 // Constants and configuration
 const STRATEGY_CHANCE = 0.4; // Chance for a monster group to take strategic action
 const MAX_SCAN_DISTANCE = 20; // How far to scan for targets
@@ -532,7 +596,10 @@ async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, wor
  * Move one step towards a target location
  */
 function moveOneStepTowardsTarget(worldId, monsterGroup, location, targetLocation, targetType, updates, now) {
-  const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
+  const groupId = monsterGroup.id;
+  const chunkKey = monsterGroup.chunkKey;
+  const tileKey = monsterGroup.tileKey;
+  const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
   
   const dx = targetLocation.x - location.x;
   const dy = targetLocation.y - location.y;
@@ -1051,6 +1118,7 @@ async function upgradeMonsterStructure(db, worldId, monsterGroup, structure, upd
   // Add special resources for higher levels
   if (currentLevel >= 2) {
     upgradeResourceCosts['Monster Hide'] = 3;
+    upgradeResourceCosts['Monster Blood'] =
     upgradeResourceCosts['Monster Blood'] = 2;
   }
   
