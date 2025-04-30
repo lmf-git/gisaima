@@ -228,7 +228,7 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       structure = structureSnapshot.val();
     }
     
-    // Calculate current power for each side
+    // Calculate current power for each side - this will include newly joined groups
     let side1Power = calculateSidePower(side1Groups);
     let side2Power = calculateSidePower(side2Groups) + (structure ? calculateStructurePower(structure) : 0);
     
