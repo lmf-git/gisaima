@@ -51,6 +51,7 @@
     import Spyglass from '../../components/icons/Spyglass.svelte';
     import Recenter from '../../components/map/Recenter.svelte';
     import Chat from '../../components/map/Chat.svelte';
+    import Notices from '../../components/map/Notices.svelte'; // Add import for Notices component
     import BirdActive from '../../components/icons/BirdActive.svelte';
     import { unreadMessages } from "../../lib/stores/chat.js";
     import Bird from '../../components/icons/Bird.svelte';
@@ -1070,8 +1071,8 @@
         });
     }
 
-    // ...existing code...
-
+    // Add state for showing notices
+    let showNotices = $state(true);
 </script>
 
 <svelte:window on:keydown={handleKeyDown} />
@@ -1242,6 +1243,11 @@
                       onMouseEnter={() => handlePanelHover('achievements')}
                     />
                 </div>
+            {/if}
+
+            <!-- Add Notices component -->
+            {#if showNotices && !isTutorialVisible}
+                <Notices maxNotices={3} />
             {/if}
         {/if}
 

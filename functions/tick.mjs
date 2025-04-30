@@ -146,7 +146,7 @@ export const processGameTicks = onSchedule({
         }
       }
 
-      // Process battles for the world using the imported function
+      // Process battles for the world using the imported function - FIXED: properly call the function with worldId
       const battlesProcessed = await processBattles(worldId);
       console.log(`Processed ${battlesProcessed} battles in world ${worldId}`);
       

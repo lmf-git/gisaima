@@ -3,82 +3,81 @@
  * Processes ongoing battles and determines outcomes for groups and structures
  */
 
-import { onSchedule } from "firebase-functions/v2/scheduler";
 import { getDatabase } from "firebase-admin/database";
 import { logger } from "firebase-functions";
 
-// Run battle tick every minute
-export const processBattles = onSchedule({
-  schedule: "every 1 minutes",
-  maxInstances: 1,
-  memory: "256MiB"
-}, async (event) => {
+/**
+ * Process battles for a given world
+ * 
+ * @param {string} worldId The ID of the world to process
+ * @returns {Promise<number>} Number of battles processed
+ */
+export async function processBattles(worldId) {
   const db = getDatabase();
-  const worldsRef = db.ref("worlds");
+  let battlesProcessed = 0;
 
   try {
-    // Get all worlds
-    const worldsSnapshot = await worldsRef.once("value");
-    const worlds = worldsSnapshot.val();
+    // Get world data
+    const worldRef = db.ref(`worlds/${worldId}`);
+    const worldSnapshot = await worldRef.once("value");
+    const worldData = worldSnapshot.val();
     
-    if (!worlds) {
-      logger.info("No worlds found");
-      return;
+    if (!worldData || !worldData.chunks) {
+      logger.info(`No chunks found in world ${worldId}`);
+      return battlesProcessed;
     }
     
-    // Process each world
-    for (const [worldId, worldData] of Object.entries(worlds)) {
-      if (!worldData.chunks) continue;
+    // Track all active battles
+    const battles = [];
+
+    // Scan through chunks for battles
+    for (const [chunkKey, chunkData] of Object.entries(worldData.chunks)) {
+      if (!chunkData) continue;
       
-      // Track all active battles
-      const battles = [];
+      for (const [locationKey, tileData] of Object.entries(chunkData)) {
+        if (locationKey === "lastUpdated" || !tileData) continue;
 
-      // Scan through chunks for battles
-      for (const [chunkKey, chunkData] of Object.entries(worldData.chunks)) {
-        if (!chunkData) continue;
+        const [x, y] = locationKey.split(",").map(Number);
         
-        for (const [locationKey, tileData] of Object.entries(chunkData)) {
-          if (locationKey === "lastUpdated" || !tileData) continue;
-
-          const [x, y] = locationKey.split(",").map(Number);
-          
-          if (tileData.battles) {
-            for (const [battleId, battleData] of Object.entries(tileData.battles)) {
-              // Only process active battles
-              if (battleData.status === "active") {
-                battles.push({
-                  worldId,
-                  chunkKey,
-                  locationKey,
-                  x,
-                  y,
-                  battleId,
-                  battleData
-                });
-              }
+        if (tileData.battles) {
+          for (const [battleId, battleData] of Object.entries(tileData.battles)) {
+            // Only process active battles
+            if (battleData.status === "active") {
+              battles.push({
+                worldId,
+                chunkKey,
+                locationKey,
+                x,
+                y,
+                battleId,
+                battleData
+              });
             }
           }
         }
       }
-      
-      logger.info(`Found ${battles.length} active battles in world ${worldId}`);
-      
-      // Process each battle
-      for (const battle of battles) {
-        try {
-          await processBattle(battle);
-        } catch (error) {
-          logger.error(`Error processing battle ${battle.battleId}:`, error);
-        }
+    }
+    
+    logger.info(`Found ${battles.length} active battles in world ${worldId}`);
+    
+    // Process each battle
+    for (const battle of battles) {
+      try {
+        await processBattle(battle);
+        battlesProcessed++;
+      } catch (error) {
+        logger.error(`Error processing battle ${battle.battleId}:`, error);
       }
     }
     
-    logger.info("Battle tick processing complete");
+    logger.info(`Processed ${battlesProcessed} battles in world ${worldId}`);
+    return battlesProcessed;
     
   } catch (error) {
-    logger.error("Error processing battle tick:", error);
+    logger.error(`Error processing battles for world ${worldId}:`, error);
+    return battlesProcessed;
   }
-});
+}
 
 async function processBattle(battle) {
   const { worldId, chunkKey, locationKey, x, y, battleId, battleData } = battle;
