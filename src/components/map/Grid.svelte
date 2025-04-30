@@ -1861,8 +1861,8 @@
   
   /* Add Monster-specific styling with red color */
   :global(.race-icon-tile.monster-icon path) {
-    fill: rgba(235, 58, 58, 0.9); /* Bright red for monsters */
-    filter: drop-shadow(0 0 3px rgba(255, 100, 100, 0.5));
+    fill: rgba(235, 58, 58, 1); /* Bright red for monsters with full opacity */
+    filter: drop-shadow(0 0 5px rgba(255, 100, 100, 0.7));
   }
   
   /* Add special animation for center tile with race icon */
@@ -1901,7 +1901,7 @@
     width: auto;
     overflow: visible;
     border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 0 0.4em rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 0.4emrgba(0, 0, 0, 0.8);
   }
 
   /* Make structure name more prominent on hover */
