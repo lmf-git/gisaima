@@ -1,5 +1,36 @@
 {
   "players": {
+    "DmMQpTpsYyQ2NCmh8qTzjKshlMq2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "first_attack": true,
+            "first_attack_date": 1746046327679,
+            "first_steps": true,
+            "first_steps_date": 1746046061539,
+            "mobilised": true
+          },
+          "alive": true,
+          "displayName": "Admin",
+          "groups": {
+            "-OP7RirjOjWt5t8mJN_8": {
+              "at": "-23,5",
+              "id": "-OP7RirjOjWt5t8mJN_8",
+              "status": "idle"
+            }
+          },
+          "id": "DmMQpTpsYyQ2NCmh8qTzjKshlMq2",
+          "inGroup": "-OP7RirjOjWt5t8mJN_8",
+          "joined": 1746045861043,
+          "lastLocation": {
+            "timestamp": 1746046516113,
+            "x": -23,
+            "y": 5
+          },
+          "race": "human"
+        }
+      }
+    },
     "Fsec3klBgbOgCMVDkHYM0CCxijg2": {
       "worlds": {
         "ancient-lands": {
@@ -224,36 +255,6 @@
             "y": -11
           },
           "race": "dwarf"
-        }
-      }
-    },
-    "wATra1ptGvevKepb1wyIeCZDK702": {
-      "worlds": {
-        "ancient-lands": {
-          "achievements": {
-            "first_attack": true,
-            "first_attack_date": 1746044871545,
-            "first_steps": true,
-            "first_steps_date": 1746044541021
-          },
-          "alive": true,
-          "displayName": "LMF",
-          "groups": {
-            "-OP7LHkionCHJdHDy0xm": {
-              "at": "-23,5",
-              "id": "-OP7LHkionCHJdHDy0xm",
-              "status": "idle"
-            }
-          },
-          "id": "wATra1ptGvevKepb1wyIeCZDK702",
-          "inGroup": "-OP7LHkionCHJdHDy0xm",
-          "joined": 1746043583558,
-          "lastLocation": {
-            "timestamp": 1746044705970,
-            "x": -23,
-            "y": 3
-          },
-          "race": "human"
         }
       }
     }
@@ -918,6 +919,15 @@
           "timestamp": 1746044267627,
           "type": "system"
         },
+        "-OP7RixLaGqJ69bVOICK": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Admin's Force is being mobilized at (-23,5)",
+          "timestamp": 1746045955624,
+          "type": "system"
+        },
         "battle_1745484723001_battle_1745483648051_103": {
           "location": {
             "x": -23,
@@ -1017,6 +1027,15 @@
           "timestamp": 1746045001947,
           "type": "event"
         },
+        "battle_1746046502078_battle_1746046327679_445_536": {
+          "location": {
+            "x": -23,
+            "y": 3
+          },
+          "text": "Battle at (-23,3) has ended after 2 ticks! Victorious: Goblin Raiders Defeated: Admin's Force (1 casualties)",
+          "timestamp": 1746046502078,
+          "type": "event"
+        },
         "battle_start_1746023700931_battle_1746023700931_769": {
           "location": {
             "x": -29,
@@ -1069,6 +1088,15 @@
           },
           "text": "Battle has begun at (-23, 3)! LMF's Force is attacking Goblin Raiders!",
           "timestamp": 1746044871545,
+          "type": "event"
+        },
+        "battle_start_1746046327679_battle_1746046327679_445": {
+          "location": {
+            "x": -23,
+            "y": 3
+          },
+          "text": "Battle has begun at (-23, 3)! Admin's Force is attacking Goblin Raiders!",
+          "timestamp": 1746046327679,
           "type": "event"
         },
         "chat_1745483585619_25": {
@@ -1584,6 +1612,18 @@
           "userId": "wATra1ptGvevKepb1wyIeCZDK702",
           "userName": "LMF's Force"
         },
+        "chat_1746045961986_82": {
+          "location": {
+            "timestamp": 1746045961986,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"Admin's Force\"",
+          "timestamp": 1746045961986,
+          "type": "event",
+          "userId": "DmMQpTpsYyQ2NCmh8qTzjKshlMq2",
+          "userName": "Admin's Force"
+        },
         "chat_monster_spawn_1745989802985_840": {
           "location": {
             "x": -34,
@@ -1798,6 +1838,15 @@
           },
           "text": "LMF's Force was defeated in battle at (-23,3)",
           "timestamp": 1746045001947,
+          "type": "event"
+        },
+        "death_1746046502078_DmMQpTpsYyQ2NCmh8qTzjKshlMq2": {
+          "location": {
+            "x": -23,
+            "y": 3
+          },
+          "text": "Admin's Force was defeated in battle at (-23,3)",
+          "timestamp": 1746046502078,
           "type": "event"
         },
         "gather_1745486761904_-OOb4owT0OYyo524niqW": {
@@ -2844,6 +2893,15 @@
           "timestamp": 1746044705970,
           "type": "event"
         },
+        "move_1746046201329_-OP7RirjOjWt5t8mJN_8_2": {
+          "location": {
+            "x": -23,
+            "y": 3
+          },
+          "text": "Admin's Force has arrived at (-23,3)",
+          "timestamp": 1746046201329,
+          "type": "event"
+        },
         "move_start_1746041195430_-OP79LEz6lBjeP0gTkln": {
           "location": {
             "x": -32,
@@ -2860,6 +2918,15 @@
           },
           "text": "LMF's Force is setting out from (-23,5) to (-23,3)",
           "timestamp": 1746044546285,
+          "type": "system"
+        },
+        "move_start_1746046066406_-OP7RirjOjWt5t8mJN_8": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Admin's Force is setting out from (-23,5) to (-23,3)",
+          "timestamp": 1746046066406,
           "type": "system"
         },
         "rare_1745985842035_-OP3kM7ZrP9K3VSiuk0J": {
@@ -3550,20 +3617,20 @@
           },
           "-23,3": {
             "groups": {
-              "-OP7LHkionCHJdHDy0xm": {
-                "battleId": "battle_1746044871545_233",
+              "-OP7RirjOjWt5t8mJN_8": {
+                "battleId": "battle_1746046327679_445",
                 "battleRole": "attacker",
                 "battleSide": 1,
-                "createdAt": 1746044267627,
-                "id": "-OP7LHkionCHJdHDy0xm",
+                "createdAt": 1746045955624,
+                "id": "-OP7RirjOjWt5t8mJN_8",
                 "inBattle": true,
                 "lastMessage": {
                   "text": "Moving to next location (-23,3)",
-                  "timestamp": 1746044705970
+                  "timestamp": 1746046201329
                 },
-                "lastUpdated": 1746044705970,
+                "lastUpdated": 1746046201329,
                 "moveSpeed": 1,
-                "moveStarted": 1746044546285,
+                "moveStarted": 1746046066406,
                 "movementPath": [
                   {
                     "x": -23,
@@ -3578,9 +3645,9 @@
                     "y": 3
                   }
                 ],
-                "name": "LMF's Force",
-                "nextMoveTime": 1746044765970,
-                "owner": "wATra1ptGvevKepb1wyIeCZDK702",
+                "name": "Admin's Force",
+                "nextMoveTime": 1746046261329,
+                "owner": "DmMQpTpsYyQ2NCmh8qTzjKshlMq2",
                 "pathIndex": 2,
                 "race": "human",
                 "status": "fighting",
@@ -3588,10 +3655,10 @@
                 "targetY": 3,
                 "unitCount": 1,
                 "units": {
-                  "wATra1ptGvevKepb1wyIeCZDK702": {
-                    "displayName": "LMF",
-                    "id": "wATra1ptGvevKepb1wyIeCZDK702",
-                    "lastActive": 1746043587274,
+                  "DmMQpTpsYyQ2NCmh8qTzjKshlMq2": {
+                    "displayName": "Admin",
+                    "id": "DmMQpTpsYyQ2NCmh8qTzjKshlMq2",
+                    "lastActive": 1746045867928,
                     "race": "human",
                     "type": "player"
                   }
@@ -3621,7 +3688,7 @@
                 ],
                 "lastMessage": {
                   "text": "Victory in battle! All units survived the battle.",
-                  "timestamp": 1746045001947
+                  "timestamp": 1746046502078
                 },
                 "lastUpdated": 1746044521946,
                 "monsterType": "goblin",
@@ -3635,31 +3702,12 @@
             }
           },
           "-23,5": {
-            "groups": {
-              "-OP79fMyI6iw7mB1jdPj": {
-                "createdAt": 1746041222719,
-                "id": "-OP79fMyI6iw7mB1jdPj",
-                "lastMessage": {
-                  "text": "Group is fully mobilized and ready",
-                  "timestamp": 1746041282033
-                },
-                "lastUpdated": 1746041282033,
-                "name": "LMF's Force",
-                "owner": "ec4OU7rVbqadlWumAcBh8WIu0q12",
-                "race": "human",
-                "status": "idle",
-                "unitCount": 1,
-                "units": {
-                  "ec4OU7rVbqadlWumAcBh8WIu0q12": {
-                    "displayName": "LMF",
-                    "id": "ec4OU7rVbqadlWumAcBh8WIu0q12",
-                    "lastActive": 1746037478391,
-                    "race": "human",
-                    "type": "player"
-                  }
-                },
-                "x": -23,
-                "y": 5
+            "players": {
+              "DmMQpTpsYyQ2NCmh8qTzjKshlMq2": {
+                "displayName": "Admin",
+                "id": "DmMQpTpsYyQ2NCmh8qTzjKshlMq2",
+                "lastActive": 1746046516227,
+                "race": "human"
               }
             },
             "structure": {
@@ -3799,9 +3847,9 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746045065570,
+        "lastTick": 1746046501265,
         "name": "Ancient Lands",
-        "playerCount": 13,
+        "playerCount": 14,
         "seed": 13579,
         "size": "large",
         "spawns": {

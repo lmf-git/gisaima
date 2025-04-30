@@ -99,6 +99,22 @@ async function processBattle(battle) {
     return;
   }
   
+  // Use the detailed battle processing instead of the simpler logic
+  try {
+    // Pass the battle data to processBattleTick for detailed processing
+    const result = await processBattleTick(worldId, chunkKey, locationKey, battleId, currentBattleData);
+    if (!result.success) {
+      logger.error(`Error in battle tick processing for battle ${battleId}: ${result.error || "Unknown error"}`);
+    }
+    return;
+  } catch (error) {
+    logger.error(`Error calling processBattleTick for battle ${battleId}:`, error);
+    return;
+  }
+
+  // Note: The original battle processing code below is now unreachable
+  // It's kept commented for reference in case we need to revert changes
+  /*
   // Get tile data to access groups and structures
   const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}`);
   const tileSnapshot = await tileRef.once("value");
@@ -205,6 +221,7 @@ async function processBattle(battle) {
   });
   
   logger.info(`Battle ${battleId} tick ${tickCount} processed. Attackers: ${attackerPower}, Defenders: ${defenderTotalPower} (Groups: ${defenderGroupPower}, Structure: ${structurePower})`);
+  */
 }
 
 /**
@@ -294,11 +311,21 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       const filteredSide1Groups = side1Groups.filter(group => {
         // A group is removed if it has no units or unitCount is 0
         const hasUnits = group.units && Object.keys(group.units).length > 0;
+        if (!hasUnits) {
+          // Double-check that we've added the group deletion to the updates
+          logger.info(`Verifying deletion of empty group ${group.id} from side 1`);
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+        }
         return hasUnits;
       });
       
       const filteredSide2Groups = side2Groups.filter(group => {
         const hasUnits = group.units && Object.keys(group.units).length > 0;
+        if (!hasUnits) {
+          // Double-check that we've added the group deletion to the updates
+          logger.info(`Verifying deletion of empty group ${group.id} from side 2`);
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+        }
         return hasUnits;
       });
 
@@ -385,7 +412,18 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
   
   // Apply casualties to each group
   Object.values(groups).forEach(group => {
-    if (!group.units || Object.keys(group.units).length === 0) return;
+    if (!group.units || Object.keys(group.units).length === 0) {
+      // Group already has no units - ensure it's deleted from the database
+      logger.warn(`Group ${group.id} (${group.name || "Unknown"}) started with no units - removing immediately`);
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+      
+      // If this group has an owner, mark them as not alive
+      if (group.owner) {
+        updates[`players/${group.owner}/worlds/${worldId}/alive`] = false;
+        logger.info(`Marking player ${group.owner} as not alive - group had no units`);
+      }
+      return;
+    }
     
     // Determine how many units should be lost
     const unitCount = Object.keys(group.units).length;
@@ -457,8 +495,10 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
     const remainingUnitCount = unitKeys.length;
     
     if (remainingUnitCount <= 0) {
-      // No units left, remove the entire group
+      // Critical fix: No units left, ensure the group is completely removed from the database
+      // Use explicit null assignment to remove the entire group node
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+      logger.info(`Group ${group.id} (${group.name || "Unknown"}) has no units left - removing it during attrition`);
       
       // Add group defeat notification to the chat log
       if (group.owner) {
@@ -474,7 +514,17 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
         logger.info(`Marking player ${group.owner} as not alive - entire group was destroyed`);
       }
       
-      logger.info(`Group ${group.id} (${group.name || "Unknown"}) completely destroyed in battle`);
+      // Also ensure the group is removed from any battle references
+      if (group.battleId) {
+        const battlePath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${group.battleId}`;
+        
+        // Check which side this group was on
+        if (group.battleSide === 1) {
+          updates[`${battlePath}/side1/groups/${group.id}`] = null;
+        } else if (group.battleSide === 2) {
+          updates[`${battlePath}/side2/groups/${group.id}`] = null;
+        }
+      }
     } else {
       // Update the unit count
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnitCount;
@@ -581,11 +631,20 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
     }
     
     // FIX: Ensure all losing groups' owners are properly marked as not alive
+    // AND explicitly remove any empty losing groups
     for (const group of losingGroups) {
       if (group.owner) {
         // Make sure player is marked as not alive in their record
         updates[`players/${group.owner}/worlds/${worldId}/alive`] = false;
         logger.info(`Marking losing player ${group.owner} as not alive during battle completion`);
+      }
+      
+      // Check if group is empty (either has no units property or units is empty)
+      const hasUnits = group.units && Object.keys(group.units).length > 0;
+      if (!hasUnits || group.unitCount <= 0) {
+        // Explicitly remove empty groups
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+        logger.info(`Removing empty losing group ${group.id} (${group.name || "Unknown"}) during battle completion`);
       }
     }
     
