@@ -9,6 +9,7 @@
   import Torch from '../icons/Torch.svelte';
   import Structure from '../icons/Structure.svelte';
   import Cancel from '../icons/Close.svelte'; // Reusing Close icon for cancel
+  import Horn from '../icons/Horn.svelte'; // Add import for Horn icon
 
   // Import race icon components
   import Human from '../icons/Human.svelte';
@@ -2079,7 +2080,6 @@
     cursor: wait;
   }
 
-  /* Add```svelte
   /* Add the flee-action button style */
   .entity-action.flee-action {
     background-color: rgba(156, 39, 176, 0.1);
@@ -2097,4 +2097,3 @@ border-color: rgba(156, 39, 176, 0.3);
     cursor: wait;
   }
 </style>
-```

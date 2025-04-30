@@ -11,7 +11,8 @@
   import Structure from '../icons/Structure.svelte';
   import Torch from '../icons/Torch.svelte';
   import Info from '../icons/Info.svelte';
-  import Logo from '../Logo.svelte'; // Import the Logo component
+  import Horn from '../icons/Horn.svelte'; // Add import for Horn icon
+  import Logo from '../Logo.svelte';
   import { onDestroy } from 'svelte';
 
   // Define props with simplified approach
@@ -151,16 +152,16 @@
   const allActions = [
     { id: 'details', label: 'Details', icon: Info, condition: () => true }, // Always show details
     { id: 'inspect', label: 'Inspect', icon: Eye, condition: (tile) => tile?.structure },
-    { id: 'build', label: 'Build', icon: Hammer, condition: canBuild }, // Updated to use canBuild condition
-    { id: 'craft', label: 'Craft', icon: Hammer, condition: canCraft }, // Now uses updated canCraft condition
+    { id: 'build', label: 'Build', icon: Hammer, condition: canBuild },
+    { id: 'craft', label: 'Craft', icon: Hammer, condition: canCraft },
     { id: 'move', label: 'Move', icon: Compass, condition: canMove },
     { id: 'mobilise', label: 'Mobilise', icon: Rally, condition: canMobilize },
     { id: 'gather', label: 'Gather', icon: Crop, condition: canGather },
     { id: 'attack', label: 'Attack', icon: Sword, condition: canAttack },
     { id: 'demobilise', label: 'Demobilise', icon: Structure, condition: canDemobilize },
     { id: 'joinBattle', label: 'Join Battle', icon: Sword, condition: canJoinBattle },
-    // Add recruitment action
-    { id: 'recruitment', label: 'Recruit', icon: Rally, condition: canRecruit }
+    // Change Rally to Horn for the Recruit action
+    { id: 'recruitment', label: 'Recruit', icon: Horn, condition: canRecruit }
   ];
 
   // Filter actions based on conditions
