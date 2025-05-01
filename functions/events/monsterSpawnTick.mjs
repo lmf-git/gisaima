@@ -245,7 +245,7 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
   
   // Choose a random monster type using biome info
   const monsterType = Units.chooseMonsterTypeForBiome(biome);
-  const monsterData = Units.getMonsterUnit(monsterType);
+  const monsterData = Units.getUnit(monsterType, 'monster');
   
   if (!monsterData) {
     logger.error(`Invalid monster type: ${monsterType}`);
@@ -276,7 +276,7 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
   
   // Maybe add items to the monster group
   if (Math.random() < monsterData.itemChance) {
-    monsterGroup.items = Units.generateMonsterItems(monsterType, unitCount);
+    monsterGroup.items = Units.generateItems(monsterType, 'monster', unitCount);
   }
   
   // Set the complete monster group at once
@@ -306,7 +306,7 @@ async function mergeWithExistingMonster(worldId, chunkKey, tileKey, existingMons
   const monsterType = existingMonster.monsterType;
   
   // Get monster data from the shared Units class
-  const monsterData = Units.getMonsterUnit(monsterType);
+  const monsterData = Units.getUnit(monsterType, 'monster');
   if (!monsterData) {
     logger.error(`Invalid monster type: ${monsterType}`);
     return;
@@ -328,7 +328,7 @@ async function mergeWithExistingMonster(worldId, chunkKey, tileKey, existingMons
   const monsterUpdates = {
     unitCount: newCount,
     lastUpdated: now,
-    name: Units.getMonsterGroupName(monsterType, newCount)
+    name: Units.getUnitGroupName(monsterType, 'monster', newCount)
   };
   
   // Maybe add more items
@@ -336,7 +336,7 @@ async function mergeWithExistingMonster(worldId, chunkKey, tileKey, existingMons
     // Get existing items
     const existingItems = existingMonster.items || [];
     // Generate new items
-    const newItems = Units.generateMonsterItems(monsterType, addedUnits);
+    const newItems = Units.generateItems(monsterType, 'monster', addedUnits);
     
     // Combine items (need to handle both array and object formats)
     let mergedItems;
@@ -368,6 +368,83 @@ async function mergeWithExistingMonster(worldId, chunkKey, tileKey, existingMons
       }
     };
   }
+}
+
+/**
+ * Create a mixed monster group
+ */
+async function createMixedMonsterGroup(worldId, chunkKey, tileKey, groupsToMerge, updates, now) {
+  // Calculate total units from all groups
+  const totalUnits = groupsToMerge.reduce((total, group) => total + (group.unitCount || 1), 0);
+  
+  // Track composition of monster types
+  const composition = {};
+  
+  // Process each group to be merged
+  for (const group of groupsToMerge) {
+    const monsterType = group.monsterType;
+    if (!composition[monsterType]) {
+      composition[monsterType] = 0;
+    }
+    composition[monsterType] += group.unitCount || 1;
+  }
+  
+  // Create a new group ID
+  const newGroupId = `mixed_monster_${now}_${Math.floor(Math.random() * 10000)}`;
+  
+  // Get a name for this mixed group
+  const groupName = Units.getUnitGroupName(null, 'monster', totalUnits, { composition });
+  
+  // Collect all items from the groups
+  const allItems = [];
+  for (const group of groupsToMerge) {
+    if (group.items) {
+      if (Array.isArray(group.items)) {
+        allItems.push(...group.items);
+      } else {
+        allItems.push(...Object.values(group.items));
+      }
+    }
+  }
+  
+  // Create the new mixed monster group
+  const mixedGroup = {
+    id: newGroupId,
+    name: groupName,
+    type: 'monster',
+    monsterType: 'mixed', // Special type for mixed groups
+    status: 'idle',
+    unitCount: totalUnits,
+    x: parseInt(tileKey.split(',')[0]),
+    y: parseInt(tileKey.split(',')[1]),
+    createdAt: now,
+    lastUpdated: now,
+    composition: composition, // Store the composition
+    items: allItems,
+    isMixed: true
+  };
+  
+  // Set the new group
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${newGroupId}`] = mixedGroup;
+  
+  // Remove all the original groups
+  for (const group of groupsToMerge) {
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${group.id}`] = null;
+  }
+  
+  // Add a chat message about the mixed group formation
+  const chatMessageKey = `chat_monster_mixed_${now}_${Math.floor(Math.random() * 1000)}`;
+  updates[`worlds/${worldId}/chat/${chatMessageKey}`] = {
+    text: `Different monster groups have combined at (${mixedGroup.x}, ${mixedGroup.y}) forming a dangerous ${groupName}!`,
+    type: 'event',
+    timestamp: now,
+    location: {
+      x: mixedGroup.x,
+      y: mixedGroup.y
+    }
+  };
+  
+  return newGroupId;
 }
 
 /**
@@ -498,7 +575,7 @@ export async function mergeMonsterGroups(worldId) {
           totalUnits += bonusUnits;
           
           // Get monster type data
-          const monsterTypeData = Units.getMonsterUnit(monsterType);
+          const monsterTypeData = Units.getUnit(monsterType);
           
           // Cap at merge limit
           totalUnits = Math.min(totalUnits, monsterTypeData.mergeLimit || 15);

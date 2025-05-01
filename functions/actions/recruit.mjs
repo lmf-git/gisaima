@@ -22,7 +22,7 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
     x, 
     y, 
     worldId, 
-    unitType, 
+    unitType, // This is actually unitId
     quantity,
     cost
   } = request.data;
@@ -36,8 +36,8 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
     throw new HttpsError('invalid-argument', 'Quantity must be between 1 and 100');
   }
   
-  // Validate the unit type using shared Units class
-  const unitTypeData = Units.getPlayerUnit(unitType);
+  // Validate the unit type using shared Units class with unified getUnit method
+  const unitTypeData = Units.getUnit(unitType, 'player');
   if (!unitTypeData) {
     throw new HttpsError('invalid-argument', `Invalid unit type: ${unitType}`);
   }
@@ -125,12 +125,12 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
     // Create recruitment entry
     const recruitmentData = {
       id: recruitmentId,
-      unitType,
+      unitId: unitType, // Store as unitId for clarity
       unitName: unitTypeData.name,
       type: unitTypeData.type,
       race: unitTypeData.race || structureData.race,
       icon: unitTypeData.icon,
-      power: unitTypeData.power,
+      power: Units.calculateUnitPower(unitType, 'player', 1), // Use unified power calculation
       quantity,
       startedAt: now,
       completesAt,

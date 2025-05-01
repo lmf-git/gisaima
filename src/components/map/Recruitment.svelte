@@ -1,5 +1,5 @@
 <script>
-    import { onMount, onDestroy } from "svelte";
+    import { onMount } from "svelte";
     import { get } from "svelte/store";
     import { game, currentPlayer } from "../../lib/stores/game.js";
     import { getFunctions, httpsCallable } from "firebase/functions";
@@ -12,6 +12,9 @@
     import Shield from "../icons/Shield.svelte";
     import Sword from "../icons/Sword.svelte";
     import Bow from "../icons/Bow.svelte";
+
+
+
 
     // Props
     const {
