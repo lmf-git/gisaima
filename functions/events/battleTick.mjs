@@ -144,6 +144,14 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
       }
     }
     
+    // Log any issues with battle sides
+    if (side1Groups.length === 0) {
+      logger.info(`Battle ${battle.id} at ${chunkKey}/${locationKey} has empty side 1`);
+    }
+    if (side2Groups.length === 0) {
+      logger.info(`Battle ${battle.id} at ${chunkKey}/${locationKey} has empty side 2`);
+    }
+    
     // Calculate initial power for each side
     let side1Power = calculateSidePower(side1Groups);
     let side2Power = calculateSidePower(side2Groups);
@@ -153,9 +161,10 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
       side2Power += calculateStructurePower(structure);
     }
     
-    // If either side starts with no power, resolve the battle immediately
-    if (side1Power === 0 || side2Power === 0) {
-      const winner = side1Power > 0 ? 1 : 2;
+    // CRITICAL FIX: If either side starts with no power or no groups, resolve the battle immediately
+    if (side1Power === 0 || side2Power === 0 || side1Groups.length === 0 || side2Groups.length === 0) {
+      // Determine the winner based on power and group presence
+      const winner = (side1Power > 0 && side1Groups.length > 0) ? 1 : 2;
       const now = Date.now();
       
       // Determine side names for better messaging
@@ -164,8 +173,7 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
       const winnerName = winner === 1 ? side1Name : side2Name;
       const loserName = winner === 1 ? side2Name : side1Name;
       
-      // Delete battle completely instead of marking as resolved
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}`] = null;
+      logger.info(`Resolving battle ${battle.id} at ${chunkKey}/${locationKey}: Side ${winner} (${winnerName}) wins with ${winner === 1 ? side1Power : side2Power} power`);
       
       // End message
       endMessage = `Battle at (${battle.locationX}, ${battle.locationY}) has ended! ${winnerName} has defeated ${loserName}!`;
@@ -334,6 +342,11 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
     
     // Check if battle should end based on remaining power
     if (side1Power === 0 || side2Power === 0) {
+      // Additional check for empty sides to ensure battles properly end
+      if (side1Groups.length === 0 || side2Groups.length === 0) {
+        logger.info(`Battle ${battle.id} has an empty side after attrition - ensuring proper cleanup`);
+      }
+      
       const now = Date.now();
       const winner = side1Power > 0 ? 1 : 2;
       const winningGroups = winner === 1 ? side1Groups : side2Groups;
@@ -481,7 +494,7 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
     // For tiny groups (1-2 units), increase baseline probability of casualties
     // to ensure battles resolve quickly
     const expectedLosses = groupSize <= 2 ? 
-      groupSize * Math.max(0.4, attritionRate) : // Higher minimum for tiny groups
+      groupSize * Math.max(0.5, attritionRate) : // Higher minimum for tiny groups (increased from 0.4 to 0.5)
       groupSize * attritionRate;
     
     // For very small groups (or individual units), use pure probability
@@ -498,7 +511,7 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
     
     // Apply consistency factor - modified for faster small battle resolution
     const consistencyFactor = groupSize <= 2 ? 
-      0.7 : // Higher consistency for tiny groups (70% chance of minimum 1 casualty if any chance exists)
+      0.85 : // Increased consistency for tiny groups (85% chance of minimum 1 casualty)
       1 - Math.min(0.9, 1 / Math.sqrt(groupSize + 1));
     
     if (unitLosses === 0 && Math.random() < consistencyFactor && attritionRate > 0.05) {
@@ -527,16 +540,19 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
       unitLosses--;
     }
     
-    // If we still need to remove more units, start removing player units
-    // But make player units more resilient based on probability rather than fixed thresholds
+    // IMPROVED: If we still need to remove more units, more aggressively remove player units in small battles
     if (unitLosses > 0 && playerUnits.length > 0) {
-      // Player survival chance increases as they have fewer allies
-      // Solo players have the highest survival chance
-      const playerProtectionFactor = Math.max(0, 1 - (nonPlayerUnits.length / 10));
+      // Solo player protection factor reduced for faster battle resolution
+      const playerProtectionFactor = Math.max(0, 0.7 - (nonPlayerUnits.length / 10));
       
-      // Give players a chance to survive based on their situation
-      if (Math.random() < playerProtectionFactor) {
-        unitLosses = 0; // Player survives this round
+      // Small battles (1v1, 1v2) should resolve faster with higher player death chance
+      if (groupSize <= 2 && attritionRate > 0.3) {
+        // In small battles with high attrition, remove player with higher probability
+        if (Math.random() > playerProtectionFactor * 0.7) {
+          unitLosses = Math.max(1, unitLosses);
+        }
+      } else if (Math.random() < playerProtectionFactor) {
+        unitLosses = 0; // Player survives this round in larger battles
       }
       
       while (unitLosses > 0 && playerUnits.length > 0) {
@@ -544,9 +560,10 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
         const [unitId, unit] = playerUnits.splice(randomIndex, 1)[0];
         unitsToRemove.push(unitId);
         
-        // Track player deaths
+        // Track player deaths with improved logging
         playersKilled.push({
           playerId: unit.id,
+          displayName: unit.displayName || 'Unknown Player',
           groupId: group.id
         });
         
@@ -591,18 +608,24 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
     }
   }
   
-  // Handle player deaths
-  for (const { playerId, groupId } of playersKilled) {
+  // Handle player deaths with improved messaging
+  for (const { playerId, displayName, groupId } of playersKilled) {
     // Update player record to mark as dead
     updates[`players/${playerId}/worlds/${worldId}/alive`] = false;
     updates[`players/${playerId}/worlds/${worldId}/lastDeathTime`] = Date.now();
-    updates[`players/${playerId}/worlds/${worldId}/lastMessage`] = 
-      `You died in battle at (${locationKey}) while in group ${groupId}.`;
+    updates[`players/${playerId}/worlds/${worldId}/lastMessage`] = {
+      text: "You were defeated in battle.",
+      timestamp: Date.now()
+    };
+    updates[`players/${playerId}/worlds/${worldId}/inGroup`] = null;
+    
+    // Log player death
+    logger.info(`Player ${playerId} (${displayName}) killed in battle at ${locationKey}`);
     
     // Create death notification
     const deathMessageId = `death_${Date.now()}_${playerId}`;
     updates[`worlds/${worldId}/chat/${deathMessageId}`] = {
-      text: `A player has died in battle at (${locationKey}).`,
+      text: `${displayName || 'A player'} has died in battle at (${locationKey}).`,
       type: 'death',
       timestamp: Date.now(),
       location: {
