@@ -59,6 +59,8 @@
     import AchievementIcon from '../../components/icons/Trophy.svelte';
     import AchievementUnlocked from '../../components/map/AchievementUnlocked.svelte';
     import NextWorldTick from '../../components/map/NextWorldTick.svelte';
+    import BoundIcon from '../../components/icons/BoundIcon.svelte';
+    import UnboundIcon from '../../components/icons/UnboundIcon.svelte';
     
     const DEBUG_MODE = true;
     const debugLog = (...args) => DEBUG_MODE && console.log(...args);
@@ -70,8 +72,9 @@
     
     let urlProcessingComplete = $state(false);
     let playerPositionSet = $state(false); // New flag to track if player position has been set
-    
     let isPathDrawingMode = $state(false);
+    let followPlayerPosition = $state(true); // Add new state to control position following
+    let lastKnownPlayerPosition = $state(null); // Track the last known player position
 
     const combinedLoading = $derived(loading || $game.worldLoading || !$isAuthReady);
     
@@ -79,9 +82,6 @@
     
     let isProcessingClick = false;
 
-    let isTransitioningToPathDrawing = $state(false);
-
-    let structureRenderCount = $state(0);
 
     let pathDrawingGroup = $state(null);
     let currentPath = $state([]);
@@ -416,12 +416,18 @@
         // Add handling for minimap and overview states
         const savedMinimapState = localStorage.getItem('minimap');
         const savedOverviewState = localStorage.getItem('overview');
+        const savedFollow = localStorage.getItem('follow_player_position');
         
         // Set minimap state based on localStorage (default to false if not set)
         showMinimap = savedMinimapState === 'true';
         
         // Set overview/entities state based on localStorage (default to false if not set)
         showEntities = savedOverviewState === 'true'; // Changed to only show if explicitly true
+
+        // Set follow player position state based on localStorage
+        if (savedFollow !== null) {
+          followPlayerPosition = savedFollow === 'true';
+        }
 
         // First handle achievements since it has higher priority
         if (savedAchievementsState === 'true' && !achievementsClosed) {
@@ -448,6 +454,34 @@
         if (isTutorialVisible && showChat) {
             showChat = false;
         }
+    });
+
+    $effect(() => {
+      if (!browser || !$ready || !$game.player?.lastLocation) return;
+      
+      const currentPosition = $game.player.lastLocation;
+      
+      // Store initial position
+      if (!lastKnownPlayerPosition) {
+        lastKnownPlayerPosition = {...currentPosition};
+        return;
+      }
+      
+      // Check if position actually changed
+      if (currentPosition.x !== lastKnownPlayerPosition.x || 
+          currentPosition.y !== lastKnownPlayerPosition.y) {
+        
+        console.log(`Player position changed from (${lastKnownPlayerPosition.x},${lastKnownPlayerPosition.y}) to (${currentPosition.x},${currentPosition.y})`);
+        
+        // Update the stored position
+        lastKnownPlayerPosition = {...currentPosition};
+        
+        // Only move the map if auto-follow is enabled
+        if (followPlayerPosition) {
+          console.log('Auto-following player to new location');
+          moveTarget(currentPosition.x, currentPosition.y);
+        }
+      }
     });
 
     function showModal(options) {
@@ -715,6 +749,13 @@
     // Updated to handle Peek actions
     function handleGridClick(coords) {
         if (!$game?.player?.alive) return;
+
+        // Disable auto-follow when clicking on the grid
+        if (coords && coords.x !== undefined && coords.y !== undefined &&
+            $game.player?.lastLocation &&
+            (coords.x !== $game.player.lastLocation.x || coords.y !== $game.player.lastLocation.y)) {
+          handleManualPositionChange();
+        }
 
         // Check if this is a path confirmation action
         if (coords && coords.confirmPath === true) {
@@ -993,12 +1034,6 @@
         
         // Enable path drawing mode
         isPathDrawingMode = true;
-        
-        // Set this to prevent weird transition effects
-        isTransitioningToPathDrawing = true;
-        setTimeout(() => {
-            isTransitioningToPathDrawing = false;
-        }, 300);
     }
     
     // Function to handle cancellation of path drawing
@@ -1084,6 +1119,27 @@
             pathDrawingGroup = null;
             currentPath = [];
         });
+    }
+
+    // Add a function to toggle position following
+    function toggleFollowPlayerPosition() {
+      followPlayerPosition = !followPlayerPosition;
+      if (followPlayerPosition && $game.player?.lastLocation) {
+        // Immediately move to player's position when re-enabling following
+        moveTarget($game.player.lastLocation.x, $game.player.lastLocation.y);
+      }
+      // Save preference to localStorage
+      if (browser) {
+        localStorage.setItem('follow_player_position', followPlayerPosition.toString());
+      }
+    }
+
+    // Simplify to just toggle followPlayerPosition
+    function handleManualPositionChange() {
+      if (followPlayerPosition) {
+        followPlayerPosition = false;
+        console.log('Manual position change detected, disabling auto-follow');
+      }
     }
 
     // Add state for showing notices
@@ -1179,6 +1235,18 @@
                         <Spyglass extraClass="button-icon" />
                     </button>
                 {/if}
+
+                <button 
+                    class="control-button follow-button" 
+                    onclick={toggleFollowPlayerPosition}
+                    aria-label={followPlayerPosition ? "Stop following player" : "Follow player"}
+                    disabled={!$game?.player?.alive || isTutorialVisible}>
+                    {#if followPlayerPosition}
+                        <BoundIcon extraClass="button-icon" />
+                    {:else}
+                        <UnboundIcon extraClass="button-icon" />
+                    {/if}
+                </button>
             </div>
         {:else if !showEntities}
             <div class="left-controls">
