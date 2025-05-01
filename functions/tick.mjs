@@ -149,8 +149,9 @@ export const processGameTicks = onSchedule({
         }
       }
 
-      // Process battles for the world
-      const battlesProcessed = await processBattles(worldId);
+      // Process battles for the world - pass the chunks data to avoid reloading
+      console.log(`Processing battles in world ${worldId}`);
+      const battlesProcessed = await processBattles(worldId, chunks);
       console.log(`Processed ${battlesProcessed} battles in world ${worldId}`);
       
       // Process structure upgrades

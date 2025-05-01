@@ -5,6 +5,7 @@
 
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
+import { Units } from 'gisaima-shared/units/units.js';
 
 // Constants for monster spawning
 const SPAWN_CHANCE = 0.4; // 40% chance to spawn monsters in an active area
@@ -13,59 +14,6 @@ const MIN_SPAWN_DISTANCE = 2; // Minimum distance from player activity to spawn
 const MAX_ACTIVE_AGE = 15 * 60 * 1000; // Consider player activity from last 15 minutes
 const MAX_MONSTERS_PER_CHUNK = 5; // Maximum monster groups per chunk
 
-// Monster types with their probabilities and properties
-const MONSTER_TYPES = {
-  goblin: { 
-    probability: 0.3,
-    name: "Goblin Raiders",
-    unitCountRange: [1, 4],
-    itemChance: 0.6,
-    mergeLimit: 8
-  },
-  wolf: { 
-    probability: 0.2,
-    name: "Wild Wolves",
-    unitCountRange: [2, 5],
-    itemChance: 0.4,
-    mergeLimit: 10
-  },
-  bandit: { 
-    probability: 0.15,
-    name: "Bandits",
-    unitCountRange: [2, 4],
-    itemChance: 0.8,
-    mergeLimit: 6
-  },
-  spider: { 
-    probability: 0.15,
-    name: "Giant Spiders",
-    unitCountRange: [1, 6],
-    itemChance: 0.5,
-    mergeLimit: 12
-  },
-  skeleton: { 
-    probability: 0.1,
-    name: "Undead Skeletons",
-    unitCountRange: [3, 7],
-    itemChance: 0.7,
-    mergeLimit: 15
-  },
-  troll: { 
-    probability: 0.05,
-    name: "Mountain Troll",
-    unitCountRange: [1, 2],
-    itemChance: 0.9,
-    mergeLimit: 3
-  },
-  elemental: { 
-    probability: 0.05,
-    name: "Wild Elemental",
-    unitCountRange: [1, 3],
-    itemChance: 0.8,
-    mergeLimit: 5
-  }
-};
-
 // Add a new constant for mixed monster groups
 const MIXED_MONSTER_TYPE = {
   name: "Mixed Monster Pack",
@@ -73,31 +21,6 @@ const MIXED_MONSTER_TYPE = {
   itemChance: 0.7,
   mergeLimit: 20
 };
-
-// Biome-specific monster weights (keep for future use once biome data is available)
-// Currently not used as we don't have access to biome data yet
-const BIOME_MONSTERS = {
-  plains: ['goblin', 'bandit', 'wolf'],
-  forest: ['wolf', 'spider', 'bandit', 'elemental'],
-  mountain: ['troll', 'goblin', 'skeleton'],
-  desert: ['skeleton', 'bandit', 'elemental'],
-  swamp: ['spider', 'skeleton', 'elemental'],
-  tundra: ['wolf', 'elemental', 'skeleton'],
-  default: ['goblin', 'wolf', 'bandit', 'spider']
-};
-
-// Possible monster items
-const POSSIBLE_ITEMS = [
-  { name: "Wooden Sticks", rarity: "common", type: "resource", quantityRange: [1, 5] },
-  { name: "Stone Pieces", rarity: "common", type: "resource", quantityRange: [1, 4] },
-  { name: "Bone Fragment", rarity: "common", type: "resource", quantityRange: [1, 3] },
-  { name: "Monster Hide", rarity: "uncommon", type: "resource", quantityRange: [1, 2] },
-  { name: "Shiny Gem", rarity: "rare", type: "gem", quantityRange: [1, 1] },
-  { name: "Ancient Coin", rarity: "uncommon", type: "treasure", quantityRange: [1, 3] },
-  { name: "Crude Weapon", rarity: "common", type: "weapon", quantityRange: [1, 1] },
-  { name: "Monster Tooth", rarity: "uncommon", type: "trophy", quantityRange: [1, 2] },
-  { name: "Mysterious Herb", rarity: "uncommon", type: "alchemy", quantityRange: [1, 2] },
-];
 
 /**
  * Spawn monsters near player activity
@@ -320,9 +243,14 @@ function findSpawnLocation(playerLocation, allActiveLocations, existingMonsterLo
 async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updates, biome) {
   const now = Date.now();
   
-  // Choose a random monster type (ignoring biome for now)
-  const monsterType = chooseMonsterType();
-  const monsterData = MONSTER_TYPES[monsterType];
+  // Choose a random monster type using biome info
+  const monsterType = Units.chooseMonsterTypeForBiome(biome);
+  const monsterData = Units.getMonsterUnit(monsterType);
+  
+  if (!monsterData) {
+    logger.error(`Invalid monster type: ${monsterType}`);
+    return null;
+  }
   
   // Generate a group ID
   const groupId = `monster_${now}_${Math.floor(Math.random() * 10000)}`;
@@ -332,7 +260,7 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
     Math.random() * (monsterData.unitCountRange[1] - monsterData.unitCountRange[0] + 1)
   ) + monsterData.unitCountRange[0];
   
-  // Create the monster group object, including items if needed
+  // Create the monster group object
   const monsterGroup = {
     id: groupId,
     name: monsterData.name,
@@ -346,9 +274,9 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
     lastUpdated: now
   };
   
-  // Maybe add items to the monster group object directly (not as a separate update)
+  // Maybe add items to the monster group
   if (Math.random() < monsterData.itemChance) {
-    monsterGroup.items = generateMonsterItems(monsterType, unitCount);
+    monsterGroup.items = Units.generateMonsterItems(monsterType, unitCount);
   }
   
   // Set the complete monster group at once
@@ -375,12 +303,15 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
  */
 async function mergeWithExistingMonster(worldId, chunkKey, tileKey, existingMonster, updates, biome) {
   const now = Date.now();
-  const monsterType = existingMonster.monsterType || 
-                      Object.keys(MONSTER_TYPES).find(type => 
-                        existingMonster.name?.includes(MONSTER_TYPES[type].name)
-                      ) || 'goblin';
+  const monsterType = existingMonster.monsterType;
   
-  const monsterData = MONSTER_TYPES[monsterType];
+  // Get monster data from the shared Units class
+  const monsterData = Units.getMonsterUnit(monsterType);
+  if (!monsterData) {
+    logger.error(`Invalid monster type: ${monsterType}`);
+    return;
+  }
+  
   const currentCount = existingMonster.unitCount || 1;
   
   // Don't grow beyond the merge limit
@@ -396,15 +327,16 @@ async function mergeWithExistingMonster(worldId, chunkKey, tileKey, existingMons
   // Create partial update for the monster
   const monsterUpdates = {
     unitCount: newCount,
-    lastUpdated: now
+    lastUpdated: now,
+    name: Units.getMonsterGroupName(monsterType, newCount)
   };
   
   // Maybe add more items
   if (Math.random() < monsterData.itemChance) {
     // Get existing items
     const existingItems = existingMonster.items || [];
-    // Generate new items and merge
-    const newItems = generateMonsterItems(monsterType, addedUnits);
+    // Generate new items
+    const newItems = Units.generateMonsterItems(monsterType, addedUnits);
     
     // Combine items (need to handle both array and object formats)
     let mergedItems;
@@ -420,7 +352,7 @@ async function mergeWithExistingMonster(worldId, chunkKey, tileKey, existingMons
     monsterUpdates.items = mergedItems;
   }
   
-  // Update the monster group with all changes at once
+  // Update the monster group
   updates[groupPath] = monsterUpdates;
   
   // Add a message about monster reinforcements
@@ -436,57 +368,6 @@ async function mergeWithExistingMonster(worldId, chunkKey, tileKey, existingMons
       }
     };
   }
-}
-
-/**
- * Choose a monster type randomly (without considering biome for now)
- */
-function chooseMonsterType() {
-  // Get all available monster types
-  const monsterTypes = Object.keys(MONSTER_TYPES);
-  
-  // Create weighted probability list based on each monster's probability
-  const weightedList = [];
-  for (const type of monsterTypes) {
-    const probability = MONSTER_TYPES[type].probability * 100;
-    for (let i = 0; i < probability; i++) {
-      weightedList.push(type);
-    }
-  }
-  
-  // Pick randomly from the weighted list
-  const randomIndex = Math.floor(Math.random() * weightedList.length);
-  return weightedList[randomIndex];
-}
-
-/**
- * Generate random items for monster groups
- */
-function generateMonsterItems(monsterType, unitCount) {
-  const items = [];
-  const itemCount = Math.min(Math.ceil(unitCount / 2), 3); // At most 3 items
-  
-  for (let i = 0; i < itemCount; i++) {
-    // Only add an item with some probability
-    if (Math.random() < 0.7) {
-      const randomItem = POSSIBLE_ITEMS[Math.floor(Math.random() * POSSIBLE_ITEMS.length)];
-      
-      // Generate quantity within range
-      const minQuantity = randomItem.quantityRange[0];
-      const maxQuantity = randomItem.quantityRange[1];
-      const quantity = Math.floor(Math.random() * (maxQuantity - minQuantity + 1)) + minQuantity;
-      
-      items.push({
-        id: `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-        name: randomItem.name,
-        type: randomItem.type,
-        rarity: randomItem.rarity,
-        quantity: quantity
-      });
-    }
-  }
-  
-  return items;
 }
 
 /**
@@ -522,7 +403,6 @@ function createMonsterGrowthMessage(monsterName, oldCount, newCount, location) {
 
 /**
  * Monster Group Merging and Enhancement
- * New function to check and merge monster groups
  */
 export async function mergeMonsterGroups(worldId) {
   const db = getDatabase();
@@ -618,13 +498,13 @@ export async function mergeMonsterGroups(worldId) {
           totalUnits += bonusUnits;
           
           // Get monster type data
-          const monsterTypeData = MONSTER_TYPES[monsterType] || MONSTER_TYPES.goblin;
+          const monsterTypeData = Units.getMonsterUnit(monsterType);
           
           // Cap at merge limit
           totalUnits = Math.min(totalUnits, monsterTypeData.mergeLimit || 15);
           
           // Determine new name based on size
-          const newName = getMonsterGroupName(monsterType, totalUnits);
+          const newName = Units.getMonsterGroupName(monsterType, totalUnits);
           
           // Merge items from all groups
           const mergedItems = [];
@@ -653,7 +533,7 @@ export async function mergeMonsterGroups(worldId) {
           const bonusItemCount = Math.min(Math.ceil(totalUnits / 5), 3);
           for (let i = 0; i < bonusItemCount; i++) {
             if (Math.random() < 0.7) { // 70% chance for each bonus item
-              mergedItems.push(generateBonusItem(monsterType, totalUnits));
+              mergedItems.push(...Units.generateMonsterItems(monsterType, totalUnits));
             }
           }
           
@@ -702,287 +582,4 @@ export async function mergeMonsterGroups(worldId) {
     logger.error(`Error merging monster groups in world ${worldId}:`, error);
     return 0;
   }
-}
-
-/**
- * Create a mixed monster group from different monster types
- * @param {string} worldId - World ID
- * @param {string} chunkKey - Chunk key
- * @param {string} tileKey - Tile key
- * @param {Array} groupsToMerge - Array of groups to merge
- * @param {Object} updates - Updates object to modify
- * @param {number} now - Current timestamp
- */
-async function createMixedMonsterGroup(worldId, chunkKey, tileKey, groupsToMerge, updates, now) {
-  // Sort by unit count to use the largest as the base
-  groupsToMerge.sort((a, b) => (b.unitCount || 1) - (a.unitCount || 1));
-  
-  const baseGroup = groupsToMerge[0];
-  const mergingGroups = groupsToMerge.slice(1);
-  
-  // Calculate total units
-  let totalUnits = baseGroup.unitCount || 1;
-  for (const group of mergingGroups) {
-    totalUnits += group.unitCount || 1;
-  }
-  
-  // Add merger bonus (10-30%)
-  const bonusUnits = Math.floor(totalUnits * (0.1 + Math.random() * 0.2));
-  totalUnits += bonusUnits;
-  
-  // Cap at a reasonable maximum
-  totalUnits = Math.min(totalUnits, MIXED_MONSTER_TYPE.mergeLimit);
-  
-  // Create a composition object to track the monster types
-  const composition = {};
-  
-  // Add the base group to composition
-  const baseType = baseGroup.monsterType || 'unknown';
-  composition[baseType] = baseGroup.unitCount || 1;
-  
-  // Add other groups to composition
-  for (const group of mergingGroups) {
-    const type = group.monsterType || 'unknown';
-    composition[type] = (composition[type] || 0) + (group.unitCount || 1);
-  }
-  
-  // Calculate percentages for each type
-  const typePercents = {};
-  let dominantType = '';
-  let highestCount = 0;
-  
-  for (const [type, count] of Object.entries(composition)) {
-    const percent = Math.round((count / totalUnits) * 100);
-    typePercents[type] = percent;
-    
-    if (count > highestCount) {
-      highestCount = count;
-      dominantType = type;
-    }
-  }
-  
-  // Generate a name for the mixed group
-  const mixedName = generateMixedGroupName(composition, totalUnits);
-  
-  // Merge all items
-  const allItems = [];
-  
-  // Process all groups' items
-  for (const group of groupsToMerge) {
-    if (group.items) {
-      if (Array.isArray(group.items)) {
-        allItems.push(...group.items);
-      } else {
-        allItems.push(...Object.values(group.items));
-      }
-    }
-  }
-  
-  // Add bonus items
-  const bonusItemCount = Math.min(Math.ceil(totalUnits / 5), 4);
-  for (let i = 0; i < bonusItemCount; i++) {
-    if (Math.random() < 0.7) {
-      allItems.push(generateBonusItem(dominantType, totalUnits));
-    }
-  }
-  
-  // Update the base group with the merged data
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/unitCount`] = totalUnits;
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/name`] = mixedName;
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/items`] = allItems;
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/lastUpdated`] = now;
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/merged`] = true;
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/isMixed`] = true;
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/composition`] = composition;
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/typePercents`] = typePercents;
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/dominantType`] = dominantType;
-  
-  // Preserve these critical properties
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/type`] = 'monster';
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/monsterType`] = dominantType;
-  
-  // Remove the other groups
-  for (const group of mergingGroups) {
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${group.id}`] = null;
-  }
-  
-  // Add a chat message about the mixed group formation
-  const chatMessageKey = `chat_mixed_monster_merge_${now}_${Math.floor(Math.random() * 1000)}`;
-  const [x, y] = tileKey.split(',').map(Number);
-  
-  const typeNames = Object.keys(composition).map(type => 
-    MONSTER_TYPES[type]?.name.split(' ')[0] || type
-  ).join(', ');
-  
-  updates[`worlds/${worldId}/chat/${chatMessageKey}`] = {
-    text: `A mixed horde of ${typeNames} has formed at (${x}, ${y})!`,
-    type: 'event',
-    timestamp: now,
-    location: { x, y }
-  };
-}
-
-/**
- * Generate a name for a mixed monster group
- * @param {Object} composition - Composition of monster types
- * @param {number} totalUnits - Total unit count
- * @returns {string} Group name
- */
-function generateMixedGroupName(composition, totalUnits) {
-  // Get the top two types by count
-  const sortedTypes = Object.entries(composition)
-    .sort(([,a], [,b]) => b - a)
-    .map(([type]) => type);
-  
-  let prefix, suffix;
-  
-  // Determine size prefix
-  if (totalUnits <= 4) {
-    prefix = "Small";
-  } else if (totalUnits <= 8) {
-    prefix = "";
-  } else if (totalUnits <= 12) {
-    prefix = "Large";
-  } else {
-    prefix = "Massive";
-  }
-  
-  // Determine group type suffix
-  if (totalUnits <= 4) {
-    suffix = "Band";
-  } else if (totalUnits <= 8) {
-    suffix = "Pack";
-  } else if (totalUnits <= 12) {
-    suffix = "Horde";
-  } else {
-    suffix = "Legion";
-  }
-  
-  // Format name based on composition complexity
-  if (Object.keys(composition).length > 2) {
-    return `${prefix} Mixed Monster ${suffix}`.trim();
-  } else {
-    // Get display names for the top types
-    const typeNames = sortedTypes.slice(0, 2).map(type => 
-      MONSTER_TYPES[type]?.name.split(' ')[0] || capitalizeFirstLetter(type)
-    );
-    
-    return `${prefix} ${typeNames.join('-')} ${suffix}`.trim();
-  }
-}
-
-/**
- * Helper function to capitalize first letter of a string
- */
-function capitalizeFirstLetter(string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-// Helper function to generate a monster group name based on size
-function getMonsterGroupName(monsterType, unitCount) {
-  const monsterData = MONSTER_TYPES[monsterType] || MONSTER_TYPES.goblin;
-  const baseName = monsterData.name || 'Monster';
-  
-  // Different names based on size
-  if (unitCount <= 2) {
-    return `Small ${baseName}`;
-  } else if (unitCount <= 5) {
-    return baseName;
-  } else if (unitCount <= 8) {
-    return `${baseName} Warband`;
-  } else if (unitCount <= 12) {
-    return `${baseName} Horde`;
-  } else {
-    return `Massive ${baseName} Legion`;
-  }
-}
-
-// Helper function to generate a bonus item for merged groups
-function generateBonusItem(monsterType, unitCount) {
-  const rarityRoll = Math.random();
-  let rarity = 'common';
-  
-  // Better items for larger groups
-  if (unitCount > 10 && rarityRoll > 0.9) {
-    rarity = 'epic';
-  } else if ((unitCount > 7 && rarityRoll > 0.85) || rarityRoll > 0.95) {
-    rarity = 'rare';
-  } else if ((unitCount > 5 && rarityRoll > 0.7) || rarityRoll > 0.8) {
-    rarity = 'uncommon';
-  }
-  
-  // Choose item type based on monster type and rarity
-  const itemTypes = {
-    goblin: ['resource', 'weapon', 'treasure'],
-    wolf: ['resource', 'trophy', 'alchemy'],
-    bandit: ['weapon', 'treasure', 'resource'],
-    spider: ['alchemy', 'resource', 'trophy'],
-    skeleton: ['weapon', 'treasure', 'gem'],
-    troll: ['trophy', 'resource', 'gem'],
-    elemental: ['gem', 'alchemy', 'trophy']
-  };
-  
-  const possibleTypes = itemTypes[monsterType] || ['resource', 'treasure', 'weapon'];
-  const itemType = possibleTypes[Math.floor(Math.random() * possibleTypes.length)];
-  
-  // Define items based on type and rarity
-  const items = {
-    resource: {
-      common: ['Wooden Sticks', 'Stone Pieces', 'Bone Fragment'],
-      uncommon: ['Monster Hide', 'Quality Wood', 'Pure Stone'],
-      rare: ['Rare Metals', 'Monster Core', 'Precious Wood'],
-      epic: ['Primal Essence', 'Ancient Materials', 'Dimensional Fragment']
-    },
-    weapon: {
-      common: ['Crude Weapon', 'Rusty Blade', 'Simple Mace'],
-      uncommon: ['Monster Blade', 'Hunter\'s Bow', 'War Axe'],
-      rare: ['Enchanted Weapon', 'Beast Slayer', 'Warrior\'s Edge'],
-      epic: ['Legendary Weapon', 'Ancient Warblade', 'Soul Harvester']
-    },
-    treasure: {
-      common: ['Ancient Coin', 'Minor Relic', 'Trinket'],
-      uncommon: ['Gold Coins', 'Valuable Relic', 'Silver Medallion'],
-      rare: ['Gold Medallion', 'Treasure Chest', 'Ancient Artifact'],
-      epic: ['Royal Treasure', 'King\'s Ransom', 'Legendary Hoard']
-    },
-    trophy: {
-      common: ['Monster Tooth', 'Beast Claw', 'Small Horn'],
-      uncommon: ['Monster Trophy', 'Beast Pelt', 'Creature Heart'],
-      rare: ['Champion\'s Trophy', 'Apex Predator Hide', 'Monster King Head'],
-      epic: ['Ancient Beast Skull', 'Legendary Creature Part', 'Ultimate Trophy']
-    },
-    alchemy: {
-      common: ['Mysterious Herb', 'Monster Blood', 'Odd Mushroom'],
-      uncommon: ['Potent Herb', 'Magical Essence', 'Creature Extract'],
-      rare: ['Rare Ingredient', 'Arcane Compound', 'Mythical Herb'],
-      epic: ['Philosopher\'s Element', 'Immortality Essence', 'Divine Extract']
-    },
-    gem: {
-      common: ['Shiny Gem', 'Crystal Fragment', 'Glowing Stone'],
-      uncommon: ['Semi-Precious Gem', 'Mana Crystal', 'Elemental Stone'],
-      rare: ['Precious Gem', 'Power Crystal', 'Soul Stone'],
-      epic: ['Legendary Gem', 'Wish Stone', 'God\'s Tear']
-    }
-  };
-  
-  // Select from available names
-  const itemOptions = items[itemType]?.[rarity] || ['Mysterious Item'];
-  const itemName = itemOptions[Math.floor(Math.random() * itemOptions.length)];
-  
-  // Determine quantity based on rarity
-  let quantity = 1;
-  if (rarity === 'common') {
-    quantity = Math.floor(Math.random() * 3) + 1;
-  } else if (rarity === 'uncommon') {
-    quantity = Math.floor(Math.random() * 2) + 1;
-  }
-  
-  // Create the item
-  return {
-    id: `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-    name: itemName,
-    type: itemType,
-    rarity: rarity,
-    quantity: quantity
-  };
 }

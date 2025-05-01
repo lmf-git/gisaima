@@ -6,6 +6,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
+import { Units } from 'gisaima-shared/units/units.js';
 
 // Calculate chunk key for database access
 function getChunkKey(x, y) {
@@ -15,76 +16,6 @@ function getChunkKey(x, y) {
   const chunkY = Math.floor(y / CHUNK_SIZE);
   return `${chunkX},${chunkY}`;
 }
-
-// Unit definitions with their properties
-const UnitTypes = {
-  // Basic units
-  'basic_warrior': {
-    name: 'Basic Warrior',
-    type: 'warrior',
-    power: 1,
-    timePerUnit: 60, // seconds
-    icon: 'sword'
-  },
-  'scout': {
-    name: 'Scout',
-    type: 'scout',
-    power: 0.5,
-    timePerUnit: 45,
-    icon: 'bow'
-  },
-  
-  // Race-specific units
-  'human_knight': {
-    name: 'Knight',
-    type: 'knight',
-    power: 2,
-    timePerUnit: 90,
-    icon: 'shield',
-    race: 'human'
-  },
-  'elf_archer': {
-    name: 'Elven Archer',
-    type: 'archer',
-    power: 1.5,
-    timePerUnit: 75,
-    icon: 'bow',
-    race: 'elf'
-  },
-  'dwarf_defender': {
-    name: 'Dwarven Defender',
-    type: 'defender',
-    power: 2,
-    timePerUnit: 90,
-    icon: 'shield',
-    race: 'dwarf'
-  },
-  'goblin_raider': {
-    name: 'Goblin Raider',
-    type: 'raider',
-    power: 0.75,
-    timePerUnit: 30,
-    icon: 'sword',
-    race: 'goblin'
-  },
-  'fairy_enchanter': {
-    name: 'Fairy Enchanter',
-    type: 'enchanter',
-    power: 1.5,
-    timePerUnit: 60,
-    icon: 'staff',
-    race: 'fairy'
-  },
-  
-  // Elite units
-  'elite_guard': {
-    name: 'Elite Guard',
-    type: 'elite',
-    power: 3,
-    timePerUnit: 120,
-    icon: 'shield'
-  }
-};
 
 // Function to recruit units
 export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
@@ -113,8 +44,8 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
     throw new HttpsError('invalid-argument', 'Quantity must be between 1 and 100');
   }
   
-  // Validate the unit type
-  const unitTypeData = UnitTypes[unitType];
+  // Validate the unit type using shared Units class
+  const unitTypeData = Units.getPlayerUnit(unitType);
   if (!unitTypeData) {
     throw new HttpsError('invalid-argument', `Invalid unit type: ${unitType}`);
   }
