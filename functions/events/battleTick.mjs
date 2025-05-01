@@ -12,64 +12,54 @@ export async function battleTick(worldId) {
   try {
     logger.info(`Processing battle tick for world: ${worldId}`);
     
-    // Get all active battles in this world
-    const battlesRef = db.ref(`battles/${worldId}`);
-    const battlesSnapshot = await battlesRef.once('value');
-    const battles = battlesSnapshot.val() || {};
+    // Instead of getting battles from top-level, get all chunks in this world
+    const chunksRef = db.ref(`worlds/${worldId}/chunks`);
+    const chunksSnapshot = await chunksRef.once('value');
+    const chunks = chunksSnapshot.val() || {};
     
     const now = Date.now();
     const batchUpdates = {};
     let processingCount = 0;
     
-    // Process each battle
-    for (const [battleId, battleData] of Object.entries(battles)) {
-      // Skip battles that aren't active
-      if (battleData.status !== 'active') continue;
-      
-      processingCount++;
-      logger.info(`Processing battle ${battleId} at (${battleData.locationX}, ${battleData.locationY})`);
-      
-      // Get chunk key to find the battle in chunk data
-      const chunkKey = getChunkKey(battleData.locationX, battleData.locationY);
-      const locationKey = `${battleData.locationX},${battleData.locationY}`;
-      
-      // Get the full battle data from the chunk
-      const chunkBattleRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`);
-      const chunkBattleSnapshot = await chunkBattleRef.once('value');
-      const battle = chunkBattleSnapshot.val();
-      
-      if (!battle) {
-        logger.error(`Battle ${battleId} not found in chunk data`);
-        // Remove orphaned battle record
-        batchUpdates[`battles/${worldId}/${battleId}`] = null;
-        continue;
-      }
-      
-      // Skip if battle is not active
-      if (battle.status !== 'active') continue;
-      
-      // Increment tick count for battle
-      const newTickCount = (battle.tickCount || 0) + 1;
-      batchUpdates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/tickCount`] = newTickCount;
-      
-      // Process battle attrition and update battle state
-      const result = await processBattleTick(worldId, chunkKey, locationKey, battle, db);
-      
-      // Apply updates from battle processing
-      Object.assign(batchUpdates, result.updates);
-      
-      // If battle ended, create a final message
-      if (result.ended) {
-        const chatMessageId = `battle_end_${now}_${battleId}`;
-        batchUpdates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-          text: result.endMessage,
-          type: 'event',
-          timestamp: now,
-          location: {
-            x: battle.locationX,
-            y: battle.locationY
+    // Process each chunk to find battles
+    for (const [chunkKey, chunkData] of Object.entries(chunks)) {
+      // Process each location in the chunk
+      for (const [locationKey, locationData] of Object.entries(chunkData)) {
+        // Skip if no battles at this location
+        if (!locationData.battles) continue;
+        
+        // Process each battle at this location
+        for (const [battleId, battle] of Object.entries(locationData.battles)) {
+          // Skip battles that aren't active
+          if (battle.status !== 'active') continue;
+          
+          processingCount++;
+          logger.info(`Processing battle ${battleId} at (${battle.locationX}, ${battle.locationY})`);
+          
+          // Increment tick count for battle
+          const newTickCount = (battle.tickCount || 0) + 1;
+          batchUpdates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/tickCount`] = newTickCount;
+          
+          // Process battle attrition and update battle state
+          const result = await processBattleTick(worldId, chunkKey, locationKey, battle, db);
+          
+          // Apply updates from battle processing
+          Object.assign(batchUpdates, result.updates);
+          
+          // If battle ended, create a final message
+          if (result.ended) {
+            const chatMessageId = `battle_end_${now}_${battleId}`;
+            batchUpdates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+              text: result.endMessage,
+              type: 'event',
+              timestamp: now,
+              location: {
+                x: battle.locationX,
+                y: battle.locationY
+              }
+            };
           }
-        };
+        }
       }
     }
     
@@ -159,7 +149,6 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
       
       // Delete battle completely instead of marking as resolved
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}`] = null;
-      updates[`battles/${worldId}/${battle.id}`] = null;
       
       // End message
       endMessage = `Battle at (${battle.locationX}, ${battle.locationY}) has ended! ${winnerName} has defeated ${loserName}!`;
@@ -324,9 +313,8 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
       // Add the end event to a temporary event list for the chat message
       const finalEvents = [...(battle.events || []), endEvent];
       
-      // Delete battle completely rather than marking as resolved
+      // Delete battle completely
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}`] = null;
-      updates[`battles/${worldId}/${battle.id}`] = null;
       
       // Handle item distribution from losing groups to winning groups
       if (losingGroups.length > 0 && winningGroups.length > 0) {
