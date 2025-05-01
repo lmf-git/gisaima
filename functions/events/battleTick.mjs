@@ -292,6 +292,28 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
         side2Groups, worldId, chunkKey, locationKey, updates, battleId, 2
       );
       
+      // Immediately check if one side has been completely eliminated after filtering
+      if (filteredSide1Groups.length === 0 || filteredSide2Groups.length === 0) {
+        // Determine winner based on which side still has groups
+        const winningSide = filteredSide1Groups.length > 0 ? 1 : 2;
+        const winningGroups = winningSide === 1 ? filteredSide1Groups : filteredSide2Groups;
+        
+        logger.info(`Battle ${battleId} ending: Side ${winningSide} wins because the other side has no groups remaining`);
+        
+        // End the battle
+        await endBattle(worldId, chunkKey, locationKey, battleId, winningSide, winningGroups, structure);
+        
+        // Add battle end message
+        addBattleEndMessageToUpdates(
+          updates, worldId, now, battleId, locationKey,
+          `Battle has ended! ${winningSide === 1 ? battleData.side1?.name || "Side 1" : battleData.side2?.name || "Side 2"} is victorious as the opposing side has been eliminated.`
+        );
+        
+        // Apply updates and exit early
+        await db.ref().update(updates);
+        return { success: true };
+      }
+      
       // Distribute loot to surviving groups
       if (side1Loot.length > 0 && filteredSide2Groups.length > 0) {
         // Side 1 lost units and had loot, distribute to side 2
@@ -708,17 +730,20 @@ function filterAndRemoveEmptyGroups(groups, worldId, chunkKey, locationKey, upda
   for (let i = 0; i < groups.length; i++) {
     const group = groups[i];
     
-    // Changed hasUnits logic to properly check for empty groups
+    // More robust empty group detection
     let hasUnits = false;
     
-    // Check if the group has a 'unitCount' property with a value > 0
-    if (group.unitCount && group.unitCount > 0) {
+    // Explicitly check for unitCount > 0
+    if (group.unitCount !== undefined && group.unitCount !== null && group.unitCount > 0) {
       hasUnits = true;
     }
-    // Also check if the group has units in the 'units' object
-    else if (group.units && Object.keys(group.units).length > 0) {
-      // For object format units
-      hasUnits = true;
+    // Also check if the group has units in the 'units' object and they're not all dead
+    else if (group.units) {
+      if (Array.isArray(group.units) && group.units.length > 0) {
+        hasUnits = true;
+      } else if (typeof group.units === 'object' && Object.keys(group.units).length > 0) {
+        hasUnits = true;
+      }
     }
     
     if (!hasUnits) {
