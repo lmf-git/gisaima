@@ -572,6 +572,12 @@ function checkAndUpdatePlayerStatus(group, casualties, worldId, chunkKey, locati
       // Player unit was lost - mark player as not alive
       updates[`players/${group.owner}/worlds/${worldId}/alive`] = false;
       
+      // Add a last message to the player's data so they know what happened
+      updates[`players/${group.owner}/worlds/${worldId}/lastMessage`] = {
+        text: "You were defeated in battle.",
+        timestamp: Date.now()
+      };
+      
       // NOTE: We're not updating the unit's dead status in the group data
       // This avoids Firebase ancestor path conflicts when the group is being deleted
       // The client can determine that a player unit is dead if the player's 'alive' status is false
