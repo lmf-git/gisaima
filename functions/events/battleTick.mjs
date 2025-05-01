@@ -1,7 +1,7 @@
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 
-export async function processBattle(worldId, chunkKey, tileKey, battleId, battle, updates) {
+export async function processBattle(worldId, chunkKey, tileKey, battleId, battle, updates, tile) {
   try {
     // Use serverTimestamp for database records only
     const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`;
@@ -21,7 +21,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     
     if (totalPower <= 0) {
       // End the battle as a draw if no power remains
-      return await endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 0);
+      return await endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 0, tile);
     }
     
     // Calculate power ratio to determine attrition rate
@@ -63,7 +63,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       }
       
       // End the battle
-      return await endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner);
+      return await endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile);
     }
     
     return true;
@@ -73,7 +73,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
   }
 }
 
-async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner) {
+async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile) {
   // Only use timestamp for database record
   const now = Date.now();
   const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`;
@@ -108,10 +108,7 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
   };
   
   // Clean up groups involved in the battle
-  const db = getDatabase();
-  const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
-  const tileSnapshot = await tileRef.once('value');
-  const tile = tileSnapshot.val();
+  // No need to fetch the tile data since it's now passed as a parameter
   
   if (tile && tile.groups) {
     // Update side 1 groups

@@ -98,7 +98,7 @@ export const processGameTicks = onSchedule({
             for (const battleId in tile.battles) {
               const battle = tile.battles[battleId];
               if (battle) {
-                const battleResult = await processBattle(worldId, chunkKey, tileKey, battleId, battle, updates);
+                const battleResult = await processBattle(worldId, chunkKey, tileKey, battleId, battle, updates, tile);
                 battlesProcessed++;
               }
             }
