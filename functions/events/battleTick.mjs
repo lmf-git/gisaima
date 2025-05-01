@@ -577,19 +577,6 @@ function checkAndUpdatePlayerStatus(group, casualties, worldId, chunkKey, locati
   }
 }
 
-// Helper function to get groups for a battle side
-function getGroupsForSide(allGroups, sideGroups) {
-  const result = [];
-  
-  for (const groupId of Object.keys(sideGroups)) {
-    if (allGroups[groupId]) {
-      result.push({...allGroups[groupId], id: groupId});
-    }
-  }
-  
-  return result;
-}
-
 // Helper function to check if battle should end early
 function shouldEndBattleEarly(side1Groups, side2Groups) {
   return side1Groups.length === 0 || side2Groups.length === 0;
