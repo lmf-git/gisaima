@@ -1,4 +1,3 @@
-import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 
 export async function processBattle(worldId, chunkKey, tileKey, battleId, battle, updates, tile) {
@@ -71,9 +70,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
 async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile) {
   const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`;
   
-  // Update battle status
-  updates[`${basePath}/status`] = 'completed';
-  updates[`${basePath}/winner`] = winner;
+  // Delete the battle instead of updating it
+  updates[`${basePath}`] = null;
   
   // Generate side names for chat message
   const side1Name = battle.side1.name || 'Attackers';
