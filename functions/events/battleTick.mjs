@@ -132,6 +132,9 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
   const updates = {};
   const now = Date.now();
   
+  // Track groups marked for deletion to avoid update conflicts
+  const deletedGroupIds = new Set();
+  
   try {
     // Extract groups from tile data
     const groups = tileData.groups || {};
@@ -188,8 +191,9 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       let casualtyEvents = [];
       
       // Apply attrition to both sides and collect loot from defeated groups
-      side1Casualties = applyAttrition(side1Groups, side1Ratio, worldId, chunkKey, locationKey, updates, now, side1Loot);
-      side2Casualties = applyAttrition(side2Groups, side2Ratio, worldId, chunkKey, locationKey, updates, now, side2Loot);
+      // Pass the deletedGroupIds set to track groups marked for deletion
+      side1Casualties = applyAttrition(side1Groups, side1Ratio, worldId, chunkKey, locationKey, updates, now, side1Loot, deletedGroupIds);
+      side2Casualties = applyAttrition(side2Groups, side2Ratio, worldId, chunkKey, locationKey, updates, now, side2Loot, deletedGroupIds);
       
       // Track casualties in the enhanced battle data
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/side1/casualties`] = 
@@ -240,7 +244,7 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       // Distribute loot to surviving groups
       if (side1Loot.length > 0 && filteredSide2Groups.length > 0) {
         // Side 1 lost units and had loot, distribute to side 2
-        distributeItemsToGroups(side1Loot, filteredSide2Groups, worldId, chunkKey, locationKey, updates, now);
+        distributeItemsToGroups(side1Loot, filteredSide2Groups, worldId, chunkKey, locationKey, updates, now, deletedGroupIds);
         
         // Add loot event
         if (side1Loot.length > 0) {
@@ -256,7 +260,7 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       
       if (side2Loot.length > 0 && filteredSide1Groups.length > 0) {
         // Side 2 lost units and had loot, distribute to side 1
-        distributeItemsToGroups(side2Loot, filteredSide1Groups, worldId, chunkKey, locationKey, updates, now);
+        distributeItemsToGroups(side2Loot, filteredSide1Groups, worldId, chunkKey, locationKey, updates, now, deletedGroupIds);
         
         // Add loot event
         if (side2Loot.length > 0) {
@@ -356,9 +360,10 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
  * @param {Object} updates - Firebase updates object
  * @param {number} now - Current timestamp
  * @param {Array} [lootCollector] - Optional array to collect items from defeated groups
+ * @param {Set} [deletedGroupIds] - Set of group IDs being deleted
  * @returns {number} Number of casualties
  */
-function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, updates, now, lootCollector = null) {
+function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, updates, now, lootCollector = null, deletedGroupIds = new Set()) {
   let casualties = 0;
   
   groups.forEach(group => {
@@ -377,6 +382,10 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
       
       // Mark group for removal (instead of also updating unitCount)
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+      
+      // Add to the set of deleted group IDs
+      deletedGroupIds.add(group.id);
+      
     } else {
       // Only update unitCount if the group is not being deleted
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnits;
@@ -384,30 +393,6 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
   });
   
   return casualties;
-}
-
-/**
- * Collect items from a group that is being removed
- * @param {Object} group - The group being removed
- * @param {Array} lootCollector - Array to collect items
- */
-function collectItemsFromGroup(group, lootCollector) {
-  if (!group.items) return;
-  
-  // Handle items stored as array
-  if (Array.isArray(group.items)) {
-    group.items.forEach(item => {
-      if (item) lootCollector.push({...item, source: group.id});
-    });
-  } 
-  // Handle items stored as object
-  else if (typeof group.items === 'object') {
-    Object.values(group.items).forEach(item => {
-      if (item) lootCollector.push({...item, source: group.id});
-    });
-  }
-  
-  logger.info(`Collected ${lootCollector.length} items from defeated group ${group.id} (${group.name || "Unknown"})`);
 }
 
 /**
@@ -419,8 +404,9 @@ function collectItemsFromGroup(group, lootCollector) {
  * @param {string} locationKey - Location key
  * @param {Object} updates - Firebase updates object
  * @param {number} now - Current timestamp
+ * @param {Set} [deletedGroupIds] - Set of group IDs being deleted
  */
-function distributeItemsToGroups(items, groups, worldId, chunkKey, locationKey, updates, now) {
+function distributeItemsToGroups(items, groups, worldId, chunkKey, locationKey, updates, now, deletedGroupIds = new Set()) {
   if (items.length === 0 || groups.length === 0) return;
   
   // Sort groups by power/size (larger groups get more items)
@@ -437,6 +423,13 @@ function distributeItemsToGroups(items, groups, worldId, chunkKey, locationKey, 
   // Calculate how many items each group should get based on their proportion of total units
   for (let i = 0; i < sortedGroups.length; i++) {
     const group = sortedGroups[i];
+    
+    // Skip groups that are marked for deletion
+    if (deletedGroupIds.has(group.id)) {
+      logger.info(`Skipping item distribution to group ${group.id} as it's marked for deletion`);
+      continue;
+    }
+    
     const groupUnitRatio = (group.unitCount || 1) / totalUnits;
     const itemCount = Math.max(1, Math.round(items.length * groupUnitRatio));
     
@@ -533,9 +526,12 @@ function addBattleProgressMessageToUpdates(updates, worldId, now, battleId, loca
 
 // Helper function to filter out empty groups and update battle data
 function filterAndRemoveEmptyGroups(groups, worldId, chunkKey, locationKey, updates, battleId, side) {
-  return groups.filter(group => {
-    // A group is removed if it has no units or unitCount is 0
+  const filteredGroups = [];
+  
+  for (let i = 0; i < groups.length; i++) {
+    const group = groups[i];
     const hasUnits = group.units && Object.keys(group.units).length > 0;
+    
     if (!hasUnits) {
       // Double-check that we've added the group deletion to the updates
       logger.info(`Verifying deletion of empty group ${group.id} from side ${side}`);
@@ -545,9 +541,12 @@ function filterAndRemoveEmptyGroups(groups, worldId, chunkKey, locationKey, upda
       if (battleId) {
         updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/side${side}/groups/${group.id}`] = null;
       }
+    } else {
+      filteredGroups.push(group);
     }
-    return hasUnits;
-  });
+  }
+  
+  return filteredGroups;
 }
 
 // Helper function to apply damage to structure
