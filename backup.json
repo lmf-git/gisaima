@@ -14,13 +14,6 @@
           },
           "alive": true,
           "displayName": "Test Human",
-          "groups": {
-            "-OP90oAsE56M59SqWaw2": {
-              "at": "-23,5",
-              "id": "-OP90oAsE56M59SqWaw2",
-              "status": "idle"
-            }
-          },
           "id": "ES5WUm59ByZqQpwwXx3A3RO1w1O2",
           "inGroup": "-OP90oAsE56M59SqWaw2",
           "joined": 1746072441117,
@@ -50,18 +43,6 @@
           },
           "alive": false,
           "displayName": "JimmyRigged",
-          "groups": {
-            "-OOd23OZjKBDoZt5B0E1": {
-              "at": "-30,-12",
-              "id": "-OOd23OZjKBDoZt5B0E1",
-              "status": "idle"
-            },
-            "-OOdDT4AuHhVSLmvPXy7": {
-              "at": "-30,-12",
-              "id": "-OOdDT4AuHhVSLmvPXy7",
-              "status": "idle"
-            }
-          },
           "id": "Fsec3klBgbOgCMVDkHYM0CCxijg2",
           "inGroup": "-OOdDT4AuHhVSLmvPXy7",
           "joined": 1745518322353,
@@ -90,13 +71,6 @@
           },
           "alive": true,
           "displayName": "Tester",
-          "groups": {
-            "-OP8t3p17HxDFl8pUfk5": {
-              "at": "-23,5",
-              "id": "-OP8t3p17HxDFl8pUfk5",
-              "status": "idle"
-            }
-          },
           "id": "Kvx6GUAXAXVeIpkrC2KIHxzcWGt1",
           "inGroup": "-OP8t3p17HxDFl8pUfk5",
           "joined": 1746070147542,
@@ -138,18 +112,6 @@
           },
           "alive": true,
           "displayName": "gunsy",
-          "groups": {
-            "-OOc_zFbAQdz2dvemVnc": {
-              "at": "-18,-22",
-              "id": "-OOc_zFbAQdz2dvemVnc",
-              "status": "idle"
-            },
-            "-OOcaUtPgnl1DCAm0gIp": {
-              "at": "-18,-22",
-              "id": "-OOcaUtPgnl1DCAm0gIp",
-              "status": "idle"
-            }
-          },
           "id": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
           "inGroup": "-OOcaUtPgnl1DCAm0gIp",
           "joined": 1745511381535,
@@ -176,13 +138,6 @@
           },
           "alive": true,
           "displayName": "FuaK",
-          "groups": {
-            "-OP3kM7ZrP9K3VSiuk0J": {
-              "at": "-30,-12",
-              "id": "-OP3kM7ZrP9K3VSiuk0J",
-              "status": "idle"
-            }
-          },
           "id": "YIDyjpxkBSR8eqemfslNDfs1YBr2",
           "inGroup": "-OP3kM7ZrP9K3VSiuk0J",
           "joined": 1745983927133,
@@ -207,13 +162,6 @@
           },
           "alive": true,
           "displayName": "JoinBattleTest",
-          "groups": {
-            "-OP8DnXDQzhr3P2DNXUi": {
-              "at": "-23,5",
-              "id": "-OP8DnXDQzhr3P2DNXUi",
-              "status": "idle"
-            }
-          },
           "id": "cBjGXz3xd0TPjgAlT5VV2Vp14hP2",
           "inGroup": "-OP8DnXDQzhr3P2DNXUi",
           "joined": 1746059067762,
@@ -240,13 +188,6 @@
           },
           "alive": true,
           "displayName": "LMF",
-          "groups": {
-            "-OP7_n87RqlbeFnI33DU": {
-              "at": "-23,5",
-              "id": "-OP7_n87RqlbeFnI33DU",
-              "status": "idle"
-            }
-          },
           "id": "kKRX0XkbRpPHYTpoqM9ppmnoC4C2",
           "inGroup": "-OP7_n87RqlbeFnI33DU",
           "joined": 1746048281323,
@@ -288,13 +229,6 @@
           },
           "alive": false,
           "displayName": "sunsueme",
-          "groups": {
-            "-OOeDa2UNCNmF3-wWau2": {
-              "at": "-23,5",
-              "id": "-OOeDa2UNCNmF3-wWau2",
-              "status": "idle"
-            }
-          },
           "id": "rBBlixvWCih6uFNcG4vK7qcGvmv1",
           "inGroup": "-OOeDa2UNCNmF3-wWau2",
           "joined": 1745538810933,
@@ -316,13 +250,6 @@
           },
           "alive": true,
           "displayName": "madnico",
-          "groups": {
-            "-OP3lS6o6oDQ6rmA8Fyh": {
-              "at": "-32,-10",
-              "id": "-OP3lS6o6oDQ6rmA8Fyh",
-              "status": "idle"
-            }
-          },
           "id": "scls4twPVdNaZABrOfKAhVXsd3v2",
           "inGroup": "-OP3lS6o6oDQ6rmA8Fyh",
           "joined": 1745984012261,
@@ -338,6 +265,3475 @@
   },
   "worlds": {
     "ancient-lands": {
+      "chat": {
+        "-OP8DnZs2T8vglOBn11Q": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "JoinBattleTest's Force is being mobilized at (-23,5)",
+          "timestamp": 1746059081929,
+          "type": "system"
+        },
+        "-OP8MvKbBK29q2aUCd0h": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force is being mobilized at (-23,5)",
+          "timestamp": 1746061472950,
+          "type": "system"
+        },
+        "-OP8WXXZENbCs1CWD3ch": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force is being mobilized at (-23,5)",
+          "timestamp": 1746063992897,
+          "type": "system"
+        },
+        "-OP8Y3vioJCMnqdddJaW": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force is being mobilized at (-23,5)",
+          "timestamp": 1746064395936,
+          "type": "system"
+        },
+        "-OP8YZ7YGOX5L8iQfig-": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force is being mobilized at (-23,5)",
+          "timestamp": 1746064523596,
+          "type": "system"
+        },
+        "-OP8aZ11ax30ta7371oG": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force is being mobilized at (-23,5)",
+          "timestamp": 1746065309749,
+          "type": "system"
+        },
+        "-OP8cS4ljlacQs76GVsw": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force is being mobilized at (-23,5)",
+          "timestamp": 1746065805452,
+          "type": "system"
+        },
+        "-OP8ef7DP6iHEPnAzRZ_": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force is being mobilized at (-23,5)",
+          "timestamp": 1746066387237,
+          "type": "system"
+        },
+        "-OP8lIpcBuskM7d7t3ll": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force is being mobilized at (-23,5)",
+          "timestamp": 1746068126807,
+          "type": "system"
+        },
+        "-OP8t3ug8JanquIUI5qq": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Tester's Force is being mobilized at (-23,5)",
+          "timestamp": 1746070162812,
+          "type": "system"
+        },
+        "-OP8ye1PEblqaBarSCgE": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "TestBattle's Force is being mobilized at (-23,5)",
+          "timestamp": 1746071625550,
+          "type": "system"
+        },
+        "-OP90oGtsBnaUeGjvCJ-": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Test Human's Force is being mobilized at (-23,5)",
+          "timestamp": 1746072453938,
+          "type": "system"
+        },
+        "-OP90tjXlg7ooNGGk1Ny": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "test",
+          "timestamp": 1746072477104,
+          "type": "user",
+          "userId": "ES5WUm59ByZqQpwwXx3A3RO1w1O2",
+          "userName": "Test Human"
+        },
+        "battle_1746059766489_battle_1746057618038_70_205": {
+          "location": {
+            "x": -25,
+            "y": 2
+          },
+          "text": "Battle has ended! One side had no units.",
+          "timestamp": 1746059766489,
+          "type": "event"
+        },
+        "battle_1746059766490_battle_1746057618038_70_25": {
+          "location": {
+            "x": -25,
+            "y": 2
+          },
+          "text": "Battle at (-25,2) has ended after 1 ticks! Victorious: Unknown Force Defeated: Unknown Force",
+          "timestamp": 1746059766490,
+          "type": "event"
+        },
+        "battle_1746061081942_battle_1746061017132_27_177": {
+          "location": {
+            "x": -27,
+            "y": 3
+          },
+          "text": "Battle has ended! One side had no units.",
+          "timestamp": 1746061081942,
+          "type": "event"
+        },
+        "battle_1746061081943_battle_1746061017132_27_467": {
+          "location": {
+            "x": -27,
+            "y": 3
+          },
+          "text": "Battle at (-27,3) has ended after 1 ticks! Victorious: Unknown Force Defeated: Unknown Force",
+          "timestamp": 1746061081943,
+          "type": "event"
+        },
+        "battle_1746061982046_battle_1746061937165_338_764": {
+          "location": {
+            "x": -26,
+            "y": 5
+          },
+          "text": "Battle at (-26,5) has ended after 1 ticks! Victorious: testbattle's Force Defeated: Bandits (1 casualties)",
+          "timestamp": 1746061982046,
+          "type": "event"
+        },
+        "battle_1746063966433_battle_1746062909333_267_607": {
+          "location": {
+            "x": -28,
+            "y": 1
+          },
+          "text": "Battle has ended! One side had no units.",
+          "timestamp": 1746063966433,
+          "type": "event"
+        },
+        "battle_1746063966434_battle_1746062909333_267_347": {
+          "location": {
+            "x": -28,
+            "y": 1
+          },
+          "text": "Battle at (-28,1) has ended after 1 ticks! Victorious: Goblin Raiders Defeated: Unknown Force",
+          "timestamp": 1746063966434,
+          "type": "event"
+        },
+        "battle_1746064266632_battle_1746064201134_935_294": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle at (-23,5) has ended after 1 ticks! Victorious: Giant Spiders Defeated: Unknown Force",
+          "timestamp": 1746064266632,
+          "type": "event"
+        },
+        "battle_1746064266632_battle_1746064201134_935_464": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle has ended! One side had no units.",
+          "timestamp": 1746064266632,
+          "type": "event"
+        },
+        "battle_1746064562741_battle_1746064442601_950_630": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle has ended! One side had no units.",
+          "timestamp": 1746064562741,
+          "type": "event"
+        },
+        "battle_1746064562744_battle_1746064442601_950_924": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle at (-23,5) has ended after 1 ticks! Victorious: Giant Spiders Defeated: Unknown Force",
+          "timestamp": 1746064562744,
+          "type": "event"
+        },
+        "battle_1746064682224_battle_1746064589338_560_509": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle at (-23,5) has ended after 1 ticks! Victorious: Unknown Force Defeated: Unknown Force",
+          "timestamp": 1746064682224,
+          "type": "event"
+        },
+        "battle_1746064682224_battle_1746064589338_560_759": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle has ended! One side had no units.",
+          "timestamp": 1746064682224,
+          "type": "event"
+        },
+        "battle_1746065705975_battle_1746065632460_834_626": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "Battle has ended! One side had no units.",
+          "timestamp": 1746065705975,
+          "type": "event"
+        },
+        "battle_1746065705976_battle_1746065632460_834_487": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "Battle at (-25,3) has ended after 1 ticks! Victorious: Bandits Defeated: Unknown Force",
+          "timestamp": 1746065705976,
+          "type": "event"
+        },
+        "battle_1746066422791_battle_1746066302714_496_343": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "Battle has ended! One side had no units.",
+          "timestamp": 1746066422791,
+          "type": "event"
+        },
+        "battle_1746066422793_battle_1746066302714_496_104": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "Battle at (-25,3) has ended after 1 ticks! Victorious: Bandits Defeated: Unknown Force",
+          "timestamp": 1746066422793,
+          "type": "event"
+        },
+        "battle_1746066723123_battle_1746066606914_49_173": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "Battle has ended! One side had no units.",
+          "timestamp": 1746066723123,
+          "type": "event"
+        },
+        "battle_1746066723123_battle_1746066606914_49_873": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "Battle at (-25,3) has ended after 1 ticks! Victorious: Bandits Defeated: Unknown Force",
+          "timestamp": 1746066723123,
+          "type": "event"
+        },
+        "battle_1746068827254_battle_1746068702689_755_109": {
+          "location": {
+            "x": -34,
+            "y": -3
+          },
+          "text": "Battle at (-34,-3) has ended after 1 ticks! Victorious: Goblin Raiders Defeated: Unknown Force",
+          "timestamp": 1746068827254,
+          "type": "event"
+        },
+        "battle_1746068827254_battle_1746068702689_755_489": {
+          "location": {
+            "x": -34,
+            "y": -3
+          },
+          "text": "Battle has ended! One side had no units.",
+          "timestamp": 1746068827254,
+          "type": "event"
+        },
+        "battle_1746068882857_battle_1746068827800_320_220": {
+          "location": {
+            "x": -25,
+            "y": 6
+          },
+          "text": "Battle has ended in stalemate after 1 ticks! By fortune's favor, testbattle's Force emerges victorious against Bandits.",
+          "timestamp": 1746068882857,
+          "type": "event"
+        },
+        "battle_1746068882858_battle_1746068827800_320_18": {
+          "location": {
+            "x": -25,
+            "y": 6
+          },
+          "text": "Battle at (-25,6) has ended after 1 ticks! Victorious: testbattle's Force Defeated: Bandits (1 casualties)",
+          "timestamp": 1746068882858,
+          "type": "event"
+        },
+        "battle_1746070562520_battle_1746070508857_37_801": {
+          "location": {
+            "x": -20,
+            "y": 4
+          },
+          "text": "Battle at (-20,4) has ended after 1 ticks! Victorious: Giant Spiders Defeated: Tester's Force (1 casualties)",
+          "timestamp": 1746070562520,
+          "type": "event"
+        },
+        "battle_1746072363698_battle_1746072122461_251_963": {
+          "location": {
+            "x": -22,
+            "y": 3
+          },
+          "text": "Battle at (-22,3) has ended after 1 ticks! Victorious: Giant Spiders Defeated: TestBattle's Force (1 casualties)",
+          "timestamp": 1746072363698,
+          "type": "event"
+        },
+        "battle_1746072723100_battle_1746072681041_994_28": {
+          "location": {
+            "x": -23,
+            "y": 7
+          },
+          "text": "Battle at (-23,7) has ended after 1 ticks! Victorious: Giant Spiders Defeated: Test Human's Force (1 casualties)",
+          "timestamp": 1746072723100,
+          "type": "event"
+        },
+        "battle_1746072902193_battle_1746072841945_174_83": {
+          "location": {
+            "x": -23,
+            "y": 7
+          },
+          "text": "Battle at (-23,7) has ended after 1 ticks! Victorious: Giant Spiders Defeated: Test Human's Force (1 casualties)",
+          "timestamp": 1746072902193,
+          "type": "event"
+        },
+        "battle_progress_1746059706881_battle_1746057618038_70_54": {
+          "location": {
+            "x": -25,
+            "y": 2
+          },
+          "text": "Battle rages! 2 casualties this tick. Items were looted from the fallen.",
+          "timestamp": 1746059706881,
+          "type": "event"
+        },
+        "battle_progress_1746061026671_battle_1746061017132_27_233": {
+          "location": {
+            "x": -27,
+            "y": 3
+          },
+          "text": "Battle rages! 2 casualties this tick. Items were looted from the fallen.",
+          "timestamp": 1746061026671,
+          "type": "event"
+        },
+        "battle_progress_1746063902830_battle_1746062909333_267_433": {
+          "location": {
+            "x": -28,
+            "y": 1
+          },
+          "text": "Battle rages! 2 casualties this tick.",
+          "timestamp": 1746063902830,
+          "type": "event"
+        },
+        "battle_progress_1746064206418_battle_1746064201134_935_244": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle rages! 2 casualties this tick.",
+          "timestamp": 1746064206418,
+          "type": "event"
+        },
+        "battle_progress_1746064503232_battle_1746064442601_950_295": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle rages! 2 casualties this tick.",
+          "timestamp": 1746064503232,
+          "type": "event"
+        },
+        "battle_progress_1746064622114_battle_1746064589338_560_998": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle rages! 2 casualties this tick. Items were looted from the fallen.",
+          "timestamp": 1746064622114,
+          "type": "event"
+        },
+        "battle_progress_1746065642675_battle_1746065632460_834_711": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "Battle rages! 2 casualties this tick.",
+          "timestamp": 1746065642675,
+          "type": "event"
+        },
+        "battle_progress_1746066363256_battle_1746066302714_496_947": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "Battle rages! 2 casualties this tick.",
+          "timestamp": 1746066363256,
+          "type": "event"
+        },
+        "battle_progress_1746066662602_battle_1746066606914_49_626": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "Battle rages! 2 casualties this tick.",
+          "timestamp": 1746066662602,
+          "type": "event"
+        },
+        "battle_progress_1746068762101_battle_1746068702689_755_641": {
+          "location": {
+            "x": -34,
+            "y": -3
+          },
+          "text": "Battle rages! 2 casualties this tick. Items were looted from the fallen.",
+          "timestamp": 1746068762101,
+          "type": "event"
+        },
+        "battle_start_1746061017132_battle_1746061017132_27": {
+          "location": {
+            "x": -27,
+            "y": 3
+          },
+          "text": "Battle has begun at (-27, 3)! JoinBattleTest's Force is attacking sunsueme's Force!",
+          "timestamp": 1746061017132,
+          "type": "event"
+        },
+        "battle_start_1746061937165_battle_1746061937165_338": {
+          "location": {
+            "x": -26,
+            "y": 5
+          },
+          "text": "Battle has begun at (-26, 5)! testbattle's Force is attacking Bandits!",
+          "timestamp": 1746061937165,
+          "type": "event"
+        },
+        "battle_start_1746062909333_battle_1746062909333_267": {
+          "location": {
+            "x": -28,
+            "y": 1
+          },
+          "text": "Battle has begun at (-28, 1)! testbattle's Force is attacking Goblin Raiders!",
+          "timestamp": 1746062909333,
+          "type": "event"
+        },
+        "battle_start_1746064201134_battle_1746064201134_935": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle has begun at (-23, 5)! testbattle's Force is attacking Giant Spiders!",
+          "timestamp": 1746064201134,
+          "type": "event"
+        },
+        "battle_start_1746064589338_battle_1746064589338_560": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle has begun at (-23, 5)! testbattle's Force is attacking Giant Spiders!",
+          "timestamp": 1746064589338,
+          "type": "event"
+        },
+        "battle_start_1746065632460_battle_1746065632460_834": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "Battle has begun at (-25, 3)! testbattle's Force is attacking Bandits!",
+          "timestamp": 1746065632460,
+          "type": "event"
+        },
+        "battle_start_1746070508857_battle_1746070508857_37": {
+          "location": {
+            "x": -20,
+            "y": 4
+          },
+          "text": "Battle has begun at (-20, 4)! Tester's Force is attacking Giant Spiders!",
+          "timestamp": 1746070508857,
+          "type": "event"
+        },
+        "battle_start_1746072681041_battle_1746072681041_994": {
+          "location": {
+            "x": -23,
+            "y": 7
+          },
+          "text": "Battle has begun at (-23, 7)! Test Human's Force is attacking Giant Spiders!",
+          "timestamp": 1746072681041,
+          "type": "event"
+        },
+        "chat_1746059105360_72": {
+          "location": {
+            "timestamp": 1746059105360,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"JoinBattleTest's Force\"",
+          "timestamp": 1746059105360,
+          "type": "event",
+          "userId": "cBjGXz3xd0TPjgAlT5VV2Vp14hP2",
+          "userName": "JoinBattleTest's Force"
+        },
+        "chat_1746061501408_97": {
+          "location": {
+            "timestamp": 1746061501408,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"testbattle's Force\"",
+          "timestamp": 1746061501408,
+          "type": "event",
+          "userId": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+          "userName": "testbattle's Force"
+        },
+        "chat_1746064025097_717": {
+          "location": {
+            "timestamp": 1746064025097,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"testbattle's Force\"",
+          "timestamp": 1746064025097,
+          "type": "event",
+          "userId": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+          "userName": "testbattle's Force"
+        },
+        "chat_1746064441558_879": {
+          "location": {
+            "timestamp": 1746064441558,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"testbattle's Force\"",
+          "timestamp": 1746064441558,
+          "type": "event",
+          "userId": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+          "userName": "testbattle's Force"
+        },
+        "chat_1746064561605_963": {
+          "location": {
+            "timestamp": 1746064561605,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"testbattle's Force\"",
+          "timestamp": 1746064561605,
+          "type": "event",
+          "userId": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+          "userName": "testbattle's Force"
+        },
+        "chat_1746065341652_443": {
+          "location": {
+            "timestamp": 1746065341652,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"testbattle's Force\"",
+          "timestamp": 1746065341652,
+          "type": "event",
+          "userId": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+          "userName": "testbattle's Force"
+        },
+        "chat_1746065820922_498": {
+          "location": {
+            "timestamp": 1746065820922,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"testbattle's Force\"",
+          "timestamp": 1746065820922,
+          "type": "event",
+          "userId": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+          "userName": "testbattle's Force"
+        },
+        "chat_1746066421646_635": {
+          "location": {
+            "timestamp": 1746066421646,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"testbattle's Force\"",
+          "timestamp": 1746066421646,
+          "type": "event",
+          "userId": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+          "userName": "testbattle's Force"
+        },
+        "chat_1746068161734_216": {
+          "location": {
+            "timestamp": 1746068161734,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"testbattle's Force\"",
+          "timestamp": 1746068161734,
+          "type": "event",
+          "userId": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+          "userName": "testbattle's Force"
+        },
+        "chat_1746070205474_45": {
+          "location": {
+            "timestamp": 1746070205474,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"Tester's Force\"",
+          "timestamp": 1746070205474,
+          "type": "event",
+          "userId": "Kvx6GUAXAXVeIpkrC2KIHxzcWGt1",
+          "userName": "Tester's Force"
+        },
+        "chat_1746071641198_849": {
+          "location": {
+            "timestamp": 1746071641198,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"TestBattle's Force\"",
+          "timestamp": 1746071641198,
+          "type": "event",
+          "userId": "ES5WUm59ByZqQpwwXx3A3RO1w1O2",
+          "userName": "TestBattle's Force"
+        },
+        "chat_1746072481239_252": {
+          "location": {
+            "timestamp": 1746072481239,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A lone human warrior has mobilized at (-23, 5) - \"Test Human's Force\"",
+          "timestamp": 1746072481239,
+          "type": "event",
+          "userId": "ES5WUm59ByZqQpwwXx3A3RO1w1O2",
+          "userName": "Test Human's Force"
+        },
+        "chat_monster_spawn_1746058082024_763": {
+          "location": {
+            "x": -29,
+            "y": -1
+          },
+          "text": "A band of Bandits has appeared at (-29, -1)",
+          "timestamp": 1746058082024,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746059525073_667": {
+          "location": {
+            "x": -27,
+            "y": -2
+          },
+          "text": "A band of Goblin Raiders has appeared at (-27, -2)",
+          "timestamp": 1746059525073,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746059707502_49": {
+          "location": {
+            "x": -26,
+            "y": 5
+          },
+          "text": "A band of Bandits has appeared at (-26, 5)",
+          "timestamp": 1746059707502,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746059769176_635": {
+          "location": {
+            "x": -21,
+            "y": 0
+          },
+          "text": "A large horde of Undead Skeletons has emerged at (-21, 0)",
+          "timestamp": 1746059769176,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746060183071_746": {
+          "location": {
+            "x": -30,
+            "y": 3
+          },
+          "text": "A band of Bandits has appeared at (-30, 3)",
+          "timestamp": 1746060183071,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746061322501_630": {
+          "location": {
+            "x": -21,
+            "y": 3
+          },
+          "text": "A band of Giant Spiders has appeared at (-21, 3)",
+          "timestamp": 1746061322501,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746062342933_24": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "A band of Giant Spiders has appeared at (-23, 5)",
+          "timestamp": 1746062342933,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746066423586_557": {
+          "location": {
+            "x": -22,
+            "y": 8
+          },
+          "text": "A small group of Goblin Raiders has been spotted at (-22, 8)",
+          "timestamp": 1746066423586,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746067143240_785": {
+          "location": {
+            "x": -24,
+            "y": 9
+          },
+          "text": "A band of Giant Spiders has appeared at (-24, 9)",
+          "timestamp": 1746067143240,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746068582434_685": {
+          "location": {
+            "x": -20,
+            "y": 4
+          },
+          "text": "A band of Giant Spiders has appeared at (-20, 4)",
+          "timestamp": 1746068582434,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746072303812_126": {
+          "location": {
+            "x": -23,
+            "y": -1
+          },
+          "text": "A small group of Mountain Troll has been spotted at (-23, -1)",
+          "timestamp": 1746072303812,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746072782955_128": {
+          "location": {
+            "x": -26,
+            "y": 6
+          },
+          "text": "A band of Giant Spiders has appeared at (-26, 6)",
+          "timestamp": 1746072782955,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746073509558_832": {
+          "location": {
+            "x": -26,
+            "y": 8
+          },
+          "text": "A band of Undead Skeletons has appeared at (-26, 8)",
+          "timestamp": 1746073509558,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746073566737_33": {
+          "location": {
+            "x": -19,
+            "y": 10
+          },
+          "text": "A band of Bandits has appeared at (-19, 10)",
+          "timestamp": 1746073566737,
+          "type": "event"
+        },
+        "chat_monster_spawn_1746073623360_111": {
+          "location": {
+            "x": -26,
+            "y": 7
+          },
+          "text": "A small group of Goblin Raiders has been spotted at (-26, 7)",
+          "timestamp": 1746073623360,
+          "type": "event"
+        },
+        "death_1746070562520_Kvx6GUAXAXVeIpkrC2KIHxzcWGt1": {
+          "location": {
+            "x": -20,
+            "y": 4
+          },
+          "text": "Tester's Force was defeated in battle at (-20,4)",
+          "timestamp": 1746070562520,
+          "type": "event"
+        },
+        "death_1746072363698_ES5WUm59ByZqQpwwXx3A3RO1w1O2": {
+          "location": {
+            "x": -22,
+            "y": 3
+          },
+          "text": "TestBattle's Force was defeated in battle at (-22,3)",
+          "timestamp": 1746072363698,
+          "type": "event"
+        },
+        "death_1746072723100_ES5WUm59ByZqQpwwXx3A3RO1w1O2": {
+          "location": {
+            "x": -23,
+            "y": 7
+          },
+          "text": "Test Human's Force was defeated in battle at (-23,7)",
+          "timestamp": 1746072723100,
+          "type": "event"
+        },
+        "death_1746072902193_ES5WUm59ByZqQpwwXx3A3RO1w1O2": {
+          "location": {
+            "x": -23,
+            "y": 7
+          },
+          "text": "Test Human's Force was defeated in battle at (-23,7)",
+          "timestamp": 1746072902193,
+          "type": "event"
+        },
+        "gather_1746058621147_monster_1746057842458_2380": {
+          "location": {
+            "x": -28,
+            "y": 2
+          },
+          "text": "Goblin Raiders gathered resources in plains biome at (-28, 2): 5 Wooden Sticks, 2 Stone Pieces",
+          "timestamp": 1746058621147,
+          "type": "event"
+        },
+        "gather_1746058621147_monster_1746058082024_1343": {
+          "location": {
+            "x": -29,
+            "y": -1
+          },
+          "text": "Bandits gathered resources in plains biome at (-29, -1): 5 Wooden Sticks, 3 Stone Pieces",
+          "timestamp": 1746058621147,
+          "type": "event"
+        },
+        "gather_1746060601957_monster_1746059769176_279": {
+          "location": {
+            "x": -21,
+            "y": 0
+          },
+          "text": "Undead Skeletons gathered resources in plains biome at (-21, 0): 1 Wooden Sticks, 2 Stone Pieces, 1 Wheat, 1 Wild Berries",
+          "timestamp": 1746060601957,
+          "type": "event"
+        },
+        "gather_1746060841362_monster_1746059707502_1332": {
+          "location": {
+            "x": -26,
+            "y": 5
+          },
+          "text": "Bandits gathered resources in plains biome at (-26, 5): 2 Wooden Sticks, 1 Stone Pieces",
+          "timestamp": 1746060841362,
+          "type": "event"
+        },
+        "gather_1746061141256_monster_1746059525073_8841": {
+          "location": {
+            "x": -27,
+            "y": -2
+          },
+          "text": "Goblin Raiders gathered resources in plains biome at (-27, -2): 5 Wooden Sticks, 3 Stone Pieces, 1 Wild Berries",
+          "timestamp": 1746061141256,
+          "type": "event"
+        },
+        "gather_1746061141256_monster_1746060183071_7650": {
+          "location": {
+            "x": -30,
+            "y": 3
+          },
+          "text": "Bandits gathered resources in plains biome at (-30, 3): 5 Wooden Sticks, 1 Stone Pieces, 1 Wheat",
+          "timestamp": 1746061141256,
+          "type": "event"
+        },
+        "gather_1746061381178_monster_1746059707502_1332": {
+          "location": {
+            "x": -26,
+            "y": 5
+          },
+          "text": "Bandits gathered resources in plains biome at (-26, 5): 2 Wooden Sticks, 1 Stone Pieces",
+          "timestamp": 1746061381178,
+          "type": "event"
+        },
+        "gather_1746061681458_monster_1746061322501_9180": {
+          "location": {
+            "x": -21,
+            "y": 3
+          },
+          "text": "Giant Spiders gathered resources in plains biome at (-21, 3): 4 Wooden Sticks, 1 Stone Pieces",
+          "timestamp": 1746061681458,
+          "type": "event"
+        },
+        "gather_1746062825288_monster_1746062342933_7010": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Giant Spiders gathered resources in plains biome at (-23, 5): 4 Wooden Sticks, 3 Stone Pieces, 1 Wheat",
+          "timestamp": 1746062825288,
+          "type": "event"
+        },
+        "gather_1746067081143_monster_1746066423586_3500": {
+          "location": {
+            "x": -22,
+            "y": 8
+          },
+          "text": "Goblin Raiders gathered resources in plains biome at (-22, 8): 5 Wooden Sticks",
+          "timestamp": 1746067081143,
+          "type": "event"
+        },
+        "gather_1746068341207_monster_1746067143240_863": {
+          "location": {
+            "x": -23,
+            "y": 9
+          },
+          "text": "Giant Spiders gathered resources in plains biome at (-23, 9): 3 Wooden Sticks, 3 Stone Pieces, 1 Wild Berries, 1 Wheat",
+          "timestamp": 1746068341207,
+          "type": "event"
+        },
+        "gather_1746068881945_monster_1746068582434_7815": {
+          "location": {
+            "x": -20,
+            "y": 4
+          },
+          "text": "Giant Spiders gathered resources in plains biome at (-20, 4): 1 Wooden Sticks, 1 Stone Pieces",
+          "timestamp": 1746068881945,
+          "type": "event"
+        },
+        "gather_1746069480743_monster_1746068582434_7815": {
+          "location": {
+            "x": -20,
+            "y": 4
+          },
+          "text": "Giant Spiders gathered resources in plains biome at (-20, 4): 1 Wooden Sticks, 1 Stone Pieces",
+          "timestamp": 1746069480743,
+          "type": "event"
+        },
+        "gather_1746069661395_monster_1746068582434_7815": {
+          "location": {
+            "x": -20,
+            "y": 4
+          },
+          "text": "Giant Spiders gathered resources in plains biome at (-20, 4): 2 Wooden Sticks, 3 Stone Pieces, 1 Wild Berries",
+          "timestamp": 1746069661395,
+          "type": "event"
+        },
+        "gather_1746073145959_monster_1746072303812_3174": {
+          "location": {
+            "x": -23,
+            "y": -1
+          },
+          "text": "Mountain Troll gathered resources in plains biome at (-23, -1): 2 Wooden Sticks, 3 Stone Pieces",
+          "timestamp": 1746073145959,
+          "type": "event"
+        },
+        "gather_1746073441367_-OP90oAsE56M59SqWaw2": {
+          "location": {
+            "x": -23,
+            "y": 7
+          },
+          "text": "Test Human's Force gathered resources in plains biome at (-23, 7): 3 Wooden Sticks",
+          "timestamp": 1746073441367,
+          "type": "event"
+        },
+        "gather_1746073441367_monster_1746072782955_3639": {
+          "location": {
+            "x": -26,
+            "y": 6
+          },
+          "text": "Giant Spiders gathered resources in plains biome at (-26, 6): 1 Wooden Sticks, 3 Stone Pieces, 1 Wild Berries",
+          "timestamp": 1746073441367,
+          "type": "event"
+        },
+        "gather_1746073921365_monster_1746073566737_2260": {
+          "location": {
+            "x": -19,
+            "y": 10
+          },
+          "text": "Bandits gathered resources in plains biome at (-19, 10): 3 Wooden Sticks, 3 Stone Pieces, 3 Wheat",
+          "timestamp": 1746073921365,
+          "type": "event"
+        },
+        "gather_1746073921365_monster_1746073623360_1215": {
+          "location": {
+            "x": -26,
+            "y": 7
+          },
+          "text": "Goblin Raiders gathered resources in plains biome at (-26, 7): 4 Wooden Sticks",
+          "timestamp": 1746073921365,
+          "type": "event"
+        },
+        "gather_start_1746073357233_-OP90oAsE56M59SqWaw2": {
+          "location": {
+            "x": -23,
+            "y": 7
+          },
+          "text": "Test Human's Force has started gathering in plains biome at (-23,7)",
+          "timestamp": 1746073357233,
+          "type": "system"
+        },
+        "monster_attack_1746064442601_monster_1746062342933_7010": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Giant Spiders have attacked testbattle's Force at (-23, 5)!",
+          "timestamp": 1746064442601,
+          "type": "event"
+        },
+        "monster_attack_1746066302714_monster_1746060183071_7650": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "Bandits have attacked testbattle's Force at (-25, 3)!",
+          "timestamp": 1746066302714,
+          "type": "event"
+        },
+        "monster_attack_1746066606914_monster_1746060183071_7650": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "Bandits have attacked testbattle's Force at (-25, 3)!",
+          "timestamp": 1746066606914,
+          "type": "event"
+        },
+        "monster_attack_1746068702689_monster_1746057842458_2380": {
+          "location": {
+            "x": -34,
+            "y": -3
+          },
+          "text": "Goblin Raiders have attacked JimmyRigged's Force at (-34, -3)!",
+          "timestamp": 1746068702689,
+          "type": "event"
+        },
+        "monster_attack_1746068827800_monster_1746060183071_7650": {
+          "location": {
+            "x": -25,
+            "y": 6
+          },
+          "text": "Bandits have attacked testbattle's Force at (-25, 6)!",
+          "timestamp": 1746068827800,
+          "type": "event"
+        },
+        "monster_attack_1746072122461_monster_1746068582434_7815": {
+          "location": {
+            "x": -22,
+            "y": 3
+          },
+          "text": "Giant Spiders have attacked TestBattle's Force at (-22, 3)!",
+          "timestamp": 1746072122461,
+          "type": "event"
+        },
+        "monster_attack_1746072841945_monster_1746067143240_863": {
+          "location": {
+            "x": -23,
+            "y": 7
+          },
+          "text": "Giant Spiders have attacked Test Human's Force at (-23, 7)!",
+          "timestamp": 1746072841945,
+          "type": "event"
+        },
+        "monster_attack_move_1746063967011_monster_1746062342933_7010": {
+          "location": {
+            "x": -22,
+            "y": 6
+          },
+          "text": "Giant Spiders is moving to attack the Stoneguard Citadel at (-23, 5)!",
+          "timestamp": 1746063967011,
+          "type": "event"
+        },
+        "monster_attack_move_1746067861958_monster_1746057842458_2380": {
+          "location": {
+            "x": -34,
+            "y": -4
+          },
+          "text": "Goblin Raiders is moving to attack players at (-34, -3)!",
+          "timestamp": 1746067861958,
+          "type": "event"
+        },
+        "monster_attack_move_1746071406432_monster_1746057842458_2380": {
+          "location": {
+            "x": -36,
+            "y": -7
+          },
+          "text": "Goblin Raiders is moving to attack the JimmyRigged's Outpost at (-37, -8)!",
+          "timestamp": 1746071406432,
+          "type": "event"
+        },
+        "monster_attack_move_1746071942661_monster_1746066423586_3500": {
+          "location": {
+            "x": -16,
+            "y": 2
+          },
+          "text": "Goblin Raiders is moving to attack the Boneridge Camp at (-15, 3)!",
+          "timestamp": 1746071942661,
+          "type": "event"
+        },
+        "monster_attack_move_1746071942661_monster_1746068582434_7815": {
+          "location": {
+            "x": -21,
+            "y": 2
+          },
+          "text": "Giant Spiders is moving to attack players at (-22, 3)!",
+          "timestamp": 1746071942661,
+          "type": "event"
+        },
+        "monster_attack_move_1746072482155_monster_1746066423586_3500": {
+          "location": {
+            "x": -15,
+            "y": 4
+          },
+          "text": "Goblin Raiders is moving to attack the Boneridge Camp at (-15, 3)!",
+          "timestamp": 1746072482155,
+          "type": "event"
+        },
+        "monster_attack_move_1746073022632_monster_1746066423586_3500": {
+          "location": {
+            "x": -14,
+            "y": 3
+          },
+          "text": "Goblin Raiders is moving to attack the Boneridge Camp at (-15, 3)!",
+          "timestamp": 1746073022632,
+          "type": "event"
+        },
+        "monster_attack_structure_1746071523093_monster_1746057842458_2380": {
+          "location": {
+            "x": -37,
+            "y": -8
+          },
+          "text": "Goblin Raiders are attacking JimmyRigged's Outpost at (-37, -8)!",
+          "timestamp": 1746071523093,
+          "type": "event"
+        },
+        "monster_gather_1746058502247_monster_1746057842458_2380": {
+          "location": {
+            "x": -28,
+            "y": 2
+          },
+          "text": "Goblin Raiders is gathering resources in the plains.",
+          "timestamp": 1746058502247,
+          "type": "event"
+        },
+        "monster_gather_1746058502247_monster_1746058082024_1343": {
+          "location": {
+            "x": -29,
+            "y": -1
+          },
+          "text": "Bandits is gathering resources in the plains.",
+          "timestamp": 1746058502247,
+          "type": "event"
+        },
+        "monster_gather_1746060482518_monster_1746059769176_279": {
+          "location": {
+            "x": -21,
+            "y": 0
+          },
+          "text": "Undead Skeletons is gathering resources in the plains.",
+          "timestamp": 1746060482518,
+          "type": "event"
+        },
+        "monster_gather_1746060726579_monster_1746059707502_1332": {
+          "location": {
+            "x": -26,
+            "y": 5
+          },
+          "text": "Bandits is gathering resources in the plains.",
+          "timestamp": 1746060726579,
+          "type": "event"
+        },
+        "monster_gather_1746061027024_monster_1746059525073_8841": {
+          "location": {
+            "x": -27,
+            "y": -2
+          },
+          "text": "Goblin Raiders is gathering resources in the plains.",
+          "timestamp": 1746061027024,
+          "type": "event"
+        },
+        "monster_gather_1746061027024_monster_1746060183071_7650": {
+          "location": {
+            "x": -30,
+            "y": 3
+          },
+          "text": "Bandits is gathering resources in the plains.",
+          "timestamp": 1746061027024,
+          "type": "event"
+        },
+        "monster_gather_1746061262878_monster_1746059707502_1332": {
+          "location": {
+            "x": -26,
+            "y": 5
+          },
+          "text": "Bandits is gathering resources in the plains.",
+          "timestamp": 1746061262878,
+          "type": "event"
+        },
+        "monster_gather_1746061562447_monster_1746061322501_9180": {
+          "location": {
+            "x": -21,
+            "y": 3
+          },
+          "text": "Giant Spiders is gathering resources in the plains.",
+          "timestamp": 1746061562447,
+          "type": "event"
+        },
+        "monster_gather_1746062702866_monster_1746062342933_7010": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Giant Spiders is gathering resources in the plains.",
+          "timestamp": 1746062702866,
+          "type": "event"
+        },
+        "monster_gather_1746066962806_monster_1746066423586_3500": {
+          "location": {
+            "x": -22,
+            "y": 8
+          },
+          "text": "Goblin Raiders is gathering resources in the plains.",
+          "timestamp": 1746066962806,
+          "type": "event"
+        },
+        "monster_gather_1746068222681_monster_1746067143240_863": {
+          "location": {
+            "x": -23,
+            "y": 9
+          },
+          "text": "Giant Spiders is gathering resources in the plains.",
+          "timestamp": 1746068222681,
+          "type": "event"
+        },
+        "monster_gather_1746068762438_monster_1746068582434_7815": {
+          "location": {
+            "x": -20,
+            "y": 4
+          },
+          "text": "Giant Spiders is gathering resources in the plains.",
+          "timestamp": 1746068762438,
+          "type": "event"
+        },
+        "monster_gather_1746069362326_monster_1746068582434_7815": {
+          "location": {
+            "x": -20,
+            "y": 4
+          },
+          "text": "Giant Spiders is gathering resources in the plains.",
+          "timestamp": 1746069362326,
+          "type": "event"
+        },
+        "monster_gather_1746069546303_monster_1746068582434_7815": {
+          "location": {
+            "x": -20,
+            "y": 4
+          },
+          "text": "Giant Spiders is gathering resources in the plains.",
+          "timestamp": 1746069546303,
+          "type": "event"
+        },
+        "monster_gather_1746073022632_monster_1746072303812_3174": {
+          "location": {
+            "x": -23,
+            "y": -1
+          },
+          "text": "Mountain Troll is gathering resources in the plains.",
+          "timestamp": 1746073022632,
+          "type": "event"
+        },
+        "monster_gather_1746073326640_monster_1746072782955_3639": {
+          "location": {
+            "x": -26,
+            "y": 6
+          },
+          "text": "Giant Spiders is gathering resources in the plains.",
+          "timestamp": 1746073326640,
+          "type": "event"
+        },
+        "monster_gather_1746073802129_monster_1746073566737_2260": {
+          "location": {
+            "x": -19,
+            "y": 10
+          },
+          "text": "Bandits is gathering resources in the plains.",
+          "timestamp": 1746073802129,
+          "type": "event"
+        },
+        "monster_gather_1746073802129_monster_1746073623360_1215": {
+          "location": {
+            "x": -26,
+            "y": 7
+          },
+          "text": "Goblin Raiders is gathering resources in the plains.",
+          "timestamp": 1746073802129,
+          "type": "event"
+        },
+        "move_1746057901132_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -29,
+            "y": -5
+          },
+          "text": "Giant Spiders has arrived at (-29,-5)",
+          "timestamp": 1746057901132,
+          "type": "event"
+        },
+        "move_1746058565645_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -30,
+            "y": -5
+          },
+          "text": "Giant Spiders has arrived at (-30,-5)",
+          "timestamp": 1746058565645,
+          "type": "event"
+        },
+        "move_1746058681347_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -31,
+            "y": -4
+          },
+          "text": "Giant Spiders has arrived at (-31,-4)",
+          "timestamp": 1746058681347,
+          "type": "event"
+        },
+        "move_1746059402031_-OP8DnXDQzhr3P2DNXUi_3": {
+          "location": {
+            "x": -25,
+            "y": 2
+          },
+          "text": "JoinBattleTest's Force has arrived at (-25,2)",
+          "timestamp": 1746059402031,
+          "type": "event"
+        },
+        "move_1746059645303_monster_1746058082024_1343_2": {
+          "location": {
+            "x": -29,
+            "y": 1
+          },
+          "text": "Bandits has arrived at (-29,1)",
+          "timestamp": 1746059645303,
+          "type": "event"
+        },
+        "move_1746060125917_-OP8DnXDQzhr3P2DNXUi_2": {
+          "location": {
+            "x": -27,
+            "y": 3
+          },
+          "text": "JoinBattleTest's Force has arrived at (-27,3)",
+          "timestamp": 1746060125917,
+          "type": "event"
+        },
+        "move_1746060841362_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -29,
+            "y": 2
+          },
+          "text": "Bandits has arrived at (-29,2)",
+          "timestamp": 1746060841362,
+          "type": "event"
+        },
+        "move_1746061025511_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -30,
+            "y": -5
+          },
+          "text": "Giant Spiders has arrived at (-30,-5)",
+          "timestamp": 1746061025511,
+          "type": "event"
+        },
+        "move_1746061141256_monster_1746059769176_279_1": {
+          "location": {
+            "x": -20,
+            "y": -1
+          },
+          "text": "Undead Skeletons has arrived at (-20,-1)",
+          "timestamp": 1746061141256,
+          "type": "event"
+        },
+        "move_1746061201643_monster_1746057842458_2380_1": {
+          "location": {
+            "x": -29,
+            "y": 2
+          },
+          "text": "Goblin Raiders has arrived at (-29,2)",
+          "timestamp": 1746061201643,
+          "type": "event"
+        },
+        "move_1746061201643_monster_1746058082024_1343_3": {
+          "location": {
+            "x": -32,
+            "y": 5
+          },
+          "text": "Bandits has arrived at (-32,5)",
+          "timestamp": 1746061201643,
+          "type": "event"
+        },
+        "move_1746061381178_monster_1746057842458_2380_1": {
+          "location": {
+            "x": -29,
+            "y": 3
+          },
+          "text": "Goblin Raiders has arrived at (-29,3)",
+          "timestamp": 1746061381178,
+          "type": "event"
+        },
+        "move_1746061381178_monster_1746059769176_279_1": {
+          "location": {
+            "x": -21,
+            "y": -2
+          },
+          "text": "Undead Skeletons has arrived at (-21,-2)",
+          "timestamp": 1746061381178,
+          "type": "event"
+        },
+        "move_1746061381178_monster_1746060183071_7650_1": {
+          "location": {
+            "x": -30,
+            "y": 4
+          },
+          "text": "Bandits has arrived at (-30,4)",
+          "timestamp": 1746061381178,
+          "type": "event"
+        },
+        "move_1746061445183_monster_1746055083166_2458_2": {
+          "location": {
+            "x": -32,
+            "y": -7
+          },
+          "text": "Giant Spiders has arrived at (-32,-7)",
+          "timestamp": 1746061445183,
+          "type": "event"
+        },
+        "move_1746061561381_monster_1746059525073_8841_2": {
+          "location": {
+            "x": -25,
+            "y": -2
+          },
+          "text": "Goblin Raiders has arrived at (-25,-2)",
+          "timestamp": 1746061561381,
+          "type": "event"
+        },
+        "move_1746061621272_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -33,
+            "y": -7
+          },
+          "text": "Giant Spiders has arrived at (-33,-7)",
+          "timestamp": 1746061621272,
+          "type": "event"
+        },
+        "move_1746061681458_monster_1746060183071_7650_1": {
+          "location": {
+            "x": -31,
+            "y": 5
+          },
+          "text": "Bandits has arrived at (-31,5)",
+          "timestamp": 1746061681458,
+          "type": "event"
+        },
+        "move_1746061745761_monster_1746057842458_2380_3": {
+          "location": {
+            "x": -29,
+            "y": 0
+          },
+          "text": "Goblin Raiders has arrived at (-29,0)",
+          "timestamp": 1746061745761,
+          "type": "event"
+        },
+        "move_1746061861317_-OP8MvGwNOuPkxQYzOiO_3": {
+          "location": {
+            "x": -26,
+            "y": 5
+          },
+          "text": "testbattle's Force has arrived at (-26,5)",
+          "timestamp": 1746061861317,
+          "type": "event"
+        },
+        "move_1746062105499_monster_1746057842458_2380_1": {
+          "location": {
+            "x": -30,
+            "y": -1
+          },
+          "text": "Goblin Raiders has arrived at (-30,-1)",
+          "timestamp": 1746062105499,
+          "type": "event"
+        },
+        "move_1746062105499_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -31,
+            "y": 6
+          },
+          "text": "Bandits has arrived at (-31,6)",
+          "timestamp": 1746062105499,
+          "type": "event"
+        },
+        "move_1746062105499_monster_1746059769176_279_1": {
+          "location": {
+            "x": -22,
+            "y": -2
+          },
+          "text": "Undead Skeletons has arrived at (-22,-2)",
+          "timestamp": 1746062105499,
+          "type": "event"
+        },
+        "move_1746062281620_monster_1746061322501_9180_1": {
+          "location": {
+            "x": -20,
+            "y": 3
+          },
+          "text": "Giant Spiders has arrived at (-20,3)",
+          "timestamp": 1746062281620,
+          "type": "event"
+        },
+        "move_1746062405103_monster_1746059769176_279_1": {
+          "location": {
+            "x": -23,
+            "y": -3
+          },
+          "text": "Undead Skeletons has arrived at (-23,-3)",
+          "timestamp": 1746062405103,
+          "type": "event"
+        },
+        "move_1746062525112_-OP8MvGwNOuPkxQYzOiO_3": {
+          "location": {
+            "x": -27,
+            "y": 2
+          },
+          "text": "testbattle's Force has arrived at (-27,2) and continues their journey",
+          "timestamp": 1746062525112,
+          "type": "event"
+        },
+        "move_1746062525112_monster_1746057842458_2380_2": {
+          "location": {
+            "x": -32,
+            "y": -3
+          },
+          "text": "Goblin Raiders has arrived at (-32,-3)",
+          "timestamp": 1746062525112,
+          "type": "event"
+        },
+        "move_1746062525112_monster_1746058082024_1343_3": {
+          "location": {
+            "x": -31,
+            "y": 9
+          },
+          "text": "Bandits has arrived at (-31,9)",
+          "timestamp": 1746062525112,
+          "type": "event"
+        },
+        "move_1746062525112_monster_1746059525073_8841_3": {
+          "location": {
+            "x": -28,
+            "y": 1
+          },
+          "text": "Goblin Raiders has arrived at (-28,1)",
+          "timestamp": 1746062525112,
+          "type": "event"
+        },
+        "move_1746062585667_-OP8MvGwNOuPkxQYzOiO_4": {
+          "location": {
+            "x": -28,
+            "y": 1
+          },
+          "text": "testbattle's Force has arrived at (-28,1)",
+          "timestamp": 1746062585667,
+          "type": "event"
+        },
+        "move_1746062585667_monster_1746060183071_7650_3": {
+          "location": {
+            "x": -28,
+            "y": 5
+          },
+          "text": "Bandits has arrived at (-28,5)",
+          "timestamp": 1746062585667,
+          "type": "event"
+        },
+        "move_1746062825288_monster_1746055083166_2458_2": {
+          "location": {
+            "x": -31,
+            "y": -7
+          },
+          "text": "Giant Spiders has arrived at (-31,-7)",
+          "timestamp": 1746062825288,
+          "type": "event"
+        },
+        "move_1746062825288_monster_1746060183071_7650_2": {
+          "location": {
+            "x": -30,
+            "y": 3
+          },
+          "text": "Bandits has arrived at (-30,3)",
+          "timestamp": 1746062825288,
+          "type": "event"
+        },
+        "move_1746063542004_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -30,
+            "y": -7
+          },
+          "text": "Giant Spiders has arrived at (-30,-7)",
+          "timestamp": 1746063542004,
+          "type": "event"
+        },
+        "move_1746063542004_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -32,
+            "y": 9
+          },
+          "text": "Bandits has arrived at (-32,9)",
+          "timestamp": 1746063542004,
+          "type": "event"
+        },
+        "move_1746063601792_monster_1746057842458_2380_1": {
+          "location": {
+            "x": -31,
+            "y": -2
+          },
+          "text": "Goblin Raiders has arrived at (-31,-2)",
+          "timestamp": 1746063601792,
+          "type": "event"
+        },
+        "move_1746063601792_monster_1746059769176_279_1": {
+          "location": {
+            "x": -24,
+            "y": -2
+          },
+          "text": "Undead Skeletons has arrived at (-24,-2)",
+          "timestamp": 1746063601792,
+          "type": "event"
+        },
+        "move_1746063601792_monster_1746062342933_7010_1": {
+          "location": {
+            "x": -22,
+            "y": 6
+          },
+          "text": "Giant Spiders has arrived at (-22,6)",
+          "timestamp": 1746063601792,
+          "type": "event"
+        },
+        "move_1746063661299_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -33,
+            "y": 8
+          },
+          "text": "Bandits has arrived at (-33,8)",
+          "timestamp": 1746063661299,
+          "type": "event"
+        },
+        "move_1746063661299_monster_1746061322501_9180_2": {
+          "location": {
+            "x": -18,
+            "y": 1
+          },
+          "text": "Giant Spiders has arrived at (-18,1)",
+          "timestamp": 1746063661299,
+          "type": "event"
+        },
+        "move_1746063845753_monster_1746057842458_2380_1": {
+          "location": {
+            "x": -31,
+            "y": -1
+          },
+          "text": "Goblin Raiders has arrived at (-31,-1)",
+          "timestamp": 1746063845753,
+          "type": "event"
+        },
+        "move_1746063965263_monster_1746058082024_1343_2": {
+          "location": {
+            "x": -35,
+            "y": 8
+          },
+          "text": "Bandits has arrived at (-35,8)",
+          "timestamp": 1746063965263,
+          "type": "event"
+        },
+        "move_1746064025097_monster_1746062342933_7010_1": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Giant Spiders has arrived at (-23,5)",
+          "timestamp": 1746064025097,
+          "type": "event"
+        },
+        "move_1746064085198_monster_1746059769176_279_1": {
+          "location": {
+            "x": -24,
+            "y": -1
+          },
+          "text": "Undead Skeletons has arrived at (-24,-1)",
+          "timestamp": 1746064085198,
+          "type": "event"
+        },
+        "move_1746064085198_monster_1746060183071_7650_1": {
+          "location": {
+            "x": -31,
+            "y": 4
+          },
+          "text": "Bandits has arrived at (-31,4)",
+          "timestamp": 1746064085198,
+          "type": "event"
+        },
+        "move_1746064085198_monster_1746061322501_9180_3": {
+          "location": {
+            "x": -21,
+            "y": -2
+          },
+          "text": "Giant Spiders has arrived at (-21,-2)",
+          "timestamp": 1746064085198,
+          "type": "event"
+        },
+        "move_1746064381100_monster_1746059769176_279_1": {
+          "location": {
+            "x": -24,
+            "y": 0
+          },
+          "text": "Undead Skeletons has arrived at (-24,0)",
+          "timestamp": 1746064381100,
+          "type": "event"
+        },
+        "move_1746064381100_monster_1746061322501_9180_1": {
+          "location": {
+            "x": -22,
+            "y": -1
+          },
+          "text": "Giant Spiders has arrived at (-22,-1)",
+          "timestamp": 1746064381100,
+          "type": "event"
+        },
+        "move_1746064501750_monster_1746057842458_2380_3": {
+          "location": {
+            "x": -34,
+            "y": 2
+          },
+          "text": "Goblin Raiders has arrived at (-34,2)",
+          "timestamp": 1746064501750,
+          "type": "event"
+        },
+        "move_1746064681139_monster_1746055083166_2458_2": {
+          "location": {
+            "x": -32,
+            "y": -5
+          },
+          "text": "Giant Spiders has arrived at (-32,-5)",
+          "timestamp": 1746064681139,
+          "type": "event"
+        },
+        "move_1746064741931_monster_1746058082024_1343_3": {
+          "location": {
+            "x": -32,
+            "y": 11
+          },
+          "text": "Bandits has arrived at (-32,11)",
+          "timestamp": 1746064741931,
+          "type": "event"
+        },
+        "move_1746064861486_monster_1746057842458_2380_2": {
+          "location": {
+            "x": -32,
+            "y": 2
+          },
+          "text": "Goblin Raiders has arrived at (-32,2)",
+          "timestamp": 1746064861486,
+          "type": "event"
+        },
+        "move_1746064861486_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -31,
+            "y": 11
+          },
+          "text": "Bandits has arrived at (-31,11)",
+          "timestamp": 1746064861486,
+          "type": "event"
+        },
+        "move_1746064861486_monster_1746059525073_8841_2": {
+          "location": {
+            "x": -30,
+            "y": -1
+          },
+          "text": "Goblin Raiders has arrived at (-30,-1)",
+          "timestamp": 1746064861486,
+          "type": "event"
+        },
+        "move_1746064861486_monster_1746060183071_7650_2": {
+          "location": {
+            "x": -29,
+            "y": 4
+          },
+          "text": "Bandits has arrived at (-29,4)",
+          "timestamp": 1746064861486,
+          "type": "event"
+        },
+        "move_1746064861486_monster_1746061322501_9180_2": {
+          "location": {
+            "x": -22,
+            "y": -3
+          },
+          "text": "Giant Spiders has arrived at (-22,-3)",
+          "timestamp": 1746064861486,
+          "type": "event"
+        },
+        "move_1746064925418_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -32,
+            "y": -6
+          },
+          "text": "Giant Spiders has arrived at (-32,-6)",
+          "timestamp": 1746064925418,
+          "type": "event"
+        },
+        "move_1746064925418_monster_1746057842458_2380_1": {
+          "location": {
+            "x": -32,
+            "y": 1
+          },
+          "text": "Goblin Raiders has arrived at (-32,1)",
+          "timestamp": 1746064925418,
+          "type": "event"
+        },
+        "move_1746064925418_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -30,
+            "y": 10
+          },
+          "text": "Bandits has arrived at (-30,10)",
+          "timestamp": 1746064925418,
+          "type": "event"
+        },
+        "move_1746064925418_monster_1746061322501_9180_1": {
+          "location": {
+            "x": -22,
+            "y": -2
+          },
+          "text": "Giant Spiders has arrived at (-22,-2)",
+          "timestamp": 1746064925418,
+          "type": "event"
+        },
+        "move_1746065041725_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -31,
+            "y": 11
+          },
+          "text": "Bandits has arrived at (-31,11)",
+          "timestamp": 1746065041725,
+          "type": "event"
+        },
+        "move_1746065041725_monster_1746059769176_279_2": {
+          "location": {
+            "x": -22,
+            "y": 0
+          },
+          "text": "Undead Skeletons has arrived at (-22,0)",
+          "timestamp": 1746065041725,
+          "type": "event"
+        },
+        "move_1746065041725_monster_1746060183071_7650_1": {
+          "location": {
+            "x": -28,
+            "y": 4
+          },
+          "text": "Bandits has arrived at (-28,4)",
+          "timestamp": 1746065041725,
+          "type": "event"
+        },
+        "move_1746065101757_monster_1746059525073_8841_1": {
+          "location": {
+            "x": -29,
+            "y": -1
+          },
+          "text": "Goblin Raiders has arrived at (-29,-1)",
+          "timestamp": 1746065101757,
+          "type": "event"
+        },
+        "move_1746065161705_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -32,
+            "y": -7
+          },
+          "text": "Giant Spiders has arrived at (-32,-7)",
+          "timestamp": 1746065161705,
+          "type": "event"
+        },
+        "move_1746065161705_monster_1746057842458_2380_1": {
+          "location": {
+            "x": -33,
+            "y": 1
+          },
+          "text": "Goblin Raiders has arrived at (-33,1)",
+          "timestamp": 1746065161705,
+          "type": "event"
+        },
+        "move_1746065161705_monster_1746060183071_7650_1": {
+          "location": {
+            "x": -27,
+            "y": 3
+          },
+          "text": "Bandits has arrived at (-27,3)",
+          "timestamp": 1746065161705,
+          "type": "event"
+        },
+        "move_1746065221949_monster_1746059769176_279_1": {
+          "location": {
+            "x": -21,
+            "y": -1
+          },
+          "text": "Undead Skeletons has arrived at (-21,-1)",
+          "timestamp": 1746065221949,
+          "type": "event"
+        },
+        "move_1746065221949_monster_1746061322501_9180_1": {
+          "location": {
+            "x": -23,
+            "y": -2
+          },
+          "text": "Giant Spiders has arrived at (-23,-2)",
+          "timestamp": 1746065221949,
+          "type": "event"
+        },
+        "move_1746065401617_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -32,
+            "y": 11
+          },
+          "text": "Bandits has arrived at (-32,11)",
+          "timestamp": 1746065401617,
+          "type": "event"
+        },
+        "move_1746065461454_-OP8aYzm48dlcvy_4M8q_1": {
+          "location": {
+            "x": -24,
+            "y": 4
+          },
+          "text": "testbattle's Force has arrived at (-24,4)",
+          "timestamp": 1746065461454,
+          "type": "event"
+        },
+        "move_1746065521520_monster_1746060183071_7650_2": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "Bandits has arrived at (-25,3)",
+          "timestamp": 1746065521520,
+          "type": "event"
+        },
+        "move_1746065521520_monster_1746061322501_9180_2": {
+          "location": {
+            "x": -21,
+            "y": 0
+          },
+          "text": "Giant Spiders has arrived at (-21,0)",
+          "timestamp": 1746065521520,
+          "type": "event"
+        },
+        "move_1746065581822_-OP8aYzm48dlcvy_4M8q_1": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "testbattle's Force has arrived at (-25,3)",
+          "timestamp": 1746065581822,
+          "type": "event"
+        },
+        "move_1746066061270_-OP8cS0HS8B11-b4jngf_2": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "testbattle's Force has arrived at (-25,3)",
+          "timestamp": 1746066061270,
+          "type": "event"
+        },
+        "move_1746066061270_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -31,
+            "y": -6
+          },
+          "text": "Giant Spiders has arrived at (-31,-6)",
+          "timestamp": 1746066061270,
+          "type": "event"
+        },
+        "move_1746066061270_monster_1746057842458_2380_1": {
+          "location": {
+            "x": -34,
+            "y": 0
+          },
+          "text": "Goblin Raiders has arrived at (-34,0)",
+          "timestamp": 1746066061270,
+          "type": "event"
+        },
+        "move_1746066061270_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -32,
+            "y": 12
+          },
+          "text": "Bandits has arrived at (-32,12)",
+          "timestamp": 1746066061270,
+          "type": "event"
+        },
+        "move_1746066061270_monster_1746061322501_9180_1": {
+          "location": {
+            "x": -21,
+            "y": -1
+          },
+          "text": "Giant Spiders has arrived at (-21,-1)",
+          "timestamp": 1746066061270,
+          "type": "event"
+        },
+        "move_1746066185712_monster_1746059769176_279_1": {
+          "location": {
+            "x": -21,
+            "y": 0
+          },
+          "text": "Undead Skeletons has arrived at (-21,0)",
+          "timestamp": 1746066185712,
+          "type": "event"
+        },
+        "move_1746066301709_monster_1746055083166_2458_2": {
+          "location": {
+            "x": -29,
+            "y": -4
+          },
+          "text": "Giant Spiders has arrived at (-29,-4)",
+          "timestamp": 1746066301709,
+          "type": "event"
+        },
+        "move_1746066421646_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -31,
+            "y": 11
+          },
+          "text": "Bandits has arrived at (-31,11)",
+          "timestamp": 1746066421646,
+          "type": "event"
+        },
+        "move_1746066485748_monster_1746055083166_2458_2": {
+          "location": {
+            "x": -27,
+            "y": -4
+          },
+          "text": "Giant Spiders has arrived at (-27,-4)",
+          "timestamp": 1746066485748,
+          "type": "event"
+        },
+        "move_1746066605898_-OP8ef2c0QtP2GSaIK6__2": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "testbattle's Force has arrived at (-25,3)",
+          "timestamp": 1746066605898,
+          "type": "event"
+        },
+        "move_1746066721891_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -26,
+            "y": -3
+          },
+          "text": "Giant Spiders has arrived at (-26,-3)",
+          "timestamp": 1746066721891,
+          "type": "event"
+        },
+        "move_1746066781859_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -32,
+            "y": 10
+          },
+          "text": "Bandits has arrived at (-32,10)",
+          "timestamp": 1746066781859,
+          "type": "event"
+        },
+        "move_1746066845144_monster_1746057842458_2380_2": {
+          "location": {
+            "x": -36,
+            "y": -2
+          },
+          "text": "Goblin Raiders has arrived at (-36,-2)",
+          "timestamp": 1746066845144,
+          "type": "event"
+        },
+        "move_1746066845144_monster_1746059769176_279_2": {
+          "location": {
+            "x": -19,
+            "y": -2
+          },
+          "text": "Undead Skeletons has arrived at (-19,-2)",
+          "timestamp": 1746066845144,
+          "type": "event"
+        },
+        "move_1746066845144_monster_1746061322501_9180_2": {
+          "location": {
+            "x": -23,
+            "y": -3
+          },
+          "text": "Giant Spiders has arrived at (-23,-3)",
+          "timestamp": 1746066845144,
+          "type": "event"
+        },
+        "move_1746066961643_monster_1746055083166_2458_2": {
+          "location": {
+            "x": -24,
+            "y": -3
+          },
+          "text": "Giant Spiders has arrived at (-24,-3)",
+          "timestamp": 1746066961643,
+          "type": "event"
+        },
+        "move_1746066961643_monster_1746059525073_8841_3": {
+          "location": {
+            "x": -26,
+            "y": 2
+          },
+          "text": "Goblin Raiders has arrived at (-26,2)",
+          "timestamp": 1746066961643,
+          "type": "event"
+        },
+        "move_1746067081143_monster_1746059525073_8841_1": {
+          "location": {
+            "x": -27,
+            "y": 3
+          },
+          "text": "Goblin Raiders has arrived at (-27,3)",
+          "timestamp": 1746067081143,
+          "type": "event"
+        },
+        "move_1746067141573_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -24,
+            "y": -4
+          },
+          "text": "Giant Spiders has arrived at (-24,-4)",
+          "timestamp": 1746067141573,
+          "type": "event"
+        },
+        "move_1746067141573_monster_1746057842458_2380_2": {
+          "location": {
+            "x": -34,
+            "y": -4
+          },
+          "text": "Goblin Raiders has arrived at (-34,-4)",
+          "timestamp": 1746067141573,
+          "type": "event"
+        },
+        "move_1746067141573_monster_1746058082024_1343_2": {
+          "location": {
+            "x": -32,
+            "y": 12
+          },
+          "text": "Bandits has arrived at (-32,12)",
+          "timestamp": 1746067141573,
+          "type": "event"
+        },
+        "move_1746067141573_monster_1746059769176_279_2": {
+          "location": {
+            "x": -21,
+            "y": -4
+          },
+          "text": "Undead Skeletons has arrived at (-21,-4)",
+          "timestamp": 1746067141573,
+          "type": "event"
+        },
+        "move_1746067205417_monster_1746059525073_8841_1": {
+          "location": {
+            "x": -27,
+            "y": 2
+          },
+          "text": "Goblin Raiders has arrived at (-27,2)",
+          "timestamp": 1746067205417,
+          "type": "event"
+        },
+        "move_1746067205417_monster_1746060183071_7650_1": {
+          "location": {
+            "x": -24,
+            "y": 3
+          },
+          "text": "Bandits has arrived at (-24,3)",
+          "timestamp": 1746067205417,
+          "type": "event"
+        },
+        "move_1746067205417_monster_1746061322501_9180_1": {
+          "location": {
+            "x": -22,
+            "y": -4
+          },
+          "text": "Giant Spiders has arrived at (-22,-4)",
+          "timestamp": 1746067205417,
+          "type": "event"
+        },
+        "move_1746067381434_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -31,
+            "y": 11
+          },
+          "text": "Bandits has arrived at (-31,11)",
+          "timestamp": 1746067381434,
+          "type": "event"
+        },
+        "move_1746067381434_monster_1746060183071_7650_1": {
+          "location": {
+            "x": -23,
+            "y": 2
+          },
+          "text": "Bandits has arrived at (-23,2)",
+          "timestamp": 1746067381434,
+          "type": "event"
+        },
+        "move_1746067381434_monster_1746061322501_9180_1": {
+          "location": {
+            "x": -23,
+            "y": -3
+          },
+          "text": "Giant Spiders has arrived at (-23,-3)",
+          "timestamp": 1746067381434,
+          "type": "event"
+        },
+        "move_1746067381434_monster_1746067143240_863_1": {
+          "location": {
+            "x": -23,
+            "y": 9
+          },
+          "text": "Giant Spiders has arrived at (-23,9)",
+          "timestamp": 1746067381434,
+          "type": "event"
+        },
+        "move_1746067442012_monster_1746059769176_279_2": {
+          "location": {
+            "x": -19,
+            "y": -4
+          },
+          "text": "Undead Skeletons has arrived at (-19,-4)",
+          "timestamp": 1746067442012,
+          "type": "event"
+        },
+        "move_1746067921213_monster_1746057842458_2380_1": {
+          "location": {
+            "x": -34,
+            "y": -3
+          },
+          "text": "Goblin Raiders has arrived at (-34,-3)",
+          "timestamp": 1746067921213,
+          "type": "event"
+        },
+        "move_1746067921213_monster_1746061322501_9180_1": {
+          "location": {
+            "x": -23,
+            "y": -2
+          },
+          "text": "Giant Spiders has arrived at (-23,-2)",
+          "timestamp": 1746067921213,
+          "type": "event"
+        },
+        "move_1746067981344_monster_1746059769176_279_1": {
+          "location": {
+            "x": -20,
+            "y": -4
+          },
+          "text": "Undead Skeletons has arrived at (-20,-4)",
+          "timestamp": 1746067981344,
+          "type": "event"
+        },
+        "move_1746067981344_monster_1746066423586_3500_1": {
+          "location": {
+            "x": -22,
+            "y": 9
+          },
+          "text": "Goblin Raiders has arrived at (-22,9)",
+          "timestamp": 1746067981344,
+          "type": "event"
+        },
+        "move_1746068045576_monster_1746060183071_7650_1": {
+          "location": {
+            "x": -22,
+            "y": 3
+          },
+          "text": "Bandits has arrived at (-22,3)",
+          "timestamp": 1746068045576,
+          "type": "event"
+        },
+        "move_1746068161734_monster_1746058082024_1343_2": {
+          "location": {
+            "x": -29,
+            "y": 11
+          },
+          "text": "Bandits has arrived at (-29,11)",
+          "timestamp": 1746068161734,
+          "type": "event"
+        },
+        "move_1746068285831_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -23,
+            "y": -3
+          },
+          "text": "Giant Spiders has arrived at (-23,-3)",
+          "timestamp": 1746068285831,
+          "type": "event"
+        },
+        "move_1746068285831_monster_1746059525073_8841_1": {
+          "location": {
+            "x": -28,
+            "y": 1
+          },
+          "text": "Goblin Raiders has arrived at (-28,1)",
+          "timestamp": 1746068285831,
+          "type": "event"
+        },
+        "move_1746068405289_monster_1746059525073_8841_1": {
+          "location": {
+            "x": -28,
+            "y": 0
+          },
+          "text": "Goblin Raiders has arrived at (-28,0)",
+          "timestamp": 1746068405289,
+          "type": "event"
+        },
+        "move_1746068405289_monster_1746059769176_279_1": {
+          "location": {
+            "x": -21,
+            "y": -4
+          },
+          "text": "Undead Skeletons has arrived at (-21,-4)",
+          "timestamp": 1746068405289,
+          "type": "event"
+        },
+        "move_1746068521084_monster_1746060183071_7650_3": {
+          "location": {
+            "x": -25,
+            "y": 6
+          },
+          "text": "Bandits has arrived at (-25,6)",
+          "timestamp": 1746068521084,
+          "type": "event"
+        },
+        "move_1746068521084_monster_1746066423586_3500_3": {
+          "location": {
+            "x": -19,
+            "y": 9
+          },
+          "text": "Goblin Raiders has arrived at (-19,9)",
+          "timestamp": 1746068521084,
+          "type": "event"
+        },
+        "move_1746068701680_-OP8lIkNakkko8xGrlmE_2": {
+          "location": {
+            "x": -25,
+            "y": 6
+          },
+          "text": "testbattle's Force has arrived at (-25,6)",
+          "timestamp": 1746068701680,
+          "type": "event"
+        },
+        "move_1746068825568_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -24,
+            "y": -4
+          },
+          "text": "Giant Spiders has arrived at (-24,-4)",
+          "timestamp": 1746068825568,
+          "type": "event"
+        },
+        "move_1746068825568_monster_1746059769176_279_1": {
+          "location": {
+            "x": -22,
+            "y": -3
+          },
+          "text": "Undead Skeletons has arrived at (-22,-3)",
+          "timestamp": 1746068825568,
+          "type": "event"
+        },
+        "move_1746068825568_monster_1746061322501_9180_1": {
+          "location": {
+            "x": -22,
+            "y": -1
+          },
+          "text": "Giant Spiders has arrived at (-22,-1)",
+          "timestamp": 1746068825568,
+          "type": "event"
+        },
+        "move_1746068825568_monster_1746067143240_863_1": {
+          "location": {
+            "x": -22,
+            "y": 10
+          },
+          "text": "Giant Spiders has arrived at (-22,10)",
+          "timestamp": 1746068825568,
+          "type": "event"
+        },
+        "move_1746068945154_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -25,
+            "y": -5
+          },
+          "text": "Giant Spiders has arrived at (-25,-5)",
+          "timestamp": 1746068945154,
+          "type": "event"
+        },
+        "move_1746068945154_monster_1746059525073_8841_2": {
+          "location": {
+            "x": -30,
+            "y": 0
+          },
+          "text": "Goblin Raiders has arrived at (-30,0)",
+          "timestamp": 1746068945154,
+          "type": "event"
+        },
+        "move_1746068945154_monster_1746059769176_279_1": {
+          "location": {
+            "x": -23,
+            "y": -3
+          },
+          "text": "Undead Skeletons has arrived at (-23,-3)",
+          "timestamp": 1746068945154,
+          "type": "event"
+        },
+        "move_1746068945154_monster_1746066423586_3500_2": {
+          "location": {
+            "x": -19,
+            "y": 7
+          },
+          "text": "Goblin Raiders has arrived at (-19,7)",
+          "timestamp": 1746068945154,
+          "type": "event"
+        },
+        "move_1746068945154_monster_1746067143240_863_1": {
+          "location": {
+            "x": -22,
+            "y": 11
+          },
+          "text": "Giant Spiders has arrived at (-22,11)",
+          "timestamp": 1746068945154,
+          "type": "event"
+        },
+        "move_1746069061348_monster_1746058082024_1343_3": {
+          "location": {
+            "x": -29,
+            "y": 8
+          },
+          "text": "Bandits has arrived at (-29,8)",
+          "timestamp": 1746069061348,
+          "type": "event"
+        },
+        "move_1746069061348_monster_1746061322501_9180_2": {
+          "location": {
+            "x": -20,
+            "y": 1
+          },
+          "text": "Giant Spiders has arrived at (-20,1)",
+          "timestamp": 1746069061348,
+          "type": "event"
+        },
+        "move_1746069121640_monster_1746057842458_2380_3": {
+          "location": {
+            "x": -37,
+            "y": -3
+          },
+          "text": "Goblin Raiders has arrived at (-37,-3)",
+          "timestamp": 1746069121640,
+          "type": "event"
+        },
+        "move_1746069121640_monster_1746059525073_8841_1": {
+          "location": {
+            "x": -29,
+            "y": 0
+          },
+          "text": "Goblin Raiders has arrived at (-29,0)",
+          "timestamp": 1746069121640,
+          "type": "event"
+        },
+        "move_1746069121640_monster_1746066423586_3500_1": {
+          "location": {
+            "x": -19,
+            "y": 6
+          },
+          "text": "Goblin Raiders has arrived at (-19,6)",
+          "timestamp": 1746069121640,
+          "type": "event"
+        },
+        "move_1746069480743_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -25,
+            "y": -6
+          },
+          "text": "Giant Spiders has arrived at (-25,-6)",
+          "timestamp": 1746069480743,
+          "type": "event"
+        },
+        "move_1746069480743_monster_1746059525073_8841_1": {
+          "location": {
+            "x": -29,
+            "y": 1
+          },
+          "text": "Goblin Raiders has arrived at (-29,1)",
+          "timestamp": 1746069480743,
+          "type": "event"
+        },
+        "move_1746069545174_monster_1746057842458_2380_2": {
+          "location": {
+            "x": -35,
+            "y": -5
+          },
+          "text": "Goblin Raiders has arrived at (-35,-5)",
+          "timestamp": 1746069545174,
+          "type": "event"
+        },
+        "move_1746069545174_monster_1746058082024_1343_2": {
+          "location": {
+            "x": -27,
+            "y": 8
+          },
+          "text": "Bandits has arrived at (-27,8)",
+          "timestamp": 1746069545174,
+          "type": "event"
+        },
+        "move_1746069725284_monster_1746057842458_2380_2": {
+          "location": {
+            "x": -37,
+            "y": -5
+          },
+          "text": "Goblin Raiders has arrived at (-37,-5)",
+          "timestamp": 1746069725284,
+          "type": "event"
+        },
+        "move_1746069725284_monster_1746059769176_279_1": {
+          "location": {
+            "x": -24,
+            "y": -2
+          },
+          "text": "Undead Skeletons has arrived at (-24,-2)",
+          "timestamp": 1746069725284,
+          "type": "event"
+        },
+        "move_1746069841889_monster_1746055083166_2458_3": {
+          "location": {
+            "x": -22,
+            "y": -3
+          },
+          "text": "Giant Spiders has arrived at (-22,-3)",
+          "timestamp": 1746069841889,
+          "type": "event"
+        },
+        "move_1746069841889_monster_1746058082024_1343_2": {
+          "location": {
+            "x": -29,
+            "y": 8
+          },
+          "text": "Bandits has arrived at (-29,8)",
+          "timestamp": 1746069841889,
+          "type": "event"
+        },
+        "move_1746069841889_monster_1746067143240_863_2": {
+          "location": {
+            "x": -22,
+            "y": 9
+          },
+          "text": "Giant Spiders has arrived at (-22,9)",
+          "timestamp": 1746069841889,
+          "type": "event"
+        },
+        "move_1746069961668_monster_1746059525073_8841_3": {
+          "location": {
+            "x": -32,
+            "y": 4
+          },
+          "text": "Goblin Raiders has arrived at (-32,4)",
+          "timestamp": 1746069961668,
+          "type": "event"
+        },
+        "move_1746070081390_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -21,
+            "y": -3
+          },
+          "text": "Giant Spiders has arrived at (-21,-3)",
+          "timestamp": 1746070081390,
+          "type": "event"
+        },
+        "move_1746070081390_monster_1746059525073_8841_1": {
+          "location": {
+            "x": -33,
+            "y": 4
+          },
+          "text": "Goblin Raiders has arrived at (-33,4)",
+          "timestamp": 1746070081390,
+          "type": "event"
+        },
+        "move_1746070146045_monster_1746058082024_1343_2": {
+          "location": {
+            "x": -31,
+            "y": 6
+          },
+          "text": "Bandits has arrived at (-31,6)",
+          "timestamp": 1746070146045,
+          "type": "event"
+        },
+        "move_1746070146045_monster_1746061322501_9180_2": {
+          "location": {
+            "x": -20,
+            "y": -1
+          },
+          "text": "Giant Spiders has arrived at (-20,-1)",
+          "timestamp": 1746070146045,
+          "type": "event"
+        },
+        "move_1746070146045_monster_1746066423586_3500_2": {
+          "location": {
+            "x": -19,
+            "y": 4
+          },
+          "text": "Goblin Raiders has arrived at (-19,4)",
+          "timestamp": 1746070146045,
+          "type": "event"
+        },
+        "move_1746070146045_monster_1746067143240_863_2": {
+          "location": {
+            "x": -24,
+            "y": 9
+          },
+          "text": "Giant Spiders has arrived at (-24,9)",
+          "timestamp": 1746070146045,
+          "type": "event"
+        },
+        "move_1746070441135_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -22,
+            "y": -4
+          },
+          "text": "Giant Spiders has arrived at (-22,-4)",
+          "timestamp": 1746070441135,
+          "type": "event"
+        },
+        "move_1746070501210_-OP8t3p17HxDFl8pUfk5_3": {
+          "location": {
+            "x": -20,
+            "y": 4
+          },
+          "text": "Tester's Force has arrived at (-20,4)",
+          "timestamp": 1746070501210,
+          "type": "event"
+        },
+        "move_1746070501210_monster_1746059525073_8841_2": {
+          "location": {
+            "x": -31,
+            "y": 2
+          },
+          "text": "Goblin Raiders has arrived at (-31,2)",
+          "timestamp": 1746070501210,
+          "type": "event"
+        },
+        "move_1746070561030_monster_1746057842458_2380_1": {
+          "location": {
+            "x": -37,
+            "y": -4
+          },
+          "text": "Goblin Raiders has arrived at (-37,-4)",
+          "timestamp": 1746070561030,
+          "type": "event"
+        },
+        "move_1746070561030_monster_1746061322501_9180_1": {
+          "location": {
+            "x": -20,
+            "y": -2
+          },
+          "text": "Giant Spiders has arrived at (-20,-2)",
+          "timestamp": 1746070561030,
+          "type": "event"
+        },
+        "move_1746070621524_monster_1746055083166_2458_2": {
+          "location": {
+            "x": -24,
+            "y": -2
+          },
+          "text": "Giant Spiders has arrived at (-24,-2)",
+          "timestamp": 1746070621524,
+          "type": "event"
+        },
+        "move_1746070621524_monster_1746059769176_279_2": {
+          "location": {
+            "x": -26,
+            "y": -2
+          },
+          "text": "Undead Skeletons has arrived at (-26,-2)",
+          "timestamp": 1746070621524,
+          "type": "event"
+        },
+        "move_1746070621524_monster_1746066423586_3500_2": {
+          "location": {
+            "x": -19,
+            "y": 2
+          },
+          "text": "Goblin Raiders has arrived at (-19,2)",
+          "timestamp": 1746070621524,
+          "type": "event"
+        },
+        "move_1746070621524_monster_1746067143240_863_3": {
+          "location": {
+            "x": -21,
+            "y": 12
+          },
+          "text": "Giant Spiders has arrived at (-21,12)",
+          "timestamp": 1746070621524,
+          "type": "event"
+        },
+        "move_1746070861970_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -32,
+            "y": 5
+          },
+          "text": "Bandits has arrived at (-32,5)",
+          "timestamp": 1746070861970,
+          "type": "event"
+        },
+        "move_1746070925312_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -23,
+            "y": -3
+          },
+          "text": "Giant Spiders has arrived at (-23,-3)",
+          "timestamp": 1746070925312,
+          "type": "event"
+        },
+        "move_1746070925312_monster_1746059525073_8841_2": {
+          "location": {
+            "x": -29,
+            "y": 0
+          },
+          "text": "Goblin Raiders has arrived at (-29,0)",
+          "timestamp": 1746070925312,
+          "type": "event"
+        },
+        "move_1746070925312_monster_1746059769176_279_2": {
+          "location": {
+            "x": -24,
+            "y": 0
+          },
+          "text": "Undead Skeletons has arrived at (-24,0)",
+          "timestamp": 1746070925312,
+          "type": "event"
+        },
+        "move_1746070925312_monster_1746066423586_3500_1": {
+          "location": {
+            "x": -18,
+            "y": 3
+          },
+          "text": "Goblin Raiders has arrived at (-18,3)",
+          "timestamp": 1746070925312,
+          "type": "event"
+        },
+        "move_1746070985968_monster_1746057842458_2380_2": {
+          "location": {
+            "x": -35,
+            "y": -6
+          },
+          "text": "Goblin Raiders has arrived at (-35,-6)",
+          "timestamp": 1746070985968,
+          "type": "event"
+        },
+        "move_1746070985968_monster_1746061322501_9180_2": {
+          "location": {
+            "x": -22,
+            "y": -2
+          },
+          "text": "Giant Spiders has arrived at (-22,-2)",
+          "timestamp": 1746070985968,
+          "type": "event"
+        },
+        "move_1746071161637_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -22,
+            "y": -3
+          },
+          "text": "Giant Spiders has arrived at (-22,-3)",
+          "timestamp": 1746071161637,
+          "type": "event"
+        },
+        "move_1746071161637_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -31,
+            "y": 5
+          },
+          "text": "Bandits has arrived at (-31,5)",
+          "timestamp": 1746071161637,
+          "type": "event"
+        },
+        "move_1746071161637_monster_1746066423586_3500_1": {
+          "location": {
+            "x": -18,
+            "y": 2
+          },
+          "text": "Goblin Raiders has arrived at (-18,2)",
+          "timestamp": 1746071161637,
+          "type": "event"
+        },
+        "move_1746071161637_monster_1746067143240_863_1": {
+          "location": {
+            "x": -22,
+            "y": 12
+          },
+          "text": "Giant Spiders has arrived at (-22,12)",
+          "timestamp": 1746071161637,
+          "type": "event"
+        },
+        "move_1746071161637_monster_1746068582434_7815_1": {
+          "location": {
+            "x": -19,
+            "y": 4
+          },
+          "text": "Giant Spiders has arrived at (-19,4)",
+          "timestamp": 1746071161637,
+          "type": "event"
+        },
+        "move_1746071281839_monster_1746059525073_8841_2": {
+          "location": {
+            "x": -31,
+            "y": -2
+          },
+          "text": "Goblin Raiders has arrived at (-31,-2)",
+          "timestamp": 1746071281839,
+          "type": "event"
+        },
+        "move_1746071341876_monster_1746057842458_2380_1": {
+          "location": {
+            "x": -36,
+            "y": -7
+          },
+          "text": "Goblin Raiders has arrived at (-36,-7)",
+          "timestamp": 1746071341876,
+          "type": "event"
+        },
+        "move_1746071341876_monster_1746068582434_7815_1": {
+          "location": {
+            "x": -20,
+            "y": 3
+          },
+          "text": "Giant Spiders has arrived at (-20,3)",
+          "timestamp": 1746071341876,
+          "type": "event"
+        },
+        "move_1746071405068_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -21,
+            "y": -4
+          },
+          "text": "Giant Spiders has arrived at (-21,-4)",
+          "timestamp": 1746071405068,
+          "type": "event"
+        },
+        "move_1746071405068_monster_1746061322501_9180_1": {
+          "location": {
+            "x": -22,
+            "y": -1
+          },
+          "text": "Giant Spiders has arrived at (-22,-1)",
+          "timestamp": 1746071405068,
+          "type": "event"
+        },
+        "move_1746071405068_monster_1746067143240_863_1": {
+          "location": {
+            "x": -21,
+            "y": 11
+          },
+          "text": "Giant Spiders has arrived at (-21,11)",
+          "timestamp": 1746071405068,
+          "type": "event"
+        },
+        "move_1746071461563_monster_1746057842458_2380_1": {
+          "location": {
+            "x": -37,
+            "y": -8
+          },
+          "text": "Goblin Raiders has arrived at (-37,-8)",
+          "timestamp": 1746071461563,
+          "type": "event"
+        },
+        "move_1746071521740_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -22,
+            "y": -3
+          },
+          "text": "Giant Spiders has arrived at (-22,-3)",
+          "timestamp": 1746071521740,
+          "type": "event"
+        },
+        "move_1746071521740_monster_1746059525073_8841_2": {
+          "location": {
+            "x": -33,
+            "y": 0
+          },
+          "text": "Goblin Raiders has arrived at (-33,0)",
+          "timestamp": 1746071521740,
+          "type": "event"
+        },
+        "move_1746071641198_monster_1746055083166_2458_1": {
+          "location": {
+            "x": -22,
+            "y": -4
+          },
+          "text": "Giant Spiders has arrived at (-22,-4)",
+          "timestamp": 1746071641198,
+          "type": "event"
+        },
+        "move_1746071641198_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -31,
+            "y": 4
+          },
+          "text": "Bandits has arrived at (-31,4)",
+          "timestamp": 1746071641198,
+          "type": "event"
+        },
+        "move_1746071641198_monster_1746066423586_3500_2": {
+          "location": {
+            "x": -16,
+            "y": 2
+          },
+          "text": "Goblin Raiders has arrived at (-16,2)",
+          "timestamp": 1746071641198,
+          "type": "event"
+        },
+        "move_1746071641198_monster_1746068582434_7815_2": {
+          "location": {
+            "x": -20,
+            "y": 1
+          },
+          "text": "Giant Spiders has arrived at (-20,1)",
+          "timestamp": 1746071641198,
+          "type": "event"
+        },
+        "move_1746071821237_monster_1746068582434_7815_1": {
+          "location": {
+            "x": -20,
+            "y": 2
+          },
+          "text": "Giant Spiders has arrived at (-20,2)",
+          "timestamp": 1746071821237,
+          "type": "event"
+        },
+        "move_1746071885778_monster_1746061322501_9180_3": {
+          "location": {
+            "x": -19,
+            "y": -1
+          },
+          "text": "Giant Spiders has arrived at (-19,-1)",
+          "timestamp": 1746071885778,
+          "type": "event"
+        },
+        "move_1746071885778_monster_1746067143240_863_1": {
+          "location": {
+            "x": -20,
+            "y": 10
+          },
+          "text": "Giant Spiders has arrived at (-20,10)",
+          "timestamp": 1746071885778,
+          "type": "event"
+        },
+        "move_1746071885778_monster_1746068582434_7815_1": {
+          "location": {
+            "x": -21,
+            "y": 2
+          },
+          "text": "Giant Spiders has arrived at (-21,2)",
+          "timestamp": 1746071885778,
+          "type": "event"
+        },
+        "move_1746072001026_-OP8ydw8iBjjHLdc3jEi_3": {
+          "location": {
+            "x": -21,
+            "y": 2
+          },
+          "text": "TestBattle's Force has arrived at (-21,2)",
+          "timestamp": 1746072001026,
+          "type": "event"
+        },
+        "move_1746072001026_monster_1746066423586_3500_1": {
+          "location": {
+            "x": -15,
+            "y": 3
+          },
+          "text": "Goblin Raiders has arrived at (-15,3)",
+          "timestamp": 1746072001026,
+          "type": "event"
+        },
+        "move_1746072001026_monster_1746068582434_7815_1": {
+          "location": {
+            "x": -22,
+            "y": 3
+          },
+          "text": "Giant Spiders has arrived at (-22,3)",
+          "timestamp": 1746072001026,
+          "type": "event"
+        },
+        "move_1746072061704_monster_1746059769176_279_1": {
+          "location": {
+            "x": -25,
+            "y": -1
+          },
+          "text": "Undead Skeletons has arrived at (-25,-1)",
+          "timestamp": 1746072061704,
+          "type": "event"
+        },
+        "move_1746072121120_-OP8ydw8iBjjHLdc3jEi_1": {
+          "location": {
+            "x": -22,
+            "y": 3
+          },
+          "text": "TestBattle's Force has arrived at (-22,3)",
+          "timestamp": 1746072121120,
+          "type": "event"
+        },
+        "move_1746072240596_monster_1746066423586_3500_1": {
+          "location": {
+            "x": -15,
+            "y": 4
+          },
+          "text": "Goblin Raiders has arrived at (-15,4)",
+          "timestamp": 1746072240596,
+          "type": "event"
+        },
+        "move_1746072301549_monster_1746059769176_279_2": {
+          "location": {
+            "x": -25,
+            "y": -3
+          },
+          "text": "Undead Skeletons has arrived at (-25,-3)",
+          "timestamp": 1746072301549,
+          "type": "event"
+        },
+        "move_1746072301549_monster_1746061322501_9180_2": {
+          "location": {
+            "x": -19,
+            "y": 1
+          },
+          "text": "Giant Spiders has arrived at (-19,1)",
+          "timestamp": 1746072301549,
+          "type": "event"
+        },
+        "move_1746072362006_monster_1746067143240_863_2": {
+          "location": {
+            "x": -22,
+            "y": 8
+          },
+          "text": "Giant Spiders has arrived at (-22,8)",
+          "timestamp": 1746072362006,
+          "type": "event"
+        },
+        "move_1746072540694_monster_1746066423586_3500_1": {
+          "location": {
+            "x": -15,
+            "y": 3
+          },
+          "text": "Goblin Raiders has arrived at (-15,3)",
+          "timestamp": 1746072540694,
+          "type": "event"
+        },
+        "move_1746072601757_monster_1746059769176_279_1": {
+          "location": {
+            "x": -24,
+            "y": -3
+          },
+          "text": "Undead Skeletons has arrived at (-24,-3)",
+          "timestamp": 1746072601757,
+          "type": "event"
+        },
+        "move_1746072601757_monster_1746067143240_863_1": {
+          "location": {
+            "x": -23,
+            "y": 7
+          },
+          "text": "Giant Spiders has arrived at (-23,7)",
+          "timestamp": 1746072601757,
+          "type": "event"
+        },
+        "move_1746072665883_-OP90oAsE56M59SqWaw2_2": {
+          "location": {
+            "x": -23,
+            "y": 7
+          },
+          "text": "Test Human's Force has arrived at (-23,7)",
+          "timestamp": 1746072665883,
+          "type": "event"
+        },
+        "move_1746072665883_monster_1746055083166_2458_2": {
+          "location": {
+            "x": -24,
+            "y": -6
+          },
+          "text": "Giant Spiders has arrived at (-24,-6)",
+          "timestamp": 1746072665883,
+          "type": "event"
+        },
+        "move_1746072665883_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -31,
+            "y": 5
+          },
+          "text": "Bandits has arrived at (-31,5)",
+          "timestamp": 1746072665883,
+          "type": "event"
+        },
+        "move_1746072665883_monster_1746059525073_8841_1": {
+          "location": {
+            "x": -34,
+            "y": -1
+          },
+          "text": "Goblin Raiders has arrived at (-34,-1)",
+          "timestamp": 1746072665883,
+          "type": "event"
+        },
+        "move_1746072665883_monster_1746066423586_3500_1": {
+          "location": {
+            "x": -14,
+            "y": 3
+          },
+          "text": "Goblin Raiders has arrived at (-14,3)",
+          "timestamp": 1746072665883,
+          "type": "event"
+        },
+        "move_1746072781715_monster_1746059769176_279_2": {
+          "location": {
+            "x": -26,
+            "y": -5
+          },
+          "text": "Undead Skeletons has arrived at (-26,-5)",
+          "timestamp": 1746072781715,
+          "type": "event"
+        },
+        "move_1746072961672_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -31,
+            "y": 6
+          },
+          "text": "Bandits has arrived at (-31,6)",
+          "timestamp": 1746072961672,
+          "type": "event"
+        },
+        "move_1746073081626_monster_1746066423586_3500_1": {
+          "location": {
+            "x": -15,
+            "y": 3
+          },
+          "text": "Goblin Raiders has arrived at (-15,3)",
+          "timestamp": 1746073081626,
+          "type": "event"
+        },
+        "move_1746073145959_monster_1746058082024_1343_1": {
+          "location": {
+            "x": -31,
+            "y": 5
+          },
+          "text": "Bandits has arrived at (-31,5)",
+          "timestamp": 1746073145959,
+          "type": "event"
+        },
+        "move_1746073260715_monster_1746059769176_279_2": {
+          "location": {
+            "x": -24,
+            "y": -3
+          },
+          "text": "Undead Skeletons has arrived at (-24,-3)",
+          "timestamp": 1746073260715,
+          "type": "event"
+        },
+        "move_1746073441367_monster_1746072303812_3174_1": {
+          "location": {
+            "x": -24,
+            "y": -1
+          },
+          "text": "Mountain Troll has arrived at (-24,-1)",
+          "timestamp": 1746073441367,
+          "type": "event"
+        },
+        "move_1746073505792_monster_1746055083166_2458_2": {
+          "location": {
+            "x": -26,
+            "y": -8
+          },
+          "text": "Giant Spiders has arrived at (-26,-8)",
+          "timestamp": 1746073505792,
+          "type": "event"
+        },
+        "move_1746073505792_monster_1746059525073_8841_2": {
+          "location": {
+            "x": -36,
+            "y": -3
+          },
+          "text": "Goblin Raiders has arrived at (-36,-3)",
+          "timestamp": 1746073505792,
+          "type": "event"
+        },
+        "move_1746073505792_monster_1746061322501_9180_1": {
+          "location": {
+            "x": -18,
+            "y": 0
+          },
+          "text": "Giant Spiders has arrived at (-18,0)",
+          "timestamp": 1746073505792,
+          "type": "event"
+        },
+        "move_1746073505792_monster_1746067143240_863_2": {
+          "location": {
+            "x": -21,
+            "y": 9
+          },
+          "text": "Giant Spiders has arrived at (-21,9)",
+          "timestamp": 1746073505792,
+          "type": "event"
+        },
+        "move_1746073621910_monster_1746059525073_8841_1": {
+          "location": {
+            "x": -35,
+            "y": -2
+          },
+          "text": "Goblin Raiders has arrived at (-35,-2)",
+          "timestamp": 1746073621910,
+          "type": "event"
+        },
+        "move_1746073621910_monster_1746066423586_3500_2": {
+          "location": {
+            "x": -17,
+            "y": 3
+          },
+          "text": "Goblin Raiders has arrived at (-17,3)",
+          "timestamp": 1746073621910,
+          "type": "event"
+        },
+        "move_1746073621910_monster_1746072782955_3639_1": {
+          "location": {
+            "x": -25,
+            "y": 6
+          },
+          "text": "Giant Spiders has arrived at (-25,6)",
+          "timestamp": 1746073621910,
+          "type": "event"
+        },
+        "move_1746073921365_monster_1746066423586_3500_1": {
+          "location": {
+            "x": -18,
+            "y": 4
+          },
+          "text": "Goblin Raiders has arrived at (-18,4)",
+          "timestamp": 1746073921365,
+          "type": "event"
+        },
+        "move_1746073921365_monster_1746073509558_3774_1": {
+          "location": {
+            "x": -27,
+            "y": 7
+          },
+          "text": "Undead Skeletons has arrived at (-27,7)",
+          "timestamp": 1746073921365,
+          "type": "event"
+        },
+        "move_start_1746059115340_-OP8DnXDQzhr3P2DNXUi": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "JoinBattleTest's Force is setting out from (-23,5) to (-25,2)",
+          "timestamp": 1746059115340,
+          "type": "system"
+        },
+        "move_start_1746059999295_-OP8DnXDQzhr3P2DNXUi": {
+          "location": {
+            "x": -25,
+            "y": 2
+          },
+          "text": "JoinBattleTest's Force is setting out from (-25,2) to (-27,3)",
+          "timestamp": 1746059999295,
+          "type": "system"
+        },
+        "move_start_1746061577643_-OP8MvGwNOuPkxQYzOiO": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force is setting out from (-23,5) to (-26,5)",
+          "timestamp": 1746061577643,
+          "type": "system"
+        },
+        "move_start_1746062258018_-OP8MvGwNOuPkxQYzOiO": {
+          "location": {
+            "x": -26,
+            "y": 5
+          },
+          "text": "testbattle's Force is setting out from (-26,5) to (-28,1)",
+          "timestamp": 1746062258018,
+          "type": "system"
+        },
+        "move_start_1746065357116_-OP8aYzm48dlcvy_4M8q": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force is setting out from (-23,5) to (-24,4)",
+          "timestamp": 1746065357116,
+          "type": "system"
+        },
+        "move_start_1746065484960_-OP8aYzm48dlcvy_4M8q": {
+          "location": {
+            "x": -24,
+            "y": 4
+          },
+          "text": "testbattle's Force is setting out from (-24,4) to (-25,3)",
+          "timestamp": 1746065484960,
+          "type": "system"
+        },
+        "move_start_1746065909391_-OP8cS0HS8B11-b4jngf": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force is setting out from (-23,5) to (-25,3)",
+          "timestamp": 1746065909391,
+          "type": "system"
+        },
+        "move_start_1746066473439_-OP8ef2c0QtP2GSaIK6_": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force is setting out from (-23,5) to (-25,3)",
+          "timestamp": 1746066473439,
+          "type": "system"
+        },
+        "move_start_1746068565901_-OP8lIkNakkko8xGrlmE": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force is setting out from (-23,5) to (-25,6)",
+          "timestamp": 1746068565901,
+          "type": "system"
+        },
+        "move_start_1746070216205_-OP8t3p17HxDFl8pUfk5": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Tester's Force is setting out from (-23,5) to (-20,4)",
+          "timestamp": 1746070216205,
+          "type": "system"
+        },
+        "move_start_1746071658533_-OP8ydw8iBjjHLdc3jEi": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "TestBattle's Force is setting out from (-23,5) to (-21,2)",
+          "timestamp": 1746071658533,
+          "type": "system"
+        },
+        "move_start_1746072014364_-OP8ydw8iBjjHLdc3jEi": {
+          "location": {
+            "x": -21,
+            "y": 2
+          },
+          "text": "TestBattle's Force is setting out from (-21,2) to (-22,3)",
+          "timestamp": 1746072014364,
+          "type": "system"
+        },
+        "move_start_1746072532248_-OP90oAsE56M59SqWaw2": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Test Human's Force is setting out from (-23,5) to (-23,7)",
+          "timestamp": 1746072532248,
+          "type": "system"
+        },
+        "player_death_1746063902831_348": {
+          "location": {
+            "x": -28,
+            "y": 1
+          },
+          "text": "testbattle's Force's avatar was killed in battle!",
+          "timestamp": 1746063902831,
+          "type": "event"
+        },
+        "player_death_1746064206418_756": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force's avatar was killed in battle!",
+          "timestamp": 1746064206418,
+          "type": "event"
+        },
+        "player_death_1746064503233_759": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force's avatar was killed in battle!",
+          "timestamp": 1746064503233,
+          "type": "event"
+        },
+        "player_death_1746064622114_248": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "testbattle's Force's avatar was killed in battle!",
+          "timestamp": 1746064622114,
+          "type": "event"
+        },
+        "player_death_1746065642676_650": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "testbattle's Force's avatar was killed in battle!",
+          "timestamp": 1746065642677,
+          "type": "event"
+        },
+        "player_death_1746066363258_912": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "testbattle's Force's avatar was killed in battle!",
+          "timestamp": 1746066363258,
+          "type": "event"
+        },
+        "player_death_1746066662603_995": {
+          "location": {
+            "x": -25,
+            "y": 3
+          },
+          "text": "testbattle's Force's avatar was killed in battle!",
+          "timestamp": 1746066662603,
+          "type": "event"
+        },
+        "player_death_1746068762102_382": {
+          "location": {
+            "x": -34,
+            "y": -3
+          },
+          "text": "JimmyRigged's Force's avatar was killed in battle!",
+          "timestamp": 1746068762102,
+          "type": "event"
+        },
+        "player_death_1746068882857_848": {
+          "location": {
+            "x": -25,
+            "y": 6
+          },
+          "text": "testbattle's Force's avatar was killed in battle!",
+          "timestamp": 1746068882857,
+          "type": "event"
+        }
+      },
       "chunks": {
         "-1,-1": {
           "-23,-8": {
@@ -453,53 +3849,6 @@
           }
         },
         "-1,0": {
-          "-14,3": {
-            "groups": {
-              "monster_1746066423586_3500": {
-                "createdAt": 1746066423586,
-                "gatheringTicksRemaining": 1,
-                "id": "monster_1746066423586_3500",
-                "items": [
-                  {
-                    "id": "item_1746067081788_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 5,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Moving to next location (-14,3)",
-                  "timestamp": 1746072665883
-                },
-                "lastUpdated": 1746072665883,
-                "monsterType": "goblin",
-                "moveReason": "structure_attack",
-                "moveSpeed": 1,
-                "moveStarted": 1746072603108,
-                "movementPath": [
-                  {
-                    "x": -15,
-                    "y": 3
-                  },
-                  {
-                    "x": -14,
-                    "y": 3
-                  }
-                ],
-                "name": "Goblin Raiders",
-                "nextMoveTime": 1746072725883,
-                "pathIndex": 1,
-                "status": "idle",
-                "targetX": -14,
-                "targetY": 3,
-                "type": "monster",
-                "unitCount": 2,
-                "x": -14,
-                "y": 3
-              }
-            }
-          },
           "-15,3": {
             "structure": {
               "description": "A resourceful goblin settlement built from the remains of ancient beasts",
@@ -518,7 +3867,7 @@
               "type": "spawn"
             }
           },
-          "-19,1": {
+          "-18,0": {
             "groups": {
               "monster_1746061322501_9180": {
                 "createdAt": 1746061322501,
@@ -555,162 +3904,130 @@
                   }
                 ],
                 "lastMessage": {
-                  "text": "Moving to next location (-19,1)",
-                  "timestamp": 1746072301549
+                  "text": "Moving to next location (-18,0)",
+                  "timestamp": 1746073505792
                 },
-                "lastUpdated": 1746072301549,
+                "lastUpdated": 1746073505792,
                 "monsterType": "spider",
                 "moveSpeed": 1,
-                "moveStarted": 1746072122461,
+                "moveStarted": 1746073383262,
                 "movementPath": [
                   {
                     "x": -19,
-                    "y": -1
-                  },
-                  {
-                    "x": -19,
-                    "y": 0
-                  },
-                  {
-                    "x": -19,
                     "y": 1
+                  },
+                  {
+                    "x": -18,
+                    "y": 0
                   }
                 ],
                 "name": "Giant Spiders",
-                "nextMoveTime": 1746072361549,
-                "pathIndex": 2,
+                "nextMoveTime": 1746073565792,
+                "pathIndex": 1,
                 "status": "idle",
-                "targetX": -19,
-                "targetY": 1,
+                "targetX": -18,
+                "targetY": 0,
                 "type": "monster",
                 "unitCount": 3,
-                "x": -19,
-                "y": 1
-              }
-            }
-          }
-        },
-        "-2,-1": {
-          "-23,-1": {
-            "groups": {
-              "monster_1746072303812_3174": {
-                "createdAt": 1746072303812,
-                "id": "monster_1746072303812_3174",
-                "lastUpdated": 1746072303812,
-                "monsterType": "troll",
-                "name": "Mountain Troll",
-                "status": "idle",
-                "type": "monster",
-                "unitCount": 1,
-                "x": -23,
-                "y": -1
+                "x": -18,
+                "y": 0
               }
             }
           },
-          "-23,-3": {
+          "-18,4": {
             "groups": {
-              "monster_1746054843517_5576": {
+              "monster_1746066423586_3500": {
+                "createdAt": 1746066423586,
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746066423586_3500",
                 "items": [
                   {
-                    "id": "item_1746054843517_142",
-                    "name": "Crude Weapon",
-                    "quantity": 1,
-                    "rarity": "common",
-                    "type": "weapon"
-                  },
-                  {
-                    "id": "item_1746055803181_1",
+                    "id": "item_1746067081788_1",
                     "name": "Wooden Sticks",
                     "quantity": 5,
                     "rarity": "common",
                     "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Moving to next location (-18,4)",
+                  "timestamp": 1746073921365
+                },
+                "lastUpdated": 1746073921365,
+                "monsterType": "goblin",
+                "moveReason": "structure_attack",
+                "moveSpeed": 1,
+                "moveStarted": 1746073802129,
+                "movementPath": [
+                  {
+                    "x": -17,
+                    "y": 3
                   },
                   {
-                    "id": "item_1746055803181_2",
+                    "x": -18,
+                    "y": 4
+                  }
+                ],
+                "name": "Goblin Raiders",
+                "nextMoveTime": 1746073981365,
+                "pathIndex": 1,
+                "status": "idle",
+                "targetX": -18,
+                "targetY": 4,
+                "type": "monster",
+                "unitCount": 2,
+                "x": -18,
+                "y": 4
+              }
+            }
+          },
+          "-19,10": {
+            "groups": {
+              "monster_1746073566737_2260": {
+                "createdAt": 1746073566737,
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746073566737_2260",
+                "items": [
+                  {
+                    "id": "item_1746073921878_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746073921878_2",
                     "name": "Stone Pieces",
                     "quantity": 3,
                     "rarity": "common",
                     "type": "resource"
                   },
                   {
-                    "id": "item_1746057542866_395",
-                    "name": "Crude Weapon",
-                    "quantity": 1,
-                    "rarity": "common",
-                    "type": "weapon"
-                  }
-                ],
-                "lastUpdated": 1746057542866,
-                "unitCount": 4
-              }
-            }
-          },
-          "-24,-6": {
-            "groups": {
-              "monster_1746055083166_2458": {
-                "createdAt": 1746055083166,
-                "gatheringTicksRemaining": 1,
-                "id": "monster_1746055083166_2458",
-                "items": [
-                  {
-                    "id": "item_1746055803183_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 5,
+                    "id": "item_1746073921878_909",
+                    "name": "Wheat",
+                    "quantity": 3,
                     "rarity": "common",
                     "type": "resource"
-                  },
-                  {
-                    "id": "item_1746055803183_2",
-                    "name": "Stone Pieces",
-                    "quantity": 4,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "description": "A strange object of unknown origin",
-                    "id": "item_1746056042191_special",
-                    "name": "Mysterious Artifact",
-                    "quantity": 1,
-                    "rarity": "rare",
-                    "type": "artifact"
                   }
                 ],
                 "lastMessage": {
-                  "text": "Moving to next location (-24,-6)",
-                  "timestamp": 1746072665883
+                  "text": "Gathered 3 items",
+                  "timestamp": 1746073921365
                 },
-                "lastUpdated": 1746072665883,
-                "monsterType": "spider",
-                "moveSpeed": 1,
-                "moveStarted": 1746072482155,
-                "movementPath": [
-                  {
-                    "x": -22,
-                    "y": -4
-                  },
-                  {
-                    "x": -23,
-                    "y": -5
-                  },
-                  {
-                    "x": -24,
-                    "y": -6
-                  }
-                ],
-                "name": "Giant Spiders",
-                "nextMoveTime": 1746072725883,
-                "pathIndex": 2,
+                "lastUpdated": 1746073921365,
+                "monsterType": "bandit",
+                "name": "Bandits",
                 "status": "idle",
-                "targetX": -24,
-                "targetY": -6,
                 "type": "monster",
-                "unitCount": 2,
-                "x": -24,
-                "y": -6
+                "unitCount": 3,
+                "x": -19,
+                "y": 10
               }
             }
-          },
-          "-25,-4": {
+          }
+        },
+        "-2,-1": {
+          "-23,-2": {
             "groups": {
               "monster_1746059769176_279": {
                 "createdAt": 1746059769176,
@@ -761,37 +4078,197 @@
                   }
                 ],
                 "lastMessage": {
-                  "text": "Moving to next location (-25,-4)",
-                  "timestamp": 1746072665883
+                  "text": "Moving to next location (-23,-2)",
+                  "timestamp": 1746073921365
                 },
-                "lastUpdated": 1746072665883,
+                "lastUpdated": 1746073921365,
                 "monsterType": "skeleton",
                 "moveSpeed": 1,
-                "moveStarted": 1746072603108,
+                "moveStarted": 1746073802129,
                 "movementPath": [
                   {
                     "x": -24,
                     "y": -3
                   },
                   {
-                    "x": -25,
-                    "y": -4
+                    "x": -23,
+                    "y": -2
                   },
                   {
-                    "x": -26,
-                    "y": -5
+                    "x": -22,
+                    "y": -1
                   }
                 ],
                 "name": "Undead Skeletons",
-                "nextMoveTime": 1746072725883,
+                "nextMoveTime": 1746073981365,
                 "pathIndex": 1,
                 "status": "moving",
-                "targetX": -27,
-                "targetY": -6,
+                "targetX": -22,
+                "targetY": -1,
                 "type": "monster",
                 "unitCount": 7,
+                "x": -23,
+                "y": -2
+              }
+            }
+          },
+          "-23,-3": {
+            "groups": {
+              "monster_1746054843517_5576": {
+                "items": [
+                  {
+                    "id": "item_1746054843517_142",
+                    "name": "Crude Weapon",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "weapon"
+                  },
+                  {
+                    "id": "item_1746055803181_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 5,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746055803181_2",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746057542866_395",
+                    "name": "Crude Weapon",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "weapon"
+                  }
+                ],
+                "lastUpdated": 1746057542866,
+                "unitCount": 4
+              }
+            }
+          },
+          "-25,-2": {
+            "groups": {
+              "monster_1746072303812_3174": {
+                "createdAt": 1746072303812,
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746072303812_3174",
+                "items": [
+                  {
+                    "id": "item_1746073146380_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746073146380_2",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Moving to next location (-25,-2)",
+                  "timestamp": 1746073921365
+                },
+                "lastUpdated": 1746073921365,
+                "monsterType": "troll",
+                "moveSpeed": 1,
+                "moveStarted": 1746073802129,
+                "movementPath": [
+                  {
+                    "x": -24,
+                    "y": -1
+                  },
+                  {
+                    "x": -25,
+                    "y": -2
+                  },
+                  {
+                    "x": -26,
+                    "y": -3
+                  }
+                ],
+                "name": "Mountain Troll",
+                "nextMoveTime": 1746073981365,
+                "pathIndex": 1,
+                "status": "moving",
+                "targetX": -26,
+                "targetY": -3,
+                "type": "monster",
+                "unitCount": 1,
                 "x": -25,
-                "y": -4
+                "y": -2
+              }
+            }
+          },
+          "-26,-8": {
+            "groups": {
+              "monster_1746055083166_2458": {
+                "createdAt": 1746055083166,
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746055083166_2458",
+                "items": [
+                  {
+                    "id": "item_1746055803183_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 5,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746055803183_2",
+                    "name": "Stone Pieces",
+                    "quantity": 4,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "description": "A strange object of unknown origin",
+                    "id": "item_1746056042191_special",
+                    "name": "Mysterious Artifact",
+                    "quantity": 1,
+                    "rarity": "rare",
+                    "type": "artifact"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Moving to next location (-26,-8)",
+                  "timestamp": 1746073505792
+                },
+                "lastUpdated": 1746073505792,
+                "monsterType": "spider",
+                "moveSpeed": 1,
+                "moveStarted": 1746073326640,
+                "movementPath": [
+                  {
+                    "x": -24,
+                    "y": -6
+                  },
+                  {
+                    "x": -25,
+                    "y": -7
+                  },
+                  {
+                    "x": -26,
+                    "y": -8
+                  }
+                ],
+                "name": "Giant Spiders",
+                "nextMoveTime": 1746073565792,
+                "pathIndex": 2,
+                "status": "idle",
+                "targetX": -27,
+                "targetY": -9,
+                "type": "monster",
+                "unitCount": 2,
+                "x": -26,
+                "y": -8
               }
             }
           },
@@ -966,7 +4443,7 @@
               "type": "spawn"
             }
           },
-          "-34,-1": {
+          "-35,-2": {
             "groups": {
               "monster_1746059525073_8841": {
                 "createdAt": 1746059525073,
@@ -997,33 +4474,33 @@
                   }
                 ],
                 "lastMessage": {
-                  "text": "Moving to next location (-34,-1)",
-                  "timestamp": 1746072665883
+                  "text": "Moving to next location (-35,-2)",
+                  "timestamp": 1746073621910
                 },
-                "lastUpdated": 1746072665883,
+                "lastUpdated": 1746073621910,
                 "monsterType": "goblin",
                 "moveSpeed": 1,
-                "moveStarted": 1746072603108,
+                "moveStarted": 1746073507294,
                 "movementPath": [
                   {
-                    "x": -33,
-                    "y": 0
+                    "x": -36,
+                    "y": -3
                   },
                   {
-                    "x": -34,
-                    "y": -1
+                    "x": -35,
+                    "y": -2
                   }
                 ],
                 "name": "Goblin Raiders",
-                "nextMoveTime": 1746072725883,
+                "nextMoveTime": 1746073681910,
                 "pathIndex": 1,
                 "status": "idle",
-                "targetX": -34,
-                "targetY": -1,
+                "targetX": -33,
+                "targetY": 0,
                 "type": "monster",
                 "unitCount": 2,
-                "x": -34,
-                "y": -1
+                "x": -35,
+                "y": -2
               }
             }
           },
@@ -1044,88 +4521,8 @@
           }
         },
         "-2,0": {
-          "-23,5": {
-            "structure": {
-              "description": "A rugged frontier settlement where hardy humans carve out a living",
-              "id": "structure_al_human_spawn",
-              "items": [
-                {
-                  "id": "item_1745062986244_1",
-                  "name": "Wooden Sticks",
-                  "quantity": 13,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "id": "item_1745062986245_2",
-                  "name": "Stone Pieces",
-                  "quantity": 7,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "description": "A strange object of unknown origin",
-                  "id": "item_1745062986245_special",
-                  "name": "Mysterious Artifact",
-                  "quantity": 1,
-                  "rarity": "rare",
-                  "type": "artifact"
-                }
-              ],
-              "name": "Stoneguard Citadel",
-              "race": "human",
-              "type": "spawn"
-            }
-          },
-          "-23,7": {
+          "-22,8": {
             "groups": {
-              "-OP90oAsE56M59SqWaw2": {
-                "battleRole": "attacker",
-                "createdAt": 1746072453938,
-                "id": "-OP90oAsE56M59SqWaw2",
-                "inBattle": false,
-                "lastMessage": {
-                  "text": "Moving to next location (-23,7)",
-                  "timestamp": 1746072665883
-                },
-                "lastUpdated": 1746072665883,
-                "moveSpeed": 1,
-                "moveStarted": 1746072532248,
-                "movementPath": [
-                  {
-                    "x": -23,
-                    "y": 5
-                  },
-                  {
-                    "x": -23,
-                    "y": 6
-                  },
-                  {
-                    "x": -23,
-                    "y": 7
-                  }
-                ],
-                "name": "Test Human's Force",
-                "nextMoveTime": 1746072725883,
-                "owner": "ES5WUm59ByZqQpwwXx3A3RO1w1O2",
-                "pathIndex": 2,
-                "race": "human",
-                "status": "idle",
-                "targetX": -23,
-                "targetY": 7,
-                "unitCount": 1,
-                "units": {
-                  "ES5WUm59ByZqQpwwXx3A3RO1w1O2": {
-                    "displayName": "Test Human",
-                    "id": "ES5WUm59ByZqQpwwXx3A3RO1w1O2",
-                    "lastActive": 1746072444979,
-                    "race": "human",
-                    "type": "player"
-                  }
-                },
-                "x": -23,
-                "y": 7
-              },
               "monster_1746067143240_863": {
                 "createdAt": 1746067143240,
                 "gatheringTicksRemaining": 1,
@@ -1169,14 +4566,18 @@
                   }
                 ],
                 "lastMessage": {
-                  "text": "Victory in battle! All units survived the battle.",
-                  "timestamp": 1746072723100
+                  "text": "Moving to next location (-22,8)",
+                  "timestamp": 1746073921365
                 },
-                "lastUpdated": 1746072601757,
+                "lastUpdated": 1746073921365,
                 "monsterType": "spider",
                 "moveSpeed": 1,
-                "moveStarted": 1746072482155,
+                "moveStarted": 1746073802129,
                 "movementPath": [
+                  {
+                    "x": -21,
+                    "y": 9
+                  },
                   {
                     "x": -22,
                     "y": 8
@@ -1187,14 +4588,264 @@
                   }
                 ],
                 "name": "Giant Spiders",
-                "nextMoveTime": 1746072661757,
+                "nextMoveTime": 1746073981365,
                 "pathIndex": 1,
+                "status": "moving",
+                "targetX": -24,
+                "targetY": 6,
+                "type": "monster",
+                "unitCount": 5,
+                "x": -22,
+                "y": 8
+              }
+            }
+          },
+          "-23,5": {
+            "structure": {
+              "description": "A rugged frontier settlement where hardy humans carve out a living",
+              "id": "structure_al_human_spawn",
+              "items": [
+                {
+                  "id": "item_1745062986244_1",
+                  "name": "Wooden Sticks",
+                  "quantity": 13,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "id": "item_1745062986245_2",
+                  "name": "Stone Pieces",
+                  "quantity": 7,
+                  "rarity": "common",
+                  "type": "resource"
+                },
+                {
+                  "description": "A strange object of unknown origin",
+                  "id": "item_1745062986245_special",
+                  "name": "Mysterious Artifact",
+                  "quantity": 1,
+                  "rarity": "rare",
+                  "type": "artifact"
+                }
+              ],
+              "name": "Stoneguard Citadel",
+              "race": "human",
+              "type": "spawn"
+            }
+          },
+          "-23,7": {
+            "groups": {
+              "-OP90oAsE56M59SqWaw2": {
+                "battleRole": "defender",
+                "createdAt": 1746072453938,
+                "gatheringTicksRemaining": 1,
+                "id": "-OP90oAsE56M59SqWaw2",
+                "inBattle": false,
+                "items": [
+                  {
+                    "id": "item_1746073442108_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Gathered 1 item",
+                  "timestamp": 1746073441367
+                },
+                "lastUpdated": 1746073441367,
+                "moveSpeed": 1,
+                "moveStarted": 1746072532248,
+                "movementPath": [
+                  {
+                    "x": -23,
+                    "y": 5
+                  },
+                  {
+                    "x": -23,
+                    "y": 6
+                  },
+                  {
+                    "x": -23,
+                    "y": 7
+                  }
+                ],
+                "name": "Test Human's Force",
+                "nextMoveTime": 1746072725883,
+                "owner": "ES5WUm59ByZqQpwwXx3A3RO1w1O2",
+                "pathIndex": 2,
+                "race": "human",
                 "status": "idle",
                 "targetX": -23,
                 "targetY": 7,
+                "unitCount": 1,
+                "units": {
+                  "ES5WUm59ByZqQpwwXx3A3RO1w1O2": {
+                    "displayName": "Test Human",
+                    "id": "ES5WUm59ByZqQpwwXx3A3RO1w1O2",
+                    "lastActive": 1746072444979,
+                    "race": "human",
+                    "type": "player"
+                  }
+                },
+                "x": -23,
+                "y": 7
+              }
+            }
+          },
+          "-25,6": {
+            "groups": {
+              "monster_1746072782955_3639": {
+                "createdAt": 1746072782955,
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746072782955_3639",
+                "items": [
+                  {
+                    "id": "item_1746072782955_206",
+                    "name": "Stone Pieces",
+                    "quantity": 5,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746072782955_739",
+                    "name": "Crude Weapon",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "weapon"
+                  },
+                  {
+                    "id": "item_1746072782955_8",
+                    "name": "Bone Fragment",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746073442216_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746073442216_702",
+                    "name": "Wild Berries",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Moving to next location (-25,6)",
+                  "timestamp": 1746073621910
+                },
+                "lastUpdated": 1746073621910,
+                "monsterType": "spider",
+                "moveSpeed": 1,
+                "moveStarted": 1746073507294,
+                "movementPath": [
+                  {
+                    "x": -26,
+                    "y": 6
+                  },
+                  {
+                    "x": -25,
+                    "y": 6
+                  }
+                ],
+                "name": "Giant Spiders",
+                "nextMoveTime": 1746073681910,
+                "pathIndex": 1,
+                "status": "idle",
+                "targetX": -23,
+                "targetY": 6,
                 "type": "monster",
                 "unitCount": 5,
-                "x": -23,
+                "x": -25,
+                "y": 6
+              }
+            }
+          },
+          "-26,7": {
+            "groups": {
+              "monster_1746073623360_1215": {
+                "createdAt": 1746073623360,
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746073623360_1215",
+                "items": [
+                  {
+                    "id": "item_1746073623360_267",
+                    "name": "Monster Hide",
+                    "quantity": 1,
+                    "rarity": "uncommon",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746073922201_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 4,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Gathered 1 item",
+                  "timestamp": 1746073921365
+                },
+                "lastUpdated": 1746073921365,
+                "monsterType": "goblin",
+                "name": "Goblin Raiders",
+                "status": "idle",
+                "type": "monster",
+                "unitCount": 1,
+                "x": -26,
+                "y": 7
+              }
+            }
+          },
+          "-27,7": {
+            "groups": {
+              "monster_1746073509558_3774": {
+                "createdAt": 1746073509558,
+                "id": "monster_1746073509558_3774",
+                "items": [
+                  {
+                    "id": "item_1746073509558_756",
+                    "name": "Crude Weapon",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "weapon"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Moving to next location (-27,7)",
+                  "timestamp": 1746073921365
+                },
+                "lastUpdated": 1746073921365,
+                "monsterType": "skeleton",
+                "moveSpeed": 1,
+                "moveStarted": 1746073802129,
+                "movementPath": [
+                  {
+                    "x": -26,
+                    "y": 8
+                  },
+                  {
+                    "x": -27,
+                    "y": 7
+                  }
+                ],
+                "name": "Undead Skeletons",
+                "nextMoveTime": 1746073981365,
+                "pathIndex": 1,
+                "status": "idle",
+                "targetX": -27,
+                "targetY": 7,
+                "type": "monster",
+                "unitCount": 4,
+                "x": -27,
                 "y": 7
               }
             }
@@ -1237,16 +4888,16 @@
                 ],
                 "lastMessage": {
                   "text": "Moving to next location (-31,5)",
-                  "timestamp": 1746072665883
+                  "timestamp": 1746073145959
                 },
-                "lastUpdated": 1746072665883,
+                "lastUpdated": 1746073145959,
                 "monsterType": "bandit",
                 "moveSpeed": 1,
-                "moveStarted": 1746072603108,
+                "moveStarted": 1746073082696,
                 "movementPath": [
                   {
                     "x": -31,
-                    "y": 4
+                    "y": 6
                   },
                   {
                     "x": -31,
@@ -1254,11 +4905,11 @@
                   }
                 ],
                 "name": "Bandits",
-                "nextMoveTime": 1746072725883,
+                "nextMoveTime": 1746073205959,
                 "pathIndex": 1,
                 "status": "idle",
                 "targetX": -31,
-                "targetY": 7,
+                "targetY": 5,
                 "type": "monster",
                 "unitCount": 4,
                 "x": -31,
@@ -1274,7 +4925,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746072721546,
+        "lastTick": 1746073921365,
         "name": "Ancient Lands",
         "playerCount": 21,
         "seed": 13579,
