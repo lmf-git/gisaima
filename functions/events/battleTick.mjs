@@ -472,7 +472,7 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
       if (group.owner && group.units) {
         // If group is being wiped out, DEFINITELY check for player death
         // Pass 100% casualty probability to ensure player status is checked
-        checkAndUpdatePlayerStatus(group, groupCasualties, worldId, chunkKey, locationKey, updates);
+        checkAndUpdatePlayerStatus(group, groupCasualties, worldId, chunkKey, locationKey, updates, deletedGroupIds);
       }
       
       // Collect items from the group before marking for removal
@@ -490,7 +490,7 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
       
       // Check if we need to check for player unit loss
       if (group.owner && group.units) {
-        checkAndUpdatePlayerStatus(group, groupCasualties, worldId, chunkKey, locationKey, updates);
+        checkAndUpdatePlayerStatus(group, groupCasualties, worldId, chunkKey, locationKey, updates, deletedGroupIds);
       }
     }
   });
@@ -506,8 +506,9 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
  * @param {string} chunkKey - Chunk key
  * @param {string} locationKey - Location key
  * @param {Object} updates - Firebase updates object
+ * @param {Set} deletedGroupIds - Set of group IDs being deleted
  */
-function checkAndUpdatePlayerStatus(group, casualties, worldId, chunkKey, locationKey, updates) {
+function checkAndUpdatePlayerStatus(group, casualties, worldId, chunkKey, locationKey, updates, deletedGroupIds) {
   // Skip if no casualties or no owner
   if (casualties <= 0 || !group.owner) return;
   
@@ -557,9 +558,15 @@ function checkAndUpdatePlayerStatus(group, casualties, worldId, chunkKey, locati
       // Player unit was lost - mark player as not alive
       updates[`players/${group.owner}/worlds/${worldId}/alive`] = false;
       
-      // Also mark the player unit as dead in the group if it's in object format
-      if (typeof group.units === 'object' && !Array.isArray(group.units) && playerUnitId) {
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/units/${playerUnitId}/dead`] = true;
+      // Check if the group's path is already scheduled for deletion
+      // We can check this by constructing the path we would update and checking if it's in updates
+      const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`;
+      const isGroupBeingDeleted = updates[groupPath] === null;
+      
+      // Only update the unit's dead status if the whole group isn't being deleted
+      // This prevents the ancestor path conflict error
+      if (!isGroupBeingDeleted && playerUnitId) {
+        updates[`${groupPath}/units/${playerUnitId}/dead`] = true;
       }
       
       logger.info(`Player unit lost during battle attrition - marking player ${group.owner} as not alive`);
