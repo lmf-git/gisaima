@@ -4,7 +4,7 @@
  */
 
 import { logger } from "firebase-functions";
-import { merge } from "gisaima-shared/economy/items.mjs";
+import { merge } from "gisaima-shared/economy/items.js";
 
 /**
  * Process demobilizing groups for a given world
