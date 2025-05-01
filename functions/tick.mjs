@@ -7,7 +7,7 @@ import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 
 // Import specialized tick handlers
-import { processBattles } from "./events/battleTick.mjs";
+import { processBattle } from "./events/battleTick.mjs";
 import { processMobilizations } from "./events/mobiliseTick.mjs";
 import { processDemobilization } from "./events/demobiliseTick.mjs";
 import { processMovement } from "./events/moveTick.mjs";
@@ -90,6 +90,11 @@ export const processGameTicks = onSchedule({
               buildingsProcessed++;
             }
           }
+
+          // TODO: Find battles in tiles and process them.
+          tile.battles
+          console.log(`Processing battles in world ${worldId}`);
+          const battleProcessed = await processBattle(worldId, chunks);
           
           // Check if there are groups on this tile
           if (tile.groups) {
@@ -148,11 +153,6 @@ export const processGameTicks = onSchedule({
           console.error(`Failed to apply updates to world ${worldId}:`, updateError);
         }
       }
-
-      // Process battles for the world - pass the chunks data to avoid reloading
-      console.log(`Processing battles in world ${worldId}`);
-      const battlesProcessed = await processBattles(worldId, chunks);
-      console.log(`Processed ${battlesProcessed} battles in world ${worldId}`);
       
       // Process structure upgrades
       console.log(`Processing structure upgrades for world ${worldId}`);
