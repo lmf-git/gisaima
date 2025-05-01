@@ -37,6 +37,27 @@
   let loading = $state(false);
   let errorMessage = $state('');
   
+  // Helper function to normalize groups data - handles both array and object formats
+  function normalizeGroupsData(groupsData) {
+    if (!groupsData) return [];
+    
+    // If it's already an array, return it
+    if (Array.isArray(groupsData)) return groupsData;
+    
+    // If it's an object with keys, convert to array
+    if (typeof groupsData === 'object') {
+      return Object.keys(groupsData).map(key => {
+        const data = groupsData[key];
+        return {
+          ...data,
+          id: data.id || key
+        };
+      });
+    }
+    
+    return [];
+  }
+  
   // Improved battle detection logic
   $effect(() => {
     if (!tileData) return;
@@ -44,17 +65,18 @@
     const playerId = $currentPlayer?.uid;
     if (!playerId) return;
     
+    // Normalize groups data first (handles both array and object formats)
+    const groups = normalizeGroupsData(tileData.groups);
+    
     // Find groups that can join battles
-    availableGroups = tileData.groups
-      ? tileData.groups.filter(group => 
-          group.owner === playerId && 
-          group.status === 'idle' &&
-          !group.inBattle
-        ).map(group => ({
-          ...group,
-          selected: false
-        }))
-      : [];
+    availableGroups = groups.filter(group => 
+        group.owner === playerId && 
+        group.status === 'idle' &&
+        !group.inBattle
+      ).map(group => ({
+        ...group,
+        selected: false
+      }));
     
     // Auto-select first group if there's only one
     if (availableGroups.length === 1) {
@@ -83,8 +105,8 @@
     }
     
     // Also look for groups in battle as a fallback
-    if (tileData.groups) {
-      tileData.groups.forEach(group => {
+    if (groups.length > 0) {
+      groups.forEach(group => {
         if (group.inBattle && group.battleId) {
           if (!battles.has(group.battleId)) {
             battles.set(group.battleId, {
