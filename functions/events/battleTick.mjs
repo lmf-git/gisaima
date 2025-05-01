@@ -818,13 +818,10 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
     const updates = {};
     const deletedPaths = new Set();
     
-    // Mark the battle path as deleted to track conflicts
+    // IMPORTANT CHANGE: We DO NOT add the battle path to deletedPaths yet
+    // We'll do that after processing all group updates to avoid conflicts
+    // Only reference the path for now
     const battlePath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`;
-    deletedPaths.add(battlePath);
-    
-    // Always delete the battle when it's resolved rather than keeping it as "resolved"
-    updates[battlePath] = null;
-    logger.info(`Deleting resolved battle ${battleId} at (${locationKey})`);
     
     // Process groups based on battle outcome
     const losingGroups = winningSide === 1 ? defenders : attackers;
@@ -1094,6 +1091,11 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
         timestamp: now + 1 // +1 to ensure it appears after the battle message
       };
     }
+    
+    // NEW: NOW we mark the battle for deletion AFTER processing all updates to child paths
+    // This prevents update conflicts with the battle path
+    updates[battlePath] = null;
+    deletedPaths.add(battlePath);
     
     // Clean up conflicting updates before submitting
     cleanupConflictingUpdates(updates, deletedPaths);
@@ -1541,6 +1543,19 @@ function cleanupConflictingUpdates(updates, deletedPaths) {
         // This update is under a deleted path, so remove it
         delete updates[updatePath];
         logger.info(`Removed conflicting update to ${updatePath} (under deleted path ${deletedPath})`);
+        break;
+      }
+      
+      // NEW: Also check if the deleted path is a child of this update path
+      // This handles conflicts when trying to update a parent while deleting a child
+      if (deletedPath.startsWith(updatePath + '/')) {
+        logger.warn(`Conflict detected: Trying to update ${updatePath} while deleting its child ${deletedPath}`);
+        // In this case, we should typically keep the deletion and skip the parent update
+        // Unless the parent update is also a deletion
+        if (updates[updatePath] !== null) {
+          delete updates[updatePath];
+          logger.info(`Removed conflicting parent update to ${updatePath} (has deleted child ${deletedPath})`);
+        }
         break;
       }
     }

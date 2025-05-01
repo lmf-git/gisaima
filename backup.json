@@ -1078,85 +1078,12 @@
             }
           },
           "-23,7": {
-            "battles": {
-              "battle_1746072681041_994": {
-                "advantage": {
-                  "side": 2,
-                  "strength": 0.6666666666666666
-                },
-                "createdAt": 1746072681041,
-                "defenderGroupPower": 5,
-                "estimatedDuration": 186756,
-                "events": [
-                  {
-                    "text": "Battle has begun! Test Human's Force is attacking Giant Spiders.",
-                    "timestamp": 1746072681041,
-                    "type": "battle_start"
-                  }
-                ],
-                "id": "battle_1746072681041_994",
-                "lastUpdate": 1746072681041,
-                "locationX": -23,
-                "locationY": 7,
-                "participants": [
-                  "ES5WUm59ByZqQpwwXx3A3RO1w1O2"
-                ],
-                "side1": {
-                  "casualties": 0,
-                  "groups": {
-                    "-OP90oAsE56M59SqWaw2": true
-                  },
-                  "name": "Test Human's Force",
-                  "participants": [
-                    {
-                      "groupId": "-OP90oAsE56M59SqWaw2",
-                      "groupName": "Test Human's Force",
-                      "groupPower": 1,
-                      "players": [
-                        {
-                          "displayName": "Test Human",
-                          "id": "ES5WUm59ByZqQpwwXx3A3RO1w1O2",
-                          "race": "human"
-                        }
-                      ]
-                    }
-                  ],
-                  "power": 1
-                },
-                "side1Power": 1,
-                "side2": {
-                  "casualties": 0,
-                  "groups": {
-                    "monster_1746067143240_863": true
-                  },
-                  "name": "Giant Spiders",
-                  "participants": [
-                    {
-                      "groupId": "monster_1746067143240_863",
-                      "groupName": "Giant Spiders",
-                      "groupPower": 5
-                    }
-                  ],
-                  "power": 5
-                },
-                "side2Power": 5,
-                "startTime": 1746072681041,
-                "status": "active",
-                "structurePower": 0,
-                "targetTypes": [
-                  "group"
-                ],
-                "tickCount": 0
-              }
-            },
             "groups": {
               "-OP90oAsE56M59SqWaw2": {
-                "battleId": "battle_1746072681041_994",
                 "battleRole": "attacker",
-                "battleSide": 1,
                 "createdAt": 1746072453938,
                 "id": "-OP90oAsE56M59SqWaw2",
-                "inBattle": true,
+                "inBattle": false,
                 "lastMessage": {
                   "text": "Moving to next location (-23,7)",
                   "timestamp": 1746072665883
@@ -1183,7 +1110,7 @@
                 "owner": "ES5WUm59ByZqQpwwXx3A3RO1w1O2",
                 "pathIndex": 2,
                 "race": "human",
-                "status": "fighting",
+                "status": "idle",
                 "targetX": -23,
                 "targetY": 7,
                 "unitCount": 1,
@@ -1200,13 +1127,10 @@
                 "y": 7
               },
               "monster_1746067143240_863": {
-                "battleId": "battle_1746072681041_994",
-                "battleRole": "defender",
-                "battleSide": 2,
                 "createdAt": 1746067143240,
                 "gatheringTicksRemaining": 1,
                 "id": "monster_1746067143240_863",
-                "inBattle": true,
+                "inBattle": false,
                 "items": [
                   {
                     "id": "item_1746067143241_417",
@@ -1245,8 +1169,8 @@
                   }
                 ],
                 "lastMessage": {
-                  "text": "Moving to next location (-23,7)",
-                  "timestamp": 1746072601757
+                  "text": "Victory in battle! All units survived the battle.",
+                  "timestamp": 1746072723100
                 },
                 "lastUpdated": 1746072601757,
                 "monsterType": "spider",
@@ -1265,7 +1189,7 @@
                 "name": "Giant Spiders",
                 "nextMoveTime": 1746072661757,
                 "pathIndex": 1,
-                "status": "fighting",
+                "status": "idle",
                 "targetX": -23,
                 "targetY": 7,
                 "type": "monster",
@@ -1350,7 +1274,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746072665883,
+        "lastTick": 1746072721546,
         "name": "Ancient Lands",
         "playerCount": 21,
         "seed": 13579,
