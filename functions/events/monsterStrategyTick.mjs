@@ -289,7 +289,22 @@ async function processMergeMonsterGroups(worldId, chunks, updates) {
       // Need at least 2 monster groups to merge
       if (monsterGroups.length < 2) continue;
       
-      // Sort monster groups by their type
+      // Check if we should do a mixed monster merge
+      const allowMixedMerge = Math.random() < 0.2 && monsterGroups.length >= 2;
+      
+      if (allowMixedMerge) {
+        // Select 2-3 random groups to merge
+        const groupCount = Math.min(monsterGroups.length, 2 + Math.floor(Math.random() * 2));
+        monsterGroups.sort(() => Math.random() - 0.5);
+        const selectedGroups = monsterGroups.slice(0, groupCount);
+        
+        // Do a mixed monster merge
+        await createMixedMonsterMerge(worldId, chunkKey, tileKey, selectedGroups, updates, now);
+        mergeCount++;
+        continue;
+      }
+      
+      // Sort monster groups by their type (regular type-based merging)
       const groupsByType = {};
       for (const group of monsterGroups) {
         const type = group.monsterType || 'unknown';
@@ -379,6 +394,15 @@ async function processMergeMonsterGroups(worldId, chunks, updates) {
         updates[`${basePath}/mergeCount`] = (baseGroup.mergeCount || 0) + mergeTargets.length;
         updates[`${basePath}/merged`] = true;
         
+        // Explicitly preserve these critical properties
+        updates[`${basePath}/type`] = 'monster';
+        updates[`${basePath}/monsterType`] = monsterType;
+        
+        // For single-type merges, set a simple composition
+        updates[`${basePath}/composition`] = { [monsterType]: totalUnits };
+        updates[`${basePath}/dominantType`] = monsterType;
+        updates[`${basePath}/isMixed`] = false;
+        
         // Remove the merged groups
         for (const group of mergeTargets) {
           updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${group.id}`] = null;
@@ -401,6 +425,152 @@ async function processMergeMonsterGroups(worldId, chunks, updates) {
   }
   
   return { mergeCount };
+}
+
+/**
+ * Create a mixed monster group by merging different types
+ */
+async function createMixedMonsterMerge(worldId, chunkKey, tileKey, groups, updates, now) {
+  // Sort by unit count, largest first
+  groups.sort((a, b) => (b.unitCount || 1) - (a.unitCount || 1));
+  
+  const baseGroup = groups[0];
+  const otherGroups = groups.slice(1);
+  
+  // Calculate total units
+  let totalUnits = baseGroup.unitCount || 1;
+  for (const group of otherGroups) {
+    totalUnits += group.unitCount || 1;
+  }
+  
+  // Add bonus units (10-30%)
+  const bonusUnits = Math.floor(totalUnits * (0.1 + Math.random() * 0.2));
+  totalUnits += bonusUnits;
+  
+  // Cap at a reasonable size (e.g., 25)
+  totalUnits = Math.min(totalUnits, 25);
+  
+  // Build composition tracking
+  const composition = {};
+  
+  // Add base group to composition
+  const baseType = baseGroup.monsterType || 'unknown';
+  composition[baseType] = baseGroup.unitCount || 1;
+  
+  // Add other groups to composition
+  for (const group of otherGroups) {
+    const type = group.monsterType || 'unknown';
+    composition[type] = (composition[type] || 0) + (group.unitCount || 1);
+  }
+  
+  // Find dominant type
+  let dominantType = Object.entries(composition)
+    .sort((a, b) => b[1] - a[1])[0][0];
+  
+  // Get names for the monster types
+  const typeNames = Object.keys(composition)
+    .map(type => {
+      const typeName = type.charAt(0).toUpperCase() + type.slice(1);
+      return typeName;
+    })
+    .join('-');
+  
+  // Create a suitable name for the mixed group
+  let newName;
+  if (Object.keys(composition).length > 2) {
+    newName = totalUnits <= 5 ? 
+      "Mixed Monster Band" : 
+      totalUnits <= 10 ? 
+        "Mixed Monster Pack" : 
+        totalUnits <= 15 ? 
+          "Mixed Monster Horde" : 
+          "Massive Mixed Legion";
+  } else {
+    // Use the top 2 types in the name
+    const nameParts = Object.keys(composition)
+      .sort((a, b) => composition[b] - composition[a])
+      .slice(0, 2)
+      .map(t => t.charAt(0).toUpperCase() + t.slice(1));
+      
+    const sizePart = totalUnits <= 5 ? 
+      "Small" : 
+      totalUnits <= 10 ? 
+        "" : 
+        totalUnits <= 15 ? 
+          "Large" : 
+          "Massive";
+          
+    const typePart = nameParts.join("-");
+    const groupPart = totalUnits <= 5 ? 
+      "Band" : 
+      totalUnits <= 10 ? 
+        "Pack" : 
+        totalUnits <= 15 ? 
+          "Horde" : 
+          "Legion";
+          
+    newName = `${sizePart} ${typePart} ${groupPart}`.trim();
+  }
+  
+  // Combine all items
+  const allItems = [];
+  
+  // Add items from all groups
+  for (const group of groups) {
+    if (group.items) {
+      if (Array.isArray(group.items)) {
+        allItems.push(...group.items);
+      } else {
+        allItems.push(...Object.values(group.items));
+      }
+    }
+  }
+  
+  // Add bonus items based on the mixed nature
+  const bonusItemCount = Math.min(3, Math.ceil(Object.keys(composition).length / 2) + 1);
+  for (let i = 0; i < bonusItemCount; i++) {
+    // Use different monster types for variety in bonus items
+    const typeKeys = Object.keys(composition);
+    const randomType = typeKeys[Math.floor(Math.random() * typeKeys.length)];
+    if (Math.random() < 0.8) {
+      allItems.push(generateBonusItem(randomType));
+    }
+  }
+  
+  // Update the base group
+  const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}`;
+  
+  updates[`${basePath}/unitCount`] = totalUnits;
+  updates[`${basePath}/name`] = newName;
+  updates[`${basePath}/items`] = allItems;
+  updates[`${basePath}/lastUpdated`] = now;
+  updates[`${basePath}/merged`] = true;
+  updates[`${basePath}/mergeCount`] = (baseGroup.mergeCount || 0) + otherGroups.length;
+  
+  // Add mixed-specific properties
+  updates[`${basePath}/isMixed`] = true;
+  updates[`${basePath}/composition`] = composition;
+  updates[`${basePath}/dominantType`] = dominantType;
+  
+  // Preserve these critical properties but set monsterType to the dominant type
+  updates[`${basePath}/type`] = 'monster';
+  updates[`${basePath}/monsterType`] = dominantType;
+  
+  // Remove the other groups
+  for (const group of otherGroups) {
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${group.id}`] = null;
+  }
+  
+  // Add chat message about the mixed merge
+  const chatMessageId = `monster_mixed_merge_${now}_${baseGroup.id}`;
+  const [x, y] = tileKey.split(',').map(Number);
+  
+  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+    text: `A mixed monster group of ${typeNames} has formed at (${x}, ${y})!`,
+    type: 'event',
+    timestamp: now,
+    location: { x, y }
+  };
 }
 
 /**
