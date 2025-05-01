@@ -977,7 +977,7 @@ async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, wor
   const adjacentStructure = await findAdjacentStructures(db, worldId, location);
   if (adjacentStructure) {
     // If we found an adjacent structure, move to it for potential attack
-    return moveToAdjacentTile(monsterGroup, location, adjacentStructure, updates, now, 'structure_attack');
+    return moveToAdjacentTile(worldId, monsterGroup, location, adjacentStructure, updates, now, 'structure_attack');
   }
   
   // If this monster group has a preferredStructureId (their "home"), prioritize it
@@ -1295,7 +1295,7 @@ function moveRandomly(worldId, monsterGroup, location, updates, now) {
 /**
  * Move monster to an adjacent tile (typically for attacking)
  */
-function moveToAdjacentTile(monsterGroup, location, adjacentTile, updates, now, moveReason) {
+function moveToAdjacentTile(worldId, monsterGroup, location, adjacentTile, updates, now, moveReason) {
   const groupId = monsterGroup.id;
   const chunkKey = monsterGroup.chunkKey;
   const tileKey = monsterGroup.tileKey;
