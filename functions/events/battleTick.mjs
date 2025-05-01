@@ -34,38 +34,16 @@ export async function processBattles(worldId) {
             const { updates, ended, endMessage } = 
               await processBattleTick(worldId, chunkKey, locationKey, battle, db);
             
-            // Apply updates, being careful not to create ancestor path conflicts
             if (Object.keys(updates).length > 0) {
-              // Consolidate updates to avoid ancestor path conflicts
+              // IMPROVED: Consolidate updates to avoid ancestor path conflicts
               const consolidatedUpdates = {};
               
-              // Group updates by their top-level paths
-              const battlePath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`;
-              const battleUpdates = {};
-              
+              // Process each update to detect and resolve conflicts
               for (const path in updates) {
-                if (path.startsWith(battlePath)) {
-                  // Extract the relative path from the battle path
-                  const relativePath = path.substring(battlePath.length + 1);
-                  if (relativePath) {
-                    // Store as a nested property for the battle object
-                    setNestedProperty(battleUpdates, relativePath.split('/'), updates[path]);
-                  } else {
-                    // This is updating the whole battle object
-                    Object.assign(battleUpdates, updates[path]);
-                  }
-                } else {
-                  // Keep other updates as they are
-                  consolidatedUpdates[path] = updates[path];
-                }
+                safelyApplyUpdate(consolidatedUpdates, path, updates[path]);
               }
               
-              // Add the consolidated battle update
-              if (Object.keys(battleUpdates).length > 0) {
-                consolidatedUpdates[battlePath] = battleUpdates;
-              }
-              
-              // Apply all updates at once
+              // Apply consolidated updates
               await db.ref().update(consolidatedUpdates);
             }
           }
@@ -92,6 +70,68 @@ function setNestedProperty(obj, pathArray, value) {
     current = current[key];
   }
   current[pathArray[pathArray.length - 1]] = value;
+}
+
+/**
+ * Helper function to safely merge updates and avoid ancestor path conflicts
+ * @param {Object} updates - The updates object to modify
+ * @param {string} path - The path to update
+ * @param {any} value - The value to set
+ */
+function safelyApplyUpdate(updates, path, value) {
+  // Check if we're already updating an ancestor of this path
+  const pathParts = path.split('/');
+  let currentPath = '';
+  
+  for (let i = 0; i < pathParts.length - 1; i++) {
+    currentPath = currentPath ? `${currentPath}/${pathParts[i]}` : pathParts[i];
+    
+    if (updates[currentPath] !== undefined) {
+      // We're updating an ancestor - need to merge this update into the ancestor
+      let target = updates[currentPath];
+      let remainingParts = pathParts.slice(i + 1);
+      
+      // Navigate to the right spot in the object
+      for (let j = 0; j < remainingParts.length - 1; j++) {
+        const part = remainingParts[j];
+        if (!target[part]) target[part] = {};
+        target = target[part];
+      }
+      
+      // Set the final property
+      target[remainingParts[remainingParts.length - 1]] = value;
+      return;
+    }
+  }
+  
+  // Check if we're updating descendants of this path
+  const prefix = `${path}/`;
+  const conflictingKeys = Object.keys(updates).filter(key => key.startsWith(prefix));
+  
+  if (conflictingKeys.length > 0) {
+    // We're already updating descendants - merge those updates into this one
+    const mergedValue = typeof value === 'object' && value !== null ? { ...value } : {};
+    
+    for (const key of conflictingKeys) {
+      const relativePath = key.substring(prefix.length);
+      const parts = relativePath.split('/');
+      
+      let target = mergedValue;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i];
+        if (!target[part]) target[part] = {};
+        target = target[part];
+      }
+      
+      target[parts[parts.length - 1]] = updates[key];
+      delete updates[key]; // Remove the descendant update
+    }
+    
+    updates[path] = mergedValue;
+  } else {
+    // No conflicts, apply normally
+    updates[path] = value;
+  }
 }
 
 /**
@@ -447,12 +487,19 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
       // Clear battle flags from surviving groups
       for (const group of winningGroups) {
         if (!group.empty && group.unitCount > 0) {
-          // Group survived - clear battle flags
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/inBattle`] = false;
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleId`] = null;
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleSide`] = null;
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleRole`] = null;
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/status`] = 'idle';
+          // FIXED: Create a consolidated update for each group rather than individual field updates
+          // This prevents ancestor path conflicts
+          const groupUpdates = {
+            inBattle: false,
+            battleId: null,
+            battleSide: null,
+            battleRole: null,
+            status: 'idle'
+          };
+          
+          // Apply consolidated update to the group
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = 
+            { ...group, ...groupUpdates };
         }
       }
       
@@ -587,14 +634,12 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
       remainingUnitCount = allUnits.filter(([unitId]) => !removedUnitIds.has(unitId)).length;
     }
     
-    // Update unit count with the accurate count
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnitCount;
-    
-    // Add remaining power from this group
-    remainingPower += remainingUnitCount;
-    
+    // Keep track of whether this group will be removed entirely
+    let groupRemoved = false;
+
     // If group has no units left, remove it completely
     if (remainingUnitCount === 0) {
+      groupRemoved = true;
       // Remove the group entirely from chunks
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
       
@@ -611,7 +656,6 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
       
       // If this was a player's group, update their record
       if (group.owner) {
-        
         // If player was in this group, update their status
         if (group.units) {
           const units = typeof group.units === 'object' ? Object.values(group.units) : [];
@@ -623,6 +667,19 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
           }
         }
       }
+    } else {
+      // FIXED: Only update fields if we're not removing the entire group
+      // This avoids ancestor path conflicts
+      const groupUpdates = {
+        unitCount: remainingUnitCount
+      };
+
+      // Apply all updates to the group at once
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = 
+        { ...group, ...groupUpdates };
+        
+      // Remove the unitCount path update since we've incorporated it into the group update
+      delete updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`];
     }
   }
   
