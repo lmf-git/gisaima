@@ -144,14 +144,28 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
     const side2Groups = getGroupsForSide(groups, battleData.side2?.groups || {});
     
     // Log clearer information about groups before processing
-    logger.info(`Battle ${battleId} at (${locationKey}): Side 1 has ${side1Groups.length} groups, Side 2 has ${side2Groups.length} groups`);
+    logger.info(`Battle ${battleId} at (${locationKey}): Side 1 has ${side1Groups.length} groups with ${calculateSidePower(side1Groups)} power, Side 2 has ${side2Groups.length} groups with ${calculateSidePower(side2Groups)} power`);
     
-    // Early check if either side has no groups - end battle immediately
+    // Early check if either side has no groups or no units - end battle immediately
     if (shouldEndBattleEarly(side1Groups, side2Groups)) {
-      const winningSide = side1Groups.length > 0 ? 1 : 2;
+      // Determine which side has units
+      const side1HasUnits = side1Groups.some(group => (group.unitCount && group.unitCount > 0));
+      const side2HasUnits = side2Groups.some(group => (group.unitCount && group.unitCount > 0));
+      
+      // Determine the winning side based on which side has units
+      let winningSide;
+      if (side1HasUnits && !side2HasUnits) {
+        winningSide = 1;
+      } else if (!side1HasUnits && side2HasUnits) {
+        winningSide = 2;
+      } else {
+        // If neither side has units, use side with most groups or default to side 1
+        winningSide = (side1Groups.length >= side2Groups.length) ? 1 : 2;
+      }
+      
       const winningGroups = winningSide === 1 ? side1Groups : side2Groups;
       
-      logger.info(`Battle ${battleId} ending early: Side ${winningSide} wins due to absence of opposing groups`);
+      logger.info(`Battle ${battleId} ending early: Side ${winningSide} wins due to absence of opposing groups or units`);
       
       // Get structure directly from tileData if involved
       let structure = battleData.targetTypes?.includes("structure") ? tileData.structure : null;
@@ -579,23 +593,64 @@ function checkAndUpdatePlayerStatus(group, casualties, worldId, chunkKey, locati
 
 // Helper function to check if battle should end early
 function shouldEndBattleEarly(side1Groups, side2Groups) {
-  return side1Groups.length === 0 || side2Groups.length === 0;
+  // Check if either side has no groups
+  if (side1Groups.length === 0 || side2Groups.length === 0) {
+    logger.info(`Battle ending early: One side has no groups (Side1: ${side1Groups.length}, Side2: ${side2Groups.length})`);
+    return true;
+  }
+  
+  // Check if either side only has empty groups (groups with no units)
+  const side1HasUnits = side1Groups.some(group => (group.unitCount && group.unitCount > 0));
+  const side2HasUnits = side2Groups.some(group => (group.unitCount && group.unitCount > 0));
+  
+  if (!side1HasUnits || !side2HasUnits) {
+    logger.info(`Battle ending early: One side has no units (Side1 has units: ${side1HasUnits}, Side2 has units: ${side2HasUnits})`);
+    return true;
+  }
+  
+  return false;
 }
 
 // Helper function to check if battle should end after attrition
 function shouldEndBattleAfterAttrition(side1Groups, side2Groups, side1Power, side2Power) {
   // FIXED: Explicitly check for empty groups first before checking power
   if (side1Groups.length === 0 || side2Groups.length === 0) {
+    logger.info(`Battle ending after attrition: One side has no groups (Side1: ${side1Groups.length}, Side2: ${side2Groups.length})`);
+    return true;
+  }
+  
+  // Check if either side only has empty groups
+  const side1HasUnits = side1Groups.some(group => (group.unitCount && group.unitCount > 0));
+  const side2HasUnits = side2Groups.some(group => (group.unitCount && group.unitCount > 0));
+  
+  if (!side1HasUnits || !side2HasUnits) {
+    logger.info(`Battle ending after attrition: One side has no units (Side1 has units: ${side1HasUnits}, Side2 has units: ${side2HasUnits})`);
     return true;
   }
   
   // Then check power
-  return side1Power <= 0 || side2Power <= 0;
+  if (side1Power <= 0 || side2Power <= 0) {
+    logger.info(`Battle ending after attrition: One side has zero power (Side1: ${side1Power}, Side2: ${side2Power})`);
+    return true;
+  }
+  
+  return false;
 }
 
 // Helper function to determine winning side
 function determineWinningSide(side1Groups, side2Groups, side1Power, side2Power) {
-  return (side1Groups.length > 0 && side1Power > 0) ? 1 : 2;
+  // First check which side has any units at all
+  const side1HasUnits = side1Groups.some(group => (group.unitCount && group.unitCount > 0));
+  const side2HasUnits = side2Groups.some(group => (group.unitCount && group.unitCount > 0));
+  
+  if (side1HasUnits && !side2HasUnits) {
+    return 1;
+  } else if (!side1HasUnits && side2HasUnits) {
+    return 2;
+  }
+  
+  // If both sides have units, use power to determine winner
+  return (side1Power > 0) ? 1 : 2;
 }
 
 // Helper function to add battle end message to updates
@@ -1308,6 +1363,9 @@ function getGroupsForSide(allGroups, sideGroups) {
   for (const groupId of Object.keys(sideGroups)) {
     if (allGroups[groupId]) {
       result.push({...allGroups[groupId], id: groupId});
+    } else {
+      // Log when a group in battle data isn't found in tile groups
+      logger.warn(`Group ${groupId} referenced in battle but not found in tile groups`);
     }
   }
   
