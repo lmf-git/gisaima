@@ -474,6 +474,37 @@ function distributeItemsToGroups(items, groups, worldId, chunkKey, locationKey, 
   }
 }
 
+/**
+ * Collect items from a defeated group and add them to the loot collector array
+ * @param {Object} group - The group that was defeated
+ * @param {Array} lootCollector - Array to collect the items in
+ */
+function collectItemsFromGroup(group, lootCollector) {
+  // Skip if group has no items or lootCollector is not an array
+  if (!group.items || !Array.isArray(lootCollector)) return;
+  
+  // Handle items whether they are in array or object format
+  let itemsArray = [];
+  
+  if (Array.isArray(group.items)) {
+    itemsArray = [...group.items];
+  } else if (typeof group.items === 'object') {
+    itemsArray = Object.values(group.items);
+  }
+  
+  // Add source metadata to each item
+  const itemsWithSource = itemsArray.map(item => ({
+    ...item,
+    source: `group_${group.id || 'unknown'}`
+  }));
+  
+  // Add all items to the loot collector
+  if (itemsWithSource.length > 0) {
+    lootCollector.push(...itemsWithSource);
+    logger.info(`Collected ${itemsWithSource.length} items from defeated group ${group.id}`);
+  }
+}
+
 // Helper function to get groups for a battle side
 function getGroupsForSide(allGroups, sideGroups) {
   const result = [];
