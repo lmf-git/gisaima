@@ -1,13 +1,17 @@
 import { logger } from "firebase-functions";
+import { getDatabase } from 'firebase-admin/database';
 
 export async function processBattle(worldId, chunkKey, tileKey, battleId, battle, updates, tile) {
   try {
     // Use serverTimestamp for database records only
     const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`;
     
+    // Create a separate updates object for battle-specific updates to avoid path conflicts
+    const battleUpdates = {};
+    
     // Increment the tick count - this is now our primary battle progression metric
     const tickCount = (battle.tickCount || 0) + 1;
-    updates[`${basePath}/tickCount`] = tickCount;
+    battleUpdates.tickCount = tickCount;
     
     // Get sides data
     const side1 = battle.side1;
@@ -329,15 +333,38 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     for (const groupToDelete of groupsToDelete) {
       updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupToDelete.groupId}`] = null;
       
-      // Remove from the battle's side groups
-      updates[`${basePath}/side${groupToDelete.side}/groups/${groupToDelete.groupId}`] = null;
+      // Instead of directly updating the battle's side groups, track this for our battle update
+      if (groupToDelete.side === 1) {
+        // Make sure side1.groups exists in battleUpdates
+        if (!battleUpdates.side1) battleUpdates.side1 = { groups: {} };
+        else if (!battleUpdates.side1.groups) battleUpdates.side1.groups = {};
+        
+        battleUpdates.side1.groups[groupToDelete.groupId] = null;
+      } else {
+        // Make sure side2.groups exists in battleUpdates
+        if (!battleUpdates.side2) battleUpdates.side2 = { groups: {} };
+        else if (!battleUpdates.side2.groups) battleUpdates.side2.groups = {};
+        
+        battleUpdates.side2.groups[groupToDelete.groupId] = null;
+      }
     }
     
     // Update power values and casualties for both sides
-    updates[`${basePath}/side1/power`] = newSide1Power;
-    updates[`${basePath}/side1/casualties`] = side1Casualties;
-    updates[`${basePath}/side2/power`] = newSide2Power;
-    updates[`${basePath}/side2/casualties`] = side2Casualties;
+    // Instead of updating child paths directly, use the battleUpdates structure
+    if (!battleUpdates.side1) battleUpdates.side1 = {};
+    if (!battleUpdates.side2) battleUpdates.side2 = {};
+    
+    battleUpdates.side1.power = newSide1Power;
+    battleUpdates.side1.casualties = side1Casualties;
+    battleUpdates.side2.power = newSide2Power;
+    battleUpdates.side2.casualties = side2Casualties;
+    
+    // Apply the battle updates to the main battle object
+    updates[basePath] = {
+      ...battle,              // Keep existing battle properties
+      ...battleUpdates,       // Apply our new updates
+      lastUpdate: Date.now()  // Update the timestamp
+    };
     
     // Check if battle should end - based only on power
     // A battle ends when one side has no power left
