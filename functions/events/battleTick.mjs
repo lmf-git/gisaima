@@ -446,6 +446,13 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
     
     // If group is wiped out, collect items and mark for removal
     if (remainingUnits === 0) {
+      // Check if the group has a player unit before removing it
+      if (group.owner && group.units) {
+        // If group is being wiped out, DEFINITELY check for player death
+        // Pass 100% casualty probability to ensure player status is checked
+        checkAndUpdatePlayerStatus(group, groupCasualties, worldId, chunkKey, locationKey, updates);
+      }
+      
       // Collect items from the group before marking for removal
       if (lootCollector !== null) {
         collectItemsFromGroup(group, lootCollector);
@@ -455,15 +462,13 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
       deletedGroupIds.add(group.id);
       
-      // FIXED: Don't mark player as not alive here - this just means all units in group are lost
-      // We'll check specifically for player unit loss in a separate function
     } else {
       // Only update unitCount if the group is not being deleted
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnits;
       
       // Check if we need to check for player unit loss
       if (group.owner && group.units) {
-        checkAndUpdatePlayerStatus(group, groupCasualties, worldId, updates);
+        checkAndUpdatePlayerStatus(group, groupCasualties, worldId, chunkKey, locationKey, updates);
       }
     }
   });
@@ -476,9 +481,11 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
  * @param {Object} group - The group to check
  * @param {number} casualties - Number of casualties in this group
  * @param {string} worldId - World ID
+ * @param {string} chunkKey - Chunk key
+ * @param {string} locationKey - Location key
  * @param {Object} updates - Firebase updates object
  */
-function checkAndUpdatePlayerStatus(group, casualties, worldId, updates) {
+function checkAndUpdatePlayerStatus(group, casualties, worldId, chunkKey, locationKey, updates) {
   // Skip if no casualties or no owner
   if (casualties <= 0 || !group.owner) return;
   
