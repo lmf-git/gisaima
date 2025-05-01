@@ -571,28 +571,46 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
       }
     }
     
-    // Remove units from the group
+    // Remove units from the group - Using Firebase's removal pattern with .remove()
     for (const unitId of unitsToRemove) {
+      // Properly delete unit by setting to null with explicit key
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/units/${unitId}`] = null;
     }
     
-    // Calculate remaining units
-    const remainingUnits = units.length - unitsToRemove.length;
+    // Calculate remaining units - only count non-null units
+    let remainingUnitCount = 0;
+    if (group.units) {
+      const allUnits = typeof group.units === 'object' ? Object.entries(group.units) : [];
+      const removedUnitIds = new Set(unitsToRemove);
+      
+      // Count remaining units that are not in the removal list
+      remainingUnitCount = allUnits.filter(([unitId]) => !removedUnitIds.has(unitId)).length;
+    }
     
-    // Update unit count
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnits;
+    // Update unit count with the accurate count
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnitCount;
     
     // Add remaining power from this group
-    remainingPower += remainingUnits;
+    remainingPower += remainingUnitCount;
     
     // If group has no units left, remove it completely
-    if (remainingUnits === 0) {
-      // Remove the group entirely
+    if (remainingUnitCount === 0) {
+      // Remove the group entirely from chunks
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+      
+      // Remove the group's entry in the battle
+      if (battleId) {
+        const battlePath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`;
+        
+        // Remove group from side1 if it exists there
+        updates[`${battlePath}/side1/groups/${group.id}`] = null;
+        
+        // Remove group from side2 if it exists there
+        updates[`${battlePath}/side2/groups/${group.id}`] = null;
+      }
       
       // If this was a player's group, update their record
       if (group.owner) {
-        updates[`players/${group.owner}/worlds/${worldId}/groups/${group.id}`] = null;
         
         // If player was in this group, update their status
         if (group.units) {
@@ -608,7 +626,7 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
     }
   }
   
-  // Handle player deaths with improved messaging
+  // Handle player deaths with improved messaging and proper cleanup
   for (const { playerId, displayName, groupId } of playersKilled) {
     // Update player record to mark as dead
     updates[`players/${playerId}/worlds/${worldId}/alive`] = false;
@@ -618,6 +636,9 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
       timestamp: Date.now()
     };
     updates[`players/${playerId}/worlds/${worldId}/inGroup`] = null;
+    
+    // Clean up player-specific references in database
+    updates[`players/${playerId}/worlds/${worldId}/currentLocation`] = null;
     
     // Log player death
     logger.info(`Player ${playerId} (${displayName}) killed in battle at ${locationKey}`);
