@@ -166,40 +166,27 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
     const side1HasOverwhelmingAdvantage = side1Power >= side2Power * 20;
     const side2HasOverwhelmingAdvantage = side2Power >= side1Power * 20;
     
-    // Randomly assign advantage when powers are equal
-    if (side1Power === side2Power && (!battle.advantage || battle.advantage.side === 0)) {
-      // 50/50 chance to give advantage to either side
-      const randomSide = Math.random() < 0.5 ? 1 : 2;
-      const randomStrength = 0.1 + (Math.random() * 0.2); // Random advantage between 10-30%
-      
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/advantage/side`] = randomSide;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/advantage/strength`] = randomStrength;
-      
-      // Update battle object for this tick's processing
-      if (!battle.advantage) battle.advantage = {};
-      battle.advantage.side = randomSide;
-      battle.advantage.strength = randomStrength;
-      
-      // Add event about advantage
-      const advantageEvent = {
-        type: 'battle_advantage',
-        timestamp: Date.now(),
-        text: `${randomSide === 1 ? battle.side1?.name || 'Side 1' : battle.side2?.name || 'Side 2'} has gained a tactical advantage!`,
-      };
-      
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/events`] = 
-        [...(battle.events || []), advantageEvent];
-    }
+    // Scale attrition based on battle size - smaller battles should resolve faster
+    const totalUnits = side1Power + side2Power;
     
     // Target number of ticks the battle should last (on average)
-    const TARGET_BATTLE_DURATION = Math.max(3, Math.ceil(4 + Math.sqrt(totalUnits)));
+    // Adjusted for faster small battles:
+    // - 1v1 battles: ~1-2 ticks
+    // - 5v5 battles: ~3-4 ticks
+    // - larger battles: scale up gradually
+    const TARGET_BATTLE_DURATION = Math.ceil(2 + Math.sqrt(totalUnits) / 2);
     
     // Calculate base attrition rate to achieve target duration
-    const baseAttritionRate = (0.5 / TARGET_BATTLE_DURATION) + (powerRatio * 0.05);
+    // Higher minimum attrition rate for small battles
+    const minAttritionRate = totalUnits <= 4 ? 0.3 : 0.15; 
+    const baseAttritionRate = Math.max(minAttritionRate, (0.7 / TARGET_BATTLE_DURATION) + (powerRatio * 0.05));
     
     // Apply escalation factor - battles get bloodier over time
+    // Increased early-battle escalation rate for small battles
     const tickCount = battle.tickCount || 1;
-    const escalationFactor = 1.0 + (Math.sqrt(tickCount - 1) * 0.15);
+    const escalationFactor = totalUnits <= 4 ? 
+      1.0 + (Math.sqrt(tickCount) * 0.3) :  // Faster escalation for small battles
+      1.0 + (Math.sqrt(tickCount - 1) * 0.15); // Normal escalation for larger battles
     
     // Calculate actual attrition rates with escalation
     let side1AttritionRate = baseAttritionRate * escalationFactor;
@@ -474,19 +461,13 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
     let unitLosses = 0;
     const groupSize = units.length;
     
-    // Base target casualty rate - adjustable parameter for game balance
-    // This represents what percentage of units should be lost per tick on average
-    const BASE_CASUALTY_RATE = 0.10; // 10% casualties per tick base rate
-    
-    // Size scaling - larger groups should have more consistent casualty rates
-    // This makes smaller groups more random, larger groups more predictable
-    const consistencyFactor = 1 - Math.min(0.9, 1 / Math.sqrt(groupSize + 1));
-    
-    // Calculate expected losses using the attrition rate
-    const expectedLosses = groupSize * attritionRate;
+    // For tiny groups (1-2 units), increase baseline probability of casualties
+    // to ensure battles resolve quickly
+    const expectedLosses = groupSize <= 2 ? 
+      groupSize * Math.max(0.4, attritionRate) : // Higher minimum for tiny groups
+      groupSize * attritionRate;
     
     // For very small groups (or individual units), use pure probability
-    // As groups get larger, blend between probabilistic and deterministic
     const deterministicLosses = Math.floor(expectedLosses);
     const remainderProbability = expectedLosses - deterministicLosses;
     
@@ -494,15 +475,15 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
     unitLosses = deterministicLosses;
     
     // Then apply probabilistic component for the remainder
-    // For large groups, this just handles the fractional part
-    // For small groups, this may be the entire calculation
     if (Math.random() < remainderProbability) {
       unitLosses += 1;
     }
     
-    // Apply consistency factor - as groups get larger, losses become more consistent
-    // For small groups, this allows more randomness (sometimes 0 losses)
-    // For large groups, this ensures losses are close to the expected value
+    // Apply consistency factor - modified for faster small battle resolution
+    const consistencyFactor = groupSize <= 2 ? 
+      0.7 : // Higher consistency for tiny groups (70% chance of minimum 1 casualty if any chance exists)
+      1 - Math.min(0.9, 1 / Math.sqrt(groupSize + 1));
+    
     if (unitLosses === 0 && Math.random() < consistencyFactor && attritionRate > 0.05) {
       unitLosses = 1; // Minimum loss threshold with probability based on group size
     }
