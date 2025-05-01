@@ -282,7 +282,6 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
     
     // Update group unit count
     const remainingUnits = Math.max(0, (group.unitCount || 1) - groupCasualties);
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnits;
     
     // If group is wiped out, collect items (if collector provided) and mark it for removal
     if (remainingUnits === 0) {
@@ -291,8 +290,11 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
         collectItemsFromGroup(group, lootCollector);
       }
       
-      // Mark group for removal
+      // Mark group for removal (instead of also updating unitCount)
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+    } else {
+      // Only update unitCount if the group is not being deleted
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnits;
     }
   });
   
