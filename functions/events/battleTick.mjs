@@ -19,11 +19,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     const side2Power = side2.power || 0;
     const totalPower = side1Power + side2Power;
     
-    if (totalPower <= 0) {
-      // End the battle as a draw if no power remains
-      return await endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 0, tile);
-    }
-    
     // Calculate power ratio to determine attrition rate
     // Higher difference means more damage to the weaker side
     const powerRatio1 = side1Power / totalPower;
@@ -53,7 +48,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     
     // Check if battle should end - based only on power
     // A battle ends when one side has no power left or after many ticks (safety cap at 20)
-    if (newSide1Power <= 0 || newSide2Power <= 0 || tickCount >= 20) {
+    if (newSide1Power <= 0 || newSide2Power <= 0) {
       // Determine the winner
       let winner = 0; // Draw
       if (newSide1Power > newSide2Power) {
@@ -74,13 +69,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
 }
 
 async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile) {
-  // Only use timestamp for database record
-  const now = Date.now();
   const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`;
   
   // Update battle status
   updates[`${basePath}/status`] = 'completed';
-  updates[`${basePath}/endTime`] = now; // Keep for record-keeping
   updates[`${basePath}/winner`] = winner;
   
   // Generate side names for chat message
@@ -97,6 +89,7 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
   }
   
   // Add chat message about battle ending
+  const now = Date.now();
   updates[`worlds/${worldId}/chat/battle_end_${now}_${battleId}`] = {
     text: `Battle at (${battle.locationX}, ${battle.locationY}) has ended. ${resultText}`,
     type: 'event',
@@ -106,9 +99,6 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
       y: battle.locationY
     }
   };
-  
-  // Clean up groups involved in the battle
-  // No need to fetch the tile data since it's now passed as a parameter
   
   if (tile && tile.groups) {
     // Update side 1 groups
