@@ -80,12 +80,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
 
 async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner) {
   const now = Date.now();
-  const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`;
-  
-  // Update battle status
-  updates[`${basePath}/status`] = 'completed';
-  updates[`${basePath}/endTime`] = now;
-  updates[`${basePath}/winner`] = winner;
   
   // Generate side names for chat message
   const side1Name = battle.side1.name || 'Attackers';
