@@ -353,6 +353,8 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
     
     // If we still need to remove more units, start removing player units
     // Only remove player units if casualties are high (>80% of non-player units lost)
+    // NOTE: For a group with ONLY a player unit, this condition will immediately trigger
+    // since nonPlayerUnits.length === 0 from the start
     if (unitLosses > 0 && playerUnits.length > 0 && nonPlayerUnits.length === 0) {
       while (unitLosses > 0 && playerUnits.length > 0) {
         const randomIndex = Math.floor(Math.random() * playerUnits.length);
