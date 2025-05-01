@@ -41,6 +41,12 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     const groupsToDelete = [];
     const playersKilled = [];
     
+    // Keep track of loot from defeated groups
+    const lootFromDefeated = {
+      side1: [], // items from side 1 groups that will be looted by side 2
+      side2: []  // items from side 2 groups that will be looted by side 1
+    };
+    
     // Apply attrition to side 1 groups
     const side1Groups = side1.groups || {};
     for (const groupId in side1Groups) {
@@ -111,12 +117,28 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         // Add remaining power (1 unit = 1 power)
         newSide1Power += newUnitCount;
         
-        // If no units left, mark for deletion
+        // If no units left, mark for deletion and collect items for looting
         if (newUnitCount <= 0) {
           groupsToDelete.push({
             side: 1,
             groupId
           });
+          
+          // Collect items from this group to be looted by side 2
+          if (group.items) {
+            // Handle both array and object formats
+            const items = Array.isArray(group.items) ? group.items : Object.values(group.items);
+            if (items.length > 0) {
+              // Add metadata to items about their source
+              const now = Date.now();
+              const lootItems = items.map(item => ({
+                ...item,
+                lootedFrom: 'battle',
+                lootedAt: now
+              }));
+              lootFromDefeated.side1.push(...lootItems);
+            }
+          }
         }
       }
     }
@@ -191,14 +213,89 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         // Add remaining power (1 unit = 1 power)
         newSide2Power += newUnitCount;
         
-        // If no units left, mark for deletion
+        // If no units left, mark for deletion and collect items for looting
         if (newUnitCount <= 0) {
           groupsToDelete.push({
             side: 2,
             groupId
           });
+          
+          // Collect items from this group to be looted by side 1
+          if (group.items) {
+            // Handle both array and object formats
+            const items = Array.isArray(group.items) ? group.items : Object.values(group.items);
+            if (items.length > 0) {
+              // Add metadata to items about their source
+              const now = Date.now();
+              const lootItems = items.map(item => ({
+                ...item,
+                lootedFrom: 'battle',
+                lootedAt: now
+              }));
+              lootFromDefeated.side2.push(...lootItems);
+            }
+          }
         }
       }
+    }
+    
+    // Distribute looted items to the winning side's surviving groups
+    const side1Surviving = Object.keys(side1Groups)
+      .filter(id => !groupsToDelete.some(g => g.groupId === id && g.side === 1));
+    
+    const side2Surviving = Object.keys(side2Groups)
+      .filter(id => !groupsToDelete.some(g => g.groupId === id && g.side === 2));
+    
+    // Distribute side 2's items to side 1 survivors
+    if (lootFromDefeated.side2.length > 0 && side1Surviving.length > 0) {
+      // Select a random surviving group to receive the loot
+      const receivingGroupId = side1Surviving[Math.floor(Math.random() * side1Surviving.length)];
+      const group = tile.groups[receivingGroupId];
+      
+      // Get the existing items in the group
+      let existingItems = group.items || {};
+      if (Array.isArray(existingItems)) {
+        // Convert array to object with numeric keys
+        existingItems = Object.fromEntries(existingItems.map((item, index) => [index, item]));
+      }
+      
+      // Add each looted item to the group
+      lootFromDefeated.side2.forEach(item => {
+        const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/items/${itemId}`] = item;
+      });
+      
+      // Add a message about looting
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/lastMessage`] = {
+        text: `Looted ${lootFromDefeated.side2.length} items from battle`,
+        timestamp: Date.now()
+      };
+    }
+    
+    // Distribute side 1's items to side 2 survivors
+    if (lootFromDefeated.side1.length > 0 && side2Surviving.length > 0) {
+      // Select a random surviving group to receive the loot
+      const receivingGroupId = side2Surviving[Math.floor(Math.random() * side2Surviving.length)];
+      const group = tile.groups[receivingGroupId];
+      
+      // Get the existing items in the group
+      let existingItems = group.items || {};
+      if (Array.isArray(existingItems)) {
+        // Convert array to object with numeric keys
+        existingItems = Object.fromEntries(existingItems.map((item, index) => [index, item]));
+      }
+      
+      // Add each looted item to the group
+      lootFromDefeated.side1.forEach(item => {
+        const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/items/${itemId}`] = item;
+      });
+      
+      // Add a message about looting
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/lastMessage`] = {
+        text: `Looted ${lootFromDefeated.side1.length} items from battle`,
+        timestamp: Date.now()
+      };
     }
     
     // Handle player deaths
