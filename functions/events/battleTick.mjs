@@ -31,15 +31,212 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     const side1Attrition = Math.round(side1Power * baseAttritionRate * (powerRatio1 + 0.5));
     const side2Attrition = Math.round(side2Power * baseAttritionRate * (powerRatio2 + 0.5));
     
-    // Update power values after attrition
-    const newSide1Power = Math.max(0, side1Power - side2Attrition);
-    const newSide2Power = Math.max(0, side2Power - side1Attrition);
+    // Apply attrition to individual groups in each side
+    let newSide1Power = 0;
+    let newSide2Power = 0;
+    let side1Casualties = side1.casualties || 0;
+    let side2Casualties = side2.casualties || 0;
     
-    // Update casualties
-    const side1Casualties = (side1.casualties || 0) + side2Attrition;
-    const side2Casualties = (side2.casualties || 0) + side1Attrition;
+    // Track groups to be deleted and players to be killed
+    const groupsToDelete = [];
+    const playersKilled = [];
     
-    // Update power values
+    // Apply attrition to side 1 groups
+    const side1Groups = side1.groups || {};
+    for (const groupId in side1Groups) {
+      if (tile.groups[groupId]) {
+        const group = tile.groups[groupId];
+        const units = group.units || {};
+        
+        // Calculate this group's share of attrition based on its proportion of side power
+        const groupPower = group.unitCount || 0;
+        const groupShare = groupPower / side1Power;
+        const groupAttrition = Math.round(side2Attrition * groupShare);
+        
+        // Apply casualties by removing specific units
+        const unitIds = Object.keys(units);
+        const totalUnits = unitIds.length;
+        let remainingAttrition = Math.min(groupAttrition, totalUnits);
+        
+        // This will track which units are killed
+        const unitsToRemove = [];
+        
+        // First check if there are any regular (non-player) units
+        const regularUnitIds = unitIds.filter(id => units[id].type !== 'player');
+        
+        // Remove regular units first as much as possible
+        while (remainingAttrition > 0 && regularUnitIds.length > 0) {
+          // Choose random unit for removal
+          const randomIndex = Math.floor(Math.random() * regularUnitIds.length);
+          const unitToRemove = regularUnitIds.splice(randomIndex, 1)[0];
+          
+          unitsToRemove.push(unitToRemove);
+          remainingAttrition--;
+        }
+        
+        // If we still need to remove more units, and we only have player units left
+        if (remainingAttrition > 0) {
+          // Get player units
+          const playerUnitIds = unitIds.filter(id => units[id].type === 'player');
+          
+          while (remainingAttrition > 0 && playerUnitIds.length > 0) {
+            // Choose random player unit
+            const randomIndex = Math.floor(Math.random() * playerUnitIds.length);
+            const playerUnitId = playerUnitIds.splice(randomIndex, 1)[0];
+            const playerUnit = units[playerUnitId];
+            
+            // Track this player for marking as dead later
+            playersKilled.push({
+              playerId: playerUnit.id,
+              displayName: playerUnit.displayName || "Unknown Player"
+            });
+            
+            unitsToRemove.push(playerUnitId);
+            remainingAttrition--;
+          }
+        }
+        
+        // Remove the selected units from the group
+        unitsToRemove.forEach(unitId => {
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/units/${unitId}`] = null;
+        });
+        
+        // Calculate how many units remain
+        const newUnitCount = totalUnits - unitsToRemove.length;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
+        
+        // Add to side casualties
+        side1Casualties += unitsToRemove.length;
+        
+        // Add remaining power (1 unit = 1 power)
+        newSide1Power += newUnitCount;
+        
+        // If no units left, mark for deletion
+        if (newUnitCount <= 0) {
+          groupsToDelete.push({
+            side: 1,
+            groupId
+          });
+        }
+      }
+    }
+    
+    // Apply attrition to side 2 groups - similar logic to side 1
+    const side2Groups = side2.groups || {};
+    for (const groupId in side2Groups) {
+      if (tile.groups[groupId]) {
+        const group = tile.groups[groupId];
+        const units = group.units || {};
+        
+        // Calculate this group's share of attrition based on its proportion of side power
+        const groupPower = group.unitCount || 0;
+        const groupShare = groupPower / side2Power;
+        const groupAttrition = Math.round(side1Attrition * groupShare);
+        
+        // Apply casualties by removing specific units
+        const unitIds = Object.keys(units);
+        const totalUnits = unitIds.length;
+        let remainingAttrition = Math.min(groupAttrition, totalUnits);
+        
+        // This will track which units are killed
+        const unitsToRemove = [];
+        
+        // First check if there are any regular (non-player) units
+        const regularUnitIds = unitIds.filter(id => units[id].type !== 'player');
+        
+        // Remove regular units first as much as possible
+        while (remainingAttrition > 0 && regularUnitIds.length > 0) {
+          // Choose random unit for removal
+          const randomIndex = Math.floor(Math.random() * regularUnitIds.length);
+          const unitToRemove = regularUnitIds.splice(randomIndex, 1)[0];
+          
+          unitsToRemove.push(unitToRemove);
+          remainingAttrition--;
+        }
+        
+        // If we still need to remove more units, and we only have player units left
+        if (remainingAttrition > 0) {
+          // Get player units
+          const playerUnitIds = unitIds.filter(id => units[id].type === 'player');
+          
+          while (remainingAttrition > 0 && playerUnitIds.length > 0) {
+            // Choose random player unit
+            const randomIndex = Math.floor(Math.random() * playerUnitIds.length);
+            const playerUnitId = playerUnitIds.splice(randomIndex, 1)[0];
+            const playerUnit = units[playerUnitId];
+            
+            // Track this player for marking as dead later
+            playersKilled.push({
+              playerId: playerUnit.id,
+              displayName: playerUnit.displayName || "Unknown Player"
+            });
+            
+            unitsToRemove.push(playerUnitId);
+            remainingAttrition--;
+          }
+        }
+        
+        // Remove the selected units from the group
+        unitsToRemove.forEach(unitId => {
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/units/${unitId}`] = null;
+        });
+        
+        // Calculate how many units remain
+        const newUnitCount = totalUnits - unitsToRemove.length;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
+        
+        // Add to side casualties
+        side2Casualties += unitsToRemove.length;
+        
+        // Add remaining power (1 unit = 1 power)
+        newSide2Power += newUnitCount;
+        
+        // If no units left, mark for deletion
+        if (newUnitCount <= 0) {
+          groupsToDelete.push({
+            side: 2,
+            groupId
+          });
+        }
+      }
+    }
+    
+    // Handle player deaths
+    for (const player of playersKilled) {
+      const now = Date.now();
+      
+      // Mark player as dead in their main record
+      updates[`players/${player.playerId}/worlds/${worldId}/alive`] = false;
+      updates[`players/${player.playerId}/worlds/${worldId}/lastDeathTime`] = now;
+      
+      // Add a message notifying the player of their death
+      updates[`players/${player.playerId}/worlds/${worldId}/lastMessage`] = {
+        text: "You were defeated in battle.",
+        timestamp: now
+      };
+      
+      // Add a chat message about player death
+      const chatId = `player_death_${now}_${player.playerId}`;
+      updates[`worlds/${worldId}/chat/${chatId}`] = {
+        text: `${player.displayName} has fallen in battle at (${battle.locationX}, ${battle.locationY})!`,
+        type: 'event',
+        timestamp: now,
+        location: {
+          x: battle.locationX,
+          y: battle.locationY
+        }
+      };
+    }
+    
+    // Delete any groups with no units left
+    for (const groupToDelete of groupsToDelete) {
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupToDelete.groupId}`] = null;
+      
+      // Remove from the battle's side groups
+      updates[`${basePath}/side${groupToDelete.side}/groups/${groupToDelete.groupId}`] = null;
+    }
+    
+    // Update power values and casualties for both sides
     updates[`${basePath}/side1/power`] = newSide1Power;
     updates[`${basePath}/side1/casualties`] = side1Casualties;
     updates[`${basePath}/side2/power`] = newSide2Power;
@@ -108,15 +305,6 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
         updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleId`] = null;
         updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
         updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
-        
-        // Apply casualties to group if it lost
-        if (winner !== 1) {
-          const group = tile.groups[groupId];
-          // Reduce unit count based on casualties
-          const casualtyRate = Math.min(0.8, battle.side1.casualties / (battle.side1.power || 1));
-          const newUnitCount = Math.max(1, Math.floor(group.unitCount * (1 - casualtyRate)));
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
-        }
       }
     }
     
@@ -129,15 +317,6 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
         updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleId`] = null;
         updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
         updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
-        
-        // Apply casualties to group if it lost
-        if (winner !== 2) {
-          const group = tile.groups[groupId];
-          // Reduce unit count based on casualties
-          const casualtyRate = Math.min(0.8, battle.side2.casualties / (battle.side2.power || 1));
-          const newUnitCount = Math.max(1, Math.floor(group.unitCount * (1 - casualtyRate)));
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
-        }
       }
     }
   }
