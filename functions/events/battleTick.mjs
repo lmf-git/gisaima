@@ -18,63 +18,80 @@ export async function processBattles(worldId) {
     const chunks = chunksSnapshot.val() || {};
     
     const now = Date.now();
-    const batchUpdates = {};
-    let processingCount = 0;
-    
-    // Process each chunk to find battles
-    for (const [chunkKey, chunkData] of Object.entries(chunks)) {
-      // Process each location in the chunk
-      for (const [locationKey, locationData] of Object.entries(chunkData)) {
-        // Skip if no battles at this location
-        if (!locationData.battles) continue;
+
+    // Fix for the ancestor path conflict
+    for (const chunkKey in chunks) {
+      const chunk = chunks[chunkKey];
+      for (const locationKey in chunk) {
+        const location = chunk[locationKey];
         
-        // Process each battle at this location
-        for (const [battleId, battle] of Object.entries(locationData.battles)) {
-          // Skip battles that aren't active
-          if (battle.status !== 'active') continue;
-          
-          processingCount++;
-          logger.info(`Processing battle ${battleId} at (${battle.locationX}, ${battle.locationY})`);
-          
-          // Increment tick count for battle
-          const newTickCount = (battle.tickCount || 0) + 1;
-          batchUpdates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/tickCount`] = newTickCount;
-          
-          // Process battle attrition and update battle state
-          const result = await processBattleTick(worldId, chunkKey, locationKey, battle, db);
-          
-          // Apply updates from battle processing
-          Object.assign(batchUpdates, result.updates);
-          
-          // If battle ended, create a final message
-          if (result.ended) {
-            const chatMessageId = `battle_end_${now}_${battleId}`;
-            batchUpdates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-              text: result.endMessage,
-              type: 'event',
-              timestamp: now,
-              location: {
-                x: battle.locationX,
-                y: battle.locationY
+        // Process battles at this location
+        if (location.battles) {
+          for (const battleId in location.battles) {
+            const battle = location.battles[battleId];
+            
+            // Process this battle and get updates
+            const { updates, ended, endMessage } = 
+              await processBattleTick(worldId, chunkKey, locationKey, battle, db);
+            
+            // Apply updates, being careful not to create ancestor path conflicts
+            if (Object.keys(updates).length > 0) {
+              // Consolidate updates to avoid ancestor path conflicts
+              const consolidatedUpdates = {};
+              
+              // Group updates by their top-level paths
+              const battlePath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`;
+              const battleUpdates = {};
+              
+              for (const path in updates) {
+                if (path.startsWith(battlePath)) {
+                  // Extract the relative path from the battle path
+                  const relativePath = path.substring(battlePath.length + 1);
+                  if (relativePath) {
+                    // Store as a nested property for the battle object
+                    setNestedProperty(battleUpdates, relativePath.split('/'), updates[path]);
+                  } else {
+                    // This is updating the whole battle object
+                    Object.assign(battleUpdates, updates[path]);
+                  }
+                } else {
+                  // Keep other updates as they are
+                  consolidatedUpdates[path] = updates[path];
+                }
               }
-            };
+              
+              // Add the consolidated battle update
+              if (Object.keys(battleUpdates).length > 0) {
+                consolidatedUpdates[battlePath] = battleUpdates;
+              }
+              
+              // Apply all updates at once
+              await db.ref().update(consolidatedUpdates);
+            }
           }
         }
       }
     }
-    
-    logger.info(`Processed ${processingCount} battles for world ${worldId}`);
-    
-    // Apply all updates atomically
-    if (Object.keys(batchUpdates).length > 0) {
-      await db.ref().update(batchUpdates);
-    }
-    
-    return { processedBattles: processingCount };
   } catch (error) {
-    logger.error('Error in battle tick:', error);
+    logger.error(`Error processing battles for world: ${worldId}`, error);
     throw error;
   }
+}
+
+/**
+ * Helper function to set a nested property in an object
+ * Creates the path if it doesn't exist
+ */
+function setNestedProperty(obj, pathArray, value) {
+  let current = obj;
+  for (let i = 0; i < pathArray.length - 1; i++) {
+    const key = pathArray[i];
+    if (!current[key]) {
+      current[key] = {};
+    }
+    current = current[key];
+  }
+  current[pathArray[pathArray.length - 1]] = value;
 }
 
 /**
