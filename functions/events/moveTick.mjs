@@ -4,7 +4,7 @@
  */
 
 import { logger } from "firebase-functions";
-import { getChunkKey } from "./utils.mjs";
+import { getChunkKey } from "gisaima-shared/map/cartography.js";
 
 /**
  * Process movement for a group

@@ -5,6 +5,7 @@
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getDatabase } from 'firebase-admin/database';
+import { getChunkKey } from 'gisaima-shared/map/cartography.js';
 
 /**
  * Mobilizes units into a new group at a specific location.
@@ -123,26 +124,6 @@ function isPlayerOnTile(tileData, playerId) {
   
   console.log(`Player ${playerId} not found on tile after all checks`);
   return false;
-}
-
-// Calculate chunk coordinates to match database structure
-function getChunkKey(x, y) {
-  const CHUNK_SIZE = 20;
-  
-  // Simple integer division matches the database structure
-  const chunkX = Math.floor(x / CHUNK_SIZE);
-  const chunkY = Math.floor(y / CHUNK_SIZE);
-  
-  console.log(`Chunk calculation: (${x},${y}) -> chunk (${chunkX},${chunkY})`);
-  
-  // Log how the previous calculation would have handled it
-  const oldChunkX = Math.floor((x >= 0 ? x : x - CHUNK_SIZE + 1) / CHUNK_SIZE);
-  const oldChunkY = Math.floor((y >= 0 ? y : y - CHUNK_SIZE + 1) / CHUNK_SIZE);
-  if (x < 0 || y < 0) {
-    console.log(`Note: Previous calculation would give: (${oldChunkX},${oldChunkY})`);
-  }
-  
-  return `${chunkX},${chunkY}`;
 }
 
 export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {

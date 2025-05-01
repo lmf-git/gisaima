@@ -8,10 +8,9 @@
     EXPANDED_COLS_FACTOR,
     EXPANDED_ROWS_FACTOR,
     setHighlighted,
-    moveTarget,
-    getChunkKey
+    moveTarget
   } from '../../lib/stores/map.js';
-  import { browser } from '$app/environment';
+  import { getChunkKey } from 'gisaima-shared/map/cartography.js';
   import { onDestroy } from "svelte";
   
   // Accept closing prop from parent
@@ -255,11 +254,6 @@
   onDestroy(() => {
     if (minimapHoverTimeout) clearTimeout(minimapHoverTimeout);
   });
-
-  // If there's any direct chunk calculation in this file, ensure it uses getChunkKey
-  function getMinimapChunk(x, y) {
-    return getChunkKey(x, y);
-  }
 </script>
 
 <svelte:window

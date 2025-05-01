@@ -7,15 +7,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 import { Units } from 'gisaima-shared/units/units.js';
-
-// Calculate chunk key for database access
-function getChunkKey(x, y) {
-  const CHUNK_SIZE = 20;
-  // Simple integer division works for both positive and negative coordinates
-  const chunkX = Math.floor(x / CHUNK_SIZE);
-  const chunkY = Math.floor(y / CHUNK_SIZE);
-  return `${chunkX},${chunkY}`;
-}
+import { getChunkKey } from 'gisaima-shared/map/cartography.js';
 
 // Function to recruit units
 export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {

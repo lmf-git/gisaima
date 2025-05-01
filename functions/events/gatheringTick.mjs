@@ -4,7 +4,8 @@
  */
 
 import { logger } from "firebase-functions";
-import { mergeItems } from "./utils.mjs";
+import { merge } from "gisaima-shared/economy/items.mjs";
+
 
 /**
  * Process gathering for a group
@@ -40,13 +41,13 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
   const biome = group.gatheringBiome || tile.biome?.name || 'plains';
   const gatheredItems = generateGatheredItems(group, biome);
   
-  // Add items to group, using mergeItems to combine identical items
+  // Add items to group, using merge to combine identical items
   if (!group.items) {
     updates[`${groupPath}/items`] = gatheredItems;
   } else {
-    // Use mergeItems utility to combine identical items
+    // Use merge utility to combine identical items
     const existingItems = Array.isArray(group.items) ? group.items : [];
-    updates[`${groupPath}/items`] = mergeItems(existingItems, gatheredItems);
+    updates[`${groupPath}/items`] = merge(existingItems, gatheredItems);
   }
   
   // Reset group status to idle

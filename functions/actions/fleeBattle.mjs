@@ -6,17 +6,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
-
-// Define CHUNK_SIZE constant for consistent usage
-const CHUNK_SIZE = 20;
-
-// Function to calculate chunk key consistently
-function getChunkKey(x, y) {
-  // Simple integer division works for both positive and negative coordinates
-  const chunkX = Math.floor(x / CHUNK_SIZE);
-  const chunkY = Math.floor(y / CHUNK_SIZE);
-  return `${chunkX},${chunkY}`;
-}
+import { getChunkKey } from 'gisaima-shared/map/cartography.js';
 
 // Function to flee from a battle
 export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {

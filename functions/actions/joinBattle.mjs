@@ -6,6 +6,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
+import { getChunkKey } from 'gisaima-shared/map/cartography.js';
 
 // Join a battle function
 export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
@@ -24,14 +25,7 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     const db = getDatabase();
     const worldId = request.data.worldId || 'default';
     
-    // Fix chunk calculation for negative coordinates
-    const CHUNK_SIZE = 20;
-    function getChunkKey(x, y) {
-      // Simple integer division works for both positive and negative coordinates
-      const chunkX = Math.floor(x / CHUNK_SIZE);
-      const chunkY = Math.floor(y / CHUNK_SIZE);
-      return `${chunkX},${chunkY}`;
-    }
+
     
     const chunkKey = getChunkKey(locationX, locationY);
     

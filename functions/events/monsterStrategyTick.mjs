@@ -5,8 +5,7 @@
 
 import { logger } from "firebase-functions";
 import { getDatabase } from 'firebase-admin/database';
-import { getChunkKey } from "./utils.mjs";
-import { mergeItems } from "./utils.mjs";
+import { getChunkKey } from "gisaima-shared/map/cartography.js";
 
 /**
  * Calculate a simple path between two points using a modified Bresenham's line algorithm

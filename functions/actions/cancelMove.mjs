@@ -6,6 +6,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
+import { CHUNK_SIZE } from 'gisaima-shared/map/cartography.js';
 
 // Function to cancel a group's movement
 export const cancelMove = onCall({ maxInstances: 10 }, async (request) => {
@@ -37,7 +38,6 @@ export const cancelMove = onCall({ maxInstances: 10 }, async (request) => {
     const db = getDatabase();
     
     // Calculate chunk key for the position - consider using consistent getChunkKey function
-    const CHUNK_SIZE = 20;
     const chunkX = Math.floor(x / CHUNK_SIZE);
     const chunkY = Math.floor(y / CHUNK_SIZE);
     const chunkKey = `${chunkX},${chunkY}`;

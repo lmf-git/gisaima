@@ -6,6 +6,8 @@ import { db } from '../firebase/firebase.js';
 import { replaceState } from '$app/navigation'; // Import from SvelteKit instead of using history directly
 // Import getWorldCenterCoordinates function from game store
 import { getWorldCenterCoordinates, game } from './game.js';
+// Import getChunkKey from the shared module
+import { getChunkKey, CHUNK_SIZE } from 'gisaima-shared/map/cartography.js';
 
 // New constants for controlling debug output
 const DEBUG_MODE = false; // Set to true to enable verbose logging
@@ -15,7 +17,6 @@ const debugLog = (...args) => DEBUG_MODE && console.log(...args);
 let terrain;
 
 // Configuration constants
-const CHUNK_SIZE = 20;
 export const TILE_SIZE = 5;
 export const EXPANDED_COLS_FACTOR = 2.6;
 export const EXPANDED_ROWS_FACTOR = 2;
@@ -743,15 +744,6 @@ export function setHighlighted(x, y) {
   } else {
     highlightedCoords.set(null);
   }
-}
-
-// Get chunk key for coordinates - matches database structure
-export function getChunkKey(x, y) {
-  // Simple integer division works for both positive and negative coordinates
-  const chunkX = Math.floor(x / CHUNK_SIZE);
-  const chunkY = Math.floor(y / CHUNK_SIZE);
-
-  return `${chunkX},${chunkY}`;
 }
 
 // Enhanced function to handle spawn data in various formats

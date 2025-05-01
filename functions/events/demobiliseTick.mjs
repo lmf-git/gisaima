@@ -4,7 +4,7 @@
  */
 
 import { logger } from "firebase-functions";
-import { mergeItems } from "./utils.mjs";
+import { merge } from "gisaima-shared/economy/items.mjs";
 
 /**
  * Process demobilizing groups for a given world
@@ -55,7 +55,7 @@ export function processDemobilization(worldId, updates, group, chunkKey, tileKey
       }
     
       // Combine existing bank items with new items from group, merging identical items
-      updates[bankPath] = mergeItems(existingBankItems, group.items);
+      updates[bankPath] = merge(existingBankItems, group.items);
     } else {
       // Store in shared storage (default behavior)
       const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/items`;
@@ -66,7 +66,7 @@ export function processDemobilization(worldId, updates, group, chunkKey, tileKey
       } else {
         // Merge group items with structure items, combining identical items
         const existingItems = Array.isArray(tile.structure.items) ? tile.structure.items : [];
-        updates[structurePath] = mergeItems(existingItems, group.items);
+        updates[structurePath] = merge(existingItems, group.items);
       }
     }
     

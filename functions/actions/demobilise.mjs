@@ -6,6 +6,7 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
+import { getChunkKey } from 'gisaima-shared/map/cartography.js';
 
 // Demobilise units function
 export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
@@ -28,16 +29,6 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
   try {
     const db = getDatabase();
     
-    // Fix chunk calculation for negative coordinates - Updated to match mobilise.mjs
-    const CHUNK_SIZE = 20;
-    function getChunkKey(x, y) {
-      // Simple integer division matches the database structure
-      const chunkX = Math.floor(x / CHUNK_SIZE);
-      const chunkY = Math.floor(y / CHUNK_SIZE);
-      
-      console.log(`Chunk calculation: (${x},${y}) -> chunk (${chunkX},${chunkY})`);
-      return `${chunkX},${chunkY}`;
-    }
     
     const chunkKey = getChunkKey(locationX, locationY);
     const tileKey = `${locationX},${locationY}`;
