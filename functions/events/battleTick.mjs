@@ -340,7 +340,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     updates[`${basePath}/side2/casualties`] = side2Casualties;
     
     // Check if battle should end - based only on power
-    // A battle ends when one side has no power left or after many ticks (safety cap at 20)
+    // A battle ends when one side has no power left
     if (newSide1Power <= 0 || newSide2Power <= 0) {
       // Determine the winner
       let winner = 0; // Draw
