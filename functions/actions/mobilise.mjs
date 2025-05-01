@@ -396,13 +396,6 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       if (!currentData.players[uid].worlds[worldId]) currentData.players[uid].worlds[worldId] = {};
       if (!currentData.players[uid].worlds[worldId].groups) currentData.players[uid].worlds[worldId].groups = {};
 
-      currentData.players[uid].worlds[worldId].groups[newGroupId] = {
-        id: newGroupId,
-        at: `${tileX},${tileY}`,
-        status: 'mobilizing',
-        readyAt: nextTickTime
-      };
-
       if (includePlayer) {
         currentData.players[uid].worlds[worldId].lastLocation = { x: tileX, y: tileY };
         currentData.players[uid].worlds[worldId].inGroup = newGroupId;
