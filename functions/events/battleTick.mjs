@@ -161,6 +161,11 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
     const totalPower = side1Power + side2Power;
     const powerRatio = Math.min(side1Power, side2Power) / Math.max(side1Power, side2Power);
     
+    // Determine if either side has overwhelming advantage (20x or more power)
+    const OVERWHELMING_ADVANTAGE_THRESHOLD = 0.05; // 1/20 = 0.05
+    const side1HasOverwhelmingAdvantage = side1Power >= side2Power * 20;
+    const side2HasOverwhelmingAdvantage = side2Power >= side1Power * 20;
+    
     // Randomly assign advantage when powers are equal
     if (side1Power === side2Power && (!battle.advantage || battle.advantage.side === 0)) {
       // 50/50 chance to give advantage to either side
@@ -186,26 +191,61 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
         [...(battle.events || []), advantageEvent];
     }
     
-    // Scale attrition based on battle size - larger battles should last longer
-    const totalUnits = side1Power + side2Power;
-    
     // Target number of ticks the battle should last (on average)
-    // This creates a curve where larger battles last longer
     const TARGET_BATTLE_DURATION = Math.max(3, Math.ceil(4 + Math.sqrt(totalUnits)));
     
     // Calculate base attrition rate to achieve target duration
-    // We're aiming for a percentage loss that would resolve the battle in TARGET_BATTLE_DURATION ticks
-    // Base rate calculation ensures smaller battles still have some randomness
     const baseAttritionRate = (0.5 / TARGET_BATTLE_DURATION) + (powerRatio * 0.05);
     
     // Apply escalation factor - battles get bloodier over time
-    // First tick is normal, then gradually increases
     const tickCount = battle.tickCount || 1;
     const escalationFactor = 1.0 + (Math.sqrt(tickCount - 1) * 0.15);
     
     // Calculate actual attrition rates with escalation
     let side1AttritionRate = baseAttritionRate * escalationFactor;
     let side2AttritionRate = baseAttritionRate * escalationFactor;
+    
+    // Apply overwhelming advantage - side with massive advantage takes no losses
+    if (side1HasOverwhelmingAdvantage) {
+      side1AttritionRate = 0; // Dominant side takes no losses
+      side2AttritionRate *= 1.5; // Weaker side takes more losses
+      
+      // Add advantage event if not already present
+      if (!battle.advantage || battle.advantage.side !== 1 || battle.advantage.strength < 0.8) {
+        const overwhelmingEvent = {
+          type: 'battle_overwhelming_advantage',
+          timestamp: Date.now(),
+          text: `${battle.side1?.name || 'Side 1'} has an overwhelming advantage! They take no casualties while inflicting heavy losses.`,
+        };
+        
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/events`] = 
+          [...(battle.events || []), overwhelmingEvent];
+        
+        // Update battle advantage
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/advantage/side`] = 1;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/advantage/strength`] = 0.9;
+      }
+    } 
+    else if (side2HasOverwhelmingAdvantage) {
+      side2AttritionRate = 0; // Dominant side takes no losses
+      side1AttritionRate *= 1.5; // Weaker side takes more losses
+      
+      // Add advantage event if not already present
+      if (!battle.advantage || battle.advantage.side !== 2 || battle.advantage.strength < 0.8) {
+        const overwhelmingEvent = {
+          type: 'battle_overwhelming_advantage',
+          timestamp: Date.now(),
+          text: `${battle.side2?.name || 'Side 2'} has an overwhelming advantage! They take no casualties while inflicting heavy losses.`,
+        };
+        
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/events`] = 
+          [...(battle.events || []), overwhelmingEvent];
+        
+        // Update battle advantage
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/advantage/side`] = 2;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/advantage/strength`] = 0.9;
+      }
+    }
     
     // Process attrition for side 1
     const side1Result = processGroupAttrition(
@@ -414,6 +454,12 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
  * Returns updates to be applied to the database and the remaining power
  */
 function processGroupAttrition(worldId, chunkKey, locationKey, groups, attritionRate, battleId, db) {
+  // If attrition rate is zero, return immediately with no changes
+  if (attritionRate === 0) {
+    const remainingPower = calculateSidePower(groups);
+    return { updates: {}, remainingPower };
+  }
+  
   const updates = {};
   let remainingPower = 0;
   const playersKilled = [];
