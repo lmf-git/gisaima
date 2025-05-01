@@ -188,10 +188,15 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
     
     // Scale attrition based on battle size - larger battles should last longer
     const totalUnits = side1Power + side2Power;
-    const sizeFactor = 1 / Math.max(1, Math.sqrt(totalUnits / 2)); // Square root scaling
     
-    // Calculate base attrition rates
-    const baseAttritionRate = (0.05 + (powerRatio * 0.05)) * sizeFactor;
+    // Target number of ticks the battle should last (on average)
+    // This creates a curve where larger battles last longer
+    const TARGET_BATTLE_DURATION = Math.max(3, Math.ceil(4 + Math.sqrt(totalUnits)));
+    
+    // Calculate base attrition rate to achieve target duration
+    // We're aiming for a percentage loss that would resolve the battle in TARGET_BATTLE_DURATION ticks
+    // Base rate calculation ensures smaller battles still have some randomness
+    const baseAttritionRate = (0.5 / TARGET_BATTLE_DURATION) + (powerRatio * 0.05);
     
     // Apply escalation factor - battles get bloodier over time
     // First tick is normal, then gradually increases
@@ -201,29 +206,6 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
     // Calculate actual attrition rates with escalation
     let side1AttritionRate = baseAttritionRate * escalationFactor;
     let side2AttritionRate = baseAttritionRate * escalationFactor;
-    
-    // Apply advantage to attrition rates
-    if (battle.advantage) {
-      if (battle.advantage.side === 1) {
-        side1AttritionRate *= (1 - battle.advantage.strength * 0.5);
-        side2AttritionRate *= (1 + battle.advantage.strength * 0.5);
-      } else if (battle.advantage.side === 2) {
-        side1AttritionRate *= (1 + battle.advantage.strength * 0.5);
-        side2AttritionRate *= (1 - battle.advantage.strength * 0.5);
-      }
-    }
-    
-    // Add escalation event if this is a significant milestone
-    if (tickCount > 1 && tickCount % 3 === 0) {
-      const escalationEvent = {
-        type: 'battle_escalation',
-        timestamp: Date.now(),
-        text: `The battle intensifies as combatants grow desperate! Casualties are increasing.`,
-      };
-      
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/events`] = 
-        [...(battle.events || []), escalationEvent];
-    }
     
     // Process attrition for side 1
     const side1Result = processGroupAttrition(
@@ -442,23 +424,41 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
     
     const units = typeof group.units === 'object' ? Object.entries(group.units) : [];
     
-    // For small battles, use probability-based attrition
+    // Calculate unit losses using a unified scaling algorithm
     let unitLosses = 0;
+    const groupSize = units.length;
     
-    if (units.length <= 5) {
-      // For small groups (5 or fewer units), use probability for each unit
-      for (let i = 0; i < units.length; i++) {
-        if (Math.random() < attritionRate) {
-          unitLosses++;
-        }
-      }
-    } else {
-      // For larger groups, use the deterministic approach with minimum loss
-      unitLosses = Math.ceil(units.length * attritionRate);
-      // Ensure at least one unit is lost if there are units and attrition rate > 5%
-      if (units.length > 0 && unitLosses === 0 && attritionRate > 0.05) {
-        unitLosses = 1;
-      }
+    // Base target casualty rate - adjustable parameter for game balance
+    // This represents what percentage of units should be lost per tick on average
+    const BASE_CASUALTY_RATE = 0.10; // 10% casualties per tick base rate
+    
+    // Size scaling - larger groups should have more consistent casualty rates
+    // This makes smaller groups more random, larger groups more predictable
+    const consistencyFactor = 1 - Math.min(0.9, 1 / Math.sqrt(groupSize + 1));
+    
+    // Calculate expected losses using the attrition rate
+    const expectedLosses = groupSize * attritionRate;
+    
+    // For very small groups (or individual units), use pure probability
+    // As groups get larger, blend between probabilistic and deterministic
+    const deterministicLosses = Math.floor(expectedLosses);
+    const remainderProbability = expectedLosses - deterministicLosses;
+    
+    // Apply deterministic losses first
+    unitLosses = deterministicLosses;
+    
+    // Then apply probabilistic component for the remainder
+    // For large groups, this just handles the fractional part
+    // For small groups, this may be the entire calculation
+    if (Math.random() < remainderProbability) {
+      unitLosses += 1;
+    }
+    
+    // Apply consistency factor - as groups get larger, losses become more consistent
+    // For small groups, this allows more randomness (sometimes 0 losses)
+    // For large groups, this ensures losses are close to the expected value
+    if (unitLosses === 0 && Math.random() < consistencyFactor && attritionRate > 0.05) {
+      unitLosses = 1; // Minimum loss threshold with probability based on group size
     }
     
     // Separate player units and non-player units
@@ -484,14 +484,15 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
     }
     
     // If we still need to remove more units, start removing player units
-    // But make player units more resilient in small battles
+    // But make player units more resilient based on probability rather than fixed thresholds
     if (unitLosses > 0 && playerUnits.length > 0) {
-      // For small groups where player is alone or nearly alone, give them more protection
-      if (playerUnits.length === 1 && units.length <= 3) {
-        // 50% chance to avoid death in 1v1 or small battles
-        if (Math.random() > 0.5) {
-          unitLosses = 0;
-        }
+      // Player survival chance increases as they have fewer allies
+      // Solo players have the highest survival chance
+      const playerProtectionFactor = Math.max(0, 1 - (nonPlayerUnits.length / 10));
+      
+      // Give players a chance to survive based on their situation
+      if (Math.random() < playerProtectionFactor) {
+        unitLosses = 0; // Player survives this round
       }
       
       while (unitLosses > 0 && playerUnits.length > 0) {
