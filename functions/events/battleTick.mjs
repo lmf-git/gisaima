@@ -176,15 +176,43 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
     const totalPower = side1Power + side2Power;
     const powerRatio = Math.min(side1Power, side2Power) / Math.max(side1Power, side2Power);
     
-    // Calculate base attrition rates - more even battles have higher attrition
-    // More uneven battles have higher attrition for the weaker side
-    const baseAttritionRate = 0.05 + (powerRatio * 0.05);  // 5-10% base attrition
+    // Randomly assign advantage when powers are equal
+    if (side1Power === side2Power && (!battle.advantage || battle.advantage.side === 0)) {
+      // 50/50 chance to give advantage to either side
+      const randomSide = Math.random() < 0.5 ? 1 : 2;
+      const randomStrength = 0.1 + (Math.random() * 0.2); // Random advantage between 10-30%
+      
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/advantage/side`] = randomSide;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/advantage/strength`] = randomStrength;
+      
+      // Update battle object for this tick's processing
+      if (!battle.advantage) battle.advantage = {};
+      battle.advantage.side = randomSide;
+      battle.advantage.strength = randomStrength;
+      
+      // Add event about advantage
+      const advantageEvent = {
+        type: 'battle_advantage',
+        timestamp: Date.now(),
+        text: `${randomSide === 1 ? battle.side1?.name || 'Side 1' : battle.side2?.name || 'Side 2'} has gained a tactical advantage!`,
+      };
+      
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/events`] = 
+        [...(battle.events || []), advantageEvent];
+    }
+    
+    // Scale attrition based on battle size - larger battles should last longer
+    const totalUnits = side1Power + side2Power;
+    const sizeFactor = 1 / Math.max(1, Math.sqrt(totalUnits / 2)); // Square root scaling
+    
+    // Calculate base attrition rates
+    const baseAttritionRate = (0.05 + (powerRatio * 0.05)) * sizeFactor;
     
     // Calculate actual attrition rates based on advantage
     let side1AttritionRate = baseAttritionRate;
     let side2AttritionRate = baseAttritionRate;
     
-    // Apply advantage to attrition rates - the side with advantage suffers less
+    // Apply advantage to attrition rates
     if (battle.advantage) {
       if (battle.advantage.side === 1) {
         side1AttritionRate *= (1 - battle.advantage.strength * 0.5);
@@ -321,11 +349,24 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
     if (!group.units) continue;
     
     const units = typeof group.units === 'object' ? Object.entries(group.units) : [];
-    let unitLosses = Math.ceil(units.length * attritionRate);
     
-    // Ensure at least one unit is lost if there are units to lose
-    if (units.length > 0 && unitLosses === 0) {
-      unitLosses = 1;
+    // For small battles, use probability-based attrition instead of guaranteed losses
+    let unitLosses = 0;
+    
+    if (units.length <= 5) {
+      // For small groups (5 or fewer units), use probability for each unit
+      for (let i = 0; i < units.length; i++) {
+        if (Math.random() < attritionRate) {
+          unitLosses++;
+        }
+      }
+    } else {
+      // For larger groups, use the deterministic approach with minimum loss
+      unitLosses = Math.ceil(units.length * attritionRate);
+      // Ensure at least one unit is lost if there are units and attrition rate > 5%
+      if (units.length > 0 && unitLosses === 0 && attritionRate > 0.05) {
+        unitLosses = 1;
+      }
     }
     
     // Separate player units and non-player units
@@ -343,7 +384,6 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
     // Remove non-player units first
     const unitsToRemove = [];
     
-    // Remove non-player units first
     while (unitLosses > 0 && nonPlayerUnits.length > 0) {
       const randomIndex = Math.floor(Math.random() * nonPlayerUnits.length);
       const [unitId, unit] = nonPlayerUnits.splice(randomIndex, 1)[0];
@@ -352,10 +392,16 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
     }
     
     // If we still need to remove more units, start removing player units
-    // Only remove player units if casualties are high (>80% of non-player units lost)
-    // NOTE: For a group with ONLY a player unit, this condition will immediately trigger
-    // since nonPlayerUnits.length === 0 from the start
-    if (unitLosses > 0 && playerUnits.length > 0 && nonPlayerUnits.length === 0) {
+    // But make player units more resilient in small battles
+    if (unitLosses > 0 && playerUnits.length > 0) {
+      // For small groups where player is alone or nearly alone, give them more protection
+      if (playerUnits.length === 1 && units.length <= 3) {
+        // 50% chance to avoid death in 1v1 or small battles
+        if (Math.random() > 0.5) {
+          unitLosses = 0;
+        }
+      }
+      
       while (unitLosses > 0 && playerUnits.length > 0) {
         const randomIndex = Math.floor(Math.random() * playerUnits.length);
         const [unitId, unit] = playerUnits.splice(randomIndex, 1)[0];
@@ -514,7 +560,7 @@ async function endBattle(worldId, chunkKey, locationKey, battle, winner, winning
         }
         
         // Add message about looting
-        message += ` ${winningName} looted ${allLootItems.length} items from the defeated groups.`;
+        message += ` ${winnerName} looted ${allLootItems.length} items from the defeated groups.`;
       }
     }
     
