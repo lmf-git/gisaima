@@ -91,10 +91,23 @@ export const processGameTicks = onSchedule({
             }
           }
 
-          // TODO: Find battles in tiles and process them.
-          tile.battles
-          console.log(`Processing battles in world ${worldId}`);
-          const battleProcessed = await processBattle(worldId, chunks);
+          // Process battles on this tile
+          let battlesProcessed = 0;
+          if (tile.battles) {
+            console.log(`Processing battles in tile ${tileKey} of world ${worldId}`);
+            for (const battleId in tile.battles) {
+              const battle = tile.battles[battleId];
+              if (battle && battle.status === 'active') {
+                const battleResult = await processBattle(worldId, chunkKey, tileKey, battleId, battle, updates);
+                if (battleResult) {
+                  battlesProcessed++;
+                }
+              }
+            }
+            if (battlesProcessed > 0) {
+              console.log(`Processed ${battlesProcessed} battles in tile ${tileKey}`);
+            }
+          }
           
           // Check if there are groups on this tile
           if (tile.groups) {
