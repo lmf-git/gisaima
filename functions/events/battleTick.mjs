@@ -193,9 +193,14 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
     // Calculate base attrition rates
     const baseAttritionRate = (0.05 + (powerRatio * 0.05)) * sizeFactor;
     
-    // Calculate actual attrition rates based on advantage
-    let side1AttritionRate = baseAttritionRate;
-    let side2AttritionRate = baseAttritionRate;
+    // Apply escalation factor - battles get bloodier over time
+    // First tick is normal, then gradually increases
+    const tickCount = battle.tickCount || 1;
+    const escalationFactor = 1.0 + (Math.sqrt(tickCount - 1) * 0.15);
+    
+    // Calculate actual attrition rates with escalation
+    let side1AttritionRate = baseAttritionRate * escalationFactor;
+    let side2AttritionRate = baseAttritionRate * escalationFactor;
     
     // Apply advantage to attrition rates
     if (battle.advantage) {
@@ -206,6 +211,18 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
         side1AttritionRate *= (1 + battle.advantage.strength * 0.5);
         side2AttritionRate *= (1 - battle.advantage.strength * 0.5);
       }
+    }
+    
+    // Add escalation event if this is a significant milestone
+    if (tickCount > 1 && tickCount % 3 === 0) {
+      const escalationEvent = {
+        type: 'battle_escalation',
+        timestamp: Date.now(),
+        text: `The battle intensifies as combatants grow desperate! Casualties are increasing.`,
+      };
+      
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/events`] = 
+        [...(battle.events || []), escalationEvent];
     }
     
     // Process attrition for side 1
@@ -283,7 +300,7 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
     const tickEvent = {
       type: 'battle_tick',
       timestamp: Date.now(),
-      text: `The battle continues! Side 1 has ${side1Power} strength remaining. Side 2 has ${side2Power} strength remaining.`,
+      text: `The battle continues${tickCount > 3 ? ' with increasing ferocity' : ''}! Side 1 has ${side1Power} strength remaining. Side 2 has ${side2Power} strength remaining.`,
     };
     
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/events`] = 
