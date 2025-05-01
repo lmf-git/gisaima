@@ -2,29 +2,64 @@
   import { moveTarget, targetStore } from '../../lib/stores/map';
   import { game } from '../../lib/stores/game';
   import Torch from '../icons/Torch.svelte';
+  // Import race icons
+  import Human from '../icons/Human.svelte';
+  import Elf from '../icons/Elf.svelte';
+  import Dwarf from '../icons/Dwarf.svelte';
+  import Goblin from '../icons/Goblin.svelte';
+  import Fairy from '../icons/Fairy.svelte';
   
   // Calculate distance between two points
   function getDistance(x1, y1, x2, y2) {
     return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
   }
   
-  // Find nearest spawn for player's race
-  let nearestSpawn = $state(null);
+  // Track recenter target info
+  let recenterTarget = $state(null);
   let distance = $state(0);
+  let targetType = $state('spawn'); // 'player' or 'spawn'
   const DISTANCE_THRESHOLD = 20;
+  
+  // Store player race for icon selection
+  let playerRace = $state(null);
+  
+  $effect(() => {
+    // Update player race whenever game state changes
+    playerRace = $game.player?.race?.toLowerCase() || null;
+  });
   
   $effect(() => {
     // Get current target coordinates
     const targetX = $targetStore.x;
     const targetY = $targetStore.y;
     
-    // Get player race and world data
-    const playerRace = $game.player?.race?.toLowerCase();
+    // Check for player location first
+    const playerLocation = $game.player?.lastLocation;
+    if ($game?.player?.alive && playerLocation && 
+        typeof playerLocation.x === 'number' && 
+        typeof playerLocation.y === 'number') {
+      
+      // Calculate distance to player
+      const dist = getDistance(targetX, targetY, playerLocation.x, playerLocation.y);
+      
+      // Update state with player as target
+      recenterTarget = { 
+        x: playerLocation.x, 
+        y: playerLocation.y,
+        type: 'player'
+      };
+      distance = dist;
+      targetType = 'player';
+      return;
+    }
+    
+    // Fall back to spawn points if player location not available
+    const playerRaceValue = $game.player?.race?.toLowerCase();
     const world = $game.worlds[$game.worldKey];
     
     // Skip if data is missing
-    if (!world || !playerRace) {
-      nearestSpawn = null;
+    if (!world || !playerRaceValue) {
+      recenterTarget = null;
       distance = 0;
       return;
     }
@@ -34,12 +69,12 @@
     
     // Filter spawns by race
     const raceSpawns = spawns.filter(spawn => 
-      spawn.race?.toLowerCase() === playerRace
+      spawn.race?.toLowerCase() === playerRaceValue
     );
     
     if (raceSpawns.length === 0) {
       // No spawns for this race found
-      nearestSpawn = null;
+      recenterTarget = null;
       distance = 0;
       return;
     }
@@ -61,29 +96,57 @@
       }
     }
     
-    // Update state
-    nearestSpawn = closest;
-    distance = minDistance;
+    // Update state with spawn as target
+    if (closest) {
+      const spawnX = closest.x ?? closest.position?.x ?? 0;
+      const spawnY = closest.y ?? closest.position?.y ?? 0;
+      
+      recenterTarget = {
+        x: spawnX,
+        y: spawnY,
+        spawn: closest,
+        type: 'spawn'
+      };
+      distance = minDistance;
+      targetType = 'spawn';
+    } else {
+      recenterTarget = null;
+      distance = 0;
+    }
   });
   
   // Handle recenter click
   function recenter() {
-    if (!nearestSpawn) return;
-    
-    const spawnX = nearestSpawn.x ?? nearestSpawn.position?.x ?? 0;
-    const spawnY = nearestSpawn.y ?? nearestSpawn.position?.y ?? 0;
-    
-    moveTarget(spawnX, spawnY);
+    if (!recenterTarget) return;
+    moveTarget(recenterTarget.x, recenterTarget.y);
   }
 </script>
 
-{#if nearestSpawn && distance > DISTANCE_THRESHOLD && $game?.player?.alive}
+{#if recenterTarget && distance > DISTANCE_THRESHOLD && $game?.player?.alive}
   <button 
     class="recenter-button" 
     onclick={recenter}
-    aria-label="Return to spawn point">
-    <Torch extraClass="torch-icon-button" size="1.2em" />
-    <span>Return to spawn</span>
+    aria-label={targetType === 'player' ? "Return to player" : "Return to spawn point"}>
+    
+    {#if targetType === 'player' && playerRace}
+      {#if playerRace === 'human'}
+        <Human extraClass="race-icon-button" size="1.2em" />
+      {:else if playerRace === 'elf'}
+        <Elf extraClass="race-icon-button" size="1.2em" />
+      {:else if playerRace === 'dwarf'}
+        <Dwarf extraClass="race-icon-button" size="1.2em" />
+      {:else if playerRace === 'goblin'}
+        <Goblin extraClass="race-icon-button" size="1.2em" />
+      {:else if playerRace === 'fairy'}
+        <Fairy extraClass="race-icon-button" size="1.2em" />
+      {:else}
+        <Torch extraClass="torch-icon-button" size="1.2em" />
+      {/if}
+    {:else}
+      <Torch extraClass="torch-icon-button" size="1.2em" />
+    {/if}
+    
+    <span>{targetType === 'player' ? 'Return to player' : 'Return to spawn'}</span>
   </button>
 {/if}
 
@@ -132,5 +195,12 @@
     height: 1.2em;
     fill: rgba(0, 0, 0, 0.8);
     filter: drop-shadow(0 0 2px rgba(255, 140, 0, 0.4));
+  }
+  
+  :global(.race-icon-button) {
+    width: 1.2em;
+    height: 1.2em;
+    fill: rgba(0, 0, 0, 0.8);
+    filter: drop-shadow(0 0 2px rgba(100, 100, 255, 0.4));
   }
 </style>
