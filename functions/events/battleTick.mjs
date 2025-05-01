@@ -409,7 +409,27 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
           `Victorious: ${getWinnerName(winningGroups)} Defeated: ${getLoserName(losingGroups)} ` +
           `(${side1Casualties + side2Casualties} casualties)`
         );
-      } else if (side1Casualties + side2Casualties > 0) {
+      }
+      // NEW: Handle the case where both sides have minimal power (stalemate)
+      else if (side1Power <= 1 && side2Power <= 1) {
+        // It's a stalemate with minimal forces - pick a random winner
+        const randomWinningSide = Math.random() < 0.5 ? 1 : 2;
+        const winningGroups = randomWinningSide === 1 ? filteredSide1Groups : filteredSide2Groups;
+        const losingGroups = randomWinningSide === 1 ? filteredSide2Groups : filteredSide1Groups;
+        
+        logger.info(`Battle ${battleId} ending in stalemate: Randomly choosing side ${randomWinningSide} as winner`);
+        
+        // End the battle with the randomly chosen side as winner
+        await endBattle(worldId, chunkKey, locationKey, battleId, randomWinningSide, winningGroups, structure);
+        
+        // Add battle end message for stalemate
+        addBattleEndMessageToUpdates(
+          updates, worldId, now, battleId, locationKey,
+          `Battle has ended in stalemate after ${battleData.tickCount + 1} ticks! ` +
+          `By fortune's favor, ${getWinnerName(winningGroups)} emerges victorious against ${getLoserName(losingGroups)}.`
+        );
+      }
+      else if (side1Casualties + side2Casualties > 0) {
         // Battle continues - add message about casualties if any
         const lootMessage = (side1Loot.length > 0 || side2Loot.length > 0) ? 
           ` Items were looted from the fallen.` : '';
@@ -626,8 +646,8 @@ function shouldEndBattleAfterAttrition(side1Groups, side2Groups, side1Power, sid
   }
   
   // Check if either side only has empty groups
-  const side1HasUnits = side1Groups.some(group => (group.unitCount && group.unitCount > 0));
-  const side2HasUnits = side2Groups.some(group => (group.unitCount && group.unitCount > 0));
+  const side1HasUnits = side1Groups.some(group => (group.unitCount !== 0 && (group.unitCount || group.units)));
+  const side2HasUnits = side2Groups.some(group => (group.unitCount !== 0 && (group.unitCount || group.units)));
   
   if (!side1HasUnits || !side2HasUnits) {
     logger.info(`Battle ending after attrition: One side has no units (Side1 has units: ${side1HasUnits}, Side2 has units: ${side2HasUnits})`);
@@ -740,7 +760,8 @@ function calculateSidePower(groups) {
   if (!groups || groups.length === 0) return 0;
   
   return groups.reduce((total, group) => {
-    let groupPower = group.unitCount || 1;
+    // Don't default to 1 if unitCount is explicitly 0
+    let groupPower = group.unitCount === 0 ? 0 : (group.unitCount || 1);
     
     // If we have unit details, use those
     if (group.units) {
