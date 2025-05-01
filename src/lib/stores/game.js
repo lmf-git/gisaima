@@ -3,10 +3,10 @@ import { browser } from '$app/environment';
 import { ref, onValue, get as dbGet, set } from "firebase/database";
 import { db } from '../firebase/firebase.js';
 import { user, isAuthReady as userAuthReady } from './user'; 
-import { clearSavedTargetPosition } from './map.js'; // Import clearSavedTargetPosition from map.js
+import { clearSavedTargetPosition } from './map.js';
 
 // Constants for localStorage
-const CURRENT_WORLD_KEY = 'gisaima-current-world'; // Keeping this for backward compatibility with localStorage
+const CURRENT_WORLD_KEY = 'gisaima-current-world';
 
 // Use the imported auth ready store instead of creating a new one
 export { userAuthReady as isAuthReady };
