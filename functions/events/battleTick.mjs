@@ -246,6 +246,36 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       side1Casualties = applyAttrition(side1Groups, side1Ratio, worldId, chunkKey, locationKey, updates, now, side1Loot, deletedGroupIds);
       side2Casualties = applyAttrition(side2Groups, side2Ratio, worldId, chunkKey, locationKey, updates, now, side2Loot, deletedGroupIds);
       
+      // NEW: Check if any side has been completely wiped out after attrition
+      const remainingSide1Groups = Object.keys(battleData.side1?.groups || {}).filter(id => !deletedGroupIds.has(id));
+      const remainingSide2Groups = Object.keys(battleData.side2?.groups || {}).filter(id => !deletedGroupIds.has(id));
+      
+      if (remainingSide1Groups.length === 0 || remainingSide2Groups.length === 0) {
+        // One side has been completely eliminated - end battle immediately
+        const winningSide = remainingSide1Groups.length > 0 ? 1 : 2;
+        const winningGroups = winningSide === 1 ? 
+          side1Groups.filter(g => !deletedGroupIds.has(g.id)) : 
+          side2Groups.filter(g => !deletedGroupIds.has(g.id));
+        
+        logger.info(`Battle ${battleId} ending immediately: Side ${winningSide} wins because all opposing groups were eliminated`);
+        
+        // Ensure the battle is deleted
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = null;
+        
+        // End the battle properly
+        await endBattle(worldId, chunkKey, locationKey, battleId, winningSide, winningGroups, structure);
+        
+        // Add battle end message
+        addBattleEndMessageToUpdates(
+          updates, worldId, now, battleId, locationKey,
+          `Battle has ended! ${winningSide === 1 ? battleData.side1?.name || "Side 1" : battleData.side2?.name || "Side 2"} is victorious as all opposing forces were eliminated.`
+        );
+        
+        // Apply updates and exit early
+        await db.ref().update(updates);
+        return { success: true };
+      }
+      
       // Track casualties in the enhanced battle data
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/side1/casualties`] = 
         (battleData.side1?.casualties || 0) + side1Casualties;
@@ -540,6 +570,11 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
       deletedGroupIds.add(group.id);
       
+      // Also explicitly remove this group from the battle data if it's in one
+      if (group.battleId && group.battleSide) {
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${group.battleId}/side${group.battleSide}/groups/${group.id}`] = null;
+      }
+      
     } else {
       // Only update unitCount if the group is not being deleted
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnits;
@@ -620,9 +655,16 @@ function checkAndUpdatePlayerStatus(group, casualties, worldId, chunkKey, locati
         timestamp: Date.now()
       };
       
-      // NOTE: We're not updating the unit's dead status in the group data
-      // This avoids Firebase ancestor path conflicts when the group is being deleted
-      // The client can determine that a player unit is dead if the player's 'alive' status is false
+      // When a player dies and this is the only unit, mark the group for deletion
+      if (Object.keys(group.units).length === 1) {
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+        deletedGroupIds.add(group.id);
+        
+        // Also explicitly remove this group from the battle data if it's in one
+        if (group.battleId && group.battleSide) {
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${group.battleId}/side${group.battleSide}/groups/${group.id}`] = null;
+        }
+      }
       
       logger.info(`Player unit lost during battle attrition - marking player ${group.owner} as not alive`);
       
@@ -647,12 +689,19 @@ function shouldEndBattleEarly(side1Groups, side2Groups) {
     return true;
   }
   
-  // Check if either side only has empty groups (groups with no units)
-  const side1HasUnits = side1Groups.some(group => (group.unitCount && group.unitCount > 0));
-  const side2HasUnits = side2Groups.some(group => (group.unitCount && group.unitCount > 0));
+  // More accurate check - count groups with actual units
+  const side1GroupsWithUnits = side1Groups.filter(group => 
+    (group.unitCount !== undefined && group.unitCount > 0) || 
+    (group.units && Object.keys(group.units).length > 0)
+  );
   
-  if (!side1HasUnits || !side2HasUnits) {
-    logger.info(`Battle ending early: One side has no units (Side1 has units: ${side1HasUnits}, Side2 has units: ${side2HasUnits})`);
+  const side2GroupsWithUnits = side2Groups.filter(group => 
+    (group.unitCount !== undefined && group.unitCount > 0) || 
+    (group.units && Object.keys(group.units).length > 0)
+  );
+  
+  if (side1GroupsWithUnits.length === 0 || side2GroupsWithUnits.length === 0) {
+    logger.info(`Battle ending early: One side has no groups with units (Side1: ${side1GroupsWithUnits.length}, Side2: ${side2GroupsWithUnits.length})`);
     return true;
   }
   

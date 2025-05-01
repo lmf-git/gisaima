@@ -343,19 +343,29 @@
               "at": "-23,5",
               "id": "-OP8aYzm48dlcvy_4M8q",
               "status": "idle"
+            },
+            "-OP8cS0HS8B11-b4jngf": {
+              "at": "-23,5",
+              "id": "-OP8cS0HS8B11-b4jngf",
+              "status": "idle"
+            },
+            "-OP8ef2c0QtP2GSaIK6_": {
+              "at": "-23,5",
+              "id": "-OP8ef2c0QtP2GSaIK6_",
+              "status": "idle"
             }
           },
           "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-          "inGroup": "-OP8aYzm48dlcvy_4M8q",
+          "inGroup": "-OP8ef2c0QtP2GSaIK6_",
           "joined": 1746061463612,
           "lastLocation": {
-            "timestamp": 1746065651530,
+            "timestamp": 1746066666434,
             "x": -23,
             "y": 5
           },
           "lastMessage": {
             "text": "You were defeated in battle.",
-            "timestamp": 1746065642676
+            "timestamp": 1746066662602
           },
           "race": "human"
         }
@@ -501,49 +511,35 @@
         "-2,-1": {
           "-21,-1": {
             "groups": {
-              "monster_1746059769176_279": {
-                "createdAt": 1746059769176,
+              "monster_1746061322501_9180": {
+                "createdAt": 1746061322501,
                 "gatheringTicksRemaining": 1,
-                "id": "monster_1746059769176_279",
+                "id": "monster_1746061322501_9180",
                 "items": [
                   {
-                    "id": "item_1746059769176_248",
-                    "name": "Bone Fragment",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "item_1746059769176_287",
-                    "name": "Monster Tooth",
+                    "id": "item_1746061322501_952",
+                    "name": "Crude Weapon",
                     "quantity": 1,
-                    "rarity": "uncommon",
-                    "type": "trophy"
+                    "rarity": "common",
+                    "type": "weapon"
                   },
                   {
-                    "id": "item_1746060602383_1",
+                    "id": "item_1746061322501_608",
+                    "name": "Shiny Gem",
+                    "quantity": 1,
+                    "rarity": "rare",
+                    "type": "gem"
+                  },
+                  {
+                    "id": "item_1746061681871_1",
                     "name": "Wooden Sticks",
-                    "quantity": 1,
+                    "quantity": 4,
                     "rarity": "common",
                     "type": "resource"
                   },
                   {
-                    "id": "item_1746060602383_2",
+                    "id": "item_1746061681871_2",
                     "name": "Stone Pieces",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "item_1746060602383_408",
-                    "name": "Wheat",
-                    "quantity": 1,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "item_1746060602383_988",
-                    "name": "Wild Berries",
                     "quantity": 1,
                     "rarity": "common",
                     "type": "resource"
@@ -551,30 +547,34 @@
                 ],
                 "lastMessage": {
                   "text": "Moving to next location (-21,-1)",
-                  "timestamp": 1746065221949
+                  "timestamp": 1746066061270
                 },
-                "lastUpdated": 1746065221949,
-                "monsterType": "skeleton",
+                "lastUpdated": 1746066662931,
+                "monsterType": "spider",
                 "moveSpeed": 1,
-                "moveStarted": 1746065102737,
+                "moveStarted": 1746066662931,
                 "movementPath": [
-                  {
-                    "x": -22,
-                    "y": 0
-                  },
                   {
                     "x": -21,
                     "y": -1
+                  },
+                  {
+                    "x": -22,
+                    "y": -2
+                  },
+                  {
+                    "x": -23,
+                    "y": -3
                   }
                 ],
-                "name": "Undead Skeletons",
-                "nextMoveTime": 1746065281949,
-                "pathIndex": 1,
-                "status": "idle",
-                "targetX": -19,
+                "name": "Giant Spiders",
+                "nextMoveTime": 1746066722931,
+                "pathIndex": 0,
+                "status": "moving",
+                "targetX": -23,
                 "targetY": -3,
                 "type": "monster",
-                "unitCount": 7,
+                "unitCount": 3,
                 "x": -21,
                 "y": -1
               }
@@ -618,6 +618,67 @@
               }
             }
           },
+          "-27,-4": {
+            "groups": {
+              "monster_1746055083166_2458": {
+                "createdAt": 1746055083166,
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746055083166_2458",
+                "items": [
+                  {
+                    "id": "item_1746055803183_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 5,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746055803183_2",
+                    "name": "Stone Pieces",
+                    "quantity": 4,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "description": "A strange object of unknown origin",
+                    "id": "item_1746056042191_special",
+                    "name": "Mysterious Artifact",
+                    "quantity": 1,
+                    "rarity": "rare",
+                    "type": "artifact"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Moving to next location (-27,-4)",
+                  "timestamp": 1746066485748
+                },
+                "lastUpdated": 1746066606914,
+                "monsterType": "spider",
+                "moveSpeed": 1,
+                "moveStarted": 1746066606914,
+                "movementPath": [
+                  {
+                    "x": -27,
+                    "y": -4
+                  },
+                  {
+                    "x": -26,
+                    "y": -3
+                  }
+                ],
+                "name": "Giant Spiders",
+                "nextMoveTime": 1746066666914,
+                "pathIndex": 0,
+                "status": "moving",
+                "targetX": -26,
+                "targetY": -3,
+                "type": "monster",
+                "unitCount": 2,
+                "x": -27,
+                "y": -4
+              }
+            }
+          },
           "-29,-1": {
             "groups": {
               "monster_1746059525073_8841": {
@@ -652,26 +713,34 @@
                   "text": "Moving to next location (-29,-1)",
                   "timestamp": 1746065101757
                 },
-                "lastUpdated": 1746065101757,
+                "lastUpdated": 1746066662931,
                 "monsterType": "goblin",
                 "moveSpeed": 1,
-                "moveStarted": 1746064982596,
+                "moveStarted": 1746066662931,
                 "movementPath": [
-                  {
-                    "x": -30,
-                    "y": -1
-                  },
                   {
                     "x": -29,
                     "y": -1
+                  },
+                  {
+                    "x": -28,
+                    "y": 0
+                  },
+                  {
+                    "x": -27,
+                    "y": 1
+                  },
+                  {
+                    "x": -26,
+                    "y": 2
                   }
                 ],
                 "name": "Goblin Raiders",
-                "nextMoveTime": 1746065161757,
-                "pathIndex": 1,
-                "status": "idle",
-                "targetX": -27,
-                "targetY": -1,
+                "nextMoveTime": 1746066722931,
+                "pathIndex": 0,
+                "status": "moving",
+                "targetX": -26,
+                "targetY": 2,
                 "type": "monster",
                 "unitCount": 2,
                 "x": -29,
@@ -850,67 +919,6 @@
               "type": "spawn"
             }
           },
-          "-32,-7": {
-            "groups": {
-              "monster_1746055083166_2458": {
-                "createdAt": 1746055083166,
-                "gatheringTicksRemaining": 1,
-                "id": "monster_1746055083166_2458",
-                "items": [
-                  {
-                    "id": "item_1746055803183_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 5,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "item_1746055803183_2",
-                    "name": "Stone Pieces",
-                    "quantity": 4,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "description": "A strange object of unknown origin",
-                    "id": "item_1746056042191_special",
-                    "name": "Mysterious Artifact",
-                    "quantity": 1,
-                    "rarity": "rare",
-                    "type": "artifact"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Moving to next location (-32,-7)",
-                  "timestamp": 1746065161705
-                },
-                "lastUpdated": 1746065161705,
-                "monsterType": "spider",
-                "moveSpeed": 1,
-                "moveStarted": 1746065042940,
-                "movementPath": [
-                  {
-                    "x": -32,
-                    "y": -6
-                  },
-                  {
-                    "x": -32,
-                    "y": -7
-                  }
-                ],
-                "name": "Giant Spiders",
-                "nextMoveTime": 1746065221705,
-                "pathIndex": 1,
-                "status": "idle",
-                "targetX": -32,
-                "targetY": -7,
-                "type": "monster",
-                "unitCount": 2,
-                "x": -32,
-                "y": -7
-              }
-            }
-          },
           "-34,-3": {
             "groups": {
               "-OOdDT4AuHhVSLmvPXy7": {
@@ -1005,35 +1013,49 @@
         "-2,0": {
           "-21,0": {
             "groups": {
-              "monster_1746061322501_9180": {
-                "createdAt": 1746061322501,
+              "monster_1746059769176_279": {
+                "createdAt": 1746059769176,
                 "gatheringTicksRemaining": 1,
-                "id": "monster_1746061322501_9180",
+                "id": "monster_1746059769176_279",
                 "items": [
                   {
-                    "id": "item_1746061322501_952",
-                    "name": "Crude Weapon",
-                    "quantity": 1,
-                    "rarity": "common",
-                    "type": "weapon"
-                  },
-                  {
-                    "id": "item_1746061322501_608",
-                    "name": "Shiny Gem",
-                    "quantity": 1,
-                    "rarity": "rare",
-                    "type": "gem"
-                  },
-                  {
-                    "id": "item_1746061681871_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 4,
+                    "id": "item_1746059769176_248",
+                    "name": "Bone Fragment",
+                    "quantity": 2,
                     "rarity": "common",
                     "type": "resource"
                   },
                   {
-                    "id": "item_1746061681871_2",
+                    "id": "item_1746059769176_287",
+                    "name": "Monster Tooth",
+                    "quantity": 1,
+                    "rarity": "uncommon",
+                    "type": "trophy"
+                  },
+                  {
+                    "id": "item_1746060602383_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746060602383_2",
                     "name": "Stone Pieces",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746060602383_408",
+                    "name": "Wheat",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "item_1746060602383_988",
+                    "name": "Wild Berries",
                     "quantity": 1,
                     "rarity": "common",
                     "type": "resource"
@@ -1041,36 +1063,52 @@
                 ],
                 "lastMessage": {
                   "text": "Moving to next location (-21,0)",
-                  "timestamp": 1746065521520
+                  "timestamp": 1746066185712
                 },
-                "lastUpdated": 1746065521520,
-                "monsterType": "spider",
+                "lastUpdated": 1746066606914,
+                "monsterType": "skeleton",
                 "moveSpeed": 1,
-                "moveStarted": 1746065281849,
+                "moveStarted": 1746066606914,
                 "movementPath": [
-                  {
-                    "x": -23,
-                    "y": -2
-                  },
-                  {
-                    "x": -22,
-                    "y": -1
-                  },
                   {
                     "x": -21,
                     "y": 0
+                  },
+                  {
+                    "x": -20,
+                    "y": -1
+                  },
+                  {
+                    "x": -19,
+                    "y": -2
                   }
                 ],
-                "name": "Giant Spiders",
-                "nextMoveTime": 1746065581520,
-                "pathIndex": 2,
-                "status": "idle",
-                "targetX": -20,
-                "targetY": 1,
+                "name": "Undead Skeletons",
+                "nextMoveTime": 1746066666914,
+                "pathIndex": 0,
+                "status": "moving",
+                "targetX": -19,
+                "targetY": -2,
                 "type": "monster",
-                "unitCount": 3,
+                "unitCount": 7,
                 "x": -21,
                 "y": 0
+              }
+            }
+          },
+          "-22,8": {
+            "groups": {
+              "monster_1746066423586_3500": {
+                "createdAt": 1746066423586,
+                "id": "monster_1746066423586_3500",
+                "lastUpdated": 1746066423586,
+                "monsterType": "goblin",
+                "name": "Goblin Raiders",
+                "status": "idle",
+                "type": "monster",
+                "unitCount": 2,
+                "x": -22,
+                "y": 8
               }
             }
           },
@@ -1085,7 +1123,7 @@
               "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
                 "displayName": "testbattle",
                 "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-                "lastActive": 1746065651648,
+                "lastActive": 1746066666542,
                 "race": "human"
               }
             },
@@ -1122,12 +1160,59 @@
             }
           },
           "-25,3": {
+            "battles": {
+              "battle_1746066606914_49": {
+                "advantage": {
+                  "side": 1,
+                  "strength": 0.3333333333333333
+                },
+                "createdAt": 1746066606914,
+                "events": [
+                  {
+                    "side1Losses": 1,
+                    "side2Losses": 1,
+                    "text": "Battle casualties: Side 1 lost 1 units, Side 2 lost 1 units.",
+                    "timestamp": 1746066662602,
+                    "type": "casualties"
+                  }
+                ],
+                "id": "battle_1746066606914_49",
+                "lastUpdate": 1746066662602,
+                "locationX": -25,
+                "locationY": 3,
+                "progress": 19,
+                "side1": {
+                  "casualties": 1,
+                  "groups": {
+                    "monster_1746060183071_7650": true
+                  },
+                  "power": 2
+                },
+                "side1Power": 2,
+                "side2": {
+                  "casualties": 1,
+                  "groups": {
+                    "-OP8ef2c0QtP2GSaIK6_": true
+                  },
+                  "power": 1
+                },
+                "side2Power": 1,
+                "status": "active",
+                "targetTypes": [
+                  "group"
+                ],
+                "tickCount": 1
+              }
+            },
             "groups": {
               "monster_1746060183071_7650": {
+                "battleId": "battle_1746066606914_49",
+                "battleRole": "attacker",
+                "battleSide": 1,
                 "createdAt": 1746060183071,
                 "gatheringTicksRemaining": 1,
                 "id": "monster_1746060183071_7650",
-                "inBattle": false,
+                "inBattle": true,
                 "items": [
                   {
                     "id": "item_1746060183072_517",
@@ -1160,9 +1245,9 @@
                 ],
                 "lastMessage": {
                   "text": "Victory in battle! All units survived the battle.",
-                  "timestamp": 1746065705976
+                  "timestamp": 1746066422793
                 },
-                "lastUpdated": 1746065521520,
+                "lastUpdated": 1746066606914,
                 "monsterType": "bandit",
                 "moveSpeed": 1,
                 "moveStarted": 1746065281849,
@@ -1183,17 +1268,17 @@
                 "name": "Bandits",
                 "nextMoveTime": 1746065581520,
                 "pathIndex": 2,
-                "status": "idle",
+                "status": "fighting",
                 "targetX": -25,
                 "targetY": 3,
                 "type": "monster",
-                "unitCount": 3,
+                "unitCount": 1,
                 "x": -25,
                 "y": 3
               }
             }
           },
-          "-32,11": {
+          "-31,11": {
             "groups": {
               "monster_1746058082024_1343": {
                 "createdAt": 1746058082024,
@@ -1230,13 +1315,13 @@
                   }
                 ],
                 "lastMessage": {
-                  "text": "Moving to next location (-32,11)",
-                  "timestamp": 1746065401617
+                  "text": "Moving to next location (-31,11)",
+                  "timestamp": 1746066421646
                 },
-                "lastUpdated": 1746065401617,
+                "lastUpdated": 1746066662931,
                 "monsterType": "bandit",
                 "moveSpeed": 1,
-                "moveStarted": 1746065281849,
+                "moveStarted": 1746066662931,
                 "movementPath": [
                   {
                     "x": -31,
@@ -1244,23 +1329,23 @@
                   },
                   {
                     "x": -32,
-                    "y": 11
+                    "y": 10
                   }
                 ],
                 "name": "Bandits",
-                "nextMoveTime": 1746065461617,
-                "pathIndex": 1,
-                "status": "idle",
+                "nextMoveTime": 1746066722931,
+                "pathIndex": 0,
+                "status": "moving",
                 "targetX": -32,
-                "targetY": 11,
+                "targetY": 10,
                 "type": "monster",
                 "unitCount": 4,
-                "x": -32,
+                "x": -31,
                 "y": 11
               }
             }
           },
-          "-33,1": {
+          "-34,0": {
             "groups": {
               "monster_1746057842458_2380": {
                 "createdAt": 1746057842458,
@@ -1283,33 +1368,37 @@
                   }
                 ],
                 "lastMessage": {
-                  "text": "Moving to next location (-33,1)",
-                  "timestamp": 1746065161705
+                  "text": "Moving to next location (-34,0)",
+                  "timestamp": 1746066061270
                 },
-                "lastUpdated": 1746065161705,
+                "lastUpdated": 1746066606914,
                 "monsterType": "goblin",
                 "moveSpeed": 1,
-                "moveStarted": 1746065042940,
+                "moveStarted": 1746066606914,
                 "movementPath": [
                   {
-                    "x": -32,
-                    "y": 1
+                    "x": -34,
+                    "y": 0
                   },
                   {
-                    "x": -33,
-                    "y": 1
+                    "x": -35,
+                    "y": -1
+                  },
+                  {
+                    "x": -36,
+                    "y": -2
                   }
                 ],
                 "name": "Goblin Raiders",
-                "nextMoveTime": 1746065221705,
-                "pathIndex": 1,
-                "status": "idle",
-                "targetX": -33,
-                "targetY": 1,
+                "nextMoveTime": 1746066666914,
+                "pathIndex": 0,
+                "status": "moving",
+                "targetX": -36,
+                "targetY": -2,
                 "type": "monster",
                 "unitCount": 3,
-                "x": -33,
-                "y": 1
+                "x": -34,
+                "y": 0
               }
             }
           }
@@ -1321,7 +1410,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746065705192,
+        "lastTick": 1746066661813,
         "name": "Ancient Lands",
         "playerCount": 18,
         "seed": 13579,
