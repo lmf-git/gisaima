@@ -1517,3 +1517,32 @@ function getGroupsForSide(allGroups, sideGroups) {
   
   return result;
 }
+
+/**
+ * Clean up any updates that would conflict with deleted paths
+ * @param {Object} updates - Updates object for Firebase
+ * @param {Set} deletedPaths - Set of paths being deleted
+ */
+function cleanupConflictingUpdates(updates, deletedPaths) {
+  if (!updates || !deletedPaths || deletedPaths.size === 0) return;
+  
+  // Make a copy of the paths to check
+  const updatePaths = Object.keys(updates);
+  
+  // For each update path, check if it's under a deleted path
+  for (const updatePath of updatePaths) {
+    // Skip paths that are themselves being deleted
+    if (updates[updatePath] === null) continue;
+    
+    // Check if this path is a child of any deleted path
+    for (const deletedPath of deletedPaths) {
+      // If the update path starts with deleted path plus a slash, it's a child
+      if (updatePath.startsWith(deletedPath + '/')) {
+        // This update is under a deleted path, so remove it
+        delete updates[updatePath];
+        logger.info(`Removed conflicting update to ${updatePath} (under deleted path ${deletedPath})`);
+        break;
+      }
+    }
+  }
+}
