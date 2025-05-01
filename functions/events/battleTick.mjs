@@ -558,16 +558,9 @@ function checkAndUpdatePlayerStatus(group, casualties, worldId, chunkKey, locati
       // Player unit was lost - mark player as not alive
       updates[`players/${group.owner}/worlds/${worldId}/alive`] = false;
       
-      // Check if the group's path is already scheduled for deletion
-      // We can check this by constructing the path we would update and checking if it's in updates
-      const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`;
-      const isGroupBeingDeleted = updates[groupPath] === null;
-      
-      // Only update the unit's dead status if the whole group isn't being deleted
-      // This prevents the ancestor path conflict error
-      if (!isGroupBeingDeleted && playerUnitId) {
-        updates[`${groupPath}/units/${playerUnitId}/dead`] = true;
-      }
+      // NOTE: We're not updating the unit's dead status in the group data
+      // This avoids Firebase ancestor path conflicts when the group is being deleted
+      // The client can determine that a player unit is dead if the player's 'alive' status is false
       
       logger.info(`Player unit lost during battle attrition - marking player ${group.owner} as not alive`);
       
