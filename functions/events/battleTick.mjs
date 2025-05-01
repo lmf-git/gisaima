@@ -134,6 +134,8 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
   
   // Track groups marked for deletion to avoid update conflicts
   const deletedGroupIds = new Set();
+  // Track paths that will be completely deleted to avoid conflicts
+  const deletedPaths = new Set();
   
   try {
     // Extract groups from tile data
@@ -170,8 +172,12 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       // Get structure directly from tileData if involved
       let structure = battleData.targetTypes?.includes("structure") ? tileData.structure : null;
       
+      // Mark the battle path as being deleted to avoid conflicts
+      const battlePath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`;
+      deletedPaths.add(battlePath);
+      
       // Ensure the battle is deleted
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = null;
+      updates[battlePath] = null;
       
       await endBattle(worldId, chunkKey, locationKey, battleId, winningSide, winningGroups, structure);
       
@@ -181,6 +187,8 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
         "Battle has ended! One side had no units."
       );
       
+      // Clean up any conflicting updates before submitting
+      cleanupConflictingUpdates(updates, deletedPaths);
       await db.ref().update(updates);
       return { success: true };
     }
@@ -259,8 +267,12 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
         
         logger.info(`Battle ${battleId} ending immediately: Side ${winningSide} wins because all opposing groups were eliminated`);
         
+        // Mark the battle path as being deleted to avoid conflicts
+        const battlePath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`;
+        deletedPaths.add(battlePath);
+        
         // Ensure the battle is deleted
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = null;
+        updates[battlePath] = null;
         
         // End the battle properly
         await endBattle(worldId, chunkKey, locationKey, battleId, winningSide, winningGroups, structure);
@@ -270,6 +282,9 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
           updates, worldId, now, battleId, locationKey,
           `Battle has ended! ${winningSide === 1 ? battleData.side1?.name || "Side 1" : battleData.side2?.name || "Side 2"} is victorious as all opposing forces were eliminated.`
         );
+        
+        // Clean up any conflicting updates before submitting
+        cleanupConflictingUpdates(updates, deletedPaths);
         
         // Apply updates and exit early
         await db.ref().update(updates);
@@ -330,6 +345,10 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
         
         logger.info(`Battle ${battleId} ending: Side ${winningSide} wins because the other side has no groups remaining`);
         
+        // Mark the battle path as being deleted to avoid conflicts
+        const battlePath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`;
+        deletedPaths.add(battlePath);
+        
         // End the battle
         await endBattle(worldId, chunkKey, locationKey, battleId, winningSide, winningGroups, structure);
         
@@ -338,6 +357,9 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
           updates, worldId, now, battleId, locationKey,
           `Battle has ended! ${winningSide === 1 ? battleData.side1?.name || "Side 1" : battleData.side2?.name || "Side 2"} is victorious as the opposing side has been eliminated.`
         );
+        
+        // Clean up any conflicting updates before submitting
+        cleanupConflictingUpdates(updates, deletedPaths);
         
         // Apply updates and exit early
         await db.ref().update(updates);
@@ -417,8 +439,12 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       if (filteredSide1Groups.length === 0 && filteredSide2Groups.length === 0) {
         logger.info(`Battle ${battleId}: Both sides eliminated - ending battle as a draw`);
         
+        // Mark the battle path as being deleted to avoid conflicts
+        const battlePath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`;
+        deletedPaths.add(battlePath);
+        
         // End the battle - just clean up, no winner
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = null;
+        updates[battlePath] = null;
         
         // Make sure to delete any monster groups that might remain in the database
         for (const groupId in battleData.side1?.groups || {}) {
@@ -451,6 +477,10 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
         
         logger.info(`Battle ${battleId} ending: Side ${winningSide} wins with ${winningGroups.length} groups remaining`);
         
+        // Mark the battle path as being deleted to avoid conflicts
+        const battlePath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`;
+        deletedPaths.add(battlePath);
+        
         // End the battle
         await endBattle(worldId, chunkKey, locationKey, battleId, winningSide, winningGroups, structure);
         
@@ -470,6 +500,10 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
         const losingGroups = randomWinningSide === 1 ? filteredSide2Groups : filteredSide1Groups;
         
         logger.info(`Battle ${battleId} ending in stalemate: Randomly choosing side ${randomWinningSide} as winner`);
+        
+        // Mark the battle path as being deleted to avoid conflicts
+        const battlePath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`;
+        deletedPaths.add(battlePath);
         
         // End the battle with the randomly chosen side as winner
         await endBattle(worldId, chunkKey, locationKey, battleId, randomWinningSide, winningGroups, structure);
@@ -492,6 +526,9 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
         );
       }
     }
+    
+    // Clean up any conflicting updates before submitting
+    cleanupConflictingUpdates(updates, deletedPaths);
     
     // Apply all updates
     await db.ref().update(updates);
@@ -537,10 +574,7 @@ function isSmallPlayerVsPlayerBattle(side1Groups, side2Groups) {
  * @param {string} chunkKey - Chunk key
  * @param {string} locationKey - Tile location key
  * @param {Object} updates - Firebase updates object
- * @param {number} now - Current timestamp
- * @param {Array} [lootCollector] - Optional array to collect items from defeated groups
- * @param {Set} [deletedGroupIds] - Set of group IDs being deleted
- * @returns {number} Number of casualties
+ * @param {Set} deletedPaths - Set of paths being deleted
  */
 function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, updates, now, lootCollector = null, deletedGroupIds = new Set()) {
   let casualties = 0;
@@ -904,9 +938,14 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
     
     // Prepare updates object
     const updates = {};
+    const deletedPaths = new Set();
+    
+    // Mark the battle path as deleted to track conflicts
+    const battlePath = `worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`;
+    deletedPaths.add(battlePath);
     
     // Always delete the battle when it's resolved rather than keeping it as "resolved"
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = null;
+    updates[battlePath] = null;
     logger.info(`Deleting resolved battle ${battleId} at (${locationKey})`);
     
     // Process groups based on battle outcome
@@ -1177,6 +1216,9 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
         timestamp: now + 1 // +1 to ensure it appears after the battle message
       };
     }
+    
+    // Clean up conflicting updates before submitting
+    cleanupConflictingUpdates(updates, deletedPaths);
     
     // Execute all updates atomically
     await db.ref().update(updates);
