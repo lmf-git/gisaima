@@ -1,29 +1,8 @@
-/**
- * Battle tick processor for Gisaima
- * Handles battle attrition and outcomes
- */
-
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 
-/**
- * Process a single battle for attrition and possible resolution
- * 
- * @param {string} worldId - The world ID
- * @param {string} chunkKey - The chunk key
- * @param {string} tileKey - The tile key
- * @param {string} battleId - The battle ID
- * @param {object} battle - The battle data
- * @param {object} updates - Reference to updates object for batch processing
- * @returns {boolean} - Whether the battle was processed
- */
 export async function processBattle(worldId, chunkKey, tileKey, battleId, battle, updates) {
   try {
-    // Skip battles that aren't active
-    if (battle.status !== 'active') {
-      return false;
-    }
-
     const now = Date.now();
     const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`;
     
@@ -32,13 +11,12 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     updates[`${basePath}/tickCount`] = tickCount;
     updates[`${basePath}/lastUpdate`] = now;
     
-    // Calculate battle progress and time remaining
+    // Calculate battle time progress
     const elapsedTime = now - battle.startTime;
     const estimatedDuration = battle.estimatedDuration || 300000; // Default 5 minutes
     const battleProgress = Math.min(1, elapsedTime / estimatedDuration);
     
-    // Calculate attrition for this tick
-    const battleEvents = battle.events || [];
+    // Get sides data
     const side1 = battle.side1;
     const side2 = battle.side2;
     
@@ -79,23 +57,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     updates[`${basePath}/side2/power`] = newSide2Power;
     updates[`${basePath}/side2/casualties`] = side2Casualties;
     
-    // Generate battle event for this tick
-    if (side1Attrition > 0 || side2Attrition > 0) {
-      const eventText = generateBattleEventText(side1, side2, side1Attrition, side2Attrition);
-      
-      // Add event to the battle log
-      const newEvent = {
-        type: 'battle_progress',
-        timestamp: now,
-        text: eventText,
-        side1Damage: side2Attrition,
-        side2Damage: side1Attrition
-      };
-      
-      // Add the event to the updates
-      updates[`${basePath}/events/${battleEvents.length}`] = newEvent;
-    }
-    
     // Check if battle should end
     if (newSide1Power <= 0 || newSide2Power <= 0 || battleProgress >= 1) {
       // Determine the winner
@@ -117,18 +78,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
   }
 }
 
-/**
- * Ends a battle and handles cleanup
- * 
- * @param {string} worldId - The world ID
- * @param {string} chunkKey - The chunk key
- * @param {string} tileKey - The tile key
- * @param {string} battleId - The battle ID
- * @param {object} battle - The battle data
- * @param {object} updates - Reference to updates object for batch processing
- * @param {number} winner - The winning side (1, 2, or 0 for draw)
- * @returns {boolean} - Whether the battle was ended successfully
- */
 async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner) {
   const now = Date.now();
   const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`;
@@ -138,7 +87,7 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
   updates[`${basePath}/endTime`] = now;
   updates[`${basePath}/winner`] = winner;
   
-  // Generate end battle event
+  // Generate side names for chat message
   const side1Name = battle.side1.name || 'Attackers';
   const side2Name = battle.side2.name || 'Defenders';
   let resultText = '';
@@ -150,16 +99,6 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
   } else {
     resultText = `The battle between ${side1Name} and ${side2Name} has ended in a stalemate.`;
   }
-  
-  // Add end event to battle log
-  const endEvent = {
-    type: 'battle_end',
-    timestamp: now,
-    text: resultText,
-    winner
-  };
-  
-  updates[`${basePath}/events/${battle.events ? battle.events.length : 0}`] = endEvent;
   
   // Add chat message about battle ending
   updates[`worlds/${worldId}/chat/battle_end_${now}_${battleId}`] = {
@@ -244,23 +183,4 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
   }
   
   return true;
-}
-
-/**
- * Generates descriptive text for battle events
- */
-function generateBattleEventText(side1, side2, side1Attrition, side2Attrition) {
-  const side1Name = side1.name || 'Attackers';
-  const side2Name = side2.name || 'Defenders';
-  
-  // Generate different message based on who's taking more damage
-  if (side1Attrition > side2Attrition * 1.5) {
-    return `${side2Name} land a devastating blow against ${side1Name}!`;
-  } else if (side2Attrition > side1Attrition * 1.5) {
-    return `${side1Name} push forward with a powerful assault against ${side2Name}!`;
-  } else if (side1Attrition > 0 && side2Attrition > 0) {
-    return `${side1Name} and ${side2Name} trade blows in fierce combat.`;
-  } else {
-    return `The battle continues with neither side gaining a clear advantage.`;
-  }
 }

@@ -732,8 +732,8 @@ async function executeMonsterStrategy(db, worldId, monsterGroup, location, tileD
   // Base path for this group
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
   
-  // Check if there's an active battle on this tile
-  if (tileData.battles && Object.values(tileData.battles).some(battle => battle.status === 'active')) {
+  // Check if there's an battle on this tile
+  if (tileData.battles) {
     return await joinExistingBattle(db, worldId, monsterGroup, tileData, updates, now);
   }
   
@@ -879,7 +879,6 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
   const battleData = {
     id: battleId,
     createdAt: now,
-    status: 'active',
     locationX: x,
     locationY: y,
     targetTypes: ['group'],
@@ -971,7 +970,6 @@ async function initiateAttackOnStructure(db, worldId, monsterGroup, structure, l
   const battleData = {
     id: battleId,
     createdAt: now,
-    status: 'active',
     locationX: x,
     locationY: y,
     targetTypes: ['structure'],
@@ -1067,9 +1065,8 @@ async function joinExistingBattle(db, worldId, monsterGroup, tileData, updates, 
   const tileKey = monsterGroup.tileKey;
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
   
-  // Get active battles on this tile
+  // Get battles on this tile
   const battles = Object.entries(tileData.battles || {})
-    .filter(([_, battle]) => battle.status === 'active')
     .map(([battleId, battle]) => ({ id: battleId, ...battle }));
   
   if (battles.length === 0) return { action: null };

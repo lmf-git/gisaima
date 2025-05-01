@@ -97,11 +97,9 @@ export const processGameTicks = onSchedule({
             console.log(`Processing battles in tile ${tileKey} of world ${worldId}`);
             for (const battleId in tile.battles) {
               const battle = tile.battles[battleId];
-              if (battle && battle.status === 'active') {
+              if (battle) {
                 const battleResult = await processBattle(worldId, chunkKey, tileKey, battleId, battle, updates);
-                if (battleResult) {
-                  battlesProcessed++;
-                }
+                battlesProcessed++;
               }
             }
             if (battlesProcessed > 0) {

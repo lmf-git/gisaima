@@ -271,7 +271,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
       id: battleId,
       createdAt: now,
       startTime: now,
-      status: "active",
       locationX,
       locationY,
       targetTypes,
