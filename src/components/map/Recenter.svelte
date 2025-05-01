@@ -153,7 +153,7 @@
 <style>
   .recenter-button {
     position: fixed;
-    top: 50%;
+    top: 35%;
     right: 1em;
     transform: translateY(-50%);
     background-color: rgba(255, 255, 255, 0.85);
