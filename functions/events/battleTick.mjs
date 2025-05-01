@@ -182,14 +182,50 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       let side1Loot = [];
       let side2Loot = [];
       
+      // Track casualties for the enhanced battle data
+      let side1Casualties = 0;
+      let side2Casualties = 0;
+      let casualtyEvents = [];
+      
       // Apply attrition to both sides and collect loot from defeated groups
-      const side1Casualties = applyAttrition(side1Groups, side1Ratio, worldId, chunkKey, locationKey, updates, now, side1Loot);
-      const side2Casualties = applyAttrition(side2Groups, side2Ratio, worldId, chunkKey, locationKey, updates, now, side2Loot);
+      side1Casualties = applyAttrition(side1Groups, side1Ratio, worldId, chunkKey, locationKey, updates, now, side1Loot);
+      side2Casualties = applyAttrition(side2Groups, side2Ratio, worldId, chunkKey, locationKey, updates, now, side2Loot);
+      
+      // Track casualties in the enhanced battle data
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/side1/casualties`] = 
+        (battleData.side1?.casualties || 0) + side1Casualties;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/side2/casualties`] = 
+        (battleData.side2?.casualties || 0) + side2Casualties;
+      
+      // Create casualty event if there were any casualties
+      if (side1Casualties > 0 || side2Casualties > 0) {
+        const side1Name = battleData.side1?.name || "Side 1";
+        const side2Name = battleData.side2?.name || "Side 2";
+        
+        casualtyEvents.push({
+          type: 'casualties',
+          timestamp: now,
+          text: `Battle casualties: ${side1Name} lost ${side1Casualties} units, ${side2Name} lost ${side2Casualties} units.`,
+          side1Losses: side1Casualties,
+          side2Losses: side2Casualties
+        });
+      }
       
       // Apply damage to structure if involved
       let structureDamage = 0;
       if (structure && side1Power > 0) {
         structureDamage = applyStructureDamage(structure, side1Power, side2Power, updates, worldId, chunkKey, locationKey);
+        
+        // Add structure damage event if significant damage was done
+        if (structureDamage > 0) {
+          casualtyEvents.push({
+            type: 'structure_damage',
+            timestamp: now,
+            text: `${battleData.side1?.name || "Side 1"} dealt ${structureDamage} damage to ${structure.name || "the structure"}.`,
+            damage: structureDamage,
+            remainingHealth: structure.health - structureDamage
+          });
+        }
       }
       
       // Filter out empty groups after attrition
@@ -205,11 +241,40 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       if (side1Loot.length > 0 && filteredSide2Groups.length > 0) {
         // Side 1 lost units and had loot, distribute to side 2
         distributeItemsToGroups(side1Loot, filteredSide2Groups, worldId, chunkKey, locationKey, updates, now);
+        
+        // Add loot event
+        if (side1Loot.length > 0) {
+          casualtyEvents.push({
+            type: 'loot',
+            timestamp: now,
+            text: `${battleData.side2?.name || "Side 2"} looted ${side1Loot.length} items from fallen enemies.`,
+            items: side1Loot.length,
+            recipient: 2
+          });
+        }
       }
       
       if (side2Loot.length > 0 && filteredSide1Groups.length > 0) {
         // Side 2 lost units and had loot, distribute to side 1
         distributeItemsToGroups(side2Loot, filteredSide1Groups, worldId, chunkKey, locationKey, updates, now);
+        
+        // Add loot event
+        if (side2Loot.length > 0) {
+          casualtyEvents.push({
+            type: 'loot',
+            timestamp: now,
+            text: `${battleData.side1?.name || "Side 1"} looted ${side2Loot.length} items from fallen enemies.`,
+            items: side2Loot.length,
+            recipient: 1
+          });
+        }
+      }
+      
+      // Update the battle events array with all new events
+      if (casualtyEvents.length > 0) {
+        const currentEvents = battleData.events || [];
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/events`] = 
+          [...currentEvents, ...casualtyEvents];
       }
       
       // Recalculate powers after attrition
@@ -220,6 +285,26 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/side1Power`] = side1Power;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/side2Power`] = side2Power;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/tickCount`] = (battleData.tickCount || 0) + 1;
+      
+      // Update advantage calculation
+      const powerDifference = side1Power - side2Power;
+      const newTotalPower = side1Power + side2Power;
+      const advantageSide = powerDifference > 0 ? 1 : powerDifference < 0 ? 2 : 0;
+      const advantageStrength = Math.abs(powerDifference) / Math.max(1, newTotalPower);
+      
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/advantage`] = {
+        side: advantageSide,
+        strength: advantageStrength
+      };
+      
+      // Calculate progress percentage (based on tick count and estimated duration)
+      const startTime = battleData.startTime || battleData.createdAt || 0;
+      const estimatedDuration = battleData.estimatedDuration || 300000; // 5 minutes default
+      const elapsedTime = now - startTime;
+      const progressPercentage = Math.min(100, Math.round((elapsedTime / estimatedDuration) * 100));
+      
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/progress`] = progressPercentage;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/lastUpdate`] = now;
       
       // Check if battle should end after filtering
       if (shouldEndBattleAfterAttrition(filteredSide1Groups, filteredSide2Groups, side1Power, side2Power)) {
@@ -557,8 +642,21 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
     // Prepare updates object
     const updates = {};
     
-    // Delete the battle entirely instead of marking it as completed
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = null;
+    // Create a new resolved battle object with results for historical record
+    const resolvedBattle = {
+      ...battleData,
+      status: "resolved",
+      endTime: now,
+      duration: now - (battleData.startTime || battleData.createdAt),
+      winner: winningSide,
+      finalPowers: {
+        side1: calculateSidePower(attackers),
+        side2: calculateSidePower(defenders)
+      }
+    };
+    
+    // For resolved battles, we want to keep the battle in the database but mark it as resolved
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = resolvedBattle;
     
     // Process groups based on battle outcome
     const losingGroups = winningSide === 1 ? defenders : attackers;

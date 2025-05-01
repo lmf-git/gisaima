@@ -178,11 +178,107 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
     
     // Total defender power combines groups and structure
     const defenderTotalPower = defenderGroupPower + structurePower;
+
+    // Extract participants info for both sides
+    const side1Participants = attackerGroups.map(group => {
+      // Extract all player units from the group
+      let players = [];
+      if (group.units) {
+        if (Array.isArray(group.units)) {
+          players = group.units.filter(unit => unit.type === 'player').map(unit => ({
+            id: unit.id,
+            displayName: unit.displayName || 'Unknown',
+            race: unit.race || 'unknown'
+          }));
+        } else {
+          players = Object.values(group.units)
+            .filter(unit => unit.type === 'player')
+            .map(unit => ({
+              id: unit.id,
+              displayName: unit.displayName || 'Unknown',
+              race: unit.race || 'unknown'
+            }));
+        }
+      }
+      
+      // Always include the group owner
+      if (group.owner && !players.some(p => p.id === group.owner)) {
+        players.push({
+          id: group.owner,
+          displayName: group.ownerName || 'Unknown', 
+          race: group.race || 'unknown'
+        });
+      }
+      
+      return {
+        groupId: group.id,
+        groupName: group.name || `Group ${group.id.slice(-4)}`,
+        groupPower: calculateGroupPower(group),
+        players
+      };
+    });
     
-    // Prepare the battle data
+    const side2Participants = defenderGroups.map(group => {
+      // Extract all player units from the group
+      let players = [];
+      if (group.units) {
+        if (Array.isArray(group.units)) {
+          players = group.units.filter(unit => unit.type === 'player').map(unit => ({
+            id: unit.id,
+            displayName: unit.displayName || 'Unknown',
+            race: unit.race || 'unknown'
+          }));
+        } else {
+          players = Object.values(group.units)
+            .filter(unit => unit.type === 'player')
+            .map(unit => ({
+              id: unit.id,
+              displayName: unit.displayName || 'Unknown',
+              race: unit.race || 'unknown'
+            }));
+        }
+      }
+      
+      // Always include the group owner
+      if (group.owner && !players.some(p => p.id === group.owner)) {
+        players.push({
+          id: group.owner,
+          displayName: group.ownerName || 'Unknown', 
+          race: group.race || 'unknown'
+        });
+      }
+      
+      return {
+        groupId: group.id,
+        groupName: group.name || `Group ${group.id.slice(-4)}`,
+        groupPower: calculateGroupPower(group),
+        players
+      };
+    });
+    
+    // Generate meaningful side names
+    const side1Name = getSideName(attackerGroups, null, 1);
+    const side2Name = getSideName(defenderGroups, structure, 2);
+    
+    // Extract all player IDs for easy reference
+    const allParticipantIds = [
+      ...new Set([
+        ...side1Participants.flatMap(p => p.players.map(player => player.id)),
+        ...side2Participants.flatMap(p => p.players.map(player => player.id))
+      ])
+    ];
+
+    // Set initial advantage based on power difference
+    const powerDifference = attackerPower - defenderTotalPower;
+    const powerTotal = attackerPower + defenderTotalPower;
+    const advantageSide = powerDifference > 0 ? 1 : powerDifference < 0 ? 2 : 0;
+    const advantageStrength = Math.abs(powerDifference) / Math.max(1, powerTotal);
+    
+    // Prepare the battle data with enhanced information
     const battleData = {
       id: battleId,
       createdAt: now,
+      startTime: now,
       status: "active",
       locationX,
       locationY,
@@ -196,16 +292,34 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
         groups: attackerGroupIds.reduce((acc, id) => {
           acc[id] = true;
           return acc;
-        }, {})
+        }, {}),
+        name: side1Name,
+        casualties: 0,
+        participants: side1Participants
       },
       side2: {
         power: defenderTotalPower,
         groups: defenderGroupIds ? defenderGroupIds.reduce((acc, id) => {
           acc[id] = true;
           return acc;
-        }, {}) : {}
+        }, {}) : {},
+        name: side2Name,
+        casualties: 0,
+        participants: side2Participants
       },
-      tickCount: 0
+      advantage: {
+        side: advantageSide,
+        strength: advantageStrength
+      },
+      participants: allParticipantIds,
+      lastUpdate: now,
+      events: [{
+        type: 'battle_start',
+        timestamp: now,
+        text: `Battle has begun! ${side1Name} is attacking ${side2Name}.`
+      }],
+      tickCount: 0,
+      estimatedDuration: estimateBattleDuration(attackerPower, defenderTotalPower)
     };
     
     // Prepare updates object for atomicity
@@ -238,21 +352,9 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/battleId`] = battleId;
     }
     
-    // Add chat message for battle start
-    const attackerName = attackerGroups.length > 0 ? attackerGroups[0].name || "Unknown Force" : "Unknown Force";
-    
-    let targetDescription = "";
-    if (defenderGroups.length > 0 && structure) {
-      const defenderName = defenderGroups[0].name || "Unknown Force";
-      targetDescription = `${defenderName} and ${structure.name || "a structure"}`;
-    } else if (defenderGroups.length > 0) {
-      targetDescription = defenderGroups[0].name || "Unknown Force";
-    } else if (structure) {
-      targetDescription = structure.name || "a structure";
-    }
-    
+    // Update chat message to use the new side names
     updates[`worlds/${worldId}/chat/battle_start_${now}_${battleId}`] = {
-      text: `Battle has begun at (${locationX}, ${locationY})! ${attackerName} is attacking ${targetDescription}!`,
+      text: `Battle has begun at (${locationX}, ${locationY})! ${side1Name} is attacking ${side2Name}!`,
       type: 'event',
       timestamp: now,
       location: {
@@ -328,4 +430,105 @@ function calculateStructurePower(structure) {
   }
   
   return basePower;
+}
+
+// Helper function to calculate individual group power
+function calculateGroupPower(group) {
+  // Base calculation using unit count
+  let power = group.unitCount || 1;
+  
+  // If we have detailed units data, use it for better calculations
+  if (group.units && typeof group.units === 'object') {
+    // Check if it's an array or object
+    if (Array.isArray(group.units)) {
+      power = group.units.reduce((total, unit) => {
+        // Calculate unit strength (default to 1 if not specified)
+        const unitStrength = unit.strength || 1;
+        return total + unitStrength;
+      }, 0);
+    } else {
+      // Handle object format (keys are unit IDs)
+      power = Object.values(group.units).reduce((total, unit) => {
+        const unitStrength = unit.strength || 1;
+        return total + unitStrength;
+      }, 0);
+    }
+    
+    // Ensure minimum power of 1
+    power = Math.max(1, power);
+  }
+  
+  return power;
+}
+
+// Helper function to generate side names based on composition
+function getSideName(groups, structure, sideNumber) {
+  if (groups.length === 0 && !structure) {
+    return `Side ${sideNumber}`;
+  }
+  
+  // If there's only one group, use its name
+  if (groups.length === 1) {
+    const group = groups[0];
+    return group.name || `Group ${group.id.slice(-4)}`;
+  }
+  
+  // If there are multiple groups, find the dominant race
+  if (groups.length > 1) {
+    const races = {};
+    groups.forEach(group => {
+      const race = group.race || 'unknown';
+      races[race] = (races[race] || 0) + 1;
+    });
+    
+    // Find the dominant race
+    let dominantRace = 'unknown';
+    let maxCount = 0;
+    for (const [race, count] of Object.entries(races)) {
+      if (count > maxCount) {
+        dominantRace = race;
+        maxCount = count;
+      }
+    }
+    
+    // Return a name based on dominant race
+    return `${formatRaceName(dominantRace)} Coalition`;
+  }
+  
+  // For structure defense without groups
+  if (structure) {
+    return `${structure.name || 'Structure'} Defenders`;
+  }
+  
+  return `Side ${sideNumber}`;
+}
+
+// Helper function to format race names
+function formatRaceName(race) {
+  if (!race || race === 'unknown') return 'Unknown';
+  
+  // Capitalize first letter of each word
+  return race.split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+// Helper function to estimate battle duration based on powers
+function estimateBattleDuration(side1Power, side2Power) {
+  // Base duration in milliseconds - 5 minutes
+  const baseDuration = 5 * 60 * 1000;
+  
+  // Calculate power ratio (always between 0 and 1)
+  const powerRatio = Math.min(side1Power, side2Power) / Math.max(side1Power, side2Power, 1);
+  
+  // More equal powers mean longer battles
+  // powerRatio = 1 (equal) → 2x duration
+  // powerRatio = 0 (completely unequal) → 0.5x duration
+  const durationMultiplier = 0.5 + (powerRatio * 1.5);
+  
+  // Scale duration by absolute power (more powerful forces = longer battles)
+  const powerScale = Math.log10(Math.max(2, side1Power + side2Power)) / Math.log10(10);
+  const scaledDuration = baseDuration * durationMultiplier * powerScale;
+  
+  return Math.round(scaledDuration);
 }

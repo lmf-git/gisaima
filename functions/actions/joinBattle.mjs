@@ -76,20 +76,99 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError("invalid-argument", "Side must be 1 or 2");
     }
     
-    // Update battle data with the joining group
-    const battleSideKey = side === 1 ? 'side1' : 'side2';
-    const groupUnitCount = joiningGroup.unitCount || 1;
+    // Extract participant info from the joining group
+    let participants = [];
+    if (joiningGroup.units) {
+      if (Array.isArray(joiningGroup.units)) {
+        participants = joiningGroup.units.filter(unit => unit.type === 'player').map(unit => ({
+          id: unit.id,
+          displayName: unit.displayName || 'Unknown',
+          race: unit.race || 'unknown'
+        }));
+      } else {
+        participants = Object.values(joiningGroup.units)
+          .filter(unit => unit.type === 'player')
+          .map(unit => ({
+            id: unit.id,
+            displayName: unit.displayName || 'Unknown',
+            race: unit.race || 'unknown'
+          }));
+      }
+    }
+    
+    // Always include the group owner
+    if (joiningGroup.owner && !participants.some(p => p.id === joiningGroup.owner)) {
+      participants.push({
+        id: joiningGroup.owner,
+        displayName: joiningGroup.ownerName || 'Unknown', 
+        race: joiningGroup.race || 'unknown'
+      });
+    }
+    
+    // Calculate group power
+    const groupPower = joiningGroup.unitCount || 1;
+    
+    const participantInfo = {
+      groupId: groupId,
+      groupName: joiningGroup.name || `Group ${groupId.slice(-4)}`,
+      groupPower: groupPower,
+      players: participants
+    };
+    
+    // Get current time for updates
+    const now = Date.now();
     
     const updates = {};
     
     // Add group to the battle side
+    const battleSideKey = side === 1 ? 'side1' : 'side2';
     updates[`battles/${worldId}/${battleId}/${battleSideKey}/groups/${groupId}`] = true;
     updates[`battles/${worldId}/${battleId}/${battleSideKey}/power`] = 
-      battleData[battleSideKey].power + groupUnitCount;
+      battleData[battleSideKey].power + groupPower;
 
     // Update battle side power
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/${battleSideKey}Power`] = 
-      battleData[battleSideKey].power + groupUnitCount;
+      battleData[battleSideKey + 'Power'] + groupPower;
+    
+    // Update enhanced battle data in the battle object
+    // Add the group to side participants
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/${battleSideKey}/participants`] = 
+      [...(battleData[battleSideKey].participants || []), participantInfo];
+    
+    // Extract player IDs and add to overall participants
+    const playerIds = participantInfo.players.map(p => p.id);
+    const currentParticipants = battleData.participants || [];
+    const newParticipants = [...new Set([...currentParticipants, ...playerIds])];
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/participants`] = newParticipants;
+    
+    // Recalculate advantage
+    const side1Power = side === 1 ? battleData.side1Power + groupPower : battleData.side1Power;
+    const side2Power = side === 2 ? battleData.side2Power + groupPower : battleData.side2Power;
+    const powerDifference = side1Power - side2Power;
+    const powerTotal = side1Power + side2Power;
+    const advantageSide = powerDifference > 0 ? 1 : powerDifference < 0 ? 2 : 0;
+    const advantageStrength = Math.abs(powerDifference) / Math.max(1, powerTotal);
+    
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/advantage`] = {
+      side: advantageSide,
+      strength: advantageStrength
+    };
+    
+    // Add battle event
+    const sideName = battleData[battleSideKey]?.name || `Side ${side}`;
+    const groupName = joiningGroup.name || `Group ${groupId.slice(-4)}`;
+    
+    const newEvent = {
+      type: 'join',
+      timestamp: now,
+      text: `${groupName} has joined the battle on ${sideName}'s side!`,
+      groupId: groupId
+    };
+    
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/events`] = 
+      [...(battleData.events || []), newEvent];
+    
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/lastUpdate`] = now;
     
     // Update group status
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/inBattle`] = true;
@@ -99,15 +178,14 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/status`] = 'fighting';
 
     // Add achievement for joining a battle
-    const now = Date.now();
     updates[`players/${userId}/worlds/${worldId}/achievements/battle_joiner`] = true;
     updates[`players/${userId}/worlds/${worldId}/achievements/battle_joiner_date`] = now;
 
     // Add chat message for joining battle
-    const groupName = joiningGroup.name || "Unnamed force";
+    const battleSideName = battleData[battleSideKey]?.name || `Side ${side}`;
     const chatMessageId = `battle_join_${now}_${groupId}`;
     updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-      text: `${groupName} has joined the battle at (${locationX}, ${locationY}) on side ${side}!`,
+      text: `${groupName} has joined the battle at (${locationX}, ${locationY}) on ${battleSideName}'s side!`,
       type: 'event',
       timestamp: now,
       location: {
@@ -121,7 +199,7 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     
     return {
       success: true,
-      message: `Joined battle on side ${side}`,
+      message: `Joined battle on ${battleSideName}'s side`,
       battleId
     };
   } catch (error) {
