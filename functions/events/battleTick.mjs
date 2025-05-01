@@ -143,15 +143,20 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
     const side1Groups = getGroupsForSide(groups, battleData.side1?.groups || {});
     const side2Groups = getGroupsForSide(groups, battleData.side2?.groups || {});
     
+    // Log clearer information about groups before processing
+    logger.info(`Battle ${battleId} at (${locationKey}): Side 1 has ${side1Groups.length} groups, Side 2 has ${side2Groups.length} groups`);
+    
     // Early check if either side has no groups - end battle immediately
     if (shouldEndBattleEarly(side1Groups, side2Groups)) {
       const winningSide = side1Groups.length > 0 ? 1 : 2;
       const winningGroups = winningSide === 1 ? side1Groups : side2Groups;
       
+      logger.info(`Battle ${battleId} ending early: Side ${winningSide} wins due to absence of opposing groups`);
+      
       // Get structure directly from tileData if involved
       let structure = battleData.targetTypes?.includes("structure") ? tileData.structure : null;
       
-      // Ensure the battle is deleted even if endBattle fails
+      // Ensure the battle is deleted
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = null;
       
       await endBattle(worldId, chunkKey, locationKey, battleId, winningSide, winningGroups, structure);
@@ -342,12 +347,27 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/progress`] = progressPercentage;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/lastUpdate`] = now;
       
-      // CRITICAL FIX: Special handling for both sides being completely eliminated
+      // Special handling for both sides being completely eliminated
       if (filteredSide1Groups.length === 0 && filteredSide2Groups.length === 0) {
         logger.info(`Battle ${battleId}: Both sides eliminated - ending battle as a draw`);
         
         // End the battle - just clean up, no winner
         updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = null;
+        
+        // Make sure to delete any monster groups that might remain in the database
+        for (const groupId in battleData.side1?.groups || {}) {
+          if (groupId.startsWith('monster_')) {
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}`] = null;
+            logger.info(`Deleting monster group ${groupId} from side 1 in mutual destruction scenario`);
+          }
+        }
+        
+        for (const groupId in battleData.side2?.groups || {}) {
+          if (groupId.startsWith('monster_')) {
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}`] = null;
+            logger.info(`Deleting monster group ${groupId} from side 2 in mutual destruction scenario`);
+          }
+        }
         
         // Add battle end message for mutual destruction
         addBattleEndMessageToUpdates(
@@ -362,6 +382,8 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
         const winningSide = determineWinningSide(filteredSide1Groups, filteredSide2Groups, side1Power, side2Power);
         const winningGroups = winningSide === 1 ? filteredSide1Groups : filteredSide2Groups;
         const losingGroups = winningSide === 1 ? filteredSide2Groups : filteredSide1Groups;
+        
+        logger.info(`Battle ${battleId} ending: Side ${winningSide} wins with ${winningGroups.length} groups remaining`);
         
         // End the battle
         await endBattle(worldId, chunkKey, locationKey, battleId, winningSide, winningGroups, structure);
@@ -617,11 +639,23 @@ function filterAndRemoveEmptyGroups(groups, worldId, chunkKey, locationKey, upda
   
   for (let i = 0; i < groups.length; i++) {
     const group = groups[i];
-    const hasUnits = group.units && Object.keys(group.units).length > 0;
+    
+    // Changed hasUnits logic to properly check for empty groups
+    let hasUnits = false;
+    
+    // Check if the group has a 'unitCount' property with a value > 0
+    if (group.unitCount && group.unitCount > 0) {
+      hasUnits = true;
+    }
+    // Also check if the group has units in the 'units' object
+    else if (group.units && Object.keys(group.units).length > 0) {
+      // For object format units
+      hasUnits = true;
+    }
     
     if (!hasUnits) {
-      // Double-check that we've added the group deletion to the updates
-      logger.info(`Verifying deletion of empty group ${group.id} from side ${side}`);
+      // This is an empty group, remove it from the database
+      logger.info(`Removing empty group ${group.id} (${group.name || "Unknown"}) from side ${side}`);
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
       
       // Remove from battle's side groups if battle still exists
@@ -728,21 +762,9 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
     // Prepare updates object
     const updates = {};
     
-    // Create a new resolved battle object with results for historical record
-    const resolvedBattle = {
-      ...battleData,
-      status: "resolved",
-      endTime: now,
-      duration: now - (battleData.startTime || battleData.createdAt),
-      winner: winningSide,
-      finalPowers: {
-        side1: calculateSidePower(attackers),
-        side2: calculateSidePower(defenders)
-      }
-    };
-    
-    // For resolved battles, we want to keep the battle in the database but mark it as resolved
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = resolvedBattle;
+    // Always delete the battle when it's resolved rather than keeping it as "resolved"
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = null;
+    logger.info(`Deleting resolved battle ${battleId} at (${locationKey})`);
     
     // Process groups based on battle outcome
     const losingGroups = winningSide === 1 ? defenders : attackers;
@@ -779,19 +801,31 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
       });
     }
     
-    // FIXED: Don't mark every losing group owner as not alive - check for player unit loss specifically
+    // Explicitly check and remove all losing groups that were involved in the battle
     for (const group of losingGroups) {
+      // Always check if any losing group was a monster group that should be removed
+      if (group.id.startsWith('monster_')) {
+        logger.info(`Removing defeated monster group ${group.id} (${group.name || "Unknown"}) after battle`);
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+        continue;
+      }
+      
       // Check if group is empty (either has no units property or units is empty)
       const hasUnits = group.units && Object.keys(group.units).length > 0;
       if (!hasUnits || group.unitCount <= 0) {
         // Explicitly remove empty groups
+        logger.info(`Removing empty losing group ${group.id} (${group.name || "Unknown"}) after battle`);
         updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
-        logger.info(`Removing empty losing group ${group.id} (${group.name || "Unknown"}) during battle completion`);
+      } else {
+        // For non-empty groups, just reset battle status flags
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/inBattle`] = false;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleId`] = null;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleSide`] = null;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/status`] = "idle";
       }
     }
     
     // Count casualties from the losing side for the battle outcome message
-    // Do not try to remove groups - they should already be removed if they have no units
     let casualties = losingGroups.length;
     
     // Just add battle result messages to the chat for each losing group's owner
@@ -1278,4 +1312,60 @@ function checkIfGroupHasPlayerUnit(group) {
   }
   
   return false;
+}
+
+// Helper function to get groups for a battle side
+function getGroupsForSide(allGroups, sideGroups) {
+  const result = [];
+  
+  for (const groupId of Object.keys(sideGroups)) {
+    if (allGroups[groupId]) {
+      result.push({...allGroups[groupId], id: groupId});
+    }
+  }
+  
+  return result;
+}
+
+// Helper function to check if battle should end early
+function shouldEndBattleEarly(side1Groups, side2Groups) {
+  return side1Groups.length === 0 || side2Groups.length === 0;
+}
+
+// Helper function to check if battle should end after attrition
+function shouldEndBattleAfterAttrition(side1Groups, side2Groups, side1Power, side2Power) {
+  // Explicitly check for empty groups first before checking power
+  if (side1Groups.length === 0 || side2Groups.length === 0) {
+    return true;
+  }
+  
+  // Then check power
+  return side1Power <= 0 || side2Power <= 0;
+}
+
+// Helper function to determine winning side
+function determineWinningSide(side1Groups, side2Groups, side1Power, side2Power) {
+  return (side1Groups.length > 0 && side1Power > 0) ? 1 : 2;
+}
+
+// Helper function to add battle end message to updates
+function addBattleEndMessageToUpdates(updates, worldId, now, battleId, locationKey, message) {
+  const [x, y] = locationKey.split(',').map(Number);
+  updates[`worlds/${worldId}/chat/battle_${now}_${battleId}_${Math.floor(Math.random() * 1000)}`] = {
+    text: message,
+    type: "event",
+    location: { x, y },
+    timestamp: now
+  };
+}
+
+// Helper function to add battle progress message to updates
+function addBattleProgressMessageToUpdates(updates, worldId, now, battleId, locationKey, message) {
+  const [x, y] = locationKey.split(',').map(Number);
+  updates[`worlds/${worldId}/chat/battle_progress_${now}_${battleId}_${Math.floor(Math.random() * 1000)}`] = {
+    text: message,
+    type: "event",
+    location: { x, y },
+    timestamp: now
+  };
 }
