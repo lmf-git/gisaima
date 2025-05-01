@@ -719,17 +719,6 @@
   });
 
   const backgroundColor = $derived($targetStore?.color || "var(--color-dark-blue)");
-
-  function getStructureClass(structure) {
-    if (!structure) return '';
-    
-    switch(structure.type) {
-      case 'spawn': return 'spawn-structure';
-      case 'watchtower': return 'watchtower-structure';
-      case 'fortress': return 'fortress-structure';
-      default: return '';
-    }
-  }
   
   function getRarityGlowSize(rarity) {
     switch(rarity) {
@@ -1152,10 +1141,9 @@
           {@const isCurrentPlayerHere = shouldShowPlayerPosition(cell)}
           {@const playerCount = getPlayerCount(cell)}
           {@const dominantRace = getDominantRace(cell)}
-          {@const distanceFromPlayer = getDistanceFromPlayer(cell.x, cell.y)}
-          
+
           <div
-            class="tile {getStructureClass(cell.structure)} {cell.terrain?.rarity || 'common'}"
+            class="tile {cell?.structure?.type} {cell.terrain?.rarity || 'common'}"
             class:center={cell.isCenter}
             tabindex={cell.isCenter ? "0" : "-1"}
             class:highlighted={cell.highlighted}
