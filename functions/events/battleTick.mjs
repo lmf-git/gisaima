@@ -157,13 +157,9 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
       const winnerName = winner === 1 ? side1Name : side2Name;
       const loserName = winner === 1 ? side2Name : side1Name;
       
-      // Mark battle as resolved
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/status`] = 'resolved';
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/resolvedAt`] = now;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/winner`] = winner;
-      updates[`battles/${worldId}/${battle.id}/status`] = 'resolved';
-      updates[`battles/${worldId}/${battle.id}/resolvedAt`] = now;
-      updates[`battles/${worldId}/${battle.id}/winner`] = winner;
+      // Delete battle completely instead of marking as resolved
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}`] = null;
+      updates[`battles/${worldId}/${battle.id}`] = null;
       
       // End message
       endMessage = `Battle at (${battle.locationX}, ${battle.locationY}) has ended! ${winnerName} has defeated ${loserName}!`;
@@ -317,13 +313,20 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
       const winnerName = winner === 1 ? side1Name : side2Name;
       const loserName = winner === 1 ? side2Name : side1Name;
       
-      // Mark battle as resolved
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/status`] = 'resolved';
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/resolvedAt`] = now;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/winner`] = winner;
-      updates[`battles/${worldId}/${battle.id}/status`] = 'resolved';
-      updates[`battles/${worldId}/${battle.id}/resolvedAt`] = now;
-      updates[`battles/${worldId}/${battle.id}/winner`] = winner;
+      // Create a final battle end event before deleting
+      const endEvent = {
+        type: 'battle_end',
+        timestamp: now,
+        text: `${winnerName} has emerged victorious over ${loserName}!`,
+        winner
+      };
+      
+      // Add the end event to a temporary event list for the chat message
+      const finalEvents = [...(battle.events || []), endEvent];
+      
+      // Delete battle completely rather than marking as resolved
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}`] = null;
+      updates[`battles/${worldId}/${battle.id}`] = null;
       
       // Handle item distribution from losing groups to winning groups
       if (losingGroups.length > 0 && winningGroups.length > 0) {
@@ -408,17 +411,6 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
           updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/status`] = 'idle';
         }
       }
-      
-      // Add battle end event
-      const endEvent = {
-        type: 'battle_end',
-        timestamp: now,
-        text: `${winnerName} has emerged victorious over ${loserName}!`,
-        winner
-      };
-      
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/events`] = 
-        [...(battle.events || []), endEvent];
       
       ended = true;
     }
