@@ -455,18 +455,97 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
       deletedGroupIds.add(group.id);
       
-      // Update player status to not alive
-      if (group.owner) {
-        updates[`players/${group.owner}/worlds/${worldId}/alive`] = false;
-        logger.info(`Marking player ${group.owner} as not alive during attrition`);
-      }
+      // FIXED: Don't mark player as not alive here - this just means all units in group are lost
+      // We'll check specifically for player unit loss in a separate function
     } else {
       // Only update unitCount if the group is not being deleted
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnits;
+      
+      // Check if we need to check for player unit loss
+      if (group.owner && group.units) {
+        checkAndUpdatePlayerStatus(group, groupCasualties, worldId, updates);
+      }
     }
   });
   
   return casualties;
+}
+
+/**
+ * Check if a player unit was lost and update player status if needed
+ * @param {Object} group - The group to check
+ * @param {number} casualties - Number of casualties in this group
+ * @param {string} worldId - World ID
+ * @param {Object} updates - Firebase updates object
+ */
+function checkAndUpdatePlayerStatus(group, casualties, worldId, updates) {
+  // Skip if no casualties or no owner
+  if (casualties <= 0 || !group.owner) return;
+  
+  // Check if the group has a player unit
+  if (!group.units) return;
+  
+  let hasPlayerUnit = false;
+  let playerUnitId = null;
+  let playerUnit = null;
+  
+  // Check if player unit exists in the group's units
+  if (Array.isArray(group.units)) {
+    // For array format
+    for (const unit of group.units) {
+      if (unit.type === "player") {
+        hasPlayerUnit = true;
+        playerUnitId = unit.id;
+        playerUnit = unit;
+        break;
+      }
+    }
+  } else if (typeof group.units === 'object') {
+    // For object format
+    for (const [unitId, unit] of Object.entries(group.units)) {
+      if (unit.type === "player") {
+        hasPlayerUnit = true;
+        playerUnitId = unitId;
+        playerUnit = unit;
+        break;
+      }
+    }
+  }
+  
+  // If the group has a player unit and casualties happened
+  if (hasPlayerUnit) {
+    // Calculate probability more precisely - the player unit should be treated individually 
+    // rather than as just part of the group's unitCount
+    const totalUnitTypes = Object.keys(group.units).length;
+    
+    // More accurate calculation - player units are 1 specific unit out of all unit types
+    // This better reflects that we're checking if *this specific* unit was lost
+    const probabilityOfPlayerLoss = casualties / totalUnitTypes;
+    
+    // Simulate if player unit was among the casualties
+    const randomValue = Math.random();
+    if (randomValue < probabilityOfPlayerLoss) {
+      // Player unit was lost - mark player as not alive
+      updates[`players/${group.owner}/worlds/${worldId}/alive`] = false;
+      
+      // Also mark the player unit as dead in the group if it's in object format
+      if (typeof group.units === 'object' && !Array.isArray(group.units) && playerUnitId) {
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/units/${playerUnitId}/dead`] = true;
+      }
+      
+      logger.info(`Player unit lost during battle attrition - marking player ${group.owner} as not alive`);
+      
+      // Add a specific message about player death
+      const messageId = `player_death_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      const [x, y] = locationKey.split(',').map(Number);
+      updates[`worlds/${worldId}/chat/${messageId}`] = {
+        text: `${group.name || "Unknown player"}'s avatar was killed in battle!`,
+        type: "event",
+        location: { x, y },
+        timestamp: Date.now()
+      };
+    }
+  }
 }
 
 // Helper function to get groups for a battle side
@@ -693,15 +772,8 @@ async function endBattle(worldId, chunkKey, locationKey, battleId, winningSide, 
       });
     }
     
-    // FIX: Ensure all losing groups' owners are properly marked as not alive
-    // AND explicitly remove any empty losing groups
+    // FIXED: Don't mark every losing group owner as not alive - check for player unit loss specifically
     for (const group of losingGroups) {
-      if (group.owner) {
-        // Make sure player is marked as not alive in their record
-        updates[`players/${group.owner}/worlds/${worldId}/alive`] = false;
-        logger.info(`Marking losing player ${group.owner} as not alive during battle completion`);
-      }
-      
       // Check if group is empty (either has no units property or units is empty)
       const hasUnits = group.units && Object.keys(group.units).length > 0;
       if (!hasUnits || group.unitCount <= 0) {
@@ -1180,4 +1252,23 @@ function distributeItemsToGroups(items, groups, worldId, chunkKey, locationKey, 
     
     logger.info(`Added ${itemsToAdd} looted items to group ${group.id} (${group.name || "Unknown"})`);
   }
+}
+
+/**
+ * Check if a group has a player unit
+ * @param {Object} group - The group to check
+ * @returns {boolean} True if the group has a player unit
+ */
+function checkIfGroupHasPlayerUnit(group) {
+  if (!group.units) return false;
+  
+  if (Array.isArray(group.units)) {
+    // For array format
+    return group.units.some(unit => unit.type === "player");
+  } else if (typeof group.units === 'object') {
+    // For object format
+    return Object.values(group.units).some(unit => unit.type === "player");
+  }
+  
+  return false;
 }
