@@ -9,6 +9,9 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // Create a separate updates object for battle-specific updates to avoid path conflicts
     const battleUpdates = {};
     
+    // Track groups that will be deleted to avoid update conflicts
+    const groupsToBeDeleted = new Set();
+    
     // Increment the tick count - this is now our primary battle progression metric
     const tickCount = (battle.tickCount || 0) + 1;
     battleUpdates.tickCount = tickCount;
@@ -329,9 +332,14 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       };
     }
     
-    // Delete any groups with no units left
+    // Delete any groups with no units left - but track them to avoid path conflicts
     for (const groupToDelete of groupsToDelete) {
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupToDelete.groupId}`] = null;
+      // Add to our tracking set so we can avoid updating properties of deleted groups
+      const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupToDelete.groupId}`;
+      groupsToBeDeleted.add(groupPath);
+      
+      // Set deletion in updates
+      updates[groupPath] = null;
       
       // Instead of directly updating the battle's side groups, track this for our battle update
       if (groupToDelete.side === 1) {
@@ -378,7 +386,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       }
       
       // End the battle
-      return await endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile);
+      return await endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile, groupsToBeDeleted);
     }
     
     return true;
@@ -388,7 +396,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
   }
 }
 
-async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile) {
+async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile, groupsToBeDeleted) {
   const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`;
   
   // Delete the battle instead of updating it
@@ -423,24 +431,38 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
     // Update side 1 groups
     const side1Groups = battle.side1.groups || {};
     for (const groupId in side1Groups) {
+      const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+      
+      // Skip updates for groups that are being deleted to avoid path conflicts
+      if (groupsToBeDeleted && groupsToBeDeleted.has(groupPath)) {
+        continue;
+      }
+      
       if (tile.groups[groupId]) {
         // Set group status based on result
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/inBattle`] = false;
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleId`] = null;
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
+        updates[`${groupPath}/inBattle`] = false;
+        updates[`${groupPath}/battleId`] = null;
+        updates[`${groupPath}/battleSide`] = null;
+        updates[`${groupPath}/status`] = 'idle';
       }
     }
     
     // Update side 2 groups
     const side2Groups = battle.side2.groups || {};
     for (const groupId in side2Groups) {
+      const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+      
+      // Skip updates for groups that are being deleted to avoid path conflicts
+      if (groupsToBeDeleted && groupsToBeDeleted.has(groupPath)) {
+        continue;
+      }
+      
       if (tile.groups[groupId]) {
         // Set group status based on result
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/inBattle`] = false;
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleId`] = null;
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
+        updates[`${groupPath}/inBattle`] = false;
+        updates[`${groupPath}/battleId`] = null;
+        updates[`${groupPath}/battleSide`] = null;
+        updates[`${groupPath}/status`] = 'idle';
       }
     }
   }
