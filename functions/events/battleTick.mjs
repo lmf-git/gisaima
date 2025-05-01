@@ -1314,22 +1314,6 @@ function getGroupsForSide(allGroups, sideGroups) {
   return result;
 }
 
-// Helper function to check if battle should end early
-function shouldEndBattleEarly(side1Groups, side2Groups) {
-  return side1Groups.length === 0 || side2Groups.length === 0;
-}
-
-// Helper function to check if battle should end after attrition
-function shouldEndBattleAfterAttrition(side1Groups, side2Groups, side1Power, side2Power) {
-  // Explicitly check for empty groups first before checking power
-  if (side1Groups.length === 0 || side2Groups.length === 0) {
-    return true;
-  }
-  
-  // Then check power
-  return side1Power <= 0 || side2Power <= 0;
-}
-
 // Helper function to determine winning side
 function determineWinningSide(side1Groups, side2Groups, side1Power, side2Power) {
   return (side1Groups.length > 0 && side1Power > 0) ? 1 : 2;
