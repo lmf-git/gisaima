@@ -1313,30 +1313,3 @@ function getGroupsForSide(allGroups, sideGroups) {
   
   return result;
 }
-
-// Helper function to determine winning side
-function determineWinningSide(side1Groups, side2Groups, side1Power, side2Power) {
-  return (side1Groups.length > 0 && side1Power > 0) ? 1 : 2;
-}
-
-// Helper function to add battle end message to updates
-function addBattleEndMessageToUpdates(updates, worldId, now, battleId, locationKey, message) {
-  const [x, y] = locationKey.split(',').map(Number);
-  updates[`worlds/${worldId}/chat/battle_${now}_${battleId}_${Math.floor(Math.random() * 1000)}`] = {
-    text: message,
-    type: "event",
-    location: { x, y },
-    timestamp: now
-  };
-}
-
-// Helper function to add battle progress message to updates
-function addBattleProgressMessageToUpdates(updates, worldId, now, battleId, locationKey, message) {
-  const [x, y] = locationKey.split(',').map(Number);
-  updates[`worlds/${worldId}/chat/battle_progress_${now}_${battleId}_${Math.floor(Math.random() * 1000)}`] = {
-    text: message,
-    type: "event",
-    location: { x, y },
-    timestamp: now
-  };
-}
