@@ -70,11 +70,6 @@ export function processMobilizations(worldId, updates, groups, chunkKey, tileKey
       }
     };
     
-    // Update player records if the owner is a player
-    if (group.owner) {
-      updates[`players/${group.owner}/worlds/${worldId}/groups/${groupId}/status`] = 'idle';
-      updates[`players/${group.owner}/worlds/${worldId}/groups/${groupId}/readyAt`] = null;
-    }
     
     mobilizationsProcessed++;
     logger.info(`Group ${groupId} completed mobilization at ${tileKey} in chunk ${chunkKey}`);

@@ -109,10 +109,6 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
         updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}/${battleSideKey}/groups/${groupId}`] = null;
       }
       
-      // Also update in the battles collection if it exists
-      updates[`battles/${worldId}/${battleId}/${battleSideKey}/groups/${groupId}`] = null;
-      updates[`battles/${worldId}/${battleId}/${battleSideKey}/power`] = newPower;
-      
       logger.info(`Updated battle power for ${battleSideKey} from ${currentPower} to ${newPower}`);
     }
     

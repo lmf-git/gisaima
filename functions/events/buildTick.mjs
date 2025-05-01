@@ -56,8 +56,7 @@ export function processBuilding(worldId, updates, chunkKey, tileKey, tile, now) 
   // Full paths for updates
   const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`;
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${builderId}`;
-  const playerPath = `players/${builder.owner}/worlds/${worldId}`;
-  
+
   // Handle structure completion
   if (progress >= total) {
     console.log(`Building complete at ${tileKey} in chunk ${chunkKey}`);
@@ -74,12 +73,6 @@ export function processBuilding(worldId, updates, chunkKey, tileKey, tile, now) 
     updates[`${groupPath}/status`] = 'idle';
     updates[`${groupPath}/buildingUntil`] = null;
     updates[`${groupPath}/lastUpdated`] = now;
-    
-    // Update player record
-    if (builder.owner) {
-      updates[`${playerPath}/groups/${builderId}/status`] = 'idle';
-      updates[`${playerPath}/groups/${builderId}/buildingUntil`] = null;
-    }
     
     // Create a chat message for the world
     const chatMessageKey = `chat_${now}_${Math.floor(Math.random() * 1000)}`;
