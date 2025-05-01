@@ -6,7 +6,7 @@ import { logger } from 'firebase-functions';
  * Applies attrition to units, removes dead groups, distributes items,
  * and determines battle outcomes
  */
-export async function battleTick(worldId) {
+export async function processBattles(worldId) {
   const db = getDatabase();
   
   try {
@@ -679,15 +679,4 @@ function calculateStructurePower(structure) {
   }
   
   return basePower;
-}
-
-/**
- * Get chunk coordinates for a location
- */
-function getChunkKey(x, y) {
-  const CHUNK_SIZE = 20;
-  // Simple integer division works for both positive and negative coordinates
-  const chunkX = Math.floor(x / CHUNK_SIZE);
-  const chunkY = Math.floor(y / CHUNK_SIZE);
-  return `${chunkX},${chunkY}`;
 }
