@@ -522,16 +522,27 @@
   
   // New function to check if player's group is on this tile
   function hasCurrentPlayerGroupOnTile(cell) {
-    if (!cell.groups || !$currentPlayer?.groups) return false;
+    if (!cell.groups || !$currentPlayer) return false;
     
-    // Get the player's group IDs
-    const playerGroupIds = Object.keys($currentPlayer.groups || {});
+    // Check if user ID exists
+    const userId = $user?.uid;
+    if (!userId) return false;
     
-    // Check if any group on this tile belongs to the player
-    return cell.groups.some(group => 
-      playerGroupIds.includes(group.id) && 
-      group.owner === $currentPlayer.id
-    );
+    // Check if any group on this tile contains the player
+    return cell.groups.some(group => {
+      // Check if player owns this group
+      if (group.owner === userId) return true;
+      
+      // Check if player is a member of this group (not the owner)
+      if (group.members && group.members[userId]) return true;
+      
+      // Alternate format: check memberIds array if present
+      if (group.memberIds && Array.isArray(group.memberIds)) {
+        return group.memberIds.includes(userId);
+      }
+      
+      return false;
+    });
   }
   
   function shouldShowPlayerPosition(cell) {
