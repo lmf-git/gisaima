@@ -173,13 +173,16 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
     let side1Power = calculateSidePower(side1Groups);
     let side2Power = calculateSidePower(side2Groups) + (structure ? calculateStructurePower(structure) : 0);
     
+    // Check for evenly matched small player groups (special handling for 1v1 player battles)
+    const isSmallPlayerBattle = isSmallPlayerVsPlayerBattle(side1Groups, side2Groups);
+    
     // Only process attrition if both sides have power
     const totalPower = side1Power + side2Power;
     
     if (totalPower > 0) {
       // Calculate casualty rates based on power differential
-      const side1Ratio = side2Power / totalPower;
-      const side2Ratio = side1Power / totalPower;
+      let side1Ratio = side2Power / totalPower;
+      let side2Ratio = side1Power / totalPower;
       
       // Create collectors for items from defeated groups
       let side1Loot = [];
@@ -189,6 +192,35 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       let side1Casualties = 0;
       let side2Casualties = 0;
       let casualtyEvents = [];
+      
+      // Add small random variation to break ties in small player battles
+      if (isSmallPlayerBattle && Math.abs(side1Power - side2Power) / totalPower < 0.1) {
+        // Powers are within 10% of each other - add randomness to break the tie
+        const randomFactor = 0.7 + (Math.random() * 0.6); // Random factor between 0.7 and 1.3
+        const favoredSide = Math.random() < 0.5 ? 1 : 2; // Randomly choose which side gets the advantage
+        
+        logger.info(`Small player battle detected - applying random factor ${randomFactor.toFixed(2)} to side ${favoredSide}`);
+        
+        if (favoredSide === 1) {
+          // Favor side 1 by reducing their casualties
+          side1Ratio = side1Ratio * (2 - randomFactor);
+          // Make sure we don't go negative with the ratio
+          side1Ratio = Math.max(0.1, side1Ratio);
+        } else {
+          // Favor side 2 by reducing their casualties
+          side2Ratio = side2Ratio * (2 - randomFactor); 
+          // Make sure we don't go negative with the ratio
+          side2Ratio = Math.max(0.1, side2Ratio);
+        }
+        
+        // Add battle event showing the luck factor
+        casualtyEvents.push({
+          type: 'battle_luck',
+          timestamp: now,
+          text: `${favoredSide === 1 ? battleData.side1?.name : battleData.side2?.name} has gained a tactical advantage in this evenly matched battle.`,
+          advantageSide: favoredSide
+        });
+      }
       
       // Apply attrition to both sides and collect loot from defeated groups
       // Pass the deletedGroupIds set to track groups marked for deletion
@@ -310,8 +342,22 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/progress`] = progressPercentage;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/lastUpdate`] = now;
       
-      // Check if battle should end after filtering
-      if (shouldEndBattleAfterAttrition(filteredSide1Groups, filteredSide2Groups, side1Power, side2Power)) {
+      // CRITICAL FIX: Special handling for both sides being completely eliminated
+      if (filteredSide1Groups.length === 0 && filteredSide2Groups.length === 0) {
+        logger.info(`Battle ${battleId}: Both sides eliminated - ending battle as a draw`);
+        
+        // End the battle - just clean up, no winner
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}`] = null;
+        
+        // Add battle end message for mutual destruction
+        addBattleEndMessageToUpdates(
+          updates, worldId, now, battleId, locationKey,
+          `Battle has ended in mutual destruction! All units on both sides were defeated.`
+        );
+        
+        // No need to call endBattle since there are no winners to update
+      } 
+      else if (shouldEndBattleAfterAttrition(filteredSide1Groups, filteredSide2Groups, side1Power, side2Power)) {
         // Determine winner based on remaining groups and power
         const winningSide = determineWinningSide(filteredSide1Groups, filteredSide2Groups, side1Power, side2Power);
         const winningGroups = winningSide === 1 ? filteredSide1Groups : filteredSide2Groups;
@@ -350,6 +396,31 @@ async function processBattleTick(worldId, chunkKey, locationKey, battleId, battl
 }
 
 /**
+ * Determine if this is a small battle between player groups
+ * This helps identify 1v1 or similarly small player battles that need special tie-breaking
+ */
+function isSmallPlayerVsPlayerBattle(side1Groups, side2Groups) {
+  // Check if both sides have a small number of units (4 or fewer)
+  const side1UnitCount = side1Groups.reduce((total, group) => total + (group.unitCount || 1), 0);
+  const side2UnitCount = side2Groups.reduce((total, group) => total + (group.unitCount || 1), 0);
+  
+  if (side1UnitCount > 4 || side2UnitCount > 4) {
+    return false;
+  }
+  
+  // Check if at least one side has player units (not just monsters)
+  const side1HasPlayers = side1Groups.some(group => {
+    return group.units && Object.values(group.units).some(unit => unit.type === "player");
+  });
+  
+  const side2HasPlayers = side2Groups.some(group => {
+    return group.units && Object.values(group.units).some(unit => unit.type === "player");
+  });
+  
+  return side1HasPlayers && side2HasPlayers;
+}
+
+/**
  * Apply attrition to a side's groups
  * Modified to collect items from defeated units with backward compatibility
  * @param {Array} groups - Groups to apply attrition to
@@ -373,19 +444,22 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
     // Update group unit count
     const remainingUnits = Math.max(0, (group.unitCount || 1) - groupCasualties);
     
-    // If group is wiped out, collect items (if collector provided) and mark it for removal
+    // If group is wiped out, collect items and mark for removal
     if (remainingUnits === 0) {
-      // Collect items from the group before marking for removal (if collector is provided)
+      // Collect items from the group before marking for removal
       if (lootCollector !== null) {
         collectItemsFromGroup(group, lootCollector);
       }
       
-      // Mark group for removal (instead of also updating unitCount)
+      // Mark group for removal
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
-      
-      // Add to the set of deleted group IDs
       deletedGroupIds.add(group.id);
       
+      // Update player status to not alive
+      if (group.owner) {
+        updates[`players/${group.owner}/worlds/${worldId}/alive`] = false;
+        logger.info(`Marking player ${group.owner} as not alive during attrition`);
+      }
     } else {
       // Only update unitCount if the group is not being deleted
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/unitCount`] = remainingUnits;
@@ -393,116 +467,6 @@ function applyAttrition(groups, casualtyRatio, worldId, chunkKey, locationKey, u
   });
   
   return casualties;
-}
-
-/**
- * Distribute collected items to surviving groups
- * @param {Array} items - Items collected from defeated groups
- * @param {Array} groups - Surviving groups to receive items
- * @param {string} worldId - World ID
- * @param {string} chunkKey - Chunk key
- * @param {string} locationKey - Location key
- * @param {Object} updates - Firebase updates object
- * @param {number} now - Current timestamp
- * @param {Set} [deletedGroupIds] - Set of group IDs being deleted
- */
-function distributeItemsToGroups(items, groups, worldId, chunkKey, locationKey, updates, now, deletedGroupIds = new Set()) {
-  if (items.length === 0 || groups.length === 0) return;
-  
-  // Sort groups by power/size (larger groups get more items)
-  const sortedGroups = [...groups].sort((a, b) => {
-    return (b.unitCount || 1) - (a.unitCount || 1);
-  });
-  
-  logger.info(`Distributing ${items.length} items to ${sortedGroups.length} surviving groups`);
-  
-  // Distribute items proportionally based on group size
-  let itemIndex = 0;
-  const totalUnits = sortedGroups.reduce((sum, group) => sum + (group.unitCount || 1), 0);
-  
-  // Calculate how many items each group should get based on their proportion of total units
-  for (let i = 0; i < sortedGroups.length; i++) {
-    const group = sortedGroups[i];
-    
-    // Skip groups that are marked for deletion
-    if (deletedGroupIds.has(group.id)) {
-      logger.info(`Skipping item distribution to group ${group.id} as it's marked for deletion`);
-      continue;
-    }
-    
-    const groupUnitRatio = (group.unitCount || 1) / totalUnits;
-    const itemCount = Math.max(1, Math.round(items.length * groupUnitRatio));
-    
-    // Don't exceed remaining items
-    const itemsToAdd = Math.min(itemCount, items.length - itemIndex);
-    if (itemsToAdd <= 0) break;
-    
-    // Get group's current items
-    let existingItems = [];
-    if (Array.isArray(group.items)) {
-      existingItems = [...group.items];
-    } else if (group.items) {
-      existingItems = Object.values(group.items);
-    }
-    
-    // Add new items to the group
-    for (let j = 0; j < itemsToAdd; j++) {
-      if (itemIndex >= items.length) break;
-      
-      const item = items[itemIndex];
-      const itemWithNewId = {
-        ...item,
-        id: `item_battle_loot_${now}_${Math.floor(Math.random() * 10000)}`,
-        lootedFrom: item.source
-      };
-      
-      delete itemWithNewId.source;
-      existingItems.push(itemWithNewId);
-      itemIndex++;
-    }
-    
-    // Update the group's items in Firebase
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/items`] = existingItems;
-    
-    // Add a message about looting
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/lastMessage`] = {
-      text: `Looted ${itemsToAdd} item${itemsToAdd !== 1 ? 's' : ''} from the battlefield`,
-      timestamp: now
-    };
-    
-    logger.info(`Added ${itemsToAdd} looted items to group ${group.id} (${group.name || "Unknown"})`);
-  }
-}
-
-/**
- * Collect items from a defeated group and add them to the loot collector array
- * @param {Object} group - The group that was defeated
- * @param {Array} lootCollector - Array to collect the items in
- */
-function collectItemsFromGroup(group, lootCollector) {
-  // Skip if group has no items or lootCollector is not an array
-  if (!group.items || !Array.isArray(lootCollector)) return;
-  
-  // Handle items whether they are in array or object format
-  let itemsArray = [];
-  
-  if (Array.isArray(group.items)) {
-    itemsArray = [...group.items];
-  } else if (typeof group.items === 'object') {
-    itemsArray = Object.values(group.items);
-  }
-  
-  // Add source metadata to each item
-  const itemsWithSource = itemsArray.map(item => ({
-    ...item,
-    source: `group_${group.id || 'unknown'}`
-  }));
-  
-  // Add all items to the loot collector
-  if (itemsWithSource.length > 0) {
-    lootCollector.push(...itemsWithSource);
-    logger.info(`Collected ${itemsWithSource.length} items from defeated group ${group.id}`);
-  }
 }
 
 // Helper function to get groups for a battle side
@@ -525,7 +489,13 @@ function shouldEndBattleEarly(side1Groups, side2Groups) {
 
 // Helper function to check if battle should end after attrition
 function shouldEndBattleAfterAttrition(side1Groups, side2Groups, side1Power, side2Power) {
-  return side1Power <= 0 || side2Power <= 0 || side1Groups.length === 0 || side2Groups.length === 0;
+  // FIXED: Explicitly check for empty groups first before checking power
+  if (side1Groups.length === 0 || side2Groups.length === 0) {
+    return true;
+  }
+  
+  // Then check power
+  return side1Power <= 0 || side2Power <= 0;
 }
 
 // Helper function to determine winning side
@@ -1094,4 +1064,120 @@ function getLoserName(losingGroups) {
     return losingGroups[0].name || "Unknown Force";
   }
   return "Unknown Force";
+}
+
+/**
+ * Collect items from a defeated group and add them to the loot collector array
+ * @param {Object} group - The group that was defeated
+ * @param {Array} lootCollector - Array to collect the items in
+ * @param {Object} [updates] - Optional Firebase updates object for tracking changes
+ */
+function collectItemsFromGroup(group, lootCollector, updates = null) {
+  // Skip if group has no items or lootCollector is not an array
+  if (!group.items || !Array.isArray(lootCollector)) return;
+  
+  // Handle items whether they are in array or object format
+  let itemsArray = [];
+  
+  if (Array.isArray(group.items)) {
+    itemsArray = [...group.items];
+  } else if (typeof group.items === 'object') {
+    itemsArray = Object.values(group.items);
+  }
+  
+  // Add source metadata to each item
+  const itemsWithSource = itemsArray.map(item => ({
+    ...item,
+    source: `group_${group.id || 'unknown'}`
+  }));
+  
+  // Add all items to the loot collector
+  if (itemsWithSource.length > 0) {
+    lootCollector.push(...itemsWithSource);
+    logger.info(`Collected ${itemsWithSource.length} items from defeated group ${group.id}`);
+    
+    // If updates is provided, we can track this operation
+    if (updates) {
+      // We could add tracking here if needed in the future
+    }
+  }
+}
+
+/**
+ * Distribute collected items to surviving groups
+ * @param {Array} items - Items collected from defeated groups
+ * @param {Array} groups - Surviving groups to receive items
+ * @param {string} worldId - World ID
+ * @param {string} chunkKey - Chunk key
+ * @param {string} locationKey - Location key
+ * @param {Object} updates - Firebase updates object
+ * @param {number} now - Current timestamp
+ * @param {Set} [deletedGroupIds] - Set of group IDs being deleted
+ */
+function distributeItemsToGroups(items, groups, worldId, chunkKey, locationKey, updates, now, deletedGroupIds = new Set()) {
+  if (items.length === 0 || groups.length === 0) return;
+  
+  // Sort groups by power/size (larger groups get more items)
+  const sortedGroups = [...groups].sort((a, b) => {
+    return (b.unitCount || 1) - (a.unitCount || 1);
+  });
+  
+  logger.info(`Distributing ${items.length} items to ${sortedGroups.length} surviving groups`);
+  
+  // Distribute items proportionally based on group size
+  let itemIndex = 0;
+  const totalUnits = sortedGroups.reduce((sum, group) => sum + (group.unitCount || 1), 0);
+  
+  // Calculate how many items each group should get based on their proportion of total units
+  for (let i = 0; i < sortedGroups.length; i++) {
+    const group = sortedGroups[i];
+    
+    // Skip groups that are marked for deletion
+    if (deletedGroupIds.has(group.id)) {
+      logger.info(`Skipping item distribution to group ${group.id} as it's marked for deletion`);
+      continue;
+    }
+    
+    const groupUnitRatio = (group.unitCount || 1) / totalUnits;
+    const itemCount = Math.max(1, Math.round(items.length * groupUnitRatio));
+    
+    // Don't exceed remaining items
+    const itemsToAdd = Math.min(itemCount, items.length - itemIndex);
+    if (itemsToAdd <= 0) break;
+    
+    // Get group's current items
+    let existingItems = [];
+    if (Array.isArray(group.items)) {
+      existingItems = [...group.items];
+    } else if (group.items) {
+      existingItems = Object.values(group.items);
+    }
+    
+    // Add new items to the group
+    for (let j = 0; j < itemsToAdd; j++) {
+      if (itemIndex >= items.length) break;
+      
+      const item = items[itemIndex];
+      const itemWithNewId = {
+        ...item,
+        id: `item_battle_loot_${now}_${Math.floor(Math.random() * 10000)}`,
+        lootedFrom: item.source
+      };
+      
+      delete itemWithNewId.source;
+      existingItems.push(itemWithNewId);
+      itemIndex++;
+    }
+    
+    // Update the group's items in Firebase
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/items`] = existingItems;
+    
+    // Add a message about looting
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/lastMessage`] = {
+      text: `Looted ${itemsToAdd} item${itemsToAdd !== 1 ? 's' : ''} from the battlefield`,
+      timestamp: now
+    };
+    
+    logger.info(`Added ${itemsToAdd} looted items to group ${group.id} (${group.name || "Unknown"})`);
+  }
 }
