@@ -269,8 +269,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
     // Prepare the battle data with enhanced information
     const battleData = {
       id: battleId,
-      createdAt: now,
-      startTime: now,
       locationX,
       locationY,
       targetTypes,
@@ -303,14 +301,7 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
         strength: advantageStrength
       },
       participants: allParticipantIds,
-      lastUpdate: now,
-      events: [{
-        type: 'battle_start',
-        timestamp: now,
-        text: `Battle has begun! ${side1Name} is attacking ${side2Name}.`
-      }],
-      tickCount: 0,
-      estimatedDuration: estimateBattleDuration(attackerPower, defenderTotalPower)
+      tickCount: 0
     };
     
     // Prepare updates object for atomicity
@@ -502,24 +493,4 @@ function formatRaceName(race) {
   return race.split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
-}
-
-// Helper function to estimate battle duration based on powers
-function estimateBattleDuration(side1Power, side2Power) {
-  // Base duration in milliseconds - 5 minutes
-  const baseDuration = 5 * 60 * 1000;
-  
-  // Calculate power ratio (always between 0 and 1)
-  const powerRatio = Math.min(side1Power, side2Power) / Math.max(side1Power, side2Power, 1);
-  
-  // More equal powers mean longer battles
-  // powerRatio = 1 (equal) → 2x duration
-  // powerRatio = 0 (completely unequal) → 0.5x duration
-  const durationMultiplier = 0.5 + (powerRatio * 1.5);
-  
-  // Scale duration by absolute power (more powerful forces = longer battles)
-  const powerScale = Math.log10(Math.max(2, side1Power + side2Power)) / Math.log10(10);
-  const scaledDuration = baseDuration * durationMultiplier * powerScale;
-  
-  return Math.round(scaledDuration);
 }

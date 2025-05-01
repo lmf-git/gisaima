@@ -162,8 +162,6 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/events`] = 
       [...(battleData.events || []), newEvent];
     
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/lastUpdate`] = now;
-    
     // Update group status
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/inBattle`] = true;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleId`] = battleId;

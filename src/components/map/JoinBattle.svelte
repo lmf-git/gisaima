@@ -91,7 +91,7 @@
     // First handle direct battle references in tileData.battles
     if (tileData.battles && tileData.battles.length > 0) {
       tileData.battles.forEach(battle => {
-        if (battle && battle.id && (battle.status !== 'resolved')) {
+        if (battle && battle.id) {
           battles.set(battle.id, {
             ...battle,
             sides: battle.sides || {

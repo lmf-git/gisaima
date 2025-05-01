@@ -3,18 +3,12 @@ import { logger } from "firebase-functions";
 
 export async function processBattle(worldId, chunkKey, tileKey, battleId, battle, updates) {
   try {
-    const now = Date.now();
+    // Use serverTimestamp for database records only
     const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`;
     
-    // Increment the tick count
+    // Increment the tick count - this is now our primary battle progression metric
     const tickCount = (battle.tickCount || 0) + 1;
     updates[`${basePath}/tickCount`] = tickCount;
-    updates[`${basePath}/lastUpdate`] = now;
-    
-    // Calculate battle time progress
-    const elapsedTime = now - battle.startTime;
-    const estimatedDuration = battle.estimatedDuration || 300000; // Default 5 minutes
-    const battleProgress = Math.min(1, elapsedTime / estimatedDuration);
     
     // Get sides data
     const side1 = battle.side1;
@@ -57,8 +51,9 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     updates[`${basePath}/side2/power`] = newSide2Power;
     updates[`${basePath}/side2/casualties`] = side2Casualties;
     
-    // Check if battle should end
-    if (newSide1Power <= 0 || newSide2Power <= 0 || battleProgress >= 1) {
+    // Check if battle should end - based only on power
+    // A battle ends when one side has no power left or after many ticks (safety cap at 20)
+    if (newSide1Power <= 0 || newSide2Power <= 0 || tickCount >= 20) {
       // Determine the winner
       let winner = 0; // Draw
       if (newSide1Power > newSide2Power) {
@@ -79,7 +74,14 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
 }
 
 async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner) {
+  // Only use timestamp for database record
   const now = Date.now();
+  const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`;
+  
+  // Update battle status
+  updates[`${basePath}/status`] = 'completed';
+  updates[`${basePath}/endTime`] = now; // Keep for record-keeping
+  updates[`${basePath}/winner`] = winner;
   
   // Generate side names for chat message
   const side1Name = battle.side1.name || 'Attackers';
@@ -98,7 +100,7 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
   updates[`worlds/${worldId}/chat/battle_end_${now}_${battleId}`] = {
     text: `Battle at (${battle.locationX}, ${battle.locationY}) has ended. ${resultText}`,
     type: 'event',
-    timestamp: now,
+    timestamp: now, // Keep timestamp for chat display
     location: {
       x: battle.locationX,
       y: battle.locationY

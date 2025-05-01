@@ -913,7 +913,6 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleSide`] = 1;
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleRole`] = 'attacker';
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/status`] = 'fighting';
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/lastUpdated`] = now;
   
   // Update each target group to be in battle
   for (const target of selectedTargets) {
@@ -922,7 +921,6 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/battleSide`] = 2;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/battleRole`] = 'defender';
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/status`] = 'fighting';
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/lastUpdated`] = now;
   }
   
   // Add battle start message to chat

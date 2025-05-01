@@ -49,7 +49,7 @@
     groups: { by: 'name', asc: true },
     players: { by: 'name', asc: true },
     items: { by: 'name', asc: true },
-    battles: { by: 'status', asc: true }
+    battles: { by: 'power', asc: true }
   });
 
   // Add a render counter to force fresh animation on each open
@@ -509,7 +509,7 @@
 
   // Determine winning side CSS class
   function getWinningSideClass(battle, side) {
-    if (!battle || battle.status !== 'resolved') return '';
+    if (!battle) return '';
     return battle.winner === side ? 'winning-side' : 'losing-side';
   }
 
@@ -1158,16 +1158,6 @@
               {#if !collapsedSections.battles}
                 <div class="sort-controls">
                   <button 
-                    class="sort-option"
-                    class:active={sortOptions.battles.by === 'status'}
-                    onclick={(e) => { e.stopPropagation(); setSortOption('battles', 'status'); }}
-                  >
-                    <span>Status</span>
-                    {#if sortOptions.battles.by === 'status'}
-                      <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
-                    {/if}
-                  </button>
-                  <button 
                     class="sort-option" 
                     class:active={sortOptions.battles.by === 'power'}
                     onclick={(e) => { e.stopPropagation(); setSortOption('battles', 'power'); }}
@@ -1200,7 +1190,7 @@
                           <span class="side-name">Side 1:</span> 
                           {getParticipantCountBySide(battle, 1)} groups
                           ({formatPower(battle.sides?.[1]?.power || battle.power?.[1])})
-                          {#if battle.status === 'resolved' && battle.winner === 1}
+                          {#if battle.winner === 1}
                             <span class="battle-winner">Winner</span>
                           {/if}
                         </div>
@@ -1209,7 +1199,7 @@
                           <span class="side-name">Side 2:</span> 
                           {getParticipantCountBySide(battle, 2)} groups
                           ({formatPower(battle.sides?.[2]?.power || battle.power?.[2])})
-                          {#if battle.status === 'resolved' && battle.winner === 2}
+                          {#if battle.winner === 2}
                             <span class="battle-winner">Winner</span>
                           {/if}
                         </div>

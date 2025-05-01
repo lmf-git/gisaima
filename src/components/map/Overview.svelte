@@ -453,7 +453,7 @@
 
   // Determine winning side CSS class
   function getWinningSideClass(battle, side) {
-    if (!battle || battle.status !== 'resolved') return '';
+    if (!battle) return '';
     return battle.winner === side ? 'winning-side' : 'losing-side';
   }
 
@@ -1292,7 +1292,7 @@
                           <span class="side-name">Side 1:</span> 
                           {getParticipantCountBySide(battle, 1)} groups
                           ({formatPower(battle.sides?.[1]?.power || battle.power?.[1])})
-                          {#if battle.status === 'resolved' && battle.winner === 1}
+                          {#if battle.winner === 1}
                             <span class="battle-winner">Winner</span>
                           {/if}
                         </div>
@@ -1301,7 +1301,7 @@
                           <span class="side-name">Side 2:</span> 
                           {getParticipantCountBySide(battle, 2)} groups
                           ({formatPower(battle.sides?.[2]?.power || battle.power?.[2])})
-                          {#if battle.status === 'resolved' && battle.winner === 2}
+                          {#if battle.winner === 2}
                             <span class="battle-winner">Winner</span>
                           {/if}
                         </div>
@@ -1319,7 +1319,7 @@
                       <div class="entity-distance">{formatDistance(battle.distance)}</div>
                     </div>
                     
-                    {#if battle.status === 'resolved' && battle.rewards}
+                    {#if battle.rewards}
                       <div class="battle-rewards">
                         <span class="rewards-label">Rewards:</span>
                         {battle.rewards.exp ? `${battle.rewards.exp} XP` : ''}
