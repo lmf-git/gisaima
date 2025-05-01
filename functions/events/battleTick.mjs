@@ -109,26 +109,20 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           }
         }
         
-        // Remove the selected units from the group
-        unitsToRemove.forEach(unitId => {
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/units/${unitId}`] = null;
-        });
-        
         // Calculate how many units remain
         const newUnitCount = totalUnits - unitsToRemove.length;
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
         
-        // Add to side casualties
-        side1Casualties += unitsToRemove.length;
-        
-        // Add remaining power (1 unit = 1 power)
-        newSide1Power += newUnitCount;
-        
-        // If no units left, mark for deletion and collect items for looting
+        // Check if the group will be destroyed
         if (newUnitCount <= 0) {
+          // Add to our deletion tracking sets
+          const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+          groupsToBeDeleted.add(groupPath);
+          
+          // Mark group for deletion - will be applied at the end
           groupsToDelete.push({
             side: 1,
-            groupId
+            groupId,
+            path: groupPath
           });
           
           // Collect items from this group to be looted by side 2
@@ -146,7 +140,21 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
               lootFromDefeated.side1.push(...lootItems);
             }
           }
+        } else {
+          // Only update unitCount if the group will survive - avoid path conflicts
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
+          
+          // Remove the selected units from the group
+          unitsToRemove.forEach(unitId => {
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/units/${unitId}`] = null;
+          });
         }
+        
+        // Add to side casualties
+        side1Casualties += unitsToRemove.length;
+        
+        // Add remaining power (1 unit = 1 power)
+        newSide1Power += newUnitCount;
       }
     }
     
@@ -205,26 +213,20 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           }
         }
         
-        // Remove the selected units from the group
-        unitsToRemove.forEach(unitId => {
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/units/${unitId}`] = null;
-        });
-        
         // Calculate how many units remain
         const newUnitCount = totalUnits - unitsToRemove.length;
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
         
-        // Add to side casualties
-        side2Casualties += unitsToRemove.length;
-        
-        // Add remaining power (1 unit = 1 power)
-        newSide2Power += newUnitCount;
-        
-        // If no units left, mark for deletion and collect items for looting
+        // Check if the group will be destroyed
         if (newUnitCount <= 0) {
+          // Add to our deletion tracking sets
+          const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+          groupsToBeDeleted.add(groupPath);
+          
+          // Mark group for deletion - will be applied at the end
           groupsToDelete.push({
             side: 2,
-            groupId
+            groupId,
+            path: groupPath
           });
           
           // Collect items from this group to be looted by side 1
@@ -242,7 +244,21 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
               lootFromDefeated.side2.push(...lootItems);
             }
           }
+        } else {
+          // Only update unitCount if the group will survive - avoid path conflicts
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
+          
+          // Remove the selected units from the group
+          unitsToRemove.forEach(unitId => {
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/units/${unitId}`] = null;
+          });
         }
+        
+        // Add to side casualties
+        side2Casualties += unitsToRemove.length;
+        
+        // Add remaining power (1 unit = 1 power)
+        newSide2Power += newUnitCount;
       }
     }
     
@@ -332,16 +348,12 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       };
     }
     
-    // Delete any groups with no units left - but track them to avoid path conflicts
+    // Apply group deletions at the end
     for (const groupToDelete of groupsToDelete) {
-      // Add to our tracking set so we can avoid updating properties of deleted groups
-      const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupToDelete.groupId}`;
-      groupsToBeDeleted.add(groupPath);
-      
       // Set deletion in updates
-      updates[groupPath] = null;
+      updates[groupToDelete.path] = null;
       
-      // Instead of directly updating the battle's side groups, track this for our battle update
+      // Update battle groups tracking
       if (groupToDelete.side === 1) {
         // Make sure side1.groups exists in battleUpdates
         if (!battleUpdates.side1) battleUpdates.side1 = { groups: {} };
@@ -358,7 +370,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     }
     
     // Update power values and casualties for both sides
-    // Instead of updating child paths directly, use the battleUpdates structure
     if (!battleUpdates.side1) battleUpdates.side1 = {};
     if (!battleUpdates.side2) battleUpdates.side2 = {};
     
