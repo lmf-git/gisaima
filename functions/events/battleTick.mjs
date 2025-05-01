@@ -146,28 +146,28 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
       side2Power += calculateStructurePower(structure);
     }
     
-    // If either side has no power, the battle should end
+    // If either side starts with no power, resolve the battle immediately
     if (side1Power === 0 || side2Power === 0) {
       const winner = side1Power > 0 ? 1 : 2;
-      const winningGroups = winner === 1 ? side1Groups : side2Groups;
-      const losingGroups = winner === 1 ? side2Groups : side1Groups;
+      const now = Date.now();
       
-      // Handle battle end
-      const result = await endBattle(
-        worldId, 
-        chunkKey, 
-        locationKey, 
-        battle, 
-        winner, 
-        winningGroups, 
-        losingGroups, 
-        structure,
-        db
-      );
+      // Determine side names for better messaging
+      const side1Name = battle.side1?.name || 'Side 1';
+      const side2Name = battle.side2?.name || 'Side 2';
+      const winnerName = winner === 1 ? side1Name : side2Name;
+      const loserName = winner === 1 ? side2Name : side1Name;
       
-      Object.assign(updates, result.updates);
+      // Mark battle as resolved
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/status`] = 'resolved';
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/resolvedAt`] = now;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/winner`] = winner;
+      updates[`battles/${worldId}/${battle.id}/status`] = 'resolved';
+      updates[`battles/${worldId}/${battle.id}/resolvedAt`] = now;
+      updates[`battles/${worldId}/${battle.id}/winner`] = winner;
+      
+      // End message
+      endMessage = `Battle at (${battle.locationX}, ${battle.locationY}) has ended! ${winnerName} has defeated ${loserName}!`;
       ended = true;
-      endMessage = result.message;
       
       return { updates, ended, endMessage };
     }
@@ -306,26 +306,121 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
     
     // Check if battle should end based on remaining power
     if (side1Power === 0 || side2Power === 0) {
+      const now = Date.now();
       const winner = side1Power > 0 ? 1 : 2;
       const winningGroups = winner === 1 ? side1Groups : side2Groups;
       const losingGroups = winner === 1 ? side2Groups : side1Groups;
       
-      // Handle battle end
-      const result = await endBattle(
-        worldId, 
-        chunkKey, 
-        locationKey, 
-        battle, 
-        winner, 
-        winningGroups, 
-        losingGroups, 
-        structure,
-        db
-      );
+      // Determine side names for better messaging
+      const side1Name = battle.side1?.name || 'Side 1';
+      const side2Name = battle.side2?.name || 'Side 2';
+      const winnerName = winner === 1 ? side1Name : side2Name;
+      const loserName = winner === 1 ? side2Name : side1Name;
       
-      Object.assign(updates, result.updates);
+      // Mark battle as resolved
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/status`] = 'resolved';
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/resolvedAt`] = now;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/winner`] = winner;
+      updates[`battles/${worldId}/${battle.id}/status`] = 'resolved';
+      updates[`battles/${worldId}/${battle.id}/resolvedAt`] = now;
+      updates[`battles/${worldId}/${battle.id}/winner`] = winner;
+      
+      // Handle item distribution from losing groups to winning groups
+      if (losingGroups.length > 0 && winningGroups.length > 0) {
+        // Collect all items from losing groups
+        const allLootItems = [];
+        
+        for (const group of losingGroups) {
+          if (group.items) {
+            const groupItems = typeof group.items === 'object' ? Object.values(group.items) : [];
+            allLootItems.push(...groupItems);
+            
+            // Clear items from losing group
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/items`] = null;
+          }
+        }
+        
+        // Distribute items to winning groups if there are any items and winning groups
+        if (allLootItems.length > 0 && winningGroups.length > 0) {
+          // Randomly assign each item to a winning group
+          for (const item of allLootItems) {
+            const randomGroupIndex = Math.floor(Math.random() * winningGroups.length);
+            const winningGroup = winningGroups[randomGroupIndex];
+            
+            // Generate an item ID if one doesn't exist
+            const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            // Add item to winning group
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${winningGroup.id}/items/${itemId}`] = {
+              ...item,
+              id: itemId,
+              lootedAt: now,
+              lootedFrom: 'battle'
+            };
+          }
+          
+          // Add message about looting
+          endMessage += ` ${winnerName} looted ${allLootItems.length} items from the defeated groups.`;
+        }
+      }
+      
+      // Handle structure capture or destruction if relevant
+      if (structure && structure.inBattle && structure.battleId === battle.id) {
+        // Remove battle flags from structure
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/inBattle`] = false;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/battleId`] = null;
+        
+        // If attackers won (side 1), handle structure capture/destruction
+        if (winner === 1) {
+          // If structure was destroyed during battle
+          if (structure.destroyed || (structure.health !== undefined && structure.health <= 0)) {
+            // Remove structure entirely
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure`] = null;
+            endMessage += ` The structure was destroyed in the battle!`;
+          } else {
+            // Capture structure - assign to first winning group owner
+            if (winningGroups.length > 0) {
+              const newOwner = winningGroups[0].owner;
+              const newOwnerName = winningGroups[0].ownerName || 'Unknown';
+              
+              updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/owner`] = newOwner;
+              updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/ownerName`] = newOwnerName;
+              updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/capturedAt`] = now;
+              updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/previousOwner`] = structure.owner;
+              
+              endMessage += ` The structure was captured by ${newOwnerName}!`;
+            }
+          }
+        } else {
+          // Defenders won (side 2), structure remains with current owner
+          endMessage += ` The structure was successfully defended!`;
+        }
+      }
+      
+      // Clear battle flags from surviving groups
+      for (const group of winningGroups) {
+        if (!group.empty && group.unitCount > 0) {
+          // Group survived - clear battle flags
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/inBattle`] = false;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleId`] = null;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleSide`] = null;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleRole`] = null;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/status`] = 'idle';
+        }
+      }
+      
+      // Add battle end event
+      const endEvent = {
+        type: 'battle_end',
+        timestamp: now,
+        text: `${winnerName} has emerged victorious over ${loserName}!`,
+        winner
+      };
+      
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/events`] = 
+        [...(battle.events || []), endEvent];
+      
       ended = true;
-      endMessage = result.message;
     }
     
     return { updates, ended, endMessage };
@@ -336,7 +431,7 @@ async function processBattleTick(worldId, chunkKey, locationKey, battle, db) {
 }
 
 /**
- * Process attrition for a group of units
+ * Process attrition for a group of units and handle removal of empty groups
  * Returns updates to be applied to the database and the remaining power
  */
 function processGroupAttrition(worldId, chunkKey, locationKey, groups, attritionRate, battleId, db) {
@@ -350,7 +445,7 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
     
     const units = typeof group.units === 'object' ? Object.entries(group.units) : [];
     
-    // For small battles, use probability-based attrition instead of guaranteed losses
+    // For small battles, use probability-based attrition
     let unitLosses = 0;
     
     if (units.length <= 5) {
@@ -431,10 +526,26 @@ function processGroupAttrition(worldId, chunkKey, locationKey, groups, attrition
     // Add remaining power from this group
     remainingPower += remainingUnits;
     
-    // If group has no units left, mark for removal
-    // We don't remove the group here - this happens in endBattle if a side loses
+    // If group has no units left, remove it completely
     if (remainingUnits === 0) {
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/empty`] = true;
+      // Remove the group entirely
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
+      
+      // If this was a player's group, update their record
+      if (group.owner) {
+        updates[`players/${group.owner}/worlds/${worldId}/groups/${group.id}`] = null;
+        
+        // If player was in this group, update their status
+        if (group.units) {
+          const units = typeof group.units === 'object' ? Object.values(group.units) : [];
+          for (const unit of units) {
+            if (unit.type === 'player' && unit.id === group.owner) {
+              // Player was in this group that got wiped out
+              updates[`players/${group.owner}/worlds/${worldId}/inGroup`] = null;
+            }
+          }
+        }
+      }
     }
   }
   
@@ -497,157 +608,6 @@ function processStructureAttrition(worldId, chunkKey, locationKey, structure, da
   }
   
   return { updates, destroyed };
-}
-
-/**
- * End a battle and handle all aftermath
- */
-async function endBattle(worldId, chunkKey, locationKey, battle, winner, winningGroups, losingGroups, structure, db) {
-  const updates = {};
-  const now = Date.now();
-  let message = '';
-  
-  try {
-    // Determine side names for better messaging
-    const side1Name = battle.side1?.name || 'Side 1';
-    const side2Name = battle.side2?.name || 'Side 2';
-    const winnerName = winner === 1 ? side1Name : side2Name;
-    const loserName = winner === 1 ? side2Name : side1Name;
-    
-    // Mark battle as resolved
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/status`] = 'resolved';
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/resolvedAt`] = now;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/winner`] = winner;
-    updates[`battles/${worldId}/${battle.id}/status`] = 'resolved';
-    updates[`battles/${worldId}/${battle.id}/resolvedAt`] = now;
-    updates[`battles/${worldId}/${battle.id}/winner`] = winner;
-    
-    // Battle result message
-    message = `Battle at (${battle.locationX}, ${battle.locationY}) has ended! ${winnerName} has defeated ${loserName}!`;
-    
-    // Handle item distribution from losing groups to winning groups
-    if (losingGroups.length > 0 && winningGroups.length > 0) {
-      // Collect all items from losing groups
-      const allLootItems = [];
-      
-      for (const group of losingGroups) {
-        if (group.items) {
-          const groupItems = typeof group.items === 'object' ? Object.values(group.items) : [];
-          allLootItems.push(...groupItems);
-          
-          // Clear items from losing group
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/items`] = null;
-        }
-      }
-      
-      // Distribute items to winning groups if there are any items and winning groups
-      if (allLootItems.length > 0 && winningGroups.length > 0) {
-        // Randomly assign each item to a winning group
-        for (const item of allLootItems) {
-          const randomGroupIndex = Math.floor(Math.random() * winningGroups.length);
-          const winningGroup = winningGroups[randomGroupIndex];
-          
-          // Generate an item ID if one doesn't exist
-          const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          
-          // Add item to winning group
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${winningGroup.id}/items/${itemId}`] = {
-            ...item,
-            id: itemId,
-            lootedAt: now,
-            lootedFrom: 'battle'
-          };
-        }
-        
-        // Add message about looting
-        message += ` ${winnerName} looted ${allLootItems.length} items from the defeated groups.`;
-      }
-    }
-    
-    // Handle structure capture or destruction if relevant
-    if (structure && structure.inBattle && structure.battleId === battle.id) {
-      // Remove battle flags from structure
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/inBattle`] = false;
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/battleId`] = null;
-      
-      // If attackers won (side 1), handle structure capture/destruction
-      if (winner === 1) {
-        // If structure was destroyed during battle
-        if (structure.destroyed || (structure.health !== undefined && structure.health <= 0)) {
-          // Remove structure entirely
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure`] = null;
-          message += ` The structure was destroyed in the battle!`;
-        } else {
-          // Capture structure - assign to first winning group owner
-          if (winningGroups.length > 0) {
-            const newOwner = winningGroups[0].owner;
-            const newOwnerName = winningGroups[0].ownerName || 'Unknown';
-            
-            updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/owner`] = newOwner;
-            updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/ownerName`] = newOwnerName;
-            updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/capturedAt`] = now;
-            updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/previousOwner`] = structure.owner;
-            
-            message += ` The structure was captured by ${newOwnerName}!`;
-          }
-        }
-      } else {
-        // Defenders won (side 2), structure remains with current owner
-        // Just remove battle status
-        message += ` The structure was successfully defended!`;
-      }
-    }
-    
-    // Handle cleanup of empty groups
-    for (const groups of [winningGroups, losingGroups]) {
-      for (const group of groups) {
-        // If group is empty after battle
-        if (group.empty || group.unitCount === 0 || !group.units || Object.keys(group.units).length === 0) {
-          // Remove the group
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}`] = null;
-          
-          // If this was a player's group, update their record
-          if (group.owner) {
-            updates[`players/${group.owner}/worlds/${worldId}/groups/${group.id}`] = null;
-            
-            // If player was in this group, update their status
-            if (group.units) {
-              const units = typeof group.units === 'object' ? Object.values(group.units) : [];
-              for (const unit of units) {
-                if (unit.type === 'player' && unit.id === group.owner) {
-                  // Player was in this group that got wiped out
-                  updates[`players/${group.owner}/worlds/${worldId}/inGroup`] = null;
-                }
-              }
-            }
-          }
-        } else {
-          // Group survived - clear battle flags
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/inBattle`] = false;
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleId`] = null;
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleSide`] = null;
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleRole`] = null;
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/status`] = 'idle';
-        }
-      }
-    }
-    
-    // Add an epic battle end event to the battle log
-    const endEvent = {
-      type: 'battle_end',
-      timestamp: now,
-      text: `${winnerName} has emerged victorious over ${loserName}!`,
-      winner
-    };
-    
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battle.id}/events`] = 
-      [...(battle.events || []), endEvent];
-    
-    return { updates, message };
-  } catch (error) {
-    logger.error(`Error ending battle ${battle.id}:`, error);
-    return { updates, message: `Battle at (${battle.locationX}, ${battle.locationY}) has ended.` };
-  }
 }
 
 /**
