@@ -1,6 +1,9 @@
 /**
  * Recruitment tick processing for Gisaima
  * Handles completing recruitment during tick cycles
+ * 
+ * Note: All timing is now based on ticks rather than seconds
+ * 1 tick = 60 seconds (configurable at world level)
  */
 
 import { logger } from "firebase-functions";
@@ -31,6 +34,9 @@ export function processRecruitment(worldId, updates, chunkKey, tileKey, tile, no
     
     // Check if the recruitment is complete
     if (recruitment.completesAt && recruitment.completesAt <= now) {
+      // Process completed recruitment as before
+      // ticksRequired is already correctly stored in the recruitment data
+
       // Get parameters from the recruitment
       const unitName = recruitment.unitName || 'Unknown Unit';
       const quantity = recruitment.quantity || 1;

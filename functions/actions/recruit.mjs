@@ -104,20 +104,23 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
       }
     }
     
-    // Calculate completion time
+    // Calculate completion time - simplified to work directly with ticks
     const now = Date.now();
-    const timePerUnit = unitTypeData.timePerUnit || 60; // Default 60 seconds per unit
-    const totalSeconds = timePerUnit * quantity;
+    const ticksPerUnit = unitTypeData.timePerUnit || 1; // Default 1 tick per unit
+    const totalTicks = ticksPerUnit * quantity;
     
     // Get world info for tick calculation
     const worldInfoRef = db.ref(`worlds/${worldId}/info`);
     const worldInfoSnapshot = await worldInfoRef.once('value');
     const worldInfo = worldInfoSnapshot.val() || {};
     
+    // Apply world speed adjustment to ticks
     const worldSpeed = worldInfo.speed || 1;
-    const adjustedSeconds = totalSeconds / worldSpeed;
+    const adjustedTicks = totalTicks / worldSpeed;
     
-    const completesAt = now + (adjustedSeconds * 1000);
+    // Only convert to timestamp at the end - 1 tick = 60 seconds (60000ms)
+    const TICK_DURATION = 60 * 1000; 
+    const completesAt = now + (adjustedTicks * TICK_DURATION);
     
     // Generate a unique recruitment ID
     const recruitmentId = `recruitment_${now}_${Math.floor(Math.random() * 1000)}`;
@@ -125,7 +128,7 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
     // Create recruitment entry
     const recruitmentData = {
       id: recruitmentId,
-      unitId: unitType, // Store as unitId for clarity
+      unitId: unitType,
       unitName: unitTypeData.name,
       type: unitTypeData.type,
       race: unitTypeData.race || structureData.race,
@@ -133,7 +136,7 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
       quantity,
       startedAt: now,
       completesAt,
-      ticksRequired: Math.ceil(adjustedSeconds / 60), // Assuming 1 tick = 60 seconds
+      ticksRequired: Math.ceil(adjustedTicks), // Store raw tick count for tick-based processing
       owner: userId,
       cost
     };

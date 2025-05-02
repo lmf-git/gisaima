@@ -226,46 +226,47 @@
         return totalCost;
     }
 
-    // Calculate estimated completion time - modified to avoid state changes
+    // Calculate estimated completion time - modified to work with ticks
     function calculateCompletionTime() {
         if (!selectedUnit) return null;
 
         const now = Date.now();
-        const secondsPerUnit = selectedUnit.timePerUnit || 60;
-        const totalSeconds = secondsPerUnit * quantity;
+        const ticksPerUnit = selectedUnit.timePerUnit || 1;
+        const totalTicks = ticksPerUnit * quantity;
 
         // Add time for existing queue items
-        let queueTimeSeconds = 0;
+        let queueTicks = 0;
         queue.forEach((item) => {
             if (item.completesAt && item.completesAt > now) {
-                queueTimeSeconds += (item.completesAt - now) / 1000;
+                // Convert remaining time to ticks
+                queueTicks += (item.completesAt - now) / (60 * 1000); // 1 tick = 60 seconds
             }
         });
 
         // Total time including queue
-        const totalTimeSeconds = queueTimeSeconds + totalSeconds;
-        const completionDate = new Date(now + totalTimeSeconds * 1000);
+        const totalTicksWithQueue = queueTicks + totalTicks;
+        const tickDuration = 60 * 1000; // 60 seconds per tick in milliseconds
+        const completionDate = new Date(now + totalTicksWithQueue * tickDuration);
 
         return {
-            seconds: totalSeconds,
-            totalSeconds: totalTimeSeconds,
+            ticks: totalTicks,
+            totalTicks: totalTicksWithQueue,
             date: completionDate,
-            queueSeconds: queueTimeSeconds,
-            ticksRequired: Math.ceil(totalSeconds / 60), // Assuming 1 tick = 60 seconds
+            queueTicks: queueTicks,
+            ticksRequired: Math.ceil(totalTicks)
         };
+    }
+
+    // Format time in ticks to readable format
+    function formatTicks(ticks) {
+        if (ticks < 1) return `${Math.round(ticks * 10) / 10} ticks`;
+        if (ticks === 1) return "1 tick";
+        return `${Math.round(ticks * 10) / 10} ticks`;
     }
 
     // Format a number with commas
     function formatNumber(num) {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
-
-    // Format time from seconds to readable format
-    function formatTime(seconds) {
-        if (seconds < 60) return `${Math.ceil(seconds)}s`;
-        if (seconds < 3600)
-            return `${Math.floor(seconds / 60)}m ${Math.ceil(seconds % 60)}s`;
-        return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
     }
 
     // Format date to human-readable format
@@ -590,7 +591,6 @@
                 <div class="form-content">
                     <!-- Unit selection -->
                     <div class="form-group">
-                        <label for="unit-select">Unit Type</label>
                         <div class="unit-select-container">
                             {#each availableUnits as unit}
                                 {@const IconComponent = getUnitIcon(unit)}
@@ -699,9 +699,9 @@
                                 </div>
                                 <div class="unit-stat">
                                     <span class="stat-label">Time:</span>
-                                    <span class="stat-value">{formatTime(
+                                    <span class="stat-value">{formatTicks(
                                         selectedUnit.timePerUnit,
-                                    )} each</span>
+                                    )} per unit</span>
                                 </div>
                             </div>
 
@@ -772,15 +772,14 @@
                                     <h6>Time Required:</h6>
                                     <div class="time-info">
                                         <div>
-                                            Production: {formatTime(
-                                                completionInfo?.seconds || 0,
+                                            Production: {formatTicks(
+                                                completionInfo?.ticks || 0,
                                             )}
                                         </div>
-                                        {#if completionInfo?.queueSeconds > 0}
+                                        {#if completionInfo?.queueTicks > 0}
                                             <div>
-                                                Queue wait: {formatTime(
-                                                    completionInfo?.queueSeconds ||
-                                                        0,
+                                                Queue wait: {formatTicks(
+                                                    completionInfo?.queueTicks || 0,
                                                 )}
                                             </div>
                                             <div class="completion-estimate">
