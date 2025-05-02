@@ -130,7 +130,6 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
       type: unitTypeData.type,
       race: unitTypeData.race || structureData.race,
       icon: unitTypeData.icon,
-      power: Units.calculateUnitPower(unitType, 'player', 1), // Use unified power calculation
       quantity,
       startedAt: now,
       completesAt,

@@ -13,10 +13,10 @@ import { processDemobilization } from "./events/demobiliseTick.mjs";
 import { processMovement } from "./events/moveTick.mjs";
 import { processGathering } from "./events/gatheringTick.mjs";
 import { processBuilding } from "./events/buildTick.mjs";
-import { spawnMonsters } from "./events/monsterSpawnTick.mjs";
+import { spawnMonsters, mergeMonsterGroups } from "./events/monsterSpawnTick.mjs";
 import { upgradeTickProcessor } from "./events/upgradeTick.mjs";
 import { processCrafting } from "./events/craftingTick.mjs"; 
-import { processMonsterStrategies } from "./events/monsterStrategyTick.mjs"; // Import the monster strategy processor
+import { processMonsterStrategies } from "./events/monsterStrategyTick.mjs"; // Only import strategy processor
 
 // Process world ticks to handle mobilizations and other time-based events
 export const processGameTicks = onSchedule({
@@ -176,11 +176,10 @@ export const processGameTicks = onSchedule({
         
         if (strategyResult.totalProcessed) {
           monsterStrategiesProcessed += strategyResult.totalProcessed;
-          monsterGroupsMerged += strategyResult.groupsMerged || 0;
           console.log(`Processed ${strategyResult.totalProcessed} monster strategies in world ${worldId}`);
           console.log(`Monster strategies: ${strategyResult.movesInitiated} moves, ${strategyResult.gatheringStarted} gathering, ` + 
                      `${strategyResult.structuresBuildStarted} building, ${strategyResult.structuresUpgraded} upgrades, ` +
-                     `${strategyResult.battlesJoined} battles joined, ${strategyResult.groupsMerged} groups merged`);
+                     `${strategyResult.battlesJoined} battles joined`);
         }
       }
       
@@ -189,6 +188,13 @@ export const processGameTicks = onSchedule({
         const spawnedCount = await spawnMonsters(worldId);
         monstersSpawned += spawnedCount;
         console.log(`Spawned ${spawnedCount} monster groups in world ${worldId}`);
+      }
+      
+      // Add separate merging process with 15% chance each tick
+      if (Math.random() < 0.15) {
+        const mergeCount = await mergeMonsterGroups(worldId);
+        monsterGroupsMerged += mergeCount;
+        console.log(`Merged ${mergeCount} monster groups in world ${worldId}`);
       }
     }
     

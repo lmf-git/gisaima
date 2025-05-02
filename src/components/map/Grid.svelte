@@ -938,19 +938,8 @@
     if (cell.groups && cell.groups.length > 0) {
       cell.groups.forEach(group => {
         if (group.type === 'monster' || group.monsterType) {
-          // For mixed monster groups, use the dominantType property
-          if (group.isMixed && group.composition) {
-            // If mixed monster group has composition data, use it to add weights
-            let totalWeight = 0;
-            for (const [type, count] of Object.entries(group.composition)) {
-              totalWeight += count;
-            }
-            // Apply the total weight with a multiplier
-            monsterCount += totalWeight * 2;
-          } else {
-            // For regular monster groups, just count units
-            monsterCount += (group.units?.length || 1) * 2;
-          }
+          // For regular monster groups, just count units
+          monsterCount += (group.units?.length || 1) * 2;
         } else if (group.race) {
           // Give groups slightly more weight than individual players
           raceCounts[group.race.toLowerCase()] = (raceCounts[group.race.toLowerCase()] || 0) + 1.5;
