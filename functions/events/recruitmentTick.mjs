@@ -32,7 +32,6 @@ export function processRecruitment(worldId, updates, chunkKey, tileKey, tile, no
     // Check if the recruitment is complete
     if (recruitment.completesAt && recruitment.completesAt <= now) {
       // Get parameters from the recruitment
-      const unitType = recruitment.unitType || 'unknown';
       const unitName = recruitment.unitName || 'Unknown Unit';
       const quantity = recruitment.quantity || 1;
       const owner = recruitment.owner;

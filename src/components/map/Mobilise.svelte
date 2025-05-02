@@ -324,8 +324,8 @@
                       {#if unit.race}
                         <span class="race-tag">{_fmt(unit.race)}</span>
                       {/if}
-                      {#if unit.strength}
-                        <span class="strength-tag">STR: {unit.strength}</span>
+                      {#if unit.power}
+                        <span class="strength-tag">STR: {unit.power}</span>
                       {/if}
                       {#if unit.group}
                         <span class="group-tag">From: {unit.group}</span>
