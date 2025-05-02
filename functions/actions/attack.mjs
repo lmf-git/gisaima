@@ -167,13 +167,14 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
       targetTypes,
       side1: {
         groups: attackerGroupIds.reduce((acc, id) => {
-          // Store additional info about each group instead of just 'true'
+          // Store complete unit data for each group (not just 'true')
           const group = attackerGroups.find(g => g.id === id);
           acc[id] = {
             present: true,
             type: group.type || 'player',
             race: group.race || 'unknown',
-            monsterType: group.monsterType
+            monsterType: group.monsterType,
+            units: group.units || {} // Include full units data
           };
           return acc;
         }, {}),
@@ -182,13 +183,14 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
       },
       side2: {
         groups: defenderGroupIds ? defenderGroupIds.reduce((acc, id) => {
-          // Store additional info about each group
+          // Store complete unit data for each group
           const group = defenderGroups.find(g => g.id === id);
           acc[id] = {
             present: true,
             type: group.type || 'player',
             race: group.race || 'unknown',
-            monsterType: group.monsterType
+            monsterType: group.monsterType,
+            units: group.units || {} // Include full units data
           };
           return acc;
         }, {}) : {},
