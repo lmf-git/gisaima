@@ -331,9 +331,6 @@
     ...(allBattles.length > 0 ? ['battles'] : [])  // Add battles
   ]);
   
-  // Always show filter tabs if there are any entities, not just multiple types
-  const showFilterTabs = $derived(nonEmptyFilters.length > 0);
-  
   // Auto-select filter if there's only one type with content and expand that section
   $effect(() => {
     if (nonEmptyFilters.length === 1) {
@@ -451,120 +448,6 @@
     
     // For other entities like groups or structures, check the owner property
     return entity.owner?.toString() === $currentPlayer.id?.toString();
-  }
-
-  // Format total power for each side
-  function formatPower(power) {
-    if (!power && power !== 0) return '?';
-    return power.toLocaleString();
-  }
-
-  // Determine winning side CSS class
-  function getWinningSideClass(battle, side) {
-    if (!battle) return '';
-    return battle.winner === side ? 'winning-side' : 'losing-side';
-  }
-
-  // Get battle participant groups count for each side - updated for simplified battle data
-  function getParticipantCountBySide(battle, side) {
-    if (!battle) return 0;
-    const sideKey = side === 1 ? 'side1' : 'side2';
-    return battle[sideKey]?.groups ? Object.keys(battle[sideKey].groups).length : 0;
-  }
-
-  // Check if current player is participating in battle - updated for simplified battle data
-  function isPlayerInBattle(battle) {
-    if (!battle || !$currentPlayer) return false;
-    
-    // Check side 1
-    const inSide1 = battle.side1?.groups && Object.keys(battle.side1.groups)
-      .some(groupId => {
-        const group = $coordinates
-          .flatMap(c => c.groups || [])
-          .find(g => g.id === groupId);
-        return group && group.owner === $currentPlayer.id;
-      });
-    
-    // Check side 2
-    const inSide2 = battle.side2?.groups && Object.keys(battle.side2.groups)
-      .some(groupId => {
-        const group = $coordinates
-          .flatMap(c => c.groups || [])
-          .find(g => g.id === groupId);
-        return group && group.owner === $currentPlayer.id;
-      });
-    
-    return inSide1 || inSide2;
-  }
-
-  // Add the missing function - isPlayerAvailableOnTile
-  function isPlayerAvailableOnTile(tile, playerId) {
-    if (!tile || !tile.players || !tile.players.some(p => p.id === playerId || p.id === playerId)) {
-      return false;
-    }
-    
-    if (tile.groups) {
-      const playerInDemobilisingGroup = tile.groups.some(group => 
-        group.status === 'demobilising' && 
-        group.owner === playerId && 
-        hasPlayerUnit(group, playerId)
-      );
-      return !playerInDemobilisingGroup;
-    }
-    
-    return true;
-  }
-
-  // Add helper function if it's not already defined
-  function hasPlayerUnit(group, playerId) {
-    if (!group || !group.units) return false;
-    
-    if (Array.isArray(group.units)) {
-      return group.units.some(unit => 
-        (unit.id === playerId || unit.id === playerId) && unit.type === 'player'
-      );
-    } 
-    
-    return Object.values(group.units).some(unit => 
-      (unit.id === playerId || unit.id === playerId) && unit.type === 'player'
-    );
-  }
-  
-  // Check if a group is idle on a specific tile
-  function hasIdlePlayerGroups(tile, playerId) {
-    if (!tile || !tile.groups || !playerId) return false;
-    return tile.groups.some(group => 
-      group.owner === playerId && 
-      group.status === 'idle' && 
-      !group.inBattle
-    );
-  }
-  
-  // Handle battle-specific actions
-  function handleBattleAction(actionType, battle) {
-    console.log(`Battle action: ${actionType} for battle:`, battle);
-    
-    // Navigate to the battle location first
-    moveTarget(battle.x, battle.y);
-    setHighlighted(battle.x, battle.y);
-    
-    // For join battle, also show the join battle modal
-    if (actionType === 'joinBattle') {
-      // Find the tile data for this location
-      const tile = $coordinates.find(c => c.x === battle.x && c.y === battle.y);
-      if (tile) {
-        onShowModal?.({ type: 'joinBattle', data: tile });
-      }
-    }
-  }
-
-  // Add function to handle keyboard events
-  function handleKeyDown(event) {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      event.stopPropagation();
-      handleClose();
-    }
   }
 </script>
 
@@ -1271,15 +1154,15 @@
                   </div>
                   
                   <div class="battle-sides">
-                    <div class="battle-side side1" class:winning-side={battle.winner === 1} class:losing-side={battle.winner === 2}>
-                      <div class="side-name">{battle.side1.name}</div>
-                      <div class="unit-count">Groups: {battle.side1?.groups.length}</div>
+                    <div class="battle-side side1" class:winning-side={battle?.winner === 1} class:losing-side={battle?.winner === 2}>
+                      <div class="side-name">{battle?.side1.name}</div>
+                      <div class="unit-count">Groups: {battle?.side1?.groups.length}</div>
                       {#if battle.side1?.casualties > 0}
                         <div class="casualties">Lost: {battle.side1?.casualties}</div>
                       {/if}
                     </div>
                     <div class="battle-vs">vs</div>
-                    <div class="battle-side side2" class:winning-side={battle.winner === 2} class:losing-side={battle.winner === 1}>
+                    <div class="battle-side side2" class:winning-side={battle?.winner === 2} class:losing-side={battle.winner === 1}>
                       <div class="side-name">{battle.side2?.name}</div>
                       <div class="unit-count">
                         Groups: {battle.side2?.groups.length}
