@@ -259,9 +259,8 @@ function processChunkData(data = {}, chunkKey) {
       updates.players[fullTileKey] = [];
     }
 
-    // Process unit groups 
+    // Process unit groups
     if (tileData.groups) {
-      // Process groups
       updates.groups[fullTileKey] = Object.entries(tileData.groups)
         .map(([id, data]) => ({ ...data, id, x, y }));
       validGroupKeys.add(fullTileKey);
@@ -271,17 +270,19 @@ function processChunkData(data = {}, chunkKey) {
       updates.groups[fullTileKey] = [];
     }
 
-    // Process battles directly from tileData.battles
+    // Process battles directly from tileData.battles (simplified)
     if (tileData.battles) {
       updates.battles[fullTileKey] = Object.entries(tileData.battles).map(([battleId, battleData]) => ({
         ...battleData,
         id: battleId,
-        x, y,
+        x: parseInt(x),
+        y: parseInt(y),
         distance: Math.sqrt(Math.pow(x - get(map).target.x, 2) + Math.pow(y - get(map).target.y, 2))
       }));
       validBattleKeys.add(fullTileKey);
       entitiesChanged = true;
     } else {
+      // Explicitly mark as empty if no battles
       updates.battles[fullTileKey] = [];
     }
 

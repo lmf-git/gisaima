@@ -248,7 +248,7 @@
     if (onClose) onClose();
   }
   
-  // Extract all entities from all visible coordinates - fixed $derived syntax
+  // Extract all entities from all visible coordinates - simplified battle extraction
   const allStructures = $derived(
     $coordinates
       .map(cell => cell.structure ? {
@@ -300,81 +300,29 @@
       .sort((a, b) => a.distance - b.distance)
   );
 
-  // Extract all battles from all visible coordinates - simplified to use direct battle data
+  // Simplified battles extraction - directly from coordinates
   const allBattles = $derived(
-    $coordinates || [])
-      .flatMap(cell => cell.battles || [])distance - b.distance)
-      .map(battle => ({
-        ...battle,
-        // Make sure we have consistent structure for UI displayd $derived syntax
-        sides: {
-          side1: battle.side1 || { groups: {}, casualties: 0 },reduce((chunks, cell) => {
-          side2: battle.side2 || { groups: {}, casualties: 0 }cell.chunkKey) chunks.add(cell.chunkKey);
-        }
-      }))Set()).size
+    $coordinates
+      .flatMap(cell => 
+        (cell.battles || []).map(battle => ({
+          ...battle,
+          x: cell.x,
+          y: cell.y,
+          distance: cell.distance
+        }))
+      )
       .sort((a, b) => a.distance - b.distance)
   );
-   Track non-empty filter types - fix $derived syntax
-  // Helper function to process battle data for UI displayconst nonEmptyFilters = $derived([
-  function processBattleData(battle, x, y, distance) {
-    if (!battle) return null;
-? ['groups'] : []),
-    // Get groups for each side    ...(allItems.length > 0 ? ['items'] : []),
-    const side1Groups = Object.entries(battle.side1?.groups || {}) ['battles'] : [])  // Add battles
-      .filter(([_, value]) => value !== null)
-      .map(([groupId, info]) => ({ id: groupId, ...info }));
-      just multiple types
-    const side2Groups = Object.entries(battle.side2?.groups || {})t showFilterTabs = $derived(nonEmptyFilters.length > 0);
-      .filter(([_, value]) => value !== null)
-      .map(([groupId, info]) => ({ id: groupId, ...info }));ype with content and expand that section
-
-    // Create battle data object with all necessary information    if (nonEmptyFilters.length === 1) {
-    return {
-      id: battle.id,sedSections[nonEmptyFilters[0]] = false; // Ensure section is expanded
-      type: 'battle',ptyFilters.length > 0 && !nonEmptyFilters.includes(activeFilter) && activeFilter !== 'all') {
-      x,);
-      y,
-      distance,
-      tickCount: battle.tickCount || 0,
-      createdAt: battle.createdAt,le based on the active filter
-      sides: {onType) {
-        side1: {iveFilter === 'all' || activeFilter === sectionType;
-          name: battle.side1?.name || 'Attackers',
-          casualties: battle.side1?.casualties || 0,
-          groups: side1Groups,d when selecting a specific filter
-          count: side1Groups.length,
-          power: battle.side1?.power
-        },
-        side2: {selecting a specific filter (not 'all'), make sure the section is expanded
-          name: battle.side2?.name || 'Defenders', == 'all') {
-          casualties: battle.side2?.casualties || 0,
-          groups: side2Groups,
-          count: side2Groups.length,
-          power: battle.side2?.power
-        } for a given filter
-      },n hasContent(filter) {
-      winner: battle.winner,ch(filter) {
-      status: battle.winner ? 'resolved' : 'active',urn allStructures.length > 0;
-      structureId: battle.structureId,
-      structureInfo: battle.side2?.structureInfo,length > 0;
-      
-      // Calculate if current player is involvedcase 'battles': return allBattles.length > 0;
-      isPlayerBattle: $currentPlayer && (0 || allPlayers.length > 0 || allGroups.length > 0 || allItems.length > 0 || allBattles.length > 0;
-        (Object.values(battle.side1?.groups || {}).some(g => g && g.owner === $currentPlayer.id)) ||
-        (Object.values(battle.side2?.groups || {}).some(g => g && g.owner === $currentPlayer.id))
-      )
-    };
-  }alculate count for each filter
-  unction getFilterCount(filter) {
-  // Calculate visible chunks count - fixed $derived syntax  switch(filter) {
+  
+  // Calculate visible chunks count - fixed $derived syntax
   const visibleChunks = $derived(
-    $coordinates.reduce((chunks, cell) => {layers.length;
-      if (cell.chunkKey) chunks.add(cell.chunkKey);h;
+    $coordinates.reduce((chunks, cell) => {
+      if (cell.chunkKey) chunks.add(cell.chunkKey);
       return chunks;
-    }, new Set()).size: return allBattles.length;
-  );0;
-  }
-  // Track non-empty filter types - fix $derived syntax}
+    }, new Set()).size
+  );
+  
+  // Track non-empty filter types - fix $derived syntax
   const nonEmptyFilters = $derived([
     ...(allStructures.length > 0 ? ['structures'] : []),
     ...(allPlayers.length > 0 ? ['players'] : []),
@@ -382,13 +330,13 @@
     ...(allItems.length > 0 ? ['items'] : []),
     ...(allBattles.length > 0 ? ['battles'] : [])  // Add battles
   ]);
-  ction isAtTarget(x, y) {
-  // Always show filter tabs if there are any entities, not just multiple types  return $targetStore && $targetStore.x === x && $targetStore.y === y;
+  
+  // Always show filter tabs if there are any entities, not just multiple types
   const showFilterTabs = $derived(nonEmptyFilters.length > 0);
   
-  // Auto-select filter if there's only one type with content and expand that section// Enhanced handler for entity clicks that supports keyboard events
+  // Auto-select filter if there's only one type with content and expand that section
   $effect(() => {
-    if (nonEmptyFilters.length === 1) {ent propagation
+    if (nonEmptyFilters.length === 1) {
       setFilter(nonEmptyFilters[0]);
       collapsedSections[nonEmptyFilters[0]] = false; // Ensure section is expanded
     } else if (nonEmptyFilters.length > 0 && !nonEmptyFilters.includes(activeFilter) && activeFilter !== 'all') {
@@ -396,278 +344,279 @@
     }
   });
   
-  // Check if a section should be visible based on the active filter  console.log('Navigating to entity at:', x, y);
+  // Check if a section should be visible based on the active filter
   function shouldShowSection(sectionType) {
-    return activeFilter === 'all' || activeFilter === sectionType;location
+    return activeFilter === 'all' || activeFilter === sectionType;
   }
-   
-  // Set active filter and ensure section is expanded when selecting a specific filter  // Also highlight the tile
+  
+  // Set active filter and ensure section is expanded when selecting a specific filter
   function setFilter(filter) {
     activeFilter = filter;
     
-    // If selecting a specific filter (not 'all'), make sure the section is expanded Modified function to get sorted tabs with enabled ones first
+    // If selecting a specific filter (not 'all'), make sure the section is expanded
     if (filter !== 'all') {
-      collapsedSections[filter] = false; the first tab
-    }d === 'all');
+      collapsedSections[filter] = false;
+    }
   }
-   // Get other tabs and sort them - enabled first, then disabled
-  // Calculate if any content exists for a given filter  const otherTabs = filters
+  
+  // Calculate if any content exists for a given filter
   function hasContent(filter) {
     switch(filter) {
-      case 'structures': return allStructures.length > 0;ntent = hasContent(a.id);
+      case 'structures': return allStructures.length > 0;
       case 'players': return allPlayers.length > 0;
       case 'groups': return allGroups.length > 0;
-      case 'items': return allItems.length > 0;1;
-      case 'battles': return allBattles.length > 0; 1;
+      case 'items': return allItems.length > 0;
+      case 'battles': return allBattles.length > 0;
       case 'all': return allStructures.length > 0 || allPlayers.length > 0 || allGroups.length > 0 || allItems.length > 0 || allBattles.length > 0;
       default: return false;
     }
-  }/ Return all tab followed by sorted others
-   return [allTab, ...otherTabs];
-  // Calculate count for each filter}
+  }
+  
+  // Calculate count for each filter
   function getFilterCount(filter) {
-    switch(filter) { for a group
-      case 'structures': return allStructures.length;temCount(group) {
+    switch(filter) {
+      case 'structures': return allStructures.length;
       case 'players': return allPlayers.length;
-      case 'groups': return allGroups.length;tems.length : Object.keys(group.items).length;
+      case 'groups': return allGroups.length;
       case 'items': return allItems.length;
       case 'battles': return allBattles.length;
-      default: return 0;rent player
-    }entPlayer(entity) {
-  }f (!$currentPlayer || !entity) return false;
-   
-  // Format coordinates for display  // For player entities, compare the ID directly 
-  function formatCoords(x, y) {fined && entity.id !== undefined && !entity.owner) {
-    return `${x},${y}`;rentPlayer.id;
+      default: return 0;
+    }
   }
-   
-  // Check if the entity is at the target location  // For other entities like groups or structures, check the owner property
-  function isAtTarget(x, y) {ayer.id?.toString();
+  
+  // Format coordinates for display
+  function formatCoords(x, y) {
+    return `${x},${y}`;
+  }
+  
+  // Check if the entity is at the target location
+  function isAtTarget(x, y) {
     return $targetStore && $targetStore.x === x && $targetStore.y === y;
   }
-/ Format total power for each side
-  // Enhanced handler for entity clicks that supports keyboard events  function formatPower(power) {
+
+  // Enhanced handler for entity clicks that supports keyboard events
   function handleEntityAction(x, y, event) {
     // Prevent event propagation
     event.stopPropagation();
     
-    // For keyboard events, only proceed if Enter or Space was pressed Determine winning side CSS class
+    // For keyboard events, only proceed if Enter or Space was pressed
     if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') {
       return;
-    }ttle.winner === side ? 'winning-side' : 'losing-side';
+    }
     
     console.log('Navigating to entity at:', x, y);
-    side
-    // Move the map target to the entity's locationnction getParticipantCountBySide(battle, side) {
-    moveTarget(x, y);ide]) return 0;
-    es[side].groups?.length || 0;
+    
+    // Move the map target to the entity's location
+    moveTarget(x, y);
+    
     // Also highlight the tile
     setHighlighted(x, y);
-  }yer is participating in battle
-unction isPlayerInBattle(battle) {
-  // Modified function to get sorted tabs with enabled ones first    if (!battle || !battle.participants || !$currentPlayer) return false;
+  }
+
+  // Modified function to get sorted tabs with enabled ones first
   function getSortedFilterTabs() {
-    // Always keep "all" as the first tabrticipants list
+    // Always keep "all" as the first tab
     const allTab = filters.find(f => f.id === 'all');
-    Player.id
-    // Get other tabs and sort them - enabled first, then disabled);
+    
+    // Get other tabs and sort them - enabled first, then disabled
     const otherTabs = filters
       .filter(f => f.id !== 'all')
-      .sort((a, b) => {PlayerAvailableOnTile
-        const aHasContent = hasContent(a.id);lableOnTile(tile, playerId) {
-        const bHasContent = hasContent(b.id);rs.some(p => p.id === playerId || p.id === playerId)) {
+      .sort((a, b) => {
+        const aHasContent = hasContent(a.id);
+        const bHasContent = hasContent(b.id);
         
         if (aHasContent && !bHasContent) return -1;
         if (!aHasContent && bHasContent) return 1;
         return 0;
-      });rInDemobilisingGroup = tile.groups.some(group => 
-    roup.status === 'demobilising' && 
-    // Return all tab followed by sorted others    group.owner === playerId && 
+      });
+    
+    // Return all tab followed by sorted others
     return [allTab, ...otherTabs];
   }
-   return !playerInDemobilisingGroup;
-  // Function to display item count for a group    }
+
+  // Function to display item count for a group
   function getGroupItemCount(group) {
     if (!group.items) return 0;
     return Array.isArray(group.items) ? group.items.length : Object.keys(group.items).length;
   }
-/ Add helper function if it's not already defined
-  // Function to check if entity belongs to current player  function hasPlayerUnit(group, playerId) {
+
+  // Function to check if entity belongs to current player
   function isOwnedByCurrentPlayer(entity) {
     if (!$currentPlayer || !entity) return false;
     
-    // For player entities, compare the ID directly   return group.units.some(unit => 
-    if (entity.displayName !== undefined && entity.id !== undefined && !entity.owner) {d) && unit.type === 'player'
+    // For player entities, compare the ID directly 
+    if (entity.displayName !== undefined && entity.id !== undefined && !entity.owner) {
       return entity.id === $currentPlayer.id;
     }
     
-    // For other entities like groups or structures, check the owner propertyreturn Object.values(group.units).some(unit => 
-    return entity.owner?.toString() === $currentPlayer.id?.toString();'
+    // For other entities like groups or structures, check the owner property
+    return entity.owner?.toString() === $currentPlayer.id?.toString();
   }
 
-  // Format total power for each side  
-  function formatPower(power) {ecific tile
-    if (!power && power !== 0) return '?';tile, playerId) {
-    return power.toLocaleString();) return false;
-  }=> 
-   group.owner === playerId && 
-  // Determine winning side CSS class      group.status === 'idle' && 
+  // Format total power for each side
+  function formatPower(power) {
+    if (!power && power !== 0) return '?';
+    return power.toLocaleString();
+  }
+
+  // Determine winning side CSS class
   function getWinningSideClass(battle, side) {
     if (!battle) return '';
     return battle.winner === side ? 'winning-side' : 'losing-side';
   }
-/ Handle battle-specific actions
-  // Get battle participant groups count for each side - simplified  function handleBattleAction(actionType, battle) {
-  function getParticipantCountBySide(battle, side) {le:`, battle);
+
+  // Get battle participant groups count for each side - updated for simplified battle data
+  function getParticipantCountBySide(battle, side) {
+    if (!battle) return 0;
     const sideKey = side === 1 ? 'side1' : 'side2';
-    if (!battle || !battle[sideKey] || !battle[sideKey].groups) return 0;
-    return Object.keys(battle[sideKey].groups).length;
-  } setHighlighted(battle.x, battle.y);
-    
-  // Check if current player is participating in battle
-  function isPlayerInBattle(battle) {{
+    return battle[sideKey]?.groups ? Object.keys(battle[sideKey].groups).length : 0;
+  }
+
+  // Check if current player is participating in battle - updated for simplified battle data
+  function isPlayerInBattle(battle) {
     if (!battle || !$currentPlayer) return false;
-      const tile = $coordinates.find(c => c.x === battle.x && c.y === battle.y);
-    // Check if player owns any groups in either side
-    const isInSide1 = battle.side1?.groups && Object.keys(battle.side1.groups)', data: tile });
+    
+    // Check side 1
+    const inSide1 = battle.side1?.groups && Object.keys(battle.side1.groups)
       .some(groupId => {
         const group = $coordinates
           .flatMap(c => c.groups || [])
           .find(g => g.id === groupId);
         return group && group.owner === $currentPlayer.id;
       });
-      
-    const isInSide2 = battle.side2?.groups && Object.keys(battle.side2.groups)Default();
-      .some(groupId => { event.stopPropagation();
-        const group = $coordinates  handleClose();
+    
+    // Check side 2
+    const inSide2 = battle.side2?.groups && Object.keys(battle.side2.groups)
+      .some(groupId => {
+        const group = $coordinates
           .flatMap(c => c.groups || [])
           .find(g => g.id === groupId);
         return group && group.owner === $currentPlayer.id;
       });
     
-    return isInSide1 || isInSide2;"entities-wrapper" 
+    return inSide1 || inSide2;
   }
-ss:active={isActive}
-  // Add the missing function - isPlayerAvailableOnTilemouseenter={onMouseEnter}
+
+  // Add the missing function - isPlayerAvailableOnTile
   function isPlayerAvailableOnTile(tile, playerId) {
-    if (!tile || !tile.players || !tile.players.some(p => p.id === playerId || p.id === playerId)) {ria-label="Map entities overview"
-      return false;  aria-modal="true"
+    if (!tile || !tile.players || !tile.players.some(p => p.id === playerId || p.id === playerId)) {
+      return false;
     }
     
     if (tile.groups) {
-      const playerInDemobilisingGroup = tile.groups.some(group =>   Map Entities
-        group.status === 'demobilising' && Chunks} chunks visible</span>
+      const playerInDemobilisingGroup = tile.groups.some(group => 
+        group.status === 'demobilising' && 
         group.owner === playerId && 
         hasPlayerUnit(group, playerId)
-      );utton 
-      return !playerInDemobilisingGroup;  class="close-button" 
-    }    onclick={handleClose} 
+      );
+      return !playerInDemobilisingGroup;
+    }
     
     return true;
-  }>
-     <Close size="1.6em" extraClass="close-icon-dark" />
-  // Add helper function if it's not already defined    </button>
+  }
+
+  // Add helper function if it's not already defined
   function hasPlayerUnit(group, playerId) {
     if (!group || !group.units) return false;
-    ities exist -->
+    
     if (Array.isArray(group.units)) {
       return group.units.some(unit => 
-        (unit.id === playerId || unit.id === playerId) && unit.type === 'player's() as filter}
+        (unit.id === playerId || unit.id === playerId) && unit.type === 'player'
       );
-    }       class="filter-tab {filter.id === activeFilter ? 'active' : ''} {hasContent(filter.id) ? 'has-content' : ''}"
-             onclick={() => setFilter(filter.id)}
-    return Object.values(group.units).some(unit =>           disabled={!hasContent(filter.id)}
+    } 
+    
+    return Object.values(group.units).some(unit => 
       (unit.id === playerId || unit.id === playerId) && unit.type === 'player'
     );
   }
-            <span class="filter-count" class:filter-count-structures={filter.id === 'structures'} class:filter-count-players={filter.id === 'players'} class:filter-count-groups={filter.id === 'groups'} class:filter-count-items={filter.id === 'items'} class:filter-count-battles={filter.id === 'battles'}>
+  
   // Check if a group is idle on a specific tile
   function hasIdlePlayerGroups(tile, playerId) {
     if (!tile || !tile.groups || !playerId) return false;
-    return tile.groups.some(group =>       </button>
+    return tile.groups.some(group => 
       group.owner === playerId && 
       group.status === 'idle' && 
       !group.inBattle
     );
-  }ntities-content"> 
+  }
   
-  // Handle battle-specific actions#if shouldShowSection('structures') && allStructures.length > 0}
-  function handleBattleAction(actionType, battle) {   <div class="entities-section">
-    console.log(`Battle action: ${actionType} for battle:`, battle);       <!-- Only show section header when on "all" tab -->
-              {#if activeFilter === 'all'}
+  // Handle battle-specific actions
+  function handleBattleAction(actionType, battle) {
+    console.log(`Battle action: ${actionType} for battle:`, battle);
+    
     // Navigate to the battle location first
-    moveTarget(battle.x, battle.y);er"
-    setHighlighted(battle.x, battle.y);gleSection('structures', e)}
+    moveTarget(battle.x, battle.y);
+    setHighlighted(battle.x, battle.y);
     
     // For join battle, also show the join battle modal
-    if (actionType === 'joinBattle') {xpanded={!collapsedSections.structures}
-      // Find the tile data for this location         onkeydown={(e) => e.key === 'Enter' && toggleSection('structures', e)}
-      const tile = $coordinates.find(c => c.x === battle.x && c.y === battle.y);         >
-      if (tile) {     <div class="section-title">
-        onShowModal?.({ type: 'joinBattle', data: tile });                Structures <span class="section-count filter-count filter-count-structures">{allStructures.length}</span>
-      }     </div>
-    }ection-controls">
-  }{#if !collapsedSections.structures}
-ass="sort-controls">
+    if (actionType === 'joinBattle') {
+      // Find the tile data for this location
+      const tile = $coordinates.find(c => c.x === battle.x && c.y === battle.y);
+      if (tile) {
+        onShowModal?.({ type: 'joinBattle', data: tile });
+      }
+    }
+  }
+
   // Add function to handle keyboard events
-  function handleKeyDown(event) {       class="sort-option"
-    if (event.key === 'Escape') {sortOptions.structures.by === 'distance'}
-      event.preventDefault();   onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'distance'); }}
-      event.stopPropagation();                   >
-      handleClose();stance</span>
-    }{#if sortOptions.structures.by === 'distance'}
-  }      <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+  function handleKeyDown(event) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      handleClose();
+    }
+  }
 </script>
-              </button>
+
 <section 
-  class="entities-wrapper"         class="sort-option" 
-  class:closing ctive={sortOptions.structures.by === 'name'}
-  class:active={isActive}{(e) => { e.stopPropagation(); setSortOption('structures', 'name'); }}
+  class="entities-wrapper" 
+  class:closing 
+  class:active={isActive}
   onmouseenter={onMouseEnter}
   role="dialog"
-  aria-label="Map entities overview"               {#if sortOptions.structures.by === 'name'}
-  aria-modal="true"ptions.structures.asc ? '↑' : '↓'}</span>
->       {/if}
-  <div class="entities-panel">           </button>
-    <h3 class="title">                <button 
+  aria-label="Map entities overview"
+  aria-modal="true"
+>
+  <div class="entities-panel">
+    <h3 class="title">
       Map Entities
-      <span class="subtitle">{visibleChunks} chunks visible</span>sortOptions.structures.by === 'type'}
-      (e) => { e.stopPropagation(); setSortOption('structures', 'type'); }}
+      <span class="subtitle">{visibleChunks} chunks visible</span>
+      
       <!-- Replace the close button to match the size in Details component -->
-      <button     <span>Type</span>
+      <button 
         class="close-button" 
-        onclick={handleClose} ion">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+        onclick={handleClose} 
         aria-label="Close map entities panel"
-        onkeydown={(e) => e.key === 'Escape' && handleClose()}         </button>
+        onkeydown={(e) => e.key === 'Escape' && handleClose()}
       >
         <Close size="1.6em" extraClass="close-icon-dark" />
       </button>
-    </h3>ures ? '▼' : '▲'}
-    ton>
-    <!-- Force filter tabs to always display when any entities exist -->iv>
+    </h3>
+    
+    <!-- Force filter tabs to always display when any entities exist -->
     {#if nonEmptyFilters.length > 0}
-      <div class="filter-tabs">e}
-        {#each getSortedFilterTabs() as filter}<!-- Just show sort controls on specific tabs -->
-          <button    <div class="tab-sort-controls">
-            class="filter-tab {filter.id === activeFilter ? 'active' : ''} {hasContent(filter.id) ? 'has-content' : ''}"          <div class="sort-controls">
+      <div class="filter-tabs">
+        {#each getSortedFilterTabs() as filter}
+          <button 
+            class="filter-tab {filter.id === activeFilter ? 'active' : ''} {hasContent(filter.id) ? 'has-content' : ''}"
             onclick={() => setFilter(filter.id)}
-            disabled={!hasContent(filter.id)}ion"
-          >'}
-            {filter.label}rtOption('structures', 'distance')}
+            disabled={!hasContent(filter.id)}
+          >
+            {filter.label}
             {#if getFilterCount(filter.id) > 0}
-              <span class="filter-count" class:filter-count-structures={filter.id === 'structures'} class:filter-count-players={filter.id === 'players'} class:filter-count-groups={filter.id === 'groups'} class:filter-count-items={filter.id === 'items'} class:filter-count-battles={filter.id === 'battles'}>>
-                {getFilterCount(filter.id)} {#if sortOptions.structures.by === 'distance'}
-              </span>t-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+              <span class="filter-count" class:filter-count-structures={filter.id === 'structures'} class:filter-count-players={filter.id === 'players'} class:filter-count-groups={filter.id === 'groups'} class:filter-count-items={filter.id === 'items'} class:filter-count-battles={filter.id === 'battles'}>
+                {getFilterCount(filter.id)}
+              </span>
             {/if}
           </button>
         {/each}
       </div>
     {/if}
-         onclick={() => setSortOption('structures', 'name')}
+    
     <div class="entities-content"> 
       <!-- Structures Section -->
-      {#if shouldShowSection('structures') && allStructures.length > 0}if sortOptions.structures.by === 'name'}
-        <div class="entities-section">ion">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+      {#if shouldShowSection('structures') && allStructures.length > 0}
+        <div class="entities-section">
           <!-- Only show section header when on "all" tab -->
           {#if activeFilter === 'all'}
             <div 
@@ -684,44 +633,44 @@ ass="sort-controls">
               <div class="section-controls">
                 {#if !collapsedSections.structures}
                   <div class="sort-controls">
-                    <button "section-content" 
-                      class="sort-option"lter !== 'all' || !collapsedSections.structures} 
-                      class:active={sortOptions.structures.by === 'distance'}sedSections.structures}>
+                    <button 
+                      class="sort-option"
+                      class:active={sortOptions.structures.by === 'distance'}
                       onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'distance'); }}
-                    >Structures as structure (structure.type + ':' + structure.x + ':' + structure.y)}
+                    >
                       <span>Distance</span>
-                      {#if sortOptions.structures.by === 'distance'}ity structure {isAtTarget(structure.x, structure.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(structure) ? 'current-player-owned' : ''}"
-                        <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>.distance === 0}
-                      {/if}ture.y, e)}
+                      {#if sortOptions.structures.by === 'distance'}
+                        <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                      {/if}
                     </button>
-                    <button index="0"
-                      class="sort-option" to {structure.name || _fmt(structure.type) || 'Structure'} at {structure.x},{structure.y}"
+                    <button 
+                      class="sort-option" 
                       class:active={sortOptions.structures.by === 'name'}
                       onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'name'); }}
-                    >tructureClick(structure, structure.x, structure.y);
+                    >
                       <span>Name</span>
                       {#if sortOptions.structures.by === 'name'}
-                        <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>v class="entity-structure-icon">
-                      {/if}wn'}
-                    </button>ew-structure-icon overview-spawn-icon" />
-                    <button e}
-                      class="sort-option"   <Structure size="1.4em" extraClass={`overview-structure-icon ${structure.type}-icon`} />
-                      class:active={sortOptions.structures.by === 'type'}  {/if}
-                      onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'type'); }} </div>
-                    >
-                      <span>Type</span>">
-                      {#if sortOptions.structures.by === 'type'}_fmt(structure.type) || "Unknown"}
-                        <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>if isOwnedByCurrentPlayer(structure)}
-                      {/if}entity-badge owner-badge">Yours</span>
+                        <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                      {/if}
                     </button>
-                  </div>.x, structure.y)}</span>
-                {/if}   </div>
-                <button class="collapse-button">details">
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.structures.by === 'type'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('structures', 'type'); }}
+                    >
+                      <span>Type</span>
+                      {#if sortOptions.structures.by === 'type'}
+                        <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                  </div>
+                {/if}
+                <button class="collapse-button">
                   {collapsedSections.structures ? '▼' : '▲'}
                 </button>
-              </div>/if}
-            </div>v class="entity-distance">{formatDistance(structure.distance)}</div>
-          {:else}v>
+              </div>
+            </div>
+          {:else}
             <!-- Just show sort controls on specific tabs -->
             <div class="tab-sort-controls">
               <div class="sort-controls">
@@ -730,92 +679,92 @@ ass="sort-controls">
                   class:active={sortOptions.structures.by === 'distance'}
                   onclick={() => setSortOption('structures', 'distance')}
                 >
-                  <span>Distance</span>n -->
-                  {#if sortOptions.structures.by === 'distance'}tion('players') && allPlayers.length > 0}
+                  <span>Distance</span>
+                  {#if sortOptions.structures.by === 'distance'}
                     <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
                   {/if}
                 </button>
-                <button ss="section-header"
-                  class="sort-option" eSection('players', e)}
+                <button 
+                  class="sort-option" 
                   class:active={sortOptions.structures.by === 'name'}
                   onclick={() => setSortOption('structures', 'name')}
-                >nded={!collapsedSections.players}
-                  <span>Name</span>(e) => e.key === 'Enter' && toggleSection('players', e)}
+                >
+                  <span>Name</span>
                   {#if sortOptions.structures.by === 'name'}
-                    <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span> class="section-title">
-                  {/if} Players <span class="section-count filter-count filter-count-players">{allPlayers.length}</span>
-                </button>    </div>
-                <button ols">
+                    <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
                   class="sort-option" 
                   class:active={sortOptions.structures.by === 'type'}
                   onclick={() => setSortOption('structures', 'type')}
                 >
-                  <span>Type</span> class:active={sortOptions.players.by === 'distance'}
+                  <span>Type</span>
                   {#if sortOptions.structures.by === 'type'}
                     <span class="sort-direction">{sortOptions.structures.asc ? '↑' : '↓'}</span>
                   {/if}
-                </button>Options.players.by === 'distance'}
-              </div>class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                </button>
+              </div>
             </div>
           {/if}
           
           <div class="section-content" 
-               class:expanded={activeFilter !== 'all' || !collapsedSections.structures}   class:active={sortOptions.players.by === 'name'}
-               class:collapsed={activeFilter === 'all' && collapsedSections.structures}>     onclick={(e) => { e.stopPropagation(); setSortOption('players', 'name'); }}
+               class:expanded={activeFilter !== 'all' || !collapsedSections.structures} 
+               class:collapsed={activeFilter === 'all' && collapsedSections.structures}>
             {#if activeFilter !== 'all' || !collapsedSections.structures}
               {#each sortedStructures as structure (structure.type + ':' + structure.x + ':' + structure.y)}
                 <div 
-                  class="entity structure {isAtTarget(structure.x, structure.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(structure) ? 'current-player-owned' : ''}"an class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                  class="entity structure {isAtTarget(structure.x, structure.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(structure) ? 'current-player-owned' : ''}"
                   class:is-here={structure.distance === 0}
-                  onkeydown={(e) => handleEntityAction(structure.x, structure.y, e)}ton>
-                  role="button"ton 
+                  onkeydown={(e) => handleEntityAction(structure.x, structure.y, e)}
+                  role="button"
                   tabindex="0"
-                  aria-label="Navigate to {structure.name || _fmt(structure.type) || 'Structure'} at {structure.x},{structure.y}"ns.players.by === 'type'}
-                  onclick={(e) => {'players', 'type'); }}
+                  aria-label="Navigate to {structure.name || _fmt(structure.type) || 'Structure'} at {structure.x},{structure.y}"
+                  onclick={(e) => {
                     e.stopPropagation();
                     handleStructureClick(structure, structure.x, structure.y);
-                  }}sortOptions.players.by === 'type'}
+                  }}
                 >
-                  <div class="entity-structure-icon">}
+                  <div class="entity-structure-icon">
                     {#if structure.type === 'spawn'}
                       <Torch size="1.4em" extraClass="overview-structure-icon overview-spawn-icon" />
                     {:else}
-                      <Structure size="1.4em" extraClass={`overview-structure-icon ${structure.type}-icon`} />ss="collapse-button">
+                      <Structure size="1.4em" extraClass={`overview-structure-icon ${structure.type}-icon`} />
                     {/if}
                   </div>
                   <div class="entity-info">
                     <div class="entity-name">
                       {structure.name || _fmt(structure.type) || "Unknown"}
-                      {#if isOwnedByCurrentPlayer(structure)}class="tab-sort-controls">
-                        <span class="entity-badge owner-badge">Yours</span>iv class="sort-controls">
-                      {/if}  <button 
-                      <span class="entity-coords">{formatCoords(structure.x, structure.y)}</span>       class="sort-option"
-                    </div>           class:active={sortOptions.players.by === 'distance'}
-                    <div class="entity-details">=> setSortOption('players', 'distance')}
+                      {#if isOwnedByCurrentPlayer(structure)}
+                        <span class="entity-badge owner-badge">Yours</span>
+                      {/if}
+                      <span class="entity-coords">{formatCoords(structure.x, structure.y)}</span>
+                    </div>
+                    <div class="entity-details">
                       {#if structure.type}
-                        <div class="entity-type">{_fmt(structure.type)}</div>>
-                      {/if}yers.by === 'distance'}
-                      <div class="entity-distance">{formatDistance(structure.distance)}</div>   <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                        <div class="entity-type">{_fmt(structure.type)}</div>
+                      {/if}
+                      <div class="entity-distance">{formatDistance(structure.distance)}</div>
                     </div>
                   </div>
                 </div>
-              {/each}ort-option" 
-            {/if}== 'name'}
+              {/each}
+            {/if}
           </div>
-        </div>   >
+        </div>
       {/if}
        
-      <!-- Players Section --><span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+      <!-- Players Section -->
       {#if shouldShowSection('players') && allPlayers.length > 0}
         <div class="entities-section">
           {#if activeFilter === 'all'}
-            <div t-option" 
-              class="section-header"ns.players.by === 'type'}
+            <div 
+              class="section-header"
               onclick={(e) => toggleSection('players', e)}
               role="button"
-              tabindex="0"an>Race</span>
-              aria-expanded={!collapsedSections.players}by === 'type'}
-              onkeydown={(e) => e.key === 'Enter' && toggleSection('players', e)}yers.asc ? '↑' : '↓'}</span>
+              tabindex="0"
+              aria-expanded={!collapsedSections.players}
+              onkeydown={(e) => e.key === 'Enter' && toggleSection('players', e)}
             >
               <div class="section-title">
                 Players <span class="section-count filter-count filter-count-players">{allPlayers.length}</span>
@@ -823,47 +772,47 @@ ass="sort-controls">
               <div class="section-controls">
                 {#if !collapsedSections.players}
                   <div class="sort-controls">
-                    <button expanded={activeFilter !== 'all' || !collapsedSections.players}
-                      class="sort-option"ilter === 'all' && collapsedSections.players}>
-                      class:active={sortOptions.players.by === 'distance'}.players}
-                      onclick={(e) => { e.stopPropagation(); setSortOption('players', 'distance'); }}ty.y)}
+                    <button 
+                      class="sort-option"
+                      class:active={sortOptions.players.by === 'distance'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('players', 'distance'); }}
                     >
-                      <span>Distance</span>ty player {entity.id === $currentPlayer?.id ? 'current' : ''} {isAtTarget(entity.x, entity.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(entity) ? 'current-player-owned' : ''}"
-                      {#if sortOptions.players.by === 'distance'}ere={entity.distance === 0}
-                        <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>tityAction(entity.x, entity.y, e)}
-                      {/if}y.y, e)}
-                    </button>
-                    <button index="0"
-                      class="sort-option" to player {entity.displayName || 'Player'} at {entity.x},{entity.y}"
-                      class:active={sortOptions.players.by === 'name'}
-                      onclick={(e) => { e.stopPropagation(); setSortOption('players', 'name'); }}
-                    >tity.race}
-                      <span>Name</span>tity.race.toLowerCase() === 'human'}
-                      {#if sortOptions.players.by === 'name'}<Human extraClass="race-icon-overview" />
-                        <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span> {:else if entity.race.toLowerCase() === 'elf'}
-                      {/if}on-overview" />
-                    </button> === 'dwarf'}
-                    <button Dwarf extraClass="race-icon-overview" />
-                      class="sort-option"   {:else if entity.race.toLowerCase() === 'goblin'}
-                      class:active={sortOptions.players.by === 'type'}      <Goblin extraClass="race-icon-overview" />
-                      onclick={(e) => { e.stopPropagation(); setSortOption('players', 'type'); }}     {:else if entity.race.toLowerCase() === 'fairy'}
-                    >race-icon-overview" />
-                      <span>Race</span>
-                      {#if sortOptions.players.by === 'type'}}
+                      <span>Distance</span>
+                      {#if sortOptions.players.by === 'distance'}
                         <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
                       {/if}
                     </button>
-                  </div>     {entity.displayName || 'Player'}
-                {/if}rentPlayer(entity)}
-                <button class="collapse-button">">You</span>
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.players.by === 'name'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('players', 'name'); }}
+                    >
+                      <span>Name</span>
+                      {#if sortOptions.players.by === 'name'}
+                        <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.players.by === 'type'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('players', 'type'); }}
+                    >
+                      <span>Race</span>
+                      {#if sortOptions.players.by === 'type'}
+                        <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                  </div>
+                {/if}
+                <button class="collapse-button">
                   {collapsedSections.players ? '▼' : '▲'}
-                </button>span class="entity-coords">{formatCoords(entity.x, entity.y)}</span>
-              </div>>
-            </div> class="entity-details">
-          {:else}}
-            <div class="tab-sort-controls">)}</div>
+                </button>
+              </div>
+            </div>
+          {:else}
+            <div class="tab-sort-controls">
               <div class="sort-controls">
-                <button      <div class="entity-distance">{formatDistance(entity.distance)}</div>
+                <button 
                   class="sort-option"
                   class:active={sortOptions.players.by === 'distance'}
                   onclick={() => setSortOption('players', 'distance')}
@@ -873,92 +822,92 @@ ass="sort-controls">
                     <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
                   {/if}
                 </button>
-                <button  Section -->
-                  class="sort-option" s') && allGroups.length > 0}
+                <button 
+                  class="sort-option" 
                   class:active={sortOptions.players.by === 'name'}
                   onclick={() => setSortOption('players', 'name')}
                 >
-                  <span>Name</span>ion-header"
-                  {#if sortOptions.players.by === 'name'}k={(e) => toggleSection('groups', e)}
-                    <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>="button"
-                  {/if}abindex="0"
-                </button>    aria-expanded={!collapsedSections.groups}
-                <button === 'Enter' && toggleSection('groups', e)}
+                  <span>Name</span>
+                  {#if sortOptions.players.by === 'name'}
+                    <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+                <button 
                   class="sort-option" 
                   class:active={sortOptions.players.by === 'type'}
-                  onclick={() => setSortOption('players', 'type')}count-groups">{allGroups.length}</span>
+                  onclick={() => setSortOption('players', 'type')}
                 >
-                  <span>Race</span>ass="section-controls">
+                  <span>Race</span>
                   {#if sortOptions.players.by === 'type'}
                     <span class="sort-direction">{sortOptions.players.asc ? '↑' : '↓'}</span>
                   {/if}
                 </button>
-              </div>ive={sortOptions.groups.by === 'distance'}
-            </div>{(e) => { e.stopPropagation(); setSortOption('groups', 'distance'); }}
+              </div>
+            </div>
           {/if}
-               <span>Distance</span>
-          <div class="section-content"ps.by === 'distance'}
-               class:expanded={activeFilter !== 'all' || !collapsedSections.players}sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+          
+          <div class="section-content"
+               class:expanded={activeFilter !== 'all' || !collapsedSections.players}
                class:collapsed={activeFilter === 'all' && collapsedSections.players}>
             {#if activeFilter !== 'all' || !collapsedSections.players}
               {#each sortedPlayers as entity ('player:' + entity.id + ':' + entity.x + ':' + entity.y)}
                 <div 
                   class="entity player {entity.id === $currentPlayer?.id ? 'current' : ''} {isAtTarget(entity.x, entity.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(entity) ? 'current-player-owned' : ''}"
-                  class:is-here={entity.distance === 0}ortOption('groups', 'name'); }}
+                  class:is-here={entity.distance === 0}
                   onclick={(e) => handleEntityAction(entity.x, entity.y, e)}
                   onkeydown={(e) => handleEntityAction(entity.x, entity.y, e)}
                   role="button"
-                  tabindex="0".groups.asc ? '↑' : '↓'}</span>
+                  tabindex="0"
                   aria-label="Navigate to player {entity.displayName || 'Player'} at {entity.x},{entity.y}"
-                >ton>
-                  <div class="entity-icon">ton 
+                >
+                  <div class="entity-icon">
                     {#if entity.race}
-                      {#if entity.race.toLowerCase() === 'human'}ns.groups.by === 'status'}
-                        <Human extraClass="race-icon-overview" />ion(); setSortOption('groups', 'status'); }}
+                      {#if entity.race.toLowerCase() === 'human'}
+                        <Human extraClass="race-icon-overview" />
                       {:else if entity.race.toLowerCase() === 'elf'}
                         <Elf extraClass="race-icon-overview" />
-                      {:else if entity.race.toLowerCase() === 'dwarf'}sortOptions.groups.by === 'status'}
-                        <Dwarf extraClass="race-icon-overview" />span>
-                      {:else if entity.race.toLowerCase() === 'goblin'}}
+                      {:else if entity.race.toLowerCase() === 'dwarf'}
+                        <Dwarf extraClass="race-icon-overview" />
+                      {:else if entity.race.toLowerCase() === 'goblin'}
                         <Goblin extraClass="race-icon-overview" />
                       {:else if entity.race.toLowerCase() === 'fairy'}
                         <Fairy extraClass="race-icon-overview" />
-                      {/if}ss="collapse-button">
+                      {/if}
                     {/if}
                   </div>
                   <div class="entity-info">
                     <div class="entity-name">
                       {entity.displayName || 'Player'}
-                      {#if isOwnedByCurrentPlayer(entity)}class="tab-sort-controls">
-                        <span class="entity-badge owner-badge">You</span>iv class="sort-controls">
-                      {/if}  <button 
-                      <span class="entity-coords">{formatCoords(entity.x, entity.y)}</span>       class="sort-option"
-                    </div>           class:active={sortOptions.groups.by === 'distance'}
-                    <div class="entity-details"> => setSortOption('groups', 'distance')}
+                      {#if isOwnedByCurrentPlayer(entity)}
+                        <span class="entity-badge owner-badge">You</span>
+                      {/if}
+                      <span class="entity-coords">{formatCoords(entity.x, entity.y)}</span>
+                    </div>
+                    <div class="entity-details">
                       {#if entity.race}
-                        <div class="entity-race">{_fmt(entity.race)}</div>>
-                      {/if}ups.by === 'distance'}
-                      <div class="entity-distance">{formatDistance(entity.distance)}</div>   <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                        <div class="entity-race">{_fmt(entity.race)}</div>
+                      {/if}
+                      <div class="entity-distance">{formatDistance(entity.distance)}</div>
                     </div>
                   </div>
                 </div>
-              {/each}ort-option" 
-            {/if}== 'name'}
+              {/each}
+            {/if}
           </div>
-        </div>   >
+        </div>
       {/if}
        
-      <!-- Groups Section --><span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+      <!-- Groups Section -->
       {#if shouldShowSection('groups') && allGroups.length > 0}
         <div class="entities-section">
           {#if activeFilter === 'all'}
-            <div t-option" 
-              class="section-header"ns.groups.by === 'status'}
+            <div 
+              class="section-header"
               onclick={(e) => toggleSection('groups', e)}
               role="button"
-              tabindex="0"an>Status</span>
-              aria-expanded={!collapsedSections.groups}y === 'status'}
-              onkeydown={(e) => e.key === 'Enter' && toggleSection('groups', e)}oups.asc ? '↑' : '↓'}</span>
+              tabindex="0"
+              aria-expanded={!collapsedSections.groups}
+              onkeydown={(e) => e.key === 'Enter' && toggleSection('groups', e)}
             >
               <div class="section-title">
                 Groups <span class="section-count filter-count filter-count-groups">{allGroups.length}</span>
@@ -966,82 +915,82 @@ ass="sort-controls">
               <div class="section-controls">
                 {#if !collapsedSections.groups}
                   <div class="sort-controls">
-                    <button expanded={activeFilter !== 'all' || !collapsedSections.groups}
-                      class="sort-option"ilter === 'all' && collapsedSections.groups}>
-                      class:active={sortOptions.groups.by === 'distance'}s.groups}
+                    <button 
+                      class="sort-option"
+                      class:active={sortOptions.groups.by === 'distance'}
                       onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'distance'); }}
                     >
-                      <span>Distance</span>ty {isAtTarget(group.x, group.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(group) ? 'current-player-owned' : ''}"
-                      {#if sortOptions.groups.by === 'distance'}ere={group.distance === 0}
-                        <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>tityAction(group.x, group.y, e)}
-                      {/if}, e)}
-                    </button>
-                    <button e="button"
-                      class="sort-option" {group.name}"
-                      class:active={sortOptions.groups.by === 'name'}
-                      onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'name'); }}
-                    >oup.race}
-                      <span>Name</span>oup.race.toLowerCase() === 'human'}
-                      {#if sortOptions.groups.by === 'name'}<Human extraClass="race-icon-overview" />
-                        <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span> {:else if group.race.toLowerCase() === 'elf'}
-                      {/if}on-overview" />
-                    </button> === 'dwarf'}
-                    <button Dwarf extraClass="race-icon-overview" />
-                      class="sort-option"   {:else if group.race.toLowerCase() === 'goblin'}
-                      class:active={sortOptions.groups.by === 'status'}      <Goblin extraClass="race-icon-overview" />
-                      onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'status'); }}     {:else if group.race.toLowerCase() === 'fairy'}
-                    >race-icon-overview" />
-                      <span>Status</span>
-                      {#if sortOptions.groups.by === 'status'}}
+                      <span>Distance</span>
+                      {#if sortOptions.groups.by === 'distance'}
                         <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
                       {/if}
                     </button>
-                  </div>   <div class="entity-name">
-                {/if}roup ${group.id.slice(-4)}`}
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.groups.by === 'name'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'name'); }}
+                    >
+                      <span>Name</span>
+                      {#if sortOptions.groups.by === 'name'}
+                        <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.groups.by === 'status'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'status'); }}
+                    >
+                      <span>Status</span>
+                      {#if sortOptions.groups.by === 'status'}
+                        <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                      {/if}
+                    </button>
+                  </div>
+                {/if}
                 <button class="collapse-button">
                   {collapsedSections.groups ? '▼' : '▲'}
-                </button>/if}
-              </div>an class="entity-coords">({formatCoords(group.x, group.y)})</span>
-            </div>v>
+                </button>
+              </div>
+            </div>
           {:else}
             <div class="tab-sort-controls">
               <div class="sort-controls">
-                <button        {(group.units ? group.units.length : 0)} units
-                  class="sort-option"upItemCount(group) > 0}
-                  class:active={sortOptions.groups.by === 'distance'}tGroupItemCount(group)} items</span>
+                <button 
+                  class="sort-option"
+                  class:active={sortOptions.groups.by === 'distance'}
                   onclick={() => setSortOption('groups', 'distance')}
-                >/span>
+                >
                   <span>Distance</span>
-                  {#if sortOptions.groups.by === 'distance'}pan class="entity-status-badge {getStatusClass(group.status)}"
-                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>tick={isPendingTick(
+                  {#if sortOptions.groups.by === 'distance'}
+                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
                   {/if}
                 </button>
-                <button            : (group.status === 'gathering' || group.status === 'starting_to_gather' 
-                  class="sort-option" up.gatheringUntil 
+                <button 
+                  class="sort-option" 
                   class:active={sortOptions.groups.by === 'name'}
                   onclick={() => setSortOption('groups', 'name')}
                 >
-                  <span>Name</span>#if group.status === 'starting_to_gather'}
-                  {#if sortOptions.groups.by === 'name'}      Preparing to gather
-                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>      {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
-                  {/if}           {_fmt(group.status)} {formatTimeRemaining(group.readyAt, group.status)}
-                </button>              {:else if group.status === 'moving'}
-                <button status)} 
-                  class="sort-option" 
-                  class:active={sortOptions.groups.by === 'status'})})
-                  onclick={() => setSortOption('groups', 'status')}
-                >
-                  <span>Status</span>     {_fmt(group.status)} 
-                  {#if sortOptions.groups.by === 'status'}
-                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>p.gatheringUntil)})
+                  <span>Name</span>
+                  {#if sortOptions.groups.by === 'name'}
+                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
                   {/if}
                 </button>
-              </div>t(group.status)}
+                <button 
+                  class="sort-option" 
+                  class:active={sortOptions.groups.by === 'status'}
+                  onclick={() => setSortOption('groups', 'status')}
+                >
+                  <span>Status</span>
+                  {#if sortOptions.groups.by === 'status'}
+                    <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
+              </div>
             </div>
           {/if}
-               
-          <div class="section-content"istance">
-               class:expanded={activeFilter !== 'all' || !collapsedSections.groups}nce(group.distance)}
+          
+          <div class="section-content"
+               class:expanded={activeFilter !== 'all' || !collapsedSections.groups}
                class:collapsed={activeFilter === 'all' && collapsedSections.groups}>
             {#if activeFilter !== 'all' || !collapsedSections.groups}
               {#each sortedGroups as group ('group:' + group.id)}
@@ -1052,92 +1001,92 @@ ass="sort-controls">
                   onkeydown={(e) => handleEntityAction(group.x, group.y, e)}
                   tabindex="0"
                   role="button"
-                  aria-label="View group {group.name}">
-                >ion('items') && allItems.length > 0}
-                  <div class="entity-icon">ties-section">
-                    {#if group.race}iveFilter === 'all'}
+                  aria-label="View group {group.name}"
+                >
+                  <div class="entity-icon">
+                    {#if group.race}
                       {#if group.race.toLowerCase() === 'human'}
                         <Human extraClass="race-icon-overview" />
                       {:else if group.race.toLowerCase() === 'elf'}
                         <Elf extraClass="race-icon-overview" />
                       {:else if group.race.toLowerCase() === 'dwarf'}
-                        <Dwarf extraClass="race-icon-overview" />={!collapsedSections.items}
+                        <Dwarf extraClass="race-icon-overview" />
                       {:else if group.race.toLowerCase() === 'goblin'}
                         <Goblin extraClass="race-icon-overview" />
-                      {:else if group.race.toLowerCase() === 'fairy'}lass="section-title">
-                        <Fairy extraClass="race-icon-overview" /> filter-count filter-count-items">{allItems.length}</span>
+                      {:else if group.race.toLowerCase() === 'fairy'}
+                        <Fairy extraClass="race-icon-overview" />
                       {/if}
                     {/if}
                   </div>
                   
                   <div class="entity-info">
-                    <div class="entity-name">sort-option"
-                      {group.name || `Group ${group.id.slice(-4)}`}class:active={sortOptions.items.by === 'distance'}
-                      {#if isOwnedByCurrentPlayer(group)}istance'); }}
+                    <div class="entity-name">
+                      {group.name || `Group ${group.id.slice(-4)}`}
+                      {#if isOwnedByCurrentPlayer(group)}
                         <span class="entity-badge owner-badge">Yours</span>
                       {/if}
-                      <span class="entity-coords">({formatCoords(group.x, group.y)})</span>== 'distance'}
+                      <span class="entity-coords">({formatCoords(group.x, group.y)})</span>
                     </div>
                     
                     <div class="entity-details">
-                      <span class="unit-count">n 
-                        {(group.units ? group.units.length : 0)} unitslass="sort-option" 
-                        {#if getGroupItemCount(group) > 0}}
-                          • <span class="item-count">{getGroupItemCount(group)} items</span>pPropagation(); setSortOption('items', 'name'); }}
+                      <span class="unit-count">
+                        {(group.units ? group.units.length : 0)} units
+                        {#if getGroupItemCount(group) > 0}
+                          • <span class="item-count">{getGroupItemCount(group)} items</span>
                         {/if}
                       </span>
                       
-                      <span class="entity-status-badge {getStatusClass(group.status)}"tion">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                      <span class="entity-status-badge {getStatusClass(group.status)}"
                         class:pending-tick={isPendingTick(
                           group.status === 'moving' 
                             ? group.nextMoveTime 
                             : (group.status === 'gathering' || group.status === 'starting_to_gather' 
-                                ? group.gatheringUntil .items.by === 'rarity'}
-                                : group.readyAt)Option('items', 'rarity'); }}
+                                ? group.gatheringUntil 
+                                : group.readyAt)
                         )}
-                      >ity</span>
-                        {#if group.status === 'starting_to_gather'}Options.items.by === 'rarity'}
-                          Preparing to gatherction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                      >
+                        {#if group.status === 'starting_to_gather'}
+                          Preparing to gather
                         {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
                           {_fmt(group.status)} {formatTimeRemaining(group.readyAt, group.status)}
-                        {:else if group.status === 'moving'}v>
+                        {:else if group.status === 'moving'}
                           {_fmt(group.status)} 
                           {#if !isPendingTick(group.nextMoveTime)}
-                            ({formatTimeRemaining(calculateMoveCompletionTime(group))})ections.items ? '▼' : '▲'}
+                            ({formatTimeRemaining(calculateMoveCompletionTime(group))})
                           {/if}
                         {:else if group.status === 'gathering'}
                           {_fmt(group.status)} 
                           {#if !isPendingTick(group.gatheringUntil)}
-                            ({formatTimeRemaining(group.gatheringUntil)})class="tab-sort-controls">
-                          {/if}iv class="sort-controls">
-                        {:else}  <button 
-                          {_fmt(group.status)}       class="sort-option"
-                        {/if}                  class:active={sortOptions.items.by === 'distance'}
-                      </span>) => setSortOption('items', 'distance')}
+                            ({formatTimeRemaining(group.gatheringUntil)})
+                          {/if}
+                        {:else}
+                          {_fmt(group.status)}
+                        {/if}
+                      </span>
                       
-                      <span class="entity-distance">>
-                        {formatDistance(group.distance)}ms.by === 'distance'}
-                      </span>   <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                      <span class="entity-distance">
+                        {formatDistance(group.distance)}
+                      </span>
                     </div>
                   </div>
                 </div>
-              {/each}ort-option" 
-            {/if}== 'name'}
+              {/each}
+            {/if}
           </div>
-        </div>   >
+        </div>
       {/if}
 
-      <!-- Items Section --><span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+      <!-- Items Section -->
       {#if shouldShowSection('items') && allItems.length > 0}
         <div class="entities-section">
           {#if activeFilter === 'all'}
-            <div t-option" 
-              class="section-header"ns.items.by === 'rarity'}
+            <div 
+              class="section-header"
               onclick={(e) => toggleSection('items', e)}
               role="button"
-              tabindex="0"an>Rarity</span>
-              aria-expanded={!collapsedSections.items} === 'rarity'}
-              onkeydown={(e) => e.key === 'Enter' && toggleSection('items', e)}tems.asc ? '↑' : '↓'}</span>
+              tabindex="0"
+              aria-expanded={!collapsedSections.items}
+              onkeydown={(e) => e.key === 'Enter' && toggleSection('items', e)}
             >
               <div class="section-title">
                 Items <span class="section-count filter-count filter-count-items">{allItems.length}</span>
@@ -1145,41 +1094,41 @@ ass="sort-controls">
               <div class="section-controls">
                 {#if !collapsedSections.items}
                   <div class="sort-controls">
-                    <button expanded={activeFilter !== 'all' || !collapsedSections.items}
-                      class="sort-option"ilter === 'all' && collapsedSections.items}>
-                      class:active={sortOptions.items.by === 'distance'}ns.items}
-                      onclick={(e) => { e.stopPropagation(); setSortOption('items', 'distance'); }}e || item.type}`).replace(/\s+/g, '-'))}
+                    <button 
+                      class="sort-option"
+                      class:active={sortOptions.items.by === 'distance'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('items', 'distance'); }}
                     >
-                      <span>Distance</span>ty item {getRarityClass(item.rarity)}" 
-                      {#if sortOptions.items.by === 'distance'}arget={isAtTarget(item.x, item.y)}
-                        <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>ance === 0}
-                      {/if})}
+                      <span>Distance</span>
+                      {#if sortOptions.items.by === 'distance'}
+                        <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                      {/if}
                     </button>
-                    <button e="button"
+                    <button 
                       class="sort-option" 
-                      class:active={sortOptions.items.by === 'name'}item.type) || 'Item'} at {item.x},{item.y}"
+                      class:active={sortOptions.items.by === 'name'}
                       onclick={(e) => { e.stopPropagation(); setSortOption('items', 'name'); }}
-                    >s="item-icon {item.type}"></div>
-                      <span>Name</span>"entity-info">
-                      {#if sortOptions.items.by === 'name'} class="entity-name">
-                        <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span> {item.name || _fmt(item.type) || "Unknown Item"}
-                      {/if}">{formatCoords(item.x, item.y)}</span>
+                    >
+                      <span>Name</span>
+                      {#if sortOptions.items.by === 'name'}
+                        <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                      {/if}
                     </button>
-                    <button class="entity-details">
-                      class="sort-option"   {#if item.type}
-                      class:active={sortOptions.items.by === 'rarity'}      <span class="item-type">{_fmt(item.type)}</span>
-                      onclick={(e) => { e.stopPropagation(); setSortOption('items', 'rarity'); }}     {/if}
-                    >1}
-                      <span>Rarity</span>-quantity">×{item.quantity}</span>
-                      {#if sortOptions.items.by === 'rarity'}if}
-                        <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>y && item.rarity !== 'common'}
-                      {/if}t(item.rarity)}</span>
+                    <button 
+                      class="sort-option" 
+                      class:active={sortOptions.items.by === 'rarity'}
+                      onclick={(e) => { e.stopPropagation(); setSortOption('items', 'rarity'); }}
+                    >
+                      <span>Rarity</span>
+                      {#if sortOptions.items.by === 'rarity'}
+                        <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                      {/if}
                     </button>
-                  </div>     <div class="entity-distance">{formatDistance(item.distance)}</div>
+                  </div>
                 {/if}
                 <button class="collapse-button">
                   {collapsedSections.items ? '▼' : '▲'}
-                </button>f}
+                </button>
               </div>
             </div>
           {:else}
@@ -1189,125 +1138,130 @@ ass="sort-controls">
                   class="sort-option"
                   class:active={sortOptions.items.by === 'distance'}
                   onclick={() => setSortOption('items', 'distance')}
-                >ction('battles') && sortedBattles.length > 0}
-                  <span>Distance</span>ies-section">
-                  {#if sortOptions.items.by === 'distance'}ction-header" on:click={e => toggleSection('battles', e)}>
-                    <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>Battles ({sortedBattles.length})</h4>
+                >
+                  <span>Distance</span>
+                  {#if sortOptions.items.by === 'distance'}
+                    <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
                   {/if}
                 </button>
-                <button div class="sort-controls">
+                <button 
                   class="sort-option" 
                   class:active={sortOptions.items.by === 'name'}
                   onclick={() => setSortOption('items', 'name')}
-                >lick={() => setSortOption('battles', 'distance')}
+                >
                   <span>Name</span>
-                  {#if sortOptions.items.by === 'name'}<span>Distance</span>
-                    <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>  {#if sortOptions.battles.by === 'distance'}
-                  {/if}       <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
-                </button>          {/if}
+                  {#if sortOptions.items.by === 'name'}
+                    <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
+                  {/if}
+                </button>
                 <button 
                   class="sort-option" 
                   class:active={sortOptions.items.by === 'rarity'}
-                  onclick={() => setSortOption('items', 'rarity')}'}
+                  onclick={() => setSortOption('items', 'rarity')}
                 >
                   <span>Rarity</span>
                   {#if sortOptions.items.by === 'rarity'}
                     <span class="sort-direction">{sortOptions.items.asc ? '↑' : '↓'}</span>
-                  {/if}ortOptions.battles.asc ? '↑' : '↓'}</span>
+                  {/if}
                 </button>
               </div>
             </div>
           {/if}
           
-          <div class="section-content"collapsedSections.battles ? '▼' : '▲'}
+          <div class="section-content"
                class:expanded={activeFilter !== 'all' || !collapsedSections.items}
                class:collapsed={activeFilter === 'all' && collapsedSections.items}>
             {#if activeFilter !== 'all' || !collapsedSections.items}
               {#each sortedItems as item ('item:' + (item.id || `${item.x}:${item.y}:${item.name || item.type}`).replace(/\s+/g, '-'))}
-                <div ded'}">
-                  class="entity item {getRarityClass(item.rarity)}" attles as battle (battle.id)}
+                <div 
+                  class="entity item {getRarityClass(item.rarity)}" 
                   class:at-target={isAtTarget(item.x, item.y)}
                   class:is-here={item.distance === 0}
                   onclick={(e) => handleEntityAction(item.x, item.y, e)}
-                  onkeydown={(e) => handleEntityAction(item.x, item.y, e)}rget={isAtTarget(battle.x, battle.y)}
-                  role="button"tyAction(battle.x, battle.y, event)}
-                  tabindex="0" event)}
-                  aria-label="Navigate to {item.name || _fmt(item.type) || 'Item'} at {item.x},{item.y}""
+                  onkeydown={(e) => handleEntityAction(item.x, item.y, e)}
+                  role="button"
+                  tabindex="0"
+                  aria-label="Navigate to {item.name || _fmt(item.type) || 'Item'} at {item.x},{item.y}"
                 >
                   <div class="item-icon {item.type}"></div>
-                  <div class="entity-info">"entity-info">
+                  <div class="entity-info">
                     <div class="entity-name">
-                      {item.name || _fmt(item.type) || "Unknown Item"} {battle.isPlayerBattle ? '🔥 ' : ''} 
-                      <span class="entity-coords">{formatCoords(item.x, item.y)}</span>ords">({battle.x}, {battle.y})</span>
+                      {item.name || _fmt(item.type) || "Unknown Item"}
+                      <span class="entity-coords">{formatCoords(item.x, item.y)}</span>
                     </div>
                     <div class="entity-details">
-                      {#if item.type}lass="battle-sides">
-                        <span class="item-type">{_fmt(item.type)}</span>iv class="battle-side side1" class:winning-side={battle.winner === 1} class:losing-side={battle.winner === 2}>
-                      {/if} <div class="side-name">{battle.sides.side1.name}</div>
-                      {#if item.quantity > 1}     <div class="unit-count">Groups: {battle.sides.side1.groups.length}</div>
-                        <span class="item-quantity">×{item.quantity}</span>      {#if battle.sides.side1.casualties > 0}
-                      {/if}          <div class="casualties">Lost: {battle.sides.side1.casualties}</div>
-                      {#if item.rarity && item.rarity !== 'common'}           {/if}
-                        <span class="item-rarity {item.rarity}">{_fmt(item.rarity)}</span>                    </div>
-                      {/if}="battle-vs">vs</div>
-                      <div class="entity-distance">{formatDistance(item.distance)}</div>e={battle.winner === 2} class:losing-side={battle.winner === 1}>
-                    </div>-name">{battle.sides.side2.name}</div>
+                      {#if item.type}
+                        <span class="item-type">{_fmt(item.type)}</span>
+                      {/if}
+                      {#if item.quantity > 1}
+                        <span class="item-quantity">×{item.quantity}</span>
+                      {/if}
+                      {#if item.rarity && item.rarity !== 'common'}
+                        <span class="item-rarity {item.rarity}">{_fmt(item.rarity)}</span>
+                      {/if}
+                      <div class="entity-distance">{formatDistance(item.distance)}</div>
+                    </div>
                     {#if item.description}
                       <div class="item-description">{item.description}</div>
-                    {/if}ureInfo}
+                    {/if}
                   </div>
                 </div>
-              {/each}v>
-            {/if}.side2.casualties > 0}
-          </div>2.casualties}</div>
+              {/each}
+            {/if}
+          </div>
         </div>
-      {/if} </div>
+      {/if}
 
       <!-- Battles Section -->
       {#if shouldShowSection('battles') && sortedBattles.length > 0}
-        <div class="entities-section">class="entity-status">
-          <div class="section-header" on:click={e => toggleSection('battles', e)}> class="entity-status-badge {battle.status}">
-            <h4 class="section-title">Battles ({sortedBattles.length})</h4>attle.status === 'active' ? 'Ongoing' : 'Concluded'}
-            <div class="section-controls">er}
-              <div class="tab-sort-controls">.name : battle.sides.side2.name} won
+        <div class="entities-section">
+          <div class="section-header" onclick={e => toggleSection('battles', e)}
+            role="button"
+            tabindex="0"
+            aria-expanded={!collapsedSections.battles}
+            onkeydown={(e) => e.key === 'Enter' && toggleSection('battles', e)}>
+            <h4 class="section-title">Battles ({sortedBattles.length})</h4>
+            <div class="section-controls">
+              <div class="tab-sort-controls">
                 <div class="sort-controls">
-                  <button    </span>
+                  <button 
                     class="sort-option"
-                    class:active={sortOptions.battles.by === 'distance'}nce(battle.distance)}</div>
+                    class:active={sortOptions.battles.by === 'distance'}
                     onclick={() => setSortOption('battles', 'distance')}
                   >
-                    <span>Distance</span>s="battle-timer">
-                    {#if sortOptions.battles.by === 'distance'}if battle.createdAt}
-                      <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>  Started {Math.floor((Date.now() - battle.createdAt) / 60000)} minutes ago
+                    <span>Distance</span>
+                    {#if sortOptions.battles.by === 'distance'}
+                      <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
                     {/if}
                   </button>
-                  <button >
+                  <button 
                     class="sort-option" 
-                    class:active={sortOptions.battles.by === 'status'}  <!-- Battle progress bar -->
-                    onclick={() => setSortOption('battles', 'status')}        <div class="battle-progress">
+                    class:active={sortOptions.battles.by === 'status'}
+                    onclick={() => setSortOption('battles', 'status')}
                   >
                     <span>Status</span>
-                    {#if sortOptions.battles.by === 'status'}     style="width: {battle.sides.side1.power ? 
-                      <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>es.side1.power / (battle.sides.side1.power + battle.sides.side2.power) * 100) : 50}%">
+                    {#if sortOptions.battles.by === 'status'}
+                      <span class="sort-direction">{sortOptions.battles.asc ? '↑' : '↓'}</span>
                     {/if}
                   </button>
                 </div>
               </div>
               <button class="collapse-button" aria-label="Toggle battles section">
-                {collapsedSections.battles ? '▼' : '▲'}ach}
+                {collapsedSections.battles ? '▼' : '▲'}
               </button>
             </div>
           </div>
           
           <div class="section-content {collapsedSections.battles ? 'collapsed' : 'expanded'}">
-            {#each sortedBattles as battle (battle.id)}y-state">
-              <div iveFilter === 'all'}
+            {#each sortedBattles as battle (battle.id)}
+              <div 
                 class="entity battle"
                 class:is-here={battle.distance === 0}
                 class:at-target={isAtTarget(battle.x, battle.y)}
-                on:click={event => handleEntityAction(battle.x, battle.y, event)}
-                on:keydown={event => handleEntityAction(battle.x, battle.y, event)}
+                onclick={event => handleEntityAction(battle.x, battle.y, event)}
+                onkeydown={event => handleEntityAction(battle.x, battle.y, event)}
                 tabindex="0"
+                role="button"
               >
                 <div class="entity-battle-icon">⚔️</div>
                 <div class="entity-info">
@@ -1318,7 +1272,7 @@ ass="sort-controls">
                   
                   <div class="battle-sides">
                     <div class="battle-side side1" class:winning-side={battle.winner === 1} class:losing-side={battle.winner === 2}>
-                      <div class="side-name">{battle.sides.side1.name}</div> ease, z-index 0s;
+                      <div class="side-name">{battle.sides.side1.name}</div>
                       <div class="unit-count">Groups: {battle.sides.side1.groups.length}</div>
                       {#if battle.sides.side1.casualties > 0}
                         <div class="casualties">Lost: {battle.sides.side1.casualties}</div>
@@ -1335,31 +1289,31 @@ ass="sort-controls">
                       </div>
                       {#if battle.sides.side2.casualties > 0}
                         <div class="casualties">Lost: {battle.sides.side2.casualties}</div>
-                      {/if}ba(255, 255, 255, 0.85);
-                    </div> solid rgba(255, 255, 255, 0.2);
+                      {/if}
+                    </div>
                   </div>
-                  0.1);
+                  
                   <div class="entity-details">
-                    <div class="entity-status">(0.5em);
+                    <div class="entity-status">
                       <span class="entity-status-badge {battle.status}">
                         {battle.status === 'active' ? 'Ongoing' : 'Concluded'}
-                        {#if battle.winner}m;
+                        {#if battle.winner}
                            - {battle.winner === 1 ? battle.sides.side1.name : battle.sides.side2.name} won
                         {/if}
                       </span>
-                    </div>rwards;
+                    </div>
                     <div class="entity-distance">{formatDistance(battle.distance)}</div>
                   </div>
                   
                   <div class="battle-timer">
-                    {#if battle.createdAt}ing .entities-panel {
-                      Started {Math.floor((Date.now() - battle.createdAt) / 60000)} minutes agotToBottom 0.8s ease-in forwards;
+                    {#if battle.createdAt}
+                      Started {Math.floor((Date.now() - battle.createdAt) / 60000)} minutes ago
                     {/if}
                     • Tick: {battle.tickCount || 0}
-                  </div>deInFromBottom {
+                  </div>
                   
-                  <!-- Battle progress bar -->form: translateY(100%);
-                  <div class="battle-progress">      opacity: 0;
+                  <!-- Battle progress bar -->
+                  <div class="battle-progress">
                     <div class="progress-bar">
                       <div class="progress-fill" 
                         style="width: {battle.sides.side1.power ? 
@@ -1367,47 +1321,47 @@ ass="sort-controls">
                       </div>
                     </div>
                   </div>
-                </div>lideOutToBottom {
+                </div>
               </div>
-            {/each}sform: translateY(0);
-          </div>acity: 1;
+            {/each}
+          </div>
         </div>
-      {/if}    100% {
-ransform: translateY(100%);
+      {/if}
+
       {#if !hasContent(activeFilter)}
         <div class="empty-state">
           {#if activeFilter === 'all'}
             No entities visible on map
           {:else}
             No {activeFilter} visible on map
-          {/if}al;
+          {/if}
         </div>
-      {/if}6em;
+      {/if}
     </div>
   </div>
-</section>  .entity-coords {
-  font-size: 0.7em;
-<style>);
-  .entities-wrapper {6em;
-    position: absolute; font-weight: normal;
-    bottom: 0.5em;  }
+</section>
+
+<style>
+  .entities-wrapper {
+    position: absolute;
+    bottom: 0.5em;
     left: 0.5em;
     z-index: 998; 
-    transition: opacity 0.2s ease, z-index 0s; background-color: rgba(64, 158, 255, 0.1);
-    font-size: 1.4em;    border-color: rgba(64, 158, 255, 0.3);
-    font-family: var(--font-body);ive;
+    transition: opacity 0.2s ease, z-index 0s;
+    font-size: 1.4em;
+    font-family: var(--font-body);
     max-width: 95%;
     outline: none; 
   }
 
   
-  .entities-wrapper.active {55, 0.3);
+  .entities-wrapper.active {
     z-index: 1001; 
   }
 
   .entities-wrapper.closing {
-    pointer-events: none; {
-  }58, 255, 0.9);
+    pointer-events: none;
+  }
 
   .entities-panel {
     background-color: rgba(255, 255, 255, 0.85);
@@ -1415,270 +1369,270 @@ ransform: translateY(100%);
     border-radius: 0.3em;
     box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(0.5em); font-weight: 600;
-    -webkit-backdrop-filter: blur(0.5em);}
+    backdrop-filter: blur(0.5em);
+    -webkit-backdrop-filter: blur(0.5em);
     width: 100%;
-    max-width: 28em;y-distance {
+    max-width: 28em;
     display: flex;
-    flex-direction: column;, 0, 0, 0.5);
-    overflow: hidden;argin-left: auto;
-    animation: slideInFromBottom 0.8s ease-out forwards;space: nowrap;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideInFromBottom 0.8s ease-out forwards;
     transform-origin: bottom left;
-  }center;
+  }
   
   
   .entities-wrapper.closing .entities-panel {
-    animation: slideOutToBottom 0.8s ease-in forwards;rst-letter {
-  }-size: 1.8em;
+    animation: slideOutToBottom 0.8s ease-in forwards;
+  }
   
-  @keyframes slideInFromBottom { 0.1em;
-    0% {ertical-align: middle;
-      transform: translateY(100%); rgba(64, 158, 255, 1.0);
+  @keyframes slideInFromBottom {
+    0% {
+      transform: translateY(100%);
       opacity: 0;
     }
-    100% {p-entities {
-      transform: translateY(0); position: fixed;
-      opacity: 1;    top: 0;
+    100% {
+      transform: translateY(0);
+      opacity: 1;
     }
   }
   
   @keyframes slideOutToBottom {
     0% {
-      transform: translateY(0); flex-direction: column;
-      opacity: 1;    gap: .5em;
+      transform: translateY(0);
+      opacity: 1;
     }
-    100% {ateZ(0);
+    100% {
       transform: translateY(100%);
-      opacity: 0;e;
+      opacity: 0;
     }
-  } overflow: hidden;
   }
+
   .subtitle {
     font-size: 0.7em;
     font-weight: normal;
-    color: rgba(0, 0, 0, 0.5);solid rgba(0, 0, 0, 0.1);
-    margin-left: 0.6em; background-color: rgba(0, 0, 0, 0.03);
-  }    padding: 0 0.3em;
-  width: 100%;
-  .entity-coords {-x: auto;
+    color: rgba(0, 0, 0, 0.5);
+    margin-left: 0.6em;
+  }
+
+  .entity-coords {
     font-size: 0.7em;
     color: rgba(0, 0, 0, 0.5);
     margin-left: 0.6em;
-    font-weight: normal; padding: 0.6em 0.8em;
-  }  font-family: var(--font-heading);
-  font-size: 0.8em;
-  .at-target {
-    background-color: rgba(64, 158, 255, 0.1);
-    border-color: rgba(64, 158, 255, 0.3);x solid transparent;
-    position: relative;
-  } color: rgba(0, 0, 0, 0.5);
-    transition: all 0.2s ease;
-    flex: 1;
-  .is-here {
-    background-color: rgba(64, 158, 255, 0.1);
-    border-color: rgba(64, 158, 255, 0.3);center;
-    position: relative; align-items: center;
-  }    position: relative;
-  rap;
-  
-  .is-here .entity-distance {
-    color: rgba(64, 158, 255, 0.9);t(:disabled) {
-    font-weight: 500;ba(0, 0, 0, 0.03);
-    font-size: 0.9em; 0, 0, 0.8);
+    font-weight: normal;
   }
 
-  .filter-tab.active {
-  .at-target.is-here .entity-distance {  border-bottom: 2px solid #4285f4;
+  .at-target {
+    background-color: rgba(64, 158, 255, 0.1);
+    border-color: rgba(64, 158, 255, 0.3);
+    position: relative;
+  }
+
+  
+  .is-here {
+    background-color: rgba(64, 158, 255, 0.1);
+    border-color: rgba(64, 158, 255, 0.3);
+    position: relative;
+  }
+  
+  
+  .is-here .entity-distance {
+    color: rgba(64, 158, 255, 0.9);
+    font-weight: 500;
+    font-size: 0.9em;
+  }
+
+  
+  .at-target.is-here .entity-distance {
     color: rgba(64, 158, 255, 1.0);
     font-weight: 600;
   }
 
   .entity-distance {
     font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.5); cursor: not-allowed;
-    margin-left: auto;  }
+    color: rgba(0, 0, 0, 0.5);
+    margin-left: auto;
     white-space: nowrap;
-    display: flex;ntent:not(.active) {
-    align-items: center;rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
   }
   
-  {
+  
   .is-here .entity-distance::first-letter {
-    font-size: 1.8em;enter;
-    line-height: 0;;
-    margin-right: 0.1em;ius: 50%;
+    font-size: 1.8em;
+    line-height: 0;
+    margin-right: 0.1em;
     vertical-align: middle;
     color: rgba(64, 158, 255, 1.0);
   }
 
-  .map-entities {;
+  .map-entities {
     position: fixed;
-    top: 0; background: rgba(0, 0, 0, 0.2);
-    right: 0;    color: white;
-    padding: .5em;solid rgba(0, 0, 0, 0.1);
-    width: 100%;0 0.15em rgba(255, 255, 255, 0.2);
+    top: 0;
+    right: 0;
+    padding: .5em;
+    width: 100%;
     max-width: 25em;
     display: flex;
     flex-direction: column;
-    gap: .5em;structures {
-    z-index: 1100;0, 0, 0, 0.9);
-    transform: translateZ(0); box-shadow: 0 0 0.15em rgba(0, 0, 0, 0.6);
-    will-change: transform;    color: rgba(255, 255, 255, 0.9); 
+    gap: .5em;
+    z-index: 1100;
+    transform: translateZ(0);
+    will-change: transform;
     pointer-events: none;
     max-height: 100vh;
     overflow: hidden;
-  }255, 100, 100, 0.9);
-.15em rgba(255, 100, 100, 0.6);
+  }
+
   .filter-tabs {
     display: flex;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);ers {
-    background-color: rgba(0, 0, 0, 0.03); 255, 0.9);
-    padding: 0 0.3em;a(100, 100, 255, 0.6);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background-color: rgba(0, 0, 0, 0.03);
+    padding: 0 0.3em;
     width: 100%;
     overflow-x: auto;
-  }ems {
-5, 0, 0.9);
-  .filter-tab {em rgba(255, 215, 0, 0.6);
+  }
+
+  .filter-tab {
     padding: 0.6em 0.8em;
     font-family: var(--font-heading);
-    font-size: 0.8em;filter-count-battles {
-    background: none;    background: rgba(139, 0, 0, 0.8);
-    border: none; 0, 0, 0.6);
+    font-size: 0.8em;
+    background: none;
+    border: none;
     border-bottom: 2px solid transparent;
     cursor: pointer;
-    color: rgba(0, 0, 0, 0.5);filter-tab.active .filter-count {
-    transition: all 0.2s ease;    background: rgba(255, 255, 255, 0.9);
-    flex: 1;0, 0.8);
-    text-align: center;0, 0.2);
+    color: rgba(0, 0, 0, 0.5);
+    transition: all 0.2s ease;
+    flex: 1;
+    text-align: center;
     display: flex;
     justify-content: center;
-    align-items: center;title {
-    position: relative;    margin: 0;
+    align-items: center;
+    position: relative;
     white-space: nowrap;
-  }1em;
+  }
 
-  .filter-tab:hover:not(:disabled) { color: rgba(0, 0, 0, 0.8);
-    background-color: rgba(0, 0, 0, 0.03);    background-color: rgba(0, 0, 0, 0.05);
-    color: rgba(0, 0, 0, 0.8);0, 0.1);
-  }ading);
- display: flex;
-  .filter-tab.active {    align-items: center;
-    border-bottom: 2px solid #4285f4;nt: space-between;
+  .filter-tab:hover:not(:disabled) {
+    background-color: rgba(0, 0, 0, 0.03);
+    color: rgba(0, 0, 0, 0.8);
+  }
+
+  .filter-tab.active {
+    border-bottom: 2px solid #4285f4;
     color: rgba(0, 0, 0, 0.9);
     font-weight: 500;
   }
 
   .filter-tab:disabled {
-    opacity: 0.4;r;
+    opacity: 0.4;
     cursor: not-allowed;
   }
-;
-  .filter-tab.has-content:not(.active) {: center;
+
+  .filter-tab.has-content:not(.active) {
     color: rgba(0, 0, 0, 0.7);
-  }auto;
+  }
 
   .filter-count {
     display: flex;
     align-items: center;
-    justify-content: center;.close-button:hover {
-    border-radius: 50%;, 0, 0, 0.1);
+    justify-content: center;
+    border-radius: 50%;
     width: 1.2em;
     height: 1.2em;
     font-size: 0.7em;
-    font-weight: bold;entities-content {
-    margin-left: 0.4em;  padding: 0.8em;
+    font-weight: bold;
+    margin-left: 0.4em;
     line-height: 1;
     background: rgba(0, 0, 0, 0.2);
     color: white;
     border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);.entities-section {
+    box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);
   }
 
   
-  .filter-count-structures { max-height: unset;
-    background: rgba(0, 0, 0, 0.9);}
+  .filter-count-structures {
+    background: rgba(0, 0, 0, 0.9);
     box-shadow: 0 0 0.15em rgba(0, 0, 0, 0.6);
     color: rgba(255, 255, 255, 0.9); 
   }
-   overflow: auto;
-  .filter-count-groups {  padding: 0;
-    background: rgba(255, 100, 100, 0.9);t 0.3s ease-in, padding 0.3s ease, opacity 0.2s ease 0.1s;
+  
+  .filter-count-groups {
+    background: rgba(255, 100, 100, 0.9);
     box-shadow: 0 0 0.15em rgba(255, 100, 100, 0.6);
   }
   
-  .filter-count-players {  .section-content.collapsed {
+  .filter-count-players {
     background: rgba(100, 100, 255, 0.9);
     box-shadow: 0 0 0.15em rgba(100, 100, 255, 0.6);
   }
   
-  .filter-count-items { overflow: hidden;
-    background: rgba(255, 215, 0, 0.9);    transition: max-height 0.3s ease-out, padding 0.3s ease;
+  .filter-count-items {
+    background: rgba(255, 215, 0, 0.9);
     box-shadow: 0 0 0.15em rgba(255, 215, 0, 0.6);
   }
   
   .filter-count-battles {
-    background: rgba(139, 0, 0, 0.8);-start;
+    background: rgba(139, 0, 0, 0.8);
     box-shadow: 0 0 0.15em rgba(139, 0, 0, 0.6);
   }
 
-  .filter-tab.active .filter-count {255, 0.5);
-    background: rgba(255, 255, 255, 0.9);lid rgba(0, 0, 0, 0.1);
+  .filter-tab.active .filter-count {
+    background: rgba(255, 255, 255, 0.9);
     color: rgba(0, 0, 0, 0.8);
-    box-shadow: 0 0 0.2em rgba(0, 0, 0, 0.2);2s ease;
+    box-shadow: 0 0 0.2em rgba(0, 0, 0, 0.2);
   }
 
   .title {
-    margin: 0; rgba(255, 255, 255, 0.8);
-    padding: 0.8em 1em; 2px 4px rgba(0, 0, 0, 0.1);
+    margin: 0;
+    padding: 0.8em 1em;
     font-size: 1.1em;
     font-weight: 600;
     color: rgba(0, 0, 0, 0.8);
-    background-color: rgba(0, 0, 0, 0.05);gba(66, 133, 244, 0.6);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);ba(66, 133, 244, 0.3);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     font-family: var(--font-heading);
     display: flex;
     align-items: center;
-    justify-content: space-between; 133, 244, 0.05);
-  } border-color: rgba(66, 133, 244, 0.3);
+    justify-content: space-between;
   }
+
   .close-button {
     background: none;
     border: none;
-    cursor: pointer; margin-top: 0.1em;
-    padding: 0.4em;      flex-shrink: 0;
+    cursor: pointer;
+    padding: 0.4em;  
     display: flex;
-    align-items: center;nter;
-    justify-content: center;center;
+    align-items: center;
+    justify-content: center;
     border-radius: 50%;
     margin-left: auto;
-    transition: background-color 0.2s;  .entity-structure-icon {
-    color: rgba(0, 0, 0, 0.6);em;
+    transition: background-color 0.2s;
+    color: rgba(0, 0, 0, 0.6);
   }
 
   .close-button:hover {
-    background-color: rgba(0, 0, 0, 0.1);r;
-    color: rgba(0, 0, 0, 0.9); justify-content: center;
-  }  }
+    background-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.9);
+  }
 
   .entities-content {
     padding: 0.8em;
     max-height: 70vh;
     overflow-y: auto;
-  }{
- font-weight: 500;
-  .entities-section {    color: rgba(0, 0, 0, 0.85);
+  }
+
+  .entities-section {
     margin-bottom: 1.2em;
-    border-radius: 0.3em; 0.2em;
+    border-radius: 0.3em;
     overflow: hidden;
     max-height: unset;
-  }ls {
+  }
 
   .section-content.expanded {
-    max-height: 13em; gap: 0.6em;
-    overflow: auto;    font-size: 0.85em;
-    padding: 0;rgba(0, 0, 0, 0.7);
+    max-height: 13em;
+    overflow: auto;
+    padding: 0;
     transition: max-height 0.3s ease-in, padding 0.3s ease, opacity 0.2s ease 0.1s;
-    opacity: 1;etween;
+    opacity: 1;
   }
 
   .section-content.collapsed {
@@ -1686,112 +1640,112 @@ ransform: translateY(100%);
     padding-top: 0;
     padding-bottom: 0;
     opacity: 0;
-    overflow: hidden; fill: rgba(0, 0, 0, 0.7);
-    transition: max-height 0.3s ease-out, padding 0.3s ease;  }
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease;
   }
 
-  .entity {) {
-    display: flex; fill: rgba(138, 43, 226, 0.8);
-    align-items: flex-start;  }
+  .entity {
+    display: flex;
+    align-items: flex-start;
     margin-bottom: 0.6em;
-    padding: 0.5em 0.7em; {
+    padding: 0.5em 0.7em;
     border-radius: 0.3em;
     background-color: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(0, 0, 0, 0.1);
     cursor: pointer;
     transition: background-color 0.2s ease;
   }
- filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
-  .entity:hover {  }
+
+  .entity:hover {
     background-color: rgba(255, 255, 255, 0.8);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);n-icon) {
-  }w(0 0 3px rgba(0, 255, 255, 0.8)) !important;
-ortant;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
   .entity:focus {
     outline: 2px solid rgba(66, 133, 244, 0.6);
     box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.3);
-  }entity.battle {
-    background-color: rgba(139, 0, 0, 0.05);
-  .entity.player.current {(139, 0, 0, 0.2);
+  }
+
+  .entity.player.current {
     background-color: rgba(66, 133, 244, 0.05);
     border-color: rgba(66, 133, 244, 0.3);
-  }on {
+  }
 
   .entity-icon {
     margin-right: 0.7em;
-    margin-top: 0.1em; width: 1.4em;
-    flex-shrink: 0;    height: 1.4em;
-    display: flex;: 0.7em;
-    align-items: center;op: 0.1em;
-    justify-content: center; font-size: 1.2em;
-  }  }
+    margin-top: 0.1em;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
   .entity-structure-icon {
     margin-right: 0.7em;
-    margin-top: 0.1em;lock;
+    margin-top: 0.1em;
     flex-shrink: 0;
-    display: flex; font-weight: 500;
-    align-items: center;    padding: 0.1em 0.5em;
-    justify-content: center;0.3em;
-  }owrap;
-capitalize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .entity-info {
     flex: 1;
   }
-rgba(128, 128, 128, 0.15);
-  .entity-name {, 128, 0.3);
-    font-weight: 500; color: rgba(0, 0, 0, 0.7);
-    color: rgba(0, 0, 0, 0.85);  }
+
+  .entity-name {
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.85);
     line-height: 1.2;
     margin-bottom: 0.2em;
-  }gba(0, 128, 0, 0.15);
-lid rgba(0, 128, 0, 0.3);
-  .entity-details {;
+  }
+
+  .entity-details {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6em;.entity-status-badge.mobilizing {
-    font-size: 0.85em;  background: rgba(255, 140, 0, 0.15);
+    gap: 0.6em;
+    font-size: 0.85em;
     color: rgba(0, 0, 0, 0.7);
     width: 100%;
     justify-content: space-between;
   }
 
-  26, 0.15);
-  :global(.race-icon-overview) { border: 1px solid rgba(138, 43, 226, 0.3);
-    width: 1.4em;    color: #6a1b9a;
-    height: 1.4em;}
+  
+  :global(.race-icon-overview) {
+    width: 1.4em;
+    height: 1.4em;
     opacity: 0.85;
-    fill: rgba(0, 0, 0, 0.7);badge.gathering, 
+    fill: rgba(0, 0, 0, 0.7);
   }
-   background: rgba(138, 43, 226, 0.15);
-    border: 1px solid rgba(138, 43, 226, 0.3);
+  
+  
   :global(.race-icon-overview.fairy-icon path) {
     fill: rgba(138, 43, 226, 0.8);
   }
-  entity-status-badge.fighting {
-  :global(.race-icon-overview.goblin-icon path) {    background: rgba(220, 20, 60, 0.15);
-    fill: rgba(0, 128, 0, 0.8);  border: 1px solid rgba(220, 20, 60, 0.3);
-  };
+  
+  :global(.race-icon-overview.goblin-icon path) {
+    fill: rgba(0, 128, 0, 0.8);
+  }
 
   
-  :global(.overview-structure-icon) {entity-status-badge.active {
-    opacity: 0.9;    background: rgba(255, 0, 0, 0.15);
-    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));gba(255, 0, 0, 0.3);
-  };
+  :global(.overview-structure-icon) {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
+  }
   
   :global(.overview-spawn-icon) {
-    filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.8)) !important;badge.resolved {
-    opacity: 1 !important;ba(0, 128, 0, 0.15);
-  }ba(0, 128, 0, 0.3);
+    filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.8)) !important;
+    opacity: 1 !important;
+  }
 
   
   .entity.battle {
-    background-color: rgba(139, 0, 0, 0.05);  .entity-status-badge.pending-tick {
-    border: 1px solid rgba(139, 0, 0, 0.2);  position: relative;
-  }infinite alternate;
+    background-color: rgba(139, 0, 0, 0.05);
+    border: 1px solid rgba(139, 0, 0, 0.2);
+  }
 
   .entity-battle-icon {
-    display: flex;e.pending-tick::after {
+    display: flex;
     align-items: center;
     justify-content: center;
     width: 1.4em;
@@ -1802,33 +1756,33 @@ lid rgba(0, 128, 0, 0.3);
   }
 
   
-  .entity-status-badge { padding: 0.5em 1em;  
-    display: inline-block;  cursor: pointer;
+  .entity-status-badge {
+    display: inline-block;
     font-size: 0.8em;
     font-weight: 500;
     padding: 0.1em 0.5em;
-    border-radius: 0.3em;r: rgba(0, 0, 0, 0.03);
-    white-space: nowrap; border-radius: 0.3em 0.3em 0 0;
-    text-transform: capitalize;  transition: background-color 0.2s ease;
+    border-radius: 0.3em;
+    white-space: nowrap;
+    text-transform: capitalize;
   }
   
   .entity-status-badge.idle {
-    background: rgba(128, 128, 128, 0.15);r: rgba(0, 0, 0, 0.05);
+    background: rgba(128, 128, 128, 0.15);
     border: 1px solid rgba(128, 128, 128, 0.3);
     color: rgba(0, 0, 0, 0.7);
   }
   
   .entity-status-badge.moving {
     background: rgba(0, 128, 0, 0.15);
-    border: 1px solid rgba(0, 128, 0, 0.3); margin-left: auto;
-    color: #006400;}
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #006400;
   }
   
   .entity-status-badge.mobilizing {
     background: rgba(255, 140, 0, 0.15);
-    border: 1px solid rgba(255, 140, 0, 0.3);0;
-    color: #d06000; color: rgba(0, 0, 0, 0.6);
-  }  text-transform: uppercase;
+    border: 1px solid rgba(255, 140, 0, 0.3);
+    color: #d06000;
+  }
   
   .entity-status-badge.demobilising {
     background: rgba(138, 43, 226, 0.15);
@@ -1838,53 +1792,53 @@ lid rgba(0, 128, 0, 0.3);
   
   .entity-status-badge.gathering, 
   .entity-status-badge.starting_to_gather {
-    background: rgba(138, 43, 226, 0.15);0, 0, 0.5);
-    border: 1px solid rgba(138, 43, 226, 0.3); font-size: 0.8em;
-    color: #8a2be2;  cursor: pointer;
+    background: rgba(138, 43, 226, 0.15);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    color: #8a2be2;
   }
   
   .entity-status-badge.fighting {
-    background: rgba(220, 20, 60, 0.15);nter;
-    border: 1px solid rgba(220, 20, 60, 0.3); justify-content: center;
-    color: #c62828;  min-width: 1.5em;
+    background: rgba(220, 20, 60, 0.15);
+    border: 1px solid rgba(220, 20, 60, 0.3);
+    color: #c62828;
   }
   
   .entity-status-badge.active {
-    background: rgba(255, 0, 0, 0.15);collapse-button:hover {
-    border: 1px solid rgba(255, 0, 0, 0.3);  color: rgba(0, 0, 0, 0.8);
+    background: rgba(255, 0, 0, 0.15);
+    border: 1px solid rgba(255, 0, 0, 0.3);
     color: #d32f2f;
-  }: 50%;
+  }
   
   .entity-status-badge.resolved {
     background: rgba(0, 128, 0, 0.15);
-    border: 1px solid rgba(0, 128, 0, 0.3);  .sort-controls {
-    color: #2e7d32;  display: flex;
+    border: 1px solid rgba(0, 128, 0, 0.3);
+    color: #2e7d32;
   }
-  0.5em;
+  
   .entity-status-badge.pending-tick {
     position: relative;
     animation: pulse 1s infinite alternate;
-  };
+  }
   
   .entity-status-badge.pending-tick::after {
-    content: '↻';0, 0, 0, 0.5);
+    content: '↻';
     margin-left: 0.3em;
     font-weight: bold;
   }
- display: flex;
-    align-items: center;
+
+  
   .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5em 1em;  {
-    cursor: pointer;or: rgba(0, 0, 0, 0.05);
-    user-select: none; 0.8);
+    padding: 0.5em 1em;  
+    cursor: pointer;
+    user-select: none;
     position: relative;
     width: 100%;
-    background-color: rgba(0, 0, 0, 0.03);sort-option.active {
-    border-radius: 0.3em 0.3em 0 0;    background-color: rgba(66, 133, 244, 0.1);
-    transition: background-color 0.2s ease;, 133, 244, 0.9);
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 0.3em 0.3em 0 0;
+    transition: background-color 0.2s ease;
   }
   
   .section-header:hover {
@@ -1893,130 +1847,191 @@ lid rgba(0, 128, 0, 0.3);
   
   .section-controls {
     display: flex;
-    align-items: center;ex;
-    gap: 0.5em; justify-content: center; 
-    margin-left: auto;    margin-bottom: 0.5em;
-  };
+    align-items: center;
+    gap: 0.5em;
+    margin-left: auto;
+  }
 
   .section-title {
     margin: 0;
     font-size: 0.9em;
-    font-weight: 600;;
+    font-weight: 600;
     color: rgba(0, 0, 0, 0.6);
     text-transform: uppercase;
-    letter-spacing: 0.05em;00;
+    letter-spacing: 0.05em;
     display: flex;
     align-items: center;
     gap: 0.3em;
-  }rgba(76, 175, 80, 0.2);
- color: #2e7d32;
-  .collapse-button {  border: 1px solid rgba(76, 175, 80, 0.4);
+  }
+
+  .collapse-button {
     background: none;
     border: none;
     color: rgba(0, 0, 0, 0.5);
-    font-size: 0.8em;-color-bright-accent, #64ffda);
-    cursor: pointer; background-color: rgba(100, 255, 218, 0.05);
-    padding: 0.2em 0.5em;    position: relative;
-    transition: all 0.2s ease;}
+    font-size: 0.8em;
+    cursor: pointer;
+    padding: 0.2em 0.5em;
+    transition: all 0.2s ease;
     display: flex;
-    align-items: center;owned::after {
-    justify-content: center;;
+    align-items: center;
+    justify-content: center;
     min-width: 1.5em;
-    min-height: 1.5em; left: 0;
-  }  top: 0;
+    min-height: 1.5em;
+  }
   
   .collapse-button:hover {
-    color: rgba(0, 0, 0, 0.8);lor: var(--color-bright-accent, #64ffda);
+    color: rgba(0, 0, 0, 0.8);
     background-color: rgba(0, 0, 0, 0.05);
     border-radius: 50%;
   }
 
   
-  .sort-controls {old;
+  .sort-controls {
     display: flex;
     gap: 0.2em;
     margin-right: 0.5em;
-  }battle-sides {
-    display: flex;
-  .sort-option {lumn;
+  }
+  
+  .sort-option {
     background: none;
     border: none;
-    font-size: 0.7em; margin-top: 0.4em;
-    color: rgba(0, 0, 0, 0.5);}
+    font-size: 0.7em;
+    color: rgba(0, 0, 0, 0.5);
     padding: 0.2em 0.4em;
     border-radius: 0.3em;
     cursor: pointer;
-    display: flex; border-radius: 0.3em;
-    align-items: center;}
+    display: flex;
+    align-items: center;
     gap: 0.2em;
-    transition: all 0.2s ease;{
-  }rgba(0, 0, 255, 0.07);
-   border: 1px solid rgba(0, 0, 255, 0.15);
-  .sort-option:hover {    color: #00008B;
+    transition: all 0.2s ease;
+  }
+  
+  .sort-option:hover {
     background-color: rgba(0, 0, 0, 0.05);
     color: rgba(0, 0, 0, 0.8);
   }
-  a(139, 0, 0, 0.07);
-  .sort-option.active { rgba(139, 0, 0, 0.15);
-    background-color: rgba(66, 133, 244, 0.1); color: #8B0000;
-    color: rgba(66, 133, 244, 0.9);  }
+  
+  .sort-option.active {
+    background-color: rgba(66, 133, 244, 0.1);
+    color: rgba(66, 133, 244, 0.9);
   }
   
   .sort-direction {
     font-size: 0.9em;
     font-weight: bold;
   }
- font-family: var(--font-mono, monospace);
-  .tab-sort-controls {    font-size: 0.85em;
-    display: flex;2f;
+
+  .tab-sort-controls {
+    display: flex;
     justify-content: center; 
     margin-bottom: 0.5em;
     padding: 0.3em 0;
-  }battle-progress {
-    margin-top: 0.4em;
+  }
+
   
   .entity-badge {
     font-size: 0.7em;
     padding: 0.2em 0.4em;
-    border-radius: 0.3em; height: 0.5em;
-    font-weight: 500;  background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0.3em;
+    font-weight: 500;
   }
-dden;
-  .owner-badge {m;
+
+  .owner-badge {
     background-color: rgba(76, 175, 80, 0.2);
     color: #2e7d32;
-    border: 1px solid rgba(76, 175, 80, 0.4);ll {
-  }%;
+    border: 1px solid rgba(76, 175, 80, 0.4);
+  }
 
-  .current-player-owned { transition: width 1s ease;
-    border-color: var(--color-bright-accent, #64ffda);  }
+  .current-player-owned {
+    border-color: var(--color-bright-accent, #64ffda);
     background-color: rgba(100, 255, 218, 0.05);
     position: relative;
   }
-  0, 0.7);
+  
   .current-player-owned::after {
     content: '';
     position: absolute;
     left: 0;
-    top: 0;;
+    top: 0;
     bottom: 0;
     width: 3px;
     background-color: var(--color-bright-accent, #64ffda);
   }
-empty-state {
-    padding: 2em;
-  .battle-winner {center;
-    color: #ff9800;0.5);
+
+  
+  .battle-winner {
+    color: #ff9800;
     font-weight: bold;
     margin-left: 0.5em;
   }
   
   .battle-sides {
     display: flex;
-    flex-direction: column;; }
+    flex-direction: column;
     gap: 0.3em;
-    font-size: 0.85em;style>
-    margin-top: 0.4em;  }    .battle-side {    padding: 0.2em 0.5em;    border-radius: 0.3em;  }    .battle-side.side1 {    background-color: rgba(0, 0, 255, 0.07);    border: 1px solid rgba(0, 0, 255, 0.15);    color: #00008B;  }    .battle-side.side2 {    background-color: rgba(139, 0, 0, 0.07);    border: 1px solid rgba(139, 0, 0, 0.15);    color: #8B0000;  }    .side-name {    font-weight: 500;  }  .battle-timer {    font-family: var(--font-mono, monospace);    font-size: 0.85em;    color: #d32f2f;    margin-top: 0.3em;  }  .battle-progress {    margin-top: 0.4em;    width: 100%;  }    .progress-bar {    height: 0.5em;    background-color: rgba(0, 0, 0, 0.1);    border-radius: 0.25em;    overflow: hidden;    margin-bottom: 0.2em;  }    .progress-fill {    height: 100%;    background-color: rgba(139, 0, 0, 0.7);    transition: width 1s ease;  }    .unit-count {    color: rgba(0, 0, 0, 0.7);    font-weight: 500;  }    .item-count {    color: #2d8659;    font-weight: 500;  }  
+    font-size: 0.85em;
+    margin-top: 0.4em;
+  }
+  
+  .battle-side {
+    padding: 0.2em 0.5em;
+    border-radius: 0.3em;
+  }
+  
+  .battle-side.side1 {
+    background-color: rgba(0, 0, 255, 0.07);
+    border: 1px solid rgba(0, 0, 255, 0.15);
+    color: #00008B;
+  }
+  
+  .battle-side.side2 {
+    background-color: rgba(139, 0, 0, 0.07);
+    border: 1px solid rgba(139, 0, 0, 0.15);
+    color: #8B0000;
+  }
+  
+  .side-name {
+    font-weight: 500;
+  }
+
+  .battle-timer {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.85em;
+    color: #d32f2f;
+    margin-top: 0.3em;
+  }
+
+  .battle-progress {
+    margin-top: 0.4em;
+    width: 100%;
+  }
+  
+  .progress-bar {
+    height: 0.5em;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 0.25em;
+    overflow: hidden;
+    margin-bottom: 0.2em;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background-color: rgba(139, 0, 0, 0.7);
+    transition: width 1s ease;
+  }
+
+  
+  .unit-count {
+    color: rgba(0, 0, 0, 0.7);
+    font-weight: 500;
+  }
+  
+  .item-count {
+    color: #2d8659;
+    font-weight: 500;
+  }
+
+  
   .empty-state {
     padding: 2em;
     text-align: center;
