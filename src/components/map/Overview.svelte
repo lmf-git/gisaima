@@ -1149,57 +1149,82 @@
                 <div class="entity-battle-icon">⚔️</div>
                 <div class="entity-info">
                   <div class="entity-name">
-                    Battle {battle.isPlayerBattle ? '🔥 ' : ''} 
-                    <span class="entity-coords">({battle.x}, {battle.y})</span>
+                    Battle ({battle.x}, {battle.y})
+                    <span class="entity-coords"></span>
                   </div>
                   
                   <div class="battle-sides">
-                    <div class="battle-side side1" class:winning-side={battle?.winner === 1} class:losing-side={battle?.winner === 2}>
-                      <div class="side-name">{battle?.side1.name}</div>
-                      <div class="unit-count">Groups: {battle?.side1?.groups.length}</div>
-                      {#if battle.side1?.casualties > 0}
-                        <div class="casualties">Lost: {battle.side1?.casualties}</div>
-                      {/if}
-                    </div>
-                    <div class="battle-vs">vs</div>
-                    <div class="battle-side side2" class:winning-side={battle?.winner === 2} class:losing-side={battle.winner === 1}>
-                      <div class="side-name">{battle.side2?.name}</div>
-                      <div class="unit-count">
-                        Groups: {battle.side2?.groups.length}
-                        {#if battle.structureInfo}
-                          + Structure
+                    <div class="battle-side side1" class:winning-side={battle?.side1?.power > battle?.side2?.power}>
+                      <div class="side-name">{battle?.side1?.name || 'Attackers'}</div>
+                      <div class="side-units">
+                        {#if battle?.side1?.groups}
+                          <div class="unit-count">
+                            {#if Object.keys(battle.side1.groups).length > 0}
+                              Groups: {Object.keys(battle.side1.groups).length}
+                              
+                              <!-- Show units detail if available -->
+                              {#if battle.side1.units}
+                                 ({Object.keys(battle.side1.units).length} units)
+                              {/if}
+                              
+                              {#if battle.side1.casualties > 0}
+                                <span class="casualties-tag">
+                                  -{battle.side1.casualties}
+                                </span>
+                              {/if}
+                            {/if}
+                          </div>
                         {/if}
                       </div>
-                      {#if battle.side2?.casualties > 0}
-                        <div class="casualties">Lost: {battle.side2?.casualties}</div>
-                      {/if}
+                    </div>
+                    <div class="battle-vs">vs</div>
+                    <div class="battle-side side2" class:winning-side={battle?.side2?.power > battle?.side1?.power}>
+                      <div class="side-name">{battle?.side2?.name || 'Defenders'}</div>
+                      <div class="side-units">
+                        {#if battle?.side2?.groups}
+                          <div class="unit-count">
+                            {#if Object.keys(battle.side2.groups).length > 0}
+                              Groups: {Object.keys(battle.side2.groups).length}
+                              
+                              <!-- Show units detail if available -->
+                              {#if battle.side2.units}
+                                 ({Object.keys(battle.side2.units).length} units)
+                              {/if}
+                              
+                              {#if battle.side2.casualties > 0}
+                                <span class="casualties-tag">
+                                  -{battle.side2.casualties}
+                                </span>
+                              {/if}
+                            {/if}
+                          </div>
+                        {/if}
+                      </div>
                     </div>
                   </div>
                   
                   <div class="entity-details">
-                    <div class="entity-status">
-                      <span class="entity-status-badge {battle.status}">
-                        {#if battle.winner}
-                           - {battle.winner === 1 ? battle.side1.name : battle.side2.name} won
-                        {/if}
-                      </span>
+                    <div class="battle-status">
+                      {#if battle.tickCount > 0}
+                        <span class="battle-status-tag">Active</span>
+                      {:else}
+                        <span class="battle-status-tag new">New</span>
+                      {/if}
                     </div>
                     <div class="entity-distance">{formatDistance(battle.distance)}</div>
                   </div>
                   
                   <div class="battle-timer">
-                    {#if battle.createdAt}
-                      Started {Math.floor((Date.now() - battle.createdAt) / 60000)} minutes ago
-                    {/if}
+                    Started {Math.floor((Date.now() - (battle.createdAt || Date.now())) / 60000) || 0} minutes ago
                     • Tick: {battle.tickCount || 0}
                   </div>
                   
                   <!-- Battle progress bar -->
                   <div class="battle-progress">
                     <div class="progress-bar">
-                      <div class="progress-fill" 
-                        style="width: {battle.side1.power ? 
-                          (battle.side1.power / (battle.side1.power + battle.side2.power) * 100) : 50}%">
+                      <div class="progress-fill side1" 
+                        style="width: {battle.side1?.power && (battle.side1.power + battle.side2?.power) > 0 ? 
+                          (battle.side1.power / (battle.side1.power + battle.side2?.power) * 100) : 50}%">
                       </div>
                     </div>
                   </div>
@@ -1849,14 +1874,16 @@
   
   .battle-sides {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 0.3em;
     font-size: 0.85em;
     margin-top: 0.4em;
+    align-items: center;
   }
   
   .battle-side {
-    padding: 0.2em 0.5em;
+    flex: 1;
+    padding: 0.3em 0.5em;
     border-radius: 0.3em;
   }
   
@@ -1874,12 +1901,34 @@
   
   .side-name {
     font-weight: 500;
+    font-size: 0.95em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .side-units {
+    font-size: 0.9em;
+    margin-top: 0.1em;
+  }
+  
+  .battle-vs {
+    font-weight: bold;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    color: rgba(0, 0, 0, 0.6);
   }
 
+  .winning-side {
+    box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.5);
+    background-color: rgba(255, 215, 0, 0.07);
+  }
+  
   .battle-timer {
     font-family: var(--font-mono, monospace);
-    font-size: 0.85em;
-    color: #d32f2f;
+    font-size: 0.8em;
+    color: rgba(0, 0, 0, 0.6);
     margin-top: 0.3em;
   }
 
@@ -1889,7 +1938,7 @@
   }
   
   .progress-bar {
-    height: 0.5em;
+    height: 0.4em;
     background-color: rgba(0, 0, 0, 0.1);
     border-radius: 0.25em;
     overflow: hidden;
@@ -1898,8 +1947,39 @@
   
   .progress-fill {
     height: 100%;
-    background-color: rgba(139, 0, 0, 0.7);
     transition: width 1s ease;
+  }
+  
+  .progress-fill.side1 {
+    background-color: rgba(0, 0, 255, 0.5);
+  }
+  
+  .casualties-tag {
+    display: inline-block;
+    font-size: 0.85em;
+    padding: 0.1em 0.3em;
+    border-radius: 0.2em;
+    margin-left: 0.2em;
+    background-color: rgba(220, 20, 60, 0.1);
+    border: 1px solid rgba(220, 20, 60, 0.2);
+    color: #c62828;
+  }
+  
+  .battle-status-tag {
+    display: inline-block;
+    font-size: 0.85em;
+    padding: 0.2em 0.4em;
+    border-radius: 0.2em;
+    background-color: rgba(255, 140, 0, 0.15);
+    border: 1px solid rgba(255, 140, 0, 0.3);
+    color: #d06000;
+    font-weight: 500;
+  }
+  
+  .battle-status-tag.new {
+    background-color: rgba(76, 175, 80, 0.15);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: #2e7d32;
   }
 
   
