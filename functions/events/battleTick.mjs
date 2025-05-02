@@ -334,6 +334,43 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       winner = 1; // Side 1 wins
     }
     
+    // Process players killed in battle - this is missing in the original code
+    if (playersKilled.length > 0) {
+      console.log(`Processing ${playersKilled.length} players killed in battle ${battleId}`);
+      
+      // For each killed player, mark them as not alive and clear their group
+      playersKilled.forEach(player => {
+        const playerId = player.playerId;
+        if (playerId) {
+          // Set alive status to false
+          updates[`players/${playerId}/worlds/${worldId}/alive`] = false;
+          
+          // Clear their group reference
+          updates[`players/${playerId}/worlds/${worldId}/inGroup`] = null;
+          
+          // Add a clear death message to the player's record
+          updates[`players/${playerId}/worlds/${worldId}/lastMessage`] = {
+            text: "Died in battle",
+            timestamp: Date.now()
+          };
+          
+          console.log(`Player ${playerId} (${player.displayName}) killed in battle and marked as dead`);
+          
+          // Add a chat message about player death
+          const chatMessageId = `player_death_${playerId}_${Date.now()}`;
+          updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+            text: `${player.displayName || "A player"} has fallen in battle at (${battle.locationX}, ${battle.locationY})`,
+            type: 'event',
+            timestamp: Date.now(),
+            location: {
+              x: battle.locationX,
+              y: battle.locationY
+            }
+          };
+        }
+      });
+    }
+    
     if (winner === undefined) {
       // Update battle tick count directly at the path
       updates[`${basePath}/tickCount`] = tickCount;
