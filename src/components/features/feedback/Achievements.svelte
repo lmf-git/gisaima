@@ -1,9 +1,11 @@
 <script>
-  import { fade } from 'svelte/transition';
-  import { currentPlayer, game, savePlayerAchievement, ACHIEVEMENT_DEFINITIONS } from '../../lib/stores/game.js';
-  import Close from '../icons/Close.svelte';
-  import Trophy from '../icons/Trophy.svelte';
   import { onMount, onDestroy } from 'svelte';
+  import { fade } from 'svelte/transition';
+
+  import { currentPlayer, game, savePlayerAchievement, ACHIEVEMENT_DEFINITIONS } from '../../../lib/stores/game.js';
+
+  import Close from '../../icons/Close.svelte';
+  import Trophy from '../../icons/Trophy.svelte';
 
   // Add onMouseEnter to props
   const { 

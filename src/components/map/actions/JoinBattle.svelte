@@ -1,17 +1,16 @@
 <script>
-  import { fade, scale } from 'svelte/transition';
-  import { currentPlayer, game } from '../../lib/stores/game';
-  import { highlightedStore, targetStore } from '../../lib/stores/map';
-  import Close from '../icons/Close.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
+
+  import { scale } from 'svelte/transition';
+
+  import { currentPlayer, game } from '../../../lib/stores/game';
+  import { targetStore } from '../../../lib/stores/map';
+
+  import Close from '../../icons/Close.svelte';
 
   const { 
     onClose = () => {}, 
-    onJoinBattle = () => {},
-    groupData = null, // Add missing groupData prop
-    x,
-    y,
-    tile
+    onJoinBattle = () => {}
   } = $props();
 
   // Get tile data directly from the targetStore (same as current player location)

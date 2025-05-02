@@ -1,18 +1,22 @@
 <script>
+    import { getFunctions, httpsCallable } from "firebase/functions";
+
     import { onMount } from "svelte";
     import { get } from "svelte/store";
-    import { game, currentPlayer } from "../../lib/stores/game.js";
-    import { getFunctions, httpsCallable } from "firebase/functions";
+    
     import UNITS from "gisaima-shared/definitions/UNITS.js";
-    import Close from "../icons/Close.svelte";
-    import Human from "../icons/Human.svelte";
-    import Elf from "../icons/Elf.svelte";
-    import Dwarf from "../icons/Dwarf.svelte";
-    import Goblin from "../icons/Goblin.svelte";
-    import Fairy from "../icons/Fairy.svelte";
-    import Shield from "../icons/Shield.svelte";
-    import Sword from "../icons/Sword.svelte";
-    import Bow from "../icons/Bow.svelte";
+
+    import { game, currentPlayer } from "../../../lib/stores/game.js";
+
+    import Close from "../../icons/Close.svelte";
+    import Human from "../../icons/Human.svelte";
+    import Elf from "../../icons/Elf.svelte";
+    import Dwarf from "../../icons/Dwarf.svelte";
+    import Goblin from "../../icons/Goblin.svelte";
+    import Fairy from "../../icons/Fairy.svelte";
+    import Shield from "../../icons/Shield.svelte";
+    import Sword from "../../icons/Sword.svelte";
+    import Bow from "../../icons/Bow.svelte";
 
     // Props
     const {

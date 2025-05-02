@@ -1,9 +1,10 @@
 <script>
-  import Logo from './Logo.svelte';
+  import { onMount } from 'svelte';
+  
   import { user, loading as userLoading } from '$lib/stores/user';
   import { game, isAuthReady } from '$lib/stores/game';
-  import { browser } from '$app/environment';
-  import { onMount } from 'svelte';
+
+  import Logo from '../../Logo.svelte';
   
   // Update to use $props() runes API - keep only the extraClass prop
   const { extraClass = '' } = $props();

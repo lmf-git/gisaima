@@ -1,11 +1,14 @@
 <script>
-  import { fade, scale } from 'svelte/transition';
-  import { highlightedStore, targetStore } from '../../lib/stores/map';
-  import { currentPlayer, game, timeUntilNextTick } from '../../lib/stores/game';
-  import Close from '../icons/Close.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
+  import { scale } from 'svelte/transition';
+
+  import { targetStore } from '../../../lib/stores/map';
+  import { currentPlayer, game, timeUntilNextTick } from '../../../lib/stores/game';
+
+  import Close from '../../icons/Close.svelte';
   
   const { onClose = () => {}, onDemobilize = () => {} } = $props();
+
   const functions = getFunctions();
   
   // Use $derived for tileData to prevent reactivity issues

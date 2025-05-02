@@ -1,6 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import {  timeUntilNextTick, worldInfo } from '../../lib/stores/game.js';
+  import {  timeUntilNextTick, worldInfo } from '../../../lib/stores/game.js';
   
   // Optional props with defaults
   const { 

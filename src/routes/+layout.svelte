@@ -8,9 +8,9 @@
     import DiscordIcon from '../components/icons/DiscordIcon.svelte';
     import GitHubIcon from '../components/icons/GitHubIcon.svelte'; 
     import MobileMenu from '../components/MobileMenu.svelte';
-    import { game, isAuthReady } from '../lib/stores/game.js';
+    import { isAuthReady } from '../lib/stores/game.js';
     import HamburgerIcon from '../components/icons/HamburgerIcon.svelte';
-    import GuestWarning from '../components/GuestWarning.svelte';
+    import GuestWarning from '../components/features/GuestWarning.svelte';
 
     const { children } = $props();
 

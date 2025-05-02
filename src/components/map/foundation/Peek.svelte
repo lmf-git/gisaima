@@ -1,19 +1,23 @@
 <script>
-  import { currentPlayer } from '../../lib/stores/game.js';
-  import { targetStore } from '../../lib/stores/map.js';
-  import Close from '../icons/Close.svelte';
-  import Eye from '../icons/Eye.svelte';
-  import Rally from '../icons/Rally.svelte';
-  import Compass from '../icons/Compass.svelte';
-  import Sword from '../icons/Sword.svelte';
-  import Hammer from '../icons/Hammer.svelte';
-  import Crop from '../icons/Crop.svelte';
-  import Structure from '../icons/Structure.svelte';
-  import Torch from '../icons/Torch.svelte';
-  import Info from '../icons/Info.svelte';
-  import Horn from '../icons/Horn.svelte'; // Add import for Horn icon
-  import Logo from '../Logo.svelte';
   import { onDestroy } from 'svelte';
+  
+  import { currentPlayer } from '../../../lib/stores/game.js';
+  import { targetStore } from '../../../lib/stores/map.js';
+
+  import Logo from '../../Logo.svelte';
+
+  import Close from '../../icons/Close.svelte';
+  import Eye from '../../icons/Eye.svelte';
+  import Rally from '../../icons/Rally.svelte';
+  import Compass from '../../icons/Compass.svelte';
+  import Sword from '../../icons/Sword.svelte';
+  import Hammer from '../../icons/Hammer.svelte';
+  import Crop from '../../icons/Crop.svelte';
+  import Structure from '../../icons/Structure.svelte';
+  import Info from '../../icons/Info.svelte';
+  import Horn from '../../icons/Horn.svelte';
+  
+  
 
   // Define props with simplified approach
   const {

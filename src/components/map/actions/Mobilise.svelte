@@ -1,14 +1,16 @@
 <script>
-  import { fade, scale } from 'svelte/transition';
-  import { currentPlayer, game, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
-  import { highlightedStore, targetStore } from '../../lib/stores/map';
-  import Close from '../icons/Close.svelte';
-  import Human from '../icons/Human.svelte';
-  import Elf from '../icons/Elf.svelte';
-  import Dwarf from '../icons/Dwarf.svelte';
-  import Goblin from '../icons/Goblin.svelte';
-  import Fairy from '../icons/Fairy.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
+  import { scale } from 'svelte/transition';
+
+  import { currentPlayer, game, timeUntilNextTick } from '../../../lib/stores/game';
+  import { targetStore } from '../../../lib/stores/map';
+
+  import Close from '../../icons/Close.svelte';
+  import Human from '../../icons/Human.svelte';
+  import Elf from '../../icons/Elf.svelte';
+  import Dwarf from '../../icons/Dwarf.svelte';
+  import Goblin from '../../icons/Goblin.svelte';
+  import Fairy from '../../icons/Fairy.svelte';
 
   const { 
     onClose = () => {}
@@ -18,11 +20,12 @@
 
   const _fmt = t => t?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   
+  let groupName = $state("");
+  let includePlayer = $state(true);
+
   let availableUnits = $state([]);
   let selectedUnits = $state([]);
-  let includePlayer = $state(true);
-  // Initialize with empty string and will set later in effect
-  let groupName = $state("");
+  
   let mobilizeError = $state(null);
   let processing = $state(false);
 

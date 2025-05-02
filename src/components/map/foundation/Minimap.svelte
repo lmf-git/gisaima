@@ -9,8 +9,8 @@
     EXPANDED_ROWS_FACTOR,
     setHighlighted,
     moveTarget
-  } from '../../lib/stores/map.js';
-  import { getChunkKey } from 'gisaima-shared/map/cartography.js';
+  } from '../../../lib/stores/map.js';
+
   import { onDestroy } from "svelte";
   
   // Accept closing prop from parent

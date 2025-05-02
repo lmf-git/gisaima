@@ -73,12 +73,7 @@ export function processRecruitment(worldId, updates, chunkKey, tileKey, tile, no
       }
       
       // Add notification message to player
-      if (owner) {
-        updates[`players/${owner}/worlds/${worldId}/lastMessage`] = {
-          text: `${quantity} ${unitName} units completed recruitment`,
-          timestamp: now
-        };
-        
+      if (owner) {        
         // Add to player's structure units reference
         updates[`players/${owner}/worlds/${worldId}/structures/${structure.id}/units/${unitId}`] = {
           id: unitId,

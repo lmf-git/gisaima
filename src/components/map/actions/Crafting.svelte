@@ -1,25 +1,27 @@
 <script>
-  import { scale } from 'svelte/transition';
   import { getFunctions, httpsCallable } from 'firebase/functions';
-  import { game, currentPlayer } from '../../lib/stores/game.js';
-  import Close from '../icons/Close.svelte';
+
+  import { scale } from 'svelte/transition';
+
+  import { BUILDINGS } from 'gisaima-shared';
   import { 
     getItemCategories, 
-    getAllRecipes, 
+    getAllRecipes
   } from 'gisaima-shared/definitions/ITEMS.js';
-  import { BUILDINGS } from 'gisaima-shared/';
+  import { game, currentPlayer } from '../../../lib/stores/game.js';
+  
+  import Close from '../../icons/Close.svelte';
 
-  // Define props using $props() rune
   const {
     structure = null,
     x = 0,
     y = 0,
     onClose = () => {},
-    onCraftStart = () => {},
+    onCraftStart = () => {}
   } = $props();
 
   // Use $state() for reactive variables
-  let recipes = $state(getAllRecipes()); // Initialize with shared recipes
+  let recipes = $state(getAllRecipes());
   let loading = $state(false); 
   let error = $state(null);
   let selectedTab = $state('weapon');

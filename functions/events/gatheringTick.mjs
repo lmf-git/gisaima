@@ -58,11 +58,7 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
   
   // Add a message about the gathering
   const itemCount = gatheredItems.length;
-  updates[`${groupPath}/lastMessage`] = {
-    text: `Gathered ${itemCount} item${itemCount !== 1 ? 's' : ''}`,
-    timestamp: now
-  };
-  
+
   // Create detailed chat message about gathering
   const groupName = group.name || "Unnamed group";
   const locationStr = tileKey.replace(',', ', ');

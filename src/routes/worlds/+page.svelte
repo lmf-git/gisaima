@@ -1,6 +1,13 @@
 <script>
-  import { goto } from '$app/navigation';
+  import { ref, onValue } from "firebase/database";
+  import { httpsCallable } from "firebase/functions";
+
+  import { functions, db } from '../../lib/firebase/firebase.js';
+
   import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
+  import { browser } from '$app/environment';
+
   import { user, loading as userLoading } from '../../lib/stores/user.js';
   import { 
     game, 
@@ -11,13 +18,9 @@
     listenToPlayerWorldData
   } from '../../lib/stores/game.js';
   import { clearSavedTargetPosition } from '../../lib/stores/map.js';
-  import { ref, onValue } from "firebase/database";
-  import { db } from '../../lib/firebase/firebase.js';
-  import { httpsCallable } from "firebase/functions";
-  import { functions } from '../../lib/firebase/firebase.js';
-  import { browser } from '$app/environment';
-  import JoinConfirmation from '../../components/JoinConfirmation.svelte';
-  import WorldCard from '../../components/WorldCard.svelte';
+
+  import JoinConfirmation from '../../components/specific/worlds/JoinConfirmation.svelte';
+  import WorldCard from '../../components/specific/worlds/WorldCard.svelte';
   
   let selectedWorld = $state(null);
   let showConfirmation = $state(false);

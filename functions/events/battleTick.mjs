@@ -140,11 +140,6 @@ export function distributeLootToWinner({
       updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/items/${itemId}`] = item;
     });
     
-    // Add a message about looting
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/lastMessage`] = {
-      text: `Looted ${battleLoot.length} items from battle`,
-      timestamp: Date.now()
-    };
   } else if (winner !== 0) {
     // If winner is determined but no surviving groups, leave loot on tile
     // This creates a "treasure" for other groups to find later
@@ -441,30 +436,12 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           
           if (tile.groups[groupId]) {
             logger.debug(`Cleaning up battle status for group ${groupId}`);
-            // Reset group status for all groups that were in battle
+            // Reset group status for all groups still in battle on winning side.
             updates[`${groupPath}/inBattle`] = false;
             updates[`${groupPath}/battleId`] = null;
             updates[`${groupPath}/battleSide`] = null;
             updates[`${groupPath}/battleRole`] = null;
             updates[`${groupPath}/status`] = 'idle';
-            
-            // Add victory or defeat message based on which side the group was on
-            const wasOnWinningSide = 
-              (winner === 1 && battle.side1.groups && battle.side1.groups[groupId]) ||
-              (winner === 2 && battle.side2.groups && battle.side2.groups[groupId]);
-            
-            if (winner !== 0) {
-              updates[`${groupPath}/lastMessage`] = {
-                text: wasOnWinningSide ? "Your group has won the battle!" : "Your group was defeated in battle.",
-                timestamp: now
-              };
-            } else {
-              // Draw message
-              updates[`${groupPath}/lastMessage`] = {
-                text: "The battle ended in a stalemate.",
-                timestamp: now
-              };
-            }
           }
         }
       }

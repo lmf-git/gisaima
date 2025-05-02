@@ -77,11 +77,7 @@ export const cancelMove = onCall({ maxInstances: 10 }, async (request) => {
       moveSpeed: null,
       nextMoveTime: null,
       targetX: null,
-      targetY: null,
-      lastMessage: {
-        text: 'Movement cancelled',
-        timestamp: now
-      }
+      targetY: null
     });
     
     return {

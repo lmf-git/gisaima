@@ -1,22 +1,22 @@
 <script>
   import { onMount } from 'svelte';
   
-
   import { TerrainGenerator } from 'gisaima-shared/map/noise.js';
+
   import { goto } from '$app/navigation';
   import { browser } from '$app/environment';
-  import { getWorldCenterCoordinates } from '../lib/stores/game.js';
+
+  import { getWorldCenterCoordinates } from '../../../lib/stores/game.js';
   
-  // Props with defaults - fix the default tileSize value
   const { 
     worldId = '', 
     seed = 0, 
-    tileSize = 9, // More reasonable default size that matches Grid component better
+    tileSize = 9,
     summaryFactor = 75,
     delayed = false,
-    joined = false, // New prop to track if world is joined
-    info = null, // Add world info prop to access center coordinates
-    worldCenter = null, // Allow passing precomputed world center directly
+    joined = false,
+    info = null,
+    worldCenter = null,
   } = $props();
   
   // Local state

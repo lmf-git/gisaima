@@ -1,27 +1,26 @@
 <script>
   import { slide } from "svelte/transition";
 
-  import { currentPlayer } from "../../lib/stores/game.js";
-
-  import { targetStore } from "../../lib/stores/map.js";
-  import Close from '../icons/Close.svelte';
-  import Structure from '../icons/Structure.svelte';
-  import Torch from '../icons/Torch.svelte';
-
-  import Human from '../icons/Human.svelte';
-  import Elf from '../icons/Elf.svelte';
-  import Dwarf from '../icons/Dwarf.svelte';
-  import Goblin from '../icons/Goblin.svelte';
-  import Fairy from '../icons/Fairy.svelte';
-
-  import Hammer from '../icons/Hammer.svelte';
   import { BUILDINGS } from "gisaima-shared";
+
+  import { currentPlayer } from "../../../lib/stores/game.js";
+  import { targetStore } from "../../../lib/stores/map.js";
+
+  import Close from '../../icons/Close.svelte';
+  import Structure from '../../icons/Structure.svelte';
+  import Torch from '../../icons/Torch.svelte';
+  import Human from '../../icons/Human.svelte';
+  import Elf from '../../icons/Elf.svelte';
+  import Dwarf from '../../icons/Dwarf.svelte';
+  import Goblin from '../../icons/Goblin.svelte';
+  import Fairy from '../../icons/Fairy.svelte';
+  import Hammer from '../../icons/Hammer.svelte';
+  
 
   // Props - using correct Svelte 5 runes syntax
   const { 
     x = 0, 
     y = 0, 
-    tile = null, 
     onClose = () => {},
     onAchievement = () => {}, // Add this to handle achievements
     onShowModal = () => {} // Add this prop to handle showing modals

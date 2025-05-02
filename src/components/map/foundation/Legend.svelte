@@ -1,5 +1,5 @@
 <script>
-  import { targetStore, ready } from "../../lib/stores/map";  // Changed from centerTileStore to targetStore
+  import { targetStore, ready } from "../../../lib/stores/map";
 
   const { openDetails } = $props();
   

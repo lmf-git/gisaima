@@ -110,10 +110,6 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleRole`] = null;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastMessage`] = {
-      text: `Fled from battle! Lost ${casualtiesCount} units while retreating.`,
-      timestamp: now
-    };
     
     // Add chat message about fleeing
     const chatMessageId = `battle_flee_${now}_${groupId}`;

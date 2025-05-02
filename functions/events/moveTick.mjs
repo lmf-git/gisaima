@@ -57,11 +57,6 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
     updates[`${groupPath}/targetX`] = null;
     updates[`${groupPath}/targetY`] = null;
     
-    // Add message about completed movement
-    updates[`${groupPath}/lastMessage`] = {
-      text: `Journey completed`,
-      timestamp: now
-    };
 
     // Add chat message for journey completion
     const startPoint = group.movementPath[0];
@@ -111,10 +106,6 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
         status: 'idle',
         x: nextPoint.x,
         y: nextPoint.y,
-        lastMessage: {
-          text: `Moving to next location (${nextPoint.x},${nextPoint.y})`,
-          timestamp: now
-        }
       };
       
       // Ensure monster-specific properties are preserved after movement
@@ -131,11 +122,7 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
         y: nextPoint.y,
         pathIndex: nextIndex,
         nextMoveTime: nextMoveTime,
-        status: 'moving',
-        lastMessage: {
-          text: `Moving to next location (${nextPoint.x},${nextPoint.y})`,
-          timestamp: now
-        }
+        status: 'moving'
       };
       
       // Ensure monster type is preserved on intermediate moves

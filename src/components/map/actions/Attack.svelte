@@ -1,19 +1,18 @@
 <script>
-  import { fade, scale } from 'svelte/transition';
-  import { currentPlayer, game } from '../../lib/stores/game';
-  import { highlightedStore, targetStore } from '../../lib/stores/map';
-  import Close from '../icons/Close.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
+  import { scale } from 'svelte/transition';
 
-  // Import race icon components
-  import Human from '../icons/Human.svelte';
-  import Elf from '../icons/Elf.svelte';
-  import Dwarf from '../icons/Dwarf.svelte';
-  import Goblin from '../icons/Goblin.svelte';
-  import Fairy from '../icons/Fairy.svelte';
-  import Structure from '../icons/Structure.svelte';
+  import { currentPlayer, game } from '../../../lib/stores/game';
+  import { targetStore } from '../../../lib/stores/map';
 
-  // Props
+  import Close from '../../icons/Close.svelte';
+  import Human from '../../icons/Human.svelte';
+  import Elf from '../../icons/Elf.svelte';
+  import Dwarf from '../../icons/Dwarf.svelte';
+  import Goblin from '../../icons/Goblin.svelte';
+  import Fairy from '../../icons/Fairy.svelte';
+  import Structure from '../../icons/Structure.svelte';
+
   const { onClose = () => {} } = $props();
 
   // Get tile data directly from the targetStore (same as current player location)

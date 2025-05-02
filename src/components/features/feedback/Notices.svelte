@@ -1,10 +1,10 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
   import { fly, fade } from 'svelte/transition';
   import { flip } from 'svelte/animate';
-  import { messages, getMessageTime, initializeChat, markMessagesAsRead } from '../../lib/stores/chat.js';
-  import { game } from '../../lib/stores/game.js';
-  import { user } from '../../lib/stores/user.js'; 
+  
+  import { messages, getMessageTime, initializeChat, markMessagesAsRead } from '../../../lib/stores/chat.js';
+  import { game } from '../../../lib/stores/game.js';
+  import { user } from '../../../lib/stores/user.js'; 
 
   // Props
   const { maxNotices = 5 } = $props();

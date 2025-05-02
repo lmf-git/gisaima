@@ -158,12 +158,6 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
         if (playerData.resources[resource] < 0) playerData.resources[resource] = 0;
       }
       
-      // Add message about recruitment
-      playerData.lastMessage = {
-        text: `Started recruiting ${quantity} ${unitTypeData.name} units`,
-        timestamp: now
-      };
-      
       // Update structure recruitment queue
       if (!data.worlds) data.worlds = {};
       if (!data.worlds[worldId]) data.worlds[worldId] = {};
@@ -283,12 +277,6 @@ export const cancelRecruitment = onCall({ maxInstances: 10 }, async (request) =>
         }
         data.players[userId].worlds[worldId].resources[resource] += amount;
       }
-      
-      // Add message about cancellation
-      data.players[userId].worlds[worldId].lastMessage = {
-        text: `Cancelled recruitment and received ${refundPercent}% refund`,
-        timestamp: now
-      };
       
       return data;
     });

@@ -1,5 +1,5 @@
 <script>
-  import { map } from "../../lib/stores/map.js";
+  import { map } from "../../../lib/stores/map.js";
   
   // Generate arrays for x and y axis labels that exactly match grid cells (not grid lines)
   const xLabels = $derived(Array.from({ length: $map.cols }, (_, i) => 

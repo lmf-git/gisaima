@@ -1,15 +1,19 @@
 <script>
+    import { getFunctions, httpsCallable } from 'firebase/functions'; 
+    import { get } from 'svelte/store';
+
     import { browser } from '$app/environment';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
-    import { get } from 'svelte/store';
+
     import { user, isAuthReady } from '../../lib/stores/user.js'; 
+    
     import { 
       game, 
       getWorldInfo,
       setCurrentWorld,
       savePlayerAchievement,
-      subscribeToWorldInfo // Add import for the subscription function
+      subscribeToWorldInfo
     } from "../../lib/stores/game.js";
     
     import { 
@@ -25,41 +29,44 @@
         hasTileContent
     } from "../../lib/stores/map.js";
     
-    import { getFunctions, httpsCallable } from 'firebase/functions'; 
-    
-    import Tutorial from '../../components/map/Tutorial.svelte';
-    import Grid from '../../components/map/Grid.svelte';
-    import Minimap from '../../components/map/Minimap.svelte';
-    import Axes from '../../components/map/Axes.svelte';
-    import Legend from '../../components/map/Legend.svelte';
-    import Details from '../../components/map/Details.svelte';
-    import SpawnMenu from '../../components/map/SpawnMenu.svelte';
-    import Overview from '../../components/map/Overview.svelte';
-    import Close from '../../components/icons/Close.svelte';
-    import Mobilise from '../../components/map/Mobilise.svelte';
-    import Build from '../../components/map/Build.svelte'; 
-    import Move from '../../components/map/Move.svelte';
-    import Attack from '../../components/map/Attack.svelte';
-    import JoinBattle from '../../components/map/JoinBattle.svelte';
-    import Demobilise from '../../components/map/Demobilise.svelte';
-    import StructureOverview from '../../components/map/StructureOverview.svelte';
-    import Gather from '../../components/map/Gather.svelte';
-    import Crafting from '../../components/map/Crafting.svelte';
-    import Recruitment from '../../components/map/Recruitment.svelte';
-    import Map from '../../components/icons/Map.svelte';
-    import Spyglass from '../../components/icons/Spyglass.svelte';
-    import Recenter from '../../components/map/Recenter.svelte';
-    import Chat from '../../components/map/Chat.svelte';
-    import Notices from '../../components/map/Notices.svelte';
-    import BirdActive from '../../components/icons/BirdActive.svelte';
     import { unreadMessages } from "../../lib/stores/chat.js";
-    import Bird from '../../components/icons/Bird.svelte';
-    import Achievements from '../../components/map/Achievements.svelte';
+
+    import Chat from '../../components/features/Chat.svelte';
+    import Achievements from '../../components/features/feedback/Achievements.svelte';
+    import AchievementUnlocked from '../../components/features/feedback/AchievementUnlocked.svelte';
+    import Notices from '../../components/features/feedback//Notices.svelte';
+    import NextWorldTick from '../../components/features/feedback//NextWorldTick.svelte';
+
+    import Grid from '../../components/map/foundation/Grid.svelte';
+    import Axes from '../../components/map/foundation/Axes.svelte';
+    import Legend from '../../components/map/foundation/Legend.svelte';
+    import Minimap from '../../components/map/foundation/Minimap.svelte';
+    import Recenter from '../../components/map/foundation/Recenter.svelte';
+    
+    import Details from '../../components/map/actions/Details.svelte';
+    import Overview from '../../components/map/actions/Overview.svelte';
+    import StructureOverview from '../../components/map/actions/StructureOverview.svelte';
+    import SpawnMenu from '../../components/map/actions/SpawnMenu.svelte';
+    import Mobilise from '../../components/map/actions/Mobilise.svelte';
+    import Move from '../../components/map/actions/Move.svelte';
+    import Gather from '../../components/map/actions/Gather.svelte';
+    import Demobilise from '../../components/map/actions/Demobilise.svelte';
+    import Recruitment from '../../components/map/actions/Recruitment.svelte';
+    import Attack from '../../components/map/actions/Attack.svelte';
+    import Build from '../../components/map/actions/Build.svelte'; 
+    import JoinBattle from '../../components/map/actions/JoinBattle.svelte';
+    import Crafting from '../../components/map/actions/Crafting.svelte';
+    import Tutorial from '../../components/map/actions/Tutorial.svelte';
+    
+    import Map from '../../components/icons/Map.svelte';
+    import Close from '../../components/icons/Close.svelte';
+    import Spyglass from '../../components/icons/Spyglass.svelte';
     import AchievementIcon from '../../components/icons/Trophy.svelte';
-    import AchievementUnlocked from '../../components/map/AchievementUnlocked.svelte';
-    import NextWorldTick from '../../components/map/NextWorldTick.svelte';
+    import BirdActive from '../../components/icons/BirdActive.svelte';
+    import Bird from '../../components/icons/Bird.svelte';
     import BoundIcon from '../../components/icons/BoundIcon.svelte';
     import UnboundIcon from '../../components/icons/UnboundIcon.svelte';
+    
     
     const DEBUG_MODE = true;
     const debugLog = (...args) => DEBUG_MODE && console.log(...args);

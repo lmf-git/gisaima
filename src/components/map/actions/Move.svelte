@@ -1,23 +1,21 @@
 <script>
   import { onMount } from 'svelte';
-  import { currentPlayer, game, hasAchievement, savePlayerAchievement } from '../../lib/stores/game';
-  import { targetStore } from '../../lib/stores/map';
-  import Close from '../icons/Close.svelte';
-  import Compass from '../icons/Compass.svelte';
+  import { 
+    currentPlayer, game, hasAchievement, savePlayerAchievement 
+  } from '../../../lib/stores/game';
+  import { targetStore } from '../../../lib/stores/map';
+
+  import Close from '../../icons/Close.svelte';
+  import Compass from '../../icons/Compass.svelte';
   
-  // Props using $props() rune
   const { 
     onClose = () => {}, 
-    onStartPathDrawing = () => {},  // Fix the prop name to match how it's used
-    groupData = null,  // Add groupData prop if it's passed in
-    x, 
-    y, 
-    tile 
+    onStartPathDrawing = () => {}
   } = $props();
 
-  // States
+
   let selectedGroupId = $state(null);
-  let processing = $state(false); // Add processing state
+  let processing = $state(false);
   let isSubmitting = $state(false);
   let error = $state(null);
   

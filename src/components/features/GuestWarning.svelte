@@ -1,7 +1,6 @@
 <script>
-  import { onMount } from 'svelte';
-  import Close from './icons/Close.svelte';
-  import { user, signUp } from '../lib/stores/user';
+  import Close from '../icons/Close.svelte';
+  import { signUp } from '../../lib/stores/user';
   
   const { onClose, animatingOut = false } = $props();
   

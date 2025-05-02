@@ -1,33 +1,31 @@
 <script>
+  import { getFunctions, httpsCallable } from 'firebase/functions';
   import { onMount, onDestroy } from "svelte";
   import { get } from "svelte/store";
   import { slide } from "svelte/transition";
-  import { highlightedStore, coordinates, targetStore, moveTarget } from "../../lib/stores/map.js";
-  import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from "../../lib/stores/game.js";
-  import { getFunctions, httpsCallable } from 'firebase/functions';
-  import Close from '../icons/Close.svelte';
-  import Torch from '../icons/Torch.svelte';
-  import Structure from '../icons/Structure.svelte';
-  import Cancel from '../icons/Close.svelte'; // Reusing Close icon for cancel
-  import Horn from '../icons/Horn.svelte'; // Add import for Horn icon
+  
   import { calculateGroupPower } from 'gisaima-shared/war/battles.js';
 
-  // Import race icon components
-  import Human from '../icons/Human.svelte';
-  import Elf from '../icons/Elf.svelte';
-  import Dwarf from '../icons/Dwarf.svelte';
-  import Goblin from '../icons/Goblin.svelte';
-  import Fairy from '../icons/Fairy.svelte';
+  import { coordinates, targetStore } from "../../../lib/stores/map.js";
+  import { game, currentPlayer, timeUntilNextTick } from "../../../lib/stores/game.js";
+  
+  import Close from '../../icons/Close.svelte';
+  import Torch from '../../icons/Torch.svelte';
+  import Structure from '../../icons/Structure.svelte';
+  import Cancel from '../../icons/Close.svelte';
+  import Horn from '../../icons/Horn.svelte';
+  import Human from '../../icons/Human.svelte';
+  import Elf from '../../icons/Elf.svelte';
+  import Dwarf from '../../icons/Dwarf.svelte';
+  import Goblin from '../../icons/Goblin.svelte';
+  import Fairy from '../../icons/Fairy.svelte';
+  import Compass from '../../icons/Compass.svelte';
+  import Eye from '../../icons/Eye.svelte';
+  import Crop from '../../icons/Crop.svelte';
+  import Rally from '../../icons/Rally.svelte';
+  import Sword from '../../icons/Sword.svelte';
+  import Hammer from '../../icons/Hammer.svelte';
 
-  // Import action icon components
-  import Compass from '../icons/Compass.svelte';
-  import Eye from '../icons/Eye.svelte';
-  import Crop from '../icons/Crop.svelte';
-  import Rally from '../icons/Rally.svelte';
-  import Sword from '../icons/Sword.svelte';
-  import Hammer from '../icons/Hammer.svelte';
-
-  // Props
   const { 
     onClose = () => {}, 
     onShowModal = null,

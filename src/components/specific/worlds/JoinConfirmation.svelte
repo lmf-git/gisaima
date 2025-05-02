@@ -1,10 +1,9 @@
 <script>
-  import Close from './icons/Close.svelte';
-  import Human from './icons/Human.svelte';
-  import Elf from './icons/Elf.svelte';
-  import Dwarf from './icons/Dwarf.svelte';
-  import Goblin from './icons/Goblin.svelte';
-  import Fairy from './icons/Fairy.svelte';
+  import Human from '../../icons/Human.svelte';
+  import Elf from '../../icons/Elf.svelte';
+  import Dwarf from '../../icons/Dwarf.svelte';
+  import Goblin from '../../icons/Goblin.svelte';
+  import Fairy from '../../icons/Fairy.svelte';
 
   // Props for the component
   const { 

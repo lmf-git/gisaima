@@ -1,9 +1,11 @@
 <script>
-  import { fade, scale } from 'svelte/transition';
-  import { currentPlayer, game, timeUntilNextTick } from '../../lib/stores/game';
-  import { highlightedStore, targetStore } from '../../lib/stores/map';
-  import Close from '../icons/Close.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
+  import { scale } from 'svelte/transition';
+
+  import { currentPlayer, game } from '../../../lib/stores/game';
+  import { targetStore } from '../../../lib/stores/map';
+
+  import Close from '../../icons/Close.svelte';
 
   const { onClose = () => {}, onGather = () => {} } = $props();
   const functions = getFunctions();

@@ -1,7 +1,9 @@
 <script>
   import { onMount, onDestroy } from "svelte";
-  import { derived, get } from "svelte/store";  // Add get import
-  import { browser } from '$app/environment';
+  import { derived, get } from "svelte/store"; 
+
+  import { user } from '../../../lib/stores/user';
+  import { game, currentPlayer } from "../../../lib/stores/game.js";
   import { 
     map, 
     ready,
@@ -10,22 +12,22 @@
     moveTarget,
     targetStore,
     highlightedStore,
-    setHighlighted,
-    hasTileContent
-  } from "../../lib/stores/map.js";
-  import { game, currentPlayer } from "../../lib/stores/game.js";
-  import { user } from '../../lib/stores/user';
-  import Torch from '../icons/Torch.svelte';
-  import Structure from '../icons/Structure.svelte';
-  import Human from '../icons/Human.svelte';
-  import Elf from '../icons/Elf.svelte';
-  import Dwarf from '../icons/Dwarf.svelte';
-  import Goblin from '../icons/Goblin.svelte';
-  import Fairy from '../icons/Fairy.svelte';
-  import Monster from '../icons/Monster.svelte'; // Add Monster component import
-  import Compass from '../icons/Compass.svelte';
-  import YouAreHere from '../icons/YouAreHere.svelte';
-  import Peek from '../map/Peek.svelte';
+    setHighlighted
+  } from "../../../lib/stores/map.js";
+  
+  import Peek from './Peek.svelte';
+  import YouAreHere from './YouAreHere.svelte';
+
+  import Torch from '../../icons/Torch.svelte';
+  import Structure from '../../icons/Structure.svelte';
+  import Human from '../../icons/Human.svelte';
+  import Elf from '../../icons/Elf.svelte';
+  import Dwarf from '../../icons/Dwarf.svelte';
+  import Goblin from '../../icons/Goblin.svelte';
+  import Fairy from '../../icons/Fairy.svelte';
+  import Monster from '../../icons/Monster.svelte';
+  import Compass from '../../icons/Compass.svelte';
+  
   
   // Props with defaults using Svelte 5 $props() rune
   const { 
@@ -36,8 +38,7 @@
     onClose = () => {},
     onUndoPoint = null, // Add new prop for undo functionality
     customPathPoints = [],
-    modalOpen = false,
-    peekOpen = false
+    modalOpen = false
   } = $props();
   
   // Track last click time for the center tile to handle debouncing

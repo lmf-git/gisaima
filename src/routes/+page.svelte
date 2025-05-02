@@ -1,7 +1,7 @@
 <script>
-  import Showcase from '../components/Showcase.svelte';
-  import Features from '../components/Features.svelte';
-  import Media from '../components/Media.svelte';
+  import Showcase from '../components/specific/landing/Showcase.svelte';
+  import Features from '../components/specific/landing/Features.svelte';
+  import Media from '../components/specific/landing/Media.svelte';
 </script>
 
 <svelte:head>

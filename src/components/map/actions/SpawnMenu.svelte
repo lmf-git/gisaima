@@ -1,21 +1,26 @@
 <script>
-  import { scale } from 'svelte/transition';
-  import { game, currentPlayer } from '../../lib/stores/game';
-  import { moveTarget, map, targetStore, clearSavedTargetPosition } from '../../lib/stores/map';
-  import { user } from '../../lib/stores/user';
-  import { goto } from '$app/navigation';
   import { httpsCallable } from 'firebase/functions';
-  import { functions } from '../../lib/firebase/firebase.js';
+  import { scale } from 'svelte/transition';
 
-  // Import torch and race icons
-  import Torch from '../icons/Torch.svelte';
-  import Human from '../icons/Human.svelte';
-  import Elf from '../icons/Elf.svelte';
-  import Dwarf from '../icons/Dwarf.svelte';
-  import Goblin from '../icons/Goblin.svelte';
-  import Fairy from '../icons/Fairy.svelte';
+  import { goto } from '$app/navigation';
 
-  // Accept onClose and add onSpawnComplete prop
+  // This can be refactored to getFunctions.
+  import { functions } from '../../../lib/firebase/firebase.js';
+  
+  import { user } from '../../../lib/stores/user';
+  import { game } from '../../../lib/stores/game';
+  import { 
+    moveTarget, map, targetStore, clearSavedTargetPosition 
+  } from '../../../lib/stores/map';
+
+  import Torch from '../../icons/Torch.svelte';
+  import Human from '../../icons/Human.svelte';
+  import Elf from '../../icons/Elf.svelte';
+  import Dwarf from '../../icons/Dwarf.svelte';
+  import Goblin from '../../icons/Goblin.svelte';
+  import Fairy from '../../icons/Fairy.svelte';
+
+  
   const {
     onClose = () => {},
     onSpawnComplete = () => {} 
@@ -27,7 +32,6 @@
   let error = $state(null);
   
   // Simplify player status detection using $derived
-  const playerDied = $derived(!$game.player?.alive);
   const deathMessage = $derived($game.player?.lastMessage?.text || '');
   
   // Extract player display name from game store
