@@ -98,21 +98,15 @@ export async function spawnMonsters(worldId) {
           }
         }
         
-        // Check for recent player activity (groups or players)
-        let hasRecentActivity = false;
-        
-        
-        if (hasRecentActivity) {
-          // Store this as an active location
-          activeLocations.push({
-            chunkKey,
-            tileKey,
-            x,
-            y,
-            // Store biome info if available, but we won't use it for monster selection yet
-            biome: tileData.biome?.name || tileData.terrain?.biome || 'unknown'
-          });
-        }
+        // Store this as an active location
+        activeLocations.push({
+          chunkKey,
+          tileKey,
+          x,
+          y,
+          // Store biome info if available, but we won't use it for monster selection yet
+          biome: tileData.biome?.name || tileData.terrain?.biome || 'unknown'
+        });
       }
     }
     
