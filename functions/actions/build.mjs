@@ -5,6 +5,7 @@
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getDatabase } from 'firebase-admin/database';
+import { STRUCTURES } from '../../../shared/definitions/STRUCTURES.js';
 
 /**
  * Starts construction of a new structure at a specific location using a group.
@@ -81,76 +82,9 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError('failed-precondition', 'Group cannot build while in battle.');
     }
 
-    // Define structure templates
-    const structureTemplates = {
-      outpost: {
-        buildTime: 1,
-        requiredResources: [
-          { name: 'Wooden Sticks', quantity: 5 },
-          { name: 'Stone Pieces', quantity: 3 }
-        ],
-        result: {
-          name: structureName,
-          type: 'outpost',
-          capacity: 10,
-          features: [
-            {
-              name: 'Lookout',
-              description: 'Allows spotting of approaching forces',
-              icon: '👁️'
-            }
-          ]
-        }
-      },
-      stronghold: {
-        buildTime: 2,
-        requiredResources: [
-          { name: 'Wooden Sticks', quantity: 10 },
-          { name: 'Stone Pieces', quantity: 8 }
-        ],
-        result: {
-          name: structureName,
-          type: 'stronghold',
-          capacity: 30,
-          features: [
-            {
-              name: 'Forge',
-              description: 'Allows crafting of basic items',
-              icon: '🔨'
-            }
-          ]
-        }
-      },
-      fortress: {
-        buildTime: 3,
-        requiredResources: [
-          { name: 'Wooden Sticks', quantity: 20 },
-          { name: 'Stone Pieces', quantity: 15 },
-          { name: 'Mysterious Artifact', quantity: 1 }
-        ],
-        result: {
-          name: structureName,
-          type: 'fortress',
-          capacity: 60,
-          features: [
-            {
-              name: 'Armory',
-              description: 'Allows crafting of advanced weapons',
-              icon: '⚔️'
-            },
-            {
-              name: 'Watchtower',
-              description: 'Provides early warning of attacks',
-              icon: '🏯'
-            }
-          ]
-        }
-      }
-    };
-    
     // Validate structure type
-    const structureTemplate = structureTemplates[structureType];
-    if (!structureTemplate) {
+    const structureDefinition = STRUCTURES[structureType];
+    if (!structureDefinition) {
       throw new HttpsError('invalid-argument', `Unknown structure type: ${structureType}`);
     }
     
@@ -180,7 +114,7 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
     
     // Check if all required resources are available
     const missingResources = [];
-    for (const resource of structureTemplate.requiredResources) {
+    for (const resource of structureDefinition.requiredResources) {
       const available = availableResources[resource.name] || 0;
       if (available < resource.quantity) {
         missingResources.push({
@@ -206,7 +140,7 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
     }
     
     // Calculate completion time based on build time (in ticks)
-    const completionTime = nextTickTime + ((structureTemplate.buildTime - 1) * tickInterval);
+    const completionTime = nextTickTime + ((structureDefinition.buildTime - 1) * tickInterval);
     
     // Use a transaction to ensure data consistency
     await db.ref().transaction(currentData => {
@@ -234,10 +168,10 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
       currentData.worlds[worldId].chunks[chunkKey][tileKey].structure = {
         id: `structure_${worldId}_${tileKey}_${now}`,
         name: structureName,
-        type: structureTemplate.result.type,
+        type: structureDefinition.type,
         status: 'building',
         buildProgress: 0,
-        buildTotalTime: structureTemplate.buildTime,
+        buildTotalTime: structureDefinition.buildTime,
         buildStartTime: now,
         buildCompletionTime: completionTime,
         owner: uid,
@@ -255,7 +189,7 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
         if (Array.isArray(currentGroup.items)) {
           // Handle as array
           const remainingItems = [];
-          const resources = new Map(structureTemplate.requiredResources.map(r => [r.name, r.quantity]));
+          const resources = new Map(structureDefinition.requiredResources.map(r => [r.name, r.quantity]));
           
           // First pass to identify resources to keep
           for (const item of currentGroup.items) {
@@ -280,7 +214,7 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
         } else {
           // Handle as object
           // Create a map of required resources
-          const resources = new Map(structureTemplate.requiredResources.map(r => [r.name, r.quantity]));
+          const resources = new Map(structureDefinition.requiredResources.map(r => [r.name, r.quantity]));
           
           for (const itemKey in currentGroup.items) {
             const item = currentGroup.items[itemKey];

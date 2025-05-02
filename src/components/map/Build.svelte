@@ -5,6 +5,7 @@
   import Close from '../icons/Close.svelte';
   import Structure from '../icons/Structure.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
+  import { STRUCTURES } from '../../../../shared/definitions/STRUCTURES.js';
 
   const { 
     onClose = () => {},
@@ -18,69 +19,43 @@
     return t.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
   
-  // Available structure templates
-  let structureOptions = $state([
-    {
-      id: 'outpost',
-      name: 'Outpost',
-      description: 'A small defensive position that allows scouting and monitoring of the area',
-      requiredResources: [
-        { name: 'Wooden Sticks', quantity: 5, type: 'resource' },
-        { name: 'Stone Pieces', quantity: 3, type: 'resource' }
-      ],
-      buildTime: 1, // in ticks
-      capacity: 10,
-      features: [
+  // Transform resource names to UI-friendly format
+  const formatResourceName = (name) => {
+    const formattedNames = {
+      'wood': 'Wooden Sticks',
+      'stone': 'Stone Pieces',
+      'fiber': 'Plant Fiber',
+      'metal': 'Metal Scraps'
+    };
+    
+    return formattedNames[name] || _fmt(name);
+  };
+  
+  // Transform STRUCTURES object into the format expected by the UI
+  const transformStructures = () => {
+    return Object.entries(STRUCTURES).map(([id, structure]) => ({
+      id,
+      name: structure.name,
+      description: structure.description,
+      requiredResources: structure.requiredResources.map(resource => ({
+        name: formatResourceName(resource.name),
+        quantity: resource.quantity,
+        type: 'resource'
+      })),
+      buildTime: structure.buildTime,
+      capacity: structure.capacity || 10, // Default capacity if not specified
+      features: structure.features || [
         {
-          name: 'Lookout',
-          description: 'Allows spotting of approaching forces',
-          icon: '👁️'
+          name: 'Structure',
+          description: 'Basic structure features',
+          icon: '🏛️'
         }
       ]
-    },
-    {
-      id: 'stronghold',
-      name: 'Stronghold',
-      description: 'A fortified position that provides protection and resources',
-      requiredResources: [
-        { name: 'Wooden Sticks', quantity: 10, type: 'resource' },
-        { name: 'Stone Pieces', quantity: 8, type: 'resource' }
-      ],
-      buildTime: 2, // in ticks
-      capacity: 30,
-      features: [
-        {
-          name: 'Forge',
-          description: 'Allows crafting of basic items',
-          icon: '🔨'
-        }
-      ]
-    },
-    {
-      id: 'fortress',
-      name: 'Fortress',
-      description: 'A massive fortification that dominates the surrounding area',
-      requiredResources: [
-        { name: 'Wooden Sticks', quantity: 20, type: 'resource' },
-        { name: 'Stone Pieces', quantity: 15, type: 'resource' },
-        { name: 'Mysterious Artifact', quantity: 1, type: 'artifact' }
-      ],
-      buildTime: 3, // in ticks
-      capacity: 60,
-      features: [
-        {
-          name: 'Armory',
-          description: 'Allows crafting of advanced weapons',
-          icon: '⚔️'
-        },
-        {
-          name: 'Watchtower',
-          description: 'Provides early warning of attacks',
-          icon: '🏯'
-        }
-      ]
-    }
-  ]);
+    }));
+  };
+  
+  // Available structure options from STRUCTURES.js
+  let structureOptions = $state(transformStructures());
 
   // State variables
   let availableGroups = $state([]);
@@ -189,7 +164,7 @@
         groupId: selectedGroup.id,
         tileX: tileData.x,
         tileY: tileData.y,
-        structureType: selectedStructure.id,
+        structureType: selectedStructure.id, // This now matches the key in STRUCTURES
         structureName: structureName
       });
       
