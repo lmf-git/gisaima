@@ -5,7 +5,7 @@
 
 import { logger } from "firebase-functions";
 import { merge } from "gisaima-shared/economy/items.js";
-
+import { ITEMS, getBiomeItems } from "gisaima-shared/definitions/items.js";
 
 /**
  * Process gathering for a group
@@ -144,8 +144,16 @@ function generateGatheredItems(group, biome = 'plains') {
   
   // Add common items every group finds
   const commonItems = [
-    { id: `item_${Date.now()}_1`, name: 'Wooden Sticks', quantity: Math.floor(Math.random() * 5) + 1, type: 'resource', rarity: 'common' },
-    { id: `item_${Date.now()}_2`, name: 'Stone Pieces', quantity: Math.floor(Math.random() * 3) + 1, type: 'resource', rarity: 'common' }
+    { 
+      id: `item_${Date.now()}_1`, 
+      ...ITEMS.WOODEN_STICKS, 
+      quantity: Math.floor(Math.random() * 5) + 1 
+    },
+    { 
+      id: `item_${Date.now()}_2`, 
+      ...ITEMS.STONE_PIECES, 
+      quantity: Math.floor(Math.random() * 3) + 1 
+    }
   ];
   
   // Combine items based on the number determined
@@ -173,59 +181,10 @@ function generateGatheredItems(group, biome = 'plains') {
   if (Math.random() < 0.05) {
     items.push({
       id: `item_${Date.now()}_special`,
-      name: 'Mysterious Artifact',
-      description: 'A strange object of unknown origin',
-      quantity: 1,
-      type: 'artifact',
-      rarity: 'rare'
+      ...ITEMS.MYSTERIOUS_ARTIFACT,
+      quantity: 1
     });
   }
   
   return items;
-}
-
-/**
- * Get biome-specific items
- * 
- * @param {string} biome Biome name
- * @returns {Array} Array of biome items
- */
-function getBiomeItems(biome) {
-  const biomeItemMap = {
-    'plains': [
-      { name: 'Wheat', quantity: Math.floor(Math.random() * 3) + 1, type: 'resource', rarity: 'common' },
-      { name: 'Wild Berries', quantity: Math.floor(Math.random() * 2) + 1, type: 'resource', rarity: 'common' }
-    ],
-    'forest': [
-      { name: 'Oak Wood', quantity: Math.floor(Math.random() * 3) + 1, type: 'resource', rarity: 'common' },
-      { name: 'Medicinal Herbs', quantity: Math.floor(Math.random() * 2) + 1, type: 'resource', rarity: 'uncommon' }
-    ],
-    'mountains': [
-      { name: 'Iron Ore', quantity: Math.floor(Math.random() * 2) + 1, type: 'resource', rarity: 'uncommon' },
-      { name: 'Mountain Crystal', quantity: 1, type: 'gem', rarity: 'rare' }
-    ],
-    'desert': [
-      { name: 'Sand Crystal', quantity: Math.floor(Math.random() * 2) + 1, type: 'gem', rarity: 'uncommon' },
-      { name: 'Cactus Fruit', quantity: Math.floor(Math.random() * 3) + 1, type: 'resource', rarity: 'common' }
-    ],
-    'rivers': [
-      { name: 'Fresh Water', quantity: Math.floor(Math.random() * 3) + 1, type: 'resource', rarity: 'common' },
-      { name: 'Fish', quantity: Math.floor(Math.random() * 2) + 1, type: 'resource', rarity: 'common' }
-    ],
-    'oasis': [
-      { name: 'Pure Water', quantity: Math.floor(Math.random() * 2) + 1, type: 'resource', rarity: 'uncommon' },
-      { name: 'Exotic Fruit', quantity: Math.floor(Math.random() * 2) + 1, type: 'resource', rarity: 'uncommon' }
-    ],
-    'ruins': [
-      { name: 'Ancient Fragment', quantity: 1, type: 'artifact', rarity: 'rare' },
-      { name: 'Broken Tool', quantity: Math.floor(Math.random() * 2) + 1, type: 'junk', rarity: 'common' }
-    ],
-    'wastes': [
-      { name: 'Scrap Metal', quantity: Math.floor(Math.random() * 3) + 1, type: 'resource', rarity: 'common' },
-      { name: 'Strange Device', quantity: 1, type: 'artifact', rarity: 'uncommon' }
-    ]
-  };
-  
-  // Return items for the specific biome, or default to plains
-  return biomeItemMap[biome] || biomeItemMap['plains'];
 }
