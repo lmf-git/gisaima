@@ -7,10 +7,10 @@
             "mobilised": true
           },
           "alive": true,
-          "displayName": "test1",
+          "displayName": "test5",
           "id": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
-          "inGroup": "-OPFMXTDco-6bgzj0Sjh",
-          "joined": 1746178770694,
+          "inGroup": "-OPFQNCObCCH_ycUwALG",
+          "joined": 1746179806384,
           "lastLocation": {
             "x": -23,
             "y": 5
@@ -23,15 +23,13 @@
       "worlds": {
         "ancient-lands": {
           "achievements": {
-            "first_attack": true,
-            "first_attack_date": 1746179131616,
             "mobilised": true
           },
           "alive": true,
-          "displayName": "test3",
+          "displayName": "test4",
           "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-          "inGroup": "-OPFMV8rtDvWZtDqYL33",
-          "joined": 1746178785309,
+          "inGroup": "-OPFQCT05js7f-b5acdE",
+          "joined": 1746179759095,
           "lastLocation": {
             "x": -23,
             "y": 5
@@ -43,242 +41,6 @@
   },
   "worlds": {
     "ancient-lands": {
-      "chat": {
-        "-OPFBUS_yDeAze6miBtN": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "test3's Force is being mobilized at (-23,5)",
-          "timestamp": 1746175915813,
-          "type": "system"
-        },
-        "-OPFBVTPCtlFQqNqDTYW": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "test's Force is being mobilized at (-23,5)",
-          "timestamp": 1746175919960,
-          "type": "system"
-        },
-        "-OPFHuZlqK7E8H1XgXXj": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "test1's Force is being mobilized at (-23,5)",
-          "timestamp": 1746177599725,
-          "type": "system"
-        },
-        "-OPFHvk1V4lLujGOwEYz": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "test3's Force is being mobilized at (-23,5)",
-          "timestamp": 1746177604544,
-          "type": "system"
-        },
-        "-OPFMVB-OkORGo3452rP": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "test3's Force is being mobilized at (-23,5)",
-          "timestamp": 1746178802355,
-          "type": "system"
-        },
-        "-OPFMXVFOONf5wS5IzDM": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "test1's Force is being mobilized at (-23,5)",
-          "timestamp": 1746178811850,
-          "type": "system"
-        },
-        "battle_end_1746175382267_battle_1746175274884_305": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle at (-23, 5) has ended. Attackers have defeated Defenders!",
-          "timestamp": 1746175382267,
-          "type": "event"
-        },
-        "battle_end_1746176042312_battle_1746175934243_40": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle at (-23, 5) has ended. Defenders have successfully defended against Attackers!",
-          "timestamp": 1746176042312,
-          "type": "event"
-        },
-        "battle_end_1746177721827_battle_1746177618251_103": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle at (-23, 5) has ended. Attackers have defeated Defenders!",
-          "timestamp": 1746177721827,
-          "type": "event"
-        },
-        "battle_start_1746175274884_battle_1746175274884_305": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle has begun at (-23, 5)! test2's Force is attacking test's Force!",
-          "timestamp": 1746175274884,
-          "type": "event"
-        },
-        "battle_start_1746175934243_battle_1746175934243_40": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle has begun at (-23, 5)! test's Force is attacking test3's Force!",
-          "timestamp": 1746175934243,
-          "type": "event"
-        },
-        "battle_start_1746177618251_battle_1746177618251_103": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle has begun at (-23, 5)! test1's Force is attacking test3's Force!",
-          "timestamp": 1746177618251,
-          "type": "event"
-        },
-        "battle_start_1746179131616_battle_1746179131616_958": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Battle has begun at (-23, 5)! test3's Force is attacking test1's Force!",
-          "timestamp": 1746179131616,
-          "type": "event"
-        },
-        "chat_1746175921122_142": {
-          "location": {
-            "timestamp": 1746175921122,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A large army of human forces has mobilized at (-23, 5) - \"test's Force\"",
-          "timestamp": 1746175921122,
-          "type": "event",
-          "userId": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-          "userName": "test's Force"
-        },
-        "chat_1746175921122_867": {
-          "location": {
-            "timestamp": 1746175921122,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A large army of human forces has mobilized at (-23, 5) - \"test3's Force\"",
-          "timestamp": 1746175921122,
-          "type": "event",
-          "userId": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
-          "userName": "test3's Force"
-        },
-        "chat_1746177606052_386": {
-          "location": {
-            "timestamp": 1746177606052,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A large army of human forces has mobilized at (-23, 5) - \"test3's Force\"",
-          "timestamp": 1746177606052,
-          "type": "event",
-          "userId": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
-          "userName": "test3's Force"
-        },
-        "chat_1746177606052_505": {
-          "location": {
-            "timestamp": 1746177606052,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A large army of human forces has mobilized at (-23, 5) - \"test1's Force\"",
-          "timestamp": 1746177606052,
-          "type": "event",
-          "userId": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-          "userName": "test1's Force"
-        },
-        "chat_1746178861688_647": {
-          "location": {
-            "timestamp": 1746178861688,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A large army of human forces has mobilized at (-23, 5) - \"test1's Force\"",
-          "timestamp": 1746178861688,
-          "type": "event",
-          "userId": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
-          "userName": "test1's Force"
-        },
-        "chat_1746178861688_974": {
-          "location": {
-            "timestamp": 1746178861688,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A large army of human forces has mobilized at (-23, 5) - \"test3's Force\"",
-          "timestamp": 1746178861688,
-          "type": "event",
-          "userId": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-          "userName": "test3's Force"
-        },
-        "chat_monster_spawn_1746178382141_253": {
-          "location": {
-            "x": -17,
-            "y": 7
-          },
-          "text": "A band of Giant Spiders has appeared at (-17, 7)",
-          "timestamp": 1746178382141,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746178801531_633": {
-          "location": {
-            "x": -31,
-            "y": 7
-          },
-          "text": "A small group of Giant Spiders has been spotted at (-31, 7)",
-          "timestamp": 1746178801531,
-          "type": "event"
-        },
-        "gather_1746179101873_monster_1746178801531_6498": {
-          "location": {
-            "x": -31,
-            "y": 7
-          },
-          "text": "Giant Spiders gathered resources in plains biome at (-31, 7): 2 Wooden Sticks, 3 Stone Pieces",
-          "timestamp": 1746179101873,
-          "type": "event"
-        },
-        "monster_gather_1746178985841_monster_1746178801531_6498": {
-          "location": {
-            "x": -31,
-            "y": 7
-          },
-          "text": "Giant Spiders is gathering resources in the plains.",
-          "timestamp": 1746178985841,
-          "type": "event"
-        },
-        "move_1746179101873_monster_1746178382141_6288_1": {
-          "location": {
-            "x": -18,
-            "y": 7
-          },
-          "text": "Giant Spiders has arrived at (-18,7)",
-          "timestamp": 1746179101873,
-          "type": "event"
-        }
-      },
       "chunks": {
         "-1,-1": {
           "-23,-8": {
@@ -375,47 +137,6 @@
               "race": "goblin",
               "type": "spawn"
             }
-          },
-          "-18,7": {
-            "groups": {
-              "monster_1746178382141_6288": {
-                "id": "monster_1746178382141_6288",
-                "items": [
-                  {
-                    "id": "STONE_PIECES",
-                    "name": "Stone Pieces",
-                    "quantity": 1,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Moving to next location (-18,7)",
-                  "timestamp": 1746179101873
-                },
-                "name": "Giant Spiders",
-                "status": "idle",
-                "targetX": -18,
-                "targetY": 7,
-                "type": "monster",
-                "units": {
-                  "monster_unit_1746178382141_296_1": {
-                    "id": "monster_unit_1746178382141_296_1",
-                    "type": "spider"
-                  },
-                  "monster_unit_1746178382141_4288_0": {
-                    "id": "monster_unit_1746178382141_4288_0",
-                    "type": "spider"
-                  },
-                  "monster_unit_1746178382141_6432_2": {
-                    "id": "monster_unit_1746178382141_6432_2",
-                    "type": "spider"
-                  }
-                },
-                "x": -18,
-                "y": 7
-              }
-            }
           }
         },
         "-2,-1": {
@@ -446,72 +167,20 @@
         },
         "-2,0": {
           "-23,5": {
-            "battles": {
-              "battle_1746179131616_958": {
-                "createdAt": 1746179131616,
-                "id": "battle_1746179131616_958",
-                "locationX": -23,
-                "locationY": 5,
-                "side1": {
-                  "casualties": 0,
-                  "groups": {
-                    "-OPFMV8rtDvWZtDqYL33": {
-                      "race": "human",
-                      "type": "player",
-                      "units": {
-                        "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
-                          "displayName": "test3",
-                          "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-                          "race": "human",
-                          "type": "player"
-                        }
-                      }
-                    }
-                  },
-                  "name": "test3's Force"
-                },
-                "side2": {
-                  "casualties": 0,
-                  "groups": {
-                    "-OPFMXTDco-6bgzj0Sjh": {
-                      "race": "human",
-                      "type": "player",
-                      "units": {
-                        "qi3VZSiTsXYrHWpc2axAsPBnBor2": {
-                          "displayName": "test1",
-                          "id": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
-                          "race": "human",
-                          "type": "player"
-                        }
-                      }
-                    }
-                  },
-                  "name": "test1's Force"
-                },
-                "targetTypes": [
-                  "group"
-                ],
-                "tickCount": 0
-              }
-            },
             "groups": {
-              "-OPFMV8rtDvWZtDqYL33": {
-                "battleId": "battle_1746179131616_958",
-                "battleRole": "attacker",
-                "battleSide": 1,
-                "id": "-OPFMV8rtDvWZtDqYL33",
-                "inBattle": true,
+              "-OPFQCT05js7f-b5acdE": {
+                "id": "-OPFQCT05js7f-b5acdE",
                 "lastMessage": {
                   "text": "Group is fully mobilized and ready",
-                  "timestamp": 1746178861688
+                  "timestamp": 1746179821308
                 },
-                "name": "test3's Force",
+                "name": "test4's Force",
                 "owner": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
                 "race": "human",
-                "status": "fighting",
+                "status": "idle",
                 "units": {
                   "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
-                    "displayName": "test3",
+                    "displayName": "test4",
                     "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
                     "race": "human",
                     "type": "player"
@@ -520,23 +189,19 @@
                 "x": -23,
                 "y": 5
               },
-              "-OPFMXTDco-6bgzj0Sjh": {
-                "battleId": "battle_1746179131616_958",
-                "battleRole": "defender",
-                "battleSide": 2,
-                "id": "-OPFMXTDco-6bgzj0Sjh",
-                "inBattle": true,
+              "-OPFQNCObCCH_ycUwALG": {
+                "id": "-OPFQNCObCCH_ycUwALG",
                 "lastMessage": {
                   "text": "Group is fully mobilized and ready",
-                  "timestamp": 1746178861688
+                  "timestamp": 1746179821308
                 },
-                "name": "test1's Force",
+                "name": "test5's Force",
                 "owner": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
                 "race": "human",
-                "status": "fighting",
+                "status": "idle",
                 "units": {
                   "qi3VZSiTsXYrHWpc2axAsPBnBor2": {
-                    "displayName": "test1",
+                    "displayName": "test5",
                     "id": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
                     "race": "human",
                     "type": "player"
@@ -577,76 +242,6 @@
               "race": "human",
               "type": "spawn"
             }
-          },
-          "-31,7": {
-            "groups": {
-              "monster_1746178801531_6498": {
-                "gatheringTicksRemaining": 1,
-                "id": "monster_1746178801531_6498",
-                "items": [
-                  {
-                    "id": "MONSTER_TOOTH",
-                    "name": "Monster Tooth",
-                    "quantity": 2,
-                    "rarity": "uncommon",
-                    "type": "trophy"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "item_1746179102785_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Small rocks useful for crafting tools",
-                    "id": "item_1746179102785_2",
-                    "name": "Stone Pieces",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Gathered 2 items",
-                  "timestamp": 1746179101873
-                },
-                "name": "Giant Spiders",
-                "status": "idle",
-                "type": "monster",
-                "units": {
-                  "monster_unit_1746178801532_4866_1": {
-                    "id": "monster_unit_1746178801532_4866_1",
-                    "type": "spider"
-                  },
-                  "monster_unit_1746178801532_525_0": {
-                    "id": "monster_unit_1746178801532_525_0",
-                    "type": "spider"
-                  }
-                },
-                "x": -31,
-                "y": 7
-              }
-            }
           }
         }
       },
@@ -656,9 +251,9 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746179101873,
+        "lastTick": 1746179881205,
         "name": "Ancient Lands",
-        "playerCount": 45,
+        "playerCount": 47,
         "seed": 13579,
         "size": "large",
         "spawns": {
