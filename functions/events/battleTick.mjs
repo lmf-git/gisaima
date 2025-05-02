@@ -6,6 +6,7 @@ import {
   selectUnitsForCasualties,
   determineWinner
 } from "gisaima-shared/war/battles.js";
+import UNITS from "gisaima-shared/definitions/UNITS.js";
 
 export async function processBattle(worldId, chunkKey, tileKey, battleId, battle, updates, tile) {
   try {
@@ -40,8 +41,19 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       if (tile.groups[groupId]) {
         const group = tile.groups[groupId];
         const power = calculateGroupPower(group);
+        
+        // Debug log to verify player power calculation
+        if (group && group.units) {
+          console.log(`Side 1 Group ${groupId} units:`, Object.keys(group.units).length);
+          for (const unitId in group.units) {
+            const unit = group.units[unitId];
+            console.log(`Unit ${unitId} type: ${unit.type}, power from UNITS: ${unit.type && UNITS[unit.type] ? UNITS[unit.type].power : 'not found'}`);
+          }
+        }
+        
         groupPowers[groupId] = power;
         side1Power += power;
+        console.log(`Side 1 Group ${groupId} calculated power: ${power}`);
       }
     }
     
@@ -51,8 +63,19 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       if (tile.groups[groupId]) {
         const group = tile.groups[groupId];
         const power = calculateGroupPower(group);
+        
+        // Debug log to verify player power calculation
+        if (group && group.units) {
+          console.log(`Side 2 Group ${groupId} units:`, Object.keys(group.units).length);
+          for (const unitId in group.units) {
+            const unit = group.units[unitId];
+            console.log(`Unit ${unitId} type: ${unit.type}, power from UNITS: ${unit.type && UNITS[unit.type] ? UNITS[unit.type].power : 'not found'}`);
+          }
+        }
+        
         groupPowers[groupId] = power;
         side2Power += power;
+        console.log(`Side 2 Group ${groupId} calculated power: ${power}`);
       }
     }
     
@@ -67,6 +90,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     side1Power = side1Power * (1 + (Math.random() * randomFactor - randomFactor/2));
     side2Power = side2Power * (1 + (Math.random() * randomFactor - randomFactor/2));
     
+    console.log(`Final battle powers - Side 1: ${side1Power}, Side 2: ${side2Power}`);
+    
     // --------- PHASE 2: CALCULATE ATTRITION ---------
     // Use the new functions to calculate power ratios and attrition
     const { side1Ratio, side2Ratio } = calculatePowerRatios(side1Power, side2Power);
@@ -74,7 +99,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     const side2Attrition = calculateAttrition(side2Power, side2Ratio);
 
     console.log('side1 attrition', side1Attrition);
-    console.log('side2 attrition', side1Attrition);
+    console.log('side2 attrition', side2Attrition);
     
     // --------- PHASE 3: APPLY CASUALTIES AND CALCULATE NEW POWERS ---------
     // Apply attrition to individual groups in each side
