@@ -107,7 +107,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // Helper function to process each side
     function processSide(sideNumber, sideGroups, sidePower, oppositeAttrition, sideCasualties) {
       let newSidePower = 0;
-      const updatedCasualties = sideCasualties;
+      let updatedCasualties = sideCasualties;  // Changed from const to let
       const sideKey = `side${sideNumber}`;
       
       for (const groupId in sideGroups) {
