@@ -88,6 +88,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         
         // Calculate this group's share of attrition based on its proportion of side power
         const groupPower = calculateGroupPower(group);
+        console.debug('test side 1 group power', group, groupPower);
         const groupShare = side1Power > 0 ? groupPower / side1Power : 1;
         const groupAttrition = Math.round(side2Attrition * groupShare);
         
@@ -158,6 +159,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         
         // Calculate this group's share of attrition based on its proportion of side power
         const groupPower = calculateGroupPower(group);
+        console.debug('test side 2 group power', group, groupPower);
         const groupShare = side2Power > 0 ? groupPower / side2Power : 1;
         const groupAttrition = Math.round(side1Attrition * groupShare);
         
