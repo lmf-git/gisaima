@@ -8,11 +8,10 @@ import { logger } from "firebase-functions";
 import { Units } from 'gisaima-shared/units/units.js';
 
 // Constants for monster spawning
-const SPAWN_CHANCE = 0.4; // 40% chance to spawn monsters in an active area
-const MAX_SPAWN_DISTANCE = 5; // Maximum distance from player activity to spawn
-const MIN_SPAWN_DISTANCE = 2; // Minimum distance from player activity to spawn
-const MAX_ACTIVE_AGE = 15 * 60 * 1000; // Consider player activity from last 15 minutes
-const MAX_MONSTERS_PER_CHUNK = 5; // Maximum monster groups per chunk
+const SPAWN_CHANCE = .1; // 40% chance to spawn monsters in an active area
+const MAX_SPAWN_DISTANCE = 9; // Maximum distance from player activity to spawn
+const MIN_SPAWN_DISTANCE = 4; // Minimum distance from player activity to spawn
+const MAX_MONSTERS_PER_CHUNK = 10; // Maximum monster groups per chunk
 
 /**
  * Generate individual monster unit objects for a monster group
@@ -41,7 +40,6 @@ function generateMonsterUnits(monsterType, qty) {
  */
 export async function spawnMonsters(worldId) {
   const db = getDatabase();
-  const now = Date.now();
   let monstersSpawned = 0;
   
   try {
