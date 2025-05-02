@@ -590,7 +590,6 @@
                 <div class="form-content">
                     <!-- Unit selection -->
                     <div class="form-group">
-                        <label for="unit-select">Unit Type</label>
                         <div class="unit-select-container">
                             {#each availableUnits as unit}
                                 {@const IconComponent = getUnitIcon(unit)}
@@ -709,8 +708,9 @@
                                 <h6>Cost per unit:</h6>
                                 <div class="cost-items">
                                     {#each Object.entries(selectedUnit.cost) as [resource, amount]}
-                                        <div class="cost-item">
-                                            {formatResource(resource)}: {amount}
+                                        {@const playerResource = getPlayerResources()[resource] || 0}
+                                        <div class="cost-item {playerResource >= amount ? 'sufficient' : 'insufficient'}">
+                                            {formatResource(resource)}: <span class="resource-value">{playerResource}/{amount}</span>
                                         </div>
                                     {/each}
                                 </div>
@@ -754,21 +754,12 @@
                                     <h6>Total Cost:</h6>
                                     <div class="total-items">
                                         {#each Object.entries(calculateTotalCost()) as [resource, amount]}
-                                            {@const playerResource =
-                                                getPlayerResources()[
-                                                    resource
-                                                ] || 0}
+                                            {@const playerResource = getPlayerResources()[resource] || 0}
                                             <div
-                                                class="total-item {playerResource <
-                                                amount
-                                                    ? 'insufficient'
-                                                    : ''}"
+                                                class="total-item {playerResource >= amount ? 'sufficient' : 'insufficient'}"
                                                 title={`You have ${playerResource} ${formatResource(resource)}`}
                                             >
-                                                {formatResource(resource)}: {amount}
-                                                <span class="player-has"
-                                                    >({playerResource})</span
-                                                >
+                                                {formatResource(resource)}: <span class="resource-value">{playerResource}/{amount}</span>
                                             </div>
                                         {/each}
                                     </div>
@@ -1015,6 +1006,18 @@
         border: 1px solid rgba(0, 0, 0, 0.1);
     }
 
+    .unit-select-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+        max-height: 15rem;
+        overflow-y: auto;
+        padding: 0.5rem;
+        background-color: rgba(255, 255, 255, 0.5);
+        border-radius: 0.3rem;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
     .unit-option {
         display: flex;
         align-items: center;
@@ -1025,8 +1028,8 @@
         border: 1px solid rgba(0, 0, 0, 0.1);
         cursor: pointer;
         transition: all 0.2s;
-        width: calc(50% - 0.25rem);
         text-align: left;
+        height: 100%;
     }
 
     .unit-option:hover {
@@ -1125,12 +1128,28 @@
         padding: 0.2rem 0.5rem;
         background-color: rgba(0, 0, 0, 0.05);
         border-radius: 0.2rem;
-        color: rgba(0, 0, 0, 0.8); /* Add explicit color with good contrast */
+        color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: space-between;
+        min-width: 8rem;
+    }
+    
+    .resource-value {
+        font-weight: 500;
     }
 
+    .cost-item.sufficient,
+    .total-item.sufficient {
+        background-color: rgba(76, 175, 80, 0.1);
+        color: rgb(27, 94, 32);
+        border: 1px solid rgba(76, 175, 80, 0.2);
+    }
+
+    .cost-item.insufficient,
     .total-item.insufficient {
         background-color: rgba(255, 59, 48, 0.1);
-        color: rgb(168, 36, 28);
+        color: rgb(198, 40, 40);
+        border: 1px solid rgba(255, 59, 48, 0.2);
     }
 
     .player-has {
@@ -1246,6 +1265,22 @@
     @media (max-width: 768px) {
         .unit-option {
             width: 100%;
+        }
+
+        .unit-select-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .cost-items {
+            display: grid;
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (min-width: 769px) {
+        .cost-items {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
         }
     }
 
