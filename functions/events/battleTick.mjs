@@ -100,14 +100,13 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     let side2Casualties = (side2.casualties || 0);
     
     // Make sure our battle updates will preserve these values
-    battleUpdates.side1 = { casualties: side1Casualties, groups: {} };
-    battleUpdates.side2 = { casualties: side2Casualties, groups: {} };
+    updates[`${basePath}/side1/casualties`] = side1Casualties;
+    updates[`${basePath}/side2/casualties`] = side2Casualties;
     
     // Track groups to be deleted and players to be killed
     const groupsToDelete = [];
     const playersKilled = [];
     
-    // Replace the existing loot tracking with battle.loot
     const battleLoot = battle.loot || [];
 
     // Helper function to process each side
@@ -142,7 +141,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         // Update casualty count
         const casualties = unitsToRemove.length;
         updatedCasualties += casualties;
-        battleUpdates[sideKey].casualties = updatedCasualties;
+        updates[`${basePath}/${sideKey}/casualties`] = updatedCasualties;
         
         // Check if the group will be destroyed
         if (newUnitCount <= 0) {
@@ -157,9 +156,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           });
           
           // Remove group from battle and database
-          battleUpdates[sideKey].groups[groupId] = null;
-          updates[groupPath] = null;
           updates[`${basePath}/${sideKey}/groups/${groupId}`] = null;
+          updates[groupPath] = null;
           
           // Handle players in group
           for (const unitId in units) {
@@ -244,13 +242,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     }
     
     if (winner === undefined) {
-      battleUpdates.loot = battleLoot;
-      
-      // Apply the battle updates to the main battle object
-      updates[basePath] = {
-        ...battle,              // Keep existing battle properties
-        ...battleUpdates,       // Apply our new updates
-      };
+      // Update battle tick count directly at the path
+      updates[`${basePath}/tickCount`] = tickCount;
+      // Update loot
+      updates[`${basePath}/loot`] = battleLoot;
     } else {
       console.log(`Battle ${battleId} ending after ${tickCount} ticks. Power levels: Side 1: ${newSide1Power}, Side 2: ${newSide2Power}`);
       
@@ -315,9 +310,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           y: battle.locationY
         }
       };
-      
-      // IMPORTANT: Fix for update conflict - don't modify battle paths if we're deleting the battle
-      // We'll delete the entire battle, so don't bother updating paths within it
       
       if (tile && tile.groups) {
         // Log battle result for debugging
@@ -393,8 +385,16 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         }
       }
       
-      // CRITICAL FIX: Delete the battle as the last step to avoid conflicts
-      // Don't update any paths within the battle after this point
+      // CRITICAL FIX: Remove any updates that are children of the battle path since we're deleting the entire battle
+      const battlePathPrefix = `${basePath}/`;
+      Object.keys(updates).forEach(key => {
+        if (key.startsWith(battlePathPrefix)) {
+          console.log(`Removing redundant update to ${key} since parent battle is being deleted`);
+          delete updates[key];
+        }
+      });
+      
+      // Delete the battle as the last step to avoid conflicts
       updates[basePath] = null;
       
       logger.debug(`Battle ${battleId} cleanup complete`);
