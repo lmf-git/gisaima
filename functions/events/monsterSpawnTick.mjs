@@ -14,14 +14,6 @@ const MIN_SPAWN_DISTANCE = 2; // Minimum distance from player activity to spawn
 const MAX_ACTIVE_AGE = 15 * 60 * 1000; // Consider player activity from last 15 minutes
 const MAX_MONSTERS_PER_CHUNK = 5; // Maximum monster groups per chunk
 
-// Add a new constant for mixed monster groups
-const MIXED_MONSTER_TYPE = {
-  name: "Mixed Monster Pack",
-  unitCountRange: [3, 10],
-  itemChance: 0.7,
-  mergeLimit: 20
-};
-
 /**
  * Generate individual monster unit objects for a monster group
  * @param {string} monsterType - Type of monster
