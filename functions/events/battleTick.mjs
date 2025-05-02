@@ -209,76 +209,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // Log the new power values for debugging
     console.log(`New battle powers after tick ${tickCount} - Side 1: ${newSide1Power}, Side 2: ${newSide2Power}`);
     
-    // Store the current power values in the battle data
-    battleUpdates.side1Power = newSide1Power;
-    battleUpdates.side2Power = newSide2Power;
-
-    // Store any accumulated loot in the battle
-    battleUpdates.loot = battleLoot;
-    
-    // Handle player deaths
-    for (const player of playersKilled) {
-      const now = Date.now();
-      
-      // Mark player as dead in their main record
-      updates[`players/${player.playerId}/worlds/${worldId}/alive`] = false;
-      updates[`players/${player.playerId}/worlds/${worldId}/lastDeathTime`] = now;
-      updates[`players/${player.playerId}/worlds/${worldId}/inGroup`] = null;
-      
-      // Add a message notifying the player of their death
-      updates[`players/${player.playerId}/worlds/${worldId}/lastMessage`] = {
-        text: "You were defeated in battle.",
-        timestamp: now
-      };
-      
-      // Add a chat message about player death
-      const chatId = `player_death_${now}_${player.playerId}`;
-      updates[`worlds/${worldId}/chat/${chatId}`] = {
-        text: `${player.displayName} has fallen in battle at (${battle.locationX}, ${battle.locationY})!`,
-        type: 'event',
-        timestamp: now,
-        location: {
-          x: battle.locationX,
-          y: battle.locationY
-        }
-      };
-    }
-    
-    // Helper function to distribute loot to the winner
-    function distributeLootToWinner(winner) {
-      if (battleLoot.length === 0) return;
-      
-      let winnerGroups = [];
-      if (winner === 1) {
-        winnerGroups = side1Surviving;
-      } else if (winner === 2) {
-        winnerGroups = side2Surviving;
-      }
-      
-      if (winnerGroups.length > 0) {
-        // Select a random surviving group from winning side
-        const receivingGroupId = winnerGroups[Math.floor(Math.random() * winnerGroups.length)];
-        
-        battleLoot.forEach(item => {
-          const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/items/${itemId}`] = item;
-        });
-        
-        // Add a message about looting
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/lastMessage`] = {
-          text: `Looted ${battleLoot.length} items from battle`,
-          timestamp: Date.now()
-        };
-      } else if (winner !== 0) {
-        // If winner is determined but no surviving groups, leave loot on tile
-        // This creates a "treasure" for other groups to find later
-        battleLoot.forEach(item => {
-          const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/items/${itemId}`] = item;
-        });
-      }
-    }
-    
     // Get surviving groups for both sides
     const side1Surviving = Object.keys(side1Groups)
       .filter(id => !groupsToDelete.some(g => g.groupId === id && g.side === 1));
@@ -294,16 +224,56 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       newSide2Power <= 0 || 
       (tickCount > 10 && Math.random() < 0.1);
     
-    if (shouldEndBattle) {
+    if (!shouldEndBattle) {
+      battleUpdates.loot = battleLoot;
+      
+      // Apply the battle updates to the main battle object
+      updates[basePath] = {
+        ...battle,              // Keep existing battle properties
+        ...battleUpdates,       // Apply our new updates
+      };
+    } else {
       console.log(`Battle ${battleId} ending after ${tickCount} ticks. Power levels: Side 1: ${newSide1Power}, Side 2: ${newSide2Power}`);
       
       // Determine the winner
       const winner = determineWinner(newSide1Power, newSide2Power);
       
       // Distribute loot to winner or leave on tile if no survivors
-      distributeLootToWinner(winner);
+      function distributeLootToWinner(winner) {
+        if (battleLoot.length === 0) return;
+        
+        let winnerGroups = [];
+        if (winner === 1) {
+          winnerGroups = side1Surviving;
+        } else if (winner === 2) {
+          winnerGroups = side2Surviving;
+        }
+        
+        if (winnerGroups.length > 0) {
+          // Select a random surviving group from winning side
+          const receivingGroupId = winnerGroups[Math.floor(Math.random() * winnerGroups.length)];
+          
+          battleLoot.forEach(item => {
+            const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/items/${itemId}`] = item;
+          });
+          
+          // Add a message about looting
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/lastMessage`] = {
+            text: `Looted ${battleLoot.length} items from battle`,
+            timestamp: Date.now()
+          };
+        } else if (winner !== 0) {
+          // If winner is determined but no surviving groups, leave loot on tile
+          // This creates a "treasure" for other groups to find later
+          battleLoot.forEach(item => {
+            const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/items/${itemId}`] = item;
+          });
+        }
+      }
       
-      // --------- PHASE 5: END BATTLE AND CLEANUP ---------
+      distributeLootToWinner(winner);
       
       // Delete the battle instead of updating it
       updates[basePath] = null;
