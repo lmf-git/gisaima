@@ -2,7 +2,9 @@
   import { onMount, onDestroy } from 'svelte';
   import { fade } from 'svelte/transition';
 
-  import { currentPlayer, game, savePlayerAchievement, ACHIEVEMENT_DEFINITIONS } from '../../../lib/stores/game.js';
+  import { ACHIEVEMENTS } from 'gisaima-shared/definitions/ACHIEVEMENTS.js';
+
+  import { currentPlayer, game, savePlayerAchievement } from '../../../lib/stores/game.js';
 
   import Close from '../../icons/Close.svelte';
   import Trophy from '../../icons/Trophy.svelte';
@@ -21,8 +23,8 @@
   // Animation constants
   const animationDuration = 300;
 
-  // Use the imported ACHIEVEMENT_DEFINITIONS instead of defining locally
-  const achievementDefinitions = $state(ACHIEVEMENT_DEFINITIONS);
+  // Use the imported ACHIEVEMENTS instead of defining locally
+  const achievementDefinitions = $state(ACHIEVEMENTS);
 
   // Get player achievements for current world
   const playerAchievements = $derived($currentPlayer?.achievements || {});

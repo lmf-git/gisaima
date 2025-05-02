@@ -1,7 +1,11 @@
-import { writable, derived, get } from 'svelte/store';
-import { browser } from '$app/environment';
 import { ref, onValue, get as dbGet, set } from "firebase/database";
+import { writable, derived, get } from 'svelte/store';
+
+import { ACHIEVEMENTS } from 'gisaima-shared/definitions/ACHIEVEMENTS.js';
+
 import { db } from '../firebase/firebase.js';
+
+import { browser } from '$app/environment';
 import { user, isAuthReady as userAuthReady } from './user'; 
 import { clearSavedTargetPosition } from './map.js';
 
@@ -15,51 +19,9 @@ export { userAuthReady as isAuthReady };
 const CHUNK_SIZE = 20;
 
 // Achievement definitions moved to top level constant
-const ACHIEVEMENT_DEFINITIONS = {
-  'mobilised': {
-    title: 'Leader',
-    description: 'Mobilize your first group',
-    category: 'explore',
-  },
-  'first_steps': {
-    title: 'First Steps',
-    description: 'Draw your first movement path',
-    category: 'explore',
-  },
-  'demobilizer': {
-    title: 'Demobilizer',
-    description: 'Demobilize a group at a structure',
-    category: 'explore',
-  },
-  'first_gather': {
-    title: 'Gatherer',
-    description: 'Gather resources for the first time',
-    category: 'items',
-  },
-  'first_message': {
-    title: 'Communicator',
-    description: 'Send your first chat message',
-    category: 'social',
-  },
-  'first_attack': {
-    title: 'First Blood',
-    description: 'Start your first attack',
-    category: 'combat',
-  },
-  'battle_joiner': {
-    title: 'Opportunist',
-    description: 'Join an in-progress battle',
-    category: 'combat',
-  },
-  'first_victory': {
-    title: 'Victorious',
-    description: 'Win your first battle',
-    category: 'combat',
-  },
-};
 
-// Make the achievement definitions available to other modules
-export { ACHIEVEMENT_DEFINITIONS };
+
+
 
 // Store for recent achievement unlocks
 export const recentUnlock = writable(null);
@@ -830,8 +792,8 @@ export async function savePlayerAchievement(worldId, achievementId, value = true
       
       // Only update recentUnlock if this is a new achievement
       if (!alreadyUnlocked) {
-        // Use the top-level ACHIEVEMENT_DEFINITIONS constant
-        const achievementInfo = ACHIEVEMENT_DEFINITIONS[achievementId] || { 
+        // Use the top-level ACHIEVEMENTS constant
+        const achievementInfo = ACHIEVEMENTS[achievementId] || { 
           title: achievementId, 
           description: 'Achievement unlocked!' 
         };
