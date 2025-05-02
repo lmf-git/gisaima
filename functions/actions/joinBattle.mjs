@@ -117,8 +117,7 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/${battleSideKey}/groups/${groupId}`] = {
       present: true,
       type: joiningGroup.type || 'player',
-      race: joiningGroup.race || 'unknown',
-      monsterType: joiningGroup.monsterType
+      race: joiningGroup.race || 'unknown'
     };
     
     // Add battle event

@@ -173,7 +173,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
             present: true,
             type: group.type || 'player',
             race: group.race || 'unknown',
-            monsterType: group.monsterType,
             units: group.units || {} // Include full units data
           };
           return acc;
@@ -189,7 +188,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
             present: true,
             type: group.type || 'player',
             race: group.race || 'unknown',
-            monsterType: group.monsterType,
             units: group.units || {} // Include full units data
           };
           return acc;

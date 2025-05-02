@@ -937,7 +937,7 @@
     // Count races in group entities and check for monster groups
     if (cell.groups && cell.groups.length > 0) {
       cell.groups.forEach(group => {
-        if (group.type === 'monster' || group.monsterType) {
+        if (group.type === 'monster') {
           // For regular monster groups, just count units
           monsterCount += (group.units?.length || 1) * 2;
         } else if (group.race) {

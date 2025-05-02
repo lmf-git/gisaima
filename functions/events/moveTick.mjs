@@ -118,9 +118,8 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
       };
       
       // Ensure monster-specific properties are preserved after movement
-      if (group.type === 'monster' || group.monsterType) {
+      if (group.type === 'monster') {
         updatedGroup.type = 'monster';
-        updatedGroup.monsterType = group.monsterType;
         // Ensure status is 'idle' for monsters
         updatedGroup.status = 'idle';
       }
@@ -140,7 +139,7 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
       };
       
       // Ensure monster type is preserved on intermediate moves
-      if (group.type === 'monster' || group.monsterType) {
+      if (group.type === 'monster') {
         updatedGroup.type = 'monster';
       }
     }

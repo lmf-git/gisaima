@@ -113,25 +113,6 @@ const MONSTER_STRUCTURES = {
   }
 };
 
-/**
- * Generate individual monster unit objects for a monster group
- * @param {string} monsterType - Type of monster
- * @param {number} qty - Number of units to generate
- * @returns {Object} Monster units with ID keys
- */
-function generateMonsterUnits(monsterType, qty) {
-  const units = {};
-  
-  for (let i = 0; i < qty; i++) {
-    const unitId = `monster_unit_${Date.now()}_${Math.floor(Math.random() * 10000)}_${i}`;
-    units[unitId] = {
-      id: unitId,
-      type: monsterType
-    };
-  }
-  
-  return units;
-}
 
 /**
  * Main function to process monster strategies across the world
@@ -270,7 +251,7 @@ export async function processMonsterStrategies(worldId) {
  * Check if a group is a monster group
  */
 function isMonsterGroup(groupData) {
-  return groupData.type === 'monster' || groupData.monsterType;
+  return groupData.type === 'monster';
 }
 
 /**
@@ -494,8 +475,7 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
       groups: {
         [monsterGroup.id]: {
           present: true,
-          type: 'monster',
-          monsterType: monsterGroup.monsterType || 'unknown'
+          type: 'monster'
         }
       },
       casualties: 0,
@@ -588,8 +568,7 @@ async function initiateAttackOnStructure(db, worldId, monsterGroup, structure, l
       groups: {
         [monsterGroup.id]: {
           present: true,
-          type: 'monster',
-          monsterType: monsterGroup.monsterType || 'unknown'
+          type: 'monster'
         }
       },
       casualties: 0,
@@ -820,8 +799,6 @@ async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, wor
   
   // Movement speed can depend on monster type
   let moveSpeed = 1;
-  if (monsterGroup.monsterType === 'wolf') moveSpeed = 1.5;
-  if (monsterGroup.monsterType === 'spider') moveSpeed = 1.2;
   
   // Set the movement data
   updates[`${groupPath}/status`] = 'moving';
