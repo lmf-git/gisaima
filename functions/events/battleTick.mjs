@@ -96,10 +96,13 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         const { unitsToRemove, playersKilled: groupPlayersKilled } = 
           selectUnitsForCasualties(units, groupAttrition);
 
-        logger.debug()
-        
         // Add players killed in this group to the overall list
         playersKilled.push(...groupPlayersKilled);
+
+        logger.debug('units', units);
+        logger.debug('group attrition', groupAttrition);
+        logger.debug('players killed in attrition', playersKilled);
+        logger.debug('units killed in attrition', unitsToRemove);
         
         // Calculate how many units remain
         const remainingUnits = { ...units };
