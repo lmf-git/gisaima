@@ -1,9 +1,10 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { entities, targetStore, coordinates, moveTarget, setHighlighted } from '../../lib/stores/map';
-  import { game, currentPlayer, calculateNextTickTime, formatTimeUntilNextTick, timeUntilNextTick } from '../../lib/stores/game';
+  import { targetStore, coordinates, moveTarget, setHighlighted } from '../../lib/stores/map';
+  import { game, currentPlayer, timeUntilNextTick } from '../../lib/stores/game';
   
-  // Import race icon components
+  import { calculateGroupPower } from 'gisaima-shared/war/battles.js';
+
   import Human from '../icons/Human.svelte';
   import Elf from '../icons/Elf.svelte';
   import Dwarf from '../icons/Dwarf.svelte';
@@ -11,7 +12,7 @@
   import Fairy from '../icons/Fairy.svelte';
   import Structure from '../icons/Structure.svelte';
   import Torch from '../icons/Torch.svelte';
-  import Close from '../icons/Close.svelte'; // Add Close icon import
+  import Close from '../icons/Close.svelte';
   
   // Props
   const { 
@@ -926,6 +927,7 @@
                         <span class="entity-badge owner-badge">Yours</span>
                       {/if}
                       <span class="entity-coords">({formatCoords(group.x, group.y)})</span>
+                      <!-- <span class="group-power">({calculateGroupPower(group)})</span> -->
                     </div>
                     
                     <div class="entity-details">
