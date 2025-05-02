@@ -1,6 +1,40 @@
 import { logger } from "firebase-functions";
 import { getDatabase } from 'firebase-admin/database';
 
+/**
+ * Calculate power for a group considering both array and object unit formats
+ * Uses each unit's strength value if available, otherwise counts as 1 unit = 1 power
+ * @param {Object} group - The group to calculate power for
+ * @returns {number} - The calculated group power
+ */
+function calculateGroupPower(group) {
+  if (!group) return 0;
+  
+  // Base calculation using unit count
+  let power = 0;
+  
+  // If we have detailed units data, use it for better calculations
+  if (group.units) {
+    // Check if it's an array or object
+    if (Array.isArray(group.units)) {
+      power = group.units.reduce((total, unit) => {
+        // Calculate unit strength (default to 1 if not specified)
+        const unitStrength = unit.strength || 1;
+        return total + unitStrength;
+      }, 0);
+    } else {
+      // Handle object format (keys are unit IDs)
+      power = Object.values(group.units).reduce((total, unit) => {
+        const unitStrength = unit.strength || 1;
+        return total + unitStrength;
+      }, 0);
+    }
+  }
+  
+  // Ensure minimum power of 1 for any group that exists
+  return Math.max(1, power);
+}
+
 export async function processBattle(worldId, chunkKey, tileKey, battleId, battle, updates, tile) {
   try {
     // Use serverTimestamp for database records only
@@ -20,15 +54,39 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     const side1 = battle.side1;
     const side2 = battle.side2;
     
-    // Get current power values
-    const side1Power = side1.power || 0;
-    const side2Power = side2.power || 0;
+    // Recalculate power values using strength-based calculation
+    let side1Power = 0;
+    let side2Power = 0;
+    
+    // Calculate side1 power by summing individual group powers
+    const side1Groups = side1.groups || {};
+    for (const groupId in side1Groups) {
+      if (tile.groups[groupId]) {
+        const group = tile.groups[groupId];
+        side1Power += calculateGroupPower(group);
+      }
+    }
+    
+    // Calculate side2 power by summing individual group powers
+    const side2Groups = side2.groups || {};
+    for (const groupId in side2Groups) {
+      if (tile.groups[groupId]) {
+        const group = tile.groups[groupId];
+        side2Power += calculateGroupPower(group);
+      }
+    }
+    
+    // Add structure power if applicable
+    if (battle.structurePower) {
+      side2Power += battle.structurePower;
+    }
+    
     const totalPower = side1Power + side2Power;
     
     // Calculate power ratio to determine attrition rate
     // Higher difference means more damage to the weaker side
-    const powerRatio1 = side1Power / totalPower;
-    const powerRatio2 = side2Power / totalPower;
+    const powerRatio1 = totalPower > 0 ? side1Power / totalPower : 0.5;
+    const powerRatio2 = totalPower > 0 ? side2Power / totalPower : 0.5;
     
     // Base attrition per tick (5-10% of opponent's power)
     const baseAttritionRate = 0.05 + (Math.random() * 0.05);
@@ -55,15 +113,14 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     };
     
     // Apply attrition to side 1 groups
-    const side1Groups = side1.groups || {};
     for (const groupId in side1Groups) {
       if (tile.groups[groupId]) {
         const group = tile.groups[groupId];
         const units = group.units || {};
         
         // Calculate this group's share of attrition based on its proportion of side power
-        const groupPower = group.units?.length || 0;
-        const groupShare = groupPower / side1Power;
+        const groupPower = calculateGroupPower(group);
+        const groupShare = side1Power > 0 ? groupPower / side1Power : 1;
         const groupAttrition = Math.round(side2Attrition * groupShare);
         
         // Apply casualties by removing specific units
@@ -110,7 +167,9 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         }
         
         // Calculate how many units remain
-        const newUnitCount = totalUnits - unitsToRemove.length;
+        const remainingUnits = { ...units };
+        unitsToRemove.forEach(unitId => delete remainingUnits[unitId]);
+        const newUnitCount = Object.keys(remainingUnits).length;
         
         // Check if the group will be destroyed
         if (newUnitCount <= 0) {
@@ -151,21 +210,23 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         // Add to side casualties
         side1Casualties += unitsToRemove.length;
         
-        // Add remaining power (1 unit = 1 power)
-        newSide1Power += newUnitCount;
+        // Calculate new group power after casualties and add to side power
+        if (newUnitCount > 0) {
+          const newGroupPower = calculateGroupPower({ units: remainingUnits });
+          newSide1Power += newGroupPower;
+        }
       }
     }
     
-    // Apply attrition to side 2 groups - similar logic to side 1
-    const side2Groups = side2.groups || {};
+    // Apply attrition to side 2 groups - similar logic with calculateGroupPower
     for (const groupId in side2Groups) {
       if (tile.groups[groupId]) {
         const group = tile.groups[groupId];
         const units = group.units || {};
         
         // Calculate this group's share of attrition based on its proportion of side power
-        const groupPower = group.units?.length || 0;
-        const groupShare = groupPower / side2Power;
+        const groupPower = calculateGroupPower(group);
+        const groupShare = side2Power > 0 ? groupPower / side2Power : 1;
         const groupAttrition = Math.round(side1Attrition * groupShare);
         
         // Apply casualties by removing specific units
@@ -212,7 +273,9 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         }
         
         // Calculate how many units remain
-        const newUnitCount = totalUnits - unitsToRemove.length;
+        const remainingUnits = { ...units };
+        unitsToRemove.forEach(unitId => delete remainingUnits[unitId]);
+        const newUnitCount = Object.keys(remainingUnits).length;
         
         // Check if the group will be destroyed
         if (newUnitCount <= 0) {

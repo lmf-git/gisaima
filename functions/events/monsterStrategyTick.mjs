@@ -905,31 +905,25 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
   // Create battle ID and prepare battle data
   const battleId = `battle_${now}_${Math.floor(Math.random() * 1000)}`;
   
-  // Calculate power for each side
-  const monsterPower = calculateGroupStrength(monsterGroup);
-  const targetPower = selectedTargets.reduce((total, group) => total + (group.units?.length || 1), 0);
-  
-  // Create battle object
+  // Create battle object without power calculations
   const battleData = {
     id: battleId,
     createdAt: now,
     locationX: x,
     locationY: y,
     targetTypes: ['group'],
-    side1Power: monsterPower,
-    side2Power: targetPower,
     side1: {
-      power: monsterPower,
       groups: {
         [monsterGroup.id]: true
-      }
+      },
+      casualties: 0
     },
     side2: {
-      power: targetPower,
       groups: selectedTargets.reduce((obj, group) => {
         obj[group.id] = true;
         return obj;
-      }, {})
+      }, {}),
+      casualties: 0
     },
     tickCount: 0
   };
@@ -994,29 +988,23 @@ async function initiateAttackOnStructure(db, worldId, monsterGroup, structure, l
   // Create battle ID and prepare battle data
   const battleId = `battle_${now}_${Math.floor(Math.random() * 1000)}`;
   
-  // Calculate power for monster group and structure
-  const monsterPower = calculateGroupStrength(monsterGroup);
-  const structurePower = calculateStructurePower(structure);
-  
-  // Create battle object
+  // Create battle object without power calculations
   const battleData = {
     id: battleId,
     createdAt: now,
     locationX: x,
     locationY: y,
     targetTypes: ['structure'],
-    side1Power: monsterPower,
-    side2Power: structurePower,
-    structurePower: structurePower,
+    structureId: structure.id,
     side1: {
-      power: monsterPower,
       groups: {
         [monsterGroup.id]: true
-      }
+      },
+      casualties: 0
     },
     side2: {
-      power: structurePower,
-      groups: {}
+      groups: {},
+      casualties: 0
     },
     tickCount: 0
   };
@@ -1058,37 +1046,6 @@ async function initiateAttackOnStructure(db, worldId, monsterGroup, structure, l
 }
 
 /**
- * Calculate power for a structure (helper function)
- * @param {object} structure - Structure data
- * @returns {number} Structure's power value
- */
-function calculateStructurePower(structure) {
-  if (!structure) return 0;
-  
-  // Base power by structure type
-  let basePower = 5;
-  
-  switch (structure.type) {
-    case 'spawn':
-      basePower = 15;
-      break;
-    case 'fortress':
-      basePower = 30;
-      break;
-    case 'watchtower':
-      basePower = 10;
-      break;
-    case 'stronghold':
-      basePower = 25;
-      break;
-    default:
-      basePower = 5;
-  }
-  
-  return basePower;
-}
-
-/**
  * Join an existing battle on this tile
  */
 async function joinExistingBattle(db, worldId, monsterGroup, tileData, updates, now) {
@@ -1119,12 +1076,9 @@ async function joinExistingBattle(db, worldId, monsterGroup, tileData, updates, 
   updates[`${groupPath}/battleRole`] = 'reinforcement';
   updates[`${groupPath}/lastUpdated`] = now;
   
-  // Add monster group to battle's side
+  // Add monster group to battle's side - simply add to the groups object
   const sideKey = battleSide === 1 ? 'side1' : 'side2';
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/${sideKey}/groups/${groupId}`] = {
-    id: groupId,
-    joined: now
-  };
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battle.id}/${sideKey}/groups/${groupId}`] = true;
   
   // Add a chat message about monsters joining the fight
   const groupName = monsterGroup.name || "Monster group";
@@ -1165,7 +1119,6 @@ function countTotalResources(items) {
 async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, worldScan, updates, now) {
   const totalUnits = monsterGroup.units?.length || 1;
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
-  const groupStrength = calculateGroupStrength(monsterGroup);
   
   let targetLocation;
   let targetType;
@@ -1235,7 +1188,7 @@ async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, wor
       }
       
       // Stronger groups target player spawns
-      else if ((totalUnits >= 10 || groupStrength > 15) && worldScan.playerSpawns.length > 0) {
+      else if (totalUnits >= 10 && worldScan.playerSpawns.length > 0) {
         // Find nearest player spawn
         for (const spawn of worldScan.playerSpawns) {
           const distance = calculateDistance(location, spawn);
@@ -1566,41 +1519,6 @@ function calculateDistance(loc1, loc2) {
   const dx = loc1.x - loc2.x;
   const dy = loc1.y - loc2.y;
   return Math.sqrt(dx*dx + dy*dy);
-}
-
-/**
- * Calculate the combat strength of a monster group
- */
-function calculateGroupStrength(group) {
-  let baseStrength = group.units?.length || 1;
-  
-  // Adjust based on monster type
-  switch (group.monsterType) {
-    case 'troll':
-      baseStrength *= 2.5;
-      break;
-    case 'skeleton':
-      baseStrength *= 1.2;
-      break;
-    case 'elemental':
-      baseStrength *= 2.0;
-      break;
-    case 'wolf':
-      baseStrength *= 1.5;
-      break;
-    case 'goblin':
-      baseStrength *= 0.8;
-      break;
-    default:
-      // Keep base strength
-      break;
-  }
-  
-  // Adjust for merge count (groups that have merged are stronger)
-  const mergeBonus = group.mergeCount ? (group.mergeCount * 0.2) : 0;
-  baseStrength *= (1 + mergeBonus);
-  
-  return baseStrength;
 }
 
 /**

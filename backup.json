@@ -260,7 +260,6 @@
                 "targetX": -21,
                 "targetY": -16,
                 "type": "monster",
-                "unitCount": 1,
                 "x": -20,
                 "y": -15
               }
@@ -406,7 +405,6 @@
                 "owner": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
                 "race": "fairy",
                 "status": "idle",
-                "unitCount": 1,
                 "units": {
                   "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2": {
                     "displayName": "gunsy",
@@ -517,7 +515,6 @@
                 "targetX": -14,
                 "targetY": 20,
                 "type": "monster",
-                "unitCount": 1,
                 "x": -13,
                 "y": 20
               }
@@ -570,7 +567,6 @@
                 "targetX": -11,
                 "targetY": 23,
                 "type": "monster",
-                "unitCount": 1,
                 "x": -9,
                 "y": 25
               }
@@ -653,7 +649,6 @@
                 "status": "idle",
                 "targetX": -29,
                 "targetY": -11,
-                "unitCount": 1,
                 "units": {
                   "scls4twPVdNaZABrOfKAhVXsd3v2": {
                     "displayName": "madnico",
@@ -722,7 +717,6 @@
                 "status": "idle",
                 "targetX": -30,
                 "targetY": -12,
-                "unitCount": 1,
                 "units": {
                   "YIDyjpxkBSR8eqemfslNDfs1YBr2": {
                     "displayName": "FuaK",
@@ -1036,7 +1030,6 @@
                 "status": "idle",
                 "targetX": -26,
                 "targetY": 6,
-                "unitCount": 1,
                 "x": -26,
                 "y": 6
               },

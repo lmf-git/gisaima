@@ -155,22 +155,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
     const battleId = `battle_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const now = Date.now();
     
-    // Calculate initial power for each side
-    const attackerPower = calculateTotalPower(attackerGroups);
-    
-    let defenderGroupPower = 0;
-    if (defenderGroups.length > 0) {
-      defenderGroupPower = calculateTotalPower(defenderGroups);
-    }
-    
-    let structurePower = 0;
-    if (structure) {
-      structurePower = calculateStructurePower(structure);
-    }
-    
-    // Total defender power combines groups and structure
-    const defenderTotalPower = defenderGroupPower + structurePower;
-
     // Extract participants info for both sides
     const side1Participants = attackerGroups.map(group => {
       // Extract all player units from the group
@@ -205,7 +189,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
       return {
         groupId: group.id,
         groupName: group.name || `Group ${group.id.slice(-4)}`,
-        groupPower: calculateGroupPower(group),
         players
       };
     });
@@ -243,7 +226,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
       return {
         groupId: group.id,
         groupName: group.name || `Group ${group.id.slice(-4)}`,
-        groupPower: calculateGroupPower(group),
         players
       };
     });
@@ -260,24 +242,13 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
       ])
     ];
 
-    // Set initial advantage based on power difference
-    const powerDifference = attackerPower - defenderTotalPower;
-    const powerTotal = attackerPower + defenderTotalPower;
-    const advantageSide = powerDifference > 0 ? 1 : powerDifference < 0 ? 2 : 0;
-    const advantageStrength = Math.abs(powerDifference) / Math.max(1, powerTotal);
-    
     // Prepare the battle data with enhanced information
     const battleData = {
       id: battleId,
       locationX,
       locationY,
       targetTypes,
-      side1Power: attackerPower,
-      side2Power: defenderTotalPower,
-      defenderGroupPower,
-      structurePower,
       side1: {
-        power: attackerPower,
         groups: attackerGroupIds.reduce((acc, id) => {
           acc[id] = true;
           return acc;
@@ -287,7 +258,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
         participants: side1Participants
       },
       side2: {
-        power: defenderTotalPower,
         groups: defenderGroupIds ? defenderGroupIds.reduce((acc, id) => {
           acc[id] = true;
           return acc;
@@ -296,14 +266,15 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
         casualties: 0,
         participants: side2Participants
       },
-      advantage: {
-        side: advantageSide,
-        strength: advantageStrength
-      },
       participants: allParticipantIds,
       tickCount: 0
     };
     
+    // If it's a structure battle, record the structureId
+    if (structure) {
+      battleData.structureId = structure.id;
+    }
+
     // Prepare updates object for atomicity
     const updates = {};
     
@@ -366,82 +337,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
     throw new HttpsError("internal", "Failed to start attack: " + (error.message || "Unknown error"));
   }
 });
-
-// Helper function to calculate total power of groups
-function calculateTotalPower(groups) {
-  if (!groups || groups.length === 0) return 0;
-  
-  return groups.reduce((total, group) => {
-    let groupPower = group.units?.length || 1;
-    
-    // If we have unit details, use those
-    if (group.units) {
-      if (Array.isArray(group.units)) {
-        groupPower = group.units.length;
-      } else if (typeof group.units === 'object') {
-        groupPower = Object.keys(group.units).length;
-      }
-    }
-    
-    return total + groupPower;
-  }, 0);
-}
-
-// Helper function to calculate structure power
-function calculateStructurePower(structure) {
-  if (!structure) return 0;
-  
-  // Base power by structure type
-  let basePower = 5;
-  
-  switch (structure.type) {
-    case 'spawn':
-      basePower = 15;
-      break;
-    case 'fortress':
-      basePower = 30;
-      break;
-    case 'watchtower':
-      basePower = 10;
-      break;
-    case 'stronghold':
-      basePower = 25;
-      break;
-    default:
-      basePower = 5;
-  }
-  
-  return basePower;
-}
-
-// Helper function to calculate individual group power
-function calculateGroupPower(group) {
-  // Base calculation using unit count
-  let power = group.units?.length || 1;
-  
-  // If we have detailed units data, use it for better calculations
-  if (group.units && typeof group.units === 'object') {
-    // Check if it's an array or object
-    if (Array.isArray(group.units)) {
-      power = group.units.reduce((total, unit) => {
-        // Calculate unit strength (default to 1 if not specified)
-        const unitStrength = unit.strength || 1;
-        return total + unitStrength;
-      }, 0);
-    } else {
-      // Handle object format (keys are unit IDs)
-      power = Object.values(group.units).reduce((total, unit) => {
-        const unitStrength = unit.strength || 1;
-        return total + unitStrength;
-      }, 0);
-    }
-    
-    // Ensure minimum power of 1
-    power = Math.max(1, power);
-  }
-  
-  return power;
-}
 
 // Helper function to generate side names based on composition
 function getSideName(groups, structure, sideNumber) {

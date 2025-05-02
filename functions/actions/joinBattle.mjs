@@ -99,13 +99,9 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
       });
     }
     
-    // Calculate group power
-    const groupPower = joiningGroup.units?.length || 1;
-    
     const participantInfo = {
       groupId: groupId,
       groupName: joiningGroup.name || `Group ${groupId.slice(-4)}`,
-      groupPower: groupPower,
       players: participants
     };
     
@@ -117,12 +113,6 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     // Add group to the battle side
     const battleSideKey = side === 1 ? 'side1' : 'side2';
     updates[`battles/${worldId}/${battleId}/${battleSideKey}/groups/${groupId}`] = true;
-    updates[`battles/${worldId}/${battleId}/${battleSideKey}/power`] = 
-      battleData[battleSideKey].power + groupPower;
-
-    // Update battle side power
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/${battleSideKey}Power`] = 
-      battleData[battleSideKey + 'Power'] + groupPower;
     
     // Update enhanced battle data in the battle object
     // Add the group to side participants
@@ -134,19 +124,6 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     const currentParticipants = battleData.participants || [];
     const newParticipants = [...new Set([...currentParticipants, ...playerIds])];
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/participants`] = newParticipants;
-    
-    // Recalculate advantage
-    const side1Power = side === 1 ? battleData.side1Power + groupPower : battleData.side1Power;
-    const side2Power = side === 2 ? battleData.side2Power + groupPower : battleData.side2Power;
-    const powerDifference = side1Power - side2Power;
-    const powerTotal = side1Power + side2Power;
-    const advantageSide = powerDifference > 0 ? 1 : powerDifference < 0 ? 2 : 0;
-    const advantageStrength = Math.abs(powerDifference) / Math.max(1, powerTotal);
-    
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/advantage`] = {
-      side: advantageSide,
-      strength: advantageStrength
-    };
     
     // Add battle event
     const sideName = battleData[battleSideKey]?.name || `Side ${side}`;
