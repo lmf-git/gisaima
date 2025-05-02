@@ -1179,7 +1179,6 @@
                   <div class="entity-details">
                     <div class="entity-status">
                       <span class="entity-status-badge {battle.status}">
-                        {battle.status === 'active' ? 'Ongoing' : 'Concluded'}
                         {#if battle.winner}
                            - {battle.winner === 1 ? battle.side1.name : battle.side2.name} won
                         {/if}
