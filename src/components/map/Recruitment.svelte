@@ -3,6 +3,7 @@
     import { get } from "svelte/store";
     import { game, currentPlayer } from "../../lib/stores/game.js";
     import { getFunctions, httpsCallable } from "firebase/functions";
+    import UNITS from "gisaima-shared/definitions/UNITS.js";
     import Close from "../icons/Close.svelte";
     import Human from "../icons/Human.svelte";
     import Elf from "../icons/Elf.svelte";
@@ -12,9 +13,6 @@
     import Shield from "../icons/Shield.svelte";
     import Sword from "../icons/Sword.svelte";
     import Bow from "../icons/Bow.svelte";
-
-
-
 
     // Props
     const {
@@ -85,186 +83,23 @@
     // Function to get available units without modifying state
     function getAvailableUnits(structure) {
         const race = structure.race?.toLowerCase();
-        const playerResources = getPlayerResources();
         const structureLevel = structure.level || 1;
-
-        // Default units available to all races
-        const baseUnits = [
-            {
-                id: "basic_warrior",
-                name: "Basic Warrior",
-                description: "Basic melee fighter with sword and shield",
-                type: "warrior",
-                race: race || "neutral",
-                cost: { wood: 2, stone: 1 },
-                timePerUnit: 60, // seconds per unit
-                icon: "sword",
-                power: 1,
-                requirements: {
-                    structureLevel: 1
-                }
-            },
-            {
-                id: "scout",
-                name: "Scout",
-                description: "Fast unit with high visibility",
-                type: "scout",
-                race: race || "neutral",
-                cost: { wood: 1, leather: 1 },
-                timePerUnit: 45, // seconds per unit
-                icon: "bow",
-                power: 0.5,
-                requirements: {
-                    structureLevel: 1
-                }
-            },
-        ];
-
-        // Race-specific units
-        const raceUnits = [];
-        if (race === "human") {
-            raceUnits.push({
-                id: "human_knight",
-                name: "Knight",
-                description: "Heavily armored warrior with high defense",
-                type: "knight",
-                race: "human",
-                cost: { wood: 1, stone: 2, iron: 1 },
-                timePerUnit: 90,
-                icon: "shield",
-                power: 2,
-                requirements: {
-                    structureLevel: 2,
-                    race: "human"
-                }
-            });
-        } else if (race === "elf") {
-            raceUnits.push({
-                id: "elf_archer",
-                name: "Elven Archer",
-                description: "Skilled ranged fighter with deadly accuracy",
-                type: "archer",
-                race: "elf",
-                cost: { wood: 3, leather: 1 },
-                timePerUnit: 75,
-                icon: "bow",
-                power: 1.5,
-                requirements: {
-                    structureLevel: 2,
-                    race: "elf"
-                }
-            });
-        } else if (race === "dwarf") {
-            raceUnits.push({
-                id: "dwarf_defender",
-                name: "Dwarven Defender",
-                description: "Sturdy warrior specialized in defense",
-                type: "defender",
-                race: "dwarf",
-                cost: { stone: 2, iron: 2 },
-                timePerUnit: 90,
-                icon: "shield",
-                power: 2,
-                requirements: {
-                    structureLevel: 2,
-                    race: "dwarf"
-                }
-            });
-        } else if (race === "goblin") {
-            raceUnits.push({
-                id: "goblin_raider",
-                name: "Goblin Raider",
-                description: "Quick but weak fighter, good in groups",
-                type: "raider",
-                race: "goblin",
-                cost: { wood: 1 },
-                timePerUnit: 30,
-                icon: "sword",
-                power: 0.75,
-                requirements: {
-                    structureLevel: 2,
-                    race: "goblin"
-                }
-            });
-        } else if (race === "fairy") {
-            raceUnits.push({
-                id: "fairy_enchanter",
-                name: "Fairy Enchanter",
-                description: "Magical unit with support abilities",
-                type: "enchanter",
-                race: "fairy",
-                cost: { herbs: 2, crystal: 1 },
-                timePerUnit: 60,
-                icon: "staff",
-                power: 1.5,
-                requirements: {
-                    structureLevel: 2,
-                    race: "fairy"
-                }
-            });
-        }
-
-        // Add additional race units that could be unlockable
-        if (race) {
-            // Add advanced unit for each race
-            const advancedUnit = {
-                id: `${race}_elite`,
-                name: `Elite ${formatRaceName(race)}`,
-                description: "Advanced unit with special abilities",
-                type: "elite",
-                race: race,
-                cost: { wood: 2, stone: 2, iron: 1, crystal: 1 },
-                timePerUnit: 120,
-                icon: race === "elf" ? "bow" : "sword",
-                power: 2.5,
-                requirements: {
-                    structureLevel: 3,
-                    race: race
-                }
-            };
-            raceUnits.push(advancedUnit);
-        }
-
-        // Add structure-specific units based on structure type
-        const structureUnits = [];
-        if (structure.type === "fortress" || structure.type === "stronghold") {
-            structureUnits.push({
-                id: "elite_guard",
-                name: "Elite Guard",
-                description: "Highly trained soldier with advanced combat skills",
-                type: "elite",
-                race: race || "neutral",
-                cost: { wood: 2, stone: 2, iron: 2 },
-                timePerUnit: 120,
-                icon: "shield",
-                power: 3,
-                requirements: {
-                    structureType: ["fortress", "stronghold"],
-                    structureLevel: 2
-                }
-            });
-            
-            // Add a siege unit
-            structureUnits.push({
-                id: "siege_ram",
-                name: "Battering Ram",
-                description: "Siege unit effective against structures",
-                type: "siege",
-                race: "neutral",
-                cost: { wood: 5, stone: 3, iron: 2 },
-                timePerUnit: 180,
-                icon: "shield",
-                power: 1.5,
-                requirements: {
-                    structureType: ["fortress", "stronghold"],
-                    structureLevel: 3,
-                    research: "siegecraft"
-                }
-            });
-        }
-
-        // Combine all units and check availability
-        const allUnits = [...baseUnits, ...raceUnits, ...structureUnits];
+        
+        // Filter units from the imported UNITS that are player recruitable units
+        const allUnits = Object.entries(UNITS)
+            .filter(([_, unit]) => unit.category === 'player')
+            .map(([id, unit]) => ({
+                id,
+                name: unit.name,
+                description: unit.description,
+                type: unit.type,
+                race: unit.race || 'neutral',
+                cost: unit.cost,
+                timePerUnit: unit.timePerUnit,
+                icon: unit.icon,
+                power: unit.power,
+                requirements: unit.requirements
+            }));
         
         // Process each unit to determine availability
         return allUnits.map(unit => {
