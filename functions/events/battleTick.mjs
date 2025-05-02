@@ -1,5 +1,11 @@
 import { logger } from "firebase-functions";
-import { calculateGroupPower } from "gisaima-shared/war/battles.js";
+import { 
+  calculateGroupPower, 
+  calculatePowerRatios, 
+  calculateAttrition, 
+  selectUnitsForCasualties,
+  determineWinner
+} from "gisaima-shared/war/battles.js";
 
 export async function processBattle(worldId, chunkKey, tileKey, battleId, battle, updates, tile) {
   try {
@@ -47,20 +53,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       side2Power += battle.structurePower;
     }
     
-    const totalPower = side1Power + side2Power;
-    
-    // Calculate power ratio to determine attrition rate
-    // Higher difference means more damage to the weaker side
-    const powerRatio1 = totalPower > 0 ? side1Power / totalPower : 0.5;
-    const powerRatio2 = totalPower > 0 ? side2Power / totalPower : 0.5;
-    
-    // Base attrition per tick (5-10% of opponent's power)
-    const baseAttritionRate = 0.05 + (Math.random() * 0.05);
-    
-    // Calculate attrition with advantage multipliers
-    // The side with more power deals more damage
-    const side1Attrition = Math.round(side1Power * baseAttritionRate * (powerRatio1 + 0.5));
-    const side2Attrition = Math.round(side2Power * baseAttritionRate * (powerRatio2 + 0.5));
+    // Use the new functions to calculate power ratios and attrition
+    const { side1Ratio, side2Ratio } = calculatePowerRatios(side1Power, side2Power);
+    const side1Attrition = calculateAttrition(side1Power, side1Ratio);
+    const side2Attrition = calculateAttrition(side2Power, side2Ratio);
     
     // Apply attrition to individual groups in each side
     let newSide1Power = 0;
@@ -89,48 +85,12 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         const groupShare = side1Power > 0 ? groupPower / side1Power : 1;
         const groupAttrition = Math.round(side2Attrition * groupShare);
         
-        // Apply casualties by removing specific units
-        const unitIds = Object.keys(units);
-        const totalUnits = unitIds.length;
-        let remainingAttrition = Math.min(groupAttrition, totalUnits);
+        // Use the new function to select casualties
+        const { unitsToRemove, playersKilled: groupPlayersKilled } = 
+          selectUnitsForCasualties(units, groupAttrition);
         
-        // This will track which units are killed
-        const unitsToRemove = [];
-        
-        // First check if there are any regular (non-player) units
-        const regularUnitIds = unitIds.filter(id => units[id].type !== 'player');
-        
-        // Remove regular units first as much as possible
-        while (remainingAttrition > 0 && regularUnitIds.length > 0) {
-          // Choose random unit for removal
-          const randomIndex = Math.floor(Math.random() * regularUnitIds.length);
-          const unitToRemove = regularUnitIds.splice(randomIndex, 1)[0];
-          
-          unitsToRemove.push(unitToRemove);
-          remainingAttrition--;
-        }
-        
-        // If we still need to remove more units, and we only have player units left
-        if (remainingAttrition > 0) {
-          // Get player units
-          const playerUnitIds = unitIds.filter(id => units[id].type === 'player');
-          
-          while (remainingAttrition > 0 && playerUnitIds.length > 0) {
-            // Choose random player unit
-            const randomIndex = Math.floor(Math.random() * playerUnitIds.length);
-            const playerUnitId = playerUnitIds.splice(randomIndex, 1)[0];
-            const playerUnit = units[playerUnitId];
-            
-            // Track this player for marking as dead later
-            playersKilled.push({
-              playerId: playerUnit.id,
-              displayName: playerUnit.displayName || "Unknown Player"
-            });
-            
-            unitsToRemove.push(playerUnitId);
-            remainingAttrition--;
-          }
-        }
+        // Add players killed in this group to the overall list
+        playersKilled.push(...groupPlayersKilled);
         
         // Calculate how many units remain
         const remainingUnits = { ...units };
@@ -184,7 +144,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       }
     }
     
-    // Apply attrition to side 2 groups - similar logic with calculateGroupPower
+    // Apply attrition to side 2 groups - similar logic
     for (const groupId in side2Groups) {
       if (tile.groups[groupId]) {
         const group = tile.groups[groupId];
@@ -195,48 +155,12 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         const groupShare = side2Power > 0 ? groupPower / side2Power : 1;
         const groupAttrition = Math.round(side1Attrition * groupShare);
         
-        // Apply casualties by removing specific units
-        const unitIds = Object.keys(units);
-        const totalUnits = unitIds.length;
-        let remainingAttrition = Math.min(groupAttrition, totalUnits);
+        // Use the new function to select casualties
+        const { unitsToRemove, playersKilled: groupPlayersKilled } = 
+          selectUnitsForCasualties(units, groupAttrition);
         
-        // This will track which units are killed
-        const unitsToRemove = [];
-        
-        // First check if there are any regular (non-player) units
-        const regularUnitIds = unitIds.filter(id => units[id].type !== 'player');
-        
-        // Remove regular units first as much as possible
-        while (remainingAttrition > 0 && regularUnitIds.length > 0) {
-          // Choose random unit for removal
-          const randomIndex = Math.floor(Math.random() * regularUnitIds.length);
-          const unitToRemove = regularUnitIds.splice(randomIndex, 1)[0];
-          
-          unitsToRemove.push(unitToRemove);
-          remainingAttrition--;
-        }
-        
-        // If we still need to remove more units, and we only have player units left
-        if (remainingAttrition > 0) {
-          // Get player units
-          const playerUnitIds = unitIds.filter(id => units[id].type === 'player');
-          
-          while (remainingAttrition > 0 && playerUnitIds.length > 0) {
-            // Choose random player unit
-            const randomIndex = Math.floor(Math.random() * playerUnitIds.length);
-            const playerUnitId = playerUnitIds.splice(randomIndex, 1)[0];
-            const playerUnit = units[playerUnitId];
-            
-            // Track this player for marking as dead later
-            playersKilled.push({
-              playerId: playerUnit.id,
-              displayName: playerUnit.displayName || "Unknown Player"
-            });
-            
-            unitsToRemove.push(playerUnitId);
-            remainingAttrition--;
-          }
-        }
+        // Add players killed in this group to the overall list
+        playersKilled.push(...groupPlayersKilled);
         
         // Calculate how many units remain
         const remainingUnits = { ...units };
@@ -281,8 +205,11 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         // Add to side casualties
         side2Casualties += unitsToRemove.length;
         
-        // Add remaining power (1 unit = 1 power)
-        newSide2Power += newUnitCount;
+        // Calculate new group power after casualties and add to side power
+        if (newUnitCount > 0) {
+          const newGroupPower = calculateGroupPower({ units: remainingUnits });
+          newSide2Power += newGroupPower;
+        }
       }
     }
     
@@ -412,13 +339,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // Check if battle should end - based only on power
     // A battle ends when one side has no power left
     if (newSide1Power <= 0 || newSide2Power <= 0) {
-      // Determine the winner
-      let winner = 0; // Draw
-      if (newSide1Power > newSide2Power) {
-        winner = 1; // Side 1 wins
-      } else if (newSide2Power > newSide1Power) {
-        winner = 2; // Side 2 wins
-      }
+      // Use the new function to determine the winner
+      const winner = determineWinner(newSide1Power, newSide2Power);
       
       // End the battle
       return await endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile, groupsToBeDeleted);

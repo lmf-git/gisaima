@@ -33,7 +33,6 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
   if (group.gatheringTicksRemaining && group.gatheringTicksRemaining > 1) {
     // Decrement the counter and continue waiting
     updates[`${groupPath}/gatheringTicksRemaining`] = group.gatheringTicksRemaining - 1;
-    updates[`${groupPath}/lastUpdated`] = now;
     return false; // Gathering not completed yet
   }
   
@@ -52,7 +51,6 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
   
   // Reset group status to idle
   updates[`${groupPath}/status`] = 'idle';
-  updates[`${groupPath}/lastUpdated`] = now;
   updates[`${groupPath}/gatheringUntil`] = null;
   updates[`${groupPath}/gatheringStarted`] = null;
   updates[`${groupPath}/gatheringBiome`] = null;

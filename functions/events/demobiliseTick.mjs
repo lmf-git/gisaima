@@ -30,7 +30,6 @@ export function processDemobilization(worldId, updates, group, chunkKey, tileKey
   if (!tile.structure) {
     logger.warn(`No structure found for demobilizing group ${groupId}`);
     updates[`${groupPath}/status`] = 'idle'; // Reset to idle if no structure
-    updates[`${groupPath}/lastUpdated`] = now;
     return false;
   }
   

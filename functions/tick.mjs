@@ -54,8 +54,6 @@ export const processGameTicks = onSchedule({
     
     // Process each world
     for (const worldId in worlds) {
-      if (worldId === 'lastUpdated') continue;
-      
       // Update world's lastTick timestamp
       await db.ref(`worlds/${worldId}/info/lastTick`).set(now);
       
@@ -74,14 +72,10 @@ export const processGameTicks = onSchedule({
       
       // Process all chunks
       for (const chunkKey in chunks) {
-        if (chunkKey === 'lastUpdated') continue;
-        
         const chunk = chunks[chunkKey];
         
         // Process all tile data in the chunk
         for (const tileKey in chunk) {
-          if (tileKey === 'lastUpdated') continue;
-          
           const tile = chunk[tileKey];
           
           // Check if there's a structure being built on this tile

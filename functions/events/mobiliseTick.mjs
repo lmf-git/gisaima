@@ -41,7 +41,6 @@ export function processMobilizations(worldId, updates, groups, chunkKey, tileKey
     
     // Complete mobilization and update group status to idle
     updates[`${groupPath}/status`] = 'idle';
-    updates[`${groupPath}/lastUpdated`] = now;
     updates[`${groupPath}/readyAt`] = null; // Remove readyAt timestamp
     
     // Add a message about the mobilization

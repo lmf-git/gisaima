@@ -36,8 +36,7 @@ function generateMonsterUnits(monsterType, qty) {
     units[unitId] = {
       id: unitId,
       type: monsterType,
-      health: 100,
-      createdAt: Date.now()
+      health: 100
     };
   }
   
@@ -71,13 +70,13 @@ export async function spawnMonsters(worldId) {
     
     // Scan chunks for player activity
     for (const [chunkKey, chunkData] of Object.entries(chunks)) {
-      if (!chunkData || chunkKey === 'lastUpdated') continue;
+      if (!chunkData) continue;
       
       let monsterCount = 0;
       
       // Look through tiles in this chunk
       for (const [tileKey, tileData] of Object.entries(chunkData)) {
-        if (!tileData || tileKey === 'lastUpdated') continue;
+        if (!tileData) continue;
         
         const [x, y] = tileKey.split(',').map(Number);
         
@@ -102,16 +101,6 @@ export async function spawnMonsters(worldId) {
         // Check for recent player activity (groups or players)
         let hasRecentActivity = false;
         
-        // Check player groups with recent updates
-        if (tileData.groups) {
-          for (const [groupId, groupData] of Object.entries(tileData.groups)) {
-            if (groupData.owner && groupData.lastUpdated && 
-                (now - groupData.lastUpdated) < MAX_ACTIVE_AGE) {
-              hasRecentActivity = true;
-              break;
-            }
-          }
-        }
         
         if (hasRecentActivity) {
           // Store this as an active location
@@ -284,9 +273,7 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
     status: 'idle',
     units: units,
     x: location.x,
-    y: location.y,
-    createdAt: now,
-    lastUpdated: now
+    y: location.y
   };
   
   // Maybe add items to the monster group
@@ -341,7 +328,6 @@ async function mergeWithExistingMonsterGroup(worldId, chunkKey, tileKey, existin
   
   // Create partial update for the monster
   const monsterUpdates = {
-    lastUpdated: now,
     name: Units.getUnitGroupName(monsterType, 'monster', newCount),
     // We're preserving all other properties by only updating specific ones
   };
@@ -352,7 +338,6 @@ async function mergeWithExistingMonsterGroup(worldId, chunkKey, tileKey, existin
   
   // Add units rather than replacing them
   updates[`${groupPath}/units`] = { ...existingUnits, ...newUnits };
-  updates[`${groupPath}/lastUpdated`] = now;
   updates[`${groupPath}/name`] = monsterUpdates.name;
   
   // Maybe add more items
@@ -446,8 +431,6 @@ async function createMixedMonsterGroup(worldId, chunkKey, tileKey, groupsToMerge
     units: mixedUnits,
     x: parseInt(tileKey.split(',')[0]),
     y: parseInt(tileKey.split(',')[1]),
-    createdAt: now,
-    lastUpdated: now,
     composition: composition, // Store the composition
     items: allItems,
     isMixed: true
@@ -531,10 +514,10 @@ export async function mergeMonsterGroups(worldId) {
     
     // Check each tile for multiple monster groups
     for (const [chunkKey, chunkData] of Object.entries(chunks)) {
-      if (!chunkData || chunkKey === 'lastUpdated') continue;
+      if (!chunkData) continue;
       
       for (const [tileKey, tileData] of Object.entries(chunkData)) {
-        if (!tileData || tileKey === 'lastUpdated') continue;
+        if (!tileData) continue;
         
         // Skip if no groups on this tile
         if (!tileData.groups) continue;
@@ -668,7 +651,6 @@ export async function mergeMonsterGroups(worldId) {
           // Update the base group
           updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/name`] = newName;
           updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/items`] = mergedItems;
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/lastUpdated`] = now;
           updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/merged`] = true;
           updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}/mergeCount`] = 
               (baseGroup.mergeCount || 0) + mergedGroups.length;

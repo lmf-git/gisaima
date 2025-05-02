@@ -148,8 +148,7 @@ export const moveGroup = onCall({ maxInstances: 10 }, async (request) => {
       moveSpeed: 1, // Base speed, can be modified by terrain, items, etc.
       targetX: toX,
       targetY: toY,
-      nextMoveTime: nextMoveTime,
-      lastUpdated: now
+      nextMoveTime: nextMoveTime
     });
     
     return {

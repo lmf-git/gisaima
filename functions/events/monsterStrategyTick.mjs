@@ -127,8 +127,7 @@ function generateMonsterUnits(monsterType, qty) {
     units[unitId] = {
       id: unitId,
       type: monsterType,
-      health: 100,
-      createdAt: Date.now()
+      health: 100
     };
   }
   
@@ -190,11 +189,11 @@ export async function processMonsterStrategies(worldId) {
     // Second pass: Process individual monster strategies
     // Scan each chunk for monster groups
     for (const [chunkKey, chunkData] of Object.entries(chunks)) {
-      if (!chunkData || chunkKey === 'lastUpdated') continue;
+      if (!chunkData) continue;
       
       // Process each tile in the chunk
       for (const [tileKey, tileData] of Object.entries(chunkData)) {
-        if (!tileData || tileKey === 'lastUpdated') continue;
+        if (!tileData) continue;
         
         // Skip tiles with no groups
         if (!tileData.groups) continue;
@@ -289,11 +288,11 @@ async function processMergeMonsterGroups(worldId, chunks, updates) {
   
   // Process each chunk
   for (const [chunkKey, chunkData] of Object.entries(chunks)) {
-    if (!chunkData || chunkKey === 'lastUpdated') continue;
+    if (!chunkData) continue;
     
     // Process each tile in the chunk
     for (const [tileKey, tileData] of Object.entries(chunkData)) {
-      if (!tileData || tileKey === 'lastUpdated') continue;
+      if (!tileData) continue;
       
       // Skip if no groups on this tile
       if (!tileData.groups) continue;
@@ -565,7 +564,6 @@ async function createMixedMonsterMerge(worldId, chunkKey, tileKey, groups, updat
   
   updates[`${basePath}/name`] = newName;
   updates[`${basePath}/items`] = allItems;
-  updates[`${basePath}/lastUpdated`] = now;
   updates[`${basePath}/merged`] = true;
   updates[`${basePath}/mergeCount`] = (baseGroup.mergeCount || 0) + otherGroups.length;
   
@@ -710,11 +708,11 @@ async function scanWorldMap(db, worldId, chunks) {
   
   // Scan through all chunks and tiles
   for (const [chunkKey, chunkData] of Object.entries(chunks)) {
-    if (!chunkData || chunkKey === 'lastUpdated') continue;
+    if (!chunkData) continue;
     
     // Process each tile in the chunk
     for (const [tileKey, tileData] of Object.entries(chunkData)) {
-      if (!tileData || tileKey === 'lastUpdated') continue;
+      if (!tileData) continue;
       
       const [x, y] = tileKey.split(',').map(Number);
       const location = { x, y, chunkKey, tileKey };
@@ -908,7 +906,6 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
   // Create battle object without power calculations
   const battleData = {
     id: battleId,
-    createdAt: now,
     locationX: x,
     locationY: y,
     targetTypes: ['group'],
@@ -991,7 +988,6 @@ async function initiateAttackOnStructure(db, worldId, monsterGroup, structure, l
   // Create battle object without power calculations
   const battleData = {
     id: battleId,
-    createdAt: now,
     locationX: x,
     locationY: y,
     targetTypes: ['structure'],
@@ -1022,7 +1018,6 @@ async function initiateAttackOnStructure(db, worldId, monsterGroup, structure, l
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleSide`] = 1;
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleRole`] = 'attacker';
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/status`] = 'fighting';
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/lastUpdated`] = now;
   
   // Mark structure as in battle
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/inBattle`] = true;
@@ -1074,7 +1069,6 @@ async function joinExistingBattle(db, worldId, monsterGroup, tileData, updates, 
   updates[`${groupPath}/battleId`] = battle.id;
   updates[`${groupPath}/battleSide`] = battleSide;
   updates[`${groupPath}/battleRole`] = 'reinforcement';
-  updates[`${groupPath}/lastUpdated`] = now;
   
   // Add monster group to battle's side - simply add to the groups object
   const sideKey = battleSide === 1 ? 'side1' : 'side2';
@@ -1234,7 +1228,6 @@ async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, wor
   updates[`${groupPath}/targetX`] = targetLocation.x;
   updates[`${groupPath}/targetY`] = targetLocation.y;
   updates[`${groupPath}/nextMoveTime`] = now + 60000; // One minute
-  updates[`${groupPath}/lastUpdated`] = now;
   
   // Add chat message for significant monster movements
   const chatMessageId = `monster_move_${now}_${monsterGroup.id}`;
@@ -1359,7 +1352,6 @@ function moveOneStepTowardsTarget(worldId, monsterGroup, location, targetLocatio
   updates[`${groupPath}/targetX`] = targetLocation.x;
   updates[`${groupPath}/targetY`] = targetLocation.y;
   updates[`${groupPath}/nextMoveTime`] = now + 60000; // One minute
-  updates[`${groupPath}/lastUpdated`] = now;
   
   // Add chat message for monster movement if it's a significant target
   if (['player_spawn', 'monster_structure', 'monster_home'].includes(targetType)) {
@@ -1430,7 +1422,6 @@ function moveRandomly(worldId, monsterGroup, location, updates, now) {
   updates[`${groupPath}/targetX`] = targetX;
   updates[`${groupPath}/targetY`] = targetY;
   updates[`${groupPath}/nextMoveTime`] = now + 60000; // One minute
-  updates[`${groupPath}/lastUpdated`] = now;
   
   return {
     action: 'move',
@@ -1469,7 +1460,6 @@ function moveToAdjacentTile(worldId, monsterGroup, location, adjacentTile, updat
   updates[`${groupPath}/targetX`] = adjacentTile.x;
   updates[`${groupPath}/targetY`] = adjacentTile.y;
   updates[`${groupPath}/nextMoveTime`] = now + 45000; // 45 seconds - faster for adjacent moves
-  updates[`${groupPath}/lastUpdated`] = now;
   updates[`${groupPath}/moveReason`] = moveReason;
   
   // Add a chat message if this is a structure attack
@@ -1566,7 +1556,6 @@ async function startMonsterGathering(db, worldId, monsterGroup, updates, now) {
   updates[`${groupPath}/gatheringStarted`] = now;
   updates[`${groupPath}/gatheringBiome`] = biome;
   updates[`${groupPath}/gatheringTicksRemaining`] = 2; // Set to wait for 2 ticks
-  updates[`${groupPath}/lastUpdated`] = now;
   
   // Add a chat message
   const chatMessageId = `monster_gather_${now}_${monsterGroup.id}`;

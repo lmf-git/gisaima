@@ -32,7 +32,6 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
     // Path is invalid, reset the group status
     logger.warn(`Invalid path for group ${groupId} in world ${worldId}`);
     updates[`${groupPath}/status`] = 'idle';
-    updates[`${groupPath}/lastUpdated`] = now;
     updates[`${groupPath}/movementPath`] = null;
     updates[`${groupPath}/pathIndex`] = null;
     return false;
@@ -45,7 +44,6 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
   if (nextIndex >= group.movementPath.length) {
     // Path is complete, update the group status
     updates[`${groupPath}/status`] = 'idle';
-    updates[`${groupPath}/lastUpdated`] = now;
     updates[`${groupPath}/movementPath`] = null;
     updates[`${groupPath}/pathIndex`] = null;
     updates[`${groupPath}/moveStarted`] = null;
@@ -103,7 +101,6 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
       ...group,
       x: nextPoint.x,
       y: nextPoint.y,
-      lastUpdated: now,
       pathIndex: nextIndex,
       nextMoveTime: nextMoveTime,
       // Ensure status remains 'moving' throughout the path
@@ -155,7 +152,6 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
   } else {
     // Just update status, path index, and next move time without changing position
     updates[`${groupPath}/pathIndex`] = nextIndex;
-    updates[`${groupPath}/lastUpdated`] = now;
     updates[`${groupPath}/nextMoveTime`] = nextMoveTime;
     
     // If this is the last step, set status to idle

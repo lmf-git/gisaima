@@ -234,10 +234,7 @@ function processChunkData(data = {}, chunkKey) {
 
   let entitiesChanged = false;
 
-  // Skip lastUpdated metadata field
   Object.entries(data).forEach(([tileKey, tileData]) => {
-    if (tileKey === 'lastUpdated') return;
-
     const [x, y] = tileKey.split(',').map(Number);
     const fullTileKey = `${x},${y}`;
 

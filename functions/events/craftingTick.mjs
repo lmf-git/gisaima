@@ -124,7 +124,6 @@ function completeCrafting(worldId, craftingId, crafting, updates) {
     message: `You have completed crafting ${crafting.result.name}!`,
     craftingId: craftingId,
     itemName: crafting.result.name,
-    createdAt: now,
     read: false
   };
   

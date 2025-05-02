@@ -28,8 +28,6 @@ export function processRecruitment(worldId, updates, chunkKey, tileKey, tile, no
   
   // Process each recruitment item in the queue
   for (const [recruitmentId, recruitment] of Object.entries(structure.recruitmentQueue)) {
-    // Skip non-object values like 'lastUpdated'
-    if (!recruitment || typeof recruitment !== 'object') continue;
     
     // Check if the recruitment is complete
     if (recruitment.completesAt && recruitment.completesAt <= now) {
@@ -61,7 +59,6 @@ export function processRecruitment(worldId, updates, chunkKey, tileKey, tile, no
         race,
         quantity,
         power,
-        createdAt: now,
         owner
       };
       
@@ -87,8 +84,7 @@ export function processRecruitment(worldId, updates, chunkKey, tileKey, tile, no
         updates[`players/${owner}/worlds/${worldId}/structures/${structure.id}/units/${unitId}`] = {
           id: unitId,
           name: `${unitName} Group`,
-          quantity,
-          createdAt: now
+          quantity
         };
       }
       

@@ -102,7 +102,6 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
     // Enhanced update with more precise location data for player placement
     await groupRef.update({
       status: 'demobilising',  // This status alone is sufficient for the tick processor
-      lastUpdated: now,
       targetStructureId: structureId, // Still include this for tick processor compatibility
       storageDestination: validatedStorageDestination, // Use validated storage destination
       // Add precise location data for player placement

@@ -87,7 +87,6 @@ export const startGathering = onCall({ maxInstances: 10 }, async (request) => {
       gatheringStarted: now,
       gatheringBiome: biome,
       gatheringTicksRemaining: 2, // Set to wait for 2 ticks before completing
-      lastUpdated: now
     });
 
     return {

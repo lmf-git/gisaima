@@ -72,7 +72,6 @@ export function processBuilding(worldId, updates, chunkKey, tileKey, tile, now) 
     // Reset the group status
     updates[`${groupPath}/status`] = 'idle';
     updates[`${groupPath}/buildingUntil`] = null;
-    updates[`${groupPath}/lastUpdated`] = now;
     
     // Create a chat message for the world
     const chatMessageKey = `chat_${now}_${Math.floor(Math.random() * 1000)}`;

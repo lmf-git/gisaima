@@ -235,7 +235,6 @@
                   "text": "Moving to next location (-20,-15)",
                   "timestamp": 1746116401442
                 },
-                "lastUpdated": 1746116401442,
                 "monsterType": "troll",
                 "moveSpeed": 1,
                 "moveStarted": 1746116286984,
@@ -353,7 +352,6 @@
                   "text": "Moving to next location (-6,-9)",
                   "timestamp": 1746116401442
                 },
-                "lastUpdated": 1746116401442,
                 "monsterType": "spider",
                 "moveSpeed": 1,
                 "moveStarted": 1746116286984,
@@ -400,7 +398,6 @@
                   "text": "Gathered 1 item",
                   "timestamp": 1745511841181
                 },
-                "lastUpdated": 1745511841181,
                 "name": "gunsy's Force",
                 "owner": "OsqXI7j9BFcfwSLt7MuPnV7PZFQ2",
                 "race": "fairy",
@@ -489,7 +486,6 @@
                   "text": "Moving to next location (-13,20)",
                   "timestamp": 1746116105921
                 },
-                "lastUpdated": 1746116105921,
                 "monsterType": "goblin",
                 "moveSpeed": 1,
                 "moveStarted": 1746115866926,
@@ -545,7 +541,6 @@
                   "text": "Moving to next location (-9,25)",
                   "timestamp": 1746116401442
                 },
-                "lastUpdated": 1746116401442,
                 "monsterType": "goblin",
                 "moveSpeed": 1,
                 "moveStarted": 1746116286984,
@@ -627,7 +622,6 @@
                   "text": "Gathered 2 items",
                   "timestamp": 1745985361139
                 },
-                "lastUpdated": 1746078003041,
                 "moveSpeed": 1,
                 "moveStarted": 1745985166325,
                 "movementPath": [
@@ -694,7 +688,6 @@
                   "text": "Gathered 3 items",
                   "timestamp": 1745985842035
                 },
-                "lastUpdated": 1745985842035,
                 "moveSpeed": 1,
                 "moveStarted": 1745985603983,
                 "movementPath": [
@@ -1003,7 +996,6 @@
                   "text": "Moving to next location (-26,6)",
                   "timestamp": 1746081785315
                 },
-                "lastUpdated": 1746103742844,
                 "moveSpeed": 1,
                 "moveStarted": 1746081693778,
                 "movementPath": [
@@ -1039,7 +1031,6 @@
                   "text": "Moving to next location (-26,6)",
                   "timestamp": 1746100261106
                 },
-                "lastUpdated": 1746100502846,
                 "monsterType": "skeleton",
                 "moveReason": "structure_attack",
                 "moveSpeed": 1.5,
@@ -1077,7 +1068,6 @@
                   "text": "Moving to next location (-26,6)",
                   "timestamp": 1746103385583
                 },
-                "lastUpdated": 1746103742844,
                 "monsterType": "bandit",
                 "moveReason": "structure_attack",
                 "moveSpeed": 1.5,
@@ -1115,7 +1105,6 @@
                   "text": "Gathered 2 items",
                   "timestamp": 1746081661354
                 },
-                "lastUpdated": 1746081786446,
                 "monsterType": "spider",
                 "name": "Giant Spiders",
                 "status": "fighting",
@@ -1173,7 +1162,6 @@
                   "text": "Moving to next location (-33,19)",
                   "timestamp": 1746116401442
                 },
-                "lastUpdated": 1746116401442,
                 "monsterType": "spider",
                 "moveSpeed": 1,
                 "moveStarted": 1746116286984,
@@ -1242,7 +1230,6 @@
                   "text": "Moving to next location (-41,1)",
                   "timestamp": 1746116401442
                 },
-                "lastUpdated": 1746116401442,
                 "monsterType": "bandit",
                 "moveSpeed": 1,
                 "moveStarted": 1746116286984,
@@ -1303,7 +1290,6 @@
                   "text": "Moving to next location (-46,9)",
                   "timestamp": 1746116401442
                 },
-                "lastUpdated": 1746116401442,
                 "monsterType": "goblin",
                 "moveSpeed": 1,
                 "moveStarted": 1746116286984,
@@ -1355,7 +1341,6 @@
                   "text": "Moving to next location (5,20)",
                   "timestamp": 1746116401442
                 },
-                "lastUpdated": 1746116401442,
                 "monsterType": "goblin",
                 "moveReason": "structure_attack",
                 "moveSpeed": 1,

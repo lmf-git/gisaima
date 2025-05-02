@@ -37,8 +37,6 @@ export const cleanup = onSchedule({
     
     // Process each world
     for (const worldId in worlds) {
-      if (worldId === 'lastUpdated') continue; // Skip metadata
-      
       const messagesRemoved = await cleanupChatMessages(db, worldId);
       totalMessagesRemoved += messagesRemoved;
     }

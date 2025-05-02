@@ -208,9 +208,6 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       let playerFoundInChunk = false;
       if (chunkData) {
         for (const [tileLoc, tileContent] of Object.entries(chunkData)) {
-          // Skip metadata fields
-          if (tileLoc === 'lastUpdated') continue;
-          
           if (tileContent.players && (tileContent.players[uid] || 
              Object.values(tileContent.players).some(p => p.id === uid))) {
             playerFoundInChunk = true;
@@ -279,7 +276,6 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
         owner: uid,
         status: 'mobilizing',  // This status alone is sufficient for the tick processor
         readyAt: nextTickTime,
-        createdAt: now,
         x: tileX,
         y: tileY,
         race: race || null,

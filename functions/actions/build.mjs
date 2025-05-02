@@ -249,7 +249,6 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
       // Update group status
       currentGroup.status = 'building';
       currentGroup.buildingUntil = completionTime;
-      currentGroup.lastUpdated = now;
       
       // Remove the required resources from the group
       if (currentGroup.items) {
