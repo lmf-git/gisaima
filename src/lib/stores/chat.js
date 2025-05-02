@@ -1,6 +1,6 @@
 import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
-import { db } from '../firebase/firebase.js';
+import { db } from '../firebase.js';
 import { ref, onValue, push, serverTimestamp, query, orderByChild, limitToLast } from "firebase/database";
 import { user } from './user.js';
 import { game } from './game.js';
@@ -19,8 +19,8 @@ export const chatStore = writable({
   unreadCount: 0,
   currentWorldId: null,
   lastReadTime: Date.now(),
-  subscriberCount: 0, // Track number of active subscribers
-  readMessageIds: new Set() // Add a Set to track read message IDs
+  subscriberCount: 0,
+  readMessageIds: new Set()
 });
 
 // Derived store to get messages sorted by timestamp

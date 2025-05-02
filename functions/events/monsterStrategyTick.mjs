@@ -77,43 +77,6 @@ const MAX_SCAN_DISTANCE = 20; // How far to scan for targets
 const MIN_UNITS_TO_BUILD = 5; // Minimum units needed to consider building
 const MIN_RESOURCES_TO_BUILD = 15; // Minimum resources needed to build a structure
 
-// Monster structure types and their properties
-const MONSTER_STRUCTURES = {
-  'monster_lair': {
-    name: "Monster Lair",
-    buildCost: {
-      'Wooden Sticks': 8,
-      'Stone Pieces': 6
-    },
-    buildTime: 1,
-    capacity: 10,
-    features: ['basic_storage', 'monster_spawning']
-  },
-  'monster_fortress': {
-    name: "Monster Fortress",
-    buildCost: {
-      'Wooden Sticks': 15,
-      'Stone Pieces': 12,
-      'Monster Hide': 5
-    },
-    buildTime: 2,
-    capacity: 25,
-    features: ['advanced_storage', 'monster_defense', 'monster_spawning']
-  },
-  'monster_hive': {
-    name: "Monster Hive",
-    buildCost: {
-      'Wooden Sticks': 10,
-      'Stone Pieces': 8,
-      'Monster Blood': 3
-    },
-    buildTime: 1,
-    capacity: 15,
-    features: ['monster_spawning', 'rapid_growth']
-  }
-};
-
-
 /**
  * Main function to process monster strategies across the world
  * @param {string} worldId World ID to process

@@ -2,7 +2,7 @@
   import { ref, onValue } from "firebase/database";
   import { httpsCallable } from "firebase/functions";
 
-  import { functions, db } from '../../lib/firebase/firebase.js';
+  import { functions, db } from '../../lib/firebase.js';
 
   import { page } from '$app/stores';
   import { goto } from '$app/navigation';

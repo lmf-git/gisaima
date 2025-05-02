@@ -5,7 +5,7 @@
   import { goto } from '$app/navigation';
 
   // This can be refactored to getFunctions.
-  import { functions } from '../../../lib/firebase/firebase.js';
+  import { functions } from '../../../lib/firebase.js';
   
   import { user } from '../../../lib/stores/user';
   import { game } from '../../../lib/stores/game';
