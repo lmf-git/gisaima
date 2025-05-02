@@ -98,15 +98,17 @@ export async function spawnMonsters(worldId) {
           }
         }
         
-        // Store this as an active location
-        activeLocations.push({
-          chunkKey,
-          tileKey,
-          x,
-          y,
-          // Store biome info if available, but we won't use it for monster selection yet
-          biome: tileData.biome?.name || tileData.terrain?.biome || 'unknown'
-        });
+        // Tiles that would make the most sense for spawning monsters to prioritise.
+        if (tileData.groups || tileData.structure || tileData.players || tileData.items) {
+          activeLocations.push({
+            chunkKey,
+            tileKey,
+            x,
+            y,
+            // Store biome info if available, but we won't use it for monster selection yet
+            biome: tileData.biome?.name || tileData.terrain?.biome || 'unknown'
+          });
+        }
       }
     }
     
