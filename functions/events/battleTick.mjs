@@ -1,39 +1,5 @@
 import { logger } from "firebase-functions";
-import { getDatabase } from 'firebase-admin/database';
-
-/**
- * Calculate power for a group considering both array and object unit formats
- * Uses each unit's strength value if available, otherwise counts as 1 unit = 1 power
- * @param {Object} group - The group to calculate power for
- * @returns {number} - The calculated group power
- */
-function calculateGroupPower(group) {
-  if (!group) return 0;
-  
-  // Base calculation using unit count
-  let power = 0;
-  
-  // If we have detailed units data, use it for better calculations
-  if (group.units) {
-    // Check if it's an array or object
-    if (Array.isArray(group.units)) {
-      power = group.units.reduce((total, unit) => {
-        // Calculate unit strength (default to 1 if not specified)
-        const unitStrength = unit.strength || 1;
-        return total + unitStrength;
-      }, 0);
-    } else {
-      // Handle object format (keys are unit IDs)
-      power = Object.values(group.units).reduce((total, unit) => {
-        const unitStrength = unit.strength || 1;
-        return total + unitStrength;
-      }, 0);
-    }
-  }
-  
-  // Ensure minimum power of 1 for any group that exists
-  return Math.max(1, power);
-}
+import { calculateGroupPower } from "gisaima-shared/war/battles.js";
 
 export async function processBattle(worldId, chunkKey, tileKey, battleId, battle, updates, tile) {
   try {
@@ -463,7 +429,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     logger.error(`Error processing battle ${battleId}:`, error);
     return false;
   }
-}
+};
 
 async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile, groupsToBeDeleted) {
   const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`;
@@ -558,4 +524,4 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
   }
   
   return true;
-}
+};
