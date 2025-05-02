@@ -305,59 +305,35 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         logger.debug(`Side 1 groups: ${JSON.stringify(Object.keys(battle.side1.groups || {}))}`);
         logger.debug(`Side 2 groups: ${JSON.stringify(Object.keys(battle.side2.groups || {}))}`);
         
-        // Update side 1 groups - set to idle
-        const side1Groups = battle.side1.groups || {};
-        for (const groupId in side1Groups) {
-          const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+        // Only update the winning side's groups
+        if (winner) {
+          // Get groups from the winning side
+          const winningGroups = battle[`side${winner}`].groups || {};
           
-          // Skip updates for groups that are being deleted to avoid path conflicts
-          if (groupsToBeDeleted && groupsToBeDeleted.has(groupPath)) {
-            logger.debug(`Skipping updates for deleted group: ${groupId}`);
-            continue;
-          }
-          
-          if (tile.groups[groupId]) {
-            logger.debug(`Updating side 1 group ${groupId} status`);
-            // Set group status based on result
-            updates[`${groupPath}/inBattle`] = false;
-            updates[`${groupPath}/battleId`] = null;
-            updates[`${groupPath}/battleSide`] = null;
-            updates[`${groupPath}/battleRole`] = null;
-            updates[`${groupPath}/status`] = 'idle';
+          for (const groupId in winningGroups) {
+            const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
             
-            // Add a message about the battle result
-            updates[`${groupPath}/lastMessage`] = {
-              text: winner === 1 ? "Your group has won the battle!" : "Your group has lost the battle.",
-              timestamp: now
-            };
-          }
-        }
-        
-        // Update side 2 groups - set to idle
-        const side2Groups = battle.side2.groups || {};
-        for (const groupId in side2Groups) {
-          const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
-          
-          // Skip updates for groups that are being deleted to avoid path conflicts
-          if (groupsToBeDeleted && groupsToBeDeleted.has(groupPath)) {
-            logger.debug(`Skipping updates for deleted group: ${groupId}`);
-            continue;
-          }
-          
-          if (tile.groups[groupId]) {
-            logger.debug(`Updating side 2 group ${groupId} status`);
-            // Set group status based on result
-            updates[`${groupPath}/inBattle`] = false;
-            updates[`${groupPath}/battleId`] = null;
-            updates[`${groupPath}/battleSide`] = null;
-            updates[`${groupPath}/battleRole`] = null;
-            updates[`${groupPath}/status`] = 'idle';
+            // Skip updates for groups that are being deleted to avoid path conflicts
+            if (groupsToBeDeleted && groupsToBeDeleted.has(groupPath)) {
+              logger.debug(`Skipping updates for deleted group: ${groupId}`);
+              continue;
+            }
             
-            // Add a message about the battle result
-            updates[`${groupPath}/lastMessage`] = {
-              text: winner === 2 ? "Your group has won the battle!" : "Your group has lost the battle.",
-              timestamp: now
-            };
+            if (tile.groups[groupId]) {
+              logger.debug(`Updating winning side ${winner} group ${groupId} status`);
+              // Set group status based on result
+              updates[`${groupPath}/inBattle`] = false;
+              updates[`${groupPath}/battleId`] = null;
+              updates[`${groupPath}/battleSide`] = null;
+              updates[`${groupPath}/battleRole`] = null;
+              updates[`${groupPath}/status`] = 'idle';
+              
+              // Add a message about the battle result
+              updates[`${groupPath}/lastMessage`] = {
+                text: "Your group has won the battle!",
+                timestamp: now
+              };
+            }
           }
         }
       }
