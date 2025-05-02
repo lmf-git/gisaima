@@ -60,6 +60,9 @@
     items: { by: 'distance', asc: true },
     battles: { by: 'distance', asc: true }  // Add battles sort options
   });
+
+  // Add state to track expanded group details
+  let expandedGroups = $state({});
   
   // Function to toggle section collapse state
   function toggleSection(sectionId, event) {
@@ -70,6 +73,14 @@
     
     // Toggle the collapsed state
     collapsedSections[sectionId] = !collapsedSections[sectionId];
+  }
+
+  // Function to toggle group expansion
+  function toggleGroupDetails(groupId, event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    expandedGroups[groupId] = !expandedGroups[groupId];
   }
 
   // Function to change sort option for a section
@@ -435,6 +446,12 @@
   function getGroupItemCount(group) {
     if (!group.items) return 0;
     return Array.isArray(group.items) ? group.items.length : Object.keys(group.items).length;
+  }
+
+  // Function to count units in a group
+  function getGroupUnitCount(group) {
+    if (!group.units) return 0;
+    return Array.isArray(group.units) ? group.units.length : Object.keys(group.units).length;
   }
 
   // Function to check if entity belongs to current player
@@ -913,9 +930,18 @@
                     
                     <div class="entity-details">
                       <span class="unit-count">
-                        {(group.units ? group.units.length : 0)} units
+                        {getGroupUnitCount(group)} units
                         {#if getGroupItemCount(group) > 0}
                           • <span class="item-count">{getGroupItemCount(group)} items</span>
+                        {/if}
+                        {#if getGroupUnitCount(group) > 0}
+                          <button 
+                            class="toggle-units-btn"
+                            onclick={(e) => toggleGroupDetails(group.id, e)}
+                            aria-expanded={!!expandedGroups[group.id]}
+                          >
+                            {expandedGroups[group.id] ? 'Hide' : 'Show'}
+                          </button>
                         {/if}
                       </span>
                       
@@ -951,6 +977,49 @@
                         {formatDistance(group.distance)}
                       </span>
                     </div>
+                    
+                    {#if expandedGroups[group.id] && group.units && getGroupUnitCount(group) > 0}
+                      <div class="group-units-list">
+                        {#each Object.entries(group.units) as [unitId, unit]}
+                          <div class="group-unit">
+                            <div class="unit-icon">
+                              {#if unit.race}
+                                {#if unit.race.toLowerCase() === 'human'}
+                                  <Human extraClass="unit-race-icon" />
+                                {:else if unit.race.toLowerCase() === 'elf'}
+                                  <Elf extraClass="unit-race-icon" />
+                                {:else if unit.race.toLowerCase() === 'dwarf'}
+                                  <Dwarf extraClass="unit-race-icon" />
+                                {:else if unit.race.toLowerCase() === 'goblin'}
+                                  <Goblin extraClass="unit-race-icon" />
+                                {:else if unit.race.toLowerCase() === 'fairy'}
+                                  <Fairy extraClass="unit-race-icon" />
+                                {/if}
+                              {/if}
+                            </div>
+                            <div class="unit-info">
+                              <div class="unit-name">
+                                {unit.displayName || unit.name || unit.type || unitId.slice(-5)}
+                                {#if unit.id === $currentPlayer?.id}
+                                  <span class="entity-badge owner-badge">You</span>
+                                {/if}
+                              </div>
+                              <div class="unit-details">
+                                {#if unit.race}
+                                  <span class="unit-race-tag">{_fmt(unit.race)}</span>
+                                {/if}
+                                {#if unit.type && unit.type !== 'player'}
+                                  <span class="unit-type-tag">{_fmt(unit.type)}</span>
+                                {/if}
+                                {#if unit.type === 'player'}
+                                  <span class="unit-type-tag player">Player</span>
+                                {/if}
+                              </div>
+                            </div>
+                          </div>
+                        {/each}
+                      </div>
+                    {/if}
                   </div>
                 </div>
               {/each}
@@ -2107,5 +2176,88 @@
     background-color: rgba(0, 0, 0, 0.03);
     padding: 0.05em 0.2em;
     border-radius: 0.15em;
+  }
+
+  /* Add styles for units list */
+  .toggle-units-btn {
+    background: none;
+    border: none;
+    color: rgba(66, 133, 244, 0.9);
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-left: 0.5em;
+    padding: 0.1em 0.3em;
+    border-radius: 0.2em;
+    transition: background-color 0.2s ease;
+  }
+  
+  .toggle-units-btn:hover {
+    background-color: rgba(66, 133, 244, 0.1);
+    text-decoration: underline;
+  }
+  
+  .group-units-list {
+    margin-top: 0.5em;
+    padding: 0.5em;
+    background-color: rgba(0, 0, 0, 0.02);
+    border-radius: 0.3em;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 0.9em;
+    max-height: 10em;
+    overflow-y: auto;
+  }
+  
+  .group-unit {
+    display: flex;
+    align-items: center;
+    padding: 0.2em 0;
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
+  }
+  
+  .group-unit:last-child {
+    border-bottom: none;
+  }
+  
+  .unit-icon {
+    margin-right: 0.5em;
+    display: flex;
+    align-items: center;
+  }
+  
+  :global(.unit-race-icon) {
+    width: 1em;
+    height: 1em;
+    opacity: 0.7;
+  }
+  
+  .unit-info {
+    flex: 1;
+  }
+  
+  .unit-name {
+    font-weight: 500;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+  }
+  
+  .unit-details {
+    display: flex;
+    gap: 0.3em;
+    font-size: 0.8em;
+    margin-top: 0.1em;
+  }
+  
+  .unit-race-tag, .unit-type-tag {
+    padding: 0.1em 0.3em;
+    border-radius: 0.2em;
+    background-color: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .unit-type-tag.player {
+    background-color: rgba(66, 133, 244, 0.1);
+    color: rgba(66, 133, 244, 0.9);
   }
 </style>
