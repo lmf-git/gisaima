@@ -6,6 +6,155 @@ import {
   selectUnitsForCasualties,
 } from "gisaima-shared/war/battles.js";
 
+export function processSide({
+  sideNumber, 
+  sideGroups, 
+  sidePower, 
+  oppositeAttrition, 
+  sideCasualties,
+  updates,
+  groupPowers,
+  groupsToBeDeleted,
+  groupsToDelete,
+  playersKilled,
+  battleLoot,
+  tile,
+  worldId, 
+  chunkKey, 
+  tileKey,
+  basePath
+}) {
+  let newSidePower = 0;
+  let updatedCasualties = sideCasualties;
+  const sideKey = `side${sideNumber}`;
+  
+  for (const groupId in sideGroups) {
+    if (!tile.groups[groupId]) continue;
+    
+    const group = tile.groups[groupId];
+    const units = group.units || {};
+    
+    // Use the stored group power
+    const groupPower = groupPowers[groupId];
+    const groupShare = sidePower > 0 ? groupPower / sidePower : 1;
+    const groupAttrition = Math.round(oppositeAttrition * groupShare);
+    
+    // Select units for casualties
+    const { unitsToRemove, playersKilled: groupPlayersKilled } = 
+      selectUnitsForCasualties(units, groupAttrition);
+      
+    // Add players killed to the list
+    playersKilled.push(...groupPlayersKilled);
+    
+    // Calculate remaining units
+    const remainingUnits = { ...units };
+    unitsToRemove.forEach(unitId => delete remainingUnits[unitId]);
+    const newUnitCount = Object.keys(remainingUnits).length;
+    
+    // Update casualty count
+    const casualties = unitsToRemove.length;
+    updatedCasualties += casualties;
+    updates[`${basePath}/${sideKey}/casualties`] = updatedCasualties;
+    
+    // Check if the group will be destroyed
+    if (newUnitCount <= 0) {
+      // Add to deletion tracking
+      const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+      groupsToBeDeleted.add(groupPath);
+      
+      groupsToDelete.push({
+        side: sideNumber,
+        groupId,
+        path: groupPath
+      });
+      
+      // Remove group from battle and database
+      updates[`${basePath}/${sideKey}/groups/${groupId}`] = null;
+      updates[groupPath] = null;
+      
+      // Handle players in group
+      for (const unitId in units) {
+        if (units[unitId].type === 'player' && units[unitId].id) {
+          updates[`players/${units[unitId].id}/worlds/${worldId}/inGroup`] = null;
+        }
+      }
+      
+      // Collect loot from defeated group
+      if (group.items) {
+        const items = Array.isArray(group.items) ? group.items : Object.values(group.items);
+        if (items.length > 0) {
+          const now = Date.now();
+          const lootItems = items.map(item => ({
+            ...item,
+            lootedFrom: 'battle',
+            lootedAt: now,
+            sourceSide: sideNumber // Track which side the loot came from
+          }));
+          
+          // Add to central battle loot pool instead of side-specific arrays
+          battleLoot.push(...lootItems);
+        }
+      }
+    } else {
+      // Remove selected units
+      unitsToRemove.forEach(unitId => {
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/units/${unitId}`] = null;
+        updates[`${basePath}/${sideKey}/groups/${groupId}/units/${unitId}`] = null;
+      });
+      
+      // Calculate new group power
+      const newGroupPower = calculateGroupPower({ units: remainingUnits });
+      console.log(`Group ${groupId} new power after casualties: ${newGroupPower}`);
+      newSidePower += newGroupPower;
+    }
+  }
+  
+  return { newSidePower, updatedCasualties };
+};
+
+export function distributeLootToWinner({
+  winner,
+  battleLoot,
+  side1Surviving,
+  side2Surviving,
+  worldId,
+  chunkKey,
+  tileKey,
+  updates
+}) {
+  if (battleLoot.length === 0) return;
+  
+  let winnerGroups = [];
+  if (winner === 1) {
+    winnerGroups = side1Surviving;
+  } else if (winner === 2) {
+    winnerGroups = side2Surviving;
+  }
+  
+  if (winnerGroups.length > 0) {
+    // Select a random surviving group from winning side
+    const receivingGroupId = winnerGroups[Math.floor(Math.random() * winnerGroups.length)];
+    
+    battleLoot.forEach(item => {
+      const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/items/${itemId}`] = item;
+    });
+    
+    // Add a message about looting
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/lastMessage`] = {
+      text: `Looted ${battleLoot.length} items from battle`,
+      timestamp: Date.now()
+    };
+  } else if (winner !== 0) {
+    // If winner is determined but no surviving groups, leave loot on tile
+    // This creates a "treasure" for other groups to find later
+    battleLoot.forEach(item => {
+      const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/items/${itemId}`] = item;
+    });
+  }
+};
+
 export async function processBattle(worldId, chunkKey, tileKey, battleId, battle, updates, tile) {
   try {
     // Use serverTimestamp for database records only
@@ -109,102 +258,46 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     
     const battleLoot = battle.loot || [];
 
-    // Helper function to process each side
-    function processSide(sideNumber, sideGroups, sidePower, oppositeAttrition, sideCasualties) {
-      let newSidePower = 0;
-      let updatedCasualties = sideCasualties;  // Changed from const to let
-      const sideKey = `side${sideNumber}`;
-      
-      for (const groupId in sideGroups) {
-        if (!tile.groups[groupId]) continue;
-        
-        const group = tile.groups[groupId];
-        const units = group.units || {};
-        
-        // Use the stored group power
-        const groupPower = groupPowers[groupId];
-        const groupShare = sidePower > 0 ? groupPower / sidePower : 1;
-        const groupAttrition = Math.round(oppositeAttrition * groupShare);
-        
-        // Select units for casualties
-        const { unitsToRemove, playersKilled: groupPlayersKilled } = 
-          selectUnitsForCasualties(units, groupAttrition);
-          
-        // Add players killed to the list
-        playersKilled.push(...groupPlayersKilled);
-        
-        // Calculate remaining units
-        const remainingUnits = { ...units };
-        unitsToRemove.forEach(unitId => delete remainingUnits[unitId]);
-        const newUnitCount = Object.keys(remainingUnits).length;
-        
-        // Update casualty count
-        const casualties = unitsToRemove.length;
-        updatedCasualties += casualties;
-        updates[`${basePath}/${sideKey}/casualties`] = updatedCasualties;
-        
-        // Check if the group will be destroyed
-        if (newUnitCount <= 0) {
-          // Add to deletion tracking
-          const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
-          groupsToBeDeleted.add(groupPath);
-          
-          groupsToDelete.push({
-            side: sideNumber,
-            groupId,
-            path: groupPath
-          });
-          
-          // Remove group from battle and database
-          updates[`${basePath}/${sideKey}/groups/${groupId}`] = null;
-          updates[groupPath] = null;
-          
-          // Handle players in group
-          for (const unitId in units) {
-            if (units[unitId].type === 'player' && units[unitId].id) {
-              updates[`players/${units[unitId].id}/worlds/${worldId}/inGroup`] = null;
-            }
-          }
-          
-          // Collect loot from defeated group
-          if (group.items) {
-            const items = Array.isArray(group.items) ? group.items : Object.values(group.items);
-            if (items.length > 0) {
-              const now = Date.now();
-              const lootItems = items.map(item => ({
-                ...item,
-                lootedFrom: 'battle',
-                lootedAt: now,
-                sourceSide: sideNumber // Track which side the loot came from
-              }));
-              
-              // Add to central battle loot pool instead of side-specific arrays
-              battleLoot.push(...lootItems);
-            }
-          }
-        } else {
-          // Remove selected units
-          unitsToRemove.forEach(unitId => {
-            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/units/${unitId}`] = null;
-            updates[`${basePath}/${sideKey}/groups/${groupId}/units/${unitId}`] = null;
-          });
-          
-          // Calculate new group power
-          const newGroupPower = calculateGroupPower({ units: remainingUnits });
-          console.log(`Group ${groupId} new power after casualties: ${newGroupPower}`);
-          newSidePower += newGroupPower;
-        }
-      }
-      
-      return { newSidePower, updatedCasualties };
-    }
-    
-    // Process both sides using the helper function
-    const side1Result = processSide(1, side1Groups, side1Power, side2Attrition, side1Casualties);
+    // Process both sides using the extracted helper function
+    const side1Result = processSide({
+      sideNumber: 1,
+      sideGroups: side1Groups,
+      sidePower: side1Power,
+      oppositeAttrition: side2Attrition,
+      sideCasualties: side1Casualties,
+      updates,
+      groupPowers,
+      groupsToBeDeleted,
+      groupsToDelete,
+      playersKilled,
+      battleLoot,
+      tile,
+      worldId,
+      chunkKey,
+      tileKey,
+      basePath
+    });
     newSide1Power = side1Result.newSidePower;
     side1Casualties = side1Result.updatedCasualties;
     
-    const side2Result = processSide(2, side2Groups, side2Power, side1Attrition, side2Casualties);
+    const side2Result = processSide({
+      sideNumber: 2,
+      sideGroups: side2Groups,
+      sidePower: side2Power,
+      oppositeAttrition: side1Attrition,
+      sideCasualties: side2Casualties,
+      updates,
+      groupPowers,
+      groupsToBeDeleted,
+      groupsToDelete,
+      playersKilled,
+      battleLoot,
+      tile,
+      worldId,
+      chunkKey,
+      tileKey,
+      basePath
+    });
     newSide2Power = side2Result.newSidePower;
     side2Casualties = side2Result.updatedCasualties;
     
@@ -249,42 +342,17 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     } else {
       console.log(`Battle ${battleId} ending after ${tickCount} ticks. Power levels: Side 1: ${newSide1Power}, Side 2: ${newSide2Power}`);
       
-      // Distribute loot to winner or leave on tile if no survivors
-      function distributeLootToWinner(winner) {
-        if (battleLoot.length === 0) return;
-        
-        let winnerGroups = [];
-        if (winner === 1) {
-          winnerGroups = side1Surviving;
-        } else if (winner === 2) {
-          winnerGroups = side2Surviving;
-        }
-        
-        if (winnerGroups.length > 0) {
-          // Select a random surviving group from winning side
-          const receivingGroupId = winnerGroups[Math.floor(Math.random() * winnerGroups.length)];
-          
-          battleLoot.forEach(item => {
-            const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/items/${itemId}`] = item;
-          });
-          
-          // Add a message about looting
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/lastMessage`] = {
-            text: `Looted ${battleLoot.length} items from battle`,
-            timestamp: Date.now()
-          };
-        } else if (winner !== 0) {
-          // If winner is determined but no surviving groups, leave loot on tile
-          // This creates a "treasure" for other groups to find later
-          battleLoot.forEach(item => {
-            const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/items/${itemId}`] = item;
-          });
-        }
-      }
-      
-      distributeLootToWinner(winner);
+      // Use the extracted function to distribute loot
+      distributeLootToWinner({
+        winner,
+        battleLoot,
+        side1Surviving,
+        side2Surviving,
+        worldId,
+        chunkKey,
+        tileKey,
+        updates
+      });
       
       // Generate side names for chat message
       const side1Name = battle.side1.name || 'Attackers';
@@ -405,4 +473,4 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     logger.error(`Error processing battle ${battleId}:`, error);
     return false;
   }
-}
+};
