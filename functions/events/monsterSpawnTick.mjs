@@ -113,16 +113,6 @@ export async function spawnMonsters(worldId) {
           }
         }
         
-        // Check individual players with recent activity
-        if (!hasRecentActivity && tileData.players) {
-          for (const [playerId, playerData] of Object.entries(tileData.players)) {
-            if (playerData.lastActive && (now - playerData.lastActive) < MAX_ACTIVE_AGE) {
-              hasRecentActivity = true;
-              break;
-            }
-          }
-        }
-        
         if (hasRecentActivity) {
           // Store this as an active location
           activeLocations.push({

@@ -109,7 +109,6 @@ export function processDemobilization(worldId, updates, group, chunkKey, tileKey
         const playerPath = `worlds/${worldId}/chunks/${playerChunkKey}/${playerTileKey}/players/${playerId}`;
         updates[playerPath] = {
           displayName: playerUnit.displayName || playerUnit.name || `Player ${playerId}`,
-          lastActive: now,
           id: playerId,
           race: playerUnit.race || 'human'
         };

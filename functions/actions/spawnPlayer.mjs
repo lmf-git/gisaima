@@ -66,7 +66,6 @@ export const spawnPlayer = onCall({
     
     await playerEntityRef.set({
       displayName,
-      lastActive: Date.now(),
       id: uid,
       race
     });
