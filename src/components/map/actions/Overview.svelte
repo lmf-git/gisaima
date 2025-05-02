@@ -467,6 +467,12 @@
     // For other entities like groups or structures, check the owner property
     return entity.owner?.toString() === $currentPlayer.id?.toString();
   }
+
+  // Format total power for each side
+  function formatPower(power) {
+    if (!power && power !== 0) return '?';
+    return power.toLocaleString();
+  }
 </script>
 
 <section 
@@ -927,7 +933,7 @@
                         <span class="entity-badge owner-badge">Yours</span>
                       {/if}
                       <span class="entity-coords">({formatCoords(group.x, group.y)})</span>
-                      <!-- <span class="group-power">({calculateGroupPower(group)})</span> -->
+                      <span class="group-power">({formatPower(calculateGroupPower(group))})</span>
                     </div>
                     
                     <div class="entity-details">
@@ -2261,5 +2267,12 @@
   .unit-type-tag.player {
     background-color: rgba(66, 133, 244, 0.1);
     color: rgba(66, 133, 244, 0.9);
+  }
+
+  .group-power {
+    font-weight: 500;
+    color: #d32f2f;
+    margin-left: 0.3em;
+    font-size: 0.9em;
   }
 </style>
