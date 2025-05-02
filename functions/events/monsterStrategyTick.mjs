@@ -304,8 +304,7 @@ async function executeMonsterStrategy(db, worldId, monsterGroup, location, tileD
   // NEW: Check for attackable player structure on this tile
   const attackableStructure = tileData.structure && 
     tileData.structure.owner && 
-    tileData.structure.owner !== 'monster' &&
-    tileData.structure.type !== 'spawn';  // Don't attack spawn points
+    tileData.structure.owner !== 'monster';
     
   if (attackableStructure && Math.random() < 0.7) { // 70% chance to attack structure
     return await initiateAttackOnStructure(db, worldId, monsterGroup, tileData.structure, location, updates, now);
