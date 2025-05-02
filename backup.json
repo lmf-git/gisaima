@@ -28,6 +28,15 @@
   "worlds": {
     "ancient-lands": {
       "chat": {
+        "battle_end_1746172805621_battle_1746172729282_432": {
+          "location": {
+            "x": -16,
+            "y": -5
+          },
+          "text": "Battle at (-16, -5) has ended. Attackers have defeated Defenders!",
+          "timestamp": 1746172805621,
+          "type": "event"
+        },
         "battle_start_1746172729282_battle_1746172729282_432": {
           "location": {
             "x": -16,
@@ -36,65 +45,20 @@
           "text": "Battle has begun at (-16, -5)! may2's Force is attacking Goblin Raiders!",
           "timestamp": 1746172729282,
           "type": "event"
+        },
+        "chat_monster_spawn_1746172806178_516": {
+          "location": {
+            "x": -43,
+            "y": -11
+          },
+          "text": "A band of Bandits has appeared at (-43, -11)",
+          "timestamp": 1746172806178,
+          "type": "event"
         }
       },
       "chunks": {
         "-1,-1": {
           "-16,-5": {
-            "battles": {
-              "battle_1746172729282_432": {
-                "createdAt": 1746172729282,
-                "id": "battle_1746172729282_432",
-                "locationX": -16,
-                "locationY": -5,
-                "side1": {
-                  "casualties": 0,
-                  "groups": {
-                    "-OPEuOklD3-dXCINHxwL": {
-                      "race": "human",
-                      "type": "player",
-                      "units": {
-                        "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
-                          "displayName": "may2",
-                          "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-                          "race": "human",
-                          "type": "player"
-                        }
-                      }
-                    }
-                  },
-                  "name": "may2's Force"
-                },
-                "side2": {
-                  "casualties": 0,
-                  "groups": {
-                    "monster_1746170346285_9404": {
-                      "race": "unknown",
-                      "type": "monster",
-                      "units": {
-                        "monster_unit_1746170346285_3502_0": {
-                          "id": "monster_unit_1746170346285_3502_0",
-                          "type": "goblin"
-                        },
-                        "monster_unit_1746170346285_7976_1": {
-                          "id": "monster_unit_1746170346285_7976_1",
-                          "type": "goblin"
-                        },
-                        "monster_unit_1746170346285_9884_2": {
-                          "id": "monster_unit_1746170346285_9884_2",
-                          "type": "goblin"
-                        }
-                      }
-                    }
-                  },
-                  "name": "Goblin Raiders"
-                },
-                "targetTypes": [
-                  "group"
-                ],
-                "tickCount": 0
-              }
-            },
             "groups": {
               "-OPEuOklD3-dXCINHxwL": {
                 "battleId": "battle_1746172729282_432",
@@ -353,6 +317,34 @@
               "type": "spawn"
             }
           }
+        },
+        "-3,-1": {
+          "-43,-11": {
+            "groups": {
+              "monster_1746172806178_2461": {
+                "id": "monster_1746172806178_2461",
+                "name": "Bandits",
+                "status": "idle",
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746172806178_5181_2": {
+                    "id": "monster_unit_1746172806178_5181_2",
+                    "type": "bandit"
+                  },
+                  "monster_unit_1746172806178_6015_0": {
+                    "id": "monster_unit_1746172806178_6015_0",
+                    "type": "bandit"
+                  },
+                  "monster_unit_1746172806178_6772_1": {
+                    "id": "monster_unit_1746172806178_6772_1",
+                    "type": "bandit"
+                  }
+                },
+                "x": -43,
+                "y": -11
+              }
+            }
+          }
         }
       },
       "info": {
@@ -361,7 +353,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746172680561,
+        "lastTick": 1746172981838,
         "name": "Ancient Lands",
         "playerCount": 35,
         "seed": 13579,
