@@ -73,8 +73,19 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // --------- PHASE 2: CALCULATE ATTRITION ---------
     // Use the new functions to calculate power ratios and attrition
     const { side1Ratio, side2Ratio } = calculatePowerRatios(side1Power, side2Power);
-    const side1Attrition = calculateAttrition(side1Power, side1Ratio);
-    const side2Attrition = calculateAttrition(side2Power, side2Ratio);
+    let side1Attrition = calculateAttrition(side1Power, side1Ratio);
+    let side2Attrition = calculateAttrition(side2Power, side2Ratio);
+
+    // If both sides have power but no calculated attrition (edge case),
+    // ensure at least one side takes attrition to guarantee battle progress
+    if (side1Power > 0 && side2Power > 0 && side1Attrition === 0 && side2Attrition === 0) {
+      const randomSide = Math.random() < 0.5 ? 1 : 2;
+      if (randomSide === 1) {
+        side1Attrition = 1;
+      } else {
+        side2Attrition = 1;
+      }
+    }
 
     console.log('side1 attrition', side1Attrition);
     console.log('side2 attrition', side2Attrition);
@@ -217,13 +228,22 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // --------- PHASE 4: CHECK FOR BATTLE END CONDITIONS ---------
     
     // A battle ends when one side has no power left or after many ticks with minimal progress
-    const side1Defeated = Object.keys(side1Groups).length === 0;
-    const side2Defeated = Object.keys(side2Groups).length === 0;
+    const side1Defeated = side1Surviving.length === 0;
+    const side2Defeated = side2Surviving.length === 0;
     
     // Determine the winner directly from defeat flags
-    const winner = side1Defeated && !side2Defeated ? 2 : (!side1Defeated && side2Defeated ? 1 : undefined);
+    let winner;
+    if (side1Defeated && side2Defeated) {
+      // If both sides are defeated, it's a draw
+      winner = 0; // Use 0 to represent a draw
+      console.log("Battle ended in a draw: both sides defeated");
+    } else if (side1Defeated && !side2Defeated) {
+      winner = 2; // Side 2 wins
+    } else if (!side1Defeated && side2Defeated) {
+      winner = 1; // Side 1 wins
+    }
     
-    if (!side1Defeated && !side2Defeated) {
+    if (winner === undefined) {
       battleUpdates.loot = battleLoot;
       
       // Apply the battle updates to the main battle object
@@ -305,32 +325,46 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         logger.debug(`Side 1 groups: ${JSON.stringify(Object.keys(battle.side1.groups || {}))}`);
         logger.debug(`Side 2 groups: ${JSON.stringify(Object.keys(battle.side2.groups || {}))}`);
         
-        // Only update the winning side's groups
-        if (winner) {
-          // Get groups from the winning side
-          const winningGroups = battle[`side${winner}`].groups || {};
+        // Clean up ALL groups that were in the battle, regardless of winner
+        const allBattleGroups = {
+          ...battle.side1.groups || {},
+          ...battle.side2.groups || {}
+        };
+        
+        logger.debug(`Cleaning up ${Object.keys(allBattleGroups).length} groups from battle`);
+        
+        for (const groupId in allBattleGroups) {
+          const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
           
-          for (const groupId in winningGroups) {
-            const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+          // Skip updates for groups that are being deleted to avoid path conflicts
+          if (groupsToBeDeleted && groupsToBeDeleted.has(groupPath)) {
+            logger.debug(`Skipping updates for deleted group: ${groupId}`);
+            continue;
+          }
+          
+          if (tile.groups[groupId]) {
+            logger.debug(`Cleaning up battle status for group ${groupId}`);
+            // Reset group status for all groups that were in battle
+            updates[`${groupPath}/inBattle`] = false;
+            updates[`${groupPath}/battleId`] = null;
+            updates[`${groupPath}/battleSide`] = null;
+            updates[`${groupPath}/battleRole`] = null;
+            updates[`${groupPath}/status`] = 'idle';
             
-            // Skip updates for groups that are being deleted to avoid path conflicts
-            if (groupsToBeDeleted && groupsToBeDeleted.has(groupPath)) {
-              logger.debug(`Skipping updates for deleted group: ${groupId}`);
-              continue;
-            }
+            // Add victory or defeat message based on which side the group was on
+            const wasOnWinningSide = 
+              (winner === 1 && battle.side1.groups && battle.side1.groups[groupId]) ||
+              (winner === 2 && battle.side2.groups && battle.side2.groups[groupId]);
             
-            if (tile.groups[groupId]) {
-              logger.debug(`Updating winning side ${winner} group ${groupId} status`);
-              // Set group status based on result
-              updates[`${groupPath}/inBattle`] = false;
-              updates[`${groupPath}/battleId`] = null;
-              updates[`${groupPath}/battleSide`] = null;
-              updates[`${groupPath}/battleRole`] = null;
-              updates[`${groupPath}/status`] = 'idle';
-              
-              // Add a message about the battle result
+            if (winner !== 0) {
               updates[`${groupPath}/lastMessage`] = {
-                text: "Your group has won the battle!",
+                text: wasOnWinningSide ? "Your group has won the battle!" : "Your group was defeated in battle.",
+                timestamp: now
+              };
+            } else {
+              // Draw message
+              updates[`${groupPath}/lastMessage`] = {
+                text: "The battle ended in a stalemate.",
                 timestamp: now
               };
             }
