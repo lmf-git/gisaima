@@ -4,6 +4,8 @@
       "worlds": {
         "ancient-lands": {
           "achievements": {
+            "first_attack": true,
+            "first_attack_date": 1746160458629,
             "first_steps": true,
             "first_steps_date": 1746159813727,
             "mobilised": true
@@ -25,290 +27,6 @@
   },
   "worlds": {
     "ancient-lands": {
-      "chat": {
-        "-OPEDhbqDOn3AuCWcP6L": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Tester's Force is being mobilized at (-23,5)",
-          "timestamp": 1746159720887,
-          "type": "system"
-        },
-        "chat_1746159721724_74": {
-          "location": {
-            "timestamp": 1746159721724,
-            "x": -23,
-            "y": 5
-          },
-          "text": "A large army of human forces has mobilized at (-23, 5) - \"Tester's Force\"",
-          "timestamp": 1746159721724,
-          "type": "event",
-          "userId": "WbRpE3iB7rX0zMGQZIovi7zGkGh1",
-          "userName": "Tester's Force"
-        },
-        "chat_monster_spawn_1746159782333_965": {
-          "location": {
-            "x": -19,
-            "y": -8
-          },
-          "text": "A band of Wild Wolves has appeared at (-19, -8)",
-          "timestamp": 1746159782333,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746159782564_164": {
-          "location": {
-            "x": -17,
-            "y": 4
-          },
-          "text": "A band of Giant Spiders has appeared at (-17, 4)",
-          "timestamp": 1746159782564,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746159782794_290": {
-          "location": {
-            "x": -36,
-            "y": -13
-          },
-          "text": "A small group of Bandits has been spotted at (-36, -13)",
-          "timestamp": 1746159782794,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746160086776_722": {
-          "location": {
-            "x": -16,
-            "y": -21
-          },
-          "text": "A band of Goblin Raiders has appeared at (-16, -21)",
-          "timestamp": 1746160086776,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746160087010_474": {
-          "location": {
-            "x": -17,
-            "y": 6
-          },
-          "text": "A band of Goblin Raiders has appeared at (-17, 6)",
-          "timestamp": 1746160087010,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746160087246_105": {
-          "location": {
-            "x": -40,
-            "y": -14
-          },
-          "text": "A band of Giant Spiders has appeared at (-40, -14)",
-          "timestamp": 1746160087246,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746160322150_163": {
-          "location": {
-            "x": -16,
-            "y": -17
-          },
-          "text": "A band of Bandits has appeared at (-16, -17)",
-          "timestamp": 1746160322150,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746160322380_389": {
-          "location": {
-            "x": -20,
-            "y": 1
-          },
-          "text": "A band of Wild Wolves has appeared at (-20, 1)",
-          "timestamp": 1746160322380,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746160322610_406": {
-          "location": {
-            "x": -34,
-            "y": -13
-          },
-          "text": "A small group of Giant Spiders has been spotted at (-34, -13)",
-          "timestamp": 1746160322610,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746160322839_715": {
-          "location": {
-            "x": -32,
-            "y": -13
-          },
-          "text": "A band of Wild Wolves has appeared at (-32, -13)",
-          "timestamp": 1746160322839,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746160442827_487": {
-          "location": {
-            "x": -13,
-            "y": 7
-          },
-          "text": "A band of Giant Spiders has appeared at (-13, 7)",
-          "timestamp": 1746160442827,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746160443056_871": {
-          "location": {
-            "x": -21,
-            "y": 6
-          },
-          "text": "A small group of Bandits has been spotted at (-21, 6)",
-          "timestamp": 1746160443056,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746160443286_7": {
-          "location": {
-            "x": -19,
-            "y": 4
-          },
-          "text": "A band of Wild Wolves has appeared at (-19, 4)",
-          "timestamp": 1746160443286,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746160443520_789": {
-          "location": {
-            "x": -33,
-            "y": -6
-          },
-          "text": "A band of Bandits has appeared at (-33, -6)",
-          "timestamp": 1746160443520,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746160443751_389": {
-          "location": {
-            "x": -37,
-            "y": -17
-          },
-          "text": "A small group of Bandits has been spotted at (-37, -17)",
-          "timestamp": 1746160443751,
-          "type": "event"
-        },
-        "gather_1746160201204_monster_1746159782564_926": {
-          "location": {
-            "x": -17,
-            "y": 4
-          },
-          "text": "Giant Spiders gathered resources in plains biome at (-17, 4): 5 Wooden Sticks, 3 Stone Pieces",
-          "timestamp": 1746160201204,
-          "type": "event"
-        },
-        "gather_1746160321131_monster_1746159782333_4219": {
-          "location": {
-            "x": -19,
-            "y": -8
-          },
-          "text": "Wild Wolves gathered resources in plains biome at (-19, -8): 1 Wooden Sticks, 2 Stone Pieces, 3 Wooden Sticks",
-          "timestamp": 1746160321131,
-          "type": "event"
-        },
-        "gather_1746160321131_monster_1746160087246_6984": {
-          "location": {
-            "x": -40,
-            "y": -14
-          },
-          "text": "Giant Spiders gathered resources in plains biome at (-40, -14): 2 Wooden Sticks, 3 Stone Pieces",
-          "timestamp": 1746160321131,
-          "type": "event"
-        },
-        "gather_1746160382019_monster_1746160086776_4767": {
-          "location": {
-            "x": -16,
-            "y": -21
-          },
-          "text": "Goblin Raiders gathered resources in plains biome at (-16, -21): 1 Wooden Sticks, 2 Stone Pieces, 1 Stone Pieces",
-          "timestamp": 1746160382019,
-          "type": "event"
-        },
-        "monster_gather_1746160086187_monster_1746159782564_926": {
-          "location": {
-            "x": -17,
-            "y": 4
-          },
-          "text": "Giant Spiders is gathering resources in the plains.",
-          "timestamp": 1746160086187,
-          "type": "event"
-        },
-        "monster_gather_1746160202185_monster_1746159782333_4219": {
-          "location": {
-            "x": -19,
-            "y": -8
-          },
-          "text": "Wild Wolves is gathering resources in the plains.",
-          "timestamp": 1746160202185,
-          "type": "event"
-        },
-        "monster_gather_1746160202185_monster_1746160087246_6984": {
-          "location": {
-            "x": -40,
-            "y": -14
-          },
-          "text": "Giant Spiders is gathering resources in the plains.",
-          "timestamp": 1746160202185,
-          "type": "event"
-        },
-        "monster_gather_1746160262709_monster_1746160086776_4767": {
-          "location": {
-            "x": -16,
-            "y": -21
-          },
-          "text": "Goblin Raiders is gathering resources in the plains.",
-          "timestamp": 1746160262709,
-          "type": "event"
-        },
-        "move_1746160085241_-OPEDh_vJAmqT8wvwDmE_3": {
-          "location": {
-            "x": -20,
-            "y": 4
-          },
-          "text": "Tester's Force has arrived at (-20,4) and continues their journey",
-          "timestamp": 1746160085241,
-          "type": "event"
-        },
-        "move_1746160261738_-OPEDh_vJAmqT8wvwDmE_5": {
-          "location": {
-            "x": -18,
-            "y": 4
-          },
-          "text": "Tester's Force has arrived at (-18,4)",
-          "timestamp": 1746160261738,
-          "type": "event"
-        },
-        "move_1746160261738_monster_1746159782794_1320_3": {
-          "location": {
-            "x": -36,
-            "y": -16
-          },
-          "text": "Bandits has arrived at (-36,-16)",
-          "timestamp": 1746160261738,
-          "type": "event"
-        },
-        "move_1746160382019_-OPEDh_vJAmqT8wvwDmE_1": {
-          "location": {
-            "x": -17,
-            "y": 4
-          },
-          "text": "Tester's Force has arrived at (-17,4)",
-          "timestamp": 1746160382019,
-          "type": "event"
-        },
-        "move_start_1746159817350_-OPEDh_vJAmqT8wvwDmE": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Tester's Force is setting out from (-23,5) to (-18,4)",
-          "timestamp": 1746159817350,
-          "type": "system"
-        },
-        "move_start_1746160271692_-OPEDh_vJAmqT8wvwDmE": {
-          "location": {
-            "x": -18,
-            "y": 4
-          },
-          "text": "Tester's Force is setting out from (-18,4) to (-17,4)",
-          "timestamp": 1746160271692,
-          "type": "system"
-        }
-      },
       "chunks": {
         "-1,-1": {
           "-23,-8": {
@@ -530,9 +248,60 @@
             }
           },
           "-17,4": {
+            "battles": {
+              "battle_1746160458629_437": {
+                "id": "battle_1746160458629_437",
+                "locationX": -17,
+                "locationY": 4,
+                "participants": [
+                  "WbRpE3iB7rX0zMGQZIovi7zGkGh1"
+                ],
+                "side1": {
+                  "casualties": 0,
+                  "groups": {
+                    "-OPEDh_vJAmqT8wvwDmE": true
+                  },
+                  "name": "Tester's Force",
+                  "participants": [
+                    {
+                      "groupId": "-OPEDh_vJAmqT8wvwDmE",
+                      "groupName": "Tester's Force",
+                      "players": [
+                        {
+                          "displayName": "Tester",
+                          "id": "WbRpE3iB7rX0zMGQZIovi7zGkGh1",
+                          "race": "human"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "side2": {
+                  "casualties": 0,
+                  "groups": {
+                    "monster_1746159782564_926": true
+                  },
+                  "name": "Giant Spiders",
+                  "participants": [
+                    {
+                      "groupId": "monster_1746159782564_926",
+                      "groupName": "Giant Spiders"
+                    }
+                  ]
+                },
+                "targetTypes": [
+                  "group"
+                ],
+                "tickCount": 0
+              }
+            },
             "groups": {
               "-OPEDh_vJAmqT8wvwDmE": {
+                "battleId": "battle_1746160458629_437",
+                "battleRole": "attacker",
+                "battleSide": 1,
                 "id": "-OPEDh_vJAmqT8wvwDmE",
+                "inBattle": true,
                 "lastMessage": {
                   "text": "Moving to next location (-17,4)",
                   "timestamp": 1746160382019
@@ -540,7 +309,7 @@
                 "name": "Tester's Force",
                 "owner": "WbRpE3iB7rX0zMGQZIovi7zGkGh1",
                 "race": "human",
-                "status": "idle",
+                "status": "fighting",
                 "targetX": -17,
                 "targetY": 4,
                 "units": {
@@ -555,8 +324,12 @@
                 "y": 4
               },
               "monster_1746159782564_926": {
+                "battleId": "battle_1746160458629_437",
+                "battleRole": "defender",
+                "battleSide": 2,
                 "gatheringTicksRemaining": 1,
                 "id": "monster_1746159782564_926",
+                "inBattle": true,
                 "items": [
                   {
                     "biomes": [
@@ -599,7 +372,7 @@
                 },
                 "monsterType": "spider",
                 "name": "Giant Spiders",
-                "status": "idle",
+                "status": "fighting",
                 "type": "monster",
                 "units": {
                   "monster_unit_1746159782564_2363_2": {

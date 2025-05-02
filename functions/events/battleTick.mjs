@@ -53,6 +53,12 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       side2Power += battle.structurePower;
     }
     
+    // Add a small random factor to prevent exact power equality and eventual stalemates
+    // This ensures battles will eventually resolve even with identical forces
+    const randomFactor = 0.05; // 5% maximum random variance
+    side1Power = side1Power * (1 + (Math.random() * randomFactor - randomFactor/2));
+    side2Power = side2Power * (1 + (Math.random() * randomFactor - randomFactor/2));
+    
     // Use the new functions to calculate power ratios and attrition
     const { side1Ratio, side2Ratio } = calculatePowerRatios(side1Power, side2Power);
     const side1Attrition = calculateAttrition(side1Power, side1Ratio);
