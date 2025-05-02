@@ -458,14 +458,16 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
   
   // Choose which player groups to attack (up to 3)
   const targetCount = Math.min(targetGroups.length, 3);
+
   // Sort by group size or randomly if sizes unknown
   targetGroups.sort((a, b) => (a.units?.length || 1) - (b.units?.length || 1));
+  
   const selectedTargets = targetGroups.slice(0, targetCount);
   
   // Create battle ID and prepare battle data
   const battleId = `battle_${now}_${Math.floor(Math.random() * 1000)}`;
   
-  // Create enhanced battle object - simplified without redundant participants info
+  // Create enhanced battle object with full units data for each side
   const battleData = {
     id: battleId,
     locationX: x,
@@ -474,8 +476,9 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
     side1: {
       groups: {
         [monsterGroup.id]: {
-          present: true,
-          type: 'monster'
+          type: 'monster',
+          race: monsterGroup.race || 'monster',
+          units: monsterGroup.units || {} // Include full units data
         }
       },
       casualties: 0,
@@ -484,9 +487,9 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
     side2: {
       groups: selectedTargets.reduce((obj, group) => {
         obj[group.id] = {
-          present: true,
           type: group.type || 'player',
-          race: group.race || 'unknown'
+          race: group.race || 'unknown',
+          units: group.units || {} // Include full units data
         };
         return obj;
       }, {}),
@@ -556,7 +559,7 @@ async function initiateAttackOnStructure(db, worldId, monsterGroup, structure, l
   // Create battle ID and prepare battle data
   const battleId = `battle_${now}_${Math.floor(Math.random() * 1000)}`;
   
-  // Create enhanced battle object - simplified without redundant participants info
+  // Create enhanced battle object with full units data
   const battleData = {
     id: battleId,
     locationX: x,
@@ -567,8 +570,9 @@ async function initiateAttackOnStructure(db, worldId, monsterGroup, structure, l
     side1: {
       groups: {
         [monsterGroup.id]: {
-          present: true,
-          type: 'monster'
+          type: 'monster',
+          race: monsterGroup.race || 'monster',
+          units: monsterGroup.units || {} // Include full units data
         }
       },
       casualties: 0,

@@ -170,7 +170,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
           // Store complete unit data for each group (not just 'true')
           const group = attackerGroups.find(g => g.id === id);
           acc[id] = {
-            present: true,
             type: group.type || 'player',
             race: group.race || 'unknown',
             units: group.units || {} // Include full units data
@@ -185,7 +184,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
           // Store complete unit data for each group
           const group = defenderGroups.find(g => g.id === id);
           acc[id] = {
-            present: true,
             type: group.type || 'player',
             race: group.race || 'unknown',
             units: group.units || {} // Include full units data

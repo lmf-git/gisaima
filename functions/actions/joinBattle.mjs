@@ -115,7 +115,6 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     
     // Simply add the group to the battle groups (more streamlined approach)
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/${battleSideKey}/groups/${groupId}`] = {
-      present: true,
       type: joiningGroup.type || 'player',
       race: joiningGroup.race || 'unknown'
     };
