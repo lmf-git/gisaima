@@ -176,8 +176,7 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
           };
           return acc;
         }, {}),
-        name: side1Name,
-        casualties: 0
+        name: side1Name
       },
       side2: {
         groups: defenderGroupIds ? defenderGroupIds.reduce((acc, id) => {
@@ -190,8 +189,7 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
           };
           return acc;
         }, {}) : {},
-        name: side2Name,
-        casualties: 0
+        name: side2Name
       },
       tickCount: 0,
       createdAt: now

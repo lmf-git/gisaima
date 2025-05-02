@@ -101,12 +101,8 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
       
       logger.info(`Updated battle power for ${battleSideKey} from ${currentPower} to ${newPower}`);
     }
-    
-    // Apply casualties to the fleeing group (25-40% of units are lost when fleeing)
-    const fleeingCasualtyRate = 0.25 + (Math.random() * 0.15);
-    const originalUnitCount = group.units?.length || 1;
-    const casualtiesCount = Math.floor(originalUnitCount * fleeingCasualtyRate);
-    const newUnitCount = Math.max(1, originalUnitCount - casualtiesCount);
+
+    const casualtiesCount = 69;
     
     // Update the group's status
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/inBattle`] = false;

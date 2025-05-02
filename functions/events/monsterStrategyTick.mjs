@@ -481,7 +481,6 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
           units: monsterGroup.units || {} // Include full units data
         }
       },
-      casualties: 0,
       name: monsterGroup.name || 'Monster Attack Force'
     },
     side2: {
@@ -493,7 +492,6 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
         };
         return obj;
       }, {}),
-      casualties: 0,
       name: selectedTargets.length === 1 ? 
         (selectedTargets[0].name || 'Defenders') : 'Defending Forces'
     },
@@ -575,12 +573,10 @@ async function initiateAttackOnStructure(db, worldId, monsterGroup, structure, l
           units: monsterGroup.units || {} // Include full units data
         }
       },
-      casualties: 0,
       name: monsterGroup.name || 'Monster Attack Force'
     },
     side2: {
       groups: {},
-      casualties: 0,
       name: structure.name || 'Structure Defenses',
       structureInfo: {
         id: structure.id,
