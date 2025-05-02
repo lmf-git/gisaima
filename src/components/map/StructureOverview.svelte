@@ -15,7 +15,7 @@
   import Fairy from '../icons/Fairy.svelte';
 
   import Hammer from '../icons/Hammer.svelte';
-  import { BUILDINGS } from "gisaima-shared/definitions/BUILDINGS.js";
+  import { BUILDINGS } from "gisaima-shared";
 
   // Props - using correct Svelte 5 runes syntax
   const { 

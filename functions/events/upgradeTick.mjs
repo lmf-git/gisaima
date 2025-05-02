@@ -1,5 +1,5 @@
 import { getDatabase } from 'firebase-admin/database';
-import { BUILDINGS } from 'gisaima-shared/definitions/BUILDINGS.js';
+import { BUILDINGS } from 'gisaima-shared/';
 
 /**
  * Process pending structure upgrades

@@ -4,13 +4,10 @@
   import { game, currentPlayer } from '../../lib/stores/game.js';
   import Close from '../icons/Close.svelte';
   import { 
-    ITEM_CATEGORIES, 
     getItemCategories, 
     getAllRecipes, 
-    canCraftRecipe 
   } from 'gisaima-shared/definitions/ITEMS.js';
-  import { BUILDINGS } from 'gisaima-shared/definitions/BUILDINGS.js';
-  import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
+  import { BUILDINGS } from 'gisaima-shared/';
 
   // Define props using $props() rune
   const {

@@ -5,7 +5,8 @@
 
 import { logger } from "firebase-functions";
 import { merge } from "gisaima-shared/economy/items.js";
-import { ITEMS, getBiomeItems } from "gisaima-shared/definitions/ITEMS.js";
+import { getBiomeItems } from "gisaima-shared/definitions/ITEMS.js";
+import { ITEMS } from "gisaima-shared";
 
 /**
  * Process gathering for a group

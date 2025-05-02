@@ -1,6 +1,6 @@
 import { getDatabase } from 'firebase-admin/database';
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { BUILDINGS } from 'gisaima-shared/definitions/BUILDINGS.js';
+import { BUILDINGS } from 'gisaima-shared';
 
 /**
  * Start a structure upgrade

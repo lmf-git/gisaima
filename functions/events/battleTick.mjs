@@ -63,6 +63,9 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     const { side1Ratio, side2Ratio } = calculatePowerRatios(side1Power, side2Power);
     const side1Attrition = calculateAttrition(side1Power, side1Ratio);
     const side2Attrition = calculateAttrition(side2Power, side2Ratio);
+
+    console.log('side1 attrition', side1Attrition);
+    console.log('side2 attrition', side1Attrition);
     
     // Apply attrition to individual groups in each side
     let newSide1Power = 0;
@@ -88,7 +91,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         
         // Calculate this group's share of attrition based on its proportion of side power
         const groupPower = calculateGroupPower(group);
-        logger.debug('test side 1 group power', group, groupPower);
+        console.log('test side 1 group power', group, groupPower);
         const groupShare = side1Power > 0 ? groupPower / side1Power : 1;
         const groupAttrition = Math.round(side2Attrition * groupShare);
         
@@ -99,10 +102,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         // Add players killed in this group to the overall list
         playersKilled.push(...groupPlayersKilled);
 
-        logger.debug('units', units);
-        logger.debug('group attrition', groupAttrition);
-        logger.debug('players killed in attrition', playersKilled);
-        logger.debug('units killed in attrition', unitsToRemove);
+        console.log('units', units);
+        console.log('group attrition', groupAttrition);
+        console.log('players killed in attrition', playersKilled);
+        console.log('units killed in attrition', unitsToRemove);
         
         // Calculate how many units remain
         const remainingUnits = { ...units };
