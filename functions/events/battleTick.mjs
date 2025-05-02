@@ -26,16 +26,22 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     const side1 = battle.side1;
     const side2 = battle.side2;
     
+    // --------- PHASE 1: CALCULATE INITIAL POWERS ---------
     // Recalculate power values using strength-based calculation
     let side1Power = 0;
     let side2Power = 0;
+    
+    // Store individual group powers to avoid recalculating later
+    const groupPowers = {};
     
     // Calculate side1 power by summing individual group powers
     const side1Groups = side1.groups || {};
     for (const groupId in side1Groups) {
       if (tile.groups[groupId]) {
         const group = tile.groups[groupId];
-        side1Power += calculateGroupPower(group);
+        const power = calculateGroupPower(group);
+        groupPowers[groupId] = power;
+        side1Power += power;
       }
     }
     
@@ -44,7 +50,9 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     for (const groupId in side2Groups) {
       if (tile.groups[groupId]) {
         const group = tile.groups[groupId];
-        side2Power += calculateGroupPower(group);
+        const power = calculateGroupPower(group);
+        groupPowers[groupId] = power;
+        side2Power += power;
       }
     }
     
@@ -59,6 +67,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     side1Power = side1Power * (1 + (Math.random() * randomFactor - randomFactor/2));
     side2Power = side2Power * (1 + (Math.random() * randomFactor - randomFactor/2));
     
+    // --------- PHASE 2: CALCULATE ATTRITION ---------
     // Use the new functions to calculate power ratios and attrition
     const { side1Ratio, side2Ratio } = calculatePowerRatios(side1Power, side2Power);
     const side1Attrition = calculateAttrition(side1Power, side1Ratio);
@@ -67,6 +76,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     console.log('side1 attrition', side1Attrition);
     console.log('side2 attrition', side1Attrition);
     
+    // --------- PHASE 3: APPLY CASUALTIES AND CALCULATE NEW POWERS ---------
     // Apply attrition to individual groups in each side
     let newSide1Power = 0;
     let newSide2Power = 0;
@@ -89,13 +99,13 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         const group = tile.groups[groupId];
         const units = group.units || {};
         
-        // Calculate this group's share of attrition based on its proportion of side power
-        const groupPower = calculateGroupPower(group);
+        // Use the stored group power instead of recalculating
+        const groupPower = groupPowers[groupId];
         console.log('test side 1 group power', group, groupPower);
         const groupShare = side1Power > 0 ? groupPower / side1Power : 1;
         const groupAttrition = Math.round(side2Attrition * groupShare);
         
-        // Use the new function to select casualties
+        // Now select which specific units will become casualties based on the group's share of attrition
         const { unitsToRemove, playersKilled: groupPlayersKilled } = 
           selectUnitsForCasualties(units, groupAttrition);
 
@@ -189,8 +199,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         const group = tile.groups[groupId];
         const units = group.units || {};
         
-        // Calculate this group's share of attrition based on its proportion of side power
-        const groupPower = calculateGroupPower(group);
+        // Use the stored group power instead of recalculating
+        const groupPower = groupPowers[groupId];
         logger.debug('test side 2 group power', group, groupPower);
         const groupShare = side2Power > 0 ? groupPower / side2Power : 1;
         const groupAttrition = Math.round(side1Attrition * groupShare);
