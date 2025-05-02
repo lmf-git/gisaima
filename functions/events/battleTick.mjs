@@ -105,8 +105,21 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // Apply attrition to individual groups in each side
     let newSide1Power = 0;
     let newSide2Power = 0;
-    let side1Casualties = side1.casualties || 0;
-    let side2Casualties = side2.casualties || 0;
+    
+    // Initialize casualty counts from battle's existing values
+    let side1Casualties = (side1.casualties || 0);
+    let side2Casualties = (side2.casualties || 0);
+    
+    // Make sure our battle updates will preserve these values
+    battleUpdates.side1 = { 
+      casualties: side1Casualties,
+      groups: {}
+    };
+    
+    battleUpdates.side2 = {
+      casualties: side2Casualties,
+      groups: {}
+    };
     
     // Track groups to be deleted and players to be killed
     const groupsToDelete = [];
@@ -147,6 +160,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         unitsToRemove.forEach(unitId => delete remainingUnits[unitId]);
         const newUnitCount = Object.keys(remainingUnits).length;
         
+        // Update casualty count for side 1
+        side1Casualties += unitsToRemove.length;
+        battleUpdates.side1.casualties = side1Casualties;
+        
         // Check if the group will be destroyed
         if (newUnitCount <= 0) {
           // Add to our deletion tracking sets
@@ -161,8 +178,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           });
           
           // Remove the group from battle side1.groups
-          if (!battleUpdates.side1) battleUpdates.side1 = { groups: {} };
-          else if (!battleUpdates.side1.groups) battleUpdates.side1.groups = {};
           battleUpdates.side1.groups[groupId] = null;
           
           // Actually delete the group from the database
@@ -205,14 +220,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
             // Also remove unit directly from the battle data
             updates[`${basePath}/side1/groups/${groupId}/units/${unitId}`] = null;
           });
-        }
-        
-        // Add to side casualties
-        side1Casualties += unitsToRemove.length;
-        
-        // Calculate new group power after casualties and add to side power
-        if (newUnitCount > 0) {
+          
+          // Always calculate new group power after casualties, even if no units were removed
           const newGroupPower = calculateGroupPower({ units: remainingUnits });
+          console.log(`Group ${groupId} new power after casualties: ${newGroupPower}`);
           newSide1Power += newGroupPower;
         }
       }
@@ -242,6 +253,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         unitsToRemove.forEach(unitId => delete remainingUnits[unitId]);
         const newUnitCount = Object.keys(remainingUnits).length;
         
+        // Update casualty count for side 2
+        side2Casualties += unitsToRemove.length;
+        battleUpdates.side2.casualties = side2Casualties;
+        
         // Check if the group will be destroyed
         if (newUnitCount <= 0) {
           // Add to our deletion tracking sets
@@ -256,8 +271,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           });
           
           // Remove the group from battle side2.groups
-          if (!battleUpdates.side2) battleUpdates.side2 = { groups: {} };
-          else if (!battleUpdates.side2.groups) battleUpdates.side2.groups = {};
           battleUpdates.side2.groups[groupId] = null;
           
           // Actually delete the group from the database
@@ -300,18 +313,26 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
             // Also remove unit directly from the battle data
             updates[`${basePath}/side2/groups/${groupId}/units/${unitId}`] = null;
           });
-        }
-        
-        // Add to side casualties
-        side2Casualties += unitsToRemove.length;
-        
-        // Calculate new group power after casualties and add to side power
-        if (newUnitCount > 0) {
+          
+          // Always calculate new group power after casualties, even if no units were removed
           const newGroupPower = calculateGroupPower({ units: remainingUnits });
+          console.log(`Group ${groupId} new power after casualties: ${newGroupPower}`);
           newSide2Power += newGroupPower;
         }
       }
     }
+    
+    // Add structure power if applicable
+    if (battle.structurePower) {
+      newSide2Power += battle.structurePower;
+    }
+    
+    // Log the new power values for debugging
+    console.log(`New battle powers after tick ${tickCount} - Side 1: ${newSide1Power}, Side 2: ${newSide2Power}`);
+    
+    // Store the current power values in the battle data
+    battleUpdates.side1Power = newSide1Power;
+    battleUpdates.side2Power = newSide2Power;
     
     // Handle player deaths
     for (const player of playersKilled) {
@@ -400,13 +421,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       };
     }
     
-    // Update power values and casualties for both sides
-    if (!battleUpdates.side1) battleUpdates.side1 = {};
-    if (!battleUpdates.side2) battleUpdates.side2 = {};
-    
-    battleUpdates.side1.casualties = side1Casualties;
-    battleUpdates.side2.casualties = side2Casualties;
-    
     // Apply the battle updates to the main battle object
     updates[basePath] = {
       ...battle,              // Keep existing battle properties
@@ -423,6 +437,14 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       const winner = determineWinner(newSide1Power, newSide2Power);
       
       // End the battle
+      return await endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile, groupsToBeDeleted);
+    }
+    
+    // Add a random chance for battle to end in stalemate after many ticks
+    // This prevents endless battles when attrition is minimal
+    if (tickCount > 10 && Math.random() < 0.1) {
+      console.log(`Battle ${battleId} ending after ${tickCount} ticks with stalemate chance`);
+      const winner = determineWinner(newSide1Power, newSide2Power);
       return await endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile, groupsToBeDeleted);
     }
     
