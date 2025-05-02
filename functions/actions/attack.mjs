@@ -189,7 +189,8 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
       return {
         groupId: group.id,
         groupName: group.name || `Group ${group.id.slice(-4)}`,
-        players
+        players,
+        dominantType: group.monsterType || group.race || 'unknown'
       };
     });
     
@@ -226,7 +227,8 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
       return {
         groupId: group.id,
         groupName: group.name || `Group ${group.id.slice(-4)}`,
-        players
+        players,
+        dominantType: group.monsterType || group.race || 'unknown'
       };
     });
     
@@ -250,7 +252,14 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
       targetTypes,
       side1: {
         groups: attackerGroupIds.reduce((acc, id) => {
-          acc[id] = true;
+          // Store additional info about each group instead of just 'true'
+          const group = attackerGroups.find(g => g.id === id);
+          acc[id] = {
+            present: true,
+            type: group.type || 'player',
+            race: group.race || 'unknown',
+            monsterType: group.monsterType
+          };
           return acc;
         }, {}),
         name: side1Name,
@@ -259,7 +268,14 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
       },
       side2: {
         groups: defenderGroupIds ? defenderGroupIds.reduce((acc, id) => {
-          acc[id] = true;
+          // Store additional info about each group
+          const group = defenderGroups.find(g => g.id === id);
+          acc[id] = {
+            present: true,
+            type: group.type || 'player',
+            race: group.race || 'unknown',
+            monsterType: group.monsterType
+          };
           return acc;
         }, {}) : {},
         name: side2Name,
@@ -267,7 +283,8 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
         participants: side2Participants
       },
       participants: allParticipantIds,
-      tickCount: 0
+      tickCount: 0,
+      createdAt: now
     };
     
     // If it's a structure battle, record the structureId

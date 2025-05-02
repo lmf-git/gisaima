@@ -902,7 +902,28 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
   // Create battle ID and prepare battle data
   const battleId = `battle_${now}_${Math.floor(Math.random() * 1000)}`;
   
-  // Create battle object without power calculations
+  // Extract participants info for both sides
+  const side1Participants = [{
+    groupId: monsterGroup.id,
+    groupName: monsterGroup.name || `Monster Group`,
+    dominantType: monsterGroup.monsterType || 'monster'
+  }];
+  
+  const side2Participants = selectedTargets.map(group => ({
+    groupId: group.id,
+    groupName: group.name || `Group ${group.id.slice(-4)}`,
+    dominantType: group.race || 'unknown',
+    // Extract player info if available
+    players: Object.values(group.units || {})
+      .filter(unit => unit.type === 'player')
+      .map(unit => ({
+        id: unit.id, 
+        displayName: unit.displayName || 'Unknown Player',
+        race: unit.race || 'unknown'
+      }))
+  }));
+
+  // Create enhanced battle object
   const battleData = {
     id: battleId,
     locationX: x,
@@ -910,25 +931,37 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
     targetTypes: ['group'],
     side1: {
       groups: {
-        [monsterGroup.id]: true
+        [monsterGroup.id]: {
+          present: true,
+          type: 'monster',
+          monsterType: monsterGroup.monsterType || 'unknown'
+        }
       },
-      casualties: 0
+      casualties: 0,
+      name: monsterGroup.name || 'Monster Attack Force',
+      participants: side1Participants
     },
     side2: {
       groups: selectedTargets.reduce((obj, group) => {
-        obj[group.id] = true;
+        obj[group.id] = {
+          present: true,
+          type: group.type || 'player',
+          race: group.race || 'unknown'
+        };
         return obj;
       }, {}),
-      casualties: 0
+      casualties: 0,
+      name: selectedTargets.length === 1 ? 
+        (selectedTargets[0].name || 'Defenders') : 'Defending Forces',
+      participants: side2Participants
     },
-    tickCount: 0
+    tickCount: 0,
+    createdAt: now
   };
   
-  // Get chunk key for current location
+  // Add battle to the tile
   const chunkKey = monsterGroup.chunkKey;
   const tileKey = `${x},${y}`;
-  
-  // Add battle to the tile
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`] = battleData;
   
   // Update monster group to be in battle
@@ -984,31 +1017,52 @@ async function initiateAttackOnStructure(db, worldId, monsterGroup, structure, l
   // Create battle ID and prepare battle data
   const battleId = `battle_${now}_${Math.floor(Math.random() * 1000)}`;
   
-  // Create battle object without power calculations
+  // Extract participants info
+  const side1Participants = [{
+    groupId: monsterGroup.id,
+    groupName: monsterGroup.name || `Monster Group`,
+    dominantType: monsterGroup.monsterType || 'monster'
+  }];
+
+  // Create enhanced battle object
   const battleData = {
     id: battleId,
     locationX: x,
     locationY: y,
     targetTypes: ['structure'],
     structureId: structure.id,
+    structurePower: structure.defensePower || 20, // Default structure defense power
     side1: {
       groups: {
-        [monsterGroup.id]: true
+        [monsterGroup.id]: {
+          present: true,
+          type: 'monster',
+          monsterType: monsterGroup.monsterType || 'unknown'
+        }
       },
-      casualties: 0
+      casualties: 0,
+      name: monsterGroup.name || 'Monster Attack Force',
+      participants: side1Participants
     },
     side2: {
       groups: {},
-      casualties: 0
+      casualties: 0,
+      name: structure.name || 'Structure Defenses',
+      structureInfo: {
+        id: structure.id,
+        name: structure.name || 'Structure',
+        type: structure.type || 'unknown',
+        owner: structure.owner || 'unknown',
+        defensePower: structure.defensePower || 20
+      }
     },
-    tickCount: 0
+    tickCount: 0,
+    createdAt: now
   };
   
-  // Get chunk key for current location
+  // Add battle to the tile
   const chunkKey = monsterGroup.chunkKey;
   const tileKey = `${x},${y}`;
-  
-  // Add battle to the tile
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`] = battleData;
   
   // Update monster group to be in battle
