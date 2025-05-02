@@ -590,6 +590,7 @@
                 <div class="form-content">
                     <!-- Unit selection -->
                     <div class="form-group">
+                        <label for="unit-select">Unit Type</label>
                         <div class="unit-select-container">
                             {#each availableUnits as unit}
                                 {@const IconComponent = getUnitIcon(unit)}
@@ -708,9 +709,8 @@
                                 <h6>Cost per unit:</h6>
                                 <div class="cost-items">
                                     {#each Object.entries(selectedUnit.cost) as [resource, amount]}
-                                        {@const playerResource = getPlayerResources()[resource] || 0}
-                                        <div class="cost-item {playerResource >= amount ? 'sufficient' : 'insufficient'}">
-                                            {formatResource(resource)}: <span class="resource-value">{playerResource}/{amount}</span>
+                                        <div class="cost-item">
+                                            {formatResource(resource)}: {amount}
                                         </div>
                                     {/each}
                                 </div>
@@ -755,15 +755,19 @@
                                     <div class="total-items">
                                         {#each Object.entries(calculateTotalCost()) as [resource, amount]}
                                             {@const playerResource = getPlayerResources()[resource] || 0}
-                                            <div
-                                                class="total-item {playerResource >= amount ? 'sufficient' : 'insufficient'}"
-                                                title={`You have ${playerResource} ${formatResource(resource)}`}
-                                            >
-                                                {formatResource(resource)}: <span class="resource-value">{playerResource}/{amount}</span>
+                                            <div class="total-item {playerResource >= amount ? 'sufficient' : 'insufficient'}"
+                                                 title={`You have ${playerResource} ${formatResource(resource)}`}>
+                                                <span class="resource-name">{formatResource(resource)}:</span>
+                                                <span class="resource-amount">
+                                                    <span class="current">{playerResource}</span>
+                                                    <span class="separator">/</span>
+                                                    <span class="needed">{amount}</span>
+                                                </span>
                                             </div>
                                         {/each}
                                     </div>
                                 </div>
+                                
                                 <div class="total-section">
                                     <h6>Time Required:</h6>
                                     <div class="time-info">
@@ -1007,10 +1011,10 @@
     }
 
     .unit-select-container {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        display: flex;
+        flex-wrap: wrap;
         gap: 0.5rem;
-        max-height: 15rem;
+        max-height: 16rem;
         overflow-y: auto;
         padding: 0.5rem;
         background-color: rgba(255, 255, 255, 0.5);
@@ -1028,8 +1032,8 @@
         border: 1px solid rgba(0, 0, 0, 0.1);
         cursor: pointer;
         transition: all 0.2s;
+        width: calc(50% - 0.25rem);
         text-align: left;
-        height: 100%;
     }
 
     .unit-option:hover {
@@ -1124,163 +1128,50 @@
 
     .cost-item,
     .total-item {
-        font-size: 0.85rem;
-        padding: 0.2rem 0.5rem;
-        background-color: rgba(0, 0, 0, 0.05);
-        border-radius: 0.2rem;
-        color: rgba(0, 0, 0, 0.8);
         display: flex;
         justify-content: space-between;
-        min-width: 8rem;
-    }
-    
-    .resource-value {
-        font-weight: 500;
-    }
-
-    .cost-item.sufficient,
-    .total-item.sufficient {
-        background-color: rgba(76, 175, 80, 0.1);
-        color: rgb(27, 94, 32);
-        border: 1px solid rgba(76, 175, 80, 0.2);
-    }
-
-    .cost-item.insufficient,
-    .total-item.insufficient {
-        background-color: rgba(255, 59, 48, 0.1);
-        color: rgb(198, 40, 40);
-        border: 1px solid rgba(255, 59, 48, 0.2);
-    }
-
-    .player-has {
-        font-size: 0.75rem;
-        color: rgba(0, 0, 0, 0.6); /* Increased from 0.5 for better contrast */
-        margin-left: 0.2rem;
-    }
-
-    .quantity-control {
-        display: flex;
-        align-items: center;
-        width: fit-content;
-    }
-
-    .quantity-button {
-        width: 2rem;
-        height: 2rem;
-        background-color: rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        border-radius: 0.3rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: rgba(0, 0, 0, 0.7);
-    }
-
-    .quantity-button:hover:not(:disabled) {
-        background-color: rgba(0, 0, 0, 0.1);
-    }
-
-    input[type="number"] {
-        width: 3rem;
-        height: 2rem;
-        text-align: center;
-        font-size: 1rem;
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        border-radius: 0;
-        margin: 0 0.5rem;
-    }
-
-    input[type="number"]::-webkit-inner-spin-button,
-    input[type="number"]::-webkit-outer-spin-button {
-        opacity: 0;
-    }
-
-    .totals {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        padding: 1rem;
-        background-color: rgba(0, 0, 0, 0.03);
-        border-radius: 0.3rem;
-    }
-
-    .time-info {
         font-size: 0.85rem;
-        color: rgba(0, 0, 0, 0.8); /* Added explicit color with good contrast */
+        padding: 0.3rem 0.6rem;
+        background-color: rgba(0, 0, 0, 0.05);
+        border-radius: 0.2rem;
+        width: calc(50% - 0.25rem);
     }
 
-    .completion-estimate {
-        margin-top: 0.5rem;
-        font-weight: 500;
-        color: rgba(0, 0, 0, 0.9); /* Added explicit color with strong contrast */
-    }
-
-    .error-message {
-        padding: 0.8rem;
-        background-color: rgba(255, 59, 48, 0.1);
-        border: 1px solid rgba(255, 59, 48, 0.2);
-        border-radius: 0.3rem;
-        color: rgb(168, 36, 28);
-        font-size: 0.9rem;
-    }
-
-    .success-message {
-        padding: 0.8rem;
+    .total-item.sufficient {
         background-color: rgba(52, 199, 89, 0.1);
         border: 1px solid rgba(52, 199, 89, 0.2);
-        border-radius: 0.3rem;
         color: rgb(20, 128, 56);
-        font-size: 0.9rem;
     }
 
-    .form-actions {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 1rem;
+    .total-item.insufficient {
+        background-color: rgba(255, 59, 48, 0.1);
+        border: 1px solid rgba(255, 59, 48, 0.2);
+        color: rgb(168, 36, 28);
     }
 
-    .recruit-button {
-        padding: 0.7rem 1.2rem;
-        background-color: rgba(0, 122, 255, 0.8);
-        color: white;
-        border: none;
-        border-radius: 0.3rem;
+    .resource-name {
         font-weight: 500;
-        cursor: pointer;
-        transition: background-color 0.2s;
     }
 
-    .recruit-button:hover:not(:disabled) {
-        background-color: rgba(0, 122, 255, 0.9);
+    .resource-amount {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.15rem;
+        font-weight: 500;
     }
 
-    .recruit-button:disabled {
-        background-color: rgba(0, 0, 0, 0.2);
-        cursor: not-allowed;
+    .separator {
+        opacity: 0.7;
+        margin: 0 0.1rem;
     }
 
-    @media (max-width: 768px) {
-        .unit-option {
+    /* Remove the old player-has style that is no longer needed */
+    /* .player-has { ... } */
+
+    /* Make sure we're responsive on small screens */
+    @media (max-width: 500px) {
+        .unit-option, .total-item {
             width: 100%;
-        }
-
-        .unit-select-container {
-            grid-template-columns: 1fr;
-        }
-        
-        .cost-items {
-            display: grid;
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (min-width: 769px) {
-        .cost-items {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
         }
     }
 
