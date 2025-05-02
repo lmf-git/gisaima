@@ -4,6 +4,8 @@
       "worlds": {
         "ancient-lands": {
           "achievements": {
+            "first_attack": true,
+            "first_attack_date": 1746172729282,
             "first_steps": true,
             "first_steps_date": 1746171188503,
             "mobilised": true
@@ -25,12 +27,81 @@
   },
   "worlds": {
     "ancient-lands": {
+      "chat": {
+        "battle_start_1746172729282_battle_1746172729282_432": {
+          "location": {
+            "x": -16,
+            "y": -5
+          },
+          "text": "Battle has begun at (-16, -5)! may2's Force is attacking Goblin Raiders!",
+          "timestamp": 1746172729282,
+          "type": "event"
+        }
+      },
       "chunks": {
         "-1,-1": {
           "-16,-5": {
+            "battles": {
+              "battle_1746172729282_432": {
+                "createdAt": 1746172729282,
+                "id": "battle_1746172729282_432",
+                "locationX": -16,
+                "locationY": -5,
+                "side1": {
+                  "casualties": 0,
+                  "groups": {
+                    "-OPEuOklD3-dXCINHxwL": {
+                      "race": "human",
+                      "type": "player",
+                      "units": {
+                        "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
+                          "displayName": "may2",
+                          "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+                          "race": "human",
+                          "type": "player"
+                        }
+                      }
+                    }
+                  },
+                  "name": "may2's Force"
+                },
+                "side2": {
+                  "casualties": 0,
+                  "groups": {
+                    "monster_1746170346285_9404": {
+                      "race": "unknown",
+                      "type": "monster",
+                      "units": {
+                        "monster_unit_1746170346285_3502_0": {
+                          "id": "monster_unit_1746170346285_3502_0",
+                          "type": "goblin"
+                        },
+                        "monster_unit_1746170346285_7976_1": {
+                          "id": "monster_unit_1746170346285_7976_1",
+                          "type": "goblin"
+                        },
+                        "monster_unit_1746170346285_9884_2": {
+                          "id": "monster_unit_1746170346285_9884_2",
+                          "type": "goblin"
+                        }
+                      }
+                    }
+                  },
+                  "name": "Goblin Raiders"
+                },
+                "targetTypes": [
+                  "group"
+                ],
+                "tickCount": 0
+              }
+            },
             "groups": {
               "-OPEuOklD3-dXCINHxwL": {
+                "battleId": "battle_1746172729282_432",
+                "battleRole": "attacker",
+                "battleSide": 1,
                 "id": "-OPEuOklD3-dXCINHxwL",
+                "inBattle": true,
                 "lastMessage": {
                   "text": "Moving to next location (-16,-5)",
                   "timestamp": 1746172680561
@@ -38,7 +109,7 @@
                 "name": "may2's Force",
                 "owner": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
                 "race": "human",
-                "status": "idle",
+                "status": "fighting",
                 "targetX": -16,
                 "targetY": -5,
                 "units": {
@@ -53,8 +124,12 @@
                 "y": -5
               },
               "monster_1746170346285_9404": {
+                "battleId": "battle_1746172729282_432",
+                "battleRole": "defender",
+                "battleSide": 2,
                 "gatheringTicksRemaining": 1,
                 "id": "monster_1746170346285_9404",
+                "inBattle": true,
                 "items": [
                   {
                     "id": "STONE_PIECES",
@@ -99,7 +174,7 @@
                 },
                 "monsterType": "goblin",
                 "name": "Goblin Raiders",
-                "status": "idle",
+                "status": "fighting",
                 "targetX": -16,
                 "targetY": -3,
                 "type": "monster",
