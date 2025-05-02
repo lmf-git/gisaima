@@ -102,7 +102,7 @@ export const entities = writable({
   groups: {},
   players: {},
   items: {},
-  battles: {}  // Add battles to the entities store
+  battles: {}
 });
 
 export const ready = derived(map, $map => $map.ready);
@@ -259,99 +259,30 @@ function processChunkData(data = {}, chunkKey) {
       updates.players[fullTileKey] = [];
     }
 
-    // Process unit groups and extract battle information
+    // Process unit groups 
     if (tileData.groups) {
       // Process groups
       updates.groups[fullTileKey] = Object.entries(tileData.groups)
         .map(([id, data]) => ({ ...data, id, x, y }));
       validGroupKeys.add(fullTileKey);
       entitiesChanged = true;
-
-      // Extract battle information from groups
-      const battlingGroups = Object.values(tileData.groups).filter(g => g.inBattle && g.battleId);
-
-      if (battlingGroups.length > 0) {
-        const battlesMap = new Map();
-
-        battlingGroups.forEach(group => {
-          if (!battlesMap.has(group.battleId)) {
-            battlesMap.set(group.battleId, {
-              id: group.battleId,
-              x, y,
-              sides: {
-                1: { groups: [], power: 0 },
-                2: { groups: [], power: 0 }
-              }
-            });
-          }
-
-          // Add group to appropriate side
-          const side = group.battleSide || 1;
-          const battleInfo = battlesMap.get(group.battleId);
-
-          battleInfo.sides[side].groups.push(group.id);
-          battleInfo.sides[side].power += (group.units?.length || 1);
-        });
-
-        // Enhanced battle processing
-        const battlesArray = Array.from(battlesMap.values()).map(battle => {
-          return {
-            ...battle,
-            id: battle.id || `battle_${chunkKey}_${tileKey}`,
-            x: parseInt(x),
-            y: parseInt(y),
-            distance: Math.sqrt(Math.pow(x - get(map).target.x, 2) + Math.pow(y - get(map).target.y, 2)),
-            sides: battle.sides || {},
-            participants: battle.participants || [],
-            power: battle.power || { 1: 0, 2: 0 },
-            winner: battle.winner,
-            rewards: battle.rewards
-          };
-        });
-        updates.battles[fullTileKey] = battlesArray;
-        validBattleKeys.add(fullTileKey);
-        entitiesChanged = true;
-      } else {
-        updates.battles[fullTileKey] = [];
-      }
     } else {
       // Explicitly mark as empty if no groups
       updates.groups[fullTileKey] = [];
-      updates.battles[fullTileKey] = [];
     }
 
-    // Process direct battle references (from database)
+    // Process battles directly from tileData.battles
     if (tileData.battles) {
-      const directBattles = Object.entries(tileData.battles).map(([battleId, battleData]) => ({
+      updates.battles[fullTileKey] = Object.entries(tileData.battles).map(([battleId, battleData]) => ({
         ...battleData,
         id: battleId,
         x, y,
-        // Ensure we have sides structure even for direct battle references
-        sides: battleData.sides || {
-          1: { groups: [], power: battleData.side1Power || 0 },
-          2: { groups: [], power: battleData.side2Power || 0 }
-        }
+        distance: Math.sqrt(Math.pow(x - get(map).target.x, 2) + Math.pow(y - get(map).target.y, 2))
       }));
-
-      // If we already extracted battles from groups, merge them 
-      if (updates.battles[fullTileKey]?.length > 0) {
-        // Map to track battles we've already processed
-        const existingBattleIds = new Set(
-          updates.battles[fullTileKey].map(battle => battle.id)
-        );
-
-        // Add only battles we haven't seen yet
-        directBattles.forEach(battle => {
-          if (!existingBattleIds.has(battle.id)) {
-            updates.battles[fullTileKey].push(battle);
-          }
-        });
-      } else {
-        updates.battles[fullTileKey] = directBattles;
-      }
-
       validBattleKeys.add(fullTileKey);
       entitiesChanged = true;
+    } else {
+      updates.battles[fullTileKey] = [];
     }
 
     // Process items (multiple per tile)
