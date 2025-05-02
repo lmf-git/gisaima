@@ -4,9 +4,7 @@ import {
   calculatePowerRatios, 
   calculateAttrition, 
   selectUnitsForCasualties,
-  determineWinner
 } from "gisaima-shared/war/battles.js";
-import UNITS from "gisaima-shared/definitions/UNITS.js";
 
 export async function processBattle(worldId, chunkKey, tileKey, battleId, battle, updates, tile) {
   try {
@@ -222,7 +220,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     const side1Defeated = Object.keys(side1Groups).length === 0;
     const side2Defeated = Object.keys(side2Groups).length === 0;
     
-    if (!side1Defeated || side2Defeated) {
+    // Determine the winner directly from defeat flags
+    const winner = side1Defeated && !side2Defeated ? 2 : (!side1Defeated && side2Defeated ? 1 : undefined);
+    
+    if (!side1Defeated && !side2Defeated) {
       battleUpdates.loot = battleLoot;
       
       // Apply the battle updates to the main battle object
@@ -232,9 +233,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       };
     } else {
       console.log(`Battle ${battleId} ending after ${tickCount} ticks. Power levels: Side 1: ${newSide1Power}, Side 2: ${newSide2Power}`);
-      
-      // Determine the winner
-      const winner = determineWinner(newSide1Power, newSide2Power);
       
       // Distribute loot to winner or leave on tile if no survivors
       function distributeLootToWinner(winner) {
