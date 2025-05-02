@@ -177,14 +177,6 @@ export async function processMonsterStrategies(worldId) {
     // Process all chunks - we'll use a batched update approach for efficiency
     const updates = {};
     
-    // First pass: Check for monster groups to merge (30% chance to run merge logic)
-    if (Math.random() < 0.3) {
-      logger.info(`Checking for monster groups to merge in world ${worldId}`);
-      const mergeResults = await processMergeMonsterGroups(worldId, chunks, updates);
-      results.groupsMerged = mergeResults.mergeCount;
-      logger.info(`Found and merged ${mergeResults.mergeCount} monster groups`);
-    }
-    
     // Second pass: Process individual monster strategies
     // Scan each chunk for monster groups
     for (const [chunkKey, chunkData] of Object.entries(chunks)) {
@@ -272,19 +264,6 @@ export async function processMonsterStrategies(worldId) {
     logger.error(`Error processing monster strategies for world ${worldId}:`, error);
     return { error: error.message };
   }
-}
-
-/**
- * Process monster group merges
- * @param {string} worldId World ID to process
- * @param {Object} chunks Chunks data
- * @param {Object} updates Updates object to modify
- * @returns {Promise<Object>} Results of merging
- */
-async function processMergeMonsterGroups(worldId, chunks, updates) {
-  // Remove this function and rely on the dedicated merging in monsterSpawnTick.mjs
-  console.log("Monster group merging now handled by dedicated mergeMonsterGroups function");
-  return { mergesPerformed: 0 };
 }
 
 /**

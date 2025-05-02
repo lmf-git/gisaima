@@ -308,6 +308,11 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
  * Merge with an existing monster group
  */
 async function mergeWithExistingMonsterGroup(worldId, chunkKey, tileKey, existingGroup, updates, biome) {
+  // Don't merge with groups that are not idle
+  if (existingGroup.status !== 'idle') {
+    return;
+  }
+
   const now = Date.now();
   const monsterType = existingGroup.monsterType;
   
@@ -533,16 +538,16 @@ function mergeGroups(worldId, chunkKey, tileKey, groups, updates, now) {
   baseGroup = groups[0];
   mergedGroups = groups.slice(1);
   
+  // Calculate total units from all groups being merged
+  let totalUnits = groups.reduce((total, group) => total + countUnits(group), 0);
   
-  // Calculate total units and map monster composition
-  let totalUnits = 0;
-  
+  // Add a bonus 10-30% more units
   const bonusUnits = Math.floor(totalUnits * (0.1 + Math.random() * 0.2));
   totalUnits += bonusUnits;
   
   // Cap at merge limit for the monster type
   const monsterType = baseGroup.monsterType;
-  const monsterData = Units.getUnit(monsterType);
+  const monsterData = Units.getUnit(monsterType, 'monster');
   if (monsterData && monsterData.mergeLimit) {
     totalUnits = Math.min(totalUnits, monsterData.mergeLimit);
   } else {
@@ -565,18 +570,26 @@ function mergeGroups(worldId, chunkKey, tileKey, groups, updates, now) {
   for (const group of groups) {
     if (!group.units) continue;
     
+    if (Array.isArray(group.units)) {
+      // If units are in array format, convert to object format
+      group.units.forEach((unit, index) => {
+        const unitId = unit.id || `unit_${now}_${index}_${Math.random().toString(36).substr(2, 5)}`;
+        mergedUnits[unitId] = { ...unit, id: unitId };
+      });
+    } else {
       // Merge object format units
       Object.entries(group.units).forEach(([id, unit]) => {
         mergedUnits[id] = unit;
       });
+    }
   }
   
   // If we need more units to meet the target, generate them
   const currentUnitCount = Object.keys(mergedUnits).length;
   if (currentUnitCount < totalUnits) {
     const neededUnits = totalUnits - currentUnitCount;
-    // For mixed groups, use dominant type
-    const dominantType = Object.entries(group.units)[0].type;
+    // For mixed groups, use the base group's monster type
+    const dominantType = baseGroup.monsterType;
     const newUnits = generateMonsterUnits(dominantType, neededUnits);
     Object.assign(mergedUnits, newUnits);
   }
@@ -586,7 +599,11 @@ function mergeGroups(worldId, chunkKey, tileKey, groups, updates, now) {
   const [x, y] = tileKey.split(',').map(Number);
   
   // Regular merge to base group
-  groupName = Units.getUnitGroupName(monsterType, totalUnits);
+  groupName = monsterData ? monsterData.name : "Monster Group";
+  if (totalUnits > 1) {
+    groupName = Units.getUnitGroupName(monsterType, 'monster', totalUnits) || `${groupName} (${totalUnits})`;
+  }
+  
   groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}`;
   
   // Update the base group
@@ -596,8 +613,8 @@ function mergeGroups(worldId, chunkKey, tileKey, groups, updates, now) {
   updates[`${groupPath}/x`] = x;
   updates[`${groupPath}/y`] = y;
   updates[`${groupPath}/status`] = 'idle';
-  updates[`${groupPath}/type`] = 'monster';
-  updates[`${groupPath}/monsterType`] = monsterType;
+  updates[`${groupPath}/type`] = 'monster'; // Ensure type is set
+  updates[`${groupPath}/monsterType`] = monsterType; // Ensure monsterType is set
   updates[`${groupPath}/originalMonsterType`] = monsterType;
   
   // Delete other groups
