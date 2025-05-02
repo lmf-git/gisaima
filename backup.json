@@ -230,44 +230,16 @@
                 "locationY": 5,
                 "side1": {
                   "casualties": 0,
-                  "groups": {
-                    "-OPFV1Y5A-BtnXnBMCRz": {
-                      "race": "human",
-                      "type": "player",
-                      "units": {
-                        "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
-                          "displayName": "two",
-                          "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-                          "race": "human",
-                          "type": "player"
-                        }
-                      }
-                    }
-                  },
-                  "name": "two's Force"
+                  "power": 2
                 },
                 "side2": {
                   "casualties": 0,
-                  "groups": {
-                    "-OPFV2dmJfLf87t9unca": {
-                      "race": "human",
-                      "type": "player",
-                      "units": {
-                        "qi3VZSiTsXYrHWpc2axAsPBnBor2": {
-                          "displayName": "one",
-                          "id": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
-                          "race": "human",
-                          "type": "player"
-                        }
-                      }
-                    }
-                  },
-                  "name": "one's Force"
+                  "power": 2
                 },
                 "targetTypes": [
                   "group"
                 ],
-                "tickCount": 0
+                "tickCount": 1
               }
             },
             "groups": {
@@ -362,7 +334,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746181081133,
+        "lastTick": 1746181140591,
         "name": "Ancient Lands",
         "playerCount": 51,
         "seed": 13579,

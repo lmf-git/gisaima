@@ -117,6 +117,25 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
             path: groupPath
           });
           
+          // Remove the group from battle side1.groups
+          if (!battleUpdates.side1) battleUpdates.side1 = { groups: {} };
+          else if (!battleUpdates.side1.groups) battleUpdates.side1.groups = {};
+          battleUpdates.side1.groups[groupId] = null;
+          
+          // Actually delete the group from the database
+          updates[groupPath] = null;
+          
+          // Handle players in this group specifically - mark them as no longer in the group
+          // This ensures players are properly handled even if their group is destroyed
+          for (const unitId in units) {
+            if (units[unitId].type === 'player') {
+              const playerId = units[unitId].id;
+              if (playerId) {
+                updates[`players/${playerId}/worlds/${worldId}/inGroup`] = null;
+              }
+            }
+          }
+          
           // Collect items from this group to be looted by side 2
           if (group.items) {
             // Handle both array and object formats
@@ -188,6 +207,25 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
             path: groupPath
           });
           
+          // Remove the group from battle side2.groups
+          if (!battleUpdates.side2) battleUpdates.side2 = { groups: {} };
+          else if (!battleUpdates.side2.groups) battleUpdates.side2.groups = {};
+          battleUpdates.side2.groups[groupId] = null;
+          
+          // Actually delete the group from the database
+          updates[groupPath] = null;
+          
+          // Handle players in this group specifically - mark them as no longer in the group
+          // This ensures players are properly handled even if their group is destroyed
+          for (const unitId in units) {
+            if (units[unitId].type === 'player') {
+              const playerId = units[unitId].id;
+              if (playerId) {
+                updates[`players/${playerId}/worlds/${worldId}/inGroup`] = null;
+              }
+            }
+          }
+          
           // Collect items from this group to be looted by side 1
           if (group.items) {
             // Handle both array and object formats
@@ -219,6 +257,34 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           newSide2Power += newGroupPower;
         }
       }
+    }
+    
+    // Handle player deaths
+    for (const player of playersKilled) {
+      const now = Date.now();
+      
+      // Mark player as dead in their main record
+      updates[`players/${player.playerId}/worlds/${worldId}/alive`] = false;
+      updates[`players/${player.playerId}/worlds/${worldId}/lastDeathTime`] = now;
+      updates[`players/${player.playerId}/worlds/${worldId}/inGroup`] = null;
+      
+      // Add a message notifying the player of their death
+      updates[`players/${player.playerId}/worlds/${worldId}/lastMessage`] = {
+        text: "You were defeated in battle.",
+        timestamp: now
+      };
+      
+      // Add a chat message about player death
+      const chatId = `player_death_${now}_${player.playerId}`;
+      updates[`worlds/${worldId}/chat/${chatId}`] = {
+        text: `${player.displayName} has fallen in battle at (${battle.locationX}, ${battle.locationY})!`,
+        type: 'event',
+        timestamp: now,
+        location: {
+          x: battle.locationX,
+          y: battle.locationY
+        }
+      };
     }
     
     // Distribute looted items to the winning side's surviving groups
@@ -280,61 +346,11 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       };
     }
     
-    // Handle player deaths
-    for (const player of playersKilled) {
-      const now = Date.now();
-      
-      // Mark player as dead in their main record
-      updates[`players/${player.playerId}/worlds/${worldId}/alive`] = false;
-      updates[`players/${player.playerId}/worlds/${worldId}/lastDeathTime`] = now;
-      
-      // Add a message notifying the player of their death
-      updates[`players/${player.playerId}/worlds/${worldId}/lastMessage`] = {
-        text: "You were defeated in battle.",
-        timestamp: now
-      };
-      
-      // Add a chat message about player death
-      const chatId = `player_death_${now}_${player.playerId}`;
-      updates[`worlds/${worldId}/chat/${chatId}`] = {
-        text: `${player.displayName} has fallen in battle at (${battle.locationX}, ${battle.locationY})!`,
-        type: 'event',
-        timestamp: now,
-        location: {
-          x: battle.locationX,
-          y: battle.locationY
-        }
-      };
-    }
-    
-    // Apply group deletions at the end
-    for (const groupToDelete of groupsToDelete) {
-      // Set deletion in updates
-      updates[groupToDelete.path] = null;
-      
-      // Update battle groups tracking
-      if (groupToDelete.side === 1) {
-        // Make sure side1.groups exists in battleUpdates
-        if (!battleUpdates.side1) battleUpdates.side1 = { groups: {} };
-        else if (!battleUpdates.side1.groups) battleUpdates.side1.groups = {};
-        
-        battleUpdates.side1.groups[groupToDelete.groupId] = null;
-      } else {
-        // Make sure side2.groups exists in battleUpdates
-        if (!battleUpdates.side2) battleUpdates.side2 = { groups: {} };
-        else if (!battleUpdates.side2.groups) battleUpdates.side2.groups = {};
-        
-        battleUpdates.side2.groups[groupToDelete.groupId] = null;
-      }
-    }
-    
     // Update power values and casualties for both sides
     if (!battleUpdates.side1) battleUpdates.side1 = {};
     if (!battleUpdates.side2) battleUpdates.side2 = {};
     
-    battleUpdates.side1.power = newSide1Power;
     battleUpdates.side1.casualties = side1Casualties;
-    battleUpdates.side2.power = newSide2Power;
     battleUpdates.side2.casualties = side2Casualties;
     
     // Apply the battle updates to the main battle object
@@ -346,7 +362,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // Check if battle should end - based only on power
     // A battle ends when one side has no power left
     if (newSide1Power <= 0 || newSide2Power <= 0) {
-      console.log('battle sohuld end', newSide1Power <= 0, newSide2Power <= 0);
+      console.log('battle should end', newSide1Power <= 0, newSide2Power <= 0);
       logger.debug(battle);
 
       // Use the new function to determine the winner
@@ -395,7 +411,7 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
   };
   
   if (tile && tile.groups) {
-    // Update side 1 groups
+    // Update side 1 groups - set to idle only if they're on the winning side
     const side1Groups = battle.side1.groups || {};
     for (const groupId in side1Groups) {
       const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
@@ -410,11 +426,17 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
         updates[`${groupPath}/inBattle`] = false;
         updates[`${groupPath}/battleId`] = null;
         updates[`${groupPath}/battleSide`] = null;
-        updates[`${groupPath}/status`] = 'idle';
+        
+        // If this side won, set status to idle, otherwise fleeing
+        if (winner === 1) {
+          updates[`${groupPath}/status`] = 'idle';
+        } else {
+          updates[`${groupPath}/status`] = 'idle';  // Could set to 'fleeing' in future if you implement retreat mechanic
+        }
       }
     }
     
-    // Update side 2 groups
+    // Update side 2 groups - set to idle only if they're on the winning side
     const side2Groups = battle.side2.groups || {};
     for (const groupId in side2Groups) {
       const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
@@ -429,7 +451,13 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
         updates[`${groupPath}/inBattle`] = false;
         updates[`${groupPath}/battleId`] = null;
         updates[`${groupPath}/battleSide`] = null;
-        updates[`${groupPath}/status`] = 'idle';
+        
+        // If this side won, set status to idle, otherwise fleeing
+        if (winner === 2) {
+          updates[`${groupPath}/status`] = 'idle';
+        } else {
+          updates[`${groupPath}/status`] = 'idle';  // Could set to 'fleeing' in future if you implement retreat mechanic
+        }
       }
     }
   }
