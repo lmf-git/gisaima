@@ -1,5 +1,6 @@
 import { getDatabase } from 'firebase-admin/database';
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { BUILDINGS } from 'gisaima-shared/definitions/BUILDINGS.js';
 
 /**
  * Start a structure upgrade
@@ -271,8 +272,8 @@ export const startBuildingUpgrade = onCall({ maxInstances: 10 }, async (request)
     
     const player = playerSnapshot.val();
     
-    // Calculate required resources based on building type and current level
-    const requiredResources = calculateBuildingUpgradeResources(building.type, currentLevel);
+    // Calculate required resources based on building type and current level using BUILDINGS utility
+    const requiredResources = BUILDINGS.getUpgradeRequirements(building.type, currentLevel);
     
     // Check if required resources are available in the structure's shared storage
     const structureItemsRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/items`);
@@ -290,25 +291,8 @@ export const startBuildingUpgrade = onCall({ maxInstances: 10 }, async (request)
       }
     }
     
-    // Calculate upgrade time based on level and building type
-    const baseUpgradeTime = 60; // 60 seconds base time
-    const levelMultiplier = 1 + (currentLevel * 0.5); // Each level adds 50% more time
-    
-    // Different building types have different upgrade times
-    const buildingTypeMultipliers = {
-      smithy: 1.2,
-      barracks: 1.5,
-      mine: 1.3,
-      wall: 0.8,
-      academy: 1.4,
-      market: 1.0,
-      farm: 0.9
-    };
-    
-    const typeMultiplier = buildingTypeMultipliers[building.type] || 1;
-    
-    // Calculate final upgrade time in seconds
-    const upgradeTime = Math.ceil(baseUpgradeTime * levelMultiplier * typeMultiplier);
+    // Calculate upgrade time based on level and building type using BUILDINGS utility
+    const upgradeTime = BUILDINGS.calculateUpgradeTime(building.type, currentLevel);
     const upgradeTimeMs = upgradeTime * 1000; // Convert to ms
     
     // Generate a unique upgrade ID
@@ -322,7 +306,7 @@ export const startBuildingUpgrade = onCall({ maxInstances: 10 }, async (request)
       worldId,
       buildingId,
       buildingType: building.type,
-      buildingName: building.name || formatText(building.type),
+      buildingName: building.name || BUILDINGS.getBuildingName(building.type),
       structureId: structure.id,
       chunkKey,
       tileKey,
@@ -399,67 +383,7 @@ export const startBuildingUpgrade = onCall({ maxInstances: 10 }, async (request)
  * @returns {Array<Object>} Array of required resources
  */
 function calculateBuildingUpgradeResources(buildingType, currentLevel) {
-  const resources = [];
-  const levelMultiplier = currentLevel * 1.5;
-  
-  // Base resources needed for all buildings
-  resources.push({ name: 'Wooden Sticks', quantity: Math.floor(10 * levelMultiplier) });
-  resources.push({ name: 'Stone Pieces', quantity: Math.floor(8 * levelMultiplier) });
-  
-  // Additional resources based on building type
-  switch (buildingType) {
-    case 'smithy':
-      resources.push({ name: 'Iron Ore', quantity: Math.floor(5 * levelMultiplier) });
-      if (currentLevel >= 3) {
-        resources.push({ name: 'Coal', quantity: Math.floor(3 * levelMultiplier) });
-      }
-      break;
-      
-    case 'barracks':
-      resources.push({ name: 'Iron Ore', quantity: Math.floor(3 * levelMultiplier) });
-      if (currentLevel >= 3) {
-        resources.push({ name: 'Leather', quantity: Math.floor(2 * levelMultiplier) });
-      }
-      break;
-      
-    case 'mine':
-      resources.push({ name: 'Iron Ore', quantity: Math.floor(2 * levelMultiplier) });
-      resources.push({ name: 'Stone Pieces', quantity: Math.floor(5 * levelMultiplier) }); // Extra stone for mines
-      break;
-      
-    case 'wall':
-      resources.push({ name: 'Stone Pieces', quantity: Math.floor(10 * levelMultiplier) }); // Walls need more stone
-      if (currentLevel >= 3) {
-        resources.push({ name: 'Iron Ore', quantity: Math.floor(3 * levelMultiplier) });
-      }
-      break;
-      
-    case 'academy':
-      resources.push({ name: 'Paper', quantity: Math.floor(3 * levelMultiplier) });
-      if (currentLevel >= 2) {
-        resources.push({ name: 'Crystal Shard', quantity: currentLevel - 1 });
-      }
-      break;
-      
-    case 'market':
-      resources.push({ name: 'Wooden Sticks', quantity: Math.floor(5 * levelMultiplier) }); // Extra wood for market stalls
-      resources.push({ name: 'Cloth', quantity: Math.floor(3 * levelMultiplier) });
-      break;
-      
-    case 'farm':
-      resources.push({ name: 'Seeds', quantity: Math.floor(5 * levelMultiplier) });
-      if (currentLevel >= 2) {
-        resources.push({ name: 'Water', quantity: Math.floor(2 * levelMultiplier) });
-      }
-      break;
-  }
-  
-  // Higher level buildings need special resources
-  if (currentLevel >= 4) {
-    resources.push({ name: 'Crystal Shard', quantity: 1 });
-  }
-  
-  return resources;
+  return BUILDINGS.getUpgradeRequirements(buildingType, currentLevel);
 }
 
 /**

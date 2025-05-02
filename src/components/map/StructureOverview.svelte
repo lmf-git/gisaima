@@ -1,20 +1,21 @@
 <script>
   import { slide } from "svelte/transition";
-  import { onMount, onDestroy } from "svelte";
+
   import { currentPlayer } from "../../lib/stores/game.js";
-  // Import targetStore for accessing current tile data
+
   import { targetStore } from "../../lib/stores/map.js";
   import Close from '../icons/Close.svelte';
   import Structure from '../icons/Structure.svelte';
   import Torch from '../icons/Torch.svelte';
-  // Import race icons for race-specific structures
+
   import Human from '../icons/Human.svelte';
   import Elf from '../icons/Elf.svelte';
   import Dwarf from '../icons/Dwarf.svelte';
   import Goblin from '../icons/Goblin.svelte';
   import Fairy from '../icons/Fairy.svelte';
-  import Shield from '../icons/Shield.svelte';
-  import Hammer from '../icons/Hammer.svelte'; // For upgrade icon
+
+  import Hammer from '../icons/Hammer.svelte';
+  import { BUILDINGS } from "gisaima-shared/definitions/BUILDINGS.js";
 
   // Props - using correct Svelte 5 runes syntax
   const { 
@@ -65,11 +66,6 @@
     return entity.owner === $currentPlayer.id;
   }
   
-  // Get rarity class from item rarity for consistent styling with grid
-  function getRarityClass(rarity) {
-    return rarity?.toLowerCase() || 'common';
-  }
-  
   // Reactive declarations using $derived - now using tileData instead of tile
   let hasPersonalBank = $derived(
     $currentPlayer?.id && 
@@ -101,13 +97,6 @@
     // Check if structure exists
     if (!tileData?.structure) return false;
     
-    // Check if current player owns the structure
-    // if (tileData.structure.owner !== $currentPlayer?.id) return false;
-    
-    // Check if structure type supports recruitment
-    // Typically fortresses, strongholds, barracks, etc. support recruitment
-    // const recruitmentStructures = ['fortress', 'stronghold', 'barracks', 'outpost', 'castle'];
-    // return recruitmentStructures.includes(tileData.structure.type?.toLowerCase());
     return true;
   }
 
@@ -385,8 +374,22 @@
 
   // Function to check if there are enough resources for building upgrade
   function checkBuildingUpgradeResources(building) {
-    // This is a simplified version - in production, you'd check actual resources
-    // For demo purposes, always return true
+    const currentLevel = building.level || 1;
+    const resources = BUILDINGS.getUpgradeRequirements(building.type, currentLevel);
+    
+    // Check if structure has all the required resources
+    const structureItems = tileData?.structure?.items || [];
+    
+    // Check if all requirements are met
+    for (const req of resources) {
+      const availableItem = structureItems.find(item => item.name === req.name);
+      const availableQuantity = availableItem ? availableItem.quantity : 0;
+      
+      if (availableQuantity < req.quantity) {
+        return false;
+      }
+    }
+    
     return true;
   }
 
@@ -438,15 +441,11 @@
     const existingTypes = Object.values(existingBuildings).map(b => b.type);
     
     // All possible building types
-    const allBuildingTypes = [
-      { type: 'smithy', name: 'Smithy', description: 'A place to craft weapons, tools and metal armor. Higher levels enable advanced smithing recipes.' },
-      { type: 'barracks', name: 'Barracks', description: 'Train and house troops here. Higher levels allow training more advanced units.' },
-      { type: 'mine', name: 'Mine', description: 'Extract minerals and resources. Higher levels yield better resources and improved mining efficiency.' },
-      { type: 'wall', name: 'Defensive Wall', description: 'Defensive structure that improves settlement security. Higher levels increase defensive capabilities.' },
-      { type: 'academy', name: 'Academy', description: 'Research new technologies and spells. Higher levels unlock advanced research options.' },
-      { type: 'market', name: 'Market', description: 'Trade goods with others. Higher levels improve trade rates and available items.' },
-      { type: 'farm', name: 'Farm', description: 'Produce food and plant resources. Higher levels increase crop yields and enable rare plants.' }
-    ];
+    const allBuildingTypes = Object.keys(BUILDINGS.types).map(type => ({
+      type,
+      name: BUILDINGS.types[type].name,
+      description: BUILDINGS.types[type].description
+    }));
     
     // Filter out already built types (only allow one of each type for simplicity)
     const filteredByType = allBuildingTypes.filter(b => !existingTypes.includes(b.type));
@@ -501,57 +500,13 @@
 
   // Get resource requirements for a new building
   function getBuildingRequirements(buildingType) {
-    const requirements = [];
-    
-    switch (buildingType) {
-      case 'smithy':
-        requirements.push({ name: 'Wooden Sticks', quantity: 10 });
-        requirements.push({ name: 'Stone Pieces', quantity: 15 });
-        requirements.push({ name: 'Iron Ore', quantity: 5 });
-        break;
-      case 'barracks':
-        requirements.push({ name: 'Wooden Sticks', quantity: 15 });
-        requirements.push({ name: 'Stone Pieces', quantity: 10 });
-        break;
-      case 'mine':
-        requirements.push({ name: 'Wooden Sticks', quantity: 8 });
-        requirements.push({ name: 'Stone Pieces', quantity: 20 });
-        break;
-      case 'wall':
-        requirements.push({ name: 'Stone Pieces', quantity: 25 });
-        break;
-      case 'academy':
-        requirements.push({ name: 'Wooden Sticks', quantity: 12 });
-        requirements.push({ name: 'Stone Pieces', quantity: 8 });
-        break;
-      case 'market':
-        requirements.push({ name: 'Wooden Sticks', quantity: 15 });
-        requirements.push({ name: 'Stone Pieces', quantity: 5 });
-        break;
-      case 'farm':
-        requirements.push({ name: 'Wooden Sticks', quantity: 10 });
-        requirements.push({ name: 'Seeds', quantity: 5 });
-        break;
-      default:
-        requirements.push({ name: 'Wooden Sticks', quantity: 10 });
-        requirements.push({ name: 'Stone Pieces', quantity: 10 });
-    }
-    
-    return requirements;
+    const buildingDef = BUILDINGS.types[buildingType];
+    return buildingDef ? buildingDef.baseRequirements : [];
   }
 
   // Get building icon based on type
   function getBuildingIcon(type) {
-    switch (type) {
-      case 'smithy': return '⚒️';
-      case 'barracks': return '🛡️';
-      case 'mine': return '⛏️';
-      case 'wall': return '🧱';
-      case 'academy': return '📚';
-      case 'market': return '💰';
-      case 'farm': return '🌾';
-      default: return '🏠';
-    }
+    return BUILDINGS.getBuildingIcon(type);
   }
 
   // Get combined list of existing buildings and available building types
@@ -591,24 +546,7 @@
 
   // Get building description if not already provided
   function getBuildingDescription(buildingType) {
-    switch (buildingType) {
-      case 'smithy':
-        return 'A place to craft weapons, tools and metal armor. Higher levels enable advanced smithing recipes.';
-      case 'barracks':
-        return 'Train and house troops here. Higher levels allow training more advanced units.';
-      case 'mine':
-        return 'Extract minerals and resources. Higher levels yield better resources and improved mining efficiency.';
-      case 'wall':
-        return 'Defensive structure that improves settlement security. Higher levels increase defensive capabilities.';
-      case 'academy':
-        return 'Research new technologies and spells. Higher levels unlock advanced research options.';
-      case 'market':
-        return 'Trade goods with others. Higher levels improve trade rates and available items.';
-      case 'farm':
-        return 'Produce food and plant resources. Higher levels increase crop yields and enable rare plants.';
-      default:
-        return 'A building within your structure.';
-    }
+    return BUILDINGS.getBuildingDescription(buildingType);
   }
 
   // Function to build a new building
@@ -620,8 +558,6 @@
   $effect(() => {
     collapsedSections.buildings = false;
   });
-
-  // ...existing code...
 </script>
 
 <svelte:window on:keydown={handleKeyDown} />
@@ -1003,7 +939,7 @@
                 </div>
               {:else}
                 {#each displayItems as item}
-                  <div class="entity item {getRarityClass(item.rarity)}">
+                  <div class="entity item {item?.rarity || 'common'}">
                     <div class="item-info">
                       <div class="item-name">
                         {item.name || formatText(item.type) || "Unknown Item"}

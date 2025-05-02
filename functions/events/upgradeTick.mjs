@@ -1,4 +1,5 @@
 import { getDatabase } from 'firebase-admin/database';
+import { BUILDINGS } from 'gisaima-shared/definitions/BUILDINGS.js';
 
 /**
  * Process pending structure upgrades
@@ -254,8 +255,8 @@ async function applyBuildingUpgrade(worldId, upgrade) {
     // Add new benefits based on level and building type
     updatedBuilding.benefits = updatedBuilding.benefits || [];
     
-    // Add new level-specific benefits
-    const newBenefits = getNewBenefitsForBuilding(building.type, toLevel);
+    // Add new level-specific benefits using centralized BUILDINGS definitions
+    const newBenefits = BUILDINGS.getNewBenefitsForLevel(building.type, toLevel);
     if (newBenefits && newBenefits.length) {
       updatedBuilding.benefits = [...updatedBuilding.benefits.filter(b => 
         !newBenefits.some(nb => nb.name === b.name)), // Remove any existing benefits with same name
@@ -320,7 +321,7 @@ async function applyBuildingUpgrade(worldId, upgrade) {
     
     // Update the building to remove upgrade in progress
     try {
-      const buildingRef = db.ref(`worlds/${worldId}/chunks/${upgrade.chunkKey}/${upgrade.tileKey}/structure/buildings/${upgrade.buildingId}`);
+      const buildingRef = db.ref(`worlds/${upgrade.chunkKey}/${upgrade.tileKey}/structure/buildings/${upgrade.buildingId}`);
       await buildingRef.update({
         upgradeInProgress: false,
         upgradeId: null,
@@ -408,157 +409,7 @@ function getNewFeaturesForLevel(structureType, level) {
     }
   }
   
-  // Race-specific features based on structure race
-  // (These could be expanded later)
-  
   return features;
-}
-
-/**
- * Get new benefits to add for this building type at a specific level
- */
-function getNewBenefitsForBuilding(buildingType, level) {
-  const benefits = [];
-  
-  switch (buildingType) {
-    case 'smithy':
-      if (level === 2) {
-        benefits.push({
-          name: 'Basic Smithing',
-          description: 'Allows crafting metal tools',
-          bonus: { craftingSpeed: 0.1 }
-        });
-      } else if (level === 3) {
-        benefits.push({
-          name: 'Advanced Smithing',
-          description: 'Allows crafting advanced weapons',
-          unlocks: ['iron_sword', 'iron_pickaxe']
-        });
-      } else if (level === 4) {
-        benefits.push({
-          name: 'Expert Smithing',
-          description: 'Allows crafting expert-level equipment',
-          unlocks: ['steel_sword', 'steel_armor']
-        });
-      } else if (level === 5) {
-        benefits.push({
-          name: 'Master Smithing',
-          description: 'Allows crafting legendary items',
-          unlocks: ['legendary_weapon']
-        });
-      }
-      break;
-    
-    case 'barracks':
-      if (level === 2) {
-        benefits.push({
-          name: 'Basic Training',
-          description: 'Allows training of basic soldiers',
-          unlocks: ['recruit_soldier']
-        });
-      } else if (level === 3) {
-        benefits.push({
-          name: 'Advanced Training',
-          description: 'Allows training of skilled units',
-          unlocks: ['skilled_soldier', 'archer']
-        });
-      } else if (level === 4) {
-        benefits.push({
-          name: 'Elite Training',
-          description: 'Allows training of elite units',
-          unlocks: ['elite_soldier', 'cavalry']
-        });
-      } else if (level === 5) {
-        benefits.push({
-          name: 'Legendary Training',
-          description: 'Allows training of legendary units',
-          unlocks: ['champion', 'royal_guard']
-        });
-      }
-      break;
-    
-    case 'mine':
-      if (level === 2) {
-        benefits.push({
-          name: 'Efficient Mining',
-          description: 'Improves mining yields by 10%',
-          bonus: { miningYield: 0.1 }
-        });
-      } else if (level === 3) {
-        benefits.push({
-          name: 'Deep Mining',
-          description: 'Allows mining of rare resources',
-          unlocks: ['gold_ore', 'silver_ore']
-        });
-      } else if (level === 4) {
-        benefits.push({
-          name: 'Advanced Mining',
-          description: 'Further improves mining yields',
-          bonus: { miningYield: 0.2 }
-        });
-      } else if (level === 5) {
-        benefits.push({
-          name: 'Master Mining',
-          description: 'Allows mining of legendary materials',
-          unlocks: ['mithril_ore', 'adamantite']
-        });
-      }
-      break;
-    
-    case 'academy':
-      if (level === 2) {
-        benefits.push({
-          name: 'Basic Research',
-          description: 'Allows researching basic technologies',
-          unlocks: ['basic_research']
-        });
-      } else if (level === 3) {
-        benefits.push({
-          name: 'Advanced Research',
-          description: 'Allows researching advanced technologies',
-          unlocks: ['advanced_research']
-        });
-      } else if (level === 4) {
-        benefits.push({
-          name: 'Expert Research',
-          description: 'Allows researching expert technologies',
-          unlocks: ['expert_research']
-        });
-      } else if (level === 5) {
-        benefits.push({
-          name: 'Magical Research',
-          description: 'Allows researching magical technologies',
-          unlocks: ['magical_research']
-        });
-      }
-      break;
-      
-    case 'farm':
-      if (level >= 2) {
-        benefits.push({
-          name: 'Improved Farming',
-          description: `Increases crop yield by ${(level-1) * 10}%`,
-          bonus: { farmingYield: (level-1) * 0.1 }
-        });
-      }
-      
-      if (level === 3) {
-        benefits.push({
-          name: 'Special Crops',
-          description: 'Allows growing special crops',
-          unlocks: ['rare_herbs', 'magical_seeds']
-        });
-      } else if (level === 5) {
-        benefits.push({
-          name: 'Magical Farming',
-          description: 'Allows growing magical plants',
-          unlocks: ['dragon_fruit', 'golden_apple']
-        });
-      }
-      break;
-  }
-  
-  return benefits;
 }
 
 /**

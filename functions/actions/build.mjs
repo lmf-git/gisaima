@@ -5,7 +5,7 @@
 
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getDatabase } from 'firebase-admin/database';
-import { STRUCTURES } from '../../../shared/definitions/STRUCTURES.js';
+import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
 
 /**
  * Starts construction of a new structure at a specific location using a group.

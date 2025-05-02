@@ -5,7 +5,7 @@
   import Close from '../icons/Close.svelte';
   import Structure from '../icons/Structure.svelte';
   import { getFunctions, httpsCallable } from 'firebase/functions';
-  import { STRUCTURES } from '../../../../shared/definitions/STRUCTURES.js';
+  import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
 
   const { 
     onClose = () => {},
