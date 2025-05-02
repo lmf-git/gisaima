@@ -30,8 +30,8 @@
   
   $effect(() => {
     // Get current target coordinates
-    const targetX = $targetStore.x;
-    const targetY = $targetStore.y;
+    const tx = $targetStore.x;
+    const ty = $targetStore.y;
     
     // Check for player location first
     const playerLocation = $game.player?.lastLocation;
@@ -40,7 +40,7 @@
         typeof playerLocation.y === 'number') {
       
       // Calculate distance to player
-      const dist = getDistance(targetX, targetY, playerLocation.x, playerLocation.y);
+      const dist = getDistance(tx, ty, playerLocation.x, playerLocation.y);
       
       // Update state with player as target
       recenterTarget = { 
@@ -88,7 +88,7 @@
       const spawnX = spawn.x ?? spawn.position?.x ?? 0;
       const spawnY = spawn.y ?? spawn.position?.y ?? 0;
       
-      const dist = getDistance(targetX, targetY, spawnX, spawnY);
+      const dist = getDistance(tx, ty, spawnX, spawnY);
       
       if (dist < minDistance) {
         minDistance = dist;

@@ -540,8 +540,8 @@ export const coordinates = derived(
 
     const viewportCenterX = Math.floor(gridCols / 2);
     const viewportCenterY = Math.floor(gridRows / 2);
-    const targetX = $map.target.x;
-    const targetY = $map.target.y;
+    const tx = $map.target.x;
+    const ty = $map.target.y;
 
     const result = [];
     const highlightedX = $highlightedCoords?.x;
@@ -556,14 +556,14 @@ export const coordinates = derived(
     // Build grid in one pass
     for (let y = 0; y < gridRows; y++) {
       for (let x = 0; x < gridCols; x++) {
-        const globalX = x - viewportCenterX + targetX;
-        const globalY = y - viewportCenterY + targetY;
+        const globalX = x - viewportCenterX + tx;
+        const globalY = y - viewportCenterY + ty;
         const locationKey = `${globalX},${globalY}`;
 
         // Calculate distance from target position
         const distance = Math.sqrt(
-          Math.pow(globalX - targetX, 2) +
-          Math.pow(globalY - targetY, 2)
+          Math.pow(globalX - tx, 2) +
+          Math.pow(globalY - ty, 2)
         );
 
         // Keep isInMainView calculation consistent regardless of minimap state
