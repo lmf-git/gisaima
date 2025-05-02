@@ -515,8 +515,10 @@
 
   // Get battle participant groups count for each side
   function getParticipantCountBySide(battle, side) {
-    if (!battle || !battle.sides || !battle.sides[side]) return 0;
-    return battle.sides[side].groups?.length || 0;
+    if (!battle) return 0;
+    return side === 1 ? 
+      (battle.side1?.groups?.length || 0) : 
+      (battle.side2?.groups?.length || 0);
   }
 
   // Add keyboard handler for the Escape key
@@ -1189,7 +1191,7 @@
                         <div class="battle-side side1 {getWinningSideClass(battle, 1)}">
                           <span class="side-name">Side 1:</span> 
                           {getParticipantCountBySide(battle, 1)} groups
-                          ({formatPower(battle.sides?.[1]?.power || battle.power?.[1])})
+                          ({formatPower(battle.side1?.power)})
                           {#if battle.winner === 1}
                             <span class="battle-winner">Winner</span>
                           {/if}
@@ -1198,7 +1200,7 @@
                         <div class="battle-side side2 {getWinningSideClass(battle, 2)}">
                           <span class="side-name">Side 2:</span> 
                           {getParticipantCountBySide(battle, 2)} groups
-                          ({formatPower(battle.sides?.[2]?.power || battle.power?.[2])})
+                          ({formatPower(battle.side2?.power)})
                           {#if battle.winner === 2}
                             <span class="battle-winner">Winner</span>
                           {/if}

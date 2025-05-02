@@ -294,10 +294,10 @@
                   <div class="battle-name">Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}</div>
                   <div class="battle-sides">
                     <div class="side-info">
-                      Side 1: {battle.sides[1].groups.length} groups ({battle.sides[1].power} strength)
+                      Side 1: {battle.side1.groups.length} groups ({battle.side1.power} strength)
                     </div>
                     <div class="side-info">
-                      Side 2: {battle.sides[2].groups.length} groups ({battle.sides[2].power} strength)
+                      Side 2: {battle.side2.groups.length} groups ({battle.side2.power} strength)
                     </div>
                   </div>
                 </div>
@@ -320,7 +320,7 @@
               >
                 <div class="side-content">
                   <span class="side-name">Side 1</span>
-                  <span class="side-count">({selectedBattle.sides[1].groups.length} groups)</span>
+                  <span class="side-count">({selectedBattle.side1.groups.length} groups)</span>
                 </div>
               </button>
               <button 
@@ -333,7 +333,7 @@
               >
                 <div class="side-content">
                   <span class="side-name">Side 2</span>
-                  <span class="side-count">({selectedBattle.sides[2].groups.length} groups)</span>
+                  <span class="side-count">({selectedBattle.side2.groups.length} groups)</span>
                 </div>
               </button>
             </div>

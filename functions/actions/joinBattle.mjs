@@ -25,8 +25,6 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     const db = getDatabase();
     const worldId = request.data.worldId || 'default';
     
-
-    
     const chunkKey = getChunkKey(locationX, locationY);
     
     const locationKey = `${locationX},${locationY}`;
@@ -110,29 +108,78 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     
     const updates = {};
     
-    // Add group to the battle side
-    const battleSideKey = side === 1 ? 'side1' : 'side2';
-    
-    // Simply add the group to the battle groups (more streamlined approach)
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/${battleSideKey}/groups/${groupId}`] = {
-      type: joiningGroup.type || 'player',
-      race: joiningGroup.race || 'unknown'
-    };
-    
-    // Add battle event
-    const sideName = battleData[battleSideKey]?.name || `Side ${side}`;
-    const groupName = joiningGroup.name || `Group ${groupId.slice(-4)}`;
-    
-    const newEvent = {
-      type: 'join',
-      timestamp: now,
-      text: `${groupName} has joined the battle on ${sideName}'s side!`,
-      groupId: groupId
-    };
-    
-    // We can keep the events array for battle history
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/events`] = 
-      [...(battleData.events || []), newEvent];
+    // Use direct side1 and side2 properties instead of accessing through sides object
+    if (side === 1) {
+      // Add the group to side1
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/side1/groups/${groupId}`] = {
+        type: joiningGroup.type || 'player',
+        race: joiningGroup.race || 'unknown'
+      };
+      
+      // Get side name using direct side1 property
+      const sideName = battleData.side1?.name || 'Side 1';
+      
+      // Add battle event
+      const groupName = joiningGroup.name || `Group ${groupId.slice(-4)}`;
+      
+      const newEvent = {
+        type: 'join',
+        timestamp: now,
+        text: `${groupName} has joined the battle on ${sideName}'s side!`,
+        groupId: groupId
+      };
+      
+      // We can keep the events array for battle history
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/events`] = 
+        [...(battleData.events || []), newEvent];
+      
+      // Add chat message for joining battle
+      const chatMessageId = `battle_join_${now}_${groupId}`;
+      updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+        text: `${groupName} has joined the battle at (${locationX}, ${locationY}) on ${sideName}'s side!`,
+        type: 'event',
+        timestamp: now,
+        location: {
+          x: locationX,
+          y: locationY
+        }
+      };
+    } else {
+      // Add the group to side2
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/side2/groups/${groupId}`] = {
+        type: joiningGroup.type || 'player',
+        race: joiningGroup.race || 'unknown'
+      };
+      
+      // Get side name using direct side2 property
+      const sideName = battleData.side2?.name || 'Side 2';
+      
+      // Add battle event
+      const groupName = joiningGroup.name || `Group ${groupId.slice(-4)}`;
+      
+      const newEvent = {
+        type: 'join',
+        timestamp: now,
+        text: `${groupName} has joined the battle on ${sideName}'s side!`,
+        groupId: groupId
+      };
+      
+      // We can keep the events array for battle history
+      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/events`] = 
+        [...(battleData.events || []), newEvent];
+      
+      // Add chat message for joining battle
+      const chatMessageId = `battle_join_${now}_${groupId}`;
+      updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+        text: `${groupName} has joined the battle at (${locationX}, ${locationY}) on ${sideName}'s side!`,
+        type: 'event',
+        timestamp: now,
+        location: {
+          x: locationX,
+          y: locationY
+        }
+      };
+    }
     
     // Update group status
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/inBattle`] = true;
@@ -145,25 +192,17 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     updates[`players/${userId}/worlds/${worldId}/achievements/battle_joiner`] = true;
     updates[`players/${userId}/worlds/${worldId}/achievements/battle_joiner_date`] = now;
 
-    // Add chat message for joining battle
-    const battleSideName = battleData[battleSideKey]?.name || `Side ${side}`;
-    const chatMessageId = `battle_join_${now}_${groupId}`;
-    updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-      text: `${groupName} has joined the battle at (${locationX}, ${locationY}) on ${battleSideName}'s side!`,
-      type: 'event',
-      timestamp: now,
-      location: {
-        x: locationX,
-        y: locationY
-      }
-    };
-
     // Execute the updates
     await db.ref().update(updates);
     
+    // Get the side name for the return message
+    const returnSideName = side === 1 ? 
+      (battleData.side1?.name || 'Side 1') : 
+      (battleData.side2?.name || 'Side 2');
+    
     return {
       success: true,
-      message: `Joined battle on ${battleSideName}'s side`,
+      message: `Joined battle on ${returnSideName}'s side`,
       battleId
     };
   } catch (error) {
