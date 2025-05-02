@@ -219,12 +219,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // --------- PHASE 4: CHECK FOR BATTLE END CONDITIONS ---------
     
     // A battle ends when one side has no power left or after many ticks with minimal progress
-    const shouldEndBattle = 
-      newSide1Power <= 0 || 
-      newSide2Power <= 0 || 
-      (tickCount > 10 && Math.random() < 0.1);
+    const side1Defeated = Object.keys(side1Groups).length === 0;
+    const side2Defeated = Object.keys(side2Groups).length === 0;
     
-    if (!shouldEndBattle) {
+    if (!side1Defeated || side2Defeated) {
       battleUpdates.loot = battleLoot;
       
       // Apply the battle updates to the main battle object
