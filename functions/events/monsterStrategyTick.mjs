@@ -126,8 +126,7 @@ function generateMonsterUnits(monsterType, qty) {
     const unitId = `monster_unit_${Date.now()}_${Math.floor(Math.random() * 10000)}_${i}`;
     units[unitId] = {
       id: unitId,
-      type: monsterType,
-      health: 100
+      type: monsterType
     };
   }
   
