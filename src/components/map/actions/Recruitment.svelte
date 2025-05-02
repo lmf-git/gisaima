@@ -50,7 +50,7 @@
             // Set max units based on structure capacity
             maxUnits = structure.capacity || 10;
             
-            // Load available units first
+            // Load available units directly from UNITS
             const units = getAvailableUnits(structure);
             availableUnits = units;
             
@@ -84,75 +84,112 @@
         }
     });
 
-    // Function to get available units without modifying state
+    // Function to get available units directly from UNITS
     function getAvailableUnits(structure) {
         const race = structure.race?.toLowerCase();
         const structureLevel = structure.level || 1;
+        const structureType = structure.type;
         
-        // Filter units from the imported UNITS that are player recruitable units
-        const allUnits = Object.entries(UNITS)
-            .filter(([_, unit]) => unit.category === 'player')
-            .map(([id, unit]) => ({
-                id,
-                name: unit.name,
-                description: unit.description,
-                type: unit.type,
-                race: unit.race || 'neutral',
-                cost: unit.cost,
-                timePerUnit: unit.timePerUnit,
-                icon: unit.icon,
-                power: unit.power,
-                requirements: unit.requirements
-            }));
+        // Get buildings inside the structure (if any)
+        const buildings = structure.buildings || {};
         
-        // Process each unit to determine availability
-        return allUnits.map(unit => {
-            // Check requirements
-            let available = true;
-            let unavailableReason = "";
-            
-            // Structure level check
-            if (unit.requirements.structureLevel > structureLevel) {
-                available = false;
-                unavailableReason = `Requires structure level ${unit.requirements.structureLevel}`;
-            }
-            
-            // Race check
-            if (unit.requirements.race && unit.requirements.race !== race) {
-                available = false;
-                unavailableReason = `Requires ${formatRaceName(unit.requirements.race)} structure`;
-            }
-            
-            // Structure type check
-            if (unit.requirements.structureType && 
-                !unit.requirements.structureType.includes(structure.type)) {
-                available = false;
-                unavailableReason = `Requires ${formatStructureTypeName(unit.requirements.structureType[0])}`;
-            }
-            
-            // Research check
-            if (unit.requirements.research) {
-                // Assuming we need to check if research is completed
-                const researchCompleted = structure.research && 
-                    structure.research[unit.requirements.research];
-                if (!researchCompleted) {
-                    available = false;
-                    unavailableReason = `Requires ${formatResearchName(unit.requirements.research)} research`;
+        // Filter units from UNITS that are player recruitable units 
+        // But exclude units with type 'player' (the player character)
+        return Object.entries(UNITS)
+            .filter(([_, unit]) => unit.category === 'player' && unit.type !== 'player')
+            .map(([id, unit]) => {
+                // Create a clean unit object with recruitment properties
+                const cleanUnit = {
+                    id,
+                    name: unit.name,
+                    description: unit.description,
+                    type: unit.type,
+                    race: unit.race || 'neutral',
+                    cost: unit.cost || {},
+                    timePerUnit: unit.timePerUnit || 60,
+                    icon: unit.icon,
+                    power: unit.power,
+                    requirements: unit.requirements || {},
+                    sortOrder: unit.recruitment?.sortOrder || 999,
+                    tooltip: unit.recruitment?.tooltip || ''
+                };
+                
+                // Calculate availability based on requirements
+                const reqs = unit.requirements || {};
+                let available = true;
+                let unavailableReason = "";
+                
+                // Use provided unavailable text if available
+                if (unit.recruitment?.unavailableText) {
+                    unavailableReason = unit.recruitment.unavailableText;
                 }
-            }
-            
-            // Return modified copy of the unit with availability info
-            return {
-                ...unit,
-                available,
-                unavailableReason
-            };
-        });
-    }
-
-    // Load available units - keeping for compatibility, but refactored to use getAvailableUnits
-    function loadAvailableUnits(structure) {
-        availableUnits = getAvailableUnits(structure);
+                
+                // Structure level check
+                if (reqs.structureLevel > structureLevel) {
+                    available = false;
+                    if (!unavailableReason) {
+                        unavailableReason = `Requires structure level ${reqs.structureLevel}`;
+                    }
+                }
+                
+                // Race check
+                if (reqs.race && reqs.race !== race) {
+                    available = false;
+                    if (!unavailableReason) {
+                        unavailableReason = `Requires ${formatRaceName(reqs.race)} structure`;
+                    }
+                }
+                
+                // Structure type check
+                if (reqs.structureType && 
+                    !reqs.structureType.includes(structureType)) {
+                    available = false;
+                    if (!unavailableReason) {
+                        unavailableReason = `Requires ${formatStructureTypeName(reqs.structureType[0])}`;
+                    }
+                }
+                
+                // Building type and level check
+                if (reqs.buildingType) {
+                    const requiredBuilding = buildings[reqs.buildingType];
+                    const requiredLevel = reqs.buildingLevel || 1;
+                    
+                    if (!requiredBuilding || requiredBuilding.level < requiredLevel) {
+                        available = false;
+                        if (!unavailableReason) {
+                            const buildingName = formatStructureTypeName(reqs.buildingType);
+                            unavailableReason = `Requires ${buildingName} level ${requiredLevel}`;
+                        }
+                    }
+                }
+                
+                // Research check
+                if (reqs.research) {
+                    // Check if research is completed in structure
+                    const researchCompleted = structure.research && 
+                        structure.research[reqs.research];
+                    
+                    // Or check if research is completed in any building
+                    const buildingWithResearch = Object.values(buildings).some(
+                        building => building.research && building.research[reqs.research]
+                    );
+                    
+                    if (!researchCompleted && !buildingWithResearch) {
+                        available = false;
+                        if (!unavailableReason) {
+                            unavailableReason = `Requires ${formatResearchName(reqs.research)} research`;
+                        }
+                    }
+                }
+                
+                // Return the unit with availability info
+                return {
+                    ...cleanUnit,
+                    available,
+                    unavailableReason
+                };
+            })
+            .sort((a, b) => a.sortOrder - b.sortOrder); // Sort by recruitment order
     }
 
     // Helpers for unit requirements
@@ -560,7 +597,7 @@
                                 <button
                                     class="unit-option {selectedUnit?.id === unit.id ? 'selected' : ''} {!unit.available ? 'unavailable' : ''}"
                                     onclick={() => selectUnit(unit)}
-                                    title={unit.available ? unit.description : `${unit.description} - ${unit.unavailableReason}`}
+                                    title={unit.available ? (unit.tooltip || unit.description) : `${unit.description} - ${unit.unavailableReason}`}
                                 >
                                     <div class="unit-option-icon">
                                         {#if IconComponent}
@@ -576,6 +613,9 @@
                                         </div>
                                         <div class="unit-option-power">
                                             Power: {unit.power}
+                                            {#if unit.tooltip}
+                                                <span class="unit-tooltip-hint">ℹ️</span>
+                                            {/if}
                                         </div>
                                     </div>
                                 </button>
@@ -590,6 +630,61 @@
                             <p class="unit-description">
                                 {selectedUnit.description}
                             </p>
+                            
+                            <!-- New Requirements Section -->nhanced visualization -->
+                            <div class="unit-requirements">
+                                <h6>Requirements:</h6>
+                                <div class="requirements-list">
+                                    {#if selectedUnit.requirements.structureLevel}
+                                        <div class="requirement-item {structureData.level >= selectedUnit.requirements.structureLevel ? 'met' : 'unmet'}">
+                                            <span class="requirement-icon">🏛️</span>
+                                            <span class="requirement-text">Structure Level {selectedUnit.requirements.structureLevel}</span>
+                                            <span class="requirement-status">{structureData.level >= selectedUnit.requirements.structureLevel ? '✓' : '✗'}</span>
+                                        </div>
+                                    {/if}
+                                    
+                                    {#if selectedUnit.requirements.race}
+                                        <div class="requirement-item {structureData.race === selectedUnit.requirements.race ? 'met' : 'unmet'}">
+                                            <span class="requirement-icon">👥</span>
+                                            <span class="requirement-text">{formatRaceName(selectedUnit.requirements.race)} Structure</span>
+                                            <span class="requirement-status">{structureData.race === selectedUnit.requirements.race ? '✓' : '✗'}</span>
+                                        </div>
+                                    {/if}
+                                    
+                                    {#if selectedUnit.requirements.structureType}
+                                        {@const hasCorrectType = selectedUnit.requirements.structureType.includes(structureData.type)}
+                                        <div class="requirement-item {hasCorrectType ? 'met' : 'unmet'}">
+                                            <span class="requirement-icon">🏠</span>
+                                            <span class="requirement-text">Structure Type: {selectedUnit.requirements.structureType.map(formatStructureTypeName).join(' or ')}</span>
+                                            <span class="requirement-status">{hasCorrectType ? '✓' : '✗'}</span>
+                                        </div>
+                                    {/if}
+                                    
+                                    {#if selectedUnit.requirements.buildingType}
+                                        {@const building = (structureData.buildings || {})[selectedUnit.requirements.buildingType]}
+                                        {@const requiredLevel = selectedUnit.requirements.buildingLevel || 1}
+                                        {@const hasBuilding = building && building.level >= requiredLevel}
+                                        <div class="requirement-item {hasBuilding ? 'met' : 'unmet'}">
+                                            <span class="requirement-icon">🔨</span>
+                                            <span class="requirement-text">{formatStructureTypeName(selectedUnit.requirements.buildingType)} (Level {requiredLevel}+)</span>
+                                            <span class="requirement-status">{hasBuilding ? '✓' : '✗'}</span>
+                                        </div>
+                                    {/if}
+                                    
+                                    {#if selectedUnit.requirements.research}
+                                        {@const researchCompleted = structureData.research && structureData.research[selectedUnit.requirements.research]}
+                                        {@const buildingWithResearch = Object.values(structureData.buildings || {}).some(
+                                            b => b.research && b.research[selectedUnit.requirements.research]
+                                        )}
+                                        {@const hasResearch = researchCompleted || buildingWithResearch}
+                                        <div class="requirement-item {hasResearch ? 'met' : 'unmet'}">
+                                            <span class="requirement-icon">📚</span>
+                                            <span class="requirement-text">Research: {formatResearchName(selectedUnit.requirements.research)}</span>
+                                            <span class="requirement-status">{hasResearch ? '✓' : '✗'}</span>
+                                        </div>
+                                    {/if}
+                                </div>
+                            </div>
                             
                             {#if !selectedUnit.available}
                                 <div class="unavailable-reason">
@@ -878,7 +973,7 @@
 
     .queue-item-time {
         font-size: 0.85rem;
-        color: rgba(0, 0, 0, 0.6); /* Increased from potentially lighter value */
+        color: rgba(0, 0, 0, 0.6);
     }
 
     .cancel-button {
@@ -909,29 +1004,6 @@
 
     .progress-fill {
         height: 100%;
-        background-color: rgba(52, 199, 89, 0.8);
-        transition: width 0.3s ease;
-    }
-
-    .form-content {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    label {
-        font-weight: 500;
-        font-size: 0.9rem;
-        color: rgba(0, 0, 0, 0.7);
-    }
-
-    .unit-select-container {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
@@ -1192,7 +1264,7 @@
         display: inline-block;
         font-size: 0.7em;
         margin-left: 0.3rem;
-        color: rgba(0, 0, 0, 0.6); /* Increased from 0.5 for better contrast */
+        color: rgba(0, 0, 0, 0.6);
     }
 
     .unit-details.unavailable {
@@ -1216,5 +1288,55 @@
     .unavailable-reason .locked-icon {
         font-size: 1em;
         color: rgb(196, 98, 0);
+    }
+
+    .unit-requirements {
+        margin-bottom: 1rem;
+    }
+
+    .requirements-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .requirement-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        padding: 0.5rem;
+        background-color: rgba(0, 0, 0, 0.05);
+        border-radius: 0.3rem;
+    }
+
+    .requirement-item.met {
+        background-color: rgba(52, 199, 89, 0.1);
+        color: rgb(20, 128, 56);
+    }
+
+    .requirement-item.unmet {
+        background-color: rgba(255, 59, 48, 0.1);
+        color: rgb(168, 36, 28);
+    }
+
+    .requirement-icon {
+        font-size: 1.2rem;
+    }
+
+    .requirement-text {
+        flex-grow: 1;
+    }
+
+    .requirement-status {
+        margin-left: auto;
+        font-weight: bold;
+    }
+
+    h6 {
+        margin: 0.8rem 0 0.5rem 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: rgba(0, 0, 0, 0.7);
     }
 </style>
