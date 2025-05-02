@@ -341,12 +341,14 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     updates[basePath] = {
       ...battle,              // Keep existing battle properties
       ...battleUpdates,       // Apply our new updates
-      lastUpdate: Date.now()  // Update the timestamp
     };
     
     // Check if battle should end - based only on power
     // A battle ends when one side has no power left
     if (newSide1Power <= 0 || newSide2Power <= 0) {
+      console.log('battle sohuld end', newSide1Power <= 0, newSide2Power <= 0);
+      console.debug(battle);
+
       // Use the new function to determine the winner
       const winner = determineWinner(newSide1Power, newSide2Power);
       
