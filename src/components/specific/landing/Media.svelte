@@ -11,8 +11,7 @@
     { type: 'image', src: '/media/3.png', alt: 'Game Board Screenshot' },
     { type: 'image', src: '/media/4.png', alt: 'Game Board Screenshot' },
     { type: 'image', src: '/media/5.png', alt: 'Game Board Screenshot' },
-    { type: 'image', src: '/media/6.png', alt: 'Game Board Screenshot' },
-    { type: 'image', src: '/media/7.png', alt: 'Game Board Screenshot' }
+    { type: 'image', src: '/media/6.png', alt: 'Game Board Screenshot' }
   ]);
   
   // Media gallery state
