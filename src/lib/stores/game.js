@@ -3,7 +3,7 @@ import { writable, derived, get } from 'svelte/store';
 
 import { ACHIEVEMENTS } from 'gisaima-shared/definitions/ACHIEVEMENTS.js';
 
-import { db } from '../firebase.js';
+import { db } from '$lib/firebase';
 
 import { browser } from '$app/environment';
 import { user, isAuthReady as userAuthReady } from './user'; 

@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
-import { auth } from '$lib/firebase/firebase';
+import { auth } from '$lib/firebase';
 import { 
   onAuthStateChanged, 
   signInWithEmailAndPassword,

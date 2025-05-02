@@ -1,6 +1,6 @@
 import { writable, derived, get } from 'svelte/store';
 import { browser } from '$app/environment';
-import { db } from '../firebase.js';
+import { db } from '$lib/firebase';
 import { ref, onValue, push, serverTimestamp, query, orderByChild, limitToLast } from "firebase/database";
 import { user } from './user.js';
 import { game } from './game.js';
