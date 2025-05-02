@@ -88,7 +88,7 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
       
       // Calculate new power for the side
       const currentPower = battleData[`${battleSideKey}Power`] || 0;
-      const groupPower = group.unitCount || 1;
+      const groupPower = group.units?.length || 1;
       const newPower = Math.max(0, currentPower - groupPower);
       
       // Update battle power
@@ -104,7 +104,7 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
     
     // Apply casualties to the fleeing group (25-40% of units are lost when fleeing)
     const fleeingCasualtyRate = 0.25 + (Math.random() * 0.15);
-    const originalUnitCount = group.unitCount || 1;
+    const originalUnitCount = group.units?.length || 1;
     const casualtiesCount = Math.floor(originalUnitCount * fleeingCasualtyRate);
     const newUnitCount = Math.max(1, originalUnitCount - casualtiesCount);
     
@@ -114,7 +114,6 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleRole`] = null;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastUpdated`] = now;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/lastMessage`] = {
       text: `Fled from battle! Lost ${casualtiesCount} units while retreating.`,

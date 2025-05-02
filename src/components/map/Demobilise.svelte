@@ -160,7 +160,7 @@
               >
                 <div class="group-info">
                   <div class="group-name">{group.name || `Group ${group.id.slice(-4)}`}</div>
-                  <div class="group-units">{group.unitCount || 'Unknown'} units</div>
+                  <div class="group-units">{group.units?.length || 'Unknown'} units</div>
                 </div>
               </button>
             {/each}

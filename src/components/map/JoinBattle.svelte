@@ -125,7 +125,7 @@
           
           if (!battleData.sides[side].groups.includes(group.id)) {
             battleData.sides[side].groups.push(group.id);
-            battleData.sides[side].power += (group.unitCount || 1);
+            battleData.sides[side].power += (group.units?.length || 1);
           }
         }
       });
@@ -270,7 +270,7 @@
               >
                 <div class="group-info">
                   <div class="group-name">{group.name || group.id}</div>
-                  <div class="group-details">Units: {group.unitCount || group.units?.length || 1}</div>
+                  <div class="group-details">Units: {group.units?.length || 1}</div>
                 </div>
               </button>
             {/each}

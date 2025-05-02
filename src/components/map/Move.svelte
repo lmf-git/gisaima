@@ -144,7 +144,7 @@
               />
               <div class="group-details">
                 <div class="group-name">{group.name || `Group ${group.id.substring(0, 5)}`}</div>
-                <div class="group-units">{group.unitCount || 1} units</div>
+                <div class="group-units">{group.units?.length || 1} units</div>
               </div>
             </label>
           {/each}

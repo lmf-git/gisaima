@@ -135,11 +135,11 @@ function generateGatheredItems(group, biome = 'plains') {
   const items = [];
   
   // Base number of items is determined by group size
-  const unitCount = group.unitCount || (group.units ? 
+  const numGatherers = (group.units ? 
     (Array.isArray(group.units) ? group.units.length : Object.keys(group.units).length) : 1);
   
   // Calculate the base number of items to generate
-  const baseItems = Math.floor(Math.random() * 2) + Math.ceil(unitCount / 2);
+  const baseItems = Math.floor(Math.random() * 2) + Math.ceil(numGatherers / 2);
   
   // Generate biome-specific items
   const biomeItems = getBiomeItems(biome);

@@ -183,7 +183,7 @@
   // Calculate total power for selected groups
   function calculateTotalPower(groups) {
     return groups.reduce((total, group) => {
-      return total + (group.unitCount || group.units?.length || 1);
+      return total + (group.units?.length || 1);
     }, 0);
   }
   
@@ -369,7 +369,7 @@
                 <div class="group-info">
                   <div class="group-name">{group.name || `Group ${group.id.slice(-4)}`}</div>
                   <div class="group-details">
-                    <span class="unit-count">Units: {group.unitCount || group.units?.length || 1}</span>
+                    <span class="unit-count">Units: {group.units?.length || 1}</span>
                     {#if group.race}
                       <span class="group-race">{_fmt(group.race)}</span>
                     {/if}
@@ -421,7 +421,7 @@
                         {group.name || `Group ${group.id.slice(-4)}`}
                       </div>
                       <div class="group-details">
-                        <span class="unit-count">Units: {group.unitCount || group.units?.length || 1}</span>
+                        <span class="unit-count">Units: {group.units?.length || 1}</span>
                         {#if group.race}
                           <span class="group-race">{_fmt(group.race)}</span>
                         {/if}

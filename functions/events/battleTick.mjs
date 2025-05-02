@@ -62,7 +62,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         const units = group.units || {};
         
         // Calculate this group's share of attrition based on its proportion of side power
-        const groupPower = group.unitCount || 0;
+        const groupPower = group.units?.length || 0;
         const groupShare = groupPower / side1Power;
         const groupAttrition = Math.round(side2Attrition * groupShare);
         
@@ -141,8 +141,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
             }
           }
         } else {
-          // Only update unitCount if the group will survive - avoid path conflicts
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
           
           // Remove the selected units from the group
           unitsToRemove.forEach(unitId => {
@@ -166,7 +164,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         const units = group.units || {};
         
         // Calculate this group's share of attrition based on its proportion of side power
-        const groupPower = group.unitCount || 0;
+        const groupPower = group.units?.length || 0;
         const groupShare = groupPower / side2Power;
         const groupAttrition = Math.round(side1Attrition * groupShare);
         
@@ -245,9 +243,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
             }
           }
         } else {
-          // Only update unitCount if the group will survive - avoid path conflicts
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/unitCount`] = newUnitCount;
-          
           // Remove the selected units from the group
           unitsToRemove.forEach(unitId => {
             updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/units/${unitId}`] = null;

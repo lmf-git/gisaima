@@ -293,7 +293,7 @@ function processChunkData(data = {}, chunkKey) {
           const battleInfo = battlesMap.get(group.battleId);
 
           battleInfo.sides[side].groups.push(group.id);
-          battleInfo.sides[side].power += (group.unitCount || 1);
+          battleInfo.sides[side].power += (group.units?.length || 1);
         });
 
         // Enhanced battle processing

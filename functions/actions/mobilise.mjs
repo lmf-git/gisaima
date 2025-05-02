@@ -288,8 +288,6 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
       
       if (!currentTile.groups) currentTile.groups = {};
       
-      let unitCount = 0;
-      
       if (units.length > 0) {
         Object.keys(currentTile.groups || {}).forEach(groupId => {
           const group = currentTile.groups[groupId];
@@ -302,7 +300,6 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
               
               if (units.includes(unit.id) && unit.type !== 'player') { 
                 newGroup.units[unitKey] = unit;
-                unitCount++;
                 delete group.units[unitKey];
               }
             });
@@ -330,7 +327,6 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
               ...player,
               type: 'player'
             };
-            unitCount++;
             
             // Remove the player from the array
             currentTile.players.splice(playerIndex, 1);
@@ -351,7 +347,6 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
                 ...player,
                 type: 'player'
               };
-              unitCount++;
               delete currentTile.players[playerKey];
               
               if (Object.keys(currentTile.players).length === 0) {
@@ -368,7 +363,6 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
         }
       }
       
-      newGroup.unitCount = unitCount;
       currentTile.groups[newGroupId] = newGroup;
 
       if (!currentData.players) currentData.players = {};

@@ -114,6 +114,28 @@ const MONSTER_STRUCTURES = {
 };
 
 /**
+ * Generate individual monster unit objects for a monster group
+ * @param {string} monsterType - Type of monster
+ * @param {number} qty - Number of units to generate
+ * @returns {Object} Monster units with ID keys
+ */
+function generateMonsterUnits(monsterType, qty) {
+  const units = {};
+  
+  for (let i = 0; i < qty; i++) {
+    const unitId = `monster_unit_${Date.now()}_${Math.floor(Math.random() * 10000)}_${i}`;
+    units[unitId] = {
+      id: unitId,
+      type: monsterType,
+      health: 100,
+      createdAt: Date.now()
+    };
+  }
+  
+  return units;
+}
+
+/**
  * Main function to process monster strategies across the world
  * @param {string} worldId World ID to process
  * @returns {Promise<Object>} Results summary
@@ -321,16 +343,16 @@ async function processMergeMonsterGroups(worldId, chunks, updates) {
         if (Math.random() > 0.7) continue;
         
         // Sort by unit count (descending)
-        typeGroups.sort((a, b) => (b.unitCount || 1) - (a.unitCount || 1));
+        typeGroups.sort((a, b) => (b.units?.length || 1) - (a.units?.length || 1));
         
         // Largest group becomes the base
         const baseGroup = typeGroups[0];
         const mergeTargets = typeGroups.slice(1);
         
         // Calculate total unit count
-        let totalUnits = baseGroup.unitCount || 1;
+        let totalUnits = baseGroup.units?.length || 1;
         for (const group of mergeTargets) {
-          totalUnits += group.unitCount || 1;
+          totalUnits += group.units?.length || 1;
         }
         
         // Add bonus units (10-30% bonus)
@@ -386,10 +408,8 @@ async function processMergeMonsterGroups(worldId, chunks, updates) {
           newName = `Massive ${baseGroup.name} Legion`;
         }
         
-        updates[`${basePath}/unitCount`] = totalUnits;
         updates[`${basePath}/name`] = newName;
         updates[`${basePath}/items`] = allItems;
-        updates[`${basePath}/lastUpdated`] = now;
         updates[`${basePath}/mergeCount`] = (baseGroup.mergeCount || 0) + mergeTargets.length;
         updates[`${basePath}/merged`] = true;
         
@@ -401,6 +421,10 @@ async function processMergeMonsterGroups(worldId, chunks, updates) {
         updates[`${basePath}/composition`] = { [monsterType]: totalUnits };
         updates[`${basePath}/dominantType`] = monsterType;
         updates[`${basePath}/isMixed`] = false;
+        
+        // Generate new units for the merged group
+        const mergedUnits = generateMonsterUnits(monsterType, totalUnits);
+        updates[`${basePath}/units`] = mergedUnits;
         
         // Remove the merged groups
         for (const group of mergeTargets) {
@@ -431,15 +455,15 @@ async function processMergeMonsterGroups(worldId, chunks, updates) {
  */
 async function createMixedMonsterMerge(worldId, chunkKey, tileKey, groups, updates, now) {
   // Sort by unit count, largest first
-  groups.sort((a, b) => (b.unitCount || 1) - (a.unitCount || 1));
+  groups.sort((a, b) => (b.units?.length || 1) - (a.units?.length || 1));
   
   const baseGroup = groups[0];
   const otherGroups = groups.slice(1);
   
   // Calculate total units
-  let totalUnits = baseGroup.unitCount || 1;
+  let totalUnits = baseGroup.units?.length || 1;
   for (const group of otherGroups) {
-    totalUnits += group.unitCount || 1;
+    totalUnits += group.units?.length || 1;
   }
   
   // Add bonus units (10-30%)
@@ -454,12 +478,12 @@ async function createMixedMonsterMerge(worldId, chunkKey, tileKey, groups, updat
   
   // Add base group to composition
   const baseType = baseGroup.monsterType || 'unknown';
-  composition[baseType] = baseGroup.unitCount || 1;
+  composition[baseType] = baseGroup.units?.length || 1;
   
   // Add other groups to composition
   for (const group of otherGroups) {
     const type = group.monsterType || 'unknown';
-    composition[type] = (composition[type] || 0) + (group.unitCount || 1);
+    composition[type] = (composition[type] || 0) + (group.units?.length || 1);
   }
   
   // Find dominant type
@@ -539,7 +563,6 @@ async function createMixedMonsterMerge(worldId, chunkKey, tileKey, groups, updat
   // Update the base group
   const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}`;
   
-  updates[`${basePath}/unitCount`] = totalUnits;
   updates[`${basePath}/name`] = newName;
   updates[`${basePath}/items`] = allItems;
   updates[`${basePath}/lastUpdated`] = now;
@@ -550,6 +573,17 @@ async function createMixedMonsterMerge(worldId, chunkKey, tileKey, groups, updat
   updates[`${basePath}/isMixed`] = true;
   updates[`${basePath}/composition`] = composition;
   updates[`${basePath}/dominantType`] = dominantType;
+  
+  // Generate units for the mixed group
+  const mixedUnits = {};
+  
+  // Create units based on the composition
+  for (const [type, count] of Object.entries(composition)) {
+    const typeUnits = generateMonsterUnits(type, count);
+    Object.assign(mixedUnits, typeUnits);
+  }
+  
+  updates[`${basePath}/units`] = mixedUnits;
   
   // Preserve these critical properties but set monsterType to the dominant type
   updates[`${basePath}/type`] = 'monster';
@@ -754,7 +788,7 @@ async function executeMonsterStrategy(db, worldId, monsterGroup, location, tileD
   }
 
   // Factors that influence decisions
-  const unitCount = monsterGroup.unitCount || 1;
+  const totalUnits = monsterGroup.units?.length || 1;
   const mergeCount = monsterGroup.mergeCount || 0;
   const hasResources = monsterGroup.items && monsterGroup.items.length > 0;
   const resourceCount = countTotalResources(monsterGroup.items);
@@ -780,7 +814,7 @@ async function executeMonsterStrategy(db, worldId, monsterGroup, location, tileD
   }
   
   // Strategy 3: If large enough group with enough resources, build a new structure
-  if (unitCount >= MIN_UNITS_TO_BUILD && 
+  if (totalUnits >= MIN_UNITS_TO_BUILD && 
       hasResources && 
       resourceCount >= MIN_RESOURCES_TO_BUILD &&
       !structureOnTile &&
@@ -865,7 +899,7 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
   // Choose which player groups to attack (up to 3)
   const targetCount = Math.min(targetGroups.length, 3);
   // Sort by group size or randomly if sizes unknown
-  targetGroups.sort((a, b) => (a.unitCount || 1) - (b.unitCount || 1));
+  targetGroups.sort((a, b) => (a.units?.length || 1) - (b.units?.length || 1));
   const selectedTargets = targetGroups.slice(0, targetCount);
   
   // Create battle ID and prepare battle data
@@ -873,7 +907,7 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
   
   // Calculate power for each side
   const monsterPower = calculateGroupStrength(monsterGroup);
-  const targetPower = selectedTargets.reduce((total, group) => total + (group.unitCount || 1), 0);
+  const targetPower = selectedTargets.reduce((total, group) => total + (group.units?.length || 1), 0);
   
   // Create battle object
   const battleData = {
@@ -1129,7 +1163,7 @@ function countTotalResources(items) {
  * Move monster group towards a strategic target
  */
 async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, worldScan, updates, now) {
-  const unitCount = monsterGroup.unitCount || 1;
+  const totalUnits = monsterGroup.units?.length || 1;
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
   const groupStrength = calculateGroupStrength(monsterGroup);
   
@@ -1175,7 +1209,7 @@ async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, wor
     // If no monster structure found or didn't choose one, follow original targeting logic
     if (!targetLocation) {
       // Smaller groups tend to pursue resource hotspots
-      if (unitCount < 5 && worldScan.resourceHotspots.length > 0 && Math.random() < 0.7) {
+      if (totalUnits < 5 && worldScan.resourceHotspots.length > 0 && Math.random() < 0.7) {
         // Find nearest resource hotspot
         for (const hotspot of worldScan.resourceHotspots) {
           const distance = calculateDistance(location, hotspot);
@@ -1188,7 +1222,7 @@ async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, wor
       }
       
       // Medium groups target monster structures to deposit resources
-      else if (unitCount >= 5 && unitCount < 10 && worldScan.monsterStructures.length > 0 && Math.random() < 0.6) {
+      else if (totalUnits >= 5 && totalUnits < 10 && worldScan.monsterStructures.length > 0 && Math.random() < 0.6) {
         // Find nearest monster structure
         for (const structure of worldScan.monsterStructures) {
           const distance = calculateDistance(location, structure);
@@ -1201,7 +1235,7 @@ async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, wor
       }
       
       // Stronger groups target player spawns
-      else if ((unitCount >= 10 || groupStrength > 15) && worldScan.playerSpawns.length > 0) {
+      else if ((totalUnits >= 10 || groupStrength > 15) && worldScan.playerSpawns.length > 0) {
         // Find nearest player spawn
         for (const spawn of worldScan.playerSpawns) {
           const distance = calculateDistance(location, spawn);
@@ -1538,8 +1572,7 @@ function calculateDistance(loc1, loc2) {
  * Calculate the combat strength of a monster group
  */
 function calculateGroupStrength(group) {
-  const unitCount = group.unitCount || 1;
-  let baseStrength = unitCount;
+  let baseStrength = group.units?.length || 1;
   
   // Adjust based on monster type
   switch (group.monsterType) {
@@ -1575,8 +1608,8 @@ function calculateGroupStrength(group) {
  */
 function createMonsterMoveMessage(monsterGroup, targetType, targetLocation) {
   const groupName = monsterGroup.name || "Monster group";
-  const size = monsterGroup.unitCount <= 3 ? "small" : 
-              monsterGroup.unitCount <= 8 ? "medium-sized" : "large";
+  const size = monsterGroup.units?.length <= 3 ? "small" : 
+              monsterGroup.units?.length <= 8 ? "medium-sized" : "large";
   
   switch (targetType) {
     case 'player_spawn':

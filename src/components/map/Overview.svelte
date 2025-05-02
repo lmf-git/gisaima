@@ -1006,7 +1006,7 @@
                     
                     <div class="entity-details">
                       <span class="unit-count">
-                        {group.unitCount || (group.units ? group.units.length : 0)} units
+                        {(group.units ? group.units.length : 0)} units
                         {#if getGroupItemCount(group) > 0}
                           • <span class="item-count">{getGroupItemCount(group)} items</span>
                         {/if}

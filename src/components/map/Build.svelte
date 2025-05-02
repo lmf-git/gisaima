@@ -288,7 +288,7 @@
                     <div class="group-name">{group.name || 'Group'}</div>
                     <div class="group-details">
                       <span class="race-tag">{_fmt(group.race || 'Unknown')}</span>
-                      <span class="strength-tag">{group.unitCount || 1} units</span>
+                      <span class="strength-tag">{group.units?.length || 1} units</span>
                       {#if group.items && group.items.length > 0}
                         <span class="resources-tag">{group.items.length} items</span>
                       {/if}

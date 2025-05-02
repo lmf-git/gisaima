@@ -372,7 +372,7 @@ function calculateTotalPower(groups) {
   if (!groups || groups.length === 0) return 0;
   
   return groups.reduce((total, group) => {
-    let groupPower = group.unitCount || 1;
+    let groupPower = group.units?.length || 1;
     
     // If we have unit details, use those
     if (group.units) {
@@ -417,7 +417,7 @@ function calculateStructurePower(structure) {
 // Helper function to calculate individual group power
 function calculateGroupPower(group) {
   // Base calculation using unit count
-  let power = group.unitCount || 1;
+  let power = group.units?.length || 1;
   
   // If we have detailed units data, use it for better calculations
   if (group.units && typeof group.units === 'object') {

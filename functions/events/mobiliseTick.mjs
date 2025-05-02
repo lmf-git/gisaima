@@ -92,7 +92,7 @@ export function processMobilizations(worldId, updates, groups, chunkKey, tileKey
  */
 function createMobilizationMessage(group, tileKey) {
   const groupName = group.name || "Unnamed force";
-  const groupSize = group.unitCount || "unknown size";
+  const groupSize = group.units?.length || "unknown size";
   const groupRace = group.race ? `${group.race}` : "";
   const location = tileKey.replace(',', ', ');
   

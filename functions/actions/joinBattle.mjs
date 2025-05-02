@@ -100,7 +100,7 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     }
     
     // Calculate group power
-    const groupPower = joiningGroup.unitCount || 1;
+    const groupPower = joiningGroup.units?.length || 1;
     
     const participantInfo = {
       groupId: groupId,

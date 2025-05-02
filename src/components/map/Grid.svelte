@@ -949,7 +949,7 @@
             monsterCount += totalWeight * 2;
           } else {
             // For regular monster groups, just count units
-            monsterCount += (group.unitCount || 1) * 2;
+            monsterCount += (group.units?.length || 1) * 2;
           }
         } else if (group.race) {
           // Give groups slightly more weight than individual players
