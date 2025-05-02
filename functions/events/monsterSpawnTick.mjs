@@ -97,8 +97,17 @@ export async function spawnMonsters(worldId) {
           }
         }
         
-        // Tiles that would make the most sense for spawning monsters to prioritise.
-        if (tileData.groups || tileData.battles || tileData.structure || tileData.players || tileData.items) {
+        // Only consider this location active if it has player activity, not just monster groups
+        const hasPlayerGroups = tileData.groups && Object.values(tileData.groups)
+          .some(group => !(group.type === 'monster' || group.monsterType));
+          
+        const hasPlayerActivity = hasPlayerGroups || 
+                               tileData.battles || 
+                               tileData.structure || 
+                               tileData.players || 
+                               tileData.items;
+                               
+        if (hasPlayerActivity) {
           activeLocations.push({
             chunkKey,
             tileKey,
@@ -111,7 +120,7 @@ export async function spawnMonsters(worldId) {
       }
     }
     
-    logger.info(`Found ${activeLocations.length} active locations in world ${worldId}`);
+    logger.info(`Found ${activeLocations.length} active locations with player activity in world ${worldId}`);
     
     // Process each active location to potentially spawn monsters
     for (const location of activeLocations) {
