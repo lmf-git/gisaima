@@ -10,6 +10,7 @@
   import Structure from '../icons/Structure.svelte';
   import Cancel from '../icons/Close.svelte'; // Reusing Close icon for cancel
   import Horn from '../icons/Horn.svelte'; // Add import for Horn icon
+  import { calculateGroupPower } from 'gisaima-shared/war/battles.js';
 
   // Import race icon components
   import Human from '../icons/Human.svelte';
@@ -58,6 +59,9 @@
   // Add a flag to track if component is ready to render
   let isReady = $state(false);
   
+  // Add state to track expanded group units
+  let expandedGroups = $state({});
+  
   // Use simpler mounting animation control
   onMount(() => {
     // Short timeout to ensure DOM is ready
@@ -71,6 +75,14 @@
   // Function to toggle section collapse state
   function toggleSection(sectionId) {
     collapsedSections[sectionId] = !collapsedSections[sectionId];
+  }
+
+  // Function to toggle group details expansion
+  function toggleGroupDetails(groupId, event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    expandedGroups[groupId] = !expandedGroups[groupId];
   }
 
   // Function to change sort option for a section
@@ -501,6 +513,12 @@
     return Array.isArray(group.items) ? group.items.length : Object.keys(group.items).length;
   }
   
+  // Function to count units in a group
+  function getGroupUnitCount(group) {
+    if (!group.units) return 0;
+    return Array.isArray(group.units) ? group.units.length : Object.keys(group.units).length;
+  }
+
   // Format total power for each side
   function formatPower(power) {
     if (!power && power !== 0) return '?';
@@ -517,8 +535,18 @@
   function getParticipantCountBySide(battle, side) {
     if (!battle) return 0;
     return side === 1 ? 
-      (battle.side1?.groups?.length || 0) : 
-      (battle.side2?.groups?.length || 0);
+      (battle.side1?.groups ? Object.keys(battle.side1.groups).length : 0) : 
+      (battle.side2?.groups ? Object.keys(battle.side2.groups).length : 0);
+  }
+
+  // Get unit count for a side in battle
+  function getUnitCountForSide(battle, side) {
+    if (!battle) return 0;
+    const sideData = side === 1 ? battle.side1 : battle.side2;
+    if (!sideData?.groups) return 0;
+    
+    return Object.values(sideData.groups).reduce((count, g) => 
+      count + (g.units ? Object.keys(g.units).length : 0), 0);
   }
 
   // Add keyboard handler for the Escape key
@@ -835,6 +863,16 @@
                       <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
                     {/if}
                   </button>
+                  <button 
+                    class="sort-option" 
+                    class:active={sortOptions.groups.by === 'power'}
+                    onclick={(e) => { e.stopPropagation(); setSortOption('groups', 'power'); }}
+                  >
+                    <span>Power</span>
+                    {#if sortOptions.groups.by === 'power'}
+                      <span class="sort-direction">{sortOptions.groups.asc ? '↑' : '↓'}</span>
+                    {/if}
+                  </button>
                 </div>
               {/if}
               <button class="collapse-button">
@@ -867,6 +905,7 @@
                     <div class="entity-info">
                       <div class="entity-name">
                         {formatEntityName(group)}
+                        <span class="group-power">({formatPower(calculateGroupPower(group))})</span>
                         {#if isOwnedByCurrentPlayer(group)}
                           <span class="entity-badge owner-badge">Yours</span>
                         {/if}
@@ -876,9 +915,18 @@
                       <div class="entity-details">
                         <div class="entity-details-left">
                           <span class="unit-count">
-                            {(group.units ? group.units.length : 0)} units
+                            {getGroupUnitCount(group)} units
                             {#if getGroupItemCount(group) > 0}
                               • <span class="item-count">{getGroupItemCount(group)} items</span>
+                            {/if}
+                            {#if getGroupUnitCount(group) > 0}
+                              <button 
+                                class="toggle-units-btn"
+                                onclick={(e) => toggleGroupDetails(group.id, e)}
+                                aria-expanded={!!expandedGroups[group.id]}
+                              >
+                                {expandedGroups[group.id] ? 'Hide' : 'Show'}
+                              </button>
                             {/if}
                           </span>
                           
@@ -911,6 +959,50 @@
                           </span>
                         </div>
                       </div>
+                      
+                      <!-- Add expandable units list -->
+                      {#if expandedGroups[group.id] && group.units && getGroupUnitCount(group) > 0}
+                        <div class="group-units-list">
+                          {#each Object.entries(group.units) as [unitId, unit]}
+                            <div class="group-unit">
+                              <div class="unit-icon">
+                                {#if unit.race}
+                                  {#if unit.race.toLowerCase() === 'human'}
+                                    <Human extraClass="unit-race-icon" />
+                                  {:else if unit.race.toLowerCase() === 'elf'}
+                                    <Elf extraClass="unit-race-icon" />
+                                  {:else if unit.race.toLowerCase() === 'dwarf'}
+                                    <Dwarf extraClass="unit-race-icon" />
+                                  {:else if unit.race.toLowerCase() === 'goblin'}
+                                    <Goblin extraClass="unit-race-icon" />
+                                  {:else if unit.race.toLowerCase() === 'fairy'}
+                                    <Fairy extraClass="unit-race-icon" />
+                                  {/if}
+                                {/if}
+                              </div>
+                              <div class="unit-info">
+                                <div class="unit-name">
+                                  {unit.displayName || unit.name || unit.type || unitId.slice(-5)}
+                                  {#if unit.id === $currentPlayer?.id}
+                                    <span class="entity-badge owner-badge">You</span>
+                                  {/if}
+                                </div>
+                                <div class="unit-details">
+                                  {#if unit.race}
+                                    <span class="unit-race-tag">{_fmt(unit.race)}</span>
+                                  {/if}
+                                  {#if unit.type && unit.type !== 'player'}
+                                    <span class="unit-type-tag">{_fmt(unit.type)}</span>
+                                  {/if}
+                                  {#if unit.type === 'player'}
+                                    <span class="unit-type-tag player">Player</span>
+                                  {/if}
+                                </div>
+                              </div>
+                            </div>
+                          {/each}
+                        </div>
+                      {/if}
                     </div>
                   </div>
                   
@@ -2127,5 +2219,141 @@
   .entity-action.flee-action:disabled {
     opacity: 0.6;
     cursor: wait;
+  }
+
+  .group-power {
+    font-weight: 500;
+    color: #d32f2f;
+    margin-left: 0.3em;
+    font-size: 0.9em;
+  }
+  
+  .side-power {
+    color: #d32f2f;
+    font-weight: 500;
+    font-size: 0.9em;
+    margin-left: 0.3em;
+  }
+  
+  /* Group units list styling */
+  .toggle-units-btn {
+    background: none;
+    border: none;
+    color: rgba(66, 133, 244, 0.9);
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-left: 0.5em;
+    padding: 0.1em 0.3em;
+    border-radius: 0.2em;
+    transition: background-color 0.2s ease;
+  }
+  
+  .toggle-units-btn:hover {
+    background-color: rgba(66, 133, 244, 0.1);
+    text-decoration: underline;
+  }
+  
+  .group-units-list {
+    margin-top: 0.5em;
+    padding: 0.5em;
+    background-color: rgba(0, 0, 0, 0.02);
+    border-radius: 0.3em;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 0.9em;
+    max-height: 10em;
+    overflow-y: auto;
+  }
+  
+  .group-unit {
+    display: flex;
+    align-items: center;
+    padding: 0.2em 0;
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
+  }
+  
+  .group-unit:last-child {
+    border-bottom: none;
+  }
+  
+  .unit-icon {
+    margin-right: 0.5em;
+    display: flex;
+    align-items: center;
+  }
+  
+  :global(.unit-race-icon) {
+    width: 1em;
+    height: 1em;
+    opacity: 0.7;
+  }
+  
+  .unit-info {
+    flex: 1;
+  }
+  
+  .unit-name {
+    font-weight: 500;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+  }
+  
+  .unit-details {
+    display: flex;
+    gap: 0.3em;
+    font-size: 0.8em;
+    margin-top: 0.1em;
+  }
+  
+  .unit-race-tag, .unit-type-tag {
+    padding: 0.1em 0.3em;
+    border-radius: 0.2em;
+    background-color: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .unit-type-tag.player {
+    background-color: rgba(66, 133, 244, 0.1);
+    color: rgba(66, 133, 244, 0.9);
+  }
+  
+  /* Enhanced battle styling */
+  .battle-groups-details {
+    margin-top: 0.3em;
+    font-size: 0.9em;
+  }
+  
+  .battle-group {
+    margin-bottom: 0.2em;
+  }
+  
+  .group-info {
+    display: flex;
+    gap: 0.3em;
+    align-items: center;
+  }
+  
+  .group-name {
+    font-weight: 500;
+  }
+  
+  .group-race, .group-type {
+    font-size: 0.85em;
+    padding: 0.1em 0.3em;
+    border-radius: 0.2em;
+    background-color: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .casualties-tag {
+    display: inline-block;
+    font-size: 0.85em;
+    padding: 0.1em 0.3em;
+    border-radius: 0.2em;
+    margin-left: 0.2em;
+    background-color: rgba(220, 20, 60, 0.1);
+    border: 1px solid rgba(220, 20, 60, 0.2);
+    color: #c62828;
   }
 </style>
