@@ -1,24 +1,40 @@
 {
   "players": {
+    "qi3VZSiTsXYrHWpc2axAsPBnBor2": {
+      "worlds": {
+        "ancient-lands": {
+          "achievements": {
+            "mobilised": true
+          },
+          "alive": true,
+          "displayName": "test",
+          "id": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
+          "inGroup": "-OPF8YIOPT3vnljNyrx9",
+          "joined": 1746175113846,
+          "lastLocation": {
+            "x": -23,
+            "y": 5
+          },
+          "race": "human"
+        }
+      }
+    },
     "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
       "worlds": {
         "ancient-lands": {
           "achievements": {
             "first_attack": true,
-            "first_attack_date": 1746172729282,
-            "first_steps": true,
-            "first_steps_date": 1746171188503,
+            "first_attack_date": 1746175274884,
             "mobilised": true
           },
           "alive": true,
-          "displayName": "may2",
+          "displayName": "test2",
           "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-          "inGroup": "-OPEuOklD3-dXCINHxwL",
-          "joined": 1746170752602,
+          "inGroup": "-OPF8XbPIvhOKG0zMWN5",
+          "joined": 1746175116504,
           "lastLocation": {
-            "timestamp": 1746172680561,
-            "x": -16,
-            "y": -5
+            "x": -23,
+            "y": 5
           },
           "race": "human"
         }
@@ -28,139 +44,18 @@
   "worlds": {
     "ancient-lands": {
       "chat": {
-        "battle_end_1746172805621_battle_1746172729282_432": {
+        "battle_start_1746175274884_battle_1746175274884_305": {
           "location": {
-            "x": -16,
-            "y": -5
+            "x": -23,
+            "y": 5
           },
-          "text": "Battle at (-16, -5) has ended. Attackers have defeated Defenders!",
-          "timestamp": 1746172805621,
-          "type": "event"
-        },
-        "battle_start_1746172729282_battle_1746172729282_432": {
-          "location": {
-            "x": -16,
-            "y": -5
-          },
-          "text": "Battle has begun at (-16, -5)! may2's Force is attacking Goblin Raiders!",
-          "timestamp": 1746172729282,
-          "type": "event"
-        },
-        "chat_monster_spawn_1746172806178_516": {
-          "location": {
-            "x": -43,
-            "y": -11
-          },
-          "text": "A band of Bandits has appeared at (-43, -11)",
-          "timestamp": 1746172806178,
+          "text": "Battle has begun at (-23, 5)! test2's Force is attacking test's Force!",
+          "timestamp": 1746175274884,
           "type": "event"
         }
       },
       "chunks": {
         "-1,-1": {
-          "-16,-5": {
-            "groups": {
-              "-OPEuOklD3-dXCINHxwL": {
-                "battleId": "battle_1746172729282_432",
-                "battleRole": "attacker",
-                "battleSide": 1,
-                "id": "-OPEuOklD3-dXCINHxwL",
-                "inBattle": true,
-                "lastMessage": {
-                  "text": "Moving to next location (-16,-5)",
-                  "timestamp": 1746172680561
-                },
-                "name": "may2's Force",
-                "owner": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-                "race": "human",
-                "status": "fighting",
-                "targetX": -16,
-                "targetY": -5,
-                "units": {
-                  "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
-                    "displayName": "may2",
-                    "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-                    "race": "human",
-                    "type": "player"
-                  }
-                },
-                "x": -16,
-                "y": -5
-              },
-              "monster_1746170346285_9404": {
-                "battleId": "battle_1746172729282_432",
-                "battleRole": "defender",
-                "battleSide": 2,
-                "gatheringTicksRemaining": 1,
-                "id": "monster_1746170346285_9404",
-                "inBattle": true,
-                "items": [
-                  {
-                    "id": "STONE_PIECES",
-                    "name": "Stone Pieces",
-                    "quantity": 4,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "item_1746170581403_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 4,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains"
-                    ],
-                    "description": "Grain that grows in open grasslands",
-                    "id": "item_1746170581403_608",
-                    "name": "Wheat",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Moving to next location (-16,-5)",
-                  "timestamp": 1746172680561
-                },
-                "monsterType": "goblin",
-                "name": "Goblin Raiders",
-                "status": "fighting",
-                "targetX": -16,
-                "targetY": -3,
-                "type": "monster",
-                "units": {
-                  "monster_unit_1746170346285_3502_0": {
-                    "id": "monster_unit_1746170346285_3502_0",
-                    "type": "goblin"
-                  },
-                  "monster_unit_1746170346285_7976_1": {
-                    "id": "monster_unit_1746170346285_7976_1",
-                    "type": "goblin"
-                  },
-                  "monster_unit_1746170346285_9884_2": {
-                    "id": "monster_unit_1746170346285_9884_2",
-                    "type": "goblin"
-                  }
-                },
-                "x": -16,
-                "y": -5
-              }
-            }
-          },
           "-23,-8": {
             "structure": {
               "capacity": 60,
@@ -285,6 +180,106 @@
         },
         "-2,0": {
           "-23,5": {
+            "battles": {
+              "battle_1746175274884_305": {
+                "createdAt": 1746175274884,
+                "id": "battle_1746175274884_305",
+                "locationX": -23,
+                "locationY": 5,
+                "side1": {
+                  "casualties": 0,
+                  "groups": {
+                    "-OPF8XbPIvhOKG0zMWN5": {
+                      "race": "human",
+                      "type": "player",
+                      "units": {
+                        "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
+                          "displayName": "test2",
+                          "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+                          "race": "human",
+                          "type": "player"
+                        }
+                      }
+                    }
+                  },
+                  "name": "test2's Force"
+                },
+                "side2": {
+                  "casualties": 0,
+                  "groups": {
+                    "-OPF8YIOPT3vnljNyrx9": {
+                      "race": "human",
+                      "type": "player",
+                      "units": {
+                        "qi3VZSiTsXYrHWpc2axAsPBnBor2": {
+                          "displayName": "test",
+                          "id": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
+                          "race": "human",
+                          "type": "player"
+                        }
+                      }
+                    }
+                  },
+                  "name": "test's Force"
+                },
+                "targetTypes": [
+                  "group"
+                ],
+                "tickCount": 0
+              }
+            },
+            "groups": {
+              "-OPF8XbPIvhOKG0zMWN5": {
+                "battleId": "battle_1746175274884_305",
+                "battleRole": "attacker",
+                "battleSide": 1,
+                "id": "-OPF8XbPIvhOKG0zMWN5",
+                "inBattle": true,
+                "lastMessage": {
+                  "text": "Group is fully mobilized and ready",
+                  "timestamp": 1746175201389
+                },
+                "name": "test2's Force",
+                "owner": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+                "race": "human",
+                "status": "fighting",
+                "units": {
+                  "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
+                    "displayName": "test2",
+                    "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+                    "race": "human",
+                    "type": "player"
+                  }
+                },
+                "x": -23,
+                "y": 5
+              },
+              "-OPF8YIOPT3vnljNyrx9": {
+                "battleId": "battle_1746175274884_305",
+                "battleRole": "defender",
+                "battleSide": 2,
+                "id": "-OPF8YIOPT3vnljNyrx9",
+                "inBattle": true,
+                "lastMessage": {
+                  "text": "Group is fully mobilized and ready",
+                  "timestamp": 1746175201389
+                },
+                "name": "test's Force",
+                "owner": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
+                "race": "human",
+                "status": "fighting",
+                "units": {
+                  "qi3VZSiTsXYrHWpc2axAsPBnBor2": {
+                    "displayName": "test",
+                    "id": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
+                    "race": "human",
+                    "type": "player"
+                  }
+                },
+                "x": -23,
+                "y": 5
+              }
+            },
             "structure": {
               "description": "A rugged frontier settlement where hardy humans carve out a living",
               "id": "structure_al_human_spawn",
@@ -317,34 +312,6 @@
               "type": "spawn"
             }
           }
-        },
-        "-3,-1": {
-          "-43,-11": {
-            "groups": {
-              "monster_1746172806178_2461": {
-                "id": "monster_1746172806178_2461",
-                "name": "Bandits",
-                "status": "idle",
-                "type": "monster",
-                "units": {
-                  "monster_unit_1746172806178_5181_2": {
-                    "id": "monster_unit_1746172806178_5181_2",
-                    "type": "bandit"
-                  },
-                  "monster_unit_1746172806178_6015_0": {
-                    "id": "monster_unit_1746172806178_6015_0",
-                    "type": "bandit"
-                  },
-                  "monster_unit_1746172806178_6772_1": {
-                    "id": "monster_unit_1746172806178_6772_1",
-                    "type": "bandit"
-                  }
-                },
-                "x": -43,
-                "y": -11
-              }
-            }
-          }
         }
       },
       "info": {
@@ -353,9 +320,9 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746172981838,
+        "lastTick": 1746175261354,
         "name": "Ancient Lands",
-        "playerCount": 35,
+        "playerCount": 39,
         "seed": 13579,
         "size": "large",
         "spawns": {

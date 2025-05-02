@@ -1273,22 +1273,22 @@
                   <div class="battle-sides">
                     <div class="battle-side side1" class:winning-side={battle.winner === 1} class:losing-side={battle.winner === 2}>
                       <div class="side-name">{battle.side1.name}</div>
-                      <div class="unit-count">Groups: {battle.side1.groups.length}</div>
-                      {#if battle.side1.casualties > 0}
-                        <div class="casualties">Lost: {battle.side1.casualties}</div>
+                      <div class="unit-count">Groups: {battle.side1?.groups.length}</div>
+                      {#if battle.side1?.casualties > 0}
+                        <div class="casualties">Lost: {battle.side1?.casualties}</div>
                       {/if}
                     </div>
                     <div class="battle-vs">vs</div>
                     <div class="battle-side side2" class:winning-side={battle.winner === 2} class:losing-side={battle.winner === 1}>
-                      <div class="side-name">{battle.side2.name}</div>
+                      <div class="side-name">{battle.side2?.name}</div>
                       <div class="unit-count">
-                        Groups: {battle.side2.groups.length}
+                        Groups: {battle.side2?.groups.length}
                         {#if battle.structureInfo}
                           + Structure
                         {/if}
                       </div>
-                      {#if battle.side2.casualties > 0}
-                        <div class="casualties">Lost: {battle.side2.casualties}</div>
+                      {#if battle.side2?.casualties > 0}
+                        <div class="casualties">Lost: {battle.side2?.casualties}</div>
                       {/if}
                     </div>
                   </div>
