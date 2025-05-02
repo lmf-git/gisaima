@@ -2,9 +2,9 @@
   import { onMount } from 'svelte'
   import { browser } from '$app/environment'
   import { slide } from 'svelte/transition'
-  import Close from '../../components/icons/Close.svelte';
-  import { map } from "../../lib/stores/map.js";
-  import Trophy from '../icons/Trophy.svelte'; // Import the Trophy icon
+  import Close from '../../icons/Close.svelte';
+  import { map } from "../../../lib/stores/map.js";
+  import Trophy from '../../icons/Trophy.svelte'; // Import the Trophy icon
 
   const { 
     onVisibilityChange = () => {},

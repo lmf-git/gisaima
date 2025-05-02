@@ -1,8 +1,8 @@
 <script>
   import { fly, fade } from 'svelte/transition';
   import { onMount, onDestroy } from 'svelte';
-  import { recentUnlock } from '../../lib/stores/game.js';
-  import Trophy from '../icons/Trophy.svelte';
+  import { recentUnlock } from '../../../lib/stores/game.js';
+  import Trophy from '../../icons/Trophy.svelte';
 
   // Local state
   let visible = $state(false);

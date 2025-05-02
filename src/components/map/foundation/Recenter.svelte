@@ -1,13 +1,13 @@
 <script>
-  import { moveTarget, targetStore } from '../../lib/stores/map';
-  import { game } from '../../lib/stores/game';
-  import Torch from '../icons/Torch.svelte';
+  import { moveTarget, targetStore } from '../../../lib/stores/map';
+  import { game } from '../../../lib/stores/game';
+  import Torch from '../../icons/Torch.svelte';
   // Import race icons
-  import Human from '../icons/Human.svelte';
-  import Elf from '../icons/Elf.svelte';
-  import Dwarf from '../icons/Dwarf.svelte';
-  import Goblin from '../icons/Goblin.svelte';
-  import Fairy from '../icons/Fairy.svelte';
+  import Human from '../../icons/Human.svelte';
+  import Elf from '../../icons/Elf.svelte';
+  import Dwarf from '../../icons/Dwarf.svelte';
+  import Goblin from '../../icons/Goblin.svelte';
+  import Fairy from '../../icons/Fairy.svelte';
   
   // Calculate distance between two points
   function getDistance(x1, y1, x2, y2) {
