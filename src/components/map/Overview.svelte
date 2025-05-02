@@ -1163,8 +1163,8 @@
                               Groups: {Object.keys(battle.side1.groups).length}
                               
                               <!-- Show units detail if available -->
-                              {#if battle.side1.units}
-                                 ({Object.keys(battle.side1.units).length} units)
+                              {#if battle.side1.units || Object.values(battle.side1.groups).some(g => g.units)}
+                                ({Object.values(battle.side1.groups).reduce((count, g) => count + (g.units ? Object.keys(g.units).length : 0), 0)} units)
                               {/if}
                               
                               {#if battle.side1.casualties > 0}
@@ -1174,278 +1174,334 @@
                               {/if}
                             {/if}
                           </div>
+                          
+                          <!-- Add detailed groups display -->
+                          <div class="battle-groups-details">
+                            {#each Object.entries(battle.side1.groups) as [groupId, group]}
+                              <div class="battle-group">
+                                <div class="group-info">
+                                  <span class="group-race">{_fmt(group.race || 'unknown')}</span>
+                                  <span class="group-type">{_fmt(group.type || 'group')}</span>
+                                </div>
+                                
+                                {#if group.units && Object.keys(group.units).length > 0}
+                                  <div class="battle-units">
+                                    {#each Object.entries(group.units) as [unitId, unit]}
+                                      <div class="battle-unit">
+                                        <span class="unit-name">{unit.displayName || unitId.slice(-4)}</span>
+                                        {#if unit.race}
+                                          <span class="unit-race">{_fmt(unit.race)}</span>
+                                        {/if}
+                                        {#if unit.type && unit.type !== 'player'}
+                                          <span class="unit-type">{_fmt(unit.type)}</span>
+                                        {/if}
+                                      </div>
+                                    {/each}
+                                  </div>
+                                {/if}
+                              </div>
+                            {/each}
+                          </div>
                         {/if}
-                      </div>-- Add detailed groups display -->
-                    </div><div class="battle-groups-details">
-                    <div class="battle-vs">vs</div>attle.side1.groups) as [groupId, group]}
+                      </div>
+                    </div>
+                    <div class="battle-vs">vs</div>
                     <div class="battle-side side2" class:winning-side={battle?.side2?.power > battle?.side1?.power}>
                       <div class="side-name">{battle?.side2?.name || 'Defenders'}</div>
-                      <div class="side-units">"group-type">{_fmt(group.type || 'unknown')}</span>
+                      <div class="side-units">
                         {#if battle?.side2?.groups}
-                          <div class="unit-count">roup-race">{_fmt(group.race)}</span>
+                          <div class="unit-count">
                             {#if Object.keys(battle.side2.groups).length > 0}
                               Groups: {Object.keys(battle.side2.groups).length}
-                                
-                              <!-- Show units detail if available -->.units).length > 0}
-                              {#if battle.side2.units}nits">
-                                 ({Object.keys(battle.side2.units).length} units), unit]}
-                              {/if}   <div class="battle-unit">
-                                        <span class="unit-name">{unit.displayName || unitId.slice(-4)}</span>
+                              
+                              <!-- Show units detail if available -->
+                              {#if battle.side2.units || Object.values(battle.side2.groups).some(g => g.units)}
+                                ({Object.values(battle.side2.groups).reduce((count, g) => count + (g.units ? Object.keys(g.units).length : 0), 0)} units)
+                              {/if}
+                              
                               {#if battle.side2.casualties > 0}
-                                <span class="casualties-tag">ace">{_fmt(unit.race)}</span>
+                                <span class="casualties-tag">
                                   -{battle.side2.casualties}
-                                </span> {#if unit.type && unit.type !== 'player'}
-                              {/if}       <span class="unit-type">{_fmt(unit.type)}</span>
-                            {/if}       {/if}
-                          </div>      </div>
-                        {/if}       {/each}
-                      </div>      </div>
-                    </div>      {/if}
-                  </div>      </div>
+                                </span>
+                              {/if}
+                            {/if}
+                          </div>
+                          
+                          <!-- Add detailed groups display for side 2 -->
+                          <div class="battle-groups-details">
+                            {#each Object.entries(battle.side2.groups) as [groupId, group]}
+                              <div class="battle-group">
+                                <div class="group-info">
+                                  <span class="group-race">{_fmt(group.race || 'unknown')}</span>
+                                  <span class="group-type">{_fmt(group.type || 'group')}</span>
+                                </div>
+                                
+                                {#if group.units && Object.keys(group.units).length > 0}
+                                  <div class="battle-units">
+                                    {#each Object.entries(group.units) as [unitId, unit]}
+                                      <div class="battle-unit">
+                                        <span class="unit-name">{unit.displayName || unitId.slice(-4)}</span>
+                                        {#if unit.race}
+                                          <span class="unit-race">{_fmt(unit.race)}</span>
+                                        {/if}
+                                        {#if unit.type && unit.type !== 'player'}
+                                          <span class="unit-type">{_fmt(unit.type)}</span>
+                                        {/if}
+                                      </div>
+                                    {/each}
+                                  </div>
+                                {/if}
+                              </div>
                             {/each}
+                          </div>
+                        {/if}
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div class="entity-details">
                     <div class="battle-status">
                       {#if battle.tickCount > 0}
                         <span class="battle-status-tag">Active</span>
-                      {:else}s="battle-vs">vs</div>
-                        <span class="battle-status-tag new">New</span>{battle?.side2?.power > battle?.side1?.power}>
-                      {/if}class="side-name">{battle?.side2?.name || 'Defenders'}</div>
-                    </div> class="side-units">
+                      {:else}
+                        <span class="battle-status-tag new">New</span>
+                      {/if}
+                    </div>
                     <div class="entity-distance">{formatDistance(battle.distance)}</div>
-                  </div>  <div class="unit-count">
-                            {#if Object.keys(battle.side2.groups).length > 0}
-                  <div class="battle-timer">t.keys(battle.side2.groups).length}
+                  </div>
+                  
+                  <div class="battle-timer">
                     Started {Math.floor((Date.now() - (battle.createdAt || Date.now())) / 60000) || 0} minutes ago
-                    • Tick: {battle.tickCount || 0}l if available -->
-                  </div>      {#if battle.side2.units}
-                                 ({Object.keys(battle.side2.units).length} units)
+                    • Tick: {battle.tickCount || 0}
+                  </div>
+                  
                   <!-- Battle progress bar -->
                   <div class="battle-progress">
-                    <div class="progress-bar">2.casualties > 0}
-                      <div class="progress-fill side1" -tag">
+                    <div class="progress-bar">
+                      <div class="progress-fill side1" 
                         style="width: {battle.side1?.power && (battle.side1.power + battle.side2?.power) > 0 ? 
                           (battle.side1.power / (battle.side1.power + battle.side2?.power) * 100) : 50}%">
-                      </div>  {/if}
-                    </div>  {/if}
-                  </div>  </div>
-                </div>    
-              </div>      <!-- Add detailed groups display for side 2 -->
-            {/each}       <div class="battle-groups-details">
-          </div>            {#each Object.entries(battle.side2.groups) as [groupId, group]}
-        </div>                <div class="battle-group">
-      {/if}                     <div class="group-info">
-                                  <span class="group-type">{_fmt(group.type || 'unknown')}</span>
-      {#if !hasContent(activeFilter)}f group.race}
-        <div class="empty-state">   <span class="group-race">{_fmt(group.race)}</span>
-          {#if activeFilter === 'all'}}
-            No entities visible on map
-          {:else}               
-            No {activeFilter} visible on mapnits && Object.keys(group.units).length > 0}
-          {/if}                   <div class="battle-units">
-        </div>                      {#each Object.entries(group.units) as [unitId, unit]}
-      {/if}                           <div class="battle-unit">
-    </div>                              <span class="unit-name">{unit.displayName || unitId.slice(-4)}</span>
-  </div>                                {#if unit.race}
-</section>                                <span class="unit-race">{_fmt(unit.race)}</span>
-                                        {/if}
-<style>                                 {#if unit.type && unit.type !== 'player'}
-  .entities-wrapper {                     <span class="unit-type">{_fmt(unit.type)}</span>
-    position: absolute;                 {/if}
-    bottom: 0.5em;                    </div>
-    left: 0.5em;                    {/each}
-    z-index: 998;                 </div>
-    transition: opacity 0.2s ease, z-index 0s;
-    font-size: 1.4em;         </div>
-    font-family: var(--font-body);}
-    max-width: 95%;       </div>
-    outline: none;      {/if}
-  }                   </div>
+                      </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
+
+      {#if !hasContent(activeFilter)}
+        <div class="empty-state">
+          {#if activeFilter === 'all'}
+            No entities visible on map
+          {:else}
+            No {activeFilter} visible on map
+          {/if}
+        </div>
+      {/if}
+    </div>
+  </div>
+</section>
+
+<style>
+  .entities-wrapper {
+    position: absolute;
+    bottom: 0.5em;
+    left: 0.5em;
+    z-index: 998; 
+    transition: opacity 0.2s ease, z-index 0s;
+    font-size: 1.4em;
+    font-family: var(--font-body);
+    max-width: 95%;
+    outline: none; 
+  }
+
+  
   .entities-wrapper.active {
-    z-index: 1001; div class="entity-details">
-  }                 <div class="battle-status">
-                      {#if battle.tickCount > 0}
-  .entities-wrapper.closing { class="battle-status-tag">Active</span>
-    pointer-events: none;lse}
-  }                     <span class="battle-status-tag new">New</span>
-                      {/if}
-  .entities-panel { </div>
-    background-color: rgba(255, 255, 255, 0.85);>{formatDistance(battle.distance)}</div>
+    z-index: 1001; 
+  }
+
+  .entities-wrapper.closing {
+    pointer-events: none;
+  }
+
+  .entities-panel {
+    background-color: rgba(255, 255, 255, 0.85);
     border: 0.05em solid rgba(255, 255, 255, 0.2);
     border-radius: 0.3em;
     box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7); (battle.createdAt || Date.now())) / 60000) || 0} minutes ago
-    backdrop-filter: blur(0.5em);le.tickCount || 0}
+    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(0.5em);
     -webkit-backdrop-filter: blur(0.5em);
-    width: 100%;  
-    max-width: 28em;-- Battle progress bar -->
-    display: flex;<div class="battle-progress">
-    flex-direction: column;ass="progress-bar">
-    overflow: hidden; <div class="progress-fill side1" 
-    animation: slideInFromBottom 0.8s ease-out forwards;er && (battle.side1.power + battle.side2?.power) > 0 ? 
-    transform-origin: bottom left;side1.power / (battle.side1.power + battle.side2?.power) * 100) : 50}%">
-  }                   </div>
-                    </div>
-                  </div>
+    width: 100%;
+    max-width: 28em;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideInFromBottom 0.8s ease-out forwards;
+    transform-origin: bottom left;
+  }
+  
+  
   .entities-wrapper.closing .entities-panel {
     animation: slideOutToBottom 0.8s ease-in forwards;
-  }         {/each}
-          </div>
+  }
+  
   @keyframes slideInFromBottom {
-    0% {if}
+    0% {
       transform: translateY(100%);
-      opacity: 0;ntent(activeFilter)}
-    }   <div class="empty-state">
-    100% {{#if activeFilter === 'all'}
-      transform: translateY(0); on map
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
       opacity: 1;
-    }       No {activeFilter} visible on map
-  }       {/if}
-        </div>
+    }
+  }
+  
   @keyframes slideOutToBottom {
-    0% {v>
+    0% {
       transform: translateY(0);
       opacity: 1;
     }
     100% {
       transform: translateY(100%);
-      opacity: 0;olute;
-    }ottom: 0.5em;
-  } left: 0.5em;
-    z-index: 998; 
-  .subtitle {n: opacity 0.2s ease, z-index 0s;
+      opacity: 0;
+    }
+  }
+
+  .subtitle {
     font-size: 0.7em;
-    font-weight: normal;ont-body);
+    font-weight: normal;
     color: rgba(0, 0, 0, 0.5);
     margin-left: 0.6em;
   }
 
   .entity-coords {
-    font-size: 0.7em;ctive {
+    font-size: 0.7em;
     color: rgba(0, 0, 0, 0.5);
     margin-left: 0.6em;
     font-weight: normal;
-  }entities-wrapper.closing {
-    pointer-events: none;
+  }
+
   .at-target {
     background-color: rgba(64, 158, 255, 0.1);
     border-color: rgba(64, 158, 255, 0.3);
-    position: relative;gba(255, 255, 255, 0.85);
-  } border: 0.05em solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.3em;
-    box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
-  .is-here {dow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    position: relative;
+  }
+
+  
+  .is-here {
     background-color: rgba(64, 158, 255, 0.1);
     border-color: rgba(64, 158, 255, 0.3);
     position: relative;
-  } max-width: 28em;
-    display: flex;
-    flex-direction: column;
-  .is-here .entity-distance {
-    color: rgba(64, 158, 255, 0.9);8s ease-out forwards;
-    font-weight: 500; bottom left;
-    font-size: 0.9em;
   }
   
-  .entities-wrapper.closing .entities-panel {
-  .at-target.is-here .entity-distance {se-in forwards;
+  
+  .is-here .entity-distance {
+    color: rgba(64, 158, 255, 0.9);
+    font-weight: 500;
+    font-size: 0.9em;
+  }
+
+  
+  .at-target.is-here .entity-distance {
     color: rgba(64, 158, 255, 1.0);
     font-weight: 600;
-  }keyframes slideInFromBottom {
-    0% {
-  .entity-distance {nslateY(100%);
+  }
+
+  .entity-distance {
     font-size: 0.85em;
     color: rgba(0, 0, 0, 0.5);
     margin-left: auto;
-    white-space: nowrap;teY(0);
+    white-space: nowrap;
     display: flex;
     align-items: center;
   }
   
-  @keyframes slideOutToBottom {
+  
   .is-here .entity-distance::first-letter {
-    font-size: 1.8em;slateY(0);
+    font-size: 1.8em;
     line-height: 0;
     margin-right: 0.1em;
     vertical-align: middle;
     color: rgba(64, 158, 255, 1.0);
-  }   opacity: 0;
-    }
+  }
+
   .map-entities {
     position: fixed;
-    top: 0; {
-    right: 0;: 0.7em;
-    padding: .5em;ormal;
-    width: 100%;0, 0, 0, 0.5);
-    max-width: 25em;em;
+    top: 0;
+    right: 0;
+    padding: .5em;
+    width: 100%;
+    max-width: 25em;
     display: flex;
     flex-direction: column;
-    gap: .5em;ds {
-    z-index: 1100;em;
-    transform: translateZ(0);;
+    gap: .5em;
+    z-index: 1100;
+    transform: translateZ(0);
     will-change: transform;
     pointer-events: none;
     max-height: 100vh;
     overflow: hidden;
-  }at-target {
-    background-color: rgba(64, 158, 255, 0.1);
-  .filter-tabs {: rgba(64, 158, 255, 0.3);
-    display: flex;tive;
+  }
+
+  .filter-tabs {
+    display: flex;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     background-color: rgba(0, 0, 0, 0.03);
     padding: 0 0.3em;
     width: 100%;
-    overflow-x: auto; rgba(64, 158, 255, 0.1);
-  } border-color: rgba(64, 158, 255, 0.3);
-    position: relative;
+    overflow-x: auto;
+  }
+
   .filter-tab {
     padding: 0.6em 0.8em;
     font-family: var(--font-heading);
-    font-size: 0.8em;stance {
-    background: none;58, 255, 0.9);
-    border: none;500;
+    font-size: 0.8em;
+    background: none;
+    border: none;
     border-bottom: 2px solid transparent;
     cursor: pointer;
     color: rgba(0, 0, 0, 0.5);
     transition: all 0.2s ease;
-    flex: 1;.is-here .entity-distance {
-    text-align: center;, 255, 1.0);
-    display: flex;00;
+    flex: 1;
+    text-align: center;
+    display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
     white-space: nowrap;
-  } color: rgba(0, 0, 0, 0.5);
-    margin-left: auto;
+  }
+
   .filter-tab:hover:not(:disabled) {
     background-color: rgba(0, 0, 0, 0.03);
     color: rgba(0, 0, 0, 0.8);
   }
-  
+
   .filter-tab.active {
-    border-bottom: 2px solid #4285f4;tter {
+    border-bottom: 2px solid #4285f4;
     color: rgba(0, 0, 0, 0.9);
     font-weight: 500;
-  } margin-right: 0.1em;
-    vertical-align: middle;
-  .filter-tab:disabled { 255, 1.0);
+  }
+
+  .filter-tab:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-  }map-entities {
-    position: fixed;
+  }
+
   .filter-tab.has-content:not(.active) {
     color: rgba(0, 0, 0, 0.7);
-  } padding: .5em;
-    width: 100%;
-  .filter-count {em;
+  }
+
+  .filter-count {
     display: flex;
-    align-items: center;mn;
+    align-items: center;
     justify-content: center;
     border-radius: 50%;
-    width: 1.2em;anslateZ(0);
-    height: 1.2em;ransform;
-    font-size: 0.7em;one;
+    width: 1.2em;
+    height: 1.2em;
+    font-size: 0.7em;
     font-weight: bold;
     margin-left: 0.4em;
     line-height: 1;
@@ -1453,45 +1509,45 @@
     color: white;
     border: 1px solid rgba(0, 0, 0, 0.1);
     box-shadow: 0 0 0.15em rgba(255, 255, 255, 0.2);
-  } background-color: rgba(0, 0, 0, 0.03);
-    padding: 0 0.3em;
-    width: 100%;
+  }
+
+  
   .filter-count-structures {
     background: rgba(0, 0, 0, 0.9);
     box-shadow: 0 0 0.15em rgba(0, 0, 0, 0.6);
     color: rgba(255, 255, 255, 0.9); 
-  } padding: 0.6em 0.8em;
-    font-family: var(--font-heading);
+  }
+  
   .filter-count-groups {
     background: rgba(255, 100, 100, 0.9);
     box-shadow: 0 0 0.15em rgba(255, 100, 100, 0.6);
-  } border-bottom: 2px solid transparent;
-    cursor: pointer;
-  .filter-count-players {0.5);
+  }
+  
+  .filter-count-players {
     background: rgba(100, 100, 255, 0.9);
     box-shadow: 0 0 0.15em rgba(100, 100, 255, 0.6);
-  } text-align: center;
-    display: flex;
-  .filter-count-items {nter;
+  }
+  
+  .filter-count-items {
     background: rgba(255, 215, 0, 0.9);
     box-shadow: 0 0 0.15em rgba(255, 215, 0, 0.6);
-  } white-space: nowrap;
   }
+  
   .filter-count-battles {
     background: rgba(139, 0, 0, 0.8);
     box-shadow: 0 0 0.15em rgba(139, 0, 0, 0.6);
-  } color: rgba(0, 0, 0, 0.8);
   }
+
   .filter-tab.active .filter-count {
     background: rgba(255, 255, 255, 0.9);
-    color: rgba(0, 0, 0, 0.8);4285f4;
+    color: rgba(0, 0, 0, 0.8);
     box-shadow: 0 0 0.2em rgba(0, 0, 0, 0.2);
-  } font-weight: 500;
   }
+
   .title {
-    margin: 0;disabled {
+    margin: 0;
     padding: 0.8em 1em;
-    font-size: 1.1em;ed;
+    font-size: 1.1em;
     font-weight: 600;
     color: rgba(0, 0, 0, 0.8);
     background-color: rgba(0, 0, 0, 0.05);
@@ -1500,169 +1556,169 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-  } align-items: center;
-    justify-content: center;
-  .close-button {: 50%;
-    background: none;
-    border: none;;
-    cursor: pointer;;
-    padding: 0.4em;  ;
-    display: flex;.4em;
-    align-items: center;
-    justify-content: center;, 0.2);
-    border-radius: 50%;
-    margin-left: auto;rgba(0, 0, 0, 0.1);
-    transition: background-color 0.2s;55, 255, 0.2);
-    color: rgba(0, 0, 0, 0.6);
-  }
-  
-  .close-button:hover {res {
-    background-color: rgba(0, 0, 0, 0.1);
-    color: rgba(0, 0, 0, 0.9);a(0, 0, 0, 0.6);
-  } color: rgba(255, 255, 255, 0.9); 
-  }
-  .entities-content {
-    padding: 0.8em;ups {
-    max-height: 70vh;255, 100, 100, 0.9);
-    overflow-y: auto;.15em rgba(255, 100, 100, 0.6);
-  }
-  
-  .entities-section {rs {
-    margin-bottom: 1.2em; 100, 255, 0.9);
-    border-radius: 0.3em;m rgba(100, 100, 255, 0.6);
-    overflow: hidden;
-    max-height: unset;
-  }filter-count-items {
-    background: rgba(255, 215, 0, 0.9);
-  .section-content.expanded {ba(255, 215, 0, 0.6);
-    max-height: 13em;
-    overflow: auto;
-    padding: 0;-battles {
-    transition: max-height 0.3s ease-in, padding 0.3s ease, opacity 0.2s ease 0.1s;
-    opacity: 1; 0 0 0.15em rgba(139, 0, 0, 0.6);
   }
 
-  .section-content.collapsed {ount {
-    max-height: 0;ba(255, 255, 255, 0.9);
-    padding-top: 0;0, 0, 0.8);
-    padding-bottom: 0;2em rgba(0, 0, 0, 0.2);
+  .close-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.4em;  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-left: auto;
+    transition: background-color 0.2s;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .close-button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.9);
+  }
+
+  .entities-content {
+    padding: 0.8em;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .entities-section {
+    margin-bottom: 1.2em;
+    border-radius: 0.3em;
+    overflow: hidden;
+    max-height: unset;
+  }
+
+  .section-content.expanded {
+    max-height: 13em;
+    overflow: auto;
+    padding: 0;
+    transition: max-height 0.3s ease-in, padding 0.3s ease, opacity 0.2s ease 0.1s;
+    opacity: 1;
+  }
+
+  .section-content.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
     opacity: 0;
     overflow: hidden;
     transition: max-height 0.3s ease-out, padding 0.3s ease;
-  } margin: 0;
-    padding: 0.8em 1em;
-  .entity {ze: 1.1em;
-    display: flex;00;
-    align-items: flex-start;);
-    margin-bottom: 0.6em;a(0, 0, 0, 0.05);
-    padding: 0.5em 0.7em;lid rgba(0, 0, 0, 0.1);
-    border-radius: 0.3em;nt-heading);
+  }
+
+  .entity {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 0.6em;
+    padding: 0.5em 0.7em;
+    border-radius: 0.3em;
     background-color: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(0, 0, 0, 0.1);
-    cursor: pointer; space-between;
+    cursor: pointer;
     transition: background-color 0.2s ease;
   }
-  .close-button {
-  .entity:hover {one;
+
+  .entity:hover {
     background-color: rgba(255, 255, 255, 0.8);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  } padding: 0.4em;  
-    display: flex;
-  .entity:focus {center;
+  }
+
+  .entity:focus {
     outline: 2px solid rgba(66, 133, 244, 0.6);
     box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.3);
-  } margin-left: auto;
-    transition: background-color 0.2s;
-  .entity.player.current {.6);
+  }
+
+  .entity.player.current {
     background-color: rgba(66, 133, 244, 0.05);
     border-color: rgba(66, 133, 244, 0.3);
-  }close-button:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-  .entity-icon {0, 0, 0, 0.9);
+  }
+
+  .entity-icon {
     margin-right: 0.7em;
     margin-top: 0.1em;
-    flex-shrink: 0; {
-    display: flex;;
+    flex-shrink: 0;
+    display: flex;
     align-items: center;
     justify-content: center;
   }
 
   .entity-structure-icon {
-    margin-right: 0.7em;;
-    margin-top: 0.1em;em;
-    flex-shrink: 0;n;
-    display: flex;set;
+    margin-right: 0.7em;
+    margin-top: 0.1em;
+    flex-shrink: 0;
+    display: flex;
     align-items: center;
     justify-content: center;
-  }section-content.expanded {
-    max-height: 13em;
-  .entity-info {to;
-    flex: 1; 0;
-  } transition: max-height 0.3s ease-in, padding 0.3s ease, opacity 0.2s ease 0.1s;
-    opacity: 1;
+  }
+
+  .entity-info {
+    flex: 1;
+  }
+
   .entity-name {
     font-weight: 500;
     color: rgba(0, 0, 0, 0.85);
     line-height: 1.2;
     margin-bottom: 0.2em;
-  } padding-bottom: 0;
-    opacity: 0;
-  .entity-details {n;
-    display: flex;x-height 0.3s ease-out, padding 0.3s ease;
+  }
+
+  .entity-details {
+    display: flex;
     flex-wrap: wrap;
     gap: 0.6em;
     font-size: 0.85em;
     color: rgba(0, 0, 0, 0.7);
-    width: 100%; flex-start;
+    width: 100%;
     justify-content: space-between;
-  } padding: 0.5em 0.7em;
-    border-radius: 0.3em;
-    background-color: rgba(255, 255, 255, 0.5);
-  :global(.race-icon-overview) { 0, 0.1);
-    width: 1.4em;er;
-    height: 1.4em;ckground-color 0.2s ease;
+  }
+
+  
+  :global(.race-icon-overview) {
+    width: 1.4em;
+    height: 1.4em;
     opacity: 0.85;
     fill: rgba(0, 0, 0, 0.7);
-  }entity:hover {
-    background-color: rgba(255, 255, 255, 0.8);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  
   :global(.race-icon-overview.fairy-icon path) {
     fill: rgba(138, 43, 226, 0.8);
-  }entity:focus {
-    outline: 2px solid rgba(66, 133, 244, 0.6);
-  :global(.race-icon-overview.goblin-icon path) {;
+  }
+  
+  :global(.race-icon-overview.goblin-icon path) {
     fill: rgba(0, 128, 0, 0.8);
   }
-  .entity.player.current {
-    background-color: rgba(66, 133, 244, 0.05);
-  :global(.overview-structure-icon) {0.3);
+
+  
+  :global(.overview-structure-icon) {
     opacity: 0.9;
     filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.7));
-  }entity-icon {
-    margin-right: 0.7em;
+  }
+  
   :global(.overview-spawn-icon) {
     filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.8)) !important;
     opacity: 1 !important;
-  } align-items: center;
-    justify-content: center;
   }
+
+  
   .entity.battle {
     background-color: rgba(139, 0, 0, 0.05);
     border: 1px solid rgba(139, 0, 0, 0.2);
-  } margin-top: 0.1em;
-    flex-shrink: 0;
+  }
+
   .entity-battle-icon {
-    display: flex;enter;
-    align-items: center;ter;
+    display: flex;
+    align-items: center;
     justify-content: center;
     width: 1.4em;
     height: 1.4em;
     margin-right: 0.7em;
     margin-top: 0.1em;
     font-size: 1.2em;
-  }entity-name {
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.85);
+  }
+
+  
   .entity-status-badge {
     display: inline-block;
     font-size: 0.8em;
@@ -1671,417 +1727,284 @@
     border-radius: 0.3em;
     white-space: nowrap;
     text-transform: capitalize;
-  } font-size: 0.85em;
-    color: rgba(0, 0, 0, 0.7);
+  }
+  
   .entity-status-badge.idle {
     background: rgba(128, 128, 128, 0.15);
     border: 1px solid rgba(128, 128, 128, 0.3);
     color: rgba(0, 0, 0, 0.7);
   }
-  :global(.race-icon-overview) {
+  
   .entity-status-badge.moving {
     background: rgba(0, 128, 0, 0.15);
     border: 1px solid rgba(0, 128, 0, 0.3);
-    color: #006400;, 0, 0.7);
+    color: #006400;
   }
   
   .entity-status-badge.mobilizing {
-    background: rgba(255, 140, 0, 0.15); path) {
+    background: rgba(255, 140, 0, 0.15);
     border: 1px solid rgba(255, 140, 0, 0.3);
     color: #d06000;
   }
-  :global(.race-icon-overview.goblin-icon path) {
+  
   .entity-status-badge.demobilising {
     background: rgba(138, 43, 226, 0.15);
     border: 1px solid rgba(138, 43, 226, 0.3);
     color: #6a1b9a;
-  }global(.overview-structure-icon) {
-    opacity: 0.9;
-  .entity-status-badge.gathering, ba(255, 255, 255, 0.7));
+  }
+  
+  .entity-status-badge.gathering, 
   .entity-status-badge.starting_to_gather {
     background: rgba(138, 43, 226, 0.15);
     border: 1px solid rgba(138, 43, 226, 0.3);
-    color: #8a2be2;adow(0 0 3px rgba(0, 255, 255, 0.8)) !important;
-  } opacity: 1 !important;
+    color: #8a2be2;
   }
+  
   .entity-status-badge.fighting {
     background: rgba(220, 20, 60, 0.15);
     border: 1px solid rgba(220, 20, 60, 0.3);
-    color: #c62828;r: rgba(139, 0, 0, 0.05);
-  } border: 1px solid rgba(139, 0, 0, 0.2);
+    color: #c62828;
   }
+  
   .entity-status-badge.active {
     background: rgba(255, 0, 0, 0.15);
     border: 1px solid rgba(255, 0, 0, 0.3);
-    color: #d32f2f;nter;
-  } justify-content: center;
-    width: 1.4em;
+    color: #d32f2f;
+  }
+  
   .entity-status-badge.resolved {
     background: rgba(0, 128, 0, 0.15);
     border: 1px solid rgba(0, 128, 0, 0.3);
-    color: #2e7d32;m;
+    color: #2e7d32;
   }
   
   .entity-status-badge.pending-tick {
-    position: relative;{
+    position: relative;
     animation: pulse 1s infinite alternate;
-  } font-size: 0.8em;
-    font-weight: 500;
-  .entity-status-badge.pending-tick::after {
-    content: '↻';: 0.3em;
-    margin-left: 0.3em;;
-    font-weight: bold;pitalize;
   }
   
-  .entity-status-badge.idle {
-  .section-header {a(128, 128, 128, 0.15);
-    display: flex;lid rgba(128, 128, 128, 0.3);
+  .entity-status-badge.pending-tick::after {
+    content: '↻';
+    margin-left: 0.3em;
+    font-weight: bold;
+  }
+
+  
+  .section-header {
+    display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0.5em 1em;  
-    cursor: pointer;ge.moving {
-    user-select: none;, 128, 0, 0.15);
-    position: relative;gba(0, 128, 0, 0.3);
-    width: 100%;00;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    width: 100%;
     background-color: rgba(0, 0, 0, 0.03);
     border-radius: 0.3em 0.3em 0 0;
     transition: background-color 0.2s ease;
-  } background: rgba(255, 140, 0, 0.15);
-    border: 1px solid rgba(255, 140, 0, 0.3);
+  }
+  
   .section-header:hover {
     background-color: rgba(0, 0, 0, 0.05);
   }
-  .entity-status-badge.demobilising {
-  .section-controls {138, 43, 226, 0.15);
-    display: flex;lid rgba(138, 43, 226, 0.3);
+  
+  .section-controls {
+    display: flex;
     align-items: center;
     gap: 0.5em;
     margin-left: auto;
-  }entity-status-badge.gathering, 
-  .entity-status-badge.starting_to_gather {
-  .section-title {ba(138, 43, 226, 0.15);
-    margin: 0;x solid rgba(138, 43, 226, 0.3);
+  }
+
+  .section-title {
+    margin: 0;
     font-size: 0.9em;
     font-weight: 600;
     color: rgba(0, 0, 0, 0.6);
-    text-transform: uppercase;g {
-    letter-spacing: 0.05em;0, 60, 0.15);
-    display: flex;lid rgba(220, 20, 60, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
     align-items: center;
     gap: 0.3em;
   }
-  .entity-status-badge.active {
-  .collapse-button {(255, 0, 0, 0.15);
-    background: none; rgba(255, 0, 0, 0.3);
-    border: none;f;
+
+  .collapse-button {
+    background: none;
+    border: none;
     color: rgba(0, 0, 0, 0.5);
     font-size: 0.8em;
-    cursor: pointer;ge.resolved {
-    padding: 0.2em 0.5em;28, 0, 0.15);
-    transition: all 0.2s ease;128, 0, 0.3);
-    display: flex;;
+    cursor: pointer;
+    padding: 0.2em 0.5em;
+    transition: all 0.2s ease;
+    display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 1.5em;e.pending-tick {
-    min-height: 1.5em;;
-  } animation: pulse 1s infinite alternate;
-  }
-  .collapse-button:hover {
-    color: rgba(0, 0, 0, 0.8);-tick::after {
-    background-color: rgba(0, 0, 0, 0.05);
-    border-radius: 50%;
-  } font-weight: bold;
+    min-width: 1.5em;
+    min-height: 1.5em;
   }
   
+  .collapse-button:hover {
+    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 50%;
+  }
+
+  
   .sort-controls {
-    display: flex;{
-    gap: 0.2em;ex;
-    margin-right: 0.5em;ce-between;
-  } align-items: center;
-    padding: 0.5em 1em;  
-  .sort-option {ter;
-    background: none;;
-    border: none;ative;
+    display: flex;
+    gap: 0.2em;
+    margin-right: 0.5em;
+  }
+  
+  .sort-option {
+    background: none;
+    border: none;
     font-size: 0.7em;
-    color: rgba(0, 0, 0, 0.5);0, 0, 0.03);
-    padding: 0.2em 0.4em;0.3em 0 0;
-    border-radius: 0.3em;d-color 0.2s ease;
+    color: rgba(0, 0, 0, 0.5);
+    padding: 0.2em 0.4em;
+    border-radius: 0.3em;
     cursor: pointer;
     display: flex;
-    align-items: center;{
-    gap: 0.2em;color: rgba(0, 0, 0, 0.05);
+    align-items: center;
+    gap: 0.2em;
     transition: all 0.2s ease;
   }
-  .section-controls {
+  
   .sort-option:hover {
     background-color: rgba(0, 0, 0, 0.05);
     color: rgba(0, 0, 0, 0.8);
-  } margin-left: auto;
   }
+  
   .sort-option.active {
     background-color: rgba(66, 133, 244, 0.1);
     color: rgba(66, 133, 244, 0.9);
-  } font-size: 0.9em;
-    font-weight: 600;
-  .sort-direction {0, 0, 0.6);
-    font-size: 0.9em;ppercase;
-    font-weight: bold;05em;
-  } display: flex;
-    align-items: center;
+  }
+  
+  .sort-direction {
+    font-size: 0.9em;
+    font-weight: bold;
+  }
+
   .tab-sort-controls {
     display: flex;
     justify-content: center; 
     margin-bottom: 0.5em;
     padding: 0.3em 0;
-  } border: none;
-    color: rgba(0, 0, 0, 0.5);
-    font-size: 0.8em;
-  .entity-badge {er;
-    font-size: 0.7em;5em;
-    padding: 0.2em 0.4em;ease;
+  }
+
+  
+  .entity-badge {
+    font-size: 0.7em;
+    padding: 0.2em 0.4em;
     border-radius: 0.3em;
-    font-weight: 500;er;
-  } justify-content: center;
-    min-width: 1.5em;
-  .owner-badge {1.5em;
+    font-weight: 500;
+  }
+
+  .owner-badge {
     background-color: rgba(76, 175, 80, 0.2);
     color: #2e7d32;
     border: 1px solid rgba(76, 175, 80, 0.4);
-  } color: rgba(0, 0, 0, 0.8);
-    background-color: rgba(0, 0, 0, 0.05);
+  }
+
   .current-player-owned {
     border-color: var(--color-bright-accent, #64ffda);
     background-color: rgba(100, 255, 218, 0.05);
     position: relative;
-  }sort-controls {
-    display: flex;
+  }
+  
   .current-player-owned::after {
-    content: '';: 0.5em;
+    content: '';
     position: absolute;
     left: 0;
-    top: 0;ion {
-    bottom: 0;: none;
-    width: 3px;e;
+    top: 0;
+    bottom: 0;
+    width: 3px;
     background-color: var(--color-bright-accent, #64ffda);
-  } color: rgba(0, 0, 0, 0.5);
-    padding: 0.2em 0.4em;
-    border-radius: 0.3em;
-  .battle-winner {r;
-    color: #ff9800;
-    font-weight: bold;r;
-    margin-left: 0.5em;
-  } transition: all 0.2s ease;
   }
+
+  
+  .battle-winner {
+    color: #ff9800;
+    font-weight: bold;
+    margin-left: 0.5em;
+  }
+  
   .battle-sides {
-    display: flex;er {
-    flex-direction: row;ba(0, 0, 0, 0.05);
-    gap: 0.3em;(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: row;
+    gap: 0.3em;
     font-size: 0.85em;
     margin-top: 0.4em;
     align-items: center;
-  } background-color: rgba(66, 133, 244, 0.1);
-    color: rgba(66, 133, 244, 0.9);
+  }
+  
   .battle-side {
     flex: 1;
     padding: 0.3em 0.5em;
     border-radius: 0.3em;
-  } font-weight: bold;
   }
+  
   .battle-side.side1 {
     background-color: rgba(0, 0, 255, 0.07);
     border: 1px solid rgba(0, 0, 255, 0.15);
-    color: #00008B;: center; 
-  } margin-bottom: 0.5em;
-    padding: 0.3em 0;
+    color: #00008B;
+  }
+  
   .battle-side.side2 {
     background-color: rgba(139, 0, 0, 0.07);
     border: 1px solid rgba(139, 0, 0, 0.15);
     color: #8B0000;
-  } font-size: 0.7em;
-    padding: 0.2em 0.4em;
-  .side-name {ius: 0.3em;
+  }
+  
+  .side-name {
     font-weight: 500;
     font-size: 0.95em;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;6, 175, 80, 0.2);
-  } color: #2e7d32;
-    border: 1px solid rgba(76, 175, 80, 0.4);
+    text-overflow: ellipsis;
+  }
+  
   .side-units {
     font-size: 0.9em;
-    margin-top: 0.1em;d {
-  } border-color: var(--color-bright-accent, #64ffda);
-    background-color: rgba(100, 255, 218, 0.05);
-  .battle-vs {relative;
+    margin-top: 0.1em;
+  }
+  
+  .battle-vs {
     font-weight: bold;
     font-size: 0.9em;
-    display: flex;owned::after {
+    display: flex;
     align-items: center;
     color: rgba(0, 0, 0, 0.6);
-  } left: 0;
-    top: 0;
+  }
+
   .winning-side {
     box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.5);
-    background-color: rgba(255, 215, 0, 0.07);t, #64ffda);
+    background-color: rgba(255, 215, 0, 0.07);
   }
   
   .battle-timer {
     font-family: var(--font-mono, monospace);
     font-size: 0.8em;
     color: rgba(0, 0, 0, 0.6);
-    margin-top: 0.3em;;
+    margin-top: 0.3em;
   }
-  
+
   .battle-progress {
     margin-top: 0.4em;
-    width: 100%;on: row;
-  } gap: 0.3em;
-    font-size: 0.85em;
-  .progress-bar {.4em;
-    height: 0.4em;enter;
+    width: 100%;
+  }
+  
+  .progress-bar {
+    height: 0.4em;
     background-color: rgba(0, 0, 0, 0.1);
     border-radius: 0.25em;
     overflow: hidden;
     margin-bottom: 0.2em;
-  } padding: 0.3em 0.5em;
-    border-radius: 0.3em;
+  }
+  
   .progress-fill {
     height: 100%;
     transition: width 1s ease;
-  } background-color: rgba(0, 0, 255, 0.07);
-    border: 1px solid rgba(0, 0, 255, 0.15);
-  .progress-fill.side1 {
-    background-color: rgba(0, 0, 255, 0.5);
   }
-  .battle-side.side2 {
-  .casualties-tag {r: rgba(139, 0, 0, 0.07);
-    display: inline-block;(139, 0, 0, 0.15);
-    font-size: 0.85em;
-    padding: 0.1em 0.3em;
-    border-radius: 0.2em;
-    margin-left: 0.2em;
-    background-color: rgba(220, 20, 60, 0.1);
-    border: 1px solid rgba(220, 20, 60, 0.2);
-    color: #c62828;wrap;
-  } overflow: hidden;
-    text-overflow: ellipsis;
-  .battle-status-tag {
-    display: inline-block;
-    font-size: 0.85em;
-    padding: 0.2em 0.4em;
-    border-radius: 0.2em;
-    background-color: rgba(255, 140, 0, 0.15);
-    border: 1px solid rgba(255, 140, 0, 0.3);
-    color: #d06000;
-    font-weight: 500;;
-  } font-size: 0.9em;
-    display: flex;
-  .battle-status-tag.new {
-    background-color: rgba(76, 175, 80, 0.15);
-    border: 1px solid rgba(76, 175, 80, 0.3);
-    color: #2e7d32;
-  }winning-side {
-    box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.5);
-    background-color: rgba(255, 215, 0, 0.07);
-  .unit-count {
-    color: rgba(0, 0, 0, 0.7);
-    font-weight: 500;
-  } font-family: var(--font-mono, monospace);
-    font-size: 0.8em;
-  .item-count {(0, 0, 0, 0.6);
-    color: #2d8659;em;
-    font-weight: 500;
-  }
-  .battle-progress {
-    margin-top: 0.4em;
-  .empty-state {
-    padding: 2em;
-    text-align: center;
-    color: rgba(0, 0, 0, 0.5);
-    font-style: italic;
-  } background-color: rgba(0, 0, 0, 0.1);
-    border-radius: 0.25em;
-    overflow: hidden;
-  @keyframes pulse {.2em;
-    from { opacity: 0.8; }
-    to { opacity: 1; }
-  }progress-fill {
-  ht: 100%;
-  /* New styles for battle details */    transition: width 1s ease;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-</style>  }    border-left-color: rgba(139, 0, 0, 0.1);  .side2 .battle-units {    }    background-color: rgba(139, 0, 0, 0.03);  .side2 .battle-group {    }    border-left-color: rgba(0, 0, 255, 0.1);  .side1 .battle-units {    }    background-color: rgba(0, 0, 255, 0.03);  .side1 .battle-group {    }    border-radius: 0.2em;    padding: 0 0.3em;    background-color: rgba(0, 0, 0, 0.05);    font-size: 0.9em;    opacity: 0.8;  .unit-race, .unit-type {    }    font-weight: 500;  .unit-name {    }    align-items: center;    margin-bottom: 0.1em;    font-size: 0.85em;    gap: 0.3em;    display: flex;  .battle-unit {    }    border-left: 2px solid rgba(0, 0, 0, 0.05);    padding-left: 0.4em;    margin-top: 0.2em;  .battle-units {    }    opacity: 0.8;    font-style: italic;  .group-race {    }    font-weight: 500;  .group-type {    }    font-size: 0.9em;    gap: 0.4em;    display: flex;  .group-info {    }    background-color: rgba(0, 0, 0, 0.04);    border-radius: 0.2em;    margin-bottom: 0.2em;    padding: 0.2em 0.3em;  .battle-group {    }    padding-right: 0.2em;    overflow-y: auto;    max-height: 7em;    font-size: 0.9em;    margin-top: 0.3em;  .battle-groups-details {  }
   
   .progress-fill.side1 {
     background-color: rgba(0, 0, 255, 0.5);
@@ -2138,5 +2061,51 @@
   @keyframes pulse {
     from { opacity: 0.8; }
     to { opacity: 1; }
+  }
+
+  .battle-groups-details {
+    margin-top: 0.3em;
+    font-size: 0.9em;
+  }
+  
+  .battle-group {
+    margin-bottom: 0.2em;
+  }
+  
+  .group-info {
+    display: flex;
+    gap: 0.3em;
+  }
+  
+  .group-race, .group-type {
+    font-size: 0.85em;
+    padding: 0.1em 0.3em;
+    border-radius: 0.2em;
+    background-color: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.7);
+  }
+  
+  .battle-units {
+    margin-left: 0.5em;
+    margin-top: 0.1em;
+  }
+  
+  .battle-unit {
+    display: flex;
+    gap: 0.3em;
+    align-items: center;
+    margin-bottom: 0.1em;
+  }
+  
+  .unit-name {
+    font-weight: 500;
+  }
+  
+  .unit-race, .unit-type {
+    font-size: 0.8em;
+    color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.03);
+    padding: 0.05em 0.2em;
+    border-radius: 0.15em;
   }
 </style>
