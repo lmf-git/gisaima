@@ -22,8 +22,7 @@
         isInternalUrlChange,
         setHighlighted,
         coordinates,
-        handleKeyboardEvent,
-        hasTileContent // Add import for hasTileContent function
+        hasTileContent
     } from "../../lib/stores/map.js";
     
     import { getFunctions, httpsCallable } from 'firebase/functions'; 
@@ -45,13 +44,13 @@
     import Demobilise from '../../components/map/Demobilise.svelte';
     import StructureOverview from '../../components/map/StructureOverview.svelte';
     import Gather from '../../components/map/Gather.svelte';
-    import Crafting from '../../components/map/Crafting.svelte'; // Uncomment this import
-    import Recruitment from '../../components/map/Recruitment.svelte'; // Add the import for Recruitment
+    import Crafting from '../../components/map/Crafting.svelte';
+    import Recruitment from '../../components/map/Recruitment.svelte';
     import Map from '../../components/icons/Map.svelte';
     import Spyglass from '../../components/icons/Spyglass.svelte';
     import Recenter from '../../components/map/Recenter.svelte';
     import Chat from '../../components/map/Chat.svelte';
-    import Notices from '../../components/map/Notices.svelte'; // Add import for Notices component
+    import Notices from '../../components/map/Notices.svelte';
     import BirdActive from '../../components/icons/BirdActive.svelte';
     import { unreadMessages } from "../../lib/stores/chat.js";
     import Bird from '../../components/icons/Bird.svelte';
