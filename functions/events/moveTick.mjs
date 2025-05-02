@@ -32,8 +32,12 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
     // Path is invalid, reset the group status
     logger.warn(`Invalid path for group ${groupId} in world ${worldId}`);
     updates[`${groupPath}/status`] = 'idle';
+    // Remove movement properties instead of setting to null
     updates[`${groupPath}/movementPath`] = null;
     updates[`${groupPath}/pathIndex`] = null;
+    updates[`${groupPath}/moveStarted`] = null;
+    updates[`${groupPath}/moveSpeed`] = null;
+    updates[`${groupPath}/nextMoveTime`] = null;
     return false;
   }
   
@@ -44,6 +48,7 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
   if (nextIndex >= group.movementPath.length) {
     // Path is complete, update the group status
     updates[`${groupPath}/status`] = 'idle';
+    // Remove movement properties instead of setting to null
     updates[`${groupPath}/movementPath`] = null;
     updates[`${groupPath}/pathIndex`] = null;
     updates[`${groupPath}/moveStarted`] = null;
@@ -96,21 +101,38 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
   
   // If position is changing (next point is different from current tile)
   if (nextChunkKey !== chunkKey || nextTileKey !== tileKey) {
-    // Create a new group at the next position with the correct status
-    updates[`worlds/${worldId}/chunks/${nextChunkKey}/${nextTileKey}/groups/${groupId}`] = {
-      ...group,
-      x: nextPoint.x,
-      y: nextPoint.y,
-      pathIndex: nextIndex,
-      nextMoveTime: nextMoveTime,
-      // Ensure status remains 'moving' throughout the path
-      status: nextIndex < group.movementPath.length - 1 ? 'moving' : 'idle',
-      // Add message about progress
-      lastMessage: {
-        text: `Moving to next location (${nextPoint.x},${nextPoint.y})`,
-        timestamp: now
-      }
-    };
+    // Create a copy of the group without movement properties if this is the last step
+    let updatedGroup = {...group};
+    if (nextIndex === group.movementPath.length - 1) {
+      // If this is the final step, don't carry over movement properties
+      const { moveSpeed, moveStarted, nextMoveTime, movementPath, pathIndex, ...cleanGroup } = updatedGroup;
+      updatedGroup = {
+        ...cleanGroup,
+        status: 'idle',
+        x: nextPoint.x,
+        y: nextPoint.y,
+        lastMessage: {
+          text: `Moving to next location (${nextPoint.x},${nextPoint.y})`,
+          timestamp: now
+        }
+      };
+    } else {
+      // Normal movement step
+      updatedGroup = {
+        ...updatedGroup,
+        x: nextPoint.x,
+        y: nextPoint.y,
+        pathIndex: nextIndex,
+        nextMoveTime: nextMoveTime,
+        status: 'moving',
+        lastMessage: {
+          text: `Moving to next location (${nextPoint.x},${nextPoint.y})`,
+          timestamp: now
+        }
+      };
+    }
+    
+    updates[`worlds/${worldId}/chunks/${nextChunkKey}/${nextTileKey}/groups/${groupId}`] = updatedGroup;
     
     // Remove the group from the current position
     updates[`${groupPath}`] = null;
@@ -154,12 +176,15 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
     updates[`${groupPath}/pathIndex`] = nextIndex;
     updates[`${groupPath}/nextMoveTime`] = nextMoveTime;
     
-    // If this is the last step, set status to idle
+    // If this is the last step, set status to idle and remove movement properties
     if (nextIndex === group.movementPath.length - 1) {
       updates[`${groupPath}/status`] = 'idle';
-      // Clean up movement data
+      // Remove movement properties instead of setting to null
       updates[`${groupPath}/moveStarted`] = null;
       updates[`${groupPath}/moveSpeed`] = null;
+      updates[`${groupPath}/movementPath`] = null;
+      updates[`${groupPath}/pathIndex`] = null;
+      updates[`${groupPath}/nextMoveTime`] = null;
       updates[`${groupPath}/targetX`] = null;
       updates[`${groupPath}/targetY`] = null;
     }
