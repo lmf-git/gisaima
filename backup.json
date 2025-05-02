@@ -5,18 +5,18 @@
         "ancient-lands": {
           "achievements": {
             "first_steps": true,
-            "first_steps_date": 1746168452388,
+            "first_steps_date": 1746171188503,
             "mobilised": true
           },
           "alive": true,
-          "displayName": "tester",
+          "displayName": "may2",
           "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-          "inGroup": "-OPEc21bZnEksrcbNIks",
-          "joined": 1746165141593,
+          "inGroup": "-OPEuOklD3-dXCINHxwL",
+          "joined": 1746170752602,
           "lastLocation": {
-            "timestamp": 1746168841292,
-            "x": -24,
-            "y": 4
+            "timestamp": 1746172680561,
+            "x": -16,
+            "y": -5
           },
           "race": "human"
         }
@@ -27,6 +27,101 @@
     "ancient-lands": {
       "chunks": {
         "-1,-1": {
+          "-16,-5": {
+            "groups": {
+              "-OPEuOklD3-dXCINHxwL": {
+                "id": "-OPEuOklD3-dXCINHxwL",
+                "lastMessage": {
+                  "text": "Moving to next location (-16,-5)",
+                  "timestamp": 1746172680561
+                },
+                "name": "may2's Force",
+                "owner": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+                "race": "human",
+                "status": "idle",
+                "targetX": -16,
+                "targetY": -5,
+                "units": {
+                  "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
+                    "displayName": "may2",
+                    "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+                    "race": "human",
+                    "type": "player"
+                  }
+                },
+                "x": -16,
+                "y": -5
+              },
+              "monster_1746170346285_9404": {
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746170346285_9404",
+                "items": [
+                  {
+                    "id": "STONE_PIECES",
+                    "name": "Stone Pieces",
+                    "quantity": 4,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746170581403_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 4,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains"
+                    ],
+                    "description": "Grain that grows in open grasslands",
+                    "id": "item_1746170581403_608",
+                    "name": "Wheat",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Moving to next location (-16,-5)",
+                  "timestamp": 1746172680561
+                },
+                "monsterType": "goblin",
+                "name": "Goblin Raiders",
+                "status": "idle",
+                "targetX": -16,
+                "targetY": -3,
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746170346285_3502_0": {
+                    "id": "monster_unit_1746170346285_3502_0",
+                    "type": "goblin"
+                  },
+                  "monster_unit_1746170346285_7976_1": {
+                    "id": "monster_unit_1746170346285_7976_1",
+                    "type": "goblin"
+                  },
+                  "monster_unit_1746170346285_9884_2": {
+                    "id": "monster_unit_1746170346285_9884_2",
+                    "type": "goblin"
+                  }
+                },
+                "x": -16,
+                "y": -5
+              }
+            }
+          },
           "-23,-8": {
             "structure": {
               "capacity": 60,
@@ -182,115 +277,6 @@
               "race": "human",
               "type": "spawn"
             }
-          },
-          "-24,4": {
-            "groups": {
-              "-OPEc21bZnEksrcbNIks": {
-                "battleId": "battle_1746168962386_619",
-                "battleRole": "defender",
-                "battleSide": 2,
-                "id": "-OPEc21bZnEksrcbNIks",
-                "inBattle": true,
-                "lastMessage": {
-                  "text": "Moving to next location (-24,4)",
-                  "timestamp": 1746168841292
-                },
-                "name": "tester's Force",
-                "owner": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-                "race": "human",
-                "status": "fighting",
-                "targetX": -24,
-                "targetY": 4,
-                "units": {
-                  "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
-                    "displayName": "tester",
-                    "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-                    "race": "human",
-                    "type": "player"
-                  }
-                },
-                "x": -24,
-                "y": 4
-              },
-              "monster_1746167463918_1972": {
-                "battleId": "battle_1746168962386_619",
-                "battleRole": "attacker",
-                "battleSide": 1,
-                "gatheringTicksRemaining": 1,
-                "id": "monster_1746167463918_1972",
-                "inBattle": true,
-                "items": [
-                  {
-                    "id": "MEDICINAL_HERBS",
-                    "name": "Medicinal Herbs",
-                    "quantity": 1,
-                    "rarity": "uncommon",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "item_1746167822231_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Small rocks useful for crafting tools",
-                    "id": "item_1746167822231_2",
-                    "name": "Stone Pieces",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Moving to next location (-24,4)",
-                  "timestamp": 1746168661130
-                },
-                "monsterType": "spider",
-                "moveReason": "structure_attack",
-                "name": "Giant Spiders",
-                "status": "fighting",
-                "targetX": -24,
-                "targetY": 4,
-                "type": "monster",
-                "units": {
-                  "monster_unit_1746167463918_1545_2": {
-                    "id": "monster_unit_1746167463918_1545_2",
-                    "type": "spider"
-                  },
-                  "monster_unit_1746167463918_8324_1": {
-                    "id": "monster_unit_1746167463918_8324_1",
-                    "type": "spider"
-                  },
-                  "monster_unit_1746167463918_9257_0": {
-                    "id": "monster_unit_1746167463918_9257_0",
-                    "type": "spider"
-                  }
-                },
-                "x": -24,
-                "y": 4
-              }
-            }
           }
         }
       },
@@ -300,9 +286,9 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746170101000,
+        "lastTick": 1746172680561,
         "name": "Ancient Lands",
-        "playerCount": 34,
+        "playerCount": 35,
         "seed": 13579,
         "size": "large",
         "spawns": {
