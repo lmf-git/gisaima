@@ -894,7 +894,7 @@
                class:expanded={activeFilter !== 'all' || !collapsedSections.groups}
                class:collapsed={activeFilter === 'all' && collapsedSections.groups}>
             {#if activeFilter !== 'all' || !collapsedSections.groups}
-              {#each sortedGroups as group ('group:' + group.id)}
+              {#each sortedGroups as group (`group:${group.x},${group.y}:${group.id}`)}
                 <div 
                   class="entity {isAtTarget(group.x, group.y) ? 'at-target' : ''} {isOwnedByCurrentPlayer(group) ? 'current-player-owned' : ''}"
                   class:is-here={group.distance === 0}
