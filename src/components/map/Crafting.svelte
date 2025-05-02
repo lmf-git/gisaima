@@ -8,7 +8,7 @@
     getItemCategories, 
     getAllRecipes, 
     canCraftRecipe 
-  } from 'gisaima-shared/definitions/items.js';
+  } from 'gisaima-shared/definitions/ITEMS.js';
   import { BUILDINGS } from 'gisaima-shared/definitions/BUILDINGS.js';
   import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
 
