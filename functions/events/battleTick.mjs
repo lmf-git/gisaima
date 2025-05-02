@@ -125,8 +125,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           // Actually delete the group from the database
           updates[groupPath] = null;
           
+          // Also update battle data to reflect this group is gone
+          updates[`${basePath}/side1/groups/${groupId}`] = null;
+          
           // Handle players in this group specifically - mark them as no longer in the group
-          // This ensures players are properly handled even if their group is destroyed
           for (const unitId in units) {
             if (units[unitId].type === 'player') {
               const playerId = units[unitId].id;
@@ -152,10 +154,13 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
             }
           }
         } else {
-          
           // Remove the selected units from the group
           unitsToRemove.forEach(unitId => {
+            // Remove unit from the tile group data
             updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/units/${unitId}`] = null;
+            
+            // Also remove unit directly from the battle data
+            updates[`${basePath}/side1/groups/${groupId}/units/${unitId}`] = null;
           });
         }
         
@@ -215,8 +220,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           // Actually delete the group from the database
           updates[groupPath] = null;
           
+          // Also update battle data to reflect this group is gone
+          updates[`${basePath}/side2/groups/${groupId}`] = null;
+          
           // Handle players in this group specifically - mark them as no longer in the group
-          // This ensures players are properly handled even if their group is destroyed
           for (const unitId in units) {
             if (units[unitId].type === 'player') {
               const playerId = units[unitId].id;
@@ -244,7 +251,11 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         } else {
           // Remove the selected units from the group
           unitsToRemove.forEach(unitId => {
+            // Remove unit from the tile group data
             updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/units/${unitId}`] = null;
+            
+            // Also remove unit directly from the battle data
+            updates[`${basePath}/side2/groups/${groupId}/units/${unitId}`] = null;
           });
         }
         
