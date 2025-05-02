@@ -44,6 +44,15 @@
   "worlds": {
     "ancient-lands": {
       "chat": {
+        "battle_end_1746180181569_battle_1746180124847_521": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle at (-23, 5) has ended. Attackers have defeated Defenders!",
+          "timestamp": 1746180181569,
+          "type": "event"
+        },
         "battle_start_1746180124847_battle_1746180124847_521": {
           "location": {
             "x": -23,
@@ -180,26 +189,6 @@
         },
         "-2,0": {
           "-23,5": {
-            "battles": {
-              "battle_1746180124847_521": {
-                "createdAt": 1746180124847,
-                "id": "battle_1746180124847_521",
-                "locationX": -23,
-                "locationY": 5,
-                "side1": {
-                  "casualties": 0,
-                  "power": 2
-                },
-                "side2": {
-                  "casualties": 0,
-                  "power": 2
-                },
-                "targetTypes": [
-                  "group"
-                ],
-                "tickCount": 1
-              }
-            },
             "groups": {
               "-OPFQCT05js7f-b5acdE": {
                 "battleId": "battle_1746180124847_521",
@@ -292,7 +281,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746180125487,
+        "lastTick": 1746180181219,
         "name": "Ancient Lands",
         "playerCount": 47,
         "seed": 13579,
