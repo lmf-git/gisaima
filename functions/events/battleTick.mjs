@@ -88,7 +88,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         
         // Calculate this group's share of attrition based on its proportion of side power
         const groupPower = calculateGroupPower(group);
-        console.debug('test side 1 group power', group, groupPower);
+        logger.debug('test side 1 group power', group, groupPower);
         const groupShare = side1Power > 0 ? groupPower / side1Power : 1;
         const groupAttrition = Math.round(side2Attrition * groupShare);
         
@@ -159,7 +159,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         
         // Calculate this group's share of attrition based on its proportion of side power
         const groupPower = calculateGroupPower(group);
-        console.debug('test side 2 group power', group, groupPower);
+        logger.debug('test side 2 group power', group, groupPower);
         const groupShare = side2Power > 0 ? groupPower / side2Power : 1;
         const groupAttrition = Math.round(side1Attrition * groupShare);
         
@@ -347,7 +347,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // A battle ends when one side has no power left
     if (newSide1Power <= 0 || newSide2Power <= 0) {
       console.log('battle sohuld end', newSide1Power <= 0, newSide2Power <= 0);
-      console.debug(battle);
+      logger.debug(battle);
 
       // Use the new function to determine the winner
       const winner = determineWinner(newSide1Power, newSide2Power);
