@@ -98,11 +98,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     const groupsToDelete = [];
     const playersKilled = [];
     
-    // Keep track of loot from defeated groups
-    const lootFromDefeated = {
-      side1: [], // items from side 1 groups that will be looted by side 2
-      side2: []  // items from side 2 groups that will be looted by side 1
-    };
+    // Replace the existing loot tracking with battle.loot
+    const battleLoot = battle.loot || [];
 
     // Helper function to process each side
     function processSide(sideNumber, sideGroups, sidePower, oppositeAttrition, sideCasualties) {
@@ -170,15 +167,12 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
               const lootItems = items.map(item => ({
                 ...item,
                 lootedFrom: 'battle',
-                lootedAt: now
+                lootedAt: now,
+                sourceSide: sideNumber // Track which side the loot came from
               }));
               
-              // Add to appropriate side's loot
-              if (sideNumber === 1) {
-                lootFromDefeated.side1.push(...lootItems);
-              } else {
-                lootFromDefeated.side2.push(...lootItems);
-              }
+              // Add to central battle loot pool instead of side-specific arrays
+              battleLoot.push(...lootItems);
             }
           }
         } else {
@@ -218,6 +212,9 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // Store the current power values in the battle data
     battleUpdates.side1Power = newSide1Power;
     battleUpdates.side2Power = newSide2Power;
+
+    // Store any accumulated loot in the battle
+    battleUpdates.loot = battleLoot;
     
     // Handle player deaths
     for (const player of playersKilled) {
@@ -247,23 +244,38 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       };
     }
     
-    // Helper function to distribute loot from defeated groups
-    function distributeLoot(loot, survivingGroups, oppositeIndex) {
-      if (loot.length > 0 && survivingGroups.length > 0) {
-        // Select a random surviving group to receive the loot
-        const receivingGroupId = survivingGroups[Math.floor(Math.random() * survivingGroups.length)];
+    // Helper function to distribute loot to the winner
+    function distributeLootToWinner(winner) {
+      if (battleLoot.length === 0) return;
+      
+      let winnerGroups = [];
+      if (winner === 1) {
+        winnerGroups = side1Surviving;
+      } else if (winner === 2) {
+        winnerGroups = side2Surviving;
+      }
+      
+      if (winnerGroups.length > 0) {
+        // Select a random surviving group from winning side
+        const receivingGroupId = winnerGroups[Math.floor(Math.random() * winnerGroups.length)];
         
-        loot.forEach(item => {
+        battleLoot.forEach(item => {
           const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-          // This line shows loot is added to group in chunk data, not to battle sides:
           updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/items/${itemId}`] = item;
         });
         
         // Add a message about looting
         updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/lastMessage`] = {
-          text: `Looted ${loot.length} items from battle`,
+          text: `Looted ${battleLoot.length} items from battle`,
           timestamp: Date.now()
         };
+      } else if (winner !== 0) {
+        // If winner is determined but no surviving groups, leave loot on tile
+        // This creates a "treasure" for other groups to find later
+        battleLoot.forEach(item => {
+          const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/items/${itemId}`] = item;
+        });
       }
     }
     
@@ -273,16 +285,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     
     const side2Surviving = Object.keys(side2Groups)
       .filter(id => !groupsToDelete.some(g => g.groupId === id && g.side === 2));
-    
-    // Distribute loot to survivors
-    distributeLoot(lootFromDefeated.side2, side1Surviving, 2);
-    distributeLoot(lootFromDefeated.side1, side2Surviving, 1);
-    
-    // Apply the battle updates to the main battle object
-    updates[basePath] = {
-      ...battle,              // Keep existing battle properties
-      ...battleUpdates,       // Apply our new updates
-    };
     
     // --------- PHASE 4: CHECK FOR BATTLE END CONDITIONS ---------
     
@@ -297,6 +299,9 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       
       // Determine the winner
       const winner = determineWinner(newSide1Power, newSide2Power);
+      
+      // Distribute loot to winner or leave on tile if no survivors
+      distributeLootToWinner(winner);
       
       // --------- PHASE 5: END BATTLE AND CLEANUP ---------
       
