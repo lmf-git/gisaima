@@ -112,18 +112,14 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     
     // Add group to the battle side
     const battleSideKey = side === 1 ? 'side1' : 'side2';
-    updates[`battles/${worldId}/${battleId}/${battleSideKey}/groups/${groupId}`] = true;
     
-    // Update enhanced battle data in the battle object
-    // Add the group to side participants
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/${battleSideKey}/participants`] = 
-      [...(battleData[battleSideKey].participants || []), participantInfo];
-    
-    // Extract player IDs and add to overall participants
-    const playerIds = participantInfo.players.map(p => p.id);
-    const currentParticipants = battleData.participants || [];
-    const newParticipants = [...new Set([...currentParticipants, ...playerIds])];
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/participants`] = newParticipants;
+    // Simply add the group to the battle groups (more streamlined approach)
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/${battleSideKey}/groups/${groupId}`] = {
+      present: true,
+      type: joiningGroup.type || 'player',
+      race: joiningGroup.race || 'unknown',
+      monsterType: joiningGroup.monsterType
+    };
     
     // Add battle event
     const sideName = battleData[battleSideKey]?.name || `Side ${side}`;
@@ -136,6 +132,7 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
       groupId: groupId
     };
     
+    // We can keep the events array for battle history
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/battles/${battleId}/events`] = 
       [...(battleData.events || []), newEvent];
     

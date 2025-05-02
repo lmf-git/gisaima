@@ -155,95 +155,10 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
     const battleId = `battle_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const now = Date.now();
     
-    // Extract participants info for both sides
-    const side1Participants = attackerGroups.map(group => {
-      // Extract all player units from the group
-      let players = [];
-      if (group.units) {
-        if (Array.isArray(group.units)) {
-          players = group.units.filter(unit => unit.type === 'player').map(unit => ({
-            id: unit.id,
-            displayName: unit.displayName || 'Unknown',
-            race: unit.race || 'unknown'
-          }));
-        } else {
-          players = Object.values(group.units)
-            .filter(unit => unit.type === 'player')
-            .map(unit => ({
-              id: unit.id,
-              displayName: unit.displayName || 'Unknown',
-              race: unit.race || 'unknown'
-            }));
-        }
-      }
-      
-      // Always include the group owner
-      if (group.owner && !players.some(p => p.id === group.owner)) {
-        players.push({
-          id: group.owner,
-          displayName: group.ownerName || 'Unknown', 
-          race: group.race || 'unknown'
-        });
-      }
-      
-      return {
-        groupId: group.id,
-        groupName: group.name || `Group ${group.id.slice(-4)}`,
-        players,
-        dominantType: group.monsterType || group.race || 'unknown'
-      };
-    });
-    
-    const side2Participants = defenderGroups.map(group => {
-      // Extract all player units from the group
-      let players = [];
-      if (group.units) {
-        if (Array.isArray(group.units)) {
-          players = group.units.filter(unit => unit.type === 'player').map(unit => ({
-            id: unit.id,
-            displayName: unit.displayName || 'Unknown',
-            race: unit.race || 'unknown'
-          }));
-        } else {
-          players = Object.values(group.units)
-            .filter(unit => unit.type === 'player')
-            .map(unit => ({
-              id: unit.id,
-              displayName: unit.displayName || 'Unknown',
-              race: unit.race || 'unknown'
-            }));
-        }
-      }
-      
-      // Always include the group owner
-      if (group.owner && !players.some(p => p.id === group.owner)) {
-        players.push({
-          id: group.owner,
-          displayName: group.ownerName || 'Unknown', 
-          race: group.race || 'unknown'
-        });
-      }
-      
-      return {
-        groupId: group.id,
-        groupName: group.name || `Group ${group.id.slice(-4)}`,
-        players,
-        dominantType: group.monsterType || group.race || 'unknown'
-      };
-    });
-    
     // Generate meaningful side names
     const side1Name = getSideName(attackerGroups, null, 1);
     const side2Name = getSideName(defenderGroups, structure, 2);
     
-    // Extract all player IDs for easy reference
-    const allParticipantIds = [
-      ...new Set([
-        ...side1Participants.flatMap(p => p.players.map(player => player.id)),
-        ...side2Participants.flatMap(p => p.players.map(player => player.id))
-      ])
-    ];
-
     // Prepare the battle data with enhanced information
     const battleData = {
       id: battleId,
@@ -263,8 +178,7 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
           return acc;
         }, {}),
         name: side1Name,
-        casualties: 0,
-        participants: side1Participants
+        casualties: 0
       },
       side2: {
         groups: defenderGroupIds ? defenderGroupIds.reduce((acc, id) => {
@@ -279,10 +193,8 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
           return acc;
         }, {}) : {},
         name: side2Name,
-        casualties: 0,
-        participants: side2Participants
+        casualties: 0
       },
-      participants: allParticipantIds,
       tickCount: 0,
       createdAt: now
     };

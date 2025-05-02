@@ -902,28 +902,7 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
   // Create battle ID and prepare battle data
   const battleId = `battle_${now}_${Math.floor(Math.random() * 1000)}`;
   
-  // Extract participants info for both sides
-  const side1Participants = [{
-    groupId: monsterGroup.id,
-    groupName: monsterGroup.name || `Monster Group`,
-    dominantType: monsterGroup.monsterType || 'monster'
-  }];
-  
-  const side2Participants = selectedTargets.map(group => ({
-    groupId: group.id,
-    groupName: group.name || `Group ${group.id.slice(-4)}`,
-    dominantType: group.race || 'unknown',
-    // Extract player info if available
-    players: Object.values(group.units || {})
-      .filter(unit => unit.type === 'player')
-      .map(unit => ({
-        id: unit.id, 
-        displayName: unit.displayName || 'Unknown Player',
-        race: unit.race || 'unknown'
-      }))
-  }));
-
-  // Create enhanced battle object
+  // Create enhanced battle object - simplified without redundant participants info
   const battleData = {
     id: battleId,
     locationX: x,
@@ -938,8 +917,7 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
         }
       },
       casualties: 0,
-      name: monsterGroup.name || 'Monster Attack Force',
-      participants: side1Participants
+      name: monsterGroup.name || 'Monster Attack Force'
     },
     side2: {
       groups: selectedTargets.reduce((obj, group) => {
@@ -952,8 +930,7 @@ async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetGroups, 
       }, {}),
       casualties: 0,
       name: selectedTargets.length === 1 ? 
-        (selectedTargets[0].name || 'Defenders') : 'Defending Forces',
-      participants: side2Participants
+        (selectedTargets[0].name || 'Defenders') : 'Defending Forces'
     },
     tickCount: 0,
     createdAt: now
@@ -1017,14 +994,7 @@ async function initiateAttackOnStructure(db, worldId, monsterGroup, structure, l
   // Create battle ID and prepare battle data
   const battleId = `battle_${now}_${Math.floor(Math.random() * 1000)}`;
   
-  // Extract participants info
-  const side1Participants = [{
-    groupId: monsterGroup.id,
-    groupName: monsterGroup.name || `Monster Group`,
-    dominantType: monsterGroup.monsterType || 'monster'
-  }];
-
-  // Create enhanced battle object
+  // Create enhanced battle object - simplified without redundant participants info
   const battleData = {
     id: battleId,
     locationX: x,
@@ -1041,8 +1011,7 @@ async function initiateAttackOnStructure(db, worldId, monsterGroup, structure, l
         }
       },
       casualties: 0,
-      name: monsterGroup.name || 'Monster Attack Force',
-      participants: side1Participants
+      name: monsterGroup.name || 'Monster Attack Force'
     },
     side2: {
       groups: {},
