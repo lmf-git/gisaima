@@ -982,9 +982,9 @@ get-caller-file@^2.0.5:
   resolved "https://registry.yarnpkg.com/get-caller-file/-/get-caller-file-2.0.5.tgz#4f94412a82db32f36e3b0b9741f8a97feb031f7e"
   integrity sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==
 
-gisaima-shared@lmf-git/gisaima-shared#ad0de4d5af640b44879f2ac2c64c422fd116ba0f:
+gisaima-shared@lmf-git/gisaima-shared#5f2b25733e9410c6891d14ea918b9b60d1672ee6:
   version "1.0.0"
-  resolved "https://codeload.github.com/lmf-git/gisaima-shared/tar.gz/ad0de4d5af640b44879f2ac2c64c422fd116ba0f"
+  resolved "https://codeload.github.com/lmf-git/gisaima-shared/tar.gz/5f2b25733e9410c6891d14ea918b9b60d1672ee6"
 
 http-parser-js@>=0.5.1:
   version "0.5.9"
