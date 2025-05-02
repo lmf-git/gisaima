@@ -291,9 +291,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       
       distributeLootToWinner(winner);
       
-      // Delete the battle instead of updating it
-      updates[basePath] = null;
-      
       // Generate side names for chat message
       const side1Name = battle.side1.name || 'Attackers';
       const side2Name = battle.side2.name || 'Defenders';
@@ -318,6 +315,9 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           y: battle.locationY
         }
       };
+      
+      // IMPORTANT: Fix for update conflict - don't modify battle paths if we're deleting the battle
+      // We'll delete the entire battle, so don't bother updating paths within it
       
       if (tile && tile.groups) {
         // Log battle result for debugging
@@ -392,6 +392,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           }
         }
       }
+      
+      // CRITICAL FIX: Delete the battle as the last step to avoid conflicts
+      // Don't update any paths within the battle after this point
+      updates[basePath] = null;
       
       logger.debug(`Battle ${battleId} cleanup complete`);
     }
