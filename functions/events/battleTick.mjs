@@ -250,11 +250,12 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // Helper function to distribute loot from defeated groups
     function distributeLoot(loot, survivingGroups, oppositeIndex) {
       if (loot.length > 0 && survivingGroups.length > 0) {
+        // Select a random surviving group to receive the loot
         const receivingGroupId = survivingGroups[Math.floor(Math.random() * survivingGroups.length)];
-        const group = tile.groups[receivingGroupId];
         
         loot.forEach(item => {
           const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+          // This line shows loot is added to group in chunk data, not to battle sides:
           updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/items/${itemId}`] = item;
         });
         
