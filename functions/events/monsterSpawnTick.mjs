@@ -99,7 +99,7 @@ export async function spawnMonsters(worldId) {
         }
         
         // Tiles that would make the most sense for spawning monsters to prioritise.
-        if (tileData.groups || tileData.structure || tileData.players || tileData.items) {
+        if (tileData.groups || tileData.battles || tileData.structure || tileData.players || tileData.items) {
           activeLocations.push({
             chunkKey,
             tileKey,
