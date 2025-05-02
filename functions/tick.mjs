@@ -169,8 +169,8 @@ export const processGameTicks = onSchedule({
       const craftingResult = await processCrafting(worldId);
       console.log(`Processed ${craftingResult.processed || 0} crafting operations in world ${worldId}`);
       
-      // Process monster strategies with a 30% chance each tick
-      if (Math.random() < 0.3) {
+      // Process monster strategies with a 66.6% chance each tick
+      if (Math.random() < 0.666) {
         console.log(`Processing monster strategies for world ${worldId}`);
         const strategyResult = await processMonsterStrategies(worldId);
         
