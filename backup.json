@@ -7,10 +7,10 @@
             "mobilised": true
           },
           "alive": true,
-          "displayName": "test5",
+          "displayName": "one",
           "id": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
-          "inGroup": "-OPFQNCObCCH_ycUwALG",
-          "joined": 1746179806384,
+          "inGroup": "-OPFV2dmJfLf87t9unca",
+          "joined": 1746180984051,
           "lastLocation": {
             "x": -23,
             "y": 5
@@ -24,14 +24,14 @@
         "ancient-lands": {
           "achievements": {
             "first_attack": true,
-            "first_attack_date": 1746180124847,
+            "first_attack_date": 1746181100702,
             "mobilised": true
           },
           "alive": true,
-          "displayName": "test4",
+          "displayName": "two",
           "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
-          "inGroup": "-OPFQCT05js7f-b5acdE",
-          "joined": 1746179759095,
+          "inGroup": "-OPFV1Y5A-BtnXnBMCRz",
+          "joined": 1746180988638,
           "lastLocation": {
             "x": -23,
             "y": 5
@@ -44,23 +44,56 @@
   "worlds": {
     "ancient-lands": {
       "chat": {
-        "battle_end_1746180181569_battle_1746180124847_521": {
+        "-OPFV1ZxBlmx9HrC57fc": {
           "location": {
             "x": -23,
             "y": 5
           },
-          "text": "Battle at (-23, 5) has ended. Attackers have defeated Defenders!",
-          "timestamp": 1746180181569,
+          "text": "two's Force is being mobilized at (-23,5)",
+          "timestamp": 1746181040385,
+          "type": "system"
+        },
+        "-OPFV2ff195DcLKG73Bt": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "one's Force is being mobilized at (-23,5)",
+          "timestamp": 1746181044909,
+          "type": "system"
+        },
+        "battle_start_1746181100702_battle_1746181100702_686": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Battle has begun at (-23, 5)! two's Force is attacking one's Force!",
+          "timestamp": 1746181100702,
           "type": "event"
         },
-        "battle_start_1746180124847_battle_1746180124847_521": {
+        "chat_1746181081133_125": {
           "location": {
+            "timestamp": 1746181081133,
             "x": -23,
             "y": 5
           },
-          "text": "Battle has begun at (-23, 5)! test4's Force is attacking test5's Force!",
-          "timestamp": 1746180124847,
-          "type": "event"
+          "text": "A large army of human forces has mobilized at (-23, 5) - \"one's Force\"",
+          "timestamp": 1746181081133,
+          "type": "event",
+          "userId": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
+          "userName": "one's Force"
+        },
+        "chat_1746181081133_151": {
+          "location": {
+            "timestamp": 1746181081133,
+            "x": -23,
+            "y": 5
+          },
+          "text": "A large army of human forces has mobilized at (-23, 5) - \"two's Force\"",
+          "timestamp": 1746181081133,
+          "type": "event",
+          "userId": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+          "userName": "two's Force"
         }
       },
       "chunks": {
@@ -189,24 +222,72 @@
         },
         "-2,0": {
           "-23,5": {
+            "battles": {
+              "battle_1746181100702_686": {
+                "createdAt": 1746181100702,
+                "id": "battle_1746181100702_686",
+                "locationX": -23,
+                "locationY": 5,
+                "side1": {
+                  "casualties": 0,
+                  "groups": {
+                    "-OPFV1Y5A-BtnXnBMCRz": {
+                      "race": "human",
+                      "type": "player",
+                      "units": {
+                        "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
+                          "displayName": "two",
+                          "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
+                          "race": "human",
+                          "type": "player"
+                        }
+                      }
+                    }
+                  },
+                  "name": "two's Force"
+                },
+                "side2": {
+                  "casualties": 0,
+                  "groups": {
+                    "-OPFV2dmJfLf87t9unca": {
+                      "race": "human",
+                      "type": "player",
+                      "units": {
+                        "qi3VZSiTsXYrHWpc2axAsPBnBor2": {
+                          "displayName": "one",
+                          "id": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
+                          "race": "human",
+                          "type": "player"
+                        }
+                      }
+                    }
+                  },
+                  "name": "one's Force"
+                },
+                "targetTypes": [
+                  "group"
+                ],
+                "tickCount": 0
+              }
+            },
             "groups": {
-              "-OPFQCT05js7f-b5acdE": {
-                "battleId": "battle_1746180124847_521",
+              "-OPFV1Y5A-BtnXnBMCRz": {
+                "battleId": "battle_1746181100702_686",
                 "battleRole": "attacker",
                 "battleSide": 1,
-                "id": "-OPFQCT05js7f-b5acdE",
+                "id": "-OPFV1Y5A-BtnXnBMCRz",
                 "inBattle": true,
                 "lastMessage": {
                   "text": "Group is fully mobilized and ready",
-                  "timestamp": 1746179821308
+                  "timestamp": 1746181081133
                 },
-                "name": "test4's Force",
+                "name": "two's Force",
                 "owner": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
                 "race": "human",
                 "status": "fighting",
                 "units": {
                   "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
-                    "displayName": "test4",
+                    "displayName": "two",
                     "id": "wKUsOXL3zoXQTxWfDWzsShETd4w1",
                     "race": "human",
                     "type": "player"
@@ -215,23 +296,23 @@
                 "x": -23,
                 "y": 5
               },
-              "-OPFQNCObCCH_ycUwALG": {
-                "battleId": "battle_1746180124847_521",
+              "-OPFV2dmJfLf87t9unca": {
+                "battleId": "battle_1746181100702_686",
                 "battleRole": "defender",
                 "battleSide": 2,
-                "id": "-OPFQNCObCCH_ycUwALG",
+                "id": "-OPFV2dmJfLf87t9unca",
                 "inBattle": true,
                 "lastMessage": {
                   "text": "Group is fully mobilized and ready",
-                  "timestamp": 1746179821308
+                  "timestamp": 1746181081133
                 },
-                "name": "test5's Force",
+                "name": "one's Force",
                 "owner": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
                 "race": "human",
                 "status": "fighting",
                 "units": {
                   "qi3VZSiTsXYrHWpc2axAsPBnBor2": {
-                    "displayName": "test5",
+                    "displayName": "one",
                     "id": "qi3VZSiTsXYrHWpc2axAsPBnBor2",
                     "race": "human",
                     "type": "player"
@@ -281,9 +362,9 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746180181219,
+        "lastTick": 1746181081133,
         "name": "Ancient Lands",
-        "playerCount": 47,
+        "playerCount": 51,
         "seed": 13579,
         "size": "large",
         "spawns": {
