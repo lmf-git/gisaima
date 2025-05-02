@@ -95,6 +95,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         // Use the new function to select casualties
         const { unitsToRemove, playersKilled: groupPlayersKilled } = 
           selectUnitsForCasualties(units, groupAttrition);
+
+        logger.debug()
         
         // Add players killed in this group to the overall list
         playersKilled.push(...groupPlayersKilled);
@@ -422,6 +424,11 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
   };
   
   if (tile && tile.groups) {
+    // Log battle result for debugging
+    logger.debug(`Battle ${battleId} ended. Winner: ${winner === 1 ? side1Name : (winner === 2 ? side2Name : 'Draw')}`);
+    logger.debug(`Side 1 groups: ${JSON.stringify(Object.keys(battle.side1.groups || {}))}`);
+    logger.debug(`Side 2 groups: ${JSON.stringify(Object.keys(battle.side2.groups || {}))}`);
+    
     // Update side 1 groups - set to idle only if they're on the winning side
     const side1Groups = battle.side1.groups || {};
     for (const groupId in side1Groups) {
@@ -429,21 +436,24 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
       
       // Skip updates for groups that are being deleted to avoid path conflicts
       if (groupsToBeDeleted && groupsToBeDeleted.has(groupPath)) {
+        logger.debug(`Skipping updates for deleted group: ${groupId}`);
         continue;
       }
       
       if (tile.groups[groupId]) {
+        logger.debug(`Updating side 1 group ${groupId} status`);
         // Set group status based on result
         updates[`${groupPath}/inBattle`] = false;
         updates[`${groupPath}/battleId`] = null;
         updates[`${groupPath}/battleSide`] = null;
+        updates[`${groupPath}/battleRole`] = null;
+        updates[`${groupPath}/status`] = 'idle';
         
-        // If this side won, set status to idle, otherwise fleeing
-        if (winner === 1) {
-          updates[`${groupPath}/status`] = 'idle';
-        } else {
-          updates[`${groupPath}/status`] = 'idle';  // Could set to 'fleeing' in future if you implement retreat mechanic
-        }
+        // Add a message about the battle result
+        updates[`${groupPath}/lastMessage`] = {
+          text: winner === 1 ? "Your group has won the battle!" : "Your group has lost the battle.",
+          timestamp: now
+        };
       }
     }
     
@@ -454,21 +464,24 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
       
       // Skip updates for groups that are being deleted to avoid path conflicts
       if (groupsToBeDeleted && groupsToBeDeleted.has(groupPath)) {
+        logger.debug(`Skipping updates for deleted group: ${groupId}`);
         continue;
       }
       
       if (tile.groups[groupId]) {
+        logger.debug(`Updating side 2 group ${groupId} status`);
         // Set group status based on result
         updates[`${groupPath}/inBattle`] = false;
         updates[`${groupPath}/battleId`] = null;
         updates[`${groupPath}/battleSide`] = null;
+        updates[`${groupPath}/battleRole`] = null;
+        updates[`${groupPath}/status`] = 'idle';
         
-        // If this side won, set status to idle, otherwise fleeing
-        if (winner === 2) {
-          updates[`${groupPath}/status`] = 'idle';
-        } else {
-          updates[`${groupPath}/status`] = 'idle';  // Could set to 'fleeing' in future if you implement retreat mechanic
-        }
+        // Add a message about the battle result
+        updates[`${groupPath}/lastMessage`] = {
+          text: winner === 2 ? "Your group has won the battle!" : "Your group has lost the battle.",
+          timestamp: now
+        };
       }
     }
   }
@@ -494,5 +507,6 @@ async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, 
     }
   }
   
+  logger.debug(`Battle ${battleId} cleanup complete`);
   return true;
 };
