@@ -104,8 +104,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       side2: []  // items from side 2 groups that will be looted by side 1
     };
 
-    // ***** REFACTORED: Create helper function to process each side *****
-    // This eliminates the duplication between processing side1 and side2
+    // Helper function to process each side
     function processSide(sideNumber, sideGroups, sidePower, oppositeAttrition, sideCasualties) {
       let newSidePower = 0;
       const updatedCasualties = sideCasualties;
@@ -248,7 +247,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       };
     }
     
-    // ***** REFACTORED: Distribute loot from defeated groups *****
+    // Helper function to distribute loot from defeated groups
     function distributeLoot(loot, survivingGroups, oppositeIndex) {
       if (loot.length > 0 && survivingGroups.length > 0) {
         const receivingGroupId = survivingGroups[Math.floor(Math.random() * survivingGroups.length)];
@@ -284,25 +283,135 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       ...battleUpdates,       // Apply our new updates
     };
     
-    // Check if battle should end - based only on power
-    // A battle ends when one side has no power left
-    if (newSide1Power <= 0 || newSide2Power <= 0) {
-      console.log('battle should end', newSide1Power <= 0, newSide2Power <= 0);
-      logger.debug(battle);
-
-      // Use the new function to determine the winner
+    // --------- PHASE 4: CHECK FOR BATTLE END CONDITIONS ---------
+    
+    // A battle ends when one side has no power left or after many ticks with minimal progress
+    const shouldEndBattle = 
+      newSide1Power <= 0 || 
+      newSide2Power <= 0 || 
+      (tickCount > 10 && Math.random() < 0.1);
+    
+    if (shouldEndBattle) {
+      console.log(`Battle ${battleId} ending after ${tickCount} ticks. Power levels: Side 1: ${newSide1Power}, Side 2: ${newSide2Power}`);
+      
+      // Determine the winner
       const winner = determineWinner(newSide1Power, newSide2Power);
       
-      // End the battle
-      return await endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile, groupsToBeDeleted);
-    }
-    
-    // Add a random chance for battle to end in stalemate after many ticks
-    // This prevents endless battles when attrition is minimal
-    if (tickCount > 10 && Math.random() < 0.1) {
-      console.log(`Battle ${battleId} ending after ${tickCount} ticks with stalemate chance`);
-      const winner = determineWinner(newSide1Power, newSide2Power);
-      return await endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile, groupsToBeDeleted);
+      // --------- PHASE 5: END BATTLE AND CLEANUP ---------
+      
+      // Delete the battle instead of updating it
+      updates[basePath] = null;
+      
+      // Generate side names for chat message
+      const side1Name = battle.side1.name || 'Attackers';
+      const side2Name = battle.side2.name || 'Defenders';
+      let resultText = '';
+      
+      if (winner === 1) {
+        resultText = `${side1Name} have defeated ${side2Name}!`;
+      } else if (winner === 2) {
+        resultText = `${side2Name} have successfully defended against ${side1Name}!`;
+      } else {
+        resultText = `The battle between ${side1Name} and ${side2Name} has ended in a stalemate.`;
+      }
+      
+      // Add chat message about battle ending
+      const now = Date.now();
+      updates[`worlds/${worldId}/chat/battle_end_${now}_${battleId}`] = {
+        text: `Battle at (${battle.locationX}, ${battle.locationY}) has ended. ${resultText}`,
+        type: 'event',
+        timestamp: now,
+        location: {
+          x: battle.locationX,
+          y: battle.locationY
+        }
+      };
+      
+      if (tile && tile.groups) {
+        // Log battle result for debugging
+        logger.debug(`Battle ${battleId} ended. Winner: ${winner === 1 ? side1Name : (winner === 2 ? side2Name : 'Draw')}`);
+        logger.debug(`Side 1 groups: ${JSON.stringify(Object.keys(battle.side1.groups || {}))}`);
+        logger.debug(`Side 2 groups: ${JSON.stringify(Object.keys(battle.side2.groups || {}))}`);
+        
+        // Update side 1 groups - set to idle
+        const side1Groups = battle.side1.groups || {};
+        for (const groupId in side1Groups) {
+          const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+          
+          // Skip updates for groups that are being deleted to avoid path conflicts
+          if (groupsToBeDeleted && groupsToBeDeleted.has(groupPath)) {
+            logger.debug(`Skipping updates for deleted group: ${groupId}`);
+            continue;
+          }
+          
+          if (tile.groups[groupId]) {
+            logger.debug(`Updating side 1 group ${groupId} status`);
+            // Set group status based on result
+            updates[`${groupPath}/inBattle`] = false;
+            updates[`${groupPath}/battleId`] = null;
+            updates[`${groupPath}/battleSide`] = null;
+            updates[`${groupPath}/battleRole`] = null;
+            updates[`${groupPath}/status`] = 'idle';
+            
+            // Add a message about the battle result
+            updates[`${groupPath}/lastMessage`] = {
+              text: winner === 1 ? "Your group has won the battle!" : "Your group has lost the battle.",
+              timestamp: now
+            };
+          }
+        }
+        
+        // Update side 2 groups - set to idle
+        const side2Groups = battle.side2.groups || {};
+        for (const groupId in side2Groups) {
+          const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+          
+          // Skip updates for groups that are being deleted to avoid path conflicts
+          if (groupsToBeDeleted && groupsToBeDeleted.has(groupPath)) {
+            logger.debug(`Skipping updates for deleted group: ${groupId}`);
+            continue;
+          }
+          
+          if (tile.groups[groupId]) {
+            logger.debug(`Updating side 2 group ${groupId} status`);
+            // Set group status based on result
+            updates[`${groupPath}/inBattle`] = false;
+            updates[`${groupPath}/battleId`] = null;
+            updates[`${groupPath}/battleSide`] = null;
+            updates[`${groupPath}/battleRole`] = null;
+            updates[`${groupPath}/status`] = 'idle';
+            
+            // Add a message about the battle result
+            updates[`${groupPath}/lastMessage`] = {
+              text: winner === 2 ? "Your group has won the battle!" : "Your group has lost the battle.",
+              timestamp: now
+            };
+          }
+        }
+      }
+      
+      // Clean up structure if involved
+      if (tile && tile.structure && battle.targetTypes && battle.targetTypes.includes('structure')) {
+        // Remove battle status from structure
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/inBattle`] = false;
+        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/battleId`] = null;
+        
+        // If attackers won, damage or destroy the structure
+        if (winner === 1) {
+          const structure = tile.structure;
+          // Structures get destroyed when attackers win
+          if (structure.type !== 'spawn') {
+            // Don't destroy spawn points, just damage them
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/health`] = 
+              Math.max(1, (structure.health || 100) - 50);
+          } else {
+            // For regular structures, destroy completely
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`] = null;
+          }
+        }
+      }
+      
+      logger.debug(`Battle ${battleId} cleanup complete`);
     }
     
     return true;
@@ -310,123 +419,4 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     logger.error(`Error processing battle ${battleId}:`, error);
     return false;
   }
-};
-
-async function endBattle(worldId, chunkKey, tileKey, battleId, battle, updates, winner, tile, groupsToBeDeleted) {
-  const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`;
-  
-  // Delete the battle instead of updating it
-  updates[`${basePath}`] = null;
-  
-  // Generate side names for chat message
-  const side1Name = battle.side1.name || 'Attackers';
-  const side2Name = battle.side2.name || 'Defenders';
-  let resultText = '';
-  
-  if (winner === 1) {
-    resultText = `${side1Name} have defeated ${side2Name}!`;
-  } else if (winner === 2) {
-    resultText = `${side2Name} have successfully defended against ${side1Name}!`;
-  } else {
-    resultText = `The battle between ${side1Name} and ${side2Name} has ended in a stalemate.`;
-  }
-  
-  // Add chat message about battle ending
-  const now = Date.now();
-  updates[`worlds/${worldId}/chat/battle_end_${now}_${battleId}`] = {
-    text: `Battle at (${battle.locationX}, ${battle.locationY}) has ended. ${resultText}`,
-    type: 'event',
-    timestamp: now, // Keep timestamp for chat display
-    location: {
-      x: battle.locationX,
-      y: battle.locationY
-    }
-  };
-  
-  if (tile && tile.groups) {
-    // Log battle result for debugging
-    logger.debug(`Battle ${battleId} ended. Winner: ${winner === 1 ? side1Name : (winner === 2 ? side2Name : 'Draw')}`);
-    logger.debug(`Side 1 groups: ${JSON.stringify(Object.keys(battle.side1.groups || {}))}`);
-    logger.debug(`Side 2 groups: ${JSON.stringify(Object.keys(battle.side2.groups || {}))}`);
-    
-    // Update side 1 groups - set to idle only if they're on the winning side
-    const side1Groups = battle.side1.groups || {};
-    for (const groupId in side1Groups) {
-      const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
-      
-      // Skip updates for groups that are being deleted to avoid path conflicts
-      if (groupsToBeDeleted && groupsToBeDeleted.has(groupPath)) {
-        logger.debug(`Skipping updates for deleted group: ${groupId}`);
-        continue;
-      }
-      
-      if (tile.groups[groupId]) {
-        logger.debug(`Updating side 1 group ${groupId} status`);
-        // Set group status based on result
-        updates[`${groupPath}/inBattle`] = false;
-        updates[`${groupPath}/battleId`] = null;
-        updates[`${groupPath}/battleSide`] = null;
-        updates[`${groupPath}/battleRole`] = null;
-        updates[`${groupPath}/status`] = 'idle';
-        
-        // Add a message about the battle result
-        updates[`${groupPath}/lastMessage`] = {
-          text: winner === 1 ? "Your group has won the battle!" : "Your group has lost the battle.",
-          timestamp: now
-        };
-      }
-    }
-    
-    // Update side 2 groups - set to idle only if they're on the winning side
-    const side2Groups = battle.side2.groups || {};
-    for (const groupId in side2Groups) {
-      const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
-      
-      // Skip updates for groups that are being deleted to avoid path conflicts
-      if (groupsToBeDeleted && groupsToBeDeleted.has(groupPath)) {
-        logger.debug(`Skipping updates for deleted group: ${groupId}`);
-        continue;
-      }
-      
-      if (tile.groups[groupId]) {
-        logger.debug(`Updating side 2 group ${groupId} status`);
-        // Set group status based on result
-        updates[`${groupPath}/inBattle`] = false;
-        updates[`${groupPath}/battleId`] = null;
-        updates[`${groupPath}/battleSide`] = null;
-        updates[`${groupPath}/battleRole`] = null;
-        updates[`${groupPath}/status`] = 'idle';
-        
-        // Add a message about the battle result
-        updates[`${groupPath}/lastMessage`] = {
-          text: winner === 2 ? "Your group has won the battle!" : "Your group has lost the battle.",
-          timestamp: now
-        };
-      }
-    }
-  }
-  
-  // Clean up structure if involved
-  if (tile && tile.structure && battle.targetTypes && battle.targetTypes.includes('structure')) {
-    // Remove battle status from structure
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/inBattle`] = false;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/battleId`] = null;
-    
-    // If attackers won, damage or destroy the structure
-    if (winner === 1) {
-      const structure = tile.structure;
-      // Structures get destroyed when attackers win
-      if (structure.type !== 'spawn') {
-        // Don't destroy spawn points, just damage them
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/health`] = 
-          Math.max(1, (structure.health || 100) - 50);
-      } else {
-        // For regular structures, destroy completely
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`] = null;
-      }
-    }
-  }
-  
-  logger.debug(`Battle ${battleId} cleanup complete`);
-  return true;
-};
+}
