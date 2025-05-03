@@ -67,16 +67,18 @@ async function isLocationSuitableForBuilding(db, worldId, location, worldScan) {
       return false; // Too many monster structures nearby
     }
     
-    // Check if we're too close to player structures
+    // Check if we're too close to player structures (increased minimum distance)
     const playerStructures = worldScan.playerSpawns || [];
+    const MIN_DISTANCE_FROM_SPAWN = 5; // Increased minimum distance
+    
     for (const playerStructure of playerStructures) {
       const distance = Math.sqrt(
         Math.pow(playerStructure.x - location.x, 2) + 
         Math.pow(playerStructure.y - location.y, 2)
       );
       
-      if (distance < 5) { // Don't build too close to player structures
-        return false;
+      if (distance < MIN_DISTANCE_FROM_SPAWN) {
+        return false; // Too close to player spawn
       }
     }
     

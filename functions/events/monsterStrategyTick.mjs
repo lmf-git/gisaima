@@ -51,6 +51,20 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   // Base path for this group
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
   
+  // Check if monster is in exploration phase - prioritize movement
+  const inExplorationPhase = monsterGroup.explorationPhase && monsterGroup.exploreDuration > now;
+  
+  // Handle exploration phase differently
+  if (inExplorationPhase) {
+    // Skip demobilizing, merging, and other non-movement actions during exploration
+    // Force movement action with higher probability (90%)
+    if (Math.random() < 0.9) {
+      return await moveMonsterTowardsTarget(
+        db, worldId, monsterGroup, location, worldScan, updates, now, null, monsterGroup.personality
+      );
+    }
+  }
+  
   // Get personality and its influence weights, or use balanced defaults
   const personalityId = monsterGroup.personality?.id || 'BALANCED';
   const personality = MONSTER_PERSONALITIES[personalityId] || MONSTER_PERSONALITIES.BALANCED;
@@ -85,9 +99,29 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
     };
   }
   
+  // If we're on our own structure and have just mobilized, prioritize moving away
+  const structureOnTile = tileData.structure && 
+    (tileData.structure.type && tileData.structure.owner === 'monster');
+  
+  const justMobilized = monsterGroup.mobilizedFromStructure && 
+    monsterGroup.mobilizedFromStructure === (tileData.structure?.id || null);
+  
+  if (structureOnTile && justMobilized) {
+    // Set exploration phase if not already set
+    if (!monsterGroup.explorationPhase) {
+      updates[`${groupPath}/explorationPhase`] = true;
+      updates[`${groupPath}/exploreDuration`] = now + 300000; // 5 minutes
+    }
+    
+    // Force movement away
+    return await moveMonsterTowardsTarget(
+      db, worldId, monsterGroup, location, worldScan, updates, now, null, personality
+    );
+  }
+  
   // First priority: Check if there are other monster groups on this tile to merge with
   // Influenced by personality's merge weight
-  if (Math.random() < MERGE_CHANCE * (weights?.merge || 1.0)) {
+  if (!inExplorationPhase && Math.random() < MERGE_CHANCE * (weights?.merge || 1.0)) {
     const mergeableGroups = findMergeableMonsterGroups(tileData, groupId);
     if (mergeableGroups.length > 0) {
       return await mergeMonsterGroupsOnTile(db, worldId, monsterGroup, mergeableGroups, updates, now);
@@ -96,7 +130,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   
   // Check if there's a battle on this tile
   // Influenced by personality's attack/join battle weight
-  if (tileData.battles) {
+  if (!inExplorationPhase && tileData.battles) {
     const joinWeight = weights?.joinBattle || weights?.attack || 1.0;
     if (Math.random() < joinWeight) {
       return await joinExistingBattle(db, worldId, monsterGroup, tileData, updates, now);
@@ -104,7 +138,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   }
   
   // NEW: Check for other monster groups to attack (for FERAL personality)
-  if (personality?.canAttackMonsters && Math.random() < 0.85 * (weights?.attackMonsters || 0)) {
+  if (!inExplorationPhase && personality?.canAttackMonsters && Math.random() < 0.85 * (weights?.attackMonsters || 0)) {
     const attackableMonsters = findAttackableMonsterGroups(tileData, groupId);
     if (attackableMonsters.length > 0) {
       return await initiateAttackOnMonsters(db, worldId, monsterGroup, attackableMonsters, location, updates, now);
@@ -125,6 +159,8 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
     tileData.structure.owner !== 'monster';
     
   if (attackableStructure && Math.random() < 0.7 * (weights?.attack || 1.0)) {
+    // Log that we found a structure to attack
+    console.log(`Monster group ${groupId} considering attacking structure of type ${tileData.structure.type} at ${location.x},${location.y}`);
     return await initiateAttackOnStructure(db, worldId, monsterGroup, tileData.structure, location, updates, now);
   }
 
@@ -132,10 +168,6 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   const totalUnits = monsterGroup.units ? Object.keys(monsterGroup.units).length : 1;
   const hasResources = monsterGroup.items && monsterGroup.items.length > 0;
   const resourceCount = countTotalResources(monsterGroup.items);
-  
-  // If there's a monster structure on this tile, consider demobilizing or upgrading
-  const structureOnTile = tileData.structure && 
-    (tileData.structure.type.includes('monster') || tileData.structure.owner === 'monster');
 
   // Strategy 1: If on a monster structure tile with enough resources, consider upgrading
   // Influenced by personality's build weight
@@ -233,7 +265,10 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   // Strategy 6: Move towards a strategic target
   // This is the default action if others don't apply
   // Influenced by personality's explore weight
-  const exploreChance = Math.min(0.9, (weights?.explore || 1.0) * 0.5); 
+  const exploreChance = inExplorationPhase ? 
+    Math.min(0.9, (weights?.explore || 1.0) * 1.5) : // Higher chance during exploration phase
+    Math.min(0.9, (weights?.explore || 1.0) * 0.5);   // Normal chance otherwise
+    
   if (Math.random() < exploreChance) {
     return await moveMonsterTowardsTarget(db, worldId, monsterGroup, location, worldScan, updates, now, null, personality);
   }

@@ -37,12 +37,13 @@ export async function moveMonsterTowardsTarget(
   let targetType;
   let targetDistance = Infinity;
 
-  // Check if monster is in exploration phase (new flag)
+  // Check if monster is in exploration phase
   const inExplorationPhase = monsterGroup.explorationPhase && monsterGroup.exploreDuration > now;
   
-  // Modified for recently mobilized monsters: clear exploration phase if it's over
+  // Clear exploration phase if it's over
   if (monsterGroup.explorationPhase && monsterGroup.exploreDuration <= now) {
     updates[`${groupPath}/explorationPhase`] = false;
+    updates[`${groupPath}/exploreDuration`] = null;
   }
   
   // Territorial personality special handling
@@ -58,48 +59,33 @@ export async function moveMonsterTowardsTarget(
     }
   }
   
-  // Check if we're in exploration phase or recently mobilized - prioritize moving away from home structure
+  // First priority for exploration phase or recently mobilized - prioritize moving AWAY from home structure
   if (inExplorationPhase && monsterGroup.mobilizedFromStructure) {
     const sourceStructure = worldScan.monsterStructures.find(s => 
       s.structure && s.structure.id === monsterGroup.mobilizedFromStructure);
       
     if (sourceStructure) {
-      // Move away from source structure - find player spawns or resource hotspots to explore
-      const exploreTargets = [];
-      
-      // Prioritize player spawns for aggressive monsters
-      if (weights.attack > 1.0 && worldScan.playerSpawns && worldScan.playerSpawns.length > 0) {
-        exploreTargets.push(...worldScan.playerSpawns.map(spawn => ({
-          location: spawn,
-          type: 'player_spawn',
-          weight: weights.attack * 2
-        })));
-      }
-      
-      // Add resource hotspots for all monsters
-      if (worldScan.resourceHotspots && worldScan.resourceHotspots.length > 0) {
-        exploreTargets.push(...worldScan.resourceHotspots.map(hotspot => ({
-          location: hotspot,
-          type: 'resource_hotspot',
-          weight: weights.gather || 1.0
-        })));
-      }
-      
-      // If we found targets, select one weighted by personality
-      if (exploreTargets.length > 0) {
-        const totalWeight = exploreTargets.reduce((sum, t) => sum + t.weight, 0);
-        let random = Math.random() * totalWeight;
+      // Move away from source structure - prioritize player spawns
+      if (worldScan.playerSpawns && worldScan.playerSpawns.length > 0) {
+        // Sort player spawns by distance (closest first)
+        const sortedSpawns = [...worldScan.playerSpawns].sort((a, b) => {
+          const distA = calculateDistance(location, a);
+          const distB = calculateDistance(location, b);
+          return distA - distB;
+        });
         
-        for (const target of exploreTargets) {
-          random -= target.weight;
-          if (random <= 0) {
-            targetLocation = target.location;
-            targetType = target.type;
-            targetDistance = calculateDistance(location, target.location);
-            break;
-          }
-        }
+        // Pick one of the closest three, with preference to closer ones
+        const targetIndex = Math.floor(Math.random() * Math.min(3, sortedSpawns.length));
+        const targetSpawn = sortedSpawns[targetIndex];
+        
+        targetLocation = targetSpawn;
+        targetType = 'player_spawn';
+        targetDistance = calculateDistance(location, targetSpawn);
+        
+        // Log that we found a player spawn target during exploration phase
+        console.log(`Monster in exploration phase targeting player spawn at (${targetSpawn.x}, ${targetSpawn.y})`);
       }
+      // If no player spawns, fall through to other target options
     }
   }
   
@@ -109,14 +95,22 @@ export async function moveMonsterTowardsTarget(
   if (!targetLocation && Math.random() < adjacentCheckChance) {
     const adjacentStructure = await findAdjacentStructures(db, worldId, location);
     if (adjacentStructure) {
-      // If we found an adjacent structure, move to it for potential attack
-      return moveToAdjacentTile(worldId, monsterGroup, location, adjacentStructure, updates, now, 'structure_attack');
+      // Only target non-monster structures (target player structures more aggressively)
+      if (adjacentStructure.structure && 
+          (!adjacentStructure.structure.monster && 
+           adjacentStructure.structure.owner !== 'monster')) {
+        // If we found an adjacent structure, move to it for potential attack
+        return moveToAdjacentTile(worldId, monsterGroup, location, adjacentStructure, updates, now, 'structure_attack');
+      }
+      // Also target player groups
+      if (adjacentStructure.hasPlayerGroups) {
+        return moveToAdjacentTile(worldId, monsterGroup, location, adjacentStructure, updates, now, 'structure_attack');
+      }
     }
   }
   
   // If this monster group has a preferredStructureId (their "home"), prioritize it
-  // Enhanced for territorial personality
-  // But SKIP this if the monster is recently mobilized or in exploration phase
+  // But SKIP this if the monster is in exploration phase
   const homePreferenceWeight = personality?.id === 'TERRITORIAL' ? 2.0 : 1.0;
   if (!targetLocation && 
       !inExplorationPhase &&
@@ -238,7 +232,7 @@ function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorati
       maxDistance: MAX_SCAN_DISTANCE
     },
     player_spawn: {
-      weight: 0.3,
+      weight: 0.5,  // Increased base weight for player spawns
       locations: worldScan.playerSpawns || [],
       maxDistance: MAX_SCAN_DISTANCE
     }
@@ -247,17 +241,17 @@ function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorati
   // Apply personality modifiers
   if (weights) {
     // Aggressive personality prioritizes player targets
-    if (weights.attack > 1.5) {
-      priorities.player_spawn.weight *= weights.attack;
+    if (weights.attack > 1.0) {
+      priorities.player_spawn.weight *= weights.attack * 1.5;
     }
     
     // Resource-focused personalities prioritize resource hotspots
-    if (weights.gather > 1.5) {
+    if (weights.gather > 1.0) {
       priorities.resource_hotspot.weight *= weights.gather;
     }
     
     // Builder personalities prioritize monster structures
-    if (weights.build > 1.5) {
+    if (weights.build > 1.0) {
       priorities.monster_structure.weight *= weights.build;
     }
   }
@@ -269,11 +263,11 @@ function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorati
     priorities.resource_hotspot.weight *= 1.3;
   }
   
-  // Exploration phase adjustments - prioritize player structures and resources
+  // Exploration phase adjustments - prioritize player structures
   if (inExplorationPhase) {
-    priorities.player_spawn.weight *= 2.0;  // Strong preference for finding players
-    priorities.resource_hotspot.weight *= 1.5;  // Also like finding resources
-    priorities.monster_structure.weight *= 0.2;  // Actively avoid monster structures
+    priorities.player_spawn.weight *= 3.0;  // Very strong preference for finding players
+    priorities.resource_hotspot.weight *= 1.0;  // Normal interest in resources
+    priorities.monster_structure.weight *= 0.1;  // Actively avoid monster structures
   }
   
   return priorities;

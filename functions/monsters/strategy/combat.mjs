@@ -191,8 +191,22 @@ export async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetG
 export async function initiateAttackOnStructure(db, worldId, monsterGroup, structure, location, updates, now) {
   const { x, y } = location;
   
+  // Don't attack monster structures
+  if (structure.monster === true || structure.owner === 'monster') {
+    console.log("Skipping attack on monster structure");
+    return { action: null, reason: 'monster_structure' };
+  }
+  
   // Create battle ID and prepare battle data
   const battleId = `battle_${now}_${Math.floor(Math.random() * 1000)}`;
+  
+  // Set defensive power based on structure type
+  let defensePower = structure.defensePower || 20; // Default structure defense power
+  
+  // Spawn points get higher defense
+  if (structure.type === 'spawn') {
+    defensePower = Math.max(defensePower, 30); // Minimum defense for spawn points
+  }
   
   // Create enhanced battle object with full units data
   const battleData = {
@@ -201,7 +215,7 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
     locationY: y,
     targetTypes: ['structure'],
     structureId: structure.id,
-    structurePower: structure.defensePower || 20, // Default structure defense power
+    structurePower: defensePower,
     side1: {
       groups: {
         [monsterGroup.id]: {
@@ -220,7 +234,7 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
         name: structure.name || 'Structure',
         type: structure.type || 'unknown',
         owner: structure.owner || 'unknown',
-        defensePower: structure.defensePower || 20
+        defensePower: defensePower
       }
     },
     tickCount: 0,
@@ -253,9 +267,12 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
     location: { x, y }
   };
   
+  console.log(`Monster group ${monsterGroup.id} is attacking structure ${structure.id} (type: ${structure.type}) at (${x}, ${y})`);
+  
   return {
     action: 'attack',
     targetStructure: structure.id,
+    structureType: structure.type,
     battleId
   };
 }
