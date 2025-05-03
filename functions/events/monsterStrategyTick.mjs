@@ -17,7 +17,7 @@ import {
   initiateAttackOnMonsters     // Import the new function
 } from '../monsters/strategy/combat.mjs';
 import { startMonsterGathering, countTotalResources } from '../monsters/strategy/resources.mjs';
-import { MONSTER_PERSONALITIES, shouldChangePersonality, getNewPersonality } from 'gisaima-shared/definitions/MONSTER_PERSONALITIES.js';
+import { MONSTER_PERSONALITIES, shouldChangePersonality, getRandomPersonality } from 'gisaima-shared/definitions/MONSTER_PERSONALITIES.js';
 import { 
   isMonsterGroup, 
   isAvailableForAction,
@@ -114,7 +114,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   
   // Check if monster should change personality
   if (shouldChangePersonality()) {
-    const newPersonality = getNewPersonality(personalityId);
+    const newPersonality = getRandomPersonality(personalityId);
     updates[`${groupPath}/personality`] = {
       id: newPersonality.id,
       name: newPersonality.name,
