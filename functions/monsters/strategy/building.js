@@ -43,8 +43,9 @@ async function isLocationSuitableForBuilding(db, worldId, location, worldScan) {
     const tileSnapshot = await tileRef.once('value');
     const tileData = tileSnapshot.val();
     
-    if (tileData?.structure) {
-      return false; // Tile already has a structure
+    // Use the comprehensive isSuitableForMonsterBuilding check
+    if (!tileData || !isSuitableForMonsterBuilding(tileData)) {
+      return false;
     }
     
     // Check if there are too many monster structures nearby

@@ -21,8 +21,7 @@ import { MONSTER_PERSONALITIES, shouldChangePersonality, getNewPersonality } fro
 import { 
   isMonsterGroup, 
   isAvailableForAction,
-  scanWorldMap,
-  EXPLORATION_TICKS
+  scanWorldMap
 } from '../monsters/_monsters.mjs';
 import { 
   buildMonsterStructure, 
@@ -36,6 +35,7 @@ const STRATEGY_CHANCE = 0.4; // Chance for a monster group to take strategic act
 const MIN_UNITS_TO_BUILD = 5; // Minimum units needed to consider building
 const MIN_RESOURCES_TO_BUILD = 15; // Minimum resources needed to build a structure
 const MERGE_CHANCE = 0.7; // Chance to attempt merging when other monster groups are present
+const MIN_DISTANCE_FROM_SPAWN = 10; // Minimum distance from player spawns to build a structure
 
 // Re-export imported functions
 export { isMonsterGroup, isAvailableForAction };
@@ -313,6 +313,31 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
     
   if (Math.random() < exploreChance) {
     return await moveMonsterTowardsTarget(db, worldId, monsterGroup, location, worldScan, updates, now, null, personality);
+  }
+  
+  // BUILDING LOGIC - Check if monster group should build a structure
+  // Only consider building if no structure exists on this tile
+  if (!tileData.structure && personality?.weights?.build > 0.5) {
+    const buildChance = personality.weights.build / 5; // Max 20% chance per tick for highest build weight
+
+    // Use the comprehensive isSuitableForMonsterBuilding check
+    if (Math.random() < buildChance && isSuitableForMonsterBuilding(tileData)) {
+      // Check for minimum distance from player spawns
+      let tooCloseToSpawn = false;
+      for (const spawn of worldScan.playerSpawns) {
+        const distance = calculateDistance(location, spawn);
+        if (distance < MIN_DISTANCE_FROM_SPAWN) {
+          tooCloseToSpawn = true;
+          break;
+        }
+      }
+
+      if (!tooCloseToSpawn) {
+        // Attempt to build a monster structure
+        // Implementation for building would go here
+        console.log(`Monster group ${monsterGroup.id} is considering building at (${x}, ${y})`);
+      }
+    }
   }
   
   // If all strategies are rejected (based on personality weights), just stay idle

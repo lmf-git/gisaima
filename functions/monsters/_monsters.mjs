@@ -129,7 +129,7 @@ export function calculateSimplePath(startX, startY, endX, endY, maxSteps = 20) {
   let x = startX;
   let y = startY;
   
-  // Limit path length to avoid excessive computation
+  // Limit path to avoid excessive computation
   let stepsLeft = Math.min(maxSteps, dx + dy);
   
   while ((x !== endX || y !== endY) && stepsLeft > 0) {
@@ -884,4 +884,95 @@ export function generateMergedGroupName(unitCount, monsterType, originalName = n
   
   // Ultimate fallback
   return `${sizePrefix} Creatures`;
+}
+
+/**
+ * Get a random monster personality
+ * @param {string} monsterType - Type of monster (can influence personality selection)
+ * @returns {Object} Selected personality object
+ */
+export function getRandomPersonality(monsterType) {
+  const personalities = Object.values(MONSTER_PERSONALITIES);
+  
+  // Some monster types might have personality preferences
+  if (monsterType) {
+    const unitDefinition = Units.getUnit(monsterType, 'monster');
+    
+    // If this monster type has preferred personalities defined in UNITS.js
+    if (unitDefinition && unitDefinition.personalityPreferences && unitDefinition.personalityPreferences.length > 0) {
+      const preferredTypes = unitDefinition.personalityPreferences
+        .map(id => MONSTER_PERSONALITIES[id])
+        .filter(Boolean); // Filter out any undefined entries
+      
+      // Return a random preferred personality if any are found
+      if (preferredTypes.length > 0) {
+        return preferredTypes[Math.floor(Math.random() * preferredTypes.length)];
+      }
+    }
+    
+    // Fallback to the previous behavior (the code commented out below was replaced with the above)
+    /*
+    // Example: Wolves tend to be more feral or aggressive
+    if (monsterType.toLowerCase().includes('wolf')) {
+      const preferredTypes = [MONSTER_PERSONALITIES.FERAL, MONSTER_PERSONALITIES.AGGRESSIVE, MONSTER_PERSONALITIES.TERRITORIAL];
+      return preferredTypes[Math.floor(Math.random() * preferredTypes.length)];
+    }
+    
+    // Goblins tend to be sneaky or cautious
+    if (monsterType.toLowerCase().includes('goblin')) {
+      const preferredTypes = [MONSTER_PERSONALITIES.SNEAKY, MONSTER_PERSONALITIES.CAUTIOUS];
+      return preferredTypes[Math.floor(Math.random() * preferredTypes.length)];
+    }
+    
+    // Spiders tend to be sneaky or territorial
+    if (monsterType.toLowerCase().includes('spider')) {
+      const preferredTypes = [MONSTER_PERSONALITIES.SNEAKY, MONSTER_PERSONALITIES.TERRITORIAL];
+      return preferredTypes[Math.floor(Math.random() * preferredTypes.length)];
+    }
+    */
+  }
+  
+  // Default random selection
+  return personalities[Math.floor(Math.random() * personalities.length)];
+}
+
+/**
+ * Check if a tile is suitable for monster building
+ * @param {object} tileData - Tile data to check
+ * @returns {boolean} True if suitable for building
+ */
+export function isSuitableForMonsterBuilding(tileData) {
+  // Don't build on tiles with any existing structures
+  if (tileData.structure) {
+    return false;
+  }
+  
+  // Check for any groups (including monsters) that are building or in other incompatible states
+  if (tileData.groups) {
+    for (const groupId in tileData.groups) {
+      const group = tileData.groups[groupId];
+      
+      // Don't build if any group is already building
+      if (group.status === 'building') {
+        return false;
+      }
+      
+      // Don't build if any non-monster group is present
+      if (group.type !== 'monster') {
+        return false;
+      }
+      
+      // Don't build if any group is in battle
+      if (group.inBattle) {
+        return false;
+      }
+    }
+  }
+  
+  // Don't build on tiles with ongoing battles
+  if (tileData.battles && Object.keys(tileData.battles).length > 0) {
+    return false;
+  }
+  
+  return true;
 }

@@ -16,6 +16,7 @@ import {
   PLAYER_STRUCTURE_ATTACK_CHANCE,
   PLAYER_STRUCTURE_SEARCH_RADIUS,
   createMonsterGroupFromStructure,
+  isMonsterStructure
 } from '../monsters/_monsters.mjs';
 
 // Constants for monster spawning
@@ -558,185 +559,137 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
 }
 
 /**
- * Monster Group Merging and Enhancement
- * Simplified function to handle merging monster groups of any type
+ * Monster Spawn Tick for Gisaima
+ * Handles spawning of new monster groups and management of monster structures
  */
-export async function mergeMonsterGroups(worldId) {
-  const db = getDatabase();
-  const now = Date.now();
-  let mergesPerformed = 0;
-  
-  try {
-    // Get all chunks for this world
-    const chunksRef = db.ref(`worlds/${worldId}/chunks`);
-    const chunksSnapshot = await chunksRef.once('value');
-    const chunks = chunksSnapshot.val();
-    
-    if (!chunks) {
-      logger.info(`No chunks found in world ${worldId}`);
-      return 0;
-    }
 
-    // Track updates to apply
-    const updates = {};
+import { logger } from "firebase-functions";
+import { getDatabase } from "firebase-admin/database";
+import { getChunkKey } from "gisaima-shared/map/cartography.js";
+import { 
+  isMonsterStructure, 
+  canStructureMobilize, 
+  MOBILIZATION_CHANCE,
+  createMonsterGroupFromStructure,
+  generateMonsterUnits,
+  generateMonsterId,
+  createMonsterSpawnMessage,
+  MIN_DISTANCE_FROM_SPAWN,
+  PLAYER_STRUCTURE_SEARCH_RADIUS,
+  PLAYER_STRUCTURE_ATTACK_CHANCE
+} from "../monsters/_monsters.mjs";
+
+import { getRandomPersonality } from "gisaima-shared/definitions/MONSTER_PERSONALITIES.js";
+
+/**
+ * Process monster spawns for a world
+ * @param {string} worldId - World ID to process
+ */
+export async function processMonsterSpawnTick(worldId) {
+  try {
+    console.log(`Processing monster spawn tick for world ${worldId}`);
+    const db = getDatabase();
+    const now = Date.now();
     
-    // Check each tile for multiple monster groups
-    for (const [chunkKey, chunkData] of Object.entries(chunks)) {
-      if (!chunkData) continue;
+    // Get world's chunks
+    const chunksRef = db.ref(`worlds/${worldId}/chunks`);
+    const chunksSnapshot = await chunksRef.once("value");
+    const chunks = chunksSnapshot.val() || {};
+    
+    // Process all tiles in the world to find monster lairs
+    const updates = {};
+    const monsterStructures = [];
+    const playerSpawns = [];
+    
+    // Find all monster structures across all chunks
+    for (const [chunkKey, chunk] of Object.entries(chunks)) {
+      if (!chunk) continue;
       
-      for (const [tileKey, tileData] of Object.entries(chunkData)) {
-        if (!tileData || !tileData.groups) continue;
+      for (const [tileKey, tile] of Object.entries(chunk)) {
+        if (!tile) continue;
         
-        // Find all idle monster groups on this tile
-        const monsterGroups = Object.entries(tileData.groups)
-          .filter(([_, g]) => g.type === 'monster')
-          .filter(([_, g]) => g.status === 'idle' && !g.inBattle)
-          .map(([id, data]) => ({id, ...data}));
+        // Track player spawn points
+        if (tile.structure && tile.structure.type === 'spawn') {
+          const [x, y] = tileKey.split(',').map(Number);
+          playerSpawns.push({ x, y, structure: tile.structure });
+        }
         
-        // Need at least 2 monster groups to merge
-        if (monsterGroups.length < 2) continue;
-        
-        const allowMixing = Math.random() < 0.2; // 20% chance to mix different types
-        
-        if (allowMixing) {
-          // Create a mixed group from different monster types
-          if (mergeGroups(worldId, chunkKey, tileKey, monsterGroups, updates, now, true)) {
-            mergesPerformed++;
-          }
+        // Track monster structures
+        if (tile.structure && isMonsterStructure(tile.structure)) {
+          const [x, y] = tileKey.split(',').map(Number);
+          monsterStructures.push({
+            x, y, chunkKey, tileKey,
+            structure: tile.structure
+          });
         }
       }
     }
     
-    // Apply all updates
+    console.log(`Found ${monsterStructures.length} monster structures`);
+    
+    // Process each monster structure for possible mobilization
+    for (const monsterStruct of monsterStructures) {
+      // Get the full tile data
+      const tileRef = db.ref(`worlds/${worldId}/chunks/${monsterStruct.chunkKey}/${monsterStruct.tileKey}`);
+      const tileSnapshot = await tileRef.once("value");
+      const tileData = tileSnapshot.val() || {};
+      
+      // Check if this structure can mobilize units
+      if (canStructureMobilize(monsterStruct.structure, tileData)) {
+        // Random chance to mobilize
+        if (Math.random() < MOBILIZATION_CHANCE) {
+          // Attempt targeted mobilization toward player structures with small chance
+          // This simulates monsters organizing coordinated raids
+          if (Math.random() < PLAYER_STRUCTURE_ATTACK_CHANCE && playerSpawns.length > 0) {
+            // Find player structures within search radius
+            const nearbyPlayerStructures = playerSpawns.filter(spawn => {
+              const dx = spawn.x - monsterStruct.x;
+              const dy = spawn.y - monsterStruct.y;
+              const distance = Math.sqrt(dx*dx + dy*dy);
+              return distance <= PLAYER_STRUCTURE_SEARCH_RADIUS;
+            });
+            
+            if (nearbyPlayerStructures.length > 0) {
+              // Select a random nearby player structure
+              const targetStructure = nearbyPlayerStructures[
+                Math.floor(Math.random() * nearbyPlayerStructures.length)
+              ];
+              
+              // Create a monster group with a target
+              const monsterType = monsterStruct.structure.monsterType || 'goblin';
+              await createMonsterGroupFromStructure(
+                worldId, monsterStruct.structure, monsterStruct,
+                monsterType, updates, now, targetStructure
+              );
+              
+              console.log(`Monster group mobilized from structure at (${monsterStruct.x}, ${monsterStruct.y}) targeting player structure at (${targetStructure.x}, ${targetStructure.y})`);
+              continue; // Skip normal mobilization
+            }
+          }
+          
+          // Normal mobilization (no specific target)
+          const monsterType = monsterStruct.structure.monsterType || 'goblin';
+          await createMonsterGroupFromStructure(
+            worldId, monsterStruct.structure, monsterStruct,
+            monsterType, updates, now
+          );
+          
+          console.log(`Monster group mobilized from structure at (${monsterStruct.x}, ${monsterStruct.y})`);
+        }
+      }
+    }
+    
+    // Apply all updates if there are any
     if (Object.keys(updates).length > 0) {
       await db.ref().update(updates);
-      logger.info(`Performed ${mergesPerformed} monster group merges in world ${worldId}`);
-    }
-    
-    return mergesPerformed;
-  } catch (error) {
-    logger.error(`Error merging monster groups in world ${worldId}:`, error);
-    return 0;
-  }
-}
-
-/**
- * Helper function to merge monster groups
- * @param {string} worldId - World ID
- * @param {string} chunkKey - Chunk key
- * @param {string} tileKey - Tile key
- * @param {Array} groups - Groups to merge
- * @param {Object} updates - Updates object to modify
- * @param {number} now - Current timestamp
- * @returns {boolean} Success status
- */
-function mergeGroups(worldId, chunkKey, tileKey, groups, updates, now) {
-  if (groups.length < 2) return false;
-  
-  // For mixed groups, use all provided groups
-  // For same-type merges, sort by size and use largest as base
-  let baseGroup, mergedGroups;
-
-  // Sort by unit count, descending
-  groups.sort((a, b) => countUnits(b) - countUnits(a));
-  
-  // Use largest as base, rest as merged
-  baseGroup = groups[0];
-  mergedGroups = groups.slice(1);
-  
-  // Calculate total units from all groups being merged
-  let totalUnits = groups.reduce((total, group) => total + countUnits(group), 0);
-  
-  // Add a bonus 10-30% more units
-  const bonusUnits = Math.floor(totalUnits * (0.1 + Math.random() * 0.2));
-  totalUnits += bonusUnits;
-  
-  // Collect all items from groups
-  const allItems = [];
-  for (const group of groups) {
-    if (group.items) {
-      const items = Array.isArray(group.items) ? group.items : Object.values(group.items);
-      allItems.push(...items);
-    }
-  }
-  
-  // Merge units
-  const mergedUnits = {};
-  
-  // Process each group's units
-  for (const group of groups) {
-    if (!group.units) continue;
-    
-    if (Array.isArray(group.units)) {
-      // If units are in array format, convert to object format
-      group.units.forEach((unit, index) => {
-        const unitId = unit.id || `unit_${now}_${index}_${Math.random().toString(36).substr(2, 5)}`;
-        mergedUnits[unitId] = { ...unit, id: unitId };
-      });
+      console.log(`Applied ${Object.keys(updates).length} updates for monster spawns`);
     } else {
-      // Merge object format units
-      Object.entries(group.units).forEach(([id, unit]) => {
-        mergedUnits[id] = unit;
-      });
+      console.log("No monster spawn updates needed");
     }
+    
+    return true;
+  } catch (error) {
+    logger.error("Error processing monster spawn tick:", error);
+    return false;
   }
-  
-  // Determine group info
-  let groupPath, groupName;
-  const [x, y] = tileKey.split(',').map(Number);
-  
-  // Create a detailed breakdown of monster types in the merged group
-  const typeDistribution = {};
-  Object.values(mergedUnits).forEach(unit => {
-    if (unit.type) {
-      typeDistribution[unit.type] = (typeDistribution[unit.type] || 0) + 1;
-    }
-  });
-  
-  // Generate size-based name using the enhanced utility with type distribution
-  groupName = generateMergedGroupName(
-    totalUnits, 
-    typeDistribution,  // Pass the full type distribution object instead of just the predominant type
-    baseGroup.name || "Monster Group"
-  );
-  
-  groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}`;
-  
-  // Retain personality from the base group (largest)
-  // This encourages more powerful groups to maintain their behaviors
-  
-  // Update the base group
-  updates[`${groupPath}/name`] = groupName;
-  updates[`${groupPath}/items`] = allItems;
-  updates[`${groupPath}/units`] = mergedUnits;
-  updates[`${groupPath}/x`] = x;
-  updates[`${groupPath}/y`] = y;
-  updates[`${groupPath}/status`] = 'idle';
-  updates[`${groupPath}/type`] = 'monster'; // Ensure type is set
-  
-  // Store the type distribution in the group for future reference
-  updates[`${groupPath}/typeDistribution`] = typeDistribution;
-  
-  // Delete other groups
-  for (const group of mergedGroups) {
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${group.id}`] = null;
-  }
-  
-  // Add chat message about the merger
-  const personality = baseGroup.personality || { name: '', emoji: '' };
-  const personalityText = personality.name ? ` ${personality.emoji} ${personality.name}` : '';
-  
-  // Create a more descriptive message for mixed groups
-  const mixedGroupText = Object.keys(typeDistribution).length > 1 ? 
-    " consisting of different creature types" : "";
-  
-  const chatMessageKey = `chat_monster_merge_${now}_${Math.floor(Math.random() * 1000)}`;
-  updates[`worlds/${worldId}/chat/${chatMessageKey}`] = {
-    text: `Monster groups have merged at (${x}, ${y}) forming a${personalityText} ${groupName}${mixedGroupText}!`,
-    type: 'event',
-    timestamp: now,
-    location: { x, y }
-  };
-  
-  return true;
 }
