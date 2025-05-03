@@ -1602,7 +1602,7 @@
         position: absolute;
         bottom: 1em;
         left: 1em;
-        z-index: 1001;
+        z-index: 998;
         display: flex;
         flex-direction: row; /* Change from column to row */
         gap: 0.5em;
