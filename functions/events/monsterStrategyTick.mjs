@@ -252,7 +252,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
       resourceCount >= MIN_RESOURCES_TO_BUILD &&
       !structureOnTile &&
       Math.random() < 0.4 * (weights?.build || 1.0)) {
-    return await buildMonsterStructure(db, worldId, monsterGroup, location, updates, now);
+    return await buildMonsterStructure(db, worldId, monsterGroup, location, updates, now, worldScan);
   }
   
   // If the monster is on a structure tile that has no building yet, consider adding one
@@ -335,7 +335,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
       if (!tooCloseToSpawn) {
         // Attempt to build a monster structure
         // Implementation for building would go here
-        console.log(`Monster group ${monsterGroup.id} is considering building at (${x}, ${y})`);
+        console.log(`Monster group ${monsterGroup.id} is considering building at (${location.x}, ${location.y})`);
       }
     }
   }

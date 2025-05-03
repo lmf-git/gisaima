@@ -48,6 +48,12 @@ async function isLocationSuitableForBuilding(db, worldId, location, worldScan) {
       return false;
     }
     
+    // Double-check the tile doesn't have a structure (defensive programming)
+    if (tileData.structure) {
+      console.log(`Location ${location.x},${location.y} already has a structure, cannot build`);
+      return false;
+    }
+    
     // Check if there are too many monster structures nearby
     let nearbyMonsterStructures = 0;
     
@@ -91,13 +97,133 @@ async function isLocationSuitableForBuilding(db, worldId, location, worldScan) {
 }
 
 /**
+ * Build a monster structure
+ * @param {object} db - Firebase database reference
+ * @param {string} worldId - World ID
+ * @param {object} monsterGroup - Monster group data
+ * @param {object} location - Current location
+ * @param {object} updates - Database updates object
+ * @param {number} now - Current timestamp
+ * @param {object} worldScan - World scan data with strategic locations
+ * @returns {object} Action result
+ */
+export async function buildMonsterStructure(db, worldId, monsterGroup, location, updates, now, worldScan = null) {
+  // Get personality for decision making
+  const personality = monsterGroup.personality || { id: 'BALANCED' };
+  
+  // Check if the monster group has enough units to build
+  const unitCount = monsterGroup.units ? Object.keys(monsterGroup.units).length : 0;
+  if (unitCount < MIN_UNITS_FOR_BUILDING) {
+    return { action: null, reason: 'not_enough_units' };
+  }
+  
+  // Use provided worldScan or create an empty one if none provided
+  const scanData = worldScan || { monsterStructures: [], playerSpawns: [], resourceHotspots: [] };
+  
+  // Determine where to build
+  const buildLocation = determineBuildLocation(location, scanData, personality);
+  
+  // Check if location is suitable
+  const isSuitable = await isLocationSuitableForBuilding(db, worldId, buildLocation, scanData);
+  if (!isSuitable) {
+    return { action: null, reason: 'unsuitable_location' };
+  }
+  
+  // Determine what to build
+  const structureType = chooseStructureType(monsterGroup, personality);
+  
+  // Check if monster has resources to build
+  if (!hasResourcesToBuild(monsterGroup, structureType)) {
+    return { action: null, reason: 'insufficient_resources' };
+  }
+  
+  // Generate structure ID
+  const structureId = generateMonsterId('monster_structure', now);
+  
+  // Set up location references
+  const chunkX = Math.floor(buildLocation.x / 20);
+  const chunkY = Math.floor(buildLocation.y / 20);
+  const chunkKey = `${chunkX},${chunkY}`;
+  const tileKey = `${buildLocation.x},${buildLocation.y}`;
+  
+  // Get the structure definition from the shared STRUCTURES object
+  const structureData = STRUCTURES[structureType];
+  if (!structureData) {
+    return { action: null, reason: 'invalid_structure_type' };
+  }
+  
+  // Calculate completion time - same format as player buildings
+  const buildTime = structureData.buildTime || 1; // Time in ticks
+  const completionTime = now + (buildTime * 60000); // Convert to milliseconds
+  
+  // Consume resources from the monster group
+  const groupPath = createGroupPath(worldId, monsterGroup);
+  if (!consumeResources(monsterGroup, structureType, updates, groupPath)) {
+    return { action: null, reason: 'resource_consumption_failed' };
+  }
+  
+  // Add the structure to the tile - using same format as player structures
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`] = {
+    id: structureId,
+    name: `${monsterGroup.name || "Monster"} ${structureData.name}`,
+    type: structureType,
+    status: 'building',
+    buildProgress: 0,
+    buildTotalTime: buildTime,
+    buildStartTime: now,
+    buildCompletionTime: completionTime,
+    owner: 'monster', // Explicitly set owner to 'monster'
+    ownerName: monsterGroup.name || "Monster",
+    ownerGroupId: monsterGroup.id,
+    builder: monsterGroup.id,
+    monster: true,
+    createdAt: now,
+    level: 1,
+    items: [],
+    features: structureData.features || [],
+    capacity: structureData.capacity || 10
+  };
+  
+  // Set monster group as building - match player group format for UI consistency
+  updates[`${groupPath}/status`] = 'building';
+  updates[`${groupPath}/buildingStart`] = now;
+  updates[`${groupPath}/buildingTime`] = buildTime;
+  updates[`${groupPath}/buildingUntil`] = completionTime; // Format matches player groups
+  updates[`${groupPath}/buildingLocation`] = { x: buildLocation.x, y: buildLocation.y };
+  updates[`${groupPath}/buildingType`] = structureType;
+  
+  // Add a message about the building
+  const chatMessageId = generateMonsterId('monster_building', now);
+  updates[createChatMessagePath(worldId, chatMessageId)] = {
+    text: createMonsterConstructionMessage(monsterGroup, 'build', structureData.name, buildLocation),
+    type: 'event',
+    timestamp: now,
+    location: {
+      x: location.x,
+      y: location.y
+    }
+  };
+  
+  // Add this structure as the preferred structure for this group
+  updates[`${groupPath}/preferredStructureId`] = structureId;
+  
+  return {
+    action: 'build',
+    structureId: structureId,
+    structureType: structureType,
+    location: buildLocation,
+    completesAt: completionTime
+  };
+}
+
+/**
  * Calculate required resources for a monster structure
  * @param {string} structureType - Type of structure to build
  * @returns {Array} Array of required resources
  */
 function getRequiredResourcesForStructure(structureType) {
-  // Check if it's a predefined structure from STRUCTURES
-  if (STRUCTURES[structureType] && STRUCTURES[structureType].monster) {
+  // Use the shared STRUCTURES definitions
+  if (STRUCTURES[structureType] && STRUCTURES[structureType].buildCost) {
     const structure = STRUCTURES[structureType];
     return Object.entries(structure.buildCost).map(([name, quantity]) => ({ 
       name, 
@@ -294,124 +420,77 @@ function consumeResources(monsterGroup, structureType, updates, groupPath) {
 }
 
 /**
- * Build a monster structure
+ * Check if a location is suitable for building
  * @param {object} db - Firebase database reference
  * @param {string} worldId - World ID
- * @param {object} monsterGroup - Monster group data
- * @param {object} location - Current location
- * @param {object} updates - Database updates object
- * @param {number} now - Current timestamp
- * @returns {object} Action result
+ * @param {object} location - Location to check
+ * @param {object} worldScan - World scan data
+ * @returns {Promise<boolean>} True if the location is suitable
  */
-export async function buildMonsterStructure(db, worldId, monsterGroup, location, updates, now) {
-  // Get personality for decision making
-  const personality = monsterGroup.personality || { id: 'BALANCED' };
-  
-  // Check if the monster group has enough units to build
-  const unitCount = monsterGroup.units ? Object.keys(monsterGroup.units).length : 0;
-  if (unitCount < MIN_UNITS_FOR_BUILDING) {
-    return { action: null, reason: 'not_enough_units' };
-  }
-  
-  // Determine where to build
-  const buildLocation = determineBuildLocation(location, { monsterStructures: [], playerSpawns: [], resourceHotspots: [] }, personality);
-  
-  // Check if location is suitable
-  const isSuitable = await isLocationSuitableForBuilding(db, worldId, buildLocation, { monsterStructures: [], playerSpawns: [] });
-  if (!isSuitable) {
-    return { action: null, reason: 'unsuitable_location' };
-  }
-  
-  // Determine what to build
-  const structureType = chooseStructureType(monsterGroup, personality);
-  
-  // Check if monster has resources to build
-  if (!hasResourcesToBuild(monsterGroup, structureType)) {
-    return { action: null, reason: 'insufficient_resources' };
-  }
-  
-  // Generate structure ID
-  const structureId = generateMonsterId('monster_structure', now);
-  
-  // Set up location references
-  const chunkX = Math.floor(buildLocation.x / 20);
-  const chunkY = Math.floor(buildLocation.y / 20);
+async function isLocationSuitableForBuilding(db, worldId, location, worldScan) {
+  // Get the chunk and tile keys
+  const chunkX = Math.floor(location.x / 20);
+  const chunkY = Math.floor(location.y / 20);
   const chunkKey = `${chunkX},${chunkY}`;
-  const tileKey = `${buildLocation.x},${buildLocation.y}`;
+  const tileKey = `${location.x},${location.y}`;
   
-  // Create the structure
-  const structureData = STRUCTURES[structureType] || {
-    name: "Monster Lair",
-    buildTime: 1,
-    capacity: 10,
-    features: ['basic_storage', 'monster_spawning'],
-    monster: true
-  };
-  
-  const structure = {
-    id: structureId,
-    type: structureType,
-    name: `${monsterGroup.name || "Monster"} ${structureData.name}`,
-    owner: 'monster', // Explicitly set owner to 'monster'
-    ownerGroupId: monsterGroup.id,
-    createdAt: now,
-    level: 1,
-    items: [],
-    buildings: {},
-    monster: true,
-    features: structureData.features || []
-  };
-  
-  // Consume resources from the monster group
-  const groupPath = createGroupPath(worldId, monsterGroup);
-  if (!consumeResources(monsterGroup, structureType, updates, groupPath)) {
-    return { action: null, reason: 'resource_consumption_failed' };
-  }
-  
-  // Add the structure to the tile - initially in "building" status like player structures
-  const buildTime = structureData.buildTime || 1; // Time in ticks (minutes)
-  const completionTime = now + (buildTime * 60000); // Convert to milliseconds
-  
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`] = {
-    ...structure,
-    status: 'building',
-    buildProgress: 0,
-    buildTotalTime: buildTime,
-    buildStartTime: now,
-    buildCompletionTime: completionTime,
-    builder: monsterGroup.id
-  };
-  
-  // Set monster group as building - match player group format for UI consistency
-  updates[`${groupPath}/status`] = 'building';
-  updates[`${groupPath}/buildingStart`] = now;
-  updates[`${groupPath}/buildingTime`] = buildTime;
-  updates[`${groupPath}/buildingUntil`] = completionTime; // Add this for UI consistency with players
-  updates[`${groupPath}/buildingLocation`] = { x: buildLocation.x, y: buildLocation.y };
-  updates[`${groupPath}/buildingType`] = structureType;
-  
-  // Add a message about the building
-  const chatMessageId = generateMonsterId('monster_building', now);
-  updates[createChatMessagePath(worldId, chatMessageId)] = {
-    text: createMonsterConstructionMessage(monsterGroup, 'build', structureData.name, buildLocation),
-    type: 'event',
-    timestamp: now,
-    location: {
-      x: location.x,
-      y: location.y
+  try {
+    // Check if the tile already has a structure
+    const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
+    const tileSnapshot = await tileRef.once('value');
+    const tileData = tileSnapshot.val();
+    
+    // Use the comprehensive isSuitableForMonsterBuilding check
+    if (!tileData || !isSuitableForMonsterBuilding(tileData)) {
+      return false;
     }
-  };
-  
-  // Add this structure as the preferred structure for this group
-  updates[`${groupPath}/preferredStructureId`] = structureId;
-  
-  return {
-    action: 'build',
-    structureId: structureId,
-    structureType: structureType,
-    location: buildLocation,
-    completesAt: completionTime // Add completion time to result
-  };
+    
+    // Double-check the tile doesn't have a structure (defensive programming)
+    if (tileData.structure) {
+      console.log(`Location ${location.x},${location.y} already has a structure, cannot build`);
+      return false;
+    }
+    
+    // Check if there are too many monster structures nearby
+    let nearbyMonsterStructures = 0;
+    
+    if (worldScan && worldScan.monsterStructures) {
+      worldScan.monsterStructures.forEach(structure => {
+        const distance = Math.sqrt(
+          Math.pow(structure.x - location.x, 2) + 
+          Math.pow(structure.y - location.y, 2)
+        );
+        
+        if (distance <= NEARBY_DISTANCE) {
+          nearbyMonsterStructures++;
+        }
+      });
+    }
+    
+    if (nearbyMonsterStructures >= MAX_MONSTER_STRUCTURES_NEARBY) {
+      return false; // Too many monster structures nearby
+    }
+    
+    // Check if we're too close to player structures (increased minimum distance)
+    const playerStructures = worldScan.playerSpawns || [];
+    const MIN_DISTANCE_FROM_SPAWN = 5; // Increased minimum distance
+    
+    for (const playerStructure of playerStructures) {
+      const distance = Math.sqrt(
+        Math.pow(playerStructure.x - location.x, 2) + 
+        Math.pow(playerStructure.y - location.y, 2)
+      );
+      
+      if (distance < MIN_DISTANCE_FROM_SPAWN) {
+        return false; // Too close to player spawn
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Error checking location for building: ${error}`);
+    return false;
+  }
 }
 
 /**
