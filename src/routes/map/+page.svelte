@@ -1189,7 +1189,17 @@
                 }
             }}
         />
+
+        {#if $ready}
+            <Axes />
+        {/if}
+
+        {#if showMinimap}
+            <Minimap />
+        {/if}
         
+
+        <!-- Controls -->
         <div class="map-controls">
             {#if !isTutorialVisible}
                 <button 
@@ -1219,7 +1229,6 @@
             </button>
         </div>
         
-        <!-- Move NextWorldTick to left-controls only when Overview is not open -->
         {#if $game?.player?.alive && !isTutorialVisible}
             <div class="left-controls">
                 <!-- Show NextWorldTick in left-controls when Overview is not open -->
@@ -1297,6 +1306,24 @@
             </div>
         {/if}
 
+
+        {#if $ready && $game?.player?.alive}
+            <Tutorial 
+                onVisibilityChange={handleTutorialVisibility}
+                hideToggleButton={true}
+                onToggle={handleTutorialToggle}
+                onOpenAchievements={openAchievementsFromTutorial}
+            />
+            <Recenter />
+        {/if}
+        
+        {#if ($user && !$game.player?.alive)}
+            <SpawnMenu onSpawnComplete={handleSpawnComplete} />
+        {/if}
+
+        <AchievementUnlocked />
+
+        <!-- Modals -->
         {#if $ready && $game?.player?.alive}
             <div class="chat-wrapper" 
                 class:visible={showChat && !isTutorialVisible} 
@@ -1334,10 +1361,6 @@
             {#if showNotices && !isTutorialVisible}
                 <Notices maxNotices={3} />
             {/if}
-        {/if}
-
-        {#if showMinimap}
-            <Minimap />
         {/if}
         
         {#if showEntities}
@@ -1383,27 +1406,6 @@
                 }} 
             />
         {/if}
-
-        {#if $ready}
-            <Axes />
-        {/if}
-
-        {#if $ready && $game?.player?.alive}
-            <Tutorial 
-                onVisibilityChange={handleTutorialVisibility}
-                hideToggleButton={true}
-                onToggle={handleTutorialToggle}
-                onOpenAchievements={openAchievementsFromTutorial}
-            />
-            <Recenter />
-        {/if}
-        
-        {#if ($user && !$game.player?.alive)}
-            <SpawnMenu onSpawnComplete={handleSpawnComplete} />
-        {/if}
-
-        <!-- Add the achievement unlock notification component -->
-        <AchievementUnlocked />
 
         {#if modalState.visible}
           {#if modalState.type === 'inspect' && modalState.data}
