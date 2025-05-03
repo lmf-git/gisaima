@@ -18,13 +18,15 @@
     import Sword from "../../icons/Sword.svelte";
     import Bow from "../../icons/Bow.svelte";
 
-    // Props
+    // Props - Add isActive and onMouseEnter props
     const {
         structure = null,
         x = 0,
         y = 0,
         onClose = () => {},
         onRecruitStart = () => {},
+        isActive = false, // Add prop for z-index control
+        onMouseEnter = () => {} // Add prop for mouse enter event
     } = $props();
 
     // Component state
@@ -474,7 +476,10 @@
 
 <svelte:window on:keydown={handleKeyDown} />
 
-<div class="recruitment-modal">
+<div 
+    class="recruitment-modal" 
+    class:active={isActive}
+    onmouseenter={onMouseEnter}>
     <header class="modal-header">
         <h3>
             Recruitment at {structureData?.name || "Structure"} ({x}, {y})
@@ -838,6 +843,12 @@
         z-index: 1000;
         overflow: hidden;
         font-family: var(--font-body);
+        transition: z-index 0s; /* Add transition for z-index */
+    }
+
+
+    .recruitment-modal.active {
+        z-index: 1001;
     }
 
     .modal-header {

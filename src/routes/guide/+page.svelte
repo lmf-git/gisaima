@@ -2659,8 +2659,8 @@
   
   /* Rarity tags styling - use specific colors from Details */
   .rarity-list {
-    list-style-type: none !important;
-    padding-left: 0 !important;
+    list-style-type: none;
+    padding-left: 0;
   }
   
   .rarity-list li {

@@ -23,7 +23,9 @@
     y = 0, 
     onClose = () => {},
     onAchievement = () => {}, // Add this to handle achievements
-    onShowModal = () => {} // Add this prop to handle showing modals
+    onShowModal = () => {}, // Add this prop to handle showing modals
+    isActive = false, // Add prop for z-index control
+    onMouseEnter = () => {} // Add prop for mouse enter event
   } = $props();
   
   // Add to the state
@@ -562,7 +564,7 @@
 <svelte:window on:keydown={handleKeyDown} />
 
 <div class="modal-container">
-  <div class="structure-modal">
+  <div class="structure-modal" class:active={isActive} onmouseenter={onMouseEnter}>
     <header class="modal-header">
       <h3>
         {formatText(tileData?.structure?.type || 'Structure')} 
@@ -1135,7 +1137,7 @@
   :global(.race-icon-badge) {
     width: 1em;
     height: 1em;
-    fill: #000000 !important;
+    fill: #000000;
   }
 
   /* Section styling */

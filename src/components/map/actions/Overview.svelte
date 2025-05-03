@@ -1678,8 +1678,8 @@
   }
   
   :global(.overview-spawn-icon) {
-    filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.8)) !important;
-    opacity: 1 !important;
+    filter: drop-shadow(0 0 3px rgba(0, 255, 255, 0.8));
+    opacity: 1;
   }
 
   

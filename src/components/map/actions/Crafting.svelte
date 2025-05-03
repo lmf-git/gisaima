@@ -12,6 +12,7 @@
   
   import Close from '../../icons/Close.svelte';
 
+  // Props
   const {
     structure = null,
     x = 0,
@@ -246,7 +247,7 @@
 <svelte:window onkeydown={handleKeyDown} />
 
 <div 
-  class="crafting-modal" 
+  class="crafting-modal"
   class:active={isActive}
   onmouseenter={onMouseEnter}
   transition:scale={{ start: 0.95, duration: 200 }}>
@@ -419,18 +420,19 @@
     transform: translate(-50%, -50%);
     width: 90%;
     max-width: 36em;
-    max-height: 90vh;
-    background: rgba(255, 255, 255, 0.85);
-    border-radius: 0.5em;
-    box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
-    overflow: hidden;
-    z-index: 1000;
+    max-height: 85vh;
+    background-color: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 0.05em solid rgba(255, 255, 255, 0.3);
+    border-radius: 0.5rem;
+    box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
+    z-index: 1000;
+    overflow: hidden;
     font-family: var(--font-body);
-    border: 0.05em solid rgba(255, 255, 255, 0.2);
-    text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
-    transition: z-index 0s;
+    transition: z-index 0s; /* Add transition for z-index */
   }
   
   .crafting-modal.active {
