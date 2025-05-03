@@ -6,7 +6,6 @@ import {
   findPlayerGroupsOnTile,
   findMergeableMonsterGroups,
   createBattleActionMessage,
-  createGroupPath,
   createChatMessagePath,
   generateMonsterId
 } from '../_monsters.mjs';

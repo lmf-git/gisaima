@@ -1,4 +1,3 @@
-import { getChunkKey } from "gisaima-shared/map/cartography.js";
 import {
   calculateSimplePath,
   calculateDistance,

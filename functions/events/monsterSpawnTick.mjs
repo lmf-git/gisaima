@@ -9,13 +9,10 @@ import { Units } from 'gisaima-shared/units/units.js';
 import { 
   generateMonsterUnits,
   createMonsterSpawnMessage,
-  createMonsterGrowthMessage,
   countUnits,
   canStructureMobilize,
-  MIN_UNITS_TO_MOBILIZE,
   MOBILIZATION_CHANCE,
   createMonsterGroupFromStructure,
-  isMonsterStructure
 } from '../monsters/_monsters.mjs';
 
 // Constants for monster spawning

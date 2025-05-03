@@ -739,17 +739,6 @@ export async function createMonsterGroupFromStructure(worldId, structure, locati
   return groupId;
 }
 
-/**
- * Get chunk key from coordinates
- * @param {number} x - X coordinate
- * @param {number} y - Y coordinate
- * @returns {string} Chunk key
- */
-export function getChunkKey(x, y) {
-  const chunkX = Math.floor(x / 20);
-  const chunkY = Math.floor(y / 20);
-  return `${chunkX},${chunkY}`;
-}
 
 // =============================================
 // NAMING UTILITIES
