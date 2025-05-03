@@ -14,7 +14,8 @@ import {
   createGroupPath,
   createStructurePath,
   createChatMessagePath,
-  generateMonsterId
+  generateMonsterId,
+  isSuitableForMonsterBuilding
 } from '../_monsters.mjs';
 
 
@@ -422,105 +423,6 @@ function determineBuildLocation(location, worldScan, personality) {
     x: location.x + offsetX,
     y: location.y + offsetY
   };
-}
-
-/**
- * Consume resources required for building
- * @param {object} monsterGroup - Monster group data
- * @param {string} structureType - Structure type being built
- * @param {object} updates - Database updates object
- * @param {string} groupPath - Path to the group in database
- * @returns {boolean} True if resources were successfully consumed
- */
-function consumeResources(monsterGroup, structureType, updates, groupPath) {
-  // Get required resources
-  const requiredResources = getRequiredResourcesForStructure(structureType);
-  
-  // Use the helper function to consume resources
-  const remainingItems = consumeResourcesFromItems(monsterGroup.items || [], requiredResources);
-  
-  // If resources couldn't be consumed, return false
-  if (remainingItems === null) {
-    return false;
-  }
-  
-  // Update the monster group with the remaining items
-  updates[`${groupPath}/items`] = remainingItems;
-  return true;
-}
-
-/**
- * Check if a location is suitable for building
- * @param {object} db - Firebase database reference
- * @param {string} worldId - World ID
- * @param {object} location - Location to check
- * @param {object} worldScan - World scan data
- * @returns {Promise<boolean>} True if the location is suitable
- */
-async function isLocationSuitableForBuilding(db, worldId, location, worldScan) {
-  // Get the chunk and tile keys
-  const chunkX = Math.floor(location.x / 20);
-  const chunkY = Math.floor(location.y / 20);
-  const chunkKey = `${chunkX},${chunkY}`;
-  const tileKey = `${location.x},${location.y}`;
-  
-  try {
-    // Check if the tile already has a structure
-    const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
-    const tileSnapshot = await tileRef.once('value');
-    const tileData = tileSnapshot.val();
-    
-    // Use the comprehensive isSuitableForMonsterBuilding check
-    if (!tileData || !isSuitableForMonsterBuilding(tileData)) {
-      return false;
-    }
-    
-    // Double-check the tile doesn't have a structure (defensive programming)
-    if (tileData.structure) {
-      console.log(`Location ${location.x},${location.y} already has a structure, cannot build`);
-      return false;
-    }
-    
-    // Check if there are too many monster structures nearby
-    let nearbyMonsterStructures = 0;
-    
-    if (worldScan && worldScan.monsterStructures) {
-      worldScan.monsterStructures.forEach(structure => {
-        const distance = Math.sqrt(
-          Math.pow(structure.x - location.x, 2) + 
-          Math.pow(structure.y - location.y, 2)
-        );
-        
-        if (distance <= NEARBY_DISTANCE) {
-          nearbyMonsterStructures++;
-        }
-      });
-    }
-    
-    if (nearbyMonsterStructures >= MAX_MONSTER_STRUCTURES_NEARBY) {
-      return false; // Too many monster structures nearby
-    }
-    
-    // Check if we're too close to player structures (increased minimum distance)
-    const playerStructures = worldScan.playerSpawns || [];
-    const MIN_DISTANCE_FROM_SPAWN = 5; // Increased minimum distance
-    
-    for (const playerStructure of playerStructures) {
-      const distance = Math.sqrt(
-        Math.pow(playerStructure.x - location.x, 2) + 
-        Math.pow(playerStructure.y - location.y, 2)
-      );
-      
-      if (distance < MIN_DISTANCE_FROM_SPAWN) {
-        return false; // Too close to player spawn
-      }
-    }
-    
-    return true;
-  } catch (error) {
-    console.error(`Error checking location for building: ${error}`);
-    return false;
-  }
 }
 
 /**

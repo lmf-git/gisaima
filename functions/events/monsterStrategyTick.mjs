@@ -21,7 +21,8 @@ import { MONSTER_PERSONALITIES, shouldChangePersonality, getRandomPersonality } 
 import { 
   isMonsterGroup, 
   isAvailableForAction,
-  scanWorldMap
+  scanWorldMap,
+  isSuitableForMonsterBuilding
 } from '../monsters/_monsters.mjs';
 import { 
   buildMonsterStructure, 
