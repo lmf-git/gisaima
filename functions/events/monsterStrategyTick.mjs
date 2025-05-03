@@ -113,7 +113,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   const weights = personality.weights;
   
   // Check if monster should change personality
-  if (shouldChangePersonality()) {
+  if (shouldChangePersonality(monsterGroup, now)) {
     const newPersonality = getRandomPersonality(personalityId);
     updates[`${groupPath}/personality`] = {
       id: newPersonality.id,
