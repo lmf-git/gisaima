@@ -636,7 +636,7 @@
                                 {selectedUnit.description}
                             </p>
                             
-                            <!-- New Requirements Section -->nhanced visualization -->
+                            <!-- Requirements Section -->
                             <div class="unit-requirements">
                                 <h6>Requirements:</h6>
                                 <div class="requirements-list">
@@ -843,9 +843,8 @@
         z-index: 1000;
         overflow: hidden;
         font-family: var(--font-body);
-        transition: z-index 0s; /* Add transition for z-index */
+        transition: z-index 0s;
     }
-
 
     .recruitment-modal.active {
         z-index: 1001;
@@ -926,7 +925,7 @@
     .empty-state {
         padding: 2rem 0;
         text-align: center;
-        color: rgba(0, 0, 0, 0.6); /* Increased from 0.5 for better contrast */
+        color: rgba(0, 0, 0, 0.7); /* Improved from 0.6 to 0.7 for better contrast */
         font-style: italic;
     }
 
@@ -974,11 +973,12 @@
     .queue-item-name {
         font-weight: 500;
         margin-bottom: 0.2rem;
+        color: rgba(0, 0, 0, 0.9); /* Improved contrast */
     }
 
     .queue-item-time {
         font-size: 0.85rem;
-        color: rgba(0, 0, 0, 0.6);
+        color: rgba(0, 0, 0, 0.7); /* Improved from 0.6 to 0.7 */
     }
 
     .cancel-button {
@@ -1009,15 +1009,7 @@
 
     .progress-fill {
         height: 100%;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        max-height: 10rem;
-        overflow-y: auto;
-        padding: 0.5rem;
-        background-color: rgba(255, 255, 255, 0.5);
-        border-radius: 0.3rem;
-        border: 1px solid rgba(0, 0, 0, 0.1);
+        background-color: rgba(76, 175, 80, 0.7); /* Added missing background-color */
     }
 
     .unit-select-container {
@@ -1048,6 +1040,7 @@
 
     .unit-option:hover {
         background-color: rgba(255, 255, 255, 0.9);
+        border-color: rgba(0, 0, 0, 0.2);
     }
 
     .unit-option.selected {
@@ -1075,11 +1068,12 @@
     .unit-option-name {
         font-weight: 500;
         margin-bottom: 0.2rem;
+        color: rgba(0, 0, 0, 0.9); /* Improved contrast */
     }
 
     .unit-option-power {
         font-size: 0.75rem;
-        color: rgba(0, 0, 0, 0.7); /* Increased from 0.6 for better contrast */
+        color: rgba(0, 0, 0, 0.8); /* Improved from 0.7 to 0.8 */
     }
 
     .unit-details {
@@ -1093,13 +1087,13 @@
         margin: 0 0 0.5rem 0;
         font-size: 1rem;
         font-weight: 600;
-        color: rgba(0, 0, 0, 0.9); /* Add explicit color with strong contrast */
+        color: rgba(0, 0, 0, 0.9);
     }
 
     .unit-description {
         margin: 0 0 1rem 0;
         font-size: 0.9rem;
-        color: rgba(0, 0, 0, 0.7); /* Ensuring good contrast */
+        color: rgba(0, 0, 0, 0.8); /* Improved from 0.7 to 0.8 */
     }
 
     .unit-stats {
@@ -1114,11 +1108,11 @@
 
     .stat-label {
         font-weight: 500;
-        color: rgba(0, 0, 0, 0.7); /* Increased from 0.6 for better contrast */
+        color: rgba(0, 0, 0, 0.8); /* Improved from 0.7 to 0.8 */
     }
     
     .stat-value {
-        color: rgba(0, 0, 0, 0.8); /* Add explicit color with good contrast */
+        color: rgba(0, 0, 0, 0.9); /* Improved contrast */
     }
 
     .unit-cost h6,
@@ -1126,7 +1120,7 @@
         margin: 0 0 0.5rem 0;
         font-size: 0.9rem;
         font-weight: 600;
-        color: rgba(0, 0, 0, 0.7);
+        color: rgba(0, 0, 0, 0.8); /* Improved from 0.7 to 0.8 */
     }
 
     .cost-items,
@@ -1145,6 +1139,7 @@
         background-color: rgba(0, 0, 0, 0.05);
         border-radius: 0.2rem;
         width: calc(50% - 0.25rem);
+        color: rgba(0, 0, 0, 0.8); /* Added explicit text color */
     }
 
     .total-item.sufficient {
@@ -1175,9 +1170,6 @@
         margin: 0 0.1rem;
     }
 
-    /* Remove the old player-has style that is no longer needed */
-    /* .player-has { ... } */
-
     /* Make sure we're responsive on small screens */
     @media (max-width: 500px) {
         .unit-option, .total-item {
@@ -1186,7 +1178,7 @@
     }
 
     .unit-option.unavailable {
-        opacity: 0.7;
+        opacity: 0.8; /* Improved from 0.7 to 0.8 for better visibility */
         background-color: rgba(0, 0, 0, 0.05);
         border-color: rgba(0, 0, 0, 0.1);
         cursor: help;
@@ -1200,7 +1192,7 @@
         display: inline-block;
         font-size: 0.7em;
         margin-left: 0.3rem;
-        color: rgba(0, 0, 0, 0.6);
+        color: rgba(0, 0, 0, 0.7); /* Improved from 0.6 to 0.7 */
     }
 
     .unit-details.unavailable {
@@ -1249,11 +1241,13 @@
     .requirement-item.met {
         background-color: rgba(52, 199, 89, 0.1);
         color: rgb(20, 128, 56);
+        border: 1px solid rgba(52, 199, 89, 0.2); /* Added border for better visibility */
     }
 
     .requirement-item.unmet {
         background-color: rgba(255, 59, 48, 0.1);
         color: rgb(168, 36, 28);
+        border: 1px solid rgba(255, 59, 48, 0.2); /* Added border for better visibility */
     }
 
     .requirement-icon {
@@ -1273,6 +1267,141 @@
         margin: 0.8rem 0 0.5rem 0;
         font-size: 0.9rem;
         font-weight: 600;
-        color: rgba(0, 0, 0, 0.7);
+        color: rgba(0, 0, 0, 0.8); /* Improved from 0.7 to 0.8 */
+    }
+
+    /* Add styles for quantity control and input */
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: rgba(0, 0, 0, 0.8); /* Added explicit color */
+    }
+
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .quantity-button {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.3rem;
+        background-color: rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        color: rgba(0, 0, 0, 0.8); /* Improved text contrast */
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .quantity-button:hover:not(:disabled) {
+        background-color: rgba(0, 0, 0, 0.1);
+        border-color: rgba(0, 0, 0, 0.2);
+    }
+
+    .quantity-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    input[type="number"] {
+        width: 4rem;
+        height: 2.5rem;
+        text-align: center;
+        padding: 0 0.5rem;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 0.3rem;
+        font-size: 1rem;
+        color: rgba(0, 0, 0, 0.9); /* Improved text contrast */
+        background-color: rgba(255, 255, 255, 0.8);
+    }
+
+    input[type="number"]:focus {
+        outline: none;
+        border-color: rgba(0, 122, 255, 0.5);
+        box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+    }
+
+    /* Add styles for time info */
+    .time-info {
+        font-size: 0.85rem;
+        color: rgba(0, 0, 0, 0.8); /* Improved text contrast */
+    }
+
+    .completion-estimate {
+        margin-top: 0.5rem;
+        font-weight: 500;
+    }
+
+    /* Add styles for error and success messages */
+    .error-message {
+        margin: 1rem 0;
+        padding: 0.8rem;
+        background-color: rgba(255, 59, 48, 0.1);
+        border: 1px solid rgba(255, 59, 48, 0.3);
+        border-radius: 0.3rem;
+        color: rgb(168, 36, 28);
+        font-weight: 500;
+    }
+
+    .success-message {
+        margin: 1rem 0;
+        padding: 0.8rem;
+        background-color: rgba(52, 199, 89, 0.1);
+        border: 1px solid rgba(52, 199, 89, 0.3);
+        border-radius: 0.3rem;
+        color: rgb(20, 128, 56);
+        font-weight: 500;
+    }
+
+    /* Add styles for the recruit button */
+    .form-actions {
+        margin-top: 1.5rem;
+        display: flex;
+        justify-content: center;
+    }
+
+    .recruit-button {
+        padding: 0.8rem 2rem;
+        background-color: rgba(0, 122, 255, 0.8); /* Increased from 0.7 to 0.8 for better contrast */
+        color: white;
+        border: none;
+        border-radius: 0.3rem;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .recruit-button:hover:not(:disabled) {
+        background-color: rgba(0, 122, 255, 0.9);
+        transform: translateY(-1px);
+    }
+
+    .recruit-button:disabled {
+        background-color: rgba(0, 0, 0, 0.2);
+        color: rgba(255, 255, 255, 0.7);
+        cursor: not-allowed;
+    }
+
+    /* Add styles for unit tooltip hint */
+    .unit-tooltip-hint {
+        font-size: 0.9em;
+        margin-left: 0.3rem;
+        opacity: 0.8;
+    }
+
+    /* Improve visibility of the unit-option when selected */
+    .unit-option.selected .unit-option-name {
+        color: rgba(0, 122, 255, 0.9);
     }
 </style>
