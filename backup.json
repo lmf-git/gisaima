@@ -72,15 +72,6 @@
   "worlds": {
     "ancient-lands": {
       "chat": {
-        "demob_complete_1746255961119_monster_1746207126423_8456": {
-          "location": {
-            "x": -22,
-            "y": 7
-          },
-          "text": "Wild Wolves has been demobilized into Goblin Raiders Monster Lair at (-22, 7)",
-          "timestamp": 1746255961119,
-          "type": "event"
-        },
         "demob_complete_1746256565163_monster_1746209532045_5356": {
           "location": {
             "x": -31,
@@ -180,13 +171,13 @@
           "timestamp": 1746271441590,
           "type": "event"
         },
-        "monster_attack_move_1746255366750_monster_1746214982781_6464": {
+        "demob_complete_1746282960991_monster_1746236005001_3396": {
           "location": {
-            "x": -23,
-            "y": 6
+            "x": -22,
+            "y": 7
           },
-          "text": "Wild Wolves is moving to attack the Stoneguard Citadel at (-23, 5)!",
-          "timestamp": 1746255366750,
+          "text": "Goblin Raiders has been demobilized into Goblin Raiders Monster Lair at (-22, 7)",
+          "timestamp": 1746282960991,
           "type": "event"
         },
         "monster_attack_move_1746256682393_monster_1746214982781_6464": {
@@ -306,6 +297,96 @@
           "timestamp": 1746277382683,
           "type": "event"
         },
+        "monster_attack_move_1746282062787_monster_1746195242709_5625": {
+          "location": {
+            "x": -22,
+            "y": 6
+          },
+          "text": "Goblin Raiders is moving to attack the Stoneguard Citadel at (-23, 5)!",
+          "timestamp": 1746282062787,
+          "type": "event"
+        },
+        "monster_attack_move_1746283145901_monster_1746195242709_5625": {
+          "location": {
+            "x": -22,
+            "y": 5
+          },
+          "text": "Goblin Raiders is moving to attack the Stoneguard Citadel at (-23, 5)!",
+          "timestamp": 1746283145901,
+          "type": "event"
+        },
+        "monster_attack_move_1746283746607_monster_1746195242709_5625": {
+          "location": {
+            "x": -24,
+            "y": 6
+          },
+          "text": "Goblin Raiders is moving to attack the Stoneguard Citadel at (-23, 5)!",
+          "timestamp": 1746283746607,
+          "type": "event"
+        },
+        "monster_attack_move_1746284521823_monster_1746195242709_5625": {
+          "location": {
+            "x": -23,
+            "y": 6
+          },
+          "text": "Goblin Raiders is moving to attack the Stoneguard Citadel at (-23, 5)!",
+          "timestamp": 1746284521823,
+          "type": "event"
+        },
+        "monster_attack_move_1746285722538_monster_1746195242709_5625": {
+          "location": {
+            "x": -22,
+            "y": 6
+          },
+          "text": "Goblin Raiders is moving to attack the Stoneguard Citadel at (-23, 5)!",
+          "timestamp": 1746285722538,
+          "type": "event"
+        },
+        "monster_attack_move_1746286682263_monster_1746195242709_5625": {
+          "location": {
+            "x": -23,
+            "y": 4
+          },
+          "text": "Goblin Raiders is moving to attack the Stoneguard Citadel at (-23, 5)!",
+          "timestamp": 1746286682263,
+          "type": "event"
+        },
+        "monster_attack_move_1746287282386_monster_1746195242709_5625": {
+          "location": {
+            "x": -22,
+            "y": 5
+          },
+          "text": "Goblin Raiders is moving to attack the Stoneguard Citadel at (-23, 5)!",
+          "timestamp": 1746287282386,
+          "type": "event"
+        },
+        "monster_attack_move_1746288122371_monster_1746195242709_5625": {
+          "location": {
+            "x": -24,
+            "y": 6
+          },
+          "text": "Goblin Raiders is moving to attack the Stoneguard Citadel at (-23, 5)!",
+          "timestamp": 1746288122371,
+          "type": "event"
+        },
+        "monster_attack_move_1746288546668_monster_1746195242709_5625": {
+          "location": {
+            "x": -22,
+            "y": 5
+          },
+          "text": "Goblin Raiders is moving to attack the Stoneguard Citadel at (-23, 5)!",
+          "timestamp": 1746288546668,
+          "type": "event"
+        },
+        "monster_attack_move_1746289441968_monster_1746195242709_5625": {
+          "location": {
+            "x": -22,
+            "y": 5
+          },
+          "text": "Goblin Raiders is moving to attack the Stoneguard Citadel at (-23, 5)!",
+          "timestamp": 1746289441968,
+          "type": "event"
+        },
         "monster_building_1746256807380_1643": {
           "location": {
             "x": -23,
@@ -313,15 +394,6 @@
           },
           "text": " Wild Wolves is building a Monster Lair at (-25, 7)!",
           "timestamp": 1746256807380,
-          "type": "event"
-        },
-        "monster_demobilize_1746255902600_5800": {
-          "location": {
-            "x": -22,
-            "y": 7
-          },
-          "text": "Wild Wolves is demobilizing at Goblin Raiders Monster Lair at (-22, 7).",
-          "timestamp": 1746255902600,
           "type": "event"
         },
         "monster_demobilize_1746256502654_7896": {
@@ -423,220 +495,13 @@
           "timestamp": 1746271386515,
           "type": "event"
         },
-        "monster_move_1746254522274_monster_1746189368610_3373": {
-          "location": {
-            "x": -11,
-            "y": -18
-          },
-          "text": "Bandits is moving towards a settlement.",
-          "timestamp": 1746254522274,
-          "type": "event"
-        },
-        "monster_move_1746254522274_monster_1746207126423_8456": {
-          "location": {
-            "x": -23,
-            "y": 8
-          },
-          "text": "Wild Wolves is moving towards a settlement.",
-          "timestamp": 1746254522274,
-          "type": "event"
-        },
-        "monster_move_1746254522274_monster_1746209532045_5356": {
-          "location": {
-            "x": -29,
-            "y": -9
-          },
-          "text": "Bandits is moving towards their lair.",
-          "timestamp": 1746254522274,
-          "type": "event"
-        },
-        "monster_move_1746254522274_monster_1746214982781_6464": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Wild Wolves is moving towards their lair.",
-          "timestamp": 1746254522274,
-          "type": "event"
-        },
-        "monster_move_1746254522274_monster_1746236005001_3396": {
-          "location": {
-            "x": -30,
-            "y": -7
-          },
-          "text": "Goblin Raiders is moving towards a settlement.",
-          "timestamp": 1746254522274,
-          "type": "event"
-        },
-        "monster_move_1746254703448_monster_1746207782723_8345": {
-          "location": {
-            "x": -33,
-            "y": 12
-          },
-          "text": "Goblin Raiders is moving towards their lair.",
-          "timestamp": 1746254703448,
-          "type": "event"
-        },
-        "monster_move_1746254886194_monster_1746209532045_5356": {
-          "location": {
-            "x": -30,
-            "y": -9
-          },
-          "text": " 💰 Bandits is moving toward their lair at (-31, -10).",
-          "timestamp": 1746254886194,
-          "type": "event"
-        },
-        "monster_move_1746255241787_monster_1746229268539_9385": {
-          "location": {
-            "x": -6,
-            "y": -3
-          },
-          "text": "Wild Wolves is moving towards their lair.",
-          "timestamp": 1746255241787,
-          "type": "event"
-        },
-        "monster_move_1746255302749_monster_1746207782723_8345": {
-          "location": {
-            "x": -32,
-            "y": 12
-          },
-          "text": "Goblin Raiders is moving towards a settlement.",
-          "timestamp": 1746255302749,
-          "type": "event"
-        },
-        "monster_move_1746255302749_monster_1746230054529_6604": {
-          "location": {
-            "x": -28,
-            "y": -14
-          },
-          "text": "Goblin Raiders is moving towards their lair.",
-          "timestamp": 1746255302749,
-          "type": "event"
-        },
-        "monster_move_1746255366750_monster_1746207126423_8456": {
-          "location": {
-            "x": -23,
-            "y": 7
-          },
-          "text": "Wild Wolves is moving towards their lair.",
-          "timestamp": 1746255366750,
-          "type": "event"
-        },
-        "monster_move_1746255366750_monster_1746229268539_9385": {
-          "location": {
-            "x": -7,
-            "y": -2
-          },
-          "text": "Wild Wolves is moving towards their lair.",
-          "timestamp": 1746255366750,
-          "type": "event"
-        },
-        "monster_move_1746255366750_monster_1746233285624_2108": {
-          "location": {
-            "x": -21,
-            "y": -19
-          },
-          "text": "Giant Spiders is moving towards their lair.",
-          "timestamp": 1746255366750,
-          "type": "event"
-        },
-        "monster_move_1746255482348_monster_1746214982781_6464": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Wild Wolves is moving towards their lair.",
-          "timestamp": 1746255482348,
-          "type": "event"
-        },
-        "monster_move_1746255482348_monster_1746232449545_5568": {
-          "location": {
-            "x": -21,
-            "y": -16
-          },
-          "text": "Bandits is moving towards a settlement.",
-          "timestamp": 1746255482348,
-          "type": "event"
-        },
-        "monster_move_1746255902600_monster_1746227283879_9904": {
-          "location": {
-            "x": -18,
-            "y": 2
-          },
-          "text": "Giant Spiders is moving towards their lair.",
-          "timestamp": 1746255902600,
-          "type": "event"
-        },
-        "monster_move_1746255902600_monster_1746233285624_2108": {
-          "location": {
-            "x": -20,
-            "y": -20
-          },
-          "text": "Giant Spiders is moving towards a settlement.",
-          "timestamp": 1746255902600,
-          "type": "event"
-        },
-        "monster_move_1746256081855_monster_1746189368610_3373": {
-          "location": {
-            "x": -12,
-            "y": -18
-          },
-          "text": "Bandits is moving towards their lair.",
-          "timestamp": 1746256081855,
-          "type": "event"
-        },
-        "monster_move_1746256081855_monster_1746229268539_9385": {
-          "location": {
-            "x": -8,
-            "y": -1
-          },
-          "text": "Wild Wolves is moving towards their lair.",
-          "timestamp": 1746256081855,
-          "type": "event"
-        },
-        "monster_move_1746256081855_monster_1746230054529_6604": {
-          "location": {
-            "x": -29,
-            "y": -13
-          },
-          "text": "Goblin Raiders is moving towards a settlement.",
-          "timestamp": 1746256081855,
-          "type": "event"
-        },
-        "monster_move_1746256266572_monster_1746207782723_8345": {
-          "location": {
-            "x": -31,
-            "y": 11
-          },
-          "text": "Goblin Raiders is moving towards a settlement.",
-          "timestamp": 1746256266572,
-          "type": "event"
-        },
-        "monster_move_1746256266572_monster_1746229268539_9385": {
-          "location": {
-            "x": -9,
-            "y": 0
-          },
-          "text": "Wild Wolves is moving towards a settlement.",
-          "timestamp": 1746256266572,
-          "type": "event"
-        },
-        "monster_move_1746256266572_monster_1746232449545_5568": {
+        "monster_demobilize_1746282903321_8201": {
           "location": {
             "x": -22,
-            "y": -16
+            "y": 7
           },
-          "text": "Bandits is moving towards a settlement.",
-          "timestamp": 1746256266572,
-          "type": "event"
-        },
-        "monster_move_1746256441564_monster_1746207782723_8345": {
-          "location": {
-            "x": -30,
-            "y": 10
-          },
-          "text": "Goblin Raiders is moving towards their lair.",
-          "timestamp": 1746256441564,
+          "text": "Goblin Raiders is demobilizing at Goblin Raiders Monster Lair at (-22, 7).",
+          "timestamp": 1746282903321,
           "type": "event"
         },
         "monster_move_1746256742579_monster_1746189368610_3373": {
@@ -1962,6 +1827,105 @@
           "timestamp": 1746281102385,
           "type": "event"
         },
+        "monster_move_1746282482608_monster_1746195242709_5625": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders is moving towards their lair.",
+          "timestamp": 1746282482608,
+          "type": "event"
+        },
+        "monster_move_1746283261854_monster_1746195242709_5625": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders is moving towards their lair.",
+          "timestamp": 1746283261854,
+          "type": "event"
+        },
+        "monster_move_1746283863402_monster_1746195242709_5625": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders is moving towards their lair.",
+          "timestamp": 1746283863402,
+          "type": "event"
+        },
+        "monster_move_1746284162405_monster_1746195242709_5625": {
+          "location": {
+            "x": -24,
+            "y": 6
+          },
+          "text": "Goblin Raiders is moving towards their lair.",
+          "timestamp": 1746284162405,
+          "type": "event"
+        },
+        "monster_move_1746284762874_monster_1746195242709_5625": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders is moving towards their lair.",
+          "timestamp": 1746284762874,
+          "type": "event"
+        },
+        "monster_move_1746285601966_monster_1746195242709_5625": {
+          "location": {
+            "x": -23,
+            "y": 6
+          },
+          "text": "Goblin Raiders is moving towards their lair.",
+          "timestamp": 1746285601966,
+          "type": "event"
+        },
+        "monster_move_1746286146599_monster_1746195242709_5625": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders is moving towards their lair.",
+          "timestamp": 1746286146599,
+          "type": "event"
+        },
+        "monster_move_1746286982032_monster_1746195242709_5625": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders is moving towards a settlement.",
+          "timestamp": 1746286982032,
+          "type": "event"
+        },
+        "monster_move_1746287825929_monster_1746195242709_5625": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders is moving towards their lair.",
+          "timestamp": 1746287825929,
+          "type": "event"
+        },
+        "monster_move_1746288306855_monster_1746195242709_5625": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders is moving towards a settlement.",
+          "timestamp": 1746288306855,
+          "type": "event"
+        },
+        "monster_move_1746289022189_monster_1746195242709_5625": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders is moving towards their lair.",
+          "timestamp": 1746289022189,
+          "type": "event"
+        },
         "monster_personality_change_1746258426408_monster_1746207782723_8345": {
           "location": {
             "x": -25,
@@ -1987,339 +1951,6 @@
           },
           "text": "The Goblin Raiders at (-23, 5) has become 🌍 Nomadic!",
           "timestamp": 1746276962208,
-          "type": "event"
-        },
-        "move_1746254401990_monster_1746232449545_5568_1": {
-          "location": {
-            "x": -21,
-            "y": -16
-          },
-          "text": "Bandits has arrived at (-21,-16)",
-          "timestamp": 1746254401990,
-          "type": "event"
-        },
-        "move_1746254646071_monster_1746189368610_3373_1": {
-          "location": {
-            "x": -12,
-            "y": -18
-          },
-          "text": "Bandits has arrived at (-12,-18)",
-          "timestamp": 1746254646071,
-          "type": "event"
-        },
-        "move_1746254646071_monster_1746205562450_5263_1": {
-          "location": {
-            "x": -56,
-            "y": 3
-          },
-          "text": "Goblin Raiders has arrived at (-56,3)",
-          "timestamp": 1746254646071,
-          "type": "event"
-        },
-        "move_1746254646071_monster_1746207126423_8456_1": {
-          "location": {
-            "x": -23,
-            "y": 7
-          },
-          "text": "Wild Wolves has arrived at (-23,7)",
-          "timestamp": 1746254646071,
-          "type": "event"
-        },
-        "move_1746254646071_monster_1746209532045_5356_1": {
-          "location": {
-            "x": -30,
-            "y": -9
-          },
-          "text": "Bandits has arrived at (-30,-9)",
-          "timestamp": 1746254646071,
-          "type": "event"
-        },
-        "move_1746254646071_monster_1746214982781_6464_1": {
-          "location": {
-            "x": -23,
-            "y": 6
-          },
-          "text": "Wild Wolves has arrived at (-23,6)",
-          "timestamp": 1746254646071,
-          "type": "event"
-        },
-        "move_1746254646071_monster_1746236005001_3396_1": {
-          "location": {
-            "x": -29,
-            "y": -6
-          },
-          "text": "Goblin Raiders has arrived at (-29,-6)",
-          "timestamp": 1746254646071,
-          "type": "event"
-        },
-        "move_1746254820880_monster_1746207782723_8345_1": {
-          "location": {
-            "x": -32,
-            "y": 12
-          },
-          "text": "Goblin Raiders has arrived at (-32,12)",
-          "timestamp": 1746254820880,
-          "type": "event"
-        },
-        "move_1746254885305_monster_1746195242709_5625_2": {
-          "location": {
-            "x": -29,
-            "y": 28
-          },
-          "text": "Goblin Raiders has arrived at (-29,28)",
-          "timestamp": 1746254885305,
-          "type": "event"
-        },
-        "move_1746255000886_monster_1746209532045_5356_1": {
-          "location": {
-            "x": -31,
-            "y": -10
-          },
-          "text": "Bandits has arrived at (-31,-10)",
-          "timestamp": 1746255000886,
-          "type": "event"
-        },
-        "move_1746255061950_monster_1746205562450_5263_2": {
-          "location": {
-            "x": -54,
-            "y": 3
-          },
-          "text": "Goblin Raiders has arrived at (-54,3)",
-          "timestamp": 1746255061950,
-          "type": "event"
-        },
-        "move_1746255185544_monster_1746195242709_5625_1": {
-          "location": {
-            "x": -28,
-            "y": 29
-          },
-          "text": "Goblin Raiders has arrived at (-28,29)",
-          "timestamp": 1746255185544,
-          "type": "event"
-        },
-        "move_1746255185544_monster_1746225256516_2906_1": {
-          "location": {
-            "x": -43,
-            "y": -35
-          },
-          "text": "Goblin Raiders has arrived at (-43,-35)",
-          "timestamp": 1746255185544,
-          "type": "event"
-        },
-        "move_1746255301852_monster_1746229268539_9385_1": {
-          "location": {
-            "x": -7,
-            "y": -2
-          },
-          "text": "Wild Wolves has arrived at (-7,-2)",
-          "timestamp": 1746255301852,
-          "type": "event"
-        },
-        "move_1746255365615_monster_1746207782723_8345_1": {
-          "location": {
-            "x": -31,
-            "y": 11
-          },
-          "text": "Goblin Raiders has arrived at (-31,11)",
-          "timestamp": 1746255365615,
-          "type": "event"
-        },
-        "move_1746255365615_monster_1746230054529_6604_1": {
-          "location": {
-            "x": -29,
-            "y": -13
-          },
-          "text": "Goblin Raiders has arrived at (-29,-13)",
-          "timestamp": 1746255365615,
-          "type": "event"
-        },
-        "move_1746255421174_monster_1746214982781_6464_1": {
-          "location": {
-            "x": -23,
-            "y": 5
-          },
-          "text": "Wild Wolves has arrived at (-23,5)",
-          "timestamp": 1746255421174,
-          "type": "event"
-        },
-        "move_1746255481089_monster_1746207126423_8456_1": {
-          "location": {
-            "x": -22,
-            "y": 7
-          },
-          "text": "Wild Wolves has arrived at (-22,7)",
-          "timestamp": 1746255481089,
-          "type": "event"
-        },
-        "move_1746255481089_monster_1746229268539_9385_1": {
-          "location": {
-            "x": -8,
-            "y": -1
-          },
-          "text": "Wild Wolves has arrived at (-8,-1)",
-          "timestamp": 1746255481089,
-          "type": "event"
-        },
-        "move_1746255481089_monster_1746233285624_2108_1": {
-          "location": {
-            "x": -20,
-            "y": -20
-          },
-          "text": "Giant Spiders has arrived at (-20,-20)",
-          "timestamp": 1746255481089,
-          "type": "event"
-        },
-        "move_1746255541274_monster_1746209946541_1514_3": {
-          "location": {
-            "x": -53,
-            "y": -26
-          },
-          "text": "Goblin Raiders has arrived at (-53,-26)",
-          "timestamp": 1746255541274,
-          "type": "event"
-        },
-        "move_1746255605203_monster_1746214982781_6464_1": {
-          "location": {
-            "x": -23,
-            "y": 6
-          },
-          "text": "Wild Wolves has arrived at (-23,6)",
-          "timestamp": 1746255605203,
-          "type": "event"
-        },
-        "move_1746255605203_monster_1746232449545_5568_1": {
-          "location": {
-            "x": -22,
-            "y": -16
-          },
-          "text": "Bandits has arrived at (-22,-16)",
-          "timestamp": 1746255605203,
-          "type": "event"
-        },
-        "move_1746255720650_monster_1746225256516_2906_2": {
-          "location": {
-            "x": -41,
-            "y": -37
-          },
-          "text": "Goblin Raiders has arrived at (-41,-37)",
-          "timestamp": 1746255720650,
-          "type": "event"
-        },
-        "move_1746256021166_monster_1746227283879_9904_1": {
-          "location": {
-            "x": -17,
-            "y": 2
-          },
-          "text": "Giant Spiders has arrived at (-17,2)",
-          "timestamp": 1746256021166,
-          "type": "event"
-        },
-        "move_1746256021166_monster_1746233285624_2108_1": {
-          "location": {
-            "x": -19,
-            "y": -21
-          },
-          "text": "Giant Spiders has arrived at (-19,-21)",
-          "timestamp": 1746256021166,
-          "type": "event"
-        },
-        "move_1746256201465_monster_1746189368610_3373_1": {
-          "location": {
-            "x": -13,
-            "y": -18
-          },
-          "text": "Bandits has arrived at (-13,-18)",
-          "timestamp": 1746256201465,
-          "type": "event"
-        },
-        "move_1746256201465_monster_1746195242709_5625_1": {
-          "location": {
-            "x": -27,
-            "y": 28
-          },
-          "text": "Goblin Raiders has arrived at (-27,28)",
-          "timestamp": 1746256201465,
-          "type": "event"
-        },
-        "move_1746256201465_monster_1746205562450_5263_1": {
-          "location": {
-            "x": -53,
-            "y": 3
-          },
-          "text": "Goblin Raiders has arrived at (-53,3)",
-          "timestamp": 1746256201465,
-          "type": "event"
-        },
-        "move_1746256201465_monster_1746229268539_9385_1": {
-          "location": {
-            "x": -9,
-            "y": 0
-          },
-          "text": "Wild Wolves has arrived at (-9,0)",
-          "timestamp": 1746256201465,
-          "type": "event"
-        },
-        "move_1746256201465_monster_1746230054529_6604_1": {
-          "location": {
-            "x": -30,
-            "y": -12
-          },
-          "text": "Goblin Raiders has arrived at (-30,-12)",
-          "timestamp": 1746256201465,
-          "type": "event"
-        },
-        "move_1746256381162_monster_1746207782723_8345_1": {
-          "location": {
-            "x": -30,
-            "y": 10
-          },
-          "text": "Goblin Raiders has arrived at (-30,10)",
-          "timestamp": 1746256381162,
-          "type": "event"
-        },
-        "move_1746256381162_monster_1746209946541_1514_1": {
-          "location": {
-            "x": -52,
-            "y": -27
-          },
-          "text": "Goblin Raiders has arrived at (-52,-27)",
-          "timestamp": 1746256381162,
-          "type": "event"
-        },
-        "move_1746256381162_monster_1746229268539_9385_1": {
-          "location": {
-            "x": -10,
-            "y": 0
-          },
-          "text": "Wild Wolves has arrived at (-10,0)",
-          "timestamp": 1746256381162,
-          "type": "event"
-        },
-        "move_1746256381162_monster_1746232449545_5568_1": {
-          "location": {
-            "x": -21,
-            "y": -17
-          },
-          "text": "Bandits has arrived at (-21,-17)",
-          "timestamp": 1746256381162,
-          "type": "event"
-        },
-        "move_1746256501680_monster_1746207782723_8345_1": {
-          "location": {
-            "x": -29,
-            "y": 10
-          },
-          "text": "Goblin Raiders has arrived at (-29,10)",
-          "timestamp": 1746256501680,
-          "type": "event"
-        },
-        "move_1746256501680_monster_1746225256516_2906_1": {
-          "location": {
-            "x": -42,
-            "y": -38
-          },
-          "text": "Goblin Raiders has arrived at (-42,-38)",
-          "timestamp": 1746256501680,
           "type": "event"
         },
         "move_1746256741710_monster_1746214982781_6464_1": {
@@ -4571,6 +4202,384 @@
           "text": "Goblin Raiders has arrived at (-54,9)",
           "timestamp": 1746281281347,
           "type": "event"
+        },
+        "move_1746281765628_monster_1746205562450_5263_2": {
+          "location": {
+            "x": -52,
+            "y": 9
+          },
+          "text": "Goblin Raiders has arrived at (-52,9)",
+          "timestamp": 1746281765628,
+          "type": "event"
+        },
+        "move_1746282122073_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders has arrived at (-23,5)",
+          "timestamp": 1746282122073,
+          "type": "event"
+        },
+        "move_1746282122073_monster_1746205562450_5263_2": {
+          "location": {
+            "x": -54,
+            "y": 11
+          },
+          "text": "Goblin Raiders has arrived at (-54,11)",
+          "timestamp": 1746282122073,
+          "type": "event"
+        },
+        "move_1746282601134_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -22,
+            "y": 5
+          },
+          "text": "Goblin Raiders has arrived at (-22,5)",
+          "timestamp": 1746282601134,
+          "type": "event"
+        },
+        "move_1746283201308_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders has arrived at (-23,5)",
+          "timestamp": 1746283201308,
+          "type": "event"
+        },
+        "move_1746283381074_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -24,
+            "y": 6
+          },
+          "text": "Goblin Raiders has arrived at (-24,6)",
+          "timestamp": 1746283381074,
+          "type": "event"
+        },
+        "move_1746283745727_monster_1746205562450_5263_1": {
+          "location": {
+            "x": -55,
+            "y": 11
+          },
+          "text": "Goblin Raiders has arrived at (-55,11)",
+          "timestamp": 1746283745727,
+          "type": "event"
+        },
+        "move_1746283802023_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders has arrived at (-23,5)",
+          "timestamp": 1746283802023,
+          "type": "event"
+        },
+        "move_1746283981462_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -24,
+            "y": 6
+          },
+          "text": "Goblin Raiders has arrived at (-24,6)",
+          "timestamp": 1746283981462,
+          "type": "event"
+        },
+        "move_1746284045460_monster_1746205562450_5263_2": {
+          "location": {
+            "x": -53,
+            "y": 13
+          },
+          "text": "Goblin Raiders has arrived at (-53,13)",
+          "timestamp": 1746284045460,
+          "type": "event"
+        },
+        "move_1746284285069_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -23,
+            "y": 6
+          },
+          "text": "Goblin Raiders has arrived at (-23,6)",
+          "timestamp": 1746284285069,
+          "type": "event"
+        },
+        "move_1746284401894_monster_1746205562450_5263_2": {
+          "location": {
+            "x": -53,
+            "y": 11
+          },
+          "text": "Goblin Raiders has arrived at (-53,11)",
+          "timestamp": 1746284401894,
+          "type": "event"
+        },
+        "move_1746284581354_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders has arrived at (-23,5)",
+          "timestamp": 1746284581354,
+          "type": "event"
+        },
+        "move_1746284581354_monster_1746205562450_5263_1": {
+          "location": {
+            "x": -53,
+            "y": 12
+          },
+          "text": "Goblin Raiders has arrived at (-53,12)",
+          "timestamp": 1746284581354,
+          "type": "event"
+        },
+        "move_1746284885229_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -23,
+            "y": 6
+          },
+          "text": "Goblin Raiders has arrived at (-23,6)",
+          "timestamp": 1746284885229,
+          "type": "event"
+        },
+        "move_1746284945318_monster_1746205562450_5263_3": {
+          "location": {
+            "x": -53,
+            "y": 15
+          },
+          "text": "Goblin Raiders has arrived at (-53,15)",
+          "timestamp": 1746284945318,
+          "type": "event"
+        },
+        "move_1746285125936_monster_1746205562450_5263_1": {
+          "location": {
+            "x": -53,
+            "y": 14
+          },
+          "text": "Goblin Raiders has arrived at (-53,14)",
+          "timestamp": 1746285125936,
+          "type": "event"
+        },
+        "move_1746285305490_monster_1746205562450_5263_1": {
+          "location": {
+            "x": -53,
+            "y": 15
+          },
+          "text": "Goblin Raiders has arrived at (-53,15)",
+          "timestamp": 1746285305490,
+          "type": "event"
+        },
+        "move_1746285601077_monster_1746205562450_5263_1": {
+          "location": {
+            "x": -54,
+            "y": 16
+          },
+          "text": "Goblin Raiders has arrived at (-54,16)",
+          "timestamp": 1746285601077,
+          "type": "event"
+        },
+        "move_1746285665761_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -22,
+            "y": 6
+          },
+          "text": "Goblin Raiders has arrived at (-22,6)",
+          "timestamp": 1746285665761,
+          "type": "event"
+        },
+        "move_1746285781214_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders has arrived at (-23,5)",
+          "timestamp": 1746285781214,
+          "type": "event"
+        },
+        "move_1746285841300_monster_1746205562450_5263_2": {
+          "location": {
+            "x": -54,
+            "y": 14
+          },
+          "text": "Goblin Raiders has arrived at (-54,14)",
+          "timestamp": 1746285841300,
+          "type": "event"
+        },
+        "move_1746286205709_monster_1746205562450_5263_3": {
+          "location": {
+            "x": -54,
+            "y": 11
+          },
+          "text": "Goblin Raiders has arrived at (-54,11)",
+          "timestamp": 1746286205709,
+          "type": "event"
+        },
+        "move_1746286265813_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -23,
+            "y": 4
+          },
+          "text": "Goblin Raiders has arrived at (-23,4)",
+          "timestamp": 1746286265813,
+          "type": "event"
+        },
+        "move_1746286441490_monster_1746205562450_5263_1": {
+          "location": {
+            "x": -55,
+            "y": 10
+          },
+          "text": "Goblin Raiders has arrived at (-55,10)",
+          "timestamp": 1746286441490,
+          "type": "event"
+        },
+        "move_1746286741588_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders has arrived at (-23,5)",
+          "timestamp": 1746286741588,
+          "type": "event"
+        },
+        "move_1746286981140_monster_1746205562450_5263_3": {
+          "location": {
+            "x": -58,
+            "y": 13
+          },
+          "text": "Goblin Raiders has arrived at (-58,13)",
+          "timestamp": 1746286981140,
+          "type": "event"
+        },
+        "move_1746287045142_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -22,
+            "y": 5
+          },
+          "text": "Goblin Raiders has arrived at (-22,5)",
+          "timestamp": 1746287045142,
+          "type": "event"
+        },
+        "move_1746287161937_monster_1746205562450_5263_1": {
+          "location": {
+            "x": -57,
+            "y": 12
+          },
+          "text": "Goblin Raiders has arrived at (-57,12)",
+          "timestamp": 1746287161937,
+          "type": "event"
+        },
+        "move_1746287341525_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders has arrived at (-23,5)",
+          "timestamp": 1746287341525,
+          "type": "event"
+        },
+        "move_1746287401482_monster_1746205562450_5263_1": {
+          "location": {
+            "x": -56,
+            "y": 12
+          },
+          "text": "Goblin Raiders has arrived at (-56,12)",
+          "timestamp": 1746287401482,
+          "type": "event"
+        },
+        "move_1746287761325_monster_1746205562450_5263_2": {
+          "location": {
+            "x": -54,
+            "y": 14
+          },
+          "text": "Goblin Raiders has arrived at (-54,14)",
+          "timestamp": 1746287761325,
+          "type": "event"
+        },
+        "move_1746287886024_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -24,
+            "y": 6
+          },
+          "text": "Goblin Raiders has arrived at (-24,6)",
+          "timestamp": 1746287886024,
+          "type": "event"
+        },
+        "move_1746288185128_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders has arrived at (-23,5)",
+          "timestamp": 1746288185128,
+          "type": "event"
+        },
+        "move_1746288305964_monster_1746205562450_5263_1": {
+          "location": {
+            "x": -54,
+            "y": 13
+          },
+          "text": "Goblin Raiders has arrived at (-54,13)",
+          "timestamp": 1746288305964,
+          "type": "event"
+        },
+        "move_1746288421721_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -22,
+            "y": 5
+          },
+          "text": "Goblin Raiders has arrived at (-22,5)",
+          "timestamp": 1746288421721,
+          "type": "event"
+        },
+        "move_1746288545773_monster_1746205562450_5263_2": {
+          "location": {
+            "x": -56,
+            "y": 15
+          },
+          "text": "Goblin Raiders has arrived at (-56,15)",
+          "timestamp": 1746288545773,
+          "type": "event"
+        },
+        "move_1746288601085_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders has arrived at (-23,5)",
+          "timestamp": 1746288601085,
+          "type": "event"
+        },
+        "move_1746289021275_monster_1746205562450_5263_3": {
+          "location": {
+            "x": -56,
+            "y": 18
+          },
+          "text": "Goblin Raiders has arrived at (-56,18)",
+          "timestamp": 1746289021275,
+          "type": "event"
+        },
+        "move_1746289085726_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -22,
+            "y": 5
+          },
+          "text": "Goblin Raiders has arrived at (-22,5)",
+          "timestamp": 1746289085726,
+          "type": "event"
+        },
+        "move_1746289501351_monster_1746195242709_5625_1": {
+          "location": {
+            "x": -23,
+            "y": 5
+          },
+          "text": "Goblin Raiders has arrived at (-23,5)",
+          "timestamp": 1746289501351,
+          "type": "event"
+        },
+        "move_1746289625908_monster_1746205562450_5263_1": {
+          "location": {
+            "x": -55,
+            "y": 18
+          },
+          "text": "Goblin Raiders has arrived at (-55,18)",
+          "timestamp": 1746289625908,
+          "type": "event"
         }
       },
       "chunks": {
@@ -6147,121 +6156,7 @@
           }
         },
         "-2,0": {
-          "-22,6": {
-            "groups": {
-              "monster_1746195242709_5625": {
-                "id": "monster_1746195242709_5625",
-                "inBattle": false,
-                "items": [
-                  {
-                    "id": "STONE_PIECES",
-                    "name": "Stone Pieces",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "RARE_METALS",
-                    "name": "Rare Metals",
-                    "quantity": 2,
-                    "rarity": "rare",
-                    "type": "resource"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Moving to next location (-21,5)",
-                  "timestamp": 1746214865856
-                },
-                "moveReason": "structure_attack",
-                "name": "Goblin Raiders",
-                "status": "idle",
-                "targetX": -23,
-                "targetY": 5,
-                "type": "monster",
-                "units": {
-                  "monster_unit_1746195242709_1843_2": {
-                    "id": "monster_unit_1746195242709_1843_2",
-                    "type": "goblin"
-                  },
-                  "monster_unit_1746195242709_6273_1": {
-                    "id": "monster_unit_1746195242709_6273_1",
-                    "type": "goblin"
-                  }
-                },
-                "x": -22,
-                "y": 6
-              }
-            }
-          },
           "-22,7": {
-            "groups": {
-              "monster_1746236005001_3396": {
-                "gatheringTicksRemaining": 1,
-                "id": "monster_1746236005001_3396",
-                "items": [
-                  {
-                    "id": "CRUDE_WEAPON",
-                    "name": "Crude Weapon",
-                    "quantity": 1,
-                    "rarity": "common",
-                    "type": "weapon"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "item_1746236522566_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 5,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Small rocks useful for crafting tools",
-                    "id": "item_1746236522566_2",
-                    "name": "Stone Pieces",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "moveReason": "structure_attack",
-                "name": "Goblin Raiders",
-                "personality": {
-                  "emoji": "🌍",
-                  "id": "NOMADIC",
-                  "name": "Nomadic"
-                },
-                "status": "idle",
-                "targetX": -22,
-                "targetY": 7,
-                "type": "monster",
-                "units": {
-                  "monster_unit_1746236005001_2314_0": {
-                    "id": "monster_unit_1746236005001_2314_0",
-                    "type": "goblin"
-                  }
-                },
-                "x": -22,
-                "y": 7
-              }
-            },
             "structure": {
               "buildCompletionTime": 1746240364342,
               "buildProgress": 0,
@@ -6296,7 +6191,7 @@
                   "description": "Basic building material found in most areas",
                   "id": "item_1746222362076_1",
                   "name": "Wooden Sticks",
-                  "quantity": 24,
+                  "quantity": 34,
                   "rarity": "common",
                   "type": "resource"
                 },
@@ -6312,7 +6207,7 @@
                   "description": "Small rocks useful for crafting tools",
                   "id": "item_1746222362076_2",
                   "name": "Stone Pieces",
-                  "quantity": 16,
+                  "quantity": 22,
                   "rarity": "common",
                   "type": "resource"
                 },
@@ -6338,6 +6233,13 @@
                   "quantity": 2,
                   "rarity": "common",
                   "type": "resource"
+                },
+                {
+                  "id": "CRUDE_WEAPON",
+                  "name": "Crude Weapon",
+                  "quantity": 2,
+                  "rarity": "common",
+                  "type": "weapon"
                 }
               ],
               "level": 1,
@@ -6388,6 +6290,10 @@
                   {
                     "id": "monster_unit_1746207126423_9822_0",
                     "type": "wolf"
+                  },
+                  {
+                    "id": "monster_unit_1746236005001_2314_0",
+                    "type": "goblin"
                   }
                 ]
               }
@@ -6395,6 +6301,48 @@
           },
           "-23,5": {
             "groups": {
+              "monster_1746195242709_5625": {
+                "id": "monster_1746195242709_5625",
+                "inBattle": false,
+                "items": [
+                  {
+                    "id": "STONE_PIECES",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "RARE_METALS",
+                    "name": "Rare Metals",
+                    "quantity": 2,
+                    "rarity": "rare",
+                    "type": "resource"
+                  }
+                ],
+                "lastMessage": {
+                  "text": "Moving to next location (-21,5)",
+                  "timestamp": 1746214865856
+                },
+                "moveReason": "structure_attack",
+                "name": "Goblin Raiders",
+                "status": "idle",
+                "targetX": -23,
+                "targetY": 5,
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746195242709_1843_2": {
+                    "id": "monster_unit_1746195242709_1843_2",
+                    "type": "goblin"
+                  },
+                  "monster_unit_1746195242709_6273_1": {
+                    "id": "monster_unit_1746195242709_6273_1",
+                    "type": "goblin"
+                  }
+                },
+                "x": -23,
+                "y": 5
+              },
               "monster_1746214982781_6464": {
                 "buildingLocation": {
                   "x": -25,
@@ -6657,7 +6605,7 @@
           }
         },
         "-3,0": {
-          "-54,9": {
+          "-55,18": {
             "groups": {
               "monster_1746205562450_5263": {
                 "gatheringTicksRemaining": 1,
@@ -6714,23 +6662,19 @@
                   "timestamp": 1746214865856
                 },
                 "moveSpeed": 1,
-                "moveStarted": 1746281585803,
+                "moveStarted": 1746289741611,
                 "movementPath": [
                   {
-                    "x": -54,
-                    "y": 9
+                    "x": -55,
+                    "y": 18
                   },
                   {
-                    "x": -53,
-                    "y": 9
-                  },
-                  {
-                    "x": -52,
-                    "y": 9
+                    "x": -56,
+                    "y": 18
                   }
                 ],
                 "name": "Goblin Raiders",
-                "nextMoveTime": 1746281645803,
+                "nextMoveTime": 1746289801611,
                 "pathIndex": 0,
                 "personality": {
                   "emoji": "🏗️",
@@ -6738,8 +6682,8 @@
                   "name": "Builder"
                 },
                 "status": "moving",
-                "targetX": -52,
-                "targetY": 9,
+                "targetX": -58,
+                "targetY": 18,
                 "type": "monster",
                 "units": {
                   "monster_unit_1746205562450_4260_0": {
@@ -6755,8 +6699,8 @@
                     "type": "goblin"
                   }
                 },
-                "x": -54,
-                "y": 9
+                "x": -55,
+                "y": 18
               }
             }
           }
@@ -6768,7 +6712,7 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746281585192,
+        "lastTick": 1746289740989,
         "name": "Ancient Lands",
         "playerCount": 69,
         "seed": 13579,

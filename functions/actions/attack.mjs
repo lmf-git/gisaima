@@ -135,11 +135,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
         throw new HttpsError("permission-denied", "You cannot attack your own structure");
       }
       
-      // Cannot attack spawn points
-      if (structure.type === "spawn") {
-        throw new HttpsError("permission-denied", "Cannot attack spawn points");
-      }
-      
       // Cannot attack structures already in battle
       if (structure.inBattle) {
         throw new HttpsError("failed-precondition", "Structure is already in battle");
