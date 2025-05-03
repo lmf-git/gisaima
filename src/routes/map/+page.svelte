@@ -134,7 +134,8 @@
         if (panelType && ((panelType === 'chat' && showChat) || 
                         (panelType === 'achievements' && showAchievements) || 
                         (panelType === 'details' && detailed) || 
-                        (panelType === 'overview' && showEntities))) {
+                        (panelType === 'overview' && showEntities) ||
+                        (modalState.visible && modalState.type === panelType))) {
             console.log(`Setting active panel to: ${panelType}`);
             lastActivePanel = panelType;
         }
