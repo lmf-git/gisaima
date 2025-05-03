@@ -25,6 +25,7 @@
   import Rally from '../../icons/Rally.svelte';
   import Sword from '../../icons/Sword.svelte';
   import Hammer from '../../icons/Hammer.svelte';
+  import GroupStatus from './GroupStatus.svelte';
 
   const { 
     onClose = () => {}, 
@@ -1837,7 +1838,7 @@
     margin-top: 0.4em;
     width: 100%;
   }
-
+  
   .battle-side {
     padding: 0.2em 0.5em;
     border-radius: 0.3em;

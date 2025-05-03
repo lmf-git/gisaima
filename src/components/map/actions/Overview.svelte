@@ -14,6 +14,9 @@
   import Torch from '../../icons/Torch.svelte';
   import Close from '../../icons/Close.svelte';
   
+  // Import the new GroupStatus component
+  import GroupStatus from './GroupStatus.svelte';
+  
   // Props
   const { 
     closing = false, 
@@ -168,18 +171,19 @@
     }
   });
 
-  // Simplify the time remaining formatter to use store
+  // We need to make sure the formatTimeRemaining function always gets fresh data
+  // when it's called in the template
   function formatTimeRemaining(endTime, status) {
     if (!endTime) return '';
     
-    updateCounter; // Keep the reactive dependency
-    
-    // If mobilizing or demobilising, show next tick countdown instead
+    // For mobilizing or demobilising, we need to check time directly based on updateCounter
     if (status === 'mobilizing' || status === 'demobilising') {
+      // Force reactive update by referencing updateCounter
+      updateCounter;
       return $timeUntilNextTick;
     }
     
-    // For other statuses, use the existing calculation
+    // For other statuses, calculate based on endTime
     const now = Date.now();
     const remaining = endTime - now;
     
@@ -953,33 +957,8 @@
                         {/if}
                       </span>
                       
-                      <span class="entity-status-badge {getStatusClass(group.status)}"
-                        class:pending-tick={isPendingTick(
-                          group.status === 'moving' 
-                            ? group.nextMoveTime 
-                            : (group.status === 'gathering' || group.status === 'starting_to_gather' 
-                                ? group.gatheringUntil 
-                                : group.readyAt)
-                        )}
-                      >
-                        {#if group.status === 'starting_to_gather'}
-                          Preparing to gather
-                        {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
-                          {_fmt(group.status)} {$timeUntilNextTick}
-                        {:else if group.status === 'moving'}
-                          {_fmt(group.status)} 
-                          {#if !isPendingTick(group.nextMoveTime)}
-                            ({formatTimeRemaining(calculateMoveCompletionTime(group))})
-                          {/if}
-                        {:else if group.status === 'gathering'}
-                          {_fmt(group.status)} 
-                          {#if !isPendingTick(group.gatheringUntil)}
-                            ({formatTimeRemaining(group.gatheringUntil)})
-                          {/if}
-                        {:else}
-                          {_fmt(group.status)}
-                        {/if}
-                      </span>
+                      <!-- Replace the status badge with the GroupStatus component -->
+                      <GroupStatus {group} updateCounter={updateCounter} />
                       
                       <span class="entity-distance">
                         {formatDistance(group.distance)}
