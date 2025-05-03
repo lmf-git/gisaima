@@ -1,7 +1,6 @@
 <script>
   import { getFunctions, httpsCallable } from 'firebase/functions';
-
-  import { scale } from 'svelte/transition';
+  import { scale, fade } from 'svelte/transition';
 
   import { BUILDINGS } from 'gisaima-shared';
   import { 
@@ -11,6 +10,7 @@
   import { game, currentPlayer } from '../../../lib/stores/game.js';
   
   import Close from '../../icons/Close.svelte';
+  import Back from '../../icons/Back.svelte';
 
   // Props
   const {
@@ -19,20 +19,23 @@
     y = 0,
     onClose = () => {},
     onCraftStart = () => {},
-    isActive = false, // Add prop for z-index control
-    onMouseEnter = () => {} // Add prop for mouse enter event
+    isActive = false,
+    onMouseEnter = () => {}
   } = $props();
 
   // Use $state() for reactive variables
   let recipes = $state(getAllRecipes());
   let loading = $state(false); 
   let error = $state(null);
-  let selectedTab = $state('weapon');
+  let selectedCategory = $state(null);
   let selectedRecipe = $state(null);
   let craftingInProgress = $state(false);
   let successMessage = $state(null);
   let playerInventory = $state([]);
   let currentBuildingLevels = $state({});
+  
+  // Navigation state - new variable to track current view
+  let currentView = $state('categories'); // 'categories', 'recipes', 'details'
 
   // Replace the hardcoded categories array with the imported function
   const categories = getItemCategories();
@@ -93,8 +96,40 @@
 
   // Use $derived for computed values - filter recipes by selected category
   const filteredRecipes = $derived(
-    recipes.filter(recipe => recipe.category === selectedTab)
+    selectedCategory ? recipes.filter(recipe => recipe.category === selectedCategory) : []
   );
+
+  // Navigation functions
+  function goToCategories() {
+    currentView = 'categories';
+    selectedCategory = null;
+    selectedRecipe = null;
+    successMessage = null;
+  }
+  
+  function selectCategory(categoryId) {
+    selectedCategory = categoryId;
+    currentView = 'recipes';
+    selectedRecipe = null;
+    successMessage = null;
+  }
+  
+  function viewRecipeDetails(recipe) {
+    selectedRecipe = recipe;
+    currentView = 'details';
+    successMessage = null;
+  }
+  
+  function goBack() {
+    if (currentView === 'details') {
+      currentView = 'recipes';
+      selectedRecipe = null;
+      successMessage = null;
+    } else if (currentView === 'recipes') {
+      currentView = 'categories';
+      selectedCategory = null;
+    }
+  }
 
   // Regular functions (not reactive)
   function hasRequiredResources(recipe) {
@@ -215,12 +250,14 @@
   
   function handleKeyDown(event) {
     if (event.key === 'Escape') {
-      onClose();
+      if (currentView === 'details') {
+        goBack();
+      } else if (currentView === 'recipes') {
+        goBack();
+      } else {
+        onClose();
+      }
     }
-  }
-  
-  function switchTab(tabId) {
-    selectedTab = tabId;
   }
   
   function canCraft(recipe) {
@@ -253,7 +290,22 @@
   transition:scale={{ start: 0.95, duration: 200 }}>
   
   <header class="modal-header">
-    <h2 id="crafting-title">Crafting</h2>
+    <div class="header-content">
+      {#if currentView !== 'categories'}
+        <button class="back-btn" onclick={goBack} aria-label="Go back">
+          <Back size="1.2em" />
+        </button>
+      {/if}
+      <h2 id="crafting-title">
+        {#if currentView === 'categories'}
+          Crafting
+        {:else if currentView === 'recipes'}
+          {categories.find(c => c.id === selectedCategory)?.label || 'Select Recipe'}
+        {:else}
+          {selectedRecipe?.name || 'Recipe Details'}
+        {/if}
+      </h2>
+    </div>
     <button class="close-btn" onclick={onClose} aria-label="Close crafting dialog">
       <Close size="1.5em" />
     </button>
@@ -272,70 +324,66 @@
       </div>
     {:else}
       <div class="crafting-container">
-        <div class="tabs crafting-tabs">
-          {#each categories as category}
-            <button 
-              class="tab-button" 
-              class:active={selectedTab === category.id}
-              onclick={() => switchTab(category.id)}
-            >
-              {category.label}
-            </button>
-          {/each}
-        </div>
-        
-        <div class="recipe-list">
-          {#if filteredRecipes.length === 0}
-            <div class="empty-message">No recipes available in this category.</div>
-          {:else}
-            {#each filteredRecipes as recipe}
-              <div 
-                class="recipe-item" 
-                class:selected={selectedRecipe?.id === recipe.id}
-                class:disabled={!canCraft(recipe)}
-                onclick={() => selectedRecipe = recipe}
-                onkeydown={(e) => e.key === 'Enter' && (selectedRecipe = recipe)}
-                tabindex="0"
-                role="button"
-                aria-pressed={selectedRecipe?.id === recipe.id}
-                aria-disabled={!canCraft(recipe)}
+        <!-- Categories View -->
+        {#if currentView === 'categories'}
+          <div class="categories-grid" transition:fade={{ duration: 200 }}>
+            {#each categories as category}
+              <button 
+                class="category-card" 
+                onclick={() => selectCategory(category.id)}
               >
-                <div class="recipe-header">
-                  <div class="recipe-name">{recipe.name}</div>
-                  <div class="recipe-rarity {recipe.result.rarity || 'common'}">{recipe.result.rarity || 'common'}</div>
-                </div>
-                <div class="recipe-description">{recipe.result.description}</div>
-                
-                {#if !canCraft(recipe)}
-                  <div class="recipe-blocked">{getCraftingBlockReason(recipe)}</div>
-                {/if}
-                
-                {#if recipe.requiredBuilding}
-                  <div class="recipe-requires">
-                    Requires: 
-                    {BUILDINGS.getBuildingName(recipe.requiredBuilding.type)} (Level {recipe.requiredBuilding.level})
-                  </div>
-                {/if}
-                
-                {#if recipe.requiredLevel && recipe.requiredLevel > 1}
-                  <div class="recipe-craft-level">
-                    Crafting Level: {recipe.requiredLevel}
-                  </div>
-                {/if}
-                
-                <div class="recipe-time">
-                  <span class="time-icon">⏱</span>
-                  {formatCraftingTicks(recipe.craftingTime)}
-                </div>
-              </div>
+                <div class="category-icon">{category.icon || '🔨'}</div>
+                <div class="category-name">{category.label}</div>
+              </button>
             {/each}
-          {/if}
-        </div>
+          </div>
+        {/if}
         
-        {#if selectedRecipe}
-          <div class="recipe-details">
+        <!-- Recipes View -->
+        {#if currentView === 'recipes'}
+          <div class="recipe-list" transition:fade={{ duration: 200 }}>
+            {#if filteredRecipes.length === 0}
+              <div class="empty-message">No recipes available in this category.</div>
+            {:else}
+              {#each filteredRecipes as recipe}
+                <div 
+                  class="recipe-item" 
+                  class:disabled={!canCraft(recipe)}
+                  onclick={() => viewRecipeDetails(recipe)}
+                  onkeydown={(e) => e.key === 'Enter' && viewRecipeDetails(recipe)}
+                  tabindex="0"
+                  role="button"
+                  aria-disabled={!canCraft(recipe)}
+                >
+                  <div class="recipe-header">
+                    <div class="recipe-name">{recipe.name}</div>
+                    <div class="recipe-rarity {recipe.result.rarity || 'common'}">{recipe.result.rarity || 'common'}</div>
+                  </div>
+                  <div class="recipe-description">{recipe.result.description}</div>
+                  
+                  {#if !canCraft(recipe)}
+                    <div class="recipe-blocked">{getCraftingBlockReason(recipe)}</div>
+                  {/if}
+                  
+                  <div class="recipe-time">
+                    <span class="time-icon">⏱</span>
+                    {formatCraftingTicks(recipe.craftingTime)}
+                  </div>
+                </div>
+              {/each}
+            {/if}
+          </div>
+        {/if}
+        
+        <!-- Recipe Details View -->
+        {#if currentView === 'details' && selectedRecipe}
+          <div class="recipe-details" transition:fade={{ duration: 200 }}>
             <h3>{selectedRecipe.name}</h3>
-            <p>{selectedRecipe.result.description}</p>
+            <p class="recipe-description">{selectedRecipe.result.description}</p>
+            
+            <div class="recipe-rarity-badge {selectedRecipe.result.rarity || 'common'}">
+              {selectedRecipe.result.rarity || 'common'}
+            </div>
             
             <h4>Required Materials:</h4>
             <div class="materials-list">
@@ -401,10 +449,6 @@
               {/if}
             </button>
           </div>
-        {:else}
-          <div class="empty-details">
-            <p>Select a recipe to view details.</p>
-          </div>
         {/if}
       </div>
     {/if}
@@ -432,7 +476,7 @@
     z-index: 1000;
     overflow: hidden;
     font-family: var(--font-body);
-    transition: z-index 0s; /* Add transition for z-index */
+    transition: z-index 0s;
   }
   
   .crafting-modal.active {
@@ -447,6 +491,28 @@
     padding: 0.8em 1em;
     background: rgba(0, 0, 0, 0.05);
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+  }
+  
+  .back-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3em;
+    border-radius: 50%;
+    transition: background 0.2s;
+  }
+  
+  .back-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
   }
   
   h2 {
@@ -479,52 +545,49 @@
     background-color: rgba(0, 0, 0, 0.1);
   }
   
-  /* Crafting container layout */
-  .crafting-container {
+  /* Categories grid styles */
+  .categories-grid {
     display: grid;
-    grid-template-columns: 14rem 1fr;
-    gap: 1rem;
-    max-height: 70vh;
+    grid-template-columns: repeat(auto-fill, minmax(8em, 1fr));
+    gap: 1em;
+    padding: 0.5em;
   }
   
-  /* Tab styles */
-  .tabs {
-    grid-column: span 2;
-    margin-bottom: 0.5rem;
+  .category-card {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.3rem;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  }
-  
-  .tab-button {
-    padding: 0.5rem 1rem;
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.5em;
+    padding: 1.5em 1em;
     cursor: pointer;
-    font-family: var(--font-body);
-    font-size: 0.9rem;
-    opacity: 0.7;
-    transition: all 0.2s ease;
+    transition: all 0.2s;
+    text-align: center;
   }
   
-  .tab-button:hover {
-    opacity: 1;
+  .category-card:hover {
+    background: rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
   }
   
-  .tab-button.active {
-    opacity: 1;
-    border-bottom-color: #4285f4;
+  .category-icon {
+    font-size: 1.8em;
+    margin-bottom: 0.5em;
+  }
+  
+  .category-name {
     font-weight: 500;
+    font-size: 0.9em;
   }
-  
+
   /* Recipe list */
   .recipe-list {
     overflow-y: auto;
-    max-height: 50vh;
-    padding-right: 0.5rem;
-    border-right: 1px solid rgba(0, 0, 0, 0.1);
+    max-height: 65vh;
+    padding: 0.5em;
   }
   
   .recipe-item {
@@ -532,23 +595,20 @@
     background: rgba(0, 0, 0, 0.05);
     border: 1px solid rgba(0, 0, 0, 0.1);
     border-radius: 0.25rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
     cursor: pointer;
     transition: all 0.2s;
   }
   
   .recipe-item:hover {
-    background: rgba(0, 0, 0, 0.1);
-  }
-  
-  .recipe-item.selected {
-    border-color: rgba(66, 133, 244, 0.6);
-    background: rgba(66, 133, 244, 0.1);
+    background: rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
   }
   
   .recipe-item.disabled {
-    opacity: 0.6;
-    border-color: rgba(255, 0, 0, 0.3);
+    opacity: 0.7;
+    border-color: rgba(255, 0, 0, 0.2);
   }
   
   /* Recipe header */
@@ -562,6 +622,7 @@
   .recipe-name {
     font-weight: 600;
     font-size: 0.95rem;
+    color: rgba(0, 0, 0, 0.8);
   }
   
   /* Rarity badges */
@@ -600,16 +661,16 @@
   /* Recipe descriptions */
   .recipe-description {
     font-size: 0.85rem;
-    opacity: 0.8;
+    color: rgba(0, 0, 0, 0.7);
     margin-bottom: 0.5rem;
-    line-height: 1.2;
+    line-height: 1.3;
   }
   
   /* Recipe status and requirements */
   .recipe-blocked {
     font-size: 0.8rem;
     color: #ff6666;
-    margin-top: 0.5rem;
+    margin: 0.5rem 0;
     font-weight: 500;
   }
   
@@ -629,7 +690,7 @@
   
   .recipe-time {
     font-size: 0.8rem;
-    color: #999999;
+    color: #666666;
     margin-top: 0.5rem;
     display: flex;
     align-items: center;
@@ -641,21 +702,31 @@
   
   /* Recipe details */
   .recipe-details {
-    padding: 0 0.5rem;
+    padding: 0.5rem;
   }
   
   .recipe-details h3 {
     margin-top: 0;
     margin-bottom: 0.5rem;
     font-size: 1.2rem;
+    color: rgba(0, 0, 0, 0.85);
   }
   
   .recipe-details h4 {
-    margin: 1rem 0 0.5rem;
+    margin: 1.2rem 0 0.5rem;
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.05rem;
-    color: #666666;
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .recipe-rarity-badge {
+    display: inline-block;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.2rem;
+    text-transform: capitalize;
+    margin: 0.5rem 0;
   }
   
   /* Materials list */
@@ -669,12 +740,23 @@
   .material-item {
     display: flex;
     justify-content: space-between;
-    padding: 0.25rem 0;
+    align-items: center;
+    padding: 0.3rem 0.5rem;
     font-size: 0.9rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  .material-item:last-child {
+    border-bottom: none;
   }
   
   .material-item.insufficient {
     color: #ff6666;
+  }
+
+  .material-quantity {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.85rem;
   }
   
   /* Building requirements */
@@ -690,6 +772,7 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 0.5rem;
+    margin-bottom: 0.5rem;
   }
   
   .building-name {
@@ -718,20 +801,54 @@
     background: rgba(244, 67, 54, 0.1);
   }
   
+  .building-icon {
+    font-size: 1.5rem;
+    text-align: center;
+    margin: 0.5rem 0;
+  }
+  
+  .building-description {
+    font-size: 0.85rem;
+    color: rgba(0, 0, 0, 0.7);
+    font-style: italic;
+  }
+  
+  /* Crafting time info */
+  .crafting-time-info {
+    margin-top: 1rem;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 0.3rem;
+    padding: 0.5rem;
+  }
+  
+  .time-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.5rem;
+  }
+  
+  .tick-count {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ffcc66;
+    text-shadow: 0 0 5px rgba(255, 204, 102, 0.5);
+  }
+  
   /* Message styles */
   .success-message {
     background-color: rgba(0, 255, 0, 0.1);
     border: 1px solid rgba(0, 255, 0, 0.3);
     color: #4caf50;
-    padding: 0.5rem;
+    padding: 0.8rem;
     border-radius: 0.25rem;
     margin: 1rem 0;
     text-align: center;
+    font-weight: 500;
   }
   
-  .empty-message,
-  .empty-details {
-    padding: 1rem;
+  .empty-message {
+    padding: 2rem 1rem;
     text-align: center;
     color: rgba(0, 0, 0, 0.5);
     font-style: italic;
@@ -789,35 +906,13 @@
     background-color: #e8eaed;
   }
   
-  /* Crafting time info */
-  .crafting-time-info {
-    margin-top: 1rem;
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: 0.3rem;
-    padding: 0.5rem;
-  }
-  
-  .time-display {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 0.5rem;
-  }
-  
-  .tick-count {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: #ffcc66;
-    text-shadow: 0 0 5px rgba(255, 204, 102, 0.5);
-  }
-  
   /* Craft button */
   .craft-btn {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
-    padding: 0.7rem;
+    padding: 0.8rem;
     font-size: 1rem;
     font-weight: 500;
     color: white;
@@ -825,12 +920,13 @@
     border: none;
     border-radius: 0.25rem;
     cursor: pointer;
-    transition: background-color 0.2s;
-    margin-top: 1rem;
+    transition: background-color 0.2s, transform 0.2s;
+    margin-top: 1.5rem;
   }
   
   .craft-btn:hover:not(:disabled) {
     background-color: #3367d6;
+    transform: translateY(-2px);
   }
   
   .craft-btn:disabled {
@@ -847,20 +943,5 @@
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-right: 0.5rem;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 480px) {
-    .crafting-container {
-      grid-template-columns: 1fr;
-    }
-    
-    .recipe-list {
-      max-height: 30vh;
-      border-right: none;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-      padding-bottom: 1rem;
-      margin-bottom: 1rem;
-    }
   }
 </style>
