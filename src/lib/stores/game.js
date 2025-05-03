@@ -137,9 +137,10 @@ export const timeUntilNextTick = derived(
     const now = Date.now();
     const remaining = $nextWorldTick - now;
     
-    // Simplified time display - show "<1m" when close to tick
+    // Show seconds when less than a minute remains
     if (remaining <= 60000) {
-      return "<1m";
+      const seconds = Math.ceil(remaining / 1000);
+      return `${seconds}s`;
     }
     
     // Format as minutes only for simplicity
@@ -147,6 +148,47 @@ export const timeUntilNextTick = derived(
     return `${minutes}m`;
   }
 );
+
+// Function to calculate time until X ticks in the future
+export function timeUntilTick(numTicks = 1) {
+  const $worldInfo = get(worldInfo);
+  
+  if (!$worldInfo || !$worldInfo.lastTick) {
+    return "Unknown";
+  }
+  
+  const worldSpeed = $worldInfo.speed || 1.0;
+  const lastTick = $worldInfo.lastTick || Date.now();
+  
+  // Base tick interval is 1 minute (60000ms) for 1x speed worlds
+  const baseTickInterval = 60000; // 1 minute
+  const adjustedInterval = Math.round(baseTickInterval / worldSpeed);
+  
+  // Calculate the time after specified number of ticks
+  const futureTickTime = lastTick + (adjustedInterval * numTicks);
+  const now = Date.now();
+  const remaining = futureTickTime - now;
+  
+  // Handle negative time (past ticks)
+  if (remaining <= 0) return "Pending";
+  
+  // Show seconds when less than a minute remains
+  if (remaining <= 60000) {
+    const seconds = Math.ceil(remaining / 1000);
+    return `${seconds}s`;
+  }
+  
+  // Format as minutes for simplicity
+  const minutes = Math.floor(remaining / 60000);
+  if (minutes < 60) {
+    return `${minutes}m`;
+  }
+  
+  // For longer times, show hours and minutes
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${hours}h ${remainingMinutes}m`;
+}
 
 // Track active subscriptions
 let activeJoinedWorldsSubscription = null;
