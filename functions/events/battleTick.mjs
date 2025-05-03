@@ -463,6 +463,41 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           } else {
             // For regular structures, destroy completely
             updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`] = null;
+            
+            // Mark players on the destroyed structure as not alive
+            if (tile.players) {
+              const now = Date.now();
+              console.log(`Structure destroyed - checking ${Object.keys(tile.players).length} players on tile`);
+              
+              // Process each player on the tile where structure was destroyed
+              Object.entries(tile.players).forEach(([playerId, playerData]) => {
+                // Set alive status to false
+                updates[`players/${playerId}/worlds/${worldId}/alive`] = false;
+                
+                // Clear their group reference
+                updates[`players/${playerId}/worlds/${worldId}/inGroup`] = null;
+                
+                // Add a death message to the player's record
+                updates[`players/${playerId}/worlds/${worldId}/lastMessage`] = {
+                  text: "Died in structure destruction",
+                  timestamp: now
+                };
+                
+                console.log(`Player ${playerId} (${playerData.displayName || 'unknown'}) marked as dead after structure destruction`);
+                
+                // Add a chat message about player death
+                const chatMessageId = `structure_death_${playerId}_${now}`;
+                updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+                  text: `${playerData.displayName || "A player"} has perished when their structure was destroyed at (${battle.locationX}, ${battle.locationY})`,
+                  type: 'event',
+                  timestamp: now,
+                  location: {
+                    x: battle.locationX,
+                    y: battle.locationY
+                  }
+                };
+              });
+            }
           }
         }
       }
