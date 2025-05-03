@@ -36,10 +36,18 @@ export async function moveMonsterTowardsTarget(
   let targetLocation;
   let targetType;
   let targetDistance = Infinity;
+
+  // Check if monster is in exploration phase (new flag)
+  const inExplorationPhase = monsterGroup.explorationPhase && monsterGroup.exploreDuration > now;
+  
+  // Modified for recently mobilized monsters: clear exploration phase if it's over
+  if (monsterGroup.explorationPhase && monsterGroup.exploreDuration <= now) {
+    updates[`${groupPath}/explorationPhase`] = false;
+  }
   
   // Territorial personality special handling
   const isHoming = personality?.id === 'TERRITORIAL' && monsterGroup.spawnLocation;
-  if (isHoming) {
+  if (isHoming && !inExplorationPhase) {
     const territoryRadius = personality.territoryRadius || 10;
     const homeDistance = monsterGroup.spawnLocation ? 
       calculateDistance(location, monsterGroup.spawnLocation) : 0;
@@ -50,10 +58,55 @@ export async function moveMonsterTowardsTarget(
     }
   }
   
+  // Check if we're in exploration phase or recently mobilized - prioritize moving away from home structure
+  if (inExplorationPhase && monsterGroup.mobilizedFromStructure) {
+    const sourceStructure = worldScan.monsterStructures.find(s => 
+      s.structure && s.structure.id === monsterGroup.mobilizedFromStructure);
+      
+    if (sourceStructure) {
+      // Move away from source structure - find player spawns or resource hotspots to explore
+      const exploreTargets = [];
+      
+      // Prioritize player spawns for aggressive monsters
+      if (weights.attack > 1.0 && worldScan.playerSpawns && worldScan.playerSpawns.length > 0) {
+        exploreTargets.push(...worldScan.playerSpawns.map(spawn => ({
+          location: spawn,
+          type: 'player_spawn',
+          weight: weights.attack * 2
+        })));
+      }
+      
+      // Add resource hotspots for all monsters
+      if (worldScan.resourceHotspots && worldScan.resourceHotspots.length > 0) {
+        exploreTargets.push(...worldScan.resourceHotspots.map(hotspot => ({
+          location: hotspot,
+          type: 'resource_hotspot',
+          weight: weights.gather || 1.0
+        })));
+      }
+      
+      // If we found targets, select one weighted by personality
+      if (exploreTargets.length > 0) {
+        const totalWeight = exploreTargets.reduce((sum, t) => sum + t.weight, 0);
+        let random = Math.random() * totalWeight;
+        
+        for (const target of exploreTargets) {
+          random -= target.weight;
+          if (random <= 0) {
+            targetLocation = target.location;
+            targetType = target.type;
+            targetDistance = calculateDistance(location, target.location);
+            break;
+          }
+        }
+      }
+    }
+  }
+  
   // First priority: Check if there are any structures on adjacent tiles to attack
-  // Influenced by attack weight
+  // Influenced by attack weight - but only if not in exploration phase
   const adjacentCheckChance = weights.attack || 1.0;
-  if (Math.random() < adjacentCheckChance) {
+  if (!targetLocation && Math.random() < adjacentCheckChance) {
     const adjacentStructure = await findAdjacentStructures(db, worldId, location);
     if (adjacentStructure) {
       // If we found an adjacent structure, move to it for potential attack
@@ -63,8 +116,12 @@ export async function moveMonsterTowardsTarget(
   
   // If this monster group has a preferredStructureId (their "home"), prioritize it
   // Enhanced for territorial personality
+  // But SKIP this if the monster is recently mobilized or in exploration phase
   const homePreferenceWeight = personality?.id === 'TERRITORIAL' ? 2.0 : 1.0;
-  if (monsterGroup.preferredStructureId && Math.random() < homePreferenceWeight) {
+  if (!targetLocation && 
+      !inExplorationPhase &&
+      monsterGroup.preferredStructureId && 
+      Math.random() < homePreferenceWeight) {
     // Try to find the preferred structure
     const preferredStructure = worldScan.monsterStructures.find(s => 
       s.structure && s.structure.id === monsterGroup.preferredStructureId);
@@ -76,10 +133,10 @@ export async function moveMonsterTowardsTarget(
     }
   }
   
-  // Modified target selection based on personality
+  // Modified target selection based on personality and exploration phase
   if (!targetLocation || targetDistance > MAX_SCAN_DISTANCE) {
     // Calculate priorities based on personality
-    const priorityMap = calculateMovementPriorities(weights, totalUnits, worldScan);
+    const priorityMap = calculateMovementPriorities(weights, totalUnits, worldScan, inExplorationPhase);
     
     // Choose a target based on weighted priorities
     const targetChoice = chooseTargetLocation(location, priorityMap);
@@ -92,7 +149,8 @@ export async function moveMonsterTowardsTarget(
 
   // If no suitable target found or too far, move randomly with exploration weight
   if (!targetLocation || targetDistance > MAX_SCAN_DISTANCE) {
-    const exploreWeight = weights.explore || 1.0;
+    // Boost exploration weight for exploration phase
+    const exploreWeight = inExplorationPhase ? 2.0 : (weights.explore || 1.0);
     if (Math.random() < exploreWeight) {
       return moveRandomly(worldId, monsterGroup, location, updates, now);
     } else {
@@ -117,6 +175,11 @@ export async function moveMonsterTowardsTarget(
   // Movement speed can depend on personality
   let moveSpeed = personality?.id === 'NOMADIC' ? 1.3 : 
                  personality?.id === 'CAUTIOUS' ? 0.8 : 1;
+                 
+  // Boost speed in exploration phase
+  if (inExplorationPhase) {
+    moveSpeed *= 1.2;
+  }
   
   // Set the movement data
   updates[`${groupPath}/status`] = 'moving';
@@ -154,13 +217,14 @@ export async function moveMonsterTowardsTarget(
 }
 
 /**
- * Calculate movement priorities based on personality
+ * Calculate movement priorities based on personality and state
  * @param {object} weights - Personality weights
  * @param {number} totalUnits - Total unit count
  * @param {object} worldScan - World scan data
+ * @param {boolean} inExplorationPhase - Whether the monster is in exploration phase
  * @returns {object} Priority map for different target types
  */
-function calculateMovementPriorities(weights, totalUnits, worldScan) {
+function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorationPhase = false) {
   // Base priorities
   const priorities = {
     monster_structure: {
@@ -203,6 +267,13 @@ function calculateMovementPriorities(weights, totalUnits, worldScan) {
     priorities.player_spawn.weight *= 1.5;
   } else if (totalUnits < 5) {
     priorities.resource_hotspot.weight *= 1.3;
+  }
+  
+  // Exploration phase adjustments - prioritize player structures and resources
+  if (inExplorationPhase) {
+    priorities.player_spawn.weight *= 2.0;  // Strong preference for finding players
+    priorities.resource_hotspot.weight *= 1.5;  // Also like finding resources
+    priorities.monster_structure.weight *= 0.2;  // Actively avoid monster structures
   }
   
   return priorities;

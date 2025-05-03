@@ -200,8 +200,8 @@ export async function findAdjacentStructures(db, worldId, location) {
       const tileData = tileSnapshot.val();
       
       if (tileData) {
-        // If there's a player structure, this is a good target
-        if (tileData.structure && tileData.structure.owner !== 'monster') {
+        // If there's ANY structure (including spawn), this is a good target
+        if (tileData.structure) {
           return {
             x: adjX,
             y: adjY,
@@ -212,7 +212,7 @@ export async function findAdjacentStructures(db, worldId, location) {
         // Also target tiles with player groups
         if (tileData.groups) {
           const hasPlayerGroups = Object.values(tileData.groups).some(
-            group => group.owner && group.owner !== 'monster'
+            group => group.owner && group.type !== 'monster'
           );
           
           if (hasPlayerGroups) {
@@ -689,6 +689,8 @@ export function canStructureMobilize(structure, tileData) {
 // Constants for mobilization/demobilization
 export const MIN_UNITS_TO_MOBILIZE = 2; // Minimum units needed to mobilize
 export const MOBILIZATION_CHANCE = 0.08; // 8% chance per tick for eligible structures
+export const EXPLORATION_DURATION = 300000; // 5 minutes exploration phase after mobilization
+export const MIN_DISTANCE_FROM_SPAWN = 3; // Minimum tiles away from spawn to allow building
 
 /**
  * Get the count of available units in a monster structure
