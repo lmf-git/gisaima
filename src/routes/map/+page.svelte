@@ -1324,7 +1324,9 @@
 
         <AchievementUnlocked />
 
+
         <!-- Modals -->
+
         {#if $ready && $game?.player?.alive}
             <div class="chat-wrapper" 
                 class:visible={showChat && !isTutorialVisible} 
@@ -1417,14 +1419,14 @@
               onClose={closeModal}
               onAchievement={savePlayerAchievement}
               onShowModal={showModal}
-              isActive={lastActivePanel === 'details'}
-              onMouseEnter={() => handlePanelHover('details')}
+              isActive={lastActivePanel === modalState.type}
+              onMouseEnter={() => handlePanelHover(modalState.type)}
             />
           {:else if modalState.type === 'mobilise'}
             <Mobilise 
               onClose={closeModal}
-              isActive={lastActivePanel === 'mobilise'}
-              onMouseEnter={() => handlePanelHover('mobilise')}
+              isActive={lastActivePanel === modalState.type}
+              onMouseEnter={() => handlePanelHover(modalState.type)}
             />
           {:else if modalState.type === 'craft' && modalState.data}
             <Crafting
@@ -1433,8 +1435,8 @@
               y={modalState.data.y}
               onClose={closeModal}
               onCraftStart={savePlayerAchievement}
-              isActive={lastActivePanel === 'details'}
-              onMouseEnter={() => handlePanelHover('details')}
+              isActive={lastActivePanel === modalState.type}
+              onMouseEnter={() => handlePanelHover(modalState.type)}
             />
           {:else if modalState.type === 'build' && modalState.data}
             <Build 
@@ -1442,8 +1444,8 @@
               y={modalState.data.y}
               tile={modalState.data.tile}
               onClose={closeModal}
-              isActive={lastActivePanel === 'build'}
-              onMouseEnter={() => handlePanelHover('build')}
+              isActive={lastActivePanel === modalState.type}
+              onMouseEnter={() => handlePanelHover(modalState.type)}
             />
           {:else if modalState.type === 'move' && modalState.data}
             <Move
@@ -1452,8 +1454,8 @@
               tile={modalState.data.tile}
               onStartPathDrawing={startPathDrawing}
               onClose={closeModal}
-              isActive={lastActivePanel === 'move'}
-              onMouseEnter={() => handlePanelHover('move')}
+              isActive={lastActivePanel === modalState.type}
+              onMouseEnter={() => handlePanelHover(modalState.type)}
             />
           {:else if modalState.type === 'attack' && modalState.data}
             <Attack
@@ -1461,8 +1463,8 @@
               y={modalState.data.y}
               tile={modalState.data.tile} 
               onClose={closeModal}
-              isActive={lastActivePanel === 'attack'}
-              onMouseEnter={() => handlePanelHover('attack')}
+              isActive={lastActivePanel === modalState.type}
+              onMouseEnter={() => handlePanelHover(modalState.type)}
             />
           {:else if modalState.type === 'joinBattle' && modalState.data}
             <JoinBattle
@@ -1470,8 +1472,8 @@
               y={modalState.data.y}
               tile={modalState.data.tile}
               onClose={closeModal}
-              isActive={lastActivePanel === 'joinBattle'}
-              onMouseEnter={() => handlePanelHover('joinBattle')}
+              isActive={lastActivePanel === modalState.type}
+              onMouseEnter={() => handlePanelHover(modalState.type)}
             />
           {:else if modalState.type === 'gather' && modalState.data}
             <Gather
@@ -1479,8 +1481,8 @@
               y={modalState.data.y}
               tile={modalState.data.tile}
               onClose={closeModal}
-              isActive={lastActivePanel === 'gather'}
-              onMouseEnter={() => handlePanelHover('gather')}
+              isActive={lastActivePanel === modalState.type}
+              onMouseEnter={() => handlePanelHover(modalState.type)}
             />
           {:else if modalState.type === 'demobilise' && modalState.data}
             <Demobilise
@@ -1488,8 +1490,8 @@
               y={modalState.data.y}
               tile={modalState.data.tile}
               onClose={closeModal}
-              isActive={lastActivePanel === 'demobilise'}
-              onMouseEnter={() => handlePanelHover('demobilise')}
+              isActive={lastActivePanel === modalState.type}
+              onMouseEnter={() => handlePanelHover(modalState.type)}
             />
           {:else if modalState.type === 'recruitment' && modalState.data}
             <Recruitment
@@ -1498,8 +1500,8 @@
               y={modalState.data.y}
               onClose={closeModal}
               onRecruitStart={savePlayerAchievement}
-              isActive={lastActivePanel === 'details'}
-              onMouseEnter={() => handlePanelHover('details')}
+              isActive={lastActivePanel === modalState.type}
+              onMouseEnter={() => handlePanelHover(modalState.type)}
             />
           {/if}
         {/if}
