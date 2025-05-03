@@ -395,10 +395,11 @@ export async function scanWorldMap(db, worldId, chunks) {
         });
       }
       
-      // Check for monster structures
+      // Check for monster structures - Updated to also check owner field
       if (tileData.structure && 
-         (tileData.structure.type.includes('monster') || 
-          tileData.structure.owner === 'monster')) {
+         (tileData.structure.monster === true || 
+          tileData.structure.owner === 'monster' ||
+          (tileData.structure.type && tileData.structure.type.includes('monster')))) {
         monsterStructures.push({
           ...location,
           structure: tileData.structure

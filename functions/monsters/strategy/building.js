@@ -443,18 +443,18 @@ export async function buildMonsterStructure(db, worldId, monsterGroup, location,
     features: ['basic_storage', 'monster_spawning'],
     monster: true
   };
-  
+
   const structure = {
     id: structureId,
     type: structureType,
     name: `${monsterGroup.name || "Monster"} ${structureData.name}`,
-    owner: 'monster',
+    owner: 'monster', // Explicitly set owner to 'monster' for all monster structures
     ownerGroupId: monsterGroup.id,
     createdAt: now,
     level: 1,
     items: [],
     buildings: {},
-    monster: true,
+    monster: true, // Also keep the monster flag
     features: structureData.features || []
   };
   

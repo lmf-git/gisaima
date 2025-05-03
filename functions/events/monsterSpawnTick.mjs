@@ -58,9 +58,10 @@ export async function spawnMonsters(worldId) {
         
         const [x, y] = tileKey.split(',').map(Number);
         
-        // Track monster structures
+        // Track monster structures - Updated to also check owner field
         if (tileData.structure && 
             (tileData.structure.monster === true || 
+             tileData.structure.owner === 'monster' ||
              (tileData.structure.type && tileData.structure.type.includes('monster')))) {
           monsterStructures.push({
             chunkKey,
