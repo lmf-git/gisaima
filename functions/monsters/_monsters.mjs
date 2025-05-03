@@ -63,6 +63,32 @@ export function findMergeableMonsterGroups(tileData, currentGroupId) {
 }
 
 // =============================================
+// UNIT GENERATION UTILITIES
+// =============================================
+
+/**
+ * Generate monster units for a group based on type and quantity
+ * @param {string} monsterType - Type of monster to generate
+ * @param {number} quantity - Number of units to generate
+ * @returns {Object} Object of generated monster units with IDs as keys
+ */
+export function generateMonsterUnits(monsterType, quantity) {
+  const units = {};
+  
+  for (let i = 0; i < quantity; i++) {
+    const unitId = `monster_unit_${Date.now()}_${Math.floor(Math.random() * 10000)}_${i}`;
+    
+    units[unitId] = {
+      id: unitId,
+      type: monsterType
+      // We don't need to add other properties since they'll come from the monster type definition
+    };
+  }
+  
+  return units;
+}
+
+// =============================================
 // MOVEMENT UTILITIES
 // =============================================
 
