@@ -80,6 +80,7 @@ export function processDemobilization(worldId, updates, group, chunkKey, tileKey
       
     // Separate player and non-player units
     const playerUnits = unitValues.filter(unit => unit.type === 'player');
+    const nonPlayerUnits = unitValues.filter(unit => unit.type !== 'player');
   
     // For each player unit, make sure they remain on the tile 
     // but are no longer in the group
@@ -124,6 +125,26 @@ export function processDemobilization(worldId, updates, group, chunkKey, tileKey
         
         logger.info(`Player ${playerId} placed at ${playerTileKey} in chunk ${playerChunkKey} after demobilization`);
       }
+    }
+    
+    // Handle non-player units - add them to structure.units[playerid]
+    if (nonPlayerUnits.length > 0) {
+      const ownerId = group.owner || 'shared';
+      const structureUnitsPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/units/${ownerId}`;
+      
+      // Check if the structure already has units for this owner
+      let existingUnits = [];
+      if (tile.structure && 
+          tile.structure.units && 
+          tile.structure.units[ownerId]) {
+        existingUnits = Array.isArray(tile.structure.units[ownerId]) ? 
+          tile.structure.units[ownerId] : Object.values(tile.structure.units[ownerId]);
+      }
+      
+      // Add non-player units to the owner's unit collection in the structure
+      updates[structureUnitsPath] = [...existingUnits, ...nonPlayerUnits];
+      
+      logger.info(`Transferred ${nonPlayerUnits.length} non-player units to structure under owner ${ownerId}`);
     }
   }
   
