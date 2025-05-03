@@ -737,19 +737,14 @@
         if (!$game?.player?.alive) return;
         
         // Close tutorial if open
-        if (isTutorialVisible) {
-            isTutorialVisible = false;
-        }
+        if (isTutorialVisible) isTutorialVisible = false;
         
-        // Short delay to allow tutorial to close
-        setTimeout(() => {
-            // Show achievements panel
-            showAchievements = true;
-            lastActivePanel = 'achievements';
-            
-            // Save state to localStorage
-            localStorage.removeItem('achievements_closed');
-        }, 300);
+        // Show achievements panel
+        showAchievements = true;
+        lastActivePanel = 'achievements';
+        
+        // Save state to localStorage
+        localStorage.removeItem('achievements_closed');
     }
 
     // Updated to handle Peek actions
