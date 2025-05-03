@@ -97,10 +97,8 @@
         });
       }
       
-      // Reduced timeout from 1500ms to 800ms
-      setTimeout(() => {
-        onClose(true);
-      }, 800);
+      onClose(true);
+
     } catch (err) {
       console.error('Gathering error:', err);
       error = err.message || 'An error occurred during gathering.';

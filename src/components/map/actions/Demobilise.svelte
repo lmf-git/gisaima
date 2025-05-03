@@ -103,10 +103,8 @@
         storageDestination: storageDestination
       });
 
-      // Reduced timeout for faster response (from 1500ms to 800ms)
-      setTimeout(() => {
-        onClose(true);
-      }, 800);
+      onClose(true);
+      
     } catch (err) {
       console.error('Demobilization error:', err);
       error = err.message || 'An error occurred during demobilization.';

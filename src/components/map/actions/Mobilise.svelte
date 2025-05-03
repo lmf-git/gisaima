@@ -143,10 +143,7 @@
       console.log('Mobilization result:', result.data);
       mobilizeSuccess = true; // Set success state
       
-      // Reduce timeout from 800ms to 500ms for faster response
-      setTimeout(() => {
-        onClose();
-      }, 500);
+      onClose();
     } catch (error) {
       console.error('Error during mobilization:', error);
       if (error.code === 'unauthenticated') {
