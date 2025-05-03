@@ -28,12 +28,39 @@
     "WbRpE3iB7rX0zMGQZIovi7zGkGh1": {
       "worlds": {
         "ancient-lands": {
+          "achievements": {
+            "first_attack": true,
+            "first_attack_date": 1746290351583,
+            "first_steps": true,
+            "first_steps_date": 1746292392303,
+            "mobilised": true
+          },
           "alive": true,
           "displayName": "test",
           "id": "WbRpE3iB7rX0zMGQZIovi7zGkGh1",
+          "inGroup": "-OPM0ex3WwBOfigQJ4Xi",
           "joined": 1746281326346,
           "lastLocation": {
-            "timestamp": 1746281336205,
+            "x": -23,
+            "y": 5
+          },
+          "lastMessage": {
+            "text": "Died in battle",
+            "timestamp": 1746290402249
+          },
+          "race": "human"
+        }
+      }
+    },
+    "rBBlixvWCih6uFNcG4vK7qcGvmv1": {
+      "worlds": {
+        "ancient-lands": {
+          "alive": true,
+          "displayName": "sun",
+          "id": "rBBlixvWCih6uFNcG4vK7qcGvmv1",
+          "joined": 1746291391090,
+          "lastLocation": {
+            "timestamp": 1746291399214,
             "x": -23,
             "y": 5
           },
@@ -73,6 +100,273 @@
     "ancient-lands": {
       "chunks": {
         "-1,-1": {
+          "-10,-2": {
+            "groups": {
+              "monster_1746296102968_68": {
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746296102968_68",
+                "items": [
+                  {
+                    "id": "MONSTER_HIDE",
+                    "name": "Monster Hide",
+                    "quantity": 2,
+                    "rarity": "uncommon",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746296945792_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Small rocks useful for crafting tools",
+                    "id": "item_1746296945792_2",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "name": "Wild Wolves",
+                "personality": {
+                  "emoji": "🏰",
+                  "id": "TERRITORIAL",
+                  "name": "Territorial"
+                },
+                "status": "idle",
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746296102968_2684_0": {
+                    "id": "monster_unit_1746296102968_2684_0",
+                    "type": "wolf"
+                  },
+                  "monster_unit_1746296102968_3271_1": {
+                    "id": "monster_unit_1746296102968_3271_1",
+                    "type": "wolf"
+                  }
+                },
+                "x": -10,
+                "y": -2
+              }
+            }
+          },
+          "-12,-1": {
+            "groups": {
+              "monster_1746297243384_7383": {
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746297243384_7383",
+                "items": [
+                  {
+                    "id": "MONSTER_TOOTH",
+                    "name": "Monster Tooth",
+                    "quantity": 1,
+                    "rarity": "uncommon",
+                    "type": "trophy"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746297541593_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Small rocks useful for crafting tools",
+                    "id": "item_1746297541593_2",
+                    "name": "Stone Pieces",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "A strange object of unknown origin",
+                    "id": "item_1746297541593_special",
+                    "name": "Mysterious Artifact",
+                    "quantity": 1,
+                    "rarity": "rare",
+                    "type": "artifact"
+                  }
+                ],
+                "name": "Goblin Raiders",
+                "personality": {
+                  "emoji": "🦝",
+                  "id": "SNEAKY",
+                  "name": "Sneaky"
+                },
+                "status": "idle",
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746297243385_750_0": {
+                    "id": "monster_unit_1746297243385_750_0",
+                    "type": "goblin"
+                  }
+                },
+                "x": -12,
+                "y": -1
+              }
+            }
+          },
+          "-20,-1": {
+            "groups": {
+              "monster_1746297542504_8196": {
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746297542504_8196",
+                "items": [
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746297901876_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Small rocks useful for crafting tools",
+                    "id": "item_1746297901876_2",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "name": "Goblin Raiders",
+                "personality": {
+                  "emoji": "🦔",
+                  "id": "CAUTIOUS",
+                  "name": "Cautious"
+                },
+                "status": "idle",
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746297542504_5867_1": {
+                    "id": "monster_unit_1746297542504_5867_1",
+                    "type": "goblin"
+                  },
+                  "monster_unit_1746297542504_867_0": {
+                    "id": "monster_unit_1746297542504_867_0",
+                    "type": "goblin"
+                  }
+                },
+                "x": -20,
+                "y": -1
+              }
+            }
+          },
+          "-20,-13": {
+            "groups": {
+              "monster_1746296102739_5067": {
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746296102739_5067",
+                "items": [
+                  {
+                    "id": "MEDICINAL_HERBS",
+                    "name": "Medicinal Herbs",
+                    "quantity": 2,
+                    "rarity": "uncommon",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746297242233_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 4,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "name": "Goblin Raiders",
+                "personality": {
+                  "emoji": "🦝",
+                  "id": "SNEAKY",
+                  "name": "Sneaky"
+                },
+                "status": "idle",
+                "targetX": -18,
+                "targetY": -22,
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746296102739_4238_0": {
+                    "id": "monster_unit_1746296102739_4238_0",
+                    "type": "goblin"
+                  }
+                },
+                "x": -20,
+                "y": -13
+              }
+            }
+          },
           "-23,-8": {
             "structure": {
               "capacity": 60,
@@ -123,196 +417,44 @@
           }
         },
         "-1,-2": {
-          "-18,-22": {
+          "-17,-30": {
             "groups": {
-              "monster_1746227402599_931": {
-                "buildingLocation": {
-                  "x": -19,
-                  "y": -22
+              "monster_1746294602792_5475": {
+                "id": "monster_1746294602792_5475",
+                "name": "Wild Wolves",
+                "personality": {
+                  "emoji": "👹",
+                  "id": "AGGRESSIVE",
+                  "name": "Aggressive"
                 },
-                "buildingStart": 1746241442823,
-                "buildingTime": 1,
-                "buildingType": "monster_lair",
-                "buildingUntil": 1746241502823,
-                "gatheringTicksRemaining": 1,
-                "id": "monster_1746227402599_931",
-                "items": [
-                  {
-                    "biomes": [
-                      "plains"
-                    ],
-                    "description": "Grain that grows in open grasslands",
-                    "id": "item_1746233526345_373",
-                    "name": "Wheat",
-                    "quantity": 1,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "MONSTER_BLOOD",
-                    "name": "Monster Blood",
-                    "quantity": 1,
-                    "rarity": "rare",
-                    "type": "alchemy"
-                  },
-                  {
-                    "id": "CRUDE_WEAPON",
-                    "name": "Crude Weapon",
-                    "quantity": 1,
-                    "rarity": "common",
-                    "type": "weapon"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "item_1746223982826_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 1,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Small rocks useful for crafting tools",
-                    "id": "item_1746223982826_2",
-                    "name": "Stone Pieces",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains"
-                    ],
-                    "description": "Grain that grows in open grasslands",
-                    "id": "item_1746223982826_463",
-                    "name": "Wheat",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "STONE_PIECES",
-                    "name": "Stone Pieces",
-                    "quantity": 6,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "item_1746232447546_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains"
-                    ],
-                    "description": "Grain that grows in open grasslands",
-                    "id": "item_1746232447546_369",
-                    "name": "Wheat",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "moveReason": "structure_attack",
-                "name": "Giant Spiders",
-                "preferredStructureId": "monster_structure_1746241442823_9357",
-                "status": "building",
+                "status": "idle",
                 "targetX": -18,
                 "targetY": -22,
                 "type": "monster",
                 "units": {
-                  "monster_unit_1746223206163_2790_2": {
-                    "id": "monster_unit_1746223206163_2790_2",
+                  "monster_unit_1746294602792_2125_1": {
+                    "id": "monster_unit_1746294602792_2125_1",
                     "type": "wolf"
                   },
-                  "monster_unit_1746223206163_3715_1": {
-                    "id": "monster_unit_1746223206163_3715_1",
+                  "monster_unit_1746294602792_3537_2": {
+                    "id": "monster_unit_1746294602792_3537_2",
                     "type": "wolf"
                   },
-                  "monster_unit_1746223206163_7694_3": {
-                    "id": "monster_unit_1746223206163_7694_3",
+                  "monster_unit_1746294602792_4299_3": {
+                    "id": "monster_unit_1746294602792_4299_3",
                     "type": "wolf"
                   },
-                  "monster_unit_1746223206163_8440_0": {
-                    "id": "monster_unit_1746223206163_8440_0",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746227402599_1771_0": {
-                    "id": "monster_unit_1746227402599_1771_0",
-                    "type": "spider"
-                  },
-                  "monster_unit_1746227402599_296_2": {
-                    "id": "monster_unit_1746227402599_296_2",
-                    "type": "spider"
-                  },
-                  "monster_unit_1746227402599_7617_1": {
-                    "id": "monster_unit_1746227402599_7617_1",
-                    "type": "spider"
-                  },
-                  "monster_unit_1746231558031_2958_1": {
-                    "id": "monster_unit_1746231558031_2958_1",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746231558031_6776_3": {
-                    "id": "monster_unit_1746231558031_6776_3",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746231558031_8686_0": {
-                    "id": "monster_unit_1746231558031_8686_0",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746231558031_9227_2": {
-                    "id": "monster_unit_1746231558031_9227_2",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746232622699_2847_2": {
-                    "id": "monster_unit_1746232622699_2847_2",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746232622699_819_0": {
-                    "id": "monster_unit_1746232622699_819_0",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746232622699_8931_1": {
-                    "id": "monster_unit_1746232622699_8931_1",
+                  "monster_unit_1746294602792_457_0": {
+                    "id": "monster_unit_1746294602792_457_0",
                     "type": "wolf"
                   }
                 },
-                "x": -18,
-                "y": -22
+                "x": -17,
+                "y": -30
               }
-            },
+            }
+          },
+          "-18,-22": {
             "structure": {
               "description": "A fairy settlement where the ancient spirits still speak",
               "id": "structure_al_fairy_spawn",
@@ -722,19 +864,11 @@
               }
             }
           },
-          "-15,3": {
+          "-14,9": {
             "groups": {
-              "monster_1746204242715_8658": {
-                "buildingLocation": {
-                  "x": -13,
-                  "y": 4
-                },
-                "buildingStart": 1746241263121,
-                "buildingTime": 1,
-                "buildingType": "monster_lair",
-                "buildingUntil": 1746241323121,
+              "monster_1746297542287_7855": {
                 "gatheringTicksRemaining": 1,
-                "id": "monster_1746204242715_8658",
+                "id": "monster_1746297542287_7855",
                 "items": [
                   {
                     "biomes": [
@@ -748,27 +882,9 @@
                       "wastes"
                     ],
                     "description": "Basic building material found in most areas",
-                    "id": "item_1746210181916_1",
+                    "id": "item_1746298441649_1",
                     "name": "Wooden Sticks",
                     "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "item_1746216606278_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 4,
                     "rarity": "common",
                     "type": "resource"
                   },
@@ -782,111 +898,7 @@
                       "wastes"
                     ],
                     "description": "Small rocks useful for crafting tools",
-                    "id": "item_1746217082201_2",
-                    "name": "Stone Pieces",
-                    "quantity": 1,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Moving to next location (-23,-8)",
-                  "timestamp": 1746214801715
-                },
-                "moveReason": "structure_attack",
-                "name": "Bandits",
-                "preferredStructureId": "monster_structure_1746241263121_6347",
-                "status": "building",
-                "targetX": -15,
-                "targetY": 3,
-                "type": "monster",
-                "units": {
-                  "monster_unit_1746204242715_1365_1": {
-                    "id": "monster_unit_1746204242715_1365_1",
-                    "type": "bandit"
-                  },
-                  "monster_unit_1746204242715_3277_3": {
-                    "id": "monster_unit_1746204242715_3277_3",
-                    "type": "bandit"
-                  },
-                  "monster_unit_1746204242715_5714_2": {
-                    "id": "monster_unit_1746204242715_5714_2",
-                    "type": "bandit"
-                  },
-                  "monster_unit_1746204242715_7991_0": {
-                    "id": "monster_unit_1746204242715_7991_0",
-                    "type": "bandit"
-                  },
-                  "monster_unit_1746209163357_1030_1": {
-                    "id": "monster_unit_1746209163357_1030_1",
-                    "type": "spider"
-                  },
-                  "monster_unit_1746209163357_4427_2": {
-                    "id": "monster_unit_1746209163357_4427_2",
-                    "type": "spider"
-                  },
-                  "monster_unit_1746209163357_6901_3": {
-                    "id": "monster_unit_1746209163357_6901_3",
-                    "type": "spider"
-                  },
-                  "monster_unit_1746209163357_9927_0": {
-                    "id": "monster_unit_1746209163357_9927_0",
-                    "type": "spider"
-                  },
-                  "monster_unit_1746216431039_5436_0": {
-                    "id": "monster_unit_1746216431039_5436_0",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746216431039_9856_1": {
-                    "id": "monster_unit_1746216431039_9856_1",
-                    "type": "wolf"
-                  }
-                },
-                "x": -15,
-                "y": 3
-              },
-              "monster_1746231965746_8211": {
-                "buildingLocation": {
-                  "x": -16,
-                  "y": 4
-                },
-                "buildingStart": 1746245586049,
-                "buildingTime": 1,
-                "buildingType": "monster_lair",
-                "buildingUntil": 1746245646049,
-                "gatheringTicksRemaining": 1,
-                "id": "monster_1746231965746_8211",
-                "items": [
-                  {
-                    "id": "STONE_PIECES",
-                    "name": "Stone Pieces",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "A strange object of unknown origin",
-                    "id": "item_1746232981918_special",
-                    "name": "Mysterious Artifact",
-                    "quantity": 1,
-                    "rarity": "rare",
-                    "type": "artifact"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Small rocks useful for crafting tools",
-                    "id": "item_1746233102477_2",
+                    "id": "item_1746298441649_2",
                     "name": "Stone Pieces",
                     "quantity": 1,
                     "rarity": "common",
@@ -894,178 +906,44 @@
                   },
                   {
                     "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
+                      "plains"
                     ],
-                    "description": "Basic building material found in most areas",
-                    "id": "item_1746207961571_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 1,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Small rocks useful for crafting tools",
-                    "id": "item_1746207961571_2",
-                    "name": "Stone Pieces",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "A strange object of unknown origin",
-                    "id": "item_1746207961571_special",
-                    "name": "Mysterious Artifact",
-                    "quantity": 1,
-                    "rarity": "rare",
-                    "type": "artifact"
-                  },
-                  {
-                    "id": "MONSTER_HIDE",
-                    "name": "Monster Hide",
-                    "quantity": 2,
-                    "rarity": "uncommon",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "item_1746236701784_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 4,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "id": "ANCIENT_COIN",
-                    "name": "Ancient Coin",
-                    "quantity": 1,
-                    "rarity": "uncommon",
-                    "type": "treasure"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "item_1746229443389_1",
-                    "name": "Wooden Sticks",
+                    "description": "Grain that grows in open grasslands",
+                    "id": "item_1746298441649_568",
+                    "name": "Wheat",
                     "quantity": 3,
                     "rarity": "common",
                     "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Small rocks useful for crafting tools",
-                    "id": "item_1746229443389_2",
-                    "name": "Stone Pieces",
-                    "quantity": 1,
-                    "rarity": "common",
-                    "type": "resource"
                   }
                 ],
-                "moveReason": "structure_attack",
                 "name": "Wild Wolves",
-                "preferredStructureId": "monster_structure_1746245586049_1513",
-                "status": "building",
-                "targetX": -15,
-                "targetY": 3,
+                "personality": {
+                  "emoji": "🏰",
+                  "id": "TERRITORIAL",
+                  "name": "Territorial"
+                },
+                "status": "idle",
                 "type": "monster",
                 "units": {
-                  "monster_unit_1746207726329_1954_0": {
-                    "id": "monster_unit_1746207726329_1954_0",
+                  "monster_unit_1746297542287_1690_0": {
+                    "id": "monster_unit_1746297542287_1690_0",
                     "type": "wolf"
                   },
-                  "monster_unit_1746207726329_3976_1": {
-                    "id": "monster_unit_1746207726329_3976_1",
+                  "monster_unit_1746297542287_8695_1": {
+                    "id": "monster_unit_1746297542287_8695_1",
                     "type": "wolf"
                   },
-                  "monster_unit_1746229141488_6079_1": {
-                    "id": "monster_unit_1746229141488_6079_1",
-                    "type": "spider"
-                  },
-                  "monster_unit_1746229141488_8507_0": {
-                    "id": "monster_unit_1746229141488_8507_0",
-                    "type": "spider"
-                  },
-                  "monster_unit_1746231965746_1038_3": {
-                    "id": "monster_unit_1746231965746_1038_3",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746231965746_3717_0": {
-                    "id": "monster_unit_1746231965746_3717_0",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746231965746_5468_1": {
-                    "id": "monster_unit_1746231965746_5468_1",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746231965746_7929_2": {
-                    "id": "monster_unit_1746231965746_7929_2",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746232220927_2957_1": {
-                    "id": "monster_unit_1746232220927_2957_1",
-                    "type": "bandit"
-                  },
-                  "monster_unit_1746232220927_6440_0": {
-                    "id": "monster_unit_1746232220927_6440_0",
-                    "type": "bandit"
-                  },
-                  "monster_unit_1746236534488_190_0": {
-                    "id": "monster_unit_1746236534488_190_0",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746236534488_7093_1": {
-                    "id": "monster_unit_1746236534488_7093_1",
+                  "monster_unit_1746297542287_9317_2": {
+                    "id": "monster_unit_1746297542287_9317_2",
                     "type": "wolf"
                   }
                 },
-                "x": -15,
-                "y": 3
+                "x": -14,
+                "y": 9
               }
-            },
+            }
+          },
+          "-15,3": {
             "structure": {
               "description": "A resourceful goblin settlement built from the remains of ancient beasts",
               "id": "structure_al_goblin_spawn",
@@ -1081,6 +959,85 @@
               "name": "Boneridge Camp",
               "race": "goblin",
               "type": "spawn"
+            }
+          },
+          "-16,10": {
+            "groups": {
+              "monster_1746298625206_4379": {
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746298625206_4379",
+                "items": [
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746299401694_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 4,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Small rocks useful for crafting tools",
+                    "id": "item_1746299401694_2",
+                    "name": "Stone Pieces",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains"
+                    ],
+                    "description": "Grain that grows in open grasslands",
+                    "id": "item_1746299401694_503",
+                    "name": "Wheat",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "name": "Giant Spiders",
+                "personality": {
+                  "emoji": "🏰",
+                  "id": "TERRITORIAL",
+                  "name": "Territorial"
+                },
+                "status": "idle",
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746298625207_2796_2": {
+                    "id": "monster_unit_1746298625207_2796_2",
+                    "type": "spider"
+                  },
+                  "monster_unit_1746298625207_5924_0": {
+                    "id": "monster_unit_1746298625207_5924_0",
+                    "type": "spider"
+                  },
+                  "monster_unit_1746298625207_6953_1": {
+                    "id": "monster_unit_1746298625207_6953_1",
+                    "type": "spider"
+                  }
+                },
+                "x": -16,
+                "y": 10
+              }
             }
           },
           "-16,4": {
@@ -1257,9 +1214,406 @@
                 ]
               }
             }
+          },
+          "-5,4": {
+            "groups": {
+              "monster_1746295742260_6222": {
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746295742260_6222",
+                "items": [
+                  {
+                    "id": "BONE_FRAGMENT",
+                    "name": "Bone Fragment",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "id": "ANCIENT_FRAGMENT",
+                    "name": "Ancient Fragment",
+                    "quantity": 1,
+                    "rarity": "rare",
+                    "type": "artifact"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746296945793_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 5,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Small rocks useful for crafting tools",
+                    "id": "item_1746296945793_2",
+                    "name": "Stone Pieces",
+                    "quantity": 5,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "name": "Goblin Raiders",
+                "personality": {
+                  "emoji": "🦔",
+                  "id": "CAUTIOUS",
+                  "name": "Cautious"
+                },
+                "status": "idle",
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746295742260_1513_0": {
+                    "id": "monster_unit_1746295742260_1513_0",
+                    "type": "goblin"
+                  },
+                  "monster_unit_1746295742260_2510_2": {
+                    "id": "monster_unit_1746295742260_2510_2",
+                    "type": "goblin"
+                  },
+                  "monster_unit_1746295742260_3756_1": {
+                    "id": "monster_unit_1746295742260_3756_1",
+                    "type": "goblin"
+                  },
+                  "monster_unit_1746295742260_5565_3": {
+                    "id": "monster_unit_1746295742260_5565_3",
+                    "type": "goblin"
+                  }
+                },
+                "x": -5,
+                "y": 4
+              }
+            }
+          },
+          "-8,1": {
+            "groups": {
+              "monster_1746296281987_6860": {
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746296281987_6860",
+                "items": [
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746297541594_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 5,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Small rocks useful for crafting tools",
+                    "id": "item_1746297541594_2",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746297541594_812",
+                    "name": "Wooden Sticks",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains"
+                    ],
+                    "description": "Grain that grows in open grasslands",
+                    "id": "item_1746297541594_390",
+                    "name": "Wheat",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746296885872_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Small rocks useful for crafting tools",
+                    "id": "item_1746296885872_2",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Small rocks useful for crafting tools",
+                    "id": "item_1746296885872_239",
+                    "name": "Stone Pieces",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "name": "Giant Spiders",
+                "personality": {
+                  "emoji": "🏰",
+                  "id": "TERRITORIAL",
+                  "name": "Territorial"
+                },
+                "status": "idle",
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746294666554_4863_2": {
+                    "id": "monster_unit_1746294666554_4863_2",
+                    "type": "wolf"
+                  },
+                  "monster_unit_1746294666554_6569_1": {
+                    "id": "monster_unit_1746294666554_6569_1",
+                    "type": "wolf"
+                  },
+                  "monster_unit_1746294666554_9486_0": {
+                    "id": "monster_unit_1746294666554_9486_0",
+                    "type": "wolf"
+                  },
+                  "monster_unit_1746296281988_3240_0": {
+                    "id": "monster_unit_1746296281988_3240_0",
+                    "type": "spider"
+                  },
+                  "monster_unit_1746296281988_4167_2": {
+                    "id": "monster_unit_1746296281988_4167_2",
+                    "type": "spider"
+                  },
+                  "monster_unit_1746296281988_6000_3": {
+                    "id": "monster_unit_1746296281988_6000_3",
+                    "type": "spider"
+                  },
+                  "monster_unit_1746296281988_7718_1": {
+                    "id": "monster_unit_1746296281988_7718_1",
+                    "type": "spider"
+                  },
+                  "monster_unit_1746296281988_7771_4": {
+                    "id": "monster_unit_1746296281988_7771_4",
+                    "type": "spider"
+                  },
+                  "monster_unit_1746296281988_9660_5": {
+                    "id": "monster_unit_1746296281988_9660_5",
+                    "type": "spider"
+                  }
+                },
+                "x": -8,
+                "y": 1
+              }
+            }
+          },
+          "-9,2": {
+            "groups": {
+              "monster_1746298625425_3186": {
+                "id": "monster_1746298625425_3186",
+                "name": "Giant Spiders",
+                "personality": {
+                  "emoji": "🏰",
+                  "id": "TERRITORIAL",
+                  "name": "Territorial"
+                },
+                "status": "idle",
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746298625425_3533_0": {
+                    "id": "monster_unit_1746298625425_3533_0",
+                    "type": "spider"
+                  }
+                },
+                "x": -9,
+                "y": 2
+              }
+            }
           }
         },
         "-2,-1": {
+          "-27,-11": {
+            "groups": {
+              "monster_1746297903674_5418": {
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746297903674_5418",
+                "items": [
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746298741981_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 5,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Small rocks useful for crafting tools",
+                    "id": "item_1746298741981_2",
+                    "name": "Stone Pieces",
+                    "quantity": 2,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "name": "Giant Spiders",
+                "personality": {
+                  "emoji": "🏰",
+                  "id": "TERRITORIAL",
+                  "name": "Territorial"
+                },
+                "status": "idle",
+                "targetX": -31,
+                "targetY": -10,
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746297903674_8415_0": {
+                    "id": "monster_unit_1746297903674_8415_0",
+                    "type": "spider"
+                  }
+                },
+                "x": -27,
+                "y": -11
+              }
+            }
+          },
+          "-29,-15": {
+            "groups": {
+              "monster_1746294603015_8574": {
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746294603015_8574",
+                "items": [
+                  {
+                    "id": "MEDICINAL_HERBS",
+                    "name": "Medicinal Herbs",
+                    "quantity": 2,
+                    "rarity": "uncommon",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746296885873_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 4,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "name": "Goblin Raiders",
+                "personality": {
+                  "emoji": "🦔",
+                  "id": "CAUTIOUS",
+                  "name": "Cautious"
+                },
+                "status": "idle",
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746294603015_6098_0": {
+                    "id": "monster_unit_1746294603015_6098_0",
+                    "type": "goblin"
+                  },
+                  "monster_unit_1746294603015_877_1": {
+                    "id": "monster_unit_1746294603015_877_1",
+                    "type": "goblin"
+                  }
+                },
+                "x": -29,
+                "y": -15
+              }
+            }
+          },
           "-31,-10": {
             "structure": {
               "buildCompletionTime": 1746240608323,
@@ -1510,122 +1864,113 @@
             }
           },
           "-32,-10": {
-            "groups": {
-              "monster_1746213792953_7043": {
-                "buildingLocation": {
-                  "x": -31,
-                  "y": -10
-                },
-                "buildingStart": 1746240548323,
-                "buildingTime": 1,
-                "buildingType": "monster_lair",
-                "buildingUntil": 1746240608323,
-                "gatheringTicksRemaining": 1,
-                "id": "monster_1746213792953_7043",
-                "items": [
-                  {
-                    "id": "BONE_FRAGMENT",
-                    "name": "Bone Fragment",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest"
-                    ],
-                    "description": "Edible berries found in meadows",
-                    "id": "item_1746214202774_894",
-                    "name": "Wild Berries",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "A strange object of unknown origin",
-                    "id": "item_1746214202774_special",
-                    "name": "Mysterious Artifact",
-                    "quantity": 1,
-                    "rarity": "rare",
-                    "type": "artifact"
-                  },
-                  {
-                    "id": "STONE_PIECES",
-                    "name": "Stone Pieces",
-                    "quantity": 4,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains"
-                    ],
-                    "description": "Grain that grows in open grasslands",
-                    "id": "item_1746216302064_598",
-                    "name": "Wheat",
-                    "quantity": 1,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Moving to next location (-27,-15)",
-                  "timestamp": 1746214801715
-                },
-                "moveReason": "structure_attack",
-                "name": "Wild Wolves",
-                "preferredStructureId": "monster_structure_1746240548323_3531",
-                "status": "building",
-                "type": "monster",
-                "units": {
-                  "monster_unit_1746213792953_2661_4": {
-                    "id": "monster_unit_1746213792953_2661_4",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746213792953_3570_3": {
-                    "id": "monster_unit_1746213792953_3570_3",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746213792953_6034_0": {
-                    "id": "monster_unit_1746213792953_6034_0",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746213792953_8771_2": {
-                    "id": "monster_unit_1746213792953_8771_2",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746213792953_9708_1": {
-                    "id": "monster_unit_1746213792953_9708_1",
-                    "type": "wolf"
-                  },
-                  "monster_unit_1746216002723_1488_1": {
-                    "id": "monster_unit_1746216002723_1488_1",
-                    "type": "bandit"
-                  },
-                  "monster_unit_1746216002723_3312_2": {
-                    "id": "monster_unit_1746216002723_3312_2",
-                    "type": "bandit"
-                  },
-                  "monster_unit_1746216002723_8529_0": {
-                    "id": "monster_unit_1746216002723_8529_0",
-                    "type": "bandit"
-                  }
-                },
-                "x": -32,
-                "y": -10
-              }
-            },
             "structure": {
               "description": "The ancestral mountain home of the dwarf clans",
               "id": "structure_al_dwarf_spawn",
               "name": "Deepforge Stronghold",
               "race": "dwarf",
               "type": "spawn"
+            }
+          },
+          "-34,-4": {
+            "groups": {
+              "monster_1746296282207_8117": {
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746296282207_8117",
+                "items": [
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746296945795_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 8,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Small rocks useful for crafting tools",
+                    "id": "item_1746297541595_2",
+                    "name": "Stone Pieces",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "name": "Giant Spiders",
+                "personality": {
+                  "emoji": "🦝",
+                  "id": "SNEAKY",
+                  "name": "Sneaky"
+                },
+                "status": "idle",
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746296282207_5121_0": {
+                    "id": "monster_unit_1746296282207_5121_0",
+                    "type": "spider"
+                  },
+                  "monster_unit_1746296282207_896_1": {
+                    "id": "monster_unit_1746296282207_896_1",
+                    "type": "spider"
+                  }
+                },
+                "x": -34,
+                "y": -4
+              }
+            }
+          },
+          "-35,-12": {
+            "groups": {
+              "monster_1746297482983_9358": {
+                "id": "monster_1746297482983_9358",
+                "name": "Wild Wolves",
+                "personality": {
+                  "emoji": "🐫",
+                  "id": "NOMADIC",
+                  "name": "Nomadic"
+                },
+                "status": "idle",
+                "targetX": -32,
+                "targetY": -10,
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746297482983_1201_0": {
+                    "id": "monster_unit_1746297482983_1201_0",
+                    "type": "wolf"
+                  },
+                  "monster_unit_1746297482983_1282_1": {
+                    "id": "monster_unit_1746297482983_1282_1",
+                    "type": "wolf"
+                  },
+                  "monster_unit_1746297482983_630_2": {
+                    "id": "monster_unit_1746297482983_630_2",
+                    "type": "wolf"
+                  },
+                  "monster_unit_1746297482983_7994_3": {
+                    "id": "monster_unit_1746297482983_7994_3",
+                    "type": "wolf"
+                  }
+                },
+                "x": -35,
+                "y": -12
+              }
             }
           },
           "-37,-8": {
@@ -1642,10 +1987,200 @@
               "status": "complete",
               "type": "outpost"
             }
+          },
+          "-39,-11": {
+            "groups": {
+              "monster_1746294603234_2831": {
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746294603234_2831",
+                "items": [
+                  {
+                    "id": "RARE_METALS",
+                    "name": "Rare Metals",
+                    "quantity": 2,
+                    "rarity": "rare",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746296945797_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 3,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "name": "Goblin Raiders",
+                "personality": {
+                  "emoji": "🦝",
+                  "id": "SNEAKY",
+                  "name": "Sneaky"
+                },
+                "status": "idle",
+                "targetX": -32,
+                "targetY": -10,
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746294603234_1359_0": {
+                    "id": "monster_unit_1746294603234_1359_0",
+                    "type": "goblin"
+                  },
+                  "monster_unit_1746294603234_5749_1": {
+                    "id": "monster_unit_1746294603234_5749_1",
+                    "type": "goblin"
+                  }
+                },
+                "x": -39,
+                "y": -11
+              }
+            }
+          }
+        },
+        "-2,-2": {
+          "-21,-27": {
+            "groups": {
+              "monster_1746295742043_2491": {
+                "gatheringTicksRemaining": 1,
+                "id": "monster_1746295742043_2491",
+                "items": [
+                  {
+                    "id": "CRUDE_WEAPON",
+                    "name": "Crude Weapon",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "weapon"
+                  },
+                  {
+                    "id": "STONE_PIECES",
+                    "name": "Stone Pieces",
+                    "quantity": 5,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746296885874_1",
+                    "name": "Wooden Sticks",
+                    "quantity": 5,
+                    "rarity": "common",
+                    "type": "resource"
+                  },
+                  {
+                    "biomes": [
+                      "plains",
+                      "forest"
+                    ],
+                    "description": "Edible berries found in meadows",
+                    "id": "item_1746296885874_220",
+                    "name": "Wild Berries",
+                    "quantity": 1,
+                    "rarity": "common",
+                    "type": "resource"
+                  }
+                ],
+                "name": "Bandits",
+                "personality": {
+                  "emoji": "🦝",
+                  "id": "SNEAKY",
+                  "name": "Sneaky"
+                },
+                "status": "idle",
+                "targetX": -18,
+                "targetY": -22,
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746295742043_3650_0": {
+                    "id": "monster_unit_1746295742043_3650_0",
+                    "type": "bandit"
+                  },
+                  "monster_unit_1746295742043_4173_3": {
+                    "id": "monster_unit_1746295742043_4173_3",
+                    "type": "bandit"
+                  },
+                  "monster_unit_1746295742043_6327_2": {
+                    "id": "monster_unit_1746295742043_6327_2",
+                    "type": "bandit"
+                  },
+                  "monster_unit_1746295742043_9840_1": {
+                    "id": "monster_unit_1746295742043_9840_1",
+                    "type": "bandit"
+                  },
+                  "monster_unit_1746297903896_3508_2": {
+                    "id": "monster_unit_1746297903896_3508_2",
+                    "type": "goblin"
+                  },
+                  "monster_unit_1746297903896_3689_0": {
+                    "id": "monster_unit_1746297903896_3689_0",
+                    "type": "goblin"
+                  },
+                  "monster_unit_1746297903896_4859_1": {
+                    "id": "monster_unit_1746297903896_4859_1",
+                    "type": "goblin"
+                  },
+                  "monster_unit_1746297903896_9610_3": {
+                    "id": "monster_unit_1746297903896_9610_3",
+                    "type": "goblin"
+                  }
+                },
+                "x": -21,
+                "y": -27
+              }
+            }
           }
         },
         "-2,0": {
           "-22,7": {
+            "groups": {
+              "monster_1746294666223_7359": {
+                "id": "monster_1746294666223_7359",
+                "name": "Wild Wolves",
+                "personality": {
+                  "emoji": "🐺",
+                  "id": "FERAL",
+                  "name": "Feral"
+                },
+                "preferredStructureId": "monster_structure_1746240304342_572",
+                "spawnedFromStructure": "monster_structure_1746240304342_572",
+                "status": "idle",
+                "type": "monster",
+                "units": {
+                  "monster_unit_1746294666332_7262_2": {
+                    "id": "monster_unit_1746294666332_7262_2",
+                    "type": "wolf"
+                  },
+                  "monster_unit_1746294666332_7739_1": {
+                    "id": "monster_unit_1746294666332_7739_1",
+                    "type": "wolf"
+                  },
+                  "monster_unit_1746294666332_7748_0": {
+                    "id": "monster_unit_1746294666332_7748_0",
+                    "type": "wolf"
+                  }
+                },
+                "x": -22,
+                "y": 7
+              }
+            },
             "structure": {
               "buildCompletionTime": 1746240364342,
               "buildProgress": 0,
@@ -1790,43 +2325,39 @@
           },
           "-23,5": {
             "groups": {
-              "monster_1746195242709_5625": {
-                "id": "monster_1746195242709_5625",
-                "inBattle": false,
+              "-OPM0ex3WwBOfigQJ4Xi": {
+                "gatheringTicksRemaining": 1,
+                "id": "-OPM0ex3WwBOfigQJ4Xi",
                 "items": [
                   {
-                    "id": "STONE_PIECES",
-                    "name": "Stone Pieces",
+                    "biomes": [
+                      "plains",
+                      "forest",
+                      "mountains",
+                      "desert",
+                      "rivers",
+                      "oasis",
+                      "ruins",
+                      "wastes"
+                    ],
+                    "description": "Basic building material found in most areas",
+                    "id": "item_1746292501735_1",
+                    "name": "Wooden Sticks",
                     "quantity": 3,
                     "rarity": "common",
                     "type": "resource"
-                  },
-                  {
-                    "id": "RARE_METALS",
-                    "name": "Rare Metals",
-                    "quantity": 2,
-                    "rarity": "rare",
-                    "type": "resource"
                   }
                 ],
-                "lastMessage": {
-                  "text": "Moving to next location (-21,5)",
-                  "timestamp": 1746214865856
-                },
-                "moveReason": "structure_attack",
-                "name": "Goblin Raiders",
+                "name": "test's Force",
+                "owner": "WbRpE3iB7rX0zMGQZIovi7zGkGh1",
+                "race": "human",
                 "status": "idle",
-                "targetX": -23,
-                "targetY": 5,
-                "type": "monster",
                 "units": {
-                  "monster_unit_1746195242709_1843_2": {
-                    "id": "monster_unit_1746195242709_1843_2",
-                    "type": "goblin"
-                  },
-                  "monster_unit_1746195242709_6273_1": {
-                    "id": "monster_unit_1746195242709_6273_1",
-                    "type": "goblin"
+                  "WbRpE3iB7rX0zMGQZIovi7zGkGh1": {
+                    "displayName": "test",
+                    "id": "WbRpE3iB7rX0zMGQZIovi7zGkGh1",
+                    "race": "human",
+                    "type": "player"
                   }
                 },
                 "x": -23,
@@ -1957,9 +2488,9 @@
               }
             },
             "players": {
-              "WbRpE3iB7rX0zMGQZIovi7zGkGh1": {
-                "displayName": "test",
-                "id": "WbRpE3iB7rX0zMGQZIovi7zGkGh1",
+              "rBBlixvWCih6uFNcG4vK7qcGvmv1": {
+                "displayName": "sun",
+                "id": "rBBlixvWCih6uFNcG4vK7qcGvmv1",
                 "race": "human"
               },
               "wKUsOXL3zoXQTxWfDWzsShETd4w1": {
@@ -1999,199 +2530,6 @@
               "race": "human",
               "type": "spawn"
             }
-          },
-          "-25,7": {
-            "structure": {
-              "buildCompletionTime": 1746256867380,
-              "buildProgress": 0,
-              "buildStartTime": 1746256807380,
-              "buildTotalTime": 1,
-              "builder": "monster_1746214982781_6464",
-              "createdAt": 1746256807380,
-              "features": [
-                "basic_storage",
-                "monster_spawning"
-              ],
-              "id": "monster_structure_1746256807380_7276",
-              "items": [
-                {
-                  "id": "BONE_FRAGMENT",
-                  "name": "Bone Fragment",
-                  "quantity": 6,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "biomes": [
-                    "plains",
-                    "forest",
-                    "mountains",
-                    "desert",
-                    "rivers",
-                    "oasis",
-                    "ruins",
-                    "wastes"
-                  ],
-                  "description": "Basic building material found in most areas",
-                  "id": "item_1746208322169_1",
-                  "name": "Wooden Sticks",
-                  "quantity": 6,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "biomes": [
-                    "plains",
-                    "forest",
-                    "mountains",
-                    "desert",
-                    "ruins",
-                    "wastes"
-                  ],
-                  "description": "Small rocks useful for crafting tools",
-                  "id": "item_1746208322169_2",
-                  "name": "Stone Pieces",
-                  "quantity": 4,
-                  "rarity": "common",
-                  "type": "resource"
-                },
-                {
-                  "biomes": [
-                    "plains"
-                  ],
-                  "description": "Grain that grows in open grasslands",
-                  "id": "item_1746208322169_718",
-                  "name": "Wheat",
-                  "quantity": 2,
-                  "rarity": "common",
-                  "type": "resource"
-                }
-              ],
-              "level": 1,
-              "monster": true,
-              "name": "Wild Wolves Monster Lair",
-              "owner": "monster",
-              "ownerGroupId": "monster_1746214982781_6464",
-              "status": "building",
-              "type": "monster_lair",
-              "units": {
-                "shared": [
-                  {
-                    "id": "monster_unit_1746207782723_3155_1",
-                    "type": "goblin"
-                  },
-                  {
-                    "id": "monster_unit_1746207782723_5870_2",
-                    "type": "goblin"
-                  },
-                  {
-                    "id": "monster_unit_1746207782723_7587_0",
-                    "type": "goblin"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        "-3,0": {
-          "-55,18": {
-            "groups": {
-              "monster_1746205562450_5263": {
-                "gatheringTicksRemaining": 1,
-                "id": "monster_1746205562450_5263",
-                "items": [
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "rivers",
-                      "oasis",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Basic building material found in most areas",
-                    "id": "item_1746206762509_1",
-                    "name": "Wooden Sticks",
-                    "quantity": 6,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains",
-                      "forest",
-                      "mountains",
-                      "desert",
-                      "ruins",
-                      "wastes"
-                    ],
-                    "description": "Small rocks useful for crafting tools",
-                    "id": "item_1746206762509_2",
-                    "name": "Stone Pieces",
-                    "quantity": 3,
-                    "rarity": "common",
-                    "type": "resource"
-                  },
-                  {
-                    "biomes": [
-                      "plains"
-                    ],
-                    "description": "Grain that grows in open grasslands",
-                    "id": "item_1746206882227_696",
-                    "name": "Wheat",
-                    "quantity": 2,
-                    "rarity": "common",
-                    "type": "resource"
-                  }
-                ],
-                "lastMessage": {
-                  "text": "Moving to next location (-39,4)",
-                  "timestamp": 1746214865856
-                },
-                "moveSpeed": 1,
-                "moveStarted": 1746289741611,
-                "movementPath": [
-                  {
-                    "x": -55,
-                    "y": 18
-                  },
-                  {
-                    "x": -56,
-                    "y": 18
-                  }
-                ],
-                "name": "Goblin Raiders",
-                "nextMoveTime": 1746289801611,
-                "pathIndex": 0,
-                "personality": {
-                  "emoji": "🏗️",
-                  "id": "BUILDER",
-                  "name": "Builder"
-                },
-                "status": "moving",
-                "targetX": -58,
-                "targetY": 18,
-                "type": "monster",
-                "units": {
-                  "monster_unit_1746205562450_4260_0": {
-                    "id": "monster_unit_1746205562450_4260_0",
-                    "type": "goblin"
-                  },
-                  "monster_unit_1746205562450_6191_2": {
-                    "id": "monster_unit_1746205562450_6191_2",
-                    "type": "goblin"
-                  },
-                  "monster_unit_1746205562450_9437_1": {
-                    "id": "monster_unit_1746205562450_9437_1",
-                    "type": "goblin"
-                  }
-                },
-                "x": -55,
-                "y": 18
-              }
-            }
           }
         }
       },
@@ -2201,9 +2539,9 @@
           "y": -8
         },
         "description": "A rugged world of mountains, ancient dungeons and forgotten treasures",
-        "lastTick": 1746289740989,
+        "lastTick": 1746299521898,
         "name": "Ancient Lands",
-        "playerCount": 69,
+        "playerCount": 70,
         "seed": 13579,
         "size": "large",
         "spawns": {
