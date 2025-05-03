@@ -307,7 +307,7 @@ export function canStructureBeUpgraded(structure, maxLevel = 3) {
 /**
  * Check if a monster group has sufficient resources for a specific requirement
  * @param {Array} monsterItems - Monster group's items
- * @param {Array} requiredResources - Required resources array of {name, quantity}
+ * @param {Array} requiredResources - Required resources array of {id, quantity} or {name, quantity}
  * @returns {boolean} True if sufficient resources are available
  */
 export function hasSufficientResources(monsterItems, requiredResources) {
@@ -317,13 +317,17 @@ export function hasSufficientResources(monsterItems, requiredResources) {
   
   // Create a map of available resources
   const availableResources = monsterItems.reduce((acc, item) => {
-    acc[item.name] = (acc[item.name] || 0) + (item.quantity || 1);
+    // Handle items that might have either id or name
+    const itemId = item.id || item.name;
+    acc[itemId] = (acc[itemId] || 0) + (item.quantity || 1);
     return acc;
   }, {});
   
   // Check if all requirements are met
   for (const required of requiredResources) {
-    if (!availableResources[required.name] || availableResources[required.name] < required.quantity) {
+    // Support both id and name for backward compatibility
+    const resourceId = required.id || required.name;
+    if (!availableResources[resourceId] || availableResources[resourceId] < required.quantity) {
       return false;
     }
   }
@@ -334,7 +338,7 @@ export function hasSufficientResources(monsterItems, requiredResources) {
 /**
  * Consume resources from a monster group
  * @param {Array} monsterItems - Monster group's items
- * @param {Array} requiredResources - Resources to consume {name, quantity}
+ * @param {Array} requiredResources - Resources to consume {id, quantity} or {name, quantity}
  * @returns {Array|null} New array of remaining items or null if insufficient resources
  */
 export function consumeResourcesFromItems(monsterItems, requiredResources) {
@@ -347,11 +351,15 @@ export function consumeResourcesFromItems(monsterItems, requiredResources) {
   
   // Consume each required resource
   for (const required of requiredResources) {
+    // Support both id and name for backward compatibility
+    const resourceId = required.id || required.name;
     let remainingQuantity = required.quantity;
     
     // Find items that match this resource
     for (let i = 0; i < remainingItems.length; i++) {
-      if (remainingItems[i].name === required.name) {
+      // Check if this item matches the required resource by id or name
+      const itemId = remainingItems[i].id || remainingItems[i].name;
+      if (itemId === resourceId) {
         const available = remainingItems[i].quantity || 1;
         
         if (available <= remainingQuantity) {

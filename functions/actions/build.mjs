@@ -115,10 +115,11 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
     // Check if all required resources are available
     const missingResources = [];
     for (const resource of structureDefinition.requiredResources) {
-      const available = availableResources[resource.name] || 0;
+      const resourceId = resource.id || resource.name; // Support both id and name for backward compatibility
+      const available = availableResources[resourceId] || 0;
       if (available < resource.quantity) {
         missingResources.push({
-          name: resource.name,
+          name: resource.id ? ITEMS[resource.id]?.name || resource.id : resource.name,
           required: resource.quantity,
           available: available
         });
@@ -189,16 +190,17 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
         if (Array.isArray(currentGroup.items)) {
           // Handle as array
           const remainingItems = [];
-          // Create a map of required resources from the standardized structure definition
-          const resources = new Map(structureDefinition.requiredResources.map(r => [r.name, r.quantity]));
+          // Create a map of required resources from the structure definition
+          const resources = new Map(structureDefinition.requiredResources.map(r => [r.id || r.name, r.quantity]));
           
           // First pass to identify resources to keep
           for (const item of currentGroup.items) {
-            const resourceRequired = resources.get(item.name);
+            const itemId = item.id || item.name;
+            const resourceRequired = resources.get(itemId);
             if (resourceRequired) {
               // This is a required resource
               const toUse = Math.min(item.quantity, resourceRequired);
-              resources.set(item.name, resourceRequired - toUse);
+              resources.set(itemId, resourceRequired - toUse);
               
               // If there are leftover quantities, keep them
               const remaining = item.quantity - toUse;
@@ -215,7 +217,7 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
         } else {
           // Handle as object
           // Create a map of required resources
-          const resources = new Map(structureDefinition.requiredResources.map(r => [r.name, r.quantity]));
+          const resources = new Map(structureDefinition.requiredResources.map(r => [r.id || r.name, r.quantity]));
           
           for (const itemKey in currentGroup.items) {
             const item = currentGroup.items[itemKey];

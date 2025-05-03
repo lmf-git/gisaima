@@ -255,6 +255,31 @@ function hasResourcesToBuild(monsterGroup, structureType) {
 }
 
 /**
+ * Consume resources required for building
+ * @param {object} monsterGroup - Monster group data
+ * @param {string} structureType - Structure type being built
+ * @param {object} updates - Database updates object
+ * @param {string} groupPath - Path to the group in database
+ * @returns {boolean} True if resources were successfully consumed
+ */
+function consumeResources(monsterGroup, structureType, updates, groupPath) {
+  // Get required resources
+  const requiredResources = getRequiredResourcesForStructure(structureType);
+  
+  // Use the helper function to consume resources
+  const remainingItems = consumeResourcesFromItems(monsterGroup.items || [], requiredResources);
+  
+  // If resources couldn't be consumed, return false
+  if (remainingItems === null) {
+    return false;
+  }
+  
+  // Update the monster group with the remaining items
+  updates[`${groupPath}/items`] = remainingItems;
+  return true;
+}
+
+/**
  * Check if monster group has resources to upgrade a building
  * @param {object} monsterGroup - Monster group data
  * @param {object} building - Building to upgrade
