@@ -13,8 +13,8 @@ import {
   joinExistingBattle,
   findMergeableMonsterGroups,
   mergeMonsterGroupsOnTile,
-  findAttackableMonsterGroups, 
-  initiateAttackOnMonsters
+  findAttackableMonsterGroups, // Import the new function
+  initiateAttackOnMonsters     // Import the new function
 } from '../monsters/strategy/combat.mjs';
 import { startMonsterGathering, countTotalResources, buildMonsterStructure, upgradeMonsterStructure, demobilizeAtMonsterStructure } from '../monsters/strategy/resources.mjs';
 import { MONSTER_PERSONALITIES, shouldChangePersonality, getNewPersonality } from 'gisaima-shared/definitions/MONSTER_PERSONALITIES.js';
@@ -85,14 +85,6 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
     };
   }
   
-  // FERAL personality special - check for other monster groups to attack first
-  if (weights?.attackMonsters && Math.random() < 0.8 * weights.attackMonsters) {
-    const attackableMonsterGroups = findAttackableMonsterGroups(tileData, groupId);
-    if (attackableMonsterGroups.length > 0) {
-      return await initiateAttackOnMonsters(db, worldId, monsterGroup, attackableMonsterGroups, location, updates, now);
-    }
-  }
-  
   // First priority: Check if there are other monster groups on this tile to merge with
   // Influenced by personality's merge weight
   if (Math.random() < MERGE_CHANCE * (weights?.merge || 1.0)) {
@@ -103,12 +95,19 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   }
   
   // Check if there's a battle on this tile
-  // Influenced by personality's attack/join battle weight or randomSides for FERAL
+  // Influenced by personality's attack/join battle weight
   if (tileData.battles) {
     const joinWeight = weights?.joinBattle || weights?.attack || 1.0;
     if (Math.random() < joinWeight) {
-      const randomSides = Boolean(weights?.randomSides);
-      return await joinExistingBattle(db, worldId, monsterGroup, tileData, updates, now, randomSides);
+      return await joinExistingBattle(db, worldId, monsterGroup, tileData, updates, now);
+    }
+  }
+  
+  // NEW: Check for other monster groups to attack (for FERAL personality)
+  if (personality?.canAttackMonsters && Math.random() < 0.85 * (weights?.attackMonsters || 0)) {
+    const attackableMonsters = findAttackableMonsterGroups(tileData, groupId);
+    if (attackableMonsters.length > 0) {
+      return await initiateAttackOnMonsters(db, worldId, monsterGroup, attackableMonsters, location, updates, now);
     }
   }
   
