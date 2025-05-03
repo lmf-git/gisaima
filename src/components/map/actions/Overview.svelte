@@ -965,7 +965,7 @@
                         {#if group.status === 'starting_to_gather'}
                           Preparing to gather
                         {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
-                          {_fmt(group.status)} {formatTimeRemaining(group.readyAt, group.status)}
+                          {_fmt(group.status)} {$timeUntilNextTick}
                         {:else if group.status === 'moving'}
                           {_fmt(group.status)} 
                           {#if !isPendingTick(group.nextMoveTime)}
