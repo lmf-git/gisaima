@@ -41,7 +41,6 @@ export function processMobilizations(worldId, updates, groups, chunkKey, tileKey
     
     // Complete mobilization and update group status to idle
     updates[`${groupPath}/status`] = 'idle';
-    updates[`${groupPath}/readyAt`] = null;
     
     // Create a chat message for the world
     const chatMessageText = createMobilizationMessage(group, tileKey);

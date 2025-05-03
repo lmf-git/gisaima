@@ -31,7 +31,7 @@
     } else if (group.status === 'gathering' || group.status === 'starting_to_gather') {
       return group.gatheringUntil;
     } else {
-      return group.readyAt;
+      return 'Unkown';
     }
   }
   

@@ -274,8 +274,7 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
         id: newGroupId,
         name,
         owner: uid,
-        status: 'mobilizing',  // This status alone is sufficient for the tick processor
-        readyAt: nextTickTime,
+        status: 'mobilizing',
         x: tileX,
         y: tileY,
         race: race || null,

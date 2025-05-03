@@ -753,7 +753,6 @@ export async function createMonsterGroupFromStructure(worldId, structure, locati
     name: Units.getUnit(monsterType, 'monster')?.name || "Monster Group",
     type: 'monster',
     status: 'mobilizing',
-    readyAt: now,
     mobilizedFromStructure: structure.id,
     preferredStructureId: structure.id,
     personality: {
