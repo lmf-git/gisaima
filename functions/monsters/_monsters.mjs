@@ -909,27 +909,6 @@ export function getRandomPersonality(monsterType) {
         return preferredTypes[Math.floor(Math.random() * preferredTypes.length)];
       }
     }
-    
-    // Fallback to the previous behavior (the code commented out below was replaced with the above)
-    /*
-    // Example: Wolves tend to be more feral or aggressive
-    if (monsterType.toLowerCase().includes('wolf')) {
-      const preferredTypes = [MONSTER_PERSONALITIES.FERAL, MONSTER_PERSONALITIES.AGGRESSIVE, MONSTER_PERSONALITIES.TERRITORIAL];
-      return preferredTypes[Math.floor(Math.random() * preferredTypes.length)];
-    }
-    
-    // Goblins tend to be sneaky or cautious
-    if (monsterType.toLowerCase().includes('goblin')) {
-      const preferredTypes = [MONSTER_PERSONALITIES.SNEAKY, MONSTER_PERSONALITIES.CAUTIOUS];
-      return preferredTypes[Math.floor(Math.random() * preferredTypes.length)];
-    }
-    
-    // Spiders tend to be sneaky or territorial
-    if (monsterType.toLowerCase().includes('spider')) {
-      const preferredTypes = [MONSTER_PERSONALITIES.SNEAKY, MONSTER_PERSONALITIES.TERRITORIAL];
-      return preferredTypes[Math.floor(Math.random() * preferredTypes.length)];
-    }
-    */
   }
   
   // Default random selection
