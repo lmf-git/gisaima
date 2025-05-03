@@ -12,8 +12,7 @@ import { processMobilizations } from "./events/mobiliseTick.mjs";
 import { processDemobilization } from "./events/demobiliseTick.mjs";
 import { processMovement } from "./events/moveTick.mjs";
 import { processGathering } from "./events/gatheringTick.mjs";
-import { processBuilding } from "./events/buildTick.mjs";
-import { spawnMonsters, mergeMonsterGroups } from "./events/monsterSpawnTick.mjs";
+import { processBuilding, spawnMonsters, mergeMonsterGroups } from "./events/buildTick.mjs";
 import { upgradeTickProcessor } from "./events/upgradeTick.mjs";
 import { processCrafting } from "./events/craftingTick.mjs"; 
 import { processMonsterStrategies } from "./events/monsterStrategyTick.mjs"; // Only import strategy processor
@@ -210,3 +209,65 @@ export const processGameTicks = onSchedule({
 });
 
 export default processGameTicks;
+
+/**
+ * Processes the building progress for a tick
+ * @param {Object} db - The database object
+ * @param {string} worldId - The ID of the world
+ * @param {number} currentTick - The current tick number
+ */
+export async function processBuildingProgress(db, worldId, currentTick) {
+  // Get all chunks in the world
+  const chunksRef = db.ref(`worlds/${worldId}/chunks`);
+  const chunksSnapshot = await chunksRef.once('value');
+  const chunks = chunksSnapshot.val();
+  
+  if (!chunks) {
+    console.log(`No chunks found in world ${worldId} for building progress`);
+    return;
+  }
+  
+  // Track updates for buildings
+  const updates = {};
+  
+  // Process each chunk
+  for (const chunkKey in chunks) {
+    const chunk = chunks[chunkKey];
+    
+    // Process each tile in the chunk
+    for (const tileKey in chunk) {
+      const tile = chunk[tileKey];
+      
+      // Check if there's a structure being built on this tile
+      if (tile.structure && tile.structure.status === 'building') {
+        // Update the building progress
+        const progress = tile.structure.progress || 0;
+        const newProgress = progress + 1; // Increment progress (or use a more complex calculation)
+        
+        // Check if the building is complete
+        if (newProgress >= tile.structure.requiredProgress) {
+          console.log(`Building complete on tile ${tileKey} of world ${worldId}`);
+          // Mark the building as complete
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`] = {
+            ...tile.structure,
+            status: 'completed',
+            progress: null, // Clear progress
+          };
+        } else {
+          // Update the progress
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/progress`] = newProgress;
+        }
+      }
+    }
+  }
+  
+  // Apply the updates for building progress
+  if (Object.keys(updates).length > 0) {
+    try {
+      await db.ref().update(updates);
+      console.log(`Successfully updated building progress in world ${worldId}`);
+    } catch (error) {
+      console.error(`Failed to update building progress in world ${worldId}:`, error);
+    }
+  }
+}

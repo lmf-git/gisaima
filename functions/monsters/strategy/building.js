@@ -833,6 +833,69 @@ export async function addOrUpgradeMonsterBuilding(db, worldId, monsterGroup, str
   };
 }
 
+/**
+ * Start building a monster structure at the given location
+ * @param {object} db - Firebase database reference
+ * @param {string} worldId - World ID
+ * @param {string} monsterId - Monster ID
+ * @param {string} structureType - Type of structure to build
+ * @param {number} x - X coordinate for building location
+ * @param {number} y - Y coordinate for building location
+ * @returns {boolean} True if building started successfully
+ */
+export async function startMonsterBuilding(db, worldId, monsterId, structureType, x, y) {
+  const structureDef = STRUCTURES[structureType];
+  if (!structureDef) return false;
+  
+  // Get world's current tick
+  const worldRef = db.collection('worlds').doc(worldId);
+  const worldDoc = await worldRef.get();
+  const worldData = worldDoc.data();
+  const currentTick = worldData.info.lastTick;
+  
+  // Use tick-based building time
+  const buildTicks = structureDef.buildTime;
+  
+  // Create structure record with tick-based timing
+  const structureData = {
+    id: `monster_structure_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+    type: structureType,
+    name: `${monsterId.includes('_') ? monsterId.split('_')[0].charAt(0).toUpperCase() + monsterId.split('_')[0].slice(1) : 'Monster'} ${structureDef.name}`,
+    owner: 'monster',
+    ownerGroupId: monsterId,
+    status: 'building',
+    builder: monsterId,
+    monster: true,
+    createdAt: Date.now(),
+    buildStartTick: currentTick,
+    buildTotalTicks: buildTicks,
+    buildCompletionTick: currentTick + buildTicks,
+    buildProgress: 0,
+    features: structureDef.features || [],
+    capacity: structureDef.capacity || 10
+  };
+  
+  // Update monster group to reflect building status
+  await db.collection('worlds').doc(worldId).collection('groups').doc(monsterId).update({
+    status: 'building',
+    buildingType: structureType,
+    buildingLocation: { x, y },
+    buildingStart: currentTick, // Store tick instead of timestamp
+    buildingTime: buildTicks,
+    buildingUntil: currentTick + buildTicks // Store completion tick
+  });
+  
+  // Add the structure to the tile
+  const chunkX = Math.floor(x / 20);
+  const chunkY = Math.floor(y / 20);
+  const chunkKey = `${chunkX},${chunkY}`;
+  const tileKey = `${x},${y}`;
+  
+  await db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`).set(structureData);
+  
+  return true;
+}
+
 // Export all necessary functions
 export {
   hasResourcesToBuild,

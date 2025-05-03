@@ -166,14 +166,14 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
       
       // Start building: create structure in 'building' state
       currentData.worlds[worldId].chunks[chunkKey][tileKey].structure = {
-        id: `structure_${worldId}_${tileKey}_${now}`,
+        id: `structure_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
         name: structureName,
         type: structureDefinition.type,
         status: 'building',
         buildProgress: 0,
         buildTotalTime: structureDefinition.buildTime,
-        buildStartTime: now,
-        buildCompletionTime: completionTime,
+        buildStartTick: worldData.lastTick,
+        buildCompletionTick: worldData.lastTick + structureDefinition.buildTime,
         owner: uid,
         ownerName: currentData.players[uid]?.worlds[worldId]?.displayName || 'Unknown',
         builder: groupId,

@@ -213,6 +213,31 @@
     structureName && 
     hasRequiredResources()
   );
+  
+  function calculateBuildProgress(structure, worldInfo) {
+    if (structure.status !== 'building') return 100;
+    
+    const currentTick = worldInfo.lastTick;
+    const startTick = structure.buildStartTick;
+    const totalTicks = structure.buildTotalTicks;
+    
+    if (!startTick || !totalTicks) return structure.buildProgress || 0;
+    
+    const elapsedTicks = currentTick - startTick;
+    return Math.min(100, Math.floor((elapsedTicks / totalTicks) * 100));
+  }
+  
+  function calculateRemainingTime(structure, worldInfo) {
+    if (structure.status !== 'building') return 'Complete';
+    
+    const currentTick = worldInfo.lastTick;
+    const completionTick = structure.buildCompletionTick;
+    
+    if (!completionTick) return 'Unknown';
+    
+    const remainingTicks = completionTick - currentTick;
+    return `${remainingTicks} tick${remainingTicks !== 1 ? 's' : ''} remaining`;
+  }
 </script>
 
 <div class="build-modal" transition:scale={{ start: 0.95, duration: 200 }}>
@@ -373,6 +398,17 @@
       </div>
     {:else}
       <p class="no-tile">No tile selected</p>
+    {/if}
+  </div>
+  
+  <div class="build-status">
+    {#if selectedStructure}
+      <div class="progress-bar">
+        <div class="progress" style="width: {calculateBuildProgress(selectedStructure, $worldInfo)}%"></div>
+      </div>
+      <div class="time-remaining">
+        {calculateRemainingTime(selectedStructure, $worldInfo)}
+      </div>
     {/if}
   </div>
 </div>
@@ -795,5 +831,33 @@
     color: #666;
     font-size: 0.9em;
     padding: 1em;
+  }
+
+  .build-status {
+    margin-top: 1em;
+    padding: 0.8em;
+    background: #f5f5f5;
+    border-radius: 0.3em;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .progress-bar {
+    height: 0.4em;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 0.2em;
+    overflow: hidden;
+    margin-bottom: 0.5em;
+  }
+  
+  .progress {
+    height: 100%;
+    background: linear-gradient(to right, #4285f4, #34a853);
+    border-radius: 0.2em;
+    transition: width 0.2s;
+  }
+  
+  .time-remaining {
+    font-size: 0.9em;
+    color: #333;
   }
 </style>
