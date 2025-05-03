@@ -16,7 +16,7 @@ import {
   findAttackableMonsterGroups, // Import the new function
   initiateAttackOnMonsters     // Import the new function
 } from '../monsters/strategy/combat.mjs';
-import { startMonsterGathering, countTotalResources, demobilizeAtMonsterStructure } from '../monsters/strategy/resources.mjs';
+import { startMonsterGathering, countTotalResources } from '../monsters/strategy/resources.mjs';
 import { MONSTER_PERSONALITIES, shouldChangePersonality, getNewPersonality } from 'gisaima-shared/definitions/MONSTER_PERSONALITIES.js';
 import { 
   isMonsterGroup, 

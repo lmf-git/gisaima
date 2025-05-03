@@ -1,8 +1,3 @@
-import { countTotalResources } from '../_monsters.mjs';
-
-// Re-export imported functions
-export { countTotalResources };
-
 /**
  * Start the monster group gathering resources
  * @param {object} db - Firebase database reference
@@ -47,10 +42,21 @@ export async function startMonsterGathering(db, worldId, monsterGroup, updates, 
   };
 }
 
-
-
-
-export async function demobilizeAtMonsterStructure(db, worldId, monsterGroup, structure, updates, now) {
-  // Implementation would go here
-  return { action: 'demobilize' };
+/**
+ * Count total resources in a monster group's items
+ * @param {Array} items - Array of items that the monster group has
+ * @returns {number} Total count of resources (sum of all quantities)
+ */
+export function countTotalResources(items) {
+  // If no items or items array is empty, return 0
+  if (!items || !items.length) {
+    return 0;
+  }
+  
+  // Sum up quantities of all items
+  return items.reduce((total, item) => {
+    // Add the quantity of this item (default to 1 if quantity is not specified)
+    return total + (item.quantity || 1);
+  }, 0);
 }
+

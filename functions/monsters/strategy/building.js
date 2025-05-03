@@ -6,24 +6,19 @@
 import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
 import { BUILDINGS } from 'gisaima-shared/definitions/BUILDINGS.js';
 import { 
-  countTotalResources, 
   isMonsterStructure,
   canStructureBeUpgraded,
   hasSufficientResources,
   consumeResourcesFromItems,
   createMonsterConstructionMessage,
-  createResourceDepositMessage,
   createGroupPath,
   createStructurePath,
   createChatMessagePath,
   generateMonsterId
 } from '../_monsters.mjs';
 
-// Constants
-const MIN_RESOURCES_FOR_BUILDING = 15;
-const MIN_RESOURCES_FOR_UPGRADE = 10;
+
 const MIN_UNITS_FOR_BUILDING = 3;
-const BUILD_CHANCE = 0.7; // Base chance for building when conditions are met
 const MAX_MONSTER_STRUCTURES_NEARBY = 3; // Maximum number of monster structures allowed in nearby area
 const NEARBY_DISTANCE = 10; // Distance considered "nearby" for structure density check
 
@@ -813,6 +808,5 @@ export async function addOrUpgradeMonsterBuilding(db, worldId, monsterGroup, str
 export {
   MONSTER_BUILDINGS,
   hasResourcesToBuild,
-  hasResourcesToUpgrade,
-  demobilizeAtMonsterStructure
+  hasResourcesToUpgrade
 };
