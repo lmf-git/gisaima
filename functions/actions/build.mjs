@@ -189,6 +189,7 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
         if (Array.isArray(currentGroup.items)) {
           // Handle as array
           const remainingItems = [];
+          // Create a map of required resources from the standardized structure definition
           const resources = new Map(structureDefinition.requiredResources.map(r => [r.name, r.quantity]));
           
           // First pass to identify resources to keep

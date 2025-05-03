@@ -222,7 +222,12 @@ export async function buildMonsterStructure(db, worldId, monsterGroup, location,
  * @returns {Array} Array of required resources
  */
 function getRequiredResourcesForStructure(structureType) {
-  // Use the shared STRUCTURES definitions
+  // Use the shared STRUCTURES definitions with standardized format
+  if (STRUCTURES[structureType] && STRUCTURES[structureType].requiredResources) {
+    return STRUCTURES[structureType].requiredResources;
+  }
+  
+  // Fallback for backward compatibility
   if (STRUCTURES[structureType] && STRUCTURES[structureType].buildCost) {
     const structure = STRUCTURES[structureType];
     return Object.entries(structure.buildCost).map(([name, quantity]) => ({ 
