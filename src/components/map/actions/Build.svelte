@@ -5,7 +5,7 @@
 
   import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
 
-  import { currentPlayer, game, timeUntilNextTick } from '../../../lib/stores/game';
+  import { currentPlayer, game, timeUntilNextTick, worldInfo } from '../../../lib/stores/game';
   import { targetStore } from '../../../lib/stores/map';
 
   import Close from '../../icons/Close.svelte';
@@ -214,7 +214,7 @@
     hasRequiredResources()
   );
   
-  function calculateBuildProgress(structure, worldInfo) {
+  function calculateBuildProgress(structure) {
     if (structure.status !== 'building') return 100;
     
     const currentTick = worldInfo.lastTick;
@@ -227,7 +227,7 @@
     return Math.min(100, Math.floor((elapsedTicks / totalTicks) * 100));
   }
   
-  function calculateRemainingTime(structure, worldInfo) {
+  function calculateRemainingTime(structure) {
     if (structure.status !== 'building') return 'Complete';
     
     const currentTick = worldInfo.lastTick;
@@ -404,10 +404,10 @@
   <div class="build-status">
     {#if selectedStructure}
       <div class="progress-bar">
-        <div class="progress" style="width: {calculateBuildProgress(selectedStructure, $worldInfo)}%"></div>
+        <div class="progress" style="width: {calculateBuildProgress(selectedStructure)}%"></div>
       </div>
       <div class="time-remaining">
-        {calculateRemainingTime(selectedStructure, $worldInfo)}
+        {calculateRemainingTime(selectedStructure)}
       </div>
     {/if}
   </div>
