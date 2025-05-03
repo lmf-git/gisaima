@@ -47,15 +47,6 @@ export async function startMonsterGathering(db, worldId, monsterGroup, updates, 
   };
 }
 
-/**
- * Functions for building and managing monster structures
- * These functions would be implemented based on business logic
- * For now they are just stubs
- */
-export async function buildMonsterStructure(db, worldId, monsterGroup, location, updates, now) {
-  // Implementation would go here
-  return { action: 'build' };
-}
 
 export async function upgradeMonsterStructure(db, worldId, monsterGroup, structure, updates, now) {
   // Implementation would go here
