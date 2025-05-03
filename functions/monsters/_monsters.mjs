@@ -750,3 +750,90 @@ export function getChunkKey(x, y) {
   const chunkY = Math.floor(y / 20);
   return `${chunkX},${chunkY}`;
 }
+
+// =============================================
+// NAMING UTILITIES
+// =============================================
+
+/**
+ * Generate a size-based name for merged monster groups
+ * @param {number} unitCount - Total number of units in the group
+ * @param {string|object} monsterType - Base monster type or object with multiple types and counts
+ * @param {string} originalName - Original name of largest group (used as fallback)
+ * @returns {string} Size-appropriate group name
+ */
+export function generateMergedGroupName(unitCount, monsterType, originalName = null) {
+  // Default name if we can't determine a better one
+  if (!unitCount || unitCount <= 0) {
+    return originalName || "Monster Group";
+  }
+  
+  // Create size-based name prefix
+  let sizePrefix;
+  if (unitCount <= 3) {
+    sizePrefix = "Small Band of";
+  } else if (unitCount <= 7) {
+    sizePrefix = "Raiding Party of";
+  } else if (unitCount <= 12) {
+    sizePrefix = "Warband of";
+  } else if (unitCount <= 20) {
+    sizePrefix = "Horde of";
+  } else if (unitCount <= 30) {
+    sizePrefix = "Legion of";
+  } else {
+    sizePrefix = "Massive Swarm of";
+  }
+  
+  // Check if this is a mixed monster group (monsterType is an object with multiple types)
+  if (monsterType && typeof monsterType === 'object') {
+    // Get the top 2 most common monster types
+    const sortedTypes = Object.entries(monsterType)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 2);
+    
+    // If we have at least 2 types with significant numbers, create a mixed name
+    if (sortedTypes.length >= 2 && sortedTypes[1][1] >= 2) {
+      // Get first two dominant types - capitalize first letter
+      const type1 = sortedTypes[0][0].charAt(0).toUpperCase() + sortedTypes[0][0].slice(1) + 's';
+      const type2 = sortedTypes[1][0].charAt(0).toUpperCase() + sortedTypes[1][0].slice(1) + 's';
+      
+      // For very mixed groups with 3+ types
+      if (Object.keys(monsterType).length >= 3) {
+        return `${sizePrefix} Mixed Creatures`;
+      } else {
+        return `${sizePrefix} ${type1} and ${type2}`;
+      }
+    } else {
+      // If one type is dominant, just use that
+      const dominantType = sortedTypes[0][0].charAt(0).toUpperCase() + sortedTypes[0][0].slice(1);
+      return `${sizePrefix} ${dominantType}s`;
+    }
+  }
+  
+  // Handle simple string monsterType (single type)
+  if (typeof monsterType === 'string') {
+    // Extract just the main monster name without modifiers
+    const baseTypeName = monsterType.replace(/^(.*?)(?:\s|$)/, '$1');
+    // Capitalize first letter
+    const capitalizedType = baseTypeName.charAt(0).toUpperCase() + baseTypeName.slice(1);
+    
+    // Check if this is already a plural form
+    const isAlreadyPlural = capitalizedType.endsWith('s');
+    const typeNameToUse = isAlreadyPlural ? capitalizedType : `${capitalizedType}s`;
+    
+    return `${sizePrefix} ${typeNameToUse}`;
+  }
+  
+  // If we couldn't determine a type, try to extract from original name
+  if (originalName) {
+    // Try to extract from original name
+    const nameParts = originalName.split(' ');
+    if (nameParts.length > 0) {
+      const baseTypeName = nameParts[nameParts.length - 1];
+      return `${sizePrefix} ${baseTypeName}`;
+    }
+  }
+  
+  // Ultimate fallback
+  return `${sizePrefix} Creatures`;
+}

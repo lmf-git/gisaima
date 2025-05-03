@@ -645,8 +645,20 @@ function mergeGroups(worldId, chunkKey, tileKey, groups, updates, now) {
   let groupPath, groupName;
   const [x, y] = tileKey.split(',').map(Number);
   
-  // Regular merge to base group
-  groupName = baseGroup.name || "Monster Group";
+  // Create a detailed breakdown of monster types in the merged group
+  const typeDistribution = {};
+  Object.values(mergedUnits).forEach(unit => {
+    if (unit.type) {
+      typeDistribution[unit.type] = (typeDistribution[unit.type] || 0) + 1;
+    }
+  });
+  
+  // Generate size-based name using the enhanced utility with type distribution
+  groupName = generateMergedGroupName(
+    totalUnits, 
+    typeDistribution,  // Pass the full type distribution object instead of just the predominant type
+    baseGroup.name || "Monster Group"
+  );
   
   groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}`;
   
@@ -662,6 +674,9 @@ function mergeGroups(worldId, chunkKey, tileKey, groups, updates, now) {
   updates[`${groupPath}/status`] = 'idle';
   updates[`${groupPath}/type`] = 'monster'; // Ensure type is set
   
+  // Store the type distribution in the group for future reference
+  updates[`${groupPath}/typeDistribution`] = typeDistribution;
+  
   // Delete other groups
   for (const group of mergedGroups) {
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${group.id}`] = null;
@@ -671,9 +686,13 @@ function mergeGroups(worldId, chunkKey, tileKey, groups, updates, now) {
   const personality = baseGroup.personality || { name: '', emoji: '' };
   const personalityText = personality.name ? ` ${personality.emoji} ${personality.name}` : '';
   
+  // Create a more descriptive message for mixed groups
+  const mixedGroupText = Object.keys(typeDistribution).length > 1 ? 
+    " consisting of different creature types" : "";
+  
   const chatMessageKey = `chat_monster_merge_${now}_${Math.floor(Math.random() * 1000)}`;
   updates[`worlds/${worldId}/chat/${chatMessageKey}`] = {
-    text: `Monster groups have merged at (${x}, ${y}) forming a${personalityText} ${groupName}!`,
+    text: `Monster groups have merged at (${x}, ${y}) forming a${personalityText} ${groupName}${mixedGroupText}!`,
     type: 'event',
     timestamp: now,
     location: { x, y }
