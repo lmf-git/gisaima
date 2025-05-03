@@ -968,14 +968,6 @@
     return dominantType;
   }
 
-  // Add an effect to log center tiles
-  $effect(() => {
-    const centerTile = $gridArray.find(cell => cell.isCenter);
-    if (centerTile) {
-      console.log('Center tile position:', centerTile.x, centerTile.y);
-    }
-  });
-
   // Add a function to handle the actions from Peek
   function handlePeekAction(actionId) {
     console.log(`Grid handling peek action: ${actionId}`);
