@@ -17,13 +17,15 @@
   // Import the new GroupStatus component
   import GroupStatus from './GroupStatus.svelte';
   
-  // Props
+
   const { 
     closing = false, 
     onShowStructure = null, 
     onClose = null,
-    isActive = false, // New prop to determine z-index priority
-    onMouseEnter = () => {} // Add prop for mouse enter event
+
+    // Used to position above other map UI.
+    isActive = false,
+    onMouseEnter = () => {}
   } = $props();
   
   // Format text for display
@@ -170,82 +172,10 @@
       clearInterval(updateTimer);
     }
   });
-
-  // We need to make sure the formatTimeRemaining function always gets fresh data
-  // when it's called in the template
-  function formatTimeRemaining(endTime, status) {
-    if (!endTime) return '';
-    
-    // For mobilizing or demobilising, we need to check time directly based on updateCounter
-    if (status === 'mobilizing' || status === 'demobilising') {
-      // Force reactive update by referencing updateCounter
-      updateCounter;
-      return $timeUntilNextTick;
-    }
-    
-    // For other statuses, calculate based on endTime
-    const now = Date.now();
-    const remaining = endTime - now;
-    
-    // If time is up or less than a minute remains, show simplified message
-    if (remaining <= 60000) {
-      return '< 1m';
-    }
-    
-    // Normal countdown calculation for time remaining
-    const minutes = Math.floor(remaining / 60000);
-    const seconds = Math.floor((remaining % 60000) / 1000);
-    
-    return `${minutes}m ${seconds}s`;
-  }
-
-  // Simplify move completion time calculation
-  function calculateMoveCompletionTime(group) {
-    if (!group || group.status !== 'moving' || !group.moveStarted) return null;
-    
-    // Use nextMoveTime from the server if available
-    if (group.nextMoveTime) {
-      return group.nextMoveTime;
-    }
-    
-    const worldSpeed = $game.worlds[$game.worldKey]?.speed || 1.0;
-    const moveStarted = group.moveStarted;
-    
-    // Basic calculation - 1 minute per movement step adjusted by world speed
-    const baseTickInterval = 60000; // 1 minute in milliseconds
-    const adjustedInterval = Math.round(baseTickInterval / worldSpeed);
-    
-    // If we have path information, use it to calculate steps remaining
-    let stepsRemaining = 1; // Default to 1 step
-    if (group.pathIndex !== undefined && group.movementPath && Array.isArray(group.movementPath)) {
-      stepsRemaining = Math.max(1, group.movementPath.length - (group.pathIndex + 1));
-    }
-    
-    // Estimate completion time based on remaining steps
-    return moveStarted + (stepsRemaining * adjustedInterval);
-  }
-
-  // Simplified function to determine if waiting for tick
-  function isPendingTick(endTime) {
-    if (!endTime) return false;
-    const now = Date.now();
-    return endTime <= now;
-  }
-
-  // Get status class from status
-  function getStatusClass(status) {
-    return status || 'idle';
-  }
-  
-  // Get rarity class from item rarity
-  function getRarityClass(rarity) {
-    return rarity?.toLowerCase() || 'common';
-  }
   
   // Format distance for display
   function formatDistance(distance) {
-    if (distance === undefined || distance === null) return '';
-    if (distance === 0) return '• Here'; // Add dot character inline with the text
+    if (distance === 0) return '• Here';
     return `${distance.toFixed(1)} tiles away`;
   }
   
@@ -257,11 +187,6 @@
     } else {
       console.log('Structure clicked but no onShowStructure handler provided:', structure);
     }
-  }
-  
-  // Function to handle close button click
-  function handleClose() {
-    if (onClose) onClose();
   }
   
   // Extract all entities from all visible coordinates - simplified battle extraction
@@ -496,9 +421,9 @@
       <!-- Replace the close button to match the size in Details component -->
       <button 
         class="close-button" 
-        onclick={handleClose} 
+        onclick={onClose} 
         aria-label="Close map entities panel"
-        onkeydown={(e) => e.key === 'Escape' && handleClose()}
+        onkeydown={(e) => e.key === 'Escape' && onClose()}
       >
         <Close size="1.6em" extraClass="close-icon-dark" />
       </button>
@@ -1113,7 +1038,7 @@
             {#if activeFilter !== 'all' || !collapsedSections.items}
               {#each sortedItems as item ('item:' + (item.id || `${item.x}:${item.y}:${item.name || item.type}`).replace(/\s+/g, '-'))}
                 <div 
-                  class="entity item {getRarityClass(item.rarity)}" 
+                  class="entity item {item.rarity}" 
                   class:at-target={isAtTarget(item.x, item.y)}
                   class:is-here={item.distance === 0}
                   onclick={(e) => handleEntityAction(item.x, item.y, e)}
