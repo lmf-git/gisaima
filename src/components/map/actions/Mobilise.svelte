@@ -13,7 +13,9 @@
   import Fairy from '../../icons/Fairy.svelte';
 
   const { 
-    onClose = () => {}
+    onClose = () => {},
+    isActive = false, // Add prop for z-index control
+    onMouseEnter = () => {} // Add prop for mouse enter event
   } = $props();
 
   let tileData = $derived($targetStore || null);
@@ -188,6 +190,8 @@
 
 <div 
   class="mobilise-modal" 
+  class:active={isActive}
+  onmouseenter={onMouseEnter}
   transition:scale={{ start: 0.95, duration: 200 }}>
   
   <header class="modal-header">
@@ -411,6 +415,11 @@
     font-family: var(--font-body);
     border: 0.05em solid rgba(255, 255, 255, 0.2);
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    transition: z-index 0s; /* Add transition for z-index */
+  }
+  
+  .mobilise-modal.active {
+    z-index: 1001; /* Higher z-index when active */
   }
   
   .modal-header {
