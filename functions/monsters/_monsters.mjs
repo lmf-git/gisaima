@@ -603,3 +603,150 @@ export function createChatMessagePath(worldId, messageId) {
 export function generateMonsterId(prefix, now) {
   return `${prefix}_${now}_${Math.floor(Math.random() * 10000)}`;
 }
+
+// =============================================
+// MOBILIZATION/DEMOBILIZATION UTILITIES
+// =============================================
+
+/**
+ * Generate a message for monster group mobilization
+ * @param {object} monsterGroup - Monster group data
+ * @param {string} structureName - Name of the structure
+ * @param {object} location - Location coordinates
+ * @returns {string} Formatted mobilization message
+ */
+export function createMonsterMobilizationMessage(monsterGroup, structureName, location) {
+  const groupName = monsterGroup.name || "Monster group";
+  const personalityEmoji = monsterGroup.personality?.emoji || '';
+  const unitCount = monsterGroup.units ? Object.keys(monsterGroup.units).length : 0;
+  
+  let sizeDesc = unitCount <= 3 ? "small" : 
+                 unitCount <= 6 ? "sizeable" : "large";
+  
+  return `A ${sizeDesc} ${personalityEmoji} ${groupName} has mobilized from ${structureName} at (${location.x}, ${location.y})!`;
+}
+
+/**
+ * Check if a monster structure can mobilize units
+ * @param {object} structure - The structure data
+ * @param {object} tileData - Full tile data
+ * @returns {boolean} True if structure can mobilize
+ */
+export function canStructureMobilize(structure, tileData) {
+  // Must be a monster structure
+  if (!isMonsterStructure(structure)) {
+    return false;
+  }
+  
+  // Structure should not be in battle
+  if (structure.inBattle) {
+    return false;
+  }
+  
+  // Check if enough units available in structure
+  const unitCount = getAvailableStructureUnitCount(structure);
+  if (unitCount < MIN_UNITS_TO_MOBILIZE) {
+    return false;
+  }
+  
+  // Check if no battles or enemy groups on tile
+  const hasBattles = tileData.battles && Object.keys(tileData.battles).length > 0;
+  
+  // Don't mobilize if battle is happening
+  if (hasBattles) {
+    return false;
+  }
+  
+  return true;
+}
+
+// Constants for mobilization/demobilization
+export const MIN_UNITS_TO_MOBILIZE = 2; // Minimum units needed to mobilize
+export const MOBILIZATION_CHANCE = 0.08; // 8% chance per tick for eligible structures
+
+/**
+ * Get the count of available units in a monster structure
+ * @param {object} structure - The structure data
+ * @returns {number} Number of available units
+ */
+export function getAvailableStructureUnitCount(structure) {
+  if (!structure || !structure.units) {
+    return 0;
+  }
+  
+  // Handle array or object format for units
+  return Array.isArray(structure.units) ? 
+    structure.units.length : 
+    Object.keys(structure.units).length;
+}
+
+/**
+ * Create a new monster group from structure units
+ * @param {string} worldId - World ID
+ * @param {object} structure - Source structure
+ * @param {object} location - Location coordinates
+ * @param {string} monsterType - Type of monsters to mobilize
+ * @param {object} updates - Updates object to modify
+ * @param {number} now - Current timestamp
+ * @returns {string|null} New group ID or null if failed
+ */
+export async function createMonsterGroupFromStructure(worldId, structure, location, monsterType, updates, now) {
+  // Generate group ID
+  const groupId = generateMonsterId('monster', now);
+  const chunkKey = getChunkKey(location.x, location.y);
+  const tileKey = `${location.x},${location.y}`;
+  
+  // Create units for the new group
+  const unitCount = Math.floor(Math.random() * 3) + 2; // 2-4 units
+  const units = generateMonsterUnits(monsterType, unitCount);
+  
+  // Get a personality
+  const personality = getRandomPersonality(monsterType);
+  
+  // Create the monster group object
+  const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+  updates[groupPath] = {
+    id: groupId,
+    name: Units.getUnit(monsterType, 'monster')?.name || "Monster Group",
+    type: 'monster',
+    status: 'mobilizing',
+    readyAt: now + 60000, // Ready in 1 minute
+    mobilizedFromStructure: structure.id,
+    preferredStructureId: structure.id,
+    personality: {
+      id: personality.id,
+      name: personality.name,
+      emoji: personality.emoji
+    },
+    units: units,
+    x: location.x,
+    y: location.y
+  };
+  
+  // Add chat message
+  const chatMessageId = generateMonsterId('monster_mobilize', now);
+  updates[createChatMessagePath(worldId, chatMessageId)] = {
+    text: createMonsterMobilizationMessage(
+      { name: Units.getUnit(monsterType, 'monster')?.name, personality, units }, 
+      structure.name || "Monster Structure", 
+      location
+    ),
+    type: 'event',
+    timestamp: now,
+    location: { x: location.x, y: location.y }
+  };
+  
+  return groupId;
+}
+
+/**
+ * Get chunk key from coordinates
+ * @param {number} x - X coordinate
+ * @param {number} y - Y coordinate
+ * @returns {string} Chunk key
+ */
+export function getChunkKey(x, y) {
+  const chunkX = Math.floor(x / 20);
+  const chunkY = Math.floor(y / 20);
+  return `${chunkX},${chunkY}`;
+}

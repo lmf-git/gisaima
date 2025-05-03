@@ -16,7 +16,7 @@ import { logger } from "firebase-functions";
  * @param {number} now Current timestamp
  * @returns {boolean} Whether a building was processed
  */
-export function processBuilding(worldId, updates, chunkKey, tileKey, tile, now) {
+export async function processBuilding(worldId, updates, chunkKey, tileKey, tile, now) {
   // Skip if no structure or structure not in building state
   if (!tile.structure || tile.structure.status !== 'building') {
     return false;
@@ -97,18 +97,29 @@ export function processBuilding(worldId, updates, chunkKey, tileKey, tile, now) 
   // Handle monster group building
   if (tile.groups) {
     for (const [groupId, group] of Object.entries(tile.groups)) {
-      if (group.status === 'building' && group.type === 'monster' && 
-          group.buildingStart && group.buildingTime) {
+      if (group.status === 'building' && group.type === 'monster') {
+        // Check for completion using either buildingUntil or buildingStart+buildingTime
+        let isComplete = false;
         
-        const buildTime = group.buildingTime * 60000; // Convert to milliseconds
-        const elapsedTime = now - group.buildingStart;
+        if (group.buildingUntil) {
+          // Use the same format as player groups
+          isComplete = now >= group.buildingUntil;
+        } else if (group.buildingStart && group.buildingTime) {
+          // Backward compatibility for older format
+          const buildTime = group.buildingTime * 60000; // Convert to milliseconds
+          const elapsedTime = now - group.buildingStart;
+          isComplete = elapsedTime >= buildTime;
+        }
         
         // Check if building is complete
-        if (elapsedTime >= buildTime) {
+        if (isComplete) {
           // Reset monster group status
           updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
           updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/buildingStart`] = null;
           updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/buildingTime`] = null;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/buildingUntil`] = null;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/buildingLocation`] = null;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/buildingType`] = null;
           
           // Check if the structure was built
           if (group.buildingLocation) {
@@ -118,19 +129,44 @@ export function processBuilding(worldId, updates, chunkKey, tileKey, tile, now) 
             const structureChunkKey = `${structureChunkX},${structureChunkY}`;
             const structureTileKey = `${x},${y}`;
             
+            // Mark the structure as completed
+            updates[`worlds/${worldId}/chunks/${structureChunkKey}/${structureTileKey}/structure/status`] = 'complete';
+            updates[`worlds/${worldId}/chunks/${structureChunkKey}/${structureTileKey}/structure/buildProgress`] = null;
+            updates[`worlds/${worldId}/chunks/${structureChunkKey}/${structureTileKey}/structure/buildTotalTime`] = null;
+            updates[`worlds/${worldId}/chunks/${structureChunkKey}/${structureTileKey}/structure/buildStartTime`] = null;
+            updates[`worlds/${worldId}/chunks/${structureChunkKey}/${structureTileKey}/structure/buildCompletionTime`] = null;
+            updates[`worlds/${worldId}/chunks/${structureChunkKey}/${structureTileKey}/structure/completedAt`] = now;
+            
             // Add a chat message about structure completion
             const messagePath = `worlds/${worldId}/chat/build_complete_${now}_${groupId}`;
             updates[messagePath] = {
-              text: `${group.name || "Monster group"} has completed building at (${x}, ${y}).`,
+              text: `${group.name || "Monster group"} has completed building a ${group.buildingType || "structure"} at (${x}, ${y}).`,
               type: 'event',
               timestamp: now,
               location: { x, y }
             };
-            
-            // No need to add the structure here as it was already added in buildMonsterStructure function
           }
           
           return true;
+        }
+        
+        // If building is still in progress, update the progress
+        if (!isComplete && group.buildingLocation) {
+          const { x, y } = group.buildingLocation;
+          const structureChunkX = Math.floor(x / 20);
+          const structureChunkY = Math.floor(y / 20);
+          const structureChunkKey = `${structureChunkX},${structureChunkY}`;
+          const structureTileKey = `${x},${y}`;
+          
+          // Get the structure and update progress
+          const structureRef = db.ref(`worlds/${worldId}/chunks/${structureChunkKey}/${structureTileKey}/structure`);
+          const structureSnapshot = await structureRef.once('value');
+          const structure = structureSnapshot.val();
+          
+          if (structure && structure.status === 'building') {
+            const progress = (structure.buildProgress || 0) + 1;
+            updates[`worlds/${worldId}/chunks/${structureChunkKey}/${structureTileKey}/structure/buildProgress`] = progress;
+          }
         }
       }
     }

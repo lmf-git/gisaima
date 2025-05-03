@@ -80,7 +80,7 @@ export const processGameTicks = onSchedule({
           
           // Check if there's a structure being built on this tile
           if (tile.structure && tile.structure.status === 'building') {
-            if (processBuilding(worldId, updates, chunkKey, tileKey, tile, now)) {
+            if (await processBuilding(worldId, updates, chunkKey, tileKey, tile, now)) {
               buildingsProcessed++;
             }
           }

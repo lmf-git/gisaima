@@ -6,12 +6,16 @@
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 import { Units } from 'gisaima-shared/units/units.js';
-import { getRandomPersonality } from 'gisaima-shared/definitions/MONSTER_PERSONALITIES.js';
 import { 
   generateMonsterUnits,
   createMonsterSpawnMessage,
   createMonsterGrowthMessage,
-  countUnits
+  countUnits,
+  canStructureMobilize,
+  MIN_UNITS_TO_MOBILIZE,
+  MOBILIZATION_CHANCE,
+  createMonsterGroupFromStructure,
+  isMonsterStructure
 } from '../monsters/_monsters.mjs';
 
 // Constants for monster spawning
@@ -118,6 +122,10 @@ export async function spawnMonsters(worldId) {
     // Process monster spawns at structures first
     const structureSpawns = await spawnMonstersAtStructures(worldId, monsterStructures, existingMonsterLocations);
     monstersSpawned += structureSpawns;
+    
+    // Process structure mobilizations - NEW FUNCTIONALITY
+    const mobilizedGroups = await mobilizeFromMonsterStructures(worldId, monsterStructures, chunks);
+    monstersSpawned += mobilizedGroups;
     
     // Process each active location to potentially spawn monsters
     for (const location of activeLocations) {
@@ -319,6 +327,86 @@ async function spawnMonstersAtStructures(worldId, monsterStructures, existingMon
   }
   
   return monstersSpawned;
+}
+
+/**
+ * Mobilize monster groups from monster structures
+ * @param {string} worldId - World ID
+ * @param {Array} monsterStructures - Array of monster structures
+ * @param {Object} chunks - All world chunks data
+ * @returns {Promise<number>} - Number of groups mobilized
+ */
+async function mobilizeFromMonsterStructures(worldId, monsterStructures, chunks) {
+  if (!monsterStructures.length) return 0;
+  
+  const db = getDatabase();
+  let groupsMobilized = 0;
+  const updates = {};
+  const now = Date.now();
+  
+  // Process each monster structure for potential mobilization
+  for (const structureData of monsterStructures) {
+    // Only a chance to mobilize each tick
+    if (Math.random() > MOBILIZATION_CHANCE) {
+      continue;
+    }
+    
+    // Check if the structure is valid for mobilization
+    const tileRef = db.ref(`worlds/${worldId}/chunks/${structureData.chunkKey}/${structureData.tileKey}`);
+    const tileSnapshot = await tileRef.once('value');
+    const tileData = tileSnapshot.val();
+    
+    // Skip if no tile data or structure
+    if (!tileData || !tileData.structure) {
+      continue;
+    }
+    
+    const structure = tileData.structure;
+    
+    // Check if structure can mobilize
+    if (!canStructureMobilize(structure, tileData)) {
+      continue;
+    }
+    
+    // Determine monster type to mobilize
+    let monsterType = 'goblin'; // Default
+    
+    // Use structure type to determine monster type
+    if (structure.type) {
+      if (structure.type === 'monster_hive') {
+        monsterType = Math.random() > 0.5 ? 'spider' : 'goblin';
+      } else if (structure.type === 'monster_fortress') {
+        monsterType = Math.random() > 0.5 ? 'troll' : 'skeleton';
+      } else if (structure.type === 'monster_lair') {
+        monsterType = Math.random() > 0.5 ? 'wolf' : 'bandit';
+      } else if (structure.type === 'monster_den') {
+        monsterType = Math.random() > 0.5 ? 'elemental' : 'wolf';
+      }
+    }
+    
+    // Create a new monster group from structure
+    const newGroupId = await createMonsterGroupFromStructure(
+      worldId,
+      structure,
+      { x: structureData.x, y: structureData.y },
+      monsterType,
+      updates,
+      now
+    );
+    
+    if (newGroupId) {
+      groupsMobilized++;
+      logger.info(`Monster structure at (${structureData.x}, ${structureData.y}) mobilized a new group`);
+    }
+  }
+  
+  // Apply all updates
+  if (Object.keys(updates).length > 0) {
+    await db.ref().update(updates);
+    logger.info(`Mobilized ${groupsMobilized} monster groups from structures in world ${worldId}`);
+  }
+  
+  return groupsMobilized;
 }
 
 /**

@@ -423,15 +423,27 @@ export async function buildMonsterStructure(db, worldId, monsterGroup, location,
     return { action: null, reason: 'resource_consumption_failed' };
   }
   
-  // Add the structure to the tile
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`] = structure;
+  // Add the structure to the tile - initially in "building" status like player structures
+  const buildTime = structureData.buildTime || 1; // Time in ticks (minutes)
+  const completionTime = now + (buildTime * 60000); // Convert to milliseconds
   
-  // Set monster group as building
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`] = {
+    ...structure,
+    status: 'building',
+    buildProgress: 0,
+    buildTotalTime: buildTime,
+    buildStartTime: now,
+    buildCompletionTime: completionTime,
+    builder: monsterGroup.id
+  };
+  
+  // Set monster group as building - match player group format for UI consistency
   updates[`${groupPath}/status`] = 'building';
   updates[`${groupPath}/buildingStart`] = now;
-  updates[`${groupPath}/buildingTime`] = structureData.buildTime || 1;
-  updates[`${groupPath}/buildingType`] = structureType;
+  updates[`${groupPath}/buildingTime`] = buildTime;
+  updates[`${groupPath}/buildingUntil`] = completionTime; // Add this for UI consistency with players
   updates[`${groupPath}/buildingLocation`] = { x: buildLocation.x, y: buildLocation.y };
+  updates[`${groupPath}/buildingType`] = structureType;
   
   // Add a message about the building
   const chatMessageId = generateMonsterId('monster_building', now);
@@ -452,7 +464,8 @@ export async function buildMonsterStructure(db, worldId, monsterGroup, location,
     action: 'build',
     structureId: structureId,
     structureType: structureType,
-    location: buildLocation
+    location: buildLocation,
+    completesAt: completionTime // Add completion time to result
   };
 }
 
@@ -619,19 +632,23 @@ export async function demobilizeAtMonsterStructure(db, worldId, monsterGroup, st
     }
   }
   
-  // Update structure and group
+  // Update structure with items
   updates[`${structurePath}/items`] = structureItems;
-  updates[`${groupPath}/items`] = []; // Clear the group's items
+  
+  // Set group as demobilizing - this will be processed in the next tick
+  updates[`${groupPath}/status`] = 'demobilising';
+  updates[`${groupPath}/demobiliseStart`] = now;
+  updates[`${groupPath}/targetStructureId`] = structure.id;
   
   // Add a message about the resource deposit
-  const chatMessageId = generateMonsterId('monster_deposit', now);
+  const chatMessageId = generateMonsterId('monster_demobilize', now);
   const location = { 
     x: parseInt(tileKey.split(',')[0]), 
     y: parseInt(tileKey.split(',')[1]) 
   };
   
   updates[createChatMessagePath(worldId, chatMessageId)] = {
-    text: createResourceDepositMessage(monsterGroup, structure.name, groupItems.length, location),
+    text: `${monsterGroup.name || "Monster group"} is demobilizing at ${structure.name || 'their structure'} at (${location.x}, ${location.y}).`,
     type: 'event',
     timestamp: now,
     location
