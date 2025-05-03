@@ -12,7 +12,9 @@ import {
   initiateAttackOnStructure, 
   joinExistingBattle,
   findMergeableMonsterGroups,
-  mergeMonsterGroupsOnTile
+  mergeMonsterGroupsOnTile,
+  findAttackableMonsterGroups, 
+  initiateAttackOnMonsters
 } from '../monsters/strategy/combat.mjs';
 import { startMonsterGathering, countTotalResources, buildMonsterStructure, upgradeMonsterStructure, demobilizeAtMonsterStructure } from '../monsters/strategy/resources.mjs';
 import { MONSTER_PERSONALITIES, shouldChangePersonality, getNewPersonality } from 'gisaima-shared/definitions/MONSTER_PERSONALITIES.js';
@@ -83,6 +85,14 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
     };
   }
   
+  // FERAL personality special - check for other monster groups to attack first
+  if (weights?.attackMonsters && Math.random() < 0.8 * weights.attackMonsters) {
+    const attackableMonsterGroups = findAttackableMonsterGroups(tileData, groupId);
+    if (attackableMonsterGroups.length > 0) {
+      return await initiateAttackOnMonsters(db, worldId, monsterGroup, attackableMonsterGroups, location, updates, now);
+    }
+  }
+  
   // First priority: Check if there are other monster groups on this tile to merge with
   // Influenced by personality's merge weight
   if (Math.random() < MERGE_CHANCE * (weights?.merge || 1.0)) {
@@ -93,11 +103,12 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   }
   
   // Check if there's a battle on this tile
-  // Influenced by personality's attack/join battle weight
+  // Influenced by personality's attack/join battle weight or randomSides for FERAL
   if (tileData.battles) {
     const joinWeight = weights?.joinBattle || weights?.attack || 1.0;
     if (Math.random() < joinWeight) {
-      return await joinExistingBattle(db, worldId, monsterGroup, tileData, updates, now);
+      const randomSides = Boolean(weights?.randomSides);
+      return await joinExistingBattle(db, worldId, monsterGroup, tileData, updates, now, randomSides);
     }
   }
   
