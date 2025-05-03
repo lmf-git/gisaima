@@ -122,14 +122,9 @@ export const demobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
     if (hasPlayerUnit) {
       const playerWorldRef = db.ref(`players/${userId}/worlds/${worldId}`);
       await playerWorldRef.update({
-        // Simplified pendingRelocation - just basic coordinates needed
         lastLocation: {
           x: locationX,
           y: locationY
-        },
-        // Flag to indicate demobilization in progress
-        pendingRelocation: {
-          timestamp: now
         }
       });
       

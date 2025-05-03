@@ -119,11 +119,7 @@ export function processDemobilization(worldId, updates, group, chunkKey, tileKey
           timestamp: now
         };
         
-        // Make sure alive status is true
-        updates[`players/${playerId}/worlds/${worldId}/alive`] = true;
-        
         // Clean up any pendingRelocation status for the player
-        updates[`players/${playerId}/worlds/${worldId}/pendingRelocation`] = null;
         updates[`players/${playerId}/worlds/${worldId}/inGroup`] = null;
         
         logger.info(`Player ${playerId} placed at ${playerTileKey} in chunk ${playerChunkKey} after demobilization`);
