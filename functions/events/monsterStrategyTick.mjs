@@ -21,7 +21,8 @@ import { MONSTER_PERSONALITIES, shouldChangePersonality, getNewPersonality } fro
 import { 
   isMonsterGroup, 
   isAvailableForAction,
-  scanWorldMap
+  scanWorldMap,
+  EXPLORATION_TICKS
 } from '../monsters/_monsters.mjs';
 import { 
   buildMonsterStructure, 
@@ -51,8 +52,49 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   // Base path for this group
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
   
-  // Check if monster is in exploration phase - prioritize movement
-  const inExplorationPhase = monsterGroup.explorationPhase && monsterGroup.exploreDuration > now;
+  // Check if monster is in exploration phase using tick counting
+  const inExplorationPhase = monsterGroup.explorationPhase && 
+                           (monsterGroup.explorationTicks && monsterGroup.explorationTicks > 0);
+  
+  // Check for targeted player structure (from structured mobilization)
+  if (monsterGroup.targetStructure) {
+    console.log(`Monster group ${groupId} has target structure at (${monsterGroup.targetStructure.x}, ${monsterGroup.targetStructure.y})`);
+    
+    // If we're close enough to the target structure, initiate an attack
+    const targetDistance = calculateDistance(location, monsterGroup.targetStructure);
+    
+    if (targetDistance <= 1.5) {
+      // Get the target structure's actual data
+      const targetChunkKey = getChunkKey(monsterGroup.targetStructure.x, monsterGroup.targetStructure.y);
+      const targetTileKey = `${monsterGroup.targetStructure.x},${monsterGroup.targetStructure.y}`;
+      
+      try {
+        const targetTileRef = db.ref(`worlds/${worldId}/chunks/${targetChunkKey}/${targetTileKey}`);
+        const targetTileSnap = await targetTileRef.once('value');
+        const targetTileData = targetTileSnap.val();
+        
+        if (targetTileData && targetTileData.structure) {
+          // We've reached the target - attack it!
+          return await initiateAttackOnStructure(
+            db, 
+            worldId, 
+            monsterGroup, 
+            targetTileData.structure, 
+            monsterGroup.targetStructure, 
+            updates, 
+            now
+          );
+        }
+      } catch (error) {
+        console.error(`Error checking target structure: ${error}`);
+      }
+    } else {
+      // Still moving toward target - prioritize movement
+      return await moveMonsterTowardsTarget(
+        db, worldId, monsterGroup, location, worldScan, updates, now, 'structure_attack'
+      );
+    }
+  }
   
   // Handle exploration phase differently
   if (inExplorationPhase) {

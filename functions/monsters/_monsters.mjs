@@ -689,168 +689,97 @@ export function canStructureMobilize(structure, tileData) {
 // Constants for mobilization/demobilization
 export const MIN_UNITS_TO_MOBILIZE = 2; // Minimum units needed to mobilize
 export const MOBILIZATION_CHANCE = 0.08; // 8% chance per tick for eligible structures
-export const EXPLORATION_DURATION = 300000; // 5 minutes exploration phase after mobilization
+export const EXPLORATION_DURATION = 300000; // 5 minutes exploration phase after mobilizationds)
 export const MIN_DISTANCE_FROM_SPAWN = 3; // Minimum tiles away from spawn to allow building
-
-/**
+export const PLAYER_STRUCTURE_SEARCH_RADIUS = 15; // Search radius for player structures in tiles
+/**ort const MIN_DISTANCE_FROM_SPAWN = 3; // Minimum tiles away from spawn to allow building
  * Get the count of available units in a monster structure
  * @param {object} structure - The structure data
- * @returns {number} Number of available units
- */
+ * @returns {number} Number of available unitser structure
+ */@param {object} structure - The structure data
 export function getAvailableStructureUnitCount(structure) {
   if (!structure || !structure.units) {
+    return 0;on getAvailableStructureUnitCount(structure) {
+  }f (!structure || !structure.units) {
     return 0;
-  }
-  
   // Handle array or object format for units
   return Array.isArray(structure.units) ? 
-    structure.units.length : 
+    structure.units.length : ormat for units
+    Object.keys(structure.units).length;? 
+}   structure.units.length : 
     Object.keys(structure.units).length;
-}
-
 /**
  * Create a new monster group from structure units
  * @param {string} worldId - World ID
- * @param {object} structure - Source structure
+ * @param {object} structure - Source structureits
  * @param {object} location - Location coordinates
  * @param {string} monsterType - Type of monsters to mobilize
  * @param {object} updates - Updates object to modify
- * @param {number} now - Current timestamp
- * @returns {string|null} New group ID or null if failed
+ * @param {number} now - Current timestamponsters to mobilize
+ * @param {object} targetStructure - Optional player structure to target
+ * @returns {string|null} New group ID or null if failed@param {number} now - Current timestamp
  */
-export async function createMonsterGroupFromStructure(worldId, structure, location, monsterType, updates, now) {
-  // Generate group ID
+export async function createMonsterGroupFromStructure(worldId, structure, location, monsterType, updates, now, targetStructure = null) {
+  // Generate group IDe(worldId, structure, location, monsterType, updates, now) {
   const groupId = generateMonsterId('monster', now);
-  const chunkKey = getChunkKey(location.x, location.y);
-  const tileKey = `${location.x},${location.y}`;
-  
+  const chunkKey = getChunkKey(location.x, location.y);ow);
+  const tileKey = `${location.x},${location.y}`;const chunkKey = getChunkKey(location.x, location.y);
+  location.y}`;
   // Create units for the new group
   const unitCount = Math.floor(Math.random() * 3) + 2; // 2-4 units
-  const units = generateMonsterUnits(monsterType, unitCount);
-  
-  // Get a personality
-  const personality = getRandomPersonality(monsterType);
-  
-  // Create the monster group object
+  const units = generateMonsterUnits(monsterType, unitCount);const unitCount = Math.floor(Math.random() * 3) + 2; // 2-4 units
+  teMonsterUnits(monsterType, unitCount);
+  // Get a personality - use more aggressive one if targeting a player structure
+  const personality = targetStructure ? // Get a personality
+    MONSTER_PERSONALITIES.AGGRESSIVE : nality(monsterType);
+    getRandomPersonality(monsterType);
+  group object
+  // Create the monster group objecth = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
-  updates[groupPath] = {
-    id: groupId,
+  const groupData = {
+    id: groupId,onsterType, 'monster')?.name || "Monster Group",
     name: Units.getUnit(monsterType, 'monster')?.name || "Monster Group",
     type: 'monster',
-    status: 'mobilizing',
-    readyAt: now + 60000, // Ready in 1 minute
-    mobilizedFromStructure: structure.id,
+    status: 'mobilizing', minute
+    readyAt: now,tructure: structure.id,
+    mobilizedFromStructure: structure.id, structure.id,
     preferredStructureId: structure.id,
     personality: {
-      id: personality.id,
-      name: personality.name,
+      id: personality.id,name: personality.name,
+      name: personality.name,onality.emoji
       emoji: personality.emoji
     },
+    explorationPhase: true,x: location.x,
+    explorationTicks: EXPLORATION_TICKS, // Use ticks instead of duration  y: location.y
     units: units,
     x: location.x,
     y: location.y
-  };
+  };monster_mobilize', now);
   
-  // Add chat message
+  // If targeting a player structure, add targeting info
+  if (targetStructure) {Units.getUnit(monsterType, 'monster')?.name, personality, units }, 
+    groupData.targetStructure = {structure.name || "Monster Structure", 
+      x: targetStructure.x,
+      y: targetStructure.y,
+      id: targetStructure.structure.id,
+      type: targetStructure.structure.typetimestamp: now,
+    };  location: { x: location.x, y: location.y }
+    // Set status directly to moving if we have a target
+    groupData.status = 'idle'; // Will be set to moving by the strategy tick 
+    // Add intent for strategy processing  return groupId;
+    groupData.attackIntent = 'player_structure';}
+  }
+  
+  updates[groupPath] = groupData;
+  // NAMING UTILITIES
+  // Add chat message=============================================
   const chatMessageId = generateMonsterId('monster_mobilize', now);
-  updates[createChatMessagePath(worldId, chatMessageId)] = {
-    text: createMonsterMobilizationMessage(
-      { name: Units.getUnit(monsterType, 'monster')?.name, personality, units }, 
-      structure.name || "Monster Structure", 
-      location
-    ),
-    type: 'event',
-    timestamp: now,
-    location: { x: location.x, y: location.y }
-  };
+  let messageText = createMonsterMobilizationMessage(
+    { name: Units.getUnit(monsterType, 'monster')?.name, personality, units }, 
+    structure.name || "Monster Structure", 
+    locationster type or object with multiple types and counts
+  );@param {string} originalName - Original name of largest group (used as fallback)
   
-  return groupId;
-}
-
-
-// =============================================
-// NAMING UTILITIES
-// =============================================
-
-/**
- * Generate a size-based name for merged monster groups
- * @param {number} unitCount - Total number of units in the group
- * @param {string|object} monsterType - Base monster type or object with multiple types and counts
- * @param {string} originalName - Original name of largest group (used as fallback)
- * @returns {string} Size-appropriate group name
- */
-export function generateMergedGroupName(unitCount, monsterType, originalName = null) {
-  // Default name if we can't determine a better one
-  if (!unitCount || unitCount <= 0) {
-    return originalName || "Monster Group";
-  }
-  
-  // Create size-based name prefix
-  let sizePrefix;
-  if (unitCount <= 3) {
-    sizePrefix = "Small Band of";
-  } else if (unitCount <= 7) {
-    sizePrefix = "Raiding Party of";
-  } else if (unitCount <= 12) {
-    sizePrefix = "Warband of";
-  } else if (unitCount <= 20) {
-    sizePrefix = "Horde of";
-  } else if (unitCount <= 30) {
-    sizePrefix = "Legion of";
-  } else {
-    sizePrefix = "Massive Swarm of";
-  }
-  
-  // Check if this is a mixed monster group (monsterType is an object with multiple types)
-  if (monsterType && typeof monsterType === 'object') {
-    // Get the top 2 most common monster types
-    const sortedTypes = Object.entries(monsterType)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 2);
-    
-    // If we have at least 2 types with significant numbers, create a mixed name
-    if (sortedTypes.length >= 2 && sortedTypes[1][1] >= 2) {
-      // Get first two dominant types - capitalize first letter
-      const type1 = sortedTypes[0][0].charAt(0).toUpperCase() + sortedTypes[0][0].slice(1) + 's';
-      const type2 = sortedTypes[1][0].charAt(0).toUpperCase() + sortedTypes[1][0].slice(1) + 's';
-      
-      // For very mixed groups with 3+ types
-      if (Object.keys(monsterType).length >= 3) {
-        return `${sizePrefix} Mixed Creatures`;
-      } else {
-        return `${sizePrefix} ${type1} and ${type2}`;
-      }
-    } else {
-      // If one type is dominant, just use that
-      const dominantType = sortedTypes[0][0].charAt(0).toUpperCase() + sortedTypes[0][0].slice(1);
-      return `${sizePrefix} ${dominantType}s`;
-    }
-  }
-  
-  // Handle simple string monsterType (single type)
-  if (typeof monsterType === 'string') {
-    // Extract just the main monster name without modifiers
-    const baseTypeName = monsterType.replace(/^(.*?)(?:\s|$)/, '$1');
-    // Capitalize first letter
-    const capitalizedType = baseTypeName.charAt(0).toUpperCase() + baseTypeName.slice(1);
-    
-    // Check if this is already a plural form
-    const isAlreadyPlural = capitalizedType.endsWith('s');
-    const typeNameToUse = isAlreadyPlural ? capitalizedType : `${capitalizedType}s`;
-    
-    return `${sizePrefix} ${typeNameToUse}`;
-  }
-  
-  // If we couldn't determine a type, try to extract from original name
-  if (originalName) {
-    // Try to extract from original name
-    const nameParts = originalName.split(' ');
-    if (nameParts.length > 0) {
-      const baseTypeName = nameParts[nameParts.length - 1];
-      return `${sizePrefix} ${baseTypeName}`;
-    }
-  }
-  
-  // Ultimate fallback
-  return `${sizePrefix} Creatures`;
+  // Add targeting info to message if applicable
+  ifme(unitCount, monsterType, originalName = null) {
 }

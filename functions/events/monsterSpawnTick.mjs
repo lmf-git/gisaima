@@ -12,6 +12,9 @@ import {
   countUnits,
   canStructureMobilize,
   MOBILIZATION_CHANCE,
+  EXPLORATION_TICKS,
+  PLAYER_STRUCTURE_ATTACK_CHANCE,
+  PLAYER_STRUCTURE_SEARCH_RADIUS,
   createMonsterGroupFromStructure,
 } from '../monsters/_monsters.mjs';
 
@@ -341,6 +344,27 @@ async function mobilizeFromMonsterStructures(worldId, monsterStructures, chunks)
   const updates = {};
   const now = Date.now();
   
+  // Find all player structures and spawns
+  const playerStructures = [];
+  for (const [chunkKey, chunkData] of Object.entries(chunks)) {
+    if (!chunkData) continue;
+    
+    for (const [tileKey, tileData] of Object.entries(chunkData)) {
+      if (!tileData || !tileData.structure) continue;
+      
+      const structure = tileData.structure;
+      if (structure.type === 'spawn' || (structure.owner && structure.owner !== 'monster')) {
+        const [x, y] = tileKey.split(',').map(Number);
+        playerStructures.push({
+          x, y,
+          chunkKey,
+          tileKey,
+          structure
+        });
+      }
+    }
+  }
+  
   // Process each monster structure for potential mobilization
   for (const structureData of monsterStructures) {
     // Only a chance to mobilize each tick
@@ -363,6 +387,24 @@ async function mobilizeFromMonsterStructures(worldId, monsterStructures, chunks)
     // Check if structure can mobilize
     if (!canStructureMobilize(structure, tileData)) {
       continue;
+    }
+    
+    // NEW: Check for nearby player structures to potentially attack
+    let targetPlayerStructure = null;
+    if (Math.random() < PLAYER_STRUCTURE_ATTACK_CHANCE && playerStructures.length > 0) {
+      // Find player structures within range
+      const nearbyStructures = playerStructures.filter(ps => {
+        const distance = Math.sqrt(
+          Math.pow(ps.x - structureData.x, 2) + 
+          Math.pow(ps.y - structureData.y, 2)
+        );
+        return distance <= PLAYER_STRUCTURE_SEARCH_RADIUS;
+      });
+      
+      if (nearbyStructures.length > 0) {
+        // Pick a random structure to target from those in range
+        targetPlayerStructure = nearbyStructures[Math.floor(Math.random() * nearbyStructures.length)];
+      }
     }
     
     // Determine monster type to mobilize
@@ -388,12 +430,13 @@ async function mobilizeFromMonsterStructures(worldId, monsterStructures, chunks)
       { x: structureData.x, y: structureData.y },
       monsterType,
       updates,
-      now
+      now,
+      targetPlayerStructure  // Pass the target if available
     );
     
     if (newGroupId) {
       groupsMobilized++;
-      logger.info(`Monster structure at (${structureData.x}, ${structureData.y}) mobilized a new group`);
+      logger.info(`Monster structure at (${structureData.x}, ${structureData.y}) mobilized a new group${targetPlayerStructure ? " targeting player structure" : ""}`);
     }
   }
   

@@ -113,6 +113,15 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
         updatedGroup.type = 'monster';
         // Ensure status is 'idle' for monsters
         updatedGroup.status = 'idle';
+        
+        // Preserve key monster properties
+        if (group.personality) updatedGroup.personality = group.personality;
+        if (group.explorationPhase) updatedGroup.explorationPhase = group.explorationPhase;
+        if (group.explorationTicks) updatedGroup.explorationTicks = group.explorationTicks;
+        if (group.mobilizedFromStructure) updatedGroup.mobilizedFromStructure = group.mobilizedFromStructure;
+        if (group.preferredStructureId) updatedGroup.preferredStructureId = group.preferredStructureId;
+        if (group.targetStructure) updatedGroup.targetStructure = group.targetStructure;
+        if (group.attackIntent) updatedGroup.attackIntent = group.attackIntent;
       }
     } else {
       // Normal movement step
@@ -128,6 +137,8 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
       // Ensure monster type is preserved on intermediate moves
       if (group.type === 'monster') {
         updatedGroup.type = 'monster';
+        // Ensure other essential monster properties are preserved
+        if (group.personality) updatedGroup.personality = group.personality;
       }
     }
     

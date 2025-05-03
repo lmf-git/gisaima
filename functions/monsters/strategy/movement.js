@@ -2,7 +2,8 @@ import {
   calculateSimplePath,
   calculateDistance,
   findAdjacentStructures,
-  createMonsterMoveMessage
+  createMonsterMoveMessage,
+  EXPLORATION_TICKS
 } from '../_monsters.mjs';
 
 // Re-export imported functions
@@ -37,29 +38,30 @@ export async function moveMonsterTowardsTarget(
   let targetType;
   let targetDistance = Infinity;
 
-  // Check if monster is in exploration phase
-  const inExplorationPhase = monsterGroup.explorationPhase && monsterGroup.exploreDuration > now;
+  // Check if monster is in exploration phase using tick counting
+  const inExplorationPhase = monsterGroup.explorationPhase && 
+                           (monsterGroup.explorationTicks && monsterGroup.explorationTicks > 0);
   
-  // Clear exploration phase if it's over
-  if (monsterGroup.explorationPhase && monsterGroup.exploreDuration <= now) {
-    updates[`${groupPath}/explorationPhase`] = false;
-    updates[`${groupPath}/exploreDuration`] = null;
-  }
-  
-  // Territorial personality special handling
-  const isHoming = personality?.id === 'TERRITORIAL' && monsterGroup.spawnLocation;
-  if (isHoming && !inExplorationPhase) {
-    const territoryRadius = personality.territoryRadius || 10;
-    const homeDistance = monsterGroup.spawnLocation ? 
-      calculateDistance(location, monsterGroup.spawnLocation) : 0;
-      
-    // If outside territory, head back home
-    if (homeDistance > territoryRadius) {
-      return moveToTerritory(worldId, monsterGroup, location, monsterGroup.spawnLocation, updates, now);
+  // Decrement exploration ticks if in exploration phase
+  if (inExplorationPhase) {
+    updates[`${groupPath}/explorationTicks`] = (monsterGroup.explorationTicks || 1) - 1;
+    
+    // If this is the last exploration tick, clear the phase
+    if (monsterGroup.explorationTicks <= 1) {
+      updates[`${groupPath}/explorationPhase`] = false;
+      updates[`${groupPath}/explorationTicks`] = null;
     }
   }
   
-  // First priority for exploration phase or recently mobilized - prioritize moving AWAY from home structure
+  // First priority: Check for targetStructure (for monsters specifically mobilized to attack)
+  if (monsterGroup.targetStructure && !targetLocation) {
+    targetLocation = monsterGroup.targetStructure;
+    targetType = 'player_structure_attack';
+    targetDistance = calculateDistance(location, targetLocation);
+    console.log(`Monster group ${monsterGroup.id} targeting player structure at (${targetLocation.x}, ${targetLocation.y})`);
+  }
+  
+  // Check if monster was recently mobilized and is in exploration phase
   if (inExplorationPhase && monsterGroup.mobilizedFromStructure) {
     const sourceStructure = worldScan.monsterStructures.find(s => 
       s.structure && s.structure.id === monsterGroup.mobilizedFromStructure);
