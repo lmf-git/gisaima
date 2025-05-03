@@ -929,33 +929,8 @@
                             {/if}
                           </span>
                           
-                          <span class="entity-badge {getStatusClass(group.status)}"
-                            class:pending-tick={isPendingTick(
-                              group.status === 'moving' 
-                                ? group.nextMoveTime 
-                                : (group.status === 'gathering' || group.status === 'starting_to_gather' 
-                                    ? group.gatheringUntil 
-                                    : group.readyAt)
-                            )}
-                          >
-                            {#if group.status === 'starting_to_gather'}
-                              Preparing to gather
-                            {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
-                              {_fmt(group.status)} {formatTimeRemaining(group.readyAt, group.status)}
-                            {:else if group.status === 'moving'}
-                              {_fmt(group.status)} 
-                              {#if group.nextMoveTime && !isPendingTick(group.nextMoveTime)}
-                                ({formatTimeRemaining(group.nextMoveTime)})
-                              {/if}
-                            {:else if group.status === 'gathering'}
-                              {_fmt(group.status)} 
-                              {#if group.gatheringUntil && !isPendingTick(group.gatheringUntil)}
-                                ({formatTimeRemaining(group.gatheringUntil)})
-                              {/if}
-                            {:else}
-                              {_fmt(group.status)}
-                            {/if}
-                          </span>
+                          <!-- Replace manual status rendering with GroupStatus component -->
+                          <GroupStatus {group} />
                         </div>
                       </div>
                       
@@ -2041,7 +2016,7 @@
 
   /* Consolidated animations */
   @keyframes pulse {
-    from { opacity: 0.7; }
+    from { opacity: 0.8; }
     to { opacity: 1; }
   }
 
@@ -2069,7 +2044,7 @@
 
   .structure-type-icon-container {
     display: inline-flex;
-    align-items: center;
+       align-items: center;
     justify-content: center;
     margin-right: 0.5em;
     vertical-align: middle;
