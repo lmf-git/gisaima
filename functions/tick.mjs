@@ -12,10 +12,11 @@ import { processMobilizations } from "./events/mobiliseTick.mjs";
 import { processDemobilization } from "./events/demobiliseTick.mjs";
 import { processMovement } from "./events/moveTick.mjs";
 import { processGathering } from "./events/gatheringTick.mjs";
-import { processBuilding, spawnMonsters, mergeMonsterGroups } from "./events/buildTick.mjs";
+import { processBuilding } from "./events/buildTick.mjs";
 import { upgradeTickProcessor } from "./events/upgradeTick.mjs";
 import { processCrafting } from "./events/craftingTick.mjs"; 
 import { processMonsterStrategies } from "./events/monsterStrategyTick.mjs"; // Only import strategy processor
+import { mergeMonsterGroups, spawnMonsters } from "./events/monsterSpawnTick.mjs";
 
 // Process world ticks to handle mobilizations and other time-based events
 export const processGameTicks = onSchedule({
