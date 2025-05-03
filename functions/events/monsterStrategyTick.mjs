@@ -21,6 +21,12 @@ import {
   isAvailableForAction,
   scanWorldMap
 } from '../monsters/_monsters.mjs';
+import { 
+  buildMonsterStructure, 
+  upgradeMonsterStructure, 
+  demobilizeAtMonsterStructure,
+  addOrUpgradeMonsterBuilding
+} from '../monsters/strategy/building.js';
 
 // Constants and configuration
 const STRATEGY_CHANCE = 0.4; // Chance for a monster group to take strategic action
@@ -127,7 +133,23 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
       hasResources && 
       resourceCount > 20 && 
       Math.random() < 0.3 * (weights?.build || 1.0)) {
-    return await upgradeMonsterStructure(db, worldId, monsterGroup, tileData.structure, updates, now);
+    // Check if we should upgrade a building within the structure or the structure itself
+    const structure = tileData.structure;
+    
+    // Check if the structure has buildings that can be upgraded
+    if (structure.buildings && Object.keys(structure.buildings).length > 0 && Math.random() < 0.5) {
+      // Select a building to upgrade
+      const buildings = Object.entries(structure.buildings);
+      const [buildingType, buildingData] = buildings[Math.floor(Math.random() * buildings.length)];
+      
+      // Try to upgrade the building
+      return await addOrUpgradeMonsterBuilding(
+        db, worldId, monsterGroup, structure, buildingType, updates, now
+      );
+    } else {
+      // Upgrade the structure itself
+      return await upgradeMonsterStructure(db, worldId, monsterGroup, tileData.structure, updates, now);
+    }
   }
   
   // Strategy 2: If on a monster structure tile with any resources, demobilize to deposit them
@@ -147,6 +169,23 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
       !structureOnTile &&
       Math.random() < 0.4 * (weights?.build || 1.0)) {
     return await buildMonsterStructure(db, worldId, monsterGroup, location, updates, now);
+  }
+  
+  // If the monster is on a structure tile that has no building yet, consider adding one
+  if (structureOnTile && 
+      structure.monster &&
+      hasResources && 
+      resourceCount > 15 &&
+      (!structure.buildings || Object.keys(structure.buildings).length < 3) &&
+      Math.random() < 0.3 * (weights?.build || 1.0)) {
+      
+    // Choose a building type to add
+    const possibleBuildings = ['monster_nest', 'monster_forge', 'monster_totem'];
+    const buildingType = possibleBuildings[Math.floor(Math.random() * possibleBuildings.length)];
+      
+    return await addOrUpgradeMonsterBuilding(
+      db, worldId, monsterGroup, structure, buildingType, updates, now
+    );
   }
   
   // Strategy 4: If carrying significant resources, prioritize moving to a monster structure

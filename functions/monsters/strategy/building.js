@@ -1,0 +1,843 @@
+/**
+ * Monster building strategy functions for Gisaima
+ * Handles monster construction and upgrading of structures and buildings
+ */
+
+import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
+import { BUILDINGS } from 'gisaima-shared/definitions/BUILDINGS.js';
+import { countTotalResources } from '../_monsters.mjs';
+
+// Constants
+const MIN_RESOURCES_FOR_BUILDING = 15;
+const MIN_RESOURCES_FOR_UPGRADE = 10;
+const MIN_UNITS_FOR_BUILDING = 3;
+const BUILD_CHANCE = 0.7; // Base chance for building when conditions are met
+const MAX_MONSTER_STRUCTURES_NEARBY = 3; // Maximum number of monster structures allowed in nearby area
+const NEARBY_DISTANCE = 10; // Distance considered "nearby" for structure density check
+
+// Monster-specific building definitions that extend the shared BUILDINGS
+export const MONSTER_BUILDINGS = {
+  'monster_nest': {
+    name: "Monster Nest",
+    description: "A crude nesting area that provides shelter for weaker monsters",
+    icon: "🪹",
+    upgradeTimeMultiplier: 0.8,
+    monster: true,
+    baseRequirements: [
+      { name: 'Wooden Sticks', quantity: 5 },
+      { name: 'Stone Pieces', quantity: 3 }
+    ],
+    benefits: {
+      1: [{ name: 'Monster Shelter', description: 'Provides basic shelter for monsters', bonus: { monsterRegeneration: 0.1 } }],
+      2: [{ name: 'Improved Nesting', description: 'Allows faster recovery', bonus: { monsterRegeneration: 0.2 } }],
+      3: [{ name: 'Advanced Nest', description: 'Attracts more monsters to the area', unlocks: ['monster_spawning'] }]
+    }
+  },
+  'monster_forge': {
+    name: "Monster Forge",
+    description: "A primitive forge used by more advanced monster groups to craft crude weapons",
+    icon: "🔥",
+    upgradeTimeMultiplier: 1.2,
+    monster: true,
+    baseRequirements: [
+      { name: 'Stone Pieces', quantity: 10 },
+      { name: 'Iron Ore', quantity: 3 }
+    ],
+    benefits: {
+      1: [{ name: 'Basic Smithing', description: 'Allows crafting simple weapons', unlocks: ['crude_weapon'] }],
+      2: [{ name: 'Improved Forge', description: 'Better weapon crafting', bonus: { attackPower: 0.1 } }],
+      3: [{ name: 'Monster Arsenal', description: 'Creates better monster weapons', unlocks: ['monster_weapons'] }]
+    }
+  },
+  'monster_totem': {
+    name: "Monster Totem",
+    description: "A ritual structure that enhances monster abilities",
+    icon: "🗿",
+    upgradeTimeMultiplier: 1.5,
+    monster: true,
+    baseRequirements: [
+      { name: 'Wooden Sticks', quantity: 8 },
+      { name: 'Stone Pieces', quantity: 4 },
+      { name: 'Crystal Shard', quantity: 1 }
+    ],
+    benefits: {
+      1: [{ name: 'Ritual Site', description: 'Empowers nearby monsters', bonus: { monsterPower: 0.1 } }],
+      2: [{ name: 'Power Totem', description: 'Further empowers monsters', bonus: { monsterPower: 0.2 } }],
+      3: [{ name: 'Elder Totem', description: 'Allows commanding other monster groups', unlocks: ['monster_command'] }]
+    }
+  }
+};
+
+/**
+ * Check if a location is suitable for building
+ * @param {object} db - Firebase database reference
+ * @param {string} worldId - World ID
+ * @param {object} location - Location to check
+ * @param {object} worldScan - World scan data
+ * @returns {Promise<boolean>} True if the location is suitable
+ */
+async function isLocationSuitableForBuilding(db, worldId, location, worldScan) {
+  // Get the chunk and tile keys
+  const chunkX = Math.floor(location.x / 20);
+  const chunkY = Math.floor(location.y / 20);
+  const chunkKey = `${chunkX},${chunkY}`;
+  const tileKey = `${location.x},${location.y}`;
+  
+  try {
+    // Check if the tile already has a structure
+    const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
+    const tileSnapshot = await tileRef.once('value');
+    const tileData = tileSnapshot.val();
+    
+    if (tileData?.structure) {
+      return false; // Tile already has a structure
+    }
+    
+    // Check if there are too many monster structures nearby
+    let nearbyMonsterStructures = 0;
+    
+    if (worldScan && worldScan.monsterStructures) {
+      worldScan.monsterStructures.forEach(structure => {
+        const distance = Math.sqrt(
+          Math.pow(structure.x - location.x, 2) + 
+          Math.pow(structure.y - location.y, 2)
+        );
+        
+        if (distance <= NEARBY_DISTANCE) {
+          nearbyMonsterStructures++;
+        }
+      });
+    }
+    
+    if (nearbyMonsterStructures >= MAX_MONSTER_STRUCTURES_NEARBY) {
+      return false; // Too many monster structures nearby
+    }
+    
+    // Check if we're too close to player structures
+    const playerStructures = worldScan.playerSpawns || [];
+    for (const playerStructure of playerStructures) {
+      const distance = Math.sqrt(
+        Math.pow(playerStructure.x - location.x, 2) + 
+        Math.pow(playerStructure.y - location.y, 2)
+      );
+      
+      if (distance < 5) { // Don't build too close to player structures
+        return false;
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Error checking location for building: ${error}`);
+    return false;
+  }
+}
+
+/**
+ * Calculate required resources for a monster structure
+ * @param {string} structureType - Type of structure to build
+ * @returns {Array} Array of required resources
+ */
+function getRequiredResourcesForStructure(structureType) {
+  // Check if it's a predefined structure from STRUCTURES
+  if (STRUCTURES[structureType] && STRUCTURES[structureType].monster) {
+    const structure = STRUCTURES[structureType];
+    return Object.entries(structure.buildCost).map(([name, quantity]) => ({ 
+      name, 
+      quantity 
+    }));
+  }
+  
+  // Default simple requirements if structure type not found
+  return [
+    { name: 'Wooden Sticks', quantity: 8 },
+    { name: 'Stone Pieces', quantity: 6 }
+  ];
+}
+
+/**
+ * Check if monster group has resources for building
+ * @param {object} monsterGroup - Monster group data
+ * @param {string} structureType - Structure type to build
+ * @returns {boolean} True if group has required resources
+ */
+function hasResourcesToBuild(monsterGroup, structureType) {
+  if (!monsterGroup.items || monsterGroup.items.length === 0) {
+    return false;
+  }
+  
+  const requiredResources = getRequiredResourcesForStructure(structureType);
+  const availableResources = monsterGroup.items.reduce((acc, item) => {
+    acc[item.name] = (acc[item.name] || 0) + (item.quantity || 1);
+    return acc;
+  }, {});
+  
+  // Check if we have all required resources
+  for (const required of requiredResources) {
+    if (!availableResources[required.name] || availableResources[required.name] < required.quantity) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+/**
+ * Check if monster group has resources to upgrade a building
+ * @param {object} monsterGroup - Monster group data
+ * @param {object} building - Building to upgrade
+ * @returns {boolean} True if group has required resources
+ */
+function hasResourcesToUpgrade(monsterGroup, structure) {
+  if (!monsterGroup.items || monsterGroup.items.length === 0) {
+    return false;
+  }
+  
+  // Determine current level
+  const currentLevel = structure.level || 1;
+  
+  // Simple resource requirements for upgrades based on level
+  const requiredResources = [
+    { name: 'Wooden Sticks', quantity: 5 * currentLevel },
+    { name: 'Stone Pieces', quantity: 3 * currentLevel }
+  ];
+  
+  // Add special resources for higher levels
+  if (currentLevel >= 2) {
+    requiredResources.push({ name: 'Iron Ore', quantity: currentLevel });
+  }
+  
+  if (currentLevel >= 3) {
+    requiredResources.push({ name: 'Crystal Shard', quantity: 1 });
+  }
+  
+  const availableResources = monsterGroup.items.reduce((acc, item) => {
+    acc[item.name] = (acc[item.name] || 0) + (item.quantity || 1);
+    return acc;
+  }, {});
+  
+  // Check if we have all required resources
+  for (const required of requiredResources) {
+    if (!availableResources[required.name] || availableResources[required.name] < required.quantity) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+/**
+ * Choose which structure type to build based on available resources
+ * @param {object} monsterGroup - Monster group data
+ * @param {object} personality - Personality data
+ * @returns {string} Chosen structure type
+ */
+function chooseStructureType(monsterGroup, personality) {
+  // Default structure types
+  const structureTypes = [
+    'monster_lair',
+    'monster_hive',
+    'monster_fortress'
+  ];
+  
+  // Calculate weights based on personality
+  const weights = {};
+  
+  for (const type of structureTypes) {
+    weights[type] = 1.0; // Default weight
+    
+    // Adjust weights based on personality
+    if (personality?.id === 'BUILDER') {
+      // Builder personality prefers all structures
+      weights[type] *= 1.5;
+    } else if (personality?.id === 'TERRITORIAL') {
+      // Territorial monsters prefer defensive structures
+      if (type === 'monster_fortress') weights[type] *= 1.8;
+    } else if (personality?.id === 'GREEDY') {
+      // Greedy monsters prefer resource-storing structures
+      if (type === 'monster_lair') weights[type] *= 1.3;
+    } else if (personality?.id === 'AGGRESSIVE') {
+      // Aggressive monsters prefer offensive structures
+      if (type === 'monster_hive') weights[type] *= 1.4;
+    }
+    
+    // If we don't have resources for this structure, set weight to 0
+    if (!hasResourcesToBuild(monsterGroup, type)) {
+      weights[type] = 0;
+    }
+  }
+  
+  // Find the structure type with the highest weight
+  const validTypes = Object.entries(weights)
+    .filter(([_, weight]) => weight > 0)
+    .sort((a, b) => b[1] - a[1]);
+  
+  if (validTypes.length === 0) {
+    return 'monster_lair'; // Default if no valid types
+  }
+  
+  return validTypes[0][0];
+}
+
+/**
+ * Find the best location for building
+ * @param {object} location - Current location
+ * @param {object} worldScan - World scan data
+ * @param {object} personality - Monster personality
+ * @returns {object} Target location for building
+ */
+function determineBuildLocation(location, worldScan, personality) {
+  // Territorial monsters prefer building close to their current position
+  if (personality?.id === 'TERRITORIAL') {
+    return { x: location.x, y: location.y };
+  }
+  
+  // Other personalities have different preferences
+  // Builders might prefer locations near resources
+  if (personality?.id === 'BUILDER' && worldScan.resourceHotspots?.length > 0) {
+    // Find a resource hotspot that's not too far away
+    const nearbyHotspots = worldScan.resourceHotspots.filter(hotspot => {
+      const distance = Math.sqrt(
+        Math.pow(hotspot.x - location.x, 2) + 
+        Math.pow(hotspot.y - location.y, 2)
+      );
+      return distance < 10;
+    });
+    
+    if (nearbyHotspots.length > 0) {
+      const randomSpot = nearbyHotspots[Math.floor(Math.random() * nearbyHotspots.length)];
+      return { x: randomSpot.x, y: randomSpot.y };
+    }
+  }
+  
+  // Aggressive monsters might prefer locations near player structures
+  if (personality?.id === 'AGGRESSIVE' && worldScan.playerSpawns?.length > 0) {
+    // Find a player structure that's not too close or too far
+    const validSpawns = worldScan.playerSpawns.filter(spawn => {
+      const distance = Math.sqrt(
+        Math.pow(spawn.x - location.x, 2) + 
+        Math.pow(spawn.y - location.y, 2)
+      );
+      return distance >= 5 && distance <= 15; // Not too close, not too far
+    });
+    
+    if (validSpawns.length > 0) {
+      const randomSpawn = validSpawns[Math.floor(Math.random() * validSpawns.length)];
+      // Don't build directly on the spawn, but nearby
+      const offsetX = Math.floor(Math.random() * 5) - 2;
+      const offsetY = Math.floor(Math.random() * 5) - 2;
+      return { x: randomSpawn.x + offsetX, y: randomSpawn.y + offsetY };
+    }
+  }
+  
+  // Default: build relatively close to current position
+  const offsetX = Math.floor(Math.random() * 5) - 2;
+  const offsetY = Math.floor(Math.random() * 5) - 2;
+  return {
+    x: location.x + offsetX,
+    y: location.y + offsetY
+  };
+}
+
+/**
+ * Consume resources required for building
+ * @param {object} monsterGroup - Monster group data
+ * @param {string} structureType - Structure type being built
+ * @param {object} updates - Database updates object
+ * @param {string} groupPath - Path to the group in database
+ * @returns {boolean} True if resources were successfully consumed
+ */
+function consumeResources(monsterGroup, structureType, updates, groupPath) {
+  // Get required resources
+  const requiredResources = getRequiredResourcesForStructure(structureType);
+  
+  // Create a copy of the monster's items
+  const remainingItems = [...(monsterGroup.items || [])];
+  
+  // Consume each required resource
+  for (const required of requiredResources) {
+    let remainingQuantity = required.quantity;
+    
+    // Find items that match this resource
+    for (let i = 0; i < remainingItems.length; i++) {
+      if (remainingItems[i].name === required.name) {
+        const available = remainingItems[i].quantity || 1;
+        
+        if (available <= remainingQuantity) {
+          // Use the entire item
+          remainingQuantity -= available;
+          remainingItems.splice(i, 1);
+          i--; // Adjust index after removal
+        } else {
+          // Use part of the item
+          remainingItems[i].quantity -= remainingQuantity;
+          remainingQuantity = 0;
+        }
+        
+        if (remainingQuantity === 0) break;
+      }
+    }
+    
+    // If we couldn't find enough of this resource, return false
+    if (remainingQuantity > 0) {
+      return false;
+    }
+  }
+  
+  // Update the monster group with the remaining items
+  updates[`${groupPath}/items`] = remainingItems;
+  return true;
+}
+
+/**
+ * Build a monster structure
+ * @param {object} db - Firebase database reference
+ * @param {string} worldId - World ID
+ * @param {object} monsterGroup - Monster group data
+ * @param {object} location - Current location
+ * @param {object} updates - Database updates object
+ * @param {number} now - Current timestamp
+ * @returns {object} Action result
+ */
+export async function buildMonsterStructure(db, worldId, monsterGroup, location, updates, now) {
+  // Get personality for decision making
+  const personality = monsterGroup.personality || { id: 'BALANCED' };
+  
+  // Check if the monster group has enough units to build
+  const unitCount = monsterGroup.units ? Object.keys(monsterGroup.units).length : 0;
+  if (unitCount < MIN_UNITS_FOR_BUILDING) {
+    return { action: null, reason: 'not_enough_units' };
+  }
+  
+  // Determine where to build
+  const buildLocation = determineBuildLocation(location, { monsterStructures: [], playerSpawns: [], resourceHotspots: [] }, personality);
+  
+  // Check if location is suitable
+  const isSuitable = await isLocationSuitableForBuilding(db, worldId, buildLocation, { monsterStructures: [], playerSpawns: [] });
+  if (!isSuitable) {
+    return { action: null, reason: 'unsuitable_location' };
+  }
+  
+  // Determine what to build
+  const structureType = chooseStructureType(monsterGroup, personality);
+  
+  // Check if monster has resources to build
+  if (!hasResourcesToBuild(monsterGroup, structureType)) {
+    return { action: null, reason: 'insufficient_resources' };
+  }
+  
+  // Generate structure ID
+  const structureId = `monster_structure_${now}_${Math.floor(Math.random() * 10000)}`;
+  
+  // Set up location references
+  const chunkX = Math.floor(buildLocation.x / 20);
+  const chunkY = Math.floor(buildLocation.y / 20);
+  const chunkKey = `${chunkX},${chunkY}`;
+  const tileKey = `${buildLocation.x},${buildLocation.y}`;
+  
+  // Create the structure
+  const structureData = STRUCTURES[structureType] || {
+    name: "Monster Lair",
+    buildTime: 1,
+    capacity: 10,
+    features: ['basic_storage', 'monster_spawning'],
+    monster: true
+  };
+  
+  const structure = {
+    id: structureId,
+    type: structureType,
+    name: `${monsterGroup.name || "Monster"} ${structureData.name}`,
+    owner: 'monster',
+    ownerGroupId: monsterGroup.id,
+    createdAt: now,
+    level: 1,
+    items: [],
+    buildings: {},
+    monster: true,
+    features: structureData.features || []
+  };
+  
+  // Consume resources from the monster group
+  const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
+  if (!consumeResources(monsterGroup, structureType, updates, groupPath)) {
+    return { action: null, reason: 'resource_consumption_failed' };
+  }
+  
+  // Add the structure to the tile
+  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`] = structure;
+  
+  // Set monster group as building
+  updates[`${groupPath}/status`] = 'building';
+  updates[`${groupPath}/buildingStart`] = now;
+  updates[`${groupPath}/buildingTime`] = structureData.buildTime || 1;
+  updates[`${groupPath}/buildingType`] = structureType;
+  updates[`${groupPath}/buildingLocation`] = { x: buildLocation.x, y: buildLocation.y };
+  
+  // Add a message about the building
+  const chatMessageId = `monster_building_${now}_${monsterGroup.id}`;
+  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+    text: `${monsterGroup.name || "Monsters"} are constructing a ${structureData.name} at (${buildLocation.x}, ${buildLocation.y})!`,
+    type: 'event',
+    timestamp: now,
+    location: {
+      x: location.x,
+      y: location.y
+    }
+  };
+  
+  // Add this structure as the preferred structure for this group
+  updates[`${groupPath}/preferredStructureId`] = structureId;
+  
+  return {
+    action: 'build',
+    structureId: structureId,
+    structureType: structureType,
+    location: buildLocation
+  };
+}
+
+/**
+ * Upgrade an existing monster structure
+ * @param {object} db - Firebase database reference
+ * @param {string} worldId - World ID
+ * @param {object} monsterGroup - Monster group data
+ * @param {object} structure - Structure to upgrade
+ * @param {object} updates - Database updates object
+ * @param {number} now - Current timestamp
+ * @returns {object} Action result
+ */
+export async function upgradeMonsterStructure(db, worldId, monsterGroup, structure, updates, now) {
+  // Only upgrade monster structures
+  if (!structure.monster) {
+    return { action: null, reason: 'not_monster_structure' };
+  }
+  
+  // Check if the structure can be upgraded
+  const currentLevel = structure.level || 1;
+  const maxLevel = 3; // Maximum level for monster structures
+  
+  if (currentLevel >= maxLevel) {
+    return { action: null, reason: 'max_level_reached' };
+  }
+  
+  // Check if monster group has resources to upgrade
+  if (!hasResourcesToUpgrade(monsterGroup, structure)) {
+    return { action: null, reason: 'insufficient_resources' };
+  }
+  
+  // Get current location info
+  const chunkKey = monsterGroup.chunkKey;
+  const tileKey = monsterGroup.tileKey;
+  
+  // Consume resources for upgrade (simplified version)
+  const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}`;
+  
+  // Generate a simple resource requirement for upgrade
+  const requiredResources = [
+    { name: 'Wooden Sticks', quantity: 5 * currentLevel },
+    { name: 'Stone Pieces', quantity: 3 * currentLevel }
+  ];
+  
+  // Add special resources for higher levels
+  if (currentLevel >= 2) {
+    requiredResources.push({ name: 'Iron Ore', quantity: currentLevel });
+  }
+  
+  // Create a copy of the monster's items
+  const remainingItems = [...(monsterGroup.items || [])];
+  let resourcesConsumed = false;
+  
+  // Consume each required resource
+  for (const required of requiredResources) {
+    let remainingQuantity = required.quantity;
+    
+    // Find items that match this resource
+    for (let i = 0; i < remainingItems.length; i++) {
+      if (remainingItems[i].name === required.name) {
+        const available = remainingItems[i].quantity || 1;
+        
+        if (available <= remainingQuantity) {
+          // Use the entire item
+          remainingQuantity -= available;
+          remainingItems.splice(i, 1);
+          i--; // Adjust index after removal
+        } else {
+          // Use part of the item
+          remainingItems[i].quantity -= remainingQuantity;
+          remainingQuantity = 0;
+        }
+        
+        if (remainingQuantity === 0) {
+          resourcesConsumed = true;
+          break;
+        }
+      }
+    }
+  }
+  
+  if (!resourcesConsumed) {
+    return { action: null, reason: 'resource_consumption_failed' };
+  }
+  
+  // Update the monster group with the remaining items
+  updates[`${groupPath}/items`] = remainingItems;
+  
+  // Update the structure
+  const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`;
+  updates[`${structurePath}/level`] = currentLevel + 1;
+  updates[`${structurePath}/upgradeTime`] = now;
+  
+  // Set new features based on level
+  let newFeatures = [...(structure.features || [])];
+  
+  if (currentLevel + 1 === 2) {
+    newFeatures.push('improved_defense');
+  } else if (currentLevel + 1 === 3) {
+    newFeatures.push('monster_recruitment');
+  }
+  
+  updates[`${structurePath}/features`] = newFeatures;
+  
+  // Add a message about the upgrade
+  const chatMessageId = `monster_upgrade_${now}_${monsterGroup.id}`;
+  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+    text: `${monsterGroup.name || "Monsters"} have upgraded their ${structure.name || "structure"} to level ${currentLevel + 1}!`,
+    type: 'event',
+    timestamp: now,
+    location: {
+      x: parseInt(tileKey.split(',')[0]),
+      y: parseInt(tileKey.split(',')[1])
+    }
+  };
+  
+  return {
+    action: 'upgrade',
+    structureId: structure.id,
+    newLevel: currentLevel + 1
+  };
+}
+
+/**
+ * Demobilize at a monster structure to deposit resources
+ * @param {object} db - Firebase database reference
+ * @param {string} worldId - World ID
+ * @param {object} monsterGroup - Monster group data
+ * @param {object} structure - Target structure
+ * @param {object} updates - Database updates object
+ * @param {number} now - Current timestamp
+ * @returns {object} Action result
+ */
+export async function demobilizeAtMonsterStructure(db, worldId, monsterGroup, structure, updates, now) {
+  // Only allow demobilizing at monster structures
+  if (!structure.monster) {
+    return { action: null, reason: 'not_monster_structure' };
+  }
+  
+  // Get paths
+  const chunkKey = monsterGroup.chunkKey;
+  const tileKey = monsterGroup.tileKey;
+  const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}`;
+  const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`;
+  
+  // Check if the monster group has items to deposit
+  if (!monsterGroup.items || monsterGroup.items.length === 0) {
+    return { action: null, reason: 'no_items_to_deposit' };
+  }
+  
+  // Add the monster group's items to the structure
+  const structureItems = [...(structure.items || [])];
+  const groupItems = [...monsterGroup.items];
+  
+  // Combine items, merging similar ones
+  for (const item of groupItems) {
+    const existingIndex = structureItems.findIndex(i => i.name === item.name && i.type === item.type);
+    
+    if (existingIndex >= 0) {
+      // Add to existing item quantity
+      structureItems[existingIndex].quantity = (structureItems[existingIndex].quantity || 1) + 
+                                              (item.quantity || 1);
+    } else {
+      // Add as new item
+      structureItems.push({ ...item });
+    }
+  }
+  
+  // Update structure and group
+  updates[`${structurePath}/items`] = structureItems;
+  updates[`${groupPath}/items`] = []; // Clear the group's items
+  
+  // Add a message about the resource deposit
+  const chatMessageId = `monster_deposit_${now}_${monsterGroup.id}`;
+  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+    text: `${monsterGroup.name || "Monsters"} have deposited resources at their ${structure.name || "structure"}.`,
+    type: 'event',
+    timestamp: now,
+    location: {
+      x: parseInt(tileKey.split(',')[0]),
+      y: parseInt(tileKey.split(',')[1])
+    }
+  };
+  
+  return {
+    action: 'demobilize',
+    depositedItems: groupItems.length,
+    structureId: structure.id
+  };
+}
+
+/**
+ * Add or upgrade a building within a monster structure
+ * @param {object} db - Firebase database reference
+ * @param {string} worldId - World ID
+ * @param {object} monsterGroup - Monster group data
+ * @param {object} structure - Parent structure
+ * @param {string} buildingType - Type of building to add/upgrade 
+ * @param {object} updates - Database updates object
+ * @param {number} now - Current timestamp
+ * @returns {object} Action result
+ */
+export async function addOrUpgradeMonsterBuilding(db, worldId, monsterGroup, structure, buildingType, updates, now) {
+  // Verify this is a monster structure
+  if (!structure.monster) {
+    return { action: null, reason: 'not_monster_structure' };
+  }
+  
+  // Get the building definition
+  const buildingDef = MONSTER_BUILDINGS[buildingType] || BUILDINGS.types[buildingType];
+  if (!buildingDef) {
+    return { action: null, reason: 'unknown_building_type' };
+  }
+  
+  // Check if the structure already has this building
+  const existingBuilding = structure.buildings && structure.buildings[buildingType];
+  const currentLevel = existingBuilding ? (existingBuilding.level || 1) : 0;
+  const maxLevel = 3; // Max level for monster buildings
+  
+  // Check if max level reached
+  if (currentLevel >= maxLevel) {
+    return { action: null, reason: 'max_level_reached' };
+  }
+  
+  // Determine if we're adding new or upgrading
+  const isUpgrade = currentLevel > 0;
+  
+  // Calculate resource requirements
+  const levelMultiplier = currentLevel + 1;
+  const resources = [];
+  
+  // Base requirements
+  if (buildingDef.baseRequirements) {
+    for (const req of buildingDef.baseRequirements) {
+      resources.push({
+        name: req.name,
+        quantity: Math.floor(req.quantity * (isUpgrade ? levelMultiplier * 0.7 : 1))
+      });
+    }
+  } else {
+    // Default requirements if none specified
+    resources.push({ name: 'Wooden Sticks', quantity: Math.floor(5 * levelMultiplier) });
+    resources.push({ name: 'Stone Pieces', quantity: Math.floor(3 * levelMultiplier) });
+  }
+  
+  // Check if monster group has the required resources
+  const groupItems = monsterGroup.items || [];
+  const availableResources = {};
+  
+  for (const item of groupItems) {
+    availableResources[item.name] = (availableResources[item.name] || 0) + (item.quantity || 1);
+  }
+  
+  for (const required of resources) {
+    if (!availableResources[required.name] || availableResources[required.name] < required.quantity) {
+      return { action: null, reason: 'insufficient_resources' };
+    }
+  }
+  
+  // Consume resources
+  const chunkKey = monsterGroup.chunkKey;
+  const tileKey = monsterGroup.tileKey;
+  const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}`;
+  
+  // Create a copy of the monster's items
+  const remainingItems = [...groupItems];
+  
+  // Consume each required resource
+  for (const required of resources) {
+    let remainingQuantity = required.quantity;
+    
+    // Find items that match this resource
+    for (let i = 0; i < remainingItems.length; i++) {
+      if (remainingItems[i].name === required.name) {
+        const available = remainingItems[i].quantity || 1;
+        
+        if (available <= remainingQuantity) {
+          // Use the entire item
+          remainingQuantity -= available;
+          remainingItems.splice(i, 1);
+          i--; // Adjust index after removal
+        } else {
+          // Use part of the item
+          remainingItems[i].quantity -= remainingQuantity;
+          remainingQuantity = 0;
+        }
+        
+        if (remainingQuantity === 0) break;
+      }
+    }
+  }
+  
+  // Update the monster group with the remaining items
+  updates[`${groupPath}/items`] = remainingItems;
+  
+  // Create or update the building
+  const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`;
+  const newLevel = currentLevel + 1;
+  
+  // Get benefits for this level
+  const benefits = buildingDef.benefits && buildingDef.benefits[newLevel] ? 
+    buildingDef.benefits[newLevel] : 
+    [{ name: 'Basic Improvement', description: 'Improved functionality' }];
+  
+  // Create the building object
+  const building = {
+    type: buildingType,
+    name: buildingDef.name,
+    level: newLevel,
+    icon: buildingDef.icon || "🏠",
+    benefits: benefits,
+    addedAt: isUpgrade ? (existingBuilding.addedAt || now) : now,
+    upgradedAt: isUpgrade ? now : null
+  };
+  
+  // Update the structure with the new/upgraded building
+  updates[`${structurePath}/buildings/${buildingType}`] = building;
+  
+  // Add a message about the building
+  const actionText = isUpgrade ? "upgraded" : "added";
+  const chatMessageId = `monster_building_${actionText}_${now}_${monsterGroup.id}`;
+  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+    text: `${monsterGroup.name || "Monsters"} have ${actionText} a ${building.name} (level ${newLevel}) in their structure!`,
+    type: 'event',
+    timestamp: now,
+    location: {
+      x: parseInt(tileKey.split(',')[0]),
+      y: parseInt(tileKey.split(',')[1])
+    }
+  };
+  
+  return {
+    action: isUpgrade ? 'upgrade_building' : 'add_building',
+    buildingType: buildingType,
+    level: newLevel,
+    structureId: structure.id
+  };
+}
+
+// Export all necessary functions
+export {
+  MONSTER_BUILDINGS,
+  hasResourcesToBuild,
+  hasResourcesToUpgrade,
+  demobilizeAtMonsterStructure
+};

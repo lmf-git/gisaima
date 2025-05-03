@@ -94,5 +94,47 @@ export function processBuilding(worldId, updates, chunkKey, tileKey, tile, now) 
     updates[`${structurePath}/buildProgress`] = progress;
   }
   
-  return true;
+  // Handle monster group building
+  if (tile.groups) {
+    for (const [groupId, group] of Object.entries(tile.groups)) {
+      if (group.status === 'building' && group.type === 'monster' && 
+          group.buildingStart && group.buildingTime) {
+        
+        const buildTime = group.buildingTime * 60000; // Convert to milliseconds
+        const elapsedTime = now - group.buildingStart;
+        
+        // Check if building is complete
+        if (elapsedTime >= buildTime) {
+          // Reset monster group status
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/buildingStart`] = null;
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/buildingTime`] = null;
+          
+          // Check if the structure was built
+          if (group.buildingLocation) {
+            const { x, y } = group.buildingLocation;
+            const structureChunkX = Math.floor(x / 20);
+            const structureChunkY = Math.floor(y / 20);
+            const structureChunkKey = `${structureChunkX},${structureChunkY}`;
+            const structureTileKey = `${x},${y}`;
+            
+            // Add a chat message about structure completion
+            const messagePath = `worlds/${worldId}/chat/build_complete_${now}_${groupId}`;
+            updates[messagePath] = {
+              text: `${group.name || "Monster group"} has completed building at (${x}, ${y}).`,
+              type: 'event',
+              timestamp: now,
+              location: { x, y }
+            };
+            
+            // No need to add the structure here as it was already added in buildMonsterStructure function
+          }
+          
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
 }
