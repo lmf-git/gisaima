@@ -6,32 +6,19 @@
 import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 import { Units } from 'gisaima-shared/units/units.js';
+import { getRandomPersonality } from 'gisaima-shared/definitions/MONSTER_PERSONALITIES.js';
+import { 
+  generateMonsterUnits,
+  createMonsterSpawnMessage,
+  createMonsterGrowthMessage,
+  countUnits
+} from '../monsters/_monsters.mjs';
 
 // Constants for monster spawning
 const SPAWN_CHANCE = .1; // 40% chance to spawn monsters in an active area
 const MAX_SPAWN_DISTANCE = 9; // Maximum distance from player activity to spawn
 const MIN_SPAWN_DISTANCE = 4; // Minimum distance from player activity to spawn
 const MAX_MONSTERS_PER_CHUNK = 10; // Maximum monster groups per chunk
-
-/**
- * Generate individual monster unit objects for a monster group
- * @param {string} type - Type of monster
- * @param {number} qty - Number of units to generate
- * @returns {Object} Monster units with ID keys
- */
-function generateMonsterUnits(type, qty) {
-  const units = {};
-  
-  for (let i = 0; i < qty; i++) {
-    const unitId = `monster_unit_${Date.now()}_${Math.floor(Math.random() * 10000)}_${i}`;
-    units[unitId] = {
-      id: unitId,
-      type: type
-    };
-  }
-  
-  return units;
-}
 
 /**
  * Spawn monsters near player activity
@@ -238,8 +225,11 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
     Math.random() * (monsterData.unitCountRange[1] - monsterData.unitCountRange[0] + 1)
   ) + monsterData.unitCountRange[0];
   
-  // Generate individual monster units
+  // Generate individual monster units using shared function
   const units = generateMonsterUnits(type, qty);
+  
+  // Assign a personality to the monster group
+  const personality = getRandomPersonality(type, biome);
   
   // Create the monster group object
   const monsterGroup = {
@@ -249,7 +239,13 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
     status: 'idle',
     units: units,
     x: location.x,
-    y: location.y
+    y: location.y,
+    // Add personality data
+    personality: {
+      id: personality.id,
+      name: personality.name,
+      emoji: personality.emoji
+    }
   };
   
   // Maybe add items to the monster group
@@ -264,7 +260,7 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
   // Add a message about monster sighting
   const chatMessageKey = `chat_monster_spawn_${now}_${Math.floor(Math.random() * 1000)}`;
   updates[`worlds/${worldId}/chat/${chatMessageKey}`] = {
-    text: createMonsterSpawnMessage(monsterData.name, qty, tileKey),
+    text: createMonsterSpawnMessage(monsterData.name, qty, tileKey, personality),
     type: 'event',
     timestamp: now,
     location: {
@@ -274,37 +270,6 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
   };
   
   return groupId;
-}
-
-/**
- * Create a descriptive message for monster spawns
- */
-function createMonsterSpawnMessage(monsterName, count, location) {
-  const locationText = location.replace(',', ', ');
-  
-  // Varied messages based on monster count
-  if (count <= 2) {
-    return `A small group of ${monsterName} has been spotted at (${locationText})`;
-  } else if (count <= 5) {
-    return `A band of ${monsterName} has appeared at (${locationText})`;
-  } else {
-    return `A large horde of ${monsterName} has emerged at (${locationText})`;
-  }
-}
-
-/**
- * Create a descriptive message for monster group growth
- */
-function createMonsterGrowthMessage(monsterName, oldCount, newCount, location) {
-  const locationText = location.replace(',', ', ');
-  const addedUnits = newCount - oldCount;
-  
-  // Different messages based on how many joined
-  if (addedUnits === 1) {
-    return `Another creature has joined the ${monsterName} at (${locationText})`;
-  } else {
-    return `${addedUnits} more creatures have joined the ${monsterName} at (${locationText})`;
-  }
 }
 
 /**
@@ -436,9 +401,12 @@ function mergeGroups(worldId, chunkKey, tileKey, groups, updates, now) {
   const [x, y] = tileKey.split(',').map(Number);
   
   // Regular merge to base group
-  groupName = monsterData ? monsterData.name : "Monster Group";
+  groupName = baseGroup.name || "Monster Group";
   
   groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${baseGroup.id}`;
+  
+  // Retain personality from the base group (largest)
+  // This encourages more powerful groups to maintain their behaviors
   
   // Update the base group
   updates[`${groupPath}/name`] = groupName;
@@ -455,25 +423,16 @@ function mergeGroups(worldId, chunkKey, tileKey, groups, updates, now) {
   }
   
   // Add chat message about the merger
+  const personality = baseGroup.personality || { name: '', emoji: '' };
+  const personalityText = personality.name ? ` ${personality.emoji} ${personality.name}` : '';
+  
   const chatMessageKey = `chat_monster_merge_${now}_${Math.floor(Math.random() * 1000)}`;
   updates[`worlds/${worldId}/chat/${chatMessageKey}`] = {
-    text: `Monster groups have merged at (${x}, ${y}) forming a ${groupName}!`,
+    text: `Monster groups have merged at (${x}, ${y}) forming a${personalityText} ${groupName}!`,
     type: 'event',
     timestamp: now,
     location: { x, y }
   };
   
   return true;
-}
-
-/**
- * Helper function to count units in a group
- * @param {Object} group - Group object
- * @returns {number} Unit count
- */
-function countUnits(group) {
-  if (!group.units) return 1;
-  return Array.isArray(group.units) ? 
-    group.units.length : 
-    Object.keys(group.units).length;
 }

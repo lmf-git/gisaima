@@ -1,13 +1,7 @@
-/**
- * Count total resources in a group's inventory
- */
-export function countTotalResources(items) {
-  if (!items || !Array.isArray(items)) return 0;
-  
-  return items.reduce((total, item) => {
-    return total + (item.quantity || 1);
-  }, 0);
-}
+import { countTotalResources } from '../_monsters.mjs';
+
+// Re-export imported functions
+export { countTotalResources };
 
 /**
  * Start the monster group gathering resources

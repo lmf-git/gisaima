@@ -1,27 +1,77 @@
 /**
- * Find player groups on the current tile
- * @param {object} tileData - Data for the current tile
- * @returns {Array} Array of player group objects
+ * Monster combat strategy functions
  */
-export function findPlayerGroupsOnTile(tileData) {
-  const playerGroups = [];
-  
-  if (tileData.groups) {
-    Object.entries(tileData.groups).forEach(([groupId, groupData]) => {
-      // Check if it's a player group (has owner, not a monster, and is idle)
-      if (groupData.owner && 
-          groupData.status === 'idle' && 
-          !groupData.inBattle &&
-          groupData.type !== 'monster') {
-        playerGroups.push({
-          id: groupId,
-          ...groupData
-        });
-      }
-    });
+
+import {
+  findPlayerGroupsOnTile,
+  findMergeableMonsterGroups
+} from '../_monsters.mjs';
+
+// Re-export the imported functions
+export { findPlayerGroupsOnTile, findMergeableMonsterGroups };
+
+/**
+ * Merge monster groups on the same tile
+ * @param {object} db - Firebase database reference
+ * @param {string} worldId - World ID
+ * @param {object} monsterGroup - The current monster group
+ * @param {Array} mergeableGroups - Array of other monster groups to merge with
+ * @param {object} updates - Updates object to modify
+ * @param {number} now - Current timestamp
+ * @returns {object} Action result with merged unit count
+ */
+export async function mergeMonsterGroupsOnTile(db, worldId, monsterGroup, mergeableGroups, updates, now) {
+  if (!mergeableGroups || mergeableGroups.length === 0) {
+    return { action: null };
   }
   
-  return playerGroups;
+  const chunkKey = monsterGroup.chunkKey;
+  const tileKey = monsterGroup.tileKey;
+  const groupId = monsterGroup.id;
+  const basePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}`;
+  const groupPath = `${basePath}/groups/${groupId}`;
+  
+  // Get all units from mergeable groups
+  let allUnits = {...(monsterGroup.units || {})};
+  let totalUnitCount = Object.keys(allUnits).length;
+  let itemsToAdd = [...(monsterGroup.items || [])];
+  
+  // Gather units and items from groups being merged
+  for (const group of mergeableGroups) {
+    if (group.units) {
+      allUnits = {...allUnits, ...group.units};
+      totalUnitCount += Object.keys(group.units).length;
+    }
+    
+    if (group.items && group.items.length > 0) {
+      itemsToAdd = [...itemsToAdd, ...group.items];
+    }
+    
+    // Mark this group for deletion
+    updates[`${basePath}/groups/${group.id}`] = null;
+  }
+  
+  // Update the current group with all units and items
+  updates[`${groupPath}/units`] = allUnits;
+  updates[`${groupPath}/items`] = itemsToAdd;
+  
+  // Add a message about the merge
+  const chatMessageId = `monster_merge_${now}_${groupId}`;
+  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+    text: `${monsterGroup.name || 'Monster group'} has grown in strength, absorbing ${mergeableGroups.length} other monster groups!`,
+    type: 'event',
+    timestamp: now,
+    location: {
+      x: parseInt(tileKey.split(',')[0]),
+      y: parseInt(tileKey.split(',')[1])
+    }
+  };
+  
+  return {
+    action: 'merge',
+    mergedGroups: mergeableGroups.length,
+    totalUnits: totalUnitCount
+  };
 }
 
 /**
@@ -207,6 +257,13 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
 
 /**
  * Join an existing battle on this tile
+ * @param {object} db - Firebase database reference
+ * @param {string} worldId - World ID
+ * @param {object} monsterGroup - The monster group joining the battle
+ * @param {object} tileData - Data for the current tile
+ * @param {object} updates - Updates object to modify
+ * @param {number} now - Current timestamp
+ * @returns {object} Action result
  */
 export async function joinExistingBattle(db, worldId, monsterGroup, tileData, updates, now) {
   const groupId = monsterGroup.id;

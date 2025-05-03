@@ -169,17 +169,17 @@ export const processGameTicks = onSchedule({
       const craftingResult = await processCrafting(worldId);
       console.log(`Processed ${craftingResult.processed || 0} crafting operations in world ${worldId}`);
       
-      // Process monster strategies with a 66.6% chance each tick
+      // Process monster strategies with a 66.6% chance each tick - now passing chunks data
       if (Math.random() < 0.666) {
         console.log(`Processing monster strategies for world ${worldId}`);
-        const strategyResult = await processMonsterStrategies(worldId);
+        const strategyResult = await processMonsterStrategies(worldId, chunks);
         
         if (strategyResult.totalProcessed) {
           monsterStrategiesProcessed += strategyResult.totalProcessed;
           console.log(`Processed ${strategyResult.totalProcessed} monster strategies in world ${worldId}`);
           console.log(`Monster strategies: ${strategyResult.movesInitiated} moves, ${strategyResult.gatheringStarted} gathering, ` + 
                      `${strategyResult.structuresBuildStarted} building, ${strategyResult.structuresUpgraded} upgrades, ` +
-                     `${strategyResult.battlesJoined} battles joined`);
+                     `${strategyResult.battlesJoined} battles joined, ${strategyResult.groupsMerged} groups merged`);
         }
       }
       

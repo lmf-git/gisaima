@@ -6,81 +6,30 @@
 import { logger } from "firebase-functions";
 import { getDatabase } from 'firebase-admin/database';
 import { calculateDistance, moveMonsterTowardsTarget } from '../monsters/strategy/movement.js';
-import { findPlayerGroupsOnTile, initiateAttackOnPlayers, initiateAttackOnStructure, joinExistingBattle } from '../monsters/strategy/combat.mjs';
+import { 
+  findPlayerGroupsOnTile, 
+  initiateAttackOnPlayers, 
+  initiateAttackOnStructure, 
+  joinExistingBattle,
+  findMergeableMonsterGroups,
+  mergeMonsterGroupsOnTile
+} from '../monsters/strategy/combat.mjs';
 import { startMonsterGathering, countTotalResources, buildMonsterStructure, upgradeMonsterStructure, demobilizeAtMonsterStructure } from '../monsters/strategy/resources.mjs';
+import { MONSTER_PERSONALITIES, shouldChangePersonality, getNewPersonality } from 'gisaima-shared/definitions/MONSTER_PERSONALITIES.js';
+import { 
+  isMonsterGroup, 
+  isAvailableForAction,
+  scanWorldMap
+} from '../monsters/_monsters.mjs';
 
 // Constants and configuration
 const STRATEGY_CHANCE = 0.4; // Chance for a monster group to take strategic action
 const MIN_UNITS_TO_BUILD = 5; // Minimum units needed to consider building
 const MIN_RESOURCES_TO_BUILD = 15; // Minimum resources needed to build a structure
+const MERGE_CHANCE = 0.7; // Chance to attempt merging when other monster groups are present
 
-/**
- * Check if a group is a monster group
- */
-export function isMonsterGroup(groupData) {
-  return groupData.type === 'monster';
-}
-
-/**
- * Check if a group is available for action (idle and not in battle)
- */
-export function isAvailableForAction(groupData) {
-  return groupData.status === 'idle' && !groupData.inBattle;
-}
-
-/**
- * Scan the world map for important locations
- */
-export async function scanWorldMap(db, worldId, chunks) {
-  const playerSpawns = [];
-  const monsterStructures = [];
-  const resourceHotspots = [];
-  
-  // Scan through all chunks and tiles
-  for (const [chunkKey, chunkData] of Object.entries(chunks)) {
-    if (!chunkData) continue;
-    
-    // Process each tile in the chunk
-    for (const [tileKey, tileData] of Object.entries(chunkData)) {
-      if (!tileData) continue;
-      
-      const [x, y] = tileKey.split(',').map(Number);
-      const location = { x, y, chunkKey, tileKey };
-      
-      // Check for player spawn structures
-      if (tileData.structure && tileData.structure.type === 'spawn') {
-        playerSpawns.push({
-          ...location,
-          structure: tileData.structure
-        });
-      }
-      
-      // Check for monster structures
-      if (tileData.structure && 
-         (tileData.structure.type.includes('monster') || 
-          tileData.structure.owner === 'monster')) {
-        monsterStructures.push({
-          ...location,
-          structure: tileData.structure
-        });
-      }
-      
-      // Identify resource hotspots (tiles with resources)
-      if (tileData.resources && Object.keys(tileData.resources).length > 0) {
-        resourceHotspots.push({
-          ...location,
-          resources: tileData.resources
-        });
-      }
-    }
-  }
-  
-  return {
-    playerSpawns,
-    monsterStructures,
-    resourceHotspots
-  };
-}
+// Re-export imported functions
+export { isMonsterGroup, isAvailableForAction };
 
 /**
  * Execute a strategic action for a monster group
@@ -94,28 +43,77 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   // Base path for this group
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
   
-  // Check if there's an battle on this tile
+  // Get personality and its influence weights, or use balanced defaults
+  const personalityId = monsterGroup.personality?.id || 'BALANCED';
+  const personality = MONSTER_PERSONALITIES[personalityId] || MONSTER_PERSONALITIES.BALANCED;
+  const weights = personality.weights;
+  
+  // Check if monster should change personality
+  if (shouldChangePersonality()) {
+    const newPersonality = getNewPersonality(personalityId);
+    updates[`${groupPath}/personality`] = {
+      id: newPersonality.id,
+      name: newPersonality.name,
+      emoji: newPersonality.emoji
+    };
+    
+    // Add message about personality change
+    const chatMessageId = `monster_personality_change_${now}_${groupId}`;
+    updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+      text: `The ${monsterGroup.name || 'monster group'} at (${location.x}, ${location.y}) has become ${newPersonality.emoji} ${newPersonality.name}!`,
+      type: 'event',
+      timestamp: now,
+      location: {
+        x: location.x,
+        y: location.y
+      }
+    };
+    
+    // Update local reference for this decision cycle
+    monsterGroup.personality = {
+      id: newPersonality.id,
+      name: newPersonality.name,
+      emoji: newPersonality.emoji
+    };
+  }
+  
+  // First priority: Check if there are other monster groups on this tile to merge with
+  // Influenced by personality's merge weight
+  if (Math.random() < MERGE_CHANCE * (weights?.merge || 1.0)) {
+    const mergeableGroups = findMergeableMonsterGroups(tileData, groupId);
+    if (mergeableGroups.length > 0) {
+      return await mergeMonsterGroupsOnTile(db, worldId, monsterGroup, mergeableGroups, updates, now);
+    }
+  }
+  
+  // Check if there's a battle on this tile
+  // Influenced by personality's attack/join battle weight
   if (tileData.battles) {
-    return await joinExistingBattle(db, worldId, monsterGroup, tileData, updates, now);
+    const joinWeight = weights?.joinBattle || weights?.attack || 1.0;
+    if (Math.random() < joinWeight) {
+      return await joinExistingBattle(db, worldId, monsterGroup, tileData, updates, now);
+    }
   }
   
   // Check for player groups on this tile to attack
+  // Influenced by personality's attack weight
   const playerGroupsOnTile = findPlayerGroupsOnTile(tileData);
-  if (playerGroupsOnTile.length > 0 && Math.random() < 0.8) { // 80% chance to attack player groups
+  if (playerGroupsOnTile.length > 0 && Math.random() < 0.8 * (weights?.attack || 1.0)) {
     return await initiateAttackOnPlayers(db, worldId, monsterGroup, playerGroupsOnTile, location, updates, now);
   }
   
   // Check for attackable player structure on this tile
+  // Influenced by personality's attack weight
   const attackableStructure = tileData.structure && 
     tileData.structure.owner && 
     tileData.structure.owner !== 'monster';
     
-  if (attackableStructure && Math.random() < 0.7) { // 70% chance to attack structure
+  if (attackableStructure && Math.random() < 0.7 * (weights?.attack || 1.0)) {
     return await initiateAttackOnStructure(db, worldId, monsterGroup, tileData.structure, location, updates, now);
   }
 
   // Factors that influence decisions
-  const totalUnits = monsterGroup.units?.length || 1;
+  const totalUnits = monsterGroup.units ? Object.keys(monsterGroup.units).length : 1;
   const hasResources = monsterGroup.items && monsterGroup.items.length > 0;
   const resourceCount = countTotalResources(monsterGroup.items);
   
@@ -123,33 +121,38 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   const structureOnTile = tileData.structure && 
     (tileData.structure.type.includes('monster') || tileData.structure.owner === 'monster');
 
-  // Decision making based on group state and environment
   // Strategy 1: If on a monster structure tile with enough resources, consider upgrading
+  // Influenced by personality's build weight
   if (structureOnTile && 
       hasResources && 
       resourceCount > 20 && 
-      Math.random() < 0.3) {
+      Math.random() < 0.3 * (weights?.build || 1.0)) {
     return await upgradeMonsterStructure(db, worldId, monsterGroup, tileData.structure, updates, now);
   }
   
   // Strategy 2: If on a monster structure tile with any resources, demobilize to deposit them
+  // Influenced by personality's build/gather weights
+  const depositWeight = ((weights?.build || 1.0) + (weights?.gather || 1.0)) / 2;
   if (structureOnTile && 
       hasResources && 
-      Math.random() < 0.6) {
+      Math.random() < 0.6 * depositWeight) {
     return await demobilizeAtMonsterStructure(db, worldId, monsterGroup, tileData.structure, updates, now);
   }
   
   // Strategy 3: If large enough group with enough resources, build a new structure
+  // Heavily influenced by personality's build weight
   if (totalUnits >= MIN_UNITS_TO_BUILD && 
       hasResources && 
       resourceCount >= MIN_RESOURCES_TO_BUILD &&
       !structureOnTile &&
-      Math.random() < 0.4) {
+      Math.random() < 0.4 * (weights?.build || 1.0)) {
     return await buildMonsterStructure(db, worldId, monsterGroup, location, updates, now);
   }
   
   // Strategy 4: If carrying significant resources, prioritize moving to a monster structure
-  if (hasResources && resourceCount > 10 && worldScan.monsterStructures.length > 0 && Math.random() < 0.8) {
+  // Influenced by personality's gather weight
+  if (hasResources && resourceCount > 10 && worldScan.monsterStructures.length > 0 && 
+      Math.random() < 0.8 * (weights?.gather || 1.0)) {
     // Find nearest monster structure
     let nearestStructure = null;
     let minDistance = Infinity;
@@ -173,21 +176,30 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   }
   
   // Strategy 5: If no resources, go gathering
-  if ((!hasResources || resourceCount < 5) && Math.random() < 0.7) {
+  // Heavily influenced by personality's gather weight
+  if ((!hasResources || resourceCount < 5) && Math.random() < 0.7 * (weights?.gather || 1.0)) {
     return await startMonsterGathering(db, worldId, monsterGroup, updates, now);
   }
   
   // Strategy 6: Move towards a strategic target
   // This is the default action if others don't apply
-  return await moveMonsterTowardsTarget(db, worldId, monsterGroup, location, worldScan, updates, now);
+  // Influenced by personality's explore weight
+  const exploreChance = Math.min(0.9, (weights?.explore || 1.0) * 0.5); 
+  if (Math.random() < exploreChance) {
+    return await moveMonsterTowardsTarget(db, worldId, monsterGroup, location, worldScan, updates, now, null, personality);
+  }
+  
+  // If all strategies are rejected (based on personality weights), just stay idle
+  return { action: 'idle', reason: 'personality' };
 }
 
 /**
  * Main function to process monster strategies across the world
  * @param {string} worldId World ID to process
+ * @param {Object} chunks Optional pre-loaded chunks data
  * @returns {Promise<Object>} Results summary
  */
-export async function processMonsterStrategies(worldId) {
+export async function processMonsterStrategies(worldId, chunks = null) {
   const db = getDatabase();
   const now = Date.now();
   
@@ -200,16 +212,20 @@ export async function processMonsterStrategies(worldId) {
     demobilizationsStarted: 0,
     battlesJoined: 0,
     groupsMerged: 0,
+    personalitiesChanged: 0,
+    idleDecisions: 0,
     totalProcessed: 0
   };
   
   try {
     logger.info(`Processing monster strategies for world ${worldId}`);
     
-    // Get all chunks for this world
-    const chunksRef = db.ref(`worlds/${worldId}/chunks`);
-    const chunksSnapshot = await chunksRef.once('value');
-    const chunks = chunksSnapshot.val();
+    // Use provided chunks or fetch them if not provided
+    if (!chunks) {
+      const chunksRef = db.ref(`worlds/${worldId}/chunks`);
+      const chunksSnapshot = await chunksRef.once('value');
+      chunks = chunksSnapshot.val();
+    }
     
     if (!chunks) {
       logger.info(`No chunks found in world ${worldId}`);
@@ -259,6 +275,11 @@ export async function processMonsterStrategies(worldId) {
           // Only process a percentage of monster groups each tick to avoid too much activity
           if (Math.random() > STRATEGY_CHANCE) continue;
           
+          // Skip groups that have been processed already (might have been merged)
+          if (updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}`] === null) {
+            continue;
+          }
+          
           // Decide and execute a strategy for this monster group
           const location = {
             x: parseInt(tileKey.split(',')[0]),
@@ -289,11 +310,20 @@ export async function processMonsterStrategies(worldId) {
               case 'demobilize':
                 results.demobilizationsStarted++;
                 break;
-              case 'join_battle': // New action type
+              case 'join_battle':
                 results.battlesJoined++;
                 break;
-              case 'attack': // New action type
+              case 'attack':
                 results.battlesJoined++;
+                break;
+              case 'merge':
+                results.groupsMerged++;
+                break;
+              case 'personality_change':
+                results.personalitiesChanged++;
+                break;
+              case 'idle':
+                results.idleDecisions++;
                 break;
             }
           }

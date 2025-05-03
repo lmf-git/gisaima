@@ -1,101 +1,71 @@
 import { getChunkKey } from "gisaima-shared/map/cartography.js";
+import {
+  calculateSimplePath,
+  calculateDistance,
+  findAdjacentStructures,
+  createMonsterMoveMessage
+} from '../_monsters.mjs';
 
-/**
- * Calculate a simple path between two points using a modified Bresenham's line algorithm
- * @param {number} startX - Starting X coordinate
- * @param {number} startY - Starting Y coordinate
- * @param {number} endX - Target X coordinate
- * @param {number} endY - Target Y coordinate
- * @param {number} maxSteps - Maximum number of steps to include in the path (default: 20)
- * @returns {Array<{x: number, y: number}>} Array of coordinates representing the path
- */
-export function calculateSimplePath(startX, startY, endX, endY, maxSteps = 20) {
-  // Ensure inputs are integers
-  startX = Math.round(startX);
-  startY = Math.round(startY);
-  endX = Math.round(endX);
-  endY = Math.round(endY);
-  
-  // Create path array with starting point
-  const path = [{x: startX, y: startY}];
-  
-  // If start and end are the same, return just the start point
-  if (startX === endX && startY === endY) {
-    return path;
-  }
-  
-  // Calculate absolute differences and direction signs
-  const dx = Math.abs(endX - startX);
-  const dy = Math.abs(endY - startY);
-  const sx = startX < endX ? 1 : -1;
-  const sy = startY < endY ? 1 : -1;
-  
-  // Determine error for Bresenham's algorithm
-  let err = dx - dy;
-  let x = startX;
-  let y = startY;
-  
-  // Limit path length to avoid excessive computation
-  let stepsLeft = Math.min(maxSteps, dx + dy);
-  
-  while ((x !== endX || y !== endY) && stepsLeft > 0) {
-    const e2 = 2 * err;
-    
-    if (e2 > -dy) {
-      err -= dy;
-      x += sx;
-    }
-    
-    if (e2 < dx) {
-      err += dx;
-      y += sy;
-    }
-    
-    // Add current position to path
-    path.push({x, y});
-    stepsLeft--;
-  }
-  
-  // If path is too short, ensure the end point is included
-  if (path.length < maxSteps && (path[path.length-1].x !== endX || path[path.length-1].y !== endY)) {
-    path.push({x: endX, y: endY});
-  }
-  
-  return path;
-}
-
-/**
- * Calculate distance between two locations
- */
-export function calculateDistance(loc1, loc2) {
-  const dx = loc1.x - loc2.x;
-  const dy = loc1.y - loc2.y;
-  return Math.sqrt(dx*dx + dy*dy);
-}
+// Re-export imported functions
+export { calculateSimplePath, calculateDistance, findAdjacentStructures, createMonsterMoveMessage };
 
 // Constants
 const MAX_SCAN_DISTANCE = 20; // How far to scan for targets
 
 /**
  * Move monster group towards a strategic target
+ * @param {object} db - Firebase database reference
+ * @param {string} worldId - World ID
+ * @param {object} monsterGroup - The monster group data
+ * @param {object} location - Current location coordinates
+ * @param {object} worldScan - World scan data with strategic locations
+ * @param {object} updates - Database updates object
+ * @param {number} now - Current timestamp
+ * @param {string} targetIntent - Optional intent of movement
+ * @param {object} personality - Optional personality data
+ * @returns {object} Action result
  */
-export async function moveMonsterTowardsTarget(db, worldId, monsterGroup, location, worldScan, updates, now, targetIntent = null) {
-  const totalUnits = monsterGroup.units?.length || 1;
+export async function moveMonsterTowardsTarget(
+  db, worldId, monsterGroup, location, worldScan, updates, now, targetIntent = null, personality = null
+) {
+  const totalUnits = monsterGroup.units ? Object.keys(monsterGroup.units).length : 1;
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
+  
+  // Get personality weights or use defaults
+  const weights = personality?.weights || { explore: 1.0, attack: 1.0 };
   
   let targetLocation;
   let targetType;
   let targetDistance = Infinity;
   
+  // Territorial personality special handling
+  const isHoming = personality?.id === 'TERRITORIAL' && monsterGroup.spawnLocation;
+  if (isHoming) {
+    const territoryRadius = personality.territoryRadius || 10;
+    const homeDistance = monsterGroup.spawnLocation ? 
+      calculateDistance(location, monsterGroup.spawnLocation) : 0;
+      
+    // If outside territory, head back home
+    if (homeDistance > territoryRadius) {
+      return moveToTerritory(worldId, monsterGroup, location, monsterGroup.spawnLocation, updates, now);
+    }
+  }
+  
   // First priority: Check if there are any structures on adjacent tiles to attack
-  const adjacentStructure = await findAdjacentStructures(db, worldId, location);
-  if (adjacentStructure) {
-    // If we found an adjacent structure, move to it for potential attack
-    return moveToAdjacentTile(worldId, monsterGroup, location, adjacentStructure, updates, now, 'structure_attack');
+  // Influenced by attack weight
+  const adjacentCheckChance = weights.attack || 1.0;
+  if (Math.random() < adjacentCheckChance) {
+    const adjacentStructure = await findAdjacentStructures(db, worldId, location);
+    if (adjacentStructure) {
+      // If we found an adjacent structure, move to it for potential attack
+      return moveToAdjacentTile(worldId, monsterGroup, location, adjacentStructure, updates, now, 'structure_attack');
+    }
   }
   
   // If this monster group has a preferredStructureId (their "home"), prioritize it
-  if (monsterGroup.preferredStructureId) {
+  // Enhanced for territorial personality
+  const homePreferenceWeight = personality?.id === 'TERRITORIAL' ? 2.0 : 1.0;
+  if (monsterGroup.preferredStructureId && Math.random() < homePreferenceWeight) {
     // Try to find the preferred structure
     const preferredStructure = worldScan.monsterStructures.find(s => 
       s.structure && s.structure.id === monsterGroup.preferredStructureId);
@@ -107,67 +77,29 @@ export async function moveMonsterTowardsTarget(db, worldId, monsterGroup, locati
     }
   }
   
-  // If no preferred structure or it's too far away, choose a different target
+  // Modified target selection based on personality
   if (!targetLocation || targetDistance > MAX_SCAN_DISTANCE) {
-    // Prioritize monster structures if they exist
-    if (worldScan.monsterStructures.length > 0 && Math.random() < 0.7) {
-      // Find nearest monster structure
-      for (const structure of worldScan.monsterStructures) {
-        const distance = calculateDistance(location, structure);
-        if (distance < targetDistance && distance < MAX_SCAN_DISTANCE) {
-          targetLocation = structure;
-          targetDistance = distance;
-          targetType = 'monster_structure';
-        }
-      }
-    }
+    // Calculate priorities based on personality
+    const priorityMap = calculateMovementPriorities(weights, totalUnits, worldScan);
     
-    // If no monster structure found or didn't choose one, follow original targeting logic
-    if (!targetLocation) {
-      // Smaller groups tend to pursue resource hotspots
-      if (totalUnits < 5 && worldScan.resourceHotspots.length > 0 && Math.random() < 0.7) {
-        // Find nearest resource hotspot
-        for (const hotspot of worldScan.resourceHotspots) {
-          const distance = calculateDistance(location, hotspot);
-          if (distance < targetDistance && distance < MAX_SCAN_DISTANCE) {
-            targetLocation = hotspot;
-            targetDistance = distance;
-            targetType = 'resource';
-          }
-        }
-      }
-      
-      // Medium groups target monster structures to deposit resources
-      else if (totalUnits >= 5 && totalUnits < 10 && worldScan.monsterStructures.length > 0 && Math.random() < 0.6) {
-        // Find nearest monster structure
-        for (const structure of worldScan.monsterStructures) {
-          const distance = calculateDistance(location, structure);
-          if (distance < targetDistance && distance < MAX_SCAN_DISTANCE) {
-            targetLocation = structure;
-            targetDistance = distance;
-            targetType = 'monster_structure';
-          }
-        }
-      }
-      
-      // Stronger groups target player spawns
-      else if (totalUnits >= 10 && worldScan.playerSpawns.length > 0) {
-        // Find nearest player spawn
-        for (const spawn of worldScan.playerSpawns) {
-          const distance = calculateDistance(location, spawn);
-          if (distance < targetDistance && distance < MAX_SCAN_DISTANCE) {
-            targetLocation = spawn;
-            targetDistance = distance;
-            targetType = 'player_spawn';
-          }
-        }
-      }
+    // Choose a target based on weighted priorities
+    const targetChoice = chooseTargetLocation(location, priorityMap);
+    if (targetChoice) {
+      targetLocation = targetChoice.location;
+      targetType = targetChoice.type;
+      targetDistance = targetChoice.distance;
     }
   }
 
-  // If no suitable target found or too far, move randomly
+  // If no suitable target found or too far, move randomly with exploration weight
   if (!targetLocation || targetDistance > MAX_SCAN_DISTANCE) {
-    return moveRandomly(worldId, monsterGroup, location, updates, now);
+    const exploreWeight = weights.explore || 1.0;
+    if (Math.random() < exploreWeight) {
+      return moveRandomly(worldId, monsterGroup, location, updates, now);
+    } else {
+      // Some personalities might prefer to stay put rather than wander randomly
+      return { action: 'idle', reason: 'no_suitable_target' };
+    }
   }
 
   // If target is more than 1 tile away, move only 1 tile in that direction
@@ -183,8 +115,9 @@ export async function moveMonsterTowardsTarget(db, worldId, monsterGroup, locati
     randomMaxSteps
   );
   
-  // Movement speed can depend on monster type
-  let moveSpeed = 1;
+  // Movement speed can depend on personality
+  let moveSpeed = personality?.id === 'NOMADIC' ? 1.3 : 
+                 personality?.id === 'CAUTIOUS' ? 0.8 : 1;
   
   // Set the movement data
   updates[`${groupPath}/status`] = 'moving';
@@ -222,68 +155,158 @@ export async function moveMonsterTowardsTarget(db, worldId, monsterGroup, locati
 }
 
 /**
- * Find structures on adjacent tiles for potential attacking
- * @param {object} db Firebase database reference
- * @param {string} worldId The world ID
- * @param {object} location Current location {x, y}
- * @returns {Promise<object|null>} Adjacent tile with structure or null if none found
+ * Calculate movement priorities based on personality
+ * @param {object} weights - Personality weights
+ * @param {number} totalUnits - Total unit count
+ * @param {object} worldScan - World scan data
+ * @returns {object} Priority map for different target types
  */
-export async function findAdjacentStructures(db, worldId, location) {
-  // Define adjacent directions (including diagonals)
-  const directions = [
-    {dx: 1, dy: 0}, {dx: -1, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: -1},
-    {dx: 1, dy: 1}, {dx: 1, dy: -1}, {dx: -1, dy: 1}, {dx: -1, dy: -1}
-  ];
+function calculateMovementPriorities(weights, totalUnits, worldScan) {
+  // Base priorities
+  const priorities = {
+    monster_structure: {
+      weight: 0.5,
+      locations: worldScan.monsterStructures || [],
+      maxDistance: MAX_SCAN_DISTANCE
+    },
+    resource_hotspot: {
+      weight: 0.5,
+      locations: worldScan.resourceHotspots || [],
+      maxDistance: MAX_SCAN_DISTANCE
+    },
+    player_spawn: {
+      weight: 0.3,
+      locations: worldScan.playerSpawns || [],
+      maxDistance: MAX_SCAN_DISTANCE
+    }
+  };
   
-  // Randomly shuffle directions for more unpredictable behavior
-  directions.sort(() => Math.random() - 0.5);
-  
-  for (const dir of directions) {
-    const adjX = location.x + dir.dx;
-    const adjY = location.y + dir.dy;
+  // Apply personality modifiers
+  if (weights) {
+    // Aggressive personality prioritizes player targets
+    if (weights.attack > 1.5) {
+      priorities.player_spawn.weight *= weights.attack;
+    }
     
-    // Get chunk key for this tile
-    const chunkKey = getChunkKey(adjX, adjY);
-    const tileKey = `${adjX},${adjY}`;
+    // Resource-focused personalities prioritize resource hotspots
+    if (weights.gather > 1.5) {
+      priorities.resource_hotspot.weight *= weights.gather;
+    }
     
-    // Check if tile exists and has a structure
-    try {
-      const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
-      const tileSnapshot = await tileRef.once('value');
-      const tileData = tileSnapshot.val();
-      
-      if (tileData) {
-        // If there's a player structure, this is a good target
-        if (tileData.structure && tileData.structure.owner !== 'monster') {
-          return {
-            x: adjX,
-            y: adjY,
-            structure: tileData.structure
-          };
-        }
-        
-        // Also target tiles with player groups
-        if (tileData.groups) {
-          const hasPlayerGroups = Object.values(tileData.groups).some(
-            group => group.owner && group.owner !== 'monster'
-          );
-          
-          if (hasPlayerGroups) {
-            return {
-              x: adjX,
-              y: adjY,
-              hasPlayerGroups: true
-            };
-          }
-        }
-      }
-    } catch (error) {
-      // Silently continue to next direction on error
-      continue;
+    // Builder personalities prioritize monster structures
+    if (weights.build > 1.5) {
+      priorities.monster_structure.weight *= weights.build;
     }
   }
   
-  return null; // No adjacent structures or player groups found
+  // Unit count adjustments - large groups tend to be more aggressive
+  if (totalUnits > 10) {
+    priorities.player_spawn.weight *= 1.5;
+  } else if (totalUnits < 5) {
+    priorities.resource_hotspot.weight *= 1.3;
+  }
+  
+  return priorities;
+}
+
+/**
+ * Choose a target location based on weighted priorities
+ * @param {object} currentLocation - Current location
+ * @param {object} priorityMap - Map of priorities for different target types
+ * @returns {object|null} Chosen target or null if none found
+ */
+function chooseTargetLocation(currentLocation, priorityMap) {
+  // Compile all possible targets with their weights
+  const allTargets = [];
+  
+  // Process each priority category
+  for (const [type, data] of Object.entries(priorityMap)) {
+    for (const location of data.locations) {
+      const distance = calculateDistance(currentLocation, location);
+      if (distance < data.maxDistance) {
+        // Closer locations get higher weight
+        const distanceFactor = 1 - (distance / data.maxDistance);
+        const weight = data.weight * distanceFactor;
+        
+        allTargets.push({
+          type,
+          location,
+          distance,
+          weight
+        });
+      }
+    }
+  }
+  
+  // If no targets, return null
+  if (allTargets.length === 0) return null;
+  
+  // Select target using weighted random selection
+  const totalWeight = allTargets.reduce((sum, target) => sum + target.weight, 0);
+  let randomValue = Math.random() * totalWeight;
+  
+  for (const target of allTargets) {
+    randomValue -= target.weight;
+    if (randomValue <= 0) {
+      return target;
+    }
+  }
+  
+  // Fallback to first target if something went wrong with the weighted selection
+  return allTargets[0];
+}
+
+/**
+ * Move a territorial monster back to its territory
+ * @param {string} worldId - World ID
+ * @param {object} monsterGroup - Monster group data
+ * @param {object} location - Current location
+ * @param {object} territoryCenter - Center of territory
+ * @param {object} updates - Database updates object
+ * @param {number} now - Current timestamp
+ * @returns {object} Action result
+ */
+function moveToTerritory(worldId, monsterGroup, location, territoryCenter, updates, now) {
+  const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
+  
+  // Create a path back to territory with slightly increased speed
+  const path = calculateSimplePath(
+    location.x, location.y,
+    territoryCenter.x, territoryCenter.y,
+    3 // Allow up to 3 steps to get back faster
+  );
+  
+  // Set the movement data with faster speed to return home
+  updates[`${groupPath}/status`] = 'moving';
+  updates[`${groupPath}/movementPath`] = path;
+  updates[`${groupPath}/pathIndex`] = 0;
+  updates[`${groupPath}/moveStarted`] = now;
+  updates[`${groupPath}/moveSpeed`] = 1.2; // Move faster to return to territory
+  updates[`${groupPath}/targetX`] = territoryCenter.x;
+  updates[`${groupPath}/targetY`] = territoryCenter.y;
+  updates[`${groupPath}/nextMoveTime`] = now + 50000; // Slightly faster (50s)
+  
+  // Add chat message about returning to territory
+  const chatMessageId = `monster_return_${now}_${monsterGroup.id}`;
+  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+    text: `The territorial ${monsterGroup.name || 'monsters'} are returning to their domain at (${territoryCenter.x}, ${territoryCenter.y}).`,
+    type: 'event',
+    timestamp: now,
+    location: {
+      x: location.x,
+      y: location.y
+    }
+  };
+  
+  return {
+    action: 'move',
+    target: {
+      type: 'territory_return',
+      x: territoryCenter.x,
+      y: territoryCenter.y,
+      distance: calculateDistance(location, territoryCenter)
+    }
+  };
 }
 
 /**
@@ -467,24 +490,4 @@ export function moveToAdjacentTile(worldId, monsterGroup, location, adjacentTile
       distance: 1
     }
   };
-}
-
-/**
- * Create a descriptive message for monster movement
- */
-export function createMonsterMoveMessage(monsterGroup, targetType, targetLocation) {
-  const groupName = monsterGroup.name || "Monster group";
-  const size = monsterGroup.units?.length <= 3 ? "small" : 
-              monsterGroup.units?.length <= 8 ? "medium-sized" : "large";
-  
-  switch (targetType) {
-    case 'player_spawn':
-      return `A ${size} ${groupName} is marching toward the settlement at (${targetLocation.x}, ${targetLocation.y})!`;
-    case 'monster_structure':
-      return `${groupName} is moving toward their lair at (${targetLocation.x}, ${targetLocation.y}).`;
-    case 'resource':
-      return `${groupName} is searching for resources near (${targetLocation.x}, ${targetLocation.y}).`;
-    default:
-      return `${groupName} is on the move.`;
-  }
 }
