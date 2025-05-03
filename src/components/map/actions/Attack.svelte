@@ -13,7 +13,11 @@
   import Fairy from '../../icons/Fairy.svelte';
   import Structure from '../../icons/Structure.svelte';
 
-  const { onClose = () => {} } = $props();
+  const { 
+    onClose = () => {},
+    isActive = false, // Add prop for z-index control
+    onMouseEnter = () => {} // Add prop for mouse enter event 
+  } = $props();
 
   // Get tile data directly from the targetStore (same as current player location)
   let tileData = $derived($targetStore || null);
@@ -309,7 +313,12 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<div class="attack-modal" transition:scale={{ start: 0.95, duration: 200 }}>
+<div 
+  class="attack-modal" 
+  class:active={isActive}
+  onmouseenter={onMouseEnter}
+  transition:scale={{ start: 0.95, duration: 200 }}
+>
   <header class="modal-header">
     <h2>Attack - {tileData?.x}, {tileData?.y}</h2>
     <button class="close-btn" onclick={onClose} aria-label="Close dialog">
@@ -506,6 +515,11 @@
     overflow: hidden;
     z-index: 1000;
     font-family: var(--font-body);
+    transition: z-index 0s;
+  }
+
+  .attack-modal.active {
+    z-index: 1001;
   }
 
   .modal-header {

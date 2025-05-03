@@ -17,7 +17,9 @@
     x = 0,
     y = 0,
     onClose = () => {},
-    onCraftStart = () => {}
+    onCraftStart = () => {},
+    isActive = false, // Add prop for z-index control
+    onMouseEnter = () => {} // Add prop for mouse enter event
   } = $props();
 
   // Use $state() for reactive variables
@@ -219,12 +221,34 @@
   function switchTab(tabId) {
     selectedTab = tabId;
   }
+  
+  function canCraft(recipe) {
+    if (!recipe) return false;
+    
+    // Check player crafting level
+    const playerCraftingLevel = $currentPlayer?.skills?.crafting?.level || 1;
+    if (recipe.requiredLevel && playerCraftingLevel < recipe.requiredLevel) {
+      return false;
+    }
+    
+    if (!hasRequiredResources(recipe)) {
+      return false;
+    }
+    
+    if (!meetsBuildingLevelRequirements(recipe)) {
+      return false;
+    }
+    
+    return true;
+  }
 </script>
 
 <svelte:window onkeydown={handleKeyDown} />
 
 <div 
   class="crafting-modal" 
+  class:active={isActive}
+  onmouseenter={onMouseEnter}
   transition:scale={{ start: 0.95, duration: 200 }}>
   
   <header class="modal-header">
@@ -406,6 +430,11 @@
     font-family: var(--font-body);
     border: 0.05em solid rgba(255, 255, 255, 0.2);
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    transition: z-index 0s;
+  }
+  
+  .crafting-modal.active {
+    z-index: 1001;
   }
   
   /* Header styles */

@@ -10,7 +10,9 @@
 
   const { 
     onClose = () => {}, 
-    onJoinBattle = () => {}
+    onJoinBattle = () => {},
+    isActive = false, // Add prop for z-index control
+    onMouseEnter = () => {} // Add prop for mouse enter event
   } = $props();
 
   // Get tile data directly from the targetStore (same as current player location)
@@ -234,7 +236,12 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<div class="join-battle-modal" transition:scale={{ start: 0.95, duration: 200 }}>
+<div 
+  class="join-battle-modal" 
+  class:active={isActive}
+  onmouseenter={onMouseEnter}
+  transition:scale={{ start: 0.95, duration: 200 }}
+>
   <header class="modal-header">
     <h2>Join Battle - {tileData?.x}, {tileData?.y}</h2>
     <button class="close-btn" onclick={onClose} aria-label="Close dialog">
@@ -366,11 +373,16 @@
     background: white;
     border-radius: 0.5em;
     box-shadow: 0 0.5em 2em rgba(0, 0, 0, 0.3);
-    display: flex;
-    flex-direction: column;
     overflow: hidden;
     z-index: 1000;
+    display: flex;
+    flex-direction: column;
     font-family: var(--font-body);
+    transition: z-index 0s;
+  }
+
+  .join-battle-modal.active {
+    z-index: 1001;
   }
 
   .modal-header {

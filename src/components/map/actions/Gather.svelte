@@ -7,7 +7,12 @@
 
   import Close from '../../icons/Close.svelte';
 
-  const { onClose = () => {}, onGather = () => {} } = $props();
+  const { 
+    onClose = () => {}, 
+    onGather = () => {},
+    isActive = false, // Add prop for z-index control
+    onMouseEnter = () => {} // Add prop for mouse enter event
+  } = $props();
   const functions = getFunctions();
   
   // Use $derived for tileData to prevent reactivity issues
@@ -125,7 +130,12 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<div class="gather-modal" transition:scale={{ start: 0.95, duration: 200 }}>
+<div 
+  class="gather-modal" 
+  class:active={isActive}
+  onmouseenter={onMouseEnter}
+  transition:scale={{ start: 0.95, duration: 200 }}
+>
   <header class="modal-header">
     <h2>Gather Resources - {tileData?.x}, {tileData?.y}</h2>
     <button class="close-btn" onclick={onClose} aria-label="Close gather dialog">
@@ -234,6 +244,11 @@
     display: flex;
     flex-direction: column;
     font-family: var(--font-body);
+    transition: z-index 0s;
+  }
+
+  .gather-modal.active {
+    z-index: 1001;
   }
 
   .modal-header {

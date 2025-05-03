@@ -7,7 +7,12 @@
 
   import Close from '../../icons/Close.svelte';
   
-  const { onClose = () => {}, onDemobilize = () => {} } = $props();
+  const { 
+    onClose = () => {}, 
+    onDemobilize = () => {},
+    isActive = false, // Add prop for z-index control
+    onMouseEnter = () => {} // Add prop for mouse enter event
+  } = $props();
 
   const functions = getFunctions();
   
@@ -132,7 +137,12 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<div class="demobilise-modal" transition:scale={{ start: 0.95, duration: 200 }}>
+<div 
+  class="demobilise-modal" 
+  class:active={isActive}
+  onmouseenter={onMouseEnter}
+  transition:scale={{ start: 0.95, duration: 200 }}
+>
   <header class="modal-header">
     <h2>Demobilise Group - {tileData?.x}, {tileData?.y}</h2>
     <button class="close-btn" onclick={onClose} aria-label="Close demobilise dialog">
@@ -273,6 +283,11 @@
     display: flex;
     flex-direction: column;
     font-family: var(--font-body);
+    transition: z-index 0s;
+  }
+
+  .demobilise-modal.active {
+    z-index: 1001;
   }
 
   .modal-header {

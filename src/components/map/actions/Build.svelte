@@ -12,7 +12,9 @@
 
   const { 
     onClose = () => {},
-    onBuild = () => {}
+    onBuild = () => {},
+    isActive = false, // Add prop for z-index control
+    onMouseEnter = () => {} // Add prop for mouse enter event
   } = $props();
 
   let tileData = $derived($targetStore || null);
@@ -240,7 +242,12 @@
   }
 </script>
 
-<div class="build-modal" transition:scale={{ start: 0.95, duration: 200 }}>
+<div 
+  class="build-modal" 
+  class:active={isActive}
+  onmouseenter={onMouseEnter}
+  transition:scale={{ start: 0.95, duration: 200 }}
+>
   <header class="modal-header">
     <h2 id="build-title">Build Structure - {tileData?.x}, {tileData?.y}</h2>
     <button class="close-btn" onclick={onClose} aria-label="Close build dialog">
@@ -432,6 +439,11 @@
     flex-direction: column;
     font-family: var(--font-body);
     border: 0.05em solid rgba(255, 255, 255, 0.2);
+    transition: z-index 0s;
+  }
+  
+  .build-modal.active {
+    z-index: 1001;
   }
   
   .modal-header {
