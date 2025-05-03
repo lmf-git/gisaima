@@ -1,23 +1,22 @@
 /**
- * Monster Spawn processing for Gisaima
- * Handles spawning monster groups near player activity
+ * Monster Spawn Tick for Gisaima
+ * Handles spawning of new monster groups and management of monster structures
  */
 
-import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
-import { Units } from 'gisaima-shared/units/units.js';
+import { getDatabase } from "firebase-admin/database";
 import { 
-  generateMonsterUnits,
-  createMonsterSpawnMessage,
-  countUnits,
-  canStructureMobilize,
+  canStructureMobilize, 
   MOBILIZATION_CHANCE,
-  EXPLORATION_TICKS,
-  PLAYER_STRUCTURE_ATTACK_CHANCE,
-  PLAYER_STRUCTURE_SEARCH_RADIUS,
   createMonsterGroupFromStructure,
-  isMonsterStructure
-} from '../monsters/_monsters.mjs';
+  createMonsterSpawnMessage,
+  PLAYER_STRUCTURE_SEARCH_RADIUS,
+  generateMonsterUnits,
+  PLAYER_STRUCTURE_ATTACK_CHANCE,
+} from "../monsters/_monsters.mjs";
+
+import { getRandomPersonality } from "../monsters/_monsters.mjs";
+import { Units } from 'gisaima-shared/units/units.js';
 
 // Constants for monster spawning
 const SPAWN_CHANCE = .1; // 10% chance to spawn monsters in an active area
@@ -556,4 +555,134 @@ async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updat
   };
   
   return groupId;
+}
+
+/**
+ * Merge multiple monster groups into a single group
+ * This is used by the tick system to consolidate monster groups
+ * @param {object} db - Firebase database reference
+ * @param {string} worldId - World ID
+ * @param {Array} groups - Array of monster groups to merge
+ * @param {object} updates - Updates object to modify
+ * @param {number} now - Current timestamp
+ * @returns {object} Merged group or null if merge failed
+ */
+export async function mergeMonsterGroups(db, worldId, groups, updates, now) {
+  if (!groups || groups.length <= 1) {
+    return null;
+  }
+  
+  // Find the largest group to be the base for merging
+  const sortedGroups = [...groups].sort((a, b) => {
+    const aCount = a.units ? Object.keys(a.units).length : 0;
+    const bCount = b.units ? Object.keys(b.units).length : 0;
+    return bCount - aCount; // Sort descending by unit count
+  });
+  
+  const baseGroup = sortedGroups[0];
+  const baseGroupPath = `worlds/${worldId}/chunks/${baseGroup.chunkKey}/${baseGroup.tileKey}/groups/${baseGroup.id}`;
+  
+  // Combined units collection
+  let allUnits = {...(baseGroup.units || {})};
+  let allItems = [...(baseGroup.items || [])];
+  let unitTypeCounts = {};
+  
+  // Track monster types for naming
+  baseGroup.units && Object.values(baseGroup.units).forEach(unit => {
+    const type = unit.type || 'unknown';
+    unitTypeCounts[type] = (unitTypeCounts[type] || 0) + 1;
+  });
+  
+  // Merge in all other groups
+  for (let i = 1; i < sortedGroups.length; i++) {
+    const group = sortedGroups[i];
+    const groupPath = `worlds/${worldId}/chunks/${group.chunkKey}/${group.tileKey}/groups/${group.id}`;
+    
+    // Merge units
+    if (group.units) {
+      allUnits = {...allUnits, ...group.units};
+      
+      // Track unit types for naming
+      Object.values(group.units).forEach(unit => {
+        const type = unit.type || 'unknown';
+        unitTypeCounts[type] = (unitTypeCounts[type] || 0) + 1;
+      });
+    }
+    
+    // Merge items
+    if (group.items && group.items.length > 0) {
+      allItems = [...allItems, ...group.items];
+    }
+    
+    // Delete the absorbed group
+    updates[groupPath] = null;
+  }
+  
+  // Generate a new name based on composition
+  const totalUnits = Object.keys(allUnits).length;
+  const newName = generateMergedGroupName(totalUnits, unitTypeCounts, baseGroup.name);
+  
+  // Update base group with all units and items
+  updates[`${baseGroupPath}/units`] = allUnits;
+  updates[`${baseGroupPath}/items`] = allItems;
+  updates[`${baseGroupPath}/name`] = newName;
+  
+  // Add a message about the merge
+  const chatMessageId = `monster_merge_${now}_${baseGroup.id}`;
+  const location = {
+    x: parseInt(baseGroup.tileKey.split(',')[0]),
+    y: parseInt(baseGroup.tileKey.split(',')[1])
+  };
+  
+  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+    text: `Monster groups have merged into a larger ${newName} at (${location.x}, ${location.y})!`,
+    type: 'event',
+    timestamp: now,
+    location
+  };
+  
+  return {
+    ...baseGroup,
+    units: allUnits,
+    items: allItems,
+    name: newName
+  };
+}
+
+/**
+ * Generate a name for merged monster groups based on composition
+ * @param {number} totalUnits - Total number of units
+ * @param {object} typeCounts - Counts of different monster types
+ * @param {string} defaultName - Default name to use if no better name can be generated
+ * @returns {string} Generated name
+ */
+function generateMergedGroupName(totalUnits, typeCounts, defaultName = "Monster Group") {
+  // Size prefix based on unit count
+  let sizePrefix = "Small";
+  if (totalUnits >= 20) sizePrefix = "Massive";
+  else if (totalUnits >= 12) sizePrefix = "Large";
+  else if (totalUnits >= 6) sizePrefix = "Medium";
+  
+  // Get the dominant monster types (top 2)
+  const types = Object.entries(typeCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([type]) => type);
+  
+  // If we have identified types, use them
+  if (types.length > 0) {
+    const primaryType = types[0].charAt(0).toUpperCase() + types[0].slice(1);
+    
+    if (types.length > 1 && typeCounts[types[1]] > Math.max(1, totalUnits * 0.25)) {
+      // If second type is significant (>25% of total), include it
+      const secondaryType = types[1].charAt(0).toUpperCase() + types[1].slice(1);
+      return `${sizePrefix} ${primaryType} and ${secondaryType} Pack`;
+    } else {
+      // Just use the primary type
+      return `${sizePrefix} ${primaryType} Horde`;
+    }
+  }
+  
+  // Fallback to using the default name with size prefix
+  return `${sizePrefix} ${defaultName}`;
 }
