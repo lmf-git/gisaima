@@ -15,10 +15,11 @@ import {
 } from '../monsters/_monsters.mjs';
 
 // Constants for monster spawning
-const SPAWN_CHANCE = .1; // 40% chance to spawn monsters in an active area
+const SPAWN_CHANCE = .1; // 10% chance to spawn monsters in an active area
 const MAX_SPAWN_DISTANCE = 9; // Maximum distance from player activity to spawn
 const MIN_SPAWN_DISTANCE = 4; // Minimum distance from player activity to spawn
 const MAX_MONSTERS_PER_CHUNK = 10; // Maximum monster groups per chunk
+const STRUCTURE_SPAWN_CHANCE = 0.03; // 3% chance for a monster structure to spawn a monster group per tick
 
 /**
  * Spawn monsters near player activity
@@ -43,8 +44,9 @@ export async function spawnMonsters(worldId) {
     // Track locations with recent player activity and existing monsters
     const activeLocations = [];
     const existingMonsterLocations = {};
+    const monsterStructures = [];
     
-    // Scan chunks for player activity
+    // Scan chunks for player activity and monster structures
     for (const [chunkKey, chunkData] of Object.entries(chunks)) {
       if (!chunkData) continue;
       
@@ -55,6 +57,19 @@ export async function spawnMonsters(worldId) {
         if (!tileData) continue;
         
         const [x, y] = tileKey.split(',').map(Number);
+        
+        // Track monster structures
+        if (tileData.structure && 
+            (tileData.structure.monster === true || 
+             (tileData.structure.type && tileData.structure.type.includes('monster')))) {
+          monsterStructures.push({
+            chunkKey,
+            tileKey,
+            x,
+            y,
+            structure: tileData.structure
+          });
+        }
         
         // Check for existing monsters
         if (tileData.groups) {
@@ -97,7 +112,11 @@ export async function spawnMonsters(worldId) {
       }
     }
     
-    logger.info(`Found ${activeLocations.length} active locations with player activity in world ${worldId}`);
+    logger.info(`Found ${activeLocations.length} active locations and ${monsterStructures.length} monster structures in world ${worldId}`);
+    
+    // Process monster spawns at structures first
+    const structureSpawns = await spawnMonstersAtStructures(worldId, monsterStructures, existingMonsterLocations);
+    monstersSpawned += structureSpawns;
     
     // Process each active location to potentially spawn monsters
     for (const location of activeLocations) {
@@ -162,6 +181,143 @@ export async function spawnMonsters(worldId) {
     logger.error(`Error spawning monsters in world ${worldId}:`, error);
     return 0;
   }
+}
+
+/**
+ * Spawn monsters at monster structures with a chance per tick
+ * @param {string} worldId - World ID
+ * @param {Array} monsterStructures - Array of monster structures
+ * @param {Object} existingMonsterLocations - Map of existing monster locations
+ * @returns {Promise<number>} - Number of monster groups spawned
+ */
+async function spawnMonstersAtStructures(worldId, monsterStructures, existingMonsterLocations) {
+  if (!monsterStructures.length) return 0;
+  
+  const db = getDatabase();
+  let monstersSpawned = 0;
+  const updates = {};
+  const now = Date.now();
+  
+  // Process each monster structure
+  for (const structureData of monsterStructures) {
+    // Skip if we've already hit the monster limit for this chunk
+    const chunkMonsterCount = existingMonsterLocations[structureData.chunkKey]?.length || 0;
+    if (chunkMonsterCount >= MAX_MONSTERS_PER_CHUNK) {
+      continue; 
+    }
+    
+    // 3% chance to spawn per tick per structure
+    if (Math.random() > STRUCTURE_SPAWN_CHANCE) {
+      continue;
+    }
+    
+    // Check if there's room for spawning (no groups already on the tile)
+    const tileRef = db.ref(`worlds/${worldId}/chunks/${structureData.chunkKey}/${structureData.tileKey}`);
+    const tileSnapshot = await tileRef.once('value');
+    const tileData = tileSnapshot.val();
+    
+    // Skip if tile has groups already to prevent overcrowding
+    if (tileData?.groups && Object.keys(tileData.groups).length > 0) {
+      continue;
+    }
+    
+    // Determine monster type based on structure
+    let monsterType = 'goblin'; // Default
+    
+    // Use structure type to influence monster type
+    if (structureData.structure.type) {
+      if (structureData.structure.type === 'monster_hive') {
+        monsterType = Math.random() > 0.5 ? 'spider' : 'goblin';
+      } else if (structureData.structure.type === 'monster_fortress') {
+        monsterType = Math.random() > 0.5 ? 'troll' : 'skeleton';
+      } else if (structureData.structure.type === 'monster_lair') {
+        monsterType = Math.random() > 0.5 ? 'wolf' : 'bandit';
+      } else if (structureData.structure.type === 'monster_den') {
+        monsterType = Math.random() > 0.5 ? 'elemental' : 'wolf';
+      }
+    }
+    
+    // Use structure level to determine strength
+    const structureLevel = structureData.structure.level || 1;
+    
+    // Create a new monster group at this structure
+    const monsterData = Units.getUnit(monsterType, 'monster');
+    
+    if (!monsterData) {
+      logger.error(`Invalid monster type: ${monsterType}`);
+      continue;
+    }
+    
+    // Generate a group ID
+    const groupId = `monster_${now}_${Math.floor(Math.random() * 10000)}`;
+    
+    // Determine unit count based on structure level
+    const baseQty = Math.floor(
+      Math.random() * (monsterData.unitCountRange[1] - monsterData.unitCountRange[0] + 1)
+    ) + monsterData.unitCountRange[0];
+    
+    // Add bonus units based on structure level
+    const bonusUnits = (structureLevel - 1) * Math.floor(Math.random() * 2 + 1);
+    const qty = baseQty + bonusUnits;
+    
+    // Generate individual monster units
+    const units = generateMonsterUnits(monsterType, qty);
+    
+    // Assign a personality to the monster group
+    const tileBiome = tileData?.biome?.name || tileData?.terrain?.biome || 'unknown';
+    const personality = getRandomPersonality(monsterType, tileBiome);
+    
+    // Create the monster group object
+    const monsterGroup = {
+      id: groupId,
+      name: monsterData.name,
+      type: 'monster',
+      status: 'idle',
+      units: units,
+      x: structureData.x,
+      y: structureData.y,
+      // Add personality data
+      personality: {
+        id: personality.id,
+        name: personality.name,
+        emoji: personality.emoji
+      },
+      // Link to spawning structure
+      spawnedFromStructure: structureData.structure.id,
+      preferredStructureId: structureData.structure.id
+    };
+    
+    // Maybe add items to the monster group - higher chance for structure spawns
+    if (Math.random() < (monsterData.itemChance * 1.5)) {
+      monsterGroup.items = Units.generateItems(monsterType, qty);
+    }
+    
+    // Set the complete monster group at once
+    const groupPath = `worlds/${worldId}/chunks/${structureData.chunkKey}/${structureData.tileKey}/groups/${groupId}`;
+    updates[groupPath] = monsterGroup;
+    
+    // Add a message about monster sighting - special message for structure spawns
+    const chatMessageKey = `chat_monster_spawn_${now}_${Math.floor(Math.random() * 1000)}`;
+    updates[`worlds/${worldId}/chat/${chatMessageKey}`] = {
+      text: `A group of ${personality.emoji || ''} ${monsterData.name} has emerged from the ${structureData.structure.name} at (${structureData.x}, ${structureData.y})!`,
+      type: 'event',
+      timestamp: now,
+      location: {
+        x: structureData.x,
+        y: structureData.y
+      }
+    };
+    
+    monstersSpawned++;
+  }
+  
+  // Apply all updates
+  if (Object.keys(updates).length > 0) {
+    await db.ref().update(updates);
+    logger.info(`Spawned ${monstersSpawned} monster groups at structures in world ${worldId}`);
+  }
+  
+  return monstersSpawned;
 }
 
 /**
