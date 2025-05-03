@@ -235,10 +235,41 @@ export function isAvailableForAction(groupData) {
  * @returns {number} Unit count
  */
 export function countUnits(group) {
-  if (!group.units) return 1;
+  if (!group.units) return 0;
   return Array.isArray(group.units) ? 
     group.units.length : 
     Object.keys(group.units).length;
+}
+
+// =============================================
+// STRUCTURE UTILITIES
+// =============================================
+
+/**
+ * Check if a structure is a monster structure
+ * @param {object} structure - Structure object to check
+ * @returns {boolean} True if this is a monster structure
+ */
+export function isMonsterStructure(structure) {
+  if (!structure) return false;
+  
+  return (
+    structure.monster === true || 
+    structure.owner === 'monster' || 
+    (structure.type && typeof structure.type === 'string' && structure.type.includes('monster'))
+  );
+}
+
+/**
+ * Check if a structure can be upgraded further
+ * @param {object} structure - Structure to check
+ * @param {number} maxLevel - Maximum level (default: 3)
+ * @returns {boolean} True if structure can be upgraded
+ */
+export function canStructureBeUpgraded(structure, maxLevel = 3) {
+  if (!structure) return false;
+  const currentLevel = structure.level || 1;
+  return currentLevel < maxLevel;
 }
 
 // =============================================
@@ -246,44 +277,76 @@ export function countUnits(group) {
 // =============================================
 
 /**
- * Count total resources in a group's inventory
- * @param {Array} items - Array of item objects
- * @returns {number} Total resource count
+ * Check if a monster group has sufficient resources for a specific requirement
+ * @param {Array} monsterItems - Monster group's items
+ * @param {Array} requiredResources - Required resources array of {name, quantity}
+ * @returns {boolean} True if sufficient resources are available
  */
-export function countTotalResources(items) {
-  if (!items || !Array.isArray(items)) return 0;
-  
-  return items.reduce((total, item) => {
-    return total + (item.quantity || 1);
-  }, 0);
-}
-
-// =============================================
-// UNIT GENERATION UTILITIES
-// =============================================
-
-/**
- * Generate individual monster unit objects for a monster group
- * @param {string} type - Type of monster
- * @param {number} qty - Number of units to generate
- * @returns {Object} Monster units with ID keys
- */
-export function generateMonsterUnits(type, qty) {
-  const units = {};
-  
-  for (let i = 0; i < qty; i++) {
-    const unitId = `monster_unit_${Date.now()}_${Math.floor(Math.random() * 10000)}_${i}`;
-    units[unitId] = {
-      id: unitId,
-      type: type
-    };
+export function hasSufficientResources(monsterItems, requiredResources) {
+  if (!monsterItems || !monsterItems.length || !requiredResources || !requiredResources.length) {
+    return false;
   }
   
-  return units;
+  // Create a map of available resources
+  const availableResources = monsterItems.reduce((acc, item) => {
+    acc[item.name] = (acc[item.name] || 0) + (item.quantity || 1);
+    return acc;
+  }, {});
+  
+  // Check if all requirements are met
+  for (const required of requiredResources) {
+    if (!availableResources[required.name] || availableResources[required.name] < required.quantity) {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+/**
+ * Consume resources from a monster group
+ * @param {Array} monsterItems - Monster group's items
+ * @param {Array} requiredResources - Resources to consume {name, quantity}
+ * @returns {Array|null} New array of remaining items or null if insufficient resources
+ */
+export function consumeResourcesFromItems(monsterItems, requiredResources) {
+  if (!hasSufficientResources(monsterItems, requiredResources)) {
+    return null;
+  }
+  
+  // Create a copy of the monster's items
+  const remainingItems = [...monsterItems];
+  
+  // Consume each required resource
+  for (const required of requiredResources) {
+    let remainingQuantity = required.quantity;
+    
+    // Find items that match this resource
+    for (let i = 0; i < remainingItems.length; i++) {
+      if (remainingItems[i].name === required.name) {
+        const available = remainingItems[i].quantity || 1;
+        
+        if (available <= remainingQuantity) {
+          // Use the entire item
+          remainingQuantity -= available;
+          remainingItems.splice(i, 1);
+          i--; // Adjust index after removal
+        } else {
+          // Use part of the item
+          remainingItems[i].quantity -= remainingQuantity;
+          remainingQuantity = 0;
+        }
+        
+        if (remainingQuantity === 0) break;
+      }
+    }
+  }
+  
+  return remainingItems;
 }
 
 // =============================================
-// MESSAGE CREATION UTILITIES
+// MESSAGE CREATION UTILITIES (ENHANCED)
 // =============================================
 
 /**
@@ -360,6 +423,72 @@ export function createMonsterMoveMessage(monsterGroup, targetType, targetLocatio
   }
 }
 
+/**
+ * Create a message about monster construction activity
+ * @param {object} monsterGroup - Monster group data
+ * @param {string} activityType - Type of activity (build, upgrade, etc)
+ * @param {string} structureName - Name of the structure
+ * @param {object} location - Location coordinates
+ * @returns {string} Formatted message
+ */
+export function createMonsterConstructionMessage(monsterGroup, activityType, structureName, location) {
+  const groupName = monsterGroup.name || 'Monster group';
+  const personalityEmoji = monsterGroup.personality?.emoji || '';
+  
+  let actionVerb = 'building';
+  if (activityType === 'upgrade') actionVerb = 'upgrading';
+  else if (activityType === 'repair') actionVerb = 'repairing';
+  
+  return `${personalityEmoji} ${groupName} is ${actionVerb} ${
+    structureName ? 'a ' + structureName : 'a structure'
+  } at (${location.x}, ${location.y})!`;
+}
+
+/**
+ * Create a message about monster depositing resources
+ * @param {object} monsterGroup - Monster group data
+ * @param {string} structureName - Name of the structure
+ * @param {number} itemCount - Number of items deposited
+ * @param {object} location - Location coordinates 
+ * @returns {string} Formatted message
+ */
+export function createResourceDepositMessage(monsterGroup, structureName, itemCount, location) {
+  const groupName = monsterGroup.name || 'Monster group';
+  const personalityEmoji = monsterGroup.personality?.emoji || '';
+  const structureDesc = structureName || 'their structure';
+  
+  return `${personalityEmoji} ${groupName} ${itemCount > 1 ? 'have' : 'has'} deposited resources at ${structureDesc} at (${location.x}, ${location.y}).`;
+}
+
+/**
+ * Create a message about monster group battle actions
+ * @param {object} monsterGroup - Monster group data
+ * @param {string} battleAction - Type of battle action (attack, join)
+ * @param {string} targetType - Type of target (player, monster, structure)
+ * @param {string} targetName - Name of the target
+ * @param {object} location - Location coordinates
+ * @returns {string} Formatted message
+ */
+export function createBattleActionMessage(monsterGroup, battleAction, targetType, targetName, location) {
+  const groupName = monsterGroup.name || 'Monster group';
+  const personalityEmoji = monsterGroup.personality?.emoji ? `${monsterGroup.personality.emoji} ` : '';
+  
+  if (battleAction === 'attack') {
+    if (targetType === 'monster') {
+      return `The ${personalityEmoji}${groupName} have turned on ${targetName} at (${location.x}, ${location.y})!`;
+    } else if (targetType === 'structure') {
+      return `${personalityEmoji}${groupName} are attacking ${targetName} at (${location.x}, ${location.y})!`;
+    } else {
+      return `${personalityEmoji}${groupName} have attacked ${targetName} at (${location.x}, ${location.y})!`;
+    }
+  } else if (battleAction === 'join') {
+    const side = targetType || 'defenders';
+    return `${personalityEmoji}${groupName} has joined the battle at (${location.x}, ${location.y}) on the side of the ${side}!`;
+  }
+  
+  return `${personalityEmoji}${groupName} has engaged in combat at (${location.x}, ${location.y}).`;
+}
+
 // =============================================
 // WORLD SCANNING UTILITIES 
 // =============================================
@@ -421,4 +550,56 @@ export async function scanWorldMap(db, worldId, chunks) {
     monsterStructures,
     resourceHotspots
   };
+}
+
+/**
+ * Create a database path for a tile
+ * @param {string} worldId - World ID
+ * @param {string} chunkKey - Chunk key
+ * @param {string} tileKey - Tile key
+ * @returns {string} Database path for the tile
+ */
+export function createTilePath(worldId, chunkKey, tileKey) {
+  return `worlds/${worldId}/chunks/${chunkKey}/${tileKey}`;
+}
+
+/**
+ * Create a database path for a monster group
+ * @param {string} worldId - World ID
+ * @param {object} monsterGroup - Monster group with chunkKey, tileKey, and id
+ * @returns {string} Database path for the monster group
+ */
+export function createGroupPath(worldId, monsterGroup) {
+  return `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
+}
+
+/**
+ * Create a database path for a structure
+ * @param {string} worldId - World ID
+ * @param {string} chunkKey - Chunk key
+ * @param {string} tileKey - Tile key
+ * @returns {string} Database path for the structure
+ */
+export function createStructurePath(worldId, chunkKey, tileKey) {
+  return `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`;
+}
+
+/**
+ * Create a database path for a chat message
+ * @param {string} worldId - World ID
+ * @param {string} messageId - Message ID
+ * @returns {string} Database path for the chat message
+ */
+export function createChatMessagePath(worldId, messageId) {
+  return `worlds/${worldId}/chat/${messageId}`;
+}
+
+/**
+ * Generate a unique monster-related ID
+ * @param {string} prefix - ID prefix
+ * @param {number} now - Current timestamp
+ * @returns {string} Generated ID
+ */
+export function generateMonsterId(prefix, now) {
+  return `${prefix}_${now}_${Math.floor(Math.random() * 10000)}`;
 }

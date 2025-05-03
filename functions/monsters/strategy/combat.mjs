@@ -4,7 +4,11 @@
 
 import {
   findPlayerGroupsOnTile,
-  findMergeableMonsterGroups
+  findMergeableMonsterGroups,
+  createBattleActionMessage,
+  createGroupPath,
+  createChatMessagePath,
+  generateMonsterId
 } from '../_monsters.mjs';
 
 // Re-export the imported functions
@@ -56,15 +60,17 @@ export async function mergeMonsterGroupsOnTile(db, worldId, monsterGroup, mergea
   updates[`${groupPath}/items`] = itemsToAdd;
   
   // Add a message about the merge
-  const chatMessageId = `monster_merge_${now}_${groupId}`;
-  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+  const chatMessageId = generateMonsterId('monster_merge', now);
+  const location = {
+    x: parseInt(tileKey.split(',')[0]),
+    y: parseInt(tileKey.split(',')[1])
+  };
+  
+  updates[createChatMessagePath(worldId, chatMessageId)] = {
     text: `${monsterGroup.name || 'Monster group'} has grown in strength, absorbing ${mergeableGroups.length} other monster groups!`,
     type: 'event',
     timestamp: now,
-    location: {
-      x: parseInt(tileKey.split(',')[0]),
-      y: parseInt(tileKey.split(',')[1])
-    }
+    location
   };
   
   return {
@@ -157,9 +163,9 @@ export async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetG
     (selectedTargets[0].name || `Player group ${selectedTargets[0].id.slice(-4)}`) :
     'Player groups';
     
-  const messageId = `monster_attack_${now}_${monsterGroup.id}`;
-  updates[`worlds/${worldId}/chat/${messageId}`] = {
-    text: `${monsterGroup.name || 'Monsters'} have attacked ${targetName} at (${x}, ${y})!`,
+  const messageId = generateMonsterId('monster_attack', now);
+  updates[createChatMessagePath(worldId, messageId)] = {
+    text: createBattleActionMessage(monsterGroup, 'attack', 'player', targetName, location),
     type: 'event',
     timestamp: now,
     location: { x, y }
@@ -240,9 +246,9 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
   
   // Add battle start message to chat
   const structureName = structure.name || structure.type || "Settlement";
-  const messageId = `monster_attack_structure_${now}_${monsterGroup.id}`;
-  updates[`worlds/${worldId}/chat/${messageId}`] = {
-    text: `${monsterGroup.name || 'Monsters'} are attacking ${structureName} at (${x}, ${y})!`,
+  const messageId = generateMonsterId('monster_attack_structure', now);
+  updates[createChatMessagePath(worldId, messageId)] = {
+    text: createBattleActionMessage(monsterGroup, 'attack', 'structure', structureName, location),
     type: 'event',
     timestamp: now,
     location: { x, y }
@@ -361,12 +367,10 @@ export async function initiateAttackOnMonsters(db, worldId, monsterGroup, target
   
   // Add battle start message to chat
   const targetName = selectedTargets[0].name || "Monster group";
-  const messageId = `monster_attack_monster_${now}_${monsterGroup.id}`;
-  const personalityText = monsterGroup.personality?.emoji ? 
-    ` ${monsterGroup.personality.emoji} ` : ' ';
+  const messageId = generateMonsterId('monster_attack_monster', now);
   
-  updates[`worlds/${worldId}/chat/${messageId}`] = {
-    text: `The${personalityText}${monsterGroup.name || 'Feral monsters'} have turned on ${targetName} at (${x}, ${y})!`,
+  updates[createChatMessagePath(worldId, messageId)] = {
+    text: createBattleActionMessage(monsterGroup, 'attack', 'monster', targetName, location),
     type: 'event',
     timestamp: now,
     location: { x, y }
@@ -438,17 +442,17 @@ export async function joinExistingBattle(db, worldId, monsterGroup, tileData, up
   // Add a chat message about monsters joining the fight
   const groupName = monsterGroup.name || "Monster group";
   const joiningSide = joinAttackers ? "attackers" : "defenders";
-  const personalityText = monsterGroup.personality?.emoji ? ` ${monsterGroup.personality.emoji}` : '';
+  const location = {
+    x: parseInt(tileKey.split(',')[0]),
+    y: parseInt(tileKey.split(',')[1])
+  };
   
-  const chatMessageId = `monster_join_battle_${now}_${groupId}`;
-  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-    text: `${personalityText} ${groupName} has joined the battle at (${tileKey.replace(',', ', ')}) on the side of the ${joiningSide}!`,
+  const chatMessageId = generateMonsterId('monster_join_battle', now);
+  updates[createChatMessagePath(worldId, chatMessageId)] = {
+    text: createBattleActionMessage(monsterGroup, 'join', joiningSide, '', location),
     type: 'event',
     timestamp: now,
-    location: {
-      x: parseInt(tileKey.split(',')[0]),
-      y: parseInt(tileKey.split(',')[1])
-    }
+    location
   };
   
   return {

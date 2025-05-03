@@ -5,7 +5,19 @@
 
 import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
 import { BUILDINGS } from 'gisaima-shared/definitions/BUILDINGS.js';
-import { countTotalResources } from '../_monsters.mjs';
+import { 
+  countTotalResources, 
+  isMonsterStructure,
+  canStructureBeUpgraded,
+  hasSufficientResources,
+  consumeResourcesFromItems,
+  createMonsterConstructionMessage,
+  createResourceDepositMessage,
+  createGroupPath,
+  createStructurePath,
+  createChatMessagePath,
+  generateMonsterId
+} from '../_monsters.mjs';
 
 // Constants
 const MIN_RESOURCES_FOR_BUILDING = 15;
@@ -162,24 +174,8 @@ function getRequiredResourcesForStructure(structureType) {
  * @returns {boolean} True if group has required resources
  */
 function hasResourcesToBuild(monsterGroup, structureType) {
-  if (!monsterGroup.items || monsterGroup.items.length === 0) {
-    return false;
-  }
-  
   const requiredResources = getRequiredResourcesForStructure(structureType);
-  const availableResources = monsterGroup.items.reduce((acc, item) => {
-    acc[item.name] = (acc[item.name] || 0) + (item.quantity || 1);
-    return acc;
-  }, {});
-  
-  // Check if we have all required resources
-  for (const required of requiredResources) {
-    if (!availableResources[required.name] || availableResources[required.name] < required.quantity) {
-      return false;
-    }
-  }
-  
-  return true;
+  return hasSufficientResources(monsterGroup.items || [], requiredResources);
 }
 
 /**
@@ -211,19 +207,7 @@ function hasResourcesToUpgrade(monsterGroup, structure) {
     requiredResources.push({ name: 'Crystal Shard', quantity: 1 });
   }
   
-  const availableResources = monsterGroup.items.reduce((acc, item) => {
-    acc[item.name] = (acc[item.name] || 0) + (item.quantity || 1);
-    return acc;
-  }, {});
-  
-  // Check if we have all required resources
-  for (const required of requiredResources) {
-    if (!availableResources[required.name] || availableResources[required.name] < required.quantity) {
-      return false;
-    }
-  }
-  
-  return true;
+  return hasSufficientResources(monsterGroup.items, requiredResources);
 }
 
 /**
@@ -351,37 +335,12 @@ function consumeResources(monsterGroup, structureType, updates, groupPath) {
   // Get required resources
   const requiredResources = getRequiredResourcesForStructure(structureType);
   
-  // Create a copy of the monster's items
-  const remainingItems = [...(monsterGroup.items || [])];
+  // Use the helper function to consume resources
+  const remainingItems = consumeResourcesFromItems(monsterGroup.items || [], requiredResources);
   
-  // Consume each required resource
-  for (const required of requiredResources) {
-    let remainingQuantity = required.quantity;
-    
-    // Find items that match this resource
-    for (let i = 0; i < remainingItems.length; i++) {
-      if (remainingItems[i].name === required.name) {
-        const available = remainingItems[i].quantity || 1;
-        
-        if (available <= remainingQuantity) {
-          // Use the entire item
-          remainingQuantity -= available;
-          remainingItems.splice(i, 1);
-          i--; // Adjust index after removal
-        } else {
-          // Use part of the item
-          remainingItems[i].quantity -= remainingQuantity;
-          remainingQuantity = 0;
-        }
-        
-        if (remainingQuantity === 0) break;
-      }
-    }
-    
-    // If we couldn't find enough of this resource, return false
-    if (remainingQuantity > 0) {
-      return false;
-    }
+  // If resources couldn't be consumed, return false
+  if (remainingItems === null) {
+    return false;
   }
   
   // Update the monster group with the remaining items
@@ -427,7 +386,7 @@ export async function buildMonsterStructure(db, worldId, monsterGroup, location,
   }
   
   // Generate structure ID
-  const structureId = `monster_structure_${now}_${Math.floor(Math.random() * 10000)}`;
+  const structureId = generateMonsterId('monster_structure', now);
   
   // Set up location references
   const chunkX = Math.floor(buildLocation.x / 20);
@@ -443,23 +402,23 @@ export async function buildMonsterStructure(db, worldId, monsterGroup, location,
     features: ['basic_storage', 'monster_spawning'],
     monster: true
   };
-
+  
   const structure = {
     id: structureId,
     type: structureType,
     name: `${monsterGroup.name || "Monster"} ${structureData.name}`,
-    owner: 'monster', // Explicitly set owner to 'monster' for all monster structures
+    owner: 'monster', // Explicitly set owner to 'monster'
     ownerGroupId: monsterGroup.id,
     createdAt: now,
     level: 1,
     items: [],
     buildings: {},
-    monster: true, // Also keep the monster flag
+    monster: true,
     features: structureData.features || []
   };
   
   // Consume resources from the monster group
-  const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
+  const groupPath = createGroupPath(worldId, monsterGroup);
   if (!consumeResources(monsterGroup, structureType, updates, groupPath)) {
     return { action: null, reason: 'resource_consumption_failed' };
   }
@@ -475,9 +434,9 @@ export async function buildMonsterStructure(db, worldId, monsterGroup, location,
   updates[`${groupPath}/buildingLocation`] = { x: buildLocation.x, y: buildLocation.y };
   
   // Add a message about the building
-  const chatMessageId = `monster_building_${now}_${monsterGroup.id}`;
-  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-    text: `${monsterGroup.name || "Monsters"} are constructing a ${structureData.name} at (${buildLocation.x}, ${buildLocation.y})!`,
+  const chatMessageId = generateMonsterId('monster_building', now);
+  updates[createChatMessagePath(worldId, chatMessageId)] = {
+    text: createMonsterConstructionMessage(monsterGroup, 'build', structureData.name, buildLocation),
     type: 'event',
     timestamp: now,
     location: {
@@ -509,15 +468,12 @@ export async function buildMonsterStructure(db, worldId, monsterGroup, location,
  */
 export async function upgradeMonsterStructure(db, worldId, monsterGroup, structure, updates, now) {
   // Only upgrade monster structures
-  if (!structure.monster) {
+  if (!isMonsterStructure(structure)) {
     return { action: null, reason: 'not_monster_structure' };
   }
   
   // Check if the structure can be upgraded
-  const currentLevel = structure.level || 1;
-  const maxLevel = 3; // Maximum level for monster structures
-  
-  if (currentLevel >= maxLevel) {
+  if (!canStructureBeUpgraded(structure)) {
     return { action: null, reason: 'max_level_reached' };
   }
   
@@ -630,15 +586,15 @@ export async function upgradeMonsterStructure(db, worldId, monsterGroup, structu
  */
 export async function demobilizeAtMonsterStructure(db, worldId, monsterGroup, structure, updates, now) {
   // Only allow demobilizing at monster structures
-  if (!structure.monster) {
+  if (!isMonsterStructure(structure)) {
     return { action: null, reason: 'not_monster_structure' };
   }
   
   // Get paths
   const chunkKey = monsterGroup.chunkKey;
   const tileKey = monsterGroup.tileKey;
-  const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}`;
-  const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`;
+  const groupPath = createGroupPath(worldId, monsterGroup);
+  const structurePath = createStructurePath(worldId, chunkKey, tileKey);
   
   // Check if the monster group has items to deposit
   if (!monsterGroup.items || monsterGroup.items.length === 0) {
@@ -668,15 +624,17 @@ export async function demobilizeAtMonsterStructure(db, worldId, monsterGroup, st
   updates[`${groupPath}/items`] = []; // Clear the group's items
   
   // Add a message about the resource deposit
-  const chatMessageId = `monster_deposit_${now}_${monsterGroup.id}`;
-  updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-    text: `${monsterGroup.name || "Monsters"} have deposited resources at their ${structure.name || "structure"}.`,
+  const chatMessageId = generateMonsterId('monster_deposit', now);
+  const location = { 
+    x: parseInt(tileKey.split(',')[0]), 
+    y: parseInt(tileKey.split(',')[1]) 
+  };
+  
+  updates[createChatMessagePath(worldId, chatMessageId)] = {
+    text: createResourceDepositMessage(monsterGroup, structure.name, groupItems.length, location),
     type: 'event',
     timestamp: now,
-    location: {
-      x: parseInt(tileKey.split(',')[0]),
-      y: parseInt(tileKey.split(',')[1])
-    }
+    location
   };
   
   return {
@@ -699,7 +657,7 @@ export async function demobilizeAtMonsterStructure(db, worldId, monsterGroup, st
  */
 export async function addOrUpgradeMonsterBuilding(db, worldId, monsterGroup, structure, buildingType, updates, now) {
   // Verify this is a monster structure
-  if (!structure.monster) {
+  if (!isMonsterStructure(structure)) {
     return { action: null, reason: 'not_monster_structure' };
   }
   
