@@ -48,10 +48,7 @@ export async function startMonsterGathering(db, worldId, monsterGroup, updates, 
 }
 
 
-export async function upgradeMonsterStructure(db, worldId, monsterGroup, structure, updates, now) {
-  // Implementation would go here
-  return { action: 'upgrade' };
-}
+
 
 export async function demobilizeAtMonsterStructure(db, worldId, monsterGroup, structure, updates, now) {
   // Implementation would go here
