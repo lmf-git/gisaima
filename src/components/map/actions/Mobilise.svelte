@@ -28,6 +28,7 @@
   
   let mobilizeError = $state(null);
   let processing = $state(false);
+  let mobilizeSuccess = $state(false); // Add new state to track success
 
   // Set default group name when component loads, based on player's name
   $effect(() => {
@@ -114,6 +115,7 @@
 
     mobilizeError = null;
     processing = true;
+    mobilizeSuccess = false; // Reset success state
     
     try {
       console.log("Preparing mobilization request with:", {
@@ -139,7 +141,12 @@
       });
       
       console.log('Mobilization result:', result.data);
-      onClose();
+      mobilizeSuccess = true; // Set success state
+      
+      // Reduce timeout from 800ms to 500ms for faster response
+      setTimeout(() => {
+        onClose();
+      }, 500);
     } catch (error) {
       console.error('Error during mobilization:', error);
       if (error.code === 'unauthenticated') {
@@ -147,6 +154,7 @@
       } else {
          mobilizeError = error.message || "Failed to mobilise forces";
       }
+      mobilizeSuccess = false;
     } finally {
       processing = false;
     }
@@ -274,6 +282,15 @@
         {#if mobilizeError}
           <div class="mobilise-error">
             {mobilizeError}
+          </div>
+        {/if}
+        
+        {#if mobilizeSuccess}
+          <div class="mobilise-success">
+            <p>Mobilization successful!</p>
+            <button class="close-now-btn" onclick={onClose}>
+              Close
+            </button>
           </div>
         {/if}
         
@@ -707,6 +724,34 @@
     margin: 1em 0;
     border-radius: 0.3em;
     font-size: 0.9em;
+  }
+  
+  .mobilise-success {
+    background-color: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: #4caf50;
+    padding: 0.8em;
+    margin: 1em 0;
+    border-radius: 0.3em;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .close-now-btn {
+    background: none;
+    border: none;
+    color: #4caf50;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.4em 0.8em;
+    border-radius: 0.3em;
+    transition: background-color 0.2s;
+  }
+  
+  .close-now-btn:hover {
+    background-color: rgba(76, 175, 80, 0.2);
   }
   
   .button-row {

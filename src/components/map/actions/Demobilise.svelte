@@ -103,10 +103,10 @@
         storageDestination: storageDestination
       });
 
-      // We no longer set selectedGroup to null here to keep the UI stable
+      // Reduced timeout for faster response (from 1500ms to 800ms)
       setTimeout(() => {
         onClose(true);
-      }, 3000);
+      }, 800);
     } catch (err) {
       console.error('Demobilization error:', err);
       error = err.message || 'An error occurred during demobilization.';
@@ -175,7 +175,14 @@
         {/if}
         
         {#if statusMessage}
-          <div class="status">{statusMessage}</div>
+          <div class="status">
+            {statusMessage}
+            {#if !processing}
+              <button class="close-now-btn" onclick={() => onClose(true)}>
+                Close
+              </button>
+            {/if}
+          </div>
         {/if}
         
         <div class="structure-info">

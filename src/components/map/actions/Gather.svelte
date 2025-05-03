@@ -97,10 +97,10 @@
         });
       }
       
-      // We don't set selectedGroup to null here to keep the UI stable
+      // Reduced timeout from 1500ms to 800ms
       setTimeout(() => {
         onClose(true);
-      }, 3000);
+      }, 800);
     } catch (err) {
       console.error('Gathering error:', err);
       error = err.message || 'An error occurred during gathering.';
@@ -175,7 +175,14 @@
         {/if}
         
         {#if statusMessage}
-          <div class="status">{statusMessage}</div>
+          <div class="status">
+            {statusMessage}
+            {#if !processing}
+              <button class="close-now-btn" onclick={() => onClose(true)}>
+                Close
+              </button>
+            {/if}
+          </div>
         {/if}
         
         <div class="actions">
