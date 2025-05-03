@@ -125,11 +125,6 @@
     let peekTile = $state(null);
     let peekLastClosed = $state(0);
     
-    // Use derived value to determine if we should skip click processing
-    const shouldSkipClickDueToPeek = $derived(
-      Date.now() - peekLastClosed < 200 // Skip if peek was closed within last 200ms
-    );
-
     function handlePanelHover(panelType) {
         if (panelType && ((panelType === 'chat' && showChat) || 
                         (panelType === 'achievements' && showAchievements) || 
