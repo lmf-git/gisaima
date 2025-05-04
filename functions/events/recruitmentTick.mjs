@@ -8,6 +8,7 @@
 
 import { logger } from "firebase-functions";
 import { getDatabase } from 'firebase-admin/database';
+import UNITS from 'gisaima-shared/definitions/UNITS.js';
 
 /**
  * Process recruitment queues for a given world
@@ -34,37 +35,45 @@ export function processRecruitment(worldId, updates, chunkKey, tileKey, tile, no
     
     // Check if the recruitment is complete
     if (recruitment.completesAt && recruitment.completesAt <= now) {
-      // Process completed recruitment as before
-      // ticksRequired is already correctly stored in the recruitment data
-
-      // Get parameters from the recruitment
-      const unitName = recruitment.unitName || 'Unknown Unit';
+      // Get unit definition from UNITS to ensure all properties are consistent
+      const unitId = recruitment.unitId;
+      const unitDefinition = UNITS[unitId] || {};
+      
+      // Get parameters from the recruitment with fallbacks to unit definition
+      const unitName = recruitment.unitName || unitDefinition.name || 'Unknown Unit';
       const quantity = recruitment.quantity || 1;
       const owner = recruitment.owner;
-      const race = recruitment.race || structure.race || 'neutral';
-      const type = recruitment.type || 'warrior';
-      const power = recruitment.power || 1;
+      const race = recruitment.race || unitDefinition.race || structure.race || 'neutral';
+      const type = recruitment.type || unitDefinition.type || 'warrior';
+      const power = unitDefinition.power || recruitment.power || 1;
+      const icon = unitDefinition.icon || recruitment.icon || 'sword';
       
       // Remove the recruitment from the queue
       updates[`${structurePath}/recruitmentQueue/${recruitmentId}`] = null;
       
       // Add units to structure's inventory
       if (!structure.units) {
-        updates[`${structurePath}/units`] = [];
+        updates[`${structurePath}/units`] = {};
       }
       
       // Generate a unique unit ID
-      const unitId = `unit_${now}_${recruitmentId}`;
+      const newUnitId = `unit_${now}_${recruitmentId}`;
       
-      // Create a unit group in the structure
+      // Create a more complete unit group with properties from UNITS definition
       const unitGroup = {
-        id: unitId,
+        id: newUnitId,
         name: `${unitName} Group`,
+        unitId: unitId, // Store the original unit ID reference
         type,
         race,
         quantity,
         power,
-        owner
+        icon,
+        owner,
+        createdAt: now,
+        // Include additional properties from unit definition if available
+        category: unitDefinition.category || 'player',
+        description: unitDefinition.description || `Group of ${unitName}`
       };
       
       // Add unit to structure units array or object

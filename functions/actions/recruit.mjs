@@ -8,6 +8,7 @@ import { getDatabase } from 'firebase-admin/database';
 import { logger } from "firebase-functions";
 import { Units } from 'gisaima-shared/units/units.js';
 import { getChunkKey } from 'gisaima-shared/map/cartography.js';
+import { ITEMS } from 'gisaima-shared/definitions/ITEMS.js';
 
 // Function to recruit units
 export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
@@ -350,16 +351,47 @@ export const cancelRecruitment = onCall({ maxInstances: 10 }, async (request) =>
         data.worlds[worldId].chunks[chunkKey][tileKey].structure.recruitmentQueue[recruitmentId] = null;
       }
       
-      // Refund resources
-      if (!data.players?.[userId]?.worlds?.[worldId]?.resources) {
-        data.players[userId].worlds[worldId].resources = {};
-      }
-      
-      for (const [resource, amount] of Object.entries(refunds)) {
-        if (!data.players[userId].worlds[worldId].resources[resource]) {
-          data.players[userId].worlds[worldId].resources[resource] = 0;
+      // Update to add resources to personal bank instead of global resources
+      const structure = data.worlds?.[worldId]?.chunks?.[chunkKey]?.[tileKey]?.structure;
+      if (structure) {
+        // Initialize banks if needed
+        if (!structure.banks) structure.banks = {};
+        if (!structure.banks[userId]) structure.banks[userId] = [];
+        
+        // Add refunds to personal bank
+        for (const [resourceId, amount] of Object.entries(refunds)) {
+          if (amount <= 0) continue;
+          
+          // Get proper item name from ITEMS if available
+          const upperResourceId = resourceId.toUpperCase();
+          const itemName = ITEMS[upperResourceId]?.name || resourceId;
+          
+          // Find existing item in bank or add new one
+          let found = false;
+          if (Array.isArray(structure.banks[userId])) {
+            for (let i = 0; i < structure.banks[userId].length; i++) {
+              const item = structure.banks[userId][i];
+              if (item && item.type === 'resource' && 
+                  (item.id === resourceId || item.id === upperResourceId)) {
+                // Update existing item
+                structure.banks[userId][i].quantity = (item.quantity || 0) + amount;
+                found = true;
+                break;
+              }
+            }
+          }
+          
+          // Add new item if not found
+          if (!found) {
+            structure.banks[userId].push({
+              id: upperResourceId,
+              name: itemName,
+              type: 'resource',
+              quantity: amount,
+              rarity: ITEMS[upperResourceId]?.rarity || 'common'
+            });
+          }
         }
-        data.players[userId].worlds[worldId].resources[resource] += amount;
       }
       
       return data;
