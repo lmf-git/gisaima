@@ -1,6 +1,7 @@
 <script>
     import { getFunctions, httpsCallable } from 'firebase/functions'; 
     import { get } from 'svelte/store';
+    import { onMount, onDestroy } from 'svelte'; // Add this import
 
     import { browser } from '$app/environment';
     import { goto } from '$app/navigation';
@@ -123,7 +124,6 @@
 
     let peekOpen = $state(false);
     let peekTile = $state(null);
-    let peekLastClosed = $state(0);
     
     function handlePanelHover(panelType) {
         if (panelType && ((panelType === 'chat' && showChat) || 
@@ -290,12 +290,21 @@
         }
     });
 
+    onMount(() => {
+        if (browser) document.body.classList.add('map-page-active');
+    })
+    onDestroy(() => {
+        if (browser) {
+            document.body.classList.remove('map-page-active');
+            cleanup();
+        }
+    });
+    
     $effect(() => {
         if (initialized || !browser) return;
         
         debugLog("Map initialization starting, checking dependencies...");
         
-        document.body.classList.add('map-page-active');
         
         if (!$isAuthReady) {
             debugLog("Auth not ready yet, waiting...");
@@ -361,15 +370,6 @@
             }
         });
 
-        window.addEventListener('beforeunload', cleanup);
-        
-        return () => {
-            if (browser) {
-                document.body.classList.remove('map-page-active');
-                cleanup();
-                window.removeEventListener('beforeunload', cleanup);
-            }
-        };
     });
 
     $effect(() => {
