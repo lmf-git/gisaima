@@ -367,22 +367,22 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
         structure.items = updatedSharedItems;
       }
       
-      // Add recruitment achievement
-      if (!data.players) data.players = {};
-      if (!data.players[userId]) data.players[userId] = {};
-      if (!data.players[userId].worlds) data.players[userId].worlds = {};
-      if (!data.players[userId].worlds[worldId]) data.players[userId].worlds[worldId] = {};
-      
-      const playerData = data.players[userId].worlds[worldId];
-      if (!playerData.achievements) playerData.achievements = {};
-      playerData.achievements.first_recruit = true;
-      playerData.achievements.first_recruit_date = now;
-      
       // Add deduction summary to recruitment data
       structure.recruitmentQueue[recruitmentId].resourceDeduction = deductionSummary;
       
       return data;
     });
+    
+    // Achievement handling - moved outside transaction like in gather.mjs
+    const playerRef = db.ref(`players/${userId}/worlds/${worldId}`);
+    const playerSnapshot = await playerRef.child('achievements').once('value');
+    const achievements = playerSnapshot.val() || {};
+    if (!achievements.first_recruit) {
+      await playerRef.child('achievements').update({ 
+        first_recruit: true,
+        first_recruit_date: Date.now()
+      });
+    }
     
     // Get updated queue to return to client
     const updatedQueueRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/recruitmentQueue`);
