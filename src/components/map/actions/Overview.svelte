@@ -575,6 +575,9 @@
                       {#if isOwnedByCurrentPlayer(structure)}
                         <span class="entity-badge owner-badge">Yours</span>
                       {/if}
+                      {#if structure.battleId}
+                        <span class="entity-badge fighting">Under Attack</span>
+                      {/if}
                       <span class="entity-coords">{formatCoords(structure.x, structure.y)}</span>
                     </div>
                     <div class="entity-details">
