@@ -38,8 +38,13 @@
     onClose = () => {},
     onUndoPoint = null, // Add new prop for undo functionality
     customPathPoints = [],
-    modalOpen = false
+    modalOpen = false,
+    initialZoom = 1.0 // Add new prop for initial zoom level
   } = $props();
+  
+  // Add zoom level state
+  let zoomLevel = $state(initialZoom);
+  let currentTileSize = $state(TILE_SIZE);
   
   // Track last click time for the center tile to handle debouncing
   let lastCenterClickTime = $state(0);
@@ -180,12 +185,20 @@
     }
   });
 
+
+  // Make tile size reactive
+  $effect(() => {
+    if (mapElement && zoomLevel) {
+      updateTileSize();
+    }
+  });
+  
   function resizeMap(mapElement) {
     if (!mapElement) return;
     
     map.update(state => {
       const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
-      const tileSizePx = TILE_SIZE * baseFontSize;
+      const tileSizePx = currentTileSize * baseFontSize; // Use currentTileSize instead of TILE_SIZE
       const width = mapElement.clientWidth;
       const height = mapElement.clientHeight;
 
@@ -429,6 +442,14 @@
   function handleTouchStart(event) {
     if (!introduced || !$map.ready) return;
     
+    // Handle pinch zoom first if we have multiple touch points
+    if (event.touches.length >= 2) {
+      if (handlePinchZoom(event)) {
+        // If we're handling as pinch zoom, exit early
+        return;
+      }
+    }
+    
     // Don't initiate dragging in path drawing mode
     if (isPathDrawingMode) {
       // Allow single touch for path points but prevent default
@@ -447,6 +468,14 @@
   }
   
   function handleTouchMove(event) {
+    // Handle pinch zoom first if we have multiple touch points or are already pinch zooming
+    if (event.touches.length >= 2 || isPinchZooming) {
+      if (handlePinchZoom(event)) {
+        // If we're handling as pinch zoom, exit early
+        return;
+      }
+    }
+    
     // Skip drag handling when in path drawing mode
     if (isPathDrawingMode) return;
     
@@ -459,7 +488,22 @@
     }, 1.5);
   }
   
-  function handleTouchEnd() {
+  function handleTouchEnd(event) {
+    // Reset pinch zoom tracking
+    if (isPinchZooming && event.touches.length < 2) {
+      isPinchZooming = false;
+      initialPinchDistance = 0;
+      
+      // If no touches remain, we're completely done with touch interaction
+      if (event.touches.length === 0) {
+        // Handle normal touch end for dragging
+        if ($map.isDragging && $map.dragSource === 'map') {
+          handleDragAction({ type: 'touchend' });
+        }
+      }
+      return;
+    }
+    
     // Skip drag handling when in path drawing mode
     if (isPathDrawingMode) return;
     
@@ -964,6 +1008,96 @@
       });
     }
   }
+  
+  // Add state variables for pinch zooming
+  let isPinchZooming = $state(false);
+  let initialPinchDistance = $state(0);
+  let initialZoomLevelOnPinch = $state(1.0);
+  let lastPinchTime = $state(0);
+  const PINCH_THROTTLE = 30; // Milliseconds between pinch updates
+  
+  // Add zoom control functions
+  function zoomIn() {
+    if (zoomLevel < 2.0) {
+      zoomLevel += 0.25;
+      updateTileSize();
+    }
+  }
+  
+  function zoomOut() {
+    if (zoomLevel > 0.5) {
+      zoomLevel -= 0.25;
+      updateTileSize();
+    }
+  }
+  
+  function resetZoom() {
+    zoomLevel = 1.0;
+    updateTileSize();
+  }
+  
+  // Function to update tile size based on zoom level and resize the map
+  function updateTileSize() {
+    currentTileSize = TILE_SIZE * zoomLevel;
+    if (mapElement) {
+      setTimeout(() => resizeMap(mapElement), 10);
+    }
+  }
+  
+  // Handle pinch zoom gesture
+  function handlePinchZoom(event) {
+    // Ensure we have multiple touch points for pinch zooming
+    if (event.touches.length < 2) return false;
+    
+    // Prevent default behavior to avoid browser zooming
+    event.preventDefault();
+    
+    const currentTime = Date.now();
+    
+    // For performance, limit how often we process pinch events
+    if (currentTime - lastPinchTime < PINCH_THROTTLE && event.type !== 'touchstart') {
+      return false;
+    }
+    
+    lastPinchTime = currentTime;
+    
+    // Calculate the distance between the first two touch points
+    const touch1 = event.touches[0];
+    const touch2 = event.touches[1];
+    
+    const distance = Math.hypot(
+      touch2.clientX - touch1.clientX,
+      touch2.clientY - touch1.clientY
+    );
+    
+    if (event.type === 'touchstart') {
+      // Start tracking pinch zoom
+      isPinchZooming = true;
+      initialPinchDistance = distance;
+      initialZoomLevelOnPinch = zoomLevel;
+      return true;
+    } 
+    else if (event.type === 'touchmove' && isPinchZooming) {
+      // Calculate new zoom level based on pinch distance change
+      const scaleFactor = distance / initialPinchDistance;
+      
+      // Apply zoom with constraints
+      let newZoom = initialZoomLevelOnPinch * scaleFactor;
+      
+      // Constrain zoom level to allowed range and round to nearest 0.05
+      newZoom = Math.min(2.0, Math.max(0.5, newZoom));
+      
+      // Only update if zoom actually changed
+      if (Math.abs(newZoom - zoomLevel) > 0.01) {
+        zoomLevel = newZoom;
+        updateTileSize();
+      }
+      
+      return true;
+    }
+    
+    return false;
+  }
 </script>
 
 <svelte:window
@@ -972,10 +1106,17 @@
   onmouseleave={handleMouseUp}
   onblur={() => $map.isDragging && handleMouseUp()}
   onvisibilitychange={() => document.visibilityState === 'hidden' && handleMouseUp()}
+  onwheel={(e) => {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      if (e.deltaY < 0) zoomIn();
+      else if (e.deltaY > 0) zoomOut();
+    }
+  }}
 />
 
 <div class="map-container" 
-    style="--tile-size: {TILE_SIZE}em; --center-tile-color: {backgroundColor};" 
+    style="--tile-size: {currentTileSize}em; --center-tile-color: {backgroundColor};" 
     class:modal-open={detailed} 
     class:touch-active={$map.isDragging && $map.dragSource === 'map'}
     class:path-drawing-mode={!!isPathDrawingMode}>
@@ -1291,6 +1432,20 @@
           </button>
         {/if}
       </div>
+    </div>
+  {/if}
+
+  {#if !isPathDrawingMode && $ready}
+    <div class="zoom-controls">
+      <button class="zoom-button" onclick={zoomOut} aria-label="Zoom out">
+        -
+      </button>
+      <button class="zoom-button reset-zoom" onclick={resetZoom} aria-label="Reset zoom">
+        {Math.round(zoomLevel * 100)}%
+      </button>
+      <button class="zoom-button" onclick={zoomIn} aria-label="Zoom in">
+        +
+      </button>
     </div>
   {/if}
 </div>
@@ -1993,5 +2148,64 @@
     0% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.9    0.9); }
     50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
     100% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.9); }
+  }
+
+  .zoom-controls {
+    position: absolute;
+    bottom: 2em;
+    right: 3em;
+    display: flex;
+    gap: 0.2em;
+    z-index: 500;
+    background-color: rgba(255, 255, 255, 0.85);
+    border-radius: 0.3em;
+    padding: 0.2em;
+    box-shadow: 0 0.1em 0.3em rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(0.5em);
+    -webkit-backdrop-filter: blur(0.5em);
+    border: 0.05em solid rgba(255, 255, 255, 0.2);
+    opacity: 0;
+    transform: translateY(1em);
+    animation: fadeInButton 0.7s ease-out 0.5s forwards;
+  }
+  
+  .zoom-button {
+    min-width: 1.8em;
+    height: 1.8em;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 0.05em solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.3em;
+    color: rgba(0, 0, 0, 0.8);
+    padding: 0.1em 0.4em;
+    font-size: 0.9em;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  
+  .zoom-button:hover {
+    background-color: rgba(255, 255, 255, 1);
+    box-shadow: 0 0.05em 0.2em rgba(0, 0, 0, 0.2);
+  }
+  
+  .reset-zoom {
+    min-width: 3.5em;
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+  }
+  
+  @media (max-width: 768px) {
+    .zoom-controls {
+      bottom: 1em;
+      right: 1em;
+    }
+  }
+
+  /* Add style to prevent zoom interference */
+  .map.touch-active {
+    touch-action: none;
   }
 </style>
