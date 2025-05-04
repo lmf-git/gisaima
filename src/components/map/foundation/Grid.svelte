@@ -273,6 +273,9 @@
   function handleDragAction(event, sensitivity = 1) {
     const state = $map;
     
+    // Add check to prevent drag operations during pinch zoom
+    if (isPinchZooming) return false;
+    
     if (event.type === 'dragstart' || event.type === 'touchstart') {
       const clientX = event.clientX || event.touches?.[0]?.clientX || 0;
       const clientY = event.clientY || event.touches?.[0]?.clientY || 0;
@@ -481,9 +484,20 @@
     
     // Handle pinch zoom first if we have multiple touch points
     if (event.touches.length >= 2) {
+      // Try to handle as pinch zoom
       if (handlePinchZoom(event)) {
-        // If we're handling as pinch zoom, exit early
-        return;
+        // If we successfully started a pinch zoom, cancel any existing drag
+        if ($map.isDragging) {
+          map.update(state => ({
+            ...state,
+            isDragging: false,
+            dragAccumX: 0,
+            dragAccumY: 0,
+            dragSource: null
+          }));
+        }
+        event.preventDefault();
+        return; // Exit early - don't start a drag operation
       }
     }
     
@@ -500,10 +514,13 @@
     // Handle pinch zoom first if we have multiple touch points or are already pinch zooming
     if (event.touches.length >= 2 || isPinchZooming) {
       if (handlePinchZoom(event)) {
-        // If we're handling as pinch zoom, exit early
-        return;
+        event.preventDefault();
+        return; // If handling as pinch zoom, exit early - don't process as drag
       }
     }
+    
+    // Only process drag if we're not pinch zooming
+    if (isPinchZooming) return;
     
     if (!$map.isDragging || $map.dragSource !== 'map') return;
     event.preventDefault();
@@ -519,6 +536,10 @@
     if (isPinchZooming && event.touches.length < 2) {
       isPinchZooming = false;
       initialPinchDistance = 0;
+      
+      // IMPORTANT: Don't start dragging immediately after pinch ends
+      // Wait for a new touch sequence to begin
+      event.preventDefault();
       
       // If no touches remain, we're completely done with touch interaction
       if (event.touches.length === 0) {
@@ -1081,7 +1102,7 @@
     
     // For performance, limit how often we process pinch events
     if (currentTime - lastPinchTime < PINCH_THROTTLE && event.type !== 'touchstart') {
-      return false;
+      return true; // Changed from false to true - we're still handling it as a pinch
     }
     
     lastPinchTime = currentTime;
@@ -1100,6 +1121,18 @@
       isPinchZooming = true;
       initialPinchDistance = distance;
       initialZoomLevelOnPinch = zoomLevel;
+      
+      // Cancel any existing drag operation when pinch starts
+      if ($map.isDragging) {
+        map.update(state => ({
+          ...state,
+          isDragging: false,
+          dragAccumX: 0,
+          dragAccumY: 0,
+          dragSource: null
+        }));
+      }
+      
       return true;
     } 
     else if (event.type === 'touchmove' && isPinchZooming) {
