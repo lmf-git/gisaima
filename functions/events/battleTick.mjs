@@ -217,8 +217,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // --------- PHASE 2: CALCULATE ATTRITION ---------
     // Use the new functions to calculate power ratios and attrition
     const { side1Ratio, side2Ratio } = calculatePowerRatios(side1Power, side2Power);
-    let side1Attrition = calculateAttrition(side1Power, side1Ratio);
-    let side2Attrition = calculateAttrition(side2Power, side2Ratio);
+    let side1Attrition = calculateAttrition(side1Power, side1Ratio, side2Ratio);
+    let side2Attrition = calculateAttrition(side2Power, side2Ratio, side1Ratio);
 
     // If both sides have power but no calculated attrition (edge case),
     // ensure at least one side takes attrition to guarantee battle progress
