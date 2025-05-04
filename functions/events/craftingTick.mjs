@@ -93,7 +93,6 @@ function completeCrafting(worldId, craftingId, crafting, updates) {
   // Mark crafting as complete
   updates[`worlds/${worldId}/crafting/${craftingId}/status`] = 'completed';
   updates[`worlds/${worldId}/crafting/${craftingId}/processed`] = true;
-  updates[`worlds/${worldId}/crafting/${craftingId}/completedAt`] = now;
   
   // Add the crafted item to player's inventory
   if (crafting.playerId && crafting.result) {

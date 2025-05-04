@@ -57,9 +57,8 @@ function completeStructure(worldId, updates, chunkKey, tileKey, tile, now) {
   
   // Complete the structure
   const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`;
-  updates[`${structurePath}/status`] = null; // Remove status instead of setting to 'complete'
+  updates[`${structurePath}/status`] = null;
   updates[`${structurePath}/buildProgress`] = null;
-  updates[`${structurePath}/completedAt`] = now;
   updates[`${structurePath}/builder`] = null;
   
   // Update the builder group's status if it exists
@@ -109,8 +108,7 @@ export async function processBuildingProgress(db, worldId, currentTick) {
     if (progress >= total) {
       // Building is complete - remove status entirely
       await doc.ref.update({
-        status: null, // Remove status instead of setting to 'complete'
-        completedAt: Date.now(),
+        status: null,
         buildProgress: null
       });
     } else {
