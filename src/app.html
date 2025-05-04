@@ -11,10 +11,11 @@
 		<meta name="apple-mobile-web-app-title" content="Gisaima" />
 		<link rel="manifest" href="%sveltekit.assets%/site.webmanifest" />
 		
-		<!-- PWA support -->
+		<!-- Enhanced PWA and mobile support -->
 		<meta name="theme-color" content="#0A192F">
 		<meta name="apple-mobile-web-app-capable" content="yes">
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+		<meta name="mobile-web-app-capable" content="yes">
 		
 		<!-- Preconnect to Google Fonts for better performance -->
 		<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -45,8 +46,8 @@
 		
 		%sveltekit.head%
 
-		<!-- Prevent mobile conflict with map controls -->
-		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+		<!-- Enhanced viewport settings to prevent browser zoom/scroll interference -->
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">%sveltekit.body%</div>

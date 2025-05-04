@@ -786,6 +786,34 @@
     }
   }
 
+  // Add function to handle and block gesture events
+  function preventBrowserGestures() {
+    if (typeof window === 'undefined') return;
+    
+    // Prevent pinch zoom at document level with non-passive listeners
+    window.addEventListener('wheel', e => {
+      if (e.ctrlKey) e.preventDefault();
+    }, { passive: false });
+    
+    // Block all gesture events that might interfere with our custom pinch handling
+    window.addEventListener('gesturestart', e => e.preventDefault(), { passive: false });
+    window.addEventListener('gesturechange', e => e.preventDefault(), { passive: false });
+    window.addEventListener('gestureend', e => e.preventDefault(), { passive: false });
+    
+    // Prevent touch action behaviors that interfere with dragging
+    document.body.style.touchAction = 'none';
+    
+    return () => {
+      window.removeEventListener('wheel', e => {
+        if (e.ctrlKey) e.preventDefault();
+      }, { passive: false });
+      window.removeEventListener('gesturestart', e => e.preventDefault());
+      window.removeEventListener('gesturechange', e => e.preventDefault());
+      window.removeEventListener('gestureend', e => e.preventDefault());
+      document.body.style.touchAction = '';
+    };
+  }
+  
   onMount(() => {
     resizeObserver = new ResizeObserver(() => {
       if (mapElement) {
@@ -808,12 +836,16 @@
     // Set animationsComplete with a slight additional delay to ensure transitions are complete
     setTimeout(() => animationsComplete = true, 1800);
 
+    // Add the gesture prevention setup
+    const gestureCleanup = preventBrowserGestures();
+
     return () => {
       if (resizeObserver) resizeObserver.disconnect();
       if (keyboardCleanup) keyboardCleanup();
       if (keyboardNavigationInterval) {
         clearInterval(keyboardNavigationInterval);
       }
+      if (gestureCleanup) gestureCleanup();
     };
   });
 
@@ -1164,13 +1196,6 @@
   onmouseleave={handleMouseUp}
   onblur={() => $map.isDragging && handleMouseUp()}
   onvisibilitychange={() => document.visibilityState === 'hidden' && handleMouseUp()}
-  onwheel={(e) => {
-    if (e.ctrlKey) {
-      e.preventDefault();
-      if (e.deltaY < 0) zoomIn();
-      else if (e.deltaY > 0) zoomOut();
-    }
-  }}
 />
 
 <div class="map-container" 
@@ -1554,6 +1579,9 @@
     left: 0;
     right: 0;
     bottom: 0;
+    /* Add these lines to prevent browser default touch behaviors */
+    touch-action: none;
+    -ms-touch-action: none;
   }
 
   .map {
@@ -1602,8 +1630,10 @@
     margin: 0;
     padding: 0;
     overflow: hidden;
+    touch-action: none;
+    -ms-touch-action: none;
   }
-
+  
   /* The tile cells must keep position: relative */
   .tile {
     display: flex;
@@ -2283,7 +2313,7 @@
     width: auto;
     overflow: visible;
     border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 0 0.4emrgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 0.4em rgba(0, 0, 0, 0.8); /* Fix missing space between 0.4em and rgba */
   }
 
   /* Make structure name more prominent on hover */
