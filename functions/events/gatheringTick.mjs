@@ -22,6 +22,12 @@ import { ITEMS } from "gisaima-shared";
  * @returns {boolean} Whether gathering was processed
  */
 export function processGathering(worldId, updates, group, chunkKey, tileKey, groupId, tile, now) {
+  // Skip if group is in cancellingGather state - user is currently cancelling gathering
+  if (group.status === 'cancellingGather') {
+    logger.info(`Skipping gathering for group ${groupId} as it's being cancelled`);
+    return false;
+  }
+  
   // Skip if not in gathering state
   if (group.status !== 'gathering') {
     return false;
@@ -29,6 +35,16 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
   
   // Full database path to this group
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+  
+  // Validate required gathering properties
+  if (group.gatheringTicksRemaining === undefined) {
+    // Invalid gathering state, reset to idle
+    logger.warn(`Invalid gathering state for group ${groupId} in world ${worldId}`);
+    updates[`${groupPath}/status`] = 'idle';
+    updates[`${groupPath}/gatheringBiome`] = null;
+    updates[`${groupPath}/gatheringTicksRemaining`] = null;
+    return false;
+  }
   
   // Check if we need to decrement ticks remaining
   if (group.gatheringTicksRemaining && group.gatheringTicksRemaining > 1) {
