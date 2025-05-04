@@ -407,14 +407,15 @@
     // Player must be on tile as an entity
     const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
     
-    // Player should not be in a mobilizing or demobilising group
-    const inProcessGroup = tile.groups?.some(g => 
-      (g.status === 'mobilizing' || g.status === 'demobilising') && 
-      g.owner === $currentPlayer.id
+    // Check if player is in ANY group (not just mobilizing/demobilizing)
+    const isInAnyGroup = tile.groups?.some(g => 
+      g.owner === $currentPlayer.id || 
+      (g.members && g.members[$currentPlayer.id]) ||
+      (g.memberIds && Array.isArray(g.memberIds) && g.memberIds.includes($currentPlayer.id))
     );
     
-    // Check if player is on tile but not already in a group
-    return playerOnTile && !inProcessGroup;
+    // Check if player is on tile but not in any group
+    return playerOnTile && !isInAnyGroup;
   }
   
   // Add function to check if player can be mobilized
