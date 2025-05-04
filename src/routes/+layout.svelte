@@ -23,11 +23,11 @@
     let hasShownGuestWarning = $state(false);
     
     // Computed values for conditional rendering
-    const isHomePage = $derived($page.url.pathname === '/');
-    const isMapPage = $derived($page.url.pathname === '/map');
-    const isLoginPage = $derived($page.url.pathname === '/login');
-    const isSignupPage = $derived($page.url.pathname === '/signup');
-    const isGuidePage = $derived($page.url.pathname === '/guide');
+    const isHomePage = $derived($page.url?.pathname === '/');
+    const isMapPage = $derived($page.url?.pathname === '/map');
+    const isLoginPage = $derived($page.url?.pathname === '/login');
+    const isSignupPage = $derived($page.url?.pathname === '/signup');
+    const isGuidePage = $derived($page.url?.pathname === '/guide');
     
     function toggleMobileMenu() {
         if (mobileMenuOpen) {

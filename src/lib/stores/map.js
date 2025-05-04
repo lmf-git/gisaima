@@ -288,6 +288,7 @@ function processChunkData(data = {}, chunkKey) {
 
     // Process items (multiple per tile)
     if (tileData.items) {
+      console.log(tileData.items, tileData.items?.map);
       updates.items[fullTileKey] = tileData.items.map(item => ({ ...item, x, y }));
       validItemKeys.add(fullTileKey);
       entitiesChanged = true;
