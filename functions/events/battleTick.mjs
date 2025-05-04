@@ -614,6 +614,13 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
                   timestamp: now
                 };
                 
+                // CRITICAL FIX: Mark lastLocation with death info instead of removing it
+                // This maintains the death location for history purposes
+                updates[`players/${playerId}/worlds/${worldId}/lastLocation`] = null;
+                
+                // CRITICAL FIX: Remove player from the tile
+                updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/players/${playerId}`] = null;
+                
                 killedPlayersCount++;
                 if (playerData.displayName) {
                   killedPlayerNames.push(playerData.displayName);
