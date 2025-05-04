@@ -11,12 +11,11 @@
   const { 
     onClose = () => {}, 
     onJoinBattle = () => {},
-    isActive = false, // Add prop for z-index control
-    onMouseEnter = () => {} // Add prop for mouse enter event
+    isActive = false,
+    onMouseEnter = () => {}
   } = $props();
 
-  // Get tile data directly from the targetStore (same as current player location)
-  // This makes more sense as players can only join battles at their current location
+  // Get tile data directly from the targetStore
   let tileData = $derived($targetStore || null);
 
   // Format text for display
@@ -37,6 +36,9 @@
   // Loading state
   let loading = $state(false);
   let errorMessage = $state('');
+  
+  // FIX: Use $derived for player ID like in other components
+  let playerId = $derived($currentPlayer?.id);
   
   // Helper function to normalize groups data - handles both array and object formats
   function normalizeGroupsData(groupsData) {
@@ -63,7 +65,7 @@
   $effect(() => {
     if (!tileData) return;
     
-    const playerId = $currentPlayer?.uid;
+    // FIX: Use the derived playerId instead of $currentPlayer?.uid
     if (!playerId) return;
     
     // Normalize groups data first (handles both array and object formats)
