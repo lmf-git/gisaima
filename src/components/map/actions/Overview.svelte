@@ -13,6 +13,7 @@
   import Structure from '../../icons/Structure.svelte';
   import Torch from '../../icons/Torch.svelte';
   import Close from '../../icons/Close.svelte';
+  import Monster from '../../icons/Monster.svelte';
   
   // Import the new GroupStatus component
   import GroupStatus from './GroupStatus.svelte';
@@ -840,7 +841,9 @@
                   aria-label="View group {group.name}"
                 >
                   <div class="entity-icon">
-                    {#if group.race}
+                    {#if group.type === 'monster'}
+                      <Monster extraClass="race-icon-overview" />
+                    {:else if group.race}
                       {#if group.race.toLowerCase() === 'human'}
                         <Human extraClass="race-icon-overview" />
                       {:else if group.race.toLowerCase() === 'elf'}
@@ -895,7 +898,9 @@
                         {#each Object.entries(group.units) as [unitId, unit]}
                           <div class="group-unit">
                             <div class="unit-icon">
-                              {#if unit.race}
+                              {#if unit.type === 'monster'}
+                                <Monster extraClass="unit-race-icon" />
+                              {:else if unit.race}
                                 {#if unit.race.toLowerCase() === 'human'}
                                   <Human extraClass="unit-race-icon" />
                                 {:else if unit.race.toLowerCase() === 'elf'}

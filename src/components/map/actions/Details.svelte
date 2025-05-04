@@ -19,6 +19,7 @@
   import Dwarf from '../../icons/Dwarf.svelte';
   import Goblin from '../../icons/Goblin.svelte';
   import Fairy from '../../icons/Fairy.svelte';
+  import Monster from '../../icons/Monster.svelte';
   import Compass from '../../icons/Compass.svelte';
   import Eye from '../../icons/Eye.svelte';
   import Crop from '../../icons/Crop.svelte';
@@ -886,7 +887,9 @@
                 <div class="entity group {isOwnedByCurrentPlayer(group) ? 'player-owned' : ''}">
                   <div class="entity-left">
                     <div class="entity-icon">
-                      {#if group.race}
+                      {#if group.type === 'monster'}
+                        <Monster extraClass="race-icon-details" />
+                      {:else if group.race}
                         {#if group.race.toLowerCase() === 'human'}
                           <Human extraClass="race-icon-details" />
                         {:else if group.race.toLowerCase() === 'elf'}
@@ -940,7 +943,9 @@
                           {#each Object.entries(group.units) as [unitId, unit]}
                             <div class="group-unit">
                               <div class="unit-icon">
-                                {#if unit.race}
+                                {#if unit.type === 'monster'}
+                                  <Monster extraClass="unit-race-icon" />
+                                {:else if unit.race}
                                   {#if unit.race.toLowerCase() === 'human'}
                                     <Human extraClass="unit-race-icon" />
                                   {:else if unit.race.toLowerCase() === 'elf'}
@@ -2032,7 +2037,7 @@
   .structure-name {
     color: rgba(0, 0, 0, 1); 
     font-weight: 500;
-    display: flex;
+       display: flex;
     align-items: center;
     gap: 0.5em;
   }
