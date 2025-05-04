@@ -1260,7 +1260,7 @@
           <div
             class="tile {cell?.structure?.type} {cell.terrain?.rarity || 'common'}"
             class:center={cell.isCenter}
-            class:subdivided={cell.structure} 
+            class:subdivided={cell.structure && cell.isCenter} 
             tabindex={cell.isCenter ? "0" : "-1"}
             class:highlighted={cell.highlighted}
             class:has-structure={cell.structure}
