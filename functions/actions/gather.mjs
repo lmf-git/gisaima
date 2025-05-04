@@ -84,6 +84,14 @@ export const startGathering = onCall({ maxInstances: 10 }, async (request) => {
       gatheringTicksRemaining: 2, // Set to wait for 2 ticks before completing
     });
 
+    // Achievement handling
+    const playerRef = db.ref(`players/${uid}/worlds/${worldId}`);
+    const playerSnapshot = await playerRef.child('achievements').once('value');
+    const achievements = playerSnapshot.val() || {};
+    if (!achievements.first_gather) {
+      await playerRef.child('achievements').update({ first_gather: true });
+    }
+
     return {
       success: true,
       message: 'Gathering started',
