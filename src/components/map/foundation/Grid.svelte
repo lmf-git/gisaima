@@ -786,31 +786,77 @@
     }
   }
 
-  // Add function to handle and block gesture events
-  function preventBrowserGestures() {
-    if (typeof window === 'undefined') return;
+  // Replace the setupGestureHandling function with a more comprehensive approach
+  function setupGestureHandling() {
+    if (typeof window === 'undefined' || !mapElement) return;
     
-    // Prevent pinch zoom at document level with non-passive listeners
-    window.addEventListener('wheel', e => {
-      if (e.ctrlKey) e.preventDefault();
-    }, { passive: false });
+    // Wheel event handler for trackpad pinch/zoom AND mouse wheel with Ctrl
+    const wheelHandler = (e) => {
+      // Check for pinch-zoom gesture (trackpad or mouse + ctrl)
+      if (e.ctrlKey || Math.abs(e.deltaY) % 1 !== 0) {
+        e.preventDefault();
+        
+        // For pinch gestures, the deltaY is usually much larger
+        // Also trackpads often send fractional deltas
+        const zoomAmount = Math.abs(e.deltaY) > 10 ? 0.05 : 0.25;
+        
+        if (e.deltaY < 0) {
+          // Zoom in
+          zoomLevel += zoomAmount;
+          updateTileSize();
+        } else if (e.deltaY > 0) {
+          // Zoom out - check minimum zoom
+          if (zoomLevel > 0.5 + zoomAmount) {
+            zoomLevel -= zoomAmount;
+            updateTileSize();
+          }
+        }
+        
+        // For logging purposes
+        console.log(`Zoom gesture detected: deltaY=${e.deltaY}, ctrlKey=${e.ctrlKey}, new zoomLevel=${zoomLevel}`);
+        return false;
+      }
+    };
     
-    // Block all gesture events that might interfere with our custom pinch handling
-    window.addEventListener('gesturestart', e => e.preventDefault(), { passive: false });
-    window.addEventListener('gesturechange', e => e.preventDefault(), { passive: false });
-    window.addEventListener('gestureend', e => e.preventDefault(), { passive: false });
+    // Handle special Safari/Mac gesture events 
+    const gestureStartHandler = (e) => {
+      e.preventDefault();
+      initialZoomLevelOnPinch = zoomLevel;
+      console.log('Gesture start detected');
+    };
     
-    // Prevent touch action behaviors that interfere with dragging
-    document.body.style.touchAction = 'none';
+    const gestureChangeHandler = (e) => {
+      e.preventDefault();
+      
+      // e.scale contains the pinch gesture scale factor
+      if (e.scale !== 1) {
+        const newZoom = initialZoomLevelOnPinch * e.scale;
+        
+        // Apply limits
+        zoomLevel = Math.max(0.5, newZoom);
+        updateTileSize();
+        console.log(`Gesture change: scale=${e.scale}, new zoomLevel=${zoomLevel}`);
+      }
+    };
+    
+    const gestureEndHandler = (e) => {
+      e.preventDefault();
+      console.log('Gesture end detected');
+    };
+    
+    // Add handlers to the map element
+    mapElement.addEventListener('wheel', wheelHandler, { passive: false });
+    mapElement.addEventListener('gesturestart', gestureStartHandler, { passive: false });
+    mapElement.addEventListener('gesturechange', gestureChangeHandler, { passive: false });
+    mapElement.addEventListener('gestureend', gestureEndHandler, { passive: false });
     
     return () => {
-      window.removeEventListener('wheel', e => {
-        if (e.ctrlKey) e.preventDefault();
-      }, { passive: false });
-      window.removeEventListener('gesturestart', e => e.preventDefault());
-      window.removeEventListener('gesturechange', e => e.preventDefault());
-      window.removeEventListener('gestureend', e => e.preventDefault());
-      document.body.style.touchAction = '';
+      if (mapElement) {
+        mapElement.removeEventListener('wheel', wheelHandler, { passive: false });
+        mapElement.removeEventListener('gesturestart', gestureStartHandler);
+        mapElement.removeEventListener('gesturechange', gestureChangeHandler);
+        mapElement.removeEventListener('gestureend', gestureEndHandler);
+      }
     };
   }
   
@@ -836,8 +882,8 @@
     // Set animationsComplete with a slight additional delay to ensure transitions are complete
     setTimeout(() => animationsComplete = true, 1800);
 
-    // Add the gesture prevention setup
-    const gestureCleanup = preventBrowserGestures();
+    // Replace preventBrowserGestures with setupGestureHandling
+    const gestureCleanup = setupGestureHandling();
 
     return () => {
       if (resizeObserver) resizeObserver.disconnect();
@@ -1122,19 +1168,19 @@
     }
   }
   
-  // Handle pinch zoom gesture
+  // Modify handlePinchZoom to better integrate with browser events
   function handlePinchZoom(event) {
     // Ensure we have multiple touch points for pinch zooming
     if (event.touches.length < 2) return false;
     
-    // Prevent default behavior to avoid browser zooming
+    // Always prevent default to stop browser zoom behavior
     event.preventDefault();
     
     const currentTime = Date.now();
     
     // For performance, limit how often we process pinch events
     if (currentTime - lastPinchTime < PINCH_THROTTLE && event.type !== 'touchstart') {
-      return true; // Changed from false to true - we're still handling it as a pinch
+      return true; // Still handling it as a pinch, just throttling updates
     }
     
     lastPinchTime = currentTime;
@@ -1213,6 +1259,7 @@
     ontouchcancel={handleTouchEnd}
     onclick={handleGridClick}
     onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleGridClick(e)}
+    onwheel={(e) => e.ctrlKey && e.preventDefault()}
     class:moving={isMoving}
     class:path-drawing={!!isPathDrawingMode}
     style="--terrain-color: {backgroundColor};"
@@ -1604,8 +1651,12 @@
     bottom: 0;
     margin: 0;
     padding: 0;
+    touch-action: none;
+    -ms-touch-action: none;
+    /* Add will-change to improve performance */
+    will-change: transform;
   }
-
+  
   .grid {
     display: grid;
     box-sizing: border-box;
@@ -1920,7 +1971,7 @@
   }
   
   .player-indicator {
-    background: radial-gradient(circle, rgba(130, 130, 255, 0.9), rgba(80, 80, 225, 0.9));
+    background: radial-gradient(circle, rgba(130, 130, 255, 0.9), rgba(80, 80,  225, 0.9));
     box-shadow: 0 0 0.2em rgba(100, 100, 255, 0.6);
     border: 0.08em solid rgba(180, 180, 255, 0.7);
   }
