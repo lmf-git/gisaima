@@ -5,6 +5,7 @@ import {
   calculateAttrition, 
   selectUnitsForCasualties,
 } from "gisaima-shared/war/battles.js";
+import { STRUCTURES } from "gisaima-shared/definitions/STRUCTURES.js";
 
 export function processSide({
   sideNumber, 
@@ -201,9 +202,15 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       }
     }
     
-    // Add structure power if applicable
-    if (battle.structurePower) {
-      side2Power += battle.structurePower;
+    // Add structure power if applicable - now using STRUCTURES definition
+    let structurePower = 0;
+    if (battle.structureId && tile.structure && tile.structure.type) {
+      const structureType = tile.structure.type;
+      if (STRUCTURES[structureType]) {
+        structurePower = STRUCTURES[structureType].durability || 0;
+        side2Power += structurePower;
+        console.log(`Structure power from ${structureType} durability: ${structurePower}`);
+      }
     }
     
     // Add a small random factor to prevent exact power equality and eventual stalemates
@@ -296,9 +303,9 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     newSide2Power = side2Result.newSidePower;
     side2Casualties = side2Result.updatedCasualties;
     
-    // Add structure power if applicable
-    if (battle.structurePower) {
-      newSide2Power += battle.structurePower;
+    // Add structure power if applicable - now using the same structurePower variable
+    if (structurePower > 0) {
+      newSide2Power += structurePower;
     }
     
     // Log the new power values for debugging
