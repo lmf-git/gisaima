@@ -67,7 +67,7 @@
     const worldSpeed = $worldInfo.speed || 1;
     
     // Check if we're in pending state
-    if (isPending) return "Processing";
+    if (isPending) return;
     
     // If we're within a minute, show seconds countdown
     const baseTickInterval = 60000; 

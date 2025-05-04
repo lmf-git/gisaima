@@ -39,7 +39,7 @@
 <style>
   .legend {
     position: absolute;
-    bottom: 1.5em;
+    bottom: 1.95em;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1001;

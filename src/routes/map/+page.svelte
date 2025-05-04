@@ -1600,19 +1600,19 @@
     
     .left-controls {
         position: absolute;
-        bottom: 1em;
-        left: 1em;
+        bottom: 2em;
+        left: 3em;
         z-index: 998;
         display: flex;
-        flex-direction: row; /* Change from column to row */
+        flex-direction: row;
         gap: 0.5em;
         align-items: center;
     }
 
     .controls-right {
         position: fixed;
-        bottom: 1em;
-        right: 1em;
+        bottom: 2em;
+        right: 3em;
         z-index: 1001;
         display: flex;
         gap: 0.5em;
