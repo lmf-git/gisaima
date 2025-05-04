@@ -694,6 +694,9 @@
                     {#if detailsData.structure.status === 'building'}
                       <span class="entity-badge building-badge">Building</span>
                     {/if}
+                    {#if detailsData.structure.battleId}
+                      <span class="entity-badge fighting">Under Attack</span>
+                    {/if}
                   </span>
                 </div>
                 
