@@ -140,12 +140,12 @@ function generateGatheredItems(group, biome = 'plains') {
   // Add common items every group finds
   const commonItems = [
     { 
-      id: `item_${Date.now()}_1`, 
+      id: "WOODEN_STICKS", // Use the item key as ID instead of generating a random one
       ...ITEMS.WOODEN_STICKS, 
       quantity: Math.floor(Math.random() * 5) + 1 
     },
     { 
-      id: `item_${Date.now()}_2`, 
+      id: "STONE_PIECES", // Use the item key as ID instead of generating a random one 
       ...ITEMS.STONE_PIECES, 
       quantity: Math.floor(Math.random() * 3) + 1 
     }
@@ -165,9 +165,6 @@ function generateGatheredItems(group, biome = 'plains') {
       const randomIndex = Math.floor(Math.random() * biomeItems.length);
       const item = { ...biomeItems[randomIndex] };
       
-      // Generate unique ID
-      item.id = `item_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-      
       items.push(item);
     }
   }
@@ -175,7 +172,7 @@ function generateGatheredItems(group, biome = 'plains') {
   // Rare chance (5%) for a special item
   if (Math.random() < 0.05) {
     items.push({
-      id: `item_${Date.now()}_special`,
+      id: "MYSTERIOUS_ARTIFACT", // This was already correct
       ...ITEMS.MYSTERIOUS_ARTIFACT,
       quantity: 1
     });

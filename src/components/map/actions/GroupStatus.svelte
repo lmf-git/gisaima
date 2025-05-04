@@ -1,6 +1,6 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { timeUntilNextTick } from '../../../lib/stores/game';
+  import { timeUntilNextTick, timeUntilTick } from '../../../lib/stores/game';
 
   // Props for the component
   const {
@@ -109,6 +109,21 @@
   onDestroy(() => {
     if (tickTimer) clearInterval(tickTimer);
   });
+
+  // Calculate gathering time countdown based on ticks remaining
+  function getGatheringCountdown(group) {
+    if (group.status !== 'gathering') return '';
+    
+    const ticksRemaining = group.gatheringTicksRemaining || 0;
+    
+    // If 0 or negative ticks, show pending message
+    if (ticksRemaining <= 0) {
+      return 'Pending';
+    }
+    
+    // Use the timeUntilTick function to get formatted time for this many ticks
+    return timeUntilTick(ticksRemaining);
+  }
 </script>
 
 <span 
@@ -126,8 +141,10 @@
     {/if}
   {:else if group.status === 'gathering'}
     {_fmt(group.status)} 
-    {#if !isPendingTick(group.gatheringUntil)}
-      ({formatTimeRemaining(gatherTime)})
+    {#if group.gatheringTicksRemaining}
+      ({group.gatheringTicksRemaining} ticks - {getGatheringCountdown(group)})
+    {:else}
+      (Pending)
     {/if}
   {:else}
     {_fmt(group.status)}

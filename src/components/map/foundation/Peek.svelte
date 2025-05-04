@@ -105,12 +105,19 @@
   function canGather(tile) {
     if (!tile || !$currentPlayer) return false;
     
-    // Only check if there are any player-owned groups that are idle and not in battle
-    return tile.groups?.some(g => 
+    // Check if player is at a structure
+    const hasStructure = !!tile.structure;
+    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
+    
+    // Check if player is in an idle group
+    const playerInIdleGroup = tile.groups?.some(g => 
       g.owner === $currentPlayer.id && 
       g.status === 'idle' &&
       !g.inBattle
     );
+    
+    // Can gather if player is in an idle group
+    return playerInIdleGroup;
   }
   
   function canJoinBattle(tile) {
