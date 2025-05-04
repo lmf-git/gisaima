@@ -1231,12 +1231,7 @@
         </div>
         
         {#if $game?.player?.alive && !isTutorialVisible}
-            <div class="left-controls">
-                <!-- Show NextWorldTick in left-controls when Overview is not open -->
-                {#if !showEntities}
-                    <NextWorldTick extraClass="control-button-like" compact={window.innerWidth < 768} />
-                {/if}
-                
+            <div class="left-controls">               
                 {#if !showEntities}
                     <button 
                         class="control-button entity-button" 
@@ -1258,6 +1253,11 @@
                         <UnboundIcon extraClass="button-icon" />
                     {/if}
                 </button>
+
+                <!-- Show NextWorldTick in left-controls when Overview is not open -->
+                {#if !showEntities}
+                    <NextWorldTick extraClass="control-button-like" compact={window.innerWidth < 768} />
+                {/if}
             </div>
         {:else if !showEntities}
             <div class="left-controls">
