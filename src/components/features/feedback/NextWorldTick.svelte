@@ -121,7 +121,7 @@
   });
 </script>
 
-<div class="next-tick-container {extraClass}" class:compact={compact} class:pending={isPending}>
+<div class="next-tick-container {extraClass}" class:compact={compact} class:pending={isPending} class:animated={extraClass.includes('control-button-like')}>
   {#if showLabel}
     <span class="next-tick-label">Next tick:</span>
   {/if}
@@ -160,6 +160,24 @@
     min-width: 5em;
   }
   
+  /* Add animation for control-button-like styling */
+  .next-tick-container.animated {
+    opacity: 0;
+    transform: translateY(-1em);
+    animation: fadeInButton 0.7s ease-out 0.5s forwards;
+  }
+  
+  @keyframes fadeInButton {
+    0% {
+      opacity: 0;
+      transform: translateY(-1em);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
   .next-tick-container.compact {
     font-size: 0.8em;
     padding: 0.25em 0.5em;
@@ -169,6 +187,11 @@
   .next-tick-container.pending {
     background-color: rgba(255, 230, 190, 0.9);
     animation: pulse 1.5s infinite alternate;
+  }
+
+  /* Ensure pulse animation doesn't conflict with fadeInButton */
+  .next-tick-container.animated.pending {
+    animation: fadeInButton 0.7s ease-out 0.5s forwards, pulse 1.5s 1.2s infinite alternate;
   }
 
   @keyframes pulse {
