@@ -288,8 +288,20 @@ function processChunkData(data = {}, chunkKey) {
 
     // Process items (multiple per tile)
     if (tileData.items) {
-      console.log(tileData.items, tileData.items?.map);
-      updates.items[fullTileKey] = tileData.items.map(item => ({ ...item, x, y }));
+      // FIX: Handle both array and object formats for items
+      let itemsArray;
+      if (Array.isArray(tileData.items)) {
+        // If it's already an array, use it directly
+        itemsArray = tileData.items;
+      } else if (typeof tileData.items === 'object') {
+        // If it's an object, convert it to an array
+        itemsArray = Object.values(tileData.items);
+      } else {
+        // Fallback if neither array nor object
+        itemsArray = [];
+      }
+      
+      updates.items[fullTileKey] = itemsArray.map(item => ({ ...item, x, y }));
       validItemKeys.add(fullTileKey);
       entitiesChanged = true;
     } else {
