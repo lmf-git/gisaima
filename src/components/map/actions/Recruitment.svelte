@@ -301,7 +301,7 @@
         return resourceId.charAt(0).toUpperCase() + resourceId.slice(1);
     }
 
-    // Get player's resources - updated to use player's personal bank
+    // Get player's resources - updated to properly map between bank items and unit cost IDs
     function getPlayerResources() {
         const player = get(currentPlayer);
         if (!player || !player.id) return {};
@@ -311,9 +311,20 @@
             const resources = {};
             structureData.banks[player.id].forEach(item => {
                 if (item.type === 'resource') {
-                    // Convert item name to lowercase for consistency
-                    const resourceName = item.name.toLowerCase();
-                    resources[resourceName] = (resources[resourceName] || 0) + item.quantity;
+                    // Check if the item has an ID first
+                    if (item.id && item.id.toUpperCase) {
+                        // If ID exists and is a proper ITEM_ID format, use it directly
+                        resources[item.id.toUpperCase()] = (resources[item.id.toUpperCase()] || 0) + item.quantity;
+                    }
+                    
+                    // Also add by name for backward compatibility and to handle custom items
+                    // This helps match items like "Wooden Sticks" to "WOODEN_STICKS"
+                    const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+                    resources[normalizedName] = (resources[normalizedName] || 0) + item.quantity;
+                    
+                    // Also add using lowercase name as a fallback
+                    const lowerName = item.name.toLowerCase();
+                    resources[lowerName] = (resources[lowerName] || 0) + item.quantity;
                 }
             });
             return resources;
@@ -323,16 +334,27 @@
         return {};
     }
 
-    // Check if player has enough resources
+    // Check if player has enough resources - update to handle resource ID matching
     function hasEnoughResources() {
         if (!selectedUnit) return false;
 
         const playerResources = getPlayerResources();
         const totalCost = calculateTotalCost();
 
-        for (const [resource, amount] of Object.entries(totalCost)) {
-            const playerAmount = playerResources[resource] || 0;
-            if (playerAmount < amount) return false;
+        for (const [resourceId, amount] of Object.entries(totalCost)) {
+            // Try different formats of the resource ID/name
+            const normalizedId = resourceId.toUpperCase();
+            const normalizedName = ITEMS[normalizedId]?.name.toUpperCase().replace(/ /g, '_') || '';
+            const lowerName = ITEMS[normalizedId]?.name.toLowerCase() || '';
+            
+            // Check all possible ways this resource might be stored
+            const availableAmount = 
+                playerResources[normalizedId] || 
+                playerResources[normalizedName] || 
+                playerResources[lowerName] || 
+                0;
+                
+            if (availableAmount < amount) return false;
         }
 
         return true;
