@@ -5,6 +5,7 @@
     import { get } from "svelte/store";
     
     import UNITS from "gisaima-shared/definitions/UNITS.js";
+    import { ITEMS } from "gisaima-shared/definitions/ITEMS.js";
 
     import { game, currentPlayer } from "../../../lib/stores/game.js";
 
@@ -286,9 +287,18 @@
         return date.toLocaleString();
     }
 
-    // Format a resource name
-    function formatResource(name) {
-        return name.charAt(0).toUpperCase() + name.slice(1);
+    // Format a resource name using ITEMS definition
+    function formatResource(resourceId) {
+        // Convert to uppercase for consistency with ITEMS keys
+        const upperResourceId = resourceId.toUpperCase();
+        
+        // If the resource exists in ITEMS, use its defined name
+        if (ITEMS[upperResourceId]) {
+            return ITEMS[upperResourceId].name;
+        }
+        
+        // Fallback to simple formatting if not found in ITEMS
+        return resourceId.charAt(0).toUpperCase() + resourceId.slice(1);
     }
 
     // Get player's resources - updated to use player's personal bank
