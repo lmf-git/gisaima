@@ -691,6 +691,9 @@
                     {#if isOwnedByCurrentPlayer(detailsData.structure)}
                       <span class="entity-badge owner-badge">Yours</span>
                     {/if}
+                    {#if detailsData.structure.status === 'building'}
+                      <span class="entity-badge building-badge">Building</span>
+                    {/if}
                   </span>
                 </div>
                 
