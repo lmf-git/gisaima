@@ -317,8 +317,7 @@
     // Check if there are any player-owned groups that are idle
     return tile.groups?.some(g => 
       g.owner === $currentPlayer.id && 
-      g.status === 'idle' &&
-      !g.inBattle
+      g.status === 'idle'
     );
   }
 
@@ -335,8 +334,7 @@
     // Check if there are any player-owned groups that are idle
     return tile.groups?.some(g => 
       g.owner === $currentPlayer.id && 
-      g.status === 'idle' &&
-      !g.inBattle
+      g.status === 'idle'
     );
   }
   
@@ -347,16 +345,14 @@
     // Check if there are any player-owned groups that are idle
     const playerGroups = tile.groups?.filter(g => 
       g.owner === $currentPlayer.id && 
-      g.status === 'idle' &&
-      !g.inBattle
+      g.status === 'idle'
     );
     
     // Check if there are any enemy groups on the tile
     // Now includes both idle and gathering status
     const enemyGroups = tile.groups?.filter(g => 
       g.owner !== $currentPlayer.id && 
-      (g.status === 'idle' || g.status === 'gathering') &&
-      !g.inBattle
+      (g.status === 'idle' || g.status === 'gathering')
     );
     
     // Can attack if player has at least one group and there's at least one enemy group
@@ -372,25 +368,25 @@
     // (Similar to canDemobilize, but don't check for items)
     return tile.groups?.some(g => 
       g.owner === $currentPlayer.id && 
-      g.status === 'idle' &&
-      !g.inBattle
+      g.status === 'idle'
     );
   }
   
   function canCraft(tile) {
-    if (!tile || !$currentPlayer || !tile.structure) return false;
+    if (!tile || !$currentPlayer) return false;
     
-    // Can only craft at certain structures and if player has idle groups
-    // return (tile.structure?.type === 'crafting_table' || 
-    //        tile.structure?.type === 'forge' || 
-    //        tile.structure?.type === 'workshop' ||
-    //        tile.structure?.type === 'alchemy_lab') && 
-    //        tile.groups?.some(g => 
-    //          g.owner === $currentPlayer.id && 
-    //          g.status === 'idle' &&
-    //          !g.inBattle
-    //        );
-    return true;
+    // Check if player is at a structure
+    const hasStructure = !!tile.structure;
+    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
+    
+    // Check if player is in an idle group
+    const playerInIdleGroup = tile.groups?.some(g => 
+      g.owner === $currentPlayer.id && 
+      g.status === 'idle'
+    );
+    
+    // Can craft if player is at a structure OR in an idle group
+    return (hasStructure && playerOnTile) || playerInIdleGroup;
   }
   
   function canJoinBattle(tile) {
@@ -985,7 +981,7 @@
                     </div>
                   </div>
                   
-                  {#if isOwnedByCurrentPlayer(group) && group.status === 'idle' && !group.inBattle}
+                  {#if isOwnedByCurrentPlayer(group) && group.status === 'idle'}
                     <div class="entity-actions">
                       <button class="entity-action" onclick={() => executeAction('move', { group })}>
                         <Compass extraClass="action-icon-small compass-icon" />

@@ -90,7 +90,7 @@
     
     if (tileData.groups && tileData.groups.length > 0) {
       tileData.groups.forEach(group => {
-        if (group.owner === $currentPlayer.id && group.status === 'idle' && !group.inBattle) {
+        if (group.owner === $currentPlayer.id && group.status === 'idle') {
           groups.push({
             ...group,
             selected: false

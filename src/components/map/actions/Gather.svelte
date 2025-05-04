@@ -48,7 +48,7 @@
     // Manually iterate instead of using filter/map to prevent reactivity issues
     for (let i = 0; i < tileData.groups.length; i++) {
       const group = tileData.groups[i];
-      if (group.owner === playerId && group.status === 'idle' && !group.inBattle) {
+      if (group.owner === playerId && group.status === 'idle') {
         filteredGroups.push({
           ...group,
           selected: false

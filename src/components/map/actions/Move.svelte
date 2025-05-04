@@ -46,8 +46,7 @@
     
     return currentTile.groups.filter(group => 
       group.owner === $currentPlayer.id && 
-      group.status === 'idle' &&
-      !group.inBattle
+      group.status === 'idle'
     );
   }
 

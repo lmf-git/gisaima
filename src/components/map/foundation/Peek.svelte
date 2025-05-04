@@ -52,8 +52,7 @@
     // Check if there are any player-owned groups that are idle
     return tile.groups?.some(g => 
       g.owner === $currentPlayer.id && 
-      g.status === 'idle' &&
-      !g.inBattle
+      g.status === 'idle'
     );
   }
   
@@ -64,8 +63,7 @@
     // Can only build if player has at least one idle group on the tile
     return !tile?.structure && tile.groups?.some(g => 
       g.owner === $currentPlayer.id && 
-      g.status === 'idle' &&
-      !g.inBattle
+      g.status === 'idle'
     );
   }
   
@@ -75,8 +73,7 @@
     // Check if there are any player-owned groups that are idle
     return tile.groups?.some(g => 
       g.owner === $currentPlayer.id && 
-      g.status === 'idle' &&
-      !g.inBattle
+      g.status === 'idle'
     );
   }
   
@@ -86,16 +83,14 @@
     // Check if there are any player-owned groups that are idle
     const playerGroups = tile.groups?.filter(g => 
       g.owner === $currentPlayer.id && 
-      g.status === 'idle' &&
-      !g.inBattle
+      g.status === 'idle'
     );
     
     // Check if there are any enemy groups on the tile
     // Now includes both idle and gathering status
     const enemyGroups = tile.groups?.filter(g => 
       g.owner !== $currentPlayer.id && 
-      (g.status === 'idle' || g.status === 'gathering') &&
-      !g.inBattle
+      (g.status === 'idle' || g.status === 'gathering')
     );
     
     // Can attack if player has at least one group and there's at least one enemy group
@@ -105,15 +100,10 @@
   function canGather(tile) {
     if (!tile || !$currentPlayer) return false;
     
-    // Check if player is at a structure
-    const hasStructure = !!tile.structure;
-    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
-    
     // Check if player is in an idle group
     const playerInIdleGroup = tile.groups?.some(g => 
       g.owner === $currentPlayer.id && 
-      g.status === 'idle' &&
-      !g.inBattle
+      g.status === 'idle'
     );
     
     // Can gather if player is in an idle group
@@ -127,8 +117,7 @@
     return tile.battles?.length > 0 &&
            tile.groups?.some(g => 
              g.owner === $currentPlayer.id && 
-             g.status === 'idle' &&
-             !g.inBattle
+             g.status === 'idle'
            );
   }
 
@@ -142,8 +131,7 @@
     // Check if player is in an idle group
     const playerInIdleGroup = tile.groups?.some(g => 
       g.owner === $currentPlayer.id && 
-      g.status === 'idle' &&
-      !g.inBattle
+      g.status === 'idle'
     );
     
     // Can craft if player is at a structure OR in an idle group

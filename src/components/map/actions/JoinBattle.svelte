@@ -74,8 +74,7 @@
     // Find groups that can join battles
     availableGroups = groups.filter(group => 
         group.owner === playerId && 
-        group.status === 'idle' &&
-        !group.inBattle
+        group.status === 'idle'
       ).map(group => ({
         ...group,
         selected: false
@@ -110,7 +109,7 @@
     // Also look for groups in battle as a fallback
     if (groups.length > 0) {
       groups.forEach(group => {
-        if (group.inBattle && group.battleId) {
+        if (group.battleId) {
           if (!battles.has(group.battleId)) {
             battles.set(group.battleId, {
               id: group.battleId,
