@@ -203,19 +203,33 @@
       const height = mapElement.clientHeight;
 
       // Calculate how many tiles can fit in the viewport
-      // Add 1 to ensure we fill the entire viewport plus a bit more
-      let cols = Math.ceil(width / tileSizePx) + 1;
-      let rows = Math.ceil(height / tileSizePx) + 1;
+      const rawCols = width / tileSizePx;
+      const rawRows = height / tileSizePx;
       
-      // Ensure we have odd numbers for centered target
-      cols = cols % 2 === 0 ? cols + 1 : cols;
-      rows = rows % 2 === 0 ? rows + 1 : rows;
+      // Define a consistent threshold for extreme zoom
+      const EXTREME_ZOOM_THRESHOLD = 4;
+      const isExtremeZoom = rawCols <= EXTREME_ZOOM_THRESHOLD || rawRows <= EXTREME_ZOOM_THRESHOLD;
+      
+      // For extreme zoom, don't add extra padding tile
+      // For normal zoom, add an extra tile to ensure coverage
+      let cols = isExtremeZoom ? Math.ceil(rawCols) : Math.ceil(rawCols) + 1;
+      let rows = isExtremeZoom ? Math.ceil(rawRows) : Math.ceil(rawRows) + 1;
+      
+      // Special handling for extreme zoom (1x1)
+      const isVeryExtremeZoom = cols === 1 && rows === 1;
+      
+      // Skip the odd number adjustment if we're at very extreme zoom (1x1)
+      if (!isVeryExtremeZoom) {
+        // Ensure we have odd numbers for centered target
+        cols = cols % 2 === 0 ? cols + 1 : cols;
+        rows = rows % 2 === 0 ? rows + 1 : rows;
+      }
       
       // Calculate the container's aspect ratio
       const containerAspectRatio = width / height;
       
-      // Only enforce square tiles when we have more than 4 rows or columns
-      if (cols > 4 || rows > 4) {
+      // Only enforce square tiles when we're NOT at extreme zoom levels
+      if (!isExtremeZoom) {
         // For normal zoom levels, calculate aspect ratio using current rows and columns
         const cellAspectRatio = (width / cols) / (height / rows);
         
@@ -234,10 +248,10 @@
           }
         }
       }
-      // At extreme zoom levels (≤ 4 rows/cols), don't enforce square tiles
-      // Just use the calculated dimensions to fill the screen
+      // At extreme zoom levels, we prioritize showing the specified number of tiles
+      // rather than enforcing square tiles
 
-      // Ensure minimum of 1 row/column for extreme zoom
+      // Always ensure we have at least 1 row and column
       cols = Math.max(cols, 1);
       rows = Math.max(rows, 1);
 
@@ -1660,7 +1674,7 @@
   .tile.subdivided:hover .structure-subgrid {
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
   }
-  
+
   .tile.subdivided:hover .subgrid-cell {
     background-color: rgba(255, 255, 255, 0.08);
   }
