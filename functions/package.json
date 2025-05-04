@@ -16,7 +16,7 @@
   "dependencies": {
     "firebase-admin": "^12.6.0",
     "firebase-functions": "^6.0.1",
-    "gisaima-shared": "lmf-git/gisaima-shared#9ab25e8e073b9b41cddb4121dece15a74622314b"
+    "gisaima-shared": "lmf-git/gisaima-shared#9335529f3bb3d3a01308619d805027bbd1d8e93c"
   },
   "devDependencies": {
     "firebase-functions-test": "^3.1.0"
