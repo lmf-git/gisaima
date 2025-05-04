@@ -6,6 +6,7 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getDatabase } from 'firebase-admin/database';
 import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
+import { ITEMS } from 'gisaima-shared/definitions/ITEMS.js';
 
 /**
  * Starts construction of a new structure at a specific location using a group.
@@ -96,33 +97,38 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
       // Handle items as array
       if (Array.isArray(groupData.items)) {
         groupData.items.forEach(item => {
-          if (!availableResources[item.name]) {
-            availableResources[item.name] = 0;
+          const itemId = item.id || item.name;
+          if (!availableResources[itemId]) {
+            availableResources[itemId] = 0;
           }
-          availableResources[item.name] += item.quantity || 1;
+          availableResources[itemId] += item.quantity || 1;
         });
       } else {
         // Handle items as object
         Object.values(groupData.items).forEach(item => {
-          if (!availableResources[item.name]) {
-            availableResources[item.name] = 0;
+          const itemId = item.id || item.name;
+          if (!availableResources[itemId]) {
+            availableResources[itemId] = 0;
           }
-          availableResources[item.name] += item.quantity || 1;
+          availableResources[itemId] += item.quantity || 1;
         });
       }
     }
     
     // Check if all required resources are available
     const missingResources = [];
-    for (const resource of structureDefinition.requiredResources) {
-      const resourceId = resource.id || resource.name; // Support both id and name for backward compatibility
-      const available = availableResources[resourceId] || 0;
-      if (available < resource.quantity) {
-        missingResources.push({
-          name: resource.id ? ITEMS[resource.id]?.name || resource.id : resource.name,
-          required: resource.quantity,
-          available: available
-        });
+    if (structureDefinition.requiredResources && structureDefinition.requiredResources.length > 0) {
+      for (const resource of structureDefinition.requiredResources) {
+        const resourceId = resource.id || resource.name;
+        const available = availableResources[resourceId] || 0;
+        if (available < resource.quantity) {
+          const displayName = ITEMS[resourceId]?.name || resourceId;
+          missingResources.push({
+            name: displayName,
+            required: resource.quantity,
+            available: available
+          });
+        }
       }
     }
     
@@ -169,7 +175,7 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
       currentData.worlds[worldId].chunks[chunkKey][tileKey].structure = {
         id: `structure_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
         name: structureName,
-        type: structureDefinition.type,
+        type: structureType,
         status: 'building',
         buildProgress: 0,
         buildTotalTime: structureDefinition.buildTime,
@@ -187,23 +193,31 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
       
       // Remove the required resources from the group
       if (currentGroup.items) {
+        // Create a map of required resources from the structure definition
+        const requiredResources = new Map();
+        if (structureDefinition.requiredResources) {
+          for (const resource of structureDefinition.requiredResources) {
+            const resourceId = resource.id || resource.name;
+            requiredResources.set(resourceId, resource.quantity);
+          }
+        }
+        
         if (Array.isArray(currentGroup.items)) {
           // Handle as array
           const remainingItems = [];
-          // Create a map of required resources from the structure definition
-          const resources = new Map(structureDefinition.requiredResources.map(r => [r.id || r.name, r.quantity]));
           
           // First pass to identify resources to keep
           for (const item of currentGroup.items) {
             const itemId = item.id || item.name;
-            const resourceRequired = resources.get(itemId);
+            const resourceRequired = requiredResources.get(itemId);
+            
             if (resourceRequired) {
               // This is a required resource
-              const toUse = Math.min(item.quantity, resourceRequired);
-              resources.set(itemId, resourceRequired - toUse);
+              const toUse = Math.min(item.quantity || 1, resourceRequired);
+              requiredResources.set(itemId, resourceRequired - toUse);
               
               // If there are leftover quantities, keep them
-              const remaining = item.quantity - toUse;
+              const remaining = (item.quantity || 1) - toUse;
               if (remaining > 0) {
                 remainingItems.push({...item, quantity: remaining});
               }
@@ -216,25 +230,38 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
           currentGroup.items = remainingItems;
         } else {
           // Handle as object
-          // Create a map of required resources
-          const resources = new Map(structureDefinition.requiredResources.map(r => [r.id || r.name, r.quantity]));
+          const itemsToRemove = [];
+          const itemsToUpdate = {};
           
           for (const itemKey in currentGroup.items) {
             const item = currentGroup.items[itemKey];
-            const resourceRequired = resources.get(item.name);
+            const itemId = item.id;
+            const resourceRequired = requiredResources.get(itemId);
             
             if (resourceRequired) {
               // This is a required resource
-              const toUse = Math.min(item.quantity, resourceRequired);
-              resources.set(item.name, resourceRequired - toUse);
+              const toUse = Math.min(item.quantity || 1, resourceRequired);
+              requiredResources.set(itemId, resourceRequired - toUse);
               
               // Update item quantity or remove if fully used
-              if (item.quantity > toUse) {
-                currentGroup.items[itemKey].quantity -= toUse;
+              if ((item.quantity || 1) > toUse) {
+                itemsToUpdate[itemKey] = {
+                  ...item,
+                  quantity: (item.quantity || 1) - toUse
+                };
               } else {
-                delete currentGroup.items[itemKey];
+                itemsToRemove.push(itemKey);
               }
             }
+          }
+          
+          // Apply updates to group items
+          for (const itemKey of itemsToRemove) {
+            delete currentGroup.items[itemKey];
+          }
+          
+          for (const [itemKey, updatedItem] of Object.entries(itemsToUpdate)) {
+            currentGroup.items[itemKey] = updatedItem;
           }
         }
       }
