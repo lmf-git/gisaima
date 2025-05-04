@@ -250,11 +250,6 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
 
     // Calculate when mobilization will complete (next world tick)
     const now = Date.now();
-    const tickInterval = worldData.tickInterval || 60000; // Default 1 minute
-    let nextTickTime = worldData.lastTick + tickInterval;
-    while (nextTickTime <= now) {
-      nextTickTime += tickInterval;
-    }
 
     // Generate new group ID
     const newGroupId = db.ref().push().key;
@@ -400,8 +395,7 @@ export const mobiliseUnits = onCall({ maxInstances: 10 }, async (request) => {
     console.log(`Mobilization successful for user ${uid}, group ${newGroupId}`);
     return { 
       success: true, 
-      groupId: newGroupId,
-      completesAt: nextTickTime
+      groupId: newGroupId
     };
   } catch (error) {
     console.error('Mobilization failed:', error);
