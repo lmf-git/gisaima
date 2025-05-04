@@ -236,11 +236,6 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
         }
       }
       
-      // Update player record
-      if (currentData.players[uid].worlds[worldId].groups[groupId]) {
-        currentData.players[uid].worlds[worldId].groups[groupId].status = 'building';
-      }
-      
       // Add chat message for building
       if (!currentData.worlds[worldId].chat) {
         currentData.worlds[worldId].chat = {};
