@@ -128,12 +128,19 @@
   function canCraft(tile) {
     if (!tile || !$currentPlayer) return false;
     
-    // Allow crafting if player is present on the tile (either as an entity or in a group)
+    // Check if player is at a structure
+    const hasStructure = !!tile.structure;
     const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
-    const playerInGroup = tile.groups?.some(g => g.owner === $currentPlayer.id);
     
-    // Can craft if player is present (either individually or in a group)
-    return playerOnTile || playerInGroup;
+    // Check if player is in an idle group
+    const playerInIdleGroup = tile.groups?.some(g => 
+      g.owner === $currentPlayer.id && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+    
+    // Can craft if player is at a structure OR in an idle group
+    return (hasStructure && playerOnTile) || playerInIdleGroup;
   }
 
   // Add function to check if recruitment is possible

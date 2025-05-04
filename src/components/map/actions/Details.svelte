@@ -378,19 +378,21 @@
   }
   
   function canCraft(tile) {
-    if (!tile || !$currentPlayer || !tile.structure) return false;
+    if (!tile || !$currentPlayer) return false;
     
-    // Can only craft at certain structures and if player has idle groups
-    // return (tile.structure?.type === 'crafting_table' || 
-    //        tile.structure?.type === 'forge' || 
-    //        tile.structure?.type === 'workshop' ||
-    //        tile.structure?.type === 'alchemy_lab') && 
-    //        tile.groups?.some(g => 
-    //          g.owner === $currentPlayer.id && 
-    //          g.status === 'idle' &&
-    //          !g.inBattle
-    //        );
-    return true;
+    // Check if player is at a structure
+    const hasStructure = !!tile.structure;
+    const playerOnTile = tile.players?.some(p => p.id === $currentPlayer.id);
+    
+    // Check if player is in an idle group
+    const playerInIdleGroup = tile.groups?.some(g => 
+      g.owner === $currentPlayer.id && 
+      g.status === 'idle' &&
+      !g.inBattle
+    );
+    
+    // Can craft if player is at a structure OR in an idle group
+    return (hasStructure && playerOnTile) || playerInIdleGroup;
   }
   
   function canJoinBattle(tile) {
