@@ -4,6 +4,7 @@
   import { scale } from 'svelte/transition';
 
   import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
+  import { ITEMS } from 'gisaima-shared/definitions/ITEMS.js';
 
   import { currentPlayer, game, timeUntilNextTick, worldInfo } from '../../../lib/stores/game';
   import { targetStore } from '../../../lib/stores/map';
@@ -25,38 +26,41 @@
   };
   
   // Transform resource names to UI-friendly format
-  const formatResourceName = (name) => {
-    const formattedNames = {
-      'wood': 'Wooden Sticks',
-      'stone': 'Stone Pieces',
-      'fiber': 'Plant Fiber',
-      'metal': 'Metal Scraps'
-    };
+  const formatResourceName = (resourceId) => {
+    // Look up the item name from ITEMS using the resource ID
+    if (ITEMS[resourceId]) {
+      return ITEMS[resourceId].name;
+    }
     
-    return formattedNames[name] || _fmt(name);
+    // Fallback formatting for unknown resources
+    return _fmt(resourceId);
   };
   
   // Transform STRUCTURES object into the format expected by the UI
   const transformStructures = () => {
-    return Object.entries(STRUCTURES).map(([id, structure]) => ({
-      id,
-      name: structure.name,
-      description: structure.description,
-      requiredResources: structure.requiredResources.map(resource => ({
-        name: formatResourceName(resource.name),
-        quantity: resource.quantity,
-        type: 'resource'
-      })),
-      buildTime: structure.buildTime,
-      capacity: structure.capacity || 10, // Default capacity if not specified
-      features: structure.features || [
-        {
-          name: 'Structure',
-          description: 'Basic structure features',
-          icon: '🏛️'
-        }
-      ]
-    }));
+    return Object.entries(STRUCTURES)
+      .filter(([_, structure]) => !structure.monster) // Filter out monster structures
+      .map(([id, structure]) => ({
+        id,
+        name: structure.name,
+        description: structure.description,
+        requiredResources: structure.requiredResources.map(resource => ({
+          // Use the ID to look up the name
+          name: formatResourceName(resource.id),
+          quantity: resource.quantity,
+          type: 'resource',
+          id: resource.id // Keep the ID for reference
+        })),
+        buildTime: structure.buildTime,
+        capacity: structure.capacity || 10, // Default capacity if not specified
+        features: structure.features || [
+          {
+            name: 'Structure',
+            description: 'Basic structure features',
+            icon: '🏛️'
+          }
+        ]
+      }));
   };
   
   // Available structure options from STRUCTURES.js
@@ -110,14 +114,15 @@
     if (selectedGroup.items && Array.isArray(selectedGroup.items)) {
       selectedGroup.items.forEach(item => {
         if (item.type === 'resource' || item.type === 'artifact') {
-          if (!resources[item.name]) {
-            resources[item.name] = {
+          if (!resources[item.id]) {
+            resources[item.id] = {
+              name: item.name,
               quantity: 0,
               type: item.type,
               rarity: item.rarity || 'common'
             };
           }
-          resources[item.name].quantity += item.quantity || 1;
+          resources[item.id].quantity += item.quantity || 1;
         }
       });
     }
@@ -204,7 +209,7 @@
     if (!selectedStructure || !selectedGroup) return false;
     
     return selectedStructure.requiredResources.every(required => {
-      const available = availableResources[required.name];
+      const available = availableResources[required.id];
       return available && available.quantity >= required.quantity;
     });
   }
@@ -318,7 +323,7 @@
             <div class="structures-list">
               {#each structureOptions as structure}
                 <div 
-                  class="structure-item {structure === selectedStructure ? 'selected' : ''} {!hasRequiredResources() && structure === selectedStructure ? 'missing-resources' : ''}"
+                  class="structure-item {structure === selectedStructure ? 'selected' : ''} {structure === selectedStructure && !hasRequiredResources() ? 'missing-resources' : ''}"
                   onclick={() => selectStructure(structure)}
                   onkeydown={(e) => handleStructureKeyDown(e, structure)}
                   tabindex="0"
@@ -341,10 +346,10 @@
                     <div class="required-resources">
                       <div class="required-title">Required Resources:</div>
                       {#each structure.requiredResources as resource}
-                        <div class="resource-requirement {availableResources[resource.name]?.quantity >= resource.quantity ? 'has-resource' : 'missing-resource'}">
+                        <div class="resource-requirement {availableResources[resource.id]?.quantity >= resource.quantity ? 'has-resource' : 'missing-resource'}">
                           <span class="resource-name">{resource.name}</span>
                           <span class="resource-quantity">
-                            {availableResources[resource.name]?.quantity || 0}/{resource.quantity}
+                            {availableResources[resource.id]?.quantity || 0}/{resource.quantity}
                           </span>
                         </div>
                       {/each}
