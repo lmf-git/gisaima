@@ -515,10 +515,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       
       // Clean up structure if involved
       if (tile && tile.structure && battle.targetTypes && battle.targetTypes.includes('structure')) {
-        // Remove battle status from structure
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/battleId`] = null;
-        
-        // If attackers won, damage or destroy the structure
+        // If attackers won, check if structure will be destroyed
+        let willDestroyStructure = false;
         if (winner === 1) {
           const structure = tile.structure;
           const structureType = structure.type;
@@ -528,6 +526,9 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           
           // Check if the structure should be destroyed
           if (newHealth <= 0) {
+            // Flag that structure will be destroyed
+            willDestroyStructure = true;
+            
             // Structure is destroyed
             updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`] = null;
             
@@ -600,8 +601,15 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
             };
           }
         }
+        
+        // Only update battleId if we're not destroying the entire structure
+        // This prevents path conflict in Firebase updates
+        if (!willDestroyStructure) {
+          // Remove battle status from structure
+          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/battleId`] = null;
+        }
       }
-      
+
       // CRITICAL FIX: Remove any updates that are children of the battle path since we're deleting the entire battle
       const battlePathPrefix = `${basePath}/`;
       Object.keys(updates).forEach(key => {
