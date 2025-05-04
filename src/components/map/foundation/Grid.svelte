@@ -223,7 +223,7 @@
   }
   
   let lastDragUpdateTime = 0;
-  const DRAG_THROTTLE = 50;
+  const DRAG_THROTTLE = 10; // Reduced from 50ms to 16ms for smoother updates (60fps)
   
   function handleDragAction(event, sensitivity = 1) {
     const state = $map;
@@ -272,14 +272,16 @@
       }
 
       const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
-      const tileSizePx = TILE_SIZE * baseFontSize;
+      const tileSizePx = currentTileSize * baseFontSize; // Use currentTileSize to respect zoom level
       const adjustedTileSize = tileSizePx * sensitivity;
 
       const dragAccumX = (state.dragAccumX || 0) + deltaX;
       const dragAccumY = (state.dragAccumY || 0) + deltaY;
 
-      const cellsMovedX = Math.round(dragAccumX / adjustedTileSize);
-      const cellsMovedY = Math.round(dragAccumY / adjustedTileSize);
+      // More fluid movement by using Math.floor instead of Math.round
+      // This ensures more consistent movement direction with less oscillation
+      const cellsMovedX = Math.floor(dragAccumX / adjustedTileSize);
+      const cellsMovedY = Math.floor(dragAccumY / adjustedTileSize);
 
       if (cellsMovedX === 0 && cellsMovedY === 0) {
         map.update(state => ({
@@ -1953,7 +1955,7 @@
   
   :global(.structure-icon) {
     opacity: 0.8;
-    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.6));
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0.6));
     /* Changed from white drop shadow to dark shadow */
     fill: rgba(40, 40, 40, 0.9); /* Added dark fill color */
   }
