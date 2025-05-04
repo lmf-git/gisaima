@@ -885,8 +885,8 @@
                         {/if}
                       </span>
                       
-                      <!-- Replace the status badge with the GroupStatus component -->
-                      <GroupStatus {group} updateCounter={updateCounter} />
+                      <!-- Pass the updateCounter to GroupStatus -->
+                      <GroupStatus group={group} updateCounter={updateCounter} />
                       
                       <span class="entity-distance">
                         {formatDistance(group.distance)}

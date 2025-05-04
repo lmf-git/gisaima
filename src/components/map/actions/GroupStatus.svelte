@@ -1,10 +1,11 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { timeUntilNextTick, timeUntilTick } from '../../../lib/stores/game';
+  import { timeUntilNextTick, timeUntilTick, worldInfo } from '../../../lib/stores/game';
 
   // Props for the component
   const {
-    group
+    group,
+    updateCounter = 0 // Accept updateCounter from parent
   } = $props();
   
   // Format text for display
@@ -16,14 +17,15 @@
   }
   
   // Local state variables
-  let updateCounter = $state(0); // Forces reactivity on interval
   let intervalId;
+  let localUpdateCounter = $state(updateCounter || 0); // Use parent counter or our own
   
   // Simplified function to format time remaining
   function formatTime(endTime) {
     if (!endTime) return '';
     
-    updateCounter; // React to counter updates
+    updateCounter; // React to external counter updates
+    localUpdateCounter; // React to local counter updates
     
     const now = Date.now();
     const remaining = endTime - now;
@@ -46,21 +48,48 @@
   // Simplified pending check
   function isPending(endTime) {
     if (!endTime) return false;
-    updateCounter; // React to counter updates
+    updateCounter; // React to parent counter updates
+    localUpdateCounter; // React to local counter updates
     return Date.now() >= endTime;
   }
 
-  // Set up interval timer to update every second
+  // Set up interval timer if not provided by parent
   onMount(() => {
-    intervalId = setInterval(() => {
-      updateCounter++; // Force reactivity
-    }, 1000);
+    if (updateCounter === 0) {
+      intervalId = setInterval(() => {
+        localUpdateCounter++; // Use our local counter
+      }, 1000);
+    }
   });
   
   // Clean up interval on component destruction
   onDestroy(() => {
     if (intervalId) clearInterval(intervalId);
   });
+  
+  // Calculate end time for tick-based actions
+  function calculateTickBasedEndTime(ticksRemaining) {
+    if (!$worldInfo || !$worldInfo.lastTick) return null;
+    
+    updateCounter; // React to parent counter updates
+    localUpdateCounter; // React to local counter updates
+    
+    const lastTick = $worldInfo.lastTick;
+    const worldSpeed = $worldInfo.speed || 1;
+    const baseTickInterval = 60000; // 1 minute in milliseconds
+    const adjustedInterval = Math.round(baseTickInterval / worldSpeed);
+    
+    // Calculate when the next tick will happen
+    const nextTickTime = lastTick + adjustedInterval;
+    
+    // If we're waiting for the next tick (mobilizing/demobilising)
+    if (ticksRemaining === 1 || !ticksRemaining) {
+      return nextTickTime;
+    }
+    
+    // For gathering or other multi-tick actions
+    return lastTick + (ticksRemaining * adjustedInterval);
+  }
   
   // Functions to get relevant time values for each status
   function getRelevantTime() {
@@ -71,7 +100,13 @@
         return group.nextMoveTime;
       case 'mobilizing':
       case 'demobilising':
-        return null; // Will use nextTick instead
+        // Calculate endTime based on next tick
+        return calculateTickBasedEndTime(1);
+      case 'gathering':
+        if (group.gatheringTicksRemaining && group.gatheringTicksRemaining > 0) {
+          return calculateTickBasedEndTime(group.gatheringTicksRemaining);
+        }
+        return null;
       default:
         return null;
     }
@@ -84,17 +119,25 @@
   function getStatusTimeDisplay() {
     if (!group) return '';
     
+    // Make these reactive to counter updates
+    updateCounter;
+    localUpdateCounter;
+    
     switch(group.status) {
       case 'moving':
         const moveTime = group.nextMoveTime;
         return isPending(moveTime) ? 'Pending' : formatTime(moveTime);
       case 'mobilizing':
       case 'demobilising':
-        return $timeUntilNextTick;
+        // Calculate the time until the next tick
+        const mobilizeEndTime = calculateTickBasedEndTime(1);
+        return isPending(mobilizeEndTime) ? 'Pending' : formatTime(mobilizeEndTime);
       case 'gathering':
-        return timeUntilTick(group.gatheringTicksRemaining);
+        if (!group.gatheringTicksRemaining || group.gatheringTicksRemaining <= 0) return 'Pending';
+        const gatherEndTime = calculateTickBasedEndTime(group.gatheringTicksRemaining);
+        return isPending(gatherEndTime) ? 'Pending' : formatTime(gatherEndTime);
       default:
-        return '?s';
+        return '';
     }
   }
 </script>
