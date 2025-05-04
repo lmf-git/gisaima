@@ -459,40 +459,59 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         
         // If attackers won, damage or destroy the structure
         if (winner === 1) {
-          // Structures get destroyed when attackers win
-
-          // Don't destroy spawn points, just damage them
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/health`] = 
-            Math.max(1, (tile.structure.health || 100) - 50);
-
-          // For regular structures, destroy completely
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`] = null;
+          const structure = tile.structure;
+          const structureType = structure.type;
+          const currentHealth = structure.health || 100;
+          const damageAmount = 50;
+          const newHealth = currentHealth - damageAmount;
           
-          // Mark players on the destroyed structure as not alive
-          if (tile.players) {
-            const now = Date.now();
-            console.log(`Structure destroyed - checking ${Object.keys(tile.players).length} players on tile`);
+          // Check if the structure should be destroyed
+          if (newHealth <= 0) {
+            // Structure is destroyed
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`] = null;
             
-            // Process each player on the tile where structure was destroyed
-            Object.entries(tile.players).forEach(([playerId, playerData]) => {
-              // Set alive status to false
-              updates[`players/${playerId}/worlds/${worldId}/alive`] = false;
+            // Handle players on the destroyed structure
+            if (tile.players) {
+              const now = Date.now();
+              const playersCount = Object.keys(tile.players).length;
+              let killedPlayersCount = 0;
+              const killedPlayerNames = [];
               
-              // Clear their group reference
-              updates[`players/${playerId}/worlds/${worldId}/inGroup`] = null;
+              console.log(`Structure destroyed - checking ${playersCount} players on tile`);
               
-              // Add a death message to the player's record
-              updates[`players/${playerId}/worlds/${worldId}/lastMessage`] = {
-                text: "Died in structure destruction",
-                timestamp: now
-              };
+              // Process each player on the tile where structure was destroyed
+              Object.entries(tile.players).forEach(([playerId, playerData]) => {
+                // Set alive status to false
+                updates[`players/${playerId}/worlds/${worldId}/alive`] = false;
+                
+                // Clear their group reference
+                updates[`players/${playerId}/worlds/${worldId}/inGroup`] = null;
+                
+                // Add a death message to the player's record
+                updates[`players/${playerId}/worlds/${worldId}/lastMessage`] = {
+                  text: "Died in structure destruction",
+                  timestamp: now
+                };
+                
+                killedPlayersCount++;
+                if (playerData.displayName) {
+                  killedPlayerNames.push(playerData.displayName);
+                }
+                
+                console.log(`Player ${playerId} (${playerData.displayName || 'unknown'}) marked as dead after structure destruction`);
+              });
               
-              console.log(`Player ${playerId} (${playerData.displayName || 'unknown'}) marked as dead after structure destruction`);
+              // Create a single chat message for the structure destruction and all player deaths
+              const structureName = structure.name || `${structureType.charAt(0).toUpperCase() + structureType.slice(1)}`;
+              let deathMessage = `${structureName} at (${battle.locationX}, ${battle.locationY}) has been destroyed!`;
               
-              // Add a chat message about player death
-              const chatMessageId = `structure_death_${playerId}_${now}`;
+              if (killedPlayersCount > 0) {
+                deathMessage += ` ${killedPlayersCount} player${killedPlayersCount !== 1 ? 's' : ''} perished in the destruction.`;
+              }
+              
+              const chatMessageId = `structure_destroyed_${battle.locationX},${battle.locationY}`;
               updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-                text: `${playerData.displayName || "A player"} has perished when their structure was destroyed at (${battle.locationX}, ${battle.locationY})`,
+                text: deathMessage,
                 type: 'event',
                 timestamp: now,
                 location: {
@@ -500,7 +519,24 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
                   y: battle.locationY
                 }
               };
-            });
+            }
+          } else {
+            // Structure survives with reduced health
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/health`] = newHealth;
+            
+            // Create a message about structure damage
+            const structureName = structure.name || `${structureType.charAt(0).toUpperCase() + structureType.slice(1)}`;
+            const now = Date.now();
+            const chatMessageId = `structure_damaged_${now}`;
+            updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+              text: `${structureName} at (${battle.locationX}, ${battle.locationY}) has been damaged! (Health: ${newHealth})`,
+              type: 'event',
+              timestamp: now,
+              location: {
+                x: battle.locationX,
+                y: battle.locationY
+              }
+            };
           }
         }
       }
