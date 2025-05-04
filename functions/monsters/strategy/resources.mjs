@@ -21,7 +21,7 @@ export async function startMonsterGathering(db, worldId, monsterGroup, updates, 
   // Set gathering status with tick counting
   updates[`${groupPath}/status`] = 'gathering';
   updates[`${groupPath}/gatheringBiome`] = biome;
-  updates[`${groupPath}/gatheringTicksRemaining`] = 2; // Set to wait for 2 ticks
+  updates[`${groupPath}/gatheringTicksRemaining`] = 2;
   
   // Add a chat message
   const chatMessageId = `monster_gather_${now}_${monsterGroup.id}`;
