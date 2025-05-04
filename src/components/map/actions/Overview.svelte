@@ -578,6 +578,9 @@
                       {#if structure.battleId}
                         <span class="entity-badge fighting">Under Attack</span>
                       {/if}
+                      {#if structure.status === 'building'}
+                        <span class="entity-badge building-badge">Building</span>
+                      {/if}
                       <span class="entity-coords">{formatCoords(structure.x, structure.y)}</span>
                     </div>
                     <div class="entity-details">
