@@ -85,23 +85,50 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError('failed-precondition', 'Recruitment queue is full');
     }
     
-    // Check player resources
-    const playerResourcesRef = db.ref(`players/${userId}/worlds/${worldId}/resources`);
-    const playerResourcesSnapshot = await playerResourcesRef.once('value');
-    const playerResources = playerResourcesSnapshot.val() || {};
+    // NEW: Check player resources in personal bank first
+    const playerBankPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/banks/${userId}`;
+    const playerBankSnapshot = await db.ref(playerBankPath).once('value');
+    const playerBank = playerBankSnapshot.val() || [];
     
-    // Validate cost structure
-    if (!cost || typeof cost !== 'object') {
-      throw new HttpsError('invalid-argument', 'Invalid cost structure');
+    // Create resource map from player's bank items
+    const bankResources = {};
+    if (Array.isArray(playerBank)) {
+      playerBank.forEach(item => {
+        if (item.type === 'resource') {
+          // Store by both ID and name for flexibility
+          if (item.id) {
+            const upperCaseId = item.id.toUpperCase();
+            bankResources[upperCaseId] = (bankResources[upperCaseId] || 0) + item.quantity;
+          }
+          
+          // Also normalize name (e.g., "Wooden Sticks" -> "WOODEN_STICKS")
+          if (item.name) {
+            const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+            bankResources[normalizedName] = (bankResources[normalizedName] || 0) + item.quantity;
+          }
+        }
+      });
     }
     
-    // Check if player has enough resources
-    for (const [resource, amount] of Object.entries(cost)) {
-      const playerAmount = playerResources[resource] || 0;
-      if (playerAmount < amount) {
-        throw new HttpsError('failed-precondition', 
-          `Not enough ${resource}. Needed: ${amount}, Have: ${playerAmount}`);
+    // Validate resource requirements against personal bank
+    const insufficientResources = [];
+    for (const [resourceKey, amountNeeded] of Object.entries(cost)) {
+      const upperResourceKey = resourceKey.toUpperCase();
+      const availableAmount = bankResources[upperResourceKey] || 0;
+      
+      if (availableAmount < amountNeeded) {
+        insufficientResources.push({
+          resource: resourceKey,
+          needed: amountNeeded,
+          available: availableAmount
+        });
       }
+    }
+    
+    if (insufficientResources.length > 0) {
+      throw new HttpsError('failed-precondition', 
+        `Insufficient resources in your personal bank: ${insufficientResources.map(r => 
+          `${r.resource} (need ${r.needed}, have ${r.available})`).join(', ')}`);
     }
     
     // Calculate completion time - simplified to work directly with ticks
@@ -145,22 +172,6 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
     await db.ref().transaction((data) => {
       if (!data) return null;
       
-      // Update player resources
-      if (!data.players) data.players = {};
-      if (!data.players[userId]) data.players[userId] = {};
-      if (!data.players[userId].worlds) data.players[userId].worlds = {};
-      if (!data.players[userId].worlds[worldId]) data.players[userId].worlds[worldId] = {};
-      if (!data.players[userId].worlds[worldId].resources) data.players[userId].worlds[worldId].resources = {};
-      
-      // Deduct resources
-      const playerData = data.players[userId].worlds[worldId];
-      for (const [resource, amount] of Object.entries(cost)) {
-        if (!playerData.resources[resource]) playerData.resources[resource] = 0;
-        playerData.resources[resource] -= amount;
-        // Ensure we don't go negative
-        if (playerData.resources[resource] < 0) playerData.resources[resource] = 0;
-      }
-      
       // Update structure recruitment queue
       if (!data.worlds) data.worlds = {};
       if (!data.worlds[worldId]) data.worlds[worldId] = {};
@@ -177,7 +188,77 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
       // Add recruitment to queue
       structure.recruitmentQueue[recruitmentId] = recruitmentData;
       
+      // NEW: Deduct resources from player's personal bank
+      if (!structure.banks) structure.banks = {};
+      if (!structure.banks[userId]) structure.banks[userId] = [];
+      
+      // Create updated bank with resources deducted
+      const updatedBank = [];
+      const resourcesNeeded = {...cost}; // Clone to track what still needs to be deducted
+      
+      // Process each item in the bank
+      if (Array.isArray(structure.banks[userId])) {
+        for (const item of structure.banks[userId]) {
+          // Skip non-resource items
+          if (!item || item.type !== 'resource') {
+            updatedBank.push(item);
+            continue;
+          }
+          
+          // Check if this item needs to be deducted
+          let deductFromThisItem = 0;
+          
+          // Check if item ID matches any resource we need
+          if (item.id) {
+            const upperItemId = item.id.toUpperCase();
+            for (const [resourceKey, amountNeeded] of Object.entries(resourcesNeeded)) {
+              if (resourceKey.toUpperCase() === upperItemId && amountNeeded > 0) {
+                deductFromThisItem = Math.min(item.quantity, amountNeeded);
+                resourcesNeeded[resourceKey] -= deductFromThisItem;
+                break;
+              }
+            }
+          }
+          
+          // If no match by ID, try matching by normalized name
+          if (deductFromThisItem === 0 && item.name) {
+            const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+            for (const [resourceKey, amountNeeded] of Object.entries(resourcesNeeded)) {
+              if (resourceKey.toUpperCase() === normalizedName && amountNeeded > 0) {
+                deductFromThisItem = Math.min(item.quantity, amountNeeded);
+                resourcesNeeded[resourceKey] -= deductFromThisItem;
+                break;
+              }
+            }
+          }
+          
+          // If we're deducting from this item
+          if (deductFromThisItem > 0) {
+            // If there's quantity remaining, keep the item with reduced quantity
+            if (item.quantity > deductFromThisItem) {
+              updatedBank.push({
+                ...item,
+                quantity: item.quantity - deductFromThisItem
+              });
+            }
+            // Otherwise the entire item is consumed, so don't add it to updatedBank
+          } else {
+            // Item not affected, keep it as is
+            updatedBank.push(item);
+          }
+        }
+      }
+      
+      // Update the bank with our modified items
+      structure.banks[userId] = updatedBank;
+      
       // Add recruitment achievement
+      if (!data.players) data.players = {};
+      if (!data.players[userId]) data.players[userId] = {};
+      if (!data.players[userId].worlds) data.players[userId].worlds = {};
+      if (!data.players[userId].worlds[worldId]) data.players[userId].worlds[worldId] = {};
+      
+      const playerData = data.players[userId].worlds[worldId];
       if (!playerData.achievements) playerData.achievements = {};
       playerData.achievements.first_recruit = true;
       playerData.achievements.first_recruit_date = now;
