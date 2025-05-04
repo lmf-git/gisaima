@@ -214,26 +214,32 @@
       // Calculate the container's aspect ratio
       const containerAspectRatio = width / height;
       
-      // Calculate cell aspect ratio using current rows and columns
-      const cellAspectRatio = (width / cols) / (height / rows);
-      
-      // If cells aren't square (with a small tolerance), adjust to make them square
-      if (Math.abs(cellAspectRatio - 1) > 0.05) {
-        if (containerAspectRatio > 1) {
-          // Wider than tall - adjust columns based on rows
-          cols = Math.ceil(rows * containerAspectRatio);
-          // Ensure odd number
-          cols = cols % 2 === 0 ? cols + 1 : cols;
-        } else {
-          // Taller than wide - adjust rows based on columns
-          rows = Math.ceil(cols / containerAspectRatio);
-          // Ensure odd number
-          rows = rows % 2 === 0 ? rows + 1 : rows;
+      // Only enforce square tiles when we have more than 4 rows or columns
+      if (cols > 4 || rows > 4) {
+        // For normal zoom levels, calculate aspect ratio using current rows and columns
+        const cellAspectRatio = (width / cols) / (height / rows);
+        
+        // If cells aren't square (with a small tolerance), adjust to make them square
+        if (Math.abs(cellAspectRatio - 1) > 0.05) {
+          if (containerAspectRatio > 1) {
+            // Wider than tall - adjust columns based on rows
+            cols = Math.ceil(rows * containerAspectRatio);
+            // Ensure odd number
+            cols = cols % 2 === 0 ? cols + 1 : cols;
+          } else {
+            // Taller than wide - adjust rows based on columns
+            rows = Math.ceil(cols / containerAspectRatio);
+            // Ensure odd number
+            rows = rows % 2 === 0 ? rows + 1 : rows;
+          }
         }
       }
+      // At extreme zoom levels (≤ 4 rows/cols), don't enforce square tiles
+      // Just use the calculated dimensions to fill the screen
 
-      cols = Math.max(cols, 7); // Increased minimum
-      rows = Math.max(rows, 7); // Increased minimum
+      // Ensure minimum of 1 row/column for extreme zoom
+      cols = Math.max(cols, 1);
+      rows = Math.max(rows, 1);
 
       return {
         ...state,
@@ -1930,8 +1936,8 @@
   .map-container.path-drawing-mode .map:not(.moving) .tile:hover::after {
        content: "";
     position: absolute;
-    inset: 0;
-    box-shadow: inset 0  0 0.3em rgba(66, 133, 244, 0.6);
+    inset:  0;
+    box-shadow: inset 0  0.3em rgba(66, 133, 244, 0.6);
     pointer-events: none;
     z-index: 10;
   }
