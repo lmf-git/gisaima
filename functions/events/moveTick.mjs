@@ -19,6 +19,12 @@ import { getChunkKey } from "gisaima-shared/map/cartography.js";
  * @returns {boolean} Whether movement was processed
  */
 export async function processMovement(worldId, updates, group, chunkKey, tileKey, groupId, now, db) {
+  // Skip if group is in cancelling state - user is currently cancelling movement
+  if (group.status === 'cancelling') {
+    logger.info(`Skipping movement for group ${groupId} as it's being cancelled`);
+    return false;
+  }
+
   // Skip if not in moving state or not time to move yet
   if (group.status !== 'moving' || !group.nextMoveTime || group.nextMoveTime > now) {
     return false;
@@ -27,8 +33,9 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
   // Full database path to this group
   const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
   
-  // Only proceed if we have a path
-  if (!group.movementPath || !Array.isArray(group.movementPath) || group.pathIndex === undefined) {
+  // Safety check: Verify all required movement properties exist
+  if (!group.movementPath || !Array.isArray(group.movementPath) || 
+      group.pathIndex === undefined || group.moveStarted === undefined) {
     // Path is invalid, reset the group status
     logger.warn(`Invalid path for group ${groupId} in world ${worldId}`);
     updates[`${groupPath}/status`] = 'idle';
@@ -38,6 +45,8 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
     updates[`${groupPath}/moveStarted`] = null;
     updates[`${groupPath}/moveSpeed`] = null;
     updates[`${groupPath}/nextMoveTime`] = null;
+    updates[`${groupPath}/targetX`] = null;
+    updates[`${groupPath}/targetY`] = null;
     return false;
   }
   

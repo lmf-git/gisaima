@@ -68,7 +68,14 @@ export const cancelMove = onCall({ maxInstances: 10 }, async (request) => {
     
     const now = Date.now();
     
-    // Update the group to cancel movement
+    // First set to cancelling state to signal to tick processor
+    await groupRef.update({
+      status: 'cancelling',
+      cancelRequestTime: now
+    });
+    
+    // After setting the cancelling state, perform the full update
+    // This two-step process helps prevent race conditions
     await groupRef.update({
       status: 'idle',
       movementPath: null,
@@ -77,7 +84,23 @@ export const cancelMove = onCall({ maxInstances: 10 }, async (request) => {
       moveSpeed: null,
       nextMoveTime: null,
       targetX: null,
-      targetY: null
+      targetY: null,
+      cancelRequestTime: null
+    });
+    
+    // Add chat message about cancellation
+    const chatMessageId = `cancel_move_${now}_${groupId}`;
+    await db.ref(`worlds/${worldId}/chat/${chatMessageId}`).set({
+      text: `${group.name || 'A group'} has stopped their journey at (${x}, ${y})`,
+      type: 'event',
+      timestamp: now,
+      userId: uid,
+      userName: group.ownerName || "Unknown",
+      location: {
+        x: x,
+        y: y,
+        timestamp: now
+      }
     });
     
     return {
