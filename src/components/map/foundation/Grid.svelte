@@ -1972,7 +1972,7 @@
   
   .player-indicator {
     background: radial-gradient(circle, rgba(130, 130, 255, 0.9), rgba(80, 80,  225, 0.9));
-    box-shadow: 0 0 0.2em rgba(100, 100, 255, 0.6);
+       box-shadow: 0 0 0.2em rgba(100, 100, 255, 0.6);
     border: 0.08em solid rgba(180, 180, 255, 0.7);
   }
   
@@ -2377,15 +2377,14 @@
 
   .you-are-here-container {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0; /* Use inset instead of top/left/width/height */
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 10;
     pointer-events: none;
+    transform-style: preserve-3d; /* Add for better rendering during transforms */
+    will-change: transform; /* Optimize for animations/transforms */
   }
 
   /* Rename target-indicator to highlight-indicator and update animation name */
