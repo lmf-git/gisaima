@@ -20,7 +20,6 @@ export async function startMonsterGathering(db, worldId, monsterGroup, updates, 
   
   // Set gathering status with tick counting
   updates[`${groupPath}/status`] = 'gathering';
-  updates[`${groupPath}/gatheringStarted`] = now;
   updates[`${groupPath}/gatheringBiome`] = biome;
   updates[`${groupPath}/gatheringTicksRemaining`] = 2; // Set to wait for 2 ticks
   

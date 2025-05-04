@@ -84,7 +84,6 @@ export const startGathering = onCall({ maxInstances: 10 }, async (request) => {
     // Update group status to gathering
     await tileRef.child(`groups/${groupId}`).update({
       status: 'gathering',
-      gatheringStarted: now,
       gatheringBiome: biome,
       gatheringTicksRemaining: 2, // Set to wait for 2 ticks before completing
     });

@@ -28,8 +28,8 @@
     
     if (group.status === 'moving') {
       return group.nextMoveTime;
-    } else if (group.status === 'gathering' || group.status === 'starting_to_gather') {
-      return group.gatheringUntil;
+    } else if (group.status === 'gathering') {
+      return 'GATHERING';
     } else {
       return 'Unkown';
     }
@@ -169,8 +169,7 @@
     color: #6a1b9a;
   }
   
-  .entity-status-badge.gathering, 
-  .entity-status-badge.starting_to_gather {
+  .entity-status-badge.gathering {
     background: rgba(138, 43, 226, 0.15);
     border: 1px solid rgba(138, 43, 226, 0.3);
     color: #8a2be2;

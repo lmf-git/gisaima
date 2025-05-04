@@ -52,8 +52,6 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
   
   // Reset group status to idle
   updates[`${groupPath}/status`] = 'idle';
-  updates[`${groupPath}/gatheringUntil`] = null;
-  updates[`${groupPath}/gatheringStarted`] = null;
   updates[`${groupPath}/gatheringBiome`] = null;
   
   // Add a message about the gathering
