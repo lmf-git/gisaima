@@ -111,11 +111,38 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
       });
     }
     
-    // Validate resource requirements against personal bank
+    // NEW: If player is the owner, also check shared storage resources
+    const sharedResources = {};
+    if (isOwned && structureData.items) {
+      const structureItems = Array.isArray(structureData.items) ? structureData.items : [];
+      structureItems.forEach(item => {
+        if (item.type === 'resource') {
+          if (item.id) {
+            const upperCaseId = item.id.toUpperCase();
+            sharedResources[upperCaseId] = (sharedResources[upperCaseId] || 0) + item.quantity;
+          }
+          
+          if (item.name) {
+            const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+            sharedResources[normalizedName] = (sharedResources[normalizedName] || 0) + item.quantity;
+          }
+        }
+      });
+    }
+    
+    // Combine available resources (for checking only, deduction will be handled separately)
+    const combinedResources = {...bankResources};
+    if (isOwned) {
+      Object.entries(sharedResources).forEach(([key, value]) => {
+        combinedResources[key] = (combinedResources[key] || 0) + value;
+      });
+    }
+    
+    // Validate resource requirements against available resources
     const insufficientResources = [];
     for (const [resourceKey, amountNeeded] of Object.entries(cost)) {
       const upperResourceKey = resourceKey.toUpperCase();
-      const availableAmount = bankResources[upperResourceKey] || 0;
+      const availableAmount = combinedResources[upperResourceKey] || 0;
       
       if (availableAmount < amountNeeded) {
         insufficientResources.push({
@@ -128,7 +155,7 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
     
     if (insufficientResources.length > 0) {
       throw new HttpsError('failed-precondition', 
-        `Insufficient resources in your personal bank: ${insufficientResources.map(r => 
+        `Insufficient resources: ${insufficientResources.map(r => 
           `${r.resource} (need ${r.needed}, have ${r.available})`).join(', ')}`);
     }
     
@@ -169,6 +196,12 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
       cost
     };
     
+    // Track which resources were deducted from which storage
+    const deductionSummary = {
+      personal: {},
+      shared: {}
+    };
+    
     // Perform the database operations in a transaction
     await db.ref().transaction((data) => {
       if (!data) return null;
@@ -189,15 +222,18 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
       // Add recruitment to queue
       structure.recruitmentQueue[recruitmentId] = recruitmentData;
       
-      // NEW: Deduct resources from player's personal bank
+      // Prepare for resource deduction
+      const resourcesNeeded = {...cost}; // Clone to track what still needs to be deducted
+      const isStructureOwner = structure.owner === userId;
+      
+      // 1. First try deducting from personal bank
       if (!structure.banks) structure.banks = {};
       if (!structure.banks[userId]) structure.banks[userId] = [];
       
       // Create updated bank with resources deducted
       const updatedBank = [];
-      const resourcesNeeded = {...cost}; // Clone to track what still needs to be deducted
       
-      // Process each item in the bank
+      // Process each item in the personal bank
       if (Array.isArray(structure.banks[userId])) {
         for (const item of structure.banks[userId]) {
           // Skip non-resource items
@@ -216,6 +252,10 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
               if (resourceKey.toUpperCase() === upperItemId && amountNeeded > 0) {
                 deductFromThisItem = Math.min(item.quantity, amountNeeded);
                 resourcesNeeded[resourceKey] -= deductFromThisItem;
+                
+                // Track what was deducted from personal storage
+                deductionSummary.personal[resourceKey] = 
+                  (deductionSummary.personal[resourceKey] || 0) + deductFromThisItem;
                 break;
               }
             }
@@ -228,6 +268,10 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
               if (resourceKey.toUpperCase() === normalizedName && amountNeeded > 0) {
                 deductFromThisItem = Math.min(item.quantity, amountNeeded);
                 resourcesNeeded[resourceKey] -= deductFromThisItem;
+                
+                // Track what was deducted from personal storage
+                deductionSummary.personal[resourceKey] = 
+                  (deductionSummary.personal[resourceKey] || 0) + deductFromThisItem;
                 break;
               }
             }
@@ -250,8 +294,78 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
         }
       }
       
-      // Update the bank with our modified items
+      // Update the personal bank with our modified items
       structure.banks[userId] = updatedBank;
+      
+      // 2. If player is structure owner and still needs resources, try deducting from shared storage
+      if (isStructureOwner && Object.values(resourcesNeeded).some(amount => amount > 0)) {
+        // Create updated shared storage with remaining resources deducted
+        const updatedSharedItems = [];
+        
+        // Process each item in shared storage
+        if (Array.isArray(structure.items)) {
+          for (const item of structure.items) {
+            // Skip non-resource items
+            if (!item || item.type !== 'resource') {
+              updatedSharedItems.push(item);
+              continue;
+            }
+            
+            // Check if this item needs to be deducted
+            let deductFromThisItem = 0;
+            
+            // Check if item ID matches any resource we still need
+            if (item.id) {
+              const upperItemId = item.id.toUpperCase();
+              for (const [resourceKey, amountNeeded] of Object.entries(resourcesNeeded)) {
+                if (resourceKey.toUpperCase() === upperItemId && amountNeeded > 0) {
+                  deductFromThisItem = Math.min(item.quantity, amountNeeded);
+                  resourcesNeeded[resourceKey] -= deductFromThisItem;
+                  
+                  // Track what was deducted from shared storage
+                  deductionSummary.shared[resourceKey] = 
+                    (deductionSummary.shared[resourceKey] || 0) + deductFromThisItem;
+                  break;
+                }
+              }
+            }
+            
+            // If no match by ID, try matching by normalized name
+            if (deductFromThisItem === 0 && item.name) {
+              const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+              for (const [resourceKey, amountNeeded] of Object.entries(resourcesNeeded)) {
+                if (resourceKey.toUpperCase() === normalizedName && amountNeeded > 0) {
+                  deductFromThisItem = Math.min(item.quantity, amountNeeded);
+                  resourcesNeeded[resourceKey] -= deductFromThisItem;
+                  
+                  // Track what was deducted from shared storage
+                  deductionSummary.shared[resourceKey] = 
+                    (deductionSummary.shared[resourceKey] || 0) + deductFromThisItem;
+                  break;
+                }
+              }
+            }
+            
+            // If we're deducting from this item
+            if (deductFromThisItem > 0) {
+              // If there's quantity remaining, keep the item with reduced quantity
+              if (item.quantity > deductFromThisItem) {
+                updatedSharedItems.push({
+                  ...item,
+                  quantity: item.quantity - deductFromThisItem
+                });
+              }
+              // Otherwise the entire item is consumed, so don't add it to updatedSharedItems
+            } else {
+              // Item not affected, keep it as is
+              updatedSharedItems.push(item);
+            }
+          }
+        }
+        
+        // Update the shared storage with our modified items
+        structure.items = updatedSharedItems;
+      }
       
       // Add recruitment achievement
       if (!data.players) data.players = {};
@@ -263,6 +377,9 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
       if (!playerData.achievements) playerData.achievements = {};
       playerData.achievements.first_recruit = true;
       playerData.achievements.first_recruit_date = now;
+      
+      // Add deduction summary to recruitment data
+      structure.recruitmentQueue[recruitmentId].resourceDeduction = deductionSummary;
       
       return data;
     });
@@ -284,7 +401,8 @@ export const recruitUnits = onCall({ maxInstances: 10 }, async (request) => {
       success: true,
       recruitmentId,
       completesAt,
-      queue: updatedQueueSnapshot.val() || {}
+      queue: updatedQueueSnapshot.val() || {},
+      resourceDeduction: deductionSummary
     };
   } 
   catch (error) {

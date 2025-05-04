@@ -301,44 +301,131 @@
         return resourceId.charAt(0).toUpperCase() + resourceId.slice(1);
     }
 
-    // Get player's resources - updated to properly map between bank items and unit cost IDs
+    // Get player's resources - updated to check both personal bank and shared storage for owners
     function getPlayerResources() {
         const player = get(currentPlayer);
         if (!player || !player.id) return {};
         
-        // Use player's personal bank at this structure
+        // Start with an empty resource map
+        const resources = {};
+        
+        // First add resources from player's personal bank at this structure
         if (structureData && structureData.banks && structureData.banks[player.id]) {
-            const resources = {};
-            structureData.banks[player.id].forEach(item => {
-                if (item.type === 'resource') {
-                    // Check if the item has an ID first
-                    if (item.id && item.id.toUpperCase) {
-                        // If ID exists and is a proper ITEM_ID format, use it directly
-                        resources[item.id.toUpperCase()] = (resources[item.id.toUpperCase()] || 0) + item.quantity;
+            const playerBank = structureData.banks[player.id];
+            if (Array.isArray(playerBank)) {
+                playerBank.forEach(item => {
+                    if (item.type === 'resource') {
+                        // Store by both ID and name for flexibility
+                        if (item.id) {
+                            const upperCaseId = item.id.toUpperCase();
+                            resources[upperCaseId] = (resources[upperCaseId] || 0) + item.quantity;
+                        }
+                        
+                        // Also normalize name (e.g., "Wooden Sticks" -> "WOODEN_STICKS")
+                        if (item.name) {
+                            const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+                            resources[normalizedName] = (resources[normalizedName] || 0) + item.quantity;
+                            
+                            // Also add using lowercase name as a fallback
+                            const lowerName = item.name.toLowerCase();
+                            resources[lowerName] = (resources[lowerName] || 0) + item.quantity;
+                        }
                     }
-                    
-                    // Also add by name for backward compatibility and to handle custom items
-                    // This helps match items like "Wooden Sticks" to "WOODEN_STICKS"
-                    const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
-                    resources[normalizedName] = (resources[normalizedName] || 0) + item.quantity;
-                    
-                    // Also add using lowercase name as a fallback
-                    const lowerName = item.name.toLowerCase();
-                    resources[lowerName] = (resources[lowerName] || 0) + item.quantity;
-                }
-            });
-            return resources;
+                });
+            }
         }
         
-        // If no player bank, return empty object
-        return {};
+        // Check if player owns the structure to include shared resources
+        const isOwner = structureData && structureData.owner === player.id;
+        
+        // If player is owner, also add resources from shared storage
+        if (isOwner && structureData && structureData.items) {
+            const sharedItems = Array.isArray(structureData.items) ? structureData.items : [];
+            
+            sharedItems.forEach(item => {
+                if (item.type === 'resource') {
+                    // Store by both ID and name for flexibility
+                    if (item.id) {
+                        const upperCaseId = item.id.toUpperCase();
+                        resources[upperCaseId] = (resources[upperCaseId] || 0) + item.quantity;
+                    }
+                    
+                    // Also normalize name
+                    if (item.name) {
+                        const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+                        resources[normalizedName] = (resources[normalizedName] || 0) + item.quantity;
+                        
+                        // Also add using lowercase name as a fallback
+                        const lowerName = item.name.toLowerCase();
+                        resources[lowerName] = (resources[lowerName] || 0) + item.quantity;
+                    }
+                }
+            });
+        }
+        
+        return {
+            resources,
+            isOwner
+        };
+    }
+    
+    // Get detailed resource breakdown showing sources
+    function getResourceBreakdown(resourceKey) {
+        const player = get(currentPlayer);
+        if (!player || !player.id) return { personal: 0, shared: 0, total: 0 };
+        
+        // Normalize resource key
+        const upperResourceKey = resourceKey.toUpperCase();
+        let personalAmount = 0;
+        let sharedAmount = 0;
+        
+        // Check player's personal bank
+        if (structureData?.banks?.[player.id]) {
+            const playerBank = structureData.banks[player.id];
+            if (Array.isArray(playerBank)) {
+                playerBank.forEach(item => {
+                    if (item.type === 'resource') {
+                        const matchesId = item.id && item.id.toUpperCase() === upperResourceKey;
+                        const matchesName = item.name && item.name.toUpperCase().replace(/ /g, '_') === upperResourceKey;
+                        
+                        if (matchesId || matchesName) {
+                            personalAmount += item.quantity;
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Check shared storage if player is owner
+        const isOwner = structureData && structureData.owner === player.id;
+        if (isOwner && structureData?.items) {
+            const sharedItems = Array.isArray(structureData.items) ? structureData.items : [];
+            
+            sharedItems.forEach(item => {
+                if (item.type === 'resource') {
+                    const matchesId = item.id && item.id.toUpperCase() === upperResourceKey;
+                    const matchesName = item.name && item.name.toUpperCase().replace(/ /g, '_') === upperResourceKey;
+                    
+                    if (matchesId || matchesName) {
+                        sharedAmount += item.quantity;
+                    }
+                }
+            });
+        }
+        
+        return {
+            personal: personalAmount,
+            shared: sharedAmount,
+            total: personalAmount + sharedAmount,
+            isOwner
+        };
     }
 
     // Check if player has enough resources - update to handle resource ID matching
     function hasEnoughResources() {
         if (!selectedUnit) return false;
 
-        const playerResources = getPlayerResources();
+        const { resources } = getPlayerResources();
         const totalCost = calculateTotalCost();
 
         for (const [resourceId, amount] of Object.entries(totalCost)) {
@@ -349,9 +436,9 @@
             
             // Check all possible ways this resource might be stored
             const availableAmount = 
-                playerResources[normalizedId] || 
-                playerResources[normalizedName] || 
-                playerResources[lowerName] || 
+                resources[normalizedId] || 
+                resources[normalizedName] || 
+                resources[lowerName] || 
                 0;
                 
             if (availableAmount < amount) return false;
@@ -360,7 +447,7 @@
         return true;
     }
 
-    // Start recruitment
+    // Start recruitment - updated to include resource deduction info in UI feedback
     async function startRecruitment() {
         if (!selectedUnit) {
             error = "No unit type selected";
@@ -400,7 +487,21 @@
             });
 
             console.log("Recruitment started:", result.data);
-            success = `Started recruiting ${quantity} ${selectedUnit.name} units`;
+            
+            // Show more detailed success message if resources were used from both storages
+            if (result.data.resourceDeduction) {
+                const { personal, shared } = result.data.resourceDeduction;
+                const usedPersonal = Object.keys(personal).length > 0;
+                const usedShared = Object.keys(shared).length > 0;
+                
+                if (usedPersonal && usedShared) {
+                    success = `Started recruiting ${quantity} ${selectedUnit.name} units using resources from personal and shared storage`;
+                } else {
+                    success = `Started recruiting ${quantity} ${selectedUnit.name} units`;
+                }
+            } else {
+                success = `Started recruiting ${quantity} ${selectedUnit.name} units`;
+            }
 
             // Refresh queue from the result
             if (result.data.queue) {
@@ -791,18 +892,40 @@
                                     <h6>Total Cost:</h6>
                                     <div class="total-items">
                                         {#each Object.entries(calculateTotalCost()) as [resource, amount]}
-                                            {@const playerResource = getPlayerResources()[resource] || 0}
-                                            <div class="total-item {playerResource >= amount ? 'sufficient' : 'insufficient'}"
-                                                 title={`You have ${playerResource} ${formatResource(resource)}`}>
+                                            {@const resourceBreakdown = getResourceBreakdown(resource)}
+                                            <div 
+                                                class="total-item {resourceBreakdown.total >= amount ? 'sufficient' : 'insufficient'}"
+                                                title={`You need ${amount} ${formatResource(resource)}`}>
                                                 <span class="resource-name">{formatResource(resource)}:</span>
                                                 <span class="resource-amount">
-                                                    <span class="current">{playerResource}</span>
-                                                    <span class="separator">/</span>
-                                                    <span class="needed">{amount}</span>
+                                                    {#if resourceBreakdown.isOwner && resourceBreakdown.shared > 0}
+                                                        <!-- Show detailed breakdown for structure owners with shared resources -->
+                                                        <span class="resource-breakdown">
+                                                            <span class="personal-amount">{resourceBreakdown.personal}</span>
+                                                            <span class="separator">+</span>
+                                                            <span class="shared-amount">{resourceBreakdown.shared}</span>
+                                                            <span class="separator">=</span>
+                                                            <span class="total-amount">{resourceBreakdown.total}</span>
+                                                        </span>
+                                                        <span class="separator">/</span>
+                                                        <span class="needed">{amount}</span>
+                                                    {:else}
+                                                        <!-- Simple display for non-owners or no shared resources -->
+                                                        <span class="current">{resourceBreakdown.total}</span>
+                                                        <span class="separator">/</span>
+                                                        <span class="needed">{amount}</span>
+                                                    {/if}
                                                 </span>
                                             </div>
                                         {/each}
                                     </div>
+                                    
+                                    {#if getPlayerResources().isOwner}
+                                        <div class="storage-note">
+                                            <span class="note-icon">ℹ️</span> 
+                                            Resources will be used from both your personal bank and shared storage
+                                        </div>
+                                    {/if}
                                 </div>
                                 
                                 <div class="total-section">
@@ -1435,5 +1558,38 @@
     /* Improve visibility of the unit-option when selected */
     .unit-option.selected .unit-option-name {
         color: rgba(0, 122, 255, 0.9);
+    }
+    
+    .resource-breakdown {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.1rem;
+    }
+    
+    .personal-amount {
+        color: #4a6fa5;
+    }
+    
+    .shared-amount {
+        color: #6a7a8c;
+    }
+    
+    .total-amount {
+        font-weight: 600;
+    }
+    
+    .storage-note {
+        margin-top: 0.5rem;
+        font-size: 0.8rem;
+        font-style: italic;
+        color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .note-icon {
+        font-size: 1rem;
+        opacity: 0.8;
     }
 </style>
