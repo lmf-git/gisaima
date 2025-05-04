@@ -24,7 +24,6 @@ export function findPlayerGroupsOnTile(tileData) {
       // Check if it's a player group (has owner, not a monster, and is idle)
       if (groupData.owner && 
           groupData.status === 'idle' && 
-          !groupData.inBattle &&
           groupData.type !== 'monster') {
         playerGroups.push({
           id: groupId,
@@ -51,8 +50,7 @@ export function findMergeableMonsterGroups(tileData, currentGroupId) {
       // Check if it's another monster group (and not the current one) that's idle and not in battle
       if (groupId !== currentGroupId && 
           groupData.type === 'monster' && 
-          groupData.status === 'idle' && 
-          !groupData.inBattle) {
+          groupData.status === 'idle') {
         monsterGroups.push({
           id: groupId,
           ...groupData
@@ -254,7 +252,7 @@ export function isMonsterGroup(groupData) {
  * @returns {boolean} True if group is available for action
  */
 export function isAvailableForAction(groupData) {
-  return groupData.status === 'idle' && !groupData.inBattle;
+  return groupData.status === 'idle';
 }
 
 /**
@@ -680,9 +678,6 @@ export function canStructureMobilize(structure, tileData) {
   // Must be a monster structure
   if (!isMonsterStructure(structure)) return false;
   
-  // Structure should not be in battle
-  if (structure.inBattle) return false;
-  
   // Check if enough units available in structure
   const unitCount = getAvailableStructureUnitCount(structure);
   if (unitCount < MIN_UNITS_TO_MOBILIZE) return false;
@@ -935,7 +930,7 @@ export function isSuitableForMonsterBuilding(tileData) {
       }
       
       // Don't build if any group is in battle
-      if (group.inBattle) {
+      if (group.status === 'fighting') {
         return false;
       }
     }

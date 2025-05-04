@@ -59,7 +59,7 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     }
     
     // Check if the group is already in battle
-    if (joiningGroup.inBattle) {
+    if (joiningGroup.status === 'fighting') {
       throw new HttpsError("failed-precondition", "This group is already in battle");
     }
     
@@ -182,7 +182,6 @@ export const joinBattle = onCall({ maxInstances: 10 }, async (request) => {
     }
     
     // Update group status
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/inBattle`] = true;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleId`] = battleId;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleSide`] = side;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${groupId}/battleRole`] = 'supporter';

@@ -74,15 +74,13 @@
       // Find player groups that can attack (idle groups)
       const myGroups = groups.filter(group => 
         group.owner === currentPlayerId && 
-        group.status === 'idle' &&
-        !group.inBattle
+        group.status === 'idle'
       );
       
       // Find enemy groups that can be attacked (idle groups not owned by player)
       const enemies = groups.filter(group => 
         group.owner !== currentPlayerId && 
-        group.status === 'idle' &&
-        !group.inBattle
+        group.status === 'idle'
       );
   
       // Update only if changes detected
@@ -112,7 +110,7 @@
     if (tileData.structure && 
         tileData.structure.owner && 
         tileData.structure.owner !== currentPlayerId &&
-        !tileData.structure.inBattle) {
+        !tileData.structure.battleId) {
       structures = [tileData.structure];
     } else {
       structures = [];

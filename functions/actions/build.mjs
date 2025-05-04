@@ -78,11 +78,6 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError('failed-precondition', 'Group must be idle to start building.');
     }
 
-    // Check if group is in battle
-    if (groupData.inBattle) {
-      throw new HttpsError('failed-precondition', 'Group cannot build while in battle.');
-    }
-
     // Validate structure type
     const structureDefinition = STRUCTURES[structureType];
     if (!structureDefinition) {
@@ -155,7 +150,7 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
         return currentData;
       }
       
-      if (currentGroup.owner !== uid || currentGroup.status !== 'idle' || currentGroup.inBattle) {
+      if (currentGroup.owner !== uid || currentGroup.status !== 'idle') {
         // Group state has changed
         return currentData;
       }

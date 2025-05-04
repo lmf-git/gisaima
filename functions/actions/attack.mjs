@@ -69,10 +69,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
         throw new HttpsError("permission-denied", `You do not own group ${groupId}`);
       }
       
-      if (group.inBattle) {
-        throw new HttpsError("failed-precondition", `Group ${groupId} is already in battle`);
-      }
-      
       if (group.status !== "idle") {
         throw new HttpsError("failed-precondition", `Group ${groupId} is not idle (status: ${group.status})`);
       }
@@ -100,10 +96,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
         // Cannot attack your own groups
         if (group.owner === userId) {
           throw new HttpsError("permission-denied", "You cannot attack your own groups");
-        }
-        
-        if (group.inBattle) {
-          throw new HttpsError("failed-precondition", `Group ${groupId} is already in battle`);
         }
         
         // Allow attacking groups that are either idle or gathering
@@ -137,7 +129,7 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
       }
       
       // Cannot attack structures already in battle
-      if (structure.inBattle) {
+      if (structure.battleId) {
         throw new HttpsError("failed-precondition", "Structure is already in battle");
       }
       
@@ -203,7 +195,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
     
     // Update attacker groups
     for (const group of attackerGroups) {
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/inBattle`] = true;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleId`] = battleId;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleSide`] = 1;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleRole`] = 'attacker';
@@ -212,7 +203,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
     
     // Update defender groups
     for (const group of defenderGroups) {
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/inBattle`] = true;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleId`] = battleId;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleSide`] = 2;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/groups/${group.id}/battleRole`] = 'defender';
@@ -221,7 +211,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
     
     // Update structure if attacking one
     if (structure) {
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/inBattle`] = true;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${locationKey}/structure/battleId`] = battleId;
     }
     

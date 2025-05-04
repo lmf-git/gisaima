@@ -396,8 +396,7 @@
     return tile.battles?.length > 0 &&
            tile.groups?.some(g => 
              g.owner === $currentPlayer.id && 
-             g.status === 'idle' &&
-             !g.inBattle
+             g.status === 'idle'
            );
   }
 
@@ -611,7 +610,6 @@
     
     // Group must be owned by current player, in battle, and not already fleeing
     return group.owner === $currentPlayer.id && 
-           group.inBattle === true && 
            group.battleId && 
            fleeingGroupId !== group.id;
   }

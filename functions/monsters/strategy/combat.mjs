@@ -141,7 +141,6 @@ export async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetG
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`] = battleData;
   
   // Update monster group to be in battle
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/inBattle`] = true;
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleId`] = battleId;
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleSide`] = 1;
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleRole`] = 'attacker';
@@ -149,7 +148,6 @@ export async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetG
   
   // Update each target group to be in battle
   for (const target of selectedTargets) {
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/inBattle`] = true;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/battleId`] = battleId;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/battleSide`] = 2;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/battleRole`] = 'defender';
@@ -244,14 +242,12 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`] = battleData;
   
   // Update monster group to be in battle
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/inBattle`] = true;
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleId`] = battleId;
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleSide`] = 1;
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleRole`] = 'attacker';
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/status`] = 'fighting';
   
   // Mark structure as in battle
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/inBattle`] = true;
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/battleId`] = battleId;
   
   // Add battle start message to chat
@@ -288,7 +284,7 @@ export function findAttackableMonsterGroups(tileData, currentGroupId) {
       // Check if it's another monster group (and not the current one) that's not in battle
       if (groupId !== currentGroupId && 
           groupData.type === 'monster' && 
-          !groupData.inBattle) {
+          groupData.status === 'idle') {
         monsterGroups.push({
           id: groupId,
           ...groupData
@@ -362,7 +358,6 @@ export async function initiateAttackOnMonsters(db, worldId, monsterGroup, target
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}`] = battleData;
   
   // Update attacker monster group to be in battle
-  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/inBattle`] = true;
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleId`] = battleId;
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleSide`] = 1;
   updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${monsterGroup.id}/battleRole`] = 'attacker';
@@ -370,7 +365,6 @@ export async function initiateAttackOnMonsters(db, worldId, monsterGroup, target
   
   // Update defending monster group to be in battle
   for (const target of selectedTargets) {
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/inBattle`] = true;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/battleId`] = battleId;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/battleSide`] = 2;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${target.id}/battleRole`] = 'defender';
@@ -437,7 +431,6 @@ export async function joinExistingBattle(db, worldId, monsterGroup, tileData, up
   const battleSide = joinAttackers ? 1 : 2;
   
   // Update monster group to join battle
-  updates[`${groupPath}/inBattle`] = true;
   updates[`${groupPath}/battleId`] = battle.id;
   updates[`${groupPath}/battleSide`] = battleSide;
   updates[`${groupPath}/battleRole`] = 'reinforcement';

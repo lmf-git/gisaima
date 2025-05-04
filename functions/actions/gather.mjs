@@ -54,10 +54,6 @@ export const startGathering = onCall({ maxInstances: 10 }, async (request) => {
       throw new HttpsError('failed-precondition', 'Group is not idle and cannot gather');
     }
 
-    if (group.inBattle) {
-      throw new HttpsError('failed-precondition', 'Group is in battle and cannot gather');
-    }
-
     // Get world info to provide tick information
     const now = Date.now();
     const worldRef = db.ref(`worlds/${worldId}/info`);

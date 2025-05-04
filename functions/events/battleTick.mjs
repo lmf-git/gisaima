@@ -444,7 +444,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           if (tile.groups[groupId]) {
             logger.debug(`Cleaning up battle status for group ${groupId}`);
             // Reset group status for all groups still in battle on winning side.
-            updates[`${groupPath}/inBattle`] = false;
             updates[`${groupPath}/battleId`] = null;
             updates[`${groupPath}/battleSide`] = null;
             updates[`${groupPath}/battleRole`] = null;
@@ -456,7 +455,6 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       // Clean up structure if involved
       if (tile && tile.structure && battle.targetTypes && battle.targetTypes.includes('structure')) {
         // Remove battle status from structure
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/inBattle`] = false;
         updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/battleId`] = null;
         
         // If attackers won, damage or destroy the structure

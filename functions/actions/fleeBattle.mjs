@@ -59,7 +59,7 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
     }
     
     // Check if group is actually in a battle
-    if (!group.inBattle || !group.battleId) {
+    if (!group.battleId) {
       logger.warn(`Group ${groupId} is not in a battle`);
       throw new HttpsError('failed-precondition', 'This group is not currently in a battle');
     }
@@ -105,7 +105,6 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
     const casualtiesCount = 69;
     
     // Update the group's status
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/inBattle`] = false;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleId`] = null;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
     updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleRole`] = null;
