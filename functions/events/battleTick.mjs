@@ -383,7 +383,29 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     
     // A battle ends when one side has no power left or after many ticks with minimal progress
     const side1Defeated = side1Surviving.length === 0;
-    const side2Defeated = side2Surviving.length === 0;
+    
+    // For side2, consider structure power when determining defeat
+    // If there's a structure involved in defense, don't count side2 as defeated until structure is also overcome
+    let side2Defeated = side2Surviving.length === 0;
+    
+    // If there's a defending structure, it should prevent automatic defeat
+    if (side2Defeated && battle.structureId && tile.structure && structurePower > 0) {
+      // If structure has significant power left, defenders aren't completely defeated
+      const currentHealth = tile.structure.health !== undefined ? tile.structure.health : 
+        STRUCTURES[tile.structure.type]?.durability || 0;
+      
+      // Only consider defenders truly defeated if structure health is critical (below 15%)
+      const structureType = tile.structure.type;
+      const maxDurability = STRUCTURES[structureType]?.durability || 100;
+      const criticalThreshold = Math.floor(maxDurability * 0.15);
+      
+      if (currentHealth > criticalThreshold) {
+        side2Defeated = false;
+        console.log(`Structure preventing side2 defeat with ${currentHealth}/${maxDurability} health`);
+      } else {
+        console.log(`Structure health critical (${currentHealth}/${maxDurability}), allowing side2 defeat`);
+      }
+    }
     
     // Determine the winner directly from defeat flags
     let winner;
@@ -520,12 +542,49 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
         if (winner === 1) {
           const structure = tile.structure;
           const structureType = structure.type;
-          const currentHealth = structure.health || 100;
-          const damageAmount = 50;
-          const newHealth = currentHealth - damageAmount;
+          const structureDurability = STRUCTURES[structureType]?.durability || 100;
           
-          // Check if the structure should be destroyed
-          if (newHealth <= 0) {
+          // Log structure state before damage calculation
+          console.log(`STRUCTURE BATTLE: ${structureType} with durability ${structureDurability}`);
+          
+          // Initialize health if not present (first battle) - CRITICAL!
+          const currentHealth = structure.health !== undefined ? structure.health : structureDurability;
+          console.log(`Current structure health: ${currentHealth} (${structure.health !== undefined ? 'from database' : 'newly initialized'})`);
+          
+          // Calculate proportional damage based on attacker power
+          // Get total units in attacking side
+          const attackingGroups = battle.side1.groups || {};
+          let totalAttackerPower = 0;
+          let totalAttackers = 0;
+          
+          for (const groupId in attackingGroups) {
+            if (tile.groups[groupId]) {
+              const group = tile.groups[groupId];
+              const unitCount = group.units ? Object.keys(group.units).length : 0;
+              totalAttackers += unitCount;
+              totalAttackerPower += groupPowers[groupId] || 0;
+            }
+          }
+          
+          // Calculate damage - base damage is 10% of structure durability, modified by attacker power
+          const baseDamage = Math.round(structureDurability * 0.10);  // Reduced from 15% to 10%
+          const powerFactor = Math.min(2, Math.max(0.5, totalAttackerPower / 10)); 
+          let damageAmount = Math.round(baseDamage * powerFactor);
+          
+          // Prevent excessive damage in early ticks - damage cap based on tick count
+          const maxDamagePerTick = Math.round(structureDurability * 0.25); // Maximum 25% in one tick
+          if (damageAmount > maxDamagePerTick) {
+            console.log(`Damage capped from ${damageAmount} to ${maxDamagePerTick} to prevent excessive damage`);
+            damageAmount = maxDamagePerTick;
+          }
+          
+          console.log(`Structure taking ${damageAmount} damage from attackers: ${totalAttackers} units with power ${totalAttackerPower}`);
+          
+          const newHealth = currentHealth - damageAmount;
+          console.log(`Structure health reduced from ${currentHealth} to ${newHealth}`);
+          
+          // Check if the structure should be destroyed - minimum 2 ticks for any structure
+          if (newHealth <= 0 && tickCount > 1) {
             // Flag that structure will be destroyed
             willDestroyStructure = true;
             
@@ -582,6 +641,24 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
                 }
               };
             }
+          } else if (newHealth <= 0) {
+            // Structure critically damaged but not destroyed in first tick
+            console.log(`Structure critically damaged but prevented from destruction in first tick`);
+            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/health`] = 1;
+            
+            // Create a message about critical damage
+            const structureName = structure.name || `${structureType.charAt(0).toUpperCase() + structureType.slice(1)}`;
+            const now = Date.now();
+            const chatMessageId = `structure_critical_${now}`;
+            updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+              text: `${structureName} at (${battle.locationX}, ${battle.locationY}) is critically damaged!`,
+              type: 'event',
+              timestamp: now,
+              location: {
+                x: battle.locationX, 
+                y: battle.locationY
+              }
+            };
           } else {
             // Structure survives with reduced health
             updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/health`] = newHealth;
