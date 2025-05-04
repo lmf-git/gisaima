@@ -107,6 +107,7 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
         }
         
         // Allow attacking groups that are either idle or gathering
+        // TODO: Will need to strip non-core props from group if interrupting
         if (group.status !== "idle" && group.status !== "gathering") {
           throw new HttpsError("failed-precondition", 
             `Group ${groupId} cannot be attacked (status: ${group.status}). Only idle or gathering groups can be attacked.`);

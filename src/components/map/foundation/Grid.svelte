@@ -889,33 +889,7 @@
     if (tile.battles && tile.battles.length > 0) {
       return true;
     }
-    
-    // Fallback to checking groups for backwards compatibility
-    if (tile.groups) {
-      return tile.groups.some(group => group.inBattle && group.battleId);
-    }
-    
     return false;
-  }
-  
-  // Optional: Get battle count
-  function getBattleCount(tile) {
-    if (tile.battles) {
-      return tile.battles.length;
-    }
-    
-    // Fallback using groups
-    if (tile.groups) {
-      const battleIds = new Set();
-      tile.groups.forEach(group => {
-        if (group.inBattle && group.battleId) {
-          battleIds.add(group.battleId);
-        }
-      });
-      return battleIds.size;
-    }
-    
-    return 0;
   }
 
   // Function to determine the dominant race or entity type on a tile
