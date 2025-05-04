@@ -214,7 +214,6 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
     locationY: y,
     targetTypes: ['structure'],
     structureId: structure.id,
-    structurePower: defensePower,
     side1: {
       groups: {
         [monsterGroup.id]: {
