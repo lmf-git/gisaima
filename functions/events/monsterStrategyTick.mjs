@@ -266,10 +266,10 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   
   // If the monster is on a structure tile that has no building yet, consider adding one
   if (structureOnTile && 
-      structure.monster &&
+      tileData.structure.monster &&
       hasResources && 
       resourceCount > 15 &&
-      (!structure.buildings || Object.keys(structure.buildings).length < 3) &&
+      (!tileData.structure.buildings || Object.keys(tileData.structure.buildings).length < 3) &&
       Math.random() < 0.3 * (weights?.build || 1.0)) {
       
     // Choose a building type to add
@@ -277,7 +277,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
     const buildingType = possibleBuildings[Math.floor(Math.random() * possibleBuildings.length)];
       
     return await addOrUpgradeMonsterBuilding(
-      db, worldId, monsterGroup, structure, buildingType, updates, now
+      db, worldId, monsterGroup, tileData.structure, buildingType, updates, now
     );
   }
   
