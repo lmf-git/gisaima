@@ -512,7 +512,6 @@
     font-family: var(--font-heading);
     font-weight: 600;
     padding: 0.6em 1em;
-    margin-top: 0.8em;
     cursor: pointer;
     transition: all 0.2s;
     width: 100%;
