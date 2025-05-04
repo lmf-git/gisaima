@@ -999,10 +999,9 @@
   
   // Add zoom control functions
   function zoomIn() {
-    if (zoomLevel < 2.0) {
-      zoomLevel += 0.25;
-      updateTileSize();
-    }
+    // Remove maximum zoom constraint
+    zoomLevel += 0.25;
+    updateTileSize();
   }
   
   function zoomOut() {
@@ -1062,11 +1061,11 @@
       // Calculate new zoom level based on pinch distance change
       const scaleFactor = distance / initialPinchDistance;
       
-      // Apply zoom with constraints
+      // Apply zoom with constraints - remove upper limit
       let newZoom = initialZoomLevelOnPinch * scaleFactor;
       
-      // Constrain zoom level to allowed range and round to nearest 0.05
-      newZoom = Math.min(2.0, Math.max(0.5, newZoom));
+      // Constrain zoom level to minimum only
+      newZoom = Math.max(0.5, newZoom);
       
       // Only update if zoom actually changed
       if (Math.abs(newZoom - zoomLevel) > 0.01) {
