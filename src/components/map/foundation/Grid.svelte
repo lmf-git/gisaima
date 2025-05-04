@@ -215,6 +215,12 @@
       let cols = isExtremeZoom ? Math.ceil(rawCols) : Math.ceil(rawCols) + 1;
       let rows = isExtremeZoom ? Math.ceil(rawRows) : Math.ceil(rawRows) + 1;
       
+      // Special handling for super extreme zoom - if either dimension is 1, show a 1x1 grid
+      if (cols === 1 || rows === 1) {
+        cols = 1;
+        rows = 1;
+      }
+      
       // Special handling for extreme zoom (1x1)
       const isVeryExtremeZoom = cols === 1 && rows === 1;
       
@@ -1883,12 +1889,6 @@
   .item-indicator.epic {
     background: radial-gradient(circle, rgba(180, 30, 255, 0.9), rgba(128, 0, 191, 0.9));
     box-shadow: 0 0 0.2em rgba(148, 0, 211, 0.6);
-    border: 0.08em solid rgba(200, 150, 255, 0.7);
-  }
-  
-  .item-indicator.legendary {
-    background: radial-gradient(circle, rgba(255, 195, 60, 0.9), rgba(225, 145, 0, 0.9));
-    box-shadow: 0 0 0.2em rgba(255, 165, 0, 0.6);
     border: 0.08em solid rgba(255, 215, 150, 0.7);
   }
   
