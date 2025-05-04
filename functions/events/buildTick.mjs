@@ -26,29 +26,9 @@ export async function processBuilding(worldId, updates, chunkKey, tileKey, tile,
   const structure = tile.structure;
   const builderId = structure.builder;
   
-  // Handle time-based completion (used by monster structures)
-  if (structure.buildCompletionTime && structure.buildCompletionTime <= now) {
-    completeStructure(worldId, updates, chunkKey, tileKey, tile, now);
-    return true;
-  }
-  
-  // Handle tick-based completion (used by player structures)
-  if (structure.buildStartTick && structure.buildCompletionTick) {
-    // Get current tick from world info
-    const worldRef = db.ref(`worlds/${worldId}/info`);
-    const worldSnapshot = await worldRef.once('value');
-    const worldData = worldSnapshot.val();
-    
-    if (worldData && worldData.lastTick >= structure.buildCompletionTick) {
-      completeStructure(worldId, updates, chunkKey, tileKey, tile, now);
-      return true;
-    }
-  }
-  
   // Calculate progress
-  let progress = structure.buildProgress || 0;
+  const progress = (structure.buildProgress || 0) + 1;
   const total = structure.buildTotalTime || 1;
-  progress += 1;
   
   // Full paths for updates
   const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`;
@@ -78,11 +58,9 @@ function completeStructure(worldId, updates, chunkKey, tileKey, tile, now) {
   updates[`${structurePath}/status`] = 'complete';
   updates[`${structurePath}/buildProgress`] = null;
   updates[`${structurePath}/buildTotalTime`] = null;
-  updates[`${structurePath}/buildStartTime`] = null;
-  updates[`${structurePath}/buildCompletionTime`] = null;
   updates[`${structurePath}/buildStartTick`] = null;
-  updates[`${structurePath}/buildCompletionTick`] = null;
   updates[`${structurePath}/completedAt`] = now;
+  updates[`${structurePath}/builder`] = null;
   
   // Update the builder group's status if it exists
   if (tile.groups && tile.groups[builderId]) {
@@ -128,24 +106,23 @@ export async function processBuildingProgress(db, worldId, currentTick) {
   for (const doc of structures.docs) {
     const structure = doc.data();
     
-    // Use tick-based calculations instead of timestamps
-    if (currentTick >= structure.buildCompletionTick) {
+    // Calculate progress directly based on buildProgress/buildTotalTime
+    const progress = structure.buildProgress || 0;
+    const total = structure.buildTotalTime || 1;
+    const progressPercent = Math.min(100, Math.floor((progress / total) * 100));
+    
+    if (progress >= total) {
       // Building is complete
       await doc.ref.update({
         status: 'complete',
         completedAt: Date.now(),
-        buildProgress: 100
+        buildProgress: null,
+        buildTotalTime: null
       });
-      
-      // Notify the builder
-      // ...notification code...
     } else {
-      // Update progress percentage based on ticks
-      const elapsedTicks = currentTick - structure.buildStartTick;
-      const progressPercent = Math.min(100, Math.floor((elapsedTicks / structure.buildTotalTicks) * 100));
-      
+      // Update progress
       await doc.ref.update({
-        buildProgress: progressPercent
+        buildProgress: progress + 1
       });
     }
   }

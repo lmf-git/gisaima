@@ -174,7 +174,7 @@
         groupId: selectedGroup.id,
         tileX: tileData.x,
         tileY: tileData.y,
-        structureType: selectedStructure.id, // This now matches the key in STRUCTURES
+        structureType: selectedStructure.id,
         structureName: structureName
       });
       
@@ -222,28 +222,22 @@
   );
   
   function calculateBuildProgress(structure) {
-    if (structure.status !== 'building') return 100;
+    if (!structure || structure.status !== 'building') return 100;
     
-    const currentTick = worldInfo.lastTick;
-    const startTick = structure.buildStartTick;
-    const totalTicks = structure.buildTotalTicks;
+    const progress = structure.buildProgress || 0;
+    const total = structure.buildTotalTime || 1;
     
-    if (!startTick || !totalTicks) return structure.buildProgress || 0;
-    
-    const elapsedTicks = currentTick - startTick;
-    return Math.min(100, Math.floor((elapsedTicks / totalTicks) * 100));
+    return Math.min(100, Math.floor((progress / total) * 100));
   }
   
   function calculateRemainingTime(structure) {
-    if (structure.status !== 'building') return 'Complete';
+    if (!structure || structure.status !== 'building') return 'Complete';
     
-    const currentTick = worldInfo.lastTick;
-    const completionTick = structure.buildCompletionTick;
+    const progress = structure.buildProgress || 0;
+    const total = structure.buildTotalTime || 1;
+    const remaining = total - progress;
     
-    if (!completionTick) return 'Unknown';
-    
-    const remainingTicks = completionTick - currentTick;
-    return `${remainingTicks} tick${remainingTicks !== 1 ? 's' : ''} remaining`;
+    return `${remaining} tick${remaining !== 1 ? 's' : ''} remaining`;
   }
 </script>
 

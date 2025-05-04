@@ -176,7 +176,6 @@ export async function buildMonsterStructure(db, worldId, monsterGroup, location,
     owner: 'monster', // Explicitly set owner to 'monster'
     ownerName: monsterGroup.name || "Monster",
     ownerGroupId: monsterGroup.id,
-    builder: monsterGroup.id,
     monster: true,
     createdAt: now,
     level: 1,

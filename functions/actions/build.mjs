@@ -138,17 +138,6 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
       );
     }
     
-    // Calculate when construction will complete
-    const now = Date.now();
-    const tickInterval = worldData.tickInterval || 60000; // Default 1 minute
-    let nextTickTime = worldData.lastTick + tickInterval;
-    while (nextTickTime <= now) {
-      nextTickTime += tickInterval;
-    }
-    
-    // Calculate completion time based on build time (in ticks)
-    const completionTime = nextTickTime + ((structureDefinition.buildTime - 1) * tickInterval);
-    
     // Use a transaction to ensure data consistency
     await db.ref().transaction(currentData => {
       if (!currentData) return null;
@@ -179,8 +168,6 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
         status: 'building',
         buildProgress: 0,
         buildTotalTime: structureDefinition.buildTime,
-        buildStartTick: worldData.lastTick,
-        buildCompletionTick: worldData.lastTick + structureDefinition.buildTime,
         owner: uid,
         ownerName: currentData.players[uid]?.worlds[worldId]?.displayName || 'Unknown',
         builder: groupId,
@@ -189,7 +176,7 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
       
       // Update group status
       currentGroup.status = 'building';
-      currentGroup.buildingUntil = completionTime;
+      currentGroup.buildingTime = structureDefinition.buildTime;
       
       // Remove the required resources from the group
       if (currentGroup.items) {
@@ -269,7 +256,6 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
       // Update player record
       if (currentData.players[uid].worlds[worldId].groups[groupId]) {
         currentData.players[uid].worlds[worldId].groups[groupId].status = 'building';
-        currentData.players[uid].worlds[worldId].groups[groupId].buildingUntil = completionTime;
       }
       
       // Add chat message for building
@@ -277,11 +263,11 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
         currentData.worlds[worldId].chat = {};
       }
       
-      const chatMessageId = `chat_${now}_${Math.floor(Math.random() * 1000)}`;
+      const chatMessageId = `chat_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
       currentData.worlds[worldId].chat[chatMessageId] = {
         type: 'system',
         text: `${structureName} construction has begun at (${tileX},${tileY})`,
-        timestamp: now,
+        timestamp: Date.now(),
         location: { x: tileX, y: tileY }
       };
       
@@ -291,7 +277,6 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
     console.log(`Building started for user ${uid}, group ${groupId} at ${tileX},${tileY}`);
     return { 
       success: true, 
-      completesAt: completionTime,
       structure: structureType
     };
   } catch (error) {
