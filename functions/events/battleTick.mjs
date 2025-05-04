@@ -33,6 +33,13 @@ export function processSide({
     if (!tile.groups[groupId]) continue;
     
     const group = tile.groups[groupId];
+    
+    // Skip groups that are in fleeingBattle state - they're being handled by the fleeBattle function
+    if (group.status === 'fleeingBattle') {
+      logger.info(`Skipping group ${groupId} in battle processing as it's currently fleeing`);
+      continue;
+    }
+    
     const units = group.units || {};
     
     // Use the stored group power
