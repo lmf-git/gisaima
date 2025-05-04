@@ -555,10 +555,11 @@ export async function processMonsterStrategies(worldId, chunks = null) {
       }
     }
     
-    // Apply all updates in a single batch
+    // Apply all updates in a single batch, but first sanitize them to prevent conflicts
     if (Object.keys(updates).length > 0) {
-      logger.info(`Applying ${Object.keys(updates).length} updates for monster strategies`);
-      await db.ref().update(updates);
+      logger.info(`Sanitizing and applying ${Object.keys(updates).length} updates for monster strategies`);
+      const sanitizedUpdates = sanitizeUpdates(updates);
+      await db.ref().update(sanitizedUpdates);
     }
     
     return results;
@@ -567,4 +568,45 @@ export async function processMonsterStrategies(worldId, chunks = null) {
     logger.error(`Error processing monster strategies for world ${worldId}:`, error);
     return { error: error.message };
   }
+}
+
+/**
+ * Sanitize updates to prevent Firebase update conflicts
+ * @param {Object} updates Original updates object
+ * @returns {Object} Sanitized updates object
+ */
+function sanitizeUpdates(updates) {
+  const sanitizedUpdates = {};
+  const pathsToSkip = new Set();
+  
+  // First pass: Identify all paths that might conflict
+  for (const path in updates) {
+    if (pathsToSkip.has(path)) continue;
+    
+    // Check for potential conflicts in other paths
+    for (const otherPath in updates) {
+      if (path === otherPath || pathsToSkip.has(otherPath)) continue;
+      
+      // If otherPath is an ancestor path of path, we need to handle this conflict
+      if (path.startsWith(otherPath + '/')) {
+        // If we're setting the entire object, no need to set its individual properties
+        pathsToSkip.add(path);
+        break;
+      }
+      
+      // If path is an ancestor of otherPath, skip the other path
+      if (otherPath.startsWith(path + '/')) {
+        pathsToSkip.add(otherPath);
+      }
+    }
+  }
+  
+  // Second pass: Add only non-skipped paths
+  for (const path in updates) {
+    if (!pathsToSkip.has(path)) {
+      sanitizedUpdates[path] = updates[path];
+    }
+  }
+  
+  return sanitizedUpdates;
 }
