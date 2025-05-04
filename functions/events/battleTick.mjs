@@ -23,7 +23,8 @@ export function processSide({
   worldId, 
   chunkKey, 
   tileKey,
-  basePath
+  basePath,
+  fleeingGroups
 }) {
   let newSidePower = 0;
   let updatedCasualties = sideCasualties;
@@ -34,9 +35,31 @@ export function processSide({
     
     const group = tile.groups[groupId];
     
-    // Skip groups that are in fleeingBattle state - they're being handled by the fleeBattle function
+    // Handle groups that are in fleeingBattle state
     if (group.status === 'fleeingBattle') {
-      logger.info(`Skipping group ${groupId} in battle processing as it's currently fleeing`);
+      logger.info(`Processing fleeing group ${groupId} in battle - cleaning up and removing from side ${sideNumber}`);
+      
+      // Remove the group from battle
+      const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+      
+      // Update the group status to idle and remove all battle references
+      updates[`${groupPath}/battleId`] = null;
+      updates[`${groupPath}/battleSide`] = null;
+      updates[`${groupPath}/battleRole`] = null;
+      updates[`${groupPath}/status`] = 'idle';
+      updates[`${groupPath}/fleeTickRequested`] = null;
+      
+      // Remove the group from the battle's side
+      updates[`${basePath}/${sideKey}/groups/${groupId}`] = null;
+      
+      // Track this group as being processed for fleeing
+      fleeingGroups.push({
+        groupId,
+        side: sideNumber,
+        name: group.name || "Unknown group"
+      });
+      
+      // Skip the rest of battle processing for this group
       continue;
     }
     
@@ -169,6 +192,9 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     // Track groups that will be deleted to avoid update conflicts
     const groupsToBeDeleted = new Set();
     
+    // Track groups that are fleeing
+    const fleeingGroups = [];
+    
     // Increment the tick count - this is now our primary battle progression metric
     const tickCount = (battle.tickCount || 0) + 1;
     battleUpdates.tickCount = tickCount;
@@ -267,7 +293,7 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
     
     const battleLoot = battle.loot || [];
 
-    // Process both sides using the extracted helper function
+    // Process both sides using the extracted helper function - now with fleeingGroups parameter
     const side1Result = processSide({
       sideNumber: 1,
       sideGroups: side1Groups,
@@ -284,7 +310,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       worldId,
       chunkKey,
       tileKey,
-      basePath
+      basePath,
+      fleeingGroups
     });
     newSide1Power = side1Result.newSidePower;
     side1Casualties = side1Result.updatedCasualties;
@@ -305,7 +332,8 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       worldId,
       chunkKey,
       tileKey,
-      basePath
+      basePath,
+      fleeingGroups
     });
     newSide2Power = side2Result.newSidePower;
     side2Casualties = side2Result.updatedCasualties;
@@ -315,15 +343,41 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       newSide2Power += structurePower;
     }
     
-    // Log the new power values for debugging
-    console.log(`New battle powers after tick ${tickCount} - Side 1: ${newSide1Power}, Side 2: ${newSide2Power}`);
+    // Add battle events for any fleeing groups
+    if (fleeingGroups.length > 0) {
+      // Create a new event for each fleeing group
+      fleeingGroups.forEach(fleeGroup => {
+        const newEvent = {
+          type: 'flee',
+          tickCount: tickCount,
+          text: `${fleeGroup.name} has fled from the battle!`,
+          groupId: fleeGroup.groupId,
+          side: fleeGroup.side
+        };
+        
+        // Only add battle events if the battle will continue
+        if (side1Surviving.length > 0 && side2Surviving.length > 0) {
+          if (!battle.events) battle.events = [];
+          battle.events.push(newEvent);
+        }
+      });
+      
+      // Update battle events if battle continues
+      if (side1Surviving.length > 0 && side2Surviving.length > 0) {
+        updates[`${basePath}/events`] = battle.events;
+      }
+    }
     
-    // Get surviving groups for both sides
+    // Get surviving groups for both sides AFTER handling fleeing groups
     const side1Surviving = Object.keys(side1Groups)
-      .filter(id => !groupsToDelete.some(g => g.groupId === id && g.side === 1));
+      .filter(id => 
+        !groupsToDelete.some(g => g.groupId === id && g.side === 1) && 
+        !fleeingGroups.some(g => g.groupId === id && g.side === 1));
     
     const side2Surviving = Object.keys(side2Groups)
-      .filter(id => !groupsToDelete.some(g => g.groupId === id && g.side === 2));
+      .filter(id => 
+        !groupsToDelete.some(g => g.groupId === id && g.side === 2) &&
+        !fleeingGroups.some(g => g.groupId === id && g.side === 2));
     
     // --------- PHASE 4: CHECK FOR BATTLE END CONDITIONS ---------
     
