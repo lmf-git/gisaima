@@ -15,139 +15,108 @@
     return status || 'idle';
   }
   
-  // Simplified function to determine if waiting for tick
-  function isPendingTick(endTime) {
-    if (!endTime) return false;
-    const now = Date.now();
-    return endTime <= now;
-  }
+  // Local state variables
+  let updateCounter = $state(0); // Forces reactivity on interval
+  let intervalId;
   
-  // Function to get the relevant endTime for the status
-  function getStatusEndTime(group) {
-    if (!group) return null;
-    
-    if (group.status === 'moving') {
-      return group.nextMoveTime;
-    } else if (group.status === 'gathering') {
-      return 'GATHERING';
-    } else {
-      return 'Unkown';
-    }
-  }
-  
-  // Format time remaining for display
-  function formatTimeRemaining(endTime) {
+  // Simplified function to format time remaining
+  function formatTime(endTime) {
     if (!endTime) return '';
+    
+    updateCounter; // React to counter updates
     
     const now = Date.now();
     const remaining = endTime - now;
     
-    // If time is up or less than a minute remains, show simplified message
-    if (remaining <= 60000) {
-      return '< 1m';
+    // If time has passed, show pending
+    if (remaining <= 0) return 'Pending';
+    
+    // If less than a minute remains, show seconds
+    if (remaining < 60000) {
+      return `${Math.max(0, Math.ceil(remaining / 1000))}s`;
     }
     
-    // Normal countdown calculation for time remaining
+    // Otherwise show minutes and seconds
     const minutes = Math.floor(remaining / 60000);
     const seconds = Math.floor((remaining % 60000) / 1000);
     
     return `${minutes}m ${seconds}s`;
   }
   
-  // Calculate completion time for movement
-  function calculateMoveCompletionTime(group) {
-    if (!group || group.status !== 'moving' || !group.moveStarted) return null;
-    
-    // Use nextMoveTime from the server if available
-    if (group.nextMoveTime) {
-      return group.nextMoveTime;
-    }
-    
-    // Basic calculation for estimated time
-    const worldSpeed = 1.0; // Default if not available
-    const moveStarted = group.moveStarted;
-    
-    // Basic calculation - 1 minute per movement step adjusted by world speed
-    const baseTickInterval = 60000; // 1 minute in milliseconds
-    const adjustedInterval = Math.round(baseTickInterval / worldSpeed);
-    
-    // If we have path information, use it to calculate steps remaining
-    let stepsRemaining = 1; // Default to 1 step
-    if (group.pathIndex !== undefined && group.movementPath && Array.isArray(group.movementPath)) {
-      stepsRemaining = Math.max(1, group.movementPath.length - (group.pathIndex + 1));
-    }
-    
-    // Estimate completion time based on remaining steps
-    return moveStarted + (stepsRemaining * adjustedInterval);
+  // Simplified pending check
+  function isPending(endTime) {
+    if (!endTime) return false;
+    updateCounter; // React to counter updates
+    return Date.now() >= endTime;
   }
-  
-  // Self-contained state for the component
-  let currentTime = $state(Date.now());
-  let tickTimer;
-  
-  // Create individual derived variables instead of an object
-  let isPending = $derived(isPendingTick(getStatusEndTime(group)));
-  let countdown = $derived(group.status === 'mobilizing' || group.status === 'demobilising' ? 
-    $timeUntilNextTick : '');
-  let moveTime = $derived(group.status === 'moving' ? 
-    calculateMoveCompletionTime(group) : null);
-  let gatherTime = $derived(group.status === 'gathering' ? 
-    group.gatheringUntil : null);
-  
-  // Set up a timer to update the current time every second
+
+  // Set up interval timer to update every second
   onMount(() => {
-    // Update immediately once
-    currentTime = Date.now();
-    
-    // Then set up interval
-    tickTimer = setInterval(() => {
-      currentTime = Date.now();
+    intervalId = setInterval(() => {
+      updateCounter++; // Force reactivity
     }, 1000);
   });
   
-  // Clean up timer when component is unmounted
+  // Clean up interval on component destruction
   onDestroy(() => {
-    if (tickTimer) clearInterval(tickTimer);
+    if (intervalId) clearInterval(intervalId);
   });
-
-  // Calculate gathering time countdown based on ticks remaining
-  function getGatheringCountdown(group) {
-    if (group.status !== 'gathering') return '';
+  
+  // Functions to get relevant time values for each status
+  function getRelevantTime() {
+    if (!group) return null;
     
-    const ticksRemaining = group.gatheringTicksRemaining || 0;
-    
-    // If 0 or negative ticks, show pending message
-    if (ticksRemaining <= 0) {
-      return 'Pending';
+    switch(group.status) {
+      case 'moving':
+        return group.nextMoveTime;
+      case 'mobilizing':
+      case 'demobilising':
+        return null; // Will use nextTick instead
+      default:
+        return null;
     }
+  }
+  
+  // Calculate if pending based on status
+  let isPendingTick = $derived(isPending(getRelevantTime()));
+  
+  // Get status-specific time display
+  function getStatusTimeDisplay() {
+    if (!group) return '';
     
-    // Use the timeUntilTick function to get formatted time for this many ticks
-    return timeUntilTick(ticksRemaining);
+    switch(group.status) {
+      case 'moving':
+        const moveTime = group.nextMoveTime;
+        return isPending(moveTime) ? 'Pending' : formatTime(moveTime);
+      case 'mobilizing':
+      case 'demobilising':
+        return $timeUntilNextTick;
+      case 'gathering':
+        return timeUntilTick(group.gatheringTicksRemaining);
+      default:
+        return '?s';
+    }
   }
 </script>
 
 <span 
   class="entity-status-badge {getStatusClass(group.status)}"
-  class:pending-tick={isPending}
+  class:pending-tick={isPendingTick}
 >
-  {#if group.status === 'starting_to_gather'}
-    Preparing to gather
-  {:else if group.status === 'mobilizing' || group.status === 'demobilising'}
-    {_fmt(group.status)} {countdown}
-  {:else if group.status === 'moving'}
-    {_fmt(group.status)} 
-    {#if !isPendingTick(group.nextMoveTime)}
-      ({formatTimeRemaining(moveTime)})
-    {/if}
-  {:else if group.status === 'gathering'}
-    {_fmt(group.status)} 
-    {#if group.gatheringTicksRemaining}
-      ({group.gatheringTicksRemaining} ticks - {getGatheringCountdown(group)})
-    {:else}
-      (Pending)
-    {/if}
-  {:else}
-    {_fmt(group.status)}
+  {_fmt(group.status)}
+  
+  {#if group.status === 'moving' || group.status === 'mobilizing' || group.status === 'demobilising'}
+    <span class="time-display">
+      {#if isPendingTick}
+        <span class="spinner"></span>
+      {:else}
+        ({getStatusTimeDisplay()})
+      {/if}
+    </span>
+  {:else if group.status === 'gathering' && group.gatheringTicksRemaining !== undefined}
+    <span class="time-display">
+      ({group.gatheringTicksRemaining} ticks - {getStatusTimeDisplay()})
+    </span>
   {/if}
 </span>
 
@@ -219,6 +188,27 @@
     content: '↻';
     margin-left: 0.3em;
     font-weight: bold;
+  }
+  
+  .time-display {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.3em;
+  }
+  
+  .spinner {
+    width: 0.8em;
+    height: 0.8em;
+    border: 0.12em solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    border-top-color: rgba(0, 0, 0, 0.8);
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-right: 0.3em;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
   
   @keyframes pulse {
