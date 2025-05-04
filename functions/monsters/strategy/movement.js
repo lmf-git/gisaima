@@ -243,9 +243,9 @@ function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorati
       maxDistance: MAX_SCAN_DISTANCE
     },
     player_spawn: {
-      weight: 0.5,  // Increased base weight for player spawns
+      weight: 1.2,  // Increased base weight for player spawns (was 0.5)
       locations: worldScan.playerSpawns || [],
-      maxDistance: MAX_SCAN_DISTANCE
+      maxDistance: MAX_SCAN_DISTANCE * 1.5  // Increased search range for spawns
     }
   };
   
@@ -253,7 +253,12 @@ function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorati
   if (weights) {
     // Aggressive personality prioritizes player targets
     if (weights.attack > 1.0) {
-      priorities.player_spawn.weight *= weights.attack * 1.5;
+      priorities.player_spawn.weight *= weights.attack * 2.0; // Increased multiplier (was 1.5)
+      
+      // ADDED: Extra weight for aggressive monsters with sufficient units
+      if (weights.attack > 1.5 && totalUnits > 8) {
+        priorities.player_spawn.weight *= 1.5; // Make spawns even more attractive targets
+      }
     }
     
     // Resource-focused personalities prioritize resource hotspots
@@ -269,15 +274,15 @@ function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorati
   
   // Unit count adjustments - large groups tend to be more aggressive
   if (totalUnits > 10) {
-    priorities.player_spawn.weight *= 1.5;
+    priorities.player_spawn.weight *= 2.0; // Increased multiplier (was 1.5)
   } else if (totalUnits < 5) {
     priorities.resource_hotspot.weight *= 1.3;
   }
   
   // Exploration phase adjustments - prioritize player structures
   if (inExplorationPhase) {
-    priorities.player_spawn.weight *= 3.0;  // Very strong preference for finding players
-    priorities.resource_hotspot.weight *= 1.0;  // Normal interest in resources
+    priorities.player_spawn.weight *= 4.0;  // Even stronger preference for finding players (was 3.0)
+    priorities.resource_hotspot.weight *= 0.8;  // Reduced interest in resources during exploration
     priorities.monster_structure.weight *= 0.1;  // Actively avoid monster structures
   }
   

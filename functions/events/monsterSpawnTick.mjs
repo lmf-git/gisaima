@@ -346,6 +346,8 @@ async function mobilizeFromMonsterStructures(worldId, monsterStructures, chunks)
   
   // Find all player structures and spawns
   const playerStructures = [];
+  const playerSpawns = []; // Separate array just for spawns
+  
   for (const [chunkKey, chunkData] of Object.entries(chunks)) {
     if (!chunkData) continue;
     
@@ -353,8 +355,18 @@ async function mobilizeFromMonsterStructures(worldId, monsterStructures, chunks)
       if (!tileData || !tileData.structure) continue;
       
       const structure = tileData.structure;
-      if (structure.type === 'spawn' || (structure.owner && structure.owner !== 'monster')) {
-        const [x, y] = tileKey.split(',').map(Number);
+      const [x, y] = tileKey.split(',').map(Number);
+      
+      // Separate spawns from other structures
+      if (structure.type === 'spawn') {
+        playerSpawns.push({
+          x, y,
+          chunkKey,
+          tileKey,
+          structure
+        });
+      }
+      else if (structure.owner && structure.owner !== 'monster') {
         playerStructures.push({
           x, y,
           chunkKey,
@@ -389,9 +401,29 @@ async function mobilizeFromMonsterStructures(worldId, monsterStructures, chunks)
       continue;
     }
     
-    // NEW: Check for nearby player structures to potentially attack
+    // NEW: Prioritize targeting player spawns (40% chance)
     let targetPlayerStructure = null;
-    if (Math.random() < PLAYER_STRUCTURE_ATTACK_CHANCE && playerStructures.length > 0) {
+    
+    // First check for player spawns with higher probability
+    if (Math.random() < 0.4 && playerSpawns.length > 0) {
+      // Find player spawns within range
+      const nearbySpawns = playerSpawns.filter(ps => {
+        const distance = Math.sqrt(
+          Math.pow(ps.x - structureData.x, 2) + 
+          Math.pow(ps.y - structureData.y, 2)
+        );
+        return distance <= PLAYER_STRUCTURE_SEARCH_RADIUS;
+      });
+      
+      if (nearbySpawns.length > 0) {
+        // Pick a random spawn to target from those in range
+        targetPlayerStructure = nearbySpawns[Math.floor(Math.random() * nearbySpawns.length)];
+        logger.info(`Monster structure at (${structureData.x}, ${structureData.y}) targeting player spawn at (${targetPlayerStructure.x}, ${targetPlayerStructure.y})`);
+      }
+    }
+    
+    // If no spawn was targeted, check other player structures with regular chance
+    if (!targetPlayerStructure && Math.random() < PLAYER_STRUCTURE_ATTACK_CHANCE && playerStructures.length > 0) {
       // Find player structures within range
       const nearbyStructures = playerStructures.filter(ps => {
         const distance = Math.sqrt(
@@ -406,7 +438,7 @@ async function mobilizeFromMonsterStructures(worldId, monsterStructures, chunks)
         targetPlayerStructure = nearbyStructures[Math.floor(Math.random() * nearbyStructures.length)];
       }
     }
-    
+
     // Determine monster type to mobilize
     let monsterType = 'goblin'; // Default
     
@@ -436,7 +468,7 @@ async function mobilizeFromMonsterStructures(worldId, monsterStructures, chunks)
     
     if (newGroupId) {
       groupsMobilized++;
-      logger.info(`Monster structure at (${structureData.x}, ${structureData.y}) mobilized a new group${targetPlayerStructure ? " targeting player structure" : ""}`);
+      logger.info(`Monster structure at (${structureData.x}, ${structureData.y}) mobilized a new group${targetPlayerStructure ? " targeting " + (targetPlayerStructure.structure.type === "spawn" ? "player spawn" : "player structure") : ""}`);
     }
   }
   

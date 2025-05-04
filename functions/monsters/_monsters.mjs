@@ -443,7 +443,7 @@ export function createMonsterMoveMessage(monsterGroup, targetType, targetLocatio
   
   switch (targetType) {
     case 'player_spawn':
-      return `A ${size}${personalityText} ${groupName} is marching toward the settlement at (${targetLocation.x}, ${targetLocation.y})!`;
+      return `A ${size}${personalityText} ${groupName} is marching toward the settlement spawn at (${targetLocation.x}, ${targetLocation.y})! Players beware!`;
     case 'monster_structure':
       return `${personalityText} ${groupName} is moving toward their lair at (${targetLocation.x}, ${targetLocation.y}).`;
     case 'resource_hotspot':
