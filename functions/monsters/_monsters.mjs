@@ -663,12 +663,12 @@ export function createMonsterMobilizationMessage(monsterGroup, structureName, lo
 }
 
 // Constants for mobilization/demobilization
-export const MIN_UNITS_TO_MOBILIZE = 2; // Minimum units needed to mobilize
-export const MOBILIZATION_CHANCE = 0.08; // 8% chance per tick for eligible structures
-export const EXPLORATION_TICKS = 5; // Exploration phase lasts 5 ticks
-export const PLAYER_STRUCTURE_ATTACK_CHANCE = 0.05; // 5% chance to target player structures
-export const PLAYER_STRUCTURE_SEARCH_RADIUS = 15; // Search radius for player structures in tiles
-export const MIN_DISTANCE_FROM_SPAWN = 3; // Minimum tiles away from spawn to allow building
+export const MIN_UNITS_TO_MOBILIZE = 4; // Minimum units needed to mobilize
+export const MOBILIZATION_CHANCE = .10; // 8% chance per tick for eligible structures
+export const EXPLORATION_TICKS = 15; // Exploration phase lasts 5 ticks
+export const PLAYER_STRUCTURE_ATTACK_CHANCE = 0.15; // 5% chance to target player structures
+export const PLAYER_STRUCTURE_SEARCH_RADIUS = 25; // Search radius for player structures in tiles
+export const MIN_DISTANCE_FROM_SPAWN = 6; // Minimum tiles away from spawn to allow building
 
 /**
  * Check if a monster structure can mobilize units
@@ -678,28 +678,14 @@ export const MIN_DISTANCE_FROM_SPAWN = 3; // Minimum tiles away from spawn to al
  */
 export function canStructureMobilize(structure, tileData) {
   // Must be a monster structure
-  if (!isMonsterStructure(structure)) {
-    return false;
-  }
+  if (!isMonsterStructure(structure)) return false;
   
   // Structure should not be in battle
-  if (structure.inBattle) {
-    return false;
-  }
+  if (structure.inBattle) return false;
   
   // Check if enough units available in structure
   const unitCount = getAvailableStructureUnitCount(structure);
-  if (unitCount < MIN_UNITS_TO_MOBILIZE) {
-    return false;
-  }
-  
-  // Check if no battles or enemy groups on tile
-  const hasBattles = tileData.battles && Object.keys(tileData.battles).length > 0;
-  
-  // Don't mobilize if battle is happening
-  if (hasBattles) {
-    return false;
-  }
+  if (unitCount < MIN_UNITS_TO_MOBILIZE) return false;
   
   return true;
 }
