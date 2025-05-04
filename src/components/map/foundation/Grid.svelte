@@ -1260,6 +1260,7 @@
           <div
             class="tile {cell?.structure?.type} {cell.terrain?.rarity || 'common'}"
             class:center={cell.isCenter}
+            class:subdivided={cell.structure} 
             tabindex={cell.isCenter ? "0" : "-1"}
             class:highlighted={cell.highlighted}
             class:has-structure={cell.structure}
@@ -1280,7 +1281,32 @@
             role="gridcell"
           >
             <!-- Only render additional elements when initial animations are complete, don't hide during movement -->
-            {#if shouldRenderDetails || cell.isCenter}
+            {#if shouldRenderDetails}
+              <!-- Add structure subdivision grid -->
+              {#if cell.structure}
+                <div class="structure-subgrid">
+                  {#each Array(9) as _, index}
+                    {@const row = Math.floor(index / 3)}
+                    {@const col = index % 3}
+                    <div 
+                      class="subgrid-cell" 
+                      class:center-cell={row === 1 && col === 1}
+                      data-position={`${row}-${col}`}
+                    >
+                      {#if row === 1 && col === 1 && cell.structure.type !== 'spawn'}
+                        <div class="subgrid-structure-icon">
+                          <Structure size="90%" extraClass="structure-icon {cell.structure.type}-icon" />
+                        </div>
+                      {:else if row === 1 && col === 1 && cell.structure.type === 'spawn'}
+                        <div class="subgrid-structure-icon">
+                          <Torch size="90%" extraClass="spawn-icon" />
+                        </div>
+                      {/if}
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+
               <!-- Add YouAreHere component for player's position -->
               {#if isCurrentPlayerHere && $ready}
                 <div class="you-are-here-container">
@@ -1522,13 +1548,13 @@
     overflow: hidden;
   }
 
-  /* Clean up the tile animation approach to use transitions consistently */
+  /* The tile cells must keep position: relative */
   .tile {
     display: flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    overflow: visible; /* Changed from hidden to visible */
+    overflow: visible; 
     text-overflow: ellipsis;
     font-size: 1em;
     color: rgba(255, 255, 255, 0.7);
@@ -1536,13 +1562,115 @@
     user-select: none;
     z-index: 1;
     font-family: var(--font-body);
-    position: relative; /* Ensure this is set for absolute positioning */
+    position: relative; /* This is correct and necessary */
     
     /* Consistent transition for all states */
     transition: 
       opacity 0.8s ease-out,
       transform 0.8s ease-out,
-      background-color 0.8s ease-out; /* Changed from 0.3s to 0.8s to match opacity */
+      background-color 0.8s ease-out;
+  }
+  
+  /* Add styling for subdivided tiles */
+  .tile.subdivided {
+    padding: 0.05em;
+    box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    overflow: visible; /* Ensure the overflow is visible for the subgrid to extend beyond tile */
+  }
+  
+  /* Hide the regular structure icon when using subdivided grid */
+  .tile.subdivided .structure-icon-container {
+    display: none;
+  }
+  
+  /* Structure subgrid styling */
+  .structure-subgrid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 1px;
+    z-index: 3;
+    pointer-events: none;
+    /* Add a subtle scale transition on hover */
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    will-change: transform, box-shadow;
+  }
+  
+  /* Make subgrids more visible when in hover state */
+  .tile.subdivided:hover .structure-subgrid {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
+    z-index: 12; /* Ensure hovering brings it above other elements */
+  }
+  
+  .subgrid-cell {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative; /* This is correct - establishes positioning context */
+    transition: background-color 0.2s ease-out;
+  }
+  
+  .subgrid-structure-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 4;
+    transition: transform 0.2s ease-out;
+  }
+  
+  .tile.subdivided:hover .subgrid-structure-icon {
+    transform: scale(1.1);
+  }
+  
+  :global(.subgrid-structure-icon .structure-icon) {
+    opacity: 1;
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.7));
+  }
+  
+  /* Enhance corner cells with subtle visual distinction */
+  .subgrid-cell:nth-child(1),
+  .subgrid-cell:nth-child(3),
+  .subgrid-cell:nth-child(7),
+  .subgrid-cell:nth-child(9) {
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+  
+  /* When hovering the tile, enhance the subgrid */
+  .tile.subdivided:hover .structure-subgrid {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+  }
+  
+  .tile.subdivided:hover .subgrid-cell {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+  
+  .tile.subdivided:hover .subgrid-cell.center-cell {
+    background-color: rgba(255, 255, 255, 0.25);
+  }
+  
+  /* Special center tile subgrid highlights */
+  .tile.center.subdivided .subgrid-cell {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .tile.center.subdivided .subgrid-cell.center-cell {
+    background-color: rgba(255, 255, 255, 0.25);
   }
 
   /* Initial state for animated tiles */
@@ -1801,7 +1929,7 @@
   }
 
   .map-container.path-drawing-mode .map:not(.moving) .tile:hover::after {
-    content: "";
+       content: "";
     position: absolute;
     inset: 0;
     box-shadow: inset 0 0 0.3em rgba(66, 133, 244, 0.6);
@@ -1955,7 +2083,7 @@
   
   :global(.structure-icon) {
     opacity: 0.8;
-    filter: drop-shadow(0 0 3px rgba(0, 0, 0.6));
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.6));
     /* Changed from white drop shadow to dark shadow */
     fill: rgba(40, 40, 40, 0.9); /* Added dark fill color */
   }
