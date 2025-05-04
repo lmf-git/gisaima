@@ -170,27 +170,17 @@ export async function buildMonsterStructure(db, worldId, monsterGroup, location,
     type: structureType,
     status: 'building',
     buildProgress: 0,
-    buildTotalTime: buildTime,
-    buildStartTime: now,
-    buildCompletionTime: completionTime,
-    owner: 'monster', // Explicitly set owner to 'monster'
+    owner: 'monster',
     ownerName: monsterGroup.name || "Monster",
     ownerGroupId: monsterGroup.id,
     monster: true,
-    createdAt: now,
     level: 1,
     items: [],
-    features: structureData.features || [],
     capacity: structureData.capacity || 10
   };
   
   // Set monster group as building - match player group format for UI consistency
   updates[`${groupPath}/status`] = 'building';
-  updates[`${groupPath}/buildingStart`] = now;
-  updates[`${groupPath}/buildingTime`] = buildTime;
-  updates[`${groupPath}/buildingUntil`] = completionTime; // Format matches player groups
-  updates[`${groupPath}/buildingLocation`] = { x: buildLocation.x, y: buildLocation.y };
-  updates[`${groupPath}/buildingType`] = structureType;
   
   // Add a message about the building
   const chatMessageId = generateMonsterId('monster_building', now);
@@ -797,10 +787,6 @@ export async function startMonsterBuilding(db, worldId, monsterId, structureType
     status: 'building',
     builder: monsterId,
     monster: true,
-    createdAt: Date.now(),
-    buildStartTick: currentTick,
-    buildTotalTicks: buildTicks,
-    buildCompletionTick: currentTick + buildTicks,
     buildProgress: 0,
     features: structureDef.features || [],
     capacity: structureDef.capacity || 10
@@ -808,12 +794,7 @@ export async function startMonsterBuilding(db, worldId, monsterId, structureType
   
   // Update monster group to reflect building status
   await db.collection('worlds').doc(worldId).collection('groups').doc(monsterId).update({
-    status: 'building',
-    buildingType: structureType,
-    buildingLocation: { x, y },
-    buildingStart: currentTick, // Store tick instead of timestamp
-    buildingTime: buildTicks,
-    buildingUntil: currentTick + buildTicks // Store completion tick
+    status: 'building'
   });
   
   // Add the structure to the tile

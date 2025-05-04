@@ -4,6 +4,7 @@
  */
 
 import { logger } from "firebase-functions";
+import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
 
 /**
  * Process building structures for a given world
@@ -28,7 +29,8 @@ export async function processBuilding(worldId, updates, chunkKey, tileKey, tile,
   
   // Calculate progress
   const progress = (structure.buildProgress || 0) + 1;
-  const total = structure.buildTotalTime || 1;
+  // Get total build time from STRUCTURES definition
+  const total = STRUCTURES[structure.type]?.buildTime || 1;
   
   // Full paths for updates
   const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`;
@@ -55,10 +57,8 @@ function completeStructure(worldId, updates, chunkKey, tileKey, tile, now) {
   
   // Complete the structure
   const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`;
-  updates[`${structurePath}/status`] = 'complete';
+  updates[`${structurePath}/status`] = null; // Remove status instead of setting to 'complete'
   updates[`${structurePath}/buildProgress`] = null;
-  updates[`${structurePath}/buildTotalTime`] = null;
-  updates[`${structurePath}/buildStartTick`] = null;
   updates[`${structurePath}/completedAt`] = now;
   updates[`${structurePath}/builder`] = null;
   
@@ -66,11 +66,6 @@ function completeStructure(worldId, updates, chunkKey, tileKey, tile, now) {
   if (tile.groups && tile.groups[builderId]) {
     const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${builderId}`;
     updates[`${groupPath}/status`] = 'idle';
-    updates[`${groupPath}/buildingUntil`] = null;
-    updates[`${groupPath}/buildingStart`] = null;
-    updates[`${groupPath}/buildingTime`] = null;
-    updates[`${groupPath}/buildingLocation`] = null;
-    updates[`${groupPath}/buildingType`] = null;
   }
   
   // Create a chat message for the world
@@ -106,18 +101,17 @@ export async function processBuildingProgress(db, worldId, currentTick) {
   for (const doc of structures.docs) {
     const structure = doc.data();
     
-    // Calculate progress directly based on buildProgress/buildTotalTime
+    // Calculate progress directly based on buildProgress and STRUCTURES definition
     const progress = structure.buildProgress || 0;
-    const total = structure.buildTotalTime || 1;
+    const total = STRUCTURES[structure.type]?.buildTime || 1;
     const progressPercent = Math.min(100, Math.floor((progress / total) * 100));
     
     if (progress >= total) {
-      // Building is complete
+      // Building is complete - remove status entirely
       await doc.ref.update({
-        status: 'complete',
+        status: null, // Remove status instead of setting to 'complete'
         completedAt: Date.now(),
-        buildProgress: null,
-        buildTotalTime: null
+        buildProgress: null
       });
     } else {
       // Update progress

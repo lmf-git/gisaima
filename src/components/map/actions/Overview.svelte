@@ -1257,7 +1257,6 @@
                   </div>
                   
                   <div class="battle-timer">
-                    Started {Math.floor((Date.now() - (battle.createdAt || Date.now())) / 60000) || 0} minutes ago
                     • Tick: {battle.tickCount || 0}
                   </div>
                   

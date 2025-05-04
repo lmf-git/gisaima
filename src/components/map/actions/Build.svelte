@@ -225,7 +225,7 @@
     if (!structure || structure.status !== 'building') return 100;
     
     const progress = structure.buildProgress || 0;
-    const total = structure.buildTotalTime || 1;
+    const total = STRUCTURES[structure.type]?.buildTime || 1;
     
     return Math.min(100, Math.floor((progress / total) * 100));
   }
@@ -234,7 +234,7 @@
     if (!structure || structure.status !== 'building') return 'Complete';
     
     const progress = structure.buildProgress || 0;
-    const total = structure.buildTotalTime || 1;
+    const total = STRUCTURES[structure.type]?.buildTime || 1;
     const remaining = total - progress;
     
     return `${remaining} tick${remaining !== 1 ? 's' : ''} remaining`;

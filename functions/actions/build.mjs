@@ -167,16 +167,13 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
         type: structureType,
         status: 'building',
         buildProgress: 0,
-        buildTotalTime: structureDefinition.buildTime,
         owner: uid,
         ownerName: currentData.players[uid]?.worlds[worldId]?.displayName || 'Unknown',
-        builder: groupId,
         race: currentGroup.race || null
       };
       
       // Update group status
       currentGroup.status = 'building';
-      currentGroup.buildingTime = structureDefinition.buildTime;
       
       // Remove the required resources from the group
       if (currentGroup.items) {

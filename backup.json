@@ -2368,10 +2368,8 @@
                   "x": -25,
                   "y": 7
                 },
-                "buildingStart": 1746256807380,
                 "buildingTime": 1,
                 "buildingType": "monster_lair",
-                "buildingUntil": 1746256867380,
                 "gatheringTicksRemaining": 1,
                 "id": "monster_1746214982781_6464",
                 "items": [

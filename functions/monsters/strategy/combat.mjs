@@ -132,8 +132,7 @@ export async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetG
       name: selectedTargets.length === 1 ? 
         (selectedTargets[0].name || 'Defenders') : 'Defending Forces'
     },
-    tickCount: 0,
-    createdAt: now
+    tickCount: 0
   };
   
   // Add battle to the tile
@@ -237,8 +236,7 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
         defensePower: defensePower
       }
     },
-    tickCount: 0,
-    createdAt: now
+    tickCount: 0
   };
   
   // Add battle to the tile
@@ -356,7 +354,6 @@ export async function initiateAttackOnMonsters(db, worldId, monsterGroup, target
       name: selectedTargets[0].name || 'Monster Group'
     },
     tickCount: 0,
-    createdAt: now,
     monsterVsMonster: true // Flag this as a monster vs monster battle
   };
   

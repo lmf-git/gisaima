@@ -187,7 +187,6 @@ export const attack = onCall({ maxInstances: 10 }, async (request) => {
         name: side2Name
       },
       tickCount: 0,
-      createdAt: now
     };
     
     // If it's a structure battle, record the structureId
