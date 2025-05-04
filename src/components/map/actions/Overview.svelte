@@ -2090,6 +2090,7 @@
     display: flex;
     align-items: center;
     gap: 0.4em;
+    color: rgba(0, 0, 0, 0.85);  /* Added darker text color */
   }
   
   .unit-details {
@@ -2097,24 +2098,46 @@
     gap: 0.3em;
     font-size: 0.8em;
     margin-top: 0.1em;
+    color: rgba(0, 0, 0, 0.7);  /* Added text color */
   }
   
   .unit-race-tag, .unit-type-tag {
     padding: 0.1em 0.3em;
     border-radius: 0.2em;
-    background-color: rgba(0, 0, 0, 0.05);
-    color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.07);  /* Increased from 0.05 to 0.07 */
+    color: rgba(0, 0, 0, 0.8);  /* Increased from 0.7 to 0.8 */
+    border: 1px solid rgba(0, 0, 0, 0.05);  /* Added border */
   }
   
   .unit-type-tag.player {
-    background-color: rgba(66, 133, 244, 0.1);
-    color: rgba(66, 133, 244, 0.9);
+    background-color: rgba(66, 133, 244, 0.15);  /* Increased from 0.1 to 0.15 */
+    color: rgba(66, 133, 244, 1);  /* Increased from 0.9 to 1 */
+    border: 1px solid rgba(66, 133, 244, 0.2);  /* Added border */
   }
-
+  
   .group-power {
     font-weight: 500;
     color: #d32f2f;
     margin-left: 0.3em;
     font-size: 0.9em;
+  }
+
+  .group-units-list {
+    margin-top: 0.5em;
+    padding: 0.5em;
+    background-color: rgba(255, 255, 255, 0.7);  /* Increased opacity from 0.02 to 0.7 */
+    border-radius: 0.3em;
+    border: 1px solid rgba(0, 0, 0, 0.1);  /* Increased border opacity from 0.05 to 0.1 */
+    font-size: 0.9em;
+    max-height: 10em;
+    overflow-y: auto;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);  /* Added subtle shadow */
+  }
+  
+  .group-unit {
+    display: flex;
+    align-items: center;
+    padding: 0.3em 0;  /* Increased padding from 0.2em to 0.3em */
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.1);  /* Increased border opacity */
   }
 </style>
