@@ -40,15 +40,6 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
   console.log(`Calculated chunk coordinates: ${chunkKey} for tile ${tileKey}`);
   
   try {
-    // Get world info to calculate next tick time
-    const worldRef = db.ref(`worlds/${worldId}/info`);
-    const worldSnapshot = await worldRef.once('value');
-    const worldData = worldSnapshot.val();
-    
-    if (!worldData) {
-      throw new HttpsError('not-found', 'World not found.');
-    }
-
     // Get current tile data
     const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
     const tileSnapshot = await tileRef.once('value');
