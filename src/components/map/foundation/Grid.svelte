@@ -206,8 +206,8 @@
       const rawCols = width / tileSizePx;
       const rawRows = height / tileSizePx;
       
-      // Define a consistent threshold for extreme zoom
-      const EXTREME_ZOOM_THRESHOLD = 4;
+      // Define a consistent threshold for extreme zoom - use 3 to ensure center tile consistency
+      const EXTREME_ZOOM_THRESHOLD = 3;
       const isExtremeZoom = rawCols <= EXTREME_ZOOM_THRESHOLD || rawRows <= EXTREME_ZOOM_THRESHOLD;
       
       // For extreme zoom, don't add extra padding tile
@@ -248,8 +248,6 @@
           }
         }
       }
-      // At extreme zoom levels, we prioritize showing the specified number of tiles
-      // rather than enforcing square tiles
 
       // Always ensure we have at least 1 row and column
       cols = Math.max(cols, 1);
