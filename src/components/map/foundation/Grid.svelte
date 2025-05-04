@@ -892,6 +892,11 @@
     return false;
   }
 
+  // Add new helper function to check if a structure is in battle
+  function hasStructureBattle(tile) {
+    return !!tile.structure?.battleId;
+  }
+
   // Function to determine the dominant race or entity type on a tile
   function getDominantRace(cell) {
     if (!cell) return null;
@@ -1180,10 +1185,17 @@
                 </div>
               {/if}
 
-              <!-- Battle indicator -->
+              <!-- Regular battle indicator -->
               {#if hasBattle(cell)}
                 <div class="battle-indicator" title="Active battle in progress">
                   ⚔️
+                </div>
+              {/if}
+              
+              <!-- New structure battle indicator -->
+              {#if hasStructureBattle(cell)}
+                <div class="structure-battle-indicator" title="Structure involved in battle">
+                  <span class="structure-battle-icon">⚔️</span>
                 </div>
               {/if}
               
