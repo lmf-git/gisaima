@@ -53,6 +53,7 @@
         })),
         buildTime: structure.buildTime,
         capacity: structure.capacity || 10, // Default capacity if not specified
+        durability: structure.durability || 100, // Include durability
         features: structure.features || [
           {
             name: 'Structure',
@@ -349,8 +350,13 @@
                       {/each}
                     </div>
                     
-                    <div class="build-time">
-                      Build Time: {structure.buildTime} {structure.buildTime === 1 ? 'tick' : 'ticks'}
+                    <div class="structure-stats">
+                      <div class="build-time">
+                        Build Time: {structure.buildTime} {structure.buildTime === 1 ? 'tick' : 'ticks'}
+                      </div>
+                      <div class="durability">
+                        Durability: {structure.durability}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -870,5 +876,29 @@
   .time-remaining {
     font-size: 0.9em;
     color: #333;
+  }
+  
+  .structure-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em;
+    margin-top: 0.5em;
+    font-size: 0.9em;
+    color: #555;
+  }
+  
+  .build-time, .durability {
+    padding: 0.4em 0;
+  }
+  
+  .durability {
+    display: flex;
+    align-items: center;
+  }
+  
+  .durability::before {
+    content: '🛡️';
+    margin-right: 0.3em;
+    font-size: 1em;
   }
 </style>
