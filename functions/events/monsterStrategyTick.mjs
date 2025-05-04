@@ -116,11 +116,19 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   // Check if monster should change personality
   if (shouldChangePersonality(monsterGroup, now)) {
     const newPersonality = getRandomPersonality(personalityId);
-    updates[`${groupPath}/personality`] = {
-      id: newPersonality.id,
-      name: newPersonality.name,
-      emoji: newPersonality.emoji
+    
+    // Instead of updating just the personality property, update the entire group
+    const updatedGroup = {
+      ...monsterGroup,
+      personality: {
+        id: newPersonality.id,
+        name: newPersonality.name,
+        emoji: newPersonality.emoji
+      }
     };
+    
+    // Set the entire updated group
+    updates[`${groupPath}`] = updatedGroup;
     
     // Add message about personality change
     const chatMessageId = `monster_personality_change_${now}_${groupId}`;

@@ -177,15 +177,24 @@ export async function moveMonsterTowardsTarget(
     moveSpeed *= 1.2;
   }
   
-  // Set the movement data
-  updates[`${groupPath}/status`] = 'moving';
-  updates[`${groupPath}/movementPath`] = path;
-  updates[`${groupPath}/pathIndex`] = 0;
-  updates[`${groupPath}/moveStarted`] = now;
-  updates[`${groupPath}/moveSpeed`] = moveSpeed;
-  updates[`${groupPath}/targetX`] = targetLocation.x;
-  updates[`${groupPath}/targetY`] = targetLocation.y;
-  updates[`${groupPath}/nextMoveTime`] = now + 60000; // One minute
+  // Instead of setting individual properties, create a movement update object
+  // and set it all at once to avoid parent/child conflicts
+  const movementUpdates = {
+    status: 'moving',
+    movementPath: path,
+    pathIndex: 0,
+    moveStarted: now,
+    moveSpeed: moveSpeed,
+    targetX: targetLocation.x,
+    targetY: targetLocation.y,
+    nextMoveTime: now + 60000 // One minute
+  };
+  
+  // Set the entire movement data object at once
+  updates[`${groupPath}`] = {
+    ...monsterGroup,  // Keep existing group properties
+    ...movementUpdates // Apply movement updates
+  };
   
   // Add chat message for significant monster movements
   const chatMessageId = `monster_move_${now}_${monsterGroup.id}`;
@@ -342,7 +351,7 @@ function moveToTerritory(worldId, monsterGroup, location, territoryCenter, updat
     3 // Allow up to 3 steps to get back faster
   );
   
-  // Set the movement data with faster speed to return home
+  // Set the movement data with faster speed to return to territory
   updates[`${groupPath}/status`] = 'moving';
   updates[`${groupPath}/movementPath`] = path;
   updates[`${groupPath}/pathIndex`] = 0;
@@ -399,15 +408,23 @@ export function moveOneStepTowardsTarget(worldId, monsterGroup, location, target
     { x: nextX, y: nextY }
   ];
   
-  // Set the movement data
-  updates[`${groupPath}/status`] = 'moving';
-  updates[`${groupPath}/movementPath`] = path;
-  updates[`${groupPath}/pathIndex`] = 0;
-  updates[`${groupPath}/moveStarted`] = now;
-  updates[`${groupPath}/moveSpeed`] = 1;
-  updates[`${groupPath}/targetX`] = targetLocation.x;
-  updates[`${groupPath}/targetY`] = targetLocation.y;
-  updates[`${groupPath}/nextMoveTime`] = now + 60000; // One minute
+  // Consolidate all updates into one object
+  const movementUpdates = {
+    status: 'moving',
+    movementPath: path,
+    pathIndex: 0,
+    moveStarted: now,
+    moveSpeed: 1,
+    targetX: targetLocation.x,
+    targetY: targetLocation.y,
+    nextMoveTime: now + 60000 // One minute
+  };
+  
+  // Set the entire updated group at once
+  updates[`${groupPath}`] = {
+    ...monsterGroup,  // Keep existing group properties
+    ...movementUpdates // Apply movement updates
+  };
   
   // Add chat message for monster movement if it's a significant target
   if (['player_spawn', 'monster_structure', 'monster_home'].includes(targetType)) {
@@ -469,15 +486,23 @@ export function moveRandomly(worldId, monsterGroup, location, updates, now) {
     randomMaxSteps
   );
   
-  // Set the movement data
-  updates[`${groupPath}/status`] = 'moving';
-  updates[`${groupPath}/movementPath`] = path;
-  updates[`${groupPath}/pathIndex`] = 0;
-  updates[`${groupPath}/moveStarted`] = now;
-  updates[`${groupPath}/moveSpeed`] = 1;
-  updates[`${groupPath}/targetX`] = targetX;
-  updates[`${groupPath}/targetY`] = targetY;
-  updates[`${groupPath}/nextMoveTime`] = now + 60000; // One minute
+  // Consolidate movement updates
+  const movementUpdates = {
+    status: 'moving',
+    movementPath: path,
+    pathIndex: 0,
+    moveStarted: now,
+    moveSpeed: 1,
+    targetX: targetX,
+    targetY: targetY,
+    nextMoveTime: now + 60000
+  };
+  
+  // Set the entire updated group at once
+  updates[`${groupPath}`] = {
+    ...monsterGroup, // Keep existing group properties
+    ...movementUpdates // Apply movement updates
+  };
   
   return {
     action: 'move',
@@ -507,16 +532,24 @@ export function moveToAdjacentTile(worldId, monsterGroup, location, adjacentTile
     { x: adjacentTile.x, y: adjacentTile.y }
   ];
   
-  // Set movement data
-  updates[`${groupPath}/status`] = 'moving';
-  updates[`${groupPath}/movementPath`] = path;
-  updates[`${groupPath}/pathIndex`] = 0;
-  updates[`${groupPath}/moveStarted`] = now;
-  updates[`${groupPath}/moveSpeed`] = 1.5; // Slightly faster for attack moves
-  updates[`${groupPath}/targetX`] = adjacentTile.x;
-  updates[`${groupPath}/targetY`] = adjacentTile.y;
-  updates[`${groupPath}/nextMoveTime`] = now + 45000; // 45 seconds - faster for adjacent moves
-  updates[`${groupPath}/moveReason`] = moveReason;
+  // Consolidate movement updates
+  const movementUpdates = {
+    status: 'moving',
+    movementPath: path,
+    pathIndex: 0,
+    moveStarted: now,
+    moveSpeed: 1.5, // Slightly faster for attack moves
+    targetX: adjacentTile.x,
+    targetY: adjacentTile.y,
+    nextMoveTime: now + 45000, // 45 seconds - faster for adjacent moves
+    moveReason: moveReason
+  };
+  
+  // Set the entire updated group at once
+  updates[`${groupPath}`] = {
+    ...monsterGroup, // Keep existing group properties
+    ...movementUpdates // Apply movement updates
+  };
   
   // Add a chat message if this is a structure attack
   if (moveReason === 'structure_attack' && adjacentTile.structure) {
