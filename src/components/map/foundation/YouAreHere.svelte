@@ -1,17 +1,35 @@
 <script>
-  // Replace size prop with hasStructure
   const { hasStructure = false } = $props();
 </script>
 
-<!-- Remove redundant wrapper -->
-<div class="indicator-ring" class:has-structure={hasStructure}></div>
-<span class="location-text" class:has-structure={hasStructure}>You are here</span>
+<!-- Restore the wrapper for proper positioning context -->
+<div class="you-are-here-wrapper" class:has-structure={hasStructure}>
+  <div class="indicator-ring"></div>
+  <span class="location-text">You are here</span>
+</div>
 
 <style>
+  .you-are-here-wrapper {
+    position: absolute;
+    inset: 0; /* Fill the entire container */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 1000;
+    /* Define base size for regular tiles */
+    --indicator-size: 4.2em;
+  }
+
+  /* Make structure indicator larger */
+  .you-are-here-wrapper.has-structure {
+    --indicator-size: 11em;
+  }
+
   .indicator-ring {
     position: absolute;
-    width: min(calc(var(--indicator-size, 4.2em) * 0.95), 95%);
-    height: min(calc(var(--indicator-size, 4.2em) * 0.95), 95%); /* Use height instead of padding-bottom */
+    width: min(calc(var(--indicator-size) * 0.95), 95%);
+    aspect-ratio: 1/1; /* Maintain perfect circle */
     border: 2px solid rgba(255, 215, 0, 0.8);
     border-radius: 50%;
     box-shadow: 
@@ -21,20 +39,11 @@
       pulse 2s infinite, 
       growIn 1s ease-out forwards;
     opacity: 0.9;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1000;
-    pointer-events: none;
-    /* Set default size without relying on wrapper */
-    --indicator-size: 4.2em;
   }
 
-  /* Ring is even larger for structure tiles */
-  .indicator-ring.has-structure {
-    --indicator-size: 11em;
+  /* Ring is larger for structure tiles */
+  .has-structure .indicator-ring {
     width: min(calc(var(--indicator-size) * 0.98), 98%);
-    height: min(calc(var(--indicator-size) * 0.98), 98%);
     border-width: 3px;
     box-shadow: 
       0 0 20px rgba(255, 215, 0, 0.7),
@@ -43,15 +52,14 @@
 
   .location-text {
     position: absolute;
-    bottom: calc(-3.1em + 50%);
+    /* Position below the ring based on indicator size */
+    top: calc(50% + var(--indicator-size) * 0.55);
     left: 50%;
     transform: translateX(-50%);
-    /* Change to dark text on gold background */
     color: rgba(50, 30, 0, 0.95);
     font-weight: bold;
-    font-size: calc(var(--indicator-size, 4.2em) / 6);
+    font-size: calc(var(--indicator-size) / 6);
     padding: 0.2em 0.6em;
-    /* Gold background matching ring color scheme */
     background: linear-gradient(to bottom, rgba(255, 215, 0, 0.9), rgba(218, 165, 32, 0.85));
     border-radius: 0.3em;
     white-space: nowrap;
@@ -65,13 +73,12 @@
       0 0 8px rgba(255, 215, 0, 0.4), 
       inset 0 0 2px rgba(255, 255, 255, 0.8);
     z-index: 1101;
-    pointer-events: none;
   }
 
   /* Make text for structures smaller with matching style */
-  .location-text.has-structure {
-    font-size: calc(var(--indicator-size, 11em) / 12);
-    bottom: calc(-2.7em + 50%);
+  .has-structure .location-text {
+    font-size: calc(var(--indicator-size) / 12);
+    top: calc(50% + var(--indicator-size) * 0.6); /* Adjust position for structure size */
     padding: 0.25em 0.7em;
     background: linear-gradient(to bottom, rgba(255, 215, 0, 0.85), rgba(218, 165, 32, 0.8));
     border: 1px solid rgba(255, 215, 0, 0.7);
@@ -83,22 +90,22 @@
   }
 
   @keyframes pulse {
-    0% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.8; }
-    50% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.8; }
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.8; }
   }
 
   @keyframes appear {
-    0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+    0% { transform: scale(0.2); opacity: 0; }
     40% { opacity: 0.4; }
-    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
   }
 
   @keyframes growIn {
-    0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
-    50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.7; }
-    70% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.8; }
-    100% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
+    0% { transform: scale(0.2); opacity: 0; }
+    50% { transform: scale(1.1); opacity: 0.7; }
+    70% { transform: scale(0.95); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 0.9; }
   }
 
   @keyframes bounce {
