@@ -1820,6 +1820,37 @@
     pointer-events: none;
     animation: pulse-battle 2s infinite;
   }
+
+  .structure-battle-indicator {
+    position: absolute;
+    bottom: 0.2em;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1em;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.15em 0.3em;
+    border-radius: 0.3em;
+    background-color: rgba(255, 30, 30, 0.35);
+    box-shadow: 0 0 0.3em rgba(255, 0, 0, 0.5), 
+                inset 0 0 0.15em rgba(255, 255, 255, 0.3);
+    pointer-events: none;
+    animation: pulse-structure-battle 2s infinite;
+    border: 0.08em solid rgba(255, 255, 255, 0.5);
+  }
+
+  .structure-battle-icon {
+    font-size: 1em;
+    filter: drop-shadow(0 0 0.1em rgba(0, 0, 0, 0.7));
+  }
+
+  @keyframes pulse-structure-battle {
+    0% { background-color: rgba(255, 30, 30, 0.35); transform: translateX(-50%) scale(0.95); }
+    50% { background-color: rgba(255, 30, 30, 0.55); transform: translateX(-50%) scale(1.05); }
+    100% { background-color: rgba(255, 30, 30, 0.35); transform: translateX(-50%) scale(0.95); }
+  }
   
   @keyframes pulse-battle {
     0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4); }
