@@ -53,6 +53,7 @@ export function processGathering(worldId, updates, group, chunkKey, tileKey, gro
   // Reset group status to idle
   updates[`${groupPath}/status`] = 'idle';
   updates[`${groupPath}/gatheringBiome`] = null;
+  updates[`${groupPath}/gatheringTicksRemaining`] = null;
   
   // Add a message about the gathering
   const itemCount = gatheredItems.length;

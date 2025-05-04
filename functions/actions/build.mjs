@@ -155,7 +155,8 @@ export const buildStructure = onCall({ maxInstances: 10 }, async (request) => {
         buildProgress: 0,
         owner: uid,
         ownerName: currentData.players[uid]?.worlds[worldId]?.displayName || 'Unknown',
-        race: currentGroup.race || null
+        race: currentGroup.race || null,
+        builder: groupId  // Add the groupId as the builder property
       };
       
       // Update group status
