@@ -396,12 +396,6 @@
   function handleMouseDown(event) {
     if (!introduced || event.button !== 0) return;
     
-    // Don't initiate dragging in path drawing mode
-    if (isPathDrawingMode) {
-      // In path drawing mode, we only want clicks, not drags
-      return;
-    }
-    
     // Reset the drag state on each mousedown
     wasDrag = false;
     dist = 0;
@@ -419,9 +413,7 @@
   }
   
   function handleMouseMove(event) {
-    // Skip drag handling when in path drawing mode
-    if (isPathDrawingMode) return;
-    
+    // Allow drag handling even in path drawing mode
     if ($map.isDragging && $map.dragSource === 'map') {
       handleDragAction({ 
         type: 'dragmove', 
@@ -432,12 +424,10 @@
   }
   
   function handleMouseUp() {
-    // Skip drag handling when in path drawing mode
-    if (isPathDrawingMode) return;
-    
+    // Allow drag handling even in path drawing mode
     if ($map.isDragging && $map.dragSource === 'map') {
       handleDragAction({ type: 'dragend' });
-      if (mapElement) mapElement.style.cursor = "grab";
+      if (mapElement) mapElement.style.cursor = isPathDrawingMode ? "crosshair" : "grab";
     }
   }
   
@@ -450,14 +440,6 @@
         // If we're handling as pinch zoom, exit early
         return;
       }
-    }
-    
-    // Don't initiate dragging in path drawing mode
-    if (isPathDrawingMode) {
-      // Allow single touch for path points but prevent default
-      // to avoid scrolling the page
-      event.preventDefault();
-      return;
     }
     
     event.preventDefault();
@@ -477,9 +459,6 @@
         return;
       }
     }
-    
-    // Skip drag handling when in path drawing mode
-    if (isPathDrawingMode) return;
     
     if (!$map.isDragging || $map.dragSource !== 'map') return;
     event.preventDefault();
@@ -505,9 +484,6 @@
       }
       return;
     }
-    
-    // Skip drag handling when in path drawing mode
-    if (isPathDrawingMode) return;
     
     if ($map.isDragging && $map.dragSource === 'map') {
       handleDragAction({ type: 'touchend' });
@@ -701,15 +677,18 @@
       
       // First handle path drawing if in that mode
       if (isPathDrawingMode) {
-        // Directly call the prop function with validation
-        if (onAddPathPoint) {
-          if (!isPathDrawingMode) {
-            console.log('Not in path drawing mode, ignoring point');
-            return;
+        // Only add a point if it was a real click, not the end of a drag
+        if (!wasDrag) {
+          // Directly call the prop function with validation
+          if (onAddPathPoint) {
+            if (!isPathDrawingMode) {
+              console.log('Not in path drawing mode, ignoring point');
+              return;
+            }
+            
+            console.log('Grid: Adding path point:', { x: tileX, y: tileY });
+            onAddPathPoint({ x: tileX, y: tileY });
           }
-          
-          console.log('Grid: Adding path point:', { x: tileX, y: tileY });
-          onAddPathPoint({ x: tileX, y: tileY });
         }
         return; // Exit early to prevent other click behaviors
       }
