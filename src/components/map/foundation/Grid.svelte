@@ -210,6 +210,27 @@
       // Ensure we have odd numbers for centered target
       cols = cols % 2 === 0 ? cols + 1 : cols;
       rows = rows % 2 === 0 ? rows + 1 : rows;
+      
+      // Calculate the container's aspect ratio
+      const containerAspectRatio = width / height;
+      
+      // Calculate cell aspect ratio using current rows and columns
+      const cellAspectRatio = (width / cols) / (height / rows);
+      
+      // If cells aren't square (with a small tolerance), adjust to make them square
+      if (Math.abs(cellAspectRatio - 1) > 0.05) {
+        if (containerAspectRatio > 1) {
+          // Wider than tall - adjust columns based on rows
+          cols = Math.ceil(rows * containerAspectRatio);
+          // Ensure odd number
+          cols = cols % 2 === 0 ? cols + 1 : cols;
+        } else {
+          // Taller than wide - adjust rows based on columns
+          rows = Math.ceil(cols / containerAspectRatio);
+          // Ensure odd number
+          rows = rows % 2 === 0 ? rows + 1 : rows;
+        }
+      }
 
       cols = Math.max(cols, 7); // Increased minimum
       rows = Math.max(rows, 7); // Increased minimum
@@ -1910,7 +1931,7 @@
        content: "";
     position: absolute;
     inset: 0;
-    box-shadow: inset 0 0 0.3em rgba(66, 133, 244, 0.6);
+    box-shadow: inset 0  0 0.3em rgba(66, 133, 244, 0.6);
     pointer-events: none;
     z-index: 10;
   }
