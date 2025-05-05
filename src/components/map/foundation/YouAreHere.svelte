@@ -52,7 +52,6 @@
 
   .location-text {
     position: absolute;
-    /* Position below the ring based on indicator size */
     top: calc(100% + var(--indicator-size) * .15);
     left: 50%;
     transform: translateX(-50%);

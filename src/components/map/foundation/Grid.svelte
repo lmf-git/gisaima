@@ -1440,10 +1440,10 @@
                 </div>
               {/if}
 
-              <!-- Add YouAreHere component for player's position - don't show at maximum zoom -->
+              <!-- Add YouAreHere component for player's position -->
               {#if isCurrentPlayerHere && $ready}
-                <div class="you-are-here-container" class:max-zoom={isMaximumZoom}>
-                  <YouAreHere hasStructure={!!cell.structure} />
+                <div class="you-are-here-container">
+                  <YouAreHere hasStructure={!!cell.structure} maxZoom={isMaximumZoom} />
                 </div>
               {/if}
 
@@ -2370,30 +2370,10 @@
     top: 1.5em;
     z-index: 1500; /* Ensure it stays above other elements */
   }
-  
-  /* ...existing code... */
-  
-  .you-are-here-container {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    pointer-events: none;
-    transform-style: preserve-3d; /* Add for better rendering during transforms */
-    will-change: transform; /* Optimize for animations/transforms */
-  }
-  
-  /* Style modifications for "You are here" at maximum zoom */
-  .you-are-here-container.max-zoom :global(.indicator-ring) {
-    display: none; /* Hide the ring at max zoom */
-  }
-  
-  .you-are-here-container.max-zoom :global(.location-text) {
-    top: 2.5em; /* Reposition the text at max zoom */
-    z-index: 1500; /* Ensure text stays visible */
-  }
-  
-  /* ...existing code... */
+
+  /* Style modifications for "You are here" container at maximum zoom */
+  .you-are-here-container.max-zoom {
+  /* Container-level styling only - the component will handle internal positioning */
+  z-index: 1500; /* Ensure container stays visible */
+}
 </style>
