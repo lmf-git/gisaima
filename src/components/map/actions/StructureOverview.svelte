@@ -1,7 +1,7 @@
 <script>
   import { slide } from "svelte/transition";
 
-  import { BUILDINGS } from "gisaima-shared";
+  import { BUILDINGS, ITEMS } from "gisaima-shared";
 
   import { currentPlayer } from "../../../lib/stores/game.js";
   import { targetStore } from "../../../lib/stores/map.js";
@@ -208,7 +208,22 @@
     return currentLevel < maxLevel;
   }
 
-  // Function to get required resources for upgrade
+  // Helper function to get item definition from ITEMS by name
+  function getItemByName(name) {
+    if (!name) return null;
+    
+    // First try to find by normalized name
+    const normalizedName = name.toUpperCase().replace(/ /g, '_');
+    if (ITEMS[normalizedName]) {
+      return ITEMS[normalizedName];
+    }
+    
+    // Try to find by name property
+    return Object.values(ITEMS).find(item => 
+      item.name.toUpperCase().replace(/ /g, '_') === normalizedName) || null;
+  }
+
+  // Function to get required resources for upgrade with proper ITEMS definitions
   function getUpgradeRequirements() {
     if (!tileData?.structure) return [];
     
@@ -223,27 +238,46 @@
     const requirements = [];
     
     if (structureType === 'outpost' || structureType === 'spawn') {
-      requirements.push({ name: 'Wooden Sticks', quantity: baseWood });
-      requirements.push({ name: 'Stone Pieces', quantity: baseStone });
+      addResourceRequirement(requirements, 'WOODEN_STICKS', baseWood);
+      addResourceRequirement(requirements, 'STONE_PIECES', baseStone);
     } else if (structureType === 'stronghold' || structureType === 'fortress') {
-      requirements.push({ name: 'Wooden Sticks', quantity: baseWood * 1.5 });
-      requirements.push({ name: 'Stone Pieces', quantity: baseStone * 1.5 });
-      requirements.push({ name: 'Iron Ore', quantity: currentLevel * 2 });
+      addResourceRequirement(requirements, 'WOODEN_STICKS', baseWood * 1.5);
+      addResourceRequirement(requirements, 'STONE_PIECES', baseStone * 1.5);
+      addResourceRequirement(requirements, 'IRON_ORE', currentLevel * 2);
     } else {
       // Default requirements
-      requirements.push({ name: 'Wooden Sticks', quantity: baseWood });
-      requirements.push({ name: 'Stone Pieces', quantity: baseStone });
+      addResourceRequirement(requirements, 'WOODEN_STICKS', baseWood);
+      addResourceRequirement(requirements, 'STONE_PIECES', baseStone);
     }
     
     // Higher level upgrades might require special materials
     if (currentLevel >= 3) {
-      requirements.push({ name: 'Crystal Shard', quantity: 1 });
+      addResourceRequirement(requirements, 'CRYSTAL_SHARD', 1);
     }
     
     return requirements;
   }
-
-  // Function to check if player has resources for upgrade
+  
+  // Helper to add resource requirement using ITEMS definitions when available
+  function addResourceRequirement(requirements, itemId, quantity) {
+    const itemDef = ITEMS[itemId];
+    if (itemDef) {
+      requirements.push({
+        id: itemDef.id,
+        name: itemDef.name,
+        quantity: Math.floor(quantity),
+        rarity: itemDef.rarity
+      });
+    } else {
+      // Fallback for items not in ITEMS definition
+      requirements.push({
+        name: itemId.replace(/_/g, ' ').toLowerCase(),
+        quantity: Math.floor(quantity)
+      });
+    }
+  }
+  
+  // Function to check if player has resources for upgrade using normalized matching
   function hasResourcesForUpgrade() {
     const requirements = getUpgradeRequirements();
     if (!requirements.length) return false;
@@ -252,36 +286,54 @@
     const sharedItems = tileData?.structure?.items || [];
     const personalItems = hasPersonalBank ? tileData?.structure?.banks[$currentPlayer.id] : [];
     
-    // Combine available resources from both sources
-    const availableResources = {};
+    // Normalize all resources for consistent matching
+    const normalizedResources = {};
     
-    // Count shared resources
-    sharedItems.forEach(item => {
-      if (!availableResources[item.name]) {
-        availableResources[item.name] = 0;
+    // Function to add normalized resources to the map
+    function addNormalizedResource(item) {
+      if (!item || !item.type === 'resource') return;
+      
+      // Try with item ID if available
+      if (item.id) {
+        const normId = item.id.toUpperCase();
+        normalizedResources[normId] = (normalizedResources[normId] || 0) + (item.quantity || 0);
       }
-      availableResources[item.name] += item.quantity || 0;
-    });
+      
+      // Also add with normalized name
+      if (item.name) {
+        const normName = item.name.toUpperCase().replace(/ /g, '_');
+        normalizedResources[normName] = (normalizedResources[normName] || 0) + (item.quantity || 0);
+      }
+    }
     
-    // Count personal resources
-    personalItems.forEach(item => {
-      if (!availableResources[item.name]) {
-        availableResources[item.name] = 0;
-      }
-      availableResources[item.name] += item.quantity || 0;
-    });
+    // Process shared resources
+    sharedItems.forEach(addNormalizedResource);
+    
+    // Process personal resources
+    personalItems.forEach(addNormalizedResource);
     
     // Check if all requirements are met
     for (const req of requirements) {
-      const available = availableResources[req.name] || 0;
-      if (available < req.quantity) {
+      let foundAmount = 0;
+      
+      // Check by ID if available
+      if (req.id) {
+        const normId = req.id.toUpperCase();
+        foundAmount += normalizedResources[normId] || 0;
+      }
+      
+      // Also check by name
+      const normName = req.name.toUpperCase().replace(/ /g, '_');
+      foundAmount += normalizedResources[normName] || 0;
+      
+      if (foundAmount < req.quantity) {
         return false;
       }
     }
     
     return true;
   }
-
+  
   // Function to start structure upgrade
   async function startUpgrade() {
     if (!canUpgradeStructure() || !hasResourcesForUpgrade()) {

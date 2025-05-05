@@ -4,6 +4,44 @@ import { BUILDINGS } from 'gisaima-shared';
 import { ITEMS } from 'gisaima-shared/definitions/ITEMS.js';
 
 /**
+ * Normalize a resource name to a standard format for comparison
+ * @param {string} resourceName - The resource name to normalize
+ * @returns {string} Normalized resource key
+ */
+function normalizeResourceName(resourceName) {
+  if (!resourceName) return '';
+  
+  // First try to find exact match in ITEMS
+  const itemKey = Object.keys(ITEMS).find(key => 
+    ITEMS[key].name === resourceName);
+  
+  if (itemKey) {
+    return itemKey;
+  }
+  
+  // If no exact match, normalize the name
+  return resourceName.toUpperCase().replace(/ /g, '_');
+}
+
+/**
+ * Get item definition from ITEMS by name
+ * @param {string} name - Item name to look up
+ * @returns {Object|null} Item definition or null if not found
+ */
+function getItemByName(name) {
+  const normalizedName = normalizeResourceName(name);
+  
+  // First try direct match with normalized name
+  if (ITEMS[normalizedName]) {
+    return ITEMS[normalizedName];
+  }
+  
+  // If that fails, try to find by the name property
+  return Object.values(ITEMS).find(item => 
+    normalizeResourceName(item.name) === normalizedName) || null;
+}
+
+/**
  * Start a structure upgrade
  * @param {Object} data - The upgrade data
  * @param {string} data.worldId - The world ID
@@ -138,13 +176,27 @@ export const startStructureUpgrade = onCall({ maxInstances: 10 }, async (request
     // Check if required resources are available in the combined storage
     const insufficientResources = [];
     for (const resource of requiredResources) {
-      const resourceKey = resource.name.toUpperCase().replace(/ /g, '_');
+      // Normalize the resource name to ITEMS format
+      const itemDef = getItemByName(resource.name);
+      const resourceKey = itemDef ? itemDef.id : normalizeResourceName(resource.name);
+      
       const amountNeeded = resource.quantity;
-      const availableAmount = combinedResources[resourceKey] || 0;
+      
+      // Look for the resource using normalized keys
+      let availableAmount = 0;
+      
+      // Check if we have this resource in combined inventory using various possible keys
+      if (combinedResources[resourceKey]) {
+        availableAmount = combinedResources[resourceKey];
+      } else if (itemDef && combinedResources[itemDef.name]) {
+        availableAmount = combinedResources[itemDef.name];
+      } else if (combinedResources[resource.name]) {
+        availableAmount = combinedResources[resource.name];
+      }
       
       if (availableAmount < amountNeeded) {
         insufficientResources.push({
-          resource: resource.name,
+          resource: itemDef?.name || resource.name,
           needed: amountNeeded,
           available: availableAmount
         });
@@ -219,7 +271,9 @@ export const startStructureUpgrade = onCall({ maxInstances: 10 }, async (request
       // Prepare for resource deduction
       const resourcesNeeded = {};
       requiredResources.forEach(resource => {
-        resourcesNeeded[resource.name.toUpperCase().replace(/ /g, '_')] = resource.quantity;
+        const itemDef = getItemByName(resource.name);
+        const key = itemDef ? itemDef.id : normalizeResourceName(resource.name);
+        resourcesNeeded[key] = resource.quantity;
       });
       
       const isStructureOwner = structure.owner === playerId;
@@ -247,7 +301,7 @@ export const startStructureUpgrade = onCall({ maxInstances: 10 }, async (request
           if (item.id) {
             const upperItemId = item.id.toUpperCase();
             for (const [resourceKey, amountNeeded] of Object.entries(resourcesNeeded)) {
-              if (resourceKey === upperItemId && amountNeeded > 0) {
+              if (upperItemId === resourceKey && amountNeeded > 0) {
                 deductFromThisItem = Math.min(item.quantity, amountNeeded);
                 resourcesNeeded[resourceKey] -= deductFromThisItem;
                 
@@ -261,9 +315,9 @@ export const startStructureUpgrade = onCall({ maxInstances: 10 }, async (request
           
           // If no match by ID, try matching by normalized name
           if (deductFromThisItem === 0 && item.name) {
-            const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+            const normalizedName = normalizeResourceName(item.name);
             for (const [resourceKey, amountNeeded] of Object.entries(resourcesNeeded)) {
-              if (resourceKey === normalizedName && amountNeeded > 0) {
+              if (normalizedName === resourceKey && amountNeeded > 0) {
                 deductFromThisItem = Math.min(item.quantity, amountNeeded);
                 resourcesNeeded[resourceKey] -= deductFromThisItem;
                 
@@ -330,7 +384,7 @@ export const startStructureUpgrade = onCall({ maxInstances: 10 }, async (request
             
             // If no match by ID, try matching by normalized name
             if (deductFromThisItem === 0 && item.name) {
-              const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+              const normalizedName = normalizeResourceName(item.name);
               for (const [resourceKey, amountNeeded] of Object.entries(resourcesNeeded)) {
                 if (resourceKey === normalizedName && amountNeeded > 0) {
                   deductFromThisItem = Math.min(item.quantity, amountNeeded);
@@ -505,7 +559,6 @@ function calculateUpgradeTime(structureType, currentLevel) {
  * @param {number} data.x - Structure X coordinate
  * @param {number} data.y - Structure Y coordinate
  * @param {string} data.buildingId - ID of the building to upgrade
- * @param {string} data.playerId - The player requesting the upgrade
  * @returns {Promise<Object>} The result of the upgrade request
  */
 export const startBuildingUpgrade = onCall({ maxInstances: 10 }, async (request) => {
@@ -593,16 +646,39 @@ export const startBuildingUpgrade = onCall({ maxInstances: 10 }, async (request)
     
     const structureItems = structureItemsSnapshot.exists() ? structureItemsSnapshot.val() : [];
     
-    // Check if all resources are available
+    // Check if all resources are available - use improved resource matching
     for (const resource of requiredResources) {
-      const availableItem = structureItems.find(item => item.name === resource.name);
-      const availableQuantity = availableItem ? availableItem.quantity : 0;
+      const itemDef = getItemByName(resource.name);
+      const resourceName = itemDef?.name || resource.name;
+      
+      // Try multiple matching strategies to find the right item
+      let availableQuantity = 0;
+      let foundItem = null;
+      
+      // First try exact name match
+      foundItem = structureItems.find(item => item.name === resourceName);
+      
+      // If not found by name, try by ID
+      if (!foundItem && itemDef) {
+        foundItem = structureItems.find(item => item.id === itemDef.id);
+      }
+      
+      // If still not found, try with normalized names
+      if (!foundItem) {
+        const normalizedResourceName = normalizeResourceName(resourceName);
+        foundItem = structureItems.find(item => 
+          normalizeResourceName(item.name) === normalizedResourceName || 
+          (item.id && normalizeResourceName(item.id) === normalizedResourceName)
+        );
+      }
+      
+      availableQuantity = foundItem ? foundItem.quantity : 0;
       
       if (availableQuantity < resource.quantity) {
-        throw new Error(`Insufficient ${resource.name}: need ${resource.quantity}, have ${availableQuantity}`);
+        throw new Error(`Insufficient ${resourceName}: need ${resource.quantity}, have ${availableQuantity}`);
       }
     }
-    
+  
     // Calculate upgrade time based on level and building type using BUILDINGS utility
     const upgradeTime = BUILDINGS.calculateUpgradeTime(building.type, currentLevel);
     const upgradeTimeMs = upgradeTime * 1000; // Convert to ms
