@@ -77,11 +77,6 @@
     }
   });
 
-  // Replace clickedCenterTile flag with a derived value
-  // This is only for visual feedback about the center tile being clicked recently,
-  // not for determining if a click is on the center tile
-  const isCenterTileActive = $derived(Date.now() - lastCenterClickTime < 300);
-  
   // Track Peek position to detect map movement
   let peekOpenedAtPosition = $state(null);
   
@@ -660,8 +655,8 @@
   }
 
   function handleGridClick(event) {
-    // Add logging to check if grid click handler is getting events
-    console.log('Grid click detected, isCenterTileActive:', isCenterTileActive);
+    // Update logging to remove reference to removed variable
+    console.log('Grid click detected');
     
     clickCount++;
     lastClickTime = Date.now();
@@ -1980,7 +1975,7 @@
   
   .group-indicator {
     background: radial-gradient(circle, rgba(255, 130, 130, 0.9), rgba(225, 80, 80, 0.9));
-    box-shadow: 0 0 0.2em rgba(255, 100, 100, 0.6);
+    box-shadow: 0  0 0.2em rgba(255, 100, 100, 0.6);
     border: 0.08em solid rgba(255, 180, 180, 0.7);
   }
   
