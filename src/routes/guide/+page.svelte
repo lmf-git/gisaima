@@ -14,6 +14,16 @@
   }
   
   onMount(() => {
+    // Check for URL hash on page load and set active section
+    if (window.location.hash) {
+      const sectionId = window.location.hash.substring(1); // Remove the # character
+      const section = document.getElementById(sectionId);
+      if (section) {
+        activeSection = sectionId;
+        section.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+    
     // Intersection observer to update active section based on scrolling
     const sections = document.querySelectorAll('.guide-section');
     
@@ -964,7 +974,6 @@
         <li><strong>Achievement Items:</strong> Awarded for milestones, firsts, or special accomplishments</li>
         <li><strong>Inspired Items:</strong> Rare items based on real players, with unique properties (0.1% per capita)</li>
         <li><strong>Magical Items:</strong> Artifacts with supernatural capabilities and sometimes consequences</li>
-        <li><strong>Battle Spoils:</strong> Items automatically collected from defeated enemies</li>
       </ul>
 
       <h3>Item Management</h3>
@@ -974,10 +983,8 @@
       <ul>
         <li>Drop or pick up items in the world</li>
         <li>Store items in structures with limited capacity</li>
-        <li>Transfer items between groups during mobilization/demobilization</li>
-        <li>Access separate bank and shared storage areas at structures</li>
-        <li>View items in map entities and details panels</li>
-        <li>Automatically combine identical items when storing</li>
+        <li>Spawn points typically offer storage for up to 200 items</li>
+        <li>Transfer items between units and locations</li>
       </ul>
 
       <h3>Item Rankings</h3>
@@ -988,17 +995,6 @@
         <li>Rankings show who owns the most of certain item types</li>
         <li>Players can choose to hide from these rankings for privacy</li>
         <li>Collecting rare item sets can provide special bonuses</li>
-      </ul>
-      
-      <h3>Storage Systems</h3>
-      <p>
-        Items can be stored in different ways:
-      </p>
-      <ul>
-        <li><strong>Group Inventory:</strong> Items carried by unit groups have weight limits</li>
-        <li><strong>Structure Shared Storage:</strong> Community resources accessible to all users of a structure</li>
-        <li><strong>Structure Bank Storage:</strong> Private items accessible only to the owner</li>
-        <li><strong>Building Materials:</strong> Resources dedicated to structure improvements</li>
       </ul>
     </section>
 
@@ -1120,21 +1116,6 @@
         <li>Standard worlds: 1x speed (ticks every minute)</li>
         <li>Fast worlds: Higher speeds mean more frequent ticks</li>
         <li>The time until the next tick is displayed in the interface</li>
-        <li>Each world has its own speed setting shown on world cards</li>
-      </ul>
-      
-      <h3>Actions Processed On Ticks</h3>
-      <p>
-        Many game activities are processed on world ticks:
-      </p>
-      <ul>
-        <li><strong>Movement:</strong> Each step of group movement requires one tick</li>
-        <li><strong>Battles:</strong> Combat resolution progresses over multiple ticks</li>
-        <li><strong>Gathering:</strong> Resource collection typically takes 2 ticks</li>
-        <li><strong>Building:</strong> Construction and upgrades progress on ticks</li>
-        <li><strong>Recruitment:</strong> New units are created after tick processing</li>
-        <li><strong>Crafting:</strong> Item creation advances with each tick</li>
-        <li><strong>Mobilizing/Demobilizing:</strong> Group formation/disbanding takes one tick</li>
       </ul>
       
       <h3>Group Management</h3>
@@ -1158,7 +1139,6 @@
         <li>Useful when you want to separate from your group</li>
         <li>Takes one tick cycle to complete</li>
         <li>Allows units to act independently again</li>
-        <li>Items can be transferred to structure storage during demobilization</li>
       </ul>
       
       <h4>Movement System</h4>
@@ -1169,8 +1149,6 @@
         <li>Movement occurs in steps, with each step taking one tick</li>
         <li>You can plot complex paths with multiple waypoints</li>
         <li>Different terrain types may affect movement speed</li>
-        <li>Path visualization shows the route groups will follow</li>
-        <li>Movements can be canceled before completion</li>
       </ul>
       
       <h3>Resource Gathering</h3>
@@ -1216,590 +1194,15 @@
         <li>Your group will join the selected side, adding its strength to that faction</li>
       </ol>
       
-      <h4>Battle Duration</h4>
       <p>
-        Battles don't resolve instantly but progress over multiple ticks:
+        Battles involve two opposing sides:
       </p>
       <ul>
-        <li>Small battles (1-5 units): 1-3 ticks</li>
-        <li>Medium battles (6-20 units): 2-5 ticks</li>
-        <li>Large battles (21-50 units): 4-8 ticks</li>
-        <li>Massive battles (50+ units): 6-12+ ticks</li>
-      </ul>
-      
-      <h4>Battle Outcomes</h4>
-      <p>
-        When a battle concludes:
-      </p>
-      <ul>
-        <li>Victorious units automatically collect all items from defeated enemies</li>
-        <li>When multiple groups are on the winning side, items are distributed randomly among them</li>
-        <li>Each group receives notification about how many items they looted from battle</li>
-        <li>Defeated units may be lost or reduced in number</li>
-        <li>Territory control may shift based on battle outcome</li>
-        <li>Strategic resources or structures may change ownership</li>
-      </ul>
-      
-      <div class="tip-box">
-        <h4>Strategic Tip</h4>
-        <p>
-          Use battles strategically by considering terrain advantages and forming 
-          alliances with other players. Sometimes joining an ongoing battle on the
-          winning side is more advantageous than starting your own!
-        </p>
-      </div>
-    </section>
-
-    <section id="trade-economy" class="guide-section">
-      <h2>Trade & Economy</h2>
-      <p>
-        Gisaima features a robust economic system that allows players to trade, create wealth, and establish financial institutions.
-      </p>
-
-      <h3>Basic Trade</h3>
-      <p>
-        Trade begins with simple exchanges:
-      </p>
-      <ul>
-        <li>Trade directly with other players in the same location</li>
-        <li>Exchange goods stored in the same property or warehouse</li>
-        <li>Set up trade offers that others can accept</li>
-      </ul>
-
-      <h3>Advanced Economic Systems</h3>
-      <p>
-        As cities develop, more complex economic activities become available:
-      </p>
-      <ul>
-        <li>Establish official currencies for cities or regions</li>
-        <li>Create your own currency backed by resources</li>
-        <li>Set trade taxes within controlled territories</li>
-        <li>Implement building taxes where a percentage of produced items go to the ruler</li>
-      </ul>
-
-      <h3>Transportation & Logistics</h3>
-      <p>
-        Moving goods across the map creates additional economic opportunities:
-      </p>
-      <ul>
-        <li>Transport goods between distant markets for profit</li>
-        <li>Rent caravans to other players with different risk/reward options</li>
-        <li>Secure valuable goods during transport for higher fees</li>
-        <li>Specialize in different goods based on their transport properties (e.g., beef moves slowly, processed goods move quickly)</li>
-      </ul>
-
-      <h3>Banking</h3>
-      <p>
-        Establish or use banking services:
-      </p>
-      <ul>
-        <li>Offer interest rates to attract deposits</li>
-        <li>Request loans with negotiable terms</li>
-        <li>Build bank credibility through consistent performance</li>
-        <li>View public debt information to make informed decisions</li>
-      </ul>
-    </section>
-
-    <section id="character-development" class="guide-section">
-      <h2>Character Development</h2>
-      <p>
-        Your character in Gisaima can develop in various ways, gaining experience, skills, and reputation.
-      </p>
-
-      <h3>Lives & Reproduction</h3>
-      <p>
-        Characters in Gisaima have limited lives:
-      </p>
-      <ul>
-        <li>Characters can die permanently under certain conditions</li>
-        <li>Reproduction mechanics allow for new generations</li>
-        <li>Various factors influence offspring characteristics</li>
-        <li>Spawn points provide safe havens for new characters</li>
-      </ul>
-
-      <h3>Development & Progression</h3>
-      <p>
-        Characters can advance through several systems:
-      </p>
-      <ul>
-        <li>Experience points earned through activities</li>
-        <li>Levels that unlock new capabilities</li>
-        <li>Skills and abilities that improve performance</li>
-        <li>Specialized knowledge that provides advantages</li>
-      </ul>
-
-      <h3>Profile & Finances</h3>
-      <p>
-        Your character maintains a public and private profile:
-      </p>
-      <ul>
-        <li>Public information includes reputation, achievements, and publicly disclosed wealth</li>
-        <li>Financial records track assets by location</li>
-        <li>Debt information is typically public</li>
-        <li>Players can choose to display or hide wealth measurements</li>
-      </ul>
-
-      <h3>Character Metrics</h3>
-      <p>
-        Various metrics track your character's accomplishments:
-      </p>
-      <ul>
-        <li>Distance traveled across the world</li>
-        <li>Combat statistics including wins, losses, and kills</li>
-        <li>Wealth accumulation and management</li>
-        <li>Resource gathering and crafting achievements</li>
-      </ul>
-    </section>
-
-    <section id="community-politics" class="guide-section">
-      <h2>Community & Politics</h2>
-      <p>
-        Gisaima features complex social systems that allow players to form communities and engage in political activities.
-      </p>
-
-      <h3>Leadership & Governance</h3>
-      <p>
-        Communities need leadership and governance structures:
-      </p>
-      <ul>
-        <li>Control of cities and regions through various means</li>
-        <li>Tax systems to generate revenue</li>
-        <li>Management of community coffers</li>
-        <li>Decision-making powers over community policies</li>
-      </ul>
-
-      <h3>Alliances & Groups</h3>
-      <p>
-        Players can form various types of associations:
-      </p>
-      <ul>
-        <li>Structures and locations can be owned by individuals, alliances, or groups</li>
-        <li>Communication forums for community interaction</li>
-        <li>Reputation systems similar to StackExchange with visible actions and contributions</li>
-      </ul>
-
-      <h3>Political Systems</h3>
-      <p>
-        Communities can implement various political mechanisms:
-      </p>
-      <ul>
-        <li><strong>Voting:</strong> Electoral systems for leadership positions</li>
-        <li><strong>Arbitration:</strong> Decision-making for community issues like naming regions</li>
-        <li><strong>Citizenship:</strong> Systems to determine who belongs to the community</li>
-        <li><strong>Laws:</strong> Community rules including speech regulations, customs, and taxes</li>
-      </ul>
-
-      <h3>Political Transitions</h3>
-      <p>
-        Power can change hands through several mechanisms:
-      </p>
-      <ul>
-        <li><strong>Seizing Power:</strong> Forceful takeover that takes time and carries risks</li>
-        <li><strong>Elections:</strong> Formal voting process for leadership positions</li>
-        <li><strong>Votes of No Confidence:</strong> Community mechanisms to remove leaders</li>
-        <li><strong>Revolution:</strong> Organized opposition to existing leadership</li>
-        <li><strong>Resignation/Exile:</strong> Voluntary or forced removal from power</li>
-      </ul>
-    </section>
-
-    <section id="races" class="guide-section">
-      <h2>Races</h2>
-      <p>
-        When joining a world in Gisaima, you'll choose one of five distinct races. 
-        Each race has unique traits and advantages that influence your gameplay strategy.
-      </p>
-      
-      <div class="race-grid">
-        <div class="race-card">
-          <div class="race-header">
-            <div class="race-icon">
-              <Human size="2.5em" extraClass="race-icon-guide human-icon" />
-            </div>
-            <h3>Humans</h3>
-          </div>
-          <p class="race-desc">Versatile and adaptable, humans excel at diplomacy and trade.</p>
-          <div class="race-traits">
-            <span class="race-trait">Diplomatic</span>
-            <span class="race-trait">Fast Learners</span>
-            <span class="race-trait">Resource Efficient</span>
-          </div>
-          <p class="race-tip">
-            <strong>Best For:</strong> New players and those who prefer balanced gameplay with 
-            flexibility to adapt to different situations.
-          </p>
-        </div>
-
-        <div class="race-card">
-          <div class="race-header">
-            <div class="race-icon">
-              <Elf size="2.5em" extraClass="race-icon-guide elf-icon" />
-            </div>
-            <h3>Elves</h3>
-          </div>
-          <p class="race-desc">Ancient forest dwellers with deep connections to nature and magic.</p>
-          <div class="race-traits">
-            <span class="race-trait">Magical Affinity</span>
-            <span class="race-trait">Forest Advantage</span>
-            <span class="race-trait">Long-range Combat</span>
-          </div>
-          <p class="race-tip">
-            <strong>Best For:</strong> Players who prefer ranged combat and excel in 
-            forest environments with magical advantage.
-          </p>
-        </div>
-
-        <div class="race-card">
-          <div class="race-header">
-            <div class="race-icon">
-              <Dwarf size="2.5em" extraClass="race-icon-guide dwarf-icon" />
-            </div>
-            <h3>Dwarves</h3>
-          </div>
-          <p class="race-desc">Sturdy mountain folk, master craftsmen and miners.</p>
-          <div class="race-traits">
-            <span class="race-trait">Mining Bonus</span>
-            <span class="race-trait">Strong Defense</span>
-            <span class="race-trait">Mountain Advantage</span>
-          </div>
-          <p class="race-tip">
-            <strong>Best For:</strong> Players focused on resource gathering and 
-            defensive strategies in mountainous regions.
-          </p>
-        </div>
-
-        <div class="race-card">
-          <div class="race-header">
-            <div class="race-icon">
-              <Goblin size="2.5em" extraClass="race-icon-guide goblin-icon" />
-            </div>
-            <h3>Goblins</h3>
-          </div>
-          <p class="race-desc">Cunning and numerous, goblins thrive in harsh environments.</p>
-          <div class="race-traits">
-            <span class="race-trait">Fast Production</span>
-            <span class="race-trait">Night Advantage</span>
-            <span class="race-trait">Scavenging Bonus</span>
-          </div>
-          <p class="race-tip">
-            <strong>Best For:</strong> Players who enjoy aggressive expansion and 
-            quick production with night operations.
-          </p>
-        </div>
-
-        <div class="race-card">
-          <div class="race-header">
-            <div class="race-icon">
-              <Fairy size="2.5em" extraClass="race-icon-guide fairy-icon" />
-            </div>
-            <h3>Fairies</h3>
-          </div>
-          <p class="race-desc">Magical beings with flight capabilities and illusion powers.</p>
-          <div class="race-traits">
-            <span class="race-trait">Flight</span>
-            <span class="race-trait">Illusion Magic</span>
-            <span class="race-trait">Small Size Advantage</span>
-          </div>
-          <p class="race-tip">
-            <strong>Best For:</strong> Players who prefer stealth, mobility, and 
-            deception over direct confrontation.
-          </p>
-        </div>
-      </div>
-      
-      <p>
-        Once you've chosen a race, you'll start at your race's specific spawn point in the world. 
-        Each race's spawn is located in a biome that complements their natural advantages.
-      </p>
-    </section>
-
-    <section id="items-inventory" class="guide-section">
-      <h2>Items & Inventory</h2>
-      <p>
-        Items in Gisaima range from common resources to mythical artifacts, each with unique properties and values.
-      </p>
-
-      <h3>Item Rarity</h3>
-      <p>
-        Items are classified by rarity, which indicates their value and power:
-      </p>
-      <ul class="rarity-list">
-        <li><span class="rarity-tag common">Common</span> Basic resources and everyday items</li>
-        <li><span class="rarity-tag uncommon">Uncommon</span> Better than average items with slight advantages</li>
-        <li><span class="rarity-tag rare">Rare</span> Valuable items with significant benefits</li>
-        <li><span class="rarity-tag precious">Precious</span> Highly sought-after items with considerable power</li>
-        <li><span class="rarity-tag legendary">Legendary</span> Extremely rare items with major advantages</li>
-        <li><span class="rarity-tag mythic">Mythic</span> The rarest and most powerful items</li>
-      </ul>
-
-      <h3>Special Items</h3>
-      <p>
-        Some items have unique properties or are awarded for special achievements:
-      </p>
-      <ul>
-        <li><strong>Achievement Items:</strong> Awarded for milestones, firsts, or special accomplishments</li>
-        <li><strong>Inspired Items:</strong> Rare items based on real players, with unique properties (0.1% per capita)</li>
-        <li><strong>Magical Items:</strong> Artifacts with supernatural capabilities and sometimes consequences</li>
-        <li><strong>Battle Spoils:</strong> Items automatically collected from defeated enemies</li>
-      </ul>
-
-      <h3>Item Management</h3>
-      <p>
-        Managing your inventory is an important aspect of gameplay:
-      </p>
-      <ul>
-        <li>Drop or pick up items in the world</li>
-        <li>Store items in structures with limited capacity</li>
-        <li>Transfer items between groups during mobilization/demobilization</li>
-        <li>Access separate bank and shared storage areas at structures</li>
-        <li>View items in map entities and details panels</li>
-        <li>Automatically combine identical items when storing</li>
-      </ul>
-
-      <h3>Item Rankings</h3>
-      <p>
-        The game tracks ownership of various item types:
-      </p>
-      <ul>
-        <li>Rankings show who owns the most of certain item types</li>
-        <li>Players can choose to hide from these rankings for privacy</li>
-        <li>Collecting rare item sets can provide special bonuses</li>
-      </ul>
-      
-      <h3>Storage Systems</h3>
-      <p>
-        Items can be stored in different ways:
-      </p>
-      <ul>
-        <li><strong>Group Inventory:</strong> Items carried by unit groups have weight limits</li>
-        <li><strong>Structure Shared Storage:</strong> Community resources accessible to all users of a structure</li>
-        <li><strong>Structure Bank Storage:</strong> Private items accessible only to the owner</li>
-        <li><strong>Building Materials:</strong> Resources dedicated to structure improvements</li>
-      </ul>
-    </section>
-
-    <section id="morality-system" class="guide-section">
-      <h2>Morality System</h2>
-      <p>
-        Gisaima features a morality system that tracks player actions and influences gameplay.
-      </p>
-
-      <h3>Morality Points</h3>
-      <p>
-        Players earn morality points through their actions:
-      </p>
-      <ul>
-        <li>Daily allocation of morality points that can be assigned</li>
-        <li>Ability to accuse others of good or evil actions</li>
-        <li>Justifications required through events, reports, or comments</li>
-        <li>Evidence used in community trials</li>
-      </ul>
-
-      <h3>Consequences of Morality</h3>
-      <p>
-        Your morality rating affects gameplay in several ways:
-      </p>
-      <ul>
-        <li>Low morality players' units can be captured and turned against them</li>
-        <li>High morality players' units must be captured or ransomed but remain loyal</li>
-        <li>Visibility on the map is affected by morality - evil actions make you more visible</li>
-        <li>Community standing and access to certain areas may be influenced by morality</li>
-      </ul>
-
-      <h3>Actions and Their Effects</h3>
-      <p>
-        Certain actions have defined moral consequences:
-      </p>
-      <ul>
-        <li>Killing someone in your own city is considered evil</li>
-        <li>Killing innocents is evil</li>
-        <li>Killing evil characters is considered good</li>
-        <li>Breaking promises or agreements may affect morality</li>
-      </ul>
-
-      <h3>Morale</h3>
-      <p>
-        Separate from individual morality, group morale affects unit performance:
-      </p>
-      <ul>
-        <li>Friendly units passing by increases citizen happiness and provides temporary morale boosts</li>
-        <li>Good and evil alignments influence group interactions and performances</li>
-        <li>Treatment of captured enemies affects morale of your own forces</li>
-      </ul>
-    </section>
-
-    <section id="reports-rankings" class="guide-section">
-      <h2>Reports & Rankings</h2>
-      <p>
-        Gisaima tracks and displays information about the world and players through various systems.
-      </p>
-
-      <h3>Battle Reports</h3>
-      <p>
-        Detailed information about combat encounters:
-      </p>
-      <ul>
-        <li>Number of kills in battles</li>
-        <li>Win/loss records</li>
-        <li>Strategic analysis of successful tactics</li>
-        <li>Resource gains and losses from combat</li>
-      </ul>
-
-      <h3>Travel & Activity Records</h3>
-      <p>
-        The game tracks player movement and actions:
-      </p>
-      <ul>
-        <li>Distance traveled across the world</li>
-        <li>Experience gained from various activities</li>
-        <li>Resources gathered and items crafted</li>
-        <li>Territories discovered and explored</li>
-      </ul>
-
-      <h3>Historical Records</h3>
-      <p>
-        The world maintains a rich historical record:
-      </p>
-      <ul>
-        <li>World history updated in a clear timeline format</li>
-        <li>Major events and their consequences</li>
-        <li>Ages and epochs of world development</li>
-        <li>Notable player achievements and contributions</li>
-      </ul>
-
-      <h3>Player Rankings</h3>
-      <p>
-        Compare yourself to other players through various rankings:
-      </p>
-      <ul>
-        <li>Wealth rankings (optional participation)</li>
-        <li>Score-based leaderboards</li>
-        <li>Distance traveled rankings</li>
-        <li>Resource gathering achievements</li>
-        <li>Combat effectiveness metrics</li>
-      </ul>
-    </section>
-
-    <section id="game-mechanics" class="guide-section">
-      <h2>Game Mechanics</h2>
-      <p>
-        Gisaima uses several core mechanics that drive gameplay. Understanding these systems 
-        is essential for effective strategy.
-      </p>
-      
-      <h3>Tick-Based Gameplay</h3>
-      <p>
-        The game world operates on a "tick" system - regular time intervals when various actions 
-        are processed. World speeds can vary, affecting how frequently ticks occur:
-      </p>
-      <ul>
-        <li>Standard worlds: 1x speed (ticks every minute)</li>
-        <li>Fast worlds: Higher speeds mean more frequent ticks</li>
-        <li>The time until the next tick is displayed in the interface</li>
-        <li>Each world has its own speed setting shown on world cards</li>
-      </ul>
-      
-      <h3>Actions Processed On Ticks</h3>
-      <p>
-        Many game activities are processed on world ticks:
-      </p>
-      <ul>
-        <li><strong>Movement:</strong> Each step of group movement requires one tick</li>
-        <li><strong>Battles:</strong> Combat resolution progresses over multiple ticks</li>
-        <li><strong>Gathering:</strong> Resource collection typically takes 2 ticks</li>
-        <li><strong>Building:</strong> Construction and upgrades progress on ticks</li>
-        <li><strong>Recruitment:</strong> New units are created after tick processing</li>
-        <li><strong>Crafting:</strong> Item creation advances with each tick</li>
-        <li><strong>Mobilizing/Demobilizing:</strong> Group formation/disbanding takes one tick</li>
-      </ul>
-      
-      <h3>Group Management</h3>
-      <p>
-        Managing your units through the group system is essential for effective gameplay:
-      </p>
-      
-      <h4>Mobilization & Demobilization</h4>
-      <p>
-        <strong>Mobilization</strong> allows a player to form their individual units into an organized group:
-      </p>
-      <ul>
-        <li>Creating a group takes one tick cycle to complete</li>
-        <li>Mobilized groups can move, gather resources, and engage in battles</li>
-        <li>Groups have greater strategic flexibility than individual units</li>
-      </ul>
-      <p>
-        <strong>Demobilization</strong> is the opposite process, disbanding a group back into individual units:
-      </p>
-      <ul>
-        <li>Useful when you want to separate from your group</li>
-        <li>Takes one tick cycle to complete</li>
-        <li>Allows units to act independently again</li>
-        <li>Items can be transferred to structure storage during demobilization</li>
-      </ul>
-      
-      <h4>Movement System</h4>
-      <p>
-        Groups can be directed to move across the map:
-      </p>
-      <ul>
-        <li>Movement occurs in steps, with each step taking one tick</li>
-        <li>You can plot complex paths with multiple waypoints</li>
-        <li>Different terrain types may affect movement speed</li>
-        <li>Path visualization shows the route groups will follow</li>
-        <li>Movements can be canceled before completion</li>
-      </ul>
-      
-      <h3>Resource Gathering</h3>
-      <p>
-        Gathering resources is crucial for building and upgrading:
-      </p>
-      <ul>
-        <li>Groups can gather resources from terrain and special resource nodes</li>
-        <li>Gathering takes time, with progress tracked across ticks</li>
-        <li>Different terrain types yield different resources</li>
-        <li>Rarer terrain produces more valuable resources</li>
-        <li>Gathered resources can be stored in your inventory or at structures</li>
-      </ul>
-      
-      <h3>Battle System</h3>
-      <p>
-        Battles in Gisaima occur when hostile groups encounter each other:
-      </p>
-      
-      <h4>Starting an Attack</h4>
-      <p>
-        You can initiate battles with enemy groups at your current location:
-      </p>
-      <ol>
-        <li>Select one or more of your groups to participate in the attack</li>
-        <li>Select one or more enemy groups as your targets</li>
-        <li>Review the battle preview showing the relative strength of both sides</li>
-        <li>Confirm the attack, which creates a battle at that location</li>
-      </ol>
-      <p>
-        When a battle is initiated, it becomes accessible to other players who can choose to
-        join either side with their own groups.
-      </p>
-      
-      <h4>Joining a Battle</h4>
-      <p>
-        You can join ongoing battles in your current location:
-      </p>
-      <ol>
-        <li>Select one of your groups to join the battle</li>
-        <li>Choose which battle to join if multiple are occurring</li>
-        <li>Select which side you want to support (Side 1 or Side 2)</li>
-        <li>Your group will join the selected side, adding its strength to that faction</li>
-      </ol>
-      
-      <h4>Battle Duration</h4>
-      <p>
-        Battles don't resolve instantly but progress over multiple ticks:
-      </p>
-      <ul>
-        <li>Small battles (1-5 units): 1-3 ticks</li>
-        <li>Medium battles (6-20 units): 2-5 ticks</li>
-        <li>Large battles (21-50 units): 4-8 ticks</li>
-        <li>Massive battles (50+ units): 6-12+ ticks</li>
+        <li>Each side can contain multiple groups from different players</li>
+        <li>The total power of each side is calculated based on unit quantity and quality</li>
+        <li>Battles progress over time, with resolution occurring on a tick</li>
+        <li>Victory is determined by many factors including total power, terrain advantages, and tactics</li>
+        <li>Winners may claim resources, territory, or other rewards</li>
       </ul>
       
       <h4>Battle Outcomes</h4>
