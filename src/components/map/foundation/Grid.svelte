@@ -790,34 +790,103 @@
     }
   }
 
+  // Add debounce timeout variables for zoom operations
+  let updateTileSizeTimeout = null;
+  let wheelZoomTimeout = null;
+  
+  // Increase debounce times for smoother operation
+  const PINCH_THROTTLE = 50; // Increased from 30ms to 50ms
+  const WHEEL_DEBOUNCE = 100; // New debounce time for wheel events
+  const RESIZE_DEBOUNCE = 150; // Debounce time for resize operations
+
+  // Debounced version of updateTileSize
+  function debouncedUpdateTileSize() {
+    if (updateTileSizeTimeout) {
+      clearTimeout(updateTileSizeTimeout);
+    }
+    
+    updateTileSizeTimeout = setTimeout(() => {
+      currentTileSize = TILE_SIZE * zoomLevel;
+      if (mapElement) {
+        resizeMap(mapElement);
+      }
+      updateTileSizeTimeout = null;
+    }, RESIZE_DEBOUNCE);
+  }
+  
+  // Update the original function to use debouncing
+  function updateTileSize() {
+    // Just set the current tile size immediately for responsive feel
+    currentTileSize = TILE_SIZE * zoomLevel;
+    // But debounce the expensive resizeMap operation
+    debouncedUpdateTileSize();
+  }
+  
+  // Debounced version of wheel zoom
+  function debouncedWheelZoom(zoomIn) {
+    if (wheelZoomTimeout) {
+      clearTimeout(wheelZoomTimeout);
+    }
+    
+    wheelZoomTimeout = setTimeout(() => {
+      if (zoomIn) {
+        zoomLevel += 0.25;
+      } else {
+        if (zoomLevel > 0.75) {
+          zoomLevel -= 0.25;
+        }
+      }
+      updateTileSize();
+      wheelZoomTimeout = null;
+    }, WHEEL_DEBOUNCE);
+  }
+  
+  // Modified zoom control functions to use the same debounced approach
+  function zoomIn() {
+    zoomLevel += 0.25;
+    updateTileSize();
+  }
+  
+  function zoomOut() {
+    if (zoomLevel > 0.5) {
+      zoomLevel -= 0.25;
+      updateTileSize();
+    }
+  }
+  
+  function resetZoom() {
+    zoomLevel = 1.0;
+    updateTileSize();
+  }
+  
   // Replace the setupGestureHandling function with a more comprehensive approach
   function setupGestureHandling() {
     if (typeof window === 'undefined' || !mapElement) return;
     
-    // Wheel event handler for trackpad pinch/zoom AND mouse wheel with Ctrl
+    // Improved wheel event handler for trackpad pinch/zoom AND mouse wheel with Ctrl
     const wheelHandler = (e) => {
       // Check for pinch-zoom gesture (trackpad or mouse + ctrl)
       if (e.ctrlKey || Math.abs(e.deltaY) % 1 !== 0) {
         e.preventDefault();
         
-        // For pinch gestures, the deltaY is usually much larger
-        // Also trackpads often send fractional deltas
-        const zoomAmount = Math.abs(e.deltaY) > 10 ? 0.05 : 0.25;
+        // Calculate zoom direction
+        const isZoomIn = e.deltaY < 0;
         
-        if (e.deltaY < 0) {
-          // Zoom in
-          zoomLevel += zoomAmount;
-          updateTileSize();
-        } else if (e.deltaY > 0) {
-          // Zoom out - check minimum zoom
-          if (zoomLevel > 0.5 + zoomAmount) {
-            zoomLevel -= zoomAmount;
-            updateTileSize();
-          }
+        // For pinch gestures, update visual feedback immediately
+        if (isZoomIn) {
+          // Visual feedback - immediate but small change
+          zoomLevel += 0.05;
+        } else if (zoomLevel > 0.55) {
+          // Visual feedback - immediate but small change
+          zoomLevel -= 0.05;
         }
         
-        // For logging purposes
-        console.log(`Zoom gesture detected: deltaY=${e.deltaY}, ctrlKey=${e.ctrlKey}, new zoomLevel=${zoomLevel}`);
+        // Update tile size visually right away
+        currentTileSize = TILE_SIZE * zoomLevel;
+        
+        // Then use debounced function for the expensive resize
+        debouncedWheelZoom(isZoomIn);
+        
         return false;
       }
     };
@@ -829,16 +898,21 @@
       console.log('Gesture start detected');
     };
     
+    // Improved gesture change handler with debouncing
     const gestureChangeHandler = (e) => {
       e.preventDefault();
       
       // e.scale contains the pinch gesture scale factor
       if (e.scale !== 1) {
-        const newZoom = initialZoomLevelOnPinch * e.scale;
+        // Calculate new zoom level
+        const newZoom = Math.max(0.5, initialZoomLevelOnPinch * e.scale);
         
-        // Apply limits
-        zoomLevel = Math.max(0.5, newZoom);
-        updateTileSize();
+        // Apply visual change immediately
+        zoomLevel = newZoom;
+        currentTileSize = TILE_SIZE * zoomLevel;
+        
+        // Debounce the expensive resize operation
+        debouncedUpdateTileSize();
       }
     };
     
@@ -859,6 +933,10 @@
         mapElement.removeEventListener('gesturestart', gestureStartHandler);
         mapElement.removeEventListener('gesturechange', gestureChangeHandler);
         mapElement.removeEventListener('gestureend', gestureEndHandler);
+        
+        // Clear any pending timeouts on cleanup
+        if (updateTileSizeTimeout) clearTimeout(updateTileSizeTimeout);
+        if (wheelZoomTimeout) clearTimeout(wheelZoomTimeout);
       }
     };
   }
@@ -900,6 +978,8 @@
 
   onDestroy(() => {
     if (hoverTimeout) clearTimeout(hoverTimeout);
+    if (updateTileSizeTimeout) clearTimeout(updateTileSizeTimeout);
+    if (wheelZoomTimeout) clearTimeout(wheelZoomTimeout);
   });
 
   const backgroundColor = $derived($targetStore?.color || "var(--color-dark-blue)");
@@ -1142,36 +1222,8 @@
   let initialPinchDistance = $state(0);
   let initialZoomLevelOnPinch = $state(1.0);
   let lastPinchTime = $state(0);
-  const PINCH_THROTTLE = 30; // Milliseconds between pinch updates
   
-  // Add zoom control functions
-  function zoomIn() {
-    // Remove maximum zoom constraint
-    zoomLevel += 0.25;
-    updateTileSize();
-  }
-  
-  function zoomOut() {
-    if (zoomLevel > 0.5) {
-      zoomLevel -= 0.25;
-      updateTileSize();
-    }
-  }
-  
-  function resetZoom() {
-    zoomLevel = 1.0;
-    updateTileSize();
-  }
-  
-  // Function to update tile size based on zoom level and resize the map
-  function updateTileSize() {
-    currentTileSize = TILE_SIZE * zoomLevel;
-    if (mapElement) {
-      setTimeout(() => resizeMap(mapElement), 10);
-    }
-  }
-  
-  // Modify handlePinchZoom to better integrate with browser events
+  // Modify handlePinchZoom to better integrate with browser events and use improved debouncing
   function handlePinchZoom(event) {
     // Ensure we have multiple touch points for pinch zooming
     if (event.touches.length < 2) return false;
@@ -1228,8 +1280,12 @@
       
       // Only update if zoom actually changed
       if (Math.abs(newZoom - zoomLevel) > 0.01) {
+        // Update visual zoom immediately
         zoomLevel = newZoom;
-        updateTileSize();
+        currentTileSize = TILE_SIZE * zoomLevel;
+        
+        // Debounce the expensive resize operation
+        debouncedUpdateTileSize();
       }
       
       return true;
