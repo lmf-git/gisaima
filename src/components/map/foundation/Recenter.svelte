@@ -1,5 +1,5 @@
 <script>
-  import { moveTarget, targetStore } from '../../../lib/stores/map';
+  import { moveTarget, targetStore, map } from '../../../lib/stores/map';
   import { game } from '../../../lib/stores/game';
   import Torch from '../../icons/Torch.svelte';
   // Import race icons
@@ -18,7 +18,7 @@
   let recenterTarget = $state(null);
   let distance = $state(0);
   let targetType = $state('spawn'); // 'player' or 'spawn'
-  const DISTANCE_THRESHOLD = 20;
+  let playerInMainView = $state(true); // Track if player is in main view
   
   // Store player race for icon selection
   let playerRace = $state(null);
@@ -26,6 +26,32 @@
   $effect(() => {
     // Update player race whenever game state changes
     playerRace = $game.player?.race?.toLowerCase() || null;
+  });
+
+  // Check if player position is in main view - more efficient calculation
+  $effect(() => {
+    const playerLocation = $game.player?.lastLocation;
+    if (!$game?.player?.alive || !playerLocation) {
+      playerInMainView = false;
+      return;
+    }
+
+    // Calculate main view boundaries based on current target and grid dimensions
+    const halfCols = Math.floor($map.cols / 2);
+    const halfRows = Math.floor($map.rows / 2);
+    
+    const minX = $targetStore.x - halfCols;
+    const maxX = $targetStore.x + halfCols;
+    const minY = $targetStore.y - halfRows;
+    const maxY = $targetStore.y + halfRows;
+
+    // Check if player's location is within these boundaries
+    playerInMainView = (
+      playerLocation.x >= minX && 
+      playerLocation.x <= maxX && 
+      playerLocation.y >= minY && 
+      playerLocation.y <= maxY
+    );
   });
   
   $effect(() => {
@@ -122,7 +148,7 @@
   }
 </script>
 
-{#if recenterTarget && distance > DISTANCE_THRESHOLD && $game?.player?.alive}
+{#if recenterTarget && (targetType === 'player' ? !playerInMainView : true) && $game?.player?.alive}
   <button 
     class="recenter-button" 
     onclick={recenter}
