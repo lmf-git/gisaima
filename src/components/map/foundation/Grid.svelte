@@ -656,7 +656,7 @@
     return tile.players.some(p => p.id?.toString() === $user.uid?.toString());
   }
 
-  // Add a function to check if a group can traverse water
+  // Add function to check if a group can traverse water
   function canTraverseWater(group) {
     if (!group || !group.motion) return false;
     
@@ -668,8 +668,71 @@
 
   // Add a function to check if a tile is water
   function isWaterTile(tile) {
-    // Check if we have a biome with water property set to true
-    return tile && tile.biome && tile.biome.water === true;
+    if (!tile) return false;
+    
+    // Check if the tile's biome has water property set to true
+    if (tile.biome && tile.biome.water === true) {
+      return true;
+    }
+    
+    // Alternative check for water terrain
+    if (tile.terrain && tile.terrain.name) {
+      const waterTerrainTypes = ['ocean', 'deep_ocean', 'sea', 'shallows', 'lake', 
+                               'river', 'stream', 'mountain_lake', 'mountain_river'];
+      return waterTerrainTypes.some(type => tile.terrain.name.toLowerCase().includes(type));
+    }
+    
+    return false;
+  }
+
+  // Add a function to interpolate path points with water checking
+  function interpolatePath(startPoint, endPoint) {
+    if (!startPoint || !endPoint) return [];
+    
+    const points = [];
+    let x = startPoint.x;
+    let y = startPoint.y;
+    
+    const dx = Math.abs(endPoint.x - startPoint.x);
+    const dy = Math.abs(endPoint.y - startPoint.y);
+    const sx = startPoint.x < endPoint.x ? 1 : -1;
+    const sy = startPoint.y < endPoint.y ? 1 : -1;
+    let err = dx - dy;
+    
+    // Track if we've hit a water obstacle
+    let pathBlocked = false;
+    
+    // Skip the first point as it's already in the path
+    while (x !== endPoint.x || y !== endPoint.y) {
+      const e2 = err * 2;
+      
+      if (e2 > -dy) {
+        err -= dy;
+        x += sx;
+      }
+      
+      if (e2 < dx) {
+        err += dx;
+        y += sy;
+      }
+      
+      // Check if this intermediate point is valid (not water or can traverse water)
+      const tileData = $coordinates.find(cell => cell.x === x && cell.y === y);
+      
+      // Check if this is a water tile and group cannot traverse water
+      if (isWaterTile(tileData) && !canTraverseWater(pathDrawingGroup)) {
+        pathBlocked = true;
+        console.log(`Path blocked at ${x},${y} - water tile`);
+        break; // Stop the interpolation when hitting water
+      }
+      
+      // Add valid intermediate point
+      points.push({ x, y });
+    }
+    
+    // If we hit water, we return the valid portion of the path up to that point
+    // If no water was hit, this simply returns all the interpolated points
+    return points;
   }
 
   function handleGridClick(event) {
@@ -778,18 +841,63 @@
         // Block path drawing on water if group can't traverse it
         if (isWater && !canTraverse) {
           console.log('Cannot add path point: water tile and group cannot traverse water');
-          // Optionally, we could show feedback to the user here
           return;
         }
         
-        // Otherwise proceed with adding the path point
+        // Check if we need to create an interpolated path
         if (onAddPathPoint) {
           console.log('Grid: Adding path point:', { x: tileX, y: tileY });
-          onAddPathPoint({ 
-            x: tileX, 
-            y: tileY,
-            tileData: tileData || null
-          });
+          
+          // Skip interpolation for first point
+          if (customPathPoints.length === 0) {
+            onAddPathPoint({ 
+              x: tileX, 
+              y: tileY,
+              tileData: tileData || null
+            });
+          } else {
+            // For subsequent points, we need to check if they're adjacent
+            const lastPoint = customPathPoints[customPathPoints.length - 1];
+            const dx = Math.abs(tileX - lastPoint.x);
+            const dy = Math.abs(tileY - lastPoint.y);
+            
+            // If points are adjacent, just add the new point
+            if (dx <= 1 && dy <= 1) {
+              onAddPathPoint({ 
+                x: tileX, 
+                y: tileY,
+                tileData: tileData || null
+              });
+            } else {
+              // For distant points, use interpolation with water checking
+              console.log('Interpolating path between', lastPoint, 'and', { x: tileX, y: tileY });
+              const interpolatedPoints = interpolatePath(lastPoint, { x: tileX, y: tileY });
+              
+              // Add each interpolated point individually
+              interpolatedPoints.forEach(point => {
+                const pointData = $coordinates.find(cell => cell.x === point.x && cell.y === point.y);
+                onAddPathPoint({
+                  x: point.x,
+                  y: point.y,
+                  tileData: pointData || null
+                });
+              });
+              
+              // Add the final point if the path wasn't blocked
+              const lastInterpolatedPoint = interpolatedPoints[interpolatedPoints.length - 1];
+              if (lastInterpolatedPoint && 
+                  lastInterpolatedPoint.x === tileX && 
+                  lastInterpolatedPoint.y === tileY) {
+                // Target was reached, no need to add it again
+              } else if (interpolatedPoints.length > 0) {
+                // Path was interpolated but stopped short due to water - don't add the unreachable target
+                console.log('Path stopped short of target due to water obstacle');
+              } else {
+                // No valid interpolated path was found
+                console.log('No valid path could be created - water obstacle');
+              }
+            }
+          }
         }
       }
       return; // Exit early to prevent other click behaviors
