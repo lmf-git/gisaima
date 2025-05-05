@@ -1,9 +1,9 @@
 <script>
-  const { hasStructure = false } = $props();
+  const { hasStructure = false, maxZoom = false } = $props();
 </script>
 
 <!-- Restore the wrapper for proper positioning context -->
-<div class="you-are-here-wrapper" class:has-structure={hasStructure}>
+<div class="you-are-here-wrapper" class:has-structure={hasStructure} class:max-zoom={maxZoom}>
   <div class="indicator-ring"></div>
   <span class="location-text">You are here</span>
 </div>
@@ -87,6 +87,15 @@
       0 0 6px rgba(255, 215, 0, 0.3), 
       inset 0 0 2px rgba(255, 255, 255, 0.7);
     font-weight: 600;
+  }
+
+  /* Make structure name more prominent on hover */
+  .you-are-here-wrapper.max-zoom .indicator-ring {
+    display: none; /* Hide the ring at max zoom */
+  }
+  
+  .you-are-here-wrapper.max-zoom .location-text {
+    top: 4.5em;
   }
 
   @keyframes pulse {

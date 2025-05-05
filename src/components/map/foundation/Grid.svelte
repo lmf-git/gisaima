@@ -1252,7 +1252,8 @@
     style="--tile-size: {currentTileSize}em; --center-tile-color: {backgroundColor};" 
     class:modal-open={detailed} 
     class:touch-active={$map.isDragging && $map.dragSource === 'map'}
-    class:path-drawing-mode={!!isPathDrawingMode}>
+    class:path-drawing-mode={!!isPathDrawingMode}
+    class:max-zoom={isMaximumZoom}>
   <div
     class="map"
     bind:this={mapElement}
@@ -1381,7 +1382,8 @@
         style="--cols: {$map.cols}; --rows: {$map.rows};" 
         role="grid"
         class:animated={!introduced}
-      >
+        class:max-zoom={isMaximumZoom}>
+        
         {#each $gridArray as cell (cell.x + ':' + cell.y)}
           {@const highestRarityItem = getHighestRarityItem(cell.items)}
           {@const hasPlayers = cell.players && cell.players.length > 0}
@@ -1440,8 +1442,8 @@
               {/if}
 
               <!-- Add YouAreHere component for player's position - don't show at maximum zoom -->
-              {#if isCurrentPlayerHere && $ready && !isMaximumZoom}
-                <div class="you-are-here-container">
+              {#if isCurrentPlayerHere && $ready}
+                <div class="you-are-here-container" class:max-zoom={isMaximumZoom}>
                   <YouAreHere hasStructure={!!cell.structure} />
                 </div>
               {/if}
@@ -2364,17 +2366,17 @@
     box-shadow: 0 0 0.4em rgba(0, 0, 0, 0.8); /* Fix missing space between 0.4em and rgba */
   }
 
-  /* Make structure name more prominent on hover */
-  .tile:hover .structure-name-label {
-    background: rgba(0, 0, 0, 0.75);
-    z-index: 1200;
-    transform: translateX(-50%) scale(1.1);
-    transition:all 0.2s ease;
+  /* Special handling for structure name label at maximum zoom */
+  .map-container.max-zoom .structure-name-label {
+    top: 1.5em;
+    z-index: 1500; /* Ensure it stays above other elements */
   }
-
+  
+  /* ...existing code... */
+  
   .you-are-here-container {
     position: absolute;
-    inset: 0; /* Use inset instead of top/left/width/height */
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2383,86 +2385,16 @@
     transform-style: preserve-3d; /* Add for better rendering during transforms */
     will-change: transform; /* Optimize for animations/transforms */
   }
-
-  /* Rename target-indicator to highlight-indicator and update animation name */
-  .highlight-indicator {
-    position: absolute;
-    width: 0.8em;
-    height: 0.8em;
-    border-radius: 50%;
-       background-color: rgba(255, 255, 255, 0.6);
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.6), 
-                0 0 20px rgba(255, 255, 255, 0.3);
-    z-index: 5;
-    pointer-events: none;
-    animation: pulse-highlight 2s infinite ease-in-out;
+  
+  /* Style modifications for "You are here" at maximum zoom */
+  .you-are-here-container.max-zoom :global(.indicator-ring) {
+    display: none; /* Hide the ring at max zoom */
   }
   
-  @keyframes pulse-highlight {
-    0% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.9    0.9); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-    100% { opacity: 0.7; transform: translate(-50%, -50%) scale(0.9); }
-  }
-
-  .zoom-controls {
-    position: absolute;
-    bottom: 2em;
-    right: 3em;
-    display: flex;
-    gap: 0.2em;
-    z-index: 500;
-    background-color: rgba(255, 255, 255, 0.85);
-    border-radius: 0.3em;
-    padding: 0.2em;
-    box-shadow: 0 0.1em 0.3em rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(0.5em);
-    -webkit-backdrop-filter: blur(0.5em);
-    border: 0.05em solid rgba(255, 255, 255, 0.2);
-    opacity: 0;
-    transform: translateY(1em);
-    animation: fadeInButton 0.7s ease-out 0.5s forwards;
+  .you-are-here-container.max-zoom :global(.location-text) {
+    top: 2.5em; /* Reposition the text at max zoom */
+    z-index: 1500; /* Ensure text stays visible */
   }
   
-  .zoom-button {
-    min-width: 1.8em;
-    height: 1.8em;
-    background-color: rgba(255, 255, 255, 0.9);
-    border: 0.05em solid rgba(0, 0, 0, 0.1);
-    border-radius: 0.3em;
-    color: rgba(0, 0, 0, 0.8);
-    padding: 0.1em 0.4em;
-    font-size: 0.9em;
-    font-weight: bold;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-  }
-  
-  .zoom-button:hover {
-    background-color: rgba(255, 255, 255, 1);
-    box-shadow: 0 0.05em 0.2em rgba(0, 0, 0, 0.2);
-  }
-  
-  .reset-zoom {
-    min-width: 3.5em;
-    font-family: var(--font-mono);
-    font-size: 0.8em;
-  }
-  
-  @media (max-width: 768px) {
-    .zoom-controls {
-      bottom: 1em;
-      right: 1em;
-    }
-  }
-
-  /* Add style to prevent zoom interference */
-  .map.touch-active {
-    touch-action: none;
-  }
+  /* ...existing code... */
 </style>
