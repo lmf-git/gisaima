@@ -6,7 +6,6 @@
 import { STRUCTURES } from 'gisaima-shared/definitions/STRUCTURES.js';
 import { BUILDINGS } from 'gisaima-shared/definitions/BUILDINGS.js';
 import { 
-  isMonsterStructure,
   canStructureBeUpgraded,
   hasSufficientResources,
   consumeResourcesFromItems,
@@ -436,7 +435,7 @@ function determineBuildLocation(location, worldScan, personality) {
  */
 export async function upgradeMonsterStructure(db, worldId, monsterGroup, structure, updates, now) {
   // Only upgrade monster structures
-  if (!isMonsterStructure(structure)) {
+  if (!structure.monster === true) {
     return { action: null, reason: 'not_monster_structure' };
   }
   
@@ -554,7 +553,7 @@ export async function upgradeMonsterStructure(db, worldId, monsterGroup, structu
  */
 export async function demobilizeAtMonsterStructure(db, worldId, monsterGroup, structure, updates, now) {
   // Only allow demobilizing at monster structures
-  if (!isMonsterStructure(structure)) {
+  if (!structure.monster) {
     return { action: null, reason: 'not_monster_structure' };
   }
   
@@ -629,7 +628,7 @@ export async function demobilizeAtMonsterStructure(db, worldId, monsterGroup, st
  */
 export async function addOrUpgradeMonsterBuilding(db, worldId, monsterGroup, structure, buildingType, updates, now) {
   // Verify this is a monster structure
-  if (!isMonsterStructure(structure)) {
+  if (!structure.monster) {
     return { action: null, reason: 'not_monster_structure' };
   }
   
@@ -800,7 +799,7 @@ export async function adoptAbandonedStructure(db, worldId, monsterGroup, structu
   }
   
   // Don't adopt player structures unless they're monster-friendly
-  if (!isMonsterStructure(structure) && structure.owner && structure.owner !== 'monster') {
+  if (!structure.monster) {
     // Only allow adopting player structures that are "monster-friendly" - uncommon case
     if (!structure.monsterFriendly) {
       return { action: null, reason: 'not_monster_friendly' };
@@ -810,7 +809,7 @@ export async function adoptAbandonedStructure(db, worldId, monsterGroup, structu
   // Monsters are more likely to adopt structures of their own kind
   let adoptionChance = 0.8; // High base chance for monster structures
   
-  if (!isMonsterStructure(structure)) {
+  if (!structure.monster) {
     adoptionChance = 0.2; // Much lower chance for player structures
   }
   
@@ -864,7 +863,7 @@ export async function adoptAbandonedStructure(db, worldId, monsterGroup, structu
   };
   
   let messageText = '';
-  if (isMonsterStructure(structure)) {
+  if (structure.monster) {
     messageText = `${monsterGroup.name || "Monster group"} has decided to continue building the ${structure.name || 'structure'} at (${location.x}, ${location.y}).`;
   } else {
     messageText = `${monsterGroup.name || "Monster group"} has taken over construction of the abandoned ${structure.name || 'structure'} at (${location.x}, ${location.y})!`;

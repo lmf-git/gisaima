@@ -271,19 +271,6 @@ export function countUnits(group) {
 // STRUCTURE UTILITIES
 // =============================================
 
-/**
- * Check if a structure is a monster structure
- * @param {object} structure - Structure object to check
- * @returns {boolean} True if this is a monster structure
- */
-export function isMonsterStructure(structure) {
-  if (!structure) return false;
-  
-  return (
-    // Primary indicator - the 'monster' flag should be the main identifier
-    structure.monster === true
-  );
-}
 
 /**
  * Check if a structure can be upgraded further
@@ -674,7 +661,7 @@ export const MIN_DISTANCE_FROM_SPAWN = 6; // Minimum tiles away from spawn to al
  */
 export function canStructureMobilize(structure, tileData) {
   // Must be a monster structure
-  if (!isMonsterStructure(structure)) return false;
+  if (!structure.monster) return false;
   
   // Check if enough units available in structure
   const unitCount = getAvailableStructureUnitCount(structure);
