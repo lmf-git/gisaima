@@ -1022,22 +1022,22 @@
 
     // Function to start path drawing mode with the selected group
     function startPathDrawing(groupData) {
-        console.log('Starting path drawing mode with group:', groupData);
-        
-        // Store the group we're drawing a path for
-        pathDrawingGroup = groupData;
-        
-        // Reset the current path
-        currentPath = [];
-        
-        // If we have a start point, add it as the first point in the path
-        if (groupData?.startPoint) {
-            console.log('Adding initial point from group start location:', groupData.startPoint);
-            currentPath = [groupData.startPoint];
-        }
-        
-        // Enable path drawing mode
-        isPathDrawingMode = true;
+      console.log('Starting path drawing mode with group:', groupData);
+      
+      // Store the group we're drawing a path for
+      pathDrawingGroup = groupData;
+      
+      // Reset the current path
+      currentPath = [];
+      
+      // If we have a start point, add it as the first point in the path
+      if (groupData?.startPoint) {
+        console.log('Adding initial point from group start location:', groupData.startPoint);
+        currentPath = [groupData.startPoint];
+      }
+      
+      // Enable path drawing mode
+      isPathDrawingMode = true;
     }
     
     // Function to handle cancellation of path drawing
@@ -1187,11 +1187,9 @@
             onUndoPoint={undoLastPathPoint}
             customPathPoints={currentPath}
             modalOpen={isAnyModalOpen}
+            pathDrawingGroup={pathDrawingGroup}
             onClose={() => {
-                if (isPathDrawingMode) {
-                    handlePathDrawingCancel();
-                } else {
-                }
+                if (isPathDrawingMode) handlePathDrawingCancel();
             }}
         />
 
@@ -1804,5 +1802,12 @@
         padding: 0;
         width: 2em;
         height: 2em;
+    }
+
+    .motion-type {
+      font-size: 0.85em;
+      opacity: 0.8;
+      font-weight: normal;
+      font-style: italic;
     }
 </style>
