@@ -839,7 +839,6 @@
         // Apply limits
         zoomLevel = Math.max(0.5, newZoom);
         updateTileSize();
-        console.log(`Gesture change: scale=${e.scale}, new zoomLevel=${zoomLevel}`);
       }
     };
     
