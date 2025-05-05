@@ -258,6 +258,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
       return await addOrUpgradeMonsterBuilding(
         db, worldId, monsterGroup, structure, buildingType, updates, now
       );
+      
     } else {
       // Upgrade the structure itself
       return await upgradeMonsterStructure(db, worldId, monsterGroup, tileData.structure, updates, now);
