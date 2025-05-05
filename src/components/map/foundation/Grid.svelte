@@ -1715,8 +1715,6 @@
   .tile.subdivided {
     padding: 0.05em;
     box-sizing: border-box;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    overflow: visible; /* Ensure the overflow is visible for the subgrid to extend beyond tile */
   }
   
   /* Hide the regular structure icon when using subdivided grid */
@@ -1744,7 +1742,6 @@
   
   /* Make subgrids more visible when in hover state */
   .tile.subdivided:hover .structure-subgrid {
-    transform: scale(1.05);
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
     z-index: 12; /* Ensure hovering brings it above other elements */
   }
@@ -1772,10 +1769,6 @@
     justify-content: center;
     z-index: 4;
     transition: transform 0.2s ease-out;
-  }
-  
-  .tile.subdivided:hover .subgrid-structure-icon {
-    transform: scale(1.1);
   }
   
   :global(.subgrid-structure-icon .structure-icon) {
@@ -1816,40 +1809,39 @@
   /* Initial state for animated tiles */
   .main-grid.animated .tile {
     opacity: 0;
-    transform: scale(0.8);
+    /* transform: scale(0.8); */
     /* Add this to make all tiles start from the same background color */
-    background-color: transparent !important;
+    background-color: transparent;
   }
 
   /* Final state for all visible tiles */
   .main-grid:not(.animated) .tile {
     opacity: 1;
-    transform: scale(1);
+    /* transform: scale(1); */
   }
   
   /* Special handling for center tile */
   .tile.center {
     z-index: 3;
     position: relative;
-    border: 0.12em solid rgba(255, 255, 255, 0.5);
+    /* border: 0.12em solid rgba(255, 255, 255, 0.5); */
     box-shadow: 
       inset 0 0 0 2px rgba(255, 255, 255, 0.7),
       inset 0 0 0.5em rgba(255, 255, 255, 0.3),
       0 0 1em rgba(255, 255, 255, 0.2);
     
     /* Center tile is always visible with slightly larger scale */
-    opacity: 1 !important;
-    transform: scale(1.05) !important;
+    opacity: 1;
     /* Remove transition: background-color 0.3s ease */
     cursor: pointer; /* Add pointer cursor to indicate clickability */
-    pointer-events: auto !important; /* Force pointer events to be active */
+    pointer-events: auto; /* Force pointer events to be active */
   }
 
   /* Initial state for center tile during animation to match other tiles */
   .main-grid.animated .tile.center {
     /* Override just the background color but still keep other properties */
-    background-color: transparent !important;
-    border-color: rgba(255, 255, 255, 0.2);
+    background-color: transparent;
+    /* border-color: rgba(255, 255, 255, 0.2); */
     box-shadow: 
       inset 0 0 0 1px rgba(255, 255, 255, 0.3),
       inset 0 0 0.2em rgba(255, 255, 255, 0.1),
@@ -2057,7 +2049,7 @@
   }
 
   .map-container.path-drawing-mode .map:not(.moving) .tile:hover {
-    box-shadow: inset 0 0 0 2px rgba(66, 133, 244, 0.9) !important;
+    box-shadow: inset 0 0 0 2px rgba(66, 133, 244, 0.9);
     position: relative;
     z-index: 45;
     transition: box-shadow 0.2s ease;
@@ -2163,8 +2155,8 @@
   .path-control-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none !important;
-    box-shadow: none !important;
+    transform: none;
+    box-shadow: none;
   }
 
   .path-control-btn.undo-btn {
