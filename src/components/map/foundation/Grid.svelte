@@ -28,6 +28,7 @@
   import Monster from '../../icons/Monster.svelte';
   import Compass from '../../icons/Compass.svelte';
   
+  import { BIOMES } from "gisaima-shared/definitions/BIOMES.js";
   
   // Props with defaults using Svelte 5 $props() rune
   const { 
@@ -36,10 +37,11 @@
     onAddPathPoint = null,
     onClick = null,
     onClose = () => {},
-    onUndoPoint = null, // Add new prop for undo functionality
+    onUndoPoint = null,
     customPathPoints = [],
     modalOpen = false,
-    initialZoom = 1.0 // Add new prop for initial zoom level
+    initialZoom = 1.0,
+    pathDrawingGroup = null // Add pathDrawingGroup as a prop
   } = $props();
   
   // Add zoom level state
@@ -654,6 +656,22 @@
     return tile.players.some(p => p.id?.toString() === $user.uid?.toString());
   }
 
+  // Add a function to check if a group can traverse water
+  function canTraverseWater(group) {
+    if (!group || !group.motion) return false;
+    
+    // Check if group has water motion capability
+    return group.motion.includes('water') || 
+           group.motion.includes('aquatic') || 
+           group.motion.includes('flying');
+  }
+
+  // Add a function to check if a tile is water
+  function isWaterTile(tile) {
+    // Check if we have a biome with water property set to true
+    return tile && tile.biome && tile.biome.water === true;
+  }
+
   function handleGridClick(event) {
     // Update logging to remove reference to removed variable
     console.log('Grid click detected');
@@ -750,15 +768,28 @@
     if (isPathDrawingMode) {
       // Only add a point if it was a real click, not the end of a drag
       if (!wasDrag) {
-        // Directly call the prop function with validation
+        // Get the clicked tile data to check if it's water
+        const tileData = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
+        
+        // Check if this tile is water and if the group can traverse water
+        const isWater = isWaterTile(tileData);
+        const canTraverse = canTraverseWater(pathDrawingGroup);
+        
+        // Block path drawing on water if group can't traverse it
+        if (isWater && !canTraverse) {
+          console.log('Cannot add path point: water tile and group cannot traverse water');
+          // Optionally, we could show feedback to the user here
+          return;
+        }
+        
+        // Otherwise proceed with adding the path point
         if (onAddPathPoint) {
-          if (!isPathDrawingMode) {
-            console.log('Not in path drawing mode, ignoring point');
-            return;
-          }
-          
           console.log('Grid: Adding path point:', { x: tileX, y: tileY });
-          onAddPathPoint({ x: tileX, y: tileY });
+          onAddPathPoint({ 
+            x: tileX, 
+            y: tileY,
+            tileData: tileData || null
+          });
         }
       }
       return; // Exit early to prevent other click behaviors
