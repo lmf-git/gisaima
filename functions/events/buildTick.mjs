@@ -25,7 +25,6 @@ export async function processBuilding(worldId, updates, chunkKey, tileKey, tile,
   
   // Get structure data
   const structure = tile.structure;
-  const builderId = structure.builder;
   
   // Calculate progress
   const progress = (structure.buildProgress || 0) + 1;
@@ -51,7 +50,7 @@ export async function processBuilding(worldId, updates, chunkKey, tileKey, tile,
  */
 function completeStructure(worldId, updates, chunkKey, tileKey, tile, now) {
   const structure = tile.structure;
-  const builderId = structure.builder;
+  const owner = structure.owner;
   
   console.log(`Building complete at ${tileKey} in chunk ${chunkKey}`);
   
@@ -59,11 +58,10 @@ function completeStructure(worldId, updates, chunkKey, tileKey, tile, now) {
   const structurePath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`;
   updates[`${structurePath}/status`] = null;
   updates[`${structurePath}/buildProgress`] = null;
-  updates[`${structurePath}/builder`] = null;
   
   // Update the builder group's status if it exists
-  if (tile.groups && tile.groups[builderId]) {
-    const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${builderId}`;
+  if (tile.groups && tile.groups[owner]) {
+    const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${owner}`;
     updates[`${groupPath}/status`] = 'idle';
   }
   
