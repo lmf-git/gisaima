@@ -123,12 +123,19 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
         // Ensure status is 'idle' for monsters
         updatedGroup.status = 'idle';
         
-        // Preserve key monster properties
+        // LIST OF CRITICAL MONSTER PROPERTIES TO PRESERVE
+        // Base properties
         if (group.personality) updatedGroup.personality = group.personality;
+        
+        // Exploration properties
         if (group.explorationPhase) updatedGroup.explorationPhase = group.explorationPhase;
         if (group.explorationTicks) updatedGroup.explorationTicks = group.explorationTicks;
+        
+        // Structure relationships
         if (group.mobilizedFromStructure) updatedGroup.mobilizedFromStructure = group.mobilizedFromStructure;
         if (group.preferredStructureId) updatedGroup.preferredStructureId = group.preferredStructureId;
+        
+        // Targeting and intent
         if (group.targetStructure) updatedGroup.targetStructure = group.targetStructure;
         if (group.attackIntent) updatedGroup.attackIntent = group.attackIntent;
       }
@@ -143,11 +150,25 @@ export async function processMovement(worldId, updates, group, chunkKey, tileKey
         status: 'moving'
       };
       
-      // Ensure monster type is preserved on intermediate moves
+      // Ensure monster properties are preserved on intermediate moves too
       if (group.type === 'monster') {
         updatedGroup.type = 'monster';
-        // Ensure other essential monster properties are preserved
+        
+        // PRESERVE THE SAME LIST OF CRITICAL MONSTER PROPERTIES FOR INTERMEDIATE STEPS
+        // Base properties
         if (group.personality) updatedGroup.personality = group.personality;
+        
+        // Exploration properties
+        if (group.explorationPhase) updatedGroup.explorationPhase = group.explorationPhase;
+        if (group.explorationTicks) updatedGroup.explorationTicks = group.explorationTicks;
+        
+        // Structure relationships
+        if (group.mobilizedFromStructure) updatedGroup.mobilizedFromStructure = group.mobilizedFromStructure;
+        if (group.preferredStructureId) updatedGroup.preferredStructureId = group.preferredStructureId;
+        
+        // Targeting and intent
+        if (group.targetStructure) updatedGroup.targetStructure = group.targetStructure;
+        if (group.attackIntent) updatedGroup.attackIntent = group.attackIntent;
       }
     }
     
