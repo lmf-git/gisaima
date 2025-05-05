@@ -113,6 +113,26 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   const personality = MONSTER_PERSONALITIES[personalityId] || MONSTER_PERSONALITIES.BALANCED;
   const weights = personality.weights;
   
+  // NEW: Check if there's a structure under construction that could be adopted
+  const structureUnderConstruction = tileData.structure && 
+                                   tileData.structure.status === 'building' && 
+                                   (!tileData.structure.builder || // No builder assigned
+                                    !tileData.groups || // No groups on tile
+                                    !Object.values(tileData.groups).some(g => g.status === 'building')); // No group actively building
+                                   
+  if (structureUnderConstruction && 
+      Math.random() < 0.7 * (weights?.build || 1.0)) { // High chance to adopt with build personality
+    const adoptResult = await adoptAbandonedStructure(
+      db, worldId, monsterGroup, tileData.structure, updates, now
+    );
+    
+    if (adoptResult.action === 'adopt') {
+      // Structure adoption was successful
+      console.log(`Monster group ${monsterGroup.id} has adopted structure ${tileData.structure.id}`);
+      return adoptResult;
+    }
+  }
+  
   // Check if monster should change personality
   if (shouldChangePersonality(monsterGroup, now)) {
     const newPersonality = getRandomPersonality(personalityId);
@@ -436,6 +456,7 @@ export async function processMonsterStrategies(worldId, chunks = null) {
     gatheringStarted: 0,
     structuresBuildStarted: 0,
     structuresUpgraded: 0,
+    structuresAdopted: 0, // NEW - track adoptions
     demobilizationsStarted: 0,
     battlesJoined: 0,
     groupsMerged: 0,
@@ -533,6 +554,9 @@ export async function processMonsterStrategies(worldId, chunks = null) {
                 break;
               case 'upgrade':
                 results.structuresUpgraded++;
+                break;
+              case 'adopt':
+                results.structuresAdopted++;
                 break;
               case 'demobilize':
                 results.demobilizationsStarted++;

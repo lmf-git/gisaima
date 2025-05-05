@@ -51,6 +51,7 @@ export const processGameTicks = onSchedule({
     let monstersSpawned = 0;
     let monsterStrategiesProcessed = 0;
     let monsterGroupsMerged = 0;
+    let structuresAdopted = 0; // NEW - track adoptions
     
     // Process each world
     for (const worldId in worlds) {
@@ -201,7 +202,8 @@ export const processGameTicks = onSchedule({
     // Update log message to include new monster activity types
     console.log(`Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, ` +
                `${movementsProcessed} movement steps, ${gatheringsProcessed} gatherings, ${buildingsProcessed} building updates, ` +
-               `${monsterStrategiesProcessed} monster strategies, ${monsterGroupsMerged} monster groups merged, and spawned ${monstersSpawned} monster groups`);    
+               `${monsterStrategiesProcessed} monster strategies, ${monsterGroupsMerged} monster groups merged, ` +
+               `${structuresAdopted} structures adopted, and spawned ${monstersSpawned} monster groups`);    
     return null;
   } catch (error) {
     console.error("Error processing game ticks:", error);

@@ -764,6 +764,126 @@ export async function addOrUpgradeMonsterBuilding(db, worldId, monsterGroup, str
   };
 }
 
+/**
+ * Check if a monster group can adopt an abandoned structure
+ * @param {object} db - Firebase database reference
+ * @param {string} worldId - World ID
+ * @param {object} monsterGroup - Monster group data
+ * @param {object} structure - Structure to potentially adopt
+ * @param {object} updates - Database updates object
+ * @param {number} now - Current timestamp
+ * @returns {object} Action result
+ */
+export async function adoptAbandonedStructure(db, worldId, monsterGroup, structure, updates, now) {
+  // Only structures that are in building status can be adopted
+  if (!structure || structure.status !== 'building') {
+    return { action: null, reason: 'structure_not_building' };
+  }
+  
+  // Check if there's already a builder group on this tile
+  const chunkKey = monsterGroup.chunkKey;
+  const tileKey = monsterGroup.tileKey;
+  
+  const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
+  const tileSnapshot = await tileRef.once('value');
+  const tileData = tileSnapshot.val();
+  
+  // Check if any group is already building - don't adopt if someone is already working
+  if (tileData?.groups) {
+    const hasActiveBuilder = Object.values(tileData.groups).some(
+      group => group.id !== monsterGroup.id && group.status === 'building'
+    );
+    
+    if (hasActiveBuilder) {
+      return { action: null, reason: 'has_active_builder' };
+    }
+  }
+  
+  // Don't adopt player structures unless they're monster-friendly
+  if (!isMonsterStructure(structure) && structure.owner && structure.owner !== 'monster') {
+    // Only allow adopting player structures that are "monster-friendly" - uncommon case
+    if (!structure.monsterFriendly) {
+      return { action: null, reason: 'not_monster_friendly' };
+    }
+  }
+  
+  // Monsters are more likely to adopt structures of their own kind
+  let adoptionChance = 0.8; // High base chance for monster structures
+  
+  if (!isMonsterStructure(structure)) {
+    adoptionChance = 0.2; // Much lower chance for player structures
+  }
+  
+  // Get personality for decision making
+  const personality = monsterGroup.personality || { id: 'BALANCED' };
+  
+  // Builder personality has higher chance to adopt
+  if (personality.id === 'BUILDER') {
+    adoptionChance *= 1.5;
+  }
+  
+  // Territorial personality has higher chance to adopt nearby structures
+  if (personality.id === 'TERRITORIAL') {
+    // Check if this is in their "territory" - nearby their existing structures
+    // This would require a worldScan to check nearby structures
+    adoptionChance *= 1.3;
+  }
+  
+  // Random chance based on adoption probability
+  if (Math.random() > adoptionChance) {
+    return { action: null, reason: 'random_rejection' };
+  }
+  
+  // Set monster group as building
+  const groupPath = createGroupPath(worldId, monsterGroup);
+  updates[`${groupPath}/status`] = 'building';
+  
+  // Update structure to show it's being built by this monster group
+  const structurePath = createStructurePath(worldId, chunkKey, tileKey);
+  updates[`${structurePath}/builder`] = monsterGroup.id;
+  updates[`${structurePath}/builderName`] = monsterGroup.name || 'Monster group';
+  
+  // If it's not already a monster structure, convert it if it was abandoned by players
+  if (!structure.monster) {
+    const longAbandoned = structure.lastActivity && (now - structure.lastActivity > 86400000); // 24 hours
+    
+    if (longAbandoned || structure.monsterFriendly) {
+      // Convert to monster structure if long abandoned or monster-friendly
+      updates[`${structurePath}/monster`] = true;
+      updates[`${structurePath}/previousOwner`] = structure.owner;
+      updates[`${structurePath}/owner`] = 'monster';
+      updates[`${structurePath}/ownerName`] = monsterGroup.name || 'Monster group';
+    }
+  }
+  
+  // Add a message about adopting the structure
+  const chatMessageId = generateMonsterId('monster_adoption', now);
+  const location = { 
+    x: parseInt(tileKey.split(',')[0]), 
+    y: parseInt(tileKey.split(',')[1]) 
+  };
+  
+  let messageText = '';
+  if (isMonsterStructure(structure)) {
+    messageText = `${monsterGroup.name || "Monster group"} has decided to continue building the ${structure.name || 'structure'} at (${location.x}, ${location.y}).`;
+  } else {
+    messageText = `${monsterGroup.name || "Monster group"} has taken over construction of the abandoned ${structure.name || 'structure'} at (${location.x}, ${location.y})!`;
+  }
+  
+  updates[createChatMessagePath(worldId, chatMessageId)] = {
+    text: messageText,
+    type: 'event',
+    timestamp: now,
+    location
+  };
+  
+  return {
+    action: 'adopt',
+    structureId: structure.id,
+    structureType: structure.type
+  };
+}
+
 // Export all necessary functions
 export {
   hasResourcesToBuild,
