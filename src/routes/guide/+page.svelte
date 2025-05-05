@@ -330,7 +330,7 @@
         Unit groups can be directed to:
       </p>
         <ul>
-          <li>Move to new locations</li>
+          <li>Move to new locations following visualized paths</li>
           <li>Gather resources from terrain</li>
           <li>Attack enemy units or structures</li>
           <li>Defend your territory</li>
@@ -339,6 +339,27 @@
         <p>
         The effectiveness of these actions depends on terrain, unit types, and other factors.
       </p>
+      <h3>Mobilization & Demobilization</h3>
+      <p>
+        The mobilize/demobilize system allows you to create and disband unit groups:
+      </p>
+      <ul>
+        <li><strong>Mobilizing:</strong> Creating a group from individual units takes one tick to complete</li>
+        <li><strong>Demobilizing:</strong> Disbanding a group back into individual units also takes one tick</li>
+        <li><strong>Status Indicators:</strong> Groups show their current status (moving, fighting, gathering, mobilizing, demobilizing)</li>
+        <li><strong>Items:</strong> When demobilizing, you can choose which items to transfer to structures or keep with units</li>
+      </ul>
+      <h3>Path Movement System</h3>
+      <p>
+        The movement system allows for detailed path planning:
+      </p>
+      <ul>
+        <li>Draw precise movement paths with multiple waypoints</li>
+        <li>Visualized paths show the route your group will follow</li>
+        <li>Each step of movement takes one tick to complete</li>
+        <li>Paths optimize automatically for shorter routes</li>
+        <li>Movement can be canceled before completion</li>
+      </ul>
       <h3>Advanced Unit Management</h3>
       <p>
         Units can be organized in different ways to enhance their effectiveness:
@@ -348,17 +369,18 @@
         <li><strong>Merging:</strong> Combine unit groups for better organization, transferring control but maintaining ownership</li>
         <li><strong>Battle Joining:</strong> Participate in ongoing battles alongside other groups</li>
       </ul>
-
       <h3>Unit Status & Capabilities</h3>
       <p>
         Units have different statuses that indicate their current actions:
       </p>
       <ul>
         <li><strong>Idle:</strong> Available for new orders</li>
+        <li><strong>Moving:</strong> Following a path to a new location</li>
         <li><strong>Combat:</strong> Engaged in battle</li>
         <li><strong>Gathering/Crafting:</strong> Performing resource collection or creation activities</li>
+        <li><strong>Mobilizing:</strong> In the process of forming a group</li>
+        <li><strong>Demobilizing:</strong> In the process of disbanding a group</li>
       </ul>
-
       <h3>Unit Organization</h3>
       <p>
         Units can be organized in different structures:
@@ -407,6 +429,19 @@
         <li><strong>Specialized Structures:</strong> Quarries, lumberyards, and other production facilities</li>
       </ul>
 
+      <h3>Building & Upgrading Structures</h3>
+      <p>
+        Structures are built and improved through a tick-based progression system:
+      </p>
+      <ul>
+        <li><strong>Building:</strong> Construction requires specific resources and takes several ticks to complete</li>
+        <li><strong>Upgrading:</strong> Existing structures can be upgraded using shared resources</li>
+        <li><strong>Durability:</strong> Structures have health points that decrease when damaged in battle</li>
+        <li><strong>Battle Indicators:</strong> Structures under attack display their current health percentage</li>
+        <li><strong>Race Restrictions:</strong> Some structures have race-specific interactions and limitations</li>
+        <li><strong>Ownership:</strong> Building actions are restricted to buildings you own or your race controls</li>
+      </ul>
+
       <h3>Buildings</h3>
       <p>
         Within settlements, various buildings can be constructed to provide specific benefits:
@@ -429,6 +464,28 @@
         <li>Capacity can be increased through upgrades</li>
         <li>Capacity limits apply to all units regardless of owner</li>
         <li>Strategic planning is required to maximize limited space</li>
+        <li>Structure levels affect available crafting recipes and activities</li>
+      </ul>
+      
+      <h3>Recruitment</h3>
+      <p>
+        Structures enable the recruitment of new units:
+      </p>
+      <ul>
+        <li>Recruitment requires resources based on unit type</li>
+        <li>Units are restricted to your character's race</li>
+        <li>Higher-level structures allow for more advanced unit types</li>
+        <li>Recruitment takes place over one or more ticks depending on unit complexity</li>
+      </ul>
+      
+      <h3>Structure Storage Systems</h3>
+      <p>
+        Structures offer multiple storage options:
+      </p>
+      <ul>
+        <li><strong>Shared Storage:</strong> Resources accessible to all users of the structure</li>
+        <li><strong>Bank Storage:</strong> Private items accessible only to the owner</li>
+        <li><strong>Building Materials:</strong> Resources dedicated to structure improvements</li>
       </ul>
     </section>
 
@@ -446,10 +503,12 @@
         <li><strong>Woodcutting:</strong> Harvesting wood using hatchets</li>
         <li><strong>Farming:</strong> Growing food from seeds in suitable terrain</li>
         <li><strong>Mining:</strong> Extracting ores and gems using pickaxes</li>
+        <li><strong>Tick-based:</strong> Gathering takes 2 ticks to complete with progress tracked</li>
+        <li><strong>Cancelable:</strong> Gathering actions can be canceled before completion</li>
       </ul>
       <p>
         Gathering affects the abundance of resources in an area. Lower abundance reduces gathering effectiveness, 
-        but areas refresh over time.
+        but areas refresh over time. Different terrain rarities produce different quality and quantity of resources.
       </p>
 
       <h3>Crafting</h3>
@@ -460,6 +519,20 @@
         <li><strong>Alchemy:</strong> Creating potions, elixirs, and magical items</li>
         <li><strong>Smithing:</strong> Forging metal goods from ores and wood</li>
         <li><strong>Crafting:</strong> Creating finished goods from fabrics, gems, pelts, and other materials</li>
+        <li><strong>Structure Enhanced:</strong> Crafting options expand based on available building levels</li>
+        <li><strong>Tick-based:</strong> Crafting takes varying amounts of ticks based on item complexity</li>
+      </ul>
+      
+      <h3>Item Storage & Transfer</h3>
+      <p>
+        Managing items is a key part of resource management:
+      </p>
+      <ul>
+        <li>Transfer items between groups and structures during mobilization/demobilization</li>
+        <li>Access shared storage at structures for community resources</li>
+        <li>Use personal bank storage for private item security</li>
+        <li>Combine identical items automatically when storing them</li>
+        <li>Track item distribution after battles through notifications</li>
       </ul>
 
       <h3>Special Activities</h3>
@@ -486,6 +559,7 @@
         <li>Direct attacks against enemy unit groups</li>
         <li>Joining ongoing battles to support allies</li>
         <li>Setting retreat conditions based on percentage of losses</li>
+        <li>Fleeing from battles after the next tick is processed</li>
       </ul>
       <p>
         Combat factors include unit sizes, types, and environmental conditions. Smaller groups may 
@@ -502,6 +576,7 @@
         <li>Siege structures to weaken them over time</li>
         <li>Structures under siege for 15 game days may be destroyed</li>
         <li>Continuous trebuchet attacks for 3 days can turn structures to ruins</li>
+        <li>Structure durability decreases as they take damage in combat</li>
       </ul>
 
       <h3>Battle Outcomes</h3>
@@ -544,7 +619,7 @@
           <li><strong>Large battles</strong> (21-50 units) often extend to 4-8 ticks</li>
           <li><strong>Massive battles</strong> (50+ units) can last 6-12+ ticks or more</li>
         </ul>
-        <p class="note">Note: Each tick is approximately 1-2 minutes of real time.</p>
+        <p class="note">Note: Each tick is approximately 1-2 minutes of real time, depending on world speed settings.</p>
       </div>
       
       <h3>Battle Casualties</h3>
@@ -572,6 +647,8 @@
             </ul>
           </li>
           <li><strong>Player vs. Player:</strong> In battles exclusively between players, the special protection rules do not apply - these battles are always to the death.</li>
+          <li><strong>Joining Battles:</strong> Groups can join ongoing battles on either side, potentially turning the tide of combat.</li>
+          <li><strong>Fleeing:</strong> Groups can attempt to flee battles, which will be processed after the next tick. Successful fleeing removes the group from combat.</li>
         </ul>
       </div>
       
@@ -887,6 +964,7 @@
         <li><strong>Achievement Items:</strong> Awarded for milestones, firsts, or special accomplishments</li>
         <li><strong>Inspired Items:</strong> Rare items based on real players, with unique properties (0.1% per capita)</li>
         <li><strong>Magical Items:</strong> Artifacts with supernatural capabilities and sometimes consequences</li>
+        <li><strong>Battle Spoils:</strong> Items automatically collected from defeated enemies</li>
       </ul>
 
       <h3>Item Management</h3>
@@ -896,8 +974,10 @@
       <ul>
         <li>Drop or pick up items in the world</li>
         <li>Store items in structures with limited capacity</li>
-        <li>Spawn points typically offer storage for up to 200 items</li>
-        <li>Transfer items between units and locations</li>
+        <li>Transfer items between groups during mobilization/demobilization</li>
+        <li>Access separate bank and shared storage areas at structures</li>
+        <li>View items in map entities and details panels</li>
+        <li>Automatically combine identical items when storing</li>
       </ul>
 
       <h3>Item Rankings</h3>
@@ -908,6 +988,17 @@
         <li>Rankings show who owns the most of certain item types</li>
         <li>Players can choose to hide from these rankings for privacy</li>
         <li>Collecting rare item sets can provide special bonuses</li>
+      </ul>
+      
+      <h3>Storage Systems</h3>
+      <p>
+        Items can be stored in different ways:
+      </p>
+      <ul>
+        <li><strong>Group Inventory:</strong> Items carried by unit groups have weight limits</li>
+        <li><strong>Structure Shared Storage:</strong> Community resources accessible to all users of a structure</li>
+        <li><strong>Structure Bank Storage:</strong> Private items accessible only to the owner</li>
+        <li><strong>Building Materials:</strong> Resources dedicated to structure improvements</li>
       </ul>
     </section>
 
@@ -1029,6 +1120,21 @@
         <li>Standard worlds: 1x speed (ticks every minute)</li>
         <li>Fast worlds: Higher speeds mean more frequent ticks</li>
         <li>The time until the next tick is displayed in the interface</li>
+        <li>Each world has its own speed setting shown on world cards</li>
+      </ul>
+      
+      <h3>Actions Processed On Ticks</h3>
+      <p>
+        Many game activities are processed on world ticks:
+      </p>
+      <ul>
+        <li><strong>Movement:</strong> Each step of group movement requires one tick</li>
+        <li><strong>Battles:</strong> Combat resolution progresses over multiple ticks</li>
+        <li><strong>Gathering:</strong> Resource collection typically takes 2 ticks</li>
+        <li><strong>Building:</strong> Construction and upgrades progress on ticks</li>
+        <li><strong>Recruitment:</strong> New units are created after tick processing</li>
+        <li><strong>Crafting:</strong> Item creation advances with each tick</li>
+        <li><strong>Mobilizing/Demobilizing:</strong> Group formation/disbanding takes one tick</li>
       </ul>
       
       <h3>Group Management</h3>
@@ -1052,6 +1158,7 @@
         <li>Useful when you want to separate from your group</li>
         <li>Takes one tick cycle to complete</li>
         <li>Allows units to act independently again</li>
+        <li>Items can be transferred to structure storage during demobilization</li>
       </ul>
       
       <h4>Movement System</h4>
@@ -1062,6 +1169,8 @@
         <li>Movement occurs in steps, with each step taking one tick</li>
         <li>You can plot complex paths with multiple waypoints</li>
         <li>Different terrain types may affect movement speed</li>
+        <li>Path visualization shows the route groups will follow</li>
+        <li>Movements can be canceled before completion</li>
       </ul>
       
       <h3>Resource Gathering</h3>
@@ -1107,15 +1216,15 @@
         <li>Your group will join the selected side, adding its strength to that faction</li>
       </ol>
       
+      <h4>Battle Duration</h4>
       <p>
-        Battles involve two opposing sides:
+        Battles don't resolve instantly but progress over multiple ticks:
       </p>
       <ul>
-        <li>Each side can contain multiple groups from different players</li>
-        <li>The total power of each side is calculated based on unit quantity and quality</li>
-        <li>Battles progress over time, with resolution occurring on a tick</li>
-        <li>Victory is determined by many factors including total power, terrain advantages, and tactics</li>
-        <li>Winners may claim resources, territory, or other rewards</li>
+        <li>Small battles (1-5 units): 1-3 ticks</li>
+        <li>Medium battles (6-20 units): 2-5 ticks</li>
+        <li>Large battles (21-50 units): 4-8 ticks</li>
+        <li>Massive battles (50+ units): 6-12+ ticks</li>
       </ul>
       
       <h4>Battle Outcomes</h4>
@@ -1430,6 +1539,7 @@
         <li><strong>Achievement Items:</strong> Awarded for milestones, firsts, or special accomplishments</li>
         <li><strong>Inspired Items:</strong> Rare items based on real players, with unique properties (0.1% per capita)</li>
         <li><strong>Magical Items:</strong> Artifacts with supernatural capabilities and sometimes consequences</li>
+        <li><strong>Battle Spoils:</strong> Items automatically collected from defeated enemies</li>
       </ul>
 
       <h3>Item Management</h3>
@@ -1439,8 +1549,10 @@
       <ul>
         <li>Drop or pick up items in the world</li>
         <li>Store items in structures with limited capacity</li>
-        <li>Spawn points typically offer storage for up to 200 items</li>
-        <li>Transfer items between units and locations</li>
+        <li>Transfer items between groups during mobilization/demobilization</li>
+        <li>Access separate bank and shared storage areas at structures</li>
+        <li>View items in map entities and details panels</li>
+        <li>Automatically combine identical items when storing</li>
       </ul>
 
       <h3>Item Rankings</h3>
@@ -1451,6 +1563,17 @@
         <li>Rankings show who owns the most of certain item types</li>
         <li>Players can choose to hide from these rankings for privacy</li>
         <li>Collecting rare item sets can provide special bonuses</li>
+      </ul>
+      
+      <h3>Storage Systems</h3>
+      <p>
+        Items can be stored in different ways:
+      </p>
+      <ul>
+        <li><strong>Group Inventory:</strong> Items carried by unit groups have weight limits</li>
+        <li><strong>Structure Shared Storage:</strong> Community resources accessible to all users of a structure</li>
+        <li><strong>Structure Bank Storage:</strong> Private items accessible only to the owner</li>
+        <li><strong>Building Materials:</strong> Resources dedicated to structure improvements</li>
       </ul>
     </section>
 
@@ -1572,6 +1695,21 @@
         <li>Standard worlds: 1x speed (ticks every minute)</li>
         <li>Fast worlds: Higher speeds mean more frequent ticks</li>
         <li>The time until the next tick is displayed in the interface</li>
+        <li>Each world has its own speed setting shown on world cards</li>
+      </ul>
+      
+      <h3>Actions Processed On Ticks</h3>
+      <p>
+        Many game activities are processed on world ticks:
+      </p>
+      <ul>
+        <li><strong>Movement:</strong> Each step of group movement requires one tick</li>
+        <li><strong>Battles:</strong> Combat resolution progresses over multiple ticks</li>
+        <li><strong>Gathering:</strong> Resource collection typically takes 2 ticks</li>
+        <li><strong>Building:</strong> Construction and upgrades progress on ticks</li>
+        <li><strong>Recruitment:</strong> New units are created after tick processing</li>
+        <li><strong>Crafting:</strong> Item creation advances with each tick</li>
+        <li><strong>Mobilizing/Demobilizing:</strong> Group formation/disbanding takes one tick</li>
       </ul>
       
       <h3>Group Management</h3>
@@ -1595,6 +1733,7 @@
         <li>Useful when you want to separate from your group</li>
         <li>Takes one tick cycle to complete</li>
         <li>Allows units to act independently again</li>
+        <li>Items can be transferred to structure storage during demobilization</li>
       </ul>
       
       <h4>Movement System</h4>
@@ -1605,6 +1744,8 @@
         <li>Movement occurs in steps, with each step taking one tick</li>
         <li>You can plot complex paths with multiple waypoints</li>
         <li>Different terrain types may affect movement speed</li>
+        <li>Path visualization shows the route groups will follow</li>
+        <li>Movements can be canceled before completion</li>
       </ul>
       
       <h3>Resource Gathering</h3>
@@ -1650,15 +1791,15 @@
         <li>Your group will join the selected side, adding its strength to that faction</li>
       </ol>
       
+      <h4>Battle Duration</h4>
       <p>
-        Battles involve two opposing sides:
+        Battles don't resolve instantly but progress over multiple ticks:
       </p>
       <ul>
-        <li>Each side can contain multiple groups from different players</li>
-        <li>The total power of each side is calculated based on unit quantity and quality</li>
-        <li>Battles progress over time, with resolution occurring on a tick</li>
-        <li>Victory is determined by many factors including total power, terrain advantages, and tactics</li>
-        <li>Winners may claim resources, territory, or other rewards</li>
+        <li>Small battles (1-5 units): 1-3 ticks</li>
+        <li>Medium battles (6-20 units): 2-5 ticks</li>
+        <li>Large battles (21-50 units): 4-8 ticks</li>
+        <li>Massive battles (50+ units): 6-12+ ticks</li>
       </ul>
       
       <h4>Battle Outcomes</h4>
@@ -2787,4 +2928,3 @@
     }
   }
 </style>
-```
