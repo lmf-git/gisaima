@@ -12,7 +12,10 @@
         "Added battle indicators for structures under attack with durability system",
         "Fixed monster groups to properly engage in combat with player groups and structures",
         "Added battle power calculations for more accurate combat outcomes",
-        "Improved battle feedback with detailed casualty reporting in both Details and Overview panels"
+        "Improved battle feedback with detailed casualty reporting in both Details and Overview panels",
+        "Added notifications for battle events in chat interface with player deaths and battle starts",
+        "Enhanced battle information display in Details and Overview panels showing units and casualties",
+        "Implemented functionality for attacking structures with damage indicators"
       ]
     },
     {
@@ -27,7 +30,11 @@
         "Enhanced monster group behaviors with merging and strategic movement",
         "Added status indicators showing group states (moving, fighting, gathering, mobilising, demobilising)",
         "Made movement paths draw from nearest corner for more natural path visualization",
-        "Optimized path points for shorter routes during movement planning"
+        "Optimized path points for shorter routes during movement planning",
+        "Added chat notifications for group movement and actions",
+        "Improved group naming with automatic player force names",
+        "Added You-Are-Here indicator that shows player location even when in a moving group",
+        "Enhanced movement animations with smooth transitions on grid tiles"
       ]
     },
     {
@@ -41,7 +48,10 @@
         "Added structure names visible on grid tiles",
         "Implemented subdivided structure visualization for larger buildings",
         "Created building ownership validation to prevent actions on buildings you don't own",
-        "Added structure upgrade buttons with clear resource requirements"
+        "Added structure upgrade buttons with clear resource requirements",
+        "Implemented race-specific structure interactions and limitations",
+        "Fixed structure name placement on grid tiles",
+        "Added structure battle status indicators showing when structures are under attack"
       ]
     },
     {
@@ -56,7 +66,12 @@
         "Improved map entity indicators with consistent colors across panels",
         "Created chat interface with message notifications and display names",
         "Implemented achievements system with unlock notifications",
-        "Added escape key functionality to close various UI elements"
+        "Added escape key functionality to close various UI elements",
+        "Created collapsible tutorial sections for better mobile experience",
+        "Enhanced zoom functionality with debounced recalculations to prevent lag",
+        "Added ability to hide legend on mobile devices",
+        "Improved contrast on all modal interfaces",
+        "Enhanced consistency of entity indicators across all panels and the grid"
       ]
     },
     {
@@ -71,7 +86,10 @@
         "Added context-sensitive crafting based on structure building levels",
         "Improved item distribution after successful battles",
         "Created item visibility in map entities and details panels",
-        "Fixed combining identical items when demobilizing to structures"
+        "Fixed combining identical items when demobilizing to structures",
+        "Added dedicated bank storage at structures for private items",
+        "Created shared storage areas for collaborative resource management",
+        "Implemented crafting UI with clear resource requirements"
       ]
     },
     {
@@ -86,7 +104,10 @@
         "Enhanced world center persistence for more reliable map loading",
         "Added terrain color indicators in tile details for better identification",
         "Implemented target tile persistence with local storage",
-        "Added race-specific spawn points with proper coordinate selection"
+        "Added race-specific spawn points with proper coordinate selection",
+        "Fixed deep ocean generation to create larger water bodies",
+        "Implemented improved terrain loading performance for better map exploration",
+        "Added tile rarity indicators in terrain details"
       ]
     },
     {
@@ -101,7 +122,27 @@
         "Added achievements system with various unlock conditions",
         "Improved map loading performance with query coordinates",
         "Implemented a You-Are-Here indicator that respects group membership",
-        "Created multiple spawn points for each race with appropriate placement"
+        "Created multiple spawn points for each race with appropriate placement",
+        "Added Firebase integration for real-time updates and persistence",
+        "Implemented world joining system with race selection",
+        "Added temporary account warning with email upgrade option",
+        "Created chat system with notifications for game events",
+        "Added achievement notification system"
+      ]
+    },
+    {
+      title: "Mobile Experience",
+      changes: [
+        "Created manifest for adding game as mobile app with icons",
+        "Improved mobile menu functionality with automatic closing when links clicked",
+        "Enhanced mobile styles for header and layout",
+        "Fixed mobile scrolling and zooming issues",
+        "Optimized tutorial for mobile devices with collapsible sections",
+        "Added proper padding and spacing for mobile forms",
+        "Fixed media playback on iOS Safari",
+        "Improved responsive design throughout the application",
+        "Enhanced touch interactions for map navigation",
+        "Fixed layout shifting issues on mobile devices"
       ]
     }
   ];
