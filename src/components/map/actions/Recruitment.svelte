@@ -96,10 +96,24 @@
         // Get buildings inside the structure (if any)
         const buildings = structure.buildings || {};
         
+        // Get the player's race from the currentPlayer store
+        const player = get(currentPlayer);
+        const playerRace = player?.race?.toLowerCase() || null;
+        
         // Filter units from UNITS that are player recruitable units 
         // But exclude units with type 'player' (the player character)
+        // And only show units that match the player's race or are neutral
         return Object.entries(UNITS)
-            .filter(([_, unit]) => unit.category === 'player' && unit.type !== 'player')
+            .filter(([_, unit]) => {
+                // Must be a player unit category but not player type
+                const isPlayerUnit = unit.category === 'player' && unit.type !== 'player';
+                
+                // Must match player's race or be neutral race
+                const unitRace = unit.race?.toLowerCase() || 'neutral';
+                const matchesPlayerRace = !playerRace || unitRace === 'neutral' || unitRace === playerRace;
+                
+                return isPlayerUnit && matchesPlayerRace;
+            })
             .map(([id, unit]) => {
                 // Create a clean unit object with recruitment properties
                 const cleanUnit = {

@@ -1997,24 +1997,21 @@
       0px 0px 2px white,
       0px 0px 1px white;
   }
-  
-  /* Enhanced indicator styles to match path elements */
-  .player-position-indicator {
-    background: radial-gradient(circle, gold, #e6c200);
-    box-shadow: 
-      0 0 0.2em gold,
-      0 0 0.5em rgba(255, 215, 0, 0.3);
-    border: 0.08em solid rgba(255, 255, 255, 0.8);
-    z-index: 11;
-  }
-  
-  .player-position-indicator.from-world-data {
-    background: radial-gradient(circle, #ffdd33, #cc9900);
-    box-shadow: 
-      0 0 0.3em gold,
-      0 0 0.8em rgba(255, 215, 0, 0.6);
-    border: 0.08em solid rgba(255, 255, 255, 1);
-    animation: pulse-player 3s infinite;
+
+  .highlight-indicator {
+    position: absolute;
+    width: 0.8em;
+    height: 0.8em;
+    border-radius: 50%;
+       background-color: rgba(255, 255, 255, 0.6);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.6), 
+                0 0 20px rgba(255, 255, 255, 0.3);
+    z-index: 5;
+    pointer-events: none;
+    animation: pulse-highlight 2s infinite ease-in-out;
   }
   
   @keyframes pulse-player {
