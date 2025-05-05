@@ -2399,6 +2399,9 @@
   }
   
   .group-units-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3em;
     margin-top: 0.5em;
     padding: 0.5em;
     background-color: rgba(0, 0, 0, 0.02);
