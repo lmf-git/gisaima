@@ -28,7 +28,7 @@
 
   .indicator-ring {
     position: absolute;
-    width: min(calc(var(--indicator-size) * 0.95), 95%);
+    width: min(calc(var(--indicator-size) * 18.98), 123%);
     aspect-ratio: 1/1; /* Maintain perfect circle */
     border: 2px solid rgba(255, 215, 0, 0.8);
     border-radius: 50%;
