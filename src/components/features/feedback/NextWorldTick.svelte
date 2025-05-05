@@ -148,7 +148,7 @@
     gap: 0.4em;
     background-color: rgba(255, 255, 255, 0.85);
     border-radius: 0.3em;
-    padding: 0.3em 0.6em;
+    padding: 0.175em 0.6em;
     color: rgba(0, 0, 0, 0.85);
     font-family: var(--font-body);
     backdrop-filter: blur(5px);
