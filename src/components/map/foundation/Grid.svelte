@@ -78,6 +78,8 @@
   });
 
   // Replace clickedCenterTile flag with a derived value
+  // This is only for visual feedback about the center tile being clicked recently,
+  // not for determining if a click is on the center tile
   const isCenterTileActive = $derived(Date.now() - lastCenterClickTime < 300);
   
   // Track Peek position to detect map movement
@@ -679,17 +681,8 @@
     // Handle Peek separately:
     // 1. If we're clicking on center tile, let handleCenterTileClick handle it
     // 2. If we're clicking elsewhere, close Peek if open, and CONTINUE processing the click
-    if (isCenterTileActive) {
-      console.log('Center tile click handling delegated to specific handler');
-      // We don't return here - let the center tile handler process it
-      // But do prevent duplicate handling later in this function
-    } else if (isPeekVisible) {
-      // If peek is open and we're not clicking on center tile, close it immediately
-      console.log('Closing Peek since we clicked on a non-center tile');
-      lastCenterClickTime = 0; // Fixed: Changed from lastCenterTileActive to lastCenterClickTime
-    }
     
-    // Get the clicked coordinates
+    // Get the clicked coordinates first
     let tileX, tileY;
     let tileElement = event.target.closest('.tile');
     
@@ -733,44 +726,57 @@
       
       tileX = parseInt(coordsMatch[1], 10);
       tileY = parseInt(coordsMatch[2], 10);
-      
-      // If this is the center tile and we already called its handler, don't duplicate
-      if (isCenterTileActive && tileX === $map.target.x && tileY === $map.target.y) {
-        console.log('Center tile click already handled');
-        return;
-      }
     }
     
-    if (tileX !== undefined && tileY !== undefined) {
-      console.log('Grid: valid click detected at', { x: tileX, y: tileY });
-      
-      // First handle path drawing if in that mode
-      if (isPathDrawingMode) {
-        // Only add a point if it was a real click, not the end of a drag
-        if (!wasDrag) {
-          // Directly call the prop function with validation
-          if (onAddPathPoint) {
-            if (!isPathDrawingMode) {
-              console.log('Not in path drawing mode, ignoring point');
-              return;
-            }
-            
-            console.log('Grid: Adding path point:', { x: tileX, y: tileY });
-            onAddPathPoint({ x: tileX, y: tileY });
+    if (tileX === undefined || tileY === undefined) {
+      console.log('Click ignored: invalid coordinates');
+      return;
+    }
+
+    // Check if this is a click on the center tile
+    const isCenterTileClick = tileX === $map.target.x && tileY === $map.target.y;
+    
+    if (isCenterTileClick) {
+      console.log('Detected click on center tile at', { x: tileX, y: tileY });
+      // Call the center tile handler directly
+      handleCenterTileClick(event);
+      return; // Exit early to prevent double processing
+    }
+    
+    // If peek is open and we're not clicking on center tile, close it immediately
+    if (isPeekVisible) {
+      console.log('Closing Peek since we clicked on a non-center tile');
+      lastCenterClickTime = 0;
+    }
+    
+    console.log('Grid: valid click detected at', { x: tileX, y: tileY });
+    
+    // First handle path drawing if in that mode
+    if (isPathDrawingMode) {
+      // Only add a point if it was a real click, not the end of a drag
+      if (!wasDrag) {
+        // Directly call the prop function with validation
+        if (onAddPathPoint) {
+          if (!isPathDrawingMode) {
+            console.log('Not in path drawing mode, ignoring point');
+            return;
           }
+          
+          console.log('Grid: Adding path point:', { x: tileX, y: tileY });
+          onAddPathPoint({ x: tileX, y: tileY });
         }
-        return; // Exit early to prevent other click behaviors
       }
-      
-      // For regular mode, handle as before - always move to the clicked position
-      if (onClick) {
-        const tileData = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
-        onClick({ 
-          x: tileX, 
-          y: tileY,
-          tileData: tileData || null
-        });
-      }
+      return; // Exit early to prevent other click behaviors
+    }
+    
+    // For regular mode, handle as before - always move to the clicked position
+    if (onClick) {
+      const tileData = $coordinates.find(cell => cell.x === tileX && cell.y === tileY);
+      onClick({ 
+        x: tileX, 
+        y: tileY,
+        tileData: tileData || null
+      });
     }
   }
 
