@@ -1471,8 +1471,8 @@
           >
             <!-- Only render additional elements when initial animations are complete, don't hide during movement -->
             {#if shouldRenderDetails}
-              <!-- Add structure subdivision grid -->
-              {#if cell.structure}
+              <!-- Add structure subdivision grid - MODIFIED: Only show for center tile -->
+              {#if cell.structure && cell.isCenter}
                 <div class="structure-subgrid">
                   {#each Array(9) as _, index}
                     {@const row = Math.floor(index / 3)}
@@ -1848,20 +1848,20 @@
   }
 
   .tile.subdivided:hover .subgrid-cell {
-    background-color: rgba(255, 255, 255, 0.08);
+    /* background-color: rgba(255, 255, 255, 0.08); */
   }
   
   .tile.subdivided:hover .subgrid-cell.center-cell {
-    background-color: rgba(255, 255, 255, 0.25);
+    /* background-color: rgba(255, 255, 255, 0.25); */
   }
   
   /* Special center tile subgrid highlights */
   .tile.center.subdivided .subgrid-cell {
-    background-color: rgba(255, 255, 255, 0.1);
+    /* background-color: rgba(255, 255, 255, 0.1); */
   }
   
   .tile.center.subdivided .subgrid-cell.center-cell {
-    background-color: rgba(255, 255, 255, 0.25);
+    /* background-color: rgba(255, 255, 255, 0.25); */
   }
 
   /* Initial state for animated tiles */

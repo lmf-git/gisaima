@@ -1638,9 +1638,8 @@
     
     .controls-middle-right {
         position: fixed;
-        top: 50%;
         right: 1em;
-        transform: translateY(-50%);
+        top: 44%;
         z-index: 1001;
         display: flex;
         flex-direction: column;
