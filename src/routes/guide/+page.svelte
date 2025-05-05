@@ -1382,7 +1382,7 @@
         Items in Gisaima range from common resources to mythical artifacts, each with unique properties and values.
       </p>
 
-      <!-- Dynamic item display using actual game data -->
+      <!-- New compact item display -->
       <div class="info-box">
         <h4>Item Types Overview</h4>
         <p>Items vary in rarity, purpose, and value. Here are some examples:</p>
@@ -1984,77 +1984,6 @@
             </div>
             <div class="item-rarity common">Common</div>
           </div>
-
-          <!-- Item Card Example - Crafted Item -->
-          <div class="element-card item-card uncommon">
-            <div class="element-header">
-              <div class="element-title">
-                <h5>Iron Sword</h5>
-                <div class="element-subtitle">Uncommon Weapon</div>
-              </div>
-            </div>
-            <div class="element-body">
-              <p class="element-desc">A well-crafted iron sword. Standard issue for many fighters.</p>
-              <div class="item-attributes">
-                <div class="item-attribute">
-                  <span class="attribute-label">Power</span>
-                  <span class="attribute-value battle-stat">10</span>
-                </div>
-                <div class="item-attribute">
-                  <span class="attribute-label">Type</span>
-                  <span class="attribute-value">Weapon</span>
-                </div>
-                
-                {#if item.recipe}
-                  <div class="crafting-recipe">
-                    <h6>Crafting Recipe</h6>
-                    <div class="resources-list">
-                      {#each Object.entries(item.recipe.materials) as [materialId, amount]}
-                        <div class="resource-item">
-                          <span class="resource-name">{materialId}</span>
-                          <span class="resource-amount">{amount}</span>
-                        </div>
-                      {/each}
-                    </div>
-                    <div class="crafting-time">
-                      <span class="time-icon">⏱️</span>
-                      <span class="time-value">{item.recipe.ticksRequired} ticks</span>
-                    </div>
-                  </div>
-                  
-                  <div class="crafting-requirements">
-                    {#if item.recipe.requiredLevel}
-                      <div class="requirement-item">
-                        <span class="requirement-label">Required Level</span>
-                        <span class="requirement-value">{item.recipe.requiredLevel}</span>
-                      </div>
-                    {/if}
-                    {#if item.recipe.requiredBuilding}
-                      <div class="requirement-item">
-                        <span class="requirement-label">Required Building</span>
-                        <span class="requirement-value">
-                          {item.recipe.requiredBuilding.type.charAt(0).toUpperCase() + item.recipe.requiredBuilding.type.slice(1)} 
-                          (Lvl {item.recipe.requiredBuilding.level})
-                        </span>
-                      </div>
-                    {/if}
-                  </div>
-                {/if}
-                
-                {#if !item.recipe && item.biomes && item.biomes.length > 0}
-                  <div class="item-uses">
-                    <h6>Used For</h6>
-                    <ul class="uses-list">
-                      <li>Basic crafting recipes</li>
-                      <li>Building structures</li>
-                      <li>Trade goods</li>
-                    </ul>
-                  </div>
-                {/if}
-              </div>
-              <div class="item-rarity {item.rarity}">{item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)}</div>
-            </div>
-          {/each}
         </div>
       </div>
 
