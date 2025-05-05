@@ -1,6 +1,7 @@
 import { getDatabase } from 'firebase-admin/database';
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { BUILDINGS } from 'gisaima-shared';
+import { ITEMS } from 'gisaima-shared/definitions/ITEMS.js';
 
 /**
  * Start a structure upgrade
@@ -8,7 +9,6 @@ import { BUILDINGS } from 'gisaima-shared';
  * @param {string} data.worldId - The world ID
  * @param {number} data.x - Structure X coordinate
  * @param {number} data.y - Structure Y coordinate
- * @param {string} data.playerId - The player requesting the upgrade
  * @returns {Promise<Object>} The result of the upgrade request
  */
 export const startStructureUpgrade = onCall({ maxInstances: 10 }, async (request) => {
@@ -38,7 +38,7 @@ export const startStructureUpgrade = onCall({ maxInstances: 10 }, async (request
     const chunkKey = `${chunkX},${chunkY}`;
     const tileKey = `${x},${y}`;
     
-    // Get the structure - convert to Admin SDK methods
+    // Get the structure
     const structureRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`);
     const structureSnapshot = await structureRef.once('value');
     
@@ -48,136 +48,346 @@ export const startStructureUpgrade = onCall({ maxInstances: 10 }, async (request
     
     const structure = structureSnapshot.val();
     
-    // Get player data for crafting level
+    // Check if structure is already being upgraded
+    if (structure.upgradeInProgress) {
+      throw new Error('Structure is already being upgraded');
+    }
+    
+    // Check if player is owner of the structure or if it's a spawn point
+    const isOwner = structure.owner === playerId;
+    const isSpawn = structure.type === 'spawn';
+    
+    if (!isOwner && !isSpawn) {
+      throw new Error('You do not have permission to upgrade this structure');
+    }
+    
+    // Calculate current and next level
+    const currentLevel = structure.level || 1;
+    const nextLevel = currentLevel + 1;
+    
+    // Check if structure is already at max level (assume max level 5)
+    if (currentLevel >= 5) {
+      throw new Error('Structure is already at maximum level');
+    }
+    
+    // Get player data for display name
     const playerRef = db.ref(`players/${playerId}/worlds/${worldId}`);
-    const playerSnapshot = await playerRef.get();
+    const playerSnapshot = await playerRef.once('value');
     
     if (!playerSnapshot.exists()) {
       throw new Error('Player data not found');
     }
     
     const player = playerSnapshot.val();
-    const craftingLevel = player.skills?.crafting?.level || 1;
     
-    // Check if player has required crafting level
-    if (data.requiredLevel && data.requiredLevel > craftingLevel) {
-      throw new Error(`This recipe requires crafting level ${data.requiredLevel}`);
-    }
+    // Calculate required resources based on structure type and current level
+    const requiredResources = getUpgradeRequirements(structure.type, currentLevel);
     
-    // Check building requirements
-    if (data.requiredBuilding) {
-      const { type, level } = data.requiredBuilding;
-      
-      // Check if structure has the required building at the right level
-      let hasRequiredBuilding = false;
-      
-      if (structure.buildings) {
-        for (const buildingId in structure.buildings) {
-          const building = structure.buildings[buildingId];
-          if (building.type === type && (building.level || 1) >= level) {
-            hasRequiredBuilding = true;
-            break;
+    // NEW: Check resources in both personal bank and shared storage
+    const personalBankRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/banks/${playerId}`);
+    const personalBankSnapshot = await personalBankRef.once('value');
+    const personalBank = personalBankSnapshot.val() || [];
+    
+    // Create resource map from player's bank items
+    const bankResources = {};
+    if (Array.isArray(personalBank)) {
+      personalBank.forEach(item => {
+        if (item.type === 'resource') {
+          // Store by both ID and name for flexibility
+          if (item.id) {
+            const upperCaseId = item.id.toUpperCase();
+            bankResources[upperCaseId] = (bankResources[upperCaseId] || 0) + item.quantity;
+          }
+          
+          // Also normalize name (e.g., "Wooden Sticks" -> "WOODEN_STICKS")
+          if (item.name) {
+            const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+            bankResources[normalizedName] = (bankResources[normalizedName] || 0) + item.quantity;
           }
         }
-      }
-      
-      if (!hasRequiredBuilding) {
-        throw new Error(`This recipe requires a ${type} of level ${level} or higher`);
-      }
+      });
     }
     
-    // Calculate crafting time
-    const baseCraftingTime = data.craftingTime || 60; // Default 60 seconds
-    
-    // Apply crafting time modifiers
-    let craftingTimeModifier = 1.0;
-    
-    // Lower time for higher crafting level (up to 50% reduction)
-    const levelModifier = Math.min(0.5, (craftingLevel - 1) * 0.05);
-    craftingTimeModifier -= levelModifier;
-    
-    // Check for building bonuses
-    let craftingSpeedBonus = 0;
-    
-    if (structure.buildings) {
-      for (const buildingId in structure.buildings) {
-        const building = structure.buildings[buildingId];
-        if (building.type === data.requiredBuilding?.type && building.benefits) {
-          for (const benefit of building.benefits) {
-            if (benefit.bonus && benefit.bonus.craftingSpeed) {
-              craftingSpeedBonus += benefit.bonus.craftingSpeed;
-            }
+    // Get shared storage resources
+    const sharedResources = {};
+    if (isOwner && structure.items) {
+      const structureItems = Array.isArray(structure.items) ? structure.items : [];
+      structureItems.forEach(item => {
+        if (item.type === 'resource') {
+          if (item.id) {
+            const upperCaseId = item.id.toUpperCase();
+            sharedResources[upperCaseId] = (sharedResources[upperCaseId] || 0) + item.quantity;
+          }
+          
+          if (item.name) {
+            const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+            sharedResources[normalizedName] = (sharedResources[normalizedName] || 0) + item.quantity;
           }
         }
+      });
+    }
+    
+    // Combine available resources (for checking only, deduction will be handled separately)
+    const combinedResources = {...bankResources};
+    if (isOwner) {
+      Object.entries(sharedResources).forEach(([key, value]) => {
+        combinedResources[key] = (combinedResources[key] || 0) + value;
+      });
+    }
+    
+    // Check if required resources are available in the combined storage
+    const insufficientResources = [];
+    for (const resource of requiredResources) {
+      const resourceKey = resource.name.toUpperCase().replace(/ /g, '_');
+      const amountNeeded = resource.quantity;
+      const availableAmount = combinedResources[resourceKey] || 0;
+      
+      if (availableAmount < amountNeeded) {
+        insufficientResources.push({
+          resource: resource.name,
+          needed: amountNeeded,
+          available: availableAmount
+        });
       }
     }
     
-    craftingTimeModifier -= craftingSpeedBonus;
+    if (insufficientResources.length > 0) {
+      throw new Error(`Insufficient resources: ${insufficientResources.map(r => 
+        `${r.resource} (need ${r.needed}, have ${r.available})`).join(', ')}`);
+    }
     
-    // Ensure minimum 10% of original time
-    craftingTimeModifier = Math.max(0.1, craftingTimeModifier);
+    // Calculate upgrade time based on level and structure type
+    const upgradeTime = calculateUpgradeTime(structure.type, currentLevel);
+    const upgradeTimeMs = upgradeTime * 1000; // Convert to ms
     
-    const finalCraftingTime = Math.ceil(baseCraftingTime * craftingTimeModifier);
-    const craftingTimeMs = finalCraftingTime * 1000; // Convert to ms
-    
-    // Create the crafting entry
+    // Generate a unique upgrade ID
     const now = Date.now();
-    const craftingId = `crafting_${worldId}_${playerId}_${now}`;
+    const upgradeId = `structure_upgrade_${worldId}_${tileKey.replace(',', '_')}_${now}`;
     
-    const craftingData = {
-      id: craftingId,
-      recipeId: data.recipeId,
-      playerId,
-      playerName: player.displayName,
+    // Create upgrade entry in database
+    const upgradeData = {
+      id: upgradeId,
+      type: 'structure',
       worldId,
       structureId: structure.id,
-      structureLocation: { x, y },
+      structureType: structure.type,
+      structureName: structure.name || formatText(structure.type),
+      chunkKey,
+      tileKey,
+      fromLevel: currentLevel,
+      toLevel: nextLevel,
       startedAt: now,
-      completesAt: now + craftingTimeMs,
-      materials: data.materials,
-      result: {
-        name: data.result.name,
-        type: data.result.type,
-        quantity: data.result.quantity || 1,
-        rarity: data.result.rarity || 'common',
-        description: data.result.description
-      },
-      status: 'in_progress',
+      completesAt: now + upgradeTimeMs,
+      startedBy: playerId,
+      playerName: player.displayName,
+      resources: requiredResources,
+      status: 'pending',
       processed: false
     };
     
-    // Save the crafting entry
-    const craftingRef = db.ref(`worlds/${worldId}/crafting/${craftingId}`);
-    await craftingRef.set(craftingData);
+    // Track which resources were deducted from which storage
+    const deductionSummary = {
+      personal: {},
+      shared: {}
+    };
     
-    // Update player's crafting status
-    const updatePlayerRef = db.ref(`players/${playerId}/worlds/${worldId}`);
-    await updatePlayerRef.update({
-      'crafting/current': craftingId,
-      'crafting/completesAt': now + craftingTimeMs
+    // Perform the database operations in a transaction
+    await db.ref().transaction((data) => {
+      if (!data) return null;
+      
+      // Update structure to mark as upgrading
+      if (!data.worlds) data.worlds = {};
+      if (!data.worlds[worldId]) data.worlds[worldId] = {};
+      if (!data.worlds[worldId].chunks) data.worlds[worldId].chunks = {};
+      if (!data.worlds[worldId].chunks[chunkKey]) data.worlds[worldId].chunks[chunkKey] = {};
+      if (!data.worlds[worldId].chunks[chunkKey][tileKey]) data.worlds[worldId].chunks[chunkKey][tileKey] = {};
+      if (!data.worlds[worldId].chunks[chunkKey][tileKey].structure) {
+        data.worlds[worldId].chunks[chunkKey][tileKey].structure = {};
+      }
+      
+      const structure = data.worlds[worldId].chunks[chunkKey][tileKey].structure;
+      
+      // Mark structure as upgrading
+      structure.upgradeInProgress = true;
+      structure.upgradeId = upgradeId;
+      structure.upgradeCompletesAt = now + upgradeTimeMs;
+      
+      // Add upgrade to world upgrades list
+      if (!data.worlds[worldId].upgrades) data.worlds[worldId].upgrades = {};
+      data.worlds[worldId].upgrades[upgradeId] = upgradeData;
+      
+      // Prepare for resource deduction
+      const resourcesNeeded = {};
+      requiredResources.forEach(resource => {
+        resourcesNeeded[resource.name.toUpperCase().replace(/ /g, '_')] = resource.quantity;
+      });
+      
+      const isStructureOwner = structure.owner === playerId;
+      
+      // 1. First try deducting from personal bank
+      if (!structure.banks) structure.banks = {};
+      if (!structure.banks[playerId]) structure.banks[playerId] = [];
+      
+      // Create updated bank with resources deducted
+      const updatedBank = [];
+      
+      // Process each item in the personal bank
+      if (Array.isArray(structure.banks[playerId])) {
+        for (const item of structure.banks[playerId]) {
+          // Skip non-resource items
+          if (!item || item.type !== 'resource') {
+            updatedBank.push(item);
+            continue;
+          }
+          
+          // Check if this item needs to be deducted
+          let deductFromThisItem = 0;
+          
+          // Check if item ID matches any resource we need
+          if (item.id) {
+            const upperItemId = item.id.toUpperCase();
+            for (const [resourceKey, amountNeeded] of Object.entries(resourcesNeeded)) {
+              if (resourceKey === upperItemId && amountNeeded > 0) {
+                deductFromThisItem = Math.min(item.quantity, amountNeeded);
+                resourcesNeeded[resourceKey] -= deductFromThisItem;
+                
+                // Track what was deducted from personal storage
+                deductionSummary.personal[resourceKey] = 
+                  (deductionSummary.personal[resourceKey] || 0) + deductFromThisItem;
+                break;
+              }
+            }
+          }
+          
+          // If no match by ID, try matching by normalized name
+          if (deductFromThisItem === 0 && item.name) {
+            const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+            for (const [resourceKey, amountNeeded] of Object.entries(resourcesNeeded)) {
+              if (resourceKey === normalizedName && amountNeeded > 0) {
+                deductFromThisItem = Math.min(item.quantity, amountNeeded);
+                resourcesNeeded[resourceKey] -= deductFromThisItem;
+                
+                // Track what was deducted from personal storage
+                deductionSummary.personal[resourceKey] = 
+                  (deductionSummary.personal[resourceKey] || 0) + deductFromThisItem;
+                break;
+              }
+            }
+          }
+          
+          // If we're deducting from this item
+          if (deductFromThisItem > 0) {
+            // If there's quantity remaining, keep the item with reduced quantity
+            if (item.quantity > deductFromThisItem) {
+              updatedBank.push({
+                ...item,
+                quantity: item.quantity - deductFromThisItem
+              });
+            }
+            // Otherwise the entire item is consumed, so don't add it to updatedBank
+          } else {
+            // Item not affected, keep it as is
+            updatedBank.push(item);
+          }
+        }
+      }
+      
+      // Update the personal bank with our modified items
+      structure.banks[playerId] = updatedBank;
+      
+      // 2. If player is structure owner and still needs resources, try deducting from shared storage
+      if (isStructureOwner && Object.values(resourcesNeeded).some(amount => amount > 0)) {
+        // Create updated shared storage with remaining resources deducted
+        const updatedSharedItems = [];
+        
+        // Process each item in shared storage
+        if (Array.isArray(structure.items)) {
+          for (const item of structure.items) {
+            // Skip non-resource items
+            if (!item || item.type !== 'resource') {
+              updatedSharedItems.push(item);
+              continue;
+            }
+            
+            // Check if this item needs to be deducted
+            let deductFromThisItem = 0;
+            
+            // Check if item ID matches any resource we still need
+            if (item.id) {
+              const upperItemId = item.id.toUpperCase();
+              for (const [resourceKey, amountNeeded] of Object.entries(resourcesNeeded)) {
+                if (resourceKey === upperItemId && amountNeeded > 0) {
+                  deductFromThisItem = Math.min(item.quantity, amountNeeded);
+                  resourcesNeeded[resourceKey] -= deductFromThisItem;
+                  
+                  // Track what was deducted from shared storage
+                  deductionSummary.shared[resourceKey] = 
+                    (deductionSummary.shared[resourceKey] || 0) + deductFromThisItem;
+                  break;
+                }
+              }
+            }
+            
+            // If no match by ID, try matching by normalized name
+            if (deductFromThisItem === 0 && item.name) {
+              const normalizedName = item.name.toUpperCase().replace(/ /g, '_');
+              for (const [resourceKey, amountNeeded] of Object.entries(resourcesNeeded)) {
+                if (resourceKey === normalizedName && amountNeeded > 0) {
+                  deductFromThisItem = Math.min(item.quantity, amountNeeded);
+                  resourcesNeeded[resourceKey] -= deductFromThisItem;
+                  
+                  // Track what was deducted from shared storage
+                  deductionSummary.shared[resourceKey] = 
+                    (deductionSummary.shared[resourceKey] || 0) + deductFromThisItem;
+                  break;
+                }
+              }
+            }
+            
+            // If we're deducting from this item
+            if (deductFromThisItem > 0) {
+              // If there's quantity remaining, keep the item with reduced quantity
+              if (item.quantity > deductFromThisItem) {
+                updatedSharedItems.push({
+                  ...item,
+                  quantity: item.quantity - deductFromThisItem
+                });
+              }
+              // Otherwise the entire item is consumed, so don't add it to updatedSharedItems
+            } else {
+              // Item not affected, keep it as is
+              updatedSharedItems.push(item);
+            }
+          }
+        }
+        
+        // Update the shared storage with our modified items
+        structure.items = updatedSharedItems;
+      }
+      
+      // Add deduction summary to upgrade data
+      data.worlds[worldId].upgrades[upgradeId].resourceDeduction = deductionSummary;
+      
+      return data;
     });
     
-    // Consume materials from inventory
-    const playerInventoryRef = db.ref(`players/${playerId}/worlds/${worldId}/inventory`);
-    const playerInventorySnapshot = await playerInventoryRef.get();
-    
-    let playerInventory = playerInventorySnapshot.exists() ? playerInventorySnapshot.val() : [];
-    
-    // Add crafting event to chat
-    const chatRef = db.ref(`worlds/${worldId}/chat/crafting_${craftingId}`);
+    // Add upgrade event to chat
+    const chatRef = db.ref(`worlds/${worldId}/chat/upgrade_${upgradeId}`);
     await chatRef.set({
       location: { x, y },
-      text: `${player.displayName} started crafting ${data.result.name}.`,
+      text: `${player.displayName} started upgrading a ${structure.name || structure.type} from level ${currentLevel} to ${nextLevel}.`,
       timestamp: now,
       type: 'event'
     });
     
     return {
       success: true,
-      craftingId,
-      completesAt: now + craftingTimeMs,
-      timeToComplete: craftingTimeMs,
-      result: craftingData.result
+      upgradeId,
+      fromLevel: currentLevel,
+      toLevel: nextLevel,
+      completesAt: now + upgradeTimeMs,
+      timeToComplete: upgradeTimeMs,
+      resourceDeduction: deductionSummary
     };
     
   } catch (error) {
@@ -185,6 +395,108 @@ export const startStructureUpgrade = onCall({ maxInstances: 10 }, async (request
     throw new HttpsError('internal', error.message);
   }
 });
+
+/**
+ * Get required resources for a structure upgrade
+ * @param {string} structureType - Type of structure
+ * @param {number} currentLevel - Current structure level
+ * @returns {Array<Object>} Array of required resources
+ */
+function getUpgradeRequirements(structureType, currentLevel) {
+  const resources = [];
+  const levelMultiplier = currentLevel * 1.5;
+  
+  // Base resources required for all structures
+  resources.push({ name: 'Wooden Sticks', quantity: Math.floor(10 * levelMultiplier) });
+  resources.push({ name: 'Stone Pieces', quantity: Math.floor(8 * levelMultiplier) });
+  
+  // Additional resources based on structure type
+  switch (structureType) {
+    case 'outpost':
+      // Standard resources, no extra
+      break;
+      
+    case 'fortress':
+    case 'stronghold':
+      resources.push({ name: 'Iron Ore', quantity: Math.floor(5 * levelMultiplier) });
+      break;
+      
+    case 'watchtower':
+      resources.push({ name: 'Rope', quantity: Math.floor(3 * levelMultiplier) });
+      break;
+      
+    case 'citadel':
+      resources.push({ name: 'Iron Ore', quantity: Math.floor(8 * levelMultiplier) });
+      resources.push({ name: 'Gold Ore', quantity: Math.floor(3 * levelMultiplier) });
+      break;
+      
+    case 'spawn':
+      // Spawn points need more resources to upgrade
+      resources.forEach(resource => {
+        resource.quantity = Math.floor(resource.quantity * 1.5);
+      });
+      resources.push({ name: 'Crystal Shard', quantity: currentLevel });
+      break;
+      
+    default:
+      // Default case for other structure types
+      break;
+  }
+  
+  // Higher level structures need special resources
+  if (currentLevel >= 3) {
+    resources.push({ name: 'Crystal Shard', quantity: currentLevel - 2 });
+  }
+  
+  return resources;
+}
+
+/**
+ * Calculate upgrade time for a structure
+ * @param {string} structureType - Type of structure
+ * @param {number} currentLevel - Current structure level
+ * @returns {number} Upgrade time in seconds
+ */
+function calculateUpgradeTime(structureType, currentLevel) {
+  // Base upgrade time in seconds
+  const baseUpgradeTime = 120; 
+  
+  // Each level adds 50% more time
+  const levelMultiplier = 1 + (currentLevel * 0.5); 
+  
+  // Type-specific multiplier
+  let typeMultiplier = 1;
+  
+  switch (structureType) {
+    case 'outpost':
+      typeMultiplier = 0.8;
+      break;
+      
+    case 'fortress':
+    case 'stronghold':
+      typeMultiplier = 1.5;
+      break;
+      
+    case 'watchtower':
+      typeMultiplier = 0.7;
+      break;
+      
+    case 'citadel':
+      typeMultiplier = 2.0;
+      break;
+      
+    case 'spawn':
+      typeMultiplier = 2.5;
+      break;
+      
+    default:
+      typeMultiplier = 1.0;
+      break;
+  }
+  
+  // Calculate final time in seconds
+  return Math.ceil(baseUpgradeTime * levelMultiplier * typeMultiplier);
+}
 
 /**
  * Start a building upgrade within a structure
