@@ -48,28 +48,6 @@
 
 		<!-- Enhanced viewport settings to prevent browser zoom/scroll interference -->
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-		
-		<!-- Update script to be more selective about zoom prevention -->
-		<script>
-			// Only run in browser context
-			if (typeof window !== 'undefined') {
-				// Don't block gestures on the whole document, just control browser defaults
-				document.addEventListener('gesturestart', function(e) {
-					// Only prevent default for gestures outside custom map elements
-					if (!e.target.closest('.map-container')) {
-						e.preventDefault();
-					}
-				}, { passive: false });
-				
-				// Only block browser zoom behavior, not wheel events completely
-				document.addEventListener('wheel', function(e) {
-					// Only prevent default for ctrl+wheel outside our map containers
-					if (e.ctrlKey && !e.target.closest('.map-container')) {
-						e.preventDefault();
-					}
-				}, { passive: false });
-			}
-		</script>
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">%sveltekit.body%</div>
