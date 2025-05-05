@@ -128,7 +128,7 @@
   
   <span class="next-tick-time">
     {#if isPending}
-      <span class="spinner"></span> Processing
+      <span class="spinner"></span>
     {:else}
       {formatTimeDisplay()}
     {/if}
