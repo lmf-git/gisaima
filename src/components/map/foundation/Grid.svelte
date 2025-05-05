@@ -1331,7 +1331,7 @@
   >    
     {#if $ready}
       <!-- Only render paths when animations are complete AND not moving -->
-      {#if shouldRenderPaths}
+      {#if shouldRenderDetails}
         <svg class="path-layer" viewBox="0 0 100 100" preserveAspectRatio="none">
           <!-- Custom path drawing group -->
           {#if isPathDrawingMode && customPathPoints && customPathPoints.length > 0}
