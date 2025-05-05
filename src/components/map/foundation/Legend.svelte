@@ -60,6 +60,14 @@
     min-width: 8em;
     text-align: center;
     font-family: var(--font-body); /* Add body font */
+    display: none; /* Hide by default on mobile */
+  }
+  
+  /* Only show on larger screens */
+  @media (min-width: 768px) {
+    .legend {
+      display: block; /* Make visible on tablets and larger */
+    }
   }
   
   /* Only animate when grid is ready */

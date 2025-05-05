@@ -146,7 +146,6 @@
     display: flex;
     align-items: center;
     gap: 0.4em;
-    font-size: 0.9em;
     background-color: rgba(255, 255, 255, 0.85);
     border-radius: 0.3em;
     padding: 0.3em 0.6em;
@@ -179,7 +178,6 @@
   }
   
   .next-tick-container.compact {
-    font-size: 0.8em;
     padding: 0.25em 0.5em;
     min-width: 3em;
   }
