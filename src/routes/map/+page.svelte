@@ -67,6 +67,7 @@
     import Bird from '../../components/icons/Bird.svelte';
     import BoundIcon from '../../components/icons/BoundIcon.svelte';
     import UnboundIcon from '../../components/icons/UnboundIcon.svelte';
+    import Logo from '../../components/Logo.svelte';
     
     
     const DEBUG_MODE = true;
@@ -1153,7 +1154,9 @@
 <div class="map" class:dragging={isDragging} class:path-drawing={isPathDrawingMode} class:spawn-menu-open={!$game?.player?.alive}>
     {#if combinedLoading}
         <div class="loading-overlay">
-            <div class="loading-spinner"></div>
+            <div class="loading-logo">
+                <Logo extraClass="animated-logo" />
+            </div>
             <div class="loading-message">
                 {#if !$isAuthReady}
                     Loading user data...
@@ -1559,24 +1562,39 @@
         z-index: 1000;
     }
     
-    .loading-spinner {
-        border: 0.25em solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
-        border-top: 0.25em solid white;
-        width: 2.5em;
-        height: 2.5em;
-        animation: spin 1s linear infinite;
+    .loading-logo {
+        width: 5em;
+        height: 5em;
         margin-bottom: 1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .animated-logo {
+        width: 100%;
+        height: 100%;
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0% {
+            opacity: 0.6;
+            transform: scale(0.95);
+        }
+        50% {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+        100% {
+            opacity: 0.6;
+            transform: scale(0.95);
+        }
     }
 
     .loading-message {
         font-size: 1.1em;
         text-align: center;
-    }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
     }
     
     .error-overlay button {
