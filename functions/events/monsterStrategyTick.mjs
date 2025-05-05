@@ -258,9 +258,13 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   if (totalUnits >= MIN_UNITS_TO_BUILD && 
       hasResources && 
       resourceCount >= MIN_RESOURCES_TO_BUILD &&
-      !structureOnTile &&
+      !structureOnTile && // Explicit check for no structure on tile
       Math.random() < 0.4 * (weights?.build || 1.0)) {
-    return await buildMonsterStructure(db, worldId, monsterGroup, location, updates, now, worldScan);
+    
+    // Extra safety check - don't build if we already have a structure here or are on a structure
+    if (!tileData.structure) {
+      return await buildMonsterStructure(db, worldId, monsterGroup, location, updates, now, worldScan);
+    }
   }
   
   // If the monster is on a structure tile that has no building yet, consider adding one

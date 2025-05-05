@@ -55,6 +55,17 @@ async function isLocationSuitableForBuilding(db, worldId, location, worldScan) {
       return false;
     }
     
+    // Check for monster groups that are already building - prevent building conflicts
+    if (tileData.groups) {
+      for (const groupId in tileData.groups) {
+        const group = tileData.groups[groupId];
+        if (group.status === 'building') {
+          console.log(`Location ${location.x},${location.y} has a group already building, cannot build`);
+          return false;
+        }
+      }
+    }
+    
     // Check if there are too many monster structures nearby
     let nearbyMonsterStructures = 0;
     
