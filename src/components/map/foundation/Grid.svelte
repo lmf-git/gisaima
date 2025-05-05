@@ -1847,23 +1847,6 @@
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
   }
 
-  .tile.subdivided:hover .subgrid-cell {
-    /* background-color: rgba(255, 255, 255, 0.08); */
-  }
-  
-  .tile.subdivided:hover .subgrid-cell.center-cell {
-    /* background-color: rgba(255, 255, 255, 0.25); */
-  }
-  
-  /* Special center tile subgrid highlights */
-  .tile.center.subdivided .subgrid-cell {
-    /* background-color: rgba(255, 255, 255, 0.1); */
-  }
-  
-  .tile.center.subdivided .subgrid-cell.center-cell {
-    /* background-color: rgba(255, 255, 255, 0.25); */
-  }
-
   /* Initial state for animated tiles */
   .main-grid.animated .tile {
     opacity: 0;
