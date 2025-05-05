@@ -44,7 +44,7 @@ export function processRecruitment(worldId, updates, chunkKey, tileKey, tile, no
       const quantity = recruitment.quantity || 1;
       const owner = recruitment.owner;
       const race = recruitment.race || unitDefinition.race || structure.race || 'neutral';
-      const type = recruitment.type || unitDefinition.type || 'warrior';
+      const type = recruitment.type || unitDefinition.type;
       const power = unitDefinition.power || recruitment.power || 1;
       const icon = unitDefinition.icon || recruitment.icon || 'sword';
       
