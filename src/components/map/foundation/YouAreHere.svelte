@@ -53,7 +53,7 @@
   .location-text {
     position: absolute;
     /* Position below the ring based on indicator size */
-    top: calc(50% + var(--indicator-size) * 0.55);
+    top: calc(100% + var(--indicator-size) * .15);
     left: 50%;
     transform: translateX(-50%);
     color: rgba(50, 30, 0, 0.95);
@@ -78,7 +78,7 @@
   /* Make text for structures smaller with matching style */
   .has-structure .location-text {
     font-size: calc(var(--indicator-size) / 12);
-    top: calc(50% + var(--indicator-size) * 0.6); /* Adjust position for structure size */
+    top: calc(100% + var(--indicator-size) * .15);
     padding: 0.25em 0.7em;
     background: linear-gradient(to bottom, rgba(255, 215, 0, 0.85), rgba(218, 165, 32, 0.8));
     border: 1px solid rgba(255, 215, 0, 0.7);
