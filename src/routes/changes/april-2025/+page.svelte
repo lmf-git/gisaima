@@ -2,39 +2,106 @@
   // Change categories with their items
   const changeCategories = [
     {
-      title: "World Generation",
+      title: "Combat & Battles",
       changes: [
-        "Enhanced procedural terrain generation with more diverse biome transitions",
-        "Added 12 new rare terrain types with unique resource yields",
-        "Improved map loading performance by 35%",
-        "Added new volcanic biome with special resources"
+        "Implemented progressive battle resolution over multiple ticks (small battles: 1-3 ticks, large battles: 6-12+ ticks)",
+        "Created battle casualty calculations based on relative power of each side with detailed reporting",
+        "Added fleeing system allowing groups to escape battles after the next tick is processed",
+        "Implemented joining ongoing battles with reinforcements on either side",
+        "Created automatic item distribution among victorious groups after battles",
+        "Added battle indicators for structures under attack with durability system",
+        "Fixed monster groups to properly engage in combat with player groups and structures",
+        "Added battle power calculations for more accurate combat outcomes",
+        "Improved battle feedback with detailed casualty reporting in both Details and Overview panels"
       ]
     },
     {
-      title: "Battle System",
+      title: "Unit Groups & Movement",
       changes: [
-        "Redesigned combat mechanics for more strategic depth",
-        "Added terrain advantages in battle",
-        "Implemented progressive battle resolution over multiple ticks",
-        "Added ability to join ongoing battles with reinforcements"
+        "Added intuitive movement path visualization with optimized waypoints",
+        "Implemented mobilise/demobilise system for creating and disbanding unit groups",
+        "Created path drawing controls with PLOT YOUR JOURNEY interface and compass icon",
+        "Added ability to cancel pending movements",
+        "Implemented map following for player movement for better navigation",
+        "Fixed unit movement across negative coordinates",
+        "Enhanced monster group behaviors with merging and strategic movement",
+        "Added status indicators showing group states (moving, fighting, gathering, mobilising, demobilising)",
+        "Made movement paths draw from nearest corner for more natural path visualization",
+        "Optimized path points for shorter routes during movement planning"
       ]
     },
     {
-      title: "Economy & Trading",
+      title: "Structures & Building",
       changes: [
-        "New banking system with loans and interest rates",
-        "Resource transportation mechanics with risk/reward options",
-        "Expanded city resource management system",
-        "Added fluctuating market prices based on resource availability"
+        "Added comprehensive structure building and upgrading system using shared resources",
+        "Implemented tick-based building progression",
+        "Created structure durability system for battles with damage indicators",
+        "Added recruitment system for adding units based on player race",
+        "Created StructureOverview interface for inspecting buildings and items",
+        "Added structure names visible on grid tiles",
+        "Implemented subdivided structure visualization for larger buildings",
+        "Created building ownership validation to prevent actions on buildings you don't own",
+        "Added structure upgrade buttons with clear resource requirements"
       ]
     },
     {
       title: "User Interface",
       changes: [
-        "Completely redesigned the main map interface",
-        "Added detailed tooltips throughout the UI",
-        "New minimap with toggle between detailed and expanded views",
-        "Improved mobile responsiveness"
+        "Added race icons throughout the interface for all races (Humans, Elves, Dwarves, Goblins, Fairies)",
+        "Created new Peek action menu for quick access to all tile actions",
+        "Improved Details panel with terrain information, biome color indicators, and action buttons",
+        "Enhanced Overview panel with collapsible sections and consistent styling",
+        "Added world tick countdown indicator showing time until next game cycle",
+        "Fixed mobile interface issues including scrolling and zooming",
+        "Improved map entity indicators with consistent colors across panels",
+        "Created chat interface with message notifications and display names",
+        "Implemented achievements system with unlock notifications",
+        "Added escape key functionality to close various UI elements"
+      ]
+    },
+    {
+      title: "Economy & Items",
+      changes: [
+        "Added crafting system with recipes and required resources",
+        "Implemented storage system for items at structures with separate bank and shared access",
+        "Created item transfer system between groups and structures",
+        "Added resource gathering with 2-tick countdown timers",
+        "Implemented tick-based crafting progression",
+        "Enhanced item management when demobilizing groups with improved UI",
+        "Added context-sensitive crafting based on structure building levels",
+        "Improved item distribution after successful battles",
+        "Created item visibility in map entities and details panels",
+        "Fixed combining identical items when demobilizing to structures"
+      ]
+    },
+    {
+      title: "World Generation & Environment",
+      changes: [
+        "Added rivers with improved generation algorithms",
+        "Rebalanced water features with thinner streams and larger oceans",
+        "Enhanced biome transitions with fixed terrain and moisture reference system",
+        "Added water cutting through continents for more realistic geography",
+        "Fixed structure name placement on grid tiles",
+        "Improved tile transition animations based on distance from center",
+        "Enhanced world center persistence for more reliable map loading",
+        "Added terrain color indicators in tile details for better identification",
+        "Implemented target tile persistence with local storage",
+        "Added race-specific spawn points with proper coordinate selection"
+      ]
+    },
+    {
+      title: "Game Systems",
+      changes: [
+        "Implemented tick-based world processing for moves, battles, gathering, and building",
+        "Added world speed settings displayed on world cards",
+        "Created race selection system with race-specific advantages",
+        "Implemented player display names throughout the interface",
+        "Added automatic monster spawning relatively near player positions",
+        "Created monster strategies for movement, merging, and structure interaction",
+        "Added achievements system with various unlock conditions",
+        "Improved map loading performance with query coordinates",
+        "Implemented a You-Are-Here indicator that respects group membership",
+        "Created multiple spawn points for each race with appropriate placement"
       ]
     }
   ];
