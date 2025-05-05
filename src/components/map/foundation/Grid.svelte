@@ -2106,20 +2106,33 @@
     stroke-width: 0.6;
   }
 
+  /* Update the path drawing mode hover style to use a circle indicator */
   .map-container.path-drawing-mode .map:not(.moving) .tile:hover {
-    box-shadow: inset 0 0 0 2px rgba(66, 133, 244, 0.9);
     position: relative;
     z-index: 45;
-    transition: box-shadow 0.2s ease;
   }
 
   .map-container.path-drawing-mode .map:not(.moving) .tile:hover::after {
-       content: "";
+    content: "";
     position: absolute;
-    inset:  0;
-    box-shadow: inset 0  0.3em rgba(66, 133, 244, 0.6);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1.4em;
+    height: 1.4em;
+    border-radius: 50%;
+    background-color: rgba(66, 133, 244, 0.15);
+    border: 0.15em solid rgba(66, 133, 244, 0.8);
+    box-shadow: 0 0 0.4em rgba(66, 133, 244, 0.6);
     pointer-events: none;
     z-index: 10;
+    animation: pulse-path-indicator 1.5s infinite ease-in-out;
+  }
+
+  @keyframes pulse-path-indicator {
+    0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+    50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
   }
 
   .path-controls {
