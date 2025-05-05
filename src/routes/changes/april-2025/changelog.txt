@@ -1,0 +1,557 @@
+
+Gisaima
+Integrate Firebase
+Retreat to before minimal change and code review
+Details / Minimap / Grid target all same biome
+Fix minimap
+Add rivers
+Biomes
+Add logo
+Revert a few commits due to legend/details issue
+Legacy in Logo and Layout
+Refactor more to the map page
+
+\
+
+Gisaima
+Create manifest so I can add to my phone as app with icons
+Improve home page & layout mobile styles (mostly header)
+Add a mobile menu
+Enable sign in with emailed link
+Login
+Register
+Header auth needs fixed height to stop layout shifting as checks/loads user
+Join worlds
+Load based on world
+Add worlds to database structure
+
+
+Gisaima
+dd per world clans
+Remove comments from styles
+Fix screenshot links
+Fix duplicate copyright footer
+Padding 0s that are unnecessary because it never had padding to overwrite, unnecessarily resetting rules that were never set (test on wider app)
+Login and register form more padding bottom
+Add crossfading screenshots to homepage
+Make sure all global selectors are specific
+Reduce debug checks
+Improve metatags
+Improve SEO
+Reduce logging
+Worlds page should redirect to login
+Logo glitch
+Maybe hero banner crossfade glitch is due to overlay
+there is layout shift on the hero maybe it should just be 100vh and remove padding or box-sizing border box?
+i don't want hero subtitle and tagline combine them please
+Mobile menu fit too tight/too wide
+Landing page banner crossfade
+Add guide page so mobile menu s never empty
+OG and card meta can’t be svg
+Login/sign up mobile paddinng/margin top needed/reduce padding and spacing and size so it fits? And should be min height 100vh not height 100vh incase the pages end up taller on mobile
+Clicking links on mobile menu should close mobile menu
+Refactor landing page sections to components for mainteainability
+Add margin top to worlds page
+Signout button style
+Remove header bg
+Fix media video not playing when returning to it
+Header nav should be on the left on worlds page
+Banner crossfade glitch
+Media video doesn’t load/play on iOS safari
+Showcase background images don’t change
+Remove debug from worlds
+Increase header gap
+Showcase background images don’t change
+Remove debug from worlds
+Increase header gap
+
+
+Gisaima
+Add a warning to layout tutorial that all their progress will be lost because they are on a temporary account that will be deleted after 30 days of inactivity but give them an option to upgrade by submitting an email and even letting them optionally set a password too, they can either have an email only account or email and password, make password optional on register page too
+- [ ] Confirm modal with races , and selecting a race should save it to the player info for that world and in details for the player it should say their race next to their name like (dwarf)
+Guest name is wrong in details? Maybe the players that get created for guests should have Guest display name to simplify?
+Make tutorial collapsible sections that start closed because people don’t realise you can scroll on mobile tutorial with the overflow lol
+Create spawns in database
+Create spawn menu
+Fix details players/guests names
+Continue as guest issue
+Make sure spawns load/are in daataase
+Segregate spawns
+Loading glitch on showcase banners
+Close icon on TempWarning and JoinConfirmation
+
+
+Gisaima
+Try to get legend/details to support changing when highlighting a tile by hovering it should show highlighted tile details instead of target tile details
+Enter world in spawn menu button Is boring
+Available worlds min height like login - shouldn’t see footer
+Remove seed defaults, remove cache size defaults
+Make cache size based on rows/columns expanded factor like minimap
+Make cache size based on rows/columns expanded factor like minimap
+Clicking on grid should move there like minimap
+Different waters should only be subtly different
+Deep ocean problem
+Enable gisaima.com auth
+Race select JoinConfirmation bad on mobile
+Merge setup and setupFromGamestore
+Highlight details/legend does not know terrain but it does for target tile
+Add current world to local storage so return to world is more resilient
+Header blocking map
+Add GitHub icon and link to footer and link it in hero to be transparent
+Move sign out button to footer out of header
+Test WorldCardComponent that takes x and y for center and seed
+Simplify home page buttons
+Map entities spawns have name (spawn)
+Entities component that can list all visible entities
+Add GitHub icon and link to footer and link it in hero to be transparent
+Move sign out button to footer out of header
+Test WorldCardComponent that takes x and y for center and seed
+Simplify home page buttons
+Structure names in map entities
+Worlds page takes too long to load
+Tutoria l doesn’t need hiding when details open
+Minimap toggle can show close immediately to prevent confusion
+Position entities higher
+Does details/legend say rarity?
+Can’t hover over rarity tiles
+Hovered tile is not showing in minimap
+Entities filter doesn’t work in MapEntities
+Load grid/map page with query x and y coordinates
+Remove highlighted cell in minimap
+		(edited)
+		25 March 2025
+		[16:24]LMF:Gisaima
+add target tile persistence with local storage and to load the map/game with local storage target tile where necessary to ensure it doesn’t break anything [worldkey]-targetX [worldKey]-targetY keys please
+Improve performance again or revert from loading by query coordinates (see if turning off world cards on worlds page helps, may be terrain cache not clearing)
+Spawn menu enter world button is boring
+Improve tutorial sections
+Link tutorial to guide sections in new tab
+Update home page with new information
+Update guide from lib, l
+Worldscard tiles should only highlight and be cursor pointer on joined worlds
+make world center apply to world card and joinworldconfirmationNeed races icons
+Add world centers to database
+Map entities don’t load
+Need icon Goblins
+Need icon Dwarves
+Need icon Elves
+Need icon Fairies
+Need icon Humans
+Need spawn icon
+Remove database status
+Click on minimap should set highlighted tile to target
+Check if terrain/moisture wisely reference each other if possible?
+Double check oceans I’ve never seen one generated in my grips and I’’ve been looking at 300x300 areas
+Streams are too big, bigger than rivers
+Add few seas and an ocean on average
+Rexamine streams, more but thinner
+Water cutting through continents would be nice
+Check if terrain/moisture wisely reference each other if possible?
+Double check oceans I’ve never seen one generated in my grips and I’’ve been looking at 300x300 areas
+Streams are too big, bigger than rivers
+Add few seas and an ocean on average
+Rexamine streams, more but thinner
+		
+
+
+		isaima
+MapEntities don’t show distance
+Check refreshing mapentites error / infinite loop resolved
+Finish goblin icon
+Finish elf icon
+		(edited)
+		5 April 2025
+		[15:50]LMF:Gisaima
+WorldCard doesn’t respect tile size like grid and minimap
+Create race icons from svgs
+Show race icons in map entities and details, spawn menu and join confirmation
+		
+
+
+
+Gisaima
+Items on map should show, items in structure should not show on map, items on coordinates/chunks should show in details and map entities, and actions should have see items here action
+Worlds should have a world speed that is shown on the worlds page / cards, and I need a firebase function that can run every minute as a baseline and then process transactions for moves, mobilizing groups, gathering
+Make mobile, move, gather transaction based and firebase function that happens every minute for each world based on world spee, it should take 1 tick to mobilize a group or move, I need a mobilize, groups tabd, world speed listed on worlds page,
+Action to mobile units and player is considered a unit too into unit groups called groups
+Details should have units section showing players by units
+Add actions popup
+If there is no entities at coordinate details can close because legend has all its default text already, so it’s redundant?
+Add buildings and items at structure for testing, items saved by playerid and also shared at structure only show own items in the structure
+StructureOverview popup that shows items and buildings in the structure and inspect action to open it
+Test demobilize with items again
+If there are no actions for that coordinate then Actions shouldn’t open when clicking grid
+Enter structure (demobilize)
+Improved movement
+Gather placeholder
+Fix move by path / test moving
+Fix mobilise
+		(edited)
+		19 April 2025
+		[04:49]LMF:Gisaima
+Clicking structure on mapentites should open structure overview at that coordinate like Inspect Structure action does when clicking grid
+Mobilisation cant find player due to chunk miscalculation, players are on the correct coordinate tile to spawn, its can’t translate spawn data to?? No, because its looking for player and player is already on the same tile as structure?
+MapEntities Minimap should be closed or default closed if spawn menu or welcome open
+Move mapentities toggle bottom left near tutorial and mapentities bottom left based too
+Are these necessary? lastGroupJoin:1744959989878 lastLocation.timestamp
+Demobilise / attack / gather actions shouldn’t be showing when group is moving so they have no available groups
+Moving group status text missing from MapEntities but Details has it properly
+Yellow idle/pending status colours?
+Gather
+Move works negative coordinates
+Test demobilise
+Can demobilize positive but not negative coords, can mobilize negative coords
+Demobilize broken again trying to get player back out
+Weird sizing for demobilize with items (due to fixed height on Demobilize component 60vh)
+StructureOverivew shows item count and storage but doesn’t show shared items or bank items (see backup.json items)
+Battles / Fight Error starting battle: HttpsError: No groups found at this location at file:///workspace/actions/attackGroups.mjs:51:13 (same reason as mobilize demobilize move errors chunk key processing floor ) show backup.json
+Demobilize with item group select area is too small
+Weird worlds card sizing
+Add displayName field with join confirmation that can then be used in the layout and user store and displayed in the name, the overcomplicated displayName handling could be removed from gameStore then?
+		(edited)
+		20 April 2025
+		[02:30]LMF:Gisaima
+Battles weird text colour code Side 1 and side 2 text the rest is good
+Details actions weird background and contrast
+Remove explore action
+Toggles bottom left look a mess, List icon for entities, Map icon for minimap
+Bad contract details close icon
+Fighting / Gathering statuses on details inconsistent to Mobilizing / Demobilizing / Moving
+Fix demobilize
+Overview opens too high up should be at bottom left, remove gap underneath
+Rename E entity toggle overview and M minimap toggle to minimap
+Move tutorial toggle to container with Minimap toggle
+Rename MapEntities Overview
+StructureOverview should use race icon and name
+Change Structure grid indicator colour to black
+MapEntity tabs count badges shouldn’t be faded out when tab is inactive
+MapEntity tabs badge for battles isn’t red but blue, groups and players tabs also wrong colours compared to grid entity indicators
+StructureOverview doesn’t need to show groups or players
+All collapsible sections should include entity indicator color circle to keep reinforcing consistency
+Indicator circle colours consistent with MapEntities and grids for all collapsible entity counters Details Overview MapEntities
+Details should just have terrain and actions at the top not collapsible without a title since its core information to the tile details is used for
+Actions not working properly like Mobilize/Demobilize/Attack/Gather but Inspect Structure works
+Details missing terrain info / biome colour square
+StructureOverview and Details do not need different tabs the
+Actions should be at the bottom of details and not collapsible
+Show colour for terrain on tile details
+Tile rarity colours in tile details
+Remove button on StructureOverview, redundant from misunderstanding
+Try move paths drawn to the top left instead of centred in tile
+		
+
+
+
+		Gisaima
+Node circles in path movements are too big and could be strokes and hollow, and the path strokes are too thick too it could all be more elegant
+Move doesn’t hide while I draw a path so it obstructs me drawing and confirming my path
+Test items In backup.json and demobilize.mjs with StructureOverview showing bank items and shared items when gathering can be tested again (it may already be working but I have no items)
+Move Legend further away from right side of screen
+StructureOverview should not show items as collapsible it needs to distinguish between bank and shared items at structure (check backup.json
+shouldn't AttackGroups JoinBattle Demobilize StructureOveriew Moibilize Details all use targetstore not highlightstore?
+The aria warnings may be solved by making wrappers forms instead of divs since cant have buttons inside buttons but can have many buttons inside form AttackGroups, Move, Mobilize, MapEntities, Legend,Grid,Details,Demobilize
+Group movement paths stroke line gap animation ends with a jolt and doesn’t repeat seamessly
+Path drawing mode styled like Details/Overview and in the bottom centre of map page/screen
+Fix move
+SpawnMenu needs to be styled like Tutorial/Overview/Details but keep the hover button effect give race icons white fill with :global
+WASD movement needs disabling while mobilize is open due to text input or if typing can prevent it
+Remove backdrop from details and structure overview
+Minimap doesn’t need to close when Overview opens
+Overview opens weird/glitchy
+Overview doesn’t open smoothly
+Unit group statuses should be consistent in details and overview Fighting status should be red, movieg green, mobilizing orange, demobilizing purple, gathering its own colour like status colours in map entities
+You/Yours style for groups/player better in Details than Overview
+StructureOverview esc should close
+Spawn broken
+		(edited)
+		[22:45]LMF:Gisaima
+Details should show gather action on any tile for now
+Center gather and remove backdrop and unnecessary wrapper
+Tile detials opened twice when clicking on grid now this was fixed with StructureOverview
+Cant open move
+Using Inspect Structure from Details seems to open two copies of StructureOverview
+Test gather
+Test if possible to make esc key close minimap and overview but would it conflict with esc key to close details and overview?
+Clicking inspect structure opens StructureOverview twice
+Style attack groups like other modals
+AttackGroups doesn’t show
+Overview collapsible sections don’t collapse
+Clicking structure in Overview doesn’t open StructureOverview like Details can
+Yellow you / player indicator which I think is based on game store player info lastPosition for should appear with other indicators in grid tile not in center of tile
+Improve modal contrasts
+Remove backdrops and unnecessary wrappers from components
+JoinBattle bad contrast
+Mobilize callable typos, rename Mobilize and Demobilize to s UK spelling
+Tile Detials isn’t properly scrollable overflow: auto is fine instead of overflow-y
+Tile details core section doesn’t need to be scrollable or have an explicit height
+I donlt like side by side dropdown on tutorial think should be more like collapsible in Detials and Overview
+Overview collapsible section headers are better than details (sort on the right side when open and hover cursor pointer and collapsed or not indicator)
+Active overview tab indicator count should be white with black text
+Overview and Details players and groups missing race iconsOverview icon contrast especially for structure / spawn torch needs :global selector fill
+You/yours entries for players/groups In Details and Overview should show above other entries that aren’t you or yours and this should be compatible with sorting
+		
+
+
+Shouldn’t game store be subscribed to current worldInfo and always know the spawns SpawnMenu can get them from there
+Try show race icon for most dominant race on grid like torch spawn/structure icons
+Debug debug from map page looked bad for players
+Dual loader is annoying map page
+Blue dots on overview / details for entity here should be to the left and center of the item not the text to the left
+Move noise to functions/shared and start creating entity configs helpers there so I can reduce the sizes of other files
+Close structure overview with escape key
+Weird structure/spawn/race icon badge on SpawnMenu
+SpawnMenu not showing
+Is it race filtering in spawnmenu…?
+Join world crashes map page
+Spawnmenu “You can explore other areas after spawning” text should be centred
+Spawnmenu backdrop should be above overview toggle, its already above brand logo map controls toggles
+Spawn option name and coordinates should be on same line “Coordinates:” label is unnecessary it is obvious/implicit
+		*HUGE REFACTOR I CANT DOCUMENT IN STEPS
+Your player and your groups should be at the top of the section items in Details like that are in Overview
+StructureOverview shared and banks should be collapsible sections instead
+Mobilise remove backdrop and unnecessary wrapper like Demobilize and make esc key close it
+Help button should not be visible if tutorial open
+Minimap and Overview icons
+Return/recenter map function should use the spawns information from worldInfo and if nothing in map entities and more than 1 chunk away from any of your race spawns button shows up to return you to that spawn via map move target store
+Gather/Demobilise/Move/AttackGroups/JoinBattle should preselect the group if it is the only group I have there
+Try actions from details fading out or transitioning between each other better
+Details hover map conflict fixed
+		(edited)
+		22 April 2025
+		[13:48]LMF:
+Remove pencil emoji Path: x Points path drawing controls should say PLOT YOUR JOURNEY use the Compass icon
+Add Compass icon to move details action
+Check alive gets set to false on player works from tick battle processing and include spawnmenu join confirmation and backup
+Move component has highlight issue if I highlight somewhere else on the map it closes but Demobilise and Mobilise don’t have that issue?
+Test Overview/Details should be higher z index based on which opened first/last, most straightforward solution to this please
+Chat doesn’t close elegantly, lot of layout shift
+Test mobilise chat logs
+Processing on buttons like mobilize to indicate it’s working
+Birds for seen/unseen messages
+Center legend
+AttackGroups bad contrast and should show group races
+Test Start of chat and tick handler sends updates battle started, when a player gets killed and who by, maybe can set a cod property (cause of death) and spawning could set it to null again
+Check demobilized items saved to structure shared quantities are combined with existing items there that are the same
+Add player not joined and not logged in redirects from the map page
+Clean backup data, readd world center, move spawns to land
+Move all spawns to land, and try world position
+clicking on grid should be disabled while spawnmneu is open or spawnmenu's backdrop can just block clicks?
+Chat toggle shouldn’t be visible if chat is open, chat toggle shouldn’t. Be disabled if achievements is open but clicking chat toggle should close achievements and clicking achievements toggle should close chat these toggles should never be disabled only not rendered with svelte template ifs please
+When spawning it moves me to 0,0, preselecting moves good to target but moves to 0,0 after spawning, if I click on the spawn manually it doesn’t happen?
+Achievements drafts
+Demobilise should preselect only group
+		(edited)
+		23 April 2025
+		[06:23]LMF:
+Chat works like details and overview where it has higher z index if it was active later and hover also sets it to latest active so its above Details/Overview
+Bad contrast on join confirmation confirm button, should be like spawn confirm button
+JoinConfiriratiom race icons and race names should be flex side by side but sizing is good
+Legend over map drawing mode, hide legend when map drawing mode is active
+Duplicate chat toggles
+Achievements should not be open if spawnmenu is but it should default open unless saves in local storage to default closed like overviews/details
+Escape key closes Achievements/Chat too
+Test if achievements opens after spawning
+Legend shouldn’t be open when inspect structure is
+legend and achievements shouldnt be open when tutorial is
+Spawn menu use player name from game store
+Prevent overview showing up for new users on spawn
+Achievements container bottom: -8em; not top %
+Achievements don’t show achievements to work towards / locked?
+Inspect structure should hide if details opens (again)
+Details shouldn’t not be affected by highlighted store only target store svelte 5 runes
+Try readding old map start tile delay animations
+Center tile background is missing biome or it recalculates unnecessarily when all of the other tiles background/biomes were already figured out?
+Messages that I send should not count as unread messages for me
+Make minimap hidden by default
+Add structure names to the grid
+Move spawn: Tile Details (-15,2) Name Boneridge Camp
+Fix center tile colour
+		(edited)
+		[15:24]LMF:
+Remove gold border for player on Grid tile
+Remove yellow current player indicator from grid
+YouAreHere stops showing when mobilized
+YouAreHere should be smaller when no structure on the tile
+Improve player lastPosition entering without breaking load by coordinate and world center loading
+JoinBattle says no groups on that tile I can attack because their status is fighting?
+Demobilize action shows when no structure on the tile but inspect knows not to
+New force should be named player’s force by default
+Mobilise bad contrast
+Structure icons on grid should be dark not lighht Torch and Structure icon
+Try Movement paths draw from nearest corner to where they are heading but never from the bottom right corner of the tile it’s coming from or to the bottom right of the target tile
+Remove redundant arrow in movement path drawing lines
+Gathering and demobilize statuses are the same colour in Details and Overview?
+Details component group and player entity statuses should be on the left near units count like Overview
+Resume button and join world should use lastLocation from game store otherwise YouAreHere indicator doesn’t work? And world joinconfirmation but refreshing makes it work again?
+Grid tiles not revealing transition-delay based on distance, background colour should start transparent
+Cleanup database and retest battles
+Move broken
+Build component added to map page
+Build action on details,
+Next world tick component based on game store and world speed will be 1m after last tick
+Proofread achievements
+Add achievement unlocked component
+Details collapsible icon/sorting
+Details you/yours isn’t consistent with Overview
+Details collapsible indicator should flex with sort
+Build icon
+Tile you are here should have higher z-index
+Recruitment draft
+Context menu
+		(edited)
+		24 April 2025
+		[17:18]LMF:
+Peek have all the actions details has using the same conditions as details renders them
+Chat messages seem to change order / inconsistent timing
+Fix dwarf spawn wrong coordinates
+Chat should show display name
+Grid cell click conflict when Peek open
+Structure names and you are here text should be bigger
+Owner-badge on inspect not consistent with overview’s owner-badge
+Inspect structure blocks getting to recruitment/bank
+If Peek supposed to open but inspect is the only action open details instead
+Make sure peek can add everything
+If only one group at targetTile move should skip to opening draw movement path
+Cant open move
+Build button shouldn’t show on details/peek when no idle groups or structure at tile
+Fix info icon in Peek
+Info icon should be consistent and fill rule with :global selector
+Move action icon larger than other action icons, inconsistent
+Close button shows up late compared to other actions
+Use target indicator for highlight and call it highlight indicator, remove target cell border
+Don’t show movement paths, tile structures or indicators until initial grid tiles transition has finished and movement is allowed again, related: stop target tile showing so early, doesn’t fit in with other tiles transitioning in based on distance
+Check combat quests work
+Monster groups don’t seem to attack and start batltes with player groups?
+Player doesn’t die in battles to respawn and battles seem to continue going with no units/groups with units on one side?
+		
+
+
+
+Can’t mobilize via new Peek menu
+No gather action?
+Attack structure and check compatibility with battle tick
+Able to leave battles “fleeing” that lets them out of the battle after next tick is processed and ends the battle if there is a side with no groups now in it after handling fleeing groups
+Ability to cancel moves
+Recruitment tick
+Does recruitment ever show?
+spawn NPC randomly relatively near where players are already monster groups with items, reference gather, can merge them together spawn in an existing monster group if one is already on the tile chosen already so they can grow bigger over time if not killed
+Test attacking groups/structures
+StructureOverview should show the buildings for the structure and each structure can be upgraded and the overall structure level can be derived form its built and upgraded buildings within the structure?
+Fix peek opening crafting and Peek crafting action colour make it pink
+Simplify crafting recipes until we get shared repo
+Crafting menu wherever player is if at structure then can craft more leveraging the structure’s building levels
+Structure overview should show structure’s buildings that arent built or upgraded yet so they can start to be upgraded from shared resources
+Some crafting items should be dependent on the structure’s buildings levels are at due to upgrade
+
+
+
+Move should have chat message
+Add monster icon if that’s dominant on tile
+Notices only show when chat open
+No chat message for starting gathering
+No demobilise chat message
+Gathering no groups, Mobilise no gorups
+Test spawn/join world
+Shouldn’t show upgrade structure or build now buttons at a spawn structure that isnt your race a building you don’t own or if your player isn’t at that tile or in a group at that tile
+Crafting should be done in terms of ticks instead of time
+Peek can show craft action anywhere player is (in group or at structure demobilised) Player can craft anywhere but some items need to be at structure with its building levels, Should be able to craft wherever player is but it’s enhanced by the structure
+Show recruit action on Peek when player at structure not in a group
+Shows 0 players on world
+Fix monster icon and make it red
+Add horn to recruit actions
+Need recruit icon
+Spawned monster groups can join existing battles on a random side
+Spawned monster groups should sometimes build/upgrade their own structure, if they have items in their group they should try to go back to their nearest structure to demobilise into shared storage so they can also upgrade
+monster spawned groups should combine with other monster groups and the name changes based on size of monster hoard, when they combine they should add a few more units too, they get a boost from not being cleaned up like that, and also give them more items to make them more rewarding
+monster spawns should move towards closest structure one tile at a time and they should attack groups and structures if they are on the same tile,
+Upgrade structure button unstyled in StructureOverview
+Should be able to attack groups that are gathering and it interrupts their status - it already sets fighting status?
+		(edited)
+		[23:30]LMF:
+Better info for battles on Details and Overview?
+Setup shared repo and noise
+When drawing path points optimise to shorter path
+Improve draving path (undo button)
+Map follows player movement
+You are here shows when in a group and moving
+remove power from battle sides added in battleTick
+Check monsters can merge now groups are units based rather than unitCount based
+Check monster spawn condition, it should ignore monster groups
+Monsters don’t spawn
+Overview doesn’t show group units
+Show battle casualties in overview
+Show battle units in overview
+Add group power to details
+Add group units to details
+try battles.calculateGroupPower in overview
+Fix recruitment appearance
+Add group power to Overview
+Idle monster groups on the same tile should merge
+Cleanup/refactor monster strategies
+Test refactor of monster spawn and strategy
+Remove readyAt
+Improve crafting UI
+Bad contrast recruitment
+Error opening crafting ReferenceError: Can't find variable: canCraft
+use isActive and onMouseEnter props to all modal components
+Demobilise shows above Overview but Recruitment doesn’t? mobilise doesn’t either?
+Gathering/mobilise/demobilise modal takes a long time to close
+		(edited)
+		3 May 2025
+		[22:08]LMF:
+Shouldn’t be able to craft while player is in a group that isn’t idle
+Show monster icon in details/overview
+JoinBattle shows no groups that can join battle
+Remove readyAt
+Improve crafting UI
+Bad contrast recruitment
+Error opening crafting ReferenceError: Can't find variable: canCraft
+use isActive and onMouseEnter props to all modal components
+Demobilise shows above Overview but Recruitment doesn’t? mobilise doesn’t either?
+Gathering/mobilise/demobilise modal takes a long time to close
+Fix phone scrolling up / down
+Building can’t see player resources
+Gathering countdown in overview/details just shows (), gathering takes 2 ticks so can just countdown 2 ticks, make method in game store to countdown for ticks
+group gets stuck building when building completes
+gatheringTicks not removed from group after gather
+Gather achievement doesn’t work
+Jimmy structure 1 health but not destroyed?
+Bigger Attack icon on structure if its included in an attack structure.battleId
+Initiating attacks shouldn’t calculate structure power in advance, battleTick can do that
+Add durability to structure build screen and battle calculations
+Remove inBattle structures and groups have battleId
+Test zoom
+Try improving grid drag
+Unit names and icons bad contrast in Overview expanded details
+Add recruit achievement
+Only show recruit action when demobilised at structure
+Test structures say in overview/details if they are under attack
+Show strcture under attack and building in details/overview
+Recruitment should use same items as build and upgrade for now
+Test flee battlemethods
+Test subdivide and placing buildings, they’ll already be in the structure data
+Cancel move
+Cancel gather
+Check why monsters don’t attack spawns but attack other structures?
+		(edited)
+		4 May 2025
+		[07:42]LMF:
+Player dies when structure destroyed but player not removed from chunk data (lastLocation not cleared too?)
+When Path drawing mode active still allow Grid drag so player can still drag and plot points?
+Details needs the battle information and styling Overview has
+NextWorldTick same padding / height as
+Hide legend on mobile
+Remove important from Grid styles and check difference
+Remove scale and borders from tiles to prevent artifacts
+Structure name should be at top of center tile if 1 row and 1 col max zoom
+You can render you are here but hide ring and show you are here text top 2.5em when cols and rows are 1 (max zoom)
+Move should not be blue border on the Grid but it can be an indicator element on the cell in the same style as the movement paths circles?
+Try the movement paths not disappearing?
+Debounce zooming, causes massive lag from too many recalculations
+Subdivided structure icon should only show when it is the center tile
+highlight-indicator styling lost
+Restrict recruitment units to race of player
+Improve loader
+		
+
+
