@@ -323,121 +323,104 @@
       </p>
     </section>
 
-    <section id="units-groups" class="guide-section">
-      <h2>Units & Groups</h2>
-      <p>
-        Units are the mobile forces that allow you to expand territory, engage in combat, and gather resources.
-        Units are organized into groups for easier management.
-      </p>
-      <h3>Unit Groups</h3>
-      <p>
-        Groups are collections of units that move and act together. The group system allows efficient 
-        management of your forces across the map. Groups are represented by circular indicators on the map,
-        with numbers showing the quantity of groups in a location.
-      </p>
-      <h3>Movement and Actions</h3>
-      <p>
-        Unit groups can be directed to:
-      </p>
-        <ul>
-          <li>Move to new locations following visualized paths</li>
-          <li>Gather resources from terrain</li>
-          <li>Attack enemy units or structures</li>
-          <li>Defend your territory</li>
-          <li>Construct new buildings</li>
-        </ul>
-        <p>
-        The effectiveness of these actions depends on terrain, unit types, and other factors.
-      </p>
-      <h3>Mobilization & Demobilization</h3>
-      <p>
-        The mobilize/demobilize system allows you to create and disband unit groups:
-      </p>
-      <ul>
-        <li><strong>Mobilizing:</strong> Creating a group from individual units takes one tick to complete</li>
-        <li><strong>Demobilizing:</strong> Disbanding a group back into individual units also takes one tick</li>
-        <li><strong>Status Indicators:</strong> Groups show their current status (moving, fighting, gathering, mobilizing, demobilizing)</li>
-        <li><strong>Items:</strong> When demobilizing, you can choose which items to transfer to structures or keep with units</li>
-      </ul>
-      <h3>Path Movement System</h3>
-      <p>
-        The movement system allows for detailed path planning:
-      </p>
-      <ul>
-        <li>Draw precise movement paths with multiple waypoints</li>
-        <li>Visualized paths show the route your group will follow</li>
-        <li>Each step of movement takes one tick to complete</li>
-        <li>Paths optimize automatically for shorter routes</li>
-        <li>Movement can be canceled before completion</li>
-      </ul>
-      <h3>Advanced Unit Management</h3>
-      <p>
-        Units can be organized in different ways to enhance their effectiveness:
-      </p>
-      <ul>
-        <li><strong>Activity Unit Groups:</strong> Join another group for protection while maintaining control</li>
-        <li><strong>Merging:</strong> Combine unit groups for better organization, transferring control but maintaining ownership</li>
-        <li><strong>Battle Joining:</strong> Participate in ongoing battles alongside other groups</li>
-      </ul>
-      <h3>Unit Status & Capabilities</h3>
-      <p>
-        Units have different statuses that indicate their current actions:
-      </p>
-      <ul>
-        <li><strong>Idle:</strong> Available for new orders</li>
-        <li><strong>Moving:</strong> Following a path to a new location</li>
-        <li><strong>Combat:</strong> Engaged in battle</li>
-        <li><strong>Gathering/Crafting:</strong> Performing resource collection or creation activities</li>
-        <li><strong>Mobilizing:</strong> In the process of forming a group</li>
-        <li><strong>Demobilizing:</strong> In the process of disbanding a group</li>
-      </ul>
-      <h3>Unit Organization</h3>
-      <p>
-        Units can be organized in different structures:
-      </p>
-      <ul>
-        <li><strong>Unorganized:</strong> Independent units with maximum flexibility but less coordination</li>
-        <li><strong>Unit Group:</strong> Organized formation under a single command</li>
-        <li><strong>Activity Group:</strong> Specialized for specific tasks like gathering or crafting</li>
-        <li><strong>Army:</strong> Large formal group with enhanced combat capabilities</li>
-      </ul>
-      
-      <h3>Carrying Capacity</h3>
-      <p>
-        Units have varying carrying capacities for transporting items:
-      </p>
-      <ul>
-        <li>Specialized transport units (like wagons) can carry more items but are defenseless</li>
-        <li>Combat units have limited carrying capacity</li>
-        <li>Unprotected transport units create strategic vulnerabilities</li>
-      </ul>
-    </section>
-
     <section id="structures" class="guide-section">
       <h2>Structures</h2>
       <p>
         Structures form the backbone of your territorial presence, providing resources, defensive capabilities, 
         and other strategic advantages.
       </p>
-      <h3>Types of Structures</h3>
-        <ul>
-          <li><strong>Spawn Points</strong> (🔵): Your starting location and respawn point if defeated</li>
-          <li><strong>Watchtowers</strong> (🗼): Provide visibility over surrounding areas</li>
-          <li><strong>Fortresses</strong> (🏰): Strong defensive positions that protect territory</li>
-          <li><strong>Other Structures</strong> (🏛️): Various specialized buildings with unique functions</li>
-        </ul>
-      <h3>Building Types</h3>
-      <p>
-        Structures range from simple camps to complex cities, each with unique benefits:
-      </p>
-      <ul>
-        <li><strong>Camps:</strong> Basic temporary structures with minimal benefits</li>
-        <li><strong>Villages:</strong> Permanent settlements with basic infrastructure</li>
-        <li><strong>Towns:</strong> Larger settlements with expanded capabilities</li>
-        <li><strong>Cities:</strong> Major urban centers with full infrastructure and services</li>
-        <li><strong>Ports:</strong> Coastal structures enabling naval activities</li>
-        <li><strong>Specialized Structures:</strong> Quarries, lumberyards, and other production facilities</li>
-      </ul>
+
+      <!-- New compact structure display -->
+      <div class="info-box">
+        <h4>Structure Types Overview</h4>
+        <p>Structures vary in purpose, cost, and strategic value. Here are some examples:</p>
+
+        <div class="element-grid structure-grid">
+          <!-- Structure Card Example -->
+          <div class="element-card">
+            <div class="element-header">
+              <div class="element-icon">🏰</div>
+              <div class="element-title">
+                <h5>Watchtower</h5>
+                <div class="element-subtitle">Defensive Structure</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">Provides visibility over surrounding area and defensive position</p>
+              <div class="attributes-grid">
+                <div class="attribute">
+                  <span class="attribute-label">Durability</span>
+                  <span class="attribute-value">150</span>
+                </div>
+                <div class="attribute">
+                  <span class="attribute-label">Sight Range</span>
+                  <span class="attribute-value">2</span>
+                </div>
+              </div>
+              <div class="resources-list">
+                <div class="resource-item">
+                  <span class="resource-name">Wooden Sticks</span>
+                  <span class="resource-amount">8</span>
+                </div>
+                <div class="resource-item">
+                  <span class="resource-name">Stone Pieces</span>
+                  <span class="resource-amount">5</span>
+                </div>
+              </div>
+              <div class="features-list">
+                <div class="feature">
+                  <span class="feature-icon">👁️</span>
+                  <span class="feature-text">Lookout: Allows spotting of approaching forces</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Structure Card Example -->
+          <div class="element-card">
+            <div class="element-header">
+              <div class="element-icon">📦</div>
+              <div class="element-title">
+                <h5>Storage Depot</h5>
+                <div class="element-subtitle">Utility Structure</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">Stores additional resources for your empire</p>
+              <div class="attributes-grid">
+                <div class="attribute">
+                  <span class="attribute-label">Capacity</span>
+                  <span class="attribute-value">10</span>
+                </div>
+                <div class="attribute">
+                  <span class="attribute-label">Durability</span>
+                  <span class="attribute-value">80</span>
+                </div>
+              </div>
+              <div class="resources-list">
+                <div class="resource-item">
+                  <span class="resource-name">Wooden Sticks</span>
+                  <span class="resource-amount">6</span>
+                </div>
+                <div class="resource-item">
+                  <span class="resource-name">Stone Pieces</span>
+                  <span class="resource-amount">2</span>
+                </div>
+                <div class="resource-item">
+                  <span class="resource-name">Medicinal Herbs</span>
+                  <span class="resource-amount">4</span>
+                </div>
+              </div>
+              <div class="features-list">
+                <div class="feature">
+                  <span class="feature-icon">📦</span>
+                  <span class="feature-text">Storage: Stores additional resources</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <h3>Building & Upgrading Structures</h3>
       <p>
@@ -497,6 +480,378 @@
         <li><strong>Bank Storage:</strong> Private items accessible only to the owner</li>
         <li><strong>Building Materials:</strong> Resources dedicated to structure improvements</li>
       </ul>
+    </section>
+
+    <section id="units-groups" class="guide-section">
+      <h2>Units & Groups</h2>
+      <p>
+        Units are the mobile forces that allow you to expand territory, engage in combat, and gather resources.
+        Units are organized into groups for easier management.
+      </p>
+
+      <!-- New compact unit display -->
+      <div class="info-box">
+        <h4>Unit Types Overview</h4>
+        <p>Units vary in abilities, cost, and power. Here are some examples:</p>
+
+        <div class="element-grid unit-grid">
+          <!-- Unit Card Example - Warrior -->
+          <div class="element-card unit-card">
+            <div class="element-header">
+              <div class="element-icon">⚔️</div>
+              <div class="element-title">
+                <h5>Human Warrior (Footman)</h5>
+                <div class="element-subtitle">Military Unit</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">Armored sword-wielder trained in formation combat</p>
+              <div class="attributes-grid">
+                <div class="attribute">
+                  <span class="attribute-label">Power</span>
+                  <span class="attribute-value battle-stat">1.2</span>
+                </div>
+                <div class="attribute">
+                  <span class="attribute-label">Time</span>
+                  <span class="attribute-value">1.1 ticks</span>
+                </div>
+              </div>
+              <div class="resources-list">
+                <div class="resource-item">
+                  <span class="resource-name">Wooden Sticks</span>
+                  <span class="resource-amount">2</span>
+                </div>
+                <div class="resource-item">
+                  <span class="resource-name">Iron Shards</span>
+                  <span class="resource-amount">1</span>
+                </div>
+              </div>
+              <div class="unit-tooltip">
+                <span class="tooltip-text">Sturdy and disciplined</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Unit Card Example - Scout -->
+          <div class="element-card unit-card">
+            <div class="element-header">
+              <div class="element-icon">👁️</div>
+              <div class="element-title">
+                <h5>Elf Scout (Windseer)</h5>
+                <div class="element-subtitle">Scout Unit</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">Eagle-eyed archer with long sight</p>
+              <div class="attributes-grid">
+                <div class="attribute">
+                  <span class="attribute-label">Power</span>
+                  <span class="attribute-value battle-stat">0.8</span>
+                </div>
+                <div class="attribute">
+                  <span class="attribute-label">Time</span>
+                  <span class="attribute-value">0.8 ticks</span>
+                </div>
+              </div>
+              <div class="resources-list">
+                <div class="resource-item">
+                  <span class="resource-name">Feather</span>
+                  <span class="resource-amount">1</span>
+                </div>
+                <div class="resource-item">
+                  <span class="resource-name">Wooden Sticks</span>
+                  <span class="resource-amount">2</span>
+                </div>
+              </div>
+              <div class="requirements-tag">Requires structure level 1</div>
+              <div class="unit-tooltip">
+                <span class="tooltip-text">Excellent visibility and range</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Unit Card Example - Elite Unit -->
+          <div class="element-card unit-card elite">
+            <div class="element-header">
+              <div class="element-icon">🛡️</div>
+              <div class="element-title">
+                <h5>Knight</h5>
+                <div class="element-subtitle">Elite Unit</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">Heavily armored warrior with high defense</p>
+              <div class="attributes-grid">
+                <div class="attribute">
+                  <span class="attribute-label">Power</span>
+                  <span class="attribute-value battle-stat">2.0</span>
+                </div>
+                <div class="attribute">
+                  <span class="attribute-label">Time</span>
+                  <span class="attribute-value">1.5 ticks</span>
+                </div>
+              </div>
+              <div class="resources-list">
+                <div class="resource-item">
+                  <span class="resource-name">Wooden Sticks</span>
+                  <span class="resource-amount">1</span>
+                </div>
+                <div class="resource-item">
+                  <span class="resource-name">Stone Pieces</span>
+                  <span class="resource-amount">2</span>
+                </div>
+                <div class="resource-item">
+                  <span class="resource-name">Iron</span>
+                  <span class="resource-amount">1</span>
+                </div>
+              </div>
+              <div class="requirements-list">
+                <div class="requirement-item">
+                  <span class="requirement-label">Structure Level</span>
+                  <span class="requirement-value">2</span>
+                </div>
+                <div class="requirement-item">
+                  <span class="requirement-label">Race</span>
+                  <span class="requirement-value">Human</span>
+                </div>
+                <div class="requirement-item">
+                  <span class="requirement-label">Building</span>
+                  <span class="requirement-value">Smithy (Lvl 2)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Keep existing content... -->
+      <!-- ...existing code... -->
+    </section>
+
+    <section id="buildings" class="guide-section">
+      <h2>Buildings</h2>
+      <p>
+        Buildings are specialized structures that provide specific bonuses and capabilities within your settlements.
+        They can be constructed, upgraded, and managed to enhance your strategic operations.
+      </p>
+
+      <!-- New compact building display -->
+      <div class="info-box">
+        <h4>Building Types Overview</h4>
+        <p>Buildings can be constructed within your structures to provide specialized capabilities:</p>
+
+        <div class="element-grid building-grid">
+          <!-- Building Card Example -->
+          <div class="element-card">
+            <div class="element-header">
+              <div class="element-icon">⚒️</div>
+              <div class="element-title">
+                <h5>Smithy</h5>
+                <div class="element-subtitle">Production Building</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">A place to craft weapons, tools and metal armor.</p>
+              <div class="resources-list">
+                <div class="resource-item">
+                  <span class="resource-name">Wooden Sticks</span>
+                  <span class="resource-amount">10</span>
+                </div>
+                <div class="resource-item">
+                  <span class="resource-name">Stone Pieces</span>
+                  <span class="resource-amount">15</span>
+                </div>
+                <div class="resource-item">
+                  <span class="resource-name">Iron Ore</span>
+                  <span class="resource-amount">5</span>
+                </div>
+              </div>
+              <div class="building-benefits">
+                <h6>Upgrade Benefits</h6>
+                <div class="benefit-item">
+                  <div class="benefit-level">Level 2</div>
+                  <div class="benefit-desc">Basic Smithing: Allows crafting metal tools</div>
+                </div>
+                <div class="benefit-item">
+                  <div class="benefit-level">Level 3</div>
+                  <div class="benefit-desc">Advanced Smithing: Allows crafting advanced weapons</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Building Card Example -->
+          <div class="element-card">
+            <div class="element-header">
+              <div class="element-icon">🛡️</div>
+              <div class="element-title">
+                <h5>Barracks</h5>
+                <div class="element-subtitle">Military Building</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">Train and house troops here. Higher levels allow training more advanced units.</p>
+              <div class="resources-list">
+                <div class="resource-item">
+                  <span class="resource-name">Wooden Sticks</span>
+                  <span class="resource-amount">15</span>
+                </div>
+                <div class="resource-item">
+                  <span class="resource-name">Stone Pieces</span>
+                  <span class="resource-amount">10</span>
+                </div>
+              </div>
+              <div class="building-benefits">
+                <h6>Upgrade Benefits</h6>
+                <div class="benefit-item">
+                  <div class="benefit-level">Level 2</div>
+                  <div class="benefit-desc">Basic Training: Allows training of basic soldiers</div>
+                </div>
+                <div class="benefit-item">
+                  <div class="benefit-level">Level 3</div>
+                  <div class="benefit-desc">Advanced Training: Allows training of skilled units</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Building Upgrades & Management</h3>
+      <p>
+        Buildings can be upgraded to enhance their capabilities and unlock new features:
+      </p>
+      <ul>
+        <li>Each upgrade level requires specific resources and time</li>
+        <li>Higher levels unlock new crafting recipes, unit types, or bonuses</li>
+        <li>Building synergies can provide additional benefits when certain buildings are paired together</li>
+        <li>Some buildings have race-specific variations with unique bonuses</li>
+      </ul>
+    </section>
+
+    <section id="items-inventory" class="guide-section">
+      <h2>Items & Inventory</h2>
+      <p>
+        Items in Gisaima range from common resources to mythical artifacts, each with unique properties and values.
+      </p>
+
+      <!-- New compact item display -->
+      <div class="info-box">
+        <h4>Item Types Overview</h4>
+        <p>Items vary in rarity, purpose, and value. Here are some examples:</p>
+
+        <div class="element-grid item-grid">
+          <!-- Item Card Example - Resource -->
+          <div class="element-card item-card common">
+            <div class="element-header">
+              <div class="element-title">
+                <h5>Wooden Sticks</h5>
+                <div class="element-subtitle">Common Resource</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">Basic building material found in most areas</p>
+              <div class="item-attributes">
+                <div class="item-attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">Resource</span>
+                </div>
+                <div class="item-attribute">
+                  <span class="attribute-label">Found in</span>
+                  <span class="attribute-value">Plains, Forest, Mountains</span>
+                </div>
+              </div>
+            </div>
+            <div class="item-rarity common">Common</div>
+          </div>
+
+          <!-- Item Card Example - Crafted Item -->
+          <div class="element-card item-card uncommon">
+            <div class="element-header">
+              <div class="element-title">
+                <h5>Iron Sword</h5>
+                <div class="element-subtitle">Uncommon Weapon</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">A well-crafted iron sword. Standard issue for many fighters.</p>
+              <div class="item-attributes">
+                <div class="item-attribute">
+                  <span class="attribute-label">Power</span>
+                  <span class="attribute-value battle-stat">10</span>
+                </div>
+                <div class="item-attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">Weapon</span>
+                </div>
+              </div>
+              <div class="crafting-recipe">
+                <h6>Crafting Recipe</h6>
+                <div class="resources-list">
+                  <div class="resource-item">
+                    <span class="resource-name">Wooden Sticks</span>
+                    <span class="resource-amount">2</span>
+                  </div>
+                  <div class="resource-item">
+                    <span class="resource-name">Iron Ore</span>
+                    <span class="resource-amount">3</span>
+                  </div>
+                </div>
+                <div class="crafting-time">
+                  <span class="time-icon">⏱️</span>
+                  <span class="time-value">18 ticks</span>
+                </div>
+              </div>
+              <div class="crafting-requirements">
+                <div class="requirement-item">
+                  <span class="requirement-label">Required Level</span>
+                  <span class="requirement-value">3</span>
+                </div>
+                <div class="requirement-item">
+                  <span class="requirement-label">Required Building</span>
+                  <span class="requirement-value">Smithy (Lvl 2)</span>
+                </div>
+              </div>
+            </div>
+            <div class="item-rarity uncommon">Uncommon</div>
+          </div>
+
+          <!-- Item Card Example - Special Item -->
+          <div class="element-card item-card rare">
+            <div class="element-header">
+              <div class="element-title">
+                <h5>Mountain Crystal</h5>
+                <div class="element-subtitle">Rare Gem</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">Beautiful crystal formed deep within mountains</p>
+              <div class="item-attributes">
+                <div class="item-attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">Gem</span>
+                </div>
+                <div class="item-attribute">
+                  <span class="attribute-label">Found in</span>
+                  <span class="attribute-value">Mountains</span>
+                </div>
+              </div>
+              <div class="item-uses">
+                <h6>Used For</h6>
+                <ul class="uses-list">
+                  <li>Advanced crafting recipes</li>
+                  <li>Magic item enchantments</li>
+                  <li>Valuable trade good</li>
+                </ul>
+              </div>
+            </div>
+            <div class="item-rarity rare">Rare</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Keep existing content... -->
+      <!-- ...existing code... -->
     </section>
 
     <section id="activities" class="guide-section">
@@ -953,278 +1308,308 @@
         Items in Gisaima range from common resources to mythical artifacts, each with unique properties and values.
       </p>
 
-      <h3>Item Rarity</h3>
-      <p>
-        Items are classified by rarity, which indicates their value and power:
-      </p>
-      <ul class="rarity-list">
-        <li><span class="rarity-tag common">Common</span> Basic resources and everyday items</li>
-        <li><span class="rarity-tag uncommon">Uncommon</span> Better than average items with slight advantages</li>
-        <li><span class="rarity-tag rare">Rare</span> Valuable items with significant benefits</li>
-        <li><span class="rarity-tag precious">Precious</span> Highly sought-after items with considerable power</li>
-        <li><span class="rarity-tag legendary">Legendary</span> Extremely rare items with major advantages</li>
-        <li><span class="rarity-tag mythic">Mythic</span> The rarest and most powerful items</li>
-      </ul>
+      <!-- New compact item display -->
+      <div class="info-box">
+        <h4>Item Types Overview</h4>
+        <p>Items vary in rarity, purpose, and value. Here are some examples:</p>
 
-      <h3>Special Items</h3>
+        <div class="element-grid item-grid">
+          <!-- Item Card Example - Resource -->
+          <div class="element-card item-card common">
+            <div class="element-header">
+              <div class="element-title">
+                <h5>Wooden Sticks</h5>
+                <div class="element-subtitle">Common Resource</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">Basic building material found in most areas</p>
+              <div class="item-attributes">
+                <div class="item-attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">Resource</span>
+                </div>
+                <div class="item-attribute">
+                  <span class="attribute-label">Found in</span>
+                  <span class="attribute-value">Plains, Forest, Mountains</span>
+                </div>
+              </div>
+            </div>
+            <div class="item-rarity common">Common</div>
+          </div>
+
+          <!-- Item Card Example - Crafted Item -->
+          <div class="element-card item-card uncommon">
+            <div class="element-header">
+              <div class="element-title">
+                <h5>Iron Sword</h5>
+                <div class="element-subtitle">Uncommon Weapon</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">A well-crafted iron sword. Standard issue for many fighters.</p>
+              <div class="item-attributes">
+                <div class="item-attribute">
+                  <span class="attribute-label">Power</span>
+                  <span class="attribute-value battle-stat">10</span>
+                </div>
+                <div class="item-attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">Weapon</span>
+                </div>
+              </div>
+              <div class="crafting-recipe">
+                <h6>Crafting Recipe</h6>
+                <div class="resources-list">
+                  <div class="resource-item">
+                    <span class="resource-name">Wooden Sticks</span>
+                    <span class="resource-amount">2</span>
+                  </div>
+                  <div class="resource-item">
+                    <span class="resource-name">Iron Ore</span>
+                    <span class="resource-amount">3</span>
+                  </div>
+                </div>
+                <div class="crafting-time">
+                  <span class="time-icon">⏱️</span>
+                  <span class="time-value">18 ticks</span>
+                </div>
+              </div>
+              <div class="crafting-requirements">
+                <div class="requirement-item">
+                  <span class="requirement-label">Required Level</span>
+                  <span class="requirement-value">3</span>
+                </div>
+                <div class="requirement-item">
+                  <span class="requirement-label">Required Building</span>
+                  <span class="requirement-value">Smithy (Lvl 2)</span>
+                </div>
+              </div>
+            </div>
+            <div class="item-rarity uncommon">Uncommon</div>
+          </div>
+
+          <!-- Item Card Example - Special Item -->
+          <div class="element-card item-card rare">
+            <div class="element-header">
+              <div class="element-title">
+                <h5>Mountain Crystal</h5>
+                <div class="element-subtitle">Rare Gem</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">Beautiful crystal formed deep within mountains</p>
+              <div class="item-attributes">
+                <div class="item-attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">Gem</span>
+                </div>
+                <div class="item-attribute">
+                  <span class="attribute-label">Found in</span>
+                  <span class="attribute-value">Mountains</span>
+                </div>
+              </div>
+              <div class="item-uses">
+                <h6>Used For</h6>
+                <ul class="uses-list">
+                  <li>Advanced crafting recipes</li>
+                  <li>Magic item enchantments</li>
+                  <li>Valuable trade good</li>
+                </ul>
+              </div>
+            </div>
+            <div class="item-rarity rare">Rare</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Keep existing content... -->
+      <!-- ...existing code... -->
+    </section>
+
+    <section id="activities" class="guide-section">
+      <h2>Activities</h2>
       <p>
-        Some items have unique properties or are awarded for special achievements:
+        Beyond combat and construction, Gisaima offers various activities that enhance gameplay and resource acquisition.
+      </p>
+
+      <h3>Gathering</h3>
+      <p>
+        Gathering resources from the environment is essential for building and crafting:
       </p>
       <ul>
-        <li><strong>Achievement Items:</strong> Awarded for milestones, firsts, or special accomplishments</li>
-        <li><strong>Inspired Items:</strong> Rare items based on real players, with unique properties (0.1% per capita)</li>
-        <li><strong>Magical Items:</strong> Artifacts with supernatural capabilities and sometimes consequences</li>
+        <li><strong>Woodcutting:</strong> Harvesting wood using hatchets</li>
+        <li><strong>Farming:</strong> Growing food from seeds in suitable terrain</li>
+        <li><strong>Mining:</strong> Extracting ores and gems using pickaxes</li>
+        <li><strong>Tick-based:</strong> Gathering takes 2 ticks to complete with progress tracked</li>
+        <li><strong>Cancelable:</strong> Gathering actions can be canceled before completion</li>
       </ul>
-
-      <h3>Item Management</h3>
       <p>
-        Managing your inventory is an important aspect of gameplay:
+        Gathering affects the abundance of resources in an area. Lower abundance reduces gathering effectiveness, 
+        but areas refresh over time. Different terrain rarities produce different quality and quantity of resources.
+      </p>
+
+      <h3>Crafting</h3>
+      <p>
+        Converting raw materials into useful items through specialized processes:
       </p>
       <ul>
-        <li>Drop or pick up items in the world</li>
-        <li>Store items in structures with limited capacity</li>
-        <li>Spawn points typically offer storage for up to 200 items</li>
-        <li>Transfer items between units and locations</li>
+        <li><strong>Alchemy:</strong> Creating potions, elixirs, and magical items</li>
+        <li><strong>Smithing:</strong> Forging metal goods from ores and wood</li>
+        <li><strong>Crafting:</strong> Creating finished goods from fabrics, gems, pelts, and other materials</li>
+        <li><strong>Structure Enhanced:</strong> Crafting options expand based on available building levels</li>
+        <li><strong>Tick-based:</strong> Crafting takes varying amounts of ticks based on item complexity</li>
       </ul>
-
-      <h3>Item Rankings</h3>
+      
+      <h3>Item Storage & Transfer</h3>
       <p>
-        The game tracks ownership of various item types:
+        Managing items is a key part of resource management:
       </p>
       <ul>
-        <li>Rankings show who owns the most of certain item types</li>
-        <li>Players can choose to hide from these rankings for privacy</li>
-        <li>Collecting rare item sets can provide special bonuses</li>
+        <li>Transfer items between groups and structures during mobilization/demobilization</li>
+        <li>Access shared storage at structures for community resources</li>
+        <li>Use personal bank storage for private item security</li>
+        <li>Combine identical items automatically when storing them</li>
+        <li>Track item distribution after battles through notifications</li>
+      </ul>
+
+      <h3>Special Activities</h3>
+      <p>
+        Beyond basic resource gathering, other activities offer unique opportunities:
+      </p>
+      <ul>
+        <li><strong>Treasure Trails:</strong> Follow clues and maps to discover hidden treasures</li>
+        <li><strong>Bounty Hunting:</strong> Track down and capture other players with bounties on their heads</li>
       </ul>
     </section>
 
-    <section id="morality-system" class="guide-section">
-      <h2>Morality System</h2>
+    <section id="battles" class="guide-section">
+      <h2>Battles & Combat</h2>
       <p>
-        Gisaima features a morality system that tracks player actions and influences gameplay.
+        Combat in Gisaima is strategic and consequential, with multiple ways to engage enemies.
       </p>
 
-      <h3>Morality Points</h3>
+      <h3>Attacking Units</h3>
       <p>
-        Players earn morality points through their actions:
+        When encountering enemy unit groups, you have several combat options:
       </p>
       <ul>
-        <li>Daily allocation of morality points that can be assigned</li>
-        <li>Ability to accuse others of good or evil actions</li>
-        <li>Justifications required through events, reports, or comments</li>
-        <li>Evidence used in community trials</li>
+        <li>Direct attacks against enemy unit groups</li>
+        <li>Joining ongoing battles to support allies</li>
+        <li>Setting retreat conditions based on percentage of losses</li>
+        <li>Fleeing from battles after the next tick is processed</li>
       </ul>
-
-      <h3>Consequences of Morality</h3>
       <p>
-        Your morality rating affects gameplay in several ways:
-      </p>
-      <ul>
-        <li>Low morality players' units can be captured and turned against them</li>
-        <li>High morality players' units must be captured or ransomed but remain loyal</li>
-        <li>Visibility on the map is affected by morality - evil actions make you more visible</li>
-        <li>Community standing and access to certain areas may be influenced by morality</li>
-      </ul>
-
-      <h3>Actions and Their Effects</h3>
-      <p>
-        Certain actions have defined moral consequences:
-      </p>
-      <ul>
-        <li>Killing someone in your own city is considered evil</li>
-        <li>Killing innocents is evil</li>
-        <li>Killing evil characters is considered good</li>
-        <li>Breaking promises or agreements may affect morality</li>
-      </ul>
-
-      <h3>Morale</h3>
-      <p>
-        Separate from individual morality, group morale affects unit performance:
-      </p>
-      <ul>
-        <li>Friendly units passing by increases citizen happiness and provides temporary morale boosts</li>
-        <li>Good and evil alignments influence group interactions and performances</li>
-        <li>Treatment of captured enemies affects morale of your own forces</li>
-      </ul>
-    </section>
-
-    <section id="reports-rankings" class="guide-section">
-      <h2>Reports & Rankings</h2>
-      <p>
-        Gisaima tracks and displays information about the world and players through various systems.
+        Combat factors include unit sizes, types, and environmental conditions. Smaller groups may 
+        flee from larger forces, while sufficiently large groups may be forced into battle.
       </p>
 
-      <h3>Battle Reports</h3>
+      <h3>Attacking Structures</h3>
       <p>
-        Detailed information about combat encounters:
+        Structures can be attacked, besieged, or captured:
       </p>
       <ul>
-        <li>Number of kills in battles</li>
-        <li>Win/loss records</li>
-        <li>Strategic analysis of successful tactics</li>
-        <li>Resource gains and losses from combat</li>
+        <li>Destroy enemy structures through direct attacks</li>
+        <li>Capture structures after defeating defenders</li>
+        <li>Siege structures to weaken them over time</li>
+        <li>Structures under siege for 15 game days may be destroyed</li>
+        <li>Continuous trebuchet attacks for 3 days can turn structures to ruins</li>
+        <li>Structure durability decreases as they take damage in combat</li>
       </ul>
 
-      <h3>Travel & Activity Records</h3>
+      <h3>Battle Outcomes</h3>
       <p>
-        The game tracks player movement and actions:
+        After battles, the victors have several options:
       </p>
       <ul>
-        <li>Distance traveled across the world</li>
-        <li>Experience gained from various activities</li>
-        <li>Resources gathered and items crafted</li>
-        <li>Territories discovered and explored</li>
-      </ul>
-
-      <h3>Historical Records</h3>
-      <p>
-        The world maintains a rich historical record:
-      </p>
-      <ul>
-        <li>World history updated in a clear timeline format</li>
-        <li>Major events and their consequences</li>
-        <li>Ages and epochs of world development</li>
-        <li>Notable player achievements and contributions</li>
-      </ul>
-
-      <h3>Player Rankings</h3>
-      <p>
-        Compare yourself to other players through various rankings:
-      </p>
-      <ul>
-        <li>Wealth rankings (optional participation)</li>
-        <li>Score-based leaderboards</li>
-        <li>Distance traveled rankings</li>
-        <li>Resource gathering achievements</li>
-        <li>Combat effectiveness metrics</li>
-      </ul>
-    </section>
-
-    <section id="game-mechanics" class="guide-section">
-      <h2>Game Mechanics</h2>
-      <p>
-        Gisaima uses several core mechanics that drive gameplay. Understanding these systems 
-        is essential for effective strategy.
-      </p>
-      
-      <h3>Tick-Based Gameplay</h3>
-      <p>
-        The game world operates on a "tick" system - regular time intervals when various actions 
-        are processed. World speeds can vary, affecting how frequently ticks occur:
-      </p>
-      <ul>
-        <li>Standard worlds: 1x speed (ticks every minute)</li>
-        <li>Fast worlds: Higher speeds mean more frequent ticks</li>
-        <li>The time until the next tick is displayed in the interface</li>
-      </ul>
-      
-      <h3>Group Management</h3>
-      <p>
-        Managing your units through the group system is essential for effective gameplay:
-      </p>
-      
-      <h4>Mobilization & Demobilization</h4>
-      <p>
-        <strong>Mobilization</strong> allows a player to form their individual units into an organized group:
-      </p>
-      <ul>
-        <li>Creating a group takes one tick cycle to complete</li>
-        <li>Mobilized groups can move, gather resources, and engage in battles</li>
-        <li>Groups have greater strategic flexibility than individual units</li>
+        <li><strong>Automatic Looting:</strong> All items carried by defeated groups are automatically collected</li>
+        <li><strong>Loot Distribution:</strong> If multiple groups are on the winning side, items are randomly distributed among them</li>
+        <li><strong>Loot Notification:</strong> Groups receive messages indicating how many items they looted from battle</li>
+        <li><strong>Scavenging:</strong> Beyond automatic looting, additional equipment may be salvageable from the battlefield</li>
+        <li><strong>Capture:</strong> Take defeated enemies prisoner</li>
+        <li><strong>Ransom:</strong> Negotiate the release of captives for payment</li>
       </ul>
       <p>
-        <strong>Demobilization</strong> is the opposite process, disbanding a group back into individual units:
+        A player's morality affects these options - low morality players may have their units turned against them, 
+        while good morality players' units must be captured or ransomed.
       </p>
-      <ul>
-        <li>Useful when you want to separate from your group</li>
-        <li>Takes one tick cycle to complete</li>
-        <li>Allows units to act independently again</li>
-      </ul>
-      
-      <h4>Movement System</h4>
-      <p>
-        Groups can be directed to move across the map:
-      </p>
-      <ul>
-        <li>Movement occurs in steps, with each step taking one tick</li>
-        <li>You can plot complex paths with multiple waypoints</li>
-        <li>Different terrain types may affect movement speed</li>
-      </ul>
-      
-      <h3>Resource Gathering</h3>
-      <p>
-        Gathering resources is crucial for building and upgrading:
-      </p>
-      <ul>
-        <li>Groups can gather resources from terrain and special resource nodes</li>
-        <li>Gathering takes time, with progress tracked across ticks</li>
-        <li>Different terrain types yield different resources</li>
-        <li>Rarer terrain produces more valuable resources</li>
-        <li>Gathered resources can be stored in your inventory or at structures</li>
-      </ul>
-      
-      <h3>Battle System</h3>
-      <p>
-        Battles in Gisaima occur when hostile groups encounter each other:
-      </p>
-      
-      <h4>Starting an Attack</h4>
-      <p>
-        You can initiate battles with enemy groups at your current location:
-      </p>
-      <ol>
-        <li>Select one or more of your groups to participate in the attack</li>
-        <li>Select one or more enemy groups as your targets</li>
-        <li>Review the battle preview showing the relative strength of both sides</li>
-        <li>Confirm the attack, which creates a battle at that location</li>
-      </ol>
-      <p>
-        When a battle is initiated, it becomes accessible to other players who can choose to
-        join either side with their own groups.
-      </p>
-      
-      <h4>Joining a Battle</h4>
-      <p>
-        You can join ongoing battles in your current location:
-      </p>
-      <ol>
-        <li>Select one of your groups to join the battle</li>
-        <li>Choose which battle to join if multiple are occurring</li>
-        <li>Select which side you want to support (Side 1 or Side 2)</li>
-        <li>Your group will join the selected side, adding its strength to that faction</li>
-      </ol>
-      
-      <p>
-        Battles involve two opposing sides:
-      </p>
-      <ul>
-        <li>Each side can contain multiple groups from different players</li>
-        <li>The total power of each side is calculated based on unit quantity and quality</li>
-        <li>Battles progress over time, with resolution occurring on a tick</li>
-        <li>Victory is determined by many factors including total power, terrain advantages, and tactics</li>
-        <li>Winners may claim resources, territory, or other rewards</li>
-      </ul>
-      
-      <h4>Battle Outcomes</h4>
-      <p>
-        When a battle concludes:
-      </p>
-      <ul>
-        <li>Victorious units automatically collect all items from defeated enemies</li>
-        <li>When multiple groups are on the winning side, items are distributed randomly among them</li>
-        <li>Each group receives notification about how many items they looted from battle</li>
-        <li>Defeated units may be lost or reduced in number</li>
-        <li>Territory control may shift based on battle outcome</li>
-        <li>Strategic resources or structures may change ownership</li>
-      </ul>
       
       <div class="tip-box">
-        <h4>Strategic Tip</h4>
+        <h4>Strategic Tip: Item Management</h4>
         <p>
-          Use battles strategically by considering terrain advantages and forming 
-          alliances with other players. Sometimes joining an ongoing battle on the
-          winning side is more advantageous than starting your own!
+          Consider what items your groups carry into battle. Valuable items might be lost if your group is defeated,
+          so leave precious cargo behind when heading into dangerous situations. Conversely, be aware that defeating
+          enemy groups with valuable items can be quite profitable!
         </p>
+      </div>
+
+      <h3>Battle Duration & Resolution</h3>
+      <p>
+        Battles in Gisaima don't resolve instantly - they take time to play out, with larger battles 
+        taking longer to resolve than smaller ones. The game simulates this through a tick-based system:
+      </p>
+      
+      <div class="info-box">
+        <h4>How Battle Duration Works:</h4>
+        <ul>
+          <li><strong>Small battles</strong> (5 or fewer units) typically resolve in 1-3 ticks</li>
+          <li><strong>Medium battles</strong> (6-20 units) may take 2-5 ticks to complete</li>
+          <li><strong>Large battles</strong> (21-50 units) often extend to 4-8 ticks</li>
+          <li><strong>Massive battles</strong> (50+ units) can last 6-12+ ticks or more</li>
+        </ul>
+        <p class="note">Note: Each tick is approximately 1-2 minutes of real time, depending on world speed settings.</p>
+      </div>
+      
+      <h3>Battle Casualties</h3>
+      <p>
+        When a battle concludes, casualties are calculated based on the relative power of each side.
+        Battles that are evenly matched generally result in higher casualty rates for both sides.
+      </p>
+      
+      <div class="info-box">
+        <h4>Notable Battle Mechanics:</h4>
+        <ul>
+          <li><strong>Player Protection:</strong> Player units have special protection in battles against non-player units:
+            <ul>
+              <li>Non-player units are lost first in battle</li>
+              <li>Players only face risk of death when casualties exceed 80%</li>
+              <li>Even when defeated, players have a chance to escape as "Battle Survivors"</li>
+            </ul>
+          </li>
+          <li><strong>One-sided Victories:</strong> When one side greatly outnumbers the other, the stronger side will suffer fewer casualties:
+            <ul>
+              <li>Overwhelming advantage (5:1 ratio): 1-5% casualties for winner</li>
+              <li>Strong advantage (3:1 ratio): 3-10% casualties for winner</li>
+              <li>Moderate advantage (1.5:1 ratio): 5-15% casualties for winner</li>
+              <li>Close match: 10-25% casualties for winner</li>
+            </ul>
+          </li>
+          <li><strong>Player vs. Player:</strong> In battles exclusively between players, the special protection rules do not apply - these battles are always to the death.</li>
+          <li><strong>Joining Battles:</strong> Groups can join ongoing battles on either side, potentially turning the tide of combat.</li>
+          <li><strong>Fleeing:</strong> Groups can attempt to flee battles, which will be processed after the next tick. Successful fleeing removes the group from combat.</li>
+        </ul>
+      </div>
+      
+      <h3>Example Scenarios</h3>
+      <div class="scenario-box">
+        <h4>Small Skirmish</h4>
+        <p><strong>Forces:</strong> 3 player units vs. 2 NPC units</p>
+        <p><strong>Duration:</strong> Likely 1-2 ticks</p>
+        <p><strong>Outcome:</strong> If player side wins, expects 5-15% casualties. Players would survive unless it's a close battle.</p>
+      </div>
+      
+      <div class="scenario-box">
+        <h4>Medium Battle</h4>
+        <p><strong>Forces:</strong> 8 player units (including 2 players) vs. 10 NPC units</p>
+        <p><strong>Duration:</strong> Likely 3-4 ticks</p>
+        <p><strong>Outcome:</strong> Casualties would be higher (10-25%), with non-player units lost first. If defeated, the players have a 20% chance to escape and form a new "Battle Survivors" group.</p>
+      </div>
+      
+      <div class="scenario-box">
+        <h4>Large-scale Conflict</h4>
+        <p><strong>Forces:</strong> 30 player units vs. 25 NPC units</p>
+        <p><strong>Duration:</strong> Likely 5-7 ticks</p>
+        <p><strong>Outcome:</strong> Battle would progress slowly with multiple ticks, giving players time to potentially bring reinforcements.</p>
       </div>
     </section>
 
@@ -1496,329 +1881,123 @@
         Items in Gisaima range from common resources to mythical artifacts, each with unique properties and values.
       </p>
 
-      <h3>Item Rarity</h3>
-      <p>
-        Items are classified by rarity, which indicates their value and power:
-      </p>
-      <ul class="rarity-list">
-        <li><span class="rarity-tag common">Common</span> Basic resources and everyday items</li>
-        <li><span class="rarity-tag uncommon">Uncommon</span> Better than average items with slight advantages</li>
-        <li><span class="rarity-tag rare">Rare</span> Valuable items with significant benefits</li>
-        <li><span class="rarity-tag precious">Precious</span> Highly sought-after items with considerable power</li>
-        <li><span class="rarity-tag legendary">Legendary</span> Extremely rare items with major advantages</li>
-        <li><span class="rarity-tag mythic">Mythic</span> The rarest and most powerful items</li>
-      </ul>
+      <!-- New compact item display -->
+      <div class="info-box">
+        <h4>Item Types Overview</h4>
+        <p>Items vary in rarity, purpose, and value. Here are some examples:</p>
 
-      <h3>Special Items</h3>
-      <p>
-        Some items have unique properties or are awarded for special achievements:
-      </p>
-      <ul>
-        <li><strong>Achievement Items:</strong> Awarded for milestones, firsts, or special accomplishments</li>
-        <li><strong>Inspired Items:</strong> Rare items based on real players, with unique properties (0.1% per capita)</li>
-        <li><strong>Magical Items:</strong> Artifacts with supernatural capabilities and sometimes consequences</li>
-      </ul>
+        <div class="element-grid item-grid">
+          <!-- Item Card Example - Resource -->
+          <div class="element-card item-card common">
+            <div class="element-header">
+              <div class="element-title">
+                <h5>Wooden Sticks</h5>
+                <div class="element-subtitle">Common Resource</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">Basic building material found in most areas</p>
+              <div class="item-attributes">
+                <div class="item-attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">Resource</span>
+                </div>
+                <div class="item-attribute">
+                  <span class="attribute-label">Found in</span>
+                  <span class="attribute-value">Plains, Forest, Mountains</span>
+                </div>
+              </div>
+            </div>
+            <div class="item-rarity common">Common</div>
+          </div>
 
-      <h3>Item Management</h3>
-      <p>
-        Managing your inventory is an important aspect of gameplay:
-      </p>
-      <ul>
-        <li>Drop or pick up items in the world</li>
-        <li>Store items in structures with limited capacity</li>
-        <li>Spawn points typically offer storage for up to 200 items</li>
-        <li>Transfer items between units and locations</li>
-      </ul>
+          <!-- Item Card Example - Crafted Item -->
+          <div class="element-card item-card uncommon">
+            <div class="element-header">
+              <div class="element-title">
+                <h5>Iron Sword</h5>
+                <div class="element-subtitle">Uncommon Weapon</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">A well-crafted iron sword. Standard issue for many fighters.</p>
+              <div class="item-attributes">
+                <div class="item-attribute">
+                  <span class="attribute-label">Power</span>
+                  <span class="attribute-value battle-stat">10</span>
+                </div>
+                <div class="item-attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">Weapon</span>
+                </div>
+              </div>
+              <div class="crafting-recipe">
+                <h6>Crafting Recipe</h6>
+                <div class="resources-list">
+                  <div class="resource-item">
+                    <span class="resource-name">Wooden Sticks</span>
+                    <span class="resource-amount">2</span>
+                  </div>
+                  <div class="resource-item">
+                    <span class="resource-name">Iron Ore</span>
+                    <span class="resource-amount">3</span>
+                  </div>
+                </div>
+                <div class="crafting-time">
+                  <span class="time-icon">⏱️</span>
+                  <span class="time-value">18 ticks</span>
+                </div>
+              </div>
+              <div class="crafting-requirements">
+                <div class="requirement-item">
+                  <span class="requirement-label">Required Level</span>
+                  <span class="requirement-value">3</span>
+                </div>
+                <div class="requirement-item">
+                  <span class="requirement-label">Required Building</span>
+                  <span class="requirement-value">Smithy (Lvl 2)</span>
+                </div>
+              </div>
+            </div>
+            <div class="item-rarity uncommon">Uncommon</div>
+          </div>
 
-      <h3>Item Rankings</h3>
-      <p>
-        The game tracks ownership of various item types:
-      </p>
-      <ul>
-        <li>Rankings show who owns the most of certain item types</li>
-        <li>Players can choose to hide from these rankings for privacy</li>
-        <li>Collecting rare item sets can provide special bonuses</li>
-      </ul>
-    </section>
-
-    <section id="morality-system" class="guide-section">
-      <h2>Morality System</h2>
-      <p>
-        Gisaima features a morality system that tracks player actions and influences gameplay.
-      </p>
-
-      <h3>Morality Points</h3>
-      <p>
-        Players earn morality points through their actions:
-      </p>
-      <ul>
-        <li>Daily allocation of morality points that can be assigned</li>
-        <li>Ability to accuse others of good or evil actions</li>
-        <li>Justifications required through events, reports, or comments</li>
-        <li>Evidence used in community trials</li>
-      </ul>
-
-      <h3>Consequences of Morality</h3>
-      <p>
-        Your morality rating affects gameplay in several ways:
-      </p>
-      <ul>
-        <li>Low morality players' units can be captured and turned against them</li>
-        <li>High morality players' units must be captured or ransomed but remain loyal</li>
-        <li>Visibility on the map is affected by morality - evil actions make you more visible</li>
-        <li>Community standing and access to certain areas may be influenced by morality</li>
-      </ul>
-
-      <h3>Actions and Their Effects</h3>
-      <p>
-        Certain actions have defined moral consequences:
-      </p>
-      <ul>
-        <li>Killing someone in your own city is considered evil</li>
-        <li>Killing innocents is evil</li>
-        <li>Killing evil characters is considered good</li>
-        <li>Breaking promises or agreements may affect morality</li>
-      </ul>
-
-      <h3>Morale</h3>
-      <p>
-        Separate from individual morality, group morale affects unit performance:
-      </p>
-      <ul>
-        <li>Friendly units passing by increases citizen happiness and provides temporary morale boosts</li>
-        <li>Good and evil alignments influence group interactions and performances</li>
-        <li>Treatment of captured enemies affects morale of your own forces</li>
-      </ul>
-    </section>
-
-    <section id="reports-rankings" class="guide-section">
-      <h2>Reports & Rankings</h2>
-      <p>
-        Gisaima tracks and displays information about the world and players through various systems.
-      </p>
-
-      <h3>Battle Reports</h3>
-      <p>
-        Detailed information about combat encounters:
-      </p>
-      <ul>
-        <li>Number of kills in battles</li>
-        <li>Win/loss records</li>
-        <li>Strategic analysis of successful tactics</li>
-        <li>Resource gains and losses from combat</li>
-      </ul>
-
-      <h3>Travel & Activity Records</h3>
-      <p>
-        The game tracks player movement and actions:
-      </p>
-      <ul>
-        <li>Distance traveled across the world</li>
-        <li>Experience gained from various activities</li>
-        <li>Resources gathered and items crafted</li>
-        <li>Territories discovered and explored</li>
-      </ul>
-
-      <h3>Historical Records</h3>
-      <p>
-        The world maintains a rich historical record:
-      </p>
-      <ul>
-        <li>World history updated in a clear timeline format</li>
-        <li>Major events and their consequences</li>
-        <li>Ages and epochs of world development</li>
-        <li>Notable player achievements and contributions</li>
-      </ul>
-
-      <h3>Player Rankings</h3>
-      <p>
-        Compare yourself to other players through various rankings:
-      </p>
-      <ul>
-        <li>Wealth rankings (optional participation)</li>
-        <li>Score-based leaderboards</li>
-        <li>Distance traveled rankings</li>
-        <li>Resource gathering achievements</li>
-        <li>Combat effectiveness metrics</li>
-      </ul>
-    </section>
-
-    <section id="game-mechanics" class="guide-section">
-      <h2>Game Mechanics</h2>
-      <p>
-        Gisaima uses several core mechanics that drive gameplay. Understanding these systems 
-        is essential for effective strategy.
-      </p>
-      
-      <h3>Tick-Based Gameplay</h3>
-      <p>
-        The game world operates on a "tick" system - regular time intervals when various actions 
-        are processed. World speeds can vary, affecting how frequently ticks occur:
-      </p>
-      <ul>
-        <li>Standard worlds: 1x speed (ticks every minute)</li>
-        <li>Fast worlds: Higher speeds mean more frequent ticks</li>
-        <li>The time until the next tick is displayed in the interface</li>
-      </ul>
-      
-      <h3>Group Management</h3>
-      <p>
-        Managing your units through the group system is essential for effective gameplay:
-      </p>
-      
-      <h4>Mobilization & Demobilization</h4>
-      <p>
-        <strong>Mobilization</strong> allows a player to form their individual units into an organized group:
-      </p>
-      <ul>
-        <li>Creating a group takes one tick cycle to complete</li>
-        <li>Mobilized groups can move, gather resources, and engage in battles</li>
-        <li>Groups have greater strategic flexibility than individual units</li>
-      </ul>
-      <p>
-        <strong>Demobilization</strong> is the opposite process, disbanding a group back into individual units:
-      </p>
-      <ul>
-        <li>Useful when you want to separate from your group</li>
-        <li>Takes one tick cycle to complete</li>
-        <li>Allows units to act independently again</li>
-      </ul>
-      
-      <h4>Movement System</h4>
-      <p>
-        Groups can be directed to move across the map:
-      </p>
-      <ul>
-        <li>Movement occurs in steps, with each step taking one tick</li>
-        <li>You can plot complex paths with multiple waypoints</li>
-        <li>Different terrain types may affect movement speed</li>
-      </ul>
-      
-      <h3>Resource Gathering</h3>
-      <p>
-        Gathering resources is crucial for building and upgrading:
-      </p>
-      <ul>
-        <li>Groups can gather resources from terrain and special resource nodes</li>
-        <li>Gathering takes time, with progress tracked across ticks</li>
-        <li>Different terrain types yield different resources</li>
-        <li>Rarer terrain produces more valuable resources</li>
-        <li>Gathered resources can be stored in your inventory or at structures</li>
-      </ul>
-      
-      <h3>Battle System</h3>
-      <p>
-        Battles in Gisaima occur when hostile groups encounter each other:
-      </p>
-      
-      <h4>Starting an Attack</h4>
-      <p>
-        You can initiate battles with enemy groups at your current location:
-      </p>
-      <ol>
-        <li>Select one or more of your groups to participate in the attack</li>
-        <li>Select one or more enemy groups as your targets</li>
-        <li>Review the battle preview showing the relative strength of both sides</li>
-        <li>Confirm the attack, which creates a battle at that location</li>
-      </ol>
-      <p>
-        When a battle is initiated, it becomes accessible to other players who can choose to
-        join either side with their own groups.
-      </p>
-      
-      <h4>Joining a Battle</h4>
-      <p>
-        You can join ongoing battles in your current location:
-      </p>
-      <ol>
-        <li>Select one of your groups to join the battle</li>
-        <li>Choose which battle to join if multiple are occurring</li>
-        <li>Select which side you want to support (Side 1 or Side 2)</li>
-        <li>Your group will join the selected side, adding its strength to that faction</li>
-      </ol>
-      
-      <p>
-        Battles involve two opposing sides:
-      </p>
-      <ul>
-        <li>Each side can contain multiple groups from different players</li>
-        <li>The total power of each side is calculated based on unit quantity and quality</li>
-        <li>Battles progress over time, with resolution occurring on a tick</li>
-        <li>Victory is determined by many factors including total power, terrain advantages, and tactics</li>
-        <li>Winners may claim resources, territory, or other rewards</li>
-      </ul>
-      
-      <h4>Battle Outcomes</h4>
-      <p>
-        When a battle concludes:
-      </p>
-      <ul>
-        <li>Victorious units automatically collect all items from defeated enemies</li>
-        <li>When multiple groups are on the winning side, items are distributed randomly among them</li>
-        <li>Each group receives notification about how many items they looted from battle</li>
-        <li>Defeated units may be lost or reduced in number</li>
-        <li>Territory control may shift based on battle outcome</li>
-        <li>Strategic resources or structures may change ownership</li>
-      </ul>
-      
-      <div class="tip-box">
-        <h4>Strategic Tip</h4>
-        <p>
-          Use battles strategically by considering terrain advantages and forming 
-          alliances with other players. Sometimes joining an ongoing battle on the
-          winning side is more advantageous than starting your own!
-        </p>
+          <!-- Item Card Example - Special Item -->
+          <div class="element-card item-card rare">
+            <div class="element-header">
+              <div class="element-title">
+                <h5>Mountain Crystal</h5>
+                <div class="element-subtitle">Rare Gem</div>
+              </div>
+            </div>
+            <div class="element-body">
+              <p class="element-desc">Beautiful crystal formed deep within mountains</p>
+              <div class="item-attributes">
+                <div class="item-attribute">
+                  <span class="attribute-label">Type</span>
+                  <span class="attribute-value">Gem</span>
+                </div>
+                <div class="item-attribute">
+                  <span class="attribute-label">Found in</span>
+                  <span class="attribute-value">Mountains</span>
+                </div>
+              </div>
+              <div class="item-uses">
+                <h6>Used For</h6>
+                <ul class="uses-list">
+                  <li>Advanced crafting recipes</li>
+                  <li>Magic item enchantments</li>
+                  <li>Valuable trade good</li>
+                </ul>
+              </div>
+            </div>
+            <div class="item-rarity rare">Rare</div>
+          </div>
+        </div>
       </div>
-    </section>
 
-    <section id="trade-economy" class="guide-section">
-      <h2>Trade & Economy</h2>
-      <p>
-        Gisaima features a robust economic system that allows players to trade, create wealth, and establish financial institutions.
-      </p>
-
-      <h3>Basic Trade</h3>
-      <p>
-        Trade begins with simple exchanges:
-      </p>
-      <ul>
-        <li>Trade directly with other players in the same location</li>
-        <li>Exchange goods stored in the same property or warehouse</li>
-        <li>Set up trade offers that others can accept</li>
-      </ul>
-
-      <h3>Advanced Economic Systems</h3>
-      <p>
-        As cities develop, more complex economic activities become available:
-      </p>
-      <ul>
-        <li>Establish official currencies for cities or regions</li>
-        <li>Create your own currency backed by resources</li>
-        <li>Set trade taxes within controlled territories</li>
-        <li>Implement building taxes where a percentage of produced items go to the ruler</li>
-      </ul>
-
-      <h3>Transportation & Logistics</h3>
-      <p>
-        Moving goods across the map creates additional economic opportunities:
-      </p>
-      <ul>
-        <li>Transport goods between distant markets for profit</li>
-        <li>Rent caravans to other players with different risk/reward options</li>
-        <li>Secure valuable goods during transport for higher fees</li>
-        <li>Specialize in different goods based on their transport properties (e.g., beef moves slowly, processed goods move quickly)</li>
-      </ul>
-
-      <h3>Banking</h3>
-      <p>
-        Establish or use banking services:
-      </p>
-      <ul>
-        <li>Offer interest rates to attract deposits</li>
-        <li>Request loans with negotiable terms</li>
-        <li>Build bank credibility through consistent performance</li>
-        <li>View public debt information to make informed decisions</li>
-      </ul>
+      <!-- Keep existing content... -->
+      <!-- ...existing code... -->
     </section>
 
     <section id="strategy-tips" class="guide-section">
