@@ -939,48 +939,102 @@
                       </div>
                       
                       <!-- Add expandable units list -->
-                      {#if expandedGroups[group.id] && group.units && getGroupUnitCount(group) > 0}
-                        <div class="group-units-list">
-                          {#each Object.entries(group.units) as [unitId, unit]}
-                            <div class="group-unit">
-                              <div class="unit-icon">
-                                {#if unit.type === 'monster'}
-                                  <Monster extraClass="unit-race-icon" />
-                                {:else if unit.race}
-                                  {#if unit.race.toLowerCase() === 'human'}
-                                    <Human extraClass="unit-race-icon" />
-                                  {:else if unit.race.toLowerCase() === 'elf'}
-                                    <Elf extraClass="unit-race-icon" />
-                                  {:else if unit.race.toLowerCase() === 'dwarf'}
-                                    <Dwarf extraClass="unit-race-icon" />
-                                  {:else if unit.race.toLowerCase() === 'goblin'}
-                                    <Goblin extraClass="unit-race-icon" />
-                                  {:else if unit.race.toLowerCase() === 'fairy'}
-                                    <Fairy extraClass="unit-race-icon" />
-                                  {/if}
-                                {/if}
-                              </div>
-                              <div class="unit-info">
-                                <div class="unit-name">
-                                  {unit.displayName || unit.name || unit.type || unitId.slice(-5)}
-                                  {#if unit.id === $currentPlayer?.id}
-                                    <span class="entity-badge owner-badge">You</span>
-                                  {/if}
+                      {#if expandedGroups[group.id] && (getGroupUnitCount(group) > 0 || getGroupItemCount(group) > 0)}
+                        <div class="group-expanded-details">
+                          {#if getGroupUnitCount(group) > 0}
+                            <div class="expanded-section-title">Units ({getGroupUnitCount(group)})</div>
+                            <div class="group-units-list">
+                              {#each Object.entries(group.units) as [unitId, unit]}
+                                <div class="group-unit">
+                                  <div class="unit-icon">
+                                    {#if unit.type === 'monster'}
+                                      <Monster extraClass="unit-race-icon" />
+                                    {:else if unit.race}
+                                      {#if unit.race.toLowerCase() === 'human'}
+                                        <Human extraClass="unit-race-icon" />
+                                      {:else if unit.race.toLowerCase() === 'elf'}
+                                        <Elf extraClass="unit-race-icon" />
+                                      {:else if unit.race.toLowerCase() === 'dwarf'}
+                                        <Dwarf extraClass="unit-race-icon" />
+                                      {:else if unit.race.toLowerCase() === 'goblin'}
+                                        <Goblin extraClass="unit-race-icon" />
+                                      {:else if unit.race.toLowerCase() === 'fairy'}
+                                        <Fairy extraClass="unit-race-icon" />
+                                      {/if}
+                                    {/if}
+                                  </div>
+                                  <div class="unit-info">
+                                    <div class="unit-name">
+                                      {unit.displayName || unit.name || unit.type || unitId.slice(-5)}
+                                      {#if unit.id === $currentPlayer?.id}
+                                        <span class="entity-badge owner-badge">You</span>
+                                      {/if}
+                                    </div>
+                                    <div class="unit-details">
+                                      {#if unit.race}
+                                        <span class="unit-race-tag">{_fmt(unit.race)}</span>
+                                      {/if}
+                                      {#if unit.type && unit.type !== 'player'}
+                                        <span class="unit-type-tag">{_fmt(unit.type)}</span>
+                                      {/if}
+                                      {#if unit.type === 'player'}
+                                        <span class="unit-type-tag player">Player</span>
+                                      {/if}
+                                    </div>
+                                  </div>
                                 </div>
-                                <div class="unit-details">
-                                  {#if unit.race}
-                                    <span class="unit-race-tag">{_fmt(unit.race)}</span>
-                                  {/if}
-                                  {#if unit.type && unit.type !== 'player'}
-                                    <span class="unit-type-tag">{_fmt(unit.type)}</span>
-                                  {/if}
-                                  {#if unit.type === 'player'}
-                                    <span class="unit-type-tag player">Player</span>
-                                  {/if}
-                                </div>
-                              </div>
+                              {/each}
                             </div>
-                          {/each}
+                          {/if}
+                          
+                          {#if getGroupItemCount(group) > 0}
+                            <div class="expanded-section-title">Items ({getGroupItemCount(group)})</div>
+                            <div class="group-items-list">
+                              {#if Array.isArray(group.items)}
+                                {#each group.items as item}
+                                  <div class="group-item {getRarityClass(item.rarity)}">
+                                    <div class="item-name">
+                                      {item.name || _fmt(item.type) || "Unknown Item"}
+                                      {#if item.quantity > 1}
+                                        <span class="item-quantity">×{item.quantity}</span>
+                                      {/if}
+                                    </div>
+                                    {#if item.type || item.rarity}
+                                      <div class="item-details">
+                                        {#if item.type}
+                                          <span class="item-type-tag">{_fmt(item.type)}</span>
+                                        {/if}
+                                        {#if item.rarity && item.rarity !== 'common'}
+                                          <span class="item-rarity-tag {item.rarity.toLowerCase()}">{_fmt(item.rarity)}</span>
+                                        {/if}
+                                      </div>
+                                    {/if}
+                                  </div>
+                                {/each}
+                              {:else}
+                                {#each Object.entries(group.items) as [itemId, item]}
+                                  <div class="group-item {getRarityClass(item.rarity)}">
+                                    <div class="item-name">
+                                      {item.name || _fmt(item.type) || itemId || "Unknown Item"}
+                                      {#if item.quantity > 1}
+                                        <span class="item-quantity">×{item.quantity}</span>
+                                      {/if}
+                                    </div>
+                                    {#if item.type || item.rarity}
+                                      <div class="item-details">
+                                        {#if item.type}
+                                          <span class="item-type-tag">{_fmt(item.type)}</span>
+                                        {/if}
+                                        {#if item.rarity && item.rarity !== 'common'}
+                                          <span class="item-rarity-tag {item.rarity.toLowerCase()}">{_fmt(item.rarity)}</span>
+                                        {/if}
+                                      </div>
+                                    {/if}
+                                  </div>
+                                {/each}
+                              {/if}
+                            </div>
+                          {/if}
                         </div>
                       {/if}
                     </div>
@@ -2355,137 +2409,99 @@
     overflow-y: auto;
   }
   
+  .group-items-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3em;
+    margin-bottom: 0.8em;
+  }
+  
   .group-unit {
     display: flex;
     align-items: center;
-    padding: 0.2em 0;
-    border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
+    padding: 0.3em 0.5em;
+    border-radius: 0.2em;
+    background-color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    width: 48%;
+    min-width: 120px;
+    box-sizing: border-box;
   }
   
-  .group-unit:last-child {
-    border-bottom: none;
-  }
-  
-  .unit-icon {
-    margin-right: 0.5em;
+  .group-item {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    padding: 0.3em 0.5em;
+    border-radius: 0.2em;
+    background-color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    width: 48%;
+    min-width: 120px;
+    box-sizing: border-box;
   }
   
-  :global(.unit-race-icon) {
-    width: 1em;
-    height: 1em;
-    opacity: 0.7;
-  }
-  
-  .unit-info {
-    flex: 1;
-  }
-  
-  .unit-name {
+  .item-name {
     font-weight: 500;
     font-size: 0.9em;
     display: flex;
     align-items: center;
-    gap: 0.4em;
+    gap: 0.3em;
   }
   
-  .unit-details {
+  .item-quantity {
+    font-size: 0.85em;
+    color: rgba(0, 0, 0, 0.6);
+  }
+  
+  .item-details {
     display: flex;
     gap: 0.3em;
     font-size: 0.8em;
     margin-top: 0.1em;
   }
   
-  .unit-race-tag, .unit-type-tag {
+  .item-type-tag {
     padding: 0.1em 0.3em;
     border-radius: 0.2em;
     background-color: rgba(0, 0, 0, 0.05);
     color: rgba(0, 0, 0, 0.7);
   }
   
-  .unit-type-tag.player {
-    background-color: rgba(66, 133, 244, 0.1);
-    color: rgba(66, 133, 244, 0.9);
-  }
-  
-  /* Enhanced battle styling */
-  .battle-groups-details {
-    margin-top: 0.3em;
-    font-size: 0.9em;
-  }
-  
-  .battle-group {
-    margin-bottom: 0.2em;
-  }
-  
-  .group-info {
-    display: flex;
-    gap: 0.3em;
-    align-items: center;
-  }
-  
-  .group-name {
+  .item-rarity-tag {
+    padding: 0.1em 0.3em;
+    border-radius: 0.2em;
     font-weight: 500;
   }
   
-  .group-race, .group-type {
-    font-size: 0.85em;
-    padding: 0.1em 0.3em;
-    border-radius: 0.2em;
-    background-color: rgba(0, 0, 0, 0.05);
-    color: rgba(0, 0, 0, 0.7);
-  }
-  
-  .casualties-tag {
-    display: inline-block;
-    font-size: 0.85em;
-    padding: 0.1em 0.3em;
-    border-radius: 0.2em;
-    margin-left: 0.2em;
-    background-color: rgba(220, 20, 60, 0.1);
-    border: 1px solid rgba(220, 20, 60, 0.2);
-    color: #c62828;
-  }
-
-  .entity-battle-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.4em;
-    height: 1.4em;
-    margin-right: 0.7em;
-    margin-top: 0.1em;
-    font-size: 1.2em;
-  }
-  
-  .battle-vs {
-    font-weight: bold;
-    font-size: 0.9em;
-    display: flex;
-    align-items: center;
-    color: rgba(0, 0, 0, 0.6);
-    margin: 0 0.5em;
-  }
-  
-  .battle-status-tag {
-    display: inline-block;
-    font-size: 0.85em;
-    padding: 0.2em 0.4em;
-    border-radius: 0.2em;
-    background-color: rgba(255, 140, 0, 0.15);
-    border: 1px solid rgba(255, 140, 0, 0.3);
-    color: #d06000;
-    font-weight: 500;
-  }
-  
-  .battle-status-tag.new {
-    background-color: rgba(76, 175, 80, 0.15);
-    border: 1px solid rgba(76, 175, 80, 0.3);
+  .item-rarity-tag.uncommon {
+    background-color: rgba(76, 175, 80, 0.2);
     color: #2e7d32;
   }
   
-  .progress-fill.side1 {
-    background-color: rgba(0, 0, 255, 0.5);
+  .item-rarity-tag.rare {
+    background-color: rgba(33, 150, 243, 0.2);
+    color: #0277bd;
+  }
+  
+  .item-rarity-tag.epic {
+    background-color: rgba(156, 39, 176, 0.2);
+    color: #7b1fa2;
+  }
+  
+  .item-rarity-tag.legendary {
+    background-color: rgba(255, 152, 0, 0.2);
+    color: #ef6c00;
+  }
+  
+  .item-rarity-tag.mythic {
+    background-color: rgba(233, 30, 99, 0.2);
+    color: #c2185b;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 480px) {
+    .group-unit, .group-item {
+      width: 100%;
+    }
   }
 </style>
