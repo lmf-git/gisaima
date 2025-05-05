@@ -385,7 +385,8 @@
                 const { x, y } = event.detail;
                 if (typeof x === 'number' && typeof y === 'number') {
                     console.log(`Navigating to chat location: ${x},${y}`);
-                    moveTarget(x, y, true); // Pass true to update URL for shared locations
+                    // Remove URL update for chat location clicks
+                    moveTarget(x, y, false);
                     
                     const clickedTile = $coordinates.find(c => c.x === x && c.y === y);
                     

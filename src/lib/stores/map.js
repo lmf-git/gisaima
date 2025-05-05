@@ -879,9 +879,11 @@ export function initialize(options = {}) {
     });
 
     // Update URL if initial coordinates were provided (but only if they're non-zero for cleaner URLs)
+    /* Remove URL updates on initialization
     if (hasInitialCoords && (initialX !== 0 || initialY !== 0)) {
       updateUrlWithCoordinates(targetPosition.x, targetPosition.y);
     }
+    */
 
     // Always save the initial position to localStorage
     saveTargetToLocalStorage(worldId, targetPosition.x, targetPosition.y);
