@@ -17,7 +17,9 @@
         "Enhanced battle information display in Details and Overview panels showing units and casualties",
         "Implemented functionality for attacking structures with damage indicators",
         "Added colored indicators for battle status in entity lists and grid",
-        "Created consistent status styling for groups in combat across all panels"
+        "Created consistent status styling for groups in combat across all panels",
+        "Added player death and respawn system when killed in battle",
+        "Implemented structure damage indicators showing health percentage during attacks"
       ]
     },
     {
@@ -38,7 +40,9 @@
         "Added You-Are-Here indicator that shows player location even when in a moving group",
         "Enhanced movement animations with smooth transitions on grid tiles",
         "Added ability to cancel gathering actions",
-        "Implemented drag functionality for map navigation while in path drawing mode"
+        "Implemented drag functionality for map navigation while in path drawing mode",
+        "Created monster group strategic behavior that targets nearby structures",
+        "Added notifications in chat for movement completion"
       ]
     },
     {
@@ -57,7 +61,9 @@
         "Fixed structure name placement on grid tiles",
         "Added structure battle status indicators showing when structures are under attack",
         "Created system for structures to show their building levels and upgrade paths",
-        "Added race-specific recruitment restrictions for proper unit composition"
+        "Added race-specific recruitment restrictions for proper unit composition",
+        "Implemented building levels that affect available crafting recipes",
+        "Created distinct structure visuals for different races"
       ]
     },
     {
@@ -82,7 +88,9 @@
         "Added achievements panel with unlocked and locked achievements display",
         "Implemented sorting of player-owned groups and entities to the top of lists",
         "Added map controls with return/recenter map function to quickly navigate to spawn points",
-        "Improved modal z-index management for better UI layering when multiple components are open"
+        "Improved modal z-index management for better UI layering when multiple components are open",
+        "Enhanced notification system for unread chat messages",
+        "Added hover states for collapsible section headers"
       ]
     },
     {
@@ -103,7 +111,8 @@
         "Implemented crafting UI with clear resource requirements",
         "Developed resource-based recruitment system tied to structure levels",
         "Created gather action available on all tiles with appropriate resources",
-        "Added ability to combine identical items in structure storage"
+        "Added ability to combine identical items in structure storage",
+        "Enhanced crafting with location-specific recipes depending on available structures"
       ]
     },
     {
@@ -122,7 +131,8 @@
         "Fixed deep ocean generation to create larger water bodies",
         "Implemented improved terrain loading performance for better map exploration",
         "Added tile rarity indicators in terrain details",
-        "Created race-specific starting areas with appropriate terrain for each race"
+        "Created race-specific starting areas with appropriate terrain for each race",
+        "Improved transition animations for revealing grid tiles based on distance from center"
       ]
     },
     {
@@ -146,7 +156,23 @@
         "Implemented player death and respawn system",
         "Created dynamic monster group behavior that targets structures and merges with other monster groups",
         "Added automatic notification system for important game events in chat",
-        "Enhanced player progression with achievement unlocks for key actions"
+        "Enhanced player progression with achievement unlocks for key actions",
+        "Added monster group strategic AI that attacks structures and groups"
+      ]
+    },
+    {
+      title: "Communication & Social",
+      changes: [
+        "Implemented chat system with unread message indicators",
+        "Added automatic notifications for key game events in chat",
+        "Created player display names for improved social interaction",
+        "Added achievement announcements in chat feed",
+        "Implemented battle event reporting in chat with casualty details",
+        "Added movement notifications in chat when groups complete journeys",
+        "Created building completion notifications in chat",
+        "Added system messages for important game events",
+        "Implemented chat message persistence across sessions",
+        "Created visual unread message indicators"
       ]
     },
     {
@@ -163,7 +189,9 @@
         "Enhanced touch interactions for map navigation",
         "Fixed layout shifting issues on mobile devices",
         "Improved UI element placement for smaller screens",
-        "Optimized modal sizes and positions for mobile devices"
+        "Optimized modal sizes and positions for mobile devices",
+        "Added ability to hide legend on mobile for better screen space utilization",
+        "Improved drag functionality on mobile devices"
       ]
     }
   ];
