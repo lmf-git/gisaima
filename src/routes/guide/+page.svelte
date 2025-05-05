@@ -2545,6 +2545,8 @@
     border: 0.05em solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 0.2em 1em rgba(0, 0, 0, 0.1);
     text-shadow: 0 0 0.15em rgba(255, 255, 255, 0.7);
+    max-height: calc(100vh - 8em);
+    overflow: auto;
   }
   
   .toc h2 {
