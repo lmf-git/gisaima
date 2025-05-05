@@ -69,7 +69,7 @@ function completeStructure(worldId, updates, chunkKey, tileKey, tile, now) {
   
   // Create a chat message for the world
   const chatMessageKey = `chat_${now}_${Math.floor(Math.random() * 1000)}`;
-  const isMonsterStructure = structure.monster === true || structure.owner === 'monster';
+  const isMonsterStructure = structure.monster === true;
   
   updates[`worlds/${worldId}/chat/${chatMessageKey}`] = {
     text: `${structure.name} has been completed at (${tileKey.replace(',', ', ')})`,

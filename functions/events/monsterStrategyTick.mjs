@@ -151,8 +151,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   }
   
   // If we're on our own structure and have just mobilized, prioritize moving away
-  const structureOnTile = tileData.structure && 
-    (tileData.structure.type && tileData.structure.owner === 'monster');
+  const structureOnTile = tileData.structure && isMonsterStructure(tileData.structure);
   
   const justMobilized = monsterGroup.mobilizedFromStructure && 
     monsterGroup.mobilizedFromStructure === (tileData.structure?.id || null);

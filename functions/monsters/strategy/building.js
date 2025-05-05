@@ -170,10 +170,9 @@ export async function buildMonsterStructure(db, worldId, monsterGroup, location,
     type: structureType,
     status: 'building',
     buildProgress: 0,
-    owner: 'monster',
+    owner: monsterGroup.id, // Set the monster group's ID as owner instead of 'monster' string
     ownerName: monsterGroup.name || "Monster",
-    ownerGroupId: monsterGroup.id,
-    monster: true,
+    monster: true, // Ensure this flag is always set for monster structures
     level: 1,
     items: [],
     capacity: structureData.capacity || 10

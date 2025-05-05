@@ -189,7 +189,7 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
   const { x, y } = location;
   
   // Don't attack monster structures
-  if (structure.monster === true || structure.owner === 'monster') {
+  if (structure.monster === true) {
     console.log("Skipping attack on monster structure");
     return { action: null, reason: 'monster_structure' };
   }

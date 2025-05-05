@@ -280,9 +280,8 @@ export function isMonsterStructure(structure) {
   if (!structure) return false;
   
   return (
-    structure.monster === true || 
-    structure.owner === 'monster' || 
-    (structure.type && typeof structure.type === 'string' && structure.type.includes('monster'))
+    // Primary indicator - the 'monster' flag should be the main identifier
+    structure.monster === true
   );
 }
 
@@ -561,7 +560,6 @@ export async function scanWorldMap(db, worldId, chunks) {
       // Check for monster structures - Updated to also check owner field
       if (tileData.structure && 
          (tileData.structure.monster === true || 
-          tileData.structure.owner === 'monster' ||
           (tileData.structure.type && tileData.structure.type.includes('monster')))) {
         monsterStructures.push({
           ...location,
