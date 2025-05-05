@@ -159,6 +159,9 @@
   
   const isMoving = $derived($map.isDragging || keyboardNavigationInterval !== null);
   
+  // Add the missing definition for isMaximumZoom
+  const isMaximumZoom = $derived($map.cols === 1 && $map.rows === 1);
+  
   // Change this to only depend on initial animation completion, not on current movement
   const shouldRenderDetails = $derived(introduced && animationsComplete);
   
@@ -1435,8 +1438,8 @@
                 </div>
               {/if}
 
-              <!-- Add YouAreHere component for player's position -->
-              {#if isCurrentPlayerHere && $ready}
+              <!-- Add YouAreHere component for player's position - don't show at maximum zoom -->
+              {#if isCurrentPlayerHere && $ready && !isMaximumZoom}
                 <div class="you-are-here-container">
                   <YouAreHere hasStructure={!!cell.structure} />
                 </div>
@@ -1969,6 +1972,7 @@
     50% { box-shadow: 0 0 0.3em gold, 0 0 0.8em rgba(255, 215, 0, 0.6); }
     100% { box-shadow: 0 0 0.2em gold, 0 0 0.4em rgba(255, 215, 0, 0.3); }
   }
+  
   
   .player-indicator {
     background: radial-gradient(circle, rgba(130, 130, 255, 0.9), rgba(80, 80,  225, 0.9));

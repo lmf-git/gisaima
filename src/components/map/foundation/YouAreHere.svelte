@@ -43,7 +43,7 @@
 
   /* Ring is larger for structure tiles */
   .has-structure .indicator-ring {
-    width: min(calc(var(--indicator-size) * 0.98), 98%);
+    width: min(calc(var(--indicator-size) * 3.28), 141%);
     border-width: 3px;
     box-shadow: 
       0 0 20px rgba(255, 215, 0, 0.7),
