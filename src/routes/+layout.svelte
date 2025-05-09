@@ -250,11 +250,6 @@
 
 <style>
 
-    :global(html), :global(body) {
-    overscroll-behavior: none;
-    touch-action: none;
-    }
-
     :global(*) {
         box-sizing: border-box;
         margin: 0;
