@@ -1803,11 +1803,4 @@
         width: 2em;
         height: 2em;
     }
-
-    .motion-type {
-      font-size: 0.85em;
-      opacity: 0.8;
-      font-weight: normal;
-      font-style: italic;
-    }
 </style>
