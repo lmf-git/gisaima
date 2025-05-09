@@ -1827,8 +1827,8 @@
     right: 0;
     bottom: 0;
     /* Add these lines to prevent browser default touch behaviors */
-    touch-action: none;
-    -ms-touch-action: none;
+    /* touch-action: none;
+    -ms-touch-action: none; */
   }
 
   .map {
