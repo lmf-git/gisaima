@@ -224,9 +224,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   
   // Check for attackable player structure on this tile
   // Influenced by personality's attack weight
-  const attackableStructure = tileData.structure && 
-    tileData.structure.owner && 
-    !tileData.structure?.monster;
+  const attackableStructure = tileData.structure && !tileData.structure?.monster;
     
   if (attackableStructure && Math.random() < 0.7 * (weights?.attack || 1.0)) {
     // Log that we found a structure to attack

@@ -99,8 +99,7 @@ export async function moveMonsterTowardsTarget(
     if (adjacentStructure) {
       // Only target non-monster structures (target player structures more aggressively)
       if (adjacentStructure.structure && 
-          (!adjacentStructure.structure.monster && 
-           adjacentStructure.structure.owner !== 'monster')) {
+          !adjacentStructure.structure.monster) {
         // If we found an adjacent structure, move to it for potential attack
         return moveToAdjacentTile(worldId, monsterGroup, location, adjacentStructure, updates, now, 'structure_attack');
       }
@@ -246,14 +245,21 @@ function calculateMovementPriorities(weights, totalUnits, worldScan, inExplorati
       weight: 1.2,  // Increased base weight for player spawns (was 0.5)
       locations: worldScan.playerSpawns || [],
       maxDistance: MAX_SCAN_DISTANCE * 1.5  // Increased search range for spawns
+    },
+    // Add player structures as a specific target category
+    player_structure: {
+      weight: 1.0,  // Base weight for player structures
+      locations: worldScan.playerStructures || [], // You'll need to collect these in scanWorldMap
+      maxDistance: MAX_SCAN_DISTANCE * 1.2  // Increased search range
     }
   };
   
   // Apply personality modifiers
   if (weights) {
-    // Aggressive personality prioritizes player targets
+    // Aggressive personality prioritizes player targets including structures
     if (weights.attack > 1.0) {
-      priorities.player_spawn.weight *= weights.attack * 2.0; // Increased multiplier (was 1.5)
+      priorities.player_spawn.weight *= weights.attack * 2.0;
+      priorities.player_structure.weight *= weights.attack * 1.8; // Strong weight for attacking structures
       
       // ADDED: Extra weight for aggressive monsters with sufficient units
       if (weights.attack > 1.5 && totalUnits > 8) {
