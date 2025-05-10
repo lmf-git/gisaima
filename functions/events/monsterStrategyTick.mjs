@@ -65,14 +65,13 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
     const targetDistance = calculateDistance(location, monsterGroup.targetStructure);
     
     if (targetDistance <= 1.5) {
-      // Get the target structure's actual data
+      // Get the target structure's data from chunks instead of database
       const targetChunkKey = getChunkKey(monsterGroup.targetStructure.x, monsterGroup.targetStructure.y);
       const targetTileKey = `${monsterGroup.targetStructure.x},${monsterGroup.targetStructure.y}`;
       
-      try {
-        const targetTileRef = db.ref(`worlds/${worldId}/chunks/${targetChunkKey}/${targetTileKey}`);
-        const targetTileSnap = await targetTileRef.once('value');
-        const targetTileData = targetTileSnap.val();
+      // Use chunks data instead of making a database call
+      if (chunks && chunks[targetChunkKey] && chunks[targetChunkKey][targetTileKey]) {
+        const targetTileData = chunks[targetChunkKey][targetTileKey];
         
         if (targetTileData && targetTileData.structure) {
           // We've reached the target - attack it!
@@ -86,13 +85,13 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
             now
           );
         }
-      } catch (error) {
-        console.error(`Error checking target structure: ${error}`);
+      } else {
+        console.log(`Target tile ${targetTileKey} in chunk ${targetChunkKey} not found in chunks data`);
       }
     } else {
       // Still moving toward target - prioritize movement
       return await moveMonsterTowardsTarget(
-        db, worldId, monsterGroup, location, worldScan, updates, now, 'structure_attack'
+        db, worldId, monsterGroup, location, worldScan, updates, now, 'structure_attack', null, chunks
       );
     }
   }

@@ -153,15 +153,13 @@ export async function spawnMonsters(worldId, chunks) {
       const spawnChunkKey = `${spawnChunkX},${spawnChunkY}`;
       const spawnTileKey = `${spawnLocation.x},${spawnLocation.y}`;
       
-      // Get the tile data for this location
-      const spawnTileRef = db.ref(`worlds/${worldId}/chunks/${spawnChunkKey}/${spawnTileKey}`);
-      const spawnTileSnapshot = await spawnTileRef.once('value');
-      const spawnTileData = spawnTileSnapshot.val() || {};
+      // Get the tile data from chunks instead of making a database call
+      const spawnTileData = chunks[spawnChunkKey]?.[spawnTileKey] || {};
       
-      // Store the biome for future use (not used for monster selection yet)
+      // Store the biome for future use
       const tileBiome = spawnTileData.biome?.name || 
-                         spawnTileData.terrain?.biome ||
-                         'unknown';
+                        spawnTileData.terrain?.biome ||
+                        'unknown';
       
       // Either create a new monster group or merge with an existing one
       const updates = {};
