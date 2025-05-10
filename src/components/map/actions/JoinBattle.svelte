@@ -61,11 +61,33 @@
     return [];
   }
   
+  // Add helper function to normalize battles data - similar to groups
+  function normalizeBattlesData(battlesData) {
+    if (!battlesData) return [];
+    
+    // If it's already an array, return it
+    if (Array.isArray(battlesData)) return battlesData;
+    
+    // If it's an object with keys, convert to array
+    if (typeof battlesData === 'object') {
+      return Object.keys(battlesData).map(key => {
+        const data = battlesData[key];
+        return {
+          ...data,
+          id: data.id || key
+        };
+      });
+    }
+    
+    return [];
+  }
+  
   // Improved battle detection logic
   $effect(() => {
     if (!tileData) return;
     
-    // FIX: Use the derived playerId instead of $currentPlayer?.uid
+    console.log('JoinBattle tileData:', tileData);
+    
     if (!playerId) return;
     
     // Normalize groups data first (handles both array and object formats)
@@ -87,21 +109,56 @@
       selectedGroup = null;
     }
     
-    // Find battles with improved detection
+    // Find battles with improved detection based on exact structure from backup.json
     const battles = new Map();
     
-    // First handle direct battle references in tileData.battles
-    if (tileData.battles && tileData.battles.length > 0) {
-      tileData.battles.forEach(battle => {
+    // First check if we have direct battle references in tileData.battles
+    if (tileData.battles) {
+      console.log('Raw battles data:', tileData.battles);
+      
+      // Normalize battles - handles both array and object formats
+      const normalizedBattles = normalizeBattlesData(tileData.battles);
+      console.log('Normalized battles:', normalizedBattles);
+      
+      normalizedBattles.forEach(battle => {
         if (battle && battle.id) {
-          battles.set(battle.id, {
+          // Create a standardized battle object matching the structure in backup.json
+          const battleData = {
             ...battle,
-            sides: battle.sides || {
-              1: { groups: [], power: battle.side1Power || 0 },
-              2: { groups: [], power: battle.side2Power || 0 }
+            // Ensure both side1 and side2 are properly populated
+            side1: battle.side1 || {
+              casualties: 0,
+              groups: {},
+              power: 0,
+              name: "Side 1"
+            },
+            side2: battle.side2 || {
+              casualties: 0,
+              groups: {},
+              power: 0,
+              name: "Side 2"
             },
             selected: false
-          });
+          };
+          
+          // Calculate power for each side if not already provided
+          battleData.side1.power = battleData.side1.power || battleData.side1Power || 0;
+          battleData.side2.power = battleData.side2.power || battleData.side2Power || 0;
+          
+          // Convert groups object to proper format if present
+          if (battleData.side1.groups) {
+            battleData.side1.groups = Object.keys(battleData.side1.groups);
+          } else {
+            battleData.side1.groups = [];
+          }
+          
+          if (battleData.side2.groups) {
+            battleData.side2.groups = Object.keys(battleData.side2.groups);
+          } else {
+            battleData.side2.groups = [];
+          }
+          
+          battles.set(battle.id, battleData);
         }
       });
     }
@@ -113,11 +170,22 @@
           if (!battles.has(group.battleId)) {
             battles.set(group.battleId, {
               id: group.battleId,
-              sides: {
-                1: { groups: [], power: 0 },
-                2: { groups: [], power: 0 }
+              side1: {
+                casualties: 0,
+                groups: [],
+                power: 0,
+                name: "Side 1"
               },
-              selected: false
+              side2: {
+                casualties: 0,
+                groups: [], 
+                power: 0,
+                name: "Side 2"
+              },
+              selected: false,
+              locationX: tileData.x,
+              locationY: tileData.y,
+              tickCount: 0
             });
           }
           
@@ -125,9 +193,13 @@
           const side = group.battleSide || 1;
           const battleData = battles.get(group.battleId);
           
-          if (!battleData.sides[side].groups.includes(group.id)) {
-            battleData.sides[side].groups.push(group.id);
-            battleData.sides[side].power += (group.units?.length || 1);
+          if (!battleData[`side${side}`].groups.includes(group.id)) {
+            battleData[`side${side}`].groups.push(group.id);
+            
+            // Calculate power based on units
+            const unitCount = group.units ? 
+              (Array.isArray(group.units) ? group.units.length : Object.keys(group.units).length) : 1;
+            battleData[`side${side}`].power += unitCount;
           }
         }
       });
