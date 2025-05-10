@@ -443,46 +443,20 @@
     };
   }
   
-  function handleMouseDown(event) {
-    if (!introduced || event.button !== 0) return;
-    
-    // Reset the drag state on each mousedown
-    wasDrag = false;
-    dist = 0;
-    
-    if (handleDragAction({ 
-      type: 'dragstart', 
-      clientX: event.clientX, 
-      clientY: event.clientY, 
-      button: event.button 
-    }) && mapElement) {
-      mapElement.style.cursor = "grabbing";
-    }
-    
-    event.preventDefault();
-  }
-  
-  function handleMouseMove(event) {
-    // Allow drag handling even in path drawing mode
-    if ($map.isDragging && $map.dragSource === 'map') {
-      handleDragAction({ 
-        type: 'dragmove', 
-        clientX: event.clientX, 
-        clientY: event.clientY 
-      });
-    }
-  }
-  
-  function handleMouseUp() {
-    // Allow drag handling even in path drawing mode
-    if ($map.isDragging && $map.dragSource === 'map') {
-      handleDragAction({ type: 'dragend' });
-      if (mapElement) mapElement.style.cursor = isPathDrawingMode ? "crosshair" : "grab";
-    }
-  }
-  
+  // Add variables for tap detection
+  let touchStartTime = $state(0);
+  let touchStartX = $state(0);
+  let touchStartY = $state(0);
+  const TAP_THRESHOLD = 300; // ms - maximum time for a touch to be considered a tap
+  const TAP_MOVEMENT_THRESHOLD = 10; // px - maximum movement allowed for a touch to be considered a tap
+
   function handleTouchStart(event) {
     if (!introduced || !$map.ready) return;
+    
+    // Record touch start time and position for tap detection
+    touchStartTime = Date.now();
+    touchStartX = event.touches[0].clientX;
+    touchStartY = event.touches[0].clientY;
     
     // Reset drag tracking for new touch
     wasDrag = false;
@@ -568,19 +542,104 @@
       return;
     }
     
-    if ($map.isDragging && $map.dragSource === 'map') {
-      handleDragAction({ type: 'touchend' });
+    // Calculate if this was a tap (not a drag)
+    const touchEndTime = Date.now();
+    const touchDuration = touchEndTime - touchStartTime;
+    
+    // Check if touch ended with all fingers lifted
+    if (event.touches.length === 0) {
+      if ($map.isDragging && $map.dragSource === 'map') {
+        handleDragAction({ type: 'touchend' });
+      }
       
-      // We don't need to create synthetic clicks anymore - the browser will
-      // generate a real click event if this wasn't a drag
-      // Just make sure we're preventing default on drags to avoid double events
-      if (wasDrag) {
-        event.preventDefault();
+      // Check if this was a tap and not a drag
+      if (!wasDrag && touchDuration < TAP_THRESHOLD) {
+        // This was a short touch with minimal movement - treat as a tap/click
+        
+        // Get the position where the touch ended
+        const touchX = event.changedTouches[0].clientX;
+        const touchY = event.changedTouches[0].clientY;
+        
+        // Calculate movement distance
+        const moveDistance = Math.sqrt(
+          Math.pow(touchX - touchStartX, 2) + 
+          Math.pow(touchY - touchStartY, 2)
+        );
+        
+        // Only process as tap if movement was minimal
+        if (moveDistance < TAP_MOVEMENT_THRESHOLD) {
+          console.log('Detected tap at:', touchX, touchY);
+          
+          // Create a synthetic click event
+          const clickEvent = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            clientX: touchX,
+            clientY: touchY
+          });
+          
+          // Find the element under the touch position
+          const elementAtPoint = document.elementFromPoint(touchX, touchY);
+          
+          if (elementAtPoint) {
+            // Check if this is the center tile
+            const centerTile = elementAtPoint.closest('.tile.center');
+            if (centerTile) {
+              console.log('Tapped on center tile');
+              handleCenterTileClick({
+                target: centerTile,
+                stopPropagation: () => {},
+                preventDefault: () => {}
+              });
+            } else {
+              // Dispatch the synthetic click event
+              elementAtPoint.dispatchEvent(clickEvent);
+            }
+          }
+        }
       }
     }
   }
   
-  let hoverTimeout = null;
+  function handleMouseDown(event) {
+    if (!introduced || event.button !== 0) return;
+    
+    // Reset the drag state on each mousedown
+    wasDrag = false;
+    dist = 0;
+    
+    if (handleDragAction({ 
+      type: 'dragstart', 
+      clientX: event.clientX, 
+      clientY: event.clientY, 
+      button: event.button 
+    }) && mapElement) {
+      mapElement.style.cursor = "grabbing";
+    }
+    
+    event.preventDefault();
+  }
+  
+  function handleMouseMove(event) {
+    // Allow drag handling even in path drawing mode
+    if ($map.isDragging && $map.dragSource === 'map') {
+      handleDragAction({ 
+        type: 'dragmove', 
+        clientX: event.clientX, 
+        clientY: event.clientY 
+      });
+    }
+  }
+  
+  function handleMouseUp() {
+    // Allow drag handling even in path drawing mode
+    if ($map.isDragging && $map.dragSource === 'map') {
+      handleDragAction({ type: 'dragend' });
+      if (mapElement) mapElement.style.cursor = isPathDrawingMode ? "crosshair" : "grab";
+    }
+  }
+  
   function handleTileHover(cell) {
     if (detailed || isPathDrawingMode) {
       // Only set highlight in path drawing mode, not when details is open
@@ -2403,6 +2462,37 @@
     .path-control-btn {
       padding: 0.4em 0.7em;
       font-size: 0.9em;
+    }
+  }
+
+  /* Improve touch targets for mobile */
+  @media (max-width: 768px) {
+    .tile {
+      /* Make tiles easier to tap by ensuring they have enough space */
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Increase size of interactive controls for better touch targets */
+    .tile.center {
+      /* Make center tile slightly larger on mobile */
+      box-shadow: 
+        inset 0 0 0 3px rgba(255, 255, 255, 0.8),
+        inset 0 0 0.7em rgba(255, 255, 255, 0.4),
+        0 0 1.2em rgba(255, 255, 255, 0.3);
+    }
+
+    /* Ensure touch targets are large enough */
+    .zoom-controls .zoom-button {
+      min-height: 44px;
+      min-width: 44px;
+      margin: 0.15em;
+    }
+
+    /* Make the path controls easier to tap */
+    .path-control-btn {
+      min-height: 44px;
+      padding: 0.7em 1.2em;
     }
   }
 
