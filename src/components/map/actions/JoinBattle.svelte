@@ -37,176 +37,43 @@
   let loading = $state(false);
   let errorMessage = $state('');
   
-  // FIX: Use $derived for player ID like in other components
+  // Use $derived for player ID like in other components
   let playerId = $derived($currentPlayer?.id);
   
-  // Helper function to normalize groups data - handles both array and object formats
-  function normalizeGroupsData(groupsData) {
-    if (!groupsData) return [];
-    
-    // If it's already an array, return it
-    if (Array.isArray(groupsData)) return groupsData;
-    
-    // If it's an object with keys, convert to array
-    if (typeof groupsData === 'object') {
-      return Object.keys(groupsData).map(key => {
-        const data = groupsData[key];
-        return {
-          ...data,
-          id: data.id || key
-        };
-      });
-    }
-    
-    return [];
-  }
-  
-  // Add helper function to normalize battles data - similar to groups
-  function normalizeBattlesData(battlesData) {
-    if (!battlesData) return [];
-    
-    // If it's already an array, return it
-    if (Array.isArray(battlesData)) return battlesData;
-    
-    // If it's an object with keys, convert to array
-    if (typeof battlesData === 'object') {
-      return Object.keys(battlesData).map(key => {
-        const data = battlesData[key];
-        return {
-          ...data,
-          id: data.id || key
-        };
-      });
-    }
-    
-    return [];
-  }
-  
-  // Improved battle detection logic
+  // Improved battle detection logic - simplified to avoid redundant processing
   $effect(() => {
-    if (!tileData) return;
+    if (!tileData || !playerId) return;
     
     console.log('JoinBattle tileData:', tileData);
     
-    if (!playerId) return;
-    
-    // Normalize groups data first (handles both array and object formats)
-    const groups = normalizeGroupsData(tileData.groups);
-    
-    // Find groups that can join battles
-    availableGroups = groups.filter(group => 
-        group.owner === playerId && 
-        group.status === 'idle'
-      ).map(group => ({
-        ...group,
-        selected: false
-      }));
+    // Filter idle groups owned by the current player
+    // tileData.groups is already an array from the map store
+    availableGroups = (tileData.groups || []).filter(group => 
+      group.owner === playerId && 
+      group.status === 'idle'
+    );
     
     // Auto-select first group if there's only one
-    if (availableGroups.length === 1) {
-      selectedGroup = availableGroups[0];
-    } else {
-      selectedGroup = null;
-    }
+    selectedGroup = availableGroups.length === 1 ? availableGroups[0] : null;
     
-    // Find battles with improved detection based on exact structure from backup.json
-    const battles = new Map();
-    
-    // First check if we have direct battle references in tileData.battles
-    if (tileData.battles) {
-      console.log('Raw battles data:', tileData.battles);
-      
-      // Normalize battles - handles both array and object formats
-      const normalizedBattles = normalizeBattlesData(tileData.battles);
-      console.log('Normalized battles:', normalizedBattles);
-      
-      normalizedBattles.forEach(battle => {
-        if (battle && battle.id) {
-          // Create a standardized battle object matching the structure in backup.json
-          const battleData = {
-            ...battle,
-            // Ensure both side1 and side2 are properly populated
-            side1: battle.side1 || {
-              casualties: 0,
-              groups: {},
-              power: 0,
-              name: "Side 1"
-            },
-            side2: battle.side2 || {
-              casualties: 0,
-              groups: {},
-              power: 0,
-              name: "Side 2"
-            },
-            selected: false
-          };
-          
-          // Calculate power for each side if not already provided
-          battleData.side1.power = battleData.side1.power || battleData.side1Power || 0;
-          battleData.side2.power = battleData.side2.power || battleData.side2Power || 0;
-          
-          // Convert groups object to proper format if present
-          if (battleData.side1.groups) {
-            battleData.side1.groups = Object.keys(battleData.side1.groups);
-          } else {
-            battleData.side1.groups = [];
-          }
-          
-          if (battleData.side2.groups) {
-            battleData.side2.groups = Object.keys(battleData.side2.groups);
-          } else {
-            battleData.side2.groups = [];
-          }
-          
-          battles.set(battle.id, battleData);
+    // Use battles directly from tileData - already normalized by map store
+    activeBattles = (tileData.battles || []).map(battle => {
+      // Just ensure the battle has the minimal required properties
+      return {
+        ...battle,
+        // Set defaults for side1/side2 if they don't exist
+        side1: battle.side1 || { 
+          groups: [],
+          power: battle.side1Power || 0,
+          name: battle.side1Name || "Side 1" 
+        },
+        side2: battle.side2 || { 
+          groups: [],
+          power: battle.side2Power || 0,
+          name: battle.side2Name || "Side 2"
         }
-      });
-    }
-    
-    // Also look for groups in battle as a fallback
-    if (groups.length > 0) {
-      groups.forEach(group => {
-        if (group.battleId) {
-          if (!battles.has(group.battleId)) {
-            battles.set(group.battleId, {
-              id: group.battleId,
-              side1: {
-                casualties: 0,
-                groups: [],
-                power: 0,
-                name: "Side 1"
-              },
-              side2: {
-                casualties: 0,
-                groups: [], 
-                power: 0,
-                name: "Side 2"
-              },
-              selected: false,
-              locationX: tileData.x,
-              locationY: tileData.y,
-              tickCount: 0
-            });
-          }
-          
-          // Add group to appropriate side
-          const side = group.battleSide || 1;
-          const battleData = battles.get(group.battleId);
-          
-          if (!battleData[`side${side}`].groups.includes(group.id)) {
-            battleData[`side${side}`].groups.push(group.id);
-            
-            // Calculate power based on units
-            const unitCount = group.units ? 
-              (Array.isArray(group.units) ? group.units.length : Object.keys(group.units).length) : 1;
-            battleData[`side${side}`].power += unitCount;
-          }
-        }
-      });
-    }
-    
-    // Convert map to array
-    activeBattles = Array.from(battles.values());
+      };
+    });
     
     console.log('Found battles:', activeBattles.length, activeBattles);
     console.log('Available groups:', availableGroups.length);
