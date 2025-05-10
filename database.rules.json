@@ -3,7 +3,7 @@
     "worlds": {
       "$worldId": {
         "chat": {
-          ".indexOn": ["timestamp"],
+          ".indexOn": "timestamp",
           ".write": "auth != null",
           "$messageId": {
             ".validate": "newData.hasChildren(['text', 'timestamp', 'userId', 'userName']) && newData.child('text').isString() && newData.child('text').val().length <= 200 && newData.child('userId').val() === auth.uid"
