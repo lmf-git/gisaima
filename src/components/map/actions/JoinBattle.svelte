@@ -46,34 +46,70 @@
     
     console.log('JoinBattle tileData:', tileData);
     
-    // Filter idle groups owned by the current player
-    // tileData.groups is already an array from the map store
-    availableGroups = (tileData.groups || []).filter(group => 
-      group.owner === playerId && 
-      group.status === 'idle'
-    );
+    // Check if groups is an array or object (normalized from the map store)
+    if (tileData.groups) {
+      // The map store always provides groups as an array
+      availableGroups = tileData.groups.filter(group => 
+        group.owner === playerId && 
+        group.status === 'idle'
+      );
+      
+      console.log('Available groups found:', availableGroups.length, availableGroups);
+    } else {
+      availableGroups = [];
+    }
     
     // Auto-select first group if there's only one
     selectedGroup = availableGroups.length === 1 ? availableGroups[0] : null;
     
-    // Use battles directly from tileData - already normalized by map store
-    activeBattles = (tileData.battles || []).map(battle => {
-      // Just ensure the battle has the minimal required properties
-      return {
-        ...battle,
-        // Set defaults for side1/side2 if they don't exist
-        side1: battle.side1 || { 
-          groups: [],
-          power: battle.side1Power || 0,
-          name: battle.side1Name || "Side 1" 
-        },
-        side2: battle.side2 || { 
-          groups: [],
-          power: battle.side2Power || 0,
-          name: battle.side2Name || "Side 2"
-        }
-      };
-    });
+    // Process battles - ensure we handle both array and object formats
+    if (tileData.battles) {
+      if (Array.isArray(tileData.battles)) {
+        // Handle battle array format (from map store)
+        activeBattles = tileData.battles.map(battle => {
+          // Enhanced logging to help debug the battle structure
+          console.log('Processing battle:', battle.id, battle);
+          
+          // Create a normalized battle object with required properties
+          return {
+            ...battle,
+            id: battle.id || `battle_${Date.now()}`,
+            side1: battle.side1 || { 
+              groups: battle.side1?.groups || {},
+              power: battle.side1Power || 0,
+              name: battle.side1?.name || "Side 1" 
+            },
+            side2: battle.side2 || { 
+              groups: battle.side2?.groups || {},
+              power: battle.side2Power || 0,
+              name: battle.side2?.name || "Side 2"
+            }
+          };
+        });
+      } else {
+        // Handle battle object format (direct from Firebase)
+        activeBattles = Object.entries(tileData.battles).map(([battleId, battle]) => {
+          console.log('Processing battle from object:', battleId, battle);
+          
+          return {
+            ...battle,
+            id: battleId,
+            side1: battle.side1 || { 
+              groups: battle.side1?.groups || {},
+              power: battle.side1Power || 0,
+              name: battle.side1?.name || "Side 1" 
+            },
+            side2: battle.side2 || { 
+              groups: battle.side2?.groups || {},
+              power: battle.side2Power || 0,
+              name: battle.side2?.name || "Side 2"
+            }
+          };
+        });
+      }
+    } else {
+      activeBattles = [];
+    }
     
     console.log('Found battles:', activeBattles.length, activeBattles);
     console.log('Available groups:', availableGroups.length);
@@ -193,6 +229,7 @@
     {#if availableGroups.length === 0 || activeBattles.length === 0}
       <div class="message error">
         <p>No battles available to join at this location, or you don't have any groups that can join.</p>
+        <p class="debug-info">Groups: {availableGroups.length}, Battles: {activeBattles.length}</p>
         <button class="cancel-btn" onclick={onClose}>Close</button>
       </div>
     {:else}
@@ -240,10 +277,10 @@
                   <div class="battle-name">Battle {battle.id.substring(battle.id.lastIndexOf('_') + 1)}</div>
                   <div class="battle-sides">
                     <div class="side-info">
-                      Side 1: {battle.side1.groups.length} groups ({battle.side1.power} strength)
+                      Side 1: {Object.keys(battle.side1?.groups || {}).length} groups
                     </div>
                     <div class="side-info">
-                      Side 2: {battle.side2.groups.length} groups ({battle.side2.power} strength)
+                      Side 2: {Object.keys(battle.side2?.groups || {}).length} groups
                     </div>
                   </div>
                 </div>
@@ -266,7 +303,7 @@
               >
                 <div class="side-content">
                   <span class="side-name">Side 1</span>
-                  <span class="side-count">({selectedBattle.side1.groups.length} groups)</span>
+                  <span class="side-count">({Object.keys(selectedBattle.side1?.groups || {}).length} groups)</span>
                 </div>
               </button>
               <button 
@@ -279,7 +316,7 @@
               >
                 <div class="side-content">
                   <span class="side-name">Side 2</span>
-                  <span class="side-count">({selectedBattle.side2.groups.length} groups)</span>
+                  <span class="side-count">({Object.keys(selectedBattle.side2?.groups || {}).length} groups)</span>
                 </div>
               </button>
             </div>
@@ -523,6 +560,26 @@
   }
 
   .error-message {
+    margin-top: 0.5em;
+    color: #999;
+    font-size: 0.8em;
+  }
+
+  .debug-info {
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    background-color: rgba(255, 0, 0, 0.1);
+  }
+
+  .message.error {
+    margin-bottom: 1em;
+    border-radius: 0.4em;
+    padding: 1em;
+  }
+
+  .message {
+    margin-top: 1em;
+    font-size: 0.9em;
+    color: red;
     padding: 0.8em;
     background-color: rgba(255, 0, 0, 0.1);
     border-left: 3px solid #ff3232;
@@ -542,6 +599,12 @@
     align-items: center;
   }
 
+  .debug-info {
+    font-size: 0.8em;
+    opacity: 0.7;
+    font-style: italic;
+  }
+  
   @media (min-width: 768px) {
     .battle-join {
       display: grid;
