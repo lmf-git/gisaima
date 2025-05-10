@@ -2482,12 +2482,6 @@
 
   /* Improve touch targets for mobile */
   @media (max-width: 768px) {
-    .tile {
-      /* Make tiles easier to tap by ensuring they have enough space */
-      min-height: 44px;
-      min-width: 44px;
-    }
-
     /* Increase size of interactive controls for better touch targets */
     .tile.center {
       /* Make center tile slightly larger on mobile */
