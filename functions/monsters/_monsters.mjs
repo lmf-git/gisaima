@@ -520,7 +520,7 @@ export function createBattleActionMessage(monsterGroup, battleAction, targetType
  * @param {object} chunks - Chunks data
  * @returns {object} Object containing player spawns, monster structures, and resource hotspots
  */
-export async function scanWorldMap(db, worldId, chunks) {
+export function scanWorldMap(db, worldId, chunks) {
   const playerSpawns = [];
   const monsterStructures = [];
   const resourceHotspots = [];
