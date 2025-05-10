@@ -219,61 +219,57 @@
       
       let cols, rows;
       
-      // Make this decision simpler and more explicit:
-      // If we're at maximum zoom, use 1x1 grid regardless of device
+      // STEP 1: Determine base grid size based on zoom level
       if (isMaxZoom) {
-        // For maximum zoom out, always use 1x1 grid
+        // For maximum zoom out, always use 1x1 grid (which is odd by definition)
         cols = 1;
         rows = 1;
       } 
-      // For intermediate extreme zoom levels, use small odd-numbered grids (3x3, 5x5, etc.)
-      else if (isExtremeZoom) {
-        // Calculate minimum size needed, then force to nearest odd number
-        cols = Math.ceil(rawCols);
-        rows = Math.ceil(rawRows);
-        
-        // Ensure odd numbers for proper centering
-        cols = cols % 2 === 0 ? cols + 1 : cols;
-        rows = rows % 2 === 0 ? rows + 1 : rows;
-        
-        // Ensure at least 3x3 grid for proper centering at intermediate zoom levels
-        cols = Math.max(3, cols);
-        rows = Math.max(3, rows);
-      } 
-      // For normal zoom levels, use calculated sizes without extra padding
       else {
-        // Just ceil the raw values without adding extra padding
+        // For all other zoom levels, ensure we have odd numbers
+        // First calculate base size from available space
         cols = Math.ceil(rawCols);
         rows = Math.ceil(rawRows);
         
-        // Ensure odd numbers for centered target
+        // ALWAYS force odd numbers to ensure perfect centering of target tile
         cols = cols % 2 === 0 ? cols + 1 : cols;
         rows = rows % 2 === 0 ? rows + 1 : rows;
+        
+        // For extreme zoom, ensure minimum size of 3x3 (still odd)
+        if (isExtremeZoom) {
+          cols = Math.max(3, cols);
+          rows = Math.max(3, rows);
+        }
       }
       
       // Calculate the container's aspect ratio
       const containerAspectRatio = width / height;
       
-      // Only enforce square tiles when we're NOT at extreme zoom levels and NOT at 1x1 grid
-      if (!isExtremeZoom && !(cols === 1 && rows === 1)) {
-        // For normal zoom levels, calculate aspect ratio using current rows and columns
+      // STEP 2: Adjust for aspect ratio to make cells square
+      // Skip for 1x1 grid as it's already square by definition
+      if (!(cols === 1 && rows === 1)) {
+        // Calculate current cell aspect ratio using current rows and columns
         const cellAspectRatio = (width / cols) / (height / rows);
         
-        // If cells aren't square (with a small tolerance), adjust to make them square
+        // If cells aren't square (with a small tolerance), adjust dimensions
         if (Math.abs(cellAspectRatio - 1) > 0.05) {
           if (containerAspectRatio > 1) {
             // Wider than tall - adjust columns based on rows
             cols = Math.ceil(rows * containerAspectRatio);
-            // Ensure odd number
+            // CRITICAL: Force odd number to maintain perfect centering
             cols = cols % 2 === 0 ? cols + 1 : cols;
           } else {
             // Taller than wide - adjust rows based on columns
             rows = Math.ceil(cols / containerAspectRatio);
-            // Ensure odd number
+            // CRITICAL: Force odd number to maintain perfect centering
             rows = rows % 2 === 0 ? rows + 1 : rows;
           }
         }
       }
+
+      // Final validation to guarantee odd numbers
+      cols = cols % 2 === 0 ? cols + 1 : cols;
+      rows = rows % 2 === 0 ? rows + 1 : rows;
 
       return {
         ...state,
