@@ -47,6 +47,7 @@
   // Add zoom level state
   let zoomLevel = $state(initialZoom);
   let currentTileSize = $state(TILE_SIZE);
+  let hoverTimeout = $state(null); // Add the missing hoverTimeout variable
   
   // Track last click time for the center tile to handle debouncing
   let lastCenterClickTime = $state(0);
