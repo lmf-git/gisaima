@@ -484,6 +484,10 @@
   function handleTouchStart(event) {
     if (!introduced || !$map.ready) return;
     
+    // Reset drag tracking for new touch
+    wasDrag = false;
+    dist = 0;
+    
     // Handle pinch zoom first if we have multiple touch points
     if (event.touches.length >= 2) {
       // Try to handle as pinch zoom
@@ -527,6 +531,17 @@
     if (!$map.isDragging || $map.dragSource !== 'map') return;
     event.preventDefault();
     
+    // If the movement is significant, mark this as a drag
+    const touch = event.touches[0];
+    const state = $map;
+    const deltaX = touch.clientX - state.dragStartX;
+    const deltaY = touch.clientY - state.dragStartY;
+    const moveDist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    
+    if (moveDist > DRAG_THRESHOLD) {
+      wasDrag = true;
+    }
+    
     handleDragAction({ 
       type: 'touchmove', 
       touches: event.touches 
@@ -555,6 +570,13 @@
     
     if ($map.isDragging && $map.dragSource === 'map') {
       handleDragAction({ type: 'touchend' });
+      
+      // We don't need to create synthetic clicks anymore - the browser will
+      // generate a real click event if this wasn't a drag
+      // Just make sure we're preventing default on drags to avoid double events
+      if (wasDrag) {
+        event.preventDefault();
+      }
     }
   }
   
@@ -1827,8 +1849,8 @@
     right: 0;
     bottom: 0;
     /* Add these lines to prevent browser default touch behaviors */
-    /* touch-action: none;
-    -ms-touch-action: none; */
+    touch-action: none;
+    -ms-touch-action: none;
   }
 
   .map {
@@ -2554,14 +2576,16 @@
   }
 
   /* Special handling for structure name label at maximum zoom */
-  .map-container.max-zoom .structure-name-label {
-    top: 1.5em;
-    z-index: 1500; /* Ensure it stays above other elements */
-  }
+  @media (max-width: 480px) {
+    .map-container.max-zoom .structure-name-label {
+      top: 1.5em;
+      z-index: 1500; /* Ensure it stays above other elements */
+    }
 
-  /* Style modifications for "You are here" container at maximum zoom */
-  .you-are-here-container.max-zoom {
-  /* Container-level styling only - the component will handle internal positioning */
-  z-index: 1500; /* Ensure container stays visible */
-}
+    /* Style modifications for "You are here" container at maximum zoom */
+    .you-are-here-container.max-zoom {
+    /* Container-level styling only - the component will handle internal positioning */
+    z-index: 1500; /* Ensure container stays visible */
+  }
+  }
 </style>
