@@ -547,9 +547,13 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           // Log structure state before damage calculation
           console.log(`STRUCTURE BATTLE: ${structureType} with durability ${structureDurability}`);
           
-          // Initialize health if not present (first battle) - CRITICAL!
-          const currentHealth = structure.health !== undefined ? structure.health : structureDurability;
-          console.log(`Current structure health: ${currentHealth} (${structure.health !== undefined ? 'from database' : 'newly initialized'})`);
+          // IMPROVED: Better handling of undefined structure health
+          // If health property doesn't exist, treat as full health without writing to DB yet
+          const currentHealth = structure.health !== undefined ? 
+              structure.health : 
+              structureDurability;
+              
+          console.log(`Current structure health: ${currentHealth} (${structure.health !== undefined ? 'from database' : 'at full health - not saved yet'})`);
           
           // Calculate proportional damage based on attacker power
           // Get total units in attacking side
@@ -568,11 +572,40 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           
           // Calculate damage - base damage is 10% of structure durability, modified by attacker power
           const baseDamage = Math.round(structureDurability * 0.10);  // Reduced from 15% to 10%
-          const powerFactor = Math.min(2, Math.max(0.5, totalAttackerPower / 10)); 
+          
+          // IMPROVED SCALING: Better scaling for very large attacking forces
+          // Old formula: const powerFactor = Math.min(2, Math.max(0.5, totalAttackerPower / 10));
+          // New formula uses logarithmic scaling to handle large numbers better
+          const powerRatio = totalAttackerPower / structureDurability;
+          let powerFactor;
+          
+          if (powerRatio <= 1) {
+            // For small forces (power <= structure durability), use original scaling
+            powerFactor = Math.max(0.5, powerRatio);
+          } else {
+            // For larger forces, use logarithmic scaling to prevent excessive caps
+            // This gives diminishing returns but still rewards larger forces
+            powerFactor = 1 + Math.log10(powerRatio);
+          }
+          
+          // Cap the maximum factor for balance, but much higher than before for massive forces
+          powerFactor = Math.min(5, powerFactor);
+          
+          console.log(`Power ratio: ${powerRatio}, calculated power factor: ${powerFactor}`);
           let damageAmount = Math.round(baseDamage * powerFactor);
           
-          // Prevent excessive damage in early ticks - damage cap based on tick count
-          const maxDamagePerTick = Math.round(structureDurability * 0.25); // Maximum 25% in one tick
+          // Adjust damage cap based on attacker power relative to structure
+          // Very large forces can do more than 25% damage per tick
+          let maxDamagePercentage = 0.25; // Default 25%
+          
+          if (powerRatio > 3) {
+            // Formula: 25% + additional % based on power ratio, capped at 75%
+            maxDamagePercentage = Math.min(0.75, 0.25 + (powerRatio - 3) * 0.05);
+            console.log(`Increased damage cap to ${Math.round(maxDamagePercentage * 100)}% due to overwhelming force`);
+          }
+          
+          const maxDamagePerTick = Math.round(structureDurability * maxDamagePercentage);
+          
           if (damageAmount > maxDamagePerTick) {
             console.log(`Damage capped from ${damageAmount} to ${maxDamagePerTick} to prevent excessive damage`);
             damageAmount = maxDamagePerTick;
@@ -585,69 +618,69 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
           
           // Check if the structure should be destroyed - minimum 2 ticks for any structure
           if (newHealth <= 0 && tickCount > 1) {
-            // Flag that structure will be destroyed
-            willDestroyStructure = true;
-            
-            // Structure is destroyed
-            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`] = null;
-            
-            // Handle players on the destroyed structure
-            if (tile.players) {
-              const now = Date.now();
-              const playersCount = Object.keys(tile.players).length;
-              let killedPlayersCount = 0;
-              const killedPlayerNames = [];
+              // Flag that structure will be destroyed
+              willDestroyStructure = true;
               
-              console.log(`Structure destroyed - checking ${playersCount} players on tile`);
+              // Structure is destroyed
+              updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure`] = null;
               
-              // Process each player on the tile where structure was destroyed
-              Object.entries(tile.players).forEach(([playerId, playerData]) => {
-                // Set alive status to false
-                updates[`players/${playerId}/worlds/${worldId}/alive`] = false;
+              // Handle players on the destroyed structure
+              if (tile.players) {
+                const now = Date.now();
+                const playersCount = Object.keys(tile.players).length;
+                let killedPlayersCount = 0;
+                const killedPlayerNames = [];
                 
-                // Clear their group reference
-                updates[`players/${playerId}/worlds/${worldId}/inGroup`] = null;
+                console.log(`Structure destroyed - checking ${playersCount} players on tile`);
                 
-                // Add a death message to the player's record
-                updates[`players/${playerId}/worlds/${worldId}/lastMessage`] = {
-                  text: "Died in structure destruction",
-                  timestamp: now
+                // Process each player on the tile where structure was destroyed
+                Object.entries(tile.players).forEach(([playerId, playerData]) => {
+                  // Set alive status to false
+                  updates[`players/${playerId}/worlds/${worldId}/alive`] = false;
+                  
+                  // Clear their group reference
+                  updates[`players/${playerId}/worlds/${worldId}/inGroup`] = null;
+                  
+                  // Add a death message to the player's record
+                  updates[`players/${playerId}/worlds/${worldId}/lastMessage`] = {
+                    text: "Died in structure destruction",
+                    timestamp: now
+                  };
+                  
+                  // CRITICAL FIX: Mark lastLocation with death info instead of removing it
+                  // This maintains the death location for history purposes
+                  updates[`players/${playerId}/worlds/${worldId}/lastLocation`] = null;
+                  
+                  // CRITICAL FIX: Remove player from the tile
+                  updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/players/${playerId}`] = null;
+                  
+                  killedPlayersCount++;
+                  if (playerData.displayName) {
+                    killedPlayerNames.push(playerData.displayName);
+                  }
+                  
+                  console.log(`Player ${playerId} (${playerData.displayName || 'unknown'}) marked as dead after structure destruction`);
+                });
+                
+                // Create a single chat message for the structure destruction and all player deaths
+                const structureName = structure.name || `${structureType.charAt(0).toUpperCase() + structureType.slice(1)}`;
+                let deathMessage = `${structureName} at (${battle.locationX}, ${battle.locationY}) has been destroyed!`;
+                
+                if (killedPlayersCount > 0) {
+                  deathMessage += ` ${killedPlayersCount} player${killedPlayersCount !== 1 ? 's' : ''} perished in the destruction.`;
+                }
+                
+                const chatMessageId = `structure_destroyed_${battle.locationX},${battle.locationY}`;
+                updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
+                  text: deathMessage,
+                  type: 'event',
+                  timestamp: now,
+                  location: {
+                    x: battle.locationX,
+                    y: battle.locationY
+                  }
                 };
-                
-                // CRITICAL FIX: Mark lastLocation with death info instead of removing it
-                // This maintains the death location for history purposes
-                updates[`players/${playerId}/worlds/${worldId}/lastLocation`] = null;
-                
-                // CRITICAL FIX: Remove player from the tile
-                updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/players/${playerId}`] = null;
-                
-                killedPlayersCount++;
-                if (playerData.displayName) {
-                  killedPlayerNames.push(playerData.displayName);
-                }
-                
-                console.log(`Player ${playerId} (${playerData.displayName || 'unknown'}) marked as dead after structure destruction`);
-              });
-              
-              // Create a single chat message for the structure destruction and all player deaths
-              const structureName = structure.name || `${structureType.charAt(0).toUpperCase() + structureType.slice(1)}`;
-              let deathMessage = `${structureName} at (${battle.locationX}, ${battle.locationY}) has been destroyed!`;
-              
-              if (killedPlayersCount > 0) {
-                deathMessage += ` ${killedPlayersCount} player${killedPlayersCount !== 1 ? 's' : ''} perished in the destruction.`;
               }
-              
-              const chatMessageId = `structure_destroyed_${battle.locationX},${battle.locationY}`;
-              updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-                text: deathMessage,
-                type: 'event',
-                timestamp: now,
-                location: {
-                  x: battle.locationX,
-                  y: battle.locationY
-                }
-              };
-            }
           } else if (newHealth <= 0) {
             // Structure critically damaged but not destroyed in first tick
             console.log(`Structure critically damaged but prevented from destruction in first tick`);
@@ -668,7 +701,10 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
             };
           } else {
             // Structure survives with reduced health
-            updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/health`] = newHealth;
+            // Only write health to DB if it's changed from full health
+            if (newHealth < structureDurability || structure.health !== undefined) {
+                updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/structure/health`] = newHealth;
+            }
             
             // Create a message about structure damage
             const structureName = structure.name || `${structureType.charAt(0).toUpperCase() + structureType.slice(1)}`;
