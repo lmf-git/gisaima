@@ -5,18 +5,20 @@
  * @param {object} monsterGroup - The monster group data
  * @param {object} updates - Updates object to modify
  * @param {number} now - Current timestamp
+ * @param {object} chunks - Pre-loaded chunks data
  * @returns {object} Action result
  */
-export async function startMonsterGathering(db, worldId, monsterGroup, updates, now) {
+export async function startMonsterGathering(db, worldId, monsterGroup, updates, now, chunks) {
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
   
-  // Get tile data to determine biome
-  const tileRef = db.ref(`worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}`);
-  const tileSnapshot = await tileRef.once('value');
-  const tileData = tileSnapshot.val() || {};
-  
-  // Get the biome or default to plains
-  const biome = tileData.biome?.name || 'plains';
+  // Get tile data from chunks instead of making a database call
+  let biome = 'plains'; // Default biome
+  if (chunks && monsterGroup.chunkKey && monsterGroup.tileKey) {
+    const tileData = chunks[monsterGroup.chunkKey]?.[monsterGroup.tileKey];
+    if (tileData) {
+      biome = tileData.biome?.name || tileData.terrain?.biome || 'plains';
+    }
+  }
   
   // Set gathering status with tick counting
   updates[`${groupPath}/status`] = 'gathering';

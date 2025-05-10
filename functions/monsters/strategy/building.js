@@ -776,24 +776,26 @@ export async function addOrUpgradeMonsterBuilding(db, worldId, monsterGroup, str
  * @param {object} structure - Structure to potentially adopt
  * @param {object} updates - Database updates object
  * @param {number} now - Current timestamp
+ * @param {object} chunks - Pre-loaded chunks data
  * @returns {object} Action result
  */
-export async function adoptAbandonedStructure(db, worldId, monsterGroup, structure, updates, now) {
+export async function adoptAbandonedStructure(db, worldId, monsterGroup, structure, updates, now, chunks) {
   // Only structures that are in building status can be adopted
   if (!structure || structure.status !== 'building') {
     return { action: null, reason: 'structure_not_building' };
   }
   
-  // Check if there's already a builder group on this tile
   const chunkKey = monsterGroup.chunkKey;
   const tileKey = monsterGroup.tileKey;
   
-  const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
-  const tileSnapshot = await tileRef.once('value');
-  const tileData = tileSnapshot.val();
+  // Get tile data from chunks instead of making a database call
+  const tileData = chunks?.[chunkKey]?.[tileKey];
+  if (!tileData) {
+    return { action: null, reason: 'tile_data_not_found' };
+  }
   
   // Check if any group is already building - don't adopt if someone is already working
-  if (tileData?.groups) {
+  if (tileData.groups) {
     const hasActiveBuilder = Object.values(tileData.groups).some(
       group => group.id !== monsterGroup.id && group.status === 'building'
     );

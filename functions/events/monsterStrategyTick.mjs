@@ -123,7 +123,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   if (structureUnderConstruction && 
       Math.random() < 0.7 * (weights?.build || 1.0)) { // High chance to adopt with build personality
     const adoptResult = await adoptAbandonedStructure(
-      db, worldId, monsterGroup, tileData.structure, updates, now
+      db, worldId, monsterGroup, tileData.structure, updates, now, chunks
     );
     
     if (adoptResult.action === 'adopt') {
@@ -282,7 +282,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
     
     // Extra safety check - don't build if we already have a structure here or are on a structure
     if (!tileData.structure) {
-      return await buildMonsterStructure(db, worldId, monsterGroup, location, updates, now, worldScan);
+      return await buildMonsterStructure(db, worldId, monsterGroup, location, updates, now, worldScan, chunks);
     }
   }
   
@@ -332,7 +332,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
   // Strategy 5: If no resources, go gathering
   // Heavily influenced by personality's gather weight
   if ((!hasResources || resourceCount < 5) && Math.random() < 0.7 * (weights?.gather || 1.0)) {
-    return await startMonsterGathering(db, worldId, monsterGroup, updates, now);
+    return await startMonsterGathering(db, worldId, monsterGroup, updates, now, chunks);
   }
   
   // Strategy 6: Move towards a strategic target

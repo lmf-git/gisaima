@@ -113,7 +113,7 @@ export async function spawnMonsters(worldId, chunks) {
     logger.info(`Found ${activeLocations.length} active locations and ${monsterStructures.length} monster structures in world ${worldId}`);
     
     // Process monster spawns at structures first
-    const structureSpawns = await spawnMonstersAtStructures(worldId, monsterStructures, existingMonsterLocations);
+    const structureSpawns = await spawnMonstersAtStructures(worldId, monsterStructures, existingMonsterLocations, chunks);
     monstersSpawned += structureSpawns;
     
     // Process structure mobilizations - NEW FUNCTIONALITY
@@ -166,7 +166,7 @@ export async function spawnMonsters(worldId, chunks) {
       // Either create a new monster group or merge with an existing one
       const updates = {};
       
-      await createNewMonsterGroup(worldId, spawnChunkKey, spawnTileKey, spawnLocation, updates, tileBiome);
+      await createNewMonsterGroup(worldId, spawnChunkKey, spawnTileKey, spawnLocation, updates, tileBiome, chunks);
       
       // Apply all updates
       if (Object.keys(updates).length > 0) {
@@ -190,9 +190,10 @@ export async function spawnMonsters(worldId, chunks) {
  * @param {string} worldId - World ID
  * @param {Array} monsterStructures - Array of monster structures
  * @param {Object} existingMonsterLocations - Map of existing monster locations
+ * @param {Object} chunks - All world chunks data
  * @returns {Promise<number>} - Number of monster groups spawned
  */
-async function spawnMonstersAtStructures(worldId, monsterStructures, existingMonsterLocations) {
+async function spawnMonstersAtStructures(worldId, monsterStructures, existingMonsterLocations, chunks) {
   if (!monsterStructures.length) return 0;
   
   const db = getDatabase();
@@ -213,13 +214,14 @@ async function spawnMonstersAtStructures(worldId, monsterStructures, existingMon
       continue;
     }
     
-    // Check if there's room for spawning (no groups already on the tile)
-    const tileRef = db.ref(`worlds/${worldId}/chunks/${structureData.chunkKey}/${structureData.tileKey}`);
-    const tileSnapshot = await tileRef.once('value');
-    const tileData = tileSnapshot.val();
+    // Get tile data from chunks instead of making a database call
+    const tileData = chunks[structureData.chunkKey]?.[structureData.tileKey];
+    if (!tileData) {
+      continue;
+    }
     
     // Skip if tile has groups already to prevent overcrowding
-    if (tileData?.groups && Object.keys(tileData.groups).length > 0) {
+    if (tileData.groups && Object.keys(tileData.groups).length > 0) {
       continue;
     }
     
@@ -377,12 +379,8 @@ async function mobilizeFromMonsterStructures(worldId, monsterStructures, chunks)
       continue;
     }
     
-    // Check if the structure is valid for mobilization
-    const tileRef = db.ref(`worlds/${worldId}/chunks/${structureData.chunkKey}/${structureData.tileKey}`);
-    const tileSnapshot = await tileRef.once('value');
-    const tileData = tileSnapshot.val();
-    
-    // Skip if no tile data or structure
+    // Get structure data from chunks instead of making a database call
+    const tileData = chunks[structureData.chunkKey]?.[structureData.tileKey];
     if (!tileData || !tileData.structure) {
       continue;
     }
@@ -515,7 +513,7 @@ function findSpawnLocation(playerLocation, allActiveLocations, existingMonsterLo
 /**
  * Create a new monster group
  */
-async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updates, biome) {
+async function createNewMonsterGroup(worldId, chunkKey, tileKey, location, updates, biome, chunks) {
   const now = Date.now();
   
   // Choose a random monster type using biome info
