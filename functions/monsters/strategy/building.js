@@ -28,9 +28,10 @@ const NEARBY_DISTANCE = 10; // Distance considered "nearby" for structure densit
  * @param {string} worldId - World ID
  * @param {object} location - Location to check
  * @param {object} worldScan - World scan data
+ * @param {object} chunks - Pre-loaded chunks data
  * @returns {Promise<boolean>} True if the location is suitable
  */
-async function isLocationSuitableForBuilding(db, worldId, location, worldScan) {
+async function isLocationSuitableForBuilding(db, worldId, location, worldScan, chunks) {
   // Get the chunk and tile keys
   const chunkX = Math.floor(location.x / 20);
   const chunkY = Math.floor(location.y / 20);
@@ -38,10 +39,13 @@ async function isLocationSuitableForBuilding(db, worldId, location, worldScan) {
   const tileKey = `${location.x},${location.y}`;
   
   try {
-    // Check if the tile already has a structure
-    const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
-    const tileSnapshot = await tileRef.once('value');
-    const tileData = tileSnapshot.val();
+    // Require chunks data to contain this tile
+    if (!chunks || !chunks[chunkKey] || !chunks[chunkKey][tileKey]) {
+      console.log(`Location ${location.x},${location.y} not found in provided chunks data`);
+      return false;
+    }
+    
+    const tileData = chunks[chunkKey][tileKey];
     
     // Use the comprehensive isSuitableForMonsterBuilding check
     if (!tileData || !isSuitableForMonsterBuilding(tileData)) {
@@ -116,9 +120,10 @@ async function isLocationSuitableForBuilding(db, worldId, location, worldScan) {
  * @param {object} updates - Database updates object
  * @param {number} now - Current timestamp
  * @param {object} worldScan - World scan data with strategic locations
+ * @param {object} chunks - Pre-loaded chunks data
  * @returns {object} Action result
  */
-export async function buildMonsterStructure(db, worldId, monsterGroup, location, updates, now, worldScan = null) {
+export async function buildMonsterStructure(db, worldId, monsterGroup, location, updates, now, worldScan = null, chunks) {
   // Get personality for decision making
   const personality = monsterGroup.personality || { id: 'BALANCED' };
   
@@ -134,8 +139,8 @@ export async function buildMonsterStructure(db, worldId, monsterGroup, location,
   // Determine where to build
   const buildLocation = determineBuildLocation(location, scanData, personality);
   
-  // Check if location is suitable
-  const isSuitable = await isLocationSuitableForBuilding(db, worldId, buildLocation, scanData);
+  // Check if location is suitable - chunks parameter is now required
+  const isSuitable = await isLocationSuitableForBuilding(db, worldId, buildLocation, scanData, chunks);
   if (!isSuitable) {
     return { action: null, reason: 'unsuitable_location' };
   }
@@ -845,13 +850,11 @@ export async function adoptAbandonedStructure(db, worldId, monsterGroup, structu
   // If it's not already a monster structure, convert it if it was abandoned by players
   if (!structure.monster) {
     const longAbandoned = structure.lastActivity && (now - structure.lastActivity > 86400000); // 24 hours
-    
     if (longAbandoned || structure.monsterFriendly) {
       // Convert to monster structure if long abandoned or monster-friendly
-      updates[`${structurePath}/monster`] = true;
-      updates[`${structurePath}/previousOwner`] = structure.owner;
       updates[`${structurePath}/owner`] = 'monster';
       updates[`${structurePath}/ownerName`] = monsterGroup.name || 'Monster group';
+      structure.monster = true; // Ensure monster flag is set
     }
   }
   
@@ -862,6 +865,7 @@ export async function adoptAbandonedStructure(db, worldId, monsterGroup, structu
     y: parseInt(tileKey.split(',')[1]) 
   };
   
+  // Message text based on structure type
   let messageText = '';
   if (structure.monster) {
     messageText = `${monsterGroup.name || "Monster group"} has decided to continue building the ${structure.name || 'structure'} at (${location.x}, ${location.y}).`;
@@ -879,9 +883,10 @@ export async function adoptAbandonedStructure(db, worldId, monsterGroup, structu
   return {
     action: 'adopt',
     structureId: structure.id,
-    structureType: structure.type
-  };
-}
+    structureType: structure.type,
+    location
+  }; }
+  
 
 // Export all necessary functions
 export {

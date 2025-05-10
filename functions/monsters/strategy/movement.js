@@ -23,10 +23,11 @@ const MAX_SCAN_DISTANCE = 20; // How far to scan for targets
  * @param {number} now - Current timestamp
  * @param {string} targetIntent - Optional intent of movement
  * @param {object} personality - Optional personality data
+ * @param {object} chunks - Optional pre-loaded chunks data
  * @returns {object} Action result
  */
 export async function moveMonsterTowardsTarget(
-  db, worldId, monsterGroup, location, worldScan, updates, now, targetIntent = null, personality = null
+  db, worldId, monsterGroup, location, worldScan, updates, now, targetIntent = null, personality = null, chunks = null
 ) {
   const totalUnits = monsterGroup.units ? Object.keys(monsterGroup.units).length : 1;
   const groupPath = `worlds/${worldId}/chunks/${monsterGroup.chunkKey}/${monsterGroup.tileKey}/groups/${monsterGroup.id}`;
@@ -95,7 +96,8 @@ export async function moveMonsterTowardsTarget(
   // Influenced by attack weight - but only if not in exploration phase
   const adjacentCheckChance = weights.attack || 1.0;
   if (!targetLocation && Math.random() < adjacentCheckChance) {
-    const adjacentStructure = await findAdjacentStructures(db, worldId, location);
+    // Pass chunks data to findAdjacentStructures
+    const adjacentStructure = await findAdjacentStructures(db, worldId, location, chunks);
     if (adjacentStructure) {
       // Only target non-monster structures (target player structures more aggressively)
       if (adjacentStructure.structure && 

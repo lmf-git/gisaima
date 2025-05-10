@@ -173,9 +173,10 @@ export function calculateDistance(loc1, loc2) {
  * @param {object} db - Firebase database reference
  * @param {string} worldId - The world ID
  * @param {object} location - Current location {x, y}
+ * @param {object} chunks - Pre-loaded chunks data
  * @returns {Promise<object|null>} Adjacent tile with structure or null if none found
  */
-export async function findAdjacentStructures(db, worldId, location) {
+export async function findAdjacentStructures(db, worldId, location, chunks) {
   // Define adjacent directions (including diagonals)
   const directions = [
     {dx: 1, dy: 0}, {dx: -1, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: -1},
@@ -185,6 +186,9 @@ export async function findAdjacentStructures(db, worldId, location) {
   // Randomly shuffle directions for more unpredictable behavior
   directions.sort(() => Math.random() - 0.5);
   
+  // Require chunks data
+  if (!chunks) return null;
+  
   for (const dir of directions) {
     const adjX = location.x + dir.dx;
     const adjY = location.y + dir.dy;
@@ -193,11 +197,9 @@ export async function findAdjacentStructures(db, worldId, location) {
     const chunkKey = getChunkKey(adjX, adjY);
     const tileKey = `${adjX},${adjY}`;
     
-    // Check if tile exists and has a structure
-    try {
-      const tileRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}`);
-      const tileSnapshot = await tileRef.once('value');
-      const tileData = tileSnapshot.val();
+    // Check if this location exists in chunks data
+    if (chunks[chunkKey] && chunks[chunkKey][tileKey]) {
+      const tileData = chunks[chunkKey][tileKey];
       
       if (tileData) {
         // If there's ANY structure (including spawn), this is a good target
@@ -224,10 +226,8 @@ export async function findAdjacentStructures(db, worldId, location) {
           }
         }
       }
-    } catch (error) {
-      // Silently continue to next direction on error
-      continue;
     }
+    // No fallback to database reads - simply continue to next direction
   }
   
   return null; // No adjacent structures or player groups found

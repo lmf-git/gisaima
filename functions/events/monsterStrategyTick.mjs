@@ -44,7 +44,7 @@ export { isMonsterGroup, isAvailableForAction };
 /**
  * Execute a strategic action for a monster group
  */
-export async function executeMonsterStrategy(db, worldId, monsterGroup, location, tileData, worldScan, updates, now) {
+export async function executeMonsterStrategy(db, worldId, monsterGroup, location, tileData, worldScan, updates, now, chunks) {
   // Get current data needed to make decisions
   const groupId = monsterGroup.id;
   const chunkKey = monsterGroup.chunkKey;
@@ -185,7 +185,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
     
     // Force movement away
     return await moveMonsterTowardsTarget(
-      db, worldId, monsterGroup, location, worldScan, updates, now, null, personality
+      db, worldId, monsterGroup, location, worldScan, updates, now, null, personality, chunks
     );
   }
   
@@ -343,7 +343,7 @@ export async function executeMonsterStrategy(db, worldId, monsterGroup, location
     Math.min(0.9, (weights?.explore || 1.0) * 0.5);   // Normal chance otherwise
     
   if (Math.random() < exploreChance) {
-    return await moveMonsterTowardsTarget(db, worldId, monsterGroup, location, worldScan, updates, now, null, personality);
+    return await moveMonsterTowardsTarget(db, worldId, monsterGroup, location, worldScan, updates, now, null, personality, chunks);
   }
   
   // BUILDING LOGIC - Check if monster group should build a structure
@@ -523,7 +523,7 @@ export async function processMonsterStrategies(worldId, chunks) {
           };
           
           const result = await executeMonsterStrategy(
-            db, worldId, monsterGroup, location, tileData, worldScan, updates, now
+            db, worldId, monsterGroup, location, tileData, worldScan, updates, now, chunks
           );
           
           // Track results

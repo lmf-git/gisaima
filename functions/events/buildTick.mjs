@@ -81,38 +81,3 @@ function completeStructure(worldId, updates, chunkKey, tileKey, tile, now) {
     }
   };
 }
-
-/**
- * Process building progress for all structures in a world
- * 
- * @param {Object} db Firestore database object
- * @param {string} worldId The ID of the world to process
- * @param {number} currentTick The current tick count
- */
-export async function processBuildingProgress(db, worldId, currentTick) {
-  const structures = await db.collection('worlds').doc(worldId).collection('structures')
-    .where('status', '==', 'building').get();
-  
-  // Process each building structure
-  for (const doc of structures.docs) {
-    const structure = doc.data();
-    
-    // Calculate progress directly based on buildProgress and STRUCTURES definition
-    const progress = structure.buildProgress || 0;
-    const total = STRUCTURES[structure.type]?.buildTime || 1;
-    const progressPercent = Math.min(100, Math.floor((progress / total) * 100));
-    
-    if (progress >= total) {
-      // Building is complete - remove status entirely
-      await doc.ref.update({
-        status: null,
-        buildProgress: null
-      });
-    } else {
-      // Update progress
-      await doc.ref.update({
-        buildProgress: progress + 1
-      });
-    }
-  }
-}

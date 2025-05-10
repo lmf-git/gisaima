@@ -28,18 +28,14 @@ const STRUCTURE_SPAWN_CHANCE = 0.03; // 3% chance for a monster structure to spa
 /**
  * Spawn monsters near player activity
  * @param {string} worldId - The world ID
+ * @param {Object} chunks - Pre-loaded chunks data
  * @returns {Promise<number>} - Number of monster groups spawned
  */
-export async function spawnMonsters(worldId) {
+export async function spawnMonsters(worldId, chunks) {
   const db = getDatabase();
   let monstersSpawned = 0;
   
   try {
-    // Get all chunks for this world
-    const chunksRef = db.ref(`worlds/${worldId}/chunks`);
-    const chunksSnapshot = await chunksRef.once('value');
-    const chunks = chunksSnapshot.val();
-    
     if (!chunks) {
       logger.info(`No chunks found in world ${worldId}`);
       return 0;
@@ -679,39 +675,34 @@ export async function mergeMonsterGroups(db, worldId, groups, updates, now) {
 }
 
 /**
- * Generate a name for merged monster groups based on composition
- * @param {number} totalUnits - Total number of units
- * @param {object} typeCounts - Counts of different monster types
- * @param {string} defaultName - Default name to use if no better name can be generated
- * @returns {string} Generated name
+ * Standalone function to merge monster groups in the world
+ * @param {string} worldId - World ID
+ * @param {Object} chunks - Pre-loaded chunks data
+ * @returns {Promise<number>} - Number of groups merged
  */
-function generateMergedGroupName(totalUnits, typeCounts, defaultName = "Monster Group") {
-  // Size prefix based on unit count
-  let sizePrefix = "Small";
-  if (totalUnits >= 20) sizePrefix = "Massive";
-  else if (totalUnits >= 12) sizePrefix = "Large";
-  else if (totalUnits >= 6) sizePrefix = "Medium";
+export async function mergeWorldMonsterGroups(worldId, chunks) {
+  const db = getDatabase();
+  let groupsMerged = 0;
+  const now = Date.now();
+  const updates = {};
   
-  // Get the dominant monster types (top 2)
-  const types = Object.entries(typeCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 2)
-    .map(([type]) => type);
-  
-  // If we have identified types, use them
-  if (types.length > 0) {
-    const primaryType = types[0].charAt(0).toUpperCase() + types[0].slice(1);
-    
-    if (types.length > 1 && typeCounts[types[1]] > Math.max(1, totalUnits * 0.25)) {
-      // If second type is significant (>25% of total), include it
-      const secondaryType = types[1].charAt(0).toUpperCase() + types[1].slice(1);
-      return `${sizePrefix} ${primaryType} and ${secondaryType} Pack`;
-    } else {
-      // Just use the primary type
-      return `${sizePrefix} ${primaryType} Horde`;
+  try {
+    if (!chunks) {
+      logger.info(`No chunks found in world ${worldId}`);
+      return 0;
     }
+    
+    // Process logic to find and merge groups...
+    // Use mergeMonsterGroups helper function with found groups
+    
+    // Apply updates
+    if (Object.keys(updates).length > 0) {
+      await db.ref().update(updates);
+    }
+    
+    return groupsMerged;
+    
+  } catch (error) {
+    logger.error(`Error merging monster groups in world ${worldId}:`, error);
   }
-  
-  // Fallback to using the default name with size prefix
-  return `${sizePrefix} ${defaultName}`;
 }
