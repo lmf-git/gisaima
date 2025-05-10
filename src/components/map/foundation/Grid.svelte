@@ -209,27 +209,44 @@
       const rawCols = width / tileSizePx;
       const rawRows = height / tileSizePx;
       
-      // Define a consistent threshold for extreme zoom - use 3 to ensure center tile consistency
+      // Define thresholds for zoom levels
       const EXTREME_ZOOM_THRESHOLD = 3;
+      const MAX_ZOOM_THRESHOLD = 1.5; // Threshold for 1x1 grid
+      
+      // Check zoom levels
       const isExtremeZoom = rawCols <= EXTREME_ZOOM_THRESHOLD || rawRows <= EXTREME_ZOOM_THRESHOLD;
+      const isMaxZoom = rawCols <= MAX_ZOOM_THRESHOLD || rawRows <= MAX_ZOOM_THRESHOLD;
       
-      // For extreme zoom, don't add extra padding tile
-      // For normal zoom, add an extra tile to ensure coverage
-      let cols = isExtremeZoom ? Math.ceil(rawCols) : Math.ceil(rawCols) + 1;
-      let rows = isExtremeZoom ? Math.ceil(rawRows) : Math.ceil(rawRows) + 1;
+      let cols, rows;
       
-      // Special handling for super extreme zoom - if either dimension is 1, show a 1x1 grid
-      if (cols === 1 || rows === 1) {
+      // Make this decision simpler and more explicit:
+      // If we're at maximum zoom, use 1x1 grid regardless of device
+      if (isMaxZoom) {
+        // For maximum zoom out, always use 1x1 grid
         cols = 1;
         rows = 1;
-      }
-      
-      // Special handling for extreme zoom (1x1)
-      const isVeryExtremeZoom = cols === 1 && rows === 1;
-      
-      // Skip the odd number adjustment if we're at very extreme zoom (1x1)
-      if (!isVeryExtremeZoom) {
-        // Ensure we have odd numbers for centered target
+      } 
+      // For intermediate extreme zoom levels, use small odd-numbered grids (3x3, 5x5, etc.)
+      else if (isExtremeZoom) {
+        // Calculate minimum size needed, then force to nearest odd number
+        cols = Math.ceil(rawCols);
+        rows = Math.ceil(rawRows);
+        
+        // Ensure odd numbers for proper centering
+        cols = cols % 2 === 0 ? cols + 1 : cols;
+        rows = rows % 2 === 0 ? rows + 1 : rows;
+        
+        // Ensure at least 3x3 grid for proper centering at intermediate zoom levels
+        cols = Math.max(3, cols);
+        rows = Math.max(3, rows);
+      } 
+      // For normal zoom levels, use calculated sizes without extra padding
+      else {
+        // Just ceil the raw values without adding extra padding
+        cols = Math.ceil(rawCols);
+        rows = Math.ceil(rawRows);
+        
+        // Ensure odd numbers for centered target
         cols = cols % 2 === 0 ? cols + 1 : cols;
         rows = rows % 2 === 0 ? rows + 1 : rows;
       }
@@ -237,8 +254,8 @@
       // Calculate the container's aspect ratio
       const containerAspectRatio = width / height;
       
-      // Only enforce square tiles when we're NOT at extreme zoom levels
-      if (!isExtremeZoom) {
+      // Only enforce square tiles when we're NOT at extreme zoom levels and NOT at 1x1 grid
+      if (!isExtremeZoom && !(cols === 1 && rows === 1)) {
         // For normal zoom levels, calculate aspect ratio using current rows and columns
         const cellAspectRatio = (width / cols) / (height / rows);
         
@@ -257,10 +274,6 @@
           }
         }
       }
-
-      // Always ensure we have at least 1 row and column
-      cols = Math.max(cols, 1);
-      rows = Math.max(rows, 1);
 
       return {
         ...state,
@@ -1981,7 +1994,7 @@
     user-select: none;
     z-index: 1;
     font-family: var(--font-body);
-    position: relative; /* This is correct and necessary */
+       position: relative; /* This is correct and necessary */
     
     /* Consistent transition for all states */
     transition: 
