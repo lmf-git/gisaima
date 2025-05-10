@@ -333,7 +333,11 @@
 
       const baseFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
       const tileSizePx = currentTileSize * baseFontSize; // Use currentTileSize to respect zoom level
-      const adjustedTileSize = tileSizePx * sensitivity;
+      
+      // Add zoom-level compensation for more consistent drag feel at all zoom levels
+      // When zoom is high (tiles are bigger), we need to increase sensitivity
+      const zoomCompensation = Math.max(1, zoomLevel);
+      const adjustedTileSize = (tileSizePx * sensitivity) / zoomCompensation;
 
       const dragAccumX = (state.dragAccumX || 0) + deltaX;
       const dragAccumY = (state.dragAccumY || 0) + deltaY;
@@ -1992,6 +1996,7 @@
     font-family: var(--font-body);
        position: relative; /* This is correct and necessary */
     
+       
     /* Consistent transition for all states */
     transition: 
       opacity 0.8s ease-out,
