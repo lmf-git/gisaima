@@ -173,6 +173,7 @@ export const processGameTicks = onSchedule({
       // Process monster strategies with a 66.6% chance each tick - already passing chunks data
       if (Math.random() < 0.666) {
         console.log(`Processing monster strategies for world ${worldId}`);
+        
         const strategyResult = await processMonsterStrategies(worldId, chunks);
         
         if (strategyResult.totalProcessed) {

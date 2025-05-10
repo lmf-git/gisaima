@@ -515,15 +515,23 @@ export function createBattleActionMessage(monsterGroup, battleAction, targetType
 
 /**
  * Scan the world map for important locations
- * @param {object} db - Firebase database reference
- * @param {string} worldId - World ID
  * @param {object} chunks - Chunks data
  * @returns {object} Object containing player spawns, monster structures, and resource hotspots
  */
-export function scanWorldMap(db, worldId, chunks) {
+export function scanWorldMap(chunks) {
   const playerSpawns = [];
   const monsterStructures = [];
   const resourceHotspots = [];
+  
+  // Check if chunks is null or undefined to prevent Object.entries() error
+  if (!chunks) {
+    console.log("Warning: No chunks data provided to scanWorldMap");
+    return {
+      playerSpawns,
+      monsterStructures,
+      resourceHotspots
+    };
+  }
   
   // Scan through all chunks and tiles
   for (const [chunkKey, chunkData] of Object.entries(chunks)) {

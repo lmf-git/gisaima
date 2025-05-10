@@ -441,7 +441,7 @@ async function processMonsterDemobilization(db, worldId, updates, monsterGroup, 
 /**
  * Main function to process monster strategies across the world
  * @param {string} worldId World ID to process
- * @param {Object} chunks Optional pre-loaded chunks data
+ * @param {Object} chunks Pre-loaded chunks data
  * @returns {Promise<Object>} Results summary
  */
 export async function processMonsterStrategies(worldId, chunks) {
@@ -454,7 +454,7 @@ export async function processMonsterStrategies(worldId, chunks) {
     gatheringStarted: 0,
     structuresBuildStarted: 0,
     structuresUpgraded: 0,
-    structuresAdopted: 0, // NEW - track adoptions
+    structuresAdopted: 0,
     demobilizationsStarted: 0,
     battlesJoined: 0,
     groupsMerged: 0,
@@ -466,6 +466,11 @@ export async function processMonsterStrategies(worldId, chunks) {
   try {
     logger.info(`Processing monster strategies for world ${worldId}`);
     
+    // Ensure chunks exists before scanning but don't try to fetch it
+    if (!chunks) {
+      logger.error(`No chunks data provided for world ${worldId} in processMonsterStrategies`);
+      return results;
+    }
     
     // Preparation: scan the world for key locations (player spawns, resources, etc)
     const worldScan = scanWorldMap(chunks);
