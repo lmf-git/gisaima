@@ -197,14 +197,6 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
   // Create battle ID and prepare battle data
   const battleId = `battle_${now}_${Math.floor(Math.random() * 1000)}`;
   
-  // Set defensive power based on structure type
-  let defensePower = structure.defensePower || 20; // Default structure defense power
-  
-  // Spawn points get higher defense
-  if (structure.type === 'spawn') {
-    defensePower = Math.max(defensePower, 30); // Minimum defense for spawn points
-  }
-  
   // Create enhanced battle object with full units data
   const battleData = {
     id: battleId,
@@ -229,8 +221,7 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
         id: structure.id,
         name: structure.name || 'Structure',
         type: structure.type || 'unknown',
-        owner: structure.owner || 'unknown',
-        defensePower: defensePower
+        owner: structure.owner || 'unknown'
       }
     },
     tickCount: 0

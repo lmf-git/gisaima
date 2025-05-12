@@ -393,7 +393,6 @@
                   "casualties": 0,
                   "name": "Stoneguard Citadel",
                   "structureInfo": {
-                    "defensePower": 30,
                     "id": "structure_al_human_spawn",
                     "name": "Stoneguard Citadel",
                     "owner": "unknown",
