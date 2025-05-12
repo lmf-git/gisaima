@@ -23,7 +23,7 @@ export const cleanup = onSchedule({
   const db = getDatabase();
   
   try {
-    // Get all world IDs
+    // Get all world data including chat messages
     const worldsRef = db.ref('worlds');
     const worldsSnapshot = await worldsRef.once('value');
     const worlds = worldsSnapshot.val();
@@ -37,7 +37,12 @@ export const cleanup = onSchedule({
     
     // Process each world
     for (const worldId in worlds) {
-      const messagesRemoved = await cleanupChatMessages(db, worldId);
+      const worldData = worlds[worldId];
+      // Access chat data directly from the loaded world data
+      const chatData = worldData.chat;
+      
+      // Process chat cleanup with the already loaded chat data
+      const messagesRemoved = await cleanupChatMessages(db, worldId, chatData);
       totalMessagesRemoved += messagesRemoved;
     }
     
@@ -54,27 +59,32 @@ export const cleanup = onSchedule({
  * 
  * @param {Object} db Database reference
  * @param {string} worldId The ID of the world to process
+ * @param {Object|null} preloadedChatData Optional preloaded chat data
  * @returns {Promise<number>} Number of messages cleaned up
  */
-async function cleanupChatMessages(db, worldId) {
+async function cleanupChatMessages(db, worldId, preloadedChatData = null) {
   try {
-    const chatRef = db.ref(`worlds/${worldId}/chat`);
+    let messages = [];
     
-    // Query all messages ordered by timestamp
-    const snapshot = await chatRef.orderByChild('timestamp').once('value');
-    
-    if (!snapshot.exists()) {
-      logger.debug(`No chat messages found for world ${worldId}`);
+    // Only use preloaded chat data, no fallback
+    if (preloadedChatData) {
+      // Convert the chat data object to our required format
+      for (const messageId in preloadedChatData) {
+        const message = preloadedChatData[messageId];
+        messages.push({
+          id: messageId,
+          timestamp: message.timestamp || 0
+        });
+      }
+    } else {
+      logger.debug(`No chat data found for world ${worldId}`);
       return 0;
     }
     
-    const messages = [];
-    snapshot.forEach((childSnapshot) => {
-      messages.push({
-        id: childSnapshot.key,
-        timestamp: childSnapshot.val().timestamp || 0
-      });
-    });
+    if (messages.length === 0) {
+      logger.debug(`No chat messages found for world ${worldId}`);
+      return 0;
+    }
     
     // Sort messages by timestamp (oldest first)
     messages.sort((a, b) => a.timestamp - b.timestamp);
