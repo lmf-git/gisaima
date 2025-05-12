@@ -18,6 +18,13 @@ import { processCrafting } from "./events/craftingTick.mjs";
 import { processMonsterStrategies } from "./events/monsterStrategyTick.mjs"; // Only import strategy processor
 import { spawnMonsters, mergeWorldMonsterGroups } from "./events/monsterSpawnTick.mjs";
 
+// Maximum number of chat messages to keep per world
+const MAX_CHAT_HISTORY = 500;
+
+// Use a timestamp to track when to run chat cleanup (every 5 minutes)
+let lastChatCleanupTime = 0;
+const CHAT_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 // Process world ticks to handle mobilizations and other time-based events
 export const processGameTicks = onSchedule({
   schedule: "every 1 minutes",
@@ -51,12 +58,31 @@ export const processGameTicks = onSchedule({
     let monstersSpawned = 0;
     let monsterStrategiesProcessed = 0;
     let monsterGroupsMerged = 0;
-    let structuresAdopted = 0; // NEW - track adoptions
+    let structuresAdopted = 0;
+    let totalMessagesRemoved = 0; // Added for chat cleanup tracking
+    
+    // Determine if we should run chat cleanup this tick
+    const shouldRunChatCleanup = (now - lastChatCleanupTime) >= CHAT_CLEANUP_INTERVAL;
+    if (shouldRunChatCleanup) {
+      console.log("Running chat cleanup as part of game tick...");
+      lastChatCleanupTime = now;
+    }
     
     // Process each world
     for (const worldId in worlds) {
       // Update world's lastTick timestamp
       await db.ref(`worlds/${worldId}/info/lastTick`).set(now);
+      
+      // If it's time to run chat cleanup, process chat data
+      if (shouldRunChatCleanup) {
+        const worldData = worlds[worldId];
+        const chatData = worldData.chat;
+        
+        if (chatData) {
+          const messagesRemoved = await cleanupChatMessages(db, worldId, chatData);
+          totalMessagesRemoved += messagesRemoved;
+        }
+      }
       
       // Access chunks directly from the world data we already loaded
       const chunks = worlds[worldId]?.chunks;
@@ -168,7 +194,7 @@ export const processGameTicks = onSchedule({
       const craftingResult = await processCrafting(worldId);
       console.log(`Processed ${craftingResult.processed || 0} crafting operations in world ${worldId}`);
       
-      // Process monster strategies with a 66.6% chance each tick - already passing chunks data
+      // Process monster strategies with a 66.6% chance each tick
       if (Math.random() < 0.666) {
         console.log(`Processing monster strategies for world ${worldId}`);
         
@@ -183,14 +209,14 @@ export const processGameTicks = onSchedule({
         }
       }
       
-      // Spawn monsters with a 20% chance on each tick - now passing chunks
+      // Spawn monsters with a 20% chance on each tick
       if (Math.random() < 0.2) {
         const spawnedCount = await spawnMonsters(worldId, chunks);
         monstersSpawned += spawnedCount;
         console.log(`Spawned ${spawnedCount} monster groups in world ${worldId}`);
       }
       
-      // Add separate merging process with 15% chance each tick - now passing chunks
+      // Add separate merging process with 15% chance each tick
       if (Math.random() < 0.15) {
         const mergeCount = await mergeWorldMonsterGroups(worldId, chunks);
         monsterGroupsMerged += mergeCount;
@@ -198,16 +224,83 @@ export const processGameTicks = onSchedule({
       }
     }
     
-    // Update log message to include new monster activity types
-    console.log(`Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, ` +
-               `${movementsProcessed} movement steps, ${gatheringsProcessed} gatherings, ${buildingsProcessed} building updates, ` +
-               `${monsterStrategiesProcessed} monster strategies, ${monsterGroupsMerged} monster groups merged, ` +
-               `${structuresAdopted} structures adopted, and spawned ${monstersSpawned} monster groups`);    
+    // Update log message to include chat cleanup metrics
+    let logMessage = `Processed ${mobilizationsProcessed} mobilizations, ${demobilizationsProcessed} demobilizations, ` +
+                 `${movementsProcessed} movement steps, ${gatheringsProcessed} gatherings, ${buildingsProcessed} building updates, ` +
+                 `${monsterStrategiesProcessed} monster strategies, ${monsterGroupsMerged} monster groups merged, ` +
+                 `${structuresAdopted} structures adopted, and spawned ${monstersSpawned} monster groups`;
+    
+    if (shouldRunChatCleanup) {
+      logMessage += `, and removed ${totalMessagesRemoved} old chat messages`;
+    }
+    
+    console.log(logMessage);    
     return null;
   } catch (error) {
     console.error("Error processing game ticks:", error);
     return null;
   }
 });
+
+/**
+ * Process chat cleanup for a given world
+ * 
+ * @param {Object} db Database reference
+ * @param {string} worldId The ID of the world to process
+ * @param {Object|null} preloadedChatData Optional preloaded chat data
+ * @returns {Promise<number>} Number of messages cleaned up
+ */
+async function cleanupChatMessages(db, worldId, preloadedChatData) {
+  try {
+    let messages = [];
+    
+    // Only use preloaded chat data, no fallback
+    if (preloadedChatData) {
+      // Convert the chat data object to our required format
+      for (const messageId in preloadedChatData) {
+        const message = preloadedChatData[messageId];
+        messages.push({
+          id: messageId,
+          timestamp: message.timestamp || 0
+        });
+      }
+    } else {
+      logger.debug(`No chat data found for world ${worldId}`);
+      return 0;
+    }
+    
+    if (messages.length === 0) {
+      logger.debug(`No chat messages found for world ${worldId}`);
+      return 0;
+    }
+    
+    // Sort messages by timestamp (oldest first)
+    messages.sort((a, b) => a.timestamp - b.timestamp);
+    
+    // If we have more than the maximum allowed messages, remove the oldest ones
+    const messagesToRemove = messages.length - MAX_CHAT_HISTORY;
+    
+    if (messagesToRemove <= 0) {
+      logger.debug(`Chat cleanup for world ${worldId}: ${messages.length} messages (under limit)`);
+      return 0;
+    }
+    
+    logger.info(`Chat cleanup for world ${worldId}: removing ${messagesToRemove} oldest messages`);
+    
+    // Batch deletion for better performance
+    const updates = {};
+    for (let i = 0; i < messagesToRemove; i++) {
+      updates[`worlds/${worldId}/chat/${messages[i].id}`] = null;
+    }
+    
+    // Apply the batch update
+    await db.ref().update(updates);
+    
+    return messagesToRemove;
+  } catch (error) {
+    logger.error(`Error cleaning up chat for world ${worldId}:`, error);
+    return 0;
+  }
+}
 
 export default processGameTicks;
