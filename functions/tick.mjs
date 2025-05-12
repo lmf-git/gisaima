@@ -58,10 +58,8 @@ export const processGameTicks = onSchedule({
       // Update world's lastTick timestamp
       await db.ref(`worlds/${worldId}/info/lastTick`).set(now);
       
-      // Process the world's chunks to find groups for processing
-      const worldRef = db.ref(`worlds/${worldId}/chunks`);
-      const chunksSnapshot = await worldRef.once('value');
-      const chunks = chunksSnapshot.val();
+      // Access chunks directly from the world data we already loaded
+      const chunks = worlds[worldId]?.chunks;
       
       if (!chunks) {
         console.log(`No chunks found in world ${worldId}`);
