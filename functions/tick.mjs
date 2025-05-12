@@ -21,10 +21,6 @@ import { spawnMonsters, mergeWorldMonsterGroups } from "./events/monsterSpawnTic
 // Maximum number of chat messages to keep per world
 const MAX_CHAT_HISTORY = 500;
 
-// Use a timestamp to track when to run chat cleanup (every 5 minutes)
-let lastChatCleanupTime = 0;
-const CHAT_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
-
 // Process world ticks to handle mobilizations and other time-based events
 export const processGameTicks = onSchedule({
   schedule: "every 1 minutes",
@@ -61,27 +57,19 @@ export const processGameTicks = onSchedule({
     let structuresAdopted = 0;
     let totalMessagesRemoved = 0; // Added for chat cleanup tracking
     
-    // Determine if we should run chat cleanup this tick
-    const shouldRunChatCleanup = (now - lastChatCleanupTime) >= CHAT_CLEANUP_INTERVAL;
-    if (shouldRunChatCleanup) {
-      console.log("Running chat cleanup as part of game tick...");
-      lastChatCleanupTime = now;
-    }
-    
     // Process each world
     for (const worldId in worlds) {
       // Update world's lastTick timestamp
       await db.ref(`worlds/${worldId}/info/lastTick`).set(now);
       
-      // If it's time to run chat cleanup, process chat data
-      if (shouldRunChatCleanup) {
-        const worldData = worlds[worldId];
-        const chatData = worldData.chat;
-        
-        if (chatData) {
-          const messagesRemoved = await cleanupChatMessages(db, worldId, chatData);
-          totalMessagesRemoved += messagesRemoved;
-        }
+      // Always run chat cleanup on every tick
+      const worldData = worlds[worldId];
+      const chatData = worldData.chat;
+      
+      if (chatData) {
+        console.log(`Running chat cleanup for world ${worldId}`);
+        const messagesRemoved = await cleanupChatMessages(db, worldId, chatData);
+        totalMessagesRemoved += messagesRemoved;
       }
       
       // Access chunks directly from the world data we already loaded
@@ -230,9 +218,8 @@ export const processGameTicks = onSchedule({
                  `${monsterStrategiesProcessed} monster strategies, ${monsterGroupsMerged} monster groups merged, ` +
                  `${structuresAdopted} structures adopted, and spawned ${monstersSpawned} monster groups`;
     
-    if (shouldRunChatCleanup) {
-      logMessage += `, and removed ${totalMessagesRemoved} old chat messages`;
-    }
+    // Always include chat cleanup metrics
+    logMessage += `, and removed ${totalMessagesRemoved} old chat messages`;
     
     console.log(logMessage);    
     return null;
