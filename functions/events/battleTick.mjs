@@ -70,10 +70,16 @@ export function processSide({
     const groupShare = sidePower > 0 ? groupPower / sidePower : 1;
     const groupAttrition = Math.round(oppositeAttrition * groupShare);
     
+    // Log the attrition calculation
+    logger.info(`Side ${sideNumber} Group ${groupId} attrition calculation: ${oppositeAttrition} * ${groupShare.toFixed(2)} = ${groupAttrition}`);
+    
     // Select units for casualties
     const { unitsToRemove, playersKilled: groupPlayersKilled } = 
       selectUnitsForCasualties(units, groupAttrition);
       
+    // Log the units selected for removal
+    logger.info(`Side ${sideNumber} Group ${groupId} units to remove: ${JSON.stringify(unitsToRemove)}`);
+    
     // Add players killed to the list
     playersKilled.push(...groupPlayersKilled);
     
@@ -127,7 +133,7 @@ export function processSide({
         }
       }
     } else {
-      // Remove selected units
+      // Remove selected units - adding explicit logging for each update path
       unitsToRemove.forEach(unitId => {
         updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/units/${unitId}`] = null;
         updates[`${basePath}/${sideKey}/groups/${groupId}/units/${unitId}`] = null;
@@ -135,7 +141,7 @@ export function processSide({
       
       // Calculate new group power
       const newGroupPower = calculateGroupPower({ units: remainingUnits });
-      console.log(`Group ${groupId} new power after casualties: ${newGroupPower}`);
+      logger.info(`Group ${groupId} new power after casualties: ${newGroupPower} (removed ${unitsToRemove.length} units)`);
       newSidePower += newGroupPower;
     }
   }
@@ -378,6 +384,11 @@ export async function processBattle(worldId, chunkKey, tileKey, battleId, battle
       .filter(id => 
         !groupsToDelete.some(g => g.groupId === id && g.side === 2) &&
         !fleeingGroups.some(g => g.groupId === id && g.side === 2));
+    
+    // Log the status of all updates
+    logger.info(`Battle ${battleId} tick ${tickCount} update operations: ${Object.keys(updates).length}`);
+    logger.info(`Side 1 units attrition: ${side1Attrition}, casualties: ${side1Casualties}, surviving groups: ${side1Surviving.length}`);
+    logger.info(`Side 2 units attrition: ${side2Attrition}, casualties: ${side2Casualties}, surviving groups: ${side2Surviving.length}`);
     
     // --------- PHASE 4: CHECK FOR BATTLE END CONDITIONS ---------
     

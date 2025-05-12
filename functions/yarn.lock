@@ -841,9 +841,9 @@ get-proto@^1.0.1:
     dunder-proto "^1.0.1"
     es-object-atoms "^1.0.0"
 
-gisaima-shared@lmf-git/gisaima-shared#28a795abbb07596b7ac6beff2bcfb0ee16153bbc:
+gisaima-shared@lmf-git/gisaima-shared#dec0cb612c59ceff18207e93d5b3ec4bad4ff874:
   version "1.0.0"
-  resolved "https://codeload.github.com/lmf-git/gisaima-shared/tar.gz/28a795abbb07596b7ac6beff2bcfb0ee16153bbc"
+  resolved "https://codeload.github.com/lmf-git/gisaima-shared/tar.gz/dec0cb612c59ceff18207e93d5b3ec4bad4ff874"
 
 google-auth-library@^9.3.0, google-auth-library@^9.6.3:
   version "9.15.1"
