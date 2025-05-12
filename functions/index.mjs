@@ -17,4 +17,3 @@ export { startStructureUpgrade, startBuildingUpgrade } from './actions/upgrade.m
 export { startCrafting, cancelCrafting } from './actions/craft.mjs';
 
 export { processGameTicks } from './tick.mjs';
-export { cleanup } from './cleanup.mjs';
