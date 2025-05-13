@@ -1214,6 +1214,21 @@
                 </button>
             {/if}
             
+            <!-- Show Follow button in map-controls when Overview is open -->
+            {#if showEntities && $game?.player?.alive && !isTutorialVisible}
+                <button 
+                    class="control-button follow-button" 
+                    onclick={toggleFollowPlayerPosition}
+                    aria-label={followPlayerPosition ? "Stop following player" : "Follow player"}
+                    disabled={!$game?.player?.alive || isTutorialVisible}>
+                    {#if followPlayerPosition}
+                        <BoundIcon extraClass="button-icon" />
+                    {:else}
+                        <UnboundIcon extraClass="button-icon" />
+                    {/if}
+                </button>
+            {/if}
+            
             <!-- Show NextWorldTick in map-controls when Overview is open -->
             {#if showEntities && $game?.player?.alive && !isTutorialVisible}
                 <NextWorldTick extraClass="control-button-like" compact={window.innerWidth < 768} />
@@ -1244,17 +1259,20 @@
                     </button>
                 {/if}
 
-                <button 
-                    class="control-button follow-button" 
-                    onclick={toggleFollowPlayerPosition}
-                    aria-label={followPlayerPosition ? "Stop following player" : "Follow player"}
-                    disabled={!$game?.player?.alive || isTutorialVisible}>
-                    {#if followPlayerPosition}
-                        <BoundIcon extraClass="button-icon" />
-                    {:else}
-                        <UnboundIcon extraClass="button-icon" />
-                    {/if}
-                </button>
+                <!-- Show Follow button in left-controls only when Overview is not open -->
+                {#if !showEntities}
+                    <button 
+                        class="control-button follow-button" 
+                        onclick={toggleFollowPlayerPosition}
+                        aria-label={followPlayerPosition ? "Stop following player" : "Follow player"}
+                        disabled={!$game?.player?.alive || isTutorialVisible}>
+                        {#if followPlayerPosition}
+                            <BoundIcon extraClass="button-icon" />
+                        {:else}
+                            <UnboundIcon extraClass="button-icon" />
+                        {/if}
+                    </button>
+                {/if}
 
                 <!-- Show NextWorldTick in left-controls when Overview is not open -->
                 {#if !showEntities}
