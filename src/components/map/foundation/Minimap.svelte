@@ -49,8 +49,9 @@
     // Start drag
     if (event.type === 'dragstart' || event.type === 'touchstart') {
       isDrag = true;
-      dragX = event.clientX || event.touches?.[0]?.clientX;
-      dragY = event.clientY || event.touches?.[0]?.clientY;
+      // Add fallbacks for coordinates to ensure they're valid numbers
+      dragX = event.clientX || event.touches?.[0]?.clientX || 0;
+      dragY = event.clientY || event.touches?.[0]?.clientY || 0;
       dist = 0;
       wasDrag = false;
       
@@ -72,6 +73,11 @@
       const currentX = event.clientX || event.touches?.[0]?.clientX;
       const currentY = event.clientY || event.touches?.[0]?.clientY;
       
+      // Validate coordinates to prevent NaN errors when off screen
+      if (currentX === undefined || currentY === undefined || isNaN(currentX) || isNaN(currentY)) {
+        return false;
+      }
+      
       const deltaX = currentX - dragX;
       const deltaY = currentY - dragY;
       
@@ -81,9 +87,15 @@
         wasDrag = true;
       }
       
+      // Validate minimap element still exists
+      if (!minimap) return false;
+      
       const minimapRect = minimap.getBoundingClientRect();
       const pixelsPerTileX = minimapRect.width / tileCountX;
       const pixelsPerTileY = minimapRect.height / tileCountY;
+      
+      // Additional validation to prevent NaN
+      if (pixelsPerTileX === 0 || pixelsPerTileY === 0) return false;
       
       const cellsMovedX = Math.round(deltaX / pixelsPerTileX);
       const cellsMovedY = Math.round(deltaY / pixelsPerTileY);
@@ -95,6 +107,7 @@
       
       moveTarget($map.target.x - cellsMovedX, $map.target.y - cellsMovedY);
       
+      // Update drag coordinates
       dragX = currentX;
       dragY = currentY;
       
@@ -133,6 +146,12 @@
   function handleMinimapDrag(event) {
     if (!isDrag || !$ready) return;
     
+    // Add validation for mouse coordinates
+    if (event.clientX === undefined || event.clientY === undefined || 
+        isNaN(event.clientX) || isNaN(event.clientY)) {
+      return;
+    }
+    
     // Create a new event object with only the properties we need
     minimapDragAction({
       type: 'dragmove',
@@ -151,7 +170,15 @@
   }
   
   function globalMinimapMouseMove(event) {
-    if (isDrag) handleMinimapDrag(event);
+    if (!isDrag) return;
+    
+    // Add validation for mouse coordinates when pointer might be off screen
+    if (event.clientX === undefined || event.clientY === undefined || 
+        isNaN(event.clientX) || isNaN(event.clientY)) {
+      return;
+    }
+    
+    handleMinimapDrag(event);
   }
 
   // Touch handling
@@ -165,6 +192,11 @@
     
     isTouching = true;
     
+    // Validate touch event has touches
+    if (!event.touches || !event.touches[0]) {
+      return;
+    }
+    
     minimapDragAction({
       type: 'touchstart',
       touches: event.touches
@@ -177,6 +209,13 @@
     // Always use the original DOM event's preventDefault
     if (event.preventDefault) {
       event.preventDefault();
+    }
+    
+    // Validate touch coordinates
+    if (!event.touches || !event.touches[0] || 
+        event.touches[0].clientX === undefined || event.touches[0].clientY === undefined ||
+        isNaN(event.touches[0].clientX) || isNaN(event.touches[0].clientY)) {
+      return;
     }
     
     minimapDragAction({
