@@ -1225,28 +1225,18 @@
         
 
         <!-- Controls -->
-        <div class="map-controls">
-            {#if !isTutorialVisible}
-                <button 
-                    class="control-button help-button" 
-                    onclick={toggleTutorial}
-                    aria-label="Show tutorial"
-                    disabled={!$game?.player?.alive}>
-                    ?
-                </button>
+        <div class="map-controls">            
+            <!-- Show NextWorldTick in map-controls when Overview is open -->
+            {#if showEntities && $game?.player?.alive && !isTutorialVisible}
+                <NextWorldTick extraClass="control-button-like" compact={window.innerWidth < 768} />
             {/if}
-            
+
             <!-- Show Follow button in map-controls when Overview is open -->
             {#if showEntities && $game?.player?.alive && !isTutorialVisible}
                 <FollowPlayer 
                     disabled={!$game?.player?.alive || isTutorialVisible}
                     onFollowToggle={handleFollowToggle}
                 />
-            {/if}
-            
-            <!-- Show NextWorldTick in map-controls when Overview is open -->
-            {#if showEntities && $game?.player?.alive && !isTutorialVisible}
-                <NextWorldTick extraClass="control-button-like" compact={window.innerWidth < 768} />
             {/if}
             
             <button 
@@ -1259,7 +1249,18 @@
                 {:else}
                     <Map extraClass="button-icon" />
                 {/if}
+
             </button>
+
+            {#if !isTutorialVisible}
+                <button 
+                    class="control-button help-button" 
+                    onclick={toggleTutorial}
+                    aria-label="Show tutorial"
+                    disabled={!$game?.player?.alive}>
+                    ?
+                </button>
+            {/if}
         </div>
         
         {#if $game?.player?.alive && !isTutorialVisible}
