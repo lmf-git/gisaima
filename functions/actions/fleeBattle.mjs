@@ -5,16 +5,15 @@
 
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getDatabase } from 'firebase-admin/database';
-import { logger } from "firebase-functions";
 import { getChunkKey } from 'gisaima-shared/map/cartography.js';
 
 // Function to flee from a battle
 export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
-  logger.info('fleeBattle function called with data:', request.data);
+  console.log('fleeBattle function called with data:', request.data);
   
   // Ensure user is authenticated
   if (!request.auth) {
-    logger.warn('Unauthenticated call to fleeBattle');
+    console.log('Unauthenticated call to fleeBattle');
     throw new HttpsError('unauthenticated', 'User must be logged in to flee from battles');
   }
   
@@ -23,16 +22,16 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
   
   // Validate required parameters
   if (!groupId) {
-    logger.warn('Missing groupId parameter');
+    console.log('Missing groupId parameter');
     throw new HttpsError('invalid-argument', 'Missing groupId parameter');
   }
   
   if (x === undefined || y === undefined) {
-    logger.warn('Missing coordinates parameters');
+    console.log('Missing coordinates parameters');
     throw new HttpsError('invalid-argument', 'Missing coordinates parameters');
   }
   
-  logger.info(`User ${uid} fleeing from battle with group ${groupId} at (${x},${y}) in world ${worldId}`);
+  console.log(`User ${uid} fleeing from battle with group ${groupId} at (${x},${y}) in world ${worldId}`);
   
   try {
     const db = getDatabase();
@@ -46,7 +45,7 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
     const groupSnapshot = await groupRef.once('value');
     
     if (!groupSnapshot.exists()) {
-      logger.warn(`Group ${groupId} not found at (${x},${y})`);
+      console.log(`Group ${groupId} not found at (${x},${y})`);
       throw new HttpsError('not-found', 'Group not found at specified location');
     }
     
@@ -54,13 +53,13 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
     
     // Verify ownership
     if (group.owner !== uid) {
-      logger.warn(`User ${uid} tried to flee battle for group ${groupId} owned by ${group.owner}`);
+      console.log(`User ${uid} tried to flee battle for group ${groupId} owned by ${group.owner}`);
       throw new HttpsError('permission-denied', 'You can only flee battles with your own groups');
     }
     
     // Check if group is actually in a battle
     if (!group.battleId) {
-      logger.warn(`Group ${groupId} is not in a battle`);
+      console.log(`Group ${groupId} is not in a battle`);
       throw new HttpsError('failed-precondition', 'This group is not currently in a battle');
     }
     
@@ -72,7 +71,7 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
     const battleSnapshot = await battleRef.once('value');
     
     if (!battleSnapshot.exists()) {
-      logger.warn(`Battle ${battleId} not found at (${x},${y})`);
+      console.log(`Battle ${battleId} not found at (${x},${y})`);
       throw new HttpsError('not-found', 'Associated battle not found');
     }
     
@@ -86,7 +85,7 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
       fleeTickRequested: currentTickCount
     });
     
-    logger.info(`Set group ${groupId} to fleeingBattle state at tick ${currentTickCount}`);
+    console.log(`Set group ${groupId} to fleeingBattle state at tick ${currentTickCount}`);
     
     // STEP 2: After setting the fleeing state, perform the full update
     const updates = {};
@@ -177,7 +176,7 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
     };
     
   } catch (error) {
-    logger.error(`Error fleeing battle for group ${groupId}:`, error);
+    console.error(`Error fleeing battle for group ${groupId}:`, error);
     throw new HttpsError('internal', 'Failed to flee battle: ' + error.message, error);
   }
 });
