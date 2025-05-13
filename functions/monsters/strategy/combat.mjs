@@ -105,11 +105,18 @@ export async function initiateAttackOnPlayers(db, worldId, monsterGroup, targetG
   }
   
   // Determine if attack should proceed based on power comparison
-  // Use personality to adjust power threshold
-  const powerThreshold = monsterGroup.personality?.id === 'AGGRESSIVE' ? 0.5 : 0.7;
-  if (monsterPower < targetPower * powerThreshold) {
+  // MODIFIED: Add special case for FERAL monsters
+  const isFeral = monsterGroup.personality?.id === 'FERAL';
+  const powerThreshold = isFeral ? 0.1 : // FERAL monsters use a much lower threshold
+                        (monsterGroup.personality?.id === 'AGGRESSIVE' ? 0.5 : 0.7);
+  
+  if (monsterPower < targetPower * powerThreshold && !isFeral) {
     console.log(`Monster group ${monsterGroup.id} (power: ${monsterPower}) avoiding attack on stronger player groups (power: ${targetPower})`);
     return { action: null, reason: 'target_too_strong' };
+  }
+  
+  if (isFeral && monsterPower < targetPower * 0.1) {
+    console.log(`FERAL monster group ${monsterGroup.id} recklessly attacking despite massive power difference! (${monsterPower} vs ${targetPower})`);
   }
   
   // Choose which player groups to attack (up to 3)
@@ -227,11 +234,18 @@ export async function initiateAttackOnStructure(db, worldId, monsterGroup, struc
     }
   }
   
-  // Use personality to adjust power threshold
-  const powerThreshold = monsterGroup.personality?.id === 'AGGRESSIVE' ? 0.4 : 0.6;
-  if (monsterPower < structurePower * powerThreshold) {
+  // MODIFIED: Add special case for FERAL monsters
+  const isFeral = monsterGroup.personality?.id === 'FERAL';
+  const powerThreshold = isFeral ? 0.05 : // FERAL monsters use a much lower threshold for structures
+                        (monsterGroup.personality?.id === 'AGGRESSIVE' ? 0.4 : 0.6);
+  
+  if (monsterPower < structurePower * powerThreshold && !isFeral) {
     console.log(`Monster group ${monsterGroup.id} (power: ${monsterPower}) avoiding attack on stronger structure (power: ${structurePower})`);
     return { action: null, reason: 'structure_too_strong' };
+  }
+  
+  if (isFeral && monsterPower < structurePower * 0.05) {
+    console.log(`FERAL monster group ${monsterGroup.id} recklessly attacking structure despite massive power difference! (${monsterPower} vs ${structurePower})`);
   }
   
   // Create battle ID and prepare battle data
@@ -357,12 +371,18 @@ export async function initiateAttackOnMonsters(db, worldId, monsterGroup, target
     targetPower += calculateGroupPower(target);
   }
   
-  // FERAL monsters will attack regardless of power difference, others are more cautious
-  const powerThreshold = monsterGroup.personality?.id === 'FERAL' ? 0.4 : 0.75;
+  // MODIFIED: FERAL monsters will attack other monsters regardless of power
+  const isFeral = monsterGroup.personality?.id === 'FERAL';
+  const powerThreshold = isFeral ? 0.01 : // Extremely low threshold for FERAL
+                        (monsterGroup.personality?.id === 'FERAL' ? 0.4 : 0.75);
   
-  if (attackerPower < targetPower * powerThreshold) {
+  if (attackerPower < targetPower * powerThreshold && !isFeral) {
     console.log(`Monster group ${monsterGroup.id} avoiding attack on stronger monster group(s). Power ratio: ${(attackerPower/targetPower).toFixed(2)}`);
     return { action: null, reason: 'target_too_strong' };
+  }
+  
+  if (isFeral && attackerPower < targetPower * 0.2) {
+    console.log(`FERAL monster group ${monsterGroup.id} going berserk! Attacking monster group despite huge power difference! (${attackerPower} vs ${targetPower})`);
   }
   
   // Create battle ID and prepare battle data
