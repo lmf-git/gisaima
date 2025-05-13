@@ -1,10 +1,10 @@
 import { ref, onValue, get as dbGet, set } from "firebase/database";
 import { writable, derived, get } from 'svelte/store';
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { httpsCallable } from "firebase/functions";
 
 import { ACHIEVEMENTS } from 'gisaima-shared/definitions/ACHIEVEMENTS.js';
 
-import { db } from '$lib/firebase';
+import { db, functions } from '$lib/firebase';
 
 import { browser } from '$app/environment';
 import { user, isAuthReady as userAuthReady } from './user'; 
@@ -978,16 +978,15 @@ export async function cancelMove(groupId, x, y) {
   }
   
   try {
-    // Get Firebase functions
-    const functions = getFunctions();
+    // Use the functions instance imported at the top of the file
     const cancelMoveFn = httpsCallable(functions, 'cancelMove');
     
     // Call the cancelMove function with group and location data
     const result = await cancelMoveFn({
       worldId: currentState.worldKey,
-      groupId: groupId,
-      x: x,
-      y: y
+      groupId,
+      x,
+      y
     });
     
     console.log('Movement cancelled successfully:', result.data);
