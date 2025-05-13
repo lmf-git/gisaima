@@ -78,83 +78,23 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
     const battleData = battleSnapshot.val();
     const currentTickCount = battleData.tickCount || 0;
     
-    // STEP 1: Set the group to "fleeingBattle" state to signal to the battle tick processor
-    // This prevents race conditions where the battle tick tries to process the group at the same time
-    await groupRef.update({
-      status: 'fleeingBattle',
-      fleeTickRequested: currentTickCount
-    });
-    
-    console.log(`Set group ${groupId} to fleeingBattle state at tick ${currentTickCount}`);
-    
-    // STEP 2: After setting the fleeing state, perform the full update
+    // MODIFIED: Only set the fleeing status - let the battle tick processor handle the actual status change
+    // This avoids race conditions where the battle tick processes the group while we're updating it
     const updates = {};
     
-    // Calculate casualties - a penalty for fleeing
+    // Set the group to "fleeingBattle" state to signal to the battle tick processor
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'fleeingBattle';
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/fleeTickRequested`] = currentTickCount;
+    
+    // Calculate casualties for chat message - don't apply them here, battle tick will handle it
     const totalUnits = Object.keys(group.units || {}).length;
     const casualtiesPercentage = 0.2; // 20% casualties for fleeing
     const casualtiesCount = Math.floor(totalUnits * casualtiesPercentage);
-    let newUnitCount = totalUnits;
     
-    // Apply casualties if there are units to remove
-    if (casualtiesCount > 0 && totalUnits > 0) {
-      // Get list of units
-      const units = Object.entries(group.units || {});
-      
-      // Randomly select casualties
-      const selectedCasualties = [];
-      const availableIndexes = [...Array(units.length).keys()];
-      
-      for (let i = 0; i < casualtiesCount && availableIndexes.length > 0; i++) {
-        const randomIndex = Math.floor(Math.random() * availableIndexes.length);
-        const unitIndex = availableIndexes[randomIndex];
-        availableIndexes.splice(randomIndex, 1);
-        
-        const [unitId, unitData] = units[unitIndex];
-        selectedCasualties.push(unitId);
-        
-        // Don't remove player units, only NPCs
-        if (unitData.type !== 'player') {
-          updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/units/${unitId}`] = null;
-        }
-      }
-      
-      newUnitCount = totalUnits - selectedCasualties.filter(unitId => 
-        group.units[unitId].type !== 'player').length;
-    }
-    
-    // Update battle reference to remove the group
-    if (battleData) {
-      const sideKey = `side${battleSide}`;
-      
-      // Remove the group reference from the battle's side
-      if (battleData[sideKey] && battleData[sideKey].groups) {
-        updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}/${sideKey}/groups/${groupId}`] = null;
-      }
-      
-      // Add a battle event recording the flee
-      const newEvent = {
-        type: 'flee',
-        tickCount: currentTickCount,
-        text: `${group.name || "A group"} has fled from the battle!`,
-        groupId: groupId
-      };
-      
-      updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}/events`] = 
-        [...(battleData.events || []), newEvent];
-    }
-    
-    // Update the group's status
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleId`] = null;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleSide`] = null;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/battleRole`] = null;
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/status`] = 'idle';
-    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}/fleeTickRequested`] = null;
-    
-    // Add chat message about fleeing - still need timestamp for chat ordering
+    // Add chat message about fleeing
     const chatMessageId = `battle_flee_${Date.now()}_${groupId}`;
     updates[`worlds/${worldId}/chat/${chatMessageId}`] = {
-      text: `${group.name || 'A group'} has fled from battle at (${x}, ${y})! Lost ${casualtiesCount} units in retreat.`,
+      text: `${group.name || 'A group'} is attempting to flee from battle at (${x}, ${y})!`,
       type: 'event',
       timestamp: Date.now(),
       tickCount: currentTickCount,
@@ -164,14 +104,24 @@ export const fleeBattle = onCall({ maxInstances: 10 }, async (request) => {
       }
     };
     
-    // Execute all updates in a single transaction
+    // Add an event to the battle about the flee attempt
+    const newEvent = {
+      type: 'flee_attempt',
+      tickCount: currentTickCount,
+      text: `${group.name || "A group"} is attempting to flee from the battle!`,
+      groupId: groupId,
+      side: battleSide
+    };
+    
+    updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/battles/${battleId}/events`] = 
+      [...(battleData.events || []), newEvent];
+    
+    // Execute updates in a single transaction
     await db.ref().update(updates);
     
     return {
       success: true,
-      message: 'Successfully fled from battle',
-      casualties: casualtiesCount,
-      newUnitCount: newUnitCount,
+      message: 'Flee command issued successfully. Your group will attempt to flee during the next battle tick.',
       tickCount: currentTickCount
     };
     

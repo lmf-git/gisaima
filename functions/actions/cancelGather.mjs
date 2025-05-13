@@ -1,10 +1,12 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getDatabase } from 'firebase-admin/database';
+import { logger } from "firebase-functions";
 
 export const cancelGather = onCall({ maxInstances: 10 }, async (request) => {
   // Check authentication context provided by onCall
   if (!request.auth) {
-    throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    logger.error('Unauthenticated call to cancelGather');
+    throw new HttpsError('unauthenticated', 'User must be logged in to cancel gathering');
   }
 
   const uid = request.auth.uid;
@@ -12,10 +14,11 @@ export const cancelGather = onCall({ maxInstances: 10 }, async (request) => {
 
   // Validate required parameters
   if (!groupId || locationX === undefined || locationY === undefined || !worldId) {
-    throw new HttpsError('invalid-argument', 'Missing required parameters');
+    logger.warn('Missing required parameters for cancelGather');
+    throw new HttpsError('invalid-argument', 'Missing required parameters: groupId, locationX, locationY, worldId');
   }
 
-  console.log(`User ${uid} canceling gathering for group ${groupId} at (${locationX},${locationY}) in world ${worldId}`);
+  logger.info('cancelGather function called by user', { uid, worldId, groupId, locationX, locationY });
 
   const db = getDatabase();
   const chunkSize = 20;
@@ -24,71 +27,77 @@ export const cancelGather = onCall({ maxInstances: 10 }, async (request) => {
   const chunkKey = `${chunkX},${chunkY}`;
   const tileKey = `${locationX},${locationY}`;
   
-  // Reference to the group
-  const groupRef = db.ref(`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`);
+  // Full database path to the group
+  const groupPath = `worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${groupId}`;
+  const groupRef = db.ref(groupPath);
   
   try {
     // Get the current state of the group
     const groupSnapshot = await groupRef.once('value');
     
     if (!groupSnapshot.exists()) {
-      console.log(`Group ${groupId} not found at (${locationX},${locationY})`);
-      throw new HttpsError('not-found', 'Group not found at specified location');
+      logger.warn(`Group ${groupId} not found at position (${locationX},${locationY})`);
+      throw new HttpsError('not-found', 'Group not found at the specified location');
     }
 
     const group = groupSnapshot.val();
     
     // Verify ownership
     if (group.owner !== uid) {
-      console.log(`User ${uid} tried to cancel gathering for group ${groupId} owned by ${group.owner}`);
+      logger.warn(`User ${uid} attempted to cancel gathering of group ${groupId} owned by ${group.owner}`);
       throw new HttpsError('permission-denied', 'You can only cancel gathering of your own groups');
     }
     
     // Check if group is in a gathering state
     if (group.status !== 'gathering') {
-      console.log(`Group ${groupId} is not gathering (current status: ${group.status})`);
-      throw new HttpsError('failed-precondition', 'Can only cancel gathering for groups that are currently gathering');
+      logger.info(`Group ${groupId} is in ${group.status} state, not gathering - no need to cancel`);
+      return {
+        success: true,
+        message: 'Group is not gathering',
+        status: group.status
+      };
     }
     
     const now = Date.now();
     
-    // First set to cancellingGather state to signal to tick processor
-    await groupRef.update({
-      status: 'cancellingGather',
-      cancelRequestTime: now
-    });
+    // Update the group to cancel gathering
+    // Update status to 'idle' and remove all gathering-related properties
+    const updates = {};
+    updates[`${groupPath}/status`] = 'idle';
+    updates[`${groupPath}/gatheringBiome`] = null;
+    updates[`${groupPath}/gatheringTicksRemaining`] = null;
     
-    // After setting the transitional state, perform the full update
-    await groupRef.update({
-      status: 'idle',
-      gatheringBiome: null,
-      gatheringTicksRemaining: null,
-      cancelRequestTime: null
-    });
+    // Add a system message to the world chat
+    const chatMessageId = `gather_cancel_${now}_${groupId}`;
+    const chatMessagePath = `worlds/${worldId}/chat/${chatMessageId}`;
+    const groupName = group.name || "Unnamed group";
     
-    // Add chat message about cancellation
-    const chatMessageId = `cancel_gather_${now}_${groupId}`;
-    await db.ref(`worlds/${worldId}/chat/${chatMessageId}`).set({
-      text: `${group.name || 'A group'} has stopped gathering at (${locationX}, ${locationY})`,
+    updates[chatMessagePath] = {
+      text: `${groupName} has stopped gathering resources at (${locationX},${locationY})`,
       type: 'event',
       timestamp: now,
-      userId: uid,
-      userName: group.ownerName || "Unknown",
+      userId: uid, // Include userId for attribution
+      userName: group.ownerName || groupName, // Use group name if owner name not available
       location: {
-        x: locationX,
-        y: locationY,
+        x: parseInt(locationX),
+        y: parseInt(locationY),
         timestamp: now
       }
-    });
+    };
+    
+    // Apply all updates in a single operation
+    await db.ref().update(updates);
+    
+    logger.info(`Successfully cancelled gathering for group ${groupId} at (${locationX},${locationY})`);
     
     return {
       success: true,
       message: 'Gathering cancelled successfully',
-      timestamp: now
+      timestamp: now,
+      data: { worldId, groupId, locationX, locationY, uid }
     };
-    
   } catch (error) {
-    console.error(`Error cancelling gathering for group ${groupId}:`, error);
-    throw new HttpsError('internal', 'Failed to cancel gathering: ' + error.message, error);
+    logger.error(`Error cancelling gathering for group ${groupId}:`, error);
+    throw new HttpsError('internal', `Failed to cancel gathering: ${error.message}`);
   }
 });
