@@ -190,13 +190,20 @@ export function distributeLootToWinner({
       updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/groups/${receivingGroupId}/items/${itemId}`] = item;
     });
     
-  } else if (winner !== 0) {
-    // If winner is determined but no surviving groups, leave loot on tile
-    // This creates a "treasure" for other groups to find later
+  } else {
+    // If winner is determined but no surviving groups, OR if it's a draw (winner === 0)
+    // leave loot on tile as "treasure" for other groups to find later
     battleLoot.forEach(item => {
       const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
       updates[`worlds/${worldId}/chunks/${chunkKey}/${tileKey}/items/${itemId}`] = item;
     });
+    
+    // Log appropriate message based on result
+    if (winner === 0) {
+      console.log(`Battle ended in a draw - all loot (${battleLoot.length} items) placed on tile as treasure`);
+    } else {
+      console.log(`Battle has a winner (side ${winner}) but no surviving groups - loot placed on tile`);
+    }
   }
 };
 
