@@ -43,6 +43,7 @@
     import Legend from '../../components/map/foundation/Legend.svelte';
     import Minimap from '../../components/map/foundation/Minimap.svelte';
     import Recenter from '../../components/map/foundation/Recenter.svelte';
+    import FollowPlayer from '../../components/map/foundation/FollowPlayer.svelte';
     
     import Details from '../../components/map/actions/Details.svelte';
     import Overview from '../../components/map/actions/Overview.svelte';
@@ -1142,12 +1143,33 @@
     function handleManualPositionChange() {
       if (followPlayerPosition) {
         followPlayerPosition = false;
+        if (browser) {
+            localStorage.setItem('follow_player_position', 'false');
+        }
         console.log('Manual position change detected, disabling auto-follow');
       }
     }
 
     // Add state for showing notices
     let showNotices = $state(true);
+
+    // Function to handle follow state changes from the FollowPlayer component
+    function handleFollowToggle(isFollowing) {
+        // Update the local followPlayerPosition state
+        followPlayerPosition = isFollowing;
+        
+        // Save preference to localStorage
+        if (browser) {
+            localStorage.setItem('follow_player_position', isFollowing.toString());
+        }
+        
+        // If following is enabled and we have player location, move to it
+        if (isFollowing && $game.player?.lastLocation) {
+            moveTarget($game.player.lastLocation.x, $game.player.lastLocation.y);
+        }
+        
+        console.log(`Follow state changed to: ${isFollowing}`);
+    }
 </script>
 
 <svelte:window on:keydown={handleKeyDown} />
@@ -1216,17 +1238,10 @@
             
             <!-- Show Follow button in map-controls when Overview is open -->
             {#if showEntities && $game?.player?.alive && !isTutorialVisible}
-                <button 
-                    class="control-button follow-button" 
-                    onclick={toggleFollowPlayerPosition}
-                    aria-label={followPlayerPosition ? "Stop following player" : "Follow player"}
-                    disabled={!$game?.player?.alive || isTutorialVisible}>
-                    {#if followPlayerPosition}
-                        <BoundIcon extraClass="button-icon" />
-                    {:else}
-                        <UnboundIcon extraClass="button-icon" />
-                    {/if}
-                </button>
+                <FollowPlayer 
+                    disabled={!$game?.player?.alive || isTutorialVisible}
+                    onFollowToggle={handleFollowToggle}
+                />
             {/if}
             
             <!-- Show NextWorldTick in map-controls when Overview is open -->
@@ -1259,19 +1274,12 @@
                     </button>
                 {/if}
 
-                <!-- Show Follow button in left-controls only when Overview is not open -->
+                <!-- Replace the duplicated Follow button with the component -->
                 {#if !showEntities}
-                    <button 
-                        class="control-button follow-button" 
-                        onclick={toggleFollowPlayerPosition}
-                        aria-label={followPlayerPosition ? "Stop following player" : "Follow player"}
-                        disabled={!$game?.player?.alive || isTutorialVisible}>
-                        {#if followPlayerPosition}
-                            <BoundIcon extraClass="button-icon" />
-                        {:else}
-                            <UnboundIcon extraClass="button-icon" />
-                        {/if}
-                    </button>
+                    <FollowPlayer 
+                        disabled={!$game?.player?.alive || isTutorialVisible}
+                        onFollowToggle={handleFollowToggle}
+                    />
                 {/if}
 
                 <!-- Show NextWorldTick in left-controls when Overview is not open -->
