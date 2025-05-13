@@ -403,6 +403,49 @@
     if (!power && power !== 0) return '?';
     return power.toLocaleString();
   }
+  
+  // Add helper function to count units by type (same as in Details component)
+  function countUnitsByType(units) {
+    if (!units) return [];
+    
+    const counts = {};
+    Object.values(units).forEach(unit => {
+      const unitType = unit.type || 'unknown';
+      if (!counts[unitType]) {
+        counts[unitType] = {
+          type: unitType,
+          count: 0,
+          race: unit.race || null,
+          // Track if there are any players in this type
+          hasPlayers: unitType === 'player'
+        };
+      }
+      counts[unitType].count++;
+    });
+    
+    return Object.values(counts);
+  }
+  
+  // Helper function to calculate power from items only (same as in Details component)
+  function calculateItemPower(group) {
+    if (!group || !group.items) return 0;
+    
+    // Convert items to array if it's an object
+    const items = Array.isArray(group.items) ? group.items : Object.values(group.items);
+    
+    let totalItemPower = 0;
+    
+    // Simple calculation - assume each item contributes 1 power
+    items.forEach(item => {
+      const quantity = item.quantity || 1;
+      const power = item.power || 1;
+      totalItemPower += power * quantity;
+    });
+    
+    return totalItemPower;
+  }
+
+  // ...existing code...
 </script>
 
 <section 
@@ -1167,26 +1210,39 @@
                             {/if}
                           </div>
                           
-                          <!-- Add detailed groups display -->
+                          <!-- Modified groups display with power info and unit type counts -->
                           <div class="battle-groups-details">
                             {#each Object.entries(battle.side1.groups) as [groupId, group]}
                               <div class="battle-group">
                                 <div class="group-info">
                                   <span class="group-race">{_fmt(group.race || 'unknown')}</span>
                                   <span class="group-type">{_fmt(group.type || 'group')}</span>
+                                  
+                                  <!-- Add group power calculation -->
+                                  {#if typeof calculateGroupPower === 'function'}
+                                    {@const groupPower = calculateGroupPower(group)}
+                                    {@const itemPower = calculateItemPower(group)}
+                                    <span class="group-power-info">
+                                      Power: {groupPower}
+                                      {#if itemPower > 0}
+                                        <span class="item-power-bonus">(+{itemPower} from items)</span>
+                                      {/if}
+                                    </span>
+                                  {/if}
                                 </div>
                                 
                                 {#if group.units && Object.keys(group.units).length > 0}
                                   <div class="battle-units">
-                                    {#each Object.entries(group.units) as [unitId, unit]}
-                                      <div class="battle-unit">
-                                        <span class="unit-name">{unit.displayName || unitId.slice(-4)}</span>
-                                        {#if unit.race}
-                                          <span class="unit-race">{_fmt(unit.race)}</span>
-                                        {/if}
-                                        {#if unit.type && unit.type !== 'player'}
-                                          <span class="unit-type">{_fmt(unit.type)}</span>
-                                        {/if}
+                                    <!-- Replace individual unit listing with counts by type -->
+                                    {#each countUnitsByType(group.units) as unitType}
+                                      <div class="unit-type-summary">
+                                        <span class="unit-type-name">
+                                          {_fmt(unitType.type)}
+                                          {#if unitType.race && unitType.type !== 'player'}
+                                            <span class="unit-race-tag">{_fmt(unitType.race)}</span>
+                                          {/if}
+                                        </span>
+                                        <span class="unit-count-badge">×{unitType.count}</span>
                                       </div>
                                     {/each}
                                   </div>
@@ -1219,26 +1275,39 @@
                             {/if}
                           </div>
                           
-                          <!-- Add detailed groups display for side 2 -->
+                          <!-- Modified groups display for side 2 -->
                           <div class="battle-groups-details">
                             {#each Object.entries(battle.side2.groups) as [groupId, group]}
                               <div class="battle-group">
                                 <div class="group-info">
                                   <span class="group-race">{_fmt(group.race || 'unknown')}</span>
                                   <span class="group-type">{_fmt(group.type || 'group')}</span>
+                                  
+                                  <!-- Add group power calculation -->
+                                  {#if typeof calculateGroupPower === 'function'}
+                                    {@const groupPower = calculateGroupPower(group)}
+                                    {@const itemPower = calculateItemPower(group)}
+                                    <span class="group-power-info">
+                                      Power: {groupPower}
+                                      {#if itemPower > 0}
+                                        <span class="item-power-bonus">(+{itemPower} from items)</span>
+                                      {/if}
+                                    </span>
+                                  {/if}
                                 </div>
                                 
                                 {#if group.units && Object.keys(group.units).length > 0}
                                   <div class="battle-units">
-                                    {#each Object.entries(group.units) as [unitId, unit]}
-                                      <div class="battle-unit">
-                                        <span class="unit-name">{unit.displayName || unitId.slice(-4)}</span>
-                                        {#if unit.race}
-                                          <span class="unit-race">{_fmt(unit.race)}</span>
-                                        {/if}
-                                        {#if unit.type && unit.type !== 'player'}
-                                          <span class="unit-type">{_fmt(unit.type)}</span>
-                                        {/if}
+                                    <!-- Replace individual unit listing with counts by type -->
+                                    {#each countUnitsByType(group.units) as unitType}
+                                      <div class="unit-type-summary">
+                                        <span class="unit-type-name">
+                                          {_fmt(unitType.type)}
+                                          {#if unitType.race && unitType.type !== 'player'}
+                                            <span class="unit-race-tag">{_fmt(unitType.race)}</span>
+                                          {/if}
+                                        </span>
+                                        <span class="unit-count-badge">×{unitType.count}</span>
                                       </div>
                                     {/each}
                                   </div>
@@ -1988,80 +2057,84 @@
   }
   
   .battle-group {
-    margin-bottom: 0.2em;
+    padding: 0.4em;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 0.3em;
+    margin-bottom: 0.5em;
+    border: 1px solid rgba(0, 0, 0, 0.05);
   }
   
   .group-info {
     display: flex;
-    gap: 0.3em;
-  }
-  
-  .group-race, .group-type {
-    font-size: 0.85em;
-    padding: 0.1em 0.3em;
-    border-radius: 0.2em;
-    background-color: rgba(0, 0, 0, 0.05);
-    color: rgba(0, 0, 0, 0.7);
+    align-items: center;
+    padding-bottom: 0.3em;
+    width: 100%;
+    gap: 0.5em;
+    flex-wrap: wrap;
   }
   
   .battle-units {
-    margin-left: 0.5em;
-    margin-top: 0.1em;
-  }
-  
-  .battle-unit {
     display: flex;
-    gap: 0.3em;
+    flex-wrap: wrap;
+    gap: 0.2em;
+    width: 100%;
+    padding-top: 0.3em;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Add styles for unit type summaries (same as in Details) */
+  .unit-type-summary {
+    display: flex;
     align-items: center;
-    margin-bottom: 0.1em;
+    gap: 0.3em;
+    padding: 0.2em 0.5em;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 0.3em;
+    margin-right: 0.3em;
+    margin-bottom: 0.3em;
   }
   
-  .unit-name {
+  .unit-type-name {
     font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
   }
   
-  .unit-race, .unit-type {
+  .unit-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.7);
+    font-weight: bold;
+    border-radius: 1em;
+    padding: 0 0.5em;
+    font-size: 0.85em;
+    line-height: 1.6;
+  }
+  
+  .group-power-info {
+    margin-left: auto;
+    font-weight: 500;
+    color: #d32f2f;
+    font-size: 0.85em;
+  }
+  
+  .item-power-bonus {
+    font-size: 0.85em;
+    color: #2e7d32;
+    margin-left: 0.3em;
+    font-weight: 400;
+  }
+  
+  .unit-race-tag {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 0.1em 0.4em;
+    border-radius: 0.2em;
     font-size: 0.8em;
     color: rgba(0, 0, 0, 0.6);
-    background-color: rgba(0, 0, 0, 0.03);
-    padding: 0.05em 0.2em;
-    border-radius: 0.15em;
-  }
-
-  /* Add styles for units list */
-  .toggle-units-btn {
-    background: none;
-    border: none;
-    color: rgba(66, 133, 244, 0.9);
-    cursor: pointer;
-    font-size: 0.9em;
-    margin-left: 0.5em;
-    padding: 0.1em 0.3em;
-    border-radius: 0.2em;
-    transition: background-color 0.2s ease;
-  }
-  
-  .toggle-units-btn:hover {
-    background-color: rgba(66, 133, 244, 0.1);
-    text-decoration: underline;
-  }
-  
-  .group-units-list {
-    margin-top: 0.5em;
-    padding: 0.5em;
-    background-color: rgba(255, 255, 255, 0.7);  /* Increased opacity from 0.02 to 0.7 */
-    border-radius: 0.3em;
-    border: 1px solid rgba(0, 0, 0, 0.1);  /* Increased border opacity from 0.05 to 0.1 */
-    font-size: 0.9em;
-    max-height: 10em;
-    overflow-y: auto;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);  /* Added subtle shadow */
-  }
-  
-  .group-unit {
-    display: flex;
-    align-items: center;
-    padding: 0.3em 0;  /* Increased padding from 0.2em to 0.3em */
-    border-bottom: 1px dashed rgba(0, 0, 0, 0.1);  /* Increased border opacity */
+    font-weight: 400;
   }
 </style>
